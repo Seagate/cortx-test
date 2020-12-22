@@ -1,3 +1,3 @@
-# ecs-test
+# cortx-test
 
 Test Automation project for LDR R2 and future versions. 
