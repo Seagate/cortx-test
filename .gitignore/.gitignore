@@ -1,0 +1,14 @@
+*.git
+*.bak
+*.log
+*__pycache__*
+*.pyc
+*.swp
+*.ova
+.build
+build
+.eggs
+*.egg-info
+.coverage
+tmp
+venv/
