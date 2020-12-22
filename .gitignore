@@ -2,6 +2,7 @@
 *.bak
 *.log
 *__pycache__*
+.idea
 *.pyc
 *.swp
 *.ova
