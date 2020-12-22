@@ -1,0 +1,58 @@
+# --- to execute setup.py whatever the goal
+# pytest-runner
+
+# --- to generate the reports (see scripts in ci_tools, called by .travis)
+# pytest-html$PYTEST_HTML_VERSION
+# xunitparser
+
+# --- to run the tests
+# tabulate
+# pytest
+# pytest-logging  # ==2015.11.4
+
+# --- to generate the reports (see scripts in ci_tools, called by .travis)
+# pytest-cov  # ==2.5
+
+# --- to generate the doc (see .travis)
+mkdocs-material==2.7.3
+mkdocs==0.17.3  # this is to prevent a version non-compliant with mkdocs-material to be installed.
+boto3==1.9.202
+botocore==1.12.202
+certifi==2019.6.16
+chardet==3.0.4
+Click==7.0
+docutils==0.14
+Flask==1.1.1
+gevent==1.4.0
+greenlet==0.4.15
+idna==2.8
+itsdangerous==1.1.0
+Jinja2==2.10.1
+jmespath==0.9.4
+locustio==0.11.0
+MarkupSafe==1.1.1
+msgpack==0.6.1
+python-dateutil==2.8.0
+pyzmq==18.0.2
+requests==2.22.0
+s3transfer==0.2.1
+six==1.12.0
+urllib3==1.25.3
+Werkzeug==0.15.5
+pyyaml==5.1.2
+pandas==0.25.1
+matplotlib==3.1.1
+paramiko==2.6.0
+setuptools==41.6.0
+pysftp==0.2.9
+pika==1.1.0
+selenium==3.141.0
+xmltodict==0.12.0
+jsonschema==3.2.0
+mypy==0.782
+jira
+schedule
+pymongo
+aenum==2.2.4
+mdstat==1.0.4
+fabric~=2.5.0

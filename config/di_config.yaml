@@ -1,0 +1,112 @@
+limits:
+  volume_pattern: "SEAGATE"
+  total_usage_limit: 214748364800
+  total_per_limit: 80
+
+serviceinfo:
+
+  ioservices:
+    - m0d
+    - motr-kernel
+    - s3server
+    - haproxy
+    - s3authserver
+
+  managementsevices:
+    - statsd
+    - elasticsearch
+    - csm_agent
+    - csm_web
+    - hare-hax
+    - hare-consul-agent
+    - salt-master
+    - salt-minion
+    - rabbitmq-server
+    - sspl-ll
+
+ldap_username: "sgiamadmin"
+ldap_passwd: "Qe3K9lbs4DS5"
+
+logs:
+  consul:
+    - "/var/log/hare/consul-watch-service.log"
+    - "/var/log/hare/consul-elect-rc-leader.log"
+    - "/var/log/hare/consul-proto-rc.log"
+    - "/var/log/hare/consul-watch-handler.log"
+
+  elasticsearch:
+    - "/var/log/elasticsearch/elasticsearch_cluster.log"
+
+  csm_agent:
+    - "/var/log/seagate/csm/csm_agent.log"
+
+  csm_web_server:
+    - "/var/log/seagate/csm/csm_middleware.log"
+
+  ha_lib:
+    - "/var/log/seagate/cortx/ha/cortxha.log"
+    - "/var/log/seagate/cortx/ha/resource_agent.log"
+    - "/var/log/seagate/cortx/ha/ha_setup.log"
+
+  hax: "/var/log/messages"
+  motr:
+    - "/var/motr"
+
+  os:
+    - "/var/log/crash"
+    - "/var/log/messages"
+    - "/var/log/secure"
+    - "/var/log/dmesg"
+
+  provisioner:
+    - "/var/log/seagate/provisioner"
+
+  s3:
+    - "/var/log/seagate/s3/"
+    - "/var/log/seagate/s3/audit/audit.log"
+
+  haproxy: "/var/log/haproxy"
+  s3auth: "/var/log/seagate/auth/server/app.log"
+  ldap:
+    - "/var/log/slapd.log"
+
+  rabbitmq:
+    - "/var/log/rabbitmq"
+  sspl:
+    - "/var/log/cortx/sspl"
+
+pcs_status_cmd: "pcs status"
+
+# prefer DNS name
+hosts:
+  - iu17-r21.pun.seagate.com
+  - iu24-r21.pun.seagate.com
+
+host_domain: pun.seagate.com
+username: root
+password: c2VhZ2F0ZQ==
+interval: 300
+
+# One of INFO, DEBUG, ERROR
+logging_Level: INFO
+retries: 3
+
+# Configurations for Rest API specifically for DI framework
+RestConfig:
+  ip : "10.237.65.205"
+  port : 28100
+  jsonfile : 'rest_call.json'
+  csm_admin_user :
+    username: "admin"
+    password: "Seagate@1"
+
+  Login_headers:
+    Content-Type: 'application/json'
+  rest_login_endpoint : "/api/v1/login"
+  s3accounts_endpoint : "/api/v1/s3_accounts"
+  s3_bucket_endpoint : "/api/v1/s3/bucket"
+  IAM_users_endpoint : "/api/v1/iam_users"
+  csmuser_endpoint : "/api/v1/csm/users"
+  bucket_policy_endpoint : "/api/v1/s3/bucket_policy/{}"
+  capacity_endpoint: "/api/v1/capacity"
+
