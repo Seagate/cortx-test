@@ -33,16 +33,47 @@ logger = logging.getLogger(__name__)
 init_loghandler(logger)
 
 
+def setup_module(module):
+    """ setup any state specific to the execution of the given module."""
+
+
+def teardown_module(module):
+    """ teardown any state that was previously setup with a setup_module
+    method.
+    """
+
 class TestDataIntegrity:
     """ log sys event when doing node operation
        log test hooks and actions/events
     """
     HOME = os.getcwd()
 
+    @classmethod
+    def setup_class(cls):
+        """ setup any state specific to the execution of the given class (which
+        usually contains tests).
+        """
+
+    @classmethod
+    def teardown_class(cls):
+        """ teardown any state that was previously setup with a call to
+        setup_class.
+        """
+
     def setUp(self) -> None:
         #users = ManagementOPs.create_account_users()
         #create_iter_content_json(DataIntegrityTest.HOME, users)
         pass
+
+    def setup_method(self, method) -> None:
+        """ setup any state tied to the execution of the given method in a
+        class.  setup_method is invoked for every test method of a class.
+        """
+
+    def teardown_method(self, method) -> None:
+        """ teardown any state that was previously setup with a setup_method
+        call.
+        """
 
     @pytest.mark.run(order=2)
     @pytest.mark.test(test_id=12345, tag='di')
@@ -90,4 +121,4 @@ class TestDataIntegrity:
 
 
 if __name__ == '__main__':
-    main()
+    pass

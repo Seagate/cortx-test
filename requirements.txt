@@ -38,3 +38,6 @@ pymongo
 aenum==2.2.4
 mdstat==1.0.4
 fabric~=2.5.0
+
+pytest~=6.2.1
+testfixtures~=6.17.0
