@@ -21,10 +21,11 @@
 import pytest
 import pathlib
 import json
-
+from testfixtures import LogCapture
+from commons.utils import yaml_utils
 
 @pytest.fixture(autouse=True)
-def read_project_config(request):
+def _read_project_config(request):
     file = pathlib.Path(request.node.fspath)
     print('current test file:', file)
     config = file.with_name('config.json')
@@ -33,7 +34,8 @@ def read_project_config(request):
         contents = json.load(fp)
     print('config contents:', contents)
 
-@pytest.fixture
+
+@pytest.fixture(autouse=True)
 def read_project_config(request):
     f = pathlib.Path(request.node.fspath.strpath)
     config = f.with_name('config.json')
@@ -41,9 +43,20 @@ def read_project_config(request):
         return json.load(fp)
 
 
+@pytest.fixture(autouse=True)
+def capture():
+    with LogCapture() as logs:
+        yield logs
+
+
 @pytest.fixture
 def data():
     pytest.req_timeout_global = 30
+
+
+def test_config():
+    test_cfg = yaml_utils.read_yaml('di_config.yaml')
+    yield
 
 # content of conftest.py
 
