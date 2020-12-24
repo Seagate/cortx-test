@@ -7,16 +7,16 @@ CTP OS and Avocado based test framework was used to develop automated test cases
   
 # Use of Pytest
 Pytest framework has lot to offer in terms of testing at system or integration level. It's easier to write small test, yet scales to support more complex integration and system level tests. It was evaluated for all test framework requirement with small tests and some of which are mentioned below.
-     * Supports parallel execution
-     * Supports tagging 
-     * modular fixtures for short and long lived resources
-     * Plugin architecture and 300+ community supported plugins
+* Supports parallel execution
+* Supports tagging 
+* modular fixtures for short and long lived resources
+* Plugin architecture and 300+ community supported plugins
 
 # High level repository structure
 The Cortx-test automation project's code can borken into 3 loosely coupled parts 
-*Test automation framework  
-*Distributed test execution framework ./core ./execution
-*Reporting framework   ./reporting_service
+* Test automation framework  
+* Distributed test execution framework ./core ./execution
+* Reporting framework   ./reporting_service
 
 ## Repository structure
 Overview of folder structure in cortx-test repository.
@@ -33,7 +33,7 @@ Exception classes and error codes.
 
 ## config
 Common config and all other component specific config. Test suite and test specific configs would be minimalistic and test and test suite fixtures should test data creation and distruction.
-
+```
 ├───ci_tools
 │       .pylintrc
 │       requirements-pip.txt
@@ -110,3 +110,4 @@ Common config and all other component specific config. Test suite and test speci
 		│   *test_result_dir_for_executed_test*
 			│  testcase.log
 
+```
