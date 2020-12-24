@@ -33,6 +33,18 @@ Exception classes and error codes.
 
 ## config
 Common config and all other component specific config. Test suite and test specific configs would be minimalistic and test and test suite fixtures should test data creation and distruction.
+
+## core
+For test execution framework codebase, hooks and common libraries.
+
+## libs
+All test libraries code should go here and should be grouped by product component or features.
+
+## tests
+Test universe
+
+## reporting_service
+Its a REST service which provides APIs to stores build wise test results and aggregate stats and query capabilities. 
 ```
 ├───ci_tools
 │       .pylintrc
@@ -111,3 +123,9 @@ Common config and all other component specific config. Test suite and test speci
 			│  testcase.log
 
 ```
+
+# Hardware Configuration for test automation setup
+VMs or Physical machines with 16-32 GB RAM and 8-16 logical cores would be a decent configuration for a test machine. The deployment view of HLD discusses more about the deployment structure. The least requirement is that there should be a connectivity to the Cortx setup in labs.
+
+
+
