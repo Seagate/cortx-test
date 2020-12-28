@@ -46,6 +46,8 @@ Fields that needs to be transfered in json format.
 # Config management
 
 # Layout and Layering
+[Block diagram of Layers](Test-Framework-Layering.png "block diagram of test framework")
+
 # Test execution framework sequence diagram
 # Class diagram of test management
 # How to write tests
