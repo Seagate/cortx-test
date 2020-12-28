@@ -125,7 +125,7 @@ Its a REST service which provides APIs to stores build wise test results and agg
 ```
 
 # Hardware Configuration for test automation setup
-VMs or Physical machines with 16-32 GB RAM and 8-16 logical cores would be a decent configuration for a test machine. The deployment view of HLD discusses more about the deployment structure. The least requirement is that there should be a connectivity to the Cortx setup in labs.
+VMs or Physical machines with 16-32 GB RAM and 8-16 logical cores would be a decent configuration for a test machine. The deployment view [Test Execution Deployment](Test-Execution-Deployment-View.md) discusses more about the deployment structure. The least requirement is that there should be a connectivity to the Cortx setup in labs.
 
 
 
