@@ -27,23 +27,24 @@ We will add more to this section after a short POC.
 # Kafka message format
 Fields that needs to be transfered in json format.
 
-Test Name 
-Test id 
-Test id labels 
-Test tag if any  
-Test plan id 
-Test execution id 
-Test type: Avocado/CFT/Locust/S3bench/ Pytest 
-Test Component: S3, CSM, Motr etc. 
-Test team: CFT / Automation / Component test 
-Build type: Release/beta 
-Build-No  
-Test result  
-Timestamp
-Filename:
-Tag
+* Test Name 
+* Test id 
+* Test id labels 
+* Test tag if any  
+* Test plan id 
+* Test execution id 
+* Test type: Avocado/CFT/Locust/S3bench/ Pytest 
+* Test Component: S3, CSM, Motr etc. 
+* Test team: CFT / Automation / Component test 
+* Build type: Release/beta 
+* Build-No  
+* Test result  
+* Timestamp
+* Filename:
+* Tag
 
 # Config management
+
 # Layout and Layering
 # Test execution framework sequence diagram
 # Class diagram of test management
