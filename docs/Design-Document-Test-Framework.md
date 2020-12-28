@@ -19,10 +19,30 @@ The execution map will be data structure which will provide API to feed Kafka to
 def create_test_execution_map(tags, te_ticket):
   pass
 
-# Kafka as a medium to distribute tests
-Multiple approaches like RPC based mechanism like XML RPC and Zero MQ were evaluated for test distribution mechanisms . Kafka provides multi producer and multi consumer model which fits in our context. Same topic `cortx-test-jobs` can be used by consumer (test-runner and )
+# Message Bus/ Kafka as a medium to distribute tests
+Multiple approaches like RPC based mechanism like XML RPC and Zero MQ were evaluated for test distribution mechanisms . Kafka provides a producer and multi consumer model which fits in our context. Alternatively RabbitMQ also satisfies our requirement. Same topic `cortx-test-jobs` can be used by consumers (test-runners) 
+
+We will add more to this section after a short POC.
 
 # Kafka message format
+Fields that needs to be transfered in json format.
+
+Test Name 
+Test id 
+Test id labels 
+Test tag if any  
+Test plan id 
+Test execution id 
+Test type: Avocado/CFT/Locust/S3bench/ Pytest 
+Test Component: S3, CSM, Motr etc. 
+Test team: CFT / Automation / Component test 
+Build type: Release/beta 
+Build-No  
+Test result  
+Timestamp
+Filename:
+Tag
+
 # Config management
 # Layout and Layering
 # Test execution framework sequence diagram
