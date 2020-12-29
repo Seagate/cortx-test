@@ -16,8 +16,13 @@ The Top runner uses pytest tags and it's or custom test discovery mechanism from
 The execution map will be data structure which will provide API to feed Kafka topic.
 
 ### Algorithm for execution map
-def create_test_execution_map(tags, te_ticket):
-  pass
+def create_test_execution_map(tags, te_ticket):\n
+  """ Returns an order map of tags and individual test cases """
+  ordered_map = OrderedDict()
+  for test in te_tickets():
+      fetch test tags from framework
+   
+  return ordered_map  
 
 # Message Bus/ Kafka as a medium to distribute tests
 Multiple approaches like RPC based mechanism like XML RPC and Zero MQ were evaluated for test distribution mechanisms . Kafka provides a producer and multi consumer model which fits in our context. Alternatively RabbitMQ also satisfies our requirement. Same topic `cortx-test-jobs` can be used by consumers (test-runners) 
