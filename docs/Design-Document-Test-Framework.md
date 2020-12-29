@@ -44,6 +44,28 @@ Fields that needs to be transfered in json format.
 * Tag
 
 # Config management
+This will be most used component of framework in writing test cases. The main aim is to seperate test data from test case while not loosing readability of test case and minimizing config clutter. Configs at framework, suite and test levels are loaded in different ways discussed below.
+Config Loading logic would be
+
+1. Set Globals from test runner agruments from command line. At minimum what I am thinking is to put target, # of processes, debug mode, test class/test file /test method/ function, global config file in test runner. 
+1a. If global config is specified it will be loaded from the path.
+    Else default global config will be loaded by config imports in test runner
+    This config is avaliable to all test libs, tests, fixtures and modules by importing config.  e.g. `from config import common_config`  
+2.  The test suite specific data can be externalized and initialized in module hooks or class hooks . e.g. setup_class, teardown_class, setup_module, teardown_module. 
+    The test suite specific fixtures can be used to load data in nunit style hooks. 
+    If suite config exits:
+        load suite config by fixtures in nunit style hooks e.g. setup_class, teardown_class, setup_module, teardown_module. 
+    else:
+        load control moves to test method or next fixture
+3.  Test specifc data externalization should be kept minimal and parameterize, parameterize_with_cases markers can be used to supply or generate test data. 
+    Test level config over shadows some suite or common configs. 
+3a. If test config exists:
+       load test config by using fixtures and parameterize, parameterize_with_cases decorators. 
+           if your test data override common config:
+              over shadow the test data/parameters at the start of test by declaring local variables (hiding)
+           else:
+              load the test data to be used by test case
+
 
 # Layout and Layering
 ![Block diagram of Layers](Test-Framework-Layering.png "block diagram of test framework")
