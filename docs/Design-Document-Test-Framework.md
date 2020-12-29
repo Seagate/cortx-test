@@ -1,6 +1,6 @@
 # Proposed test framework architecture
 The deployment view [Test Execution Deployment](Test-Execution-Deployment-View.md) discusses about the deployment structure however same diagram can be used to explain high level design of framework
-## [Automation deployment view](latest_automation_framework_deployment_view_full_mode.png)
+## ![Automation deployment view](latest_automation_framework_deployment_view_full_mode.png "Automation deployment view")
 
 The execution framework (a loosely coupled sub component of framework) will be triggered with from Jenkins with top level test runner. This top test runner has responsibility of creating an execution plan from the input taken from Jenkins for either of these 3 sources.
 * Test Execution ticket
