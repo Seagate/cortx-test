@@ -17,12 +17,12 @@ The execution map will be data structure which will provide API to feed Kafka to
 
 ### Algorithm for execution map
 ```
-def create_test_execution_map(tags, te_ticket):\n
+def create_test_execution_map(tags, te_ticket):
   """ Returns an order map of tags and individual test cases """
   ordered_map = OrderedDict()
   for test in te_tickets():
       fetch test tags from framework
-   
+      # algo 
   return ordered_map  
 ```
 
@@ -98,7 +98,13 @@ Helpers/Test Libs/fixtures
 TBD
 
 # When to use fixtures
-TBD
+When:
+1. You want to extract test specific data out and that can be used across multiple tests. 
+2. You want to generate combinations from provided test data
+3. You want to hide common configuration parameters by making fixture hide them and generate test specific data dict.
+Not when:
+1.Test substantially consumes different data and it can be externalised to test specific yaml config.
+2. When you are using too many fixtures. May be you need to revisit the fixtures and refactor them logically into file per directory or features. 
 
 # Glossary:
 `Test execution Framework` - Part of Test Framework which will be responsible for distributing test cases across multiple test runners.
