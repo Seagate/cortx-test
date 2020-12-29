@@ -1,6 +1,6 @@
 # Proposed test framework architecture
 The deployment view [Test Execution Deployment](Test-Execution-Deployment-View.md) discusses about the deployment structure however same diagram can be used to explain high level design of framework
-## ![Automation deployment view](latest_automation_framework_deployment_view_full_mode.png "Automation deployment view")
+## ![Automation deployment view](media/latest_automation_framework_deployment_view_full_mode.png "Automation deployment view")
 
 The execution framework (a loosely coupled sub component of framework) will be triggered with from Jenkins with top level test runner. This top test runner has responsibility of creating an execution plan from the input taken from Jenkins for either of these 3 sources.
 * Test Execution ticket
@@ -25,7 +25,7 @@ Multiple approaches like RPC based mechanism like XML RPC and Zero MQ were evalu
 We will add more to this section after a short POC.
 
 # Kafka message format
-Fields that needs to be transfered in json format.
+Fields that needs to be transfered in json format. The Kafka message format has message identifer and value would be json with all attributes mentioned below.
 
 * Test Name 
 * Test id 
@@ -68,7 +68,7 @@ Config Loading logic would be
 
 
 # Layout and Layering
-![Block diagram of Layers](Test-Framework-Layering.png "block diagram of test framework")
+![Block diagram of Layers](media/Test-Framework-Layering.png "block diagram of test framework")
 
 # Test execution framework sequence diagram
 # Class diagram of test management
