@@ -82,6 +82,7 @@ TBD
 
 # Class diagram of test management
 A sample class diagram for a typical feature automation depicts aggregation or composition. It should be prefered over when possible. 
+```
 Test Class 
    |
    |
@@ -90,7 +91,7 @@ Test Library
  |     Utilities 
  |
 Helpers/Test Libs/fixtures
-
+```
 ![Typical Test class diagram](media/sample_test_class_hierarchy.png "test class diagram")
 
 # How to write tests
