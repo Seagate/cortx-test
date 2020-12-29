@@ -78,10 +78,29 @@ Config Loading logic would be
 ![Block diagram of Layers](media/Test-Framework-Layering.png "block diagram of test framework")
 
 # Test execution framework sequence diagram
+TBD
+
 # Class diagram of test management
+A sample class diagram for a typical feature automation depicts aggregation or composition. It should be prefered over when possible. 
+Test Class 
+   |
+   |
+Test Library
+ |      |
+ |     Utilities 
+ |
+Helpers/Test Libs/fixtures
+
+![Typical Test class diagram](media/sample_test_class_hierarchy.png "test class diagram")
+
 # How to write tests
+TBD
+
 # When to use fixtures
+TBD
+
 # Glossary:
-`Test execution Framework` - Part of Test Framework which will be responsible for distributing test cases across multiple test runners. 
+`Test execution Framework` - Part of Test Framework which will be responsible for distributing test cases across multiple test runners.
+`Test Framework` - Part of Framework which will be used to write tests and libraries.  
 
 
