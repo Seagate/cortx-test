@@ -9,7 +9,7 @@ def pymongo_exception(func):
             ret = func(*args, **kwargs)
             return ret
         except ServerSelectionTimeoutError:
-            return False, (503, "Unable to connect to mongoDB. Probably MongoDB server is down {e}")
+            return False, (503, "Unable to connect to mongoDB. Probably MongoDB server is down")
         except OperationFailure as e1:
             if e1.code == 18:
                 return False, (401, f"Wrong username/password. {e1}")
