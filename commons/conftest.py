@@ -44,6 +44,7 @@ def read_project_config(request):
     with config.open() as fp:
         return json.load(fp)
 
+
 def init_loghandler(log): #TODO needs to be removed after framework Logger is developed
     log.setLevel(logging.DEBUG)
     fh = logging.FileHandler('pytestfeatures.log', mode='a')

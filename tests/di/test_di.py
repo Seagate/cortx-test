@@ -86,7 +86,6 @@ class TestDataIntegrity:
         cmn_cfg = cfg.CMN_CFG
         users = cfg.constants.USER_JSON
 
-
     @pytest.mark.test(test_id=12345, tag='di')
     @pytest.mark.run(order=2)
     def test_very_large_number_s3_connection(self):

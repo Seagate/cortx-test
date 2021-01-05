@@ -78,6 +78,7 @@ def min(values):
     logging.getLogger(__name__).info("inner function min is %s" % _min)
     return _min
 
+
 @pytest.fixture(scope='function')
 def log_cutter(request, formatter):
     print("setup")
@@ -102,6 +103,3 @@ def test_min(request, capture, logger):
     records = capture.records
     test_name = request.node.name
     Globals.records.update({test_name: records})
-    # with open(test_min.__name__, 'w') as f:
-    #     for rec in capture.records:
-    #         f.write(formatter.format(rec) + '\n')
