@@ -1,6 +1,7 @@
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 from pymongo.errors import ServerSelectionTimeoutError, OperationFailure
+from http import HTTPStatus
 
 
 def pymongo_exception(func):
@@ -9,16 +10,19 @@ def pymongo_exception(func):
             ret = func(*args, **kwargs)
             return ret
         except ServerSelectionTimeoutError:
-            return False, (503, "Unable to connect to mongoDB. Probably MongoDB server is down")
+            return False, (HTTPStatus.SERVICE_UNAVAILABLE,
+                           "Unable to connect to mongoDB. Probably MongoDB server is down")
         except OperationFailure as e1:
             if e1.code == 18:
-                return False, (401, f"Wrong username/password. {e1}")
+                return False, (HTTPStatus.UNAUTHORIZED, f"Wrong username/password. {e1}")
             elif e1.code == 13:
-                return False, (403, f"User does not have permission for operation. {e1}")
+                return False, (HTTPStatus.FORBIDDEN,
+                               f"User does not have permission for operation. {e1}")
             else:
-                return False, (503, f"Unable to connect to mongoDB. {e1}")
+                return False, (HTTPStatus.SERVICE_UNAVAILABLE,
+                               f"Unable to connect to mongoDB. {e1}")
         except PyMongoError as e2:
-            return False, (503, f"Unable to connect to mongoDB. {e2}")
+            return False, (HTTPStatus.SERVICE_UNAVAILABLE, f"Unable to connect to mongoDB. {e2}")
 
     return new_func
 
