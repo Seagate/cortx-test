@@ -16,11 +16,13 @@ def init_loghandler(log):
     log.addHandler(fh)
     log.addHandler(ch)
 
+
 @pytest.fixture(scope='session')
 def formatter():
     format_log_message = '%(asctime)s\t%(levelname)s\t%(filename)s\t%(funcName)s\t%(processName)s\t%(message)s'
     formatter = logging.Formatter(fmt=format_log_message, datefmt='%Y-%m-%d %H:%M:%S')
     return formatter
+
 
 @pytest.fixture(scope='session')
 def logger():
@@ -78,6 +80,7 @@ def min(values):
     logging.getLogger(__name__).info("inner function min is %s" % _min)
     return _min
 
+
 @pytest.fixture(scope='function')
 def log_cutter(request, formatter):
     print("setup")
@@ -89,6 +92,7 @@ def log_cutter(request, formatter):
     with open(name, 'w') as f:
         for rec in records:
             f.write(formatter.format(rec) + '\n')
+
 
 @pytest.mark.usefixtures("log_cutter")
 def test_min(request, capture, logger):
@@ -102,9 +106,6 @@ def test_min(request, capture, logger):
     records = capture.records
     test_name = request.node.name
     Globals.records.update({test_name: records})
-    # with open(test_min.__name__, 'w') as f:
-    #     for rec in capture.records:
-    #         f.write(formatter.format(rec) + '\n')
 
 
 def test_max(capture, logger, formatter):

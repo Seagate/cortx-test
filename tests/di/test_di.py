@@ -77,7 +77,7 @@ class TestDataIntegrity:
 
     @pytest.mark.run(order=2)
     @pytest.mark.test(test_id=12345, tag='di')
-    @pytest.mark.dataprovider('', a=a)
+    @pytest.mark.dataprovider('', conn=300)
     def test_di_large_number_s3_connection(self):
         """
         300 * 3, 300 * 6, 300 * 9, 300 * 12
@@ -85,7 +85,6 @@ class TestDataIntegrity:
         """
         cmn_cfg = cfg.CMN_CFG
         users = cfg.constants.USER_JSON
-
 
     @pytest.mark.test(test_id=12345, tag='di')
     @pytest.mark.run(order=2)
