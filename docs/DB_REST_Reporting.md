@@ -1,6 +1,6 @@
 # REST-DB & Reporting Framework
 
-<img src="media\rest_server.png" style="width:5.02084in;height:3.96875in" />
+<img src="media/rest_server.png" style="width:5.02084in;height:3.96875in" />
 
 # Entities
 
