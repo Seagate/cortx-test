@@ -55,6 +55,7 @@ def count_documents(query: dict,
 
 @pymongo_exception
 def find_documents(query: dict,
+                   projection: dict,
                    uri: str,
                    db_name: str,
                    collection: str
@@ -64,6 +65,7 @@ def find_documents(query: dict,
 
     Args:
         query: Query to be searched in MongoDB
+        projection: Fields to be returned
         uri: URI of MongoDB database
         db_name: Database name
         collection: Collection name in database
@@ -75,7 +77,7 @@ def find_documents(query: dict,
     with MongoClient(uri) as client:
         db = client[db_name]
         tests = db[collection]
-        result = tests.find(query)
+        result = tests.find(query, projection)
         return True, result
 
 

@@ -1,7 +1,7 @@
 # REST server APIs guide
 ### While consuming any API:
 1. Include `Content-Type: application/json` in request headers
-2. Include `username` and `password` in json body
+2. Include `db_username` and `db_password` in json body
 ## Endpoints
 ### 1. create
 * Can be used to create new execution entries in database
@@ -75,8 +75,8 @@ curl -L -X POST 'http://127.0.0.1:5000/create' \
     ],
     "testTeam": "CFT",
     "testType": "Pytest",
-    "username": "username",
-    "password": "password"
+    "db_username": "db_username",
+    "db_password": "db_password"
 }'
 ```
 2. python - requests
@@ -121,8 +121,8 @@ payload = {
     ],
     "testTeam": "CFT",
     "testType": "Pytest",
-    "username": "username",
-    "password": "password"
+    "db_username": "db_username",
+    "db_password": "db_password"
 }
 headers = {
   'Content-Type': 'application/json'
@@ -139,7 +139,7 @@ print(response.text)
 |-----|-------|
 |200 | Success |
 |400 | Bad Request: Missing parameters. Do not retry. |
-|401 | Unauthorized: Wrong username/password. |
+|401 | Unauthorized: Wrong db_username/db_password. |
 |403 | Forbidden: User does not have permission for operation. |
 |503 | Service Unavailable: Unable to connect to mongoDB. |
 
@@ -148,6 +148,9 @@ print(response.text)
 * Can pass the exact query which can be executed using 
 [db.collection.find](https://docs.mongodb.com/manual/reference/method/db.collection.find/#db.collection.find).
 This allows to execute complex queries using operators.
+* Fields for search 
+  * query - to be searched in DB,
+  * projection - return only specified fields in result documents
 
 #### Examples:
 1. Command line
@@ -155,12 +158,11 @@ This allows to execute complex queries using operators.
 curl -L -X GET 'http://127.0.0.1:5000/search' \
 -H 'Content-Type: application/json' \
 --data-raw '{
-    "buildNo": "531",
-    "testID": "TEST-10",
-    "healthCheckResult": "Fail",
-    "testComponent": { "$in": ["S3", "Motr", "CSM"] },
-    "username": "username",
-    "password": "password"
+    "query": {"testComponent": { "$in": ["S3", "Motr"]},
+              "healthCheckResult": "Fail" },
+    "projection": {"OSVersion": true, "buildNo": true},
+    "db_username": "db_username",
+    "db_password": "db_password"
 }'
 ```
 2. python - requests
@@ -171,12 +173,11 @@ endpoint = search
 host = "http://127.0.0.1:5000/"
 
 payload = {
-    "buildNo": "531",
-    "testID": "TEST-10",
-    "healthCheckResult": "Fail",
-    "testComponent": { "$in": ["S3", "Motr", "CSM"] },
-    "username": "username",
-    "password": "password"
+    "query": {"testComponent": { "$in": ["S3", "Motr"]},
+              "healthCheckResult": "Fail" },
+    "projection": {"OSVersion": true, "buildNo": true},
+    "db_username": "db_username",
+    "db_password": "db_password"
 }
 headers = {
   'Content-Type': 'application/json'
@@ -193,7 +194,7 @@ print(response.text)
 |-----|-------|
 |200 | Success |
 |400 | Bad Request: Missing parameters. Do not retry. |
-|401 | Unauthorized: Wrong username/password. |
+|401 | Unauthorized: Wrong db_username/db_password. |
 |403 | Forbidden: User does not have permission for operation. |
 |404 | Not Found: No entry for that query in MongoDB. |
 |503 | Service Unavailable: Unable to connect to mongoDB. |
@@ -211,8 +212,8 @@ curl -L -X PATCH 'http://127.0.0.1:5000/update' \
 --data-raw '{
     "filter": {"buildType": "Beta"},
     "update": {"$set": {"buildType": "Release", "OSVersion": "Redhat"}},
-    "username": "username",
-    "password": "password"
+    "db_username": "db_username",
+    "db_password": "db_password"
 }'
 ```
 2. python - requests
@@ -225,8 +226,8 @@ host = "http://127.0.0.1:5000/"
 payload = {
     "filter": {"buildType": "Beta"},
     "update": {"$set": {"buildType": "Release", "OSVersion": "Redhat"}},
-    "username": "username",
-    "password": "password"
+    "db_username": "db_username",
+    "db_password": "db_password"
 }
 headers = {
   'Content-Type': 'application/json'
@@ -243,6 +244,6 @@ print(response.text)
 |-----|-------|
 |200 | Success |
 |400 | Bad Request: Missing parameters. Do not retry. |
-|401 | Unauthorized: Wrong username/password. |
+|401 | Unauthorized: Wrong db_username/db_password. |
 |403 | Forbidden: User does not have permission for operation. |
 |503 | Service Unavailable: Unable to connect to mongoDB. |

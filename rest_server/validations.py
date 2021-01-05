@@ -40,9 +40,22 @@ def check_user_pass(json_data: dict) -> bool:
     Returns:
         bool
     """
-    if "username" in json_data.keys() and "password" in json_data.keys():
+    if "db_username" in json_data.keys() and "db_password" in json_data.keys():
         return True
     return False
+
+
+def validate_search_fields(json_data: dict) -> (bool, tuple):
+    search_keys = ["query", "projection"]
+    if "query" not in json_data.keys():
+        return False, (HTTPStatus.BAD_REQUEST, f"Please provide query key")
+    if type(json_data["query"]) != dict:
+        return False, (HTTPStatus.BAD_REQUEST,
+                       f"Please provide query key as dictionary")
+    if "projection" in json_data.keys() and type(json_data["projection"]) != dict:
+        return False, (HTTPStatus.BAD_REQUEST,
+                       f"Please provide projection keys as dictionary")
+    return True, None
 
 
 def validate_mandatory_db_fields(json_data: dict) -> (bool, tuple):
