@@ -1,13 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from collections import OrderedDict
-from decimal import Decimal
-from difflib import unified_diff
-from types import GeneratorType
-import re
 import pytest
-from comparison import *
+from commons.utils.comparison import *
 
 
 def compare(*argv, **kwargs):
@@ -40,7 +35,11 @@ def compare(*argv, **kwargs):
     # for comparison of text having mixed data types
     compare_text = kwargs.get('compare_text', False)
 
-    dtype = type(argv[0])
+    if len(argv) != 2:
+        assert len(argv) == 2, "Please provide correct number of operands. " \
+                               "Two operands are supported"
+    else:
+        dtype = type(argv[0])
 
     if compare_text:
         assert_compare_text(argv[0], argv[1], kwargs)
