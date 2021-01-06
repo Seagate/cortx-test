@@ -120,13 +120,13 @@ def is_machine_clean(self):
     # Check any RPM is being installed on machine
     rpm_cmd = PROV_DICT_OBJ["LST_RPM_CMD"]
     prvsn_dir = constants.LST_PRVSN_DIR
-    logger.info(f"command : {rpm_cmd}")
+    log.info(f"command : {rpm_cmd}")
     cmd_output = self.execute_command(command=rpm_cmd)
     if cmd_output[1] != []:
         rpm_installed = True
 
     # Now check eos-prvsn binaries present at path
-    logger.info(f"command : {prvsn_dir}")
+    log.info(f"command : {prvsn_dir}")
     cmd_output_1 = self.execute_command(command=prvsn_dir)
     if cmd_output_1[1] != []:
         eos_prvsnr_present = True
@@ -151,9 +151,9 @@ def is_machine_clean(self):
             cmd = "openssl md5 -binary {} | base64".format(file_path)
         else:
             cmd = "md5sum {} {}".format(options, file_path)
-        logger.info(f"Executing cmd: {cmd}")
+        log.info(f"Executing cmd: {cmd}")
         result = self.execute_cmd(cmd)
-        logger.debug("Output: {}".format(result))
+        log.debug("Output: {}".format(result))
         return result
     def cal_percent(num1, num2):
         """
@@ -195,9 +195,9 @@ def is_machine_clean(self):
             resp.append(result)
         return resp
     def validate_output(self, output, expected_keywords):
-        logger.info("actual output", output)
+        log.info("actual output", output)
         output = [i.strip() for i in output]
-        logger.info("output after strip %s", output)
+        log.info("output after strip %s", output)
         validation_steps = dict()
         for ele in expected_keywords:
             validation_steps[ele] = False
@@ -236,7 +236,7 @@ def is_machine_clean(self):
             with open(fpath, "w") as f_write:
                 pass
         except OSError as error:
-            logger.error("{0} {1}: {2}".format(
+            log.error("{0} {1}: {2}".format(
                 constants.EXCEPTION_ERROR,
                 Utility.open_empty_file.__name__,
                 error))
@@ -259,7 +259,7 @@ def is_machine_clean(self):
         try:
             os.symlink(fpath, spath)
         except OSError as error:
-            logger.error("{0} {1}: {2}".format(
+            log.error("{0} {1}: {2}".format(
                 constants.EXCEPTION_ERROR,
                 Utility.create_symlink.__name__,
                 error))
@@ -285,7 +285,7 @@ def is_machine_clean(self):
                 elif os.path.isdir(file_path):
                     shutil.rmtree(file_path)
             except OSError as error:
-                logger.error("{0} {1}: {2}".format(
+                log.error("{0} {1}: {2}".format(
                     constants.EXCEPTION_ERROR,
                     Utility.cleanup_directory.__name__,
                     error))
@@ -307,7 +307,7 @@ def is_machine_clean(self):
             flist = os.listdir(dpath)
             logging.debug("List: {}".format(flist))
         except IOError as error:
-            logger.error("{0} {1}: {2}".format(
+            log.error("{0} {1}: {2}".format(
                 constants.EXCEPTION_ERROR,
                 Utility.listdir.__name__,
                 error))
@@ -332,7 +332,7 @@ def is_machine_clean(self):
             else:
                 os.mkdir(dpath)
         except IOError as error:
-            logger.error("{0} {1}: {2}".format(
+            log.error("{0} {1}: {2}".format(
                 constants.EXCEPTION_ERROR,
                 Utility.update_config.__name__,
                 error))
@@ -357,7 +357,7 @@ def is_machine_clean(self):
             else:
                 os.makedirs(dpath)
         except IOError as error:
-            logger.error("{0} {1}: {2}".format(
+            log.error("{0} {1}: {2}".format(
                 constants.EXCEPTION_ERROR,
                 Utility.makedirs.__name__,
                 error))
@@ -378,7 +378,7 @@ def is_machine_clean(self):
         try:
             os.rmdir(dpath)
         except IOError as error:
-            logger.error("{0} {1}: {2}".format(
+            log.error("{0} {1}: {2}".format(
                 constants.EXCEPTION_ERROR,
                 Utility.removedir.__name__,
                 error))
@@ -393,12 +393,12 @@ def is_machine_clean(self):
         :param str file_name: Name of the file
         :return: (Boolean, response)
         """
-        logger.info("Calculating checksum of file content")
+        log.info("Calculating checksum of file content")
         try:
             result = md5(open(file_name, "rb").read()).hexdigest()
             return True, result
         except BaseException as error:
-            logger.error(
+            log.error(
                 "{0} {1}: {2}".format(
                     cons.EXCEPTION_ERROR,
                     Utility.get_file_checksum.__name__,
@@ -420,11 +420,11 @@ def is_machine_clean(self):
         :return: folder list
         """
         if not os.path.exists(folder_path):
-            logger.warning(f"{folder_path} doesnt exist creating new one")
+            log.warning(f"{folder_path} doesnt exist creating new one")
             os.mkdir(folder_path)
         try:
             os.chdir(folder_path)
-            logger.info(f"Creating {file_count} file at path {os.getcwd()}")
+            log.info(f"Creating {file_count} file at path {os.getcwd()}")
             for i in range(file_count):
                 file_name = "{}{}".format(
                     os.path.join(
@@ -437,7 +437,7 @@ def is_machine_clean(self):
             list_dir = os.listdir(folder_path)
             return True, list_dir
         except BaseException as error:
-            logger.error(
+            log.error(
                 "{} {}: {}".format(
                     cons.EXCEPTION_ERROR,
                     Utility.create_multiple_size_files.__name__,
@@ -454,7 +454,7 @@ def is_machine_clean(self):
             os.remove(file_path)
             return True, "Success"
         except Exception as error:
-            logger.error("Error while deleting file".format(error))
+            log.error("Error while deleting file".format(error))
             return False, error
     def split_file(self, file_name, size, split_count, random_part_size=False):
         """
@@ -467,10 +467,10 @@ def is_machine_clean(self):
         """
 
         if os.path.exists(file_name):
-            logger.debug("Deleting existing file: {}".format(file_name))
+            log.debug("Deleting existing file: {}".format(file_name))
             self.remove_file(file_name)
         self.create_file(file_name, size)
-        logger.debug(
+        log.debug(
             "Created new file {} with size {} MB".format(
                 file_name, size))
         dir_path = os.path.dirname(file_name)
@@ -488,7 +488,7 @@ def is_machine_clean(self):
                 with open(fop, 'wb') as split_fin:
                     split_fin.write(fin.read(read_bytes))
                     res_d.append({"Output": fop, "Size": os.stat(fop).st_size})
-        logger.debug(res_d)
+        log.debug(res_d)
         return res_d
 
     def is_utility_present(self, utility_name, filepath):
@@ -500,19 +500,16 @@ def is_machine_clean(self):
         cmd = f"ls {filepath}"
         try:
             values = self.execute_command(cmd)
-            logger.info(values)
+            log.info(values)
             if values[0]:
                 for val in values[1]:
                     if utility_name == val.split("\n")[0]:
                         return True
             return False
         except BaseException as error:
-            logger.info(
+            log.info(
                 "is_eos_utility_present failed with error : {}".format(error))
             return False
-
-
-
 
     def backup_or_restore_files(action,
                                 backup_path,
@@ -520,19 +517,19 @@ def is_machine_clean(self):
         """Used to take backup or restore mentioned files at the required path"""
         try:
             if action == "backup":
-                logger.info('Starting the backup')
+                log.info('Starting the backup')
                 if not os.path.exists(backup_path):
                     os.mkdir(backup_path)
                 for files in backup_list:
                     shutil.copy(files, backup_path)
-                    logger.info(
+                    log.info(
                         "Files :{} copied successfully at path {}".format(
                             files, backup_path))
                 return True, backup_list
             elif action == "restore":
-                logger.info('Starting the restore')
+                log.info('Starting the restore')
                 if not os.path.exists(backup_path):
-                    logger.info(
+                    log.info(
                         "Backup path :{}, does not exist".format(backup_path))
                 else:
                     os.chdir(backup_path)
@@ -540,53 +537,100 @@ def is_machine_clean(self):
                         file = os.path.basename(files)
                         file_path = os.path.dirname(files)
                         shutil.copy(file, file_path)
-                        logger.info(
+                        log.info(
                             "File :{} got copied successfully at path {}".format(
                                 file, file_path))
                     return True, backup_path
         except BaseException as error:
-            logger.error("{} {}: {}".format(
+            log.error("{} {}: {}".format(
                 cons.EXCEPTION_ERROR, Utility.backup_or_restore_files.__name__,
                 error))
             return False, error
 
-################################################################################
-# Process communication
-################################################################################
-    def run_cmd(cmd):
-        """
-        Execute any given command
-        :param cmd: Command to execute on the node
-        :return: response
-        """
-        log.info(cmd)
-        proc = subprocess.Popen(cmd, shell=True,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
-        result = str(proc.communicate())
-        log.debug("Output:{}".format(result))
-        return result
 
+################################################################################
+# command execution
+################################################################################
+    def run_remote_cmd(cmd, host, u_name, u_password, read_lines = True, read_nbytes = -1, **kwargs
+                       ) -> Tuple[Union[List[str], str, bytes], bool]:
+        """
+        Execute any command on remote machine using paramiko instance.
+        ref: https://stackoverflow.com/questions/28485647/wait-until-task-is-completed-on-remote-machine-through-python
+        :param client_obj: client connection object to execute commands on remote machine.
+        :type client_obj: Connection object.
+        :param cmd: command to be executed on the client machine.
+        :type cmd: str.
+        :param time_out: command to be executed on the client machine.
+        :type time_out: int seconds.
+        :return: ([result/err], True/False).
+        :rtype: tuple.
+        """
+        try:
+            if not host:
+                raise ValueError(const.MISSING_REQ_PARA.format(host))
+            if not u_name:
+                raise ValueError(const.MISSING_REQ_PARA.format(u_name))
+            if not u_password:
+                raise ValueError(const.MISSING_REQ_PARA.format(u_password))
+            if not cmd:
+                raise ValueError(const.MISSING_REQ_PARA.format(cmd))
+            log.debug("Connect details: Host:%s, user name:%s, password:%s, port:%s",
+                         host, u_name, u_password, port)
+            client = paramiko.SSHClient()
+            client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            log.debug("Command: %s" % str(cmd))
+            stdin, stdout, stderr = client.exec_command(cmd, timeout=time_out)
+            exit_status = stdout.channel.recv_exit_status()
+            if read_lines:
+                result = stdout.readlines()
+                result = [r.strip().strip("\n").strip() for r in result]
+                log.debug("Result: %s" % str(result))
+                error = stderr.readlines()
+                error = [r.strip().strip("\n").strip() for r in error]
+                log.debug("Error: %s" % str(error))
+            else:
+                result = stdout.read(read_nbytes)
+            log.debug(exit_status)
+            if exit_status != 0:
+                if error:
+                    raise IOError(error)
+                raise IOError(result)
+            client.close()
+        except AuthenticationException as error:
+                    log.error(const.EXCEPTION_MSG.format(CommonLib.connect.__name__, error))
+        except SSHException as error:
+                    log.error(const.EXCEPTION_MSG.format(CommonLib.connect.__name__, error))
+        except (paramiko.SSHException, BaseException) as error:
+            log.error(const.EXCEPTION_MSG.format(CommonLib.run_remote_cmd.__name__, error))
+            return str(error), False
 
-    def execute_cmd(self, command):
+        return result, True
+
+    def run_local_cmd(cmd: cmd = None
+                      ) -> Tuple[bool, Union[List[str], str, bytes]]:
         """
-        This function executes  jcloud and jlient commands on the local machine
-        :param str command: Command to be executed
-        :return: tuple (boolean, output): includes boolean value and return output
-        of the cli command
+        Execute any given command on local machine.
+        :param cmd: command to be executed.
+        :type cmd: str.
+        :return: True/False, Success/str(err)
+        :rtype: tuple.
         """
-        log.info("Command : {}".format(command))
-        proc = Popen(
-            command,
-            shell=True,
-            stdout=PIPE,
-            stderr=PIPE,
-            encoding="utf-8")
-        output = proc.communicate()
-        log.debug("Output of command execution : {}".format(output))
-        if proc.returncode != 0:
-            return False, str(output)
-        elif output[1]:
-            return False, output[1].strip()
-        else:
-            return True, output[0].strip()
+        try:
+            if not cmd:
+                raise ValueError(const.MSG_INVALID.format("command", cmd))
+            log.info("Command: %s", cmd)
+            proc = Popen(cmd, shell=True,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE)
+            output, error = proc.communicate()
+            log.info("output = %s", str(output))
+            if const.MSG_RSA_KEY_ADDED in output:
+                return True, output
+            if const.LCMD_NOT_FOUND in error or error:
+                return False, error
+        except (CalledProcessError, BaseException) as error:
+            log.error(const.EXCEPTION_MSG.format(CommonLib.run_local_cmd.__name__, error))
+            return False, str(error)
+
+        return True, output
+    

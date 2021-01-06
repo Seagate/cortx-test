@@ -36,7 +36,7 @@ log = logging.getLogger(__name__)
 ################################################################################
 # Local libraries
 ################################################################################
-class s3_helper():
+class S3_helper(Node_Helper):
 
     def configure_s3cfg(self, access, secret, path=CM_CFG["s3cfg_path"]):
         """

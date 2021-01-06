@@ -60,7 +60,7 @@ RAS_CFG = ctpyaml.read_yaml("config/ras/ras_config.yaml")
 PROV_DICT_OBJ = constants.PROV_BUILD_VER[CM_CFG["BUILD_VER_TYPE"]]
 
 
-class Node_Helper:
+class Node_Helper(Host):
     """
     Class to maintain all common functions across component
     """
@@ -93,8 +93,11 @@ class Node_Helper:
 
 
 
-
-
+    def execute_command(cmd, remote=False)
+        if remote:
+            self.remote_execution(cmd)
+        else:
+            system_util.run_cmd(cmd)
 
     def is_mero_online(self, host=CM_CFG["host"],
                        user=CM_CFG["username"], pwd=CM_CFG["password"]):
@@ -1477,6 +1480,139 @@ class Node_Helper:
         log.info(f"Successfully executed cmd {cmd}")
         return resp
 
+    ################################################################################
+    # remote execution
+    ################################################################################
+    def execute_cmd(self, cmd, read_lines=True, read_nbytes=-1):
+        """
+        Execute any command on remote machine/VM
+        :param host: Host IP
+        :param user: Host user name
+        :param password: Host password
+        :param cmd: command user wants to execute on host
+        :param read_lines: Response will be return using readlines() else using read()
+        :return: response
+        """
+        try:
+            stdin, stdout, stderr = self.host_obj.exec_command(cmd)
+            if read_lines:
+                result = stdout.readlines()
+            else:
+                result = stdout.read(read_nbytes)
+            return result
+        except BaseException as error:
+            log.error(error)
+            return error
+
+    ################################################################################
+    # remote file operations
+    ################################################################################
+    def create_file(self, file_name, count):
+        """
+        Creates a new file, size(count) in MB
+        :param str file_name: Name of the file with path
+        :param int count: size of the file in MB
+        :return: output of remote execution cmd
+        :rtype: str:
+        """
+        cmd = "dd if=/dev/zero of={} bs=1M count={}".format(file_name, count)
+        log.debug(cmd)
+        if remote:
+            result = self.execute_cmd(
+                host=self.hostname,
+                user=self.username,
+                password=self.password,
+                cmd=cmd,
+                shell=False)
+        else:
+            result = self.run_cmd(cmd)
+        log.debug("output = {}".format(result))
+        return result
+
+
+    def copy_file_to_remote(
+            self,
+            local_path,
+            remote_file_path,
+            host=CM_CFG["host"],
+            user=CM_CFG["username"],
+            pwd=CM_CFG["password"],
+            shell=True):
+        """
+        copy file from local to local remote
+        :param str local_path: local path
+        :param str remote_file_path: remote path
+        :param str host: host ip or domain name
+        :param str user: host machine user name
+        :param str pwd: host machine password
+        :return: boolean, remote_path/error
+        :rtype: tuple
+        """
+        try:
+            client = self.connect(
+                host, username=user, password=pwd, shell=shell)
+            log.info("client connected")
+            sftp = client.open_sftp()
+            log.info("sftp connected")
+            sftp.put(local_path, remote_file_path)
+            log.info("file copied to : {}".format(remote_file_path))
+            sftp.close()
+            client.close()
+            return True, remote_file_path
+        except BaseException as error:
+            log.error("{} {}: {}".format(
+                cons.EXCEPTION_ERROR, Utility.copy_file_to_remote.__name__,
+                error))
+            return False, error
+
+    ################################################################################
+    # remote directory operations
+    ################################################################################
+    def is_directory_exists(self, path, dir_name, remote_machine=False):
+        """
+        This function is use to check directory is exist or not
+        :param path: path of directory
+        :type path: string
+        :param dir_name: directory name
+        :type dir_name: string
+        :return: boolean True if directory find, False otherwise.
+        """
+        try:
+            if remote_machine:
+                out_flag, directories = self.execute_command(
+                    command=f"ls {path}", host=PRVSNR_CFG['machine1'])
+            else:
+                out_flag, directories = self.execute_command(
+                    command=f"ls {path}")
+            # decode utf 8 is to convert bytes to string
+            # directories = (directories.decode("utf-8")).split("\n")
+            directories = (directory.split("\n")[0]
+                           for directory in directories)
+            if dir_name in directories:
+                return True
+            else:
+                return False
+        except Exception as error:
+            log.error("{} {}: {}".format(
+                cons.EXCEPTION_ERROR, Utility.is_directory_exists.__name__,
+                error))
+            return False
+
+    ################################################################################
+    # Remote process operations
+    ################################################################################
+    def kill_remote_process(self, process_name, host=CM_CFG["host"],
+                            user=CM_CFG["username"], pwd=CM_CFG["password"]):
+        """
+        Kill all process matching the process_name at s3 server
+        :param process_name: Name of the process to be killed
+        :param host: IP of the host
+        :param user: user name of the host
+        :param pwd: password for the user
+        :return:
+        """
+        return self.remote_execution(
+            host, user, pwd, cons.PKIL_CMD.format(process_name))
 
 
 
