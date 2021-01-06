@@ -1,6 +1,6 @@
 from commons.host import Host
 
-class bmc_helper(Host):
+class BmcHelper(Host):
     def connect_bmc():
         result = self.connect()
         if result:
