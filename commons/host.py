@@ -54,10 +54,10 @@ from ctp.utils import ctpyaml
 log = logging.getLogger(__name__)
 
 ################################################################################
-# Classes
+# Interface Classes
 ################################################################################
 
-class host():
+class Host():
     def __init__(self, hostname, username, password):
         self.hostname = hostname
         self.username = username
