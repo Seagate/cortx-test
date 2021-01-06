@@ -79,22 +79,10 @@ Mongo DB Collection for storing test execution details.
 | Update Time                                   |               |           |
 | Deployment Time                               |               |           |
 
-# Authentication for REST server 
-
-Will be implemented using the database login credentials
-
--   Authentication will only be implemented for POST/PATCH request
-
--   Authentication will not be implemented for GET method
-
--   For POST/PATCH request, username/password should be passed as part of body of request
-
-We already have users created in database username: datawrite, dataread. And authentication will be done using those only.
-
 # REST server APIs guide
 ### While consuming any API:
 1. Include `Content-Type: application/json` in request headers
-2. Include `db_username` and `db_password` in json body
+2. Include `db_username` and `db_password` in json body for authentication 
 ## Endpoints
 ### 1. create
 * Can be used to create new execution entries in database
