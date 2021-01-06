@@ -23,30 +23,13 @@
 ################################################################################
 import logging
 import paramiko
-import os
-import re
-import shutil
-import subprocess
-import time
-import random
 import socket
-
 import pysftp
-import posixpath
-import stat
-import mdstat
-from hashlib import md5
-from subprocess import Popen, PIPE
 
 ################################################################################
 # Local libraries
 ################################################################################
-from eos_test.provisioner import constants
-from eos_test.s3 import constants as cons
-from eos_test.ha import constants as ha_cons
-from eos_test.ras import constants as ras_cons
-from ctp.utils import ctpyaml
-
+# None
 
 ################################################################################
 # Constants
@@ -63,10 +46,11 @@ class Host():
         self.username = username
         self.password = password
         self.host_obj = None
+
     ############################################################################
     # remote connection options
     ############################################################################
-    def connect(self, shell=True, **kwargs):
+    def connect(self, shell=True, port=22 , timeout_sec=400, **kwargs):
         """
         Connect to remote host.
         :param host: host ip address
@@ -81,15 +65,16 @@ class Host():
         try:
             self.host_obj = paramiko.SSHClient()
             self.host_obj.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            log.debug(f"Connecting to host: {host}")
+            log.debug(f"Connecting to host: {self.hostname}")
             self.host_obj.connect(hostname=self.hostname, 
                                   username=self.username, 
                                   password=self.password,
+                                  timeout=timeout_sec,
                                   port=22,
-                                  timeout=30,
                                   **kwargs)
             if shell:
                 shell = self.host_obj.invoke_shell()
+   
         except paramiko.AuthenticationException:
             log.error(constants.SERVER_AUTH_FAIL)
             result = False
@@ -127,7 +112,7 @@ class Host():
         :rtype: pysftp.Connection
         """
         try:
-            log.debug(f"Connecting to host: {host}")
+            log.debug(f"Connecting to host: {self.hostname}")
             cnopts = pysftp.CnOpts()
             cnopts.hostkeys = None
             result = pysftp.Connection( host=self.hostname,
@@ -147,4 +132,55 @@ class Host():
             log.error(f"Error message: {error}")
             result = False
         return result
+
+    def disconnect(self):
+        self.host_obj.close()
+    ############################################################################
+    # execute command
+    ############################################################################
+    def execute_cmd(self, cmd, shell=True, inputs=None, read_lines=False, read_nbytes=-1,
+                    read_sls=False ,timeout_sec=400, **kwargs):
+        """
+        Execute any command on remote machine/VM
+        :param host: Host IP
+        :param user: Host user name
+        :param password: Host password
+        :param cmd: command user wants to execute on host
+        :param read_lines: Response will be return using readlines() else using read()
+        :param inputs: used to pass yes argument to commands.
+        :type inputs: str
+        :param nbytes: nbytes returns string buffer.
+        :type nbytes: bool
+        :param read_sls: use only if we want to read sls file data
+        :type read_sls: bool
+        :return: response
+        """
+        try:
+            result = False
+            result = self.connect(shell=shell,**kwargs)
+            if result:
+                stdin, stdout, stderr = self.host_obj.exec_command(cmd)
+                exit_status = stdout.channel.recv_exit_status()
+                logger.debug(exit_status)
+                if exit_status != 0:
+                    err = stderr.readlines()
+                    err = [r.strip().strip("\n").strip() for r in err]
+                    logger.debug("Error: %s" % str(err))
+                    if err:
+                        raise IOError(err)
+                    raise IOError(stdout.readlines())
+                else:
+                    if inputs:
+                        stdin.write('\n'.join(inputs))
+                        stdin.write('\n')
+                    stdin.flush()
+                    if read_lines:
+                        return stdout.readlines(), True
+                    else:
+                        return stdout.read(read_nbytes), True
+            else:
+                raise Exception
+        except BaseException as error:
+            log.error(error)
+            return str(error), False
 

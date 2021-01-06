@@ -552,7 +552,7 @@ def is_machine_clean(self):
 # command execution
 ################################################################################
     def run_remote_cmd(cmd, host, u_name, u_password, read_lines = True, read_nbytes = -1, **kwargs
-                       ) -> Tuple[Union[List[str], str, bytes], bool]:
+                        ) -> Tuple[Union[List[str], str, bytes], bool]:
         """
         Execute any command on remote machine using paramiko instance.
         ref: https://stackoverflow.com/questions/28485647/wait-until-task-is-completed-on-remote-machine-through-python
