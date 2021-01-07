@@ -41,3 +41,4 @@ fabric~=2.5.0
 
 pytest~=6.2.1
 testfixtures~=6.17.0
+pytest-html
