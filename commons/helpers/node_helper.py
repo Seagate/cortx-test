@@ -25,18 +25,10 @@ import logging
 import os
 import re
 import shutil
-#import subprocess
 import time
-#import random
-#import socket
-#import configparser
-#import paramiko
-#import pysftp
 import posixpath
 import stat
 import mdstat
-#from hashlib import md5
-#from subprocess import Popen, PIPE
 
 ################################################################################
 # Local libraries
@@ -91,9 +83,7 @@ class NodeHelper(Host):
             result['output'] = out
         return result
 
-    def status_service(self, services,
-                       expected_status,
-                       host=None, timeout=2):
+    def status_service(self, services, expected_status, timeout=2):
         """
         This function display status of services
         :param host: Remote host ip address
@@ -108,8 +98,6 @@ class NodeHelper(Host):
             log.info(f"service status {service}")
             cmd = commands.SYSTEMCTL_STATUS
             cmd = cmd.replace("%s", service)
-            if not host:
-                host = PRVSNR_CFG["server_ip"]
             _, out = self.execute_cmd(cmd, timeout_sec=timeout)
             found = False
             for line in out:
@@ -123,11 +111,7 @@ class NodeHelper(Host):
         result["success"] = False not in status_list
         return result
 
-    def check_server_connectivity(self, host=PRVSNR_CFG["server_ip"],
-                                  username=PRVSNR_CFG['server_username'],
-                                  password=PRVSNR_CFG['server_password'],
-                                  retry_count=constants.RETRY_COUNT
-                                  ):
+    def check_server_connectivity(self, retry_count):
         """
         This method re-connect to host machine
         :param host: host machine ip
@@ -137,23 +121,14 @@ class NodeHelper(Host):
         :return: string
         """
         while retry_count:
-            retval = self.connect(
-                host=host,
-                username=username,
-                password=password)
+            retval = self.connect()
             if retval is False:
                 retry_count -= 1
                 time.sleep(1)
                 continue
             break
 
-    ################################################################################
-    # Remote file operations
-    ################################################################################
-    def configure_jclient_cloud(
-            self, source=CM_CFG["jClientCloud_path"]["source"],
-            destination=CM_CFG["jClientCloud_path"]["dest"],
-            nfs_path=CM_CFG["nfs_path"]):
+    def configure_jclient_cloud(self, source,destination,nfs_path):
         """
         Function to configure jclient and cloud jar files
         :param string source: path to the source dir where .jar are present.
@@ -178,12 +153,9 @@ class NodeHelper(Host):
         self.execute_cmd(f"yes | cp -rf {source}*.jar {destination}")
         res_ls = self.execute_cmd(f"ls {destination}")[1]
         res = True if ".jar" in res_ls else False
-
         return res
 
-    def validate_alert_msg(self, remote_file_path, pattern_lst,
-                           host=CM_CFG["host"], user=CM_CFG["username"],
-                           pwd=CM_CFG["password"], shell=True):
+    def validate_alert_msg(self, remote_file_path, pattern_lst, shell=True):
         """
         This function checks the list of alerts iteratively in the remote file
         and return boolean value
@@ -201,9 +173,8 @@ class NodeHelper(Host):
         try:
             if os.path.exists(local_path):
                 os.remove(local_path)
-            res = self.copy_s3server_file(file_path=remote_file_path,
-                                          local_path=local_path, host=host,
-                                          user=user, pwd=pwd, shell=shell)
+            res = self.copy_file_to_local(file_path=remote_file_path,
+                                          local_path=local_path, shell=shell)
             for pattern in pattern_lst:
                 if pattern in open(local_path).read():
                     response = pattern
@@ -340,7 +311,7 @@ class NodeHelper(Host):
         """
         try:
             client = self.connect(shell=False)
-            log.debug(f"Connected to {host}")
+            log.debug(f"Connected to {self.hostname}")
             sftp = client.open_sftp()
             log.debug("sftp connected")
             try:
