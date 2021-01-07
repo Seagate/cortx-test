@@ -54,6 +54,10 @@ def validate_search_fields(json_data: dict) -> (bool, tuple):
     if "projection" in json_data and type(json_data["projection"]) != dict:
         return False, (HTTPStatus.BAD_REQUEST,
                        f"Please provide projection keys as dictionary")
+    for key in json_data["query"]:
+        if key not in db_keys and key not in extra_db_keys:
+            return False, (HTTPStatus.BAD_REQUEST,
+                           f"{key} is not correct db field")
     return True, None
 
 
