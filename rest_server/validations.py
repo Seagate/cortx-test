@@ -25,7 +25,7 @@ def check_db_keys(json_data: dict) -> bool:
         bool
     """
     for key in db_keys:
-        if key not in json_data.keys():
+        if key not in json_data:
             return False
     return True
 
@@ -40,19 +40,18 @@ def check_user_pass(json_data: dict) -> bool:
     Returns:
         bool
     """
-    if "db_username" in json_data.keys() and "db_password" in json_data.keys():
+    if "db_username" in json_data and "db_password" in json_data:
         return True
     return False
 
 
 def validate_search_fields(json_data: dict) -> (bool, tuple):
-    search_keys = ["query", "projection"]
-    if "query" not in json_data.keys():
+    if "query" not in json_data:
         return False, (HTTPStatus.BAD_REQUEST, f"Please provide query key")
     if type(json_data["query"]) != dict:
         return False, (HTTPStatus.BAD_REQUEST,
                        f"Please provide query key as dictionary")
-    if "projection" in json_data.keys() and type(json_data["projection"]) != dict:
+    if "projection" in json_data and type(json_data["projection"]) != dict:
         return False, (HTTPStatus.BAD_REQUEST,
                        f"Please provide projection keys as dictionary")
     return True, None
@@ -101,10 +100,10 @@ def validate_extra_db_fields(json_data: dict) -> (bool, tuple):
         On success returns True
     """
     for key in extra_db_keys_bool:
-        if key in json_data.keys() and type(json_data[key]) != bool:
+        if key in json_data and type(json_data[key]) != bool:
             return False, (HTTPStatus.BAD_REQUEST, f"{key} should be boolean")
     for key in extra_db_keys_str:
-        if key in json_data.keys() and type(json_data[key]) != str:
+        if key in json_data and type(json_data[key]) != str:
             return False, (HTTPStatus.BAD_REQUEST, f"{key} should be string")
     return True, None
 
@@ -122,10 +121,14 @@ def validate_update_request(json_data: dict) -> (bool, tuple):
     """
     update_keys = ["filter", "update"]
     for key in update_keys:
-        if key not in json_data.keys():
+        if key not in json_data:
             return False, (HTTPStatus.BAD_REQUEST, f"Please provide {update_keys} keys")
     for key in update_keys:
         if type(json_data[key]) != dict:
             return False, (HTTPStatus.BAD_REQUEST,
                            f"Please provide {update_keys} keys as dictionary")
+    for key in json_data["filter"]:
+        if key not in db_keys and key not in extra_db_keys:
+            return False, (HTTPStatus.BAD_REQUEST,
+                           f"{key} is not correct db field")
     return True, None

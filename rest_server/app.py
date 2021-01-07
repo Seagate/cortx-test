@@ -22,6 +22,8 @@ except KeyError:
     print("Could not start REST server. Please verify config.ini file")
     exit(1)
 
+MONGODB_URI = "mongodb://{0}:{1}@{2}"
+
 
 @api.route("/search", doc={"description": "Search test execution entries in MongoDB"})
 @api.response(200, "Success")
@@ -44,9 +46,9 @@ class Search(Resource):
         if not validate_field[0]:
             return flask.Response(status=validate_field[1][0], response=validate_field[1][1])
 
-        uri = "mongodb://{0}:{1}@{2}".format(quote_plus(json_data["db_username"]),
-                                             quote_plus(json_data["db_password"]),
-                                             db_hostname)
+        uri = MONGODB_URI.format(quote_plus(json_data["db_username"]),
+                                 quote_plus(json_data["db_password"]),
+                                 db_hostname)
 
         # Delete username and password as not needed to add those fields in DB
         del json_data["db_username"]
@@ -55,7 +57,7 @@ class Search(Resource):
         # Projection can be used to return certain fields from documents
         projection = None
         # Received request with projection field and projection is not empty dictionary
-        if "projection" in json_data.keys() and bool(json_data["projection"]):
+        if "projection" in json_data and bool(json_data["projection"]):
             projection = json_data["projection"]
 
         count_results = mongodbapi.count_documents(json_data["query"], uri, db_name, collection)
@@ -114,9 +116,9 @@ class Create(Resource):
                                   response=valid_result[1][1])
 
         # Build MongoDB URI using username and password
-        uri = "mongodb://{0}:{1}@{2}".format(quote_plus(json_data["db_username"]),
-                                             quote_plus(json_data["db_password"]),
-                                             db_hostname)
+        uri = MONGODB_URI.format(quote_plus(json_data["db_username"]),
+                                 quote_plus(json_data["db_password"]),
+                                 db_hostname)
 
         # Delete username and password as not needed to add those fields in DB
         del json_data["db_username"]
@@ -155,9 +157,9 @@ class Update(Resource):
                                   response=validate_result[1][1])
 
         # Build MongoDB URI using username and password
-        uri = "mongodb://{0}:{1}@{2}".format(quote_plus(json_data["db_username"]),
-                                             quote_plus(json_data["db_password"]),
-                                             db_hostname)
+        uri = MONGODB_URI.format(quote_plus(json_data["db_username"]),
+                                 quote_plus(json_data["db_password"]),
+                                 db_hostname)
 
         # Delete username and password as not needed to add those fields in DB
         del json_data["db_username"]
