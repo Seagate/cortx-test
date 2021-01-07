@@ -79,62 +79,255 @@ Mongo DB Collection for storing test execution details.
 | Update Time                                   |               |           |
 | Deployment Time                               |               |           |
 
-# Authentication for REST server 
+# REST server APIs guide
+### While consuming any API:
+1. Include `Content-Type: application/json` in request headers
+2. Include `db_username` and `db_password` in json body for authentication 
+## Endpoints
+### 1. create
+* Can be used to create new execution entries in database
+* Data types for database fields
 
-Will be implemented using the database login credentials
+    |**Mandatory**|    **Field Name**   |   **Data Type**    |
+    | ----------- | ------------------- | ------------------ |
+    | Yes         | clientHostname      | String             |
+    | Yes         | noOfNodes           | Integer            |
+    | Yes         | OSVersion           | String             |
+    | Yes         | nodesHostname       | List of String     |
+    | Yes         | testName            | String             |
+    | Yes         | testID              | String             |
+    | Yes         | testIDLabels        | List of String     |
+    | Yes         | testTags            | List of String     |
+    | Yes         | testPlanID          | String             |
+    | Yes         | testExecutionID     | String             |
+    | Yes         | testType            | String             |
+    | Yes         | testComponent       | String             |
+    | Yes         | testTeam            | String             |
+    | Yes         | testStartTime       | String in ISO 8601 |
+    | Yes         | testExecutionTime   | Integer            |
+    | Yes         | buildType           | String             |
+    | Yes         | buildNo             | String             |
+    | Yes         | logPath             | String             |
+    | Yes         | testResult          | String             |
+    | Yes         | healthCheckResult   | String             |
+    | Yes         | executionType       | String             |
+    | No          | issueType           | String             |
+    | No          | issueID             | String             |
+    | No          | isRegression        | Boolean            |
+    | No          | logCollectionDone   | Boolean            |
 
--   Authentication will only be implemented for POST/PATCH request
+#### Examples:
+1. Command line
+```
+curl -L -X POST 'http://127.0.0.1:5000/reportsdb/create' \
+-H 'Content-Type: application/json' \
+--data-raw '{
+    "OSVersion": "CentOS",
+    "buildNo": "0002",
+    "buildType": "Release",
+    "clientHostname": "iu10-r18.pun.seagate.com",
+    "executionType": "Automated",
+    "healthCheckResult": "Fail",
+    "isRegression": false,
+    "issueID": "EOS-000",
+    "issueType": "Dev",
+    "logCollectionDone": true,
+    "logPath": "DemoPath",
+    "noOfNodes": 2,
+    "nodesHostname": [
+        "sm7-r18.pun.seagate.com",
+        "sm8-r18.pun.seagate.com"
+    ],
+    "testComponent": "S3",
+    "testExecutionID": "TEST-0000",
+    "testExecutionTime": 0,
+    "testID": "TEST-0000",
+    "testIDLabels": [
+        "Demo",
+        "Labels"
+    ],
+    "testName": "Demo test",
+    "testPlanID": "TEST-0000",
+    "testResult": "Pass",
+    "testStartTime": "2020-12-29T09:01:38+00:00",
+    "testTags": [
+        "Demo",
+        "Tags"
+    ],
+    "testTeam": "CFT",
+    "testType": "Pytest",
+    "db_username": "db_username",
+    "db_password": "db_password"
+}'
+```
+2. python - requests
+```
+import requests
+import json
+endpoint = "reportsdb/create"
+host = "http://127.0.0.1:5000/"
 
--   Authentication will not be implemented for GET method
+payload = {
+    "OSVersion": "Redhat",
+    "buildNo": "0000",
+    "buildType": "Release",
+    "clientHostname": "iu10-r18.pun.seagate.com",
+    "executionType": "Automated",
+    "healthCheckResult": "Fail",
+    "isRegression": false,
+    "issueID": "EOS-000",
+    "issueType": "Dev",
+    "logCollectionDone": true,
+    "logPath": "DemoPath",
+    "noOfNodes": 2,
+    "nodesHostname": [
+        "sm7-r18.pun.seagate.com",
+        "sm8-r18.pun.seagate.com"
+    ],
+    "testComponent": "S3",
+    "testExecutionID": "TEST-0000",
+    "testExecutionTime": 0,
+    "testID": "TEST-1111",
+    "testIDLabels": [
+        "Demo",
+        "Labels"
+    ],
+    "testName": "Demo test",
+    "testPlanID": "TEST-0000",
+    "testResult": "Pass",
+    "testStartTime": "2020-12-29T09:01:38+00:00",
+    "testTags": [
+        "Demo",
+        "Tags"
+    ],
+    "testTeam": "CFT",
+    "testType": "Pytest",
+    "db_username": "db_username",
+    "db_password": "db_password"
+}
+headers = {
+  'Content-Type': 'application/json'
+}
 
--   For POST/PATCH request, username/password should be passed as part of body of request
+response = requests.request("POST", host+endpoint,
+                            headers=headers, data=json.dumps(payload))
 
-We already have users created in database username: datawrite, dataread. And authentication will be done using those only.
+print(response.text)
+```
 
-# REST Server Endpoints
+#### HTTP Status Code:
+|Code | Description |
+|-----|-------|
+|200 | Success |
+|400 | Bad Request: Missing parameters. Do not retry. |
+|401 | Unauthorized: Wrong db_username/db_password. |
+|403 | Forbidden: User does not have permission for operation. |
+|503 | Service Unavailable: Unable to connect to mongoDB. |
 
-1.  Login
+### 2. search
+* Can be used to search previous execution entries in database
+* Can pass the exact query which can be executed using 
+[db.collection.find](https://docs.mongodb.com/manual/reference/method/db.collection.find/#db.collection.find).
+This allows to execute complex queries using operators.
+* Fields for search 
+  * query - to be searched in DB,
+  * projection - return only specified fields in result documents
 
-    1.  GET
+#### Examples:
+1. Command line
+```
+curl -L -X GET 'http://127.0.0.1:5000/reportsdb/search' \
+-H 'Content-Type: application/json' \
+--data-raw '{
+    "query": {"testComponent": { "$in": ["S3", "Motr"]},
+              "healthCheckResult": "Fail" },
+    "projection": {"OSVersion": true, "buildNo": true},
+    "db_username": "db_username",
+    "db_password": "db_password"
+}'
+```
+2. python - requests
+```
+import requests
+import json
+endpoint = "reportsdb/search"
+host = "http://127.0.0.1:5000/"
 
-2.  TestID
+payload = {
+    "query": {"testComponent": { "$in": ["S3", "Motr"]},
+              "healthCheckResult": "Fail" },
+    "projection": {"OSVersion": true, "buildNo": true},
+    "db_username": "db_username",
+    "db_password": "db_password"
+}
+headers = {
+  'Content-Type': 'application/json'
+}
 
-    1.  GET - Get results by Test ID
+response = requests.request("GET", host+endpoint,
+                            headers=headers, data=json.dumps(payload))
 
-    2.  POST - Create new Entry
+print(response.text)
+```
 
-    3.  PATCH - Modify existing entry
+#### HTTP Status Code:
+|Code | Description |
+|-----|-------|
+|200 | Success |
+|400 | Bad Request: Missing parameters. Do not retry. |
+|401 | Unauthorized: Wrong db_username/db_password. |
+|403 | Forbidden: User does not have permission for operation. |
+|404 | Not Found: No entry for that query in MongoDB. |
+|503 | Service Unavailable: Unable to connect to mongoDB. |
 
-3.  Build
+### 3. update
+* Can be used to update previous execution entries in database
+* Include `filter` and `update` as dictionary in json body
+  (More examples can be seen at [db-collection-updatemany](https://docs.mongodb.com/manual/reference/method/db.collection.updateMany/#db-collection-updatemany))
 
-    1.  GET - Get results by build
+#### Examples:
+1. Command line
+```
+curl -L -X PATCH 'http://127.0.0.1:5000/reportsdb/update' \
+-H 'Content-Type: application/json' \
+--data-raw '{
+    "filter": {"buildType": "Beta"},
+    "update": {"$set": {"buildType": "Release", "OSVersion": "Redhat"}},
+    "db_username": "db_username",
+    "db_password": "db_password"
+}'
+```
+2. python - requests
+```
+import requests
+import json
+endpoint = "reportsdb/update"
+host = "http://127.0.0.1:5000/"
 
-4.  TestExecutionID
+payload = {
+    "filter": {"buildType": "Beta"},
+    "update": {"$set": {"buildType": "Release", "OSVersion": "Redhat"}},
+    "db_username": "db_username",
+    "db_password": "db_password"
+}
+headers = {
+  'Content-Type': 'application/json'
+}
 
-    1.  GET - Get results by TestExecutionID
+response = requests.request("PATCH", host+endpoint,
+                            headers=headers, data=json.dumps(payload))
 
-5.  TestPlanID
+print(response.text)
+```
 
-    1.  GET - Get results by TestPlanID
-
-6.  TestTeam
-
-    1.  GET - Get results by TestTeam
-
-7.  Search
-
-    1.  GET – Search results, can be used for mixed query
-
-# API Status Response
-
-| **Code** | **Description**                                                                                                                                                                            |
-|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 200      | OK: successful.                                                                                                                                                                            |
-| 400      | Bad Request: Request body is missing, or Username or password is missing                                                                                                                   |
-| 401      | No Data Found                                                                                                                                                                              |
-| 422      | Unprocessable Entity: server understands the content type of the request entity, and the syntax of the request entity is correct, but it was unable to process the contained instructions. |
-| 499      | Call Cancelled: Call cancelled by client.                                                                                                                                                  |
-| 500      | Internal Server Error: When requested resource is not available.                                                                                                                           |
+#### HTTP Status Code:
+|Code | Description |
+|-----|-------|
+|200 | Success |
+|400 | Bad Request: Missing parameters. Do not retry. |
+|401 | Unauthorized: Wrong db_username/db_password. |
+|403 | Forbidden: User does not have permission for operation. |
+|503 | Service Unavailable: Unable to connect to mongoDB. |
 
 # Reporting Webpage
 
