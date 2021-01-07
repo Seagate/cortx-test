@@ -26,29 +26,6 @@ from testfixtures import LogCapture
 from commons.utils import yaml_utils
 from commons import Globals
 
-@pytest.hookimpl(tryfirst=True, hookwrapper=True)
-def pytest_runtest_makereport(item, call):
-    # execute all other hooks to obtain the report object
-    outcome = yield
-    rep = outcome.get_result()
-    print(rep)
-    # we only look at actual failing test calls, not setup/teardown
-    fail_file = 'failed_tests.log'
-    pass_file = 'passed_tests.log'
-    current_file = 'other_test_calls.log'
-    if rep.failed:
-        current_file = fail_file
-    elif rep.passed:
-        current_file = pass_file
-    mode = "a" if os.path.exists(current_file) else "w"
-    with open(current_file, mode) as f:
-        # let's also access a fixture
-        if "tmpdir" in item.fixturenames:
-            extra = " ({})".format(item.funcargs["tmpdir"])
-        else:
-            extra = ""
-        f.write(rep.nodeid + extra + "\n")
-
 @pytest.fixture(autouse=True)
 def _read_project_config(request):
     file = pathlib.Path(request.node.fspath)
@@ -132,5 +109,4 @@ def pytest_collection_modifyitems(session, config, items):
         for marker in item.iter_markers(name="test_id"):
             test_id = marker.args[0]
             item.user_properties.append(("test_id", test_id))
-
 
