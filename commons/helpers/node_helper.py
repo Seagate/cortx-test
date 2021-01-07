@@ -24,181 +24,48 @@
 import logging
 import os
 import re
-import shutil
-import subprocess
+#import shutil
+#import subprocess
 import time
-import random
-import socket
-import configparser
-import paramiko
-import pysftp
+#import random
+#import socket
+#import configparser
+#import paramiko
+#import pysftp
 import posixpath
 import stat
-import mdstat
-from hashlib import md5
-from subprocess import Popen, PIPE
+#import mdstat
+#from hashlib import md5
+#from subprocess import Popen, PIPE
 
 ################################################################################
 # Local libraries
 ################################################################################
-from eos_test.provisioner import constants
-from eos_test.s3 import constants as cons
-from eos_test.ha import constants as ha_cons
-from eos_test.ras import constants as ras_cons
-from ctp.utils import ctpyaml
-
-
+from commons import commands
+from commons.helpers.host import Host
 ################################################################################
 # Constants
 ################################################################################
 log = logging.getLogger(__name__)
+EXCEPTION_MSG = "*ERROR* An exception occurred in {}: {}"
 
+################################################################################
+# Node Helper class
+################################################################################
 class NodeHelper(Host):
     """
     Class to maintain all common functions across component
     """
-    def command_formatter(cmd_options, utility_path=None):
-        """
-        Creating command fronm dictonary cmd_options
-        :param cmd_options: input dictonary contains command option/general_options
-        :type cmd_options: dict
-        :param utility_path: cli utility path for which command is being created
-        :type utility_path: str
-        :return: actual command that is going to execute for utility
-        """
-        cmd_elements = []
-        # utility path only for cli utilities
-        if utility_path:
-            cmd_elements.append(utility_path)
-        # Positional argument is mandatory
-        if 'positional_argument' in cmd_options:
-            cmd_elements.append(cmd_options['positional_argument'])
-        if 'options' in cmd_options:
-            for argument in cmd_options['options']:
-                arg_val = cmd_options['options'][argument]
-                if arg_val is None:
-                    arg_str = argument
-                else:
-                    arg_str = argument + " " + arg_val
-                cmd_elements.append(arg_str)
-        if 'general_options' in cmd_options:
-            for argument in cmd_options['general_options']:
-                arg_val = cmd_options['general_options'][argument]
-                if arg_val is None:
-                    arg_str = argument
-                else:
-                    arg_str = argument + " " + arg_val
-                cmd_elements.append(arg_str)
-        if 'teardown' in cmd_options:
-            cmd_elements.append("salt")
-            if '--local' in cmd_options['teardown']:
-                cmd_elements.append("--local")
-            else:
-                cmd_elements.append("'*'")
-            # "all-at-time" is to execute teardown services all at a time
-            if 'all-at-time' in cmd_options['teardown']['services']:
-                cmd_elements.append("state.apply components.teardown")
-            # "one-by-one" is to execute teardown services individually
-            elif 'one-by-one' in cmd_options['teardown']['services']:
-                cmd_elements.append("state.apply components.%s.teardown")
 
-        cmd = " ".join(cmd_elements)
-        return cmd
-
-    def is_directory_exists(self, path, dir_name, remote_machine=False):
-        """
-        This function is use to check directory is exist or not
-        :param path: path of directory
-        :type path: string
-        :param dir_name: directory name
-        :type dir_name: string
-        :return: boolean True if directory find, False otherwise.
-        """
-        try:
-            if remote_machine:
-                out_flag, directories = self.execute_command(
-                    command=f"ls {path}", host=PRVSNR_CFG['machine1'])
-            else:
-                out_flag, directories = self.execute_command(
-                    command=f"ls {path}")
-            # decode utf 8 is to convert bytes to string
-            # directories = (directories.decode("utf-8")).split("\n")
-            directories = (directory.split("\n")[0]
-                           for directory in directories)
-            if dir_name in directories:
-                return True
-            else:
-                return False
-        except Exception as error:
-            log.error("{} {}: {}".format(
-                cons.EXCEPTION_ERROR, Utility.is_directory_exists.__name__,
-                error))
-            return False
-
-    def make_directory(self, path=None, dir_name=None, remote_host=False):
-        """
-        Make directory
-        """
-        try:
-            if path is None or dir_name is None:
-                raise TypeError("path or dir_name incorrect")
-
-            if not self.is_directory_exists(
-                    path, dir_name, remote_machine=remote_host):
-                log.info(
-                    f"Directory '{dir_name}' not exists, creating directory...")
-                if remote_host:
-                    self.execute_command(
-                        command=f"mkdir {path}{dir_name}",
-                        host=PRVSNR_CFG['machine1'])
-                else:
-                    self.execute_command(command=f"mkdir {path}{dir_name}")
-            else:
-                log.info(f"Directory '{dir_name}' already exist...")
-            return True
-
-        except Exception as error:
-            log.error("{} {}: {}".format(
-                cons.EXCEPTION_ERROR, Utility.make_directory.__name__,
-                error))
-            return False
-
-    def rem_directory(self, path=None, remote_host=False):
-        """Remove directory
-        """
-        try:
-            if path is None:
-                raise TypeError("Requires path to delete directory")
-            if not path.startswith("/"):
-                raise TypeError("Requires absolute path")
-            log.info(f"Removing directory : {path}")
-            cmd = f"rm -rf {path}"
-            if remote_host:
-                ret_val = self.execute_command(
-                    command=cmd, host=PRVSNR_CFG['machine1'])
-            else:
-                ret_val = self.execute_command(command=cmd)
-            if ret_val:
-                log.info("Successfully delete directory")
-                return True
-        except Exception as error:
-            log.error("{} {}: {}".format(
-                cons.EXCEPTION_ERROR, Utility.rem_directory.__name__,
-                error))
-            return False
-
-    def get_authserver_log(self, path, option="-n 3", host=CM_CFG["host"],
-                           user=CM_CFG["username"],
-                           pwd=CM_CFG["password"]):
+    def get_authserver_log(self, path, option="-n 3"):
         cmd = "tail {} {}".format(path, option)
-        res = self.remote_execution(host, user, pwd, cmd)
+        res = self.execute_cmd(cmd)
         return res
 
     def start_stop_services(
             self,
             services,
-            operation=constants.SERVICE_START,
-            host=None,
+            operation,
             timeout=60):
         """
         This function is responsible to stop all services which are activated by deploy-eos
@@ -207,25 +74,25 @@ class NodeHelper(Host):
         :param timeout: Timeout value
         :type timeout: Integer
         """
-        log.info("Stop all services individually")
+        valid_operations = {"start_service", "stop_service"}
+        if operation not in valid_operations:
+            raise ValueError("Operation parameter must be one of %r." % valid_operations)
+
         result = {}
         for service in services:
-            log.info(f"stopping service {service}")
-            if operation == constants.SERVICE_START:
-                cmd = constants.SYSTEMCTL_START
+            log.info(f"Stopping service {service}")
+            if operation == "start_service":
+                cmd = commands.SYSTEMCTL_START
             else:
-                cmd = constants.SYSTEM_CTL_STOP
+                cmd = commands.SYSTEM_CTL_STOP
             cmd = cmd.replace("%s", service)
-            if not host:
-                host = PRVSNR_CFG['server_ip']
-            success, out = self.execute_command(
-                cmd, host=host, timeout_sec=timeout)
+            success, out = self.execute_cmd(cmd, timeout_sec=timeout)
             result['success'] = success
             result['output'] = out
         return result
 
     def status_service(self, services,
-                       expected_status=constants.SERVICE_ACTIVE,
+                       expected_status,
                        host=None, timeout=2):
         """
         This function display status of services
@@ -239,12 +106,11 @@ class NodeHelper(Host):
         status_list = []
         for service in services:
             log.info(f"service status {service}")
-            cmd = constants.SYSTEMCTL_STATUS
+            cmd = commands.SYSTEMCTL_STATUS
             cmd = cmd.replace("%s", service)
             if not host:
                 host = PRVSNR_CFG["server_ip"]
-            _, out = self.execute_command(
-                cmd, host=host, timeout_sec=timeout)
+            _, out = self.execute_cmd(cmd, timeout_sec=timeout)
             found = False
             for line in out:
                 if isinstance(line, bytes):
@@ -281,9 +147,72 @@ class NodeHelper(Host):
                 continue
             break
 
+    ################################################################################
+    # Remote file operations
+    ################################################################################
+    def is_dir_exists(self, path, dir_name):
+        """
+        This function is use to check directory is exist or not
+        :param path: path of directory
+        :type path: string
+        :param dir_name: directory name
+        :type dir_name: string
+        :return: boolean True if directory find, False otherwise.
+        """
+        try:
+            out_flag, directories = self.execute_cmd(f"ls {path}")
 
+            # decode utf 8 is to convert bytes to string
+            # directories = (directories.decode("utf-8")).split("\n")
+            directories = (directory.split("\n")[0]
+                           for directory in directories)
+            if dir_name in directories:
+                return True
+            else:
+                return False
+        except Exception as error:
+            log.error(EXCEPTION_MSG.format(NodeHelper.is_dir_exists.__name__, error))
+            return False
 
-    def delete_remote_dir(self, sftp, remotepath, level=0):
+    def makedir(self, path, dir_name ):
+        """
+        Make directory
+        """
+        mkdir_cmd = "mkdir {}"
+        try:
+            if path is None or dir_name is None:
+                raise TypeError("path or dir_name incorrect")
+            if not self.is_dir_exists(path, dir_name):
+                log.debug(f"Directory '{dir_name}' not exists, creating directory...")
+                dpath = os.path.join(path, dir_name)
+                self.execute_cmd(mkdir_cmd.format(dpath))
+            else:
+                log.info(f"Directory '{dir_name}' already exist...")
+            return True
+
+        except Exception as error:
+            log.error(EXCEPTION_MSG.format(NodeHelper.makedir.__name__, error))
+            return False
+
+    def removedir(self, path):
+        """Remove directory
+        """
+        cmd = f"rm -rf {path}"
+        try:
+            if path is None:
+                raise TypeError("Requires path to delete directory")
+            if not path.startswith("/"):
+                raise TypeError("Requires absolute path")
+            log.info(f"Removing directory : {path}")
+            ret_val = self.execute_cmd(cmd)
+            if ret_val:
+                log.info("Successfully delete directory")
+                return True
+        except Exception as error:
+            log.error(EXCEPTION_MSG.format(NodeHelper.removedir.__name__, error))
+            return False
+
+    def deletedir_sftp(self, sftp, remotepath, level=0):
         """
         This function deletes all the remote server files and directory
         recursively of the specified path
@@ -302,15 +231,9 @@ class NodeHelper(Host):
                     sftp.remove(rpath)
             sftp.rmdir(remotepath)
         except Exception as error:
-            log.error(error)
+            log.error(EXCEPTION_MSG.format(NodeHelper.removedir.__name__, error))
 
-    def create_remote_dir(
-            self,
-            dir_name,
-            dest_dir,
-            host=CM_CFG["host"],
-            user=CM_CFG["username"],
-            pwd=CM_CFG["password"], shell=True):
+    def create_remote_dir(self, dir_name, dest_dir, shell=True):
         """
         This function creates directory on the remote server and returns the
         absolute path of the remote server
@@ -323,8 +246,7 @@ class NodeHelper(Host):
         """
         remote_path = os.path.join(dest_dir, dir_name)
         try:
-            client = self.connect(
-                host, username=user, password=pwd, shell=shell)
+            client = self.connect(shell=shell)
             sftp = client.open_sftp()
             log.debug("sftp connected")
             dir_path = str()
@@ -340,18 +262,12 @@ class NodeHelper(Host):
             client.close()
             return True, remote_path
         except Exception as error:
-            log.error(error)
+            log.error(EXCEPTION_MSG.format(NodeHelper.removedir.__name__, error))
             sftp.close()
             client.close()
             return False, error
 
-    def file_rename_remote(
-            self,
-            old_filename,
-            new_filename,
-            host=RAS_CFG["host"],
-            user=RAS_CFG["username"],
-            pwd=RAS_CFG["password"], shell=True):
+    def file_rename_remote(self, old_filename, new_filename, shell=True):
         """
         This function renames file on remote host.
         :param old_filename: Old name of the file(Absolute path)
@@ -361,9 +277,7 @@ class NodeHelper(Host):
         :param pwd: Password for the user
         """
         try:
-            client = self.connect(host, username=user, password=pwd,
-                                  shell=shell)
-            log.debug(f"Connected to {host}")
+            client = self.connect(shell=shell)
             sftp = client.open_sftp()
             log.debug("sftp connected")
             try:
@@ -374,11 +288,7 @@ class NodeHelper(Host):
             sftp.close()
             client.close()
         except BaseException as error:
-            log.error(
-                "{} {}: {}".format(
-                    cons.EXCEPTION_ERROR,
-                    Utility.file_rename_remote.__name__,
-                    error))
+            log.error(EXCEPTION_MSG.format(NodeHelper.removedir.__name__, error))
 
 
 
@@ -410,11 +320,7 @@ class NodeHelper(Host):
             sftp.close()
             client.close()
         except BaseException as error:
-            log.error(
-                "{} {}: {}".format(
-                    cons.EXCEPTION_ERROR,
-                    Utility.remove_file_remote.__name__,
-                    error))
+            log.error(EXCEPTION_MSG.format(NodeHelper.removedir.__name__, error))
 
 
 
@@ -444,11 +350,7 @@ class NodeHelper(Host):
                 response = f.read()
                 return response
         except BaseException as error:
-            log.error(
-                "{} {}: {}".format(
-                    cons.EXCEPTION_ERROR,
-                    Utility.read_file_remote.__name__,
-                    error))
+            log.error(EXCEPTION_MSG.format(NodeHelper.removedir.__name__, error))
         finally:
             if os.path.exists(local_path):
                 os.remove(local_path)
@@ -482,11 +384,7 @@ class NodeHelper(Host):
             else:
                 return False, "String Not Found"
         except BaseException as error:
-            log.error(
-                "{} {}: {}".format(
-                    cons.EXCEPTION_ERROR,
-                    Utility.is_string_in_remote_file.__name__,
-                    error))
+            log.error(EXCEPTION_MSG.format(NodeHelper.removedir.__name__, error))
             return False, error
         finally:
             if os.path.exists(local_path):
@@ -548,17 +446,6 @@ class NodeHelper(Host):
         res = True if ".jar" in res_ls else False
 
         return res
-
-
-
-
-
-
-
-
-
-
-
 
     def pgrep(self, process, remote=False,
               host=CM_CFG["host"],
@@ -632,11 +519,7 @@ class NodeHelper(Host):
                     raise err
             return True, dir_lst
         except BaseException as error:
-            log.error(
-                "{} {}: {}".format(
-                    cons.EXCEPTION_ERROR,
-                    Utility.list_remote_dir.__name__,
-                    error))
+            log.error(EXCEPTION_MSG.format(NodeHelper.removedir.__name__, error))
             return False, error
 
     def validate_alert_msg(self, remote_file_path, pattern_lst,
@@ -671,11 +554,7 @@ class NodeHelper(Host):
                 log.info("Match found : {}".format(pattern))
             return True, response
         except BaseException as error:
-            log.error(
-                "{} {}: {}".format(
-                    cons.EXCEPTION_ERROR,
-                    Utility.validate_alert_msg.__name__,
-                    error))
+            log.error(EXCEPTION_MSG.format(NodeHelper.removedir.__name__, error))
         finally:
             if os.path.exists(local_path):
                 os.remove(local_path)
@@ -705,11 +584,7 @@ class NodeHelper(Host):
             else:
                 return False, resp
         except BaseException as error:
-            log.error(
-                "{} {}: {}".format(
-                    cons.EXCEPTION_ERROR,
-                    Utility.validate_is_dir.__name__,
-                    error))
+            log.error(EXCEPTION_MSG.format(NodeHelper.removedir.__name__, error))
             return False, error
 
 
@@ -733,7 +608,7 @@ class NodeHelper(Host):
             client.close()
             return True
         except BaseException as error:
-            log.error(error)
+            log.error(EXCEPTION_MSG.format(NodeHelper.removedir.__name__, error))
             return False
 
     def write_remote_file_to_local_file(self, file_path, local_path,
@@ -767,9 +642,7 @@ class NodeHelper(Host):
 
             return True, local_path
         except BaseException as error:
-            log.error("{} {}: {}".format(
-                cons.EXCEPTION_ERROR,
-                Utility.write_remote_file_to_local_file.__name__, error))
+            log.error(EXCEPTION_MSG.format(NodeHelper.removedir.__name__, error))
 
             return False, error
     def get_mdstat(self, host=CM_CFG["host"],
@@ -795,50 +668,86 @@ class NodeHelper(Host):
             log.info("Parsing mdstat file")
             output = mdstat.parse(RAS_CFG["mdstat_local_path"])
         except BaseException as error:
-            log.error(
-                "{} {}: {}".format(
-                    cons.EXCEPTION_ERROR,
-                    Utility.get_mdstat.__name__,
-                    error))
+            log.error(EXCEPTION_MSG.format(NodeHelper.get_mdstat.__name__, error))
             return error
         self.remove_file(RAS_CFG["mdstat_local_path"])
         return output
 
-    def shutdown_node(self, host=CM_CFG["host"],
-                      username=CM_CFG["username"],
-                      password=CM_CFG["password"], options=None):
+
+
+
+
+
+
+    ################################################################################
+    # remote file operations
+    ################################################################################
+    def create_file(self, file_name, count):
         """
-        Function to shutdown any of the node
-        :param host:
-        :param username:
-        :param password:
-        :param options:
-        :return:
+        Creates a new file, size(count) in MB
+        :param str file_name: Name of the file with path
+        :param int count: size of the file in MB
+        :return: output of remote execution cmd
+        :rtype: str:
+        """
+        cmd = commands.CREATE_FILE.format(file_name, count)
+        log.debug(cmd)
+        result = self.execute_cmd(cmd, shell=False)
+        log.debug("output = {}".format(result))
+        return result
+
+    def copy_file(self, local_path,remote_file_path, shell=True):
+        """
+        copy file from local to local remote
+        :param str local_path: local path
+        :param str remote_file_path: remote path
+        :param str host: host ip or domain name
+        :param str user: host machine user name
+        :param str pwd: host machine password
+        :return: boolean, remote_path/error
+        :rtype: tuple
         """
         try:
-            cmd = ha_cons.SHUTDOWN_NODE_CMD.format(
-                options if options else "")
-            log.info(
-                f"Shutting down {host} node using cmd: {cmd}.")
-            resp = self.remote_execution(
-                host=host,
-                user=username,
-                password=password,
-                cmd=cmd,
-                shell=False)
-            log.info(resp)
+            client = self.connect(shell=shell)
+            log.info("client connected")
+            sftp = client.open_sftp()
+            log.info("sftp connected")
+            sftp.put(local_path, remote_file_path)
+            log.info("file copied to : {}".format(remote_file_path))
+            sftp.close()
+            client.close()
+            return True, remote_file_path
         except BaseException as error:
-            log.error(
-                "{} {}: {}".format(
-                    cons.EXCEPTION_ERROR,
-                    Utility.shutdown_node.__name__,
-                    error))
+            log.error(EXCEPTION_MSG.format(NodeHelper.copy_file.__name__, error))
             return False, error
 
-        return True, f"Node shutdown successfully"
+    ################################################################################
+    # remote directory operations
+    ################################################################################
+
+
+    ################################################################################
+    # Remote process operations
+    ################################################################################
+    def kill_remote_process(self, process_name):
+        """
+        Kill all process matching the process_name at s3 server
+        :param process_name: Name of the process to be killed
+        :param host: IP of the host
+        :param user: user name of the host
+        :param pwd: password for the user
+        :return:
+        """
+        return self.remote_execution(
+            host, user, pwd, cons.PKIL_CMD.format(process_name))
 
 
 
+
+
+    ################################################################################
+    # Power operations
+    ################################################################################
     def toggle_apc_node_power(self, pdu_ip, pdu_user, pdu_pwd, node_slot, timeout=120, status=None):
         """
         Functon to toggle node power status usng APC PDU switch.
@@ -869,149 +778,35 @@ class NodeHelper(Host):
             resp = self.execute_cmd(cmd)
             log.debug("Output:", resp)
         except BaseException as error:
-            log.error(
-                "{} {}: {}".format(
-                    cons.EXCEPTION_ERROR,
-                    Utility.toggle_apc_node_power.__name__,
-                    error))
+            log.error(EXCEPTION_MSG.format(NodeHelper.toggle_apc_node_power.__name__, error))
             return False, error
 
         log.info(f"Successfully executed cmd {cmd}")
         return resp
 
-    ################################################################################
-    # remote execution
-    ################################################################################
-    def execute_cmd(self, cmd, read_lines=True, read_nbytes=-1):
+    def shutdown_node(self, options=None):
         """
-        Execute any command on remote machine/VM
-        :param host: Host IP
-        :param user: Host user name
-        :param password: Host password
-        :param cmd: command user wants to execute on host
-        :param read_lines: Response will be return using readlines() else using read()
-        :return: response
-        """
-        try:
-            stdin, stdout, stderr = self.host_obj.exec_command(cmd)
-            if read_lines:
-                result = stdout.readlines()
-            else:
-                result = stdout.read(read_nbytes)
-            return result
-        except BaseException as error:
-            log.error(error)
-            return error
-
-    ################################################################################
-    # remote file operations
-    ################################################################################
-    def create_file(self, file_name, count):
-        """
-        Creates a new file, size(count) in MB
-        :param str file_name: Name of the file with path
-        :param int count: size of the file in MB
-        :return: output of remote execution cmd
-        :rtype: str:
-        """
-        cmd = "dd if=/dev/zero of={} bs=1M count={}".format(file_name, count)
-        log.debug(cmd)
-        if remote:
-            result = self.execute_cmd(
-                host=self.hostname,
-                user=self.username,
-                password=self.password,
-                cmd=cmd,
-                shell=False)
-        else:
-            result = self.run_cmd(cmd)
-        log.debug("output = {}".format(result))
-        return result
-
-
-    def copy_file_to_remote(
-            self,
-            local_path,
-            remote_file_path,
-            host=CM_CFG["host"],
-            user=CM_CFG["username"],
-            pwd=CM_CFG["password"],
-            shell=True):
-        """
-        copy file from local to local remote
-        :param str local_path: local path
-        :param str remote_file_path: remote path
-        :param str host: host ip or domain name
-        :param str user: host machine user name
-        :param str pwd: host machine password
-        :return: boolean, remote_path/error
-        :rtype: tuple
-        """
-        try:
-            client = self.connect(
-                host, username=user, password=pwd, shell=shell)
-            log.info("client connected")
-            sftp = client.open_sftp()
-            log.info("sftp connected")
-            sftp.put(local_path, remote_file_path)
-            log.info("file copied to : {}".format(remote_file_path))
-            sftp.close()
-            client.close()
-            return True, remote_file_path
-        except BaseException as error:
-            log.error("{} {}: {}".format(
-                cons.EXCEPTION_ERROR, Utility.copy_file_to_remote.__name__,
-                error))
-            return False, error
-
-    ################################################################################
-    # remote directory operations
-    ################################################################################
-    def is_directory_exists(self, path, dir_name, remote_machine=False):
-        """
-        This function is use to check directory is exist or not
-        :param path: path of directory
-        :type path: string
-        :param dir_name: directory name
-        :type dir_name: string
-        :return: boolean True if directory find, False otherwise.
-        """
-        try:
-            if remote_machine:
-                out_flag, directories = self.execute_command(
-                    command=f"ls {path}", host=PRVSNR_CFG['machine1'])
-            else:
-                out_flag, directories = self.execute_command(
-                    command=f"ls {path}")
-            # decode utf 8 is to convert bytes to string
-            # directories = (directories.decode("utf-8")).split("\n")
-            directories = (directory.split("\n")[0]
-                           for directory in directories)
-            if dir_name in directories:
-                return True
-            else:
-                return False
-        except Exception as error:
-            log.error("{} {}: {}".format(
-                cons.EXCEPTION_ERROR, Utility.is_directory_exists.__name__,
-                error))
-            return False
-
-    ################################################################################
-    # Remote process operations
-    ################################################################################
-    def kill_remote_process(self, process_name, host=CM_CFG["host"],
-                            user=CM_CFG["username"], pwd=CM_CFG["password"]):
-        """
-        Kill all process matching the process_name at s3 server
-        :param process_name: Name of the process to be killed
-        :param host: IP of the host
-        :param user: user name of the host
-        :param pwd: password for the user
+        Function to shutdown any of the node
+        :param host:
+        :param username:
+        :param password:
+        :param options:
         :return:
         """
-        return self.remote_execution(
-            host, user, pwd, cons.PKIL_CMD.format(process_name))
+        try:
+            cmd = ha_cons.SHUTDOWN_NODE_CMD.format(
+                options if options else "")
+            log.info(
+                f"Shutting down {host} node using cmd: {cmd}.")
+            resp = self.remote_execution(
+                host=host,
+                user=username,
+                password=password,
+                cmd=cmd,
+                shell=False)
+            log.info(resp)
+        except BaseException as error:
+            log.error(EXCEPTION_MSG.format(NodeHelper.shutdown_node.__name__, error))
+            return False, error
 
-
-
+        return True, f"Node shutdown successfully"

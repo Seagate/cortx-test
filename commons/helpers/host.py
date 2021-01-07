@@ -76,20 +76,17 @@ class Host():
                 shell = self.host_obj.invoke_shell()
    
         except paramiko.AuthenticationException:
-            log.error(constants.SERVER_AUTH_FAIL)
+            log.error("Server authentication failed")
             result = False
         except paramiko.SSHException as ssh_exception:
-            log.error(
-                "Could not establish ssh connection: %s",
-                ssh_exception)
+            log.error("Could not establish ssh connection: %s", ssh_exception)
             result = False
         except socket.timeout as timeout_exception:
-            log.error(
-                "Could not establish connection because of timeout: %s",
+            log.error("Could not establish connection because of timeout: %s",
                 timeout_exception)
             result = False
         except Exception as error:
-            log.error(constants.SERVER_CONNECT_ERR)
+            log.error("Exception while connecting to server")
             log.error(f"Error message: {error}")
             result = False
             if shell:
@@ -128,7 +125,7 @@ class Host():
                 timeout_exception)
             result = False
         except Exception as error:
-            log.error(constants.SERVER_CONNECT_ERR)
+            log.error("Exception while connecting to server")
             log.error(f"Error message: {error}")
             result = False
         return result
@@ -138,7 +135,7 @@ class Host():
     ############################################################################
     # execute command
     ############################################################################
-    def execute_cmd(self, cmd, shell=True, inputs=None, read_lines=False, read_nbytes=-1,
+    def execute_cmd(self, cmd, shell=False, inputs=None, read_lines=False, read_nbytes=-1,
                     read_sls=False ,timeout_sec=400, **kwargs):
         """
         Execute any command on remote machine/VM
@@ -159,13 +156,13 @@ class Host():
             result = False
             result = self.connect(shell=shell,**kwargs)
             if result:
-                stdin, stdout, stderr = self.host_obj.exec_command(cmd)
+                stdin, stdout, stderr = self.host_obj.exec_command(cmd, timeout=timeout_sec)
                 exit_status = stdout.channel.recv_exit_status()
-                logger.debug(exit_status)
+                log.debug(exit_status)
                 if exit_status != 0:
                     err = stderr.readlines()
                     err = [r.strip().strip("\n").strip() for r in err]
-                    logger.debug("Error: %s" % str(err))
+                    log.debug("Error: %s" % str(err))
                     if err:
                         raise IOError(err)
                     raise IOError(stdout.readlines())
@@ -175,12 +172,12 @@ class Host():
                         stdin.write('\n')
                     stdin.flush()
                     if read_lines:
-                        return stdout.readlines(), True
+                        return True, stdout.readlines()
                     else:
-                        return stdout.read(read_nbytes), True
+                        return True, stdout.read(read_nbytes)
             else:
                 raise Exception
         except BaseException as error:
             log.error(error)
-            return str(error), False
+            return False, str(error)
 
