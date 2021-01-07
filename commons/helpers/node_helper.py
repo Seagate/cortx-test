@@ -24,7 +24,7 @@
 import logging
 import os
 import re
-#import shutil
+import shutil
 #import subprocess
 import time
 #import random
@@ -34,7 +34,7 @@ import time
 #import pysftp
 import posixpath
 import stat
-#import mdstat
+import mdstat
 #from hashlib import md5
 #from subprocess import Popen, PIPE
 
@@ -150,6 +150,357 @@ class NodeHelper(Host):
     ################################################################################
     # Remote file operations
     ################################################################################
+    def configure_jclient_cloud(
+            self, source=CM_CFG["jClientCloud_path"]["source"],
+            destination=CM_CFG["jClientCloud_path"]["dest"],
+            nfs_path=CM_CFG["nfs_path"]):
+        """
+        Function to configure jclient and cloud jar files
+        :param string source: path to the source dir where .jar are present.
+        :param string destination: destination path where .jar need to be copied
+        :return: True/False
+        :rtype: bool
+        """
+        if not os.path.exists(source):
+            os.mkdir(source)
+
+        dir_list = os.listdir(source)
+        if "jcloudclient.jar" not in dir_list or "jclient.jar" not in dir_list:
+            temp_dir = "/home/jjarfiles"
+            os.mkdir(temp_dir)
+            mount_cmd = f"mount.nfs -v {nfs_path} {temp_dir}"
+            umount_cmd = f"umount -v {temp_dir}"
+            self.execute_cmd(mount_cmd)
+            self.execute_cmd(f"yes | cp -rf {temp_dir}*.jar {source}")
+            self.execute_cmd(umount_cmd)
+            os.remove(temp_dir)
+
+        self.execute_cmd(f"yes | cp -rf {source}*.jar {destination}")
+        res_ls = self.execute_cmd(f"ls {destination}")[1]
+        res = True if ".jar" in res_ls else False
+
+        return res
+
+    def validate_alert_msg(self, remote_file_path, pattern_lst,
+                           host=CM_CFG["host"], user=CM_CFG["username"],
+                           pwd=CM_CFG["password"], shell=True):
+        """
+        This function checks the list of alerts iteratively in the remote file
+        and return boolean value
+        :param str remote_file_path: remote file
+        :param list pattern_lst: list of err alerts generated
+        :param host: IP of the host
+        :param user: Username of the host
+        :param pwd: Password for the user
+        :return: Boolean, response
+        :rtype: tuple
+        """
+
+        response = None
+        local_path = os.path.join(os.getcwd(), 'temp_file')
+        try:
+            if os.path.exists(local_path):
+                os.remove(local_path)
+            res = self.copy_s3server_file(file_path=remote_file_path,
+                                          local_path=local_path, host=host,
+                                          user=user, pwd=pwd, shell=shell)
+            for pattern in pattern_lst:
+                if pattern in open(local_path).read():
+                    response = pattern
+                else:
+                    log.info("Match not found : {}".format(pattern))
+                    return False, pattern
+                log.info("Match found : {}".format(pattern))
+            return True, response
+        except BaseException as error:
+            log.error(EXCEPTION_MSG.format(NodeHelper.removedir.__name__, error))
+        finally:
+            if os.path.exists(local_path):
+                os.remove(local_path)
+
+
+    ################################################################################
+    # remote file operations
+    ################################################################################
+    def create_file(self, file_name, count):
+        """
+        Creates a new file, size(count) in MB
+        :param str file_name: Name of the file with path
+        :param int count: size of the file in MB
+        :return: output of remote execution cmd
+        :rtype: str:
+        """
+        cmd = commands.CREATE_FILE.format(file_name, count)
+        log.debug(cmd)
+        result = self.execute_cmd(cmd, shell=False)
+        log.debug("output = {}".format(result))
+        return result
+
+    def copy_file_to_remote(self, local_path,remote_file_path, shell=True):
+        """
+        copy file from local to local remote
+        :param str local_path: local path
+        :param str remote_file_path: remote path
+        :param str host: host ip or domain name
+        :param str user: host machine user name
+        :param str pwd: host machine password
+        :return: boolean, remote_path/error
+        :rtype: tuple
+        """
+        try:
+            client = self.connect(shell=shell)
+            log.info("client connected")
+            sftp = client.open_sftp()
+            log.info("sftp connected")
+            sftp.put(local_path, remote_file_path)
+            log.info("file copied to : {}".format(remote_file_path))
+            sftp.close()
+            client.close()
+            return True, remote_file_path
+        except BaseException as error:
+            log.error(EXCEPTION_MSG.format(NodeHelper.copy_file_to_remote.__name__, error))
+            return False, error
+
+    def copy_file_to_local(self,file_path, local_path, shell=True):
+        """
+        copy file from local to local remote
+        :param str local_path: local path
+        :param str remote_file_path: remote path
+        :param str host: host ip or domain name
+        :param str user: host machine user name
+        :param str pwd: host machine password
+        :return: boolean, remote_path/error
+        :rtype: tuple
+        """
+        try:
+            client = self.connect(shell=shell)
+            log.info("client connected")
+            sftp = client.open_sftp()
+            log.info("sftp connected")
+            sftp.get(file_path, local_path)
+            log.info("file copied to : {}".format(local_path))
+            sftp.close()
+            client.close()
+            return True, local_path
+        except BaseException as error:
+            log.error(EXCEPTION_MSG.format(NodeHelper.copy_file_to_local.__name__, error))
+            return False, error
+
+    def write_remote_file_to_local_file(self, file_path, local_path,shell=True):
+        """
+        Writing remote file content in local file
+        :param file_path: Remote path
+        :type: str
+        :param local_path: Local path
+        :return: bool, local path
+        :rtype: Boolean, string
+        """
+        try:
+            client = self.connect(shell=shell)
+            sftp = client.open_sftp()
+            log.debug("sftp connected")
+            with sftp.open(file_path, "r") as remote:
+                shutil.copyfileobj(remote, open(local_path, "wb"))
+            return True, local_path
+        except BaseException as error:
+            log.error(EXCEPTION_MSG.format(NodeHelper.write_remote_file_to_local_file.__name__, error))
+
+            return False, error
+
+    def read_file(self, filename, local_path, shell=True):
+        """
+        This function reads the given file and returns the file content
+        :param filename: Absolute path of the file to be read
+        :param host: IP of the host
+        :param user: user name of the host
+        :param pwd: password for the user
+        """
+        try:
+            if os.path.exists(local_path):
+                os.remove(local_path)
+            resp = self.copy_file_to_local(file_path=filename,
+                                           local_path=local_path, shell=shell)
+            if resp[0]:
+                f = open(local_path, 'r')
+                response = f.read()
+                return response
+        except BaseException as error:
+            log.error(EXCEPTION_MSG.format(NodeHelper.read_file.__name__, error))
+        finally:
+            if os.path.exists(local_path):
+                os.remove(local_path)
+
+    def remove_file(self,filename):
+        """
+        This function removes the unwanted file from the remote host.
+        :param filename: Absolute path of the file to be removed
+        :param host: IP of the host
+        :param user: Username of the host
+        :param pwd: Password for the user
+        """
+        try:
+            client = self.connect(shell=False)
+            log.debug(f"Connected to {host}")
+            sftp = client.open_sftp()
+            log.debug("sftp connected")
+            try:
+                sftp.remove(filename)
+            except IOError as err:
+                if err[0] == 2:
+                    raise err
+            sftp.close()
+            client.close()
+        except BaseException as error:
+            log.error(EXCEPTION_MSG.format(NodeHelper.remove_file.__name__, error))
+
+    def file_rename(self, old_filename, new_filename, shell=True):
+        """
+        This function renames file on remote host.
+        :param old_filename: Old name of the file(Absolute path)
+        :param new_filename: New name of the file(Absolute path)
+        :param host: IP of the host
+        :param user: Username of the host
+        :param pwd: Password for the user
+        """
+        try:
+            client = self.connect(shell=shell)
+            sftp = client.open_sftp()
+            log.debug("sftp connected")
+            try:
+                sftp.rename(old_filename, new_filename)
+            except IOError as err:
+                if err[0] == 2:
+                    raise err
+            sftp.close()
+            client.close()
+        except BaseException as error:
+            log.error(EXCEPTION_MSG.format(NodeHelper.file_rename.__name__, error))
+
+    def get_mdstat(self):
+        """
+        This function retrieves the /proc/mdstat file from remote host and returns the parsed output in json form
+        :param str host: hostname or IP of remote host
+        :param str username: username of the host
+        :param str password: password of the host
+        :return: parsed mdstat output
+        :rtype: dict
+        """
+        mdstat_remote_path = "/proc/mdstat"
+        mdstat_local_path = "mdstat"
+        try:
+            log.debug(
+                "Fetching /proc/mdstat file from the host {}".format(self.hostname))
+            self.write_remote_file_to_local_file(
+                mdstat_remote_path,
+                mdstat_local_path)
+            log.debug("Parsing mdstat file")
+            output = mdstat.parse(mdstat_local_path)
+        except BaseException as error:
+            log.error(EXCEPTION_MSG.format(NodeHelper.get_mdstat.__name__, error))
+            return error
+        self.remove_file(mdstat_local_path)
+        return output
+
+    def is_string_in_remote_file(self,string,file_path, shell=True):
+        """
+        find given string in file present on s3 server
+        :param string: String to be check
+        :param file_path: file path
+        :param host: IP of the host
+        :param user: user name of the host
+        :param pwd: password for the user
+        :return: Boolean
+        """
+        local_path = os.path.join(os.getcwd(), "temp_file")
+        try:
+            if os.path.exists(local_path):
+                os.remove(local_path)
+            response = self.copy_file_to_local(
+                file_path, local_path, shell=shell)
+            data = open(local_path).read()
+            match = re.search(string, data)
+            if match:
+                log.info("Match found in : {}".format(file_path))
+                return True, match
+            else:
+                return False, "String Not Found"
+        except BaseException as error:
+            log.error(EXCEPTION_MSG.format(NodeHelper.is_string_in_remote_file.__name__, error))
+            return False, error
+        finally:
+            if os.path.exists(local_path):
+                os.remove(local_path)
+
+    ################################################################################
+    # remote directory operations
+    ################################################################################
+    def is_path_exists(self, path, shell=True):
+        """
+        Check if file exists on s3 server
+        :param path: Absolute path of the file
+        :param host: IP of the host
+        :param user: Username of the host
+        :param pwd: Password for the user
+        :return: bool, response
+        """
+        client = self.connect(shell=shell)
+        log.info("client connected")
+        sftp = client.open_sftp()
+        log.info("sftp connected")
+        try:
+            sftp.stat(path)
+        except BaseException:
+            return False, path
+        sftp.close()
+        client.close()
+        return True, path
+
+    def validate_is_dir(self, remote_path):
+        """
+        This function validates if the remote path is directory or not
+        :param str remote_path: absolute path on the remote server
+        :return: response: Boolean
+        :param host: IP of the host
+        :param user: Username of the host
+        :param pwd: Password for the user
+        :rtype: list
+        """
+        client = self.connect_pysftp()
+        log.info("client connected")
+        try:
+            resp = client.isdir(remote_path)
+            client.close()
+            if resp:
+                return True, resp
+            else:
+                return False, resp
+        except BaseException as error:
+            log.error(EXCEPTION_MSG.format(NodeHelper.validate_is_dir.__name__, error))
+            return False, error
+
+    def list_remote_dir(self, remote_path, shell=True):
+        """
+        This function list the files of the remote server
+        :param str remote_path: absolute path on the remote server
+        :return: response: list of files
+        :param host: IP of the host
+        :param user: Username of the host
+        :param pwd: Password for the user
+        :rtype: list
+        """
+        try:
+            client = self.connect(shell=shell)
+            sftp = client.open_sftp()
+            try:
+                dir_lst = sftp.listdir(remote_path)
+            except IOError as err:
+                if err[0] == 2:
+                    raise err
+            return True, dir_lst
+        except BaseException as error:
+            log.error(EXCEPTION_MSG.format(NodeHelper.list_remote_dir.__name__, error))
+            return False, error
+
     def is_dir_exists(self, path, dir_name):
         """
         This function is use to check directory is exist or not
@@ -267,464 +618,6 @@ class NodeHelper(Host):
             client.close()
             return False, error
 
-    def file_rename_remote(self, old_filename, new_filename, shell=True):
-        """
-        This function renames file on remote host.
-        :param old_filename: Old name of the file(Absolute path)
-        :param new_filename: New name of the file(Absolute path)
-        :param host: IP of the host
-        :param user: Username of the host
-        :param pwd: Password for the user
-        """
-        try:
-            client = self.connect(shell=shell)
-            sftp = client.open_sftp()
-            log.debug("sftp connected")
-            try:
-                sftp.rename(old_filename, new_filename)
-            except IOError as err:
-                if err[0] == 2:
-                    raise err
-            sftp.close()
-            client.close()
-        except BaseException as error:
-            log.error(EXCEPTION_MSG.format(NodeHelper.removedir.__name__, error))
-
-
-
-
-    def remove_file_remote(
-            self,
-            filename,
-            host=RAS_CFG["host"],
-            user=RAS_CFG["username"],
-            pwd=RAS_CFG["password"]):
-        """
-        This function removes the unwanted file from the remote host.
-        :param filename: Absolute path of the file to be removed
-        :param host: IP of the host
-        :param user: Username of the host
-        :param pwd: Password for the user
-        """
-        try:
-            client = self.connect(host, username=user, password=pwd,
-                                  shell=False)
-            log.debug(f"Connected to {host}")
-            sftp = client.open_sftp()
-            log.debug("sftp connected")
-            try:
-                sftp.remove(filename)
-            except IOError as err:
-                if err[0] == 2:
-                    raise err
-            sftp.close()
-            client.close()
-        except BaseException as error:
-            log.error(EXCEPTION_MSG.format(NodeHelper.removedir.__name__, error))
-
-
-
-
-    def read_file_remote(self,
-                         filename,
-                         host=CM_CFG["host"],
-                         user=CM_CFG["username"],
-                         pwd=CM_CFG["password"],
-                         shell=True):
-        """
-        This function reads the given file and returns the file content
-        :param filename: Absolute path of the file to be read
-        :param host: IP of the host
-        :param user: user name of the host
-        :param pwd: password for the user
-        """
-        local_path = '/tmp/rabbitmq_alert.log'
-        try:
-            if os.path.exists(local_path):
-                os.remove(local_path)
-            resp = self.copy_s3server_file(file_path=filename,
-                                           local_path=local_path, host=host,
-                                           user=user, pwd=pwd, shell=shell)
-            if resp[0]:
-                f = open(local_path, 'r')
-                response = f.read()
-                return response
-        except BaseException as error:
-            log.error(EXCEPTION_MSG.format(NodeHelper.removedir.__name__, error))
-        finally:
-            if os.path.exists(local_path):
-                os.remove(local_path)
-
-    def is_string_in_remote_file(self,
-                                 string,
-                                 file_path,
-                                 host=CM_CFG["host"],
-                                 user=CM_CFG["username"],
-                                 pwd=CM_CFG["password"], shell=True):
-        """
-        find given string in file present on s3 server
-        :param string: String to be check
-        :param file_path: file path
-        :param host: IP of the host
-        :param user: user name of the host
-        :param pwd: password for the user
-        :return: Boolean
-        """
-        local_path = os.path.join(os.getcwd(), "temp_file")
-        try:
-            if os.path.exists(local_path):
-                os.remove(local_path)
-            response = self.copy_s3server_file(
-                file_path, local_path, host=host, shell=shell)
-            data = open(local_path).read()
-            match = re.search(string, data)
-            if match:
-                log.info("Match found in : {}".format(file_path))
-                return True, match
-            else:
-                return False, "String Not Found"
-        except BaseException as error:
-            log.error(EXCEPTION_MSG.format(NodeHelper.removedir.__name__, error))
-            return False, error
-        finally:
-            if os.path.exists(local_path):
-                os.remove(local_path)
-
-    def is_remote_path_exists(
-            self,
-            path,
-            host=CM_CFG["host"],
-            user=CM_CFG["username"],
-            pwd=CM_CFG["password"], shell=True):
-        """
-        Check if file exists on s3 server
-        :param path: Absolute path of the file
-        :param host: IP of the host
-        :param user: Username of the host
-        :param pwd: Password for the user
-        :return: bool, response
-        """
-        client = self.connect(host, username=user, password=pwd, shell=shell)
-        log.info("client connected")
-        sftp = client.open_sftp()
-        log.info("sftp connected")
-        try:
-            sftp.stat(path)
-        except BaseException:
-            return False, path
-        sftp.close()
-        client.close()
-        return True, path
-
-    def configure_jclient_cloud(
-            self, source=CM_CFG["jClientCloud_path"]["source"],
-            destination=CM_CFG["jClientCloud_path"]["dest"],
-            nfs_path=CM_CFG["nfs_path"]):
-        """
-        Function to configure jclient and cloud jar files
-        :param string source: path to the source dir where .jar are present.
-        :param string destination: destination path where .jar need to be copied
-        :return: True/False
-        :rtype: bool
-        """
-        if not os.path.exists(source):
-            os.mkdir(source)
-
-        dir_list = os.listdir(source)
-        if "jcloudclient.jar" not in dir_list or "jclient.jar" not in dir_list:
-            temp_dir = "/home/jjarfiles"
-            os.mkdir(temp_dir)
-            mount_cmd = f"mount.nfs -v {nfs_path} {temp_dir}"
-            umount_cmd = f"umount -v {temp_dir}"
-            self.execute_cmd(mount_cmd)
-            self.execute_cmd(f"yes | cp -rf {temp_dir}*.jar {source}")
-            self.execute_cmd(umount_cmd)
-            os.remove(temp_dir)
-
-        self.execute_cmd(f"yes | cp -rf {source}*.jar {destination}")
-        res_ls = self.execute_cmd(f"ls {destination}")[1]
-        res = True if ".jar" in res_ls else False
-
-        return res
-
-    def pgrep(self, process, remote=False,
-              host=CM_CFG["host"],
-              user=CM_CFG["username"],
-              pwd=CM_CFG["password"]):
-        """
-        Function to get process ID using pgrep cmd.
-        :param str process: Name of the process
-        :param bool remote: Remote process or local. True/False
-        :param str host: IP of the host
-        :param str user: user name of the host
-        :param str pwd: password for the user
-        :return: bool, response/error
-        :rtype: tuple
-        """
-        try:
-            if remote:
-                response = self.remote_execution(
-                    host, user, pwd, cons.PGREP_CMD.format(process))
-                return True, response
-            else:
-                response = self.execute_cmd(cons.PGREP_CMD.format(process))
-                return response
-        except Exception as error:
-            log.error(
-                "{} {}: {}".format(
-                    cons.EXCEPTION_ERROR,
-                    Utility.pgrep.__name__,
-                    error))
-            return False, error
-
-
-
-
-    def check_ping(self, host):
-        """
-        This function will send ping to the given host
-        :param str host: Host to whom ping to be sent
-        :return: True/ False
-        :rtype: Boolean
-        """
-        response = os.system("ping -c 1 {}".format(host))
-        if response == 0:
-            pingstatus = True
-        else:
-            pingstatus = False
-
-        return pingstatus
-
-    def list_remote_dir(self, remote_path,
-                        host=CM_CFG["host"],
-                        user=CM_CFG["username"],
-                        pwd=CM_CFG["password"], shell=True):
-        """
-        This function list the files of the remote server
-        :param str remote_path: absolute path on the remote server
-        :return: response: list of files
-        :param host: IP of the host
-        :param user: Username of the host
-        :param pwd: Password for the user
-        :rtype: list
-        """
-        try:
-            client = self.connect(
-                host, username=user, password=pwd, shell=shell)
-            sftp = client.open_sftp()
-            try:
-                dir_lst = sftp.listdir(remote_path)
-            except IOError as err:
-                if err[0] == 2:
-                    raise err
-            return True, dir_lst
-        except BaseException as error:
-            log.error(EXCEPTION_MSG.format(NodeHelper.removedir.__name__, error))
-            return False, error
-
-    def validate_alert_msg(self, remote_file_path, pattern_lst,
-                           host=CM_CFG["host"], user=CM_CFG["username"],
-                           pwd=CM_CFG["password"], shell=True):
-        """
-        This function checks the list of alerts iteratively in the remote file
-        and return boolean value
-        :param str remote_file_path: remote file
-        :param list pattern_lst: list of err alerts generated
-        :param host: IP of the host
-        :param user: Username of the host
-        :param pwd: Password for the user
-        :return: Boolean, response
-        :rtype: tuple
-        """
-
-        response = None
-        local_path = os.path.join(os.getcwd(), 'temp_file')
-        try:
-            if os.path.exists(local_path):
-                os.remove(local_path)
-            res = self.copy_s3server_file(file_path=remote_file_path,
-                                          local_path=local_path, host=host,
-                                          user=user, pwd=pwd, shell=shell)
-            for pattern in pattern_lst:
-                if pattern in open(local_path).read():
-                    response = pattern
-                else:
-                    log.info("Match not found : {}".format(pattern))
-                    return False, pattern
-                log.info("Match found : {}".format(pattern))
-            return True, response
-        except BaseException as error:
-            log.error(EXCEPTION_MSG.format(NodeHelper.removedir.__name__, error))
-        finally:
-            if os.path.exists(local_path):
-                os.remove(local_path)
-
-
-    def validate_is_dir(self, remote_path,
-                        host=CM_CFG["host"],
-                        user=CM_CFG["username"],
-                        pwd=CM_CFG["password"]
-                        ):
-        """
-        This function validates if the remote path is directory or not
-        :param str remote_path: absolute path on the remote server
-        :return: response: Boolean
-        :param host: IP of the host
-        :param user: Username of the host
-        :param pwd: Password for the user
-        :rtype: list
-        """
-        client = self.connect_pysftp(host, user, pwd)
-        log.info("client connected")
-        try:
-            resp = client.isdir(remote_path)
-            client.close()
-            if resp:
-                return True, resp
-            else:
-                return False, resp
-        except BaseException as error:
-            log.error(EXCEPTION_MSG.format(NodeHelper.removedir.__name__, error))
-            return False, error
-
-
-
-
-
-    def command_execution(self, host, user, password, cmd):
-        """
-        Execute any command on remote machine/VM do not evaluate
-        stderr,stdout or stdin
-        :param str host: Host IP
-        :param str user: Host user name
-        :param ste password: Host password
-        :param str cmd: command user wants to execute on host
-        :return Bool True/False: True if command executed successfully
-        :rtype Boolean:
-        """
-        try:
-            client = self.connect(host, username=user, password=password)
-            stdin, stdout, stderr = client.exec_command(cmd)
-            client.close()
-            return True
-        except BaseException as error:
-            log.error(EXCEPTION_MSG.format(NodeHelper.removedir.__name__, error))
-            return False
-
-    def write_remote_file_to_local_file(self, file_path, local_path,
-                                        host=CM_CFG["host"],
-                                        user=CM_CFG["username"],
-                                        pwd=CM_CFG["password"], shell=True):
-        """
-        Writing remote file content in local file
-        :param file_path: Remote path
-        :type: str
-        :param local_path: Local path
-        :type: str
-        :param host: IP of the host
-        :type: str
-        :param user: user name of the host
-        :type: str
-        :param pwd: password for the user
-        :type: str
-        :return: bool, local path
-        :rtype: Boolean, string
-        """
-        try:
-            client = self.connect(host, username=user, password=pwd,
-                                  shell=shell)
-            log.info("client connected")
-            sftp = client.open_sftp()
-            log.info("sftp connected")
-
-            with sftp.open(file_path, "r") as remote:
-                shutil.copyfileobj(remote, open(local_path, "wb"))
-
-            return True, local_path
-        except BaseException as error:
-            log.error(EXCEPTION_MSG.format(NodeHelper.removedir.__name__, error))
-
-            return False, error
-    def get_mdstat(self, host=CM_CFG["host"],
-                   username=CM_CFG["username"],
-                   password=CM_CFG["password"]):
-        """
-        This function retrieves the /proc/mdstat file from remote host and returns the parsed output in json form
-        :param str host: hostname or IP of remote host
-        :param str username: username of the host
-        :param str password: password of the host
-        :return: parsed mdstat output
-        :rtype: dict
-        """
-        try:
-            log.info(
-                "Fetching /proc/mdstat file from the host {}".format(host))
-            self.write_remote_file_to_local_file(
-                RAS_CFG["mdstat_remote_path"],
-                RAS_CFG["mdstat_local_path"],
-                host=host,
-                user=username,
-                pwd=password)
-            log.info("Parsing mdstat file")
-            output = mdstat.parse(RAS_CFG["mdstat_local_path"])
-        except BaseException as error:
-            log.error(EXCEPTION_MSG.format(NodeHelper.get_mdstat.__name__, error))
-            return error
-        self.remove_file(RAS_CFG["mdstat_local_path"])
-        return output
-
-
-
-
-
-
-
-    ################################################################################
-    # remote file operations
-    ################################################################################
-    def create_file(self, file_name, count):
-        """
-        Creates a new file, size(count) in MB
-        :param str file_name: Name of the file with path
-        :param int count: size of the file in MB
-        :return: output of remote execution cmd
-        :rtype: str:
-        """
-        cmd = commands.CREATE_FILE.format(file_name, count)
-        log.debug(cmd)
-        result = self.execute_cmd(cmd, shell=False)
-        log.debug("output = {}".format(result))
-        return result
-
-    def copy_file(self, local_path,remote_file_path, shell=True):
-        """
-        copy file from local to local remote
-        :param str local_path: local path
-        :param str remote_file_path: remote path
-        :param str host: host ip or domain name
-        :param str user: host machine user name
-        :param str pwd: host machine password
-        :return: boolean, remote_path/error
-        :rtype: tuple
-        """
-        try:
-            client = self.connect(shell=shell)
-            log.info("client connected")
-            sftp = client.open_sftp()
-            log.info("sftp connected")
-            sftp.put(local_path, remote_file_path)
-            log.info("file copied to : {}".format(remote_file_path))
-            sftp.close()
-            client.close()
-            return True, remote_file_path
-        except BaseException as error:
-            log.error(EXCEPTION_MSG.format(NodeHelper.copy_file.__name__, error))
-            return False, error
-
-    ################################################################################
-    # remote directory operations
-    ################################################################################
-
 
     ################################################################################
     # Remote process operations
@@ -738,12 +631,25 @@ class NodeHelper(Host):
         :param pwd: password for the user
         :return:
         """
-        return self.remote_execution(
-            host, user, pwd, cons.PKIL_CMD.format(process_name))
+        return self.execute_cmd(commands.PKIL_CMD.format(process_name))
 
-
-
-
+    def pgrep(self, process, remote=False):
+        """
+        Function to get process ID using pgrep cmd.
+        :param str process: Name of the process
+        :param bool remote: Remote process or local. True/False
+        :param str host: IP of the host
+        :param str user: user name of the host
+        :param str pwd: password for the user
+        :return: bool, response/error
+        :rtype: tuple
+        """
+        try:
+            response = self.execute_cmd(commands.PGREP_CMD.format(process))
+            return True, response
+        except Exception as error:
+            log.error(EXCEPTION_MSG.format(NodeHelper.pgrep.__name__, error))
+            return False, error
 
     ################################################################################
     # Power operations
@@ -776,7 +682,7 @@ class NodeHelper(Host):
                 return False, "Command not found"
             log.info(f"Executing cmd: {cmd}")
             resp = self.execute_cmd(cmd)
-            log.debug("Output:", resp)
+            log.debug(f"Output: {resp}")
         except BaseException as error:
             log.error(EXCEPTION_MSG.format(NodeHelper.toggle_apc_node_power.__name__, error))
             return False, error
@@ -794,19 +700,11 @@ class NodeHelper(Host):
         :return:
         """
         try:
-            cmd = ha_cons.SHUTDOWN_NODE_CMD.format(
-                options if options else "")
-            log.info(
-                f"Shutting down {host} node using cmd: {cmd}.")
-            resp = self.remote_execution(
-                host=host,
-                user=username,
-                password=password,
-                cmd=cmd,
-                shell=False)
+            cmd = "shutdown {}".format(options if options else "")
+            log.info(f"Shutting down {self.hostname} node using cmd: {cmd}.")
+            resp = self.execute_cmd(cmd, shell=False)
             log.info(resp)
         except BaseException as error:
             log.error(EXCEPTION_MSG.format(NodeHelper.shutdown_node.__name__, error))
             return False, error
-
         return True, f"Node shutdown successfully"

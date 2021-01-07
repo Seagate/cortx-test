@@ -639,3 +639,36 @@ def list_rpms(filter_str="",remote=False,*remoteargs, **remoteKwargs):
         return True, rpm_list
     else:
         return False, resp
+
+def check_ping(host):
+    """
+    This function will send ping to the given host
+    :param str host: Host to whom ping to be sent
+    :return: True/ False
+    :rtype: Boolean
+    """
+    response = os.system("ping -c 1 {}".format(host))
+    if response == 0:
+        pingstatus = True
+    else:
+        pingstatus = False
+
+    return pingstatus
+
+def pgrep(process):
+    """
+    Function to get process ID using pgrep cmd.
+    :param str process: Name of the process
+    :param bool remote: Remote process or local. True/False
+    :param str host: IP of the host
+    :param str user: user name of the host
+    :param str pwd: password for the user
+    :return: bool, response/error
+    :rtype: tuple
+    """
+    try:
+        response = run_local_cmd(commands.PGREP_CMD.format(process))
+        return response
+    except Exception as error:
+        log.error(EXCEPTION_MSG.format(pgrep.__name__, error))
+        return False, error
