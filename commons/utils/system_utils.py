@@ -21,16 +21,97 @@
 # Standard libraries
 ################################################################################
 import logging
+import os
+from pysftp.exceptions import ConnectionException
+from paramiko import SSHClient, AutoAddPolicy
+from paramiko.ssh_exception import AuthenticationException, SSHException
+from subprocess import Popen, PIPE
 
 ################################################################################
 # Local libraries
 ################################################################################
-
+import commons.errorcodes as cterr
+from commons.exceptions import CTException
 
 ################################################################################
 # Constants
 ################################################################################
 log = logging.getLogger(__name__)
+EXCEPTION_MSG = "*ERROR* An exception occurred in {}: {}"
+
+################################################################################
+# command execution
+################################################################################
+def run_remote_cmd(cmd, hostname, username, password, read_lines=True, read_nbytes=-1, 
+                port=22, timeout_sec = 30, **kwargs):
+    """
+    Execute command on remote machine
+    :return: ([stdout/stderr], True/False).
+    :rtype: tuple.
+    """
+    try:
+        if not hostname:
+            raise ValueError("Missing required parameter: {}".format(hostname))
+        if not username:
+            raise ValueError("Missing required parameter: {}".format(username))
+        if not password:
+            raise ValueError("Missing required parameter: {}".format(password))
+        if not cmd:
+            raise ValueError("Missing required parameter: {}".format(cmd))
+
+        log.debug("Connect details: Host:%s, user name:%s, password:%s, port:%s",
+                        hostname, username, password, port=port, timeout=timeout_sec, **kwargs)
+        client = SSHClient()
+        client.set_missing_host_key_policy(AutoAddPolicy())
+        log.debug("Command: %s" % str(cmd))
+        stdin, stdout, stderr = client.exec_command(cmd)
+        exit_status = stdout.channel.recv_exit_status()
+        if read_lines:
+            output = stdout.readlines()
+            output = [r.strip().strip("\n").strip() for r in output]
+            log.debug("Result: %s" % str(output))
+            error = stderr.readlines()
+            error = [r.strip().strip("\n").strip() for r in error]
+            log.debug("Error: %s" % str(error))
+        else:
+            output = stdout.read(read_nbytes)
+            error = stderr.read()
+        log.debug(exit_status)
+        if exit_status != 0:
+            if error:
+                raise IOError(error)
+            raise IOError(output)
+        client.close()
+    except (SSHException, AuthenticationException, BaseException) as error:
+        log.error(EXCEPTION_MSG.format(run_remote_cmd.__name__, error))
+        return error, False
+
+    return output, True
+
+def run_local_cmd(cmd):
+    """
+    Execute any given command on local machine.
+    :param cmd: command to be executed.
+    :type cmd: str.
+    :return: True/False, Success/str(err)
+    :rtype: tuple.
+    """
+    try:
+        if not cmd:
+            raise ValueError("Missing required parameter: {}".format(cmd))
+        log.info("Command: %s", cmd)
+        proc = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
+        output, error = proc.communicate()
+        log.info("output = %s", str(output))
+        if const.MSG_RSA_KEY_ADDED in output:
+            return True, output
+        if const.LCMD_NOT_FOUND in error or error:
+            return False, error
+    except (CalledProcessError, BaseException) as error:
+        log.error(const.EXCEPTION_MSG.format(CommonLib.run_local_cmd.__name__, error))
+        return False, str(error)
+
+    return True, output
 
 ################################################################################
 # RPM functions
@@ -47,7 +128,7 @@ def list_rpms(host, user, passwd, filter_str=""):
     :rtype: boolean, list
     """
     rpm_grep_cmd = "rpm -qa | grep {}".format(filter_str)
-    resp = self.remote_execution(
+    resp = remote_execution(
         host=host,
         user=user,
         password=passwd,
@@ -71,9 +152,8 @@ def install_new_cli_rpm(host=None, rpm_link=None):
             log.info(constants.RPM_INSTALLATION_SUCCESS)
         return cmd_flag, cmd_output
     except Exception as error:
-        log.error("{0} {1}: {2}".format(
-            constants.RPM_INSTALLATION_FAILED,
-            self.install_new_cli_rpm.__name__,
+        log.error("Error while installing RPM {1}: {2}".format(
+            install_new_cli_rpm.__name__,
             error))
         return False, cmd_output
 
@@ -136,112 +216,115 @@ def is_machine_clean(self):
 # Math operations
 ################################################################################
 
-    def calculate_checksum(self, file_path, binary_bz64=True, options=""):
-        """
-        Calculate MD5 checksum with/without binary coversion for a file.
-        :param file_name: Name of the file with path
-        :param binary_bz64: Calulate binary base64 checksum for file,
-        if False it will return MD5 checksum digest
-        :return: string or MD5 object
-        :rtype: str
-        """
-        if not os.path.exists(file_path):
-            return False, "Please pass proper file path"
-        if binary_bz64:
-            cmd = "openssl md5 -binary {} | base64".format(file_path)
-        else:
-            cmd = "md5sum {} {}".format(options, file_path)
-        log.info(f"Executing cmd: {cmd}")
-        result = self.execute_cmd(cmd)
-        log.debug("Output: {}".format(result))
-        return result
-    def cal_percent(num1, num2):
-        """
-        percentage calculator to track progress
-        :param num1: First number
-        :param num2: second number
-        :return: calculated percentage
-        """
-        return float(num1) / float(num2) * 100.0
+def calculate_checksum(file_path, binary_bz64=True, options=""):
+    """
+    Calculate MD5 checksum with/without binary coversion for a file.
+    :param file_name: Name of the file with path
+    :param binary_bz64: Calulate binary base64 checksum for file,
+    if False it will return MD5 checksum digest
+    :return: string or MD5 object
+    :rtype: str
+    """
+    if not os.path.exists(file_path):
+        return False, "Please pass proper file path"
+    if binary_bz64:
+        cmd = "openssl md5 -binary {} | base64".format(file_path)
+    else:
+        cmd = "md5sum {} {}".format(options, file_path)
+    
+    log.info(f"Executing cmd: {cmd}")
+    result = run_local_cmd(cmd)
+    log.debug("Output: {}".format(result))
+    return result
+
+def cal_percent(num1, num2):
+    """
+    percentage calculator to track progress
+    :param num1: First number
+    :param num2: second number
+    :return: calculated percentage
+    """
+    return float(num1) / float(num2) * 100.0
 
 ################################################################################
 # String operations 
 ################################################################################
-    def _format_dict(el):
-        """
-        Format the data in dict format
-        :param el: list of string element
-        :return: dict
-        """
-        resp_dict = {}
-        list_tup = []
-        for i in el:
-            list_tup.append(i.split(" = "))
-        for i in list_tup:
-            resp_dict[i[0]] = i[1]
-        return resp_dict
+def _format_dict(el):
+    """
+    Format the data in dict format
+    :param el: list of string element
+    :return: dict
+    """
+    resp_dict = {}
+    list_tup = []
+    for i in el:
+        list_tup.append(i.split(" = "))
+    for i in list_tup:
+        resp_dict[i[0]] = i[1]
+    return resp_dict
 
-    def format_iam_resp(self, res_msg):
-        """
-        Function to format IAM response which comes in string format.
-        :param res_msg: bytes string of tuple
-        :return: list of dict
-        """
-        resp = []
-        res = res_msg.split("b'")[1].replace("\\n',", "").split("\\n")
-        for i in res:
-            new_result = i.split(',')
-            result = self._format_dict(new_result)
-            resp.append(result)
-        return resp
-    def validate_output(self, output, expected_keywords):
-        log.info("actual output", output)
-        output = [i.strip() for i in output]
-        log.info("output after strip %s", output)
-        validation_steps = dict()
-        for ele in expected_keywords:
-            validation_steps[ele] = False
-        for line in output:
-            for out in validation_steps:
-                if isinstance(line, bytes):
-                    line = line.decode("utf-8")
-                if out in line:
-                    validation_steps[out] = True
-        retval = (
-            False not in list(
-                validation_steps.values()),
-            'validation failed')
-        return retval
+def format_iam_resp(self, res_msg):
+    """
+    Function to format IAM response which comes in string format.
+    :param res_msg: bytes string of tuple
+    :return: list of dict
+    """
+    resp = []
+    res = res_msg.split("b'")[1].replace("\\n',", "").split("\\n")
+    for i in res:
+        new_result = i.split(',')
+        result = self._format_dict(new_result)
+        resp.append(result)
+    return resp
+
+def validate_output(self, output, expected_keywords):
+    log.info(f"actual output {output}")
+    output = [i.strip() for i in output]
+    log.info("output after strip %s", output)
+    validation_steps = dict()
+    for ele in expected_keywords:
+        validation_steps[ele] = False
+    for line in output:
+        for out in validation_steps:
+            if isinstance(line, bytes):
+                line = line.decode("utf-8")
+            if out in line:
+                validation_steps[out] = True
+    retval = (
+        False not in list(
+            validation_steps.values()),
+        'validation failed')
+    return retval
+
 ################################################################################
 # File operations 
 ################################################################################
-    def is_path_exists(path):
-        """
-        Check if file exists locally
-        :param path: Absolute path
-        :return: response
-        """
-        return os.path.exists(path)
-    def open_empty_file(self,
-                        fpath,
-                        ):
-        """
-        Create empty file specified in path.
-        :param fpath: Non-existing file path.
-        :type fpath: str.
-        :return: True/err.
-        :rtype: bool.
-        """
-        try:
-            with open(fpath, "w") as f_write:
-                pass
-        except OSError as error:
-            log.error("{0} {1}: {2}".format(
-                constants.EXCEPTION_ERROR,
-                Utility.open_empty_file.__name__,
-                error))
-            return False
-        return True
+def is_path_exists(path):
+    """
+    Check if file exists locally
+    :param path: Absolute path
+    :return: response
+    """
+    return os.path.exists(path)
+
+def open_empty_file(fpath):
+    """
+    Create empty file specified in path.
+    :param fpath: Non-existing file path.
+    :type fpath: str.
+    :return: True/err.
+    :rtype: bool.
+    """
+    try:
+        with open(fpath, "w") as f_write:
+            pass
+    except OSError as error:
+        log.error("{0} {1}: {2}".format(
+            constants.EXCEPTION_ERROR,
+            Utility.open_empty_file.__name__,
+            error))
+        return False
+    return True
 
     def create_symlink(self,
                        fpath,
@@ -548,89 +631,5 @@ def is_machine_clean(self):
             return False, error
 
 
-################################################################################
-# command execution
-################################################################################
-    def run_remote_cmd(cmd, host, u_name, u_password, read_lines = True, read_nbytes = -1, **kwargs
-                        ) -> Tuple[Union[List[str], str, bytes], bool]:
-        """
-        Execute any command on remote machine using paramiko instance.
-        ref: https://stackoverflow.com/questions/28485647/wait-until-task-is-completed-on-remote-machine-through-python
-        :param client_obj: client connection object to execute commands on remote machine.
-        :type client_obj: Connection object.
-        :param cmd: command to be executed on the client machine.
-        :type cmd: str.
-        :param time_out: command to be executed on the client machine.
-        :type time_out: int seconds.
-        :return: ([result/err], True/False).
-        :rtype: tuple.
-        """
-        try:
-            if not host:
-                raise ValueError(const.MISSING_REQ_PARA.format(host))
-            if not u_name:
-                raise ValueError(const.MISSING_REQ_PARA.format(u_name))
-            if not u_password:
-                raise ValueError(const.MISSING_REQ_PARA.format(u_password))
-            if not cmd:
-                raise ValueError(const.MISSING_REQ_PARA.format(cmd))
-            log.debug("Connect details: Host:%s, user name:%s, password:%s, port:%s",
-                         host, u_name, u_password, port)
-            client = paramiko.SSHClient()
-            client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            log.debug("Command: %s" % str(cmd))
-            stdin, stdout, stderr = client.exec_command(cmd, timeout=time_out)
-            exit_status = stdout.channel.recv_exit_status()
-            if read_lines:
-                result = stdout.readlines()
-                result = [r.strip().strip("\n").strip() for r in result]
-                log.debug("Result: %s" % str(result))
-                error = stderr.readlines()
-                error = [r.strip().strip("\n").strip() for r in error]
-                log.debug("Error: %s" % str(error))
-            else:
-                result = stdout.read(read_nbytes)
-            log.debug(exit_status)
-            if exit_status != 0:
-                if error:
-                    raise IOError(error)
-                raise IOError(result)
-            client.close()
-        except AuthenticationException as error:
-                    log.error(const.EXCEPTION_MSG.format(CommonLib.connect.__name__, error))
-        except SSHException as error:
-                    log.error(const.EXCEPTION_MSG.format(CommonLib.connect.__name__, error))
-        except (paramiko.SSHException, BaseException) as error:
-            log.error(const.EXCEPTION_MSG.format(CommonLib.run_remote_cmd.__name__, error))
-            return str(error), False
 
-        return result, True
-
-    def run_local_cmd(cmd: cmd = None
-                      ) -> Tuple[bool, Union[List[str], str, bytes]]:
-        """
-        Execute any given command on local machine.
-        :param cmd: command to be executed.
-        :type cmd: str.
-        :return: True/False, Success/str(err)
-        :rtype: tuple.
-        """
-        try:
-            if not cmd:
-                raise ValueError(const.MSG_INVALID.format("command", cmd))
-            log.info("Command: %s", cmd)
-            proc = Popen(cmd, shell=True,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
-            output, error = proc.communicate()
-            log.info("output = %s", str(output))
-            if const.MSG_RSA_KEY_ADDED in output:
-                return True, output
-            if const.LCMD_NOT_FOUND in error or error:
-                return False, error
-        except (CalledProcessError, BaseException) as error:
-            log.error(const.EXCEPTION_MSG.format(CommonLib.run_local_cmd.__name__, error))
-            return False, str(error)
-
-        return True, output
     
