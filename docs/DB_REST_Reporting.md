@@ -119,7 +119,7 @@ Mongo DB Collection for storing test execution details.
 #### Examples:
 1. Command line
 ```
-curl -L -X POST 'http://127.0.0.1:5000/create' \
+curl -L -X POST 'http://127.0.0.1:5000/reportsdb/create' \
 -H 'Content-Type: application/json' \
 --data-raw '{
     "OSVersion": "CentOS",
@@ -164,7 +164,7 @@ curl -L -X POST 'http://127.0.0.1:5000/create' \
 ```
 import requests
 import json
-endpoint = create
+endpoint = "reportsdb/create"
 host = "http://127.0.0.1:5000/"
 
 payload = {
@@ -236,7 +236,7 @@ This allows to execute complex queries using operators.
 #### Examples:
 1. Command line
 ```
-curl -L -X GET 'http://127.0.0.1:5000/search' \
+curl -L -X GET 'http://127.0.0.1:5000/reportsdb/search' \
 -H 'Content-Type: application/json' \
 --data-raw '{
     "query": {"testComponent": { "$in": ["S3", "Motr"]},
@@ -250,7 +250,7 @@ curl -L -X GET 'http://127.0.0.1:5000/search' \
 ```
 import requests
 import json
-endpoint = search
+endpoint = "reportsdb/search"
 host = "http://127.0.0.1:5000/"
 
 payload = {
@@ -288,7 +288,7 @@ print(response.text)
 #### Examples:
 1. Command line
 ```
-curl -L -X PATCH 'http://127.0.0.1:5000/update' \
+curl -L -X PATCH 'http://127.0.0.1:5000/reportsdb/update' \
 -H 'Content-Type: application/json' \
 --data-raw '{
     "filter": {"buildType": "Beta"},
@@ -301,7 +301,7 @@ curl -L -X PATCH 'http://127.0.0.1:5000/update' \
 ```
 import requests
 import json
-endpoint = update
+endpoint = "reportsdb/update"
 host = "http://127.0.0.1:5000/"
 
 payload = {

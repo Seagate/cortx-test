@@ -10,7 +10,7 @@ import validations
 
 app = flask.Flask(__name__)
 
-api = Api(app, version='1.0', title='MongoREST APIs')
+api = Api(app, version='1.0', title='ReportsDB APIs')
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -25,7 +25,7 @@ except KeyError:
 MONGODB_URI = "mongodb://{0}:{1}@{2}"
 
 
-@api.route("/search", doc={"description": "Search test execution entries in MongoDB"})
+@api.route("/reportsdb/search", doc={"description": "Search test execution entries in MongoDB"})
 @api.response(200, "Success")
 @api.response(400, "Bad Request: Missing parameters. Do not retry.")
 @api.response(401, "Unauthorized: Wrong db_username/db_password.")
@@ -81,7 +81,7 @@ class Search(Resource):
                                   response=count_results[1][1])
 
 
-@api.route("/create", doc={"description": "Add test execution entry in MongoDB"})
+@api.route("/reportsdb/create", doc={"description": "Add test execution entry in MongoDB"})
 @api.response(200, "Success")
 @api.response(400, "Bad Request: Missing parameters. Do not retry.")
 @api.response(401, "Unauthorized: Wrong db_username/db_password.")
@@ -133,7 +133,7 @@ class Create(Resource):
                                   response=add_result[1][1])
 
 
-@api.route("/update", doc={"description": "Update test execution entries in MongoDB"})
+@api.route("/reportsdb/update", doc={"description": "Update test execution entries in MongoDB"})
 @api.response(200, "Success")
 @api.response(400, "Bad Request: Missing parameters. Do not retry.")
 @api.response(401, "Unauthorized: Wrong db_username/db_password.")
