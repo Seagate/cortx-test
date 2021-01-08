@@ -1,28 +1,25 @@
 """
 JIRA Access Utility Class
-===========================
 """
-# ======================================================================================================================
-# === IMPORTS ==========================================================================================================
-# ======================================================================================================================
 import json
 import requests
-from jira import JIRA
 import datetime
+from jira import JIRA
 
 
-# ======================================================================================================================
-# === JIRA TASK CLASS ==================================================================================================
-# ======================================================================================================================
-class JiraTask:
+class JiraTask :
     def __init__(self, jira_id, jira_password) :
         """
         constructor
         """
         self.jira_id = jira_id
         self.jira_password = jira_password
+        self.headers = {
+            'content-type' : "application/json",
+            'accept' : "application/json",
+        }
 
-    def get_test_ids_from_te(self, test_exe_id, status='ALL'):
+    def get_test_ids_from_te(self, test_exe_id, status='ALL') :
         """
         Get test jira ids available in test execution jira
         """
@@ -32,36 +29,36 @@ class JiraTask:
         while page_not_zero :
             jira_url = "https://jts.seagate.com/rest/raven/1.0/api/testexec/{}/test?page={}" \
                 .format(test_exe_id, page_cnt)
-            headers = {
-                'content-type' : "application/json",
-                'accept' : "application/json",
-            }
-            try:
+
+            try :
                 response = requests.request("GET", jira_url, data=None, auth=(self.jira_id, self.jira_password),
-                                            headers=headers, params=None)
+                                            headers=self.headers, params=None)
                 data = response.json()
-            except Exception as e:
+            except Exception as e :
                 print(e)
-            else:
-                if len(data) == 0:
+            else :
+                if len(data) == 0 :
                     page_not_zero = 0
-                else:
+                else :
                     page_cnt = page_cnt + 1
                     for test in data :
-                        if status == 'ALL':
+                        if status == 'ALL' :
                             test_list.append(test['key'])
-                        elif status == 'FAIL':
-                            if str(test['status']) == 'FAIL':
+                        elif status == 'FAIL' :
+                            if str(test['status']) == 'FAIL' :
                                 test_list.append(test['key'])
-                        elif status == 'TODO':
-                            if str(test['status']) == 'TODO':
+                        elif status == 'TODO' :
+                            if str(test['status']) == 'TODO' :
                                 test_list.append(test['key'])
-                        elif status == 'PASS':
-                            if str(test['status']) == 'PASS':
+                        elif status == 'PASS' :
+                            if str(test['status']) == 'PASS' :
+                                test_list.append(test['key'])
+                        elif status == 'ABORTED' :
+                            if str(test['status']) == 'ABORTED' :
                                 test_list.append(test['key'])
             return test_list
 
-    def get_test_list_from_te(self, test_exe_id, status='ALL'):
+    def get_test_list_from_te(self, test_exe_id, status='ALL') :
         """
         Get required test jira information for all tests from test execution jira.
         """
@@ -97,7 +94,7 @@ class JiraTask:
             test_details.append([test_id, test_name, test_to_execute])
         return test_details
 
-    def update_test_jira_status(self, test_exe_id, test_id, test_status, log_path=''):
+    def update_test_jira_status(self, test_exe_id, test_id, test_status, log_path='') :
         """
         Update test jira status in xray jira
         """
@@ -115,11 +112,7 @@ class JiraTask:
         state['tests'].append(status)
         data = json.dumps(state)
         jira_url = "https://jts.seagate.com/" + "/rest/raven/1.0/import/execution"
-        headers = {
-            'content-type' : "application/json",
-            'accept' : "application/json",
-        }
         response = requests.request("POST", jira_url, data=data, auth=(self.jira_id, self.jira_password),
-                                    headers=headers,
+                                    headers=self.headers,
                                     params=None)
         return response
