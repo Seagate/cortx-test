@@ -36,7 +36,7 @@ log = logging.getLogger(__name__)
 ################################################################################
 # Local libraries
 ################################################################################
-class s3_helper():
+class S3_helper(Node_Helper):
 
     def configure_s3cfg(self, access, secret, path=CM_CFG["s3cfg_path"]):
         """
@@ -490,3 +490,33 @@ class s3_helper():
         secret_key = config[section]["aws_secret_access_key"]
         log.info(f"fetched {access_key} access and {secret_key} secret key")
         return access_key, secret_key
+
+    def is_string_in_file(self, string,file_path,shell=True):
+        """
+        find given string in file present on s3 server
+        :param string: String to be check
+        :param file_path: file path
+        :param host: IP of the host
+        :param user: user name of the host
+        :param pwd: password for the user
+        :return: Boolean
+        """
+        local_path = os.path.join(os.getcwd(), "temp_file")
+        try:
+            if os.path.exists(local_path):
+                os.remove(local_path)
+            response = self.copy_s3server_file(
+                file_path, local_path, host=host, shell=shell)
+            data = open(local_path).read()
+            match = re.search(string, data)
+            if match:
+                log.info("Match found in : {}".format(file_path))
+                return True, match
+            else:
+                return False, "String Not Found"
+        except BaseException as error:
+            log.error(EXCEPTION_MSG.format(NodeHelper.is_string_in_file.__name__, error))
+            return False, error
+        finally:
+            if os.path.exists(local_path):
+                os.remove(local_path)

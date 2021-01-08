@@ -5,6 +5,7 @@ class BmcHelper(Host):
         result = self.connect()
         if result:
             print("connection is establish")
+            
     def get_bmc_ip(self) -> str:
         """
         Execute 'ipmitool lan print' on primary node and return bmc ip.
@@ -22,7 +23,7 @@ class BmcHelper(Host):
         try:
             cmd = dest_cons.CMD_LAN_INFO
             logger.info(f"Running command {cmd}")
-            status, response = self.host_obj.execute_cmd(cmd=cmd,read_lines=False
+            status, response = self.execute_cmd(cmd=cmd,read_lines=False
                                                         read_nbytes=ras_cons.BYTES_TO_READ,
                                                         , shell=False)
             response = response.decode("utf-8") if isinstance(response, bytes) else response
