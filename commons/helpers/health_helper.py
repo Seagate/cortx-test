@@ -149,7 +149,7 @@ class HealthHelper(Host):
         :rtype: (bool, float)
         """
         try:
-            log.info("Fetching system cpu usage from node {}".format(host))
+            log.info("Fetching system cpu usage from node {}".format(self.hostname))
             log.info(commands.CPU_USAGE_CMD)
             flag, resp = self.execute_cmd(commands.CPU_USAGE_CMD)
             log.info(resp)
@@ -209,7 +209,7 @@ class HealthHelper(Host):
             log.error(EXCEPTION_MSG.format(HealthHelper.get_disk_usage.__name__, error))
             return False, error
     
-    def pcs_cluster_start_stop(self, stopFlag):
+    def pcs_cluster_start_stop(self, nodeName, stopFlag):
         """
         This function Gracefully shutdown the given node
         using pcs cluster stop command
@@ -218,10 +218,6 @@ class HealthHelper(Host):
         :return: True/False
         :rtype: Boolean
         """
-        prefix = node.split(CM_CFG["NodeNamePattern"])
-        node_prefix = prefix[1]
-        nodeName = "{}{}".format(CM_CFG["ServerNamePattern"], node_prefix)
-
         if stopFlag:
             cmd = commands.PCS_CLUSTER_STOP.format(nodeName)
         else:
@@ -327,7 +323,7 @@ class HealthHelper(Host):
         log.info("Machine is already configured..!")
         return True
 
-    def all_cluster_services_online(self, host=None, timeout=400):
+    def all_cluster_services_online(self, timeout=400):
         """
         This function will verify hctl status commands output. Check for
         all cluster services are online using hctl mero status command.
@@ -336,8 +332,7 @@ class HealthHelper(Host):
         """
         mero_status_cmd = commands.MERO_STATUS_CMD
         log.info(f"command : {mero_status_cmd}")
-        cmd_output = self.execute_command(command=mero_status_cmd,
-                                          host=host, timeout_sec=timeout)
+        cmd_output = self.execute_command(mero_status_cmd, timeout_sec=timeout)
         if not cmd_output[0]:
             log.error(f"Command {mero_status_cmd} failed..!")
             return False, cmd_output[1]

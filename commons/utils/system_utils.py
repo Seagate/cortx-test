@@ -46,7 +46,7 @@ EXCEPTION_MSG = "*ERROR* An exception occurred in {}: {}"
 # command execution
 ################################################################################
 def run_remote_cmd(cmd, hostname, username, password, read_lines=True, read_nbytes=-1, 
-                port=22, timeout_sec = 30, **kwargs):
+                port=22, timeout_sec=30, **kwargs):
     """
     Execute command on remote machine
     :return: ([stdout/stderr], True/False).
@@ -87,9 +87,9 @@ def run_remote_cmd(cmd, hostname, username, password, read_lines=True, read_nbyt
         client.close()
     except (SSHException, AuthenticationException, BaseException) as error:
         log.error(EXCEPTION_MSG.format(run_remote_cmd.__name__, error))
-        return error, False
+        return False, error
 
-    return output, True
+    return True, output
 
 def run_local_cmd(cmd):
     """
