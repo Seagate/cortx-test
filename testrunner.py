@@ -1,7 +1,7 @@
 import os
 import subprocess
 import argparse
-from commons.utils import runner_utils
+from core import runner
 from commons.utils.jira_utils import JiraTask
 
 import getpass
@@ -88,8 +88,8 @@ def check_test_status(test_name):
 
 def main(args):
     if args.json_file:
-        json_dict, cmd, run_using = runner_utils.parse_json(args.json_file)
-        cmd_line = runner_utils.get_cmd_line(cmd, run_using, args.html_report, args.log_level)
+        json_dict, cmd, run_using = runner.parse_json(args.json_file)
+        cmd_line = runner.get_cmd_line(cmd, run_using, args.html_report, args.log_level)
         run_pytest_cmd(cmd_line)
     elif args.test_exe:
         jira_id, jira_pwd = get_jira_credential()
@@ -99,7 +99,7 @@ def main(args):
         for test in test_list:
             delete_status_files()
             cmd, test_id, test_html_report = process_test_list(test)
-            cmd_line = runner_utils.get_cmd_line(cmd.strip(), 'test_name', test_html_report, args.log_level)
+            cmd_line = runner.get_cmd_line(cmd.strip(), 'test_name', test_html_report, args.log_level)
             # Set initial test status in xray to executing
             jira_obj.update_test_jira_status(args.test_exe, test_id, 'Executing')
             run_pytest_cmd(cmd_line)
