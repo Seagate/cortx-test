@@ -1,14 +1,10 @@
 #!/usr/bin/py
 import socket
 import logging
-import eos_test.ras.constants as ras_cons
 
 from telnetlib import Telnet
-from ctp.utils import ctpyaml
 from typing import Union, Tuple, List
-
-COMMON_CONF = ctpyaml.read_yaml(ras_cons.COMMON_CONFIG_PATH)
-LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 class TelnetLib:
@@ -17,13 +13,7 @@ class TelnetLib:
     Telnet from python is used to create generic calls and further extensions are added.
     """
 
-    def __init__(self,
-                 host: str = COMMON_CONF['gem_controller']["host"],
-                 port: str = COMMON_CONF['gem_controller']["port1"],
-                 user: str = COMMON_CONF['gem_controller']["username"],
-                 pwd: str = COMMON_CONF['gem_controller']["password"],
-                 timeout: int = 20
-                 ) -> None:
+    def __init__(self,host: str,port: str,user: str,pwd: str,timeout: int = 20) -> None:
         """
         Constructor to connect to controller and perform CRUD operations.
         :param host: primary node host.
@@ -47,9 +37,9 @@ class TelnetLib:
         try:
             self.tn = Telnet(host=self.host, port=self.port, timeout=self.timeout)
         except (socket.error, Exception) as error:
-            LOGGER.error(f"Error in {TelnetLib.__init__.__name__}. error: {error}")
+            log.error(f"Error in {TelnetLib.__init__.__name__}. error: {error}")
         else:
-            LOGGER.info(f"Connected to host {self.host} successfully.")
+            log.info(f"Connected to host {self.host} successfully.")
 
     def connect(self) -> Tuple[bool, str]:
         """
@@ -60,18 +50,18 @@ class TelnetLib:
         try:
             self.tn.write(b'\n')
             if b'GEM>' in (self.read()):
-                LOGGER.info("GEM Console connected successfully without login/password.")
+                log.info("GEM Console connected successfully without login/password.")
                 return True, "Connected."
             if b'Password:' in self.read():
                 resp = self._write(self.pwd)
-                LOGGER.info(resp)
+                log.info(resp)
                 return self.login(resp)
             else:
                 resp = self.read()
-                LOGGER.info(resp)
+                log.info(resp)
                 return self.login(resp)
         except Exception as error:
-            LOGGER.error(f"Error in {TelnetLib.connect.__name__}. Could not establish connection: error: {error}")
+            log.error(f"Error in {TelnetLib.connect.__name__}. Could not establish connection: error: {error}")
 
         return False, "Failed to connect."
 
@@ -87,10 +77,10 @@ class TelnetLib:
                 if b'Password:' in resp:
                     resp = self._write(self.pwd)
                     if b'GEM>' in resp:
-                        LOGGER.info("Login Successful with login and password.")
+                        log.info("Login Successful with login and password.")
                         return True, "Connected."
         except Exception as error:
-            LOGGER.error(f"Error in {TelnetLib.login.__name__}, ConnectionRefusedError:{error}")
+            log.error(f"Error in {TelnetLib.login.__name__}, ConnectionRefusedError:{error}")
 
         return False, "Failed to connect."
 
@@ -103,7 +93,7 @@ class TelnetLib:
         try:
             self.tn.close()
         except (AttributeError, Exception) as error:
-            LOGGER.error(f"Error in destroy telnet, Error:{error}")
+            log.error(f"Error in destroy telnet, Error:{error}")
 
     def read(self,
              b_str: Union[bytes, str] = b' GEM>',
@@ -122,7 +112,7 @@ class TelnetLib:
             b_str = b_str if isinstance(b_str, bytes) else b_str.encode()  # convert string to bytes.
             read_response = self.tn.read_until(b_str, timeout)
         except Exception as error:
-            LOGGER.error(f"Error in {TelnetLib.read.__name__}, Error:{error}")
+            log.error(f"Error in {TelnetLib.read.__name__}, Error:{error}")
 
         return read_response
 
@@ -135,9 +125,9 @@ class TelnetLib:
         read_all_response = b""
         try:
             read_all_response = self.tn.read_all()
-            LOGGER.info(f"Read all response: {read_all_response}")
+            log.info(f"Read all response: {read_all_response}")
         except Exception as error:
-            LOGGER.error(f"Error in {TelnetLib.read_all.__name__}, Error:{error}")
+            log.error(f"Error in {TelnetLib.read_all.__name__}, Error:{error}")
 
         return read_all_response
 
@@ -156,9 +146,9 @@ class TelnetLib:
             self.tn.write(b_str)
             self.tn.write(b'\n')
             write_response = self.read()
-            LOGGER.info(f"Write response: {write_response}")
+            log.info(f"Write response: {write_response}")
         except Exception as error:
-            LOGGER.error(f"Error in {TelnetLib._write.__name__}, Error:{error}")
+            log.error(f"Error in {TelnetLib._write.__name__}, Error:{error}")
 
         return write_response
 
@@ -187,9 +177,9 @@ class TelnetLib:
             response = self.result(response)
             if not response:
                 flag = False
-            LOGGER.info(f"Execute cmd response: {response}")
+            log.info(f"Execute cmd response: {response}")
         except Exception as error:
-            LOGGER.error(f"Error in {TelnetLib.execute_cmd.__name__}, Error:{error}")
+            log.error(f"Error in {TelnetLib.execute_cmd.__name__}, Error:{error}")
 
         return flag, response
 
@@ -206,6 +196,6 @@ class TelnetLib:
             response = response.decode("utf-8") if isinstance(response, bytes) else response  # convert to string.
             response = response.split("\r\n")[1:-1]  # Output cleanup: split text around \r\n, skip first, last element.
         except Exception as error:
-            LOGGER.error(f"Error in {TelnetLib.result.__name__}, Error:{error}")
+            log.error(f"Error in {TelnetLib.result.__name__}, Error:{error}")
 
         return response

@@ -672,3 +672,27 @@ def pgrep(process):
     except Exception as error:
         log.error(EXCEPTION_MSG.format(pgrep.__name__, error))
         return False, error
+
+def get_disk_usage(self, path):
+    """
+    This function will return disk usage associated with given path.
+    :param path: Path to retrieve disk usage
+    :param remote: for getting remote disk usgae True/False
+    :param host: IP of the remort host
+    :param user: User of the remote host
+    :param pwd: Password of the remote user
+    :return: Disk usage of given path or error in case of failure
+    :type: (Boolean, float/str)
+    """
+    try:
+
+        log.info("Running local disk usage cmd.")
+        stats = os.statvfs(path)
+        f_blocks, f_frsize, f_bfree = stats.f_blocks, stats.f_frsize, stats.f_bfree
+        total = (f_blocks * f_frsize)
+        used = (f_blocks - f_bfree) * f_frsize
+        result = format((float(used) / total) * 100, ".1f")
+    except (Exception ,ZeroDivisionError) as error:
+        log.error(EXCEPTION_MSG.format(get_disk_usage.__name__, error))
+        return False, error
+    return True, result
