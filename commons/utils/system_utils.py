@@ -62,11 +62,10 @@ def run_remote_cmd(cmd, hostname, username, password, read_lines=True, read_nbyt
         if not cmd:
             raise ValueError("Missing required parameter: {}".format(cmd))
 
-        log.debug("Connect details: Host:%s, user name:%s, password:%s, port:%s",
-                        hostname, username, password, port=port, timeout=timeout_sec, **kwargs)
         client = SSHClient()
         client.set_missing_host_key_policy(AutoAddPolicy())
         log.debug("Command: %s" % str(cmd))
+        client.connect(hostname,username=username, password=password, port=port, timeout=timeout_sec)
         stdin, stdout, stderr = client.exec_command(cmd)
         exit_status = stdout.channel.recv_exit_status()
         if read_lines:
@@ -284,7 +283,7 @@ def open_empty_file(fpath):
         return False
     return True
 
-def create_symlink(fpath,spath):
+def create_symlink(fpath, spath):
     """
     Create symlink using os.symlink specified in fpath.
     :param fpath: Existing file path.

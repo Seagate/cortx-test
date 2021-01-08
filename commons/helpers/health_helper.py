@@ -40,21 +40,17 @@ EXCEPTION_MSG = "*ERROR* An exception occurred in {}: {}"
 # Health Helper class
 ################################################################################
 class HealthHelper(Host):
-
     ############################################################################
     # Get Ports
     ############################################################################
     def get_ports_of_service(self, service):
         """
         Find all TCP ports for given running service
-        :param host: IP of the host
-        :param user: user name of the host
-        :param pwd: password for the user
         :param service: (boolean, response)
         :return:
         """
         try:
-            output = self.execute_cmd(commands.NETSAT_CMD.format(service))
+            flag, output = self.execute_cmd(commands.NETSAT_CMD.format(service), read_lines=True)
             ports = []
             for line in output:
                 out_list = line.split()
@@ -70,14 +66,11 @@ class HealthHelper(Host):
     def get_ports_for_firewall_cmd(self,service):
         """
         Find all ports exposed through firewall permanent service for given component
-        :param host: IP of the host
-        :param user: user name of the host
-        :param pwd: password for the user
         :param service: service component
         :return: (boolean, response)
         """
         try:
-            output = self.execute_cmd(commands.FIREWALL_CMD.format(service))
+            flag, output = self.execute_cmd(commands.FIREWALL_CMD.format(service), read_lines=True)
             ports = []
             for word in output:
                 ports.append(word.split())
@@ -92,7 +85,7 @@ class HealthHelper(Host):
     ############################################################################
     # Resource usage
     ############################################################################
-    def get_disk_usage(self, path, remote=False):
+    def get_disk_usage(self, path):
         """
         This function will return disk usage associated with given path.
         :param path: Path to retrieve disk usage
@@ -103,8 +96,9 @@ class HealthHelper(Host):
 
             log.info("Running remote disk usage cmd.")
             cmd = "stat --file-system / --format %b,%S,%f"
-            log.debug(f"Running cmd: {cmd} on host:{host}")
+            log.debug(f"Running cmd: {cmd} on host:{self.hostname}")
             flag, res = self.execute_cmd(cmd)
+            res = res.decode("utf-8")
             f_res = res.replace("\n", "").split(",")
             f_blocks, f_frsize, f_bfree = int(
                 f_res[0]), int(
@@ -132,7 +126,8 @@ class HealthHelper(Host):
             cmd = "python3 -c 'import psutil; print(psutil.disk_usage(\"{a}\")[{b}])'" \
                 .format(a=str(dir_path), b=int(field_val))
             log.info(f"Running python command {cmd}")
-            resp = self.execute_cmd(cmd)
+            flag, resp = self.execute_cmd(cmd)
+            res = res.decode("utf-8")
         except BaseException as error:
             log.error(EXCEPTION_MSG.format(HealthHelper.disk_usage_python_interpreter_cmd.__name__, error))
             return False, error
@@ -168,9 +163,9 @@ class HealthHelper(Host):
         """
         try:
             log.info(
-                "Fetching system memory usage from node {}".format(host))
+                "Fetching system memory usage from node {}".format(self.hostname))
             log.info(commands.MEM_USAGE_CMD)
-            flag, resp = self.execute_cmd(commands.MEM_USAGE_CMD)
+            flag, resp = self.execute_cmd(commands.MEM_USAGE_CMD, read_lines=True)
             log.info(resp)
             mem_usage = float(resp[0])
         except BaseException as error:
@@ -293,7 +288,7 @@ class HealthHelper(Host):
         :return: bool , response
         """
         try:
-            output = self.execute_cmd(commands.MERO_STATUS_CMD)
+            flag, output = self.execute_cmd(commands.MERO_STATUS_CMD, read_lines=True)
             log.info(output)
             fail_list = ['failed', 'not running', 'offline']
             for line in output:
@@ -310,9 +305,9 @@ class HealthHelper(Host):
         ex - mero_status_cmd = "hctl status"
         :return: boolean
         """
-        mero_status_cmd = commands.STATUS_MERO
+        mero_status_cmd = commands.MERO_STATUS_CMD
         log.info(f"command : {mero_status_cmd}")
-        cmd_output = self.execute_command(command=mero_status_cmd)
+        flag, cmd_output = self.execute_cmd(mero_status_cmd, read_lines=True)
         if not cmd_output[0] or "command not found" in str(cmd_output[1]):
             log.info("Machine is not configured..!")
             return False
@@ -332,7 +327,7 @@ class HealthHelper(Host):
         """
         mero_status_cmd = commands.MERO_STATUS_CMD
         log.info(f"command : {mero_status_cmd}")
-        cmd_output = self.execute_command(mero_status_cmd, timeout_sec=timeout)
+        flag, cmd_output = self.execute_cmd(mero_status_cmd, timeout_sec=timeout, read_lines=True)
         if not cmd_output[0]:
             log.error(f"Command {mero_status_cmd} failed..!")
             return False, cmd_output[1]

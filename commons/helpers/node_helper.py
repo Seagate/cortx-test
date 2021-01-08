@@ -48,7 +48,6 @@ class NodeHelper(Host):
     """
     Class to maintain all common functions across component
     """
-
     def get_authserver_log(self, path, option="-n 3"):
         cmd = "tail {} {}".format(path, option)
         res = self.execute_cmd(cmd)
@@ -485,9 +484,8 @@ class NodeHelper(Host):
             out_flag, directories = self.execute_cmd(f"ls {path}")
 
             # decode utf 8 is to convert bytes to string
-            # directories = (directories.decode("utf-8")).split("\n")
-            directories = (directory.split("\n")[0]
-                           for directory in directories)
+            directories = (directories.decode("utf-8")).split("\n")
+            directories = (directory.split("\n")[0] for directory in directories)
             if dir_name in directories:
                 return True
             else:
@@ -496,7 +494,7 @@ class NodeHelper(Host):
             log.error(EXCEPTION_MSG.format(NodeHelper.is_dir_exists.__name__, error))
             return False
 
-    def makedir(self, path, dir_name ):
+    def makedir(self, path, dir_name):
         """
         Make directory
         """
@@ -561,9 +559,6 @@ class NodeHelper(Host):
         absolute path of the remote server
         :param str dir_name: Name of the directory to be created
         :param str dest_dir: Remote destination path on remote server
-        :param host: host machine ip
-        :param user: host machine username
-        :param pwd: host machine password
         :return: (Boolean, Remotepath)
         """
         remote_path = os.path.join(dest_dir, dir_name)
@@ -588,7 +583,6 @@ class NodeHelper(Host):
             sftp.close()
             client.close()
             return False, error
-
 
     ################################################################################
     # Remote process operations
