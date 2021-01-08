@@ -25,11 +25,14 @@ import logging
 import os
 import yaml
 import json
+import shutil
+import re
 import xml.etree.ElementTree
 from configparser import ConfigParser, MissingSectionHeaderError
 ################################################################################
 # Local libraries
 ################################################################################
+
 import commons.errorcodes as cterr
 from commons.exceptions import CTException
 
@@ -41,6 +44,8 @@ log = logging.getLogger(__name__)
 ################################################################################
 # YAML Functions
 ################################################################################
+
+
 def read_yaml(fpath):
     """Read yaml file and return dictionary/list of the content"""
     if os.path.isfile(fpath):
@@ -57,7 +62,8 @@ def read_yaml(fpath):
 
     return data
 
-def write_yaml(self, fpath, write_data, backup=True):
+
+def write_yaml(fpath, write_data, backup=True):
     """
     This functions overwrites the content of given yaml file with given data
     :param str fpath: yaml file path to be overwritten
@@ -70,21 +76,21 @@ def write_yaml(self, fpath, write_data, backup=True):
         if backup:
             bkup_path = f'{fpath}.bkp'
             shutil.copy2(fpath, bkup_path)
-            logger.info("Backup file {} at {}".format(fpath, bkup_path))
+            log.debug("Backup file {} at {}".format(fpath, bkup_path))
         with open(fpath, 'w') as fobj:
             yaml.safe_dump(write_data, fobj)
-        logger.info("Updated yaml file at {}".format(fpath))
+        log.debug("Updated yaml file at {}".format(fpath))
     except BaseException as error:
-        logger.error(
-            "{} {}: {}".format(
-                cons.EXCEPTION_ERROR,
-                Utility.write_yaml.__name__,
-                error))
+        log.error(
+            "{}".format(CTException(cterr.FILE_MISSING, error)))
         return False, error
     return True, fpath
+
 ################################################################################
 # JSON Functions
 ################################################################################
+
+
 def create_content_json(home, data, user_json):
     """
 
@@ -114,7 +120,9 @@ def read_content_json(home, user_json):
 ################################################################################
 # XML Functions
 ################################################################################
-def parse_xml_controller(self, filepath, field_list, xml_tag="PROPERTY"):
+
+
+def parse_xml_controller(filepath, field_list, xml_tag="PROPERTY"):
     """
     This function parses xml file and converts it into nested dictionary.
     :param filepath: File path of the xml file to be parsed
@@ -148,7 +156,7 @@ def parse_xml_controller(self, filepath, field_list, xml_tag="PROPERTY"):
                 new_d = {}
                 listkeys = []
 
-        log.info("Removing empty dictionaries")
+        log.debug("Removing empty dictionaries")
         i = 0
         while True:
             if d['dict_{}'.format(i)] == {}:
@@ -160,15 +168,14 @@ def parse_xml_controller(self, filepath, field_list, xml_tag="PROPERTY"):
         return True, d
     except BaseException as error:
         log.error(
-            "{} {}: {}".format(
-                cons.EXCEPTION_ERROR,
-                Utility.parse_xml_controller.__name__,
-                error))
+            "{}".format(CTException(cterr.FILE_MISSING, error)))
 
 ################################################################################
 # Config Parser Functions
 ################################################################################
-def get_config(self, path, section=None, key=None):
+
+
+def get_config(path, section=None, key=None):
     """
     Get config file value as per the section and key
     :param path: File path
@@ -180,8 +187,10 @@ def get_config(self, path, section=None, key=None):
         config = ConfigParser()
         config.read(path)
         if section and key:
+            log.debug(config.get(section, key))
             return config.get(section, key)
         else:
+            log.debug(config.items(section))
             return config.items(section)
     except MissingSectionHeaderError:
         keystr = "{}=".format(key)
@@ -191,7 +200,8 @@ def get_config(self, path, section=None, key=None):
                     return line[len(keystr):].strip()
         return None
 
-def update_config_ini(self, path, section, key, value):
+
+def update_config_ini(path, section, key, value):
     """
     Update config file value as per the section and key
     :param path: File path
@@ -207,22 +217,14 @@ def update_config_ini(self, path, section, key, value):
         with open(path, "w") as configfile:
             config.write(configfile)
     except Exception as error:
-        log.error("{0} {1}: {2}".format(
-            constants.EXCEPTION_ERROR,
-            Utility.update_config.__name__,
-            error))
+        log.error("{}".format(CTException(cterr.INVALID_CONFIG_FILE, error)))
         return False
     return True
 
-def update_config_helper(
-        self,
-        filename,
-        key,
-        old_value,
-        new_value,
-        delimiter):
+
+def update_config_helper(filename, key, old_value, new_value, delimiter):
     """
-    helper method for update_config2
+    helper method for update_cfg_based_on_separator
     :param filename: file to update
     :param key: key in file
     :param old_value: old value of key
@@ -281,7 +283,8 @@ def update_config_helper(
                             new_data = f_in.read()
                             return True, new_data
 
-def update_config2(self, filename, key, old_value, new_value):
+
+def update_cfg_based_on_separator(filename, key, old_value, new_value):
     """
     Editing a file provided with : or = separator
     :param filename: file to update
@@ -294,14 +297,14 @@ def update_config2(self, filename, key, old_value, new_value):
         with open(filename, 'r+') as f_in:
             for line in f_in.readlines():
                 if "=" in line:
-                    self.update_config_helper(
+                    update_config_helper(
                         filename, key, old_value, new_value, "=")
                 elif ":" in line:
-                    self.update_config_helper(
+                    update_config_helper(
                         filename, key, old_value, new_value, ":")
                 return True, new_value
     except AttributeError as error:
-        log.debug(
+        log.error(
             'Old value : {} is incorrect, please correct it and try again'.format(old_value))
         return False, error
     except Exception as error:
@@ -309,6 +312,76 @@ def update_config2(self, filename, key, old_value, new_value):
         os.rename(filename + '_bkp', filename)
         log.debug(
             "Removed original corrupted file and Backup file has been restored ")
-        log.debug(
+        log.error(
             "*ERROR* An exception occurred in upload_config : {}".format(error))
         return False, error
+
+################################################################################
+# Update YAML configs
+################################################################################
+# Dictionary mapping to keys in config/main_config.yaml
+# ALL_CONFIGS keys should match keys in config/main_config.yaml
+
+
+MAIN_CONFIG_PATH = "config/main_config.yaml"
+# ALL_CONFIGS = {
+#     "common_config": "config/common_config.yaml",
+#     "s3_config": "config/s3/s3_config.yaml",
+#     "blackbox_config_jcloud": "config/blackbox/test_jcloud_jclient.yaml",
+#     "prov_config": "config/provisioner/provisioner_config.yaml",
+#     "prov_reset": "config/provisioner/test_provisioner_reset.yaml",
+#     "prov_system": "config/provisioner/test_provisioner_system.yaml",
+#     "ras_config": "config/ras/ras_config.yaml",
+#     "ras_testlib_unittest": "config/ras/test_ras_test_lib_unittest.yaml",
+#     "csm_config": "config/csm/csm_config.yaml",
+# }
+
+
+def read_write_config(config, path):
+    """
+    read and update values from source_file to destination config
+    :param config: key from source_file
+    :type config: str
+    :param path: path of destination config
+    :type path: str
+    :return: None
+    """
+    log.debug("Reading and updating : {} at {}".format(config, path))
+    conf_values = read_yaml(MAIN_CONFIG_PATH)
+    log.debug("VALUES TO UPDATE:",  conf_values[config])
+    dict_val = conf_values[config]
+    keys = dict_val.keys()
+    log.debug(keys)
+    curr_values = read_yaml(path)
+    log.debug("OLD CONFIG : {}".format(curr_values))
+    for key in keys:
+        if key in curr_values:
+            try:
+                for i_key in dict_val[key].keys():
+                    if i_key in curr_values[key]:
+                        log.debug("Replacing inner_key : {}".format(i_key))
+                        log.debug("Old value : {}".format(curr_values[key][i_key]))
+                        curr_values[key][i_key] = dict_val[key][i_key]
+                        log.debug("New value : {}".format(dict_val[key][i_key]))
+            except BaseException as error:
+                log.debug("Replacing key : {}".format(key))
+                log.debug("Old value : {}".format(curr_values[key]))
+                curr_values[key] = dict_val[key]
+                log.debug("New value : {}".format(dict_val[key]))
+                log.error(
+                    "*ERROR* An exception occurred in upload_config : {}".format(
+                        error))
+
+    write_yaml(path, curr_values, backup=False)
+    updated_values = read_yaml(path)
+    log.debug("UPDATED CONFIG : {}".format(updated_values))
+
+
+def update_configs(all_configs):
+    """
+    Update all configs mentioned in ALL_CONFIGS with values of MAIN_CONFIG_PATH
+    :param all_configs: Dictionary of paths of all config files
+    :type all_configs: dict
+    """
+    for conf in all_configs.keys():
+        read_write_config(conf, all_configs[conf])
