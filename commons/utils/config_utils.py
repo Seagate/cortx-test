@@ -52,15 +52,16 @@ def read_yaml(fpath):
         with open(fpath) as fin:
             try:
                 data = yaml.safe_load(fin)
+                print(data)
             except yaml.YAMLError as exc:
                 err_msg = "Failed to parse: {}\n{}".format(fpath, str(exc))
-                raise CTException(cterr.YAML_SYNTAX_ERROR, err_msg)
+                return False, exc
 
     else:
         err_msg = "Specified file doesn't exist: {}".format(fpath)
-        raise CTException(cterr.FILE_MISSING, err_msg)
+        return False, cterr.FILE_MISSING
 
-    return data
+    return True, data
 
 
 def write_yaml(fpath, write_data, backup=True):
@@ -169,6 +170,7 @@ def parse_xml_controller(filepath, field_list, xml_tag="PROPERTY"):
     except BaseException as error:
         log.error(
             "{}".format(CTException(cterr.FILE_MISSING, error)))
+        return False, error
 
 ################################################################################
 # Config Parser Functions
@@ -262,26 +264,33 @@ def update_config_helper(filename, key, old_value, new_value, delimiter):
                             count = len(ol_value) - len(nw_value)
                             new_pattern = new_pattern + " " * count
                             match = re.search(old_pattern, data)
-                            span_ = match.span()
-                            f_in.seek(span_[0])
-                            f_in.write(new_pattern)
-                            log.debug(
-                                "Old pattern {} got replaced by new pattern {}".format(
-                                    old_pattern, new_pattern))
-                            f_in.seek(0, 0)
-                            new_data = f_in.read()
-                            return True, new_data
+                            if match:
+                                span_ = match.span()
+                                f_in.seek(span_[0])
+                                f_in.write(new_pattern)
+                                log.debug(
+                                    "Old pattern {} got replaced by new "
+                                    "pattern {}".format(
+                                        old_pattern, new_pattern))
+                                f_in.seek(0, 0)
+                                new_data = f_in.read()
+                                return True, new_data
                         else:
                             match = re.search(old_pattern, data)
-                            span_ = match.span()
-                            f_in.seek(span_[0])
-                            f_in.write(new_pattern)
-                            log.debug(
-                                "Old pattern {} got replaced by new pattern {}".format(
-                                    old_pattern, new_pattern))
-                            f_in.seek(0, 0)
-                            new_data = f_in.read()
-                            return True, new_data
+                            if match:
+                                span_ = match.span()
+                                f_in.seek(span_[0])
+                                f_in.write(new_pattern)
+                                log.debug(
+                                    "Old pattern {} got replaced by "
+                                    "new pattern {}".format(
+                                        old_pattern, new_pattern))
+                                f_in.seek(0, 0)
+                                new_data = f_in.read()
+                                return True, new_data
+
+    return False, "Failed to replace Old pattern {} with new pattern {}".format(
+        old_value, new_value)
 
 
 def update_cfg_based_on_separator(filename, key, old_value, new_value):
@@ -294,26 +303,29 @@ def update_cfg_based_on_separator(filename, key, old_value, new_value):
     :return: bool
     """
     try:
+        status, resp = False, None
         with open(filename, 'r+') as f_in:
             for line in f_in.readlines():
-                if "=" in line:
-                    update_config_helper(
+                if "=" in line and key in line:
+                    status, resp = update_config_helper(
                         filename, key, old_value, new_value, "=")
-                elif ":" in line:
-                    update_config_helper(
+                elif ":" in line and key in line:
+                    status, resp = update_config_helper(
                         filename, key, old_value, new_value, ":")
-                return True, new_value
+        return status, resp
     except AttributeError as error:
-        log.error(
-            'Old value : {} is incorrect, please correct it and try again'.format(old_value))
+        log.debug(
+            'Old value : {} is incorrect, please correct it and try again'.format(
+                old_value))
         return False, error
     except Exception as error:
         os.remove(filename)
         os.rename(filename + '_bkp', filename)
         log.debug(
             "Removed original corrupted file and Backup file has been restored ")
-        log.error(
+        log.debug(
             "*ERROR* An exception occurred in upload_config : {}".format(error))
+
         return False, error
 
 ################################################################################
