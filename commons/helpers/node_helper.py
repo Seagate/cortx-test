@@ -44,7 +44,7 @@ EXCEPTION_MSG = "*ERROR* An exception occurred in {}: {}"
 ################################################################################
 # Node Helper class
 ################################################################################
-class NodeHelper(Host):
+class Node(Host):
     """
     Class to maintain all common functions across component
     """
@@ -53,11 +53,7 @@ class NodeHelper(Host):
         res = self.execute_cmd(cmd)
         return res
 
-    def start_stop_services(
-            self,
-            services,
-            operation,
-            timeout=60):
+    def start_stop_services(self,services,operation,timeout=60):
         """
         This function is responsible to stop all services which are activated by deploy-eos
         :param host: To execute commands on remote host
@@ -97,7 +93,7 @@ class NodeHelper(Host):
             log.info(f"service status {service}")
             cmd = commands.SYSTEMCTL_STATUS
             cmd = cmd.replace("%s", service)
-            _, out = self.execute_cmd(cmd, timeout_sec=timeout)
+            _, out = self.execute_cmd(cmd, read_lines=True, timeout_sec=timeout)
             found = False
             for line in out:
                 if isinstance(line, bytes):
@@ -110,24 +106,7 @@ class NodeHelper(Host):
         result["success"] = False not in status_list
         return result
 
-    def check_server_connectivity(self, retry_count):
-        """
-        This method re-connect to host machine
-        :param host: host machine ip
-        :param username: host machine username
-        :param password: host machine password
-        :param retry_count: host retry count
-        :return: string
-        """
-        while retry_count:
-            retval = self.connect()
-            if retval is False:
-                retry_count -= 1
-                time.sleep(1)
-                continue
-            break
-
-    def configure_jclient_cloud(self, source,destination,nfs_path):
+    def configure_jclient_cloud(self, source, destination, nfs_path):
         """
         Function to configure jclient and cloud jar files
         :param string source: path to the source dir where .jar are present.
@@ -183,7 +162,7 @@ class NodeHelper(Host):
                 log.info("Match found : {}".format(pattern))
             return True, response
         except BaseException as error:
-            log.error(EXCEPTION_MSG.format(NodeHelper.removedir.__name__, error))
+            log.error(EXCEPTION_MSG.format(Node.removedir.__name__, error))
         finally:
             if os.path.exists(local_path):
                 os.remove(local_path)
@@ -192,15 +171,15 @@ class NodeHelper(Host):
     ################################################################################
     # remote file operations
     ################################################################################
-    def create_file(self, file_name, count):
+    def create_file(self, file_name, mb_count):
         """
         Creates a new file, size(count) in MB
         :param str file_name: Name of the file with path
-        :param int count: size of the file in MB
+        :param int mb_count: size of the file in MB
         :return: output of remote execution cmd
         :rtype: str:
         """
-        cmd = commands.CREATE_FILE.format(file_name, count)
+        cmd = commands.CREATE_FILE.format(file_name, mb_count)
         log.debug(cmd)
         result = self.execute_cmd(cmd, shell=False)
         log.debug("output = {}".format(result))
@@ -228,7 +207,7 @@ class NodeHelper(Host):
             client.close()
             return True, remote_file_path
         except BaseException as error:
-            log.error(EXCEPTION_MSG.format(NodeHelper.copy_file_to_remote.__name__, error))
+            log.error(EXCEPTION_MSG.format(Node.copy_file_to_remote.__name__, error))
             return False, error
 
     def copy_file_to_local(self,file_path, local_path, shell=True):
@@ -253,7 +232,7 @@ class NodeHelper(Host):
             client.close()
             return True, local_path
         except BaseException as error:
-            log.error(EXCEPTION_MSG.format(NodeHelper.copy_file_to_local.__name__, error))
+            log.error(EXCEPTION_MSG.format(Node.copy_file_to_local.__name__, error))
             return False, error
 
     def write_remote_file_to_local_file(self, file_path, local_path,shell=True):
@@ -273,7 +252,7 @@ class NodeHelper(Host):
                 shutil.copyfileobj(remote, open(local_path, "wb"))
             return True, local_path
         except BaseException as error:
-            log.error(EXCEPTION_MSG.format(NodeHelper.write_remote_file_to_local_file.__name__, error))
+            log.error(EXCEPTION_MSG.format(Node.write_remote_file_to_local_file.__name__, error))
 
             return False, error
 
@@ -291,11 +270,11 @@ class NodeHelper(Host):
             resp = self.copy_file_to_local(file_path=filename,
                                            local_path=local_path, shell=shell)
             if resp[0]:
-                f = open(local_path, 'r')
-                response = f.read()
+                file = open(local_path, 'r')
+                response = file.read()
                 return response
         except BaseException as error:
-            log.error(EXCEPTION_MSG.format(NodeHelper.read_file.__name__, error))
+            log.error(EXCEPTION_MSG.format(Node.read_file.__name__, error))
         finally:
             if os.path.exists(local_path):
                 os.remove(local_path)
@@ -321,7 +300,7 @@ class NodeHelper(Host):
             sftp.close()
             client.close()
         except BaseException as error:
-            log.error(EXCEPTION_MSG.format(NodeHelper.remove_file.__name__, error))
+            log.error(EXCEPTION_MSG.format(Node.remove_file.__name__, error))
 
     def file_rename(self, old_filename, new_filename, shell=True):
         """
@@ -344,7 +323,7 @@ class NodeHelper(Host):
             sftp.close()
             client.close()
         except BaseException as error:
-            log.error(EXCEPTION_MSG.format(NodeHelper.file_rename.__name__, error))
+            log.error(EXCEPTION_MSG.format(Node.file_rename.__name__, error))
 
     def get_mdstat(self):
         """
@@ -366,7 +345,7 @@ class NodeHelper(Host):
             log.debug("Parsing mdstat file")
             output = mdstat.parse(mdstat_local_path)
         except BaseException as error:
-            log.error(EXCEPTION_MSG.format(NodeHelper.get_mdstat.__name__, error))
+            log.error(EXCEPTION_MSG.format(Node.get_mdstat.__name__, error))
             return error
         self.remove_file(mdstat_local_path)
         return output
@@ -395,7 +374,7 @@ class NodeHelper(Host):
             else:
                 return False, "String Not Found"
         except BaseException as error:
-            log.error(EXCEPTION_MSG.format(NodeHelper.is_string_in_remote_file.__name__, error))
+            log.error(EXCEPTION_MSG.format(Node.is_string_in_remote_file.__name__, error))
             return False, error
         finally:
             if os.path.exists(local_path):
@@ -404,7 +383,7 @@ class NodeHelper(Host):
     ################################################################################
     # remote directory operations
     ################################################################################
-    def is_path_exists(self, path, shell=True):
+    def path_exists(self, path, shell=True):
         """
         Check if file exists on s3 server
         :param path: Absolute path of the file
@@ -445,10 +424,10 @@ class NodeHelper(Host):
             else:
                 return False, resp
         except BaseException as error:
-            log.error(EXCEPTION_MSG.format(NodeHelper.validate_is_dir.__name__, error))
+            log.error(EXCEPTION_MSG.format(Node.validate_is_dir.__name__, error))
             return False, error
 
-    def list_remote_dir(self, remote_path, shell=True):
+    def list_dir(self, remote_path, shell=True):
         """
         This function list the files of the remote server
         :param str remote_path: absolute path on the remote server
@@ -468,11 +447,12 @@ class NodeHelper(Host):
                     raise err
             return True, dir_lst
         except BaseException as error:
-            log.error(EXCEPTION_MSG.format(NodeHelper.list_remote_dir.__name__, error))
+            log.error(EXCEPTION_MSG.format(Node.list_remote_dir.__name__, error))
             return False, error
 
     def is_dir_exists(self, path, dir_name):
         """
+        #TODO: Remove
         This function is use to check directory is exist or not
         :param path: path of directory
         :type path: string
@@ -491,7 +471,7 @@ class NodeHelper(Host):
             else:
                 return False
         except Exception as error:
-            log.error(EXCEPTION_MSG.format(NodeHelper.is_dir_exists.__name__, error))
+            log.error(EXCEPTION_MSG.format(Node.is_dir_exists.__name__, error))
             return False
 
     def makedir(self, path, dir_name):
@@ -511,7 +491,7 @@ class NodeHelper(Host):
             return True
 
         except Exception as error:
-            log.error(EXCEPTION_MSG.format(NodeHelper.makedir.__name__, error))
+            log.error(EXCEPTION_MSG.format(Node.makedir.__name__, error))
             return False
 
     def removedir(self, path):
@@ -529,7 +509,7 @@ class NodeHelper(Host):
                 log.info("Successfully delete directory")
                 return True
         except Exception as error:
-            log.error(EXCEPTION_MSG.format(NodeHelper.removedir.__name__, error))
+            log.error(EXCEPTION_MSG.format(Node.removedir.__name__, error))
             return False
 
     def deletedir_sftp(self, sftp, remotepath, level=0):
@@ -551,9 +531,9 @@ class NodeHelper(Host):
                     sftp.remove(rpath)
             sftp.rmdir(remotepath)
         except Exception as error:
-            log.error(EXCEPTION_MSG.format(NodeHelper.removedir.__name__, error))
+            log.error(EXCEPTION_MSG.format(Node.removedir.__name__, error))
 
-    def create_remote_dir(self, dir_name, dest_dir, shell=True):
+    def create_dir(self, dir_name, dest_dir, shell=True):
         """
         This function creates directory on the remote server and returns the
         absolute path of the remote server
@@ -579,7 +559,7 @@ class NodeHelper(Host):
             client.close()
             return True, remote_path
         except Exception as error:
-            log.error(EXCEPTION_MSG.format(NodeHelper.removedir.__name__, error))
+            log.error(EXCEPTION_MSG.format(Node.removedir.__name__, error))
             sftp.close()
             client.close()
             return False, error
@@ -613,7 +593,7 @@ class NodeHelper(Host):
             response = self.execute_cmd(commands.PGREP_CMD.format(process))
             return True, response
         except Exception as error:
-            log.error(EXCEPTION_MSG.format(NodeHelper.pgrep.__name__, error))
+            log.error(EXCEPTION_MSG.format(Node.pgrep.__name__, error))
             return False, error
 
     ################################################################################
@@ -649,7 +629,7 @@ class NodeHelper(Host):
             resp = self.execute_cmd(cmd)
             log.debug(f"Output: {resp}")
         except BaseException as error:
-            log.error(EXCEPTION_MSG.format(NodeHelper.toggle_apc_node_power.__name__, error))
+            log.error(EXCEPTION_MSG.format(Node.toggle_apc_node_power.__name__, error))
             return False, error
 
         log.info(f"Successfully executed cmd {cmd}")
@@ -670,6 +650,6 @@ class NodeHelper(Host):
             resp = self.execute_cmd(cmd, shell=False)
             log.info(resp)
         except BaseException as error:
-            log.error(EXCEPTION_MSG.format(NodeHelper.shutdown_node.__name__, error))
+            log.error(EXCEPTION_MSG.format(Node.shutdown_node.__name__, error))
             return False, error
-        return True, f"Node shutdown successfully"
+        return True, "Node shutdown successfully"

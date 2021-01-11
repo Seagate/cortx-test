@@ -22,9 +22,10 @@
 # Standard libraries
 ################################################################################
 import logging
-import paramiko
+import time
 import socket
 import pysftp
+import paramiko
 
 ################################################################################
 # Local libraries
@@ -41,6 +42,8 @@ log = logging.getLogger(__name__)
 ################################################################################
 
 class Host():
+    """Interface class for establishing connections
+    """    
     def __init__(self, hostname, username, password):
         self.hostname = hostname
         self.username = username
@@ -50,7 +53,7 @@ class Host():
     ############################################################################
     # remote connection options
     ############################################################################
-    def connect(self, shell=True, port=22 , timeout_sec=400, **kwargs):
+    def _connect(self, shell=True, port=22 , timeout_sec=400, **kwargs):
         """
         Connect to remote host.
         :param host: host ip address
@@ -70,7 +73,7 @@ class Host():
                                   username=self.username, 
                                   password=self.password,
                                   timeout=timeout_sec,
-                                  port=22,
+                                  port=port,
                                   **kwargs)
             if shell:
                 shell = self.host_obj.invoke_shell()
@@ -132,11 +135,28 @@ class Host():
 
     def disconnect(self):
         self.host_obj.close()
+
+    def reconnect(self, retry_count):
+        """
+        This method re-connect to host machine
+        :param host: host machine ip
+        :param username: host machine username
+        :param password: host machine password
+        :param retry_count: host retry count
+        :return: string
+        """
+        while retry_count:
+            retval = self._connect()
+            if retval is False:
+                retry_count -= 1
+                time.sleep(1)
+                continue
+            break
+            
     ############################################################################
     # execute command
     ############################################################################
-    def execute_cmd(self, cmd, shell=False, inputs=None, read_lines=False, read_nbytes=-1,
-                    read_sls=False ,timeout_sec=400, **kwargs):
+    def execute_cmd(self, cmd, shell=False, inputs=None, read_lines=False, read_nbytes=-1 ,timeout_sec=400, **kwargs):
         """
         Execute any command on remote machine/VM
         :param host: Host IP
@@ -154,7 +174,7 @@ class Host():
         """
         try:
             result = False
-            result = self.connect(shell=shell,**kwargs)
+            result = self._connect(shell=shell,**kwargs)
             if result:
                 stdin, stdout, stderr = self.host_obj.exec_command(cmd, timeout=timeout_sec)
                 exit_status = stdout.channel.recv_exit_status()

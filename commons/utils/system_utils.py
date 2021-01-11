@@ -23,7 +23,6 @@
 import logging
 import os
 import random
-from pysftp.exceptions import ConnectionException
 from paramiko import SSHClient, AutoAddPolicy
 from paramiko.ssh_exception import AuthenticationException, SSHException
 from subprocess import Popen, PIPE, CalledProcessError
@@ -32,8 +31,6 @@ import shutil
 ################################################################################
 # Local libraries
 ################################################################################
-import commons.errorcodes as cterr
-from commons.exceptions import CTException
 from commons import commands
 
 ################################################################################
@@ -97,9 +94,10 @@ def run_local_cmd(cmd):
     :type cmd: str.
     :return: True/False, Success/str(err)
     :rtype: tuple.
+    
     """
-    MSG_RSA_KEY_ADDED = b"Number of key(s) added: 1"
-    LCMD_NOT_FOUND = b"command not found"
+    msg_rsa_key_added = b"Number of key(s) added: 1"
+    lcmd_not_found = b"command not found"
     try:
         if not cmd:
             raise ValueError("Missing required parameter: {}".format(cmd))
@@ -107,9 +105,9 @@ def run_local_cmd(cmd):
         proc = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
         output, error = proc.communicate()
         log.info("output = %s", str(output))
-        if MSG_RSA_KEY_ADDED in output:
+        if msg_rsa_key_added in output:
             return True, output
-        if LCMD_NOT_FOUND in error or error:
+        if lcmd_not_found in error or error:
             return False, error
     except (CalledProcessError, BaseException) as error:
         log.error(EXCEPTION_MSG.format(run_local_cmd.__name__, error))
@@ -630,7 +628,7 @@ def list_rpms(filter_str="",remote=False,*remoteargs, **remoteKwargs):
     """
     cmd = commands.RPM_GREP_CMD.format(filter_str)
     log.debug(f"command : {cmd}")
-    resp, cmd_flag = execute_cmd(cmd,remote,*remoteargs, **remoteKwargs)
+    cmd_flag, resp  = execute_cmd(cmd,remote,*remoteargs, **remoteKwargs)
     if isinstance(resp, list):
         rpm_list = [rpm.strip("\n") for rpm in resp]
         if not rpm_list:

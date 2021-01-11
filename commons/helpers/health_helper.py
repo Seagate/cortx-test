@@ -27,8 +27,6 @@ import logging
 # Local libraries
 ################################################################################
 from commons.helpers.host import Host
-import commons.errorcodes as cterr
-from commons.exceptions import CTException
 from commons import commands
 ################################################################################
 # Constants
@@ -39,7 +37,7 @@ EXCEPTION_MSG = "*ERROR* An exception occurred in {}: {}"
 ################################################################################
 # Health Helper class
 ################################################################################
-class HealthHelper(Host):
+class Health(Host):
     ############################################################################
     # Get Ports
     ############################################################################
@@ -60,7 +58,7 @@ class HealthHelper(Host):
                     service)
             return True, ports
         except BaseException as error:
-            log.error(EXCEPTION_MSG.format(HealthHelper.get_ports_of_service.__name__, error))
+            log.error(EXCEPTION_MSG.format(Health.get_ports_of_service.__name__, error))
             return False, error
     # Provisioner
     def get_ports_for_firewall_cmd(self,service):
@@ -79,14 +77,15 @@ class HealthHelper(Host):
                     service)
             return True, ports
         except BaseException as error:
-            log.error(EXCEPTION_MSG.format(HealthHelper.get_ports_for_firewall_cmd.__name__, error))
+            log.error(EXCEPTION_MSG.format(Health.get_ports_for_firewall_cmd.__name__, error))
             return False, error
 
     ############################################################################
     # Resource usage
     ############################################################################
-    def get_disk_usage(self, path):
+    def get_disk_usage(self):
         """
+        #TODO: REMOVE
         This function will return disk usage associated with given path.
         :param path: Path to retrieve disk usage
         :return: Disk usage of given path or error in case of failure
@@ -108,7 +107,7 @@ class HealthHelper(Host):
             used = (f_blocks - f_bfree) * f_frsize
             result = format((float(used) / total) * 100, ".1f")
         except (Exception ,ZeroDivisionError) as error:
-            log.error(EXCEPTION_MSG.format(HealthHelper.get_disk_usage.__name__, error))
+            log.error(EXCEPTION_MSG.format(Health.get_disk_usage.__name__, error))
             return False, error
         return True, result
 
@@ -126,13 +125,12 @@ class HealthHelper(Host):
             cmd = "python3 -c 'import psutil; print(psutil.disk_usage(\"{a}\")[{b}])'" \
                 .format(a=str(dir_path), b=int(field_val))
             log.info(f"Running python command {cmd}")
-            flag, resp = self.execute_cmd(cmd)
+            flag, res = self.execute_cmd(cmd)
             res = res.decode("utf-8")
         except BaseException as error:
-            log.error(EXCEPTION_MSG.format(HealthHelper.disk_usage_python_interpreter_cmd.__name__, error))
+            log.error(EXCEPTION_MSG.format(Health.disk_usage_python_interpreter_cmd.__name__, error))
             return False, error
-
-        return resp
+        return res
 
     def get_system_cpu_usage(self):
         """
@@ -150,7 +148,7 @@ class HealthHelper(Host):
             log.info(resp)
             cpu_usage = float(resp[0])
         except BaseException as error:
-            log.error(EXCEPTION_MSG.format(HealthHelper.get_system_cpu_usage.__name__, error))
+            log.error(EXCEPTION_MSG.format(Health.get_system_cpu_usage.__name__, error))
             return False, error
 
         return True, cpu_usage
@@ -169,10 +167,9 @@ class HealthHelper(Host):
             log.info(resp)
             mem_usage = float(resp[0])
         except BaseException as error:
-            log.error(EXCEPTION_MSG.format(HealthHelper.get_system_memory_usage.__name__, error))
+            log.error(EXCEPTION_MSG.format(Health.get_system_memory_usage.__name__, error))
             return False, error
         return True, mem_usage
-
 
     ############################################################################
     # PCS command functions
@@ -201,10 +198,10 @@ class HealthHelper(Host):
                     log.info(res)
                     return True, res[1]
         except Exception as error:
-            log.error(EXCEPTION_MSG.format(HealthHelper.get_disk_usage.__name__, error))
+            log.error(EXCEPTION_MSG.format(Health.get_disk_usage.__name__, error))
             return False, error
     
-    def pcs_cluster_start_stop(self, nodeName, stopFlag):
+    def pcs_cluster_start_stop(self, node_name, stop_flag):
         """
         This function Gracefully shutdown the given node
         using pcs cluster stop command
@@ -213,10 +210,10 @@ class HealthHelper(Host):
         :return: True/False
         :rtype: Boolean
         """
-        if stopFlag:
-            cmd = commands.PCS_CLUSTER_STOP.format(nodeName)
+        if stop_flag:
+            cmd = commands.PCS_CLUSTER_STOP.format(node_name)
         else:
-            cmd = commands.PCS_CLUSTER_START.format(nodeName)
+            cmd = commands.PCS_CLUSTER_START.format(node_name)
 
         log.info(f"Executing cmd: {cmd}")
         try:
@@ -225,11 +222,10 @@ class HealthHelper(Host):
             if not resp:
                 return False, None
         except Exception as error:
-            log.error(EXCEPTION_MSG.format(HealthHelper.get_disk_usage.__name__, error))
+            log.error(EXCEPTION_MSG.format(Health.pcs_cluster_start_stop.__name__, error))
 
             return False, error
         return True, resp[1]
-
 
     def pcs_status_grep(self, service):
         """
@@ -249,7 +245,7 @@ class HealthHelper(Host):
             if not resp:
                 return None
         except Exception as error:
-            log.error(EXCEPTION_MSG.format(HealthHelper.get_disk_usage.__name__, error))
+            log.error(EXCEPTION_MSG.format(Health.get_disk_usage.__name__, error))
             return error
         return resp
 
@@ -272,7 +268,7 @@ class HealthHelper(Host):
             if not resp:
                 return False, None
         except Exception as error:
-            log.error(EXCEPTION_MSG.format(HealthHelper.pcs_resource_cleanup.__name__, error))
+            log.error(EXCEPTION_MSG.format(Health.pcs_resource_cleanup.__name__, error))
             return False, error
         return True, resp
 
@@ -296,7 +292,7 @@ class HealthHelper(Host):
                     return False, output
             return True, output
         except BaseException as error:
-            log.error(EXCEPTION_MSG.format(HealthHelper.is_mero_online.__name__, error))
+            log.error(EXCEPTION_MSG.format(Health.is_mero_online.__name__, error))
             return False, error
 
     def is_machine_already_configured(self):
@@ -344,6 +340,6 @@ class HealthHelper(Host):
                     ("Cluster is not running." in output):
                 log.info("Machine is not configured..!")
                 return False, f"{commands.MERO_STATUS_CMD} command not found"
-        else:
-            log.info("All other services are online")
-            return True, "Server is Online"
+            else:
+                log.info("All other services are online")
+                return True, "Server is Online"

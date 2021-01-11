@@ -35,13 +35,6 @@ log = logging.getLogger(__name__)
 ################################################################################
 
 class SaltHelper(Host):
-    def connect_salt_server(self):
-        result = self.connect()
-        if result:
-            log.debug("Connection established.")
-        else:
-            log.error("Failed to establish connection.")
-            
     def get_pillar_values(
             self,
             component,
@@ -64,7 +57,7 @@ class SaltHelper(Host):
             pillar_key)
         log.info(
             "Fetching pillar value with cmd: {}".format(get_pillar_cmd))
-        output = self.host_obj.execute_cmd(cmd=get_pillar_cmd, shell=False)
+        flag, output = self.execute_cmd(cmd=get_pillar_cmd, shell=False)
         if not output:
             err_msg = "Pillar value not found for {}".format(pillar_key)
             return False, err_msg
@@ -80,12 +73,7 @@ class SaltHelper(Host):
                 return False, err_msg
             decrypt_cmd = "salt-call lyveutil.decrypt {} {} --output=newline_values_only".format(
                 component, pillar_value)
-            output = self.remote_execution(
-                host=host,
-                user=username,
-                password=password,
-                cmd=decrypt_cmd,
-                shell=False)
+            flag, output = self.execute_cmd(decrypt_cmd, shell=False)
             pillar_value = output[0].strip("\n")
             log.info(
                 "Decrypted Pillar value for {} is {}".format(
