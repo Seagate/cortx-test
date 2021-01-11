@@ -132,9 +132,6 @@ class Host():
                 retry_count -= 1
                 time.sleep(1)
         return False
-    ############################################################################
-    # execute command
-    ############################################################################
 
     def execute_cmd(self, cmd: str, inputs: str = None, read_lines: bool = False, 
     read_nbytes: int = -1, timeout_sec=400, **kwargs) -> Tuple[bool, Union[List[str], str, bytes]]:
