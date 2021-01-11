@@ -7,17 +7,20 @@ Variables  ../common/element_locators.py
 
 *** Keywords ***
 Open URL
+    [Documentation]  Test keyword is for opening the URL in the browser, with specific options.
     [Arguments]  ${url}  ${browser}
     open browser  ${url}  ${browser}    options=add_argument('--ignore-ssl-errors');add_argument('--ignore-certificate-errors')
     maximize browser window
 
 Open URL In Headless
+    [Documentation]  Test keyword is for opening the URL in the browser in headless mode, with specific options.
     [Arguments]  ${url}  ${browser}
     open browser  ${url}  ${browser}    options=add_argument('--ignore-ssl-errors');add_argument('--ignore-certificate-errors');add_argument('--no-sandbox');add_argument('--headless')
     maximize browser window
 
 
 Enter Username And Password
+    [Documentation]  Test keyword is for entring the username and password on login form.
     [Arguments]  ${username}  ${password}
     input text  ${csm username id}  ${username}
     input password  ${csm password id}  ${password}
@@ -26,6 +29,7 @@ Click Sigin Button
     click button    ${signin_button_id}
 
 Validate CSM Login Failure
+    [Documentation]  Test keyword is for Validating login failure on CSM GUI.
     ${csm_login_fail_msg}=  get text  ${csm login fail msg id}
     should be equal  ${csm_login_fail_msg} ${LOGIN_FAILED_MSG}
     [Return]  ${csm_login_fail_msg}

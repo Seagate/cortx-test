@@ -15,11 +15,13 @@ ${browser}  chrome
 ${headless}  True
 ${navigate_to_subpage}  False
 ${Sub_tab}  None
+${username}
+${password}
 
 *** Test Cases ***
 test_4242
     [Documentation]  Test that csm user is able to login to CSM UI
     [Tags]  Priority_High
-    [Setup]   CSM GUI Login  ${url}  ${browser}  ${headless}  ${csm admin user}  ${csm admin password}
-    Validate CSM Login Success  ${csm admin user}
+    [Setup]   CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
+    Validate CSM Login Success  ${username}
     [Teardown]  Close Browser

@@ -11,13 +11,13 @@ Variables  element_locators.py
 
 *** Keywords ***
 Log To Console And Report
-    [Documentation]  Keyword if for logging the same string to console and report.
+    [Documentation]  This Keyword is for logging the same string to console and report.
     [Arguments]  ${log_message}
     log  ${log_message}
     Log To Console  ${\n}${log_message}
 
 Navigate To Page
-    [Documentation]  Keyword for naviagting to certain page
+    [Documentation]  This Keyword is for naviagting to certain page
     [Arguments]  ${page_name}  ${sub_page}=False
     #${page_name}=  Catenate  ${page_name}  menu  id
     log to console and report  Navigating to ${page_name}
@@ -29,7 +29,7 @@ Navigate To Page
     ...  Click Element  ${${sub_page}}
 
 Read Table Data
-    [Documentation]  Keyword if for reading the table data.
+    [Documentation]  This Keyword is for reading the data from the html table and it returns the data in list format.
     [Arguments]  ${table_element}
     @{table_elements}=  Get WebElements  ${table_element}
     sleep  2s
@@ -41,7 +41,7 @@ Read Table Data
     [Return]   @{table_data}
 
 Action On The Table Element
-    [Documentation]  Keyword if for reading the table data.
+    [Documentation]  This Keyword is for performing actions like edit/delete on perticualr user/element in html table.
     [Arguments]  ${Element_for_action}  ${USER_NAME}
     sleep  2s
     Log To Console And Report   ${Element_for_action}

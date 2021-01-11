@@ -14,7 +14,7 @@ Check S3 Account Exists
     List Should Contain Value      ${s3_account_table_data}     ${expected_s3_account}
 
 Action on the table
-    [Documentation]  This keyword is used to check S3 account exists.
+    [Documentation]  This keyword is to check user can perform action on the user table.
     [Arguments]  ${USER_NAME}  ${ACTION_ELEMENT_XPATH}
     ${CSM_account_table_data}=   Action On The Table Element   ${${ACTION_ELEMENT_XPATH}}  ${USER_NAME}
 

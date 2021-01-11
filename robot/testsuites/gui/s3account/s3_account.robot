@@ -17,24 +17,26 @@ ${browser}  chrome
 ${headless}  True
 ${navigate_to_subpage}  False
 ${Sub_tab}  None
+${username}
+${password}
 
 *** Test Cases ***
 
 Check S3 Account Exists
     [Documentation]  This test is to verify that S3 account existes
     [Tags]  Priority_High
-    [Setup]   CSM GUI Login  ${url}  ${browser}  ${headless}  ${csm admin user}  ${csm admin password}
-    Validate CSM Login Success  ${csm admin user}
+    [Setup]   CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
+    Validate CSM Login Success  ${username}
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     Check S3 Account Exists     ${S3_ACCOUNTS_TABLE_XPATH}  ${S3_ACCOUNT}
     [Teardown]  Close Browser
 
 Test action on table
-    [Documentation]  This test case is to verify that user can perform the actions on the table ements.
+    [Documentation]  This test case is to verify that user can perform the actions on the table elements.
     [Tags]  Priority_High
-    [Setup]   CSM GUI Login  ${url}  ${browser}  ${headless}  ${csm admin user}  ${csm admin password}
-    Validate CSM Login Success  ${csm admin user}
+    [Setup]   CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
+    Validate CSM Login Success  ${username}
     Navigate To Page    MANAGE_MENU_ID
     sleep  2s
     Action on the table     ${CSM_USER}  CSM_USER_EDIT_XPATH
