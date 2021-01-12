@@ -30,3 +30,5 @@ def get_cmd_line(cmd, run_using, html_report, log_cli_level) :
     log_cli_level_str = '--log-cli-level={}'.format(log_cli_level)
     cmd_line = ['pytest', log_cli_level_str, result_html_file, cmd]
     return cmd_line
+
+

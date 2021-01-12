@@ -22,9 +22,14 @@ import pytest
 import pathlib
 import json
 import logging
+from _pytest.nodes import Item
+from _pytest.runner import CallInfo
 from testfixtures import LogCapture
 from commons.utils import yaml_utils
 from commons import Globals
+from commons import cortxlogging
+
+FAILURES_FILE = "failures.txt"
 
 @pytest.fixture(autouse=True)
 def _read_project_config(request):
@@ -45,19 +50,6 @@ def read_project_config(request):
         return json.load(fp)
 
 
-def init_loghandler(log): #TODO needs to be removed after framework Logger is developed
-    log.setLevel(logging.DEBUG)
-    fh = logging.FileHandler('pytestfeatures.log', mode='a')
-    fh.setLevel(logging.DEBUG)
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    fh.setFormatter(formatter)
-    ch.setFormatter(formatter)
-    log.addHandler(fh)
-    log.addHandler(ch)
-
-
 @pytest.fixture(autouse=True)
 def capture():
     with LogCapture() as logs:
@@ -66,16 +58,18 @@ def capture():
 
 @pytest.fixture(scope='session')
 def formatter():
-    format_log_message = '%(asctime)s\t%(levelname)s\t%(filename)s\t%(funcName)s\t%(processName)s\t%(message)s'
+    format_log_message = '%(asctime)s\t%(levelname)s\t%(filename)s\t%(funcName)s' \
+                         '\t%(processName)s\t%(message)s'
     formatter = logging.Formatter(fmt=format_log_message, datefmt='%Y-%m-%d %H:%M:%S')
     return formatter
+
 
 @pytest.fixture(scope='session')
 def logger():
     logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
-    init_loghandler(logger)  #TODO reference
+    cortxlogging.init_loghandler(logger)  #TODO reference
     return logger
 
 
@@ -90,7 +84,7 @@ def log_cutter(request, formatter):
     with open(name, 'w') as f:
         for rec in records:
             f.write(formatter.format(rec) + '\n')
-
+    del Globals.records[name]
 
 @pytest.fixture
 def data():
@@ -103,10 +97,24 @@ def test_config():
 
 # content of conftest.py
 
-
 def pytest_collection_modifyitems(session, config, items):
     for item in items:
         for marker in item.iter_markers(name="test_id"):
             test_id = marker.args[0]
             item.user_properties.append(("test_id", test_id))
 
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item: Item, call: CallInfo):
+    # All code prior to yield statement would be ran prior
+    # to any other of the same fixtures defined
+
+    outcome = yield  # Run all other pytest_runtest_makereport non wrapped hooks
+    result = outcome.get_result()
+    if result.when == "call" and result.failed:
+        try:  # Just to not crash py.test reporting
+            with open(str(FAILURES_FILE), "a") as f:
+                f.write(result.nodeid + "\n")
+        except Exception as e:
+            print("ERROR", e)
+            pass

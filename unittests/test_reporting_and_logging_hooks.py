@@ -3,6 +3,7 @@ import logging
 from commons import Globals
 # import _pytest.logging.LogCaptureFixture
 from testfixtures import LogCapture
+from _pytest import runner
 
 
 def setup_module(module):
@@ -26,11 +27,6 @@ def teardown_function(function):
     # with open(function.__name__, 'w') as f:
     #     for rec in capture.records:
     #         f.write(formatter.format(rec) + '\n')
-
-@pytest.fixture(autouse=True)
-def capture():
-    with LogCapture() as logs:
-        yield logs
 
 
 def max(values):
@@ -65,3 +61,15 @@ def test_min(request, capture, logger):
     records = capture.records
     test_name = request.node.name
     Globals.records.update({test_name: records})
+
+@pytest.mark.usefixtures("log_cutter")
+def test_max(request, capture, logger):
+    values = (2, 3, 1, 4, 6)
+
+    val = max(values)
+    logger.info("max is %s" % val)
+    assert val == 6
+    records = capture.records
+    test_name = request.node.name
+    Globals.records.update({test_name: records})
+

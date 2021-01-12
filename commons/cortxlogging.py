@@ -5,7 +5,29 @@ import os
 import gzip
 import shutil
 import datetime
+import logging
 from logging import handlers
+LOG_DIR = 'log'
+LOG_FILE = 'cortx-test.log'
+
+
+def init_loghandler(log) -> None:
+    log.setLevel(logging.DEBUG)
+    make_log_dir(LOG_DIR)
+    fh = logging.FileHandler(os.path.join(os.getcwd(), LOG_DIR, LOG_FILE), mode='a')
+    fh.setLevel(logging.DEBUG)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    fh.setFormatter(formatter)
+    ch.setFormatter(formatter)
+    log.addHandler(fh)
+    log.addHandler(ch)
+
+
+def make_log_dir(dirpath) -> None:
+    if not os.path.exists(dirpath):
+        os.makedirs(dirpath, exist_ok=True)
 
 
 class CortxRotatingFileHandler(handlers.RotatingFileHandler):

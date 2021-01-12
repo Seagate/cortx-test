@@ -4,33 +4,33 @@ from commons import Globals
 # import _pytest.logging.LogCaptureFixture
 from testfixtures import LogCapture
 
-def init_loghandler(log):
-    log.setLevel(logging.DEBUG)
-    fh = logging.FileHandler('pytestfeatures.log', mode='a')
-    fh.setLevel(logging.DEBUG)
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    fh.setFormatter(formatter)
-    ch.setFormatter(formatter)
-    log.addHandler(fh)
-    log.addHandler(ch)
-
-
-@pytest.fixture(scope='session')
-def formatter():
-    format_log_message = '%(asctime)s\t%(levelname)s\t%(filename)s\t%(funcName)s\t%(processName)s\t%(message)s'
-    formatter = logging.Formatter(fmt=format_log_message, datefmt='%Y-%m-%d %H:%M:%S')
-    return formatter
-
-
-@pytest.fixture(scope='session')
-def logger():
-    logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.DEBUG)
-    init_loghandler(logger)
-    return logger
+# def init_loghandler(log):
+#     log.setLevel(logging.DEBUG)
+#     fh = logging.FileHandler('pytestfeatures.log', mode='a')
+#     fh.setLevel(logging.DEBUG)
+#     ch = logging.StreamHandler()
+#     ch.setLevel(logging.DEBUG)
+#     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+#     fh.setFormatter(formatter)
+#     ch.setFormatter(formatter)
+#     log.addHandler(fh)
+#     log.addHandler(ch)
+#
+#
+# @pytest.fixture(scope='session')
+# def formatter():
+#     format_log_message = '%(asctime)s\t%(levelname)s\t%(filename)s\t%(funcName)s\t%(processName)s\t%(message)s'
+#     formatter = logging.Formatter(fmt=format_log_message, datefmt='%Y-%m-%d %H:%M:%S')
+#     return formatter
+#
+#
+# @pytest.fixture(scope='session')
+# def logger():
+#     logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
+#     logger = logging.getLogger(__name__)
+#     logger.setLevel(logging.DEBUG)
+#     init_loghandler(logger)
+#     return logger
 
 
 def setup_module(module):
@@ -55,10 +55,10 @@ def teardown_function(function):
     #     for rec in capture.records:
     #         f.write(formatter.format(rec) + '\n')
 
-@pytest.fixture(autouse=True)
-def capture():
-    with LogCapture() as logs:
-        yield logs
+# @pytest.fixture(autouse=True)
+# def capture():
+#     with LogCapture() as logs:
+#         yield logs
 
 
 def max(values):
@@ -81,17 +81,17 @@ def min(values):
     return _min
 
 
-@pytest.fixture(scope='function')
-def log_cutter(request, formatter):
-    print("setup")
-    name = request.function.__name__
-    records = dict()
-    yield records
-    records = Globals.records.get(name)
-    print("teardown")
-    with open(name, 'w') as f:
-        for rec in records:
-            f.write(formatter.format(rec) + '\n')
+# @pytest.fixture(scope='function')
+# def log_cutter(request, formatter):
+#     print("setup")
+#     name = request.function.__name__
+#     records = dict()
+#     yield records
+#     records = Globals.records.get(name)
+#     print("teardown")
+#     with open(name, 'w') as f:
+#         for rec in records:
+#             f.write(formatter.format(rec) + '\n')
 
 
 @pytest.mark.usefixtures("log_cutter")
