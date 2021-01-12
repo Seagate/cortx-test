@@ -2,6 +2,7 @@ import pytest
 import logging
 from commons.helpers.node_helper import Node
 from commons.helpers.health_helper import Health
+from commons.helpers.bmc_helper import Bmc
 
 def test_node_helper():
     x = Node("10.237.65.202","root","seagate")
@@ -31,3 +32,13 @@ def test_health_helper():
     x.is_mero_online()
     x.is_machine_already_configured()
     x.all_cluster_services_online()
+
+
+def test_bmc_helper():
+    x = Bmc(hostname="sm7-r19.pun.seagate.com", username="root", password="seagate")
+    x.get_bmc_ip()
+    x.bmc_node_power_status('10.237.65.16', 'bmcadmin', 'adminBMC!')
+    x.bmc_node_power_on_off('10.237.65.16', 'bmcadmin', 'adminBMC!')
+    x.set_bmc_ip('10.237.65.16')
+    x.create_bmc_ip_change_fault('10.234.56.9')
+    x.resolve_bmc_ip_change_fault('10.237.65.16')
