@@ -6,13 +6,19 @@ from commons.helpers.health_helper import Health
 def test_node_helper():
     x = Node("10.237.65.202","root","seagate")
     x.get_authserver_log("/var/log/seagate/auth/server/app.log")
+    x.send_systemctl_cmd("stop",["s3authserver"])
+    x.status_service(["s3authserver"],"active")
+    x.send_systemctl_cmd("start",["s3authserver"])
+    x.path_exists('/root')
+    x.path_exists('/rt')
+    x.create_file('tmp.txt',34)
+    x.rename_file('tmp.txt','dk.txt')
+    x.remove_file('dk.txt')
     x.execute_cmd('pwd')
     x.is_dir_exists('/root','hw_cfg')
     x.makedir('/root/','test')
     
-    x.status_service(["s3authserver"],"active")
-    x.start_stop_services(["s3authserver"],"stop_service")
-    x.start_stop_services(["s3authserver"],"start_service")
+
     x.create_file('tmp',20)
     
 def test_health_helper():

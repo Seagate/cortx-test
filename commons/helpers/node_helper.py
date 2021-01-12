@@ -42,26 +42,16 @@ class Node(Host):
         res = self.execute_cmd(cmd)
         return res
 
-    def start_stop_services(self,services:str,operation:str,timeout:int=60):
-        """
-        This function is responsible to stop all services which are activated by deploy-eos
-        """
-        valid_operations = {"start_service", "stop_service"}
-        if operation not in valid_operations:
-            raise ValueError("Operation parameter must be one of %r." % valid_operations)
-
-        result = {}
+    def send_systemctl_cmd(self, command:str, services:list,timeout:int=60)->list:
+        valid_commands = {"start", "stop", "reload", "enable", "disable", "status"}
+        if command not in valid_commands:
+            raise ValueError("command parameter must be one of %r." % valid_commands)
+        out=[]
         for service in services:
-            log.info(f"Stopping service {service}")
-            if operation == "start_service":
-                cmd = commands.SYSTEMCTL_START
-            else:
-                cmd = commands.SYSTEM_CTL_STOP
-            cmd = cmd.replace("%s", service)
-            success, out = self.execute_cmd(cmd, timeout=timeout)
-            result['success'] = success
-            result['output'] = out
-        return result
+            log.debug("Performing {} on service {}...".format(command, service))
+            cmd = commands.SYSTEM_CTL_CMD.format(command, service)
+            out.append(self.execute_cmd(cmd, timeout=timeout))
+        return out
 
     def status_service(self, services:str, expected_status:str, timeout:int=2)->str:
         """
@@ -73,7 +63,7 @@ class Node(Host):
         for service in services:
             log.info(f"service status {service}")
             cmd = commands.SYSTEMCTL_STATUS
-            cmd = cmd.replace("%s", service)
+            cmd = cmd.format(service)
             out = self.execute_cmd(cmd, read_lines=True, timeout=timeout)
             found = False
             for line in out:
@@ -143,68 +133,67 @@ class Node(Host):
             if os.path.exists(local_path):
                 os.remove(local_path)
 
-    def create_file(self, file_name:str, mb_count:int)->str:
+    def path_exists(self, path:str)->bool:
+        """
+        Check if file exists 
+        :param path: Absolute path of the file
+        :return: bool, response
+        """
+        self.connect_pysftp()
+        log.info("client connected")
+        try:
+            self.host_obj.stat(path)
+        except BaseException:
+            return False
+        self.disconnect()
+        return True
+
+    def create_file(self, file_name:str, mb_count:int, dev = "/dev/zero", bs="1M")->str:
         """
         Creates a new file, size(count) in MB
         :param file_name: Name of the file with path
         :param mb_count: size of the file in MB
         :return: output of remote execution cmd
         """
-        cmd = commands.CREATE_FILE.format(file_name, mb_count)
+        cmd = commands.CREATE_FILE.format(dev,file_name,bs, mb_count)
         log.debug(cmd)
         result = self.execute_cmd(cmd, shell=False)
         log.debug("output = {}".format(result))
         return result
 
-    def copy_file_to_remote(self, local_path:str,remote_file_path:str, shell:bool=True)->None:
+    def rename_file(self, old_filename:str, new_filename:str):
         """
-        copy file from local to local remote
-        :param str local_path: local path
-        :param str remote_file_path: remote path
-        :return: boolean, remote_path/error
-        :rtype: tuple
+        This function renames file on remote host.
+        :param old_filename: Old name of the file(Absolute path)
+        :param new_filename: New name of the file(Absolute path)
         """
-        client = self.connect(shell=shell)
-        log.info("client connected")
-        sftp = client.open_sftp()
-        log.info("sftp connected")
-        sftp.put(local_path, remote_file_path)
-        log.info("file copied to : {}".format(remote_file_path))
-        sftp.close()
-        client.close()
-
-
-    def copy_file_to_local(self,file_path:str, local_path:str, shell:bool=True)->None:
-        """
-        copy file from local to local remote
-        :param str local_path: local path
-        :param str remote_file_path: remote path
-        :return: boolean, remote_path/error
-        :rtype: tuple
-        """
-        client = self.connect(shell=shell)
-        log.info("client connected")
-        sftp = client.open_sftp()
-        log.info("sftp connected")
-        sftp.get(file_path, local_path)
-        log.info("file copied to : {}".format(local_path))
-        sftp.close()
-        client.close()
-
-
-    def write_remote_file_to_local_file(self, file_path:str, local_path:str,shell:bool=True)->None:
-        """
-        Writing remote file content in local file
-        :param file_path: Remote path
-        :param local_path: Local path
-        """
-        client = self.connect(shell=shell)
-        sftp = client.open_sftp()
+        self.connect_pysftp()
         log.debug("sftp connected")
-        with sftp.open(file_path, "r") as remote:
-            shutil.copyfileobj(remote, open(local_path, "wb"))
+        try:
+            self.host_obj.rename(old_filename, new_filename)
+        except IOError as err:
+            if err[0] == 2:
+                raise err
+        self.disconnect()
+        
+    def remove_file(self,filename:str):
+        """
+        This function removes the unwanted file from the remote host.
+        :param filename: Absolute path of the file to be removed
+        :param host: IP of the host
+        :param user: Username of the host
+        :param pwd: Password for the user
+        """
+        self.connect_pysftp()
+        log.debug(f"Connected to {self.hostname}")
+        try:
+            self.host_obj.remove(filename)
+        except IOError as err:
+            if err[0] == 2:
+                raise err
+        self.disconnect()
 
-    def read_file(self, filename:str, local_path:str, shell:bool=True):
+    def read_file(self, filename:str, local_path:str):
         """
         This function reads the given file and returns the file content
         :param filename: Absolute path of the file to be read
@@ -216,7 +205,7 @@ class Node(Host):
             if os.path.exists(local_path):
                 os.remove(local_path)
             resp = self.copy_file_to_local(file_path=filename,
-                                           local_path=local_path, shell=shell)
+                                           local_path=local_path)
             if resp[0]:
                 file = open(local_path, 'r')
                 response = file.read()
@@ -227,42 +216,44 @@ class Node(Host):
             if os.path.exists(local_path):
                 os.remove(local_path)
 
-    def remove_file(self,filename:str):
+    def copy_file_to_remote(self, local_path:str,remote_file_path:str)->None:
         """
-        This function removes the unwanted file from the remote host.
-        :param filename: Absolute path of the file to be removed
-        :param host: IP of the host
-        :param user: Username of the host
-        :param pwd: Password for the user
+        copy file from local to local remote
+        :param str local_path: local path
+        :param str remote_file_path: remote path
+        :return: boolean, remote_path/error
+        :rtype: tuple
         """
-        client = self.connect(shell=False)
-        log.debug(f"Connected to {self.hostname}")
-        sftp = client.open_sftp()
-        log.debug("sftp connected")
-        try:
-            sftp.remove(filename)
-        except IOError as err:
-            if err[0] == 2:
-                raise err
-        sftp.close()
-        client.close()
+        self.connect_pysftp()
+        log.info("sftp connected")
+        self.host_obj.put(local_path, remote_file_path)
+        log.info("file copied to : {}".format(remote_file_path))
+        self.disconnect()
 
-    def file_rename(self, old_filename:str, new_filename:str, shell:bool=True):
+    def copy_file_to_local(self,file_path:str, local_path:str)->None:
         """
-        This function renames file on remote host.
-        :param old_filename: Old name of the file(Absolute path)
-        :param new_filename: New name of the file(Absolute path)
+        copy file from local to local remote
+        :param str local_path: local path
+        :param str remote_file_path: remote path
+        :return: boolean, remote_path/error
+        :rtype: tuple
         """
-        client = self.connect(shell=shell)
-        sftp = client.open_sftp()
+        self.connect_pysftp()
+        log.info("sftp connected")
+        self.host_obj.get(file_path, local_path)
+        log.info("file copied to : {}".format(local_path))
+        self.disconnect()
+
+    def write_remote_file_to_local_file(self, file_path:str, local_path:str)->None:
+        """
+        Writing remote file content in local file
+        :param file_path: Remote path
+        :param local_path: Local path
+        """
+        self.connect_pysftp()
         log.debug("sftp connected")
-        try:
-            sftp.rename(old_filename, new_filename)
-        except IOError as err:
-            if err[0] == 2:
-                raise err
-        sftp.close()
-        client.close()
+        with self.host_obj.open(file_path, "r") as remote:
+            shutil.copyfileobj(remote, open(local_path, "wb"))
 
     def get_mdstat(self):
         """
@@ -307,30 +298,6 @@ class Node(Host):
             if os.path.exists(local_path):
                 os.remove(local_path)
 
-    ################################################################################
-    # remote directory operations
-    ################################################################################
-    def path_exists(self, path:str, shell:bool=True)->bool:
-        """
-        Check if file exists on s3 server
-        :param path: Absolute path of the file
-        :param host: IP of the host
-        :param user: Username of the host
-        :param pwd: Password for the user
-        :return: bool, response
-        """
-        client = self.connect(shell=shell)
-        log.info("client connected")
-        sftp = client.open_sftp()
-        log.info("sftp connected")
-        try:
-            sftp.stat(path)
-        except BaseException:
-            return False
-        sftp.close()
-        client.close()
-        return True
-
     def validate_is_dir(self, remote_path:str)->Tuple[bool,str]:
         """
         This function validates if the remote path is directory or not
@@ -351,7 +318,7 @@ class Node(Host):
             log.error(EXCEPTION_MSG.format(Node.validate_is_dir.__name__, error))
             return False, error
 
-    def list_dir(self, remote_path, shell=True):
+    def list_dir(self, remote_path):
         """
         This function list the files of the remote server
         :param str remote_path: absolute path on the remote server
@@ -362,10 +329,9 @@ class Node(Host):
         :rtype: list
         """
         try:
-            client = self.connect(shell=shell)
-            sftp = client.open_sftp()
+            client = self.connect_pysftp()
             try:
-                dir_lst = sftp.listdir(remote_path)
+                dir_lst = self.host_obj.listdir(remote_path)
             except IOError as err:
                 if err[0] == 2:
                     raise err
@@ -374,31 +340,7 @@ class Node(Host):
             log.error(EXCEPTION_MSG.format(Node.list_remote_dir.__name__, error))
             return False, error
 
-    def is_dir_exists(self, path, dir_name):
-        """
-        #TODO: Remove
-        This function is use to check directory is exist or not
-        :param path: path of directory
-        :type path: string
-        :param dir_name: directory name
-        :type dir_name: string
-        :return: boolean True if directory find, False otherwise.
-        """
-        try:
-            directories = self.execute_cmd(f"ls {path}")
-
-            # decode utf 8 is to convert bytes to string
-            directories = (directories.decode("utf-8")).split("\n")
-            directories = (directory.split("\n")[0] for directory in directories)
-            if dir_name in directories:
-                return True
-            else:
-                return False
-        except Exception as error:
-            log.error(EXCEPTION_MSG.format(Node.is_dir_exists.__name__, error))
-            return False
-
-    def makedir(self, path, dir_name):
+    def make_dir(self, path, dir_name):
         """
         Make directory
         """
@@ -418,7 +360,7 @@ class Node(Host):
             log.error(EXCEPTION_MSG.format(Node.makedir.__name__, error))
             return False
 
-    def removedir(self, path):
+    def remove_dir(self, path):
         """Remove directory
         """
         cmd = f"rm -rf {path}"
