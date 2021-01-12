@@ -1,5 +1,5 @@
 import pytest
-from commons.helpers import serverlogs_hepler
+from commons.helpers import serverlogs_helper
 from datetime import datetime
 
 now = datetime.now()
@@ -11,8 +11,8 @@ def test_serverlogs_lib():
     start_time = "Dec 12 16:06:01"
     end_time = "Dec 12 16:12:07"
 
-    serverlogs_hepler.collect_logs_fromserver(st_time= start_time,
+    serverlogs_helper.collect_logs_fromserver(st_time= start_time,
                                               end_time= end_time,
                                               file_type= "motr",
                                               node="node1",
-                                              test_suffix= "001")
+                                              test_suffix= "077")
