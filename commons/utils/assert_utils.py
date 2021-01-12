@@ -1,18 +1,26 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from collections import OrderedDict
-from decimal import Decimal
-from difflib import unified_diff
-from types import GeneratorType
-import re
 import pytest
-from comparison import *
+from commons.utils.comparison import *
 
 
 def compare(*argv, **kwargs):
     """
-
+    Function to compare objects of any data type.
+    Optional parameters:
+    case_check: Case check for str comparison (True: Check case, False:
+    Ignore case)
+    key_check: For comparison of key of dict (True: Check if dict contains
+    the given key)
+    value_check: For comparison of value of dict (True: Check if dict contains
+    the given value)
+    sequence_item_check: For comparison of element of list/tuple (True: Check if
+    list/tuple contains given element/s)
+    sequence_order_check: For comparison of order of elements of list/tuple
+    (True: Check order of elements of given lists)
+    compare_text: For comparison of text having mixed data types (True:
+    Compare multiline texts having mixed data types)
     """
     # case check for str comparison
     case_check = kwargs.get('case_check', False)
@@ -27,7 +35,11 @@ def compare(*argv, **kwargs):
     # for comparison of text having mixed data types
     compare_text = kwargs.get('compare_text', False)
 
-    dtype = type(argv[0])
+    if len(argv) != 2:
+        assert len(argv) == 2, "Please provide correct number of operands. " \
+                               "Two operands are supported"
+    else:
+        dtype = type(argv[0])
 
     if compare_text:
         assert_compare_text(argv[0], argv[1], kwargs)

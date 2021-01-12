@@ -1,12 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from collections import OrderedDict
-from decimal import Decimal
-from difflib import unified_diff
-import pytest
-from hamcrest import *
 import re
+import pytest
+from difflib import unified_diff
+from hamcrest import *
 
 
 def assert_equals(x, y):
@@ -63,6 +61,10 @@ def assert_or(x, y):
 
 def assert_compare_text(x, y, context):
     """
+    Function to compare multi-lined test having different datatypes.
+    :param x: First object to be compared
+    :param y: Second object to be compared
+    :param context: Dict having the flag values
     """
     blanklines = context.get('blanklines', False)
     leading_whitespace = context.get('leading_whitespace', True)
@@ -94,6 +96,6 @@ def assert_compare_text(x, y, context):
         else:
             message = '\n%s\n!=\n%s' % (labelled_x, labelled_y)
     else:
-        message = labelled_x+' != '+labelled_y
+        message = labelled_x + ' != ' + labelled_y
 
-    assert labelled_x != labelled_y, message
+    assert labelled_x == labelled_y, message
