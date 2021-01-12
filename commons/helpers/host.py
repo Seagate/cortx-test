@@ -38,7 +38,7 @@ class Host():
         self.host_obj = None
         self.shell_obj = None
 
-    def connect(self, shell=False, timeout_sec=400, **kwargs) -> bool:
+    def connect(self, shell=False, timeout=400, **kwargs) -> bool:
         """
         Connect to remote host using hostname, username and password attribute
         :param shell: In case required shell invocation
@@ -53,7 +53,7 @@ class Host():
             self.host_obj.connect(hostname=self.hostname,
                                   username=self.username,
                                   password=self.password,
-                                  timeout=timeout_sec,
+                                  timeout=timeout,
                                   **kwargs)
             if shell:
                 self.shell_obj = self.host_obj.invoke_shell()
@@ -68,7 +68,7 @@ class Host():
             log.error("Could not establish connection because of timeout: %s",
                       timeout_exception)
             result = self.reconnect(
-                1, shell=shell, timeout_sec=timeout_sec, **kwargs)
+                1, shell=shell, timeout=timeout, **kwargs)
         except Exception as error:
             log.error("Exception while connecting to server")
             log.error(f"Error message: {error}")
@@ -134,7 +134,7 @@ class Host():
         return False
 
     def execute_cmd(self, cmd: str, inputs: str = None, read_lines: bool = False, 
-    read_nbytes: int = -1, timeout_sec=400, **kwargs) -> Tuple[bool, Union[List[str], str, bytes]]:
+    read_nbytes: int = -1, timeout=400, **kwargs) -> Tuple[bool, Union[List[str], str, bytes]]:
         """
         If connection is not established,  it will establish the connection and 
         Execute any command on remote machine/VM
@@ -146,11 +146,10 @@ class Host():
         """
         try:
             result = False
-            if self.host_obj.get_transport() is None:
-                result = self.connect(timeout=timeout_sec, **kwargs)
+            result = self.connect(timeout=timeout, **kwargs)
             if result:
                 stdin, stdout, stderr = self.host_obj.exec_command(
-                    cmd, timeout=timeout_sec)
+                    cmd, timeout=timeout)
                 exit_status = stdout.channel.recv_exit_status()
                 log.debug(exit_status)
                 if exit_status != 0:
@@ -164,7 +163,7 @@ class Host():
                     if inputs:
                         stdin.write('\n'.join(inputs))
                         stdin.write('\n')
-                    stdin.flush()
+                        stdin.flush()
                     if read_lines:
                         return True, stdout.readlines()
                     else:

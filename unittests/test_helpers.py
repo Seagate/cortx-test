@@ -1,10 +1,10 @@
 import pytest
 import logging
-from commons.helpers.node_helper import NodeHelper
-from commons.helpers.health_helper import HealthHelper
+from commons.helpers.node_helper import Node
+from commons.helpers.health_helper import Health
 
 def test_node_helper():
-    x = NodeHelper("10.237.65.202","root","seagate")
+    x = Node("10.237.65.202","root","seagate")
     x.execute_cmd('pwd')
     x.is_dir_exists('/root','hw_cfg')
     x.makedir('/root/','test')
@@ -15,12 +15,16 @@ def test_node_helper():
     x.create_file('tmp',20)
     
 def test_health_helper():
-    x = HealthHelper("10.237.65.202","root","seagate")
-    x.get_ports_of_service('csm') 
-    x.get_ports_for_firewall_cmd('csm')   
-    x.get_disk_usage('/root')
-    x.get_system_cpu_usage()
-    x.disk_usage_python_interpreter_cmd('/root')
+    x = Health("10.237.65.202","root","seagate")
+    x.get_ports_of_service('csm')
+    x.get_ports_for_firewall_cmd('csm')
+    x.get_disk_usage('/root',field_val=3)
+    x.get_disk_usage('/root',field_val=2)
+    x.get_disk_usage('/root',field_val=1)
+    x.get_disk_usage('/root',field_val=0)
+    x.get_cpu_usage()
+    x.get_memory_usage()
+    x.get_pcs_service_systemd('csm')
     x.pcs_status_grep('csm')
     x.pcs_resource_cleanup()
     x.is_mero_online()
