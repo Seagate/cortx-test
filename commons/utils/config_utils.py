@@ -101,21 +101,20 @@ def create_content_json(home, data, user_json):
     :param user_json:
     :return:
     """
-    pth = os.path.join(home, user_json)
-    with open(pth, 'w') as outfile:
+    path = os.path.join(home, user_json)
+    with open(path, 'w') as outfile:
         json.dump(data, outfile, ensure_ascii=False)
 
+    return path
 
-def read_content_json(home, user_json):
+
+def read_content_json(fpath):
     """
-
-    :param home:
-    :param user_json:
+    :param fpath:
     :return:
     """
-    pth = os.path.join(home, user_json)
     data = None
-    with open(pth, 'rb') as json_file:
+    with open(fpath, 'rb') as json_file:
         data = json.loads(json_file.read())
     return data
 
