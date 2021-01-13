@@ -26,13 +26,14 @@ from gevent import Greenlet
 from gevent import Timeout
 from gevent.queue import Queue
 from gevent.pool import Pool
-#from queue import Queue
+# from queue import Queue
 from typing import List, Tuple, Any, Optional
 
 logger = logging.getLogger(__name__)
 if sys.platform == "win32":
     # Add stdout handler, with level DEBUG
     logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+
 threads = list()
 
 
@@ -41,73 +42,87 @@ class Multithreading(Greenlet):
     Class to Create Greenlet Multi-threading Objects and used to further extending child classes
     """
 
-    def __init__(self,*args, run=None, thread_id=None, thread_name=None, thread_q=None):
+    def __init__(
+            self,
+            *args,
+            run=None,
+            thread_id=None,
+            thread_q=None,
+            **kwargs):
         """
         Constructor
         """
-        super().__init__(run,args)
+        super().__init__(run, *args, **kwargs)
         if thread_q is not None:
             self.queue = thread_q
         else:
             self.queue = Queue()
         self.thread_id = thread_id
-        # self.threads = list()
-        self.thread_name = thread_name
+        self._action()
 
     def _run(self):
         """Build some CPU-intensive tasks to run via multiprocessing here.
         and Return some information back through multiprocessing.Queue
         """
-        #result = connection_io()
-        self._action()
+        logger.info("Running GThraeds")
 
     def _action(self) -> None:
         """
          self.thread_id is id of thread passed from calling function.
          self.name is an attribute of multiprocessing.Process
         """
-        self.queue.put("Thread id={0} is called '{1}'".format(self.thread_id, self.name))
+        self.queue.put(
+            "Thread id={0} and Thread name is: '{1}'".format(
+                self.thread_id, self.name))
 
     def terminate(self) -> None:
         """ wait until queue is empty and terminate threads """
-        self.queue.join()
-        for p in self.threads:
-            p.terminate()
+        pass
 
 
 class GThread(Multithreading):
     queue = Queue()
 
-    def __init__(self, thread_id=None):
-        super(GThread, self).__init__(thread_id)
+    def __init__(self, *args, run=None, thread_id=None, **kwargs):
+        super(
+            GThread,
+            self).__init__(
+            *args,
+            run=run,
+            thread_id=thread_id,
+            thread_q=GThread.queue,
+            **kwargs)
         logger.debug("Creating GThread Object")
+        self.responses = dict()  # Collecting Thread name and Thread Result/Return response
 
-    def _run(self,message=None):
+    def _run(self, message=None) -> None:
         logger.debug(message)
         super()._run()
 
     @staticmethod
-    def join() -> List:
+    def join() -> None:
         """
-        Waiting for all threads to complete
-        return: List of finished threads
+        Waiting for all threads to complete.
+        Collecting list of finished threads and their results.
         """
-        logger.debug(threads)
         logger.debug("Waiting for all threads to complete\n")
+        logger.debug(threads)
         gevent.joinall(threads)
+        logger.debug("All Threads execution is completed")
+        GThread.responses = {thread.name: thread.value for thread in threads}
 
     @staticmethod
     def terminate() -> Tuple:
         """ wait until queue is empty and terminate threads """
         GThread.join()
         logger.debug(threads)
-        logger.debug("Terminating all processes once they finished with task\n")
-
+        logger.debug(
+            "Terminating all processes once they finished with task\n")
+        results = list()
         while not GThread.queue.empty():
-            response = GThread.queue.get()
-            logger.info("RESULT: {0}".format(GThread.queue.get()))  # get results from the queue...
+            # get results from the queue...
+            logger.info("RESULT: {0}".format(GThread.queue.get()))
         if GThread.queue.empty():
-            return True, "Threading Finished"
+            return True, GThread.responses
         else:
-            return False, "Error"
-
+            return False, GThread.responses
