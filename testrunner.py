@@ -1,12 +1,14 @@
 import os
 import subprocess
 import argparse
+import csv
+import getpass
 from core import runner
 from commons.utils.jira_utils import JiraTask
-import csv
 
+import getpass
 
-def parse_args() :
+def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-j", "--json_file", type=str,
                         help="json file name")
@@ -20,11 +22,34 @@ def parse_args() :
                         help="jira xray test plan id")
     parser.add_argument("-ll", "--log_level", type=int, default=10,
                         help="log level value")
-    parser.add_argument("-p", "--prc_cnt", type=int, default=2,
-                        help="number of parallel processes")
+
     return parser.parse_args()
 
 
+def get_jira_credential() :
+    jira_id = ''
+    jira_pwd = ''
+    try :
+        jira_id = os.environ['JIRA_ID']
+        jira_pwd = os.environ['JIRA_PASSWORD']
+    except KeyError :
+        print("JIRA credentials not found in environment")
+        jira_id = input("JIRA username: ")
+        jira_pwd = getpass.getpass("JIRA password: ")
+    return jira_id, jira_pwd
+
+
+def run_pytest_cmd(args, te_tag, parallel_red) :
+    tag = '-m ' + te_tag
+    is_parallel = "--is_parallel=" + parallel_red
+    log_level = "--log-cli-level=" + str(args.log_level)
+    prc_cnt = str(args.prc_cnt) + "*popen"
+    if parallel_red == "true" :
+        report_name = "--html=parallel_" + args.html_report
+        cmd_line = ["pytest", is_parallel, log_level, report_name, "-d", "--tx", prc_cnt, tag]
+    else :
+        report_name = "--html=non_parallel_" + args.html_report
+        cmd_line = ["pytest", is_parallel, log_level, report_name, tag]
 def run_pytest_cmd(args, te_tag, parallel_red, te_ticket=None):
     tag = '-m ' + te_tag
     is_parallel = "--is_parallel=" + parallel_red
@@ -104,6 +129,6 @@ def main(args) :
         print("Json or test execution id is expected")
 
 
-if __name__ == '__main__':
+if __name__ == '__main__' :
     opts = parse_args()
     main(opts)

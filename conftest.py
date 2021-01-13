@@ -20,6 +20,42 @@
 # !/usr/bin/python
 import pytest
 import os
+import csv
+
+
+def pytest_addoption(parser) :
+    parser.addoption(
+        "--is_parallel", action="store", default="false", help="option: true or false"
+    )
+
+
+def read_test_list_csv() :
+    try :
+        with open('test_lists.csv') as f :
+            reader = csv.reader(f)
+            test_list = list(reader)
+            return test_list
+    except Exception as e :
+        print(e)
+
+
+def pytest_collection_modifyitems(config, items) :
+    required_tests = read_test_list_csv()
+    selected_items = []
+    for item in items :
+        parallel_found = 'false'
+        test_found = ''
+        for mark in item.iter_markers() :
+            if mark.name == 'parallel' :
+                parallel_found = 'true'
+                if config.option.is_parallel == 'false' :
+                    break
+            elif mark.name == 'tags' :
+                test_found = mark.args[0]
+        if parallel_found == config.option.is_parallel and test_found != '' :
+            if [test_found] in required_tests :
+                selected_items.append(item)
+    items[:] = selected_items
 import pathlib
 import json
 import logging
@@ -152,6 +188,7 @@ def pytest_runtest_makereport(item, call) :
     # execute all other hooks to obtain the report object
     outcome = yield
     rep = outcome.get_result()
+    # print(rep)
     # we only look at actual failing test calls, not setup/teardown
     fail_file = 'failed_tests.log'
     pass_file = 'passed_tests.log'
