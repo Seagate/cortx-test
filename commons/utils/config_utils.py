@@ -52,13 +52,14 @@ def read_yaml(fpath):
         with open(fpath) as fin:
             try:
                 data = yaml.safe_load(fin)
-                print(data)
             except yaml.YAMLError as exc:
                 err_msg = "Failed to parse: {}\n{}".format(fpath, str(exc))
+                log.error(err_msg)
                 return False, exc
 
     else:
         err_msg = "Specified file doesn't exist: {}".format(fpath)
+        log.error(err_msg)
         return False, cterr.FILE_MISSING
 
     return True, data

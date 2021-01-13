@@ -38,7 +38,7 @@ class Host():
         self.host_obj = None
         self.shell_obj = None
 
-    def connect(self, shell=False, timeout_sec=400, **kwargs) -> bool:
+    def connect(self, shell=False, retry=1, timeout=400, **kwargs) -> bool:
         """
         Connect to remote host using hostname, username and password attribute
         :param shell: In case required shell invocation
@@ -53,33 +53,23 @@ class Host():
             self.host_obj.connect(hostname=self.hostname,
                                   username=self.username,
                                   password=self.password,
-                                  timeout=timeout_sec,
+                                  timeout=timeout,
                                   **kwargs)
             if shell:
                 self.shell_obj = self.host_obj.invoke_shell()
 
-        except paramiko.AuthenticationException:
-            log.error("Server authentication failed")
-            result = False
-        except paramiko.SSHException as ssh_exception:
-            log.error("Could not establish ssh connection: %s", ssh_exception)
-            result = False
         except socket.timeout as timeout_exception:
             log.error("Could not establish connection because of timeout: %s",
                       timeout_exception)
-            result = self.reconnect(
-                1, shell=shell, timeout_sec=timeout_sec, **kwargs)
+            self.reconnect(retry, shell=shell, timeout=timeout, **kwargs)
         except Exception as error:
             log.error("Exception while connecting to server")
             log.error(f"Error message: {error}")
-            result = False
             if shell:
                 self.host_obj.close()
             if not isinstance(shell, bool):
                 shell.close()
-        else:
-            result = True
-        return result
+            raise error
 
     def connect_pysftp(self, private_key=None, private_key_pass: str = None) -> bool:
         """
@@ -89,29 +79,20 @@ class Host():
         :return: connection object based on the success
         :rtype: pysftp.Connection
         """
-        try:
-            log.debug(f"Connecting to host: {self.hostname}")
-            cnopts = pysftp.CnOpts()
-            cnopts.hostkeys = None
-            result = pysftp.Connection(host=self.hostname,
-                                       username=self.username,
-                                       password=self.password,
-                                       private_key=private_key,
-                                       private_key_pass=private_key_pass,
-                                       cnopts=cnopts)
-            self.host_obj = result
-        except socket.timeout as timeout_exception:
-            log.error(
-                "Could not establish connection because of timeout: %s",
-                timeout_exception)
-            result = False
-        except Exception as error:
-            log.error("Exception while connecting to server")
-            log.error(f"Error message: {error}")
-            result = False
-        return result
+        log.debug(f"Connecting to host: {self.hostname}")
+        cnopts = pysftp.CnOpts()
+        cnopts.hostkeys = None
+        result = pysftp.Connection(host=self.hostname,
+                                    username=self.username,
+                                    password=self.password,
+                                    private_key=private_key,
+                                    private_key_pass=private_key_pass,
+                                    cnopts=cnopts)
+        self.host_obj = result
 
     def disconnect(self):
+        """Disconnects the host obj
+        """    
         if self.shell_obj is not None:
             self.shell_obj.close()
         self.host_obj.close()
@@ -122,19 +103,18 @@ class Host():
         """
         This method re-connect to host machine
         :param retry_count: host retry count
-        :return: bool
         """
         while retry_count:
-            retval = self.connect(**kwargs)
-            if retval:
-                return retval
-            else:
+            try:
+                self.connect(**kwargs)
+                break
+            except:
+                log.debug("Attempting to reconnect")
                 retry_count -= 1
                 time.sleep(1)
-        return False
 
     def execute_cmd(self, cmd: str, inputs: str = None, read_lines: bool = False, 
-    read_nbytes: int = -1, timeout_sec=400, **kwargs) -> Tuple[bool, Union[List[str], str, bytes]]:
+    read_nbytes: int = -1, timeout=400, **kwargs) -> Tuple[bool, Union[List[str], str, bytes]]:
         """
         If connection is not established,  it will establish the connection and 
         Execute any command on remote machine/VM
@@ -142,35 +122,26 @@ class Host():
         :param read_lines: Response will be return using readlines() else using read()
         :param inputs: used to pass yes argument to commands.
         :param nbytes: nbytes returns string buffer.
+        :param timeout: command and connect timeout
         :return: bool, stdout / strerr
         """
-        try:
-            result = False
-            if self.host_obj.get_transport() is None:
-                result = self.connect(timeout=timeout_sec, **kwargs)
-            if result:
-                stdin, stdout, stderr = self.host_obj.exec_command(
-                    cmd, timeout=timeout_sec)
-                exit_status = stdout.channel.recv_exit_status()
-                log.debug(exit_status)
-                if exit_status != 0:
-                    err = stderr.readlines()
-                    err = [r.strip().strip("\n").strip() for r in err]
-                    log.debug("Error: %s" % str(err))
-                    if err:
-                        raise IOError(err)
-                    raise IOError(stdout.readlines())
-                else:
-                    if inputs:
-                        stdin.write('\n'.join(inputs))
-                        stdin.write('\n')
-                    stdin.flush()
-                    if read_lines:
-                        return True, stdout.readlines()
-                    else:
-                        return True, stdout.read(read_nbytes)
+        self.connect(timeout=timeout, **kwargs)
+        stdin, stdout, stderr = self.host_obj.exec_command(cmd, timeout=timeout)
+        exit_status = stdout.channel.recv_exit_status()
+        log.debug(exit_status)
+        if exit_status != 0:
+            err = stderr.readlines()
+            err = [r.strip().strip("\n").strip() for r in err]
+            log.debug("Error: %s" % str(err))
+            if err:
+                raise IOError(err)
+            raise IOError(stdout.readlines())
+        else:
+            if inputs:
+                stdin.write('\n'.join(inputs))
+                stdin.write('\n')
+                stdin.flush()
+            if read_lines:
+                return stdout.readlines()
             else:
-                raise Exception
-        except BaseException as error:
-            log.error(error)
-            return False, str(error)
+                return stdout.read(read_nbytes)
