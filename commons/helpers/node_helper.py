@@ -25,8 +25,8 @@ import shutil
 import time
 import posixpath
 import stat
+from typing import Tuple
 import mdstat
-from typing import Union, Tuple, List
 from commons import commands
 from commons.helpers.host import Host
 
@@ -61,7 +61,7 @@ class Node(Host):
         result["output"] = {}
         status_list = []
         for service in services:
-            log.info(f"service status {service}")
+            log.debug(f"service status {service}")
             cmd = commands.SYSTEMCTL_STATUS
             cmd = cmd.format(service)
             out = self.execute_cmd(cmd, read_lines=True, timeout=timeout)
@@ -102,45 +102,13 @@ class Node(Host):
         res = True if ".jar" in res_ls else False
         return res
 
-    def validate_alert_msg(self, remote_file_path:str, pattern_lst:list, shell:bool=True)->Tuple[bool,str]:
-        """
-        This function checks the list of alerts iteratively in the remote file
-        and return boolean value
-        :param remote_file_path: remote file
-        :param pattern_lst: list of err alerts generated
-        :return: Boolean, response
-        :rtype: tuple
-        """
-
-        response = None
-        local_path = os.path.join(os.getcwd(), 'temp_file')
-        try:
-            if os.path.exists(local_path):
-                os.remove(local_path)
-            res = self.copy_file_to_local(file_path=remote_file_path,
-                                          local_path=local_path, shell=shell)
-            for pattern in pattern_lst:
-                if pattern in open(local_path).read():
-                    response = pattern
-                else:
-                    log.info("Match not found : {}".format(pattern))
-                    return False, pattern
-                log.info("Match found : {}".format(pattern))
-            return True, response
-        except BaseException as error:
-            log.error(EXCEPTION_MSG.format(Node.removedir.__name__, error))
-        finally:
-            if os.path.exists(local_path):
-                os.remove(local_path)
-
     def path_exists(self, path:str)->bool:
         """
-        Check if file exists 
+        Check if file exists
         :param path: Absolute path of the file
-        :return: bool, response
         """
         self.connect_pysftp()
-        log.info("client connected")
+        log.debug("client connected")
         try:
             self.host_obj.stat(path)
         except BaseException:
@@ -148,18 +116,18 @@ class Node(Host):
         self.disconnect()
         return True
 
-    def create_file(self, file_name:str, mb_count:int, dev = "/dev/zero", bs="1M")->str:
+    def create_file(self, filename:str, mb_count:int, dev = "/dev/zero", bs="1M")->str:
         """
         Creates a new file, size(count) in MB
-        :param file_name: Name of the file with path
+        :param filename: Name of the file with path
         :param mb_count: size of the file in MB
         :return: output of remote execution cmd
         """
-        cmd = commands.CREATE_FILE.format(dev,file_name,bs, mb_count)
+        cmd = commands.CREATE_FILE.format(dev,filename,bs, mb_count)
         log.debug(cmd)
-        result = self.execute_cmd(cmd, shell=False)
+        result = self.execute_cmd(cmd)
         log.debug("output = {}".format(result))
-        return result
+        return self.path_exists(filename), result
 
     def rename_file(self, old_filename:str, new_filename:str):
         """
@@ -171,9 +139,9 @@ class Node(Host):
         log.debug("sftp connected")
         try:
             self.host_obj.rename(old_filename, new_filename)
-        except IOError as err:
-            if err[0] == 2:
-                raise err
+        except IOError as error:
+            if error.args[0] == 2:
+                raise error
         self.disconnect()
         
     def remove_file(self,filename:str):
@@ -188,60 +156,48 @@ class Node(Host):
         log.debug(f"Connected to {self.hostname}")
         try:
             self.host_obj.remove(filename)
-        except IOError as err:
-            if err[0] == 2:
-                raise err
+        except IOError as error:
+            if error.args[0] == 2:
+                raise error
         self.disconnect()
+        return not self.path_exists(filename)
 
     def read_file(self, filename:str, local_path:str):
         """
         This function reads the given file and returns the file content
         :param filename: Absolute path of the file to be read
-        :param host: IP of the host
-        :param user: user name of the host
-        :param pwd: password for the user
         """
-        try:
-            if os.path.exists(local_path):
-                os.remove(local_path)
-            resp = self.copy_file_to_local(file_path=filename,
-                                           local_path=local_path)
-            if resp[0]:
-                file = open(local_path, 'r')
-                response = file.read()
-                return response
-        except BaseException as error:
-            log.error(EXCEPTION_MSG.format(Node.read_file.__name__, error))
-        finally:
-            if os.path.exists(local_path):
-                os.remove(local_path)
+        if os.path.exists(local_path):
+            os.remove(local_path)
+        self.copy_file_to_local(remote_path=filename, local_path=local_path)
+        file = open(local_path, 'r')
+        response = file.read()
+        if os.path.exists(local_path):
+            os.remove(local_path)
+        return response
 
-    def copy_file_to_remote(self, local_path:str,remote_file_path:str)->None:
+    def copy_file_to_remote(self, local_path:str,remote_path:str)->None:
         """
         copy file from local to local remote
         :param str local_path: local path
         :param str remote_file_path: remote path
-        :return: boolean, remote_path/error
-        :rtype: tuple
         """
         self.connect_pysftp()
-        log.info("sftp connected")
-        self.host_obj.put(local_path, remote_file_path)
-        log.info("file copied to : {}".format(remote_file_path))
+        log.debug("sftp connected")
+        self.host_obj.put(local_path, remote_path)
+        log.debug("file copied to : {}".format(remote_path))
         self.disconnect()
 
-    def copy_file_to_local(self,file_path:str, local_path:str)->None:
+    def copy_file_to_local(self,remote_path:str, local_path:str)->None:
         """
         copy file from local to local remote
         :param str local_path: local path
         :param str remote_file_path: remote path
-        :return: boolean, remote_path/error
-        :rtype: tuple
         """
         self.connect_pysftp()
-        log.info("sftp connected")
-        self.host_obj.get(file_path, local_path)
-        log.info("file copied to : {}".format(local_path))
+        log.debug("sftp connected")
+        self.host_obj.get(remote_path, local_path)
+        log.debug("file copied to : {}".format(local_path))
         self.disconnect()
 
     def write_remote_file_to_local_file(self, file_path:str, local_path:str)->None:
@@ -271,23 +227,21 @@ class Node(Host):
         self.remove_file(mdstat_local_path)
         return output
 
-    def is_string_in_remote_file(self,string,file_path, shell=True):
+    def is_string_in_remote_file(self,string:str,file_path:str)->bool:
         """
         find given string in file present on s3 server
         :param string: String to be check
-        :param file_path: file path
-        :return: Boolean
+        :param file_path: absolute file path
         """
         local_path = os.path.join(os.getcwd(), "temp_file")
         try:
             if os.path.exists(local_path):
                 os.remove(local_path)
-            response = self.copy_file_to_local(
-                file_path, local_path, shell=shell)
+            self.copy_file_to_local(file_path, local_path)
             data = open(local_path).read()
             match = re.search(string, data)
             if match:
-                log.info("Match found in : {}".format(file_path))
+                log.debug("Match found in : {}".format(file_path))
                 return True, match
             else:
                 return False, "String Not Found"
@@ -305,11 +259,11 @@ class Node(Host):
         :return: response: Boolean
         :rtype: list
         """
-        client = self.connect_pysftp()
-        log.info("client connected")
+        self.connect_pysftp()
+        log.debug("client connected")
         try:
-            resp = client.isdir(remote_path)
-            client.close()
+            resp = self.host_obj.isdir(remote_path)
+            self.host_obj.close()
             if resp:
                 return True, resp
             else:
@@ -318,7 +272,7 @@ class Node(Host):
             log.error(EXCEPTION_MSG.format(Node.validate_is_dir.__name__, error))
             return False, error
 
-    def list_dir(self, remote_path):
+    def list_dir(self, remote_path:str)->list:
         """
         This function list the files of the remote server
         :param str remote_path: absolute path on the remote server
@@ -328,78 +282,41 @@ class Node(Host):
         :param pwd: Password for the user
         :rtype: list
         """
+        self.connect_pysftp()
         try:
-            client = self.connect_pysftp()
-            try:
-                dir_lst = self.host_obj.listdir(remote_path)
-            except IOError as err:
-                if err[0] == 2:
-                    raise err
-            return True, dir_lst
-        except BaseException as error:
-            log.error(EXCEPTION_MSG.format(Node.list_remote_dir.__name__, error))
-            return False, error
+            dir_lst = self.host_obj.listdir(remote_path)
+        except IOError as error:
+            if error.args[0] == 2:
+                raise error
+        return dir_lst
 
-    def make_dir(self, path, dir_name):
+    def make_dir(self, dpath:str)->bool:
         """
         Make directory
         """
         mkdir_cmd = "mkdir {}"
-        try:
-            if path is None or dir_name is None:
-                raise TypeError("path or dir_name incorrect")
-            if not self.is_dir_exists(path, dir_name):
-                log.debug(f"Directory '{dir_name}' not exists, creating directory...")
-                dpath = os.path.join(path, dir_name)
-                self.execute_cmd(mkdir_cmd.format(dpath))
-            else:
-                log.info(f"Directory '{dir_name}' already exist...")
-            return True
+        if dpath is None:
+            raise TypeError("path or dir_name incorrect")
+        if not self.path_exists(dpath):
+            log.debug(f"Directory '{dpath}' not exists, creating directory...")
+            self.execute_cmd(mkdir_cmd.format(dpath))
+        return self.path_exists(dpath)
 
-        except Exception as error:
-            log.error(EXCEPTION_MSG.format(Node.makedir.__name__, error))
-            return False
-
-    def remove_dir(self, path):
+    def remove_dir(self, dpath:str):
         """Remove directory
         """
-        cmd = f"rm -rf {path}"
-        try:
-            if path is None:
-                raise TypeError("Requires path to delete directory")
-            if not path.startswith("/"):
-                raise TypeError("Requires absolute path")
-            log.info(f"Removing directory : {path}")
-            ret_val = self.execute_cmd(cmd)
-            if ret_val:
-                log.info("Successfully delete directory")
-                return True
-        except Exception as error:
-            log.error(EXCEPTION_MSG.format(Node.removedir.__name__, error))
-            return False
+        cmd = f"rm -rf {dpath}"
+        if dpath is None:
+            raise TypeError("Requires path to delete directory")
+        if not dpath.startswith("/"):
+            raise TypeError("Requires absolute path")
+        log.debug(f"Removing directory : {dpath}")
+        ret_val = self.execute_cmd(cmd)
+        if ret_val:
+            log.debug("Successfully delete directory")
+        return not self.path_exists(dpath)
 
-    def deletedir_sftp(self, sftp, remotepath, level=0):
-        """
-        This function deletes all the remote server files and directory
-        recursively of the specified path
-        :param object sftp: paramiko.sftp object
-        :param str remotepath: Remote directory to be deleted
-        :param int level: Level or depth of remote directory
-        :return: None
-        """
-        try:
-            for f in sftp.listdir_attr(remotepath):
-                rpath = posixpath.join(remotepath, f.filename)
-                if stat.S_ISDIR(f.st_mode):
-                    self.delete_remote_dir(sftp, rpath, level=(level + 1))
-                else:
-                    rpath = posixpath.join(remotepath, f.filename)
-                    sftp.remove(rpath)
-            sftp.rmdir(remotepath)
-        except Exception as error:
-            log.error(EXCEPTION_MSG.format(Node.removedir.__name__, error))
-
-    def create_dir(self, dir_name, dest_dir, shell=True):
+    def create_dir_sftp(self, dpath:str)-> bool:
         """
         This function creates directory on the remote server and returns the
         absolute path of the remote server
@@ -407,32 +324,41 @@ class Node(Host):
         :param str dest_dir: Remote destination path on remote server
         :return: (Boolean, Remotepath)
         """
-        remote_path = os.path.join(dest_dir, dir_name)
-        try:
-            client = self.connect(shell=shell)
-            sftp = client.open_sftp()
-            log.debug("sftp connected")
-            dir_path = str()
-            for dir_folder in remote_path.split("/"):
-                if dir_folder == "":
-                    continue
-                dir_path += r"/{0}".format(dir_folder)
-                try:
-                    sftp.listdir(dir_path)
-                except IOError:
-                    sftp.mkdir(dir_path)
-            sftp.close()
-            client.close()
-            return True, remote_path
-        except Exception as error:
-            log.error(EXCEPTION_MSG.format(Node.removedir.__name__, error))
-            sftp.close()
-            client.close()
-            return False, error
+        self.connect_pysftp()
+        log.debug("sftp connected")
+        dir_path = str()
+        for dir_folder in dpath.split("/"):
+            if dir_folder == "":
+                continue
+            dir_path += r"/{0}".format(dir_folder)
+            try:
+                self.host_obj.listdir(dir_path)
+            except IOError:
+                self.host_obj.mkdir(dir_path)
+        self.disconnect()
+        return self.path_exists(dpath)
 
-    ################################################################################
-    # Remote process operations
-    ################################################################################
+    def delete_dir_sftp(self, dpath:str, level:int=0)->bool:
+        """
+        This function deletes all the remote server files and directory
+        recursively of the specified path
+        :param str dpath: Remote directory to be deleted
+        :param int level: Level or depth of remote directory
+        :return: None
+        """
+        self.connect_pysftp()
+        log.debug("sftp connected")
+        for f in self.host_obj.listdir_attr(dpath):
+            rpath = posixpath.join(dpath, f.filename)
+            if stat.S_ISDIR(f.st_mode):
+                self.delete_dir_sftp(rpath, level=(level + 1))
+            else:
+                rpath = posixpath.join(dpath, f.filename)
+                self.host_obj.remove(rpath)
+        self.host_obj.rmdir(dpath)
+        self.disconnect()
+        return not self.path_exists(dpath)
+
     def kill_remote_process(self, process_name:str):
         """
         Kill all process matching the process_name at s3 server
@@ -444,18 +370,11 @@ class Node(Host):
         """
         Function to get process ID using pgrep cmd.
         :param str process: Name of the process
-        :param bool remote: Remote process or local. True/False
-        :param str host: IP of the host
-        :param str user: user name of the host
-        :param str pwd: password for the user
         :return: bool, response/error
         :rtype: tuple
         """
         return self.execute_cmd(commands.PGREP_CMD.format(process))
 
-    ################################################################################
-    # Power operations
-    ################################################################################
     def toggle_apc_node_power(self, pdu_ip, pdu_user, pdu_pwd, node_slot, timeout=120, status=None):
         """
         Functon to toggle node power status usng APC PDU switch.
@@ -482,14 +401,14 @@ class Node(Host):
         try:
             if not cmd:
                 return False, "Command not found"
-            log.info(f"Executing cmd: {cmd}")
+            log.debug(f"Executing cmd: {cmd}")
             resp = self.execute_cmd(cmd)
             log.debug(f"Output: {resp}")
         except BaseException as error:
             log.error(EXCEPTION_MSG.format(Node.toggle_apc_node_power.__name__, error))
             return False, error
 
-        log.info(f"Successfully executed cmd {cmd}")
+        log.debug(f"Successfully executed cmd {cmd}")
         return resp
 
     def shutdown_node(self, options=None):
@@ -498,10 +417,11 @@ class Node(Host):
         """
         try:
             cmd = "shutdown {}".format(options if options else "")
-            log.info(f"Shutting down {self.hostname} node using cmd: {cmd}.")
+            log.debug(f"Shutting down {self.hostname} node using cmd: {cmd}.")
             resp = self.execute_cmd(cmd, shell=False)
-            log.info(resp)
+            log.debug(resp)
         except BaseException as error:
             log.error(EXCEPTION_MSG.format(Node.shutdown_node.__name__, error))
             return False, error
         return True, "Node shutdown successfully"
+

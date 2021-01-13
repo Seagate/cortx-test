@@ -15,12 +15,14 @@ def test_node_helper():
     x.create_file('tmp.txt',34)
     x.rename_file('tmp.txt','dk.txt')
     x.remove_file('dk.txt')
+    x.list_dir('/root')
+    x.make_dir('/root/test_dk')
+    x.path_exists('/root/test_dk')
+    x.remove_dir('/root/test_dk')
+    x.create_dir_sftp('/root/test_dk')
+    x.delete_dir_sftp('/root/test_dk')
     x.execute_cmd('pwd')
-    x.is_dir_exists('/root','hw_cfg')
-    x.makedir('/root/','test')
-    
 
-    x.create_file('tmp',20)
     
 def test_health_helper():
     x = Health("10.237.65.202","root","seagate")

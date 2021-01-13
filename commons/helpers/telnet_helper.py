@@ -2,12 +2,12 @@
 import socket
 import logging
 
-from telnetlib import Telnet
+from telnetlib import Telnet as Tnet
 from typing import Union, Tuple, List
 log = logging.getLogger(__name__)
 
 
-class TelnetLib:
+class Telnet:
     """
     Telnet Class Lib used to write wrapper methods.
     Telnet from python is used to create generic calls and further extensions are added.
@@ -35,11 +35,11 @@ class TelnetLib:
         self.pwd = pwd if isinstance(pwd, bytes) else pwd.encode()
         self.timeout = timeout
         try:
-            self.tn = Telnet(host=self.host, port=self.port, timeout=self.timeout)
+            self.tn = Tnet(host=self.host, port=self.port, timeout=self.timeout)
         except (socket.error, Exception) as error:
             log.error(f"Error in {TelnetLib.__init__.__name__}. error: {error}")
         else:
-            log.info(f"Connected to host {self.host} successfully.")
+            log.debug(f"Connected to host {self.host} successfully.")
 
     def connect(self) -> Tuple[bool, str]:
         """
@@ -50,18 +50,18 @@ class TelnetLib:
         try:
             self.tn.write(b'\n')
             if b'GEM>' in (self.read()):
-                log.info("GEM Console connected successfully without login/password.")
+                log.debug("GEM Console connected successfully without login/password.")
                 return True, "Connected."
             if b'Password:' in self.read():
                 resp = self._write(self.pwd)
-                log.info(resp)
+                log.debug(resp)
                 return self.login(resp)
             else:
                 resp = self.read()
-                log.info(resp)
+                log.debug(resp)
                 return self.login(resp)
         except Exception as error:
-            log.error(f"Error in {TelnetLib.connect.__name__}. Could not establish connection: error: {error}")
+            log.error(f"Error in {Telnet.connect.__name__}. Could not establish connection: error: {error}")
 
         return False, "Failed to connect."
 
@@ -77,10 +77,10 @@ class TelnetLib:
                 if b'Password:' in resp:
                     resp = self._write(self.pwd)
                     if b'GEM>' in resp:
-                        log.info("Login Successful with login and password.")
+                        log.debug("Login Successful with login and password.")
                         return True, "Connected."
         except Exception as error:
-            log.error(f"Error in {TelnetLib.login.__name__}, ConnectionRefusedError:{error}")
+            log.error(f"Error in {Telnet.login.__name__}, ConnectionRefusedError:{error}")
 
         return False, "Failed to connect."
 
@@ -112,7 +112,7 @@ class TelnetLib:
             b_str = b_str if isinstance(b_str, bytes) else b_str.encode()  # convert string to bytes.
             read_response = self.tn.read_until(b_str, timeout)
         except Exception as error:
-            log.error(f"Error in {TelnetLib.read.__name__}, Error:{error}")
+            log.error(f"Error in {Telnet.read.__name__}, Error:{error}")
 
         return read_response
 
@@ -125,9 +125,9 @@ class TelnetLib:
         read_all_response = b""
         try:
             read_all_response = self.tn.read_all()
-            log.info(f"Read all response: {read_all_response}")
+            log.debug(f"Read all response: {read_all_response}")
         except Exception as error:
-            log.error(f"Error in {TelnetLib.read_all.__name__}, Error:{error}")
+            log.error(f"Error in {Telnet.read_all.__name__}, Error:{error}")
 
         return read_all_response
 
@@ -146,9 +146,9 @@ class TelnetLib:
             self.tn.write(b_str)
             self.tn.write(b'\n')
             write_response = self.read()
-            log.info(f"Write response: {write_response}")
+            log.debug(f"Write response: {write_response}")
         except Exception as error:
-            log.error(f"Error in {TelnetLib._write.__name__}, Error:{error}")
+            log.error(f"Error in {Telnet._write.__name__}, Error:{error}")
 
         return write_response
 
@@ -177,9 +177,9 @@ class TelnetLib:
             response = self.result(response)
             if not response:
                 flag = False
-            log.info(f"Execute cmd response: {response}")
+            log.debug(f"Execute cmd response: {response}")
         except Exception as error:
-            log.error(f"Error in {TelnetLib.execute_cmd.__name__}, Error:{error}")
+            log.error(f"Error in {Telnet.execute_cmd.__name__}, Error:{error}")
 
         return flag, response
 
@@ -196,6 +196,6 @@ class TelnetLib:
             response = response.decode("utf-8") if isinstance(response, bytes) else response  # convert to string.
             response = response.split("\r\n")[1:-1]  # Output cleanup: split text around \r\n, skip first, last element.
         except Exception as error:
-            log.error(f"Error in {TelnetLib.result.__name__}, Error:{error}")
+            log.error(f"Error in {Telnet.result.__name__}, Error:{error}")
 
         return response
