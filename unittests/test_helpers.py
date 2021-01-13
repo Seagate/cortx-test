@@ -3,6 +3,7 @@ import logging
 from commons.helpers.node_helper import Node
 from commons.helpers.health_helper import Health
 from commons.helpers.bmc_helper import Bmc
+from commons.helpers.telnet_helper import Telnet
 
 def test_node_helper():
     x = Node("10.237.65.202","root","seagate")
@@ -41,7 +42,6 @@ def test_health_helper():
     x.is_machine_already_configured()
     x.all_cluster_services_online()
 
-
 def test_bmc_helper():
     x = Bmc(hostname="sm7-r19.pun.seagate.com", username="root", password="seagate")
     x.get_bmc_ip()
@@ -50,3 +50,12 @@ def test_bmc_helper():
     x.set_bmc_ip('10.237.65.16')
     x.create_bmc_ip_change_fault('10.234.56.9')
     x.resolve_bmc_ip_change_fault('10.237.65.16')
+
+def test_telnet_helper():
+    host = "10.237.67.16"
+    username = "engineer"
+    password = "S3ag@teEng"
+    port1 = "9012"
+    port2 = "9014"
+    x = Telnet(host,port1,username,password)
+    x.connect()

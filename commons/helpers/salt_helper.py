@@ -80,3 +80,4 @@ class SaltHelper(Host):
                     pillar_key, pillar_value))
 
         return True, pillar_value
+    

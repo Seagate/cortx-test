@@ -17,13 +17,9 @@ class Telnet:
         """
         Constructor to connect to controller and perform CRUD operations.
         :param host: primary node host.
-        :type host: str.
         :param port: valid port number.
-        :type port: str
         :param user: primary node username.
-        :type user: str.
         :param pwd: primary node password.
-        :type pwd: str.
         :param timeout: waiting time
         :type timeout: int
         :return: None
@@ -37,7 +33,7 @@ class Telnet:
         try:
             self.tn = Tnet(host=self.host, port=self.port, timeout=self.timeout)
         except (socket.error, Exception) as error:
-            log.error(f"Error in {TelnetLib.__init__.__name__}. error: {error}")
+            log.error(f"Error in {Telnet.__init__.__name__}. error: {error}")
         else:
             log.debug(f"Connected to host {self.host} successfully.")
 
@@ -123,12 +119,8 @@ class Telnet:
         :rtype: bytes.
         """
         read_all_response = b""
-        try:
-            read_all_response = self.tn.read_all()
-            log.debug(f"Read all response: {read_all_response}")
-        except Exception as error:
-            log.error(f"Error in {Telnet.read_all.__name__}, Error:{error}")
-
+        read_all_response = self.tn.read_all()
+        log.debug(f"Read all response: {read_all_response}")
         return read_all_response
 
     def _write(self,
@@ -141,15 +133,11 @@ class Telnet:
         :rtype: bytes.
         """
         write_response = b""
-        try:
-            b_str = b_str if isinstance(b_str, bytes) else b_str.encode()  # convert string to bytes.
-            self.tn.write(b_str)
-            self.tn.write(b'\n')
-            write_response = self.read()
-            log.debug(f"Write response: {write_response}")
-        except Exception as error:
-            log.error(f"Error in {Telnet._write.__name__}, Error:{error}")
-
+        b_str = b_str if isinstance(b_str, bytes) else b_str.encode()  # convert string to bytes.
+        self.tn.write(b_str)
+        self.tn.write(b'\n')
+        write_response = self.read()
+        log.debug(f"Write response: {write_response}")
         return write_response
 
     def execute_cmd(self,
@@ -163,24 +151,20 @@ class Telnet:
         :rtype: List[bool, list]
         """
         flag, response = True, b""
-        try:
-            cmd = cmd if isinstance(cmd, bytes) else cmd.encode()  # convert string to bytes.
-            response = self._write(cmd)
-            if b'Invalid Command.' in response:
-                flag = False
-            if b'This command can only be run from the master' in response:
-                flag = False
-            if b'Unknown command.' in response:
-                flag = False
-            if b'Authentication failed' in response:
-                flag = False
-            response = self.result(response)
-            if not response:
-                flag = False
-            log.debug(f"Execute cmd response: {response}")
-        except Exception as error:
-            log.error(f"Error in {Telnet.execute_cmd.__name__}, Error:{error}")
-
+        cmd = cmd if isinstance(cmd, bytes) else cmd.encode()  # convert string to bytes.
+        response = self._write(cmd)
+        if b'Invalid Command.' in response:
+            flag = False
+        if b'This command can only be run from the master' in response:
+            flag = False
+        if b'Unknown command.' in response:
+            flag = False
+        if b'Authentication failed' in response:
+            flag = False
+        response = self.result(response)
+        if not response:
+            flag = False
+        log.debug(f"Execute cmd response: {response}")
         return flag, response
 
     @staticmethod
@@ -192,10 +176,6 @@ class Telnet:
         :return: list.
         :rtype: List.
         """
-        try:
-            response = response.decode("utf-8") if isinstance(response, bytes) else response  # convert to string.
-            response = response.split("\r\n")[1:-1]  # Output cleanup: split text around \r\n, skip first, last element.
-        except Exception as error:
-            log.error(f"Error in {Telnet.result.__name__}, Error:{error}")
-
+        response = response.decode("utf-8") if isinstance(response, bytes) else response  # convert to string.
+        response = response.split("\r\n")[1:-1]  # Output cleanup: split text around \r\n, skip first, last element.
         return response
