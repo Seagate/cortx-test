@@ -23,19 +23,24 @@ import os
 import pathlib
 import json
 import logging
+import csv
+import re
+import builtins
 from _pytest.nodes import Item
 from _pytest.runner import CallInfo
 from testfixtures import LogCapture
 from commons.utils import yaml_utils
 from commons import Globals
 from commons import cortxlogging
-
+from commons.utils import jira_utils
+from core.runner import LRUCache
+from core.runner import get_jira_credential
 pytest_plugins = [
     "commons.conftest",
 ]
 
 FAILURES_FILE = "failures.txt"
-
+CACHE = LRUCache(1024 * 10)
 
 @pytest.fixture(autouse=True, scope='session')
 def read_project_config(request):
@@ -82,6 +87,50 @@ def log_cutter(request, formatter):
     del Globals.records[name]
 
 
+# content of conftest.py
+def pytest_addoption(parser) :
+    parser.addoption(
+        "--is_parallel", action="store", default="false", help="option: true or false"
+    )
+    parser.addoption(
+        "--te_tkt", action="store", default="", help="TE ticket's ID"
+    )
+    parser.addoption(
+        "--logpath", action="store", default=None, help="Log root folder path"
+    )
+
+
+def read_test_list_csv() :
+    try :
+        with open('test_lists.csv') as f :
+            reader = csv.reader(f)
+            test_list = list(reader)
+            return test_list
+    except Exception as e :
+        print(e)
+
+
+def pytest_collection_modifyitems(config, items):
+    required_tests = read_test_list_csv()
+    Globals.TE_TKT = config.option.te_tkt
+    selected_items = []
+    for item in items:
+        parallel_found = 'false'
+        test_found = ''
+        for mark in item.iter_markers():
+            if mark.name == 'parallel':
+                parallel_found = 'true'
+                if config.option.is_parallel == 'false':
+                    break
+            elif mark.name == 'tags' :
+                test_found = mark.args[0]
+        if parallel_found == config.option.is_parallel and test_found != '':
+            if [test_found] in required_tests:
+                selected_items.append(item)
+        CACHE.store(item.nodeid, test_found)
+    items[:] = selected_items
+
+
 # @pytest.hookimpl(hookwrapper=True)
 # def pytest_runtest_makereport(item: Item, call: CallInfo):
 #     # All code prior to yield statement would be ran prior
@@ -119,3 +168,22 @@ def pytest_runtest_makereport(item, call) :
         else :
             extra = ""
         f.write(rep.nodeid + extra + "\n")
+
+
+def pytest_runtest_logreport(report: "TestReport") -> None:
+    if report.when == 'teardown':
+        log = report.caplog
+        ansi_escape = re.compile(r'(\x9B|\x1B\[)[0-?]*[ -\/]*[@-~]')
+        ansi_escape.sub('', log)
+        logs = log.split('\n')
+        test_id = CACHE.lookup(report.nodeid)
+        name = str(test_id) + report.nodeid.split('::')[1]
+        with open(name, 'w') as fp:
+            for rec in logs:
+                fp.write(rec + '\n')
+        jira_id, jira_pwd = get_jira_credential()
+        task = jira_utils.JiraTask(jira_id, jira_pwd)
+        task.update_test_jira_status(Globals.TE_TKT, test_id, report.outcome.capitalize())
+
+
+

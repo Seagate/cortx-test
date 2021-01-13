@@ -14,7 +14,7 @@ LOG_FILE = 'cortx-test.log'
 def init_loghandler(log) -> None:
     log.setLevel(logging.DEBUG)
     make_log_dir(LOG_DIR)
-    fh = logging.FileHandler(os.path.join(os.getcwd(), LOG_DIR, LOG_FILE), mode='a')
+    fh = logging.FileHandler(os.path.join(os.getcwd(), LOG_DIR, LOG_FILE), mode='w')
     fh.setLevel(logging.DEBUG)
     ch = logging.StreamHandler()
     ch.setLevel(logging.DEBUG)

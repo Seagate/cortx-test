@@ -22,6 +22,7 @@ import pytest
 import pathlib
 import json
 import logging
+import csv
 from _pytest.nodes import Item
 from _pytest.runner import CallInfo
 from testfixtures import LogCapture
@@ -94,14 +95,6 @@ def data():
 def test_config():
     test_cfg = yaml_utils.read_yaml('di_config.yaml')
     yield
-
-# content of conftest.py
-
-def pytest_collection_modifyitems(session, config, items):
-    for item in items:
-        for marker in item.iter_markers(name="test_id"):
-            test_id = marker.args[0]
-            item.user_properties.append(("test_id", test_id))
 
 
 @pytest.hookimpl(hookwrapper=True)

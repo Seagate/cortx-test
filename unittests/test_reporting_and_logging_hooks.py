@@ -48,7 +48,8 @@ def min(values):
     logging.getLogger(__name__).info("inner function min is %s" % _min)
     return _min
 
-
+"""
+@pytest.mark.tags("TEST-17495")
 @pytest.mark.usefixtures("log_cutter")
 def test_min(request, capture, logger):
     values = (2, 3, 1, 4, 6)
@@ -62,6 +63,7 @@ def test_min(request, capture, logger):
     test_name = request.node.name
     Globals.records.update({test_name: records})
 
+@pytest.mark.tags("TEST-17496")
 @pytest.mark.usefixtures("log_cutter")
 def test_max(request, capture, logger):
     values = (2, 3, 1, 4, 6)
@@ -73,3 +75,24 @@ def test_max(request, capture, logger):
     test_name = request.node.name
     Globals.records.update({test_name: records})
 
+"""
+
+
+@pytest.mark.tags("TEST-17495")
+def test_min(logger):
+    values = (2, 3, 1, 4, 6)
+    val = min(values)
+    logger.debug("min is %s" % val)
+    logger.warning("min is %s" % val)
+    logger.info("min is %s" % val)
+    logger.error("min is %s" % val)
+    assert val == 1
+
+
+@pytest.mark.tags("TEST-17496")
+def test_max(request, capture, logger):
+    values = (2, 3, 1, 4, 6)
+
+    val = max(values)
+    logger.info("max is %s" % val)
+    assert val == 6
