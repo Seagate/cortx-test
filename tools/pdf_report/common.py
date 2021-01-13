@@ -45,7 +45,7 @@ def build_main_table(data):
         ('RIGHTPADDING', (0, 0), (-1, -1), 0),  # No padding
         ('BOTTOMPADDING', (0, 0), (-1, -1), 0),  # No padding
     ]))
-    table.argH[0] = 0.32 * inch
+    table._argH[0] = 0.32 * inch
     return table
 
 
@@ -60,7 +60,7 @@ def build_reported_bugs_table(data):
         ('TEXTCOLOR', (0, 5), (-1, 5), colors.HexColor(0x0070c0)),  # Blue for 5nd row
         ('TEXTCOLOR', (0, 7), (-1, 7), colors.HexColor(0x009933)),  # Green for 7nd row
     ]))
-    reported_bugs_table.argH[0] = 0.3 * inch
+    reported_bugs_table._argH[0] = 0.3 * inch
     return reported_bugs_table
 
 
@@ -73,7 +73,7 @@ def build_qa_report_table(data):
         ('TEXTCOLOR', (0, 3), (-1, 3), colors.HexColor(0x009933)),  # Green for 3nd row
         ('TEXTCOLOR', (0, 4), (-1, 4), colors.HexColor(0xff0000)),  # Red for 4nd row
     ]))
-    qa_report_table.argH[0] = 0.3 * inch
+    qa_report_table._argH[0] = 0.3 * inch
     return qa_report_table
 
 

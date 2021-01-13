@@ -56,14 +56,14 @@ def build_component_table(data):
         ('TEXTCOLOR', (9, 2), (9, -1), colors.HexColor(0xff0000)),  # Red for 10th column
         ('TEXTCOLOR', (0, -1), (-1, -1), colors.HexColor(0x0070c0)),  # Blue for last row
     ]))
-    component_table.argW[0] = 1.25 * inch
+    component_table._argW[0] = 1.25 * inch
     return component_table
 
 
 def build_single_bucket_perf_stats(data):
     single_bucket_perf_stats = Table(data, 9 * [0.71 * inch], 10 * [0.24 * inch],
                                      style=common.common_table_style)
-    single_bucket_perf_stats.argW[0] = 2 * inch
+    single_bucket_perf_stats._argW[0] = 2 * inch
     return single_bucket_perf_stats
 
 
@@ -78,8 +78,8 @@ def build_multi_bucket_perf_stats(data):
         ('LINEABOVE', (0, 27), (0, 31), 1, colors.HexColor(0xededed)),
         ('LINEABOVE', (0, 33), (0, 37), 1, colors.HexColor(0xededed)),
     ]))
-    multi_bucket_perf_stats.argW[0] = 1 * inch
-    multi_bucket_perf_stats.argW[1] = 1.25 * inch
+    multi_bucket_perf_stats._argW[0] = 1 * inch
+    multi_bucket_perf_stats._argW[1] = 1.25 * inch
     return multi_bucket_perf_stats
 
 
@@ -91,9 +91,12 @@ def build_metadata_latencies_table(data):
 
 def build_defect_table(data):
     stylesheet = getSampleStyleSheet()
-    for row in data[2:]:
+
+    # Set wrap text style for 5th column (Bug Description) in table.
+    for row in data[2:]:   # Do not apply for first two header rows
         if len(row) >= 5:
             row[5] = Paragraph(row[5], stylesheet['BodyText'])
+
     defect_table = Table(data, 6 * [0.72 * inch], None,
                          style=common.common_table_style)
     defect_table.setStyle(TableStyle([
@@ -104,10 +107,10 @@ def build_defect_table(data):
         ('RIGHTPADDING', (0, 0), (-1, -1), 5),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
     ]))
-    defect_table.argW[5] = 3.5 * inch
-    defect_table.argW[0] = 1.25 * inch
-    defect_table.argH[1] = 0.25 * inch
-    defect_table.argH[0] = 0.25 * inch
+    defect_table._argW[5] = 3.5 * inch
+    defect_table._argW[0] = 1.25 * inch
+    defect_table._argH[1] = 0.25 * inch
+    defect_table._argH[0] = 0.25 * inch
     return defect_table
 
 
