@@ -28,6 +28,7 @@ def pytest_addoption(parser) :
         "--is_parallel", action="store", default="false", help="option: true or false"
     )
 
+
 def read_test_list_csv() :
     try :
         with open('test_lists.csv') as f :
@@ -37,23 +38,25 @@ def read_test_list_csv() :
     except Exception as e :
         print(e)
 
+
 def pytest_collection_modifyitems(config, items) :
     required_tests = read_test_list_csv()
     selected_items = []
-    for item in items:
+    for item in items :
         parallel_found = 'false'
         test_found = ''
-        for mark in item.iter_markers():
-            if mark.name == 'parallel':
+        for mark in item.iter_markers() :
+            if mark.name == 'parallel' :
                 parallel_found = 'true'
-                if config.option.is_parallel == 'false':
+                if config.option.is_parallel == 'false' :
                     break
             elif mark.name == 'tags' :
                 test_found = mark.args[0]
-        if parallel_found == config.option.is_parallel and test_found != '':
-            if [test_found] in required_tests:
+        if parallel_found == config.option.is_parallel and test_found != '' :
+            if [test_found] in required_tests :
                 selected_items.append(item)
     items[:] = selected_items
+
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_runtest_makereport(item, call) :

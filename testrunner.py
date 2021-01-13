@@ -1,10 +1,11 @@
 import os
 import subprocess
 import argparse
-from core import runner
-from commons.utils.jira_utils import JiraTask
 import csv
 import getpass
+from core import runner
+from commons.utils.jira_utils import JiraTask
+
 
 
 def parse_args() :
