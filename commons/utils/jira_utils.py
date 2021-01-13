@@ -5,6 +5,7 @@ import json
 import requests
 import datetime
 from jira import JIRA
+from http import HTTPStatus
 
 
 class JiraTask :
@@ -23,47 +24,56 @@ class JiraTask :
         """
         Get test jira ids available in test execution jira
         """
-        test_list = []
-        page_not_zero = 1
-        page_cnt = 1
-        while page_not_zero :
-            jira_url = "https://jts.seagate.com/rest/raven/1.0/api/testexec/{}/test?page={}" \
-                .format(test_exe_id, page_cnt)
 
-            try :
-                response = requests.request("GET", jira_url, data=None, auth=(self.jira_id, self.jira_password),
-                                            headers=self.headers, params=None)
-                data = response.json()
-            except Exception as e :
-                print(e)
-            else :
-                if len(data) == 0 :
-                    page_not_zero = 0
+        jira_url = 'https://jts.seagate.com/rest/raven/1.0/testruns?testExecKey=' + test_exe_id
+        response = requests.get(jira_url, auth=(self.jira_id, self.jira_password))
+        test_list = []
+        te_tag = ""
+        if response.status_code == HTTPStatus.OK:
+            data = response.json()
+            if len(data[0]['testEnvironments']) > 0 :
+                te_tag = data[0]['testEnvironments'][0]
+                te_tag = te_tag.lower()
+            page_not_zero = 1
+            page_cnt = 1
+            while page_not_zero :
+                jira_url = "https://jts.seagate.com/rest/raven/1.0/api/testexec/{}/test?page={}" \
+                    .format(test_exe_id, page_cnt)
+
+                try :
+                    response = requests.request("GET", jira_url, data=None, auth=(self.jira_id, self.jira_password),
+                                                headers=self.headers, params=None)
+                    data = response.json()
+                except Exception as e :
+                    print(e)
                 else :
-                    page_cnt = page_cnt + 1
-                    for test in data :
-                        if status == 'ALL' :
-                            test_list.append(test['key'])
-                        elif status == 'FAIL' :
-                            if str(test['status']) == 'FAIL' :
+                    if len(data) == 0 :
+                        page_not_zero = 0
+                    else :
+                        page_cnt = page_cnt + 1
+                        for test in data :
+                            if status == 'ALL' :
                                 test_list.append(test['key'])
-                        elif status == 'TODO' :
-                            if str(test['status']) == 'TODO' :
-                                test_list.append(test['key'])
-                        elif status == 'PASS' :
-                            if str(test['status']) == 'PASS' :
-                                test_list.append(test['key'])
-                        elif status == 'ABORTED' :
-                            if str(test['status']) == 'ABORTED' :
-                                test_list.append(test['key'])
-            return test_list
+                            elif status == 'FAIL' :
+                                if str(test['status']) == 'FAIL' :
+                                    test_list.append(test['key'])
+                            elif status == 'TODO' :
+                                if str(test['status']) == 'TODO' :
+                                    test_list.append(test['key'])
+                            elif status == 'PASS' :
+                                if str(test['status']) == 'PASS' :
+                                    test_list.append(test['key'])
+                            elif status == 'ABORTED' :
+                                if str(test['status']) == 'ABORTED' :
+                                    test_list.append(test['key'])
+            return test_list, te_tag
 
     def get_test_list_from_te(self, test_exe_id, status='ALL') :
         """
         Get required test jira information for all tests from test execution jira.
         """
         test_details = []
-        test_list = self.get_test_ids_from_te(test_exe_id, status)
+        test_list , te_tag = self.get_test_ids_from_te(test_exe_id, status)
         for test in test_list :
             test_id = str(test)
             jira_link = 'https://jts.seagate.com/rest/raven/1.0/api/test?keys=' + test_id
@@ -92,7 +102,9 @@ class JiraTask :
             test_name = issue.fields.summary
             test_name_full = test_id + "_" + test_name.replace(" ", "_")
             test_details.append([test_id, test_name, test_to_execute])
-        return test_details
+        else:
+            print("Returned code from xray jira request: {}".format(response.status_code))
+        return test_details, te_tag
 
     def update_test_jira_status(self, test_exe_id, test_id, test_status, log_path='') :
         """
