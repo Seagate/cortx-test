@@ -28,7 +28,8 @@ def test_config_utils():
                                  }
                  }
     config_utils.create_content_json(os.getcwd(), json_data, 'user_json')
-    config_utils.read_content_json(os.getcwd(), 'user_json')
+    fpath = os.path.join(os.getcwd(), 'user_json')
+    config_utils.read_content_json(fpath)
     config_utils.parse_xml_controller("unittests/test_xml.xml",
                                       field_list=['location'])
     config_utils.get_config("config/common_config.yaml", "pdu")
