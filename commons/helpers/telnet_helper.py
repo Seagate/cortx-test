@@ -13,7 +13,7 @@ class Telnet:
     Telnet from python is used to create generic calls and further extensions are added.
     """
 
-    def __init__(self,host: str,port: str,user: str,pwd: str,timeout: int = 20) -> None:
+    def __init__(self, host: str, port: str, user: str, pwd: str, timeout: int = 20) -> None:
         """
         Constructor to connect to controller and perform CRUD operations.
         :param host: primary node host.
@@ -31,7 +31,8 @@ class Telnet:
         self.pwd = pwd if isinstance(pwd, bytes) else pwd.encode()
         self.timeout = timeout
         try:
-            self.tn = Tnet(host=self.host, port=self.port, timeout=self.timeout)
+            self.tn = Tnet(host=self.host, port=self.port,
+                           timeout=self.timeout)
         except (socket.error, Exception) as error:
             log.error(f"Error in {Telnet.__init__.__name__}. error: {error}")
         else:
@@ -46,7 +47,8 @@ class Telnet:
         try:
             self.tn.write(b'\n')
             if b'GEM>' in (self.read()):
-                log.debug("GEM Console connected successfully without login/password.")
+                log.debug(
+                    "GEM Console connected successfully without login/password.")
                 return True, "Connected."
             if b'Password:' in self.read():
                 resp = self._write(self.pwd)
@@ -57,7 +59,8 @@ class Telnet:
                 log.debug(resp)
                 return self.login(resp)
         except Exception as error:
-            log.error(f"Error in {Telnet.connect.__name__}. Could not establish connection: error: {error}")
+            log.error(
+                f"Error in {Telnet.connect.__name__}. Could not establish connection: error: {error}")
 
         return False, "Failed to connect."
 
@@ -76,7 +79,8 @@ class Telnet:
                         log.debug("Login Successful with login and password.")
                         return True, "Connected."
         except Exception as error:
-            log.error(f"Error in {Telnet.login.__name__}, ConnectionRefusedError:{error}")
+            log.error(
+                f"Error in {Telnet.login.__name__}, ConnectionRefusedError:{error}")
 
         return False, "Failed to connect."
 
@@ -105,7 +109,8 @@ class Telnet:
         """
         read_response = b""
         try:
-            b_str = b_str if isinstance(b_str, bytes) else b_str.encode()  # convert string to bytes.
+            # convert string to bytes.
+            b_str = b_str if isinstance(b_str, bytes) else b_str.encode()
             read_response = self.tn.read_until(b_str, timeout)
         except Exception as error:
             log.error(f"Error in {Telnet.read.__name__}, Error:{error}")
@@ -133,7 +138,8 @@ class Telnet:
         :rtype: bytes.
         """
         write_response = b""
-        b_str = b_str if isinstance(b_str, bytes) else b_str.encode()  # convert string to bytes.
+        # convert string to bytes.
+        b_str = b_str if isinstance(b_str, bytes) else b_str.encode()
         self.tn.write(b_str)
         self.tn.write(b'\n')
         write_response = self.read()
@@ -151,7 +157,8 @@ class Telnet:
         :rtype: List[bool, list]
         """
         flag, response = True, b""
-        cmd = cmd if isinstance(cmd, bytes) else cmd.encode()  # convert string to bytes.
+        # convert string to bytes.
+        cmd = cmd if isinstance(cmd, bytes) else cmd.encode()
         response = self._write(cmd)
         if b'Invalid Command.' in response:
             flag = False
@@ -176,6 +183,8 @@ class Telnet:
         :return: list.
         :rtype: List.
         """
-        response = response.decode("utf-8") if isinstance(response, bytes) else response  # convert to string.
-        response = response.split("\r\n")[1:-1]  # Output cleanup: split text around \r\n, skip first, last element.
+        response = response.decode("utf-8") if isinstance(response,
+                                                          bytes) else response  # convert to string.
+        # Output cleanup: split text around \r\n, skip first, last element.
+        response = response.split("\r\n")[1:-1]
         return response

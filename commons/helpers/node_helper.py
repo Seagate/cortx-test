@@ -33,27 +33,31 @@ from commons.helpers.host import Host
 log = logging.getLogger(__name__)
 EXCEPTION_MSG = "*ERROR* An exception occurred in {}: {}"
 
+
 class Node(Host):
     """
     Class to maintain all common functions across component
     """
-    def get_authserver_log(self, path:str, option:str="-n 3")->str:
+
+    def get_authserver_log(self, path: str, option: str = "-n 3") -> str:
         cmd = "tail {} {}".format(path, option)
         res = self.execute_cmd(cmd)
         return res
 
-    def send_systemctl_cmd(self, command:str, services:list,timeout:int=60)->list:
-        valid_commands = {"start", "stop", "reload", "enable", "disable", "status"}
+    def send_systemctl_cmd(self, command: str, services: list, timeout: int = 60) -> list:
+        valid_commands = {"start", "stop",
+                          "reload", "enable", "disable", "status"}
         if command not in valid_commands:
-            raise ValueError("command parameter must be one of %r." % valid_commands)
-        out=[]
+            raise ValueError(
+                "command parameter must be one of %r." % valid_commands)
+        out = []
         for service in services:
             log.debug("Performing {} on service {}...".format(command, service))
             cmd = commands.SYSTEM_CTL_CMD.format(command, service)
             out.append(self.execute_cmd(cmd, timeout=timeout))
         return out
 
-    def status_service(self, services:str, expected_status:str, timeout:int=2)->str:
+    def status_service(self, services: str, expected_status: str, timeout: int = 2) -> str:
         """
         This function display status of services
         """
@@ -77,7 +81,7 @@ class Node(Host):
         result["success"] = False not in status_list
         return result
 
-    def configure_jclient_cloud(self, source:str, destination:str, nfs_path:str)->bool:
+    def configure_jclient_cloud(self, source: str, destination: str, nfs_path: str) -> bool:
         """
         Function to configure jclient and cloud jar files
         :param source: path to the source dir where .jar are present.
@@ -102,7 +106,7 @@ class Node(Host):
         res = True if ".jar" in res_ls else False
         return res
 
-    def path_exists(self, path:str)->bool:
+    def path_exists(self, path: str) -> bool:
         """
         Check if file exists
         :param path: Absolute path of the file
@@ -116,20 +120,20 @@ class Node(Host):
         self.disconnect()
         return True
 
-    def create_file(self, filename:str, mb_count:int, dev = "/dev/zero", bs="1M")->str:
+    def create_file(self, filename: str, mb_count: int, dev="/dev/zero", bs="1M") -> str:
         """
         Creates a new file, size(count) in MB
         :param filename: Name of the file with path
         :param mb_count: size of the file in MB
         :return: output of remote execution cmd
         """
-        cmd = commands.CREATE_FILE.format(dev,filename,bs, mb_count)
+        cmd = commands.CREATE_FILE.format(dev, filename, bs, mb_count)
         log.debug(cmd)
         result = self.execute_cmd(cmd)
         log.debug("output = {}".format(result))
         return self.path_exists(filename), result
 
-    def rename_file(self, old_filename:str, new_filename:str):
+    def rename_file(self, old_filename: str, new_filename: str):
         """
         This function renames file on remote host.
         :param old_filename: Old name of the file(Absolute path)
@@ -143,8 +147,8 @@ class Node(Host):
             if error.args[0] == 2:
                 raise error
         self.disconnect()
-        
-    def remove_file(self,filename:str):
+
+    def remove_file(self, filename: str):
         """
         This function removes the unwanted file from the remote host.
         :param filename: Absolute path of the file to be removed
@@ -162,7 +166,7 @@ class Node(Host):
         self.disconnect()
         return not self.path_exists(filename)
 
-    def read_file(self, filename:str, local_path:str):
+    def read_file(self, filename: str, local_path: str):
         """
         This function reads the given file and returns the file content
         :param filename: Absolute path of the file to be read
@@ -176,7 +180,7 @@ class Node(Host):
             os.remove(local_path)
         return response
 
-    def copy_file_to_remote(self, local_path:str,remote_path:str)->None:
+    def copy_file_to_remote(self, local_path: str, remote_path: str) -> None:
         """
         copy file from local to local remote
         :param str local_path: local path
@@ -188,7 +192,7 @@ class Node(Host):
         log.debug("file copied to : {}".format(remote_path))
         self.disconnect()
 
-    def copy_file_to_local(self,remote_path:str, local_path:str)->None:
+    def copy_file_to_local(self, remote_path: str, local_path: str) -> None:
         """
         copy file from local to local remote
         :param str local_path: local path
@@ -200,7 +204,7 @@ class Node(Host):
         log.debug("file copied to : {}".format(local_path))
         self.disconnect()
 
-    def write_remote_file_to_local_file(self, file_path:str, local_path:str)->None:
+    def write_remote_file_to_local_file(self, file_path: str, local_path: str) -> None:
         """
         Writing remote file content in local file
         :param file_path: Remote path
@@ -221,13 +225,14 @@ class Node(Host):
         mdstat_local_path = "mdstat"
         log.debug(
             "Fetching /proc/mdstat file from the host {}".format(self.hostname))
-        self.write_remote_file_to_local_file(mdstat_remote_path, mdstat_local_path)
+        self.write_remote_file_to_local_file(
+            mdstat_remote_path, mdstat_local_path)
         log.debug("Parsing mdstat file")
         output = mdstat.parse(mdstat_local_path)
         self.remove_file(mdstat_local_path)
         return output
 
-    def is_string_in_remote_file(self,string:str,file_path:str)->bool:
+    def is_string_in_remote_file(self, string: str, file_path: str) -> bool:
         """
         find given string in file present on s3 server
         :param string: String to be check
@@ -246,13 +251,14 @@ class Node(Host):
             else:
                 return False, "String Not Found"
         except BaseException as error:
-            log.error(EXCEPTION_MSG.format(Node.is_string_in_remote_file.__name__, error))
+            log.error(EXCEPTION_MSG.format(
+                Node.is_string_in_remote_file.__name__, error))
             return False, error
         finally:
             if os.path.exists(local_path):
                 os.remove(local_path)
 
-    def validate_is_dir(self, remote_path:str)->Tuple[bool,str]:
+    def validate_is_dir(self, remote_path: str) -> Tuple[bool, str]:
         """
         This function validates if the remote path is directory or not
         :param str remote_path: absolute path on the remote server
@@ -269,10 +275,11 @@ class Node(Host):
             else:
                 return False, resp
         except BaseException as error:
-            log.error(EXCEPTION_MSG.format(Node.validate_is_dir.__name__, error))
+            log.error(EXCEPTION_MSG.format(
+                Node.validate_is_dir.__name__, error))
             return False, error
 
-    def list_dir(self, remote_path:str)->list:
+    def list_dir(self, remote_path: str) -> list:
         """
         This function list the files of the remote server
         :param str remote_path: absolute path on the remote server
@@ -290,7 +297,7 @@ class Node(Host):
                 raise error
         return dir_lst
 
-    def make_dir(self, dpath:str)->bool:
+    def make_dir(self, dpath: str) -> bool:
         """
         Make directory
         """
@@ -302,7 +309,7 @@ class Node(Host):
             self.execute_cmd(mkdir_cmd.format(dpath))
         return self.path_exists(dpath)
 
-    def remove_dir(self, dpath:str):
+    def remove_dir(self, dpath: str):
         """Remove directory
         """
         cmd = f"rm -rf {dpath}"
@@ -316,7 +323,7 @@ class Node(Host):
             log.debug("Successfully delete directory")
         return not self.path_exists(dpath)
 
-    def create_dir_sftp(self, dpath:str)-> bool:
+    def create_dir_sftp(self, dpath: str) -> bool:
         """
         This function creates directory on the remote server and returns the
         absolute path of the remote server
@@ -338,7 +345,7 @@ class Node(Host):
         self.disconnect()
         return self.path_exists(dpath)
 
-    def delete_dir_sftp(self, dpath:str, level:int=0)->bool:
+    def delete_dir_sftp(self, dpath: str, level: int = 0) -> bool:
         """
         This function deletes all the remote server files and directory
         recursively of the specified path
@@ -359,14 +366,14 @@ class Node(Host):
         self.disconnect()
         return not self.path_exists(dpath)
 
-    def kill_remote_process(self, process_name:str):
+    def kill_remote_process(self, process_name: str):
         """
         Kill all process matching the process_name at s3 server
         :param process_name: Name of the process to be killed
         """
         return self.execute_cmd(commands.PKIL_CMD.format(process_name))
 
-    def pgrep(self, process:str):
+    def pgrep(self, process: str):
         """
         Function to get process ID using pgrep cmd.
         :param str process: Name of the process
@@ -405,7 +412,8 @@ class Node(Host):
             resp = self.execute_cmd(cmd)
             log.debug(f"Output: {resp}")
         except BaseException as error:
-            log.error(EXCEPTION_MSG.format(Node.toggle_apc_node_power.__name__, error))
+            log.error(EXCEPTION_MSG.format(
+                Node.toggle_apc_node_power.__name__, error))
             return False, error
 
         log.debug(f"Successfully executed cmd {cmd}")
@@ -424,4 +432,3 @@ class Node(Host):
             log.error(EXCEPTION_MSG.format(Node.shutdown_node.__name__, error))
             return False, error
         return True, "Node shutdown successfully"
-

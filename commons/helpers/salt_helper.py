@@ -34,6 +34,7 @@ log = logging.getLogger(__name__)
 # salt functions
 ################################################################################
 
+
 class SaltHelper(Host):
     def get_pillar_values(
             self,
@@ -51,7 +52,7 @@ class SaltHelper(Host):
         :return: True/False and pillar output value
         :rtype: bool, str
         """
-        
+
         pillar_key = ":".join([component, *keys])
         get_pillar_cmd = "salt-call pillar.get {} --output=newline_values_only".format(
             pillar_key)
@@ -80,4 +81,3 @@ class SaltHelper(Host):
                     pillar_key, pillar_value))
 
         return True, pillar_value
-    

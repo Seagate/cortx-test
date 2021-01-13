@@ -17,9 +17,6 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-################################################################################
-# Standard libraries
-################################################################################
 import logging
 import os
 import random
@@ -28,22 +25,13 @@ from paramiko.ssh_exception import AuthenticationException, SSHException
 from subprocess import Popen, PIPE, CalledProcessError
 from hashlib import md5
 import shutil
-################################################################################
-# Local libraries
-################################################################################
 from commons import commands
 
-################################################################################
-# Constants
-################################################################################
 log = logging.getLogger(__name__)
 EXCEPTION_MSG = "*ERROR* An exception occurred in {}: {}"
 
-################################################################################
-# command execution
-################################################################################
-def run_remote_cmd(cmd, hostname, username, password, read_lines=True, read_nbytes=-1, 
-                port=22, timeout_sec=30, **kwargs):
+def run_remote_cmd(cmd:str, hostname:str, username:str, password:str, read_lines:bool=True, read_nbytes:int=-1, 
+                port:int=22, timeout_sec:int=30, **kwargs):
     """
     Execute command on remote machine
     :return: ([stdout/stderr], True/False).
@@ -91,7 +79,6 @@ def run_local_cmd(cmd):
     """
     Execute any given command on local machine.
     :param cmd: command to be executed.
-    :type cmd: str.
     :return: True/False, Success/str(err)
     :rtype: tuple.
     
@@ -170,10 +157,6 @@ def command_formatter(cmd_options, utility_path=None):
     cmd = " ".join(cmd_elements)
     return cmd
 
-################################################################################
-# Math operations
-################################################################################
-
 def calculate_checksum(file_path, binary_bz64=True, options=""):
     """
     Calculate MD5 checksum with/without binary coversion for a file.
@@ -204,9 +187,6 @@ def cal_percent(num1, num2):
     """
     return float(num1) / float(num2) * 100.0
 
-################################################################################
-# String operations 
-################################################################################
 def _format_dict(el):
     """
     Format the data in dict format

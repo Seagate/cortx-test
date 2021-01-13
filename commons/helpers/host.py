@@ -83,16 +83,16 @@ class Host():
         cnopts = pysftp.CnOpts()
         cnopts.hostkeys = None
         result = pysftp.Connection(host=self.hostname,
-                                    username=self.username,
-                                    password=self.password,
-                                    private_key=private_key,
-                                    private_key_pass=private_key_pass,
-                                    cnopts=cnopts)
+                                   username=self.username,
+                                   password=self.password,
+                                   private_key=private_key,
+                                   private_key_pass=private_key_pass,
+                                   cnopts=cnopts)
         self.host_obj = result
 
     def disconnect(self):
         """Disconnects the host obj
-        """    
+        """
         if self.shell_obj is not None:
             self.shell_obj.close()
         self.host_obj.close()
@@ -113,8 +113,8 @@ class Host():
                 retry_count -= 1
                 time.sleep(1)
 
-    def execute_cmd(self, cmd: str, inputs: str = None, read_lines: bool = False, 
-    read_nbytes: int = -1, timeout=400, **kwargs) -> Tuple[bool, Union[List[str], str, bytes]]:
+    def execute_cmd(self, cmd: str, inputs: str = None, read_lines: bool = False,
+                    read_nbytes: int = -1, timeout=400, **kwargs) -> Tuple[bool, Union[List[str], str, bytes]]:
         """
         If connection is not established,  it will establish the connection and 
         Execute any command on remote machine/VM
@@ -126,7 +126,8 @@ class Host():
         :return: bool, stdout / strerr
         """
         self.connect(timeout=timeout, **kwargs)
-        stdin, stdout, stderr = self.host_obj.exec_command(cmd, timeout=timeout)
+        stdin, stdout, stderr = self.host_obj.exec_command(
+            cmd, timeout=timeout)
         exit_status = stdout.channel.recv_exit_status()
         log.debug(exit_status)
         if exit_status != 0:
