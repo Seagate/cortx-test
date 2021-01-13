@@ -18,9 +18,6 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-################################################################################
-# Standard libraries
-################################################################################
 import logging
 import os
 import re
@@ -29,37 +26,25 @@ import time
 import posixpath
 import stat
 import mdstat
-
-################################################################################
-# Local libraries
-################################################################################
+from typing import Union, Tuple, List
 from commons import commands
 from commons.helpers.host import Host
-################################################################################
-# Constants
-################################################################################
+
 log = logging.getLogger(__name__)
 EXCEPTION_MSG = "*ERROR* An exception occurred in {}: {}"
 
-################################################################################
-# Node Helper class
-################################################################################
 class Node(Host):
     """
     Class to maintain all common functions across component
     """
-    def get_authserver_log(self, path, option="-n 3"):
+    def get_authserver_log(self, path:str, option:str="-n 3")->str:
         cmd = "tail {} {}".format(path, option)
         res = self.execute_cmd(cmd)
         return res
 
-    def start_stop_services(self,services,operation,timeout=60):
+    def start_stop_services(self,services:str,operation:str,timeout:int=60):
         """
         This function is responsible to stop all services which are activated by deploy-eos
-        :param host: To execute commands on remote host
-        :type host: Boolean
-        :param timeout: Timeout value
-        :type timeout: Integer
         """
         valid_operations = {"start_service", "stop_service"}
         if operation not in valid_operations:
@@ -73,18 +58,14 @@ class Node(Host):
             else:
                 cmd = commands.SYSTEM_CTL_STOP
             cmd = cmd.replace("%s", service)
-            success, out = self.execute_cmd(cmd, timeout_sec=timeout)
+            success, out = self.execute_cmd(cmd, timeout=timeout)
             result['success'] = success
             result['output'] = out
         return result
 
-    def status_service(self, services, expected_status, timeout=2):
+    def status_service(self, services:str, expected_status:str, timeout:int=2)->str:
         """
         This function display status of services
-        :param host: Remote host ip address
-        :type host: string
-        :param timeout: Timeout value
-        :type timeout: Integer
         """
         result = {}
         result["output"] = {}
@@ -93,7 +74,7 @@ class Node(Host):
             log.info(f"service status {service}")
             cmd = commands.SYSTEMCTL_STATUS
             cmd = cmd.replace("%s", service)
-            _, out = self.execute_cmd(cmd, read_lines=True, timeout_sec=timeout)
+            out = self.execute_cmd(cmd, read_lines=True, timeout=timeout)
             found = False
             for line in out:
                 if isinstance(line, bytes):
@@ -106,13 +87,11 @@ class Node(Host):
         result["success"] = False not in status_list
         return result
 
-    def configure_jclient_cloud(self, source, destination, nfs_path):
+    def configure_jclient_cloud(self, source:str, destination:str, nfs_path:str)->bool:
         """
         Function to configure jclient and cloud jar files
-        :param string source: path to the source dir where .jar are present.
-        :param string destination: destination path where .jar need to be copied
-        :return: True/False
-        :rtype: bool
+        :param source: path to the source dir where .jar are present.
+        :param destination: destination path where .jar need to be copied
         """
         if not os.path.exists(source):
             os.mkdir(source)
@@ -133,15 +112,12 @@ class Node(Host):
         res = True if ".jar" in res_ls else False
         return res
 
-    def validate_alert_msg(self, remote_file_path, pattern_lst, shell=True):
+    def validate_alert_msg(self, remote_file_path:str, pattern_lst:list, shell:bool=True)->Tuple[bool,str]:
         """
         This function checks the list of alerts iteratively in the remote file
         and return boolean value
-        :param str remote_file_path: remote file
-        :param list pattern_lst: list of err alerts generated
-        :param host: IP of the host
-        :param user: Username of the host
-        :param pwd: Password for the user
+        :param remote_file_path: remote file
+        :param pattern_lst: list of err alerts generated
         :return: Boolean, response
         :rtype: tuple
         """
@@ -167,17 +143,12 @@ class Node(Host):
             if os.path.exists(local_path):
                 os.remove(local_path)
 
-
-    ################################################################################
-    # remote file operations
-    ################################################################################
-    def create_file(self, file_name, mb_count):
+    def create_file(self, file_name:str, mb_count:int)->str:
         """
         Creates a new file, size(count) in MB
-        :param str file_name: Name of the file with path
-        :param int mb_count: size of the file in MB
+        :param file_name: Name of the file with path
+        :param mb_count: size of the file in MB
         :return: output of remote execution cmd
-        :rtype: str:
         """
         cmd = commands.CREATE_FILE.format(file_name, mb_count)
         log.debug(cmd)
@@ -185,78 +156,55 @@ class Node(Host):
         log.debug("output = {}".format(result))
         return result
 
-    def copy_file_to_remote(self, local_path,remote_file_path, shell=True):
+    def copy_file_to_remote(self, local_path:str,remote_file_path:str, shell:bool=True)->None:
         """
         copy file from local to local remote
         :param str local_path: local path
         :param str remote_file_path: remote path
-        :param str host: host ip or domain name
-        :param str user: host machine user name
-        :param str pwd: host machine password
         :return: boolean, remote_path/error
         :rtype: tuple
         """
-        try:
-            client = self.connect(shell=shell)
-            log.info("client connected")
-            sftp = client.open_sftp()
-            log.info("sftp connected")
-            sftp.put(local_path, remote_file_path)
-            log.info("file copied to : {}".format(remote_file_path))
-            sftp.close()
-            client.close()
-            return True, remote_file_path
-        except BaseException as error:
-            log.error(EXCEPTION_MSG.format(Node.copy_file_to_remote.__name__, error))
-            return False, error
+        client = self.connect(shell=shell)
+        log.info("client connected")
+        sftp = client.open_sftp()
+        log.info("sftp connected")
+        sftp.put(local_path, remote_file_path)
+        log.info("file copied to : {}".format(remote_file_path))
+        sftp.close()
+        client.close()
 
-    def copy_file_to_local(self,file_path, local_path, shell=True):
+
+    def copy_file_to_local(self,file_path:str, local_path:str, shell:bool=True)->None:
         """
         copy file from local to local remote
         :param str local_path: local path
         :param str remote_file_path: remote path
-        :param str host: host ip or domain name
-        :param str user: host machine user name
-        :param str pwd: host machine password
         :return: boolean, remote_path/error
         :rtype: tuple
         """
-        try:
-            client = self.connect(shell=shell)
-            log.info("client connected")
-            sftp = client.open_sftp()
-            log.info("sftp connected")
-            sftp.get(file_path, local_path)
-            log.info("file copied to : {}".format(local_path))
-            sftp.close()
-            client.close()
-            return True, local_path
-        except BaseException as error:
-            log.error(EXCEPTION_MSG.format(Node.copy_file_to_local.__name__, error))
-            return False, error
+        client = self.connect(shell=shell)
+        log.info("client connected")
+        sftp = client.open_sftp()
+        log.info("sftp connected")
+        sftp.get(file_path, local_path)
+        log.info("file copied to : {}".format(local_path))
+        sftp.close()
+        client.close()
 
-    def write_remote_file_to_local_file(self, file_path, local_path,shell=True):
+
+    def write_remote_file_to_local_file(self, file_path:str, local_path:str,shell:bool=True)->None:
         """
         Writing remote file content in local file
         :param file_path: Remote path
-        :type: str
         :param local_path: Local path
-        :return: bool, local path
-        :rtype: Boolean, string
         """
-        try:
-            client = self.connect(shell=shell)
-            sftp = client.open_sftp()
-            log.debug("sftp connected")
-            with sftp.open(file_path, "r") as remote:
-                shutil.copyfileobj(remote, open(local_path, "wb"))
-            return True, local_path
-        except BaseException as error:
-            log.error(EXCEPTION_MSG.format(Node.write_remote_file_to_local_file.__name__, error))
+        client = self.connect(shell=shell)
+        sftp = client.open_sftp()
+        log.debug("sftp connected")
+        with sftp.open(file_path, "r") as remote:
+            shutil.copyfileobj(remote, open(local_path, "wb"))
 
-            return False, error
-
-    def read_file(self, filename, local_path, shell=True):
+    def read_file(self, filename:str, local_path:str, shell:bool=True):
         """
         This function reads the given file and returns the file content
         :param filename: Absolute path of the file to be read
@@ -279,7 +227,7 @@ class Node(Host):
             if os.path.exists(local_path):
                 os.remove(local_path)
 
-    def remove_file(self,filename):
+    def remove_file(self,filename:str):
         """
         This function removes the unwanted file from the remote host.
         :param filename: Absolute path of the file to be removed
@@ -287,66 +235,48 @@ class Node(Host):
         :param user: Username of the host
         :param pwd: Password for the user
         """
+        client = self.connect(shell=False)
+        log.debug(f"Connected to {self.hostname}")
+        sftp = client.open_sftp()
+        log.debug("sftp connected")
         try:
-            client = self.connect(shell=False)
-            log.debug(f"Connected to {self.hostname}")
-            sftp = client.open_sftp()
-            log.debug("sftp connected")
-            try:
-                sftp.remove(filename)
-            except IOError as err:
-                if err[0] == 2:
-                    raise err
-            sftp.close()
-            client.close()
-        except BaseException as error:
-            log.error(EXCEPTION_MSG.format(Node.remove_file.__name__, error))
+            sftp.remove(filename)
+        except IOError as err:
+            if err[0] == 2:
+                raise err
+        sftp.close()
+        client.close()
 
-    def file_rename(self, old_filename, new_filename, shell=True):
+    def file_rename(self, old_filename:str, new_filename:str, shell:bool=True):
         """
         This function renames file on remote host.
         :param old_filename: Old name of the file(Absolute path)
         :param new_filename: New name of the file(Absolute path)
-        :param host: IP of the host
-        :param user: Username of the host
-        :param pwd: Password for the user
         """
+        client = self.connect(shell=shell)
+        sftp = client.open_sftp()
+        log.debug("sftp connected")
         try:
-            client = self.connect(shell=shell)
-            sftp = client.open_sftp()
-            log.debug("sftp connected")
-            try:
-                sftp.rename(old_filename, new_filename)
-            except IOError as err:
-                if err[0] == 2:
-                    raise err
-            sftp.close()
-            client.close()
-        except BaseException as error:
-            log.error(EXCEPTION_MSG.format(Node.file_rename.__name__, error))
+            sftp.rename(old_filename, new_filename)
+        except IOError as err:
+            if err[0] == 2:
+                raise err
+        sftp.close()
+        client.close()
 
     def get_mdstat(self):
         """
         This function retrieves the /proc/mdstat file from remote host and returns the parsed output in json form
-        :param str host: hostname or IP of remote host
-        :param str username: username of the host
-        :param str password: password of the host
         :return: parsed mdstat output
         :rtype: dict
         """
         mdstat_remote_path = "/proc/mdstat"
         mdstat_local_path = "mdstat"
-        try:
-            log.debug(
-                "Fetching /proc/mdstat file from the host {}".format(self.hostname))
-            self.write_remote_file_to_local_file(
-                mdstat_remote_path,
-                mdstat_local_path)
-            log.debug("Parsing mdstat file")
-            output = mdstat.parse(mdstat_local_path)
-        except BaseException as error:
-            log.error(EXCEPTION_MSG.format(Node.get_mdstat.__name__, error))
-            return error
+        log.debug(
+            "Fetching /proc/mdstat file from the host {}".format(self.hostname))
+        self.write_remote_file_to_local_file(mdstat_remote_path, mdstat_local_path)
+        log.debug("Parsing mdstat file")
+        output = mdstat.parse(mdstat_local_path)
         self.remove_file(mdstat_local_path)
         return output
 
@@ -355,9 +285,6 @@ class Node(Host):
         find given string in file present on s3 server
         :param string: String to be check
         :param file_path: file path
-        :param host: IP of the host
-        :param user: user name of the host
-        :param pwd: password for the user
         :return: Boolean
         """
         local_path = os.path.join(os.getcwd(), "temp_file")
@@ -383,7 +310,7 @@ class Node(Host):
     ################################################################################
     # remote directory operations
     ################################################################################
-    def path_exists(self, path, shell=True):
+    def path_exists(self, path:str, shell:bool=True)->bool:
         """
         Check if file exists on s3 server
         :param path: Absolute path of the file
@@ -399,19 +326,16 @@ class Node(Host):
         try:
             sftp.stat(path)
         except BaseException:
-            return False, path
+            return False
         sftp.close()
         client.close()
-        return True, path
+        return True
 
-    def validate_is_dir(self, remote_path):
+    def validate_is_dir(self, remote_path:str)->Tuple[bool,str]:
         """
         This function validates if the remote path is directory or not
         :param str remote_path: absolute path on the remote server
         :return: response: Boolean
-        :param host: IP of the host
-        :param user: Username of the host
-        :param pwd: Password for the user
         :rtype: list
         """
         client = self.connect_pysftp()
@@ -461,7 +385,7 @@ class Node(Host):
         :return: boolean True if directory find, False otherwise.
         """
         try:
-            out_flag, directories = self.execute_cmd(f"ls {path}")
+            directories = self.execute_cmd(f"ls {path}")
 
             # decode utf 8 is to convert bytes to string
             directories = (directories.decode("utf-8")).split("\n")
@@ -567,18 +491,14 @@ class Node(Host):
     ################################################################################
     # Remote process operations
     ################################################################################
-    def kill_remote_process(self, process_name):
+    def kill_remote_process(self, process_name:str):
         """
         Kill all process matching the process_name at s3 server
         :param process_name: Name of the process to be killed
-        :param host: IP of the host
-        :param user: user name of the host
-        :param pwd: password for the user
-        :return:
         """
         return self.execute_cmd(commands.PKIL_CMD.format(process_name))
 
-    def pgrep(self, process, remote=False):
+    def pgrep(self, process:str):
         """
         Function to get process ID using pgrep cmd.
         :param str process: Name of the process
@@ -589,12 +509,7 @@ class Node(Host):
         :return: bool, response/error
         :rtype: tuple
         """
-        try:
-            response = self.execute_cmd(commands.PGREP_CMD.format(process))
-            return True, response
-        except Exception as error:
-            log.error(EXCEPTION_MSG.format(Node.pgrep.__name__, error))
-            return False, error
+        return self.execute_cmd(commands.PGREP_CMD.format(process))
 
     ################################################################################
     # Power operations
@@ -638,11 +553,6 @@ class Node(Host):
     def shutdown_node(self, options=None):
         """
         Function to shutdown any of the node
-        :param host:
-        :param username:
-        :param password:
-        :param options:
-        :return:
         """
         try:
             cmd = "shutdown {}".format(options if options else "")
