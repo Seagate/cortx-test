@@ -126,7 +126,7 @@ class Bmc(Host):
                 f"Update bmc ip on primary node and set to '{bmc_ip}'.")
             cmd = "ipmitool lan set 1 ipaddr {}".format(bmc_ip)
             logger.info(f"Running command {cmd}")
-            response = self.execute_cmd(cmd=cmd, nbytes=8000)
+            response = self.execute_cmd(cmd=cmd, read_nbytes=8000)
             up_bmc_ip = self.get_bmc_ip()
             logger.debug(f"Updated bmc ip: {up_bmc_ip}")
             flg = True if "Setting LAN IP Address to {}".format(

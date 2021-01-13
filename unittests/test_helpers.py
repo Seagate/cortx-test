@@ -51,11 +51,3 @@ def test_bmc_helper():
     x.create_bmc_ip_change_fault('10.234.56.9')
     x.resolve_bmc_ip_change_fault('10.237.65.16')
 
-def test_telnet_helper():
-    host = "10.237.67.16"
-    username = "engineer"
-    password = "S3ag@teEng"
-    port1 = "9012"
-    port2 = "9014"
-    x = Telnet(host,port1,username,password)
-    x.connect()
