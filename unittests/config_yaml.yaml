@@ -1,0 +1,75 @@
+BUILD_VER_TYPE: "EOS"  
+NodeNamePattern: "eosnode-"
+PrimaryName: "Masters"
+ServerNamePattern: "srvnode-"
+aws_cred_section: "default"
+aws_path: "/root/.aws/credentials"
+cluster_msg: "cluster is not currently running on this node"
+dataPathServices:
+  - "s3authserver"
+haproxy_service:
+  - "haproxy-c"
+delay_60sec: 60
+enclosure_pwd: "Seagate123$"
+enclosure_user: "manage"
+host: "eosnode-1"
+host2: "eosnode-2"
+host_domain: ".pun.seagate.com"
+jClientCloud_path:
+  dest: "scripts/tools/"
+  source: "/root/jclientCloud/"
+management_services:
+  - "kibana-vip"
+  - "kibana"
+  - "csm-web"
+  - "csm-agent"
+  - "uds"
+meroServices:
+  - "-confd-c"
+  - "-ios-c"
+minio_path: "/root/.mc/config.json"
+nfs_path: "10.237.65.201:/EES_LOGS/jclientCloud/"
+nodes:
+  - "eosnode-1"
+  - "eosnode-2"
+password: "seagate"
+primary_enclosure_ip: "10.0.0.2"
+s3ServiceCount: 11
+s3ServiceName: "s3server-c"
+s3cfg_path: "/root/.s3cfg"
+s3fs_path: "/etc/passwd-s3fs"
+secondary_enclosure_ip: "10.0.0.3"
+sshWaitTime: 120
+test_file_name: "test_file"
+test_folder_path: "/root/test_folder"
+username: "root"
+primary_node_ip: "10.237.66.55"
+secondary_node_ip: "10.237.65.157"
+audit_service: "auditd.service"
+statsd_service: "statsd"
+aws_locust_cred_section: "locust"
+locust_details:
+  user: "locust"
+  email: "locust@seagate.com"
+pdu:
+  ip: "10.237.66.137"
+  user: "device"
+  pwd: "seagate1"
+  power_on: "on"
+  power_off: "off"
+  sleep_time: 120 # in case we are dong reboot off then on n same call
+# Gem controller details.
+gem_controller:
+  host: "10.237.67.16"
+  username: "engineer"
+  password: "S3ag@teEng"
+  port1: "9012"
+  port2: "9014"
+
+bmc_details:
+  user: "bmcadmin"
+  pwd: "adminBMC!"
+
+ldap_username: "sgiamadmin"
+ldap_passwd: "cNvVpk11hLJv"
+sspl_pass: "cNvVpk11hLJv"
