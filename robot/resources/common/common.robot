@@ -51,3 +51,21 @@ Action On The Table Element
     sleep  2s
     click element   ${table_elements}
     sleep  2s
+
+
+Generate New User Name
+    [Documentation]  Functionlity to generate new user name
+    ${str}=  Get Current Date
+    ${str}=  Replace String  ${str}  :  ${EMPTY}
+    ${str}=  Replace String  ${str}  .  ${EMPTY}
+    ${str}=  Replace String  ${str}  -  ${EMPTY}
+    ${str}=  Replace String  ${str}  ${space}  ${EMPTY}
+    ${str}=  catenate  SEPARATOR=  testuser  ${str}
+    [Return]  ${str}
+
+
+Generate New User Email
+    [Documentation]  Functionlity to generate new user email
+    ${name}=  Generate New User Name
+    ${email}=  catenate  SEPARATOR=  ${name}  @seagate.com
+    [Return]  ${email}
