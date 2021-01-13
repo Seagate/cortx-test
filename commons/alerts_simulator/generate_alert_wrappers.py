@@ -3,16 +3,11 @@
 """
 This file contains the wrapper functions used by Alert Simulation API.
 """
-import json
 import logging
 import time
-import os
 from eos_test.utility import utility
 from eos_test.ras.ras_test_lib import RASTestLib
 import eos_test.ras.constants as cons
-from ctp.common.ctpexception import CTPException
-import eos_test.common.eos_errors as err
-from ctp.utils import ctpyaml
 
 LOGGER = logging.getLogger(__name__)
 
@@ -71,7 +66,8 @@ class GenerateAlertWrapper:
 
             mc_debug_pswd = RAS_TEST_OBJ.get_mc_debug_pswd(resp[1], resp[2])
             if mc_debug_pswd is None:
-                return False, f"{mc_debug_pswd} is returned for MC debug password"
+                return False, f"{mc_debug_pswd} is returned for MC debug " \
+                              f"password"
 
             resp = RAS_TEST_OBJ.simulate_fault_ctrl(
                 mc_deb_password=mc_debug_pswd, enclosure_ip=encl_ip,
@@ -139,10 +135,12 @@ class GenerateAlertWrapper:
             LOGGER.info(f"check phy response: {resp}")
             if isinstance(exp_status, list):
                 if resp != exp_status[0] and resp != exp_status[1]:
-                    return False, f"Failed to put drive in {exp_status} state, response: {resp}"
+                    return False, f"Failed to put drive in {exp_status} " \
+                                  f"state, response: {resp}"
             else:
                 if resp != exp_status:
-                    return False, f"Failed to put drive in {exp_status} state, response: {resp}"
+                    return False, f"Failed to put drive in {exp_status} " \
+                                  f"state, response: {resp}"
 
             LOGGER.info(f"Successfully put phy in {exp_status} state")
         except BaseException as error:
@@ -174,7 +172,9 @@ class GenerateAlertWrapper:
         fault_resolved = input_parameters["fault_resolved"]
         RAS_TEST_OBJ = RASTestLib(host=host, username=h_user, password=h_pwd)
         try:
-            resp = RAS_TEST_OBJ.generate_disk_full_alert(du_val=du_val, fault=fault, fault_resolved=fault_resolved)
+            resp = RAS_TEST_OBJ.generate_disk_full_alert(du_val=du_val,
+                                                         fault=fault,
+                                                         fault_resolved=fault_resolved)
 
             return resp
         except BaseException as error:
@@ -202,7 +202,8 @@ class GenerateAlertWrapper:
         LOGGER.info("Generating CPU usage alert")
         try:
             resp = RAS_TEST_OBJ.generate_cpu_usage_alert(
-                delta_cpu_usage=delta_cpu_usage, host=host, username=h_user, password=h_pwd)
+                delta_cpu_usage=delta_cpu_usage, host=host, username=h_user,
+                password=h_pwd)
             return resp, "Completed CPU usage Fault Generation"
         except BaseException as error:
             LOGGER.error(f"{cons.EXCEPTION_ERROR} "
@@ -229,7 +230,8 @@ class GenerateAlertWrapper:
         LOGGER.info("Generating memory usage alert")
         try:
             resp = RAS_TEST_OBJ.generate_memory_usage_alert(
-                delta_mem_usage=delta_mem_usage, host=host, username=h_user, password=h_pwd)
+                delta_mem_usage=delta_mem_usage, host=host, username=h_user,
+                password=h_pwd)
             return resp, "Completed Memory Usage Fault Generation"
         except BaseException as error:
             LOGGER.error(
@@ -304,6 +306,6 @@ class GenerateAlertWrapper:
         logger_alert_cmd = input_parameters['cmd']
         LOGGER.info("Logger cmd : {}".format(logger_alert_cmd))
         resp = UTIL_OBJ.execute_command(logger_alert_cmd, host=host,
-                                     username=h_user,
-                                     password=h_pwd)
+                                        username=h_user,
+                                        password=h_pwd)
         return resp
