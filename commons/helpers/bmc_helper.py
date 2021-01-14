@@ -27,14 +27,17 @@ EXCEPTION_MSG = "*ERROR* An exception occurred in {}: {}"
 
 class Bmc(Host):
 
-    def bmc_node_power_status(self, bmc_ip, bmc_user, bmc_pwd):
+    def bmc_node_power_status(
+            self,
+            bmc_ip: str,
+            bmc_user: str,
+            bmc_pwd: str) -> str:
         """
         Function to check node power states using BMC
-        :param str bmc_ip: Node BMC IP
-        :param str bmc_user: Node BMC user name
-        :param str bmc_pwd: Node BMC user pwd
+        :param bmc_ip: Node BMC IP
+        :param bmc_user: Node BMC user name
+        :param bmc_pwd: Node BMC user pwd
         :return: resp
-        :rtype: str
         """
         if not self.execute_cmd("rpm  -qa | grep ipmitool")[0]:
             logger.debug("Installing ipmitool")
@@ -55,15 +58,19 @@ class Bmc(Host):
         logger.info(f"Successfully executed cmd {cmd}")
         return resp
 
-    def bmc_node_power_on_off(self, bmc_ip, bmc_user, bmc_pwd, status="on"):
+    def bmc_node_power_on_off(
+            self,
+            bmc_ip: str,
+            bmc_user: str,
+            bmc_pwd: str,
+            status: str = "on") -> str:
         """
         Function to on and off node power using BMC IP
-        :param str bmc_ip: Node BMC IP
-        :param str bmc_user: Node BMC user name
-        :param str bmc_pwd: Node BMC user pwd
-        :param str status: Status of bmc
+        :param bmc_ip: Node BMC IP
+        :param bmc_user: Node BMC user name
+        :param bmc_pwd: Node BMC user pwd
+        :param status: Status of bmc
         :return: resp
-        :rtype: str
         """
         if not self.execute_cmd("rpm  -qa | grep ipmitool")[0]:
             logger.debug("Installing ipmitool")
@@ -84,11 +91,10 @@ class Bmc(Host):
         logger.info(f"Successfully executed cmd {cmd}")
         return resp
 
-    def get_bmc_ip(self):
+    def get_bmc_ip(self) -> str:
         """
         Execute 'ipmitool lan print' on node and return bmc ip.
         :return: bmc ip or none
-        :rtype: str.
         """
         bmc_ip = None
         try:
@@ -113,13 +119,11 @@ class Bmc(Host):
 
         return bmc_ip
 
-    def set_bmc_ip(self, bmc_ip):
+    def set_bmc_ip(self, bmc_ip: str) -> bool:
         """
         Execute 'ipmitool lan set 1 ipaddr {ip}' on node to change/set/update bmc ip.
         :param bmc_ip: any valid ip.
-        :type bmc_ip: str/ip.
         :return: True if bmc ip changed else False.
-        :rtype: bool.
         """
         try:
             logger.info(
@@ -138,17 +142,15 @@ class Bmc(Host):
             logger.error(EXCEPTION_MSG.format(Bmc.set_bmc_ip.__name__, error))
             raise error
 
-    def create_bmc_ip_change_fault(self, ip):
+    def create_bmc_ip_change_fault(self, ip: str) -> bool:
         """
         Create bmc ip change fault by updating non ping-able valid ip.
         :param ip: non ping-able valid ip.
-        :type ip: str/ip.
         :return: True if bmc ip changed else False.
-        :rtype: bool.
         """
         try:
             if not ip:
-                raise Exception(f"Invalid ip: {ip}")
+                raise ValueError(f"Invalid ip: {ip}")
             logger.info("Create bmc ip change fault on  node.")
             return self.set_bmc_ip(ip)
         except Exception as error:
@@ -158,13 +160,11 @@ class Bmc(Host):
                     error))
             raise error
 
-    def resolve_bmc_ip_change_fault(self, ip):
+    def resolve_bmc_ip_change_fault(self, ip: str) -> bool:
         """
         Resolve bmc ip fault.
         :param ip: bmc ip.
-        :type ip: str/ip.
         :return: True if bmc ip changed else False.
-        :rtype: bool.
         """
         try:
             if not ip:

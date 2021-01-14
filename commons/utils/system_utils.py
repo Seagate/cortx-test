@@ -26,12 +26,13 @@ from subprocess import Popen, PIPE, CalledProcessError
 from hashlib import md5
 import shutil
 from commons import commands
+from typing import Union, Tuple, List
 
 log = logging.getLogger(__name__)
 EXCEPTION_MSG = "*ERROR* An exception occurred in {}: {}"
 
 def run_remote_cmd(cmd:str, hostname:str, username:str, password:str, read_lines:bool=True, read_nbytes:int=-1, 
-                port:int=22, timeout_sec:int=30, **kwargs):
+                port:int=22, timeout_sec:int=30, **kwargs)->Tuple[bool,str]:
     """
     Execute command on remote machine
     :return: ([stdout/stderr], True/False).
@@ -75,13 +76,11 @@ def run_remote_cmd(cmd:str, hostname:str, username:str, password:str, read_lines
 
     return True, output
 
-def run_local_cmd(cmd):
+def run_local_cmd(cmd:str)->Tuple[bool,str]:
     """
     Execute any given command on local machine.
     :param cmd: command to be executed.
-    :return: True/False, Success/str(err)
-    :rtype: tuple.
-    
+    :return: True/False, Success/str(err)    
     """
     msg_rsa_key_added = b"Number of key(s) added: 1"
     lcmd_not_found = b"command not found"
@@ -102,20 +101,22 @@ def run_local_cmd(cmd):
 
     return True, output
 
-def execute_cmd(cmd, remote, *remoteargs, **remoteKwargs):
+def execute_cmd(cmd:str, remote:bool, *remoteargs, **remoteKwargs)->Tuple[bool,str]:
+    """Execute command on local / remote machine based on remote flag
+    :param cmd: cmd to be executed
+    :param remote: if True executes on remote machine
+    """    
     if remote:
         result = run_remote_cmd(cmd,*remoteargs, **remoteKwargs)
     else:
         result = run_local_cmd(cmd)
     return result
 
-def command_formatter(cmd_options, utility_path=None):
+def command_formatter(cmd_options:dict, utility_path:str=None)->str:
     """
     Creating command from dictionary cmd_options
     :param cmd_options: input dictionary contains command option/general_options
-    :type cmd_options: dict
     :param utility_path: cli utility path for which command is being created
-    :type utility_path: str
     :return: actual command that is going to execute for utility
     """
     cmd_elements = []
@@ -157,14 +158,13 @@ def command_formatter(cmd_options, utility_path=None):
     cmd = " ".join(cmd_elements)
     return cmd
 
-def calculate_checksum(file_path, binary_bz64=True, options=""):
+def calculate_checksum(file_path:str, binary_bz64:bool=True, options="")->str:
     """
     Calculate MD5 checksum with/without binary coversion for a file.
     :param file_name: Name of the file with path
     :param binary_bz64: Calulate binary base64 checksum for file,
     if False it will return MD5 checksum digest
     :return: string or MD5 object
-    :rtype: str
     """
     if not os.path.exists(file_path):
         return False, "Please pass proper file path"
@@ -178,7 +178,7 @@ def calculate_checksum(file_path, binary_bz64=True, options=""):
     log.debug("Output: {}".format(result))
     return result
 
-def cal_percent(num1, num2):
+def cal_percent(num1:float, num2:float)->float:
     """
     percentage calculator to track progress
     :param num1: First number
@@ -187,11 +187,10 @@ def cal_percent(num1, num2):
     """
     return float(num1) / float(num2) * 100.0
 
-def _format_dict(el):
+def _format_dict(el:list)->dict:
     """
     Format the data in dict format
     :param el: list of string element
-    :return: dict
     """
     resp_dict = {}
     list_tup = []
@@ -201,7 +200,7 @@ def _format_dict(el):
         resp_dict[i[0]] = i[1]
     return resp_dict
 
-def format_iam_resp(self, res_msg):
+def format_iam_resp(self, res_msg:str)->list:
     """
     Function to format IAM response which comes in string format.
     :param res_msg: bytes string of tuple
@@ -215,7 +214,7 @@ def format_iam_resp(self, res_msg):
         resp.append(result)
     return resp
 
-def validate_output(self, output, expected_keywords):
+def validate_output(self, output:str, expected_keywords:str):
     log.info(f"actual output {output}")
     output = [i.strip() for i in output]
     log.info("output after strip %s", output)
@@ -234,10 +233,7 @@ def validate_output(self, output, expected_keywords):
         'validation failed')
     return retval
 
-################################################################################
-# File operations 
-################################################################################
-def is_path_exists(path):
+def path_exists(path:str)->bool:
     """
     Check if file exists locally
     :param path: Absolute path
@@ -245,23 +241,17 @@ def is_path_exists(path):
     """
     return os.path.exists(path)
 
-def open_empty_file(fpath):
+def open_empty_file(fpath:str)->bool:
     """
     Create empty file specified in path.
     :param fpath: Non-existing file path.
-    :type fpath: str.
     :return: True/err.
-    :rtype: bool.
     """
-    try:
-        with open(fpath, "w") as f_write:
-            pass
-    except OSError as error:
-        log.error(EXCEPTION_MSG.format(open_empty_file.__name__, error))
-        return False
-    return True
+    with open(fpath, "w") as f_write:
+        pass
+    return os.path.exists(fpath)
 
-def create_symlink(fpath, spath):
+def create_symlink(fpath:str, spath:str)->bool:
     """
     Create symlink using os.symlink specified in fpath.
     :param fpath: Existing file path.
@@ -276,10 +266,9 @@ def create_symlink(fpath, spath):
     except OSError as error:
         log.error(EXCEPTION_MSG.format(create_symlink.__name__, error))
         return False
-
     return True
 
-def cleanup_directory(dpath):
+def cleanup_directory(dpath:str):
     """
     Remove all files, links, directory recursively inside dpath.
     :param dpath: Absolute directory path.
@@ -299,7 +288,7 @@ def cleanup_directory(dpath):
             return False
     return True
 
-def listdir(dpath):
+def listdir(dpath:str)->list:
     """
     List directory from dpath.
     :param dpath: Directory path.
