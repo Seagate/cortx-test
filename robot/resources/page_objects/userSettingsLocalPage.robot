@@ -39,14 +39,16 @@ Create New CSM User
     [Documentation]  Functionality to create new user
     [Arguments]  ${user_name}  ${user_type}=manage
     ${email}=  Generate New User Email
+    ${password}=  Generate New Password
     log to console and report  user name is ${user_name}
     log to console and report  email-id is ${email}
     log to console and report  user type is ${user_type}
+    log to console and report  password is ${password}
     Click On Add User Button
     Input Text  ${ADD_USER_USER_NAME_INPUT_BOX_ID}  ${user_name}
     Input Text  ${ADD_USER_EMAIL_ID_INPUT_ID}  ${email}
-    Input Text  ${ADD_USER_PASSWORD_INPUT_ID}  ${common password}
-    Input Text  ${ADD_USER_CONFIRM_PASSWORD_INPUT_ID}  ${common password}
+    Input Text  ${ADD_USER_PASSWORD_INPUT_ID}  ${password}
+    Input Text  ${ADD_USER_CONFIRM_PASSWORD_INPUT_ID}  ${password}
     ${var}=  CATENATE  add  ${user_type}  user  radio  button  id
     Click Element  ${${var}}
     Click button    ${CREATE_NEW_CSM_USER_BUTTON_ID}
@@ -85,6 +87,7 @@ Verify Only Valid User Allowed For Username
 
 Verify Create Button Must Remain disbaled
     [Documentation]  Functionality to verify create button status at different scenario
+    ${password}=  Generate New Password
     Element Should Be Disabled  ${CREATE_NEW_CSM_USER_BUTTON_ID}
     ${value}=  Generate New User Name
     Log To Console And Report  Inserting username ${value}
@@ -95,10 +98,10 @@ Verify Create Button Must Remain disbaled
     Input Text  ${ADD_USER_EMAIL_ID_INPUT_ID}  ${value}
     Element Should Be Disabled  ${CREATE_NEW_CSM_USER_BUTTON_ID}
     Log To Console And Report  Insrting password
-    Input Text  ${ADD_USER_PASSWORD_INPUT_ID}  ${common password}
+    Input Text  ${ADD_USER_PASSWORD_INPUT_ID}  ${password}
     Element Should Be Disabled  ${CREATE_NEW_CSM_USER_BUTTON_ID}
     Log To Console And Report  Insrting confirm password
-    Input Text  ${ADD_USER_CONFIRM_PASSWORD_INPUT_ID}  ${common password}
+    Input Text  ${ADD_USER_CONFIRM_PASSWORD_INPUT_ID}  ${password}
     Element Should Be Enabled  ${CREATE_NEW_CSM_USER_BUTTON_ID}
 
 Verify Passwords Remain Hidden
@@ -113,8 +116,9 @@ Verify Passwords Remain Hidden
 Verify Missmatch Password Error
     [Documentation]  Functionality to verify error msg at missmatch password
     Log To Console And Report  Verifying miss match pasword
-    Input Text  ${ADD_USER_PASSWORD_INPUT_ID}  ${common password}
-    ${value}=  CATENATE  ${common password}  new
+    ${password}=  Generate New Password
+    Input Text  ${ADD_USER_PASSWORD_INPUT_ID}  ${password}
+    ${value}=  CATENATE  ${password}  new
     Log To Console And Report  ${value}
     Input Text  ${ADD_USER_CONFIRM_PASSWORD_INPUT_ID}  ${value}
     Page Should Contain Element  ${PASSWORD_MISS_MATCH_MSG_ID}
