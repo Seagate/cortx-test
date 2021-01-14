@@ -1,3 +1,4 @@
+# All the constants are alphabetically arranged.
 CPU_USAGE_CMD = "python3 -c 'import psutil; print(psutil.cpu_times_percent(interval=1)[2])'"
 CREATE_FILE = "dd if={} of={} bs={} count={}"
 FIREWALL_CMD = "firewall-cmd --service={} --get-ports --permanent"
