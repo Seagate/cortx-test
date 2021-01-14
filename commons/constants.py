@@ -16,34 +16,11 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
+# -*- coding: utf-8 -*-
+# !/usr/bin/python
 
-import os
-import json
+#: NWORKERS specifies number of worker (python) threads  in a worker pool.
+NWORKERS = 32
 
-
-def create_content_json(home, data, user_json):
-    """
-
-    :param home:
-    :param data:
-    :param user_json:
-    :return:
-    """
-    pth = os.path.join(home, user_json)
-    with open(pth, 'w') as outfile:
-        json.dump(data, outfile, ensure_ascii=False)
-
-
-def read_content_json(home, user_json):
-    """
-
-    :param home:
-    :param user_json:
-    :return:
-    """
-    pth = os.path.join(home, user_json)
-    data = None
-    with open(pth, 'rb') as json_file:
-        data = json.loads(json_file.read())
-    return data
-
+#: NGREENLETS specifies number of greenlets in a thread. These greenlets will run in parallel.
+NGREENLETS = 32
