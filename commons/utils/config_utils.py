@@ -47,7 +47,10 @@ log = logging.getLogger(__name__)
 
 
 def read_yaml(fpath):
-    """Read yaml file and return dictionary/list of the content"""
+    """Read yaml file and return dictionary/list of the content
+    :param str fpath: Path of yaml file to be read
+    :return: Boolean, Data
+    """
     if os.path.isfile(fpath):
         with open(fpath) as fin:
             try:
@@ -96,10 +99,10 @@ def write_yaml(fpath, write_data, backup=True):
 def create_content_json(home, data, user_json):
     """
 
-    :param home:
-    :param data:
-    :param user_json:
-    :return:
+    :param home: Directory name in which json file is to be created
+    :param data: Data to write in json file
+    :param user_json: Name of the json file
+    :return: path of the file
     """
     path = os.path.join(home, user_json)
     with open(path, 'w') as outfile:
@@ -110,8 +113,8 @@ def create_content_json(home, data, user_json):
 
 def read_content_json(fpath):
     """
-    :param fpath:
-    :return:
+    :param fpath: Path of the json file
+    :return: Data of the json file
     """
     data = None
     with open(fpath, 'rb') as json_file:
