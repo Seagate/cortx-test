@@ -21,7 +21,8 @@ def parse_args():
                         help="jira xray test plan id")
     parser.add_argument("-ll", "--log_level", type=int, default=10,
                         help="log level value")
-
+    parser.add_argument("-p", "--prc_cnt", type=int, default=2,
+                        help="number of parallel processes")
     return parser.parse_args()
 
 

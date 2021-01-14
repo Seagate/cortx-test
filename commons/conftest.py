@@ -51,19 +51,3 @@ def data():
 def test_config():
     test_cfg = yaml_utils.read_yaml('di_config.yaml')
     yield
-
-
-@pytest.hookimpl(hookwrapper=True)
-def pytest_runtest_makereport(item: Item, call: CallInfo):
-    # All code prior to yield statement would be ran prior
-    # to any other of the same fixtures defined
-
-    outcome = yield  # Run all other pytest_runtest_makereport non wrapped hooks
-    result = outcome.get_result()
-    if result.when == "call" and result.failed:
-        try:  # Just to not crash py.test reporting
-            with open(str(FAILURES_FILE), "a") as f:
-                f.write(result.nodeid + "\n")
-        except Exception as e:
-            print("ERROR", e)
-            pass

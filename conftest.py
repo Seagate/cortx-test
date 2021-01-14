@@ -192,7 +192,8 @@ def pytest_runtest_makereport(item, call):
     to understand where does this fucntion fits in. In short this function will help to create
     failed, passed lists in multiple runs. The clean up of logs files should happen before the
     test runs starts.
-
+    All code prior to yield statement would be ran prior
+    to any other of the same fixtures defined
     :param item:
     :param call:
     :return:

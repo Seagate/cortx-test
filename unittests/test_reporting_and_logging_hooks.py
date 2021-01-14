@@ -24,9 +24,6 @@ def teardown_function(function):
     """ teardown any state that was previously setup with a setup_function
     call.
     """
-    # with open(function.__name__, 'w') as f:
-    #     for rec in capture.records:
-    #         f.write(formatter.format(rec) + '\n')
 
 
 def max(values):
@@ -48,10 +45,16 @@ def min(values):
     logging.getLogger(__name__).info("inner function min is %s" % _min)
     return _min
 
-"""
 @pytest.mark.tags("TEST-17495")
 @pytest.mark.usefixtures("log_cutter")
-def test_min(request, capture, logger):
+def test_min_lc(request, capture, logger):
+    """
+    Alternate way to cut logs for each test
+    :param request:
+    :param capture:
+    :param logger:
+    :return:
+    """
     values = (2, 3, 1, 4, 6)
     val = min(values)
     logger.debug("min is %s" % val)
@@ -65,7 +68,7 @@ def test_min(request, capture, logger):
 
 @pytest.mark.tags("TEST-17496")
 @pytest.mark.usefixtures("log_cutter")
-def test_max(request, capture, logger):
+def test_max_lc(request, capture, logger):
     values = (2, 3, 1, 4, 6)
 
     val = max(values)
@@ -75,11 +78,16 @@ def test_max(request, capture, logger):
     test_name = request.node.name
     Globals.records.update({test_name: records})
 
-"""
 
 @pytest.mark.parallel
 @pytest.mark.tags("TEST-17413")
 def test_min(logger):
+    """
+    Preferred way to cut logs for each test and sample to be refered to
+    write test cases.
+    :param logger:
+    :return:
+    """
     values = (2, 3, 1, 4, 6)
     val = min(values)
     logger.debug("min is %s" % val)
@@ -92,7 +100,6 @@ def test_min(logger):
 @pytest.mark.tags("TEST-17414")
 def test_max(request, capture, logger):
     values = (2, 3, 1, 4, 6)
-
     val = max(values)
     logger.info("max is %s" % val)
     assert val == 6
