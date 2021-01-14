@@ -52,7 +52,6 @@ Action On The Table Element
     click element   ${table_elements}
     sleep  2s
 
-
 Generate New User Name
     [Documentation]  Functionlity to generate new user name
     ${str}=  Get Current Date
@@ -63,9 +62,18 @@ Generate New User Name
     ${str}=  catenate  SEPARATOR=  testuser  ${str}
     [Return]  ${str}
 
-
 Generate New User Email
     [Documentation]  Functionlity to generate new user email
     ${name}=  Generate New User Name
     ${email}=  catenate  SEPARATOR=  ${name}  @seagate.com
     [Return]  ${email}
+
+Generate New Password
+    [Documentation]  Functionlity to generate valid password
+    ${upper_case}=  Generate Random String  2  [UPPER]
+    ${lower_case}=  Generate Random String  2  [LOWER][NUMBERS]
+    ${numbers}=  Generate Random String  2  [NUMBERS]
+    ${special_char}=  Generate random string    2    !@#$%^&*()
+    ${password}=  Catenate  SEPARATOR=  ${upper_case}  ${lower_case}  ${numbers}  ${special_char}
+    Log To Console And Report  ${password}
+    [Return]  ${password}
