@@ -11,13 +11,11 @@ fileconf = config_utils.read_yaml("config/serverlogs_helper.yaml")
 now = datetime.now()
 current_time = now.strftime('%b  %#d %H:%M:%S')
 
-
 class node_data:
     def __init__(self):
         self.ip = None
         self.uname = "root"
         self.passwd = "seagate"
-
 
 def get_node_details(node_name):
     node_obj = node_data
@@ -25,7 +23,6 @@ def get_node_details(node_name):
     node_obj.uname = fileconf['node_username']
     node_obj.passwd = fileconf['node_password']
     return node_obj
-
 
 def split_file_for_timestamp(st_time, end_time, filename, filepath, test_id):
     # split file for give time stamps and create new file with test_id
@@ -54,7 +51,6 @@ def split_file_for_timestamp(st_time, end_time, filename, filepath, test_id):
     newfile.close()  # close it if done writing into it
 
     return newpath
-
 
 def process_and_copy_file(
         st_time,
@@ -87,24 +83,23 @@ def process_and_copy_file(
     filename = "{}_{}".format(test_id, file_name)
     rm_path = "{}/{}".format(remote_path, filename)
 
-    connect_obj = host_obj.connect(
-        logserver,
+    host_obj = host.Host(
+        hostname=logserver,
         username=lg_uname,
-        password=lg_passwd,
-        shell=False)
+        password=lg_passwd)
+    connect_obj = host_obj.connect()
     sftp = connect_obj.open_sftp()
     sftp.put(localpath=newfilepath, remotepath=rm_path)
-
 
 def collect_logs(st_time, end_time, file, node, test_id):
     # error = False #@ TODO - error handling to be done, connection retry
     # 1. Connect to node
     node_det = get_node_details(node)
-    connect_obj = host_obj.connect(
-        node_det.ip,
+    host_obj = host.Host(
+        hostname=node_det.ip,
         username=node_det.uname,
-        password=node_det.passwd,
-        shell=False)
+        password=node_det.passwd)
+    connect_obj = host_obj.connect()
     sftp = connect_obj.open_sftp()
     localpath = "{}_{}".format(fileconf['log_destination'], test_id)
 
@@ -136,7 +131,6 @@ def collect_logs(st_time, end_time, file, node, test_id):
     sftp.close
 
     # @TODO Error handling
-
 
 def collect_logs_fromserver(
         st_time,
