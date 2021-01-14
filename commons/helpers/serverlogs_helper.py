@@ -1,22 +1,23 @@
 #!/usr/bin/python
 """ This helper file is used to collect logs from Nodes for the given time stamps """
 
-import yaml
 from datetime import datetime
-from commons.helpers import node_helper
+from commons.helpers import host
+from commons.utils import config_utils
 
-utils_obj = node_helper.Utility()
+host_obj = host.Host()
+fileconf = config_utils.read_yaml("config/serverlogs_helper.yaml")
+
 now = datetime.now()
 current_time = now.strftime('%b  %#d %H:%M:%S')
 
-with open('config/serverlogs_helper.yaml','r') as configyaml:
-    fileconf = yaml.load(configyaml)
 
 class node_data:
     def __init__(self):
         self.ip = None
         self.uname = "root"
         self.passwd = "seagate"
+
 
 def get_node_details(node_name):
     node_obj = node_data
@@ -25,8 +26,10 @@ def get_node_details(node_name):
     node_obj.passwd = fileconf['node_password']
     return node_obj
 
+
 def split_file_for_timestamp(st_time, end_time, filename, filepath, test_id):
-    # split file for give time stamps and create new file with test_id appended to it
+    # split file for give time stamps and create new file with test_id
+    # appended to it
     path = "{}/{}".format(filepath, filename)
     logfile = open(path, 'r')
 
@@ -42,7 +45,8 @@ def split_file_for_timestamp(st_time, end_time, filename, filepath, test_id):
 
     for line in logfile:
         ls = line.split(' ')
-        # PLEASE CHECK TIMESTAMP IN LOG FILES FIRST, For every file it might be different
+        # PLEASE CHECK TIMESTAMP IN LOG FILES FIRST, For every file it might be
+        # different
         timestamp = "{} {} {}".format(ls[0], ls[1], ls[2])
         if timestamp >= start_time and timestamp <= end_time:
             newfile.write(line)
@@ -51,16 +55,31 @@ def split_file_for_timestamp(st_time, end_time, filename, filepath, test_id):
 
     return newpath
 
-def process_and_copy_file(st_time, end_time, file_name, file_path, localpath, test_id, sftp):
+
+def process_and_copy_file(
+        st_time,
+        end_time,
+        file_name,
+        file_path,
+        localpath,
+        test_id,
+        sftp):
     # Copy file from node to test client
     nodepath = "{}/{}".format(file_path, file_name)
     dest_path = "{}/{}".format(fileconf['log_destination'], file_name)
-    sftp.get(remotepath=nodepath, localpath=dest_path)  # @TODO - check sftp.get(), this call might be wrong
+    # @TODO - check sftp.get(), this call might be wrong
+    sftp.get(remotepath=nodepath, localpath=dest_path)
 
     # 1. Fetch give file from node and Split file for given time stamp
-    newfilepath = split_file_for_timestamp(st_time, end_time, file_name, fileconf['log_destination'], test_id)
+    newfilepath = split_file_for_timestamp(
+        st_time,
+        end_time,
+        file_name,
+        fileconf['log_destination'],
+        test_id)
 
-    # 2. Copy file from node to remote server <<< @TODO need new connection here !! MISSING !!!
+    # 2. Copy file from node to remote server <<< @TODO need new connection
+    # here !! MISSING !!!
     logserver = fileconf['logserver']
     lg_uname = fileconf['logserver_username']
     lg_passwd = fileconf['logserver_password']
@@ -68,21 +87,24 @@ def process_and_copy_file(st_time, end_time, file_name, file_path, localpath, te
     filename = "{}_{}".format(test_id, file_name)
     rm_path = "{}/{}".format(remote_path, filename)
 
-    connect_obj = utils_obj.connect(logserver,
-                                    username=lg_uname,
-                                    password=lg_passwd,
-                                    shell=False)
+    connect_obj = host_obj.connect(
+        logserver,
+        username=lg_uname,
+        password=lg_passwd,
+        shell=False)
     sftp = connect_obj.open_sftp()
     sftp.put(localpath=newfilepath, remotepath=rm_path)
+
 
 def collect_logs(st_time, end_time, file, node, test_id):
     # error = False #@ TODO - error handling to be done, connection retry
     # 1. Connect to node
     node_det = get_node_details(node)
-    connect_obj = utils_obj.connect(node_det.ip,
-                                    username=node_det.uname,
-                                    password=node_det.passwd,
-                                    shell=False)
+    connect_obj = host_obj.connect(
+        node_det.ip,
+        username=node_det.uname,
+        password=node_det.passwd,
+        shell=False)
     sftp = connect_obj.open_sftp()
     localpath = "{}_{}".format(fileconf['log_destination'], test_id)
 
@@ -90,28 +112,49 @@ def collect_logs(st_time, end_time, file, node, test_id):
         for fname in fileconf['file_list']:
             file_name = "{}{}".format(file, fileconf['file_exention'])
             file_path = fileconf['file_path_dict'][fname]
-            process_and_copy_file(st_time, end_time, file_name, file_path, localpath, test_id, sftp)
+            process_and_copy_file(
+                st_time,
+                end_time,
+                file_name,
+                file_path,
+                localpath,
+                test_id,
+                sftp)
     else:
         file_name = "{}{}".format(file, fileconf['file_exention'])
         file_path = fileconf['file_path_dict'][file]
-        process_and_copy_file(st_time, end_time, file_name, file_path, localpath, test_id, sftp)
+        process_and_copy_file(
+            st_time,
+            end_time,
+            file_name,
+            file_path,
+            localpath,
+            test_id,
+            sftp)
 
     # Close connection once all file transfers are done
     sftp.close
 
     # @TODO Error handling
-    # if error:
-    # log.warn("Error: Could not collect logs from node {0} for file {1}", node, file, test_id)
-    # else:
-    # log.info("Success: Logs Collected from node {0} for file {1}", node, file, test_id)
 
-def collect_logs_fromserver(st_time, test_suffix, end_time=current_time, file_type='all', node='all'):
+
+def collect_logs_fromserver(
+        st_time,
+        test_suffix,
+        end_time=current_time,
+        file_type='all',
+        node='all'):
     # Collect logs for all nodes
-    yaml.warnings({'YamlLoadWarning': False})
 
     if node is 'all':
         for node_name in fileconf['node_list']:
-            response = collect_logs(st_time, end_time, file_type, node, test_suffix)
+            response = collect_logs(
+                st_time, end_time, file_type, node, test_suffix)
     # collect from one node only
     else:
-        response = collect_logs(st_time, end_time, file_type, node, test_suffix)
+        response = collect_logs(
+            st_time,
+            end_time,
+            file_type,
+            node,
+            test_suffix)

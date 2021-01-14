@@ -1,8 +1,9 @@
+#TODO - need to revisit all the paths and IPs mentioned in this file
+
 logserver: "10.237.65.125"
 logserver_path: "/root/mahesh/temp"
 logserver_username: "root"
 logserver_password: "seagate"
-
 log_destination: "/root/mahesh/temp"
 
 file_exention : ".log"
@@ -31,3 +32,4 @@ file_path_dict:
 node_ip_dict:
   node1: "10.237.65.202"
   node2: "10.237.65.160"
+  
