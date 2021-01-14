@@ -31,8 +31,9 @@ from commons import commands
 log = logging.getLogger(__name__)
 EXCEPTION_MSG = "*ERROR* An exception occurred in {}: {}"
 
-def run_remote_cmd(cmd:str, hostname:str, username:str, password:str, read_lines:bool=False, 
-                    read_nbytes:int=-1, timeout_sec:int=30, **kwargs)->str:
+
+def run_remote_cmd(cmd: str, hostname: str, username: str, password: str, read_lines: bool = False,
+                   read_nbytes: int = -1, timeout_sec: int = 30, **kwargs) -> str:
     """
     Execute command on remote machine
     :return: stdout
@@ -49,7 +50,8 @@ def run_remote_cmd(cmd:str, hostname:str, username:str, password:str, read_lines
     client = SSHClient()
     client.set_missing_host_key_policy(AutoAddPolicy())
     log.debug("Command: %s" % str(cmd))
-    client.connect(hostname,username=username, password=password, timeout=timeout_sec)
+    client.connect(hostname, username=username,
+                   password=password, timeout=timeout_sec)
     _, stdout, stderr = client.exec_command(cmd)
     exit_status = stdout.channel.recv_exit_status()
     if read_lines:
@@ -72,7 +74,8 @@ def run_remote_cmd(cmd:str, hostname:str, username:str, password:str, read_lines
         raise IOError(error)
     return output
 
-def run_local_cmd(cmd:str)->str:
+
+def run_local_cmd(cmd: str) -> str:
     """
     Execute any given command on local machine.
     :param cmd: command to be executed.
@@ -92,18 +95,20 @@ def run_local_cmd(cmd:str)->str:
         raise IOError(error)
     return output
 
-def execute_cmd(cmd:str, remote:bool, *remoteargs, **remoteKwargs)->str:
+
+def execute_cmd(cmd: str, remote: bool, *remoteargs, **remoteKwargs) -> str:
     """Execute command on local / remote machine based on remote flag
     :param cmd: cmd to be executed
     :param remote: if True executes on remote machine
-    """    
+    """
     if remote:
-        result = run_remote_cmd(cmd,*remoteargs, **remoteKwargs)
+        result = run_remote_cmd(cmd, *remoteargs, **remoteKwargs)
     else:
         result = run_local_cmd(cmd)
     return result
 
-def command_formatter(cmd_options:dict, utility_path:str=None)->str:
+
+def command_formatter(cmd_options: dict, utility_path: str = None) -> str:
     """
     TODO: If this function is not being used, we can delete it later.
     Creating command from dictionary cmd_options
@@ -150,7 +155,8 @@ def command_formatter(cmd_options:dict, utility_path:str=None)->str:
     cmd = " ".join(cmd_elements)
     return cmd
 
-def calculate_checksum(file_path:str, binary_bz64:bool=True, options="")->str:
+
+def calculate_checksum(file_path: str, binary_bz64: bool = True, options="") -> str:
     """
     Calculate MD5 checksum with/without binary coversion for a file.
     :param filename: Name of the file with path
@@ -164,13 +170,14 @@ def calculate_checksum(file_path:str, binary_bz64:bool=True, options="")->str:
         cmd = "openssl md5 -binary {} | base64".format(file_path)
     else:
         cmd = "md5sum {} {}".format(options, file_path)
-    
+
     log.debug(f"Executing cmd: {cmd}")
     result = run_local_cmd(cmd)
     log.debug("Output: {}".format(result))
     return result
 
-def cal_percent(num1:float, num2:float)->float:
+
+def cal_percent(num1: float, num2: float) -> float:
     """
     percentage calculator to track progress
     :param num1: First number
@@ -179,7 +186,8 @@ def cal_percent(num1:float, num2:float)->float:
     """
     return float(num1) / float(num2) * 100.0
 
-def _format_dict(el:list)->dict:
+
+def _format_dict(el: list) -> dict:
     """
     TODO remove later as IAM is not supported
     Format the data in dict format
@@ -193,7 +201,8 @@ def _format_dict(el:list)->dict:
         resp_dict[i[0]] = i[1]
     return resp_dict
 
-def format_iam_resp(res_msg:str)->list:
+
+def format_iam_resp(res_msg: str) -> list:
     """
     #TODO remove later as IAM is not supported
     Function to format IAM response which comes in string format.
@@ -208,7 +217,8 @@ def format_iam_resp(res_msg:str)->list:
         resp.append(result)
     return resp
 
-def validate_output(output:str, expected_keywords:str):
+
+def validate_output(output: str, expected_keywords: str):
     log.debug(f"actual output {output}")
     output = [i.strip() for i in output]
     log.debug("output after strip %s", output)
@@ -227,7 +237,8 @@ def validate_output(output:str, expected_keywords:str):
         'validation failed')
     return retval
 
-def open_empty_file(fpath:str)->bool:
+
+def open_empty_file(fpath: str) -> bool:
     """
     Create empty file specified in path.
     :param fpath: Non-existing file path.
@@ -237,7 +248,8 @@ def open_empty_file(fpath:str)->bool:
         pass
     return os.path.exists(fpath)
 
-def create_symlink(fpath:str, spath:str)->bool:
+
+def create_symlink(fpath: str, spath: str) -> bool:
     """
     Create symlink using os.symlink specified in fpath.
     :param fpath: Existing file path.
@@ -251,7 +263,8 @@ def create_symlink(fpath:str, spath:str)->bool:
         return False
     return True
 
-def cleanup_dir(dpath:str)->bool:
+
+def cleanup_dir(dpath: str) -> bool:
     """
     Remove all files, links, directory recursively inside dpath.
     :param dpath: Absolute directory path.
@@ -269,7 +282,8 @@ def cleanup_dir(dpath:str)->bool:
             return False
     return True
 
-def list_dir(dpath:str)->list:
+
+def list_dir(dpath: str) -> list:
     """
     List directory from dpath.
     :param dpath: Directory path.
@@ -282,7 +296,8 @@ def list_dir(dpath:str)->list:
         return []
     return flist
 
-def make_dir(dpath:str,mode:int=None):
+
+def make_dir(dpath: str, mode: int = None):
     """
     Create directory path.
     :param dpath: Directory path.
@@ -296,7 +311,8 @@ def make_dir(dpath:str,mode:int=None):
         os.mkdir(dpath)
     return os.path.exists(dpath)
 
-def make_dirs(dpath:str,mode:int=None):
+
+def make_dirs(dpath: str, mode: int = None):
     """
     Create directory path recursively.
     :param dpath: Directory path.
@@ -312,7 +328,8 @@ def make_dirs(dpath:str,mode:int=None):
         return str(error)
     return dpath
 
-def remove_dir(dpath:str)->str:
+
+def remove_dir(dpath: str) -> str:
     """
     remove empty directory.
     :param dpath: Directory path.
@@ -321,7 +338,8 @@ def remove_dir(dpath:str)->str:
     os.rmdir(dpath)
     return os.path.exists(dpath)
 
-def get_file_checksum(filename:str):
+
+def get_file_checksum(filename: str):
     """
     This function will return checksum of file content present on the
     local server
@@ -336,12 +354,14 @@ def get_file_checksum(filename:str):
         log.error(EXCEPTION_MSG.format(get_file_checksum.__name__, error))
         return False, error
 
-def create_file(filename:str, count:int):
+
+def create_file(filename: str, count: int):
     cmd = commands.CREATE_FILE.format(filename, count)
     log.debug(cmd)
     result = run_local_cmd(cmd)
     log.debug("output = {}".format(result))
     return result
+
 
 def create_multiple_size_files(start_range, stop_range, file_count, folder_path, test_filename):
     """
@@ -359,15 +379,18 @@ def create_multiple_size_files(start_range, stop_range, file_count, folder_path,
         os.chdir(folder_path)
         log.debug(f"Creating {file_count} file at path {os.getcwd()}")
         for i in range(file_count):
-            filename = "{}{}".format(os.path.join(folder_path,test_filename), i)
+            filename = "{}{}".format(
+                os.path.join(folder_path, test_filename), i)
             create_file(filename, random.randint(start_range, stop_range))
         list_dir = os.listdir(folder_path)
         return True, list_dir
     except BaseException as error:
-        log.error(EXCEPTION_MSG.format(create_multiple_size_files.__name__, error))
+        log.error(EXCEPTION_MSG.format(
+            create_multiple_size_files.__name__, error))
         return False, error
 
-def remove_file(file_path:str=None):
+
+def remove_file(file_path: str = None):
     """
     This function is used to remove file at specified path
     :param file_path: Path of file to be deleted
@@ -379,6 +402,7 @@ def remove_file(file_path:str=None):
     except Exception as error:
         log.error(EXCEPTION_MSG.format(remove_file.__name__, error))
         return False, error
+
 
 def split_file(filename, size, split_count, random_part_size=False):
     """
@@ -403,7 +427,7 @@ def split_file(filename, size, split_count, random_part_size=False):
     with open(filename, "rb") as fin:
         for el in range(split_count):
             fop = "{}/{}_out{}".format(dir_path,
-                                        os.path.basename(filename), str(el))
+                                       os.path.basename(filename), str(el))
             if random_part_size:
                 read_bytes = random.randint(
                     1048576 * size // 10, 1048576 * size)
@@ -415,7 +439,8 @@ def split_file(filename, size, split_count, random_part_size=False):
     log.debug(res_d)
     return res_d
 
-def is_utility_present(utility_name:str, filepath:str)->bool:
+
+def is_utility_present(utility_name: str, filepath: str) -> bool:
     """
     This function will check utility file
     is present on specific location or not
@@ -433,6 +458,7 @@ def is_utility_present(utility_name:str, filepath:str)->bool:
     except BaseException as error:
         log.error(EXCEPTION_MSG.format(is_utility_present.__name__, error))
         return False
+
 
 def backup_or_restore_files(action,
                             backup_path,
@@ -466,10 +492,12 @@ def backup_or_restore_files(action,
                             file, file_path))
                 return True, backup_path
     except BaseException as error:
-        log.error(EXCEPTION_MSG.format(backup_or_restore_files.__name__, error))
+        log.error(EXCEPTION_MSG.format(
+            backup_or_restore_files.__name__, error))
         return False, error
 
-def is_dir_exists(path:str, dir_name:str)->bool:
+
+def is_dir_exists(path: str, dir_name: str) -> bool:
     directories = run_local_cmd(commands.LS_CMD.format(path))
     directories = (directory.split("\n")[0] for directory in directories)
     if dir_name in directories:
@@ -477,7 +505,8 @@ def is_dir_exists(path:str, dir_name:str)->bool:
     else:
         return False
 
-def is_machine_clean()->Tuple[bool,bool]:
+
+def is_machine_clean() -> Tuple[bool, bool]:
     """
     This function checks that any rpm is installed on machine and
     will check for eos-prvsnr binaries present at /opt/seagate/ path
@@ -504,7 +533,8 @@ def is_machine_clean()->Tuple[bool,bool]:
         eos_prvsnr_present = True
     return rpm_installed, eos_prvsnr_present
 
-def is_rpm_installed(expected_rpm:str, remote:bool=False, *remoteargs, **remoteKwargs)->bool:
+
+def is_rpm_installed(expected_rpm: str, remote: bool = False, *remoteargs, **remoteKwargs) -> bool:
     """
     This function checks that expected rpm is currenty installed or not
     :param expected_rpm: rpm to check
@@ -512,7 +542,7 @@ def is_rpm_installed(expected_rpm:str, remote:bool=False, *remoteargs, **remoteK
     rpm_installed = False
     cmd = commands.LST_RPM_CMD
     log.debug(f"command : {cmd}")
-    cmd_output = execute_cmd(cmd,remote,*remoteargs, **remoteKwargs)
+    cmd_output = execute_cmd(cmd, remote, *remoteargs, **remoteKwargs)
     if cmd_output[1] == []:
         log.debug("RPM not found")
         rpm_installed = False
@@ -528,17 +558,19 @@ def is_rpm_installed(expected_rpm:str, remote:bool=False, *remoteargs, **remoteK
                 break
         return rpm_installed, "Expected RPM installed"
 
-def install_new_cli_rpm(rpm_link=None, remote=False,*remoteargs, **remoteKwargs ):
+
+def install_new_cli_rpm(rpm_link=None, remote=False, *remoteargs, **remoteKwargs):
     cmd_output = []
     # cmd = f"yum install -y {rpm_link}"
     cmd = commands.RPM_INSTALL_CMD.format(rpm_link)
     log.debug(f"command : {cmd}")
-    cmd_output = execute_cmd(cmd,remote,*remoteargs, **remoteKwargs)
+    cmd_output = execute_cmd(cmd, remote, *remoteargs, **remoteKwargs)
     if cmd_output != []:
         log.debug("Successfully installed RPM")
     return cmd_output
 
-def list_rpms(filter_str="",remote=False,*remoteargs, **remoteKwargs)->Tuple[bool,list]:
+
+def list_rpms(filter_str="", remote=False, *remoteargs, **remoteKwargs) -> Tuple[bool, list]:
     """
     This function lists the rpms installed on a given host and filters by given string
     :param str filter_str: string to search in rpm names for filtering results, default lists all the rpms
@@ -546,7 +578,7 @@ def list_rpms(filter_str="",remote=False,*remoteargs, **remoteKwargs)->Tuple[boo
     """
     cmd = commands.RPM_GREP_CMD.format(filter_str)
     log.debug(f"command : {cmd}")
-    resp  = execute_cmd(cmd,remote,*remoteargs, **remoteKwargs)
+    resp = execute_cmd(cmd, remote, *remoteargs, **remoteKwargs)
     if isinstance(resp, list):
         rpm_list = [rpm.strip("\n") for rpm in resp]
         if not rpm_list:
@@ -555,7 +587,8 @@ def list_rpms(filter_str="",remote=False,*remoteargs, **remoteKwargs)->Tuple[boo
     else:
         return False, resp
 
-def check_ping(host:str)->bool:
+
+def check_ping(host: str) -> bool:
     """
     This function will send ping to the given host
     :param str host: Host to whom ping to be sent
@@ -564,7 +597,8 @@ def check_ping(host:str)->bool:
     response = os.system("ping -c 1 {}".format(host))
     return (response == 0)
 
-def pgrep(process:str):
+
+def pgrep(process: str):
     """
     Function to get process ID using pgrep cmd.
     :param process: Name of the process
@@ -573,7 +607,8 @@ def pgrep(process:str):
     response = run_local_cmd(commands.PGREP_CMD.format(process))
     return response
 
-def get_disk_usage(path:str)->str:
+
+def get_disk_usage(path: str) -> str:
     """
     This function will return disk usage associated with given path.
     :param path: Path to retrieve disk usage
