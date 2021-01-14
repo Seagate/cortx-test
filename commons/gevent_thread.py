@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# !/usr/bin/python
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -16,8 +18,6 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-# -*- coding: utf-8 -*-
-# !/usr/bin/python
 
 import sys
 import logging
@@ -112,6 +112,13 @@ class GThread(Multithreading):
         self.responses = dict()  # Collecting Thread name and Thread Result/Return response
 
     def _run(self, message=None) -> Any:
+        """
+        Subclasses may override this method to take any number of
+        arguments and keyword arguments.
+        :param message:
+        :return: Any
+        :rtype: As defined by subclass
+        """
         logger.debug(message)
         super()._run()
 
@@ -132,7 +139,10 @@ class GThread(Multithreading):
 
     @staticmethod
     def terminate() -> Tuple[bool, List]:
-        """ wait until queue is empty and terminate threads """
+        """ wait until queue is empty and terminate threads
+        :return: Collection of Boolean with list of thread responses
+        :rtype: tuple containing bool and List
+        """
         GThread.join()
         logger.debug(
             "Terminating all processes once they finished with task\n")
