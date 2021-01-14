@@ -70,16 +70,28 @@ def formatter():
 
 @pytest.fixture(scope='session')
 def logger():
+    """
+    Gets session scoped logger which can be used in test methods or functions.
+    :return: logger instance
+    """
     logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
-    cortxlogging.init_loghandler(logger)  #TODO reference
+    cortxlogging.init_loghandler(logger)
     return logger
 
 
 @pytest.fixture(scope='function')
 def log_cutter(request, formatter):
-    print("setup")
+    """
+    Fixture to create test log for each test case. Developer need to use this
+    fixture in the test method argument as shown below
+    test_demo(requests, log_cutter)
+
+    :param request:
+    :param formatter:
+    :return:
+    """
     name = request.function.__name__
     records = dict()
     yield records
@@ -93,6 +105,12 @@ def log_cutter(request, formatter):
 
 @pytest.fixture(autouse=True, scope='session')
 def cleanup(request):
+    """
+    This Fixture renames the the log/latest folder to a name with current timestamp
+    and creates a folder named latest.
+    :param request:
+    :return:
+    """
     root_dir = pathlib.Path(request.node.fspath.strpath)
     log_dir = os.path.join(root_dir, 'log')
     now = str(datetime.datetime.now())
@@ -110,6 +128,11 @@ def cleanup(request):
 # content of conftest.py
 
 def pytest_addoption(parser) :
+    """
+    Hook to add options at runtime to pytest command
+    :param parser:
+    :return:
+    """
     parser.addoption(
         "--is_parallel", action="store", default="false", help="option: true or false"
     )
@@ -132,7 +155,17 @@ def read_test_list_csv() :
 
 
 def pytest_collection_modifyitems(config, items):
-    required_tests = ['TEST-17413', 'TEST-17414'] # read_test_list_csv()
+    """
+    A hooks which gets called after pytest collects items. This provides an intercept
+     to modify items at run time based on tags. Intention is to group TE tests into
+     parallel and non parallel groups.
+     This function's behaviour will change depending on the test execution framework
+     integration.
+    :param config:
+    :param items:
+    :return:
+    """
+    required_tests = read_test_list_csv() # e.g. ['TEST-17413', 'TEST-17414']
     Globals.TE_TKT = config.option.te_tkt
     selected_items = []
     for item in items:
@@ -152,25 +185,18 @@ def pytest_collection_modifyitems(config, items):
     items[:] = selected_items
 
 
-# @pytest.hookimpl(hookwrapper=True)
-# def pytest_runtest_makereport(item: Item, call: CallInfo):
-#     # All code prior to yield statement would be ran prior
-#     # to any other of the same fixtures defined
-#
-#     outcome = yield  # Run all other pytest_runtest_makereport non wrapped hooks
-#     result = outcome.get_result()
-#     if result.when == "call" and result.failed:
-#         try:  # Just to not crash py.test reporting
-#             with open(str(FAILURES_FILE), "a") as f:
-#                 f.write(result.nodeid + "\n")
-#         except Exception as e:
-#             print("ERROR", e)
-#             pass
-
-
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
-def pytest_runtest_makereport(item, call) :
-    # execute all other hooks to obtain the report object
+def pytest_runtest_makereport(item, call):
+    """
+    Execute all other hooks to obtain the report object. Follow the pytest execution protocol
+    to understand where does this fucntion fits in. In short this function will help to create
+    failed, passed lists in multiple runs. The clean up of logs files should happen before the
+    test runs starts.
+
+    :param item:
+    :param call:
+    :return:
+    """
     outcome = yield
     rep = outcome.get_result()
     # print(rep)
@@ -194,6 +220,13 @@ def pytest_runtest_makereport(item, call) :
 
 
 def pytest_runtest_logreport(report: "TestReport") -> None:
+    """
+    Provides an intercept to create a) generate log per test case
+    b) Update Jira with result at different phases within a test (setup, call, teardown)
+    c) Call Reports REST API to update Report DB (Mongo)
+    :param report:
+    :return:
+    """
     jira_id, jira_pwd = get_jira_credential()
     task = jira_utils.JiraTask(jira_id, jira_pwd)
     test_id = CACHE.lookup(report.nodeid)

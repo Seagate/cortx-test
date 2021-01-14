@@ -10,9 +10,6 @@ from http import HTTPStatus
 
 class JiraTask :
     def __init__(self, jira_id, jira_password) :
-        """
-        constructor
-        """
         self.jira_id = jira_id
         self.jira_password = jira_password
         self.headers = {
@@ -24,8 +21,6 @@ class JiraTask :
         """
         Get test jira ids available in test execution jira
         """
-        import pdb
-        pdb.set_trace()
         jira_url = 'https://jts.seagate.com/rest/raven/1.0/testruns?testExecKey=' + test_exe_id
         response = requests.get(jira_url, auth=(self.jira_id, self.jira_password))
         test_list = []
