@@ -15,4 +15,4 @@ def test_serverlogs_lib():
                                               end_time=end_time,
                                               file_type="motr",
                                               node="node1",
-                                              test_suffix="077")
+                                              test_suffix="0707")
