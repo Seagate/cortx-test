@@ -7,6 +7,7 @@ import shutil
 import datetime
 import logging
 from logging import handlers
+
 LOG_DIR = 'log'
 LOG_FILE = 'cortx-test.log'
 
@@ -14,7 +15,7 @@ LOG_FILE = 'cortx-test.log'
 def init_loghandler(log) -> None:
     log.setLevel(logging.DEBUG)
     make_log_dir(LOG_DIR)
-    fh = logging.FileHandler(os.path.join(os.getcwd(), LOG_DIR, LOG_FILE), mode='w')
+    fh = logging.FileHandler(os.path.join(os.getcwd(), LOG_DIR, 'latest', LOG_FILE), mode='w')
     fh.setLevel(logging.DEBUG)
     ch = logging.StreamHandler()
     ch.setLevel(logging.DEBUG)

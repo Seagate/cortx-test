@@ -77,8 +77,8 @@ def test_max(request, capture, logger):
 
 """
 
-
-@pytest.mark.tags("TEST-17495")
+@pytest.mark.parallel
+@pytest.mark.tags("TEST-17413")
 def test_min(logger):
     values = (2, 3, 1, 4, 6)
     val = min(values)
@@ -88,8 +88,8 @@ def test_min(logger):
     logger.error("min is %s" % val)
     assert val == 1
 
-
-@pytest.mark.tags("TEST-17496")
+@pytest.mark.parallel
+@pytest.mark.tags("TEST-17414")
 def test_max(request, capture, logger):
     values = (2, 3, 1, 4, 6)
 

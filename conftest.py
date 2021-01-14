@@ -20,62 +20,30 @@
 # !/usr/bin/python
 import pytest
 import os
-import csv
-
-
-def pytest_addoption(parser) :
-    parser.addoption(
-        "--is_parallel", action="store", default="false", help="option: true or false"
-    )
-
-
-def read_test_list_csv() :
-    try :
-        with open('test_lists.csv') as f :
-            reader = csv.reader(f)
-            test_list = list(reader)
-            return test_list
-    except Exception as e :
-        print(e)
-
-
-def pytest_collection_modifyitems(config, items) :
-    required_tests = read_test_list_csv()
-    selected_items = []
-    for item in items :
-        parallel_found = 'false'
-        test_found = ''
-        for mark in item.iter_markers() :
-            if mark.name == 'parallel' :
-                parallel_found = 'true'
-                if config.option.is_parallel == 'false' :
-                    break
-            elif mark.name == 'tags' :
-                test_found = mark.args[0]
-        if parallel_found == config.option.is_parallel and test_found != '' :
-            if [test_found] in required_tests :
-                selected_items.append(item)
-    items[:] = selected_items
 import pathlib
 import json
 import logging
 import csv
 import re
 import builtins
+import datetime
 from _pytest.nodes import Item
 from _pytest.runner import CallInfo
 from testfixtures import LogCapture
+from strip_ansi import strip_ansi
 from commons.utils import yaml_utils
 from commons import Globals
 from commons import cortxlogging
 from commons.utils import jira_utils
 from core.runner import LRUCache
 from core.runner import get_jira_credential
+
 pytest_plugins = [
     "commons.conftest",
 ]
 
 FAILURES_FILE = "failures.txt"
+LOG_DIR = 'log'
 CACHE = LRUCache(1024 * 10)
 
 @pytest.fixture(autouse=True, scope='session')
@@ -123,7 +91,24 @@ def log_cutter(request, formatter):
     del Globals.records[name]
 
 
+@pytest.fixture(autouse=True, scope='session')
+def cleanup(request):
+    root_dir = pathlib.Path(request.node.fspath.strpath)
+    log_dir = os.path.join(root_dir, 'log')
+    now = str(datetime.datetime.now())
+    now = now.replace(' ', '-')  #now has a space in timestamp
+    now = now.replace(':', '_')
+    if os.path.exists(log_dir) and os.path.isdir(log_dir):
+        latest = os.path.join(log_dir,'latest')
+        if os.path.isdir(latest) and os.path.exists(latest):
+            os.rename(latest, os.path.join(log_dir, now))
+        os.makedirs(latest)
+    else:
+        os.makedirs(os.path.join(log_dir,'latest'))
+
+
 # content of conftest.py
+
 def pytest_addoption(parser) :
     parser.addoption(
         "--is_parallel", action="store", default="false", help="option: true or false"
@@ -147,7 +132,7 @@ def read_test_list_csv() :
 
 
 def pytest_collection_modifyitems(config, items):
-    required_tests = read_test_list_csv()
+    required_tests = ['TEST-17413', 'TEST-17414'] # read_test_list_csv()
     Globals.TE_TKT = config.option.te_tkt
     selected_items = []
     for item in items:
@@ -161,7 +146,7 @@ def pytest_collection_modifyitems(config, items):
             elif mark.name == 'tags' :
                 test_found = mark.args[0]
         if parallel_found == config.option.is_parallel and test_found != '':
-            if [test_found] in required_tests:
+            if test_found in required_tests:
                 selected_items.append(item)
         CACHE.store(item.nodeid, test_found)
     items[:] = selected_items
@@ -197,6 +182,7 @@ def pytest_runtest_makereport(item, call) :
         current_file = fail_file
     elif rep.passed :
         current_file = pass_file
+    current_file = os.path.join(os.getcwd(), LOG_DIR, 'latest', current_file)
     mode = "a" if os.path.exists(current_file) else "w"
     with open(current_file, mode) as f :
         # let's also access a fixture
@@ -208,19 +194,31 @@ def pytest_runtest_makereport(item, call) :
 
 
 def pytest_runtest_logreport(report: "TestReport") -> None:
-    if report.when == 'teardown':
+    jira_id, jira_pwd = get_jira_credential()
+    task = jira_utils.JiraTask(jira_id, jira_pwd)
+    test_id = CACHE.lookup(report.nodeid)
+    if report.when == 'setup':
+        task.update_test_jira_status(Globals.TE_TKT, test_id, 'Executing')
+        pass
+    elif report.when == 'call':
+        task.update_test_jira_status(Globals.TE_TKT, test_id, 'Executing')
+        pass
+    elif report.when == 'teardown':
         log = report.caplog
-        ansi_escape = re.compile(r'(\x9B|\x1B\[)[0-?]*[ -\/]*[@-~]')
-        ansi_escape.sub('', log)
+        log = strip_ansi(log)
         logs = log.split('\n')
         test_id = CACHE.lookup(report.nodeid)
-        name = str(test_id) + report.nodeid.split('::')[1]
-        with open(name, 'w') as fp:
+        name = str(test_id) + '_' + report.nodeid.split('::')[1]
+        test_log = os.path.join(os.getcwd(), LOG_DIR, 'latest', name)
+        with open(test_log, 'w') as fp:
             for rec in logs:
                 fp.write(rec + '\n')
-        jira_id, jira_pwd = get_jira_credential()
-        task = jira_utils.JiraTask(jira_id, jira_pwd)
-        task.update_test_jira_status(Globals.TE_TKT, test_id, report.outcome.capitalize())
+        if report.outcome in ['passed', 'Passed']:
+            task.update_test_jira_status(Globals.TE_TKT, test_id, 'PASS')
+        elif report.outcome in ['failed', 'Failed']:
+            task.update_test_jira_status(Globals.TE_TKT, test_id, 'FAIL')
+
+
 
 
 

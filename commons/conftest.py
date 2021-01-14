@@ -43,50 +43,6 @@ def _read_project_config(request):
     print('config contents:', contents)
 
 
-@pytest.fixture(autouse=True)
-def read_project_config(request):
-    f = pathlib.Path(request.node.fspath.strpath)
-    config = f.with_name('config.json')
-    with config.open() as fp:
-        return json.load(fp)
-
-
-@pytest.fixture(autouse=True)
-def capture():
-    with LogCapture() as logs:
-        yield logs
-
-
-@pytest.fixture(scope='session')
-def formatter():
-    format_log_message = '%(asctime)s\t%(levelname)s\t%(filename)s\t%(funcName)s' \
-                         '\t%(processName)s\t%(message)s'
-    formatter = logging.Formatter(fmt=format_log_message, datefmt='%Y-%m-%d %H:%M:%S')
-    return formatter
-
-
-@pytest.fixture(scope='session')
-def logger():
-    logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.DEBUG)
-    cortxlogging.init_loghandler(logger)  #TODO reference
-    return logger
-
-
-@pytest.fixture(scope='function')
-def log_cutter(request, formatter):
-    print("setup")
-    name = request.function.__name__
-    records = dict()
-    yield records
-    records = Globals.records.get(name)
-    print("teardown")
-    with open(name, 'w') as f:
-        for rec in records:
-            f.write(formatter.format(rec) + '\n')
-    del Globals.records[name]
-
 @pytest.fixture
 def data():
     pytest.req_timeout_global = 30

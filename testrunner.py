@@ -6,7 +6,6 @@ import getpass
 from core import runner
 from commons.utils.jira_utils import JiraTask
 
-import getpass
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -39,17 +38,6 @@ def get_jira_credential() :
     return jira_id, jira_pwd
 
 
-def run_pytest_cmd(args, te_tag, parallel_red) :
-    tag = '-m ' + te_tag
-    is_parallel = "--is_parallel=" + parallel_red
-    log_level = "--log-cli-level=" + str(args.log_level)
-    prc_cnt = str(args.prc_cnt) + "*popen"
-    if parallel_red == "true" :
-        report_name = "--html=parallel_" + args.html_report
-        cmd_line = ["pytest", is_parallel, log_level, report_name, "-d", "--tx", prc_cnt, tag]
-    else :
-        report_name = "--html=non_parallel_" + args.html_report
-        cmd_line = ["pytest", is_parallel, log_level, report_name, tag]
 def run_pytest_cmd(args, te_tag, parallel_red, te_ticket=None):
     tag = '-m ' + te_tag
     is_parallel = "--is_parallel=" + parallel_red
@@ -117,7 +105,7 @@ def main(args) :
         if len(test_list) == 0 or te_tag == "":
             assert "Please check TE provided, tests or tag is missing"
         # writing the data into the file
-        with open('test_lists.csv', 'w') as f :
+        with open('test_lists.csv', 'w') as f:
             write = csv.writer(f)
             for test in test_list :
                 write.writerow([test])

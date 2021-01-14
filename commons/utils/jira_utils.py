@@ -24,7 +24,8 @@ class JiraTask :
         """
         Get test jira ids available in test execution jira
         """
-
+        import pdb
+        pdb.set_trace()
         jira_url = 'https://jts.seagate.com/rest/raven/1.0/testruns?testExecKey=' + test_exe_id
         response = requests.get(jira_url, auth=(self.jira_id, self.jira_password))
         test_list = []
@@ -114,7 +115,7 @@ class JiraTask :
         status = {}
         state["testExecutionKey"] = test_exe_id
         status["testKey"] = test_id
-        if test_status == 'Executing' :
+        if test_status == 'Executing':
             status["start"] = datetime.datetime.now().astimezone().isoformat(timespec='seconds')
         else :
             status["finish"] = datetime.datetime.now().astimezone().isoformat(timespec='seconds')
