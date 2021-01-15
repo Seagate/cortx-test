@@ -13,3 +13,4 @@ build
 .coverage
 tmp
 venv/
+.venv/
