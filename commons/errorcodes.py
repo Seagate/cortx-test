@@ -89,3 +89,6 @@ CT_CONFIG_ERROR = CTError(1000, "CTP Config Error")
 
 # HTTP and HTTPS Errors
 HTTP_ERROR = CTError(2000, "HTTP Error")
+
+# RAS CT Errors
+CONTROLLER_ERROR = CTError(6000, "CONTROLLER Error")
