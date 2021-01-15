@@ -1,0 +1,239 @@
+ras_sspl_alert:
+  ees_server_path: "/"
+  disk_usage_val: 5
+  wait_time: 5
+  create_dir_cmd: "mkdir -p {}"
+  file:
+    sspl_conf_filename: "/etc/sspl.conf"
+    sspl_cfg_temp: "/tmp/sspl.conf"
+    original_sspl_conf: "/etc/sspl_original.conf"
+    alert_log_file: "/root/rabbitmq_alert.log"
+    extracted_alert_file: "/root/extracted_alert.log"
+    encrypter_local_path: "/root/encryptor_updated.py"
+    temp_txt_file: "temp.txt"
+    telnet_xml: "/root/telnet.xml"
+    sspl_log_file: "/root/sspl_log.txt"
+    screen_log: "/root/screenlog.0"
+  sspl_config:
+    sspl_section: "NODEDATAMSGHANDLER"
+    sspl_du_key: "disk_usage_threshold"
+    sspl_du_dval: "80"
+    server_du_path: "/"
+    sspl_trans_intv_key: "transmit_interval"
+    sspl_trans_intv_dval: 300
+    sspl_trans_intv_val: 10
+    sspl_log_level_key: "log_level"
+    sspl_log_level_val: "WARNING"
+    sspl_log_dval: "INFO"
+  ldap_user: "sgiamadmin"
+  ldap_pwd: "ldapadmin"
+  sleep_val: 120
+  after_service_restart_sleep_val: 60
+  ipmitool_sdr_cmd: "ipmitool sdr list"
+  sspl_exch: "sspl-out"
+  sspl_key: "sensor-key"
+  service:
+    sspl_service: "sspl-ll"
+    rabitmq_service: "rabbitmq-server"
+  sspl_resource_id: "sspl-master"
+  mc_debug_port: 7900
+  telnet_sleep_val: 120
+  max_wait_time: 320
+  default_cpu_usage: 80
+  csm_error_msg: "Failed to get alerts using CSM REST API"
+  csm_alert_gen_delay: 60
+  default_mem_usage: 80
+  start_rmq: False
+
+test_3005:
+  alert: True
+  du_val: 3
+  alert_type: "fault_resolved"
+  resource_type: "node:os:disk_space"
+
+test_3006:
+  alert: False
+  resource_type: "node:os:disk_space"
+  alert_fault:
+    du_val: 1
+    alert_type: "fault"
+  alert_fault_resolved:
+    du_val: 1
+    alert_type: "fault_resolved"
+
+test_3104:
+  buffer_sz: 100000
+  check_time_sppl: "systemd-analyze blame | grep {}"
+  sspl_time: 2
+  time_cmd: 3
+
+test_3161:
+  buffer_sz: 100000
+  ipmitool_event:
+    - "ipmitool event {} ucr"
+    - "ipmitool event {} lcr"
+    - "ipmitool event {} lnr"
+  resource_type: "node:fru:fan"
+  alert_type: "fault"
+  wait_time: 5
+  operations:
+    - "ucr"
+    - "lcr"
+    - "lnr"
+
+test_3280:
+  buffer_sz: 100000
+  ipmitool_event: "ipmitool event {} lcr"
+  op: "lcr"
+  alert_type: "fault"
+  resource_type: "node:fru:fan"
+  wait_time: 10
+
+test_1299:
+  batch_count: 6
+  buffer_sz: 100000
+  ipmitool_event: 'ipmitool event "{}" lcr'
+  usage_pattern: "Percent Used"
+  wait_time: 1
+  range_max: 90
+
+test_4332:
+  pos: left
+  fru: psu
+  type_fault: e
+  fault_resolved: r
+  ctrl_name: a
+  enclId : 0
+  alert_type: "fault"
+  resource_type: "enclosure:fru:psu"
+
+test_4362:
+  pos: a
+  fru: ctrl
+  type_fault: e
+  fault_resolved: r
+  ctrl_name: a
+  enclId : 0
+  alert_type: "fault_resolved"
+  resource_type: "enclosure:fru:controller"
+  err_msg: "Couldn't connect to telnet port 7900. Please try on other controller (Generating Fault) - {}"
+
+test_4335:
+  fru: psu
+  type_fault: e
+  fault_resolved: r
+  ctrl_name: a
+  enclId : 0
+  pos : left
+  alert_type: "fault_resolved"
+  resource_type: "enclosure:fru:psu"
+
+test_4361:
+  fru: ctrl
+  type_fault: e
+  fault_resolved: r
+  ctrl_name: a
+  enclId : 0
+  pos : a
+  alert_type: "fault"
+  resource_type: "enclosure:fru:controller"
+
+test_6916:
+  key: "log_level"
+  log_level_val: "WARNING"
+
+test_4349:
+  port_name:
+    - "primary_controller_port"
+    - "secondary_controller_port"
+  port_number: 5100
+  test_sspl_file: "/home/sspl_4349.txt"
+
+test_3424:
+  rsyslog_service: "rsyslog"
+  logger_cmd: "logger -i -p local3.err IEC: BO00100101000:Error in connecting to controller"
+  alert_type: "get"
+  resource_type: "iem"
+  description: "Error in connecting to controller"
+
+test_6592:
+  key: "log_level"
+  log_level_val:
+    - "WARNING"
+    - "ERROR"
+  test_sspl_file: "/home/sspl_6592.txt"
+
+test_157:
+  encl: 0
+  ctrl: A
+  operation_fault: "Disabled"
+  degraded_phy_status:
+    - "Degraded"
+    - "Fault"
+  operation_fault_resolved: "Enabled"
+  ok_phy_status: "OK"
+  alert_type: "fault"
+  resource_type: "enclosure:fru:disk"
+  retry: 2
+
+test_158:
+  encl: 0
+  ctrl: A
+  operation_fault: "Disabled"
+  degraded_phy_status:
+    - "Degraded"
+    - "Fault"
+  operation_fault_resolved: "Enabled"
+  ok_phy_status: "OK"
+  alert_type: "fault_resolved"
+  resource_type: "enclosure:fru:disk"
+  cat_cmd: "cat {}"
+  retry: 2
+
+test_6335:
+  buf_sz: 100
+  file_name:
+    - "components"
+    - "s3"
+    - "motr"
+    - "auth"
+    - "csm"
+  err_msg: "Error in fetching user"
+  alert_type: "get"
+  cat_cmd: "cat {}"
+  ied_code_initial: "IEC: BS{}:{}"
+  wait_time: 240
+  alert_wait: 2
+  resource_type: "iem"
+
+# Test parameters for TEST-1648 and TEST-1783 ran in test_sspl_secondary.py
+test_1648:
+  buffer_sz: 100000
+  ipmitool_event: "ipmitool event {} {}"
+  op: lnr
+  resource_type: "node:fru:fan"
+  alert_type: "fault"
+  wait_time: 60
+
+test_5924:
+  fields:
+    - "user"
+    - "password"
+
+test_4354:
+  delta_cpu_usage: -0.3
+  alert_type: "fault"
+  resource_type: "node:os:cpu"
+
+test_1645:
+  buffer_sz: 100000
+  op: lnr
+  resource_type: "node:fru:fan"
+  alert_type: "fault"
+  alert_delay: 60
+  reboot_delay: 600
+
+test_4355:
+  delta_mem_usage: -3
+  alert_type: "fault"
+  resource_type: "node:os:memory_usage"
