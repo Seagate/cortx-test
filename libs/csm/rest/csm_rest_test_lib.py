@@ -1,12 +1,13 @@
 """ REST API Alert operation Library. """
 import logging
-import commons.errorcodes as err
 from string import Template
+from jsonschema import validate
+import commons.errorcodes as err
 from commons.constants import Rest as const
 from commons.utils import config_utils
 from commons.exceptions import CTException
 from libs.csm.rest.csm_rest_core_lib import RestClient
-from jsonschema import validate
+
 
 
 
@@ -16,7 +17,7 @@ class RestTestLib:
     """
 
     def __init__(self):
-        self.csm_conf = config_utils.read_yaml("config/csm/csm_config.yaml")
+        self.csm_conf = config_utils.read_yaml("config/csm/csm_config.yaml")[1]
         self.config = self.csm_conf["Restcall"]
         self._log = logging.getLogger(__name__)
         self.restapi = RestClient(self.csm_conf["Restcall"])
@@ -42,7 +43,7 @@ class RestTestLib:
             # Building response
             endpoint = self.config["rest_login_endpoint"]
             headers = self.config["Login_headers"]
-            self._log.info("endpoint ", endpoint)
+            self._log.info(f"endpoint {endpoint}")
             # payload = self.config[login_as] # showing some error in Cortx-1.0.0-rc3
             payload = Template(const.LOGIN_PAYLOAD).substitute(
                 **self.config[login_as])
@@ -50,7 +51,7 @@ class RestTestLib:
             # Fetch and verify response
             response = self.restapi.rest_call(
                 "post", endpoint, headers=headers, data=payload, save_json=False)
-            self._log.info("response : ", response)
+            self._log.info(f"response : {response}")
 
             return response
         except BaseException as error:
@@ -75,14 +76,14 @@ class RestTestLib:
             # Building response
             endpoint = self.config["rest_login_endpoint"]
             headers = self.config["Login_headers"]
-            self._log.info("endpoint ", endpoint)
+            self._log.info(f"endpoint {endpoint}")
             payload = "{{\"{}\":\"{}\",\"{}\":\"{}\"}}".format(
                 username_key, username, password_key, password)
 
             # Fetch and verify response
             response = self.restapi.rest_call(
                 "post", endpoint, headers=headers, data=payload, save_json=False)
-            self._log.info("response : ", response)
+            self._log.info(f"response : {response}")
 
         except BaseException as error:
             self._log.error("{0} {1}: {2}".format(

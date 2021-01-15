@@ -3,7 +3,7 @@ import logging
 import json
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
-
+from commons.constants import Rest as const
 
 class RestClient:
     """

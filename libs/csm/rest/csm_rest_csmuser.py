@@ -1,12 +1,11 @@
 """Test library for CSM user related operations."""
 import time
 import json
+import random
 from commons.constants import Rest as const
 import commons.errorcodes as err
-from libs.csm.rest.csm_rest_test_lib import RestTestLib as Base
 from commons.exceptions import CTException
-import random
-
+from libs.csm.rest.csm_rest_test_lib import RestTestLib as Base
 
 class RestCsmUser(Base):
     """RestCsmUser contains all the Rest API calls for csm user operations"""
