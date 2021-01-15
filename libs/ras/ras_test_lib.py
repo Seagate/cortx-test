@@ -7,7 +7,7 @@ class
 import logging
 import os
 import time
-from typing import Tuple, Any
+from typing import Tuple, Any, Union
 from libs.ras.ras_core_lib import RASCoreLib
 from commons.utils.config_utils import read_yaml, get_config
 from commons import constants as cmn_cons
@@ -42,19 +42,22 @@ class RASTestLib(RASCoreLib):
         self.username = username
         self.pwd = password
         self.common_cfg = COMMON_CFG
+        self.sspl_pass = COMMON_CFG["sspl_pass"]
         super().__init__(host, username, password)
 
-    def start_rabbitmq_reader_cmd(self, sspl_exchange: str, sspl_key: str) -> bool:
+    def start_rabbitmq_reader_cmd(self, sspl_exchange: str, sspl_key: str, **kwargs) -> bool:
         """
         This function will check for the disk space alert for sspl.
         :param str sspl_exchange: sspl exchange string
         :param str sspl_key: sspl key string
+        :keyword sspl_pass: sspl_pass
         :return: Command response along with status(True/False)
         :rtype: bool
         """
+        sspl_pass = kwargs.get("sspl_pass")if kwargs.get("sspl_pass") else self.sspl_pass
         try:
             LOGGER.info(f"Start rabbitmq chanel on node {self.host}")
-            cmd_output = super().start_rabbitmq_reader_cmd(sspl_exchange, sspl_key)
+            cmd_output = super().start_rabbitmq_reader_cmd(sspl_exchange, sspl_key, sspl_pass)
             LOGGER.debug(cmd_output)
             return cmd_output
         except BaseException as error:
@@ -191,7 +194,7 @@ class RASTestLib(RASCoreLib):
         :param value: Threshold value to be updated
         :param update: Flag for updating the consul value or not
         :return: True/False
-        :rtype: Boolean
+        :rtype: bool
         """
         try:
             LOGGER.info("Updating the consul value {}".format(field))
@@ -265,15 +268,14 @@ class RASTestLib(RASCoreLib):
             self,
             du_val: int,
             fault: bool = True,
-            fault_resolved: bool = False) -> tuple:
+            fault_resolved: bool = False) -> Tuple[bool, float]:
         """
         Function to verify the sspl disk space alert, both positive and negative
         based on the disk usage
         :param int du_val: Value to be added to current disk usage to form new disk_usage_threshold
         :param bool fault: True to generate disk full fault alert, default True
         :param bool fault_resolved: True to generate disk full fault_resolved alert, default False
-        :return: status, current disk usage(bool,int)
-        :rtype: tuple
+        :return: status, current disk usage(bool,int|float)
         """
         try:
             common_cfg = RAS_VAL["ras_sspl_alert"]
@@ -333,25 +335,17 @@ class RASTestLib(RASCoreLib):
             if fault:
                 if self.node_utils.path_exists(file_name):
                     LOGGER.info("Remove temp disk usage file")
-                    self.node_utils.remove_file(filename=file_name, host=self.host)
+                    self.node_utils.remove_file(filename=file_name)
                 LOGGER.info(
                     "Creating file {} on host {} to increase the disk usage".format(
                         file_name, self.host))
                 resp = self.node_utils.create_file(
-                    file_name,
-                    file_size,
-                    remote=True,
-                    host=self.host,
-                    username=self.username,
-                    password=self.pwd)
+                    file_name, file_size)
                 LOGGER.info(resp)
                 time.sleep(common_cfg["one_min_delay"])
                 LOGGER.info("Fetching server disk usage")
                 resp = self.node_utils.disk_usage_python_interpreter_cmd(
-                    dir_path=common_cfg["sspl_config"]["server_du_path"],
-                    host=self.host,
-                    user=self.username,
-                    pwd=self.pwd)
+                    dir_path=common_cfg["sspl_config"]["server_du_path"])
                 current_disk_usage = float(resp[1][0])
                 LOGGER.info("Current disk usage of EES server :{}"
                             .format(current_disk_usage))
@@ -362,15 +356,11 @@ class RASTestLib(RASCoreLib):
                 LOGGER.info(
                     "Removing file {} to reduce the disk usage on host {}".format(
                         file_name, self.host))
-                self.node_utils.remove_file_remote(
-                    file_name, host=self.host, user=self.username, pwd=self.pwd)
+                self.node_utils.remove_file(file_name)
                 time.sleep(common_cfg["one_min_delay"])
                 LOGGER.info("Fetching server disk usage")
                 resp = self.node_utils.disk_usage_python_interpreter_cmd(
-                    dir_path=common_cfg["sspl_config"]["server_du_path"],
-                    host=self.host,
-                    user=self.username,
-                    pwd=self.pwd)
+                    dir_path=common_cfg["sspl_config"]["server_du_path"])
                 current_disk_usage = float(resp[1][0])
                 LOGGER.info("Current disk usage of EES server :{}"
                             .format(current_disk_usage))
@@ -387,17 +377,15 @@ class RASTestLib(RASCoreLib):
 
         return status, current_disk_usage
 
-    def list_alert_validation(self, string_list: list, host: str = None) -> Tuple[bool, Any]:
+    def list_alert_validation(self, string_list: list) -> Tuple[bool, Any]:
         """
         Function to verify the alerts generated on specific events
         :param list string_list: List of expected strings in alert response having
         format [resource_type, alert_type, ...]
-        :param str host: host machine ip
-        :return: response in tupple{bool, resp)
+        :return: response in tuple{bool, resp)
         :rtype: (bool, str)
         """
         common_cfg = RAS_VAL["ras_sspl_alert"]
-        hostname = host if host else self.host
         try:
             LOGGER.info("Checking status of sspl and rabbitmq services")
             resp = self.node_utils.get_s3server_service_status(
@@ -413,22 +401,15 @@ class RASTestLib(RASCoreLib):
             time.sleep(common_cfg["sleep_val"])
 
             LOGGER.info("Fetching sspl alert response")
-            cmd = common_commands.COPY_FILE_CMD.format(
-                common_cfg["file"]["screen_log"],
-                common_cfg["file"]["alert_log_file"])
-
-            response = self.node_utils.remote_machine_cmd(cmd=cmd,
-                                                          host=hostname,
-                                                          nbytes=BYTES_TO_READ,
-                                                          shell=False)
-
+            response = self.cp_file(common_cfg["file"]["screen_log"],
+                                    common_cfg["file"]["alert_log_file"])
             if not response[0]:
                 return response
             LOGGER.info("Successfully fetched the alert response")
 
             LOGGER.debug("Reading the alert log file")
-            read_resp = self.node_utils.read_file_remote(
-                common_cfg["file"]["alert_log_file"], shell=False)
+            read_resp = self.node_utils.read_file(
+                common_cfg["file"]["alert_log_file"], "/tmp/rabbitmq_alert.log")
             LOGGER.debug(
                 "======================================================")
             LOGGER.debug(read_resp)
@@ -439,10 +420,9 @@ class RASTestLib(RASCoreLib):
                 "Checking if alerts are generated on rabbitmq channel")
             cmd = common_commands.EXTRACT_LOG_CMD.format(
                 common_cfg["file"]["alert_log_file"], string_list[0])
-            response = self.node_utils.remote_machine_cmd(cmd=cmd,
-                                                          host=hostname,
-                                                          nbytes=BYTES_TO_READ,
-                                                          shell=False)
+            response = self.node_utils.execute_cmd(cmd=cmd,
+                                                   nbytes=BYTES_TO_READ,
+                                                   shell=False)
             if not response[0]:
                 return response
 
@@ -459,11 +439,11 @@ class RASTestLib(RASCoreLib):
             raise CTException(err.RAS_ERROR, error.args[0])
         finally:
             LOGGER.info("Removing alert log file from the Node")
-            self.node_utils.remove_file_remote(
+            self.node_utils.remove_file(
                 filename=common_cfg["file"]["alert_log_file"])
-            self.node_utils.remove_file_remote(
+            self.node_utils.remove_file(
                 filename=common_cfg["file"]["extracted_alert_file"])
-            self.node_utils.remove_file_remote(
+            self.node_utils.remove_file(
                 filename=common_cfg["file"]["screen_log"])
 
     def generate_cpu_usage_alert(
@@ -619,11 +599,11 @@ class RASTestLib(RASCoreLib):
     def create_mdraid_disk_array(
             self,
             md_device: str,
-            *disks: tuple) -> tuple:
+            *disks: Any) -> Tuple[bool, Union[str, dict]]:
         """
         This method creates a MDRAID array device with the given list of disks
         :param str md_device: MDRAID device to be created
-        :param tuple disks: Disks to be added in the MDRAID array
+        :param disks: Disks to be added in the MDRAID array
         :return: True/False and mdstat response
         :rtype: bool, dict
         """
@@ -648,8 +628,7 @@ class RASTestLib(RASCoreLib):
                     md_device) in md_stat["devices"] and md_device in mdadm_conf:
                 md_stat_disks = md_stat["devices"][os.path.basename(
                     md_device)]["disks"]
-                disk_flag = [
-                    True for disk in disks if os.path.basename(disk) in md_stat_disks]
+                disk_flag = [True for disk in disks if os.path.basename(disk) in md_stat_disks]
                 if all(disk_flag):
                     return True, md_stat
         except Exception as error:
@@ -661,7 +640,7 @@ class RASTestLib(RASCoreLib):
 
         return False, md_stat
 
-    def assemble_mdraid_device(self, md_device: str) -> tuple:
+    def assemble_mdraid_device(self, md_device: str) -> Tuple[bool, Union[str, dict]]:
         """
         This method re-assembles/restarts the given MDRAID device on the given host
         :param str md_device: MDRAID device to be assemble
@@ -690,8 +669,7 @@ class RASTestLib(RASCoreLib):
 
     def stop_mdraid_device(
             self,
-            md_device: str
-    ) -> tuple:
+            md_device: str) -> Tuple[bool, Union[str, dict]]:
         """
         This method stops the given MDRAID device on the given host
         :param str md_device: MDRAID device to be stopped
@@ -721,7 +699,7 @@ class RASTestLib(RASCoreLib):
     def fail_disk_mdraid(
             self,
             md_device: str,
-            disk: str) -> tuple:
+            disk: str) -> Tuple[bool, Union[str, dict]]:
         """
         This method simulates disk failure from a given MRAID device
         :param str md_device: MDRAID device
@@ -754,7 +732,7 @@ class RASTestLib(RASCoreLib):
     def remove_faulty_disk(
             self,
             md_device: str,
-            disk: str) -> tuple:
+            disk: str) -> Tuple[bool, Union[str, dict]]:
         """
         This method removes given faulty disk from the given MRAID device
         :param str md_device: MDRAID device
@@ -819,7 +797,7 @@ class RASTestLib(RASCoreLib):
 
         return False, md_stat
 
-    def remove_mdraid_disk_array(self, md_device: str) -> tuple:
+    def remove_mdraid_disk_array(self, md_device: str) -> Tuple[bool, Union[str, dict]]:
         """
         This method removes given MDRAID array device anc cleanup all the disks from array
         :param str md_device: MDRAID device to be created

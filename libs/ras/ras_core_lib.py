@@ -50,7 +50,7 @@ class RASCoreLib:
         self.host = host
         self.username = username
         self.pwd = password
-        self.sspl_pass = None  # Need caller fun to get sspl_pass
+        # self.sspl_pass = None  # Need caller fun to get sspl_pass
         self.node_utils = node_helper.Node(
             hostname=self.host, username=self.username, password=self.pwd)
 
@@ -79,8 +79,8 @@ class RASCoreLib:
     def truncate_file(self, file_path: str) -> Tuple[bool, Any]:
         """
         Empty remote file content using truncate cmd
-        :param file_path:
-        :return:
+        :param file_path: path of the file to be truncated
+        :return: response in tuple
         """
         reset_file_cmd = common_commands.EMPTY_FILE_CMD.format(file_path)
         res = self.node_utils.execute_cmd(
@@ -90,9 +90,9 @@ class RASCoreLib:
     def cp_file(self, path: str, backup_path: str) -> Tuple[bool, Any]:
         """
         copy file with remote machine cp cmd
-        :param path:
-        :param backup_path:
-        :return:
+        :param path: source path
+        :param backup_path: destination path
+        :return: response in tuple
         """
         cmd = common_commands.COPY_FILE_CMD.format(path, backup_path)
         resp = self.node_utils.execute_cmd(
@@ -132,7 +132,7 @@ class RASCoreLib:
             shell=False)
         return response
 
-    def start_rabbitmq_reader_cmd(self, sspl_exchange: str, sspl_key: str) -> bool:
+    def start_rabbitmq_reader_cmd(self, sspl_exchange: str, sspl_key: str, sspl_pass: str) -> bool:
         """
         This function will check for the disk space alert for sspl.
         :param str sspl_exchange: sspl exchange string
@@ -183,7 +183,7 @@ class RASCoreLib:
         """
         Function to change file mode using cmd chmod on remote machine
         :param str path: remote file path.
-        :return:
+        :return: response in tuple
         """
         cmd = common_commands.FILE_MODE_CHANGE_CMD.format(path)
         LOGGER.debug(f"Executing cmd : {cmd} on {self.host} node.")

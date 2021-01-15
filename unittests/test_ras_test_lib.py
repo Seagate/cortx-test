@@ -12,7 +12,7 @@ Second_Node_TEST_OBJ = RASTestLib(host="sm8-r19.pun.seagate.com")
 def test_start_rabbitmq_reader_cmd(exchange, key, expected):
     res = First_Node_TEST_OBJ.start_rabbitmq_reader_cmd(exchange, key)
     # needs cleanup calls
-    assert res[0] == expected
+    assert res == expected
 
 
 @pytest.mark.skip
@@ -140,4 +140,5 @@ def test_remove_mdraid_disk_array():
 
 def test_get_sspl_state_pcs():
     res = First_Node_TEST_OBJ.get_sspl_state_pcs()
+    print(res)
     assert dict == type(res)
