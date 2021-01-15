@@ -6,24 +6,21 @@ This test helper lib implements the base functions for controller operations
 import logging
 import requests
 import os
+from typing import Tuple
 from commons.utils import system_utils as SYS_UTIL
 from commons.helpers.host import Host
 from commons.helpers.node_helper import Node
 from commons import constants as cons
-from commons import commands as command
+from commons import commands as common_cmd
 from commons import errorcodes as cterr
 from commons.exceptions import CTException
 from commons.utils import config_utils as conf_util
 
-
 LOGGER = logging.getLogger(__name__)
 
-COMMON_CONF = conf_util.read_yaml(cons.COMMON_CONFIG_PATH)
-# CONS_OBJ_DICT = cons.RAS_BUILD_VER[COMMON_CONF["BUILD_VER_TYPE"]]
-
-#COMMON_DESTRUCTIVE_VAL = conf_util.read_yaml(dest_cons.COMMON_CONFIG_PATH)
-#RAS_VAL = ctpyaml.read_yaml(CONS_OBJ_DICT["CONFIG_PATH"])
-#SSPL_VAL = ctpyaml.read_yaml(CONS_OBJ_DICT["SSPL_CONFIG_PATH"])
+COMMON_CONF = conf_util.read_yaml(cons.COMMON_CONFIG_PATH)[1]
+COMMON_DESTRUCTIVE_VAL = conf_util.read_yaml(cons.COMMON_CONFIG_PATH)[1]
+RAS_VAL = conf_util.read_yaml(cons.RAS_CONFIG_PATH)[1]
 
 BYTES_TO_READ = cons.BYTES_TO_READ
 
@@ -33,8 +30,11 @@ class ControllerLib:
     RAS helper functions which for Test-cases
     """
 
-    def __init__(self, host, h_user, h_pwd, enclosure_ip, enclosure_user,
-                 enclosure_pwd):
+    def __init__(self, host=COMMON_CONF["host"], h_user=COMMON_CONF["username"],
+                 h_pwd=COMMON_CONF["password"],
+                 enclosure_ip=COMMON_CONF["primary_enclosure_ip"],
+                 enclosure_user=COMMON_CONF["enclosure_user"],
+                 enclosure_pwd=COMMON_CONF["enclosure_pwd"]):
         """This method initializes members of ControllerLib class
         :param host: IP of the remote host
         :type: str
@@ -70,7 +70,7 @@ class ControllerLib:
         if not self.node_obj.path_exists(path=runner_path):
             self.copy = False
 
-    def get_mc_ver_sr(self):
+    def get_mc_ver_sr(self) -> Tuple[str, str, str]:
         """
         Function to get the version and serial number of the management
         controller
@@ -79,30 +79,30 @@ class ControllerLib:
         """
         if self.copy:
             try:
-                cmd = command.SET_DEBUG_CMD
-                print(cmd)
+                cmd = common_cmd.SET_DEBUG_CMD
 
                 command = f"python3 /root/telnet_operations.py " \
-                    f"--telnet_op=" \
-                    f"'get_mc_ver_sr(enclosure_ip=\"{self.enclosure_ip}\", " \
-                    f"enclosure_user=\"{self.enclosure_user}\", " \
-                    f"enclosure_pwd=\"{self.enclosure_pwd}\", cmd=\"{cmd}\")'"
+                          f"--telnet_op=" \
+                          f"'get_mc_ver_sr(enclosure_ip=\"{self.enclosure_ip}\", " \
+                          f"enclosure_user=\"{self.enclosure_user}\", " \
+                          f"enclosure_pwd=\"{self.enclosure_pwd}\", cmd=\"{cmd}\")'"
 
                 LOGGER.info(f"Running command {command}")
                 response = self.host_connect.execute_cmd(cmd=command,
                                                          read_lines=True,
                                                          shell=False)
-                print(response)
                 response = response[0].split()
 
-                status = os.popen((command.STRING_MANIPULATION.format(response[0])).
-                                  replace('\n', ' ').replace('\\n', ' ')).read()
-                mc_ver = os.popen((command.STRING_MANIPULATION.format(response[1])).
-                                  replace('\n', ' ').replace('\\n', ' ')).read()
-                mc_sr = os.popen((command.STRING_MANIPULATION.format(response[2])).
-                                 replace('\n', ' ').replace('\\n', ' ')).read()
+                status = os.popen(
+                    (common_cmd.STRING_MANIPULATION.format(response[0])).
+                        replace('\n', ' ').replace('\\n', ' ')).read()
+                mc_ver = os.popen(
+                    (common_cmd.STRING_MANIPULATION.format(response[1])).
+                        replace('\n', ' ').replace('\\n', ' ')).read()
+                mc_sr = os.popen(
+                    (common_cmd.STRING_MANIPULATION.format(response[2])).
+                        replace('\n', ' ').replace('\\n', ' ')).read()
 
-                print(status, mc_sr, mc_ver)
                 return status, mc_ver, mc_sr
             except BaseException as error:
                 LOGGER.error(f"Error in {ControllerLib.get_mc_ver_sr.__name__}:"
@@ -156,17 +156,17 @@ class ControllerLib:
         if self.copy:
             try:
                 ras_sspl_cfg = RAS_VAL["ras_sspl_alert"]
-                cmd = command.SIMULATE_FAULT_CTRL_CMD. \
+                cmd = common_cmd.SIMULATE_FAULT_CTRL_CMD. \
                     format(enclid, pos, fru, type_fault, ctrl_name)
                 telnet_port = ras_sspl_cfg["mc_debug_port"]
                 timeout = ras_sspl_cfg["one_min_delay"]
 
                 command = f"python3 /root/telnet_operations.py " \
-                    f"--telnet_op='simulate_fault_ctrl(" \
-                    f"mc_deb_password=\"{mc_deb_password}\", " \
-                    f"enclosure_ip=\"{self.enclosure_ip}\", " \
-                    f"telnet_port=\"{telnet_port}\", timeout=\"{timeout}\", " \
-                    f"cmd=\"{cmd}\")'"
+                          f"--telnet_op='simulate_fault_ctrl(" \
+                          f"mc_deb_password=\"{mc_deb_password}\", " \
+                          f"enclosure_ip=\"{self.enclosure_ip}\", " \
+                          f"telnet_port=\"{telnet_port}\", timeout=\"{timeout}\", " \
+                          f"cmd=\"{cmd}\")'"
 
                 LOGGER.info(f"Running command {command}")
                 response = self.host_connect.execute_cmd(cmd=command,
@@ -174,10 +174,11 @@ class ControllerLib:
                                                          shell=False)
                 response = response[0].split()
 
-                status = os.popen((command.STRING_MANIPULATION.format(response[0])).
-                                  replace('\n', ' ').replace('\\n', ' ')).read()
+                status = os.popen(
+                    (common_cmd.STRING_MANIPULATION.format(response[0])).
+                        replace('\n', ' ').replace('\\n', ' ')).read()
                 password_str = os.popen(
-                    (command.STRING_MANIPULATION.format(
+                    (common_cmd.STRING_MANIPULATION.format(
                         response[1])).replace(
                         '\n', ' ').replace(
                         '\\n', ' ')).read()
@@ -199,9 +200,9 @@ class ControllerLib:
         """
         if self.copy:
             try:
-                common_cfg = SSPL_VAL["ras_sspl_alert"]
+                common_cfg = RAS_VAL["ras_sspl_alert"]
                 LOGGER.info(f"Show disks for {self.enclosure_ip} enclosure.")
-                cmd = command.SHOW_DISKS_CMD
+                cmd = common_cmd.SHOW_DISKS_CMD
 
                 command = f"python3 /root/telnet_operations.py " \
                           f"--telnet_op=" \
@@ -212,18 +213,19 @@ class ControllerLib:
                           f"cmd=\"{cmd}\")'"
 
                 LOGGER.info(f"Running command : {command}")
-                response = UTIL_OBJ.remote_execution(host=self.host,
-                                                     user=self.h_user,
-                                                     password=self.h_pwd,
-                                                     cmd=command, shell=False)
+                response = self.host_connect.execute_cmd(cmd=command,
+                                                         read_lines=True,
+                                                         shell=False)
 
                 LOGGER.info(response)
                 response = response[0].split()
 
-                status = os.popen((command.STRING_MANIPULATION.format(response[0])).
-                                  replace('\n', ' ').replace('\\n', ' ')).read()
-                path = os.popen((command.STRING_MANIPULATION.format(response[1])).
-                                replace('\n', ' ').replace('\\n', ' ')).read()
+                status = os.popen(
+                    (common_cmd.STRING_MANIPULATION.format(response[0])).
+                        replace('\n', ' ').replace('\\n', ' ')).read()
+                path = os.popen(
+                    (common_cmd.STRING_MANIPULATION.format(response[1])).
+                        replace('\n', ' ').replace('\\n', ' ')).read()
             except BaseException as error:
                 LOGGER.error(
                     f"Error in {ControllerLib.show_disks.__name__}: {error}")
@@ -239,15 +241,13 @@ class ControllerLib:
         :rtype: Boolean, Integer
         """
         if self.copy:
-            common_cfg = SSPL_VAL["ras_sspl_alert"]
+            common_cfg = RAS_VAL["ras_sspl_alert"]
             try:
                 resp = self.show_disks(telnet_file=telnet_file)
 
                 LOGGER.info("Copying telnet file from node to client")
-                resp = UTIL_OBJ.write_remote_file_to_local_file(
-                    file_path=telnet_file, local_path=telnet_file,
-                    host=self.host, user=self.h_user, pwd=self.h_pwd,
-                    shell=False)
+                resp = self.node_obj.write_remote_file_to_local_file(
+                    file_path=telnet_file, local_path=telnet_file)
 
                 LOGGER.info("Copy completed")
 
@@ -255,7 +255,7 @@ class ControllerLib:
                     common_cfg["file"]["telnet_xml"]))
 
                 if resp[0]:
-                    resp = UTIL_OBJ.parse_xml_controller(
+                    resp = conf_util.parse_xml_controller(
                         filepath=telnet_file, field_list=['location'])
                 else:
                     return resp
@@ -280,15 +280,13 @@ class ControllerLib:
         :rtype: Boolean, String
         """
         if self.copy:
-            common_cfg = SSPL_VAL["ras_sspl_alert"]
+            common_cfg = RAS_VAL["ras_sspl_alert"]
             try:
                 resp = self.show_disks(telnet_file=telnet_file)
 
                 LOGGER.info("Copying telnet file from node to client")
-                resp = UTIL_OBJ.write_remote_file_to_local_file(
-                    file_path=telnet_file, local_path=telnet_file,
-                    host=self.host, user=self.h_user, pwd=self.h_pwd,
-                    shell=False)
+                resp = self.node_obj.write_remote_file_to_local_file(
+                    file_path=telnet_file, local_path=telnet_file)
 
                 LOGGER.info("Copy completed")
 
@@ -296,7 +294,7 @@ class ControllerLib:
                     common_cfg["file"]["telnet_xml"]))
 
                 if resp[0]:
-                    resp = UTIL_OBJ.parse_xml_controller(
+                    resp = conf_util.parse_xml_controller(
                         filepath=telnet_file, field_list=['location', 'health'])
                 else:
                     return resp
@@ -331,28 +329,28 @@ class ControllerLib:
         """
         if self.copy:
             try:
-                cmd = command.SET_DRIVE_STATUS_CMD.format(
+                cmd = common_cmd.SET_DRIVE_STATUS_CMD.format(
                     enclosure_id, controller_name, drive_number, status)
 
                 command = f"python3 /root/telnet_operations.py " \
-                    f"--telnet_op='set_drive_status_telnet(" \
-                    f"enclosure_ip=\"{self.enclosure_ip}\", " \
-                    f"username=\"{self.enclosure_user}\", " \
-                    f"pwd=\"{self.enclosure_pwd}\", " \
-                    f"status=\"{status}\", cmd=\"{cmd}\")'"
+                          f"--telnet_op='set_drive_status_telnet(" \
+                          f"enclosure_ip=\"{self.enclosure_ip}\", " \
+                          f"username=\"{self.enclosure_user}\", " \
+                          f"pwd=\"{self.enclosure_pwd}\", " \
+                          f"status=\"{status}\", cmd=\"{cmd}\")'"
 
                 LOGGER.info(f"Running command {command}")
-                response = UTIL_OBJ.remote_execution(host=self.host,
-                                                     user=self.h_user,
-                                                     password=self.h_pwd,
-                                                     cmd=command,
-                                                     shell=False)
+                response = self.host_connect.execute_cmd(cmd=command,
+                                                         read_lines=True,
+                                                         shell=False)
+
                 response = response[0].split()
 
-                status = os.popen((command.STRING_MANIPULATION.format(response[0])).
-                                  replace('\n', ' ').replace('\\n', ' ')).read()
+                status = os.popen(
+                    (common_cmd.STRING_MANIPULATION.format(response[0])).
+                        replace('\n', ' ').replace('\\n', ' ')).read()
                 drive_status = os.popen(
-                    (command.STRING_MANIPULATION.format(
+                    (common_cmd.STRING_MANIPULATION.format(
                         response[1])).replace(
                         '\n', ' ').replace(
                         '\\n', ' ')).read()
@@ -373,14 +371,14 @@ class ControllerLib:
                             "total-size", "allocated-size", "storage-type",
                             "health", "health-reason",
                             "health-recommendation"}}}
-        :param output_file_path: File path to save response of telnet command.
+        :param output_file_path: File path to save response of telnet common_cmd.
         :type: str
         :return: (Boolean, disk volume dict).
         :rtype: tuple
         """
         if self.copy:
             try:
-                cmd = command.CMD_SHOW_VOLUMES
+                cmd = common_cmd.CMD_SHOW_VOLUMES
                 LOGGER.debug(cmd)
                 volumes_param = COMMON_DESTRUCTIVE_VAL.get("show_volumes")
                 LOGGER.debug(volumes_param)
@@ -389,35 +387,27 @@ class ControllerLib:
                                     f"{volumes_param}")
                 # Check telnet_operations.py present on primary node.
                 runner_path = cons.REMOTE_TELNET_PATH
-                res = UTIL_OBJ.is_remote_path_exists(path=runner_path,
-                                                     host=self.host,
-                                                     user=self.h_user,
-                                                     pwd=self.h_pwd,
-                                                     shell=False)
+                res = self.node_obj.path_exists(path=runner_path)
                 if not res[0]:
                     raise Exception(f"telnet_operations.py path '{runner_path}'"
                                     f" not exists on primary node.")
                 # Run show volumes command on primary controller.
                 command = f"python3 {runner_path} " \
-                    f"--telnet_op=" \
-                    f"'execute_cmd_on_enclosure(enclosure_ip=\"" \
+                          f"--telnet_op=" \
+                          f"'execute_cmd_on_enclosure(enclosure_ip=\"" \
                           f"{self.enclosure_ip}\", " \
                           f"enclosure_user=\"{self.enclosure_user}\", " \
                           f"enclosure_pwd=\"{self.enclosure_pwd}\", " \
                           f"file_path=\"{output_file_path}\", cmd=\"{cmd}\")'"
                 LOGGER.info(f"Running command : {command}")
-                resp = UTIL_OBJ.remote_execution(host=self.host,
-                                                 user=self.h_user,
-                                                 password=self.h_pwd,
-                                                 cmd=command,
-                                                 shell=False)
+                resp = self.host_connect.execute_cmd(cmd=command,
+                                                     read_lines=True,
+                                                     shell=False)
                 LOGGER.info(f"Show volumes response log: {resp}")
                 # Copy remote log file to local path.
                 LOGGER.info("Copying log file from node to client")
-                status, res_path = UTIL_OBJ.write_remote_file_to_local_file(
-                    file_path=output_file_path, local_path=output_file_path,
-                    host=self.host, user=self.h_user, pwd=self.h_pwd,
-                    shell=False)
+                status, res_path = self.node_obj.write_remote_file_to_local_file(
+                    file_path=output_file_path, local_path=output_file_path)
                 LOGGER.info(f"copy file log: {status, resp}")
                 if not status:
                     raise Exception(f"Failed to copy file: {output_file_path}. "
@@ -426,7 +416,7 @@ class ControllerLib:
                 if not os.path.exists(output_file_path):
                     raise Exception(f"Local copy for {output_file_path} "
                                     f"not exists.")
-                status, disk_volumes_dict = UTIL_OBJ.parse_xml_controller(
+                status, disk_volumes_dict = conf_util.parse_xml_controller(
                     filepath=output_file_path,
                     field_list=list(volumes_param.values()))
                 LOGGER.debug(f'Show volumes dict: {disk_volumes_dict}')
@@ -438,7 +428,8 @@ class ControllerLib:
                     d = {}
                     keys = disk_volumes_dict.keys()
                     for k in keys:
-                        if disk_volumes_dict[k].get("storage-pool-name") not in d:
+                        if disk_volumes_dict[k].get(
+                                "storage-pool-name") not in d:
                             d[disk_volumes_dict[k]["storage-pool-name"]] = {
                                 disk_volumes_dict[k]["volume-name"]:
                                     dict([(ik, disk_volumes_dict[k][iv])
@@ -446,12 +437,14 @@ class ControllerLib:
                                           if disk_volumes_dict[k].get(iv)])
                             }
                         else:
-                            d[disk_volumes_dict[k]["storage-pool-name"]].update({
-                                disk_volumes_dict[k]["volume-name"]:
-                                    dict([(ik, disk_volumes_dict[k][iv])
-                                          for ik, iv in volumes_param.items()
-                                          if disk_volumes_dict[k].get(iv)])
-                            })
+                            d[disk_volumes_dict[k]["storage-pool-name"]].update(
+                                {
+                                    disk_volumes_dict[k]["volume-name"]:
+                                        dict([(ik, disk_volumes_dict[k][iv])
+                                              for ik, iv in
+                                              volumes_param.items()
+                                              if disk_volumes_dict[k].get(iv)])
+                                })
                     disk_volumes_dict = d
                 # Remove local log file.
                 if os.path.exists(output_file_path):
@@ -474,14 +467,14 @@ class ControllerLib:
          {values: "enclosure-id", "controller",
                             "wide-port-index", "type", "elem-status",
                              "elem-disabled", "status", "elem-reason"}}}
-        :param output_file_path: File path to save response of telnet command.
+        :param output_file_path: File path to save response of telnet command
         :type: str
         :return: (Boolean, controller dict).
         :rtype: tuple
         """
         if self.copy:
             try:
-                cmd = command.CMD_SHOW_XP_STATUS
+                cmd = common_cmd.CMD_SHOW_XP_STATUS
                 LOGGER.debug(cmd)
                 expander_param = COMMON_DESTRUCTIVE_VAL.get("show_expander_"
                                                             "status")
@@ -491,33 +484,26 @@ class ControllerLib:
                                     f"{expander_param}")
                 # Check telnet_operations.py present on primary node.
                 runner_path = cons.REMOTE_TELNET_PATH
-                res = UTIL_OBJ.is_remote_path_exists(path=runner_path,
-                                                     host=self.host,
-                                                     user=self.h_user,
-                                                     pwd=self.h_pwd,
-                                                     shell=False)
+                res = self.node_obj.path_exists(path=runner_path)
                 if not res[0]:
                     raise Exception(f"telnet_operations.py path '{runner_path}'"
                                     f" not exists on primary node.")
                 # Run 'show expander-status' command on primary controller.
                 command = f"python3 {runner_path} " \
-                    f"--telnet_op=" \
-                    f"'execute_cmd_on_enclosure(enclosure_ip=\"" \
+                          f"--telnet_op=" \
+                          f"'execute_cmd_on_enclosure(enclosure_ip=\"" \
                           f"{self.enclosure_ip}\", enclosure_user=\"" \
                           f"{self.enclosure_user}\", enclosure_pwd=\"" \
                           f"{self.enclosure_pwd}\", " \
                           f"file_path=\"{output_file_path}\", cmd=\"{cmd}\")'"
                 LOGGER.info(f"Running command : {command}")
-                resp = UTIL_OBJ.remote_execution(host=self.host,
-                                                 user=self.h_user,
-                                                 password=self.h_pwd,
-                                                 cmd=command, shell=False)
+                resp = self.host_connect.execute_cmd(cmd=command,
+                                                     read_lines=True,
+                                                     shell=False)
                 LOGGER.info(f"Show show expander-status response log: {resp}")
                 LOGGER.info("Copying log file from node to client")
-                status, res_path = UTIL_OBJ.write_remote_file_to_local_file(
-                    file_path=output_file_path, local_path=output_file_path,
-                    host=self.host, user=self.h_user, pwd=self.h_pwd,
-                    shell=False)
+                status, res_path = self.node_obj.write_remote_file_to_local_file(
+                    file_path=output_file_path, local_path=output_file_path)
                 LOGGER.info(f"copy file log: {status, resp}")
                 if not status:
                     raise Exception(f"Failed to copy log. response: {res_path}")
@@ -525,7 +511,7 @@ class ControllerLib:
                 if not os.path.exists(output_file_path):
                     raise Exception(f"Local copy for {output_file_path} "
                                     f"not exists.")
-                status, expander_status_dict = UTIL_OBJ.parse_xml_controller(
+                status, expander_status_dict = conf_util.parse_xml_controller(
                     filepath=output_file_path,
                     field_list=list(expander_param.values()))
                 LOGGER.debug(f'Show expander-status dict: '
@@ -539,19 +525,27 @@ class ControllerLib:
                     keys = expander_status_dict.keys()
                     for k in keys:
                         if expander_status_dict[k].get("type") == "Drive":
-                            if expander_status_dict[k].get('controller') not in d:
+                            if expander_status_dict[k].get(
+                                    'controller') not in d:
                                 d[expander_status_dict[k].get('controller')] = {
-                                    int(expander_status_dict[k]["wide-port-index"]):
+                                    int(expander_status_dict[k][
+                                            "wide-port-index"]):
                                         dict([(ik, expander_status_dict[k][iv])
-                                              for ik, iv in expander_param.items()
-                                              if expander_status_dict[k].get(iv)])
+                                              for ik, iv in
+                                              expander_param.items()
+                                              if
+                                              expander_status_dict[k].get(iv)])
                                 }
                             else:
-                                d[expander_status_dict[k].get('controller')].update({
-                                    int(expander_status_dict[k]["wide-port-index"]):
+                                d[expander_status_dict[k].get(
+                                    'controller')].update({
+                                    int(expander_status_dict[k][
+                                            "wide-port-index"]):
                                         dict([(ik, expander_status_dict[k][iv])
-                                              for ik, iv in expander_param.items()
-                                              if expander_status_dict[k].get(iv)])
+                                              for ik, iv in
+                                              expander_param.items()
+                                              if
+                                              expander_status_dict[k].get(iv)])
                                 })
                     expander_status_dict = d
                 # Remove local log file.
@@ -574,14 +568,14 @@ class ControllerLib:
         Parse output xml.
         Get response dict: key-"disk group" and values dict of "name, size,
         health, health-reason, health-recommendation".
-        :param output_file_path: File path to save response of telnet command.
+        :param output_file_path: File path to save response of telnet common_cmd.
         :type: str
         :return: (Boolean, disk group dict).
         :rtype: tuple
         """
         if self.copy:
             try:
-                cmd = command.CMD_SHOW_DISK_GROUP
+                cmd = common_cmd.CMD_SHOW_DISK_GROUP
                 LOGGER.debug(cmd)
                 diskgroup_param = COMMON_DESTRUCTIVE_VAL.get("show_disk_groups")
                 LOGGER.debug(diskgroup_param)
@@ -590,35 +584,27 @@ class ControllerLib:
                                     f"{diskgroup_param}")
                 # Check telnet_operations.py present on primary node.
                 runner_path = cons.REMOTE_TELNET_PATH
-                res = UTIL_OBJ.is_remote_path_exists(path=runner_path,
-                                                     host=self.host,
-                                                     user=self.h_user,
-                                                     pwd=self.h_pwd,
-                                                     shell=False)
+                res = self.node_obj.path_exists(path=runner_path)
                 if not res[0]:
                     raise Exception(f"telnet_operations.py path '{runner_path}'"
                                     f" does not exist on primary node.")
                 # Run 'show disk-group' command on primary controller.
                 command = f"python3 {runner_path} " \
-                    f"--telnet_op=" \
-                    f"'execute_cmd_on_enclosure(enclosure_ip=\"" \
+                          f"--telnet_op=" \
+                          f"'execute_cmd_on_enclosure(enclosure_ip=\"" \
                           f"{self.enclosure_ip}\", " \
                           f"enclosure_user=\"{self.enclosure_user}\", " \
                           f"enclosure_pwd=\"{self.enclosure_pwd}\", " \
                           f"file_path=\"{output_file_path}\", cmd=\"{cmd}\")'"
                 LOGGER.info(f"Running command : {command}")
-                resp = UTIL_OBJ.remote_execution(host=self.host,
-                                                 user=self.h_user,
-                                                 password=self.h_pwd,
-                                                 cmd=command,
-                                                 shell=False)
+                resp = self.host_connect.execute_cmd(cmd=command,
+                                                     read_lines=True,
+                                                     shell=False)
                 LOGGER.info(f"Show disk group response log: {resp}")
                 # Copy remote log file to local path.
                 LOGGER.info("Copying log file from node to client")
-                status, res_path = UTIL_OBJ.write_remote_file_to_local_file(
-                    file_path=output_file_path, local_path=output_file_path,
-                    host=self.host, user=self.h_user, pwd=self.h_pwd,
-                    shell=False)
+                status, res_path = self.node_obj.write_remote_file_to_local_file(
+                    file_path=output_file_path, local_path=output_file_path)
                 LOGGER.info(f"copy file log: {status, resp}")
                 if not status:
                     raise Exception(f"Failed to copy file: {output_file_path}. "
@@ -627,7 +613,7 @@ class ControllerLib:
                 if not os.path.exists(output_file_path):
                     raise Exception(f"Local copy for {output_file_path} "
                                     f"not exists.")
-                status, disk_group_dict = UTIL_OBJ.parse_xml_controller(
+                status, disk_group_dict = conf_util.parse_xml_controller(
                     filepath=output_file_path,
                     field_list=list(diskgroup_param.values()))
                 LOGGER.debug(f'Show disk-group dict: {disk_group_dict}')
@@ -638,9 +624,11 @@ class ControllerLib:
                 if isinstance(disk_group_dict, dict):
                     disk_group_dict = dict([(disk_group_dict[k]['name'],
                                              dict([(ik, v[iv])
-                                                   for ik, iv in diskgroup_param.items()
+                                                   for ik, iv in
+                                                   diskgroup_param.items()
                                                    if v.get(iv)]))
-                                            for k, v in disk_group_dict.items()])
+                                            for k, v in
+                                            disk_group_dict.items()])
                 # Remove local log file.
                 if os.path.exists(output_file_path):
                     os.remove(output_file_path)
@@ -663,14 +651,14 @@ class ControllerLib:
                     "revision", "description", "interface", "usage", "size",
                     "disk-group", "storage-pool-name", "storage-tier",
                     "health", "health-reason", "health-recommendation".
-        :param output_file_path: File path to save response of telnet command.
+        :param output_file_path: File path to save response of telnet common_cmd.
         :type: str
         :return: (Boolean, disks dict).
         :rtype: tuple
         """
         if self.copy:
             try:
-                cmd = command.SHOW_DISKS_CMD
+                cmd = common_cmd.SHOW_DISKS_CMD
                 LOGGER.debug(cmd)
                 disks_param = COMMON_DESTRUCTIVE_VAL.get("show_disks")
                 LOGGER.debug(disks_param)
@@ -678,34 +666,27 @@ class ControllerLib:
                     raise Exception(f"Failed to get shows_disks: {disks_param}")
                 # Check telnet_operations.py present on primary node.
                 runner_path = cons.REMOTE_TELNET_PATH
-                res = UTIL_OBJ.is_remote_path_exists(path=runner_path,
-                                                     host=self.host,
-                                                     user=self.h_user,
-                                                     pwd=self.h_pwd,
-                                                     shell=False)
+                res = self.node_obj.path_exists(path=runner_path)
                 if not res[0]:
                     raise Exception(f"telnet_operations.py path '{runner_path}'"
                                     f" does not exist on primary node.")
                 # Run 'show disks' command on primary controller.
                 command = f"python3 {runner_path} " \
-                    f"--telnet_op=" \
-                    f"'execute_cmd_on_enclosure(enclosure_ip=\"" \
+                          f"--telnet_op=" \
+                          f"'execute_cmd_on_enclosure(enclosure_ip=\"" \
                           f"{self.enclosure_ip}\", enclosure_user=\"" \
                           f"{self.enclosure_user}\", enclosure_pwd=\"" \
                           f"{self.enclosure_pwd}\", " \
                           f"file_path=\"{output_file_path}\", cmd=\"{cmd}\")'"
                 LOGGER.info(f"Running command : {command}")
-                resp = UTIL_OBJ.remote_execution(host=self.host,
-                                                 user=self.h_user,
-                                                 password=self.h_pwd,
-                                                 cmd=command, shell=False)
+                resp = self.host_connect.execute_cmd(cmd=command,
+                                                     read_lines=True,
+                                                     shell=False)
                 LOGGER.info(f"Show disk group response log: {resp}")
                 # Copy remote log file to local path.
                 LOGGER.info("Copying log file from node to client")
-                status, res_path = UTIL_OBJ.write_remote_file_to_local_file(
-                    file_path=output_file_path, local_path=output_file_path,
-                    host=self.host, user=self.h_user, pwd=self.h_pwd,
-                    shell=False)
+                status, res_path = self.node_obj.write_remote_file_to_local_file(
+                    file_path=output_file_path, local_path=output_file_path)
                 LOGGER.info(f"copy file log: {status, resp}")
                 if not status:
                     raise Exception(f"Failed to copy file: {output_file_path}. "
@@ -714,7 +695,7 @@ class ControllerLib:
                 if not os.path.exists(output_file_path):
                     raise Exception(f"Local copy for {output_file_path} "
                                     f"not exists.")
-                status, disks_dict = UTIL_OBJ.parse_xml_controller(
+                status, disks_dict = conf_util.parse_xml_controller(
                     filepath=output_file_path,
                     field_list=list(disks_param.values()))
                 LOGGER.debug(f'Show disks dict: {disks_dict}')
@@ -751,15 +732,11 @@ class ControllerLib:
         """
         if self.copy:
             try:
-                cmd = command.CMD_CLEAR_METADATA.format(drive_num)
+                cmd = common_cmd.CMD_CLEAR_METADATA.format(drive_num)
                 LOGGER.debug(f"Running command: {cmd}")
                 # Check telnet_operations.py present on primary node.
                 runner_path = cons.REMOTE_TELNET_PATH
-                res = UTIL_OBJ.is_remote_path_exists(path=runner_path,
-                                                     host=self.host,
-                                                     user=self.h_user,
-                                                     pwd=self.h_pwd,
-                                                     shell=False)
+                res = self.node_obj.path_exists(path=runner_path)
                 if not res[0]:
                     raise Exception(f"telnet_operations.py path '{runner_path}'"
                                     f" does not exist on primary node.")
@@ -771,17 +748,17 @@ class ControllerLib:
                           f"{self.enclosure_user}\", enclosure_pwd=\"" \
                           f"{self.enclosure_pwd}\", cmd=\"{cmd}\")'"
                 LOGGER.info(f"Running command : {command}")
-                resp = UTIL_OBJ.remote_execution(host=self.host,
-                                                 user=self.h_user,
-                                                 password=self.h_pwd,
-                                                 cmd=command, shell=False)
+                resp = self.host_connect.execute_cmd(cmd=command,
+                                                     read_lines=True,
+                                                     shell=False)
 
                 LOGGER.debug(resp)
                 response = resp[0].split()
 
-                status = os.popen((command.STRING_MANIPULATION.format(response[
-                                                                       0])).
-                                  replace('\n', ' ').replace('\\n', ' ')).read()
+                status = os.popen(
+                    (common_cmd.STRING_MANIPULATION.format(response[
+                                                               0])).
+                        replace('\n', ' ').replace('\\n', ' ')).read()
 
             except Exception as error:
                 LOGGER.error("Error in {0}: {1}".format(
