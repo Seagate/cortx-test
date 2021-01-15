@@ -7,8 +7,7 @@ from core import runner
 from commons.utils.jira_utils import JiraTask
 
 
-
-def parse_args() :
+def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-j", "--json_file", type=str,
                         help="json file name")
@@ -40,7 +39,7 @@ def get_jira_credential() :
     return jira_id, jira_pwd
 
 
-def run_pytest_cmd(args, te_tag, parallel_red) :
+def run_pytest_cmd(args, te_tag, parallel_red):
     tag = '-m ' + te_tag
     is_parallel = "--is_parallel=" + parallel_red
     log_level = "--log-cli-level=" + str(args.log_level)
@@ -51,6 +50,8 @@ def run_pytest_cmd(args, te_tag, parallel_red) :
     else :
         report_name = "--html=non_parallel_" + args.html_report
         cmd_line = ["pytest", is_parallel, log_level, report_name, tag]
+    if args.te_ticket:
+        cmd_line = cmd_line + ["--te_tkt=" + str(args.te_ticket)]
     prc = subprocess.Popen(cmd_line)
     out, err = prc.communicate()
 
@@ -99,13 +100,13 @@ def main(args) :
         prc = subprocess.Popen(cmd_line)
         out, err = prc.communicate()
     elif args.test_exe :
-        jira_id, jira_pwd = get_jira_credential()
+        jira_id, jira_pwd = runner.get_jira_credential()
         jira_obj = JiraTask(jira_id, jira_pwd)
         test_list, te_tag = jira_obj.get_test_ids_from_te(args.test_exe)
         if len(test_list) == 0 or te_tag == "":
             assert "Please check TE provided, tests or tag is missing"
         # writing the data into the file
-        with open('test_lists.csv', 'w') as f :
+        with open('test_lists.csv', 'w') as f:
             write = csv.writer(f)
             for test in test_list :
                 write.writerow([test])
