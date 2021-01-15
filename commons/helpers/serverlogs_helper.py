@@ -19,7 +19,7 @@ class node_data:
 
 def get_node_details(node_name):
     node_obj = node_data
-    node_obj.ip = fileconf['node_ip_dict'][node_name]
+    node_obj.ip = fileconf["node_ip_dict"][node_name]
     node_obj.uname = fileconf['node_username']
     node_obj.passwd = fileconf['node_password']
     return node_obj
@@ -84,24 +84,24 @@ def process_and_copy_file(
     filename = "{}_{}".format(test_id, file_name)
     rm_path = "{}/{}".format(remote_path, filename)
 
-    host_obj = host.Host(
+    hostobj = host.Host(
         hostname=logserver,
         username=lg_uname,
         password=lg_passwd)
-    connect_obj = host_obj.connect()
-    sftp = connect_obj.open_sftp()
+    hostobj.connect()
+    sftp = hostobj.host_obj.open_sftp()
     sftp.put(localpath=newfilepath, remotepath=rm_path)
 
 def collect_logs(st_time, end_time, file, node, test_id):
     # error = False #@ TODO - error handling to be done, connection retry
     # 1. Connect to node
     node_det = get_node_details(node)
-    host_obj = host.Host(
+    hostobj = host.Host(
         hostname=node_det.ip,
         username=node_det.uname,
         password=node_det.passwd)
-    connect_obj = host_obj.connect()
-    sftp = connect_obj.open_sftp()
+    hostobj.connect()
+    sftp = hostobj.host_obj.open_sftp()
     localpath = "{}_{}".format(fileconf['log_destination'], test_id)
 
     if file is "all":
