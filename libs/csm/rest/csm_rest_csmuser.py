@@ -1,7 +1,7 @@
 """Test library for CSM user related operations."""
 import time
 import json
-import libs.csm.rest.constants as const
+from commons.constants import Rest as const
 import commons.errorcodes as err
 from libs.csm.rest.csm_rest_test_lib import RestTestLib as Base
 from commons.exceptions import CTException

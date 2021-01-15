@@ -1,14 +1,13 @@
 """ REST API Alert operation Library. """
 import logging
 import commons.errorcodes as err
-import libs.csm.rest.constants as const
 from string import Template
-from commons.utils import yaml_utils
+from commons.constants import Rest as const
+from commons.utils import config_utils
 from commons.exceptions import CTException
 from libs.csm.rest.csm_rest_core_lib import RestClient
 from jsonschema import validate
 
-csm_conf = yaml_utils.read_yaml("config/csm/csm_config.yaml")
 
 
 class RestTestLib:
@@ -17,21 +16,21 @@ class RestTestLib:
     """
 
     def __init__(self):
-        self.const = const
-        self.config = csm_conf["Restcall"]
+        self.csm_conf = config_utils.read_yaml("config/csm/csm_config.yaml")
+        self.config = self.csm_conf["Restcall"]
         self._log = logging.getLogger(__name__)
-        self.restapi = RestClient(csm_conf["Restcall"])
+        self.restapi = RestClient(self.csm_conf["Restcall"])
         self.user_type = ("valid", "duplicate", "invalid", "missing")
-        self.success_response = self.const.SUCCESS_STATUS
-        self.bad_request_response = self.const.BAD_REQUEST
-        self.conflict_response = self.const.CONFLICT
-        self.forbidden = self.const.FORBIDDEN
-        self.method_not_found = self.const.METHOD_NOT_FOUND
+        self.success_response = const.SUCCESS_STATUS
+        self.bad_request_response = const.BAD_REQUEST
+        self.conflict_response = const.CONFLICT
+        self.forbidden = const.FORBIDDEN
+        self.method_not_found = const.METHOD_NOT_FOUND
         self.default_s3user_name = self.config["s3account_user"]["username"]
         self.default_csm_user_monitor = self.config["csm_user_monitor"]["username"]
         self.default_csm_user_manage = self.config["csm_user_manage"]["username"]
-        self.exception_error = self.const.EXCEPTION_ERROR
-        self.success_response_post = self.const.SUCCESS_STATUS_FOR_POST
+        self.exception_error = const.EXCEPTION_ERROR
+        self.success_response_post = const.SUCCESS_STATUS_FOR_POST
 
     def rest_login(self, login_as):
         """
@@ -45,7 +44,7 @@ class RestTestLib:
             headers = self.config["Login_headers"]
             self._log.info("endpoint ", endpoint)
             # payload = self.config[login_as] # showing some error in Cortx-1.0.0-rc3
-            payload = Template(self.const.LOGIN_PAYLOAD).substitute(
+            payload = Template(const.LOGIN_PAYLOAD).substitute(
                 **self.config[login_as])
 
             # Fetch and verify response
@@ -99,7 +98,6 @@ class RestTestLib:
         :type: Decorator
         :functionality: Authorize the user before any rest calls
         """
-
         def create_authenticate_header(self, *args, **kwargs):
             """
             This function will fetch the login token and create the authentication header
@@ -126,7 +124,7 @@ class RestTestLib:
             self._log.info("user will be logged in as {}".format(login_type))
             response = self.rest_login(login_as=login_type)
 
-            if authorized and response.status_code == self.const.SUCCESS_STATUS:
+            if authorized and response.status_code == const.SUCCESS_STATUS:
                 self.headers = {
                     'Authorization': response.headers['Authorization']}
 

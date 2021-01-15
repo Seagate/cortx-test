@@ -3,10 +3,6 @@ import logging
 import json
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
-import libs.csm.rest.constants as const
-
-# Disable warnings for Insecure Requests till ssl feature is implemented and available in CSM
-requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 
 class RestClient:
@@ -19,6 +15,7 @@ class RestClient:
         This function will initialize this class
         :param config: configuration of setup
         """
+        requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
         self._log = logging.getLogger(__name__)
         self._config = config
         self._request = {"get": requests.get, "post": requests.post,
