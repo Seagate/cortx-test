@@ -5,8 +5,8 @@ from datetime import datetime
 from commons.helpers import host
 from commons.utils import config_utils
 
-host_obj = host.Host()
-fileconf = config_utils.read_yaml("config/serverlogs_helper.yaml")
+fileconf_yaml = config_utils.read_yaml("config/serverlogs_helper.yaml")
+fileconf = fileconf_yaml[1]
 
 now = datetime.now()
 current_time = now.strftime('%b  %#d %H:%M:%S')
@@ -49,6 +49,7 @@ def split_file_for_timestamp(st_time, end_time, filename, filepath, test_id):
             newfile.write(line)
 
     newfile.close()  # close it if done writing into it
+    logfile.close()
 
     return newpath
 
