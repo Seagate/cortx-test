@@ -39,7 +39,7 @@ def get_jira_credential() :
     return jira_id, jira_pwd
 
 
-def run_pytest_cmd(args, te_tag, parallel_red, te_ticket=None):
+def run_pytest_cmd(args, te_tag, parallel_red):
     tag = '-m ' + te_tag
     is_parallel = "--is_parallel=" + parallel_red
     log_level = "--log-cli-level=" + str(args.log_level)
@@ -50,8 +50,8 @@ def run_pytest_cmd(args, te_tag, parallel_red, te_ticket=None):
     else :
         report_name = "--html=non_parallel_" + args.html_report
         cmd_line = ["pytest", is_parallel, log_level, report_name, tag]
-    if te_ticket:
-        cmd_line = cmd_line + ["--te_tkt=" + str(te_ticket)]
+    if args.te_ticket:
+        cmd_line = cmd_line + ["--te_tkt=" + str(args.te_ticket)]
     prc = subprocess.Popen(cmd_line)
     out, err = prc.communicate()
 
@@ -111,9 +111,9 @@ def main(args) :
             for test in test_list :
                 write.writerow([test])
         # First execute all tests with parallel tag which are mentioned in given tag.
-        run_pytest_cmd(args, te_tag, 'true', te_ticket=args.test_exe)
+        run_pytest_cmd(args, te_tag, 'true')
         # Execute all tests having no parallel tag and which are mentioned in given tag.
-        run_pytest_cmd(args, te_tag, 'false', te_ticket=args.test_exe)
+        run_pytest_cmd(args, te_tag, 'false')
     else :
         print("Json or test execution id is expected")
 
