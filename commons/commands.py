@@ -45,11 +45,13 @@ MDADM_MANAGE = "--manage"
 MDADM_FAIL = "--fail"
 MDADM_REMOVE = "--remove"
 MDADM_ADD = "--add"
+
 # BMC commands.
 CMD_LAN_INFO = "ipmitool lan print"
 CMD_SET_LAN_IP_ADDR = "ipmitool lan set 1 ipaddr {}"  # parameter: IP address.
 MSG_SET_LAN_IP_ADDR = "Setting LAN IP Address to {}"  # parameter: IP address.
 CMD_PING = "ping -c1 -W1 -q {}"  # parameter: IP address.
+
 # Fan fault/resolve commands.
 CMD_FAN_FAULT = "fan_fault"
 CMD_FAN_SPEED = "fan_set {} speed {}"
@@ -59,3 +61,24 @@ WIPE_DISK_CMD = "dd if=/dev/zero of={} &"
 KILL_WIPE_DISK_PROCESS = "-x dd"
 PCS_STATUS_CMD = "pcs status"
 SELINUX_STATUS_CMD = "sestatus > {}"
+
+# All the constants are alphabetically arranged.
+CREATE_FILE = "dd if={} of={} bs={} count={}"
+FIREWALL_CMD = "firewall-cmd --service={} --get-ports --permanent"
+GREP_PCS_SERVICE_CMD = "pcs status | grep {}"
+LS_CMD = "ls {}"
+LST_PRVSN_DIR = "ls /opt/seagate/"
+LST_RPM_CMD = "rpm -qa | grep eos-prvsnr"
+MOTR_START_FIDS = "hctl mero process start --fid {}"
+MOTR_STATUS_CMD = "hctl status"
+MOTR_STOP_FIDS = "hctl mero process stop --fid {} --force"
+NETSAT_CMD = "netstat -tnlp | grep {}"
+PCS_CLUSTER_START = "pcs cluster start {}"
+PCS_CLUSTER_STOP = "pcs cluster stop {}"
+PCS_RESOURCES_CLEANUP = "pcs resource cleanup {}"
+PGREP_CMD = "sudo pgrep {}"
+PKIL_CMD = "pkill {}"
+RPM_GREP_CMD = "rpm -qa | grep {}"
+RPM_INSTALL_CMD = "yum install -y {0}"
+SYSTEM_CTL_CMD = "systemctl {} {}"
+SYSTEMCTL_STATUS = "systemctl status {}"

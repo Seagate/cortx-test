@@ -6,7 +6,9 @@ This test helper lib implements the base functions for controller operations
 import logging
 import requests
 import os
-#from eos_test.utility import utility
+from commons.utils import system_utils as SYS_UTIL
+from commons.helpers.host import Host
+from commons.helpers.node_helper import Node
 from commons import constants as cons
 from commons import commands as command
 from commons import errorcodes as cterr
@@ -16,14 +18,12 @@ from commons.utils import config_utils as conf_util
 
 LOGGER = logging.getLogger(__name__)
 
-UTIL_OBJ = utility.Utility()
-
 COMMON_CONF = conf_util.read_yaml(cons.COMMON_CONFIG_PATH)
-CONS_OBJ_DICT = cons.RAS_BUILD_VER[COMMON_CONF["BUILD_VER_TYPE"]]
+# CONS_OBJ_DICT = cons.RAS_BUILD_VER[COMMON_CONF["BUILD_VER_TYPE"]]
 
-COMMON_DESTRUCTIVE_VAL = conf_util.read_yaml(dest_cons.COMMON_CONFIG_PATH)
-RAS_VAL = ctpyaml.read_yaml(CONS_OBJ_DICT["CONFIG_PATH"])
-SSPL_VAL = ctpyaml.read_yaml(CONS_OBJ_DICT["SSPL_CONFIG_PATH"])
+#COMMON_DESTRUCTIVE_VAL = conf_util.read_yaml(dest_cons.COMMON_CONFIG_PATH)
+#RAS_VAL = ctpyaml.read_yaml(CONS_OBJ_DICT["CONFIG_PATH"])
+#SSPL_VAL = ctpyaml.read_yaml(CONS_OBJ_DICT["SSPL_CONFIG_PATH"])
 
 BYTES_TO_READ = cons.BYTES_TO_READ
 
@@ -55,16 +55,19 @@ class ControllerLib:
         self.enclosure_ip = enclosure_ip
         self.enclosure_user = enclosure_user
         self.enclosure_pwd = enclosure_pwd
+        self.host_connect = Host(hostname=self.host, username=self.h_user,
+                                 password=self.h_pwd)
+        self.node_obj = Node(hostname=self.host, username=self.h_user,
+                             password=self.h_pwd)
 
         self.copy = True
         runner_path = cons.REMOTE_TELNET_PATH
         local_path = cons.TELNET_OP_PATH
         LOGGER.info(f"Copying file {local_path} to {runner_path}")
-        res = UTIL_OBJ.copy_file_to_remote(local_path=local_path,
-                                           remote_file_path=runner_path,
-                                           shell=False)
+        self.node_obj.copy_file_to_remote(local_path=local_path,
+                                          remote_path=runner_path)
 
-        if not res[0]:
+        if not self.node_obj.path_exists(path=runner_path):
             self.copy = False
 
     def get_mc_ver_sr(self):
@@ -77,6 +80,7 @@ class ControllerLib:
         if self.copy:
             try:
                 cmd = command.SET_DEBUG_CMD
+                print(cmd)
 
                 command = f"python3 /root/telnet_operations.py " \
                     f"--telnet_op=" \
@@ -85,10 +89,10 @@ class ControllerLib:
                     f"enclosure_pwd=\"{self.enclosure_pwd}\", cmd=\"{cmd}\")'"
 
                 LOGGER.info(f"Running command {command}")
-                response = UTIL_OBJ.remote_execution(host=self.host,
-                                                     user=self.h_user,
-                                                     password=self.h_pwd,
-                                                     cmd=command, shell=False)
+                response = self.host_connect.execute_cmd(cmd=command,
+                                                         read_lines=True,
+                                                         shell=False)
+                print(response)
                 response = response[0].split()
 
                 status = os.popen((command.STRING_MANIPULATION.format(response[0])).
@@ -98,6 +102,7 @@ class ControllerLib:
                 mc_sr = os.popen((command.STRING_MANIPULATION.format(response[2])).
                                  replace('\n', ' ').replace('\\n', ' ')).read()
 
+                print(status, mc_sr, mc_ver)
                 return status, mc_ver, mc_sr
             except BaseException as error:
                 LOGGER.error(f"Error in {ControllerLib.get_mc_ver_sr.__name__}:"
@@ -164,11 +169,9 @@ class ControllerLib:
                     f"cmd=\"{cmd}\")'"
 
                 LOGGER.info(f"Running command {command}")
-                response = UTIL_OBJ.remote_execution(host=self.host,
-                                                     user=self.h_user,
-                                                     password=self.h_pwd,
-                                                     cmd=command,
-                                                     shell=False)
+                response = self.host_connect.execute_cmd(cmd=command,
+                                                         read_lines=True,
+                                                         shell=False)
                 response = response[0].split()
 
                 status = os.popen((command.STRING_MANIPULATION.format(response[0])).
