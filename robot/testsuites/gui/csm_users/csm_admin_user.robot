@@ -7,12 +7,12 @@ Suite Teardown  Close All Browsers
 Force Tags  CSM_GUI  CSM_USER
 
 *** Variables ***
-${url}  https://10.230.246.58:28100/#/
 ${browser}  chrome
 ${headless}  True
 ${navigate_to_subpage}  False
 ${Sub_tab}  None
 ${page name}  MANAGE_MENU_ID
+${url}
 ${username}
 ${password}
 
