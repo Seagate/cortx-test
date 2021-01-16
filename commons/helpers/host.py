@@ -17,34 +17,35 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-import logging
+
 import time
 import socket
-from typing import Union, Tuple, List
+import logging
 import pysftp
 import paramiko
+
+from typing import Union, Tuple, List
 
 log = logging.getLogger(__name__)
 
 
 class Host():
-    """Interface class for establishing connections
-    """
+    """ Interface class for establishing connections. """
 
-    def __init__(self, hostname: str, username: str, password: str) -> bool:
+    def __init__(self, hostname: str, username: str, password: str) -> None:
         self.hostname = hostname
         self.username = username
         self.password = password
         self.host_obj = None
         self.shell_obj = None
 
-    def connect(self, shell=False, retry=1, timeout=400, **kwargs) -> bool:
+    def connect(self, shell: bool = False, retry: int = 1, timeout: int = 400, **kwargs) -> None:
         """
-        Connect to remote host using hostname, username and password attribute
-        :param shell: In case required shell invocation
-        :param timeout_sec: timeout in seconds
-        :param kwargs: Optional keyword arguments for SSHClient.connect func call
-        :return: Boolean, Whether ssh connection establish or not
+        Connect to remote host using hostname, username and password attribute.
+        :param shell: In case required shell invocation.
+        :param timeout: timeout in seconds.
+        :param retry: retry to connect.
+        :param kwargs: Optional keyword arguments for SSHClient.connect func call.
         """
         try:
             self.host_obj = paramiko.SSHClient()
@@ -71,13 +72,11 @@ class Host():
                 shell.close()
             raise error
 
-    def connect_pysftp(self, private_key=None, private_key_pass: str = None) -> bool:
+    def connect_pysftp(self, private_key: str = None, private_key_pass: str = None) -> None:
         """
-        Connect to remote host using pysftp
-        :param str private_key: path to private key file(str) or paramiko.AgentKey
-        :param str private_key_pass:  password to use, if private_key is encrypted
-        :return: connection object based on the success
-        :rtype: pysftp.Connection
+        Connect to remote host using pysftp.
+        :param private_key: path to private key file(str) or paramiko.AgentKey
+        :param private_key_pass:  password to use, if private_key is encrypted
         """
         log.debug(f"Connecting to host: {self.hostname}")
         cnopts = pysftp.CnOpts()
@@ -90,8 +89,9 @@ class Host():
                                    cnopts=cnopts)
         self.host_obj = result
 
-    def disconnect(self):
-        """Disconnects the host obj
+    def disconnect(self) -> None:
+        """
+        Disconnects the host obj.
         """
         if self.shell_obj is not None:
             self.shell_obj.close()
@@ -99,7 +99,7 @@ class Host():
         self.host_obj = None
         self.shell_obj = None
 
-    def reconnect(self, retry_count: int, **kwargs) -> bool:
+    def reconnect(self, retry_count: int, **kwargs) -> None:
         """
         This method re-connect to host machine
         :param retry_count: host retry count
@@ -114,20 +114,20 @@ class Host():
                 time.sleep(1)
 
     def execute_cmd(self, cmd: str, inputs: str = None, read_lines: bool = False,
-                    read_nbytes: int = -1, timeout=400, **kwargs) -> Tuple[bool, Union[List[str], str, bytes]]:
+                    read_nbytes: int = -1, timeout: int = 400, **kwargs) -> Tuple[Union[List[str], str, bytes]]:
         """
         If connection is not established,  it will establish the connection and 
         Execute any command on remote machine/VM
-        :param cmd: command user wants to execute on host
-        :param read_lines: Response will be return using readlines() else using read()
+        :param cmd: command user wants to execute on host.
+        :param read_lines: Response will be return using readlines() else using read().
         :param inputs: used to pass yes argument to commands.
         :param nbytes: nbytes returns string buffer.
-        :param timeout: command and connect timeout
-        :return: bool, stdout / strerr
+        :param timeout: command and connect timeout.
+        :param read_nbytes: maximum number of bytes to read.
+        :return: stdout/strerr.
         """
         self.connect(timeout=timeout, **kwargs)
-        stdin, stdout, stderr = self.host_obj.exec_command(
-            cmd, timeout=timeout)
+        stdin, stdout, stderr = self.host_obj.exec_command(cmd, timeout=timeout)
         exit_status = stdout.channel.recv_exit_status()
         log.debug(exit_status)
         if exit_status != 0:
