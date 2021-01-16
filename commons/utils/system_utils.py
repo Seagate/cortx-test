@@ -75,24 +75,24 @@ def run_remote_cmd(cmd: str, hostname: str, username: str, password: str, read_l
     return output
 
 
-def run_local_cmd(cmd: str) -> str:
+def run_local_cmd(cmd: str) -> bytes:
     """
-    Execute any given command on local machine.
+    Execute any given command on local machine(Windows, Linux).
     :param cmd: command to be executed.
     :return: stdout 
     """
-    msg_rsa_key_added = b"Number of key(s) added: 1"
-    lcmd_not_found = b"command not found"
     if not cmd:
         raise ValueError("Missing required parameter: {}".format(cmd))
     log.debug("Command: %s", cmd)
     proc = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
     output, error = proc.communicate()
     log.debug("output = %s", str(output))
-    if msg_rsa_key_added in output:
-        return True, output
-    if lcmd_not_found in error or error:
+    log.debug("error = %s", str(error))
+    if b"Number of key(s) added: 1" in output:
+        return output
+    if b"command not found" in error or b"not recognized as an internal or external command" in error or error:
         raise IOError(error)
+
     return output
 
 
