@@ -62,13 +62,12 @@ class Node(Host):
         """
         This function display status of services
         """
-        result = {}
+        result = dict()
         result["output"] = {}
         status_list = []
         for service in services:
             log.debug(f"service status {service}")
-            cmd = commands.SYSTEMCTL_STATUS
-            cmd = cmd.format(service)
+            cmd = commands.SYSTEM_CTL_STATUS_CMD.format(service)
             out = self.execute_cmd(cmd, read_lines=True, timeout=timeout)
             found = False
             for line in out:
