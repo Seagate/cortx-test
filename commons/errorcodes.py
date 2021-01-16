@@ -114,3 +114,6 @@ FILE_TYPE_NOT_SUP = CTError(30004, "Type file not supported")
 PCD_RENDERING_ERROR = CTError(30005, "Error during the rendering process")
 PCD_FILE_ERROR = CTError(30006, "PCD file content error")
 ENC_PCD_COMPONENT_MAPPING_ERROR = CTError(30007, "PCD Components not mapping to Enclosure Components")
+
+# S3 Errors
+S3_ERROR = CTError(0o0001, "S3 Error")
