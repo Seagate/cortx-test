@@ -117,6 +117,8 @@ PCD_FILE_ERROR = CTError(30006, "PCD file content error")
 ENC_PCD_COMPONENT_MAPPING_ERROR = CTError(30007, "PCD Components not mapping to Enclosure Components")
 
 # S3 Errors
+S3_SERVER_ERROR = CTError(5007, "S3 Server Error")
+S3_CLIENT_ERROR = CTError(4007, "S3 Client Error")
 S3_ERROR = CTError(0o0001, "S3 Error")
 
 # RAS
