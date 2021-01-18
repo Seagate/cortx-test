@@ -71,7 +71,7 @@ Generate New User Email
 Generate New Password
     [Documentation]  Functionlity to generate valid password
     ${upper_case}=  Generate Random String  2  [UPPER]
-    ${lower_case}=  Generate Random String  2  [LOWER][NUMBERS]
+    ${lower_case}=  Generate Random String  2  [LOWER]
     ${numbers}=  Generate Random String  2  [NUMBERS]
     ${special_char}=  Generate random string    2    !@#$%^&*()
     ${password}=  Catenate  SEPARATOR=  ${upper_case}  ${lower_case}  ${numbers}  ${special_char}
