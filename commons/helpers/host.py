@@ -29,7 +29,7 @@ from typing import Union, Tuple, List
 log = logging.getLogger(__name__)
 
 
-class Host():
+class Host:
     """ Interface class for establishing connections. """
 
     def __init__(self, hostname: str, username: str, password: str) -> None:
@@ -38,6 +38,7 @@ class Host():
         self.password = password
         self.host_obj = None
         self.shell_obj = None
+        self.pysftp_obj = None
 
     def connect(self, shell: bool = False, retry: int = 1, timeout: int = 400, **kwargs) -> None:
         """
@@ -46,6 +47,7 @@ class Host():
         :param timeout: timeout in seconds.
         :param retry: retry to connect.
         :param kwargs: Optional keyword arguments for SSHClient.connect func call.
+                       ref: http://docs.paramiko.org/en/stable/api/client.html#paramiko.client.SSHClient.connect
         """
         try:
             self.host_obj = paramiko.SSHClient()
@@ -66,13 +68,13 @@ class Host():
         except Exception as error:
             log.error("Exception while connecting to server")
             log.error(f"Error message: {error}")
-            if shell:
+            if self.host_obj:
                 self.host_obj.close()
-            if not isinstance(shell, bool):
-                shell.close()
+            if shell and self.shell_obj:
+                self.shell_obj.close()
             raise error
 
-    def connect_pysftp(self, private_key: str = None, private_key_pass: str = None) -> None:
+    def connect_pysftp(self, private_key: str = None, private_key_pass: str = None, **kwargs) -> None:
         """
         Connect to remote host using pysftp.
         :param private_key: path to private key file(str) or paramiko.AgentKey
@@ -81,28 +83,32 @@ class Host():
         log.debug(f"Connecting to host: {self.hostname}")
         cnopts = pysftp.CnOpts()
         cnopts.hostkeys = None
-        result = pysftp.Connection(host=self.hostname,
-                                   username=self.username,
-                                   password=self.password,
-                                   private_key=private_key,
-                                   private_key_pass=private_key_pass,
-                                   cnopts=cnopts)
-        self.host_obj = result
+        self.pysftp_obj = pysftp.Connection(host=self.hostname,
+                                            username=self.username,
+                                            password=self.password,
+                                            private_key=private_key,
+                                            private_key_pass=private_key_pass,
+                                            cnopts=cnopts)
 
     def disconnect(self) -> None:
         """
         Disconnects the host obj.
         """
-        if self.shell_obj is not None:
+        if self.host_obj:
+            self.host_obj.close()
+        if self.shell_obj:
             self.shell_obj.close()
-        self.host_obj.close()
+        if self.pysftp_obj:
+            self.pysftp_obj.close()
         self.host_obj = None
         self.shell_obj = None
+        self.pysftp_obj = None
 
-    def reconnect(self, retry_count: int, **kwargs) -> None:
+    def reconnect(self, retry_count: int, wait_time: int = 10, **kwargs) -> None:
         """
         This method re-connect to host machine
-        :param retry_count: host retry count
+        :param wait_time: wait for retry connection.
+        :param retry_count: host retry count.
         """
         while retry_count:
             try:
@@ -111,7 +117,7 @@ class Host():
             except:
                 log.debug("Attempting to reconnect")
                 retry_count -= 1
-                time.sleep(1)
+                time.sleep(wait_time)
 
     def execute_cmd(self, cmd: str, inputs: str = None, read_lines: bool = False,
                     read_nbytes: int = -1, timeout: int = 400, **kwargs) -> Tuple[Union[List[str], str, bytes]]:
