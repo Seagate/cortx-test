@@ -1,19 +1,20 @@
 import sys
 import time
-from avocado import Test
-from avocadoext.ctp_fail_on import ctp_fail_on
-from eos_test.common.eos_errors import error_handler
-from eos_test.csm.rest.csm_rest_csmuser import RestCsmUser
-from eos_test.csm.csm_setup import CSMConfigsCheck
-from ctp.utils import ctpyaml
 import json
-from eos_test.csm.rest.csm_rest_s3account import RestS3account
-from eos_test.csm.rest.csm_rest_iamuser import RestIamUser
-from eos_test.csm.rest.csm_rest_test_lib import RestTestLib
-from eos_test.csm.rest.csm_rest_bucket import RestS3Bucket
-from eos_test.csm.rest.csm_rest_bucket import RestS3BucketPolicy
+from ctp.utils import ctpyaml
 
+from libs.csm.rest.csm_rest_csmuser import RestCsmUser
+from libs.csm.rest.csm_rest_s3account import RestS3account
 
+#from commons.eos_errors import error_handler
+
+#from eos_test.csm.csm_setup import CSMConfigsCheck
+#from eos_test.csm.rest.csm_rest_iamuser import RestIamUser
+#from eos_test.csm.rest.csm_rest_test_lib import RestTestLib
+#from eos_test.csm.rest.csm_rest_bucket import RestS3Bucket
+#from eos_test.csm.rest.csm_rest_bucket import RestS3BucketPolicy
+
+ 
 class CsmUserTests(Test):
     """REST API Test cases for CSM users"""
 

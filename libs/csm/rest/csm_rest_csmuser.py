@@ -169,7 +169,7 @@ class RestCsmUser(Base):
             # Checking response in details
             self._log.info(
                 "verifying Newly created CSM user data in created list")
-            list_acc = self.list_csm_users(expect_status_code=self.const.SUCCESS_STATUS,
+            list_acc = self.list_csm_users(expect_status_code=const.SUCCESS_STATUS,
                                            return_actual_response=True).json()["users"]
             expected_result = self.recently_created_csm_user.copy()
             expected_result.pop("password")
@@ -283,7 +283,7 @@ class RestCsmUser(Base):
                     expect_status_code=200, return_actual_response=True)
 
             # Checking status code
-            if (not response) or response.status_code != self.const.SUCCESS_STATUS:
+            if (not response) or response.status_code != const.SUCCESS_STATUS:
                 self._log.info("Response is not 200")
                 return False
             expected_response = response.json()
@@ -319,9 +319,9 @@ class RestCsmUser(Base):
             # Get the count of the number of csm users present
             self._log.info("Getting the initial list of csm users present")
             response = self.list_csm_users(
-                expect_status_code=self.const.SUCCESS_STATUS, return_actual_response=True)
+                expect_status_code=const.SUCCESS_STATUS, return_actual_response=True)
             # Checking status code
-            if (not response) or response.status_code != self.const.SUCCESS_STATUS:
+            if (not response) or response.status_code != const.SUCCESS_STATUS:
                 self._log.info("Response is not 200")
                 return False
 
@@ -349,9 +349,9 @@ class RestCsmUser(Base):
             self._log.info(
                 "fetching csm users list for verification purpose...")
             response = self.list_csm_users(
-                limit=limit, expect_status_code=self.const.SUCCESS_STATUS, return_actual_response=True)
+                limit=limit, expect_status_code=const.SUCCESS_STATUS, return_actual_response=True)
             # Checking status code
-            if (not response) or response.status_code != self.const.SUCCESS_STATUS:
+            if (not response) or response.status_code != const.SUCCESS_STATUS:
                 self._log.info("Response is not 200")
                 return False
 
@@ -395,9 +395,9 @@ class RestCsmUser(Base):
             self._log.info(
                 "fetching all csm users without parameters specified")
             response = self.list_csm_users(
-                expect_status_code=self.const.SUCCESS_STATUS, return_actual_response=True)
+                expect_status_code=const.SUCCESS_STATUS, return_actual_response=True)
             # Checking status code
-            if (not response) or response.status_code != self.const.SUCCESS_STATUS:
+            if (not response) or response.status_code != const.SUCCESS_STATUS:
                 self._log.info("Failure in status code, returned code is {} instead of 200".format(
                     response.status_code))
                 return False
@@ -409,9 +409,9 @@ class RestCsmUser(Base):
             self._log.info(
                 "Fetching user list with parameters offset,limit,sort_by and sort_dir specified")
             response = self.list_csm_users(limit=const.CSM_USER_LIST_LIMIT, offset=const.CSM_USER_LIST_OFFSET, sort_by=const.CSM_USER_LIST_SORT_BY,
-                                           sort_dir=const.CSM_USER_LIST_SORT_DIR, expect_status_code=self.const.SUCCESS_STATUS, return_actual_response=True)
+                                           sort_dir=const.CSM_USER_LIST_SORT_DIR, expect_status_code=const.SUCCESS_STATUS, return_actual_response=True)
             # Checking status code
-            if (not response) or response.status_code != self.const.SUCCESS_STATUS:
+            if (not response) or response.status_code != const.SUCCESS_STATUS:
                 self._log.info("Failure in status code,returned code is {} instead of 200".format(
                     response.status_code))
                 return False
@@ -619,7 +619,7 @@ class RestCsmUser(Base):
                                               endpoint=self.config["rest_login_endpoint"],
                                               data=payload_login, headers=self.config["Login_headers"])
             self._log.info("response : ", response)
-            if response.status_code == self.const.SUCCESS_STATUS:
+            if response.status_code == const.SUCCESS_STATUS:
                 headers.update(
                     {'Authorization': response.headers['Authorization']})
 
@@ -724,7 +724,7 @@ class RestCsmUser(Base):
         :return: True if user found else False.
         :rtype: bool.
         """
-        users = self.list_csm_users(self.const.SUCCESS_STATUS,
+        users = self.list_csm_users(const.SUCCESS_STATUS,
                                     return_actual_response=True)
         self._log.info(f"List csm users response: {users.json()}")
         found = False
