@@ -81,26 +81,24 @@ def write_yaml(fpath: str, write_data: dict or list, backup: bool = True) \
     return True, fpath
 
 
-def create_content_json(home: str, data: str, user_json: str) -> str:
+def create_content_json(path: str, data: object) -> str:
     """
-    :param home: Directory name in which json file is to be created
+    :param path: json file path is to be created.
     :param data: Data to write in json file
-    :param user_json: Name of the json file
-    :return: path of the file
+    :return: path of the file.
     """
-    path = os.path.join(home, user_json)
     with open(path, 'w') as outfile:
         json.dump(data, outfile, ensure_ascii=False)
 
     return path
 
 
-def read_content_json(fpath: str) -> str:
+def read_content_json(fpath: str) -> dict:
     """
     :param fpath: Path of the json file
     :return: Data of the json file
     """
-    data = None
+    data = dict()
     with open(fpath, 'rb') as json_file:
         data = json.loads(json_file.read())
     return data
