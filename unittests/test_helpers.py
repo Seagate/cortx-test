@@ -4,6 +4,7 @@ from commons.helpers.node_helper import Node
 from commons.helpers.health_helper import Health
 from commons.helpers.bmc_helper import Bmc
 from commons.helpers.telnet_helper import Telnet
+from commons.helpers.controller_helper import ControllerLib
 
 def test_node_helper():
     x = Node("10.237.65.202","root","seagate")
@@ -51,3 +52,27 @@ def test_bmc_helper():
     x.create_bmc_ip_change_fault('10.234.56.9')
     x.resolve_bmc_ip_change_fault('10.237.65.16')
 
+
+@pytest.mark.skip
+def test_controller_helper():
+    x = ControllerLib(host="sm8-r19.pun.seagate.com", h_user="root",
+                      h_pwd="seagate", enclosure_ip="10.0.0.2",
+                      enclosure_user="manage", enclosure_pwd="Seagate123$")
+    stat, mc_v, mc_s = x.get_mc_ver_sr()
+    pswd = x.get_mc_debug_pswd(mc_v, mc_s)
+    x.simulate_fault_ctrl(pswd, 0, "left", "psu", "e", "a")
+    telnet_file = "test_telnet.xml"
+    x.show_disks(telnet_file)
+    count = x.get_total_drive_count(telnet_file)
+    stat, health = x.check_phy_health("7", telnet_file)
+    stat, health = x.set_drive_status_telnet(enclosure_id=0,
+                                             controller_name="A",
+                                             drive_number=7, status="disabled")
+    stat = x.clear_drive_metadata(7)
+    stat, health = x.set_drive_status_telnet(enclosure_id=0,
+                                             controller_name="A",
+                                             drive_number=7, status="enabled")
+    stat, d = x.get_show_volumes()
+    stat, d = x.get_show_expander_status()
+    stat, d = x.get_show_disk_group()
+    stat, d = x.get_show_disks()

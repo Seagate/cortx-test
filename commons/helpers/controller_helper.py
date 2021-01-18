@@ -7,7 +7,6 @@ import logging
 import requests
 import os
 from typing import Tuple
-from commons.utils import system_utils as SYS_UTIL
 from commons.helpers.host import Host
 from commons.helpers.node_helper import Node
 from commons import constants as cons
