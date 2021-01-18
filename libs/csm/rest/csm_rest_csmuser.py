@@ -7,6 +7,7 @@ import commons.errorcodes as err
 from commons.exceptions import CTException
 from libs.csm.rest.csm_rest_test_lib import RestTestLib as Base
 
+
 class RestCsmUser(Base):
     """RestCsmUser contains all the Rest API calls for csm user operations"""
 
@@ -730,7 +731,8 @@ class RestCsmUser(Base):
         found = False
         for usr in users.json()['users']:
             if user == usr['username']:
-                self._log.info(f"Inside loop: user: {user}, username: {usr['username']}")
+                self._log.info(
+                    f"Inside loop: user: {user}, username: {usr['username']}")
                 found = True
                 break
 

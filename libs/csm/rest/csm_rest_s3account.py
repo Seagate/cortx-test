@@ -1,8 +1,8 @@
 """Test library for s3 account operations."""
 import time
-import eos_test.common.eos_errors as err
-from ctp.common.ctpexception import CTPException
-from eos_test.csm.rest.csm_rest_test_lib import RestTestLib as Base
+import commons.errorcodes as err
+from commons.exceptions import CTException
+from libs.csm.rest.csm_rest_test_lib import RestTestLib as Base
 
 
 class RestS3account(Base):
@@ -47,7 +47,7 @@ class RestS3account(Base):
                 self.exception_error,
                 RestS3account.create_s3_account.__name__,
                 error))
-            raise CTPException(
+            raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR, error.args[0])
 
     @Base.authenticate_and_login
@@ -72,7 +72,7 @@ class RestS3account(Base):
                 self.exception_error,
                 RestS3account.list_all_created_s3account.__name__,
                 error))
-            raise CTPException(
+            raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR, error.args[0])
 
     @Base.authenticate_and_login
@@ -105,7 +105,7 @@ class RestS3account(Base):
                 self.exception_error,
                 RestS3account.edit_s3_account_user.__name__,
                 error))
-            raise CTPException(
+            raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR, error.args[0])
 
     @Base.authenticate_and_login
@@ -133,7 +133,7 @@ class RestS3account(Base):
                 self.exception_error,
                 RestS3account.delete_s3_account_user.__name__,
                 error))
-            raise CTPException(
+            raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR, error.args[0])
 
     def verify_list_s3account_details(self, expect_no_user=False):
@@ -171,7 +171,7 @@ class RestS3account(Base):
                 self.exception_error,
                 RestS3account.verify_list_s3account_details.__name__,
                 error))
-            raise CTPException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
+            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
 
     def create_and_verify_s3account(self, user, expect_status_code):
         """
@@ -231,7 +231,7 @@ class RestS3account(Base):
                 self.exception_error,
                 RestS3account.create_and_verify_s3account.__name__,
                 error))
-            raise CTPException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
+            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
 
     def create_payload_for_new_s3_account(self, user_type):
         """
@@ -279,7 +279,7 @@ class RestS3account(Base):
                 self.exception_error,
                 RestS3account.create_payload_for_new_s3_account.__name__,
                 error))
-            raise CTPException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
+            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
 
     def edit_user_payload(self, payload_type):
         """
@@ -308,7 +308,7 @@ class RestS3account(Base):
                 self.exception_error,
                 RestS3account.edit_user_payload.__name__,
                 error))
-            raise CTPException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
+            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
 
     def edit_and_verify_s3_account_user(self, user_payload):
         """
@@ -371,7 +371,7 @@ class RestS3account(Base):
                 self.exception_error,
                 RestS3account.edit_and_verify_s3_account_user.__name__,
                 error))
-            raise CTPException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
+            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
 
     def delete_and_verify_s3_account_user(self):
         """
@@ -402,7 +402,7 @@ class RestS3account(Base):
                 self.exception_error,
                 RestS3account.delete_and_verify_s3_account_user.__name__,
                 error))
-            raise CTPException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
+            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
 
     @Base.authenticate_and_login
     def edit_s3_account_user_invalid_password(self, username, payload):
@@ -436,5 +436,5 @@ class RestS3account(Base):
                 self.exception_error,
                 RestS3account.edit_s3_account_user_invalid_password.__name__,
                 error))
-            raise CTPException(
+            raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR, error.args[0])
