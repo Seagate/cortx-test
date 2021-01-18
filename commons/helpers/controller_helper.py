@@ -108,7 +108,7 @@ class ControllerLib:
                              f" {error}")
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
-    def get_mc_debug_pswd(self, mc_ver, mc_sr):
+    def get_mc_debug_pswd(self, mc_ver: str, mc_sr: str) -> str:
         """
         Function to get the password for management controller debug console
         :param mc_ver: Management controller version
@@ -133,8 +133,9 @@ class ControllerLib:
         LOGGER.info(f"MC debug password: {mc_password}")
         return mc_password
 
-    def simulate_fault_ctrl(self, mc_deb_password, enclid, pos, fru, type_fault,
-                            ctrl_name):
+    def simulate_fault_ctrl(self, mc_deb_password: str, enclid: str, pos: str,
+                            fru: str, type_fault: str, ctrl_name: str) -> \
+            Tuple[str, str]:
         """
         Function to simulate faults on the controller
         :param mc_deb_password: Password of Management controller debug console
@@ -189,7 +190,7 @@ class ControllerLib:
                              f" {error}")
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
-    def show_disks(self, telnet_file):
+    def show_disks(self, telnet_file: str) -> Tuple[str, str]:
         """
         Show disk.
         :param telnet_file: File path to save response of telnet command
@@ -231,7 +232,7 @@ class ControllerLib:
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
             return status, path
 
-    def get_total_drive_count(self, telnet_file):
+    def get_total_drive_count(self, telnet_file: str) -> Tuple[str, int]:
         """
         Get total number of drives mapped.
         :param telnet_file: File path to save response of telnet command
@@ -268,7 +269,8 @@ class ControllerLib:
                     f" {error}")
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
-    def check_phy_health(self, phy_num, telnet_file):
+    def check_phy_health(self, phy_num: str, telnet_file: str) -> Tuple[bool,
+                                                                        str]:
         """
         Check health of the phy.
         :param phy_num: number of the phy to be disabled
@@ -312,8 +314,9 @@ class ControllerLib:
                     f"{error}")
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
-    def set_drive_status_telnet(self, enclosure_id, controller_name,
-                                drive_number, status):
+    def set_drive_status_telnet(self, enclosure_id: str, controller_name: str,
+                                drive_number: str, status: str) -> Tuple[str,
+                                                                         str]:
         """
         Enable or Disable drive status from disk group.
         :param enclosure_id: Enclosure ID of the machine
@@ -361,7 +364,8 @@ class ControllerLib:
                              f" {error}")
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
-    def get_show_volumes(self, output_file_path=cons.CTRL_LOG_PATH):
+    def get_show_volumes(self, output_file_path: str = cons.CTRL_LOG_PATH) ->\
+            Tuple[bool, dict]:
         """
         Execute "show volumes" command on primary enclosure.
         Parse output file.
@@ -458,7 +462,8 @@ class ControllerLib:
                     f"{error}")
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
-    def get_show_expander_status(self, output_file_path=cons.CTRL_LOG_PATH):
+    def get_show_expander_status(self, output_file_path: str = cons.CTRL_LOG_PATH) \
+            -> Tuple[bool, dict]:
         """
         Get "show expander-status" output from enclosure.
         Parse the output files.
@@ -561,7 +566,8 @@ class ControllerLib:
                     f" {error}")
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
-    def get_show_disk_group(self, output_file_path=cons.CTRL_LOG_PATH):
+    def get_show_disk_group(self, output_file_path: str = cons.CTRL_LOG_PATH)\
+            -> Tuple[bool, dict]:
         """
         Execute "show disk-groups" command on primary controller.
         Parse output xml.
@@ -641,7 +647,8 @@ class ControllerLib:
                     f"{error}")
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
-    def get_show_disks(self, output_file_path=cons.CTRL_LOG_PATH):
+    def get_show_disks(self, output_file_path: str = cons.CTRL_LOG_PATH) -> \
+            Tuple[bool, dict]:
         """
         Execute "show disks" command on primary controller.
         Parse output xml.
@@ -721,7 +728,7 @@ class ControllerLib:
                     f"{error}")
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
-    def clear_drive_metadata(self, drive_num):
+    def clear_drive_metadata(self, drive_num: str) -> str:
         """
         Execute "clear metadata" command on primary controller.
         :param drive_num: Drive of which metadata is to be cleared
