@@ -114,7 +114,7 @@ class Node(Host):
         self.connect_pysftp()
         log.debug("client connected")
         try:
-            self.host_obj.stat(path)
+            self.pysftp_obj.stat(path)
         except BaseException:
             return False
         self.disconnect()
@@ -142,7 +142,7 @@ class Node(Host):
         self.connect_pysftp()
         log.debug("sftp connected")
         try:
-            self.host_obj.rename(old_filename, new_filename)
+            self.pysftp_obj.rename(old_filename, new_filename)
         except IOError as error:
             if error.args[0] == 2:
                 raise error
@@ -159,7 +159,7 @@ class Node(Host):
         self.connect_pysftp()
         log.debug(f"Connected to {self.hostname}")
         try:
-            self.host_obj.remove(filename)
+            self.pysftp_obj.remove(filename)
         except IOError as error:
             if error.args[0] == 2:
                 raise error
@@ -188,7 +188,7 @@ class Node(Host):
         """
         self.connect_pysftp()
         log.debug("sftp connected")
-        self.host_obj.put(local_path, remote_path)
+        self.pysftp_obj.put(local_path, remote_path)
         log.debug("file copied to : {}".format(remote_path))
         self.disconnect()
 
@@ -200,7 +200,7 @@ class Node(Host):
         """
         self.connect_pysftp()
         log.debug("sftp connected")
-        self.host_obj.get(remote_path, local_path)
+        self.pysftp_obj.get(remote_path, local_path)
         log.debug("file copied to : {}".format(local_path))
         self.disconnect()
 
@@ -212,7 +212,7 @@ class Node(Host):
         """
         self.connect_pysftp()
         log.debug("sftp connected")
-        with self.host_obj.open(file_path, "r") as remote:
+        with self.pysftp_obj.open(file_path, "r") as remote:
             shutil.copyfileobj(remote, open(local_path, "wb"))
 
     def get_mdstat(self):
@@ -268,8 +268,8 @@ class Node(Host):
         self.connect_pysftp()
         log.debug("client connected")
         try:
-            resp = self.host_obj.isdir(remote_path)
-            self.host_obj.close()
+            resp = self.pysftp_obj.isdir(remote_path)
+            self.pysftp_obj.close()
             if resp:
                 return True, resp
             else:
@@ -291,7 +291,7 @@ class Node(Host):
         """
         self.connect_pysftp()
         try:
-            dir_lst = self.host_obj.listdir(remote_path)
+            dir_lst = self.pysftp_obj.listdir(remote_path)
         except IOError as error:
             if error.args[0] == 2:
                 raise error
@@ -339,9 +339,9 @@ class Node(Host):
                 continue
             dir_path += r"/{0}".format(dir_folder)
             try:
-                self.host_obj.listdir(dir_path)
+                self.pysftp_obj.listdir(dir_path)
             except IOError:
-                self.host_obj.mkdir(dir_path)
+                self.pysftp_obj.mkdir(dir_path)
         self.disconnect()
         return self.path_exists(dpath)
 
@@ -355,14 +355,14 @@ class Node(Host):
         """
         self.connect_pysftp()
         log.debug("sftp connected")
-        for f in self.host_obj.listdir_attr(dpath):
+        for f in self.pysftp_obj.listdir_attr(dpath):
             rpath = posixpath.join(dpath, f.filename)
             if stat.S_ISDIR(f.st_mode):
                 self.delete_dir_sftp(rpath, level=(level + 1))
             else:
                 rpath = posixpath.join(dpath, f.filename)
-                self.host_obj.remove(rpath)
-        self.host_obj.rmdir(dpath)
+                self.pysftp_obj.remove(rpath)
+        self.pysftp_obj.rmdir(dpath)
         self.disconnect()
         return not self.path_exists(dpath)
 
