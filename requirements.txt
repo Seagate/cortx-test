@@ -41,3 +41,4 @@ Cython==0.29.21
 pytest~=6.2.1
 testfixtures~=6.17.0
 matplotlib==3.1.1
+PyHamcrest==2.0.2

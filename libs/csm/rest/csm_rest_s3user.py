@@ -3,13 +3,14 @@ import time
 import commons.errorcodes as err
 from commons.exceptions import CTException
 from libs.csm.rest.csm_rest_test_lib import RestTestLib as Base
+import logging
+from commons.constants import Rest as const
 
-
-class RestS3account(Base):
-    """RestS3account contains all the Rest Api calls for s3 account operations"""
+class RestS3user(Base):
+    """RestS3user contains all the Rest Api calls for s3 account operations"""
 
     def __init__(self):
-        super(RestS3account, self).__init__()
+        super(RestS3user, self).__init__()
         self.recently_created_s3_account_user = None
         self.recent_patch_payload = None
         self.user_type = ("valid", "duplicate", "invalid", "missing")
@@ -45,7 +46,7 @@ class RestS3account(Base):
         except BaseException as error:
             self._log.error("{0} {1}: {2}".format(
                 self.exception_error,
-                RestS3account.create_s3_account.__name__,
+                RestS3user.create_s3_account.__name__,
                 error))
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR, error.args[0])
@@ -70,7 +71,7 @@ class RestS3account(Base):
         except BaseException as error:
             self._log.error("{0} {1}: {2}".format(
                 self.exception_error,
-                RestS3account.list_all_created_s3account.__name__,
+                RestS3user.list_all_created_s3account.__name__,
                 error))
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR, error.args[0])
@@ -103,7 +104,7 @@ class RestS3account(Base):
         except BaseException as error:
             self._log.error("{0} {1}: {2}".format(
                 self.exception_error,
-                RestS3account.edit_s3_account_user.__name__,
+                RestS3user.edit_s3_account_user.__name__,
                 error))
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR, error.args[0])
@@ -131,7 +132,7 @@ class RestS3account(Base):
         except BaseException as error:
             self._log.error("{0} {1}: {2}".format(
                 self.exception_error,
-                RestS3account.delete_s3_account_user.__name__,
+                RestS3user.delete_s3_account_user.__name__,
                 error))
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR, error.args[0])
@@ -149,13 +150,13 @@ class RestS3account(Base):
             # Checking status code
             self._log.info("Response to be verified : ",
                            self.recently_created_s3_account_user)
-            if (not response) or response.status_code != self.const.SUCCESS_STATUS:
+            if (not response) or response.status_code != const.SUCCESS_STATUS:
                 self._log.info("Response is not 200")
                 return False
             response = response.json()
 
             # Checking the response validity of response
-            if self.const.S3_ACCOUNTS not in response:
+            if const.S3_ACCOUNTS not in response:
                 self._log.error("Error !!! No response fetched ...")
                 return False
 
@@ -165,11 +166,11 @@ class RestS3account(Base):
                     len(response["iam_users"])))
                 return len(response["s3_accounts"]) == 0 and expect_no_user
 
-            return all(self.const.ACC_NAME in key and self.const.ACC_EMAIL in key for key in response["s3_accounts"])
+            return all(const.ACC_NAME in key and const.ACC_EMAIL in key for key in response["s3_accounts"])
         except Exception as error:
             self._log.error("{0} {1}: {2}".format(
                 self.exception_error,
-                RestS3account.verify_list_s3account_details.__name__,
+                RestS3user.verify_list_s3account_details.__name__,
                 error))
             raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
 
@@ -203,18 +204,18 @@ class RestS3account(Base):
 
             # Checking presence of access key and secret key
             response = response.json()
-            if self.const.ACCESS_KEY not in response and self.const.SECRET_KEY not in response:
+            if const.ACCESS_KEY not in response and const.SECRET_KEY not in response:
                 self._log.info("secret key and/or access key is not present")
                 return False
 
             # Checking account name
             self._log.info("verifying Newly created account data ...")
-            if response[self.const.ACC_NAME] != self.recently_created_s3_account_user[self.const.ACC_NAME]:
+            if response[const.ACC_NAME] != self.recently_created_s3_account_user[const.ACC_NAME]:
                 self._log.info("Miss match user name ...")
                 return False
 
             # Checking account name
-            if response[self.const.ACC_EMAIL] != self.recently_created_s3_account_user[self.const.ACC_EMAIL]:
+            if response[const.ACC_EMAIL] != self.recently_created_s3_account_user[const.ACC_EMAIL]:
                 self._log.info("Miss match email address ...")
                 return False
 
@@ -222,14 +223,14 @@ class RestS3account(Base):
             self._log.info(
                 "verifying Newly created account data in created list...")
             list_acc = self.list_all_created_s3account().json()["s3_accounts"]
-            expected_result = {self.const.ACC_EMAIL: response[self.const.ACC_EMAIL],
-                               self.const.ACC_NAME: response[self.const.ACC_NAME]}
+            expected_result = {const.ACC_EMAIL: response[const.ACC_EMAIL],
+                               const.ACC_NAME: response[const.ACC_NAME]}
 
             return any(self.verify_json_response(actual_result, expected_result) for actual_result in list_acc)
         except Exception as error:
             self._log.error("{0} {1}: {2}".format(
                 self.exception_error,
-                RestS3account.create_and_verify_s3account.__name__,
+                RestS3user.create_and_verify_s3account.__name__,
                 error))
             raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
 
@@ -277,7 +278,7 @@ class RestS3account(Base):
         except Exception as error:
             self._log.error("{0} {1}: {2}".format(
                 self.exception_error,
-                RestS3account.create_payload_for_new_s3_account.__name__,
+                RestS3user.create_payload_for_new_s3_account.__name__,
                 error))
             raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
 
@@ -306,7 +307,7 @@ class RestS3account(Base):
         except Exception as error:
             self._log.error("{0} {1}: {2}".format(
                 self.exception_error,
-                RestS3account.edit_user_payload.__name__,
+                RestS3user.edit_user_payload.__name__,
                 error))
             raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
 
@@ -331,45 +332,45 @@ class RestS3account(Base):
             if user_payload in ("unchanged_access", "only_password"):
                 self._log.info(
                     "verify status code for edit user without changing access")
-                if (not response) or response.status_code != self.const.SUCCESS_STATUS:
+                if (not response) or response.status_code != const.SUCCESS_STATUS:
                     self._log.info("Response is not 200")
                     return False
                 response = response.json()
                 # For edit user without changing access secret key and access key should not be visible
-                return (response[self.const.ACC_NAME] == account_name) and (
-                    self.const.ACCESS_KEY not in response) and (
-                    self.const.SECRET_KEY not in response)
+                return (response[const.ACC_NAME] == account_name) and (
+                    const.ACCESS_KEY not in response) and (
+                    const.SECRET_KEY not in response)
 
             # Handling specific scenarios
             if user_payload != "valid":
                 self._log.info(
                     "verify status code for user {}".format(user_payload))
-                return (not response) and response.status_code == self.const.BAD_REQUEST
+                return (not response) and response.status_code == const.BAD_REQUEST
 
             # Checking status code
             self._log.info("Response to be verified : ",
                            self.recently_created_s3_account_user)
-            if (not response) or response.status_code != self.const.SUCCESS_STATUS:
+            if (not response) or response.status_code != const.SUCCESS_STATUS:
                 self._log.info("Response is not 200")
                 return False
 
             # Checking presence of access key and secret key
             response = response.json()
-            if self.const.ACCESS_KEY not in response and self.const.SECRET_KEY not in response:
+            if const.ACCESS_KEY not in response and const.SECRET_KEY not in response:
                 self._log.info("secret key and/or access key is not present")
                 return False
 
             # Checking account name
             self._log.info("verifying Newly created account data ...")
-            if self.const.ACC_NAME not in response:
+            if const.ACC_NAME not in response:
                 self._log.info("username key is not present ...")
                 return False
 
-            return response[self.const.ACC_NAME] == account_name
+            return response[const.ACC_NAME] == account_name
         except Exception as error:
             self._log.error("{0} {1}: {2}".format(
                 self.exception_error,
-                RestS3account.edit_and_verify_s3_account_user.__name__,
+                RestS3user.edit_and_verify_s3_account_user.__name__,
                 error))
             raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
 
@@ -392,15 +393,15 @@ class RestS3account(Base):
 
             # Checking status code
             self._log.info("Response to be verified for user: ", account_name)
-            if (not response) or response.status_code != self.const.SUCCESS_STATUS:
+            if (not response) or response.status_code != const.SUCCESS_STATUS:
                 self._log.info("Response is not 200")
                 return False
 
-            return response.json()["message"] == self.const.DELETE_SUCCESS_MSG
+            return response.json()["message"] == const.DELETE_SUCCESS_MSG
         except Exception as error:
             self._log.error("{0} {1}: {2}".format(
                 self.exception_error,
-                RestS3account.delete_and_verify_s3_account_user.__name__,
+                RestS3user.delete_and_verify_s3_account_user.__name__,
                 error))
             raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
 
@@ -434,7 +435,7 @@ class RestS3account(Base):
         except BaseException as error:
             self._log.error("{0} {1}: {2}".format(
                 self.exception_error,
-                RestS3account.edit_s3_account_user_invalid_password.__name__,
+                RestS3user.edit_s3_account_user_invalid_password.__name__,
                 error))
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR, error.args[0])
