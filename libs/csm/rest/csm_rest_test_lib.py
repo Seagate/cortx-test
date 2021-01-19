@@ -62,7 +62,7 @@ class RestTestLib:
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR, error.args[0])
 
-    def invalid_rest_login(self, username, password,
+    def custom_rest_login(self, username, password,
                            username_key="username", password_key="password"):
         """
         This function tests the invalid login scenarios
@@ -88,7 +88,7 @@ class RestTestLib:
         except BaseException as error:
             self._log.error("{0} {1}: {2}".format(
                 self.exception_error,
-                RestTestLib.invalid_rest_login.__name__,
+                RestTestLib.custom_rest_login.__name__,
                 error))
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR, error.args[0])
