@@ -1,3 +1,23 @@
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
+# -*- coding: utf-8 -*-
+# !/usr/bin/python
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter, inch
 from reportlab.lib.styles import getSampleStyleSheet
@@ -93,7 +113,7 @@ def build_defect_table(data):
     stylesheet = getSampleStyleSheet()
 
     # Set wrap text style for 5th column (Bug Description) in table.
-    for row in data[2:]:   # Do not apply for first two header rows
+    for row in data[2:]:  # Do not apply for first two header rows
         if len(row) >= 5:
             row[5] = Paragraph(row[5], stylesheet['BodyText'])
 
@@ -115,13 +135,12 @@ def build_defect_table(data):
 
 
 def main():
-    doc = SimpleDocTemplate("Engg_Report.pdf", pagesize=letter, leftMargin=0.5 * inch,
-                            rightMargin=0.5 * inch, topMargin=0.5 * inch, bottomMargin=0.5 * inch)
-
     data = common.get_data_from_csv('engg_report.csv')
 
     main_table_data = [data[i] for i in range(MAIN_TABLE_START, MAIN_TABLE_END)]
     main_table = common.build_main_table(main_table_data)
+
+    build = main_table_data[2][1]
 
     reported_bugs_table_data = [
         data[i] for i in range(REPORTED_BUGS_TABLE_START, REPORTED_BUGS_TABLE_END)]
@@ -156,6 +175,9 @@ def main():
                 multi_bucket_perf_stats, PageBreak(), metadata_latencies_table, Spacer(15, 15),
                 timing_summary_table, Paragraph("<em>NA signifies the data is Not Available.</em>"),
                 Spacer(15, 15), defect_table]
+
+    doc = SimpleDocTemplate(f"Engg_Report_{build}.pdf", pagesize=letter, leftMargin=0.5 * inch,
+                            rightMargin=0.5 * inch, topMargin=0.5 * inch, bottomMargin=0.5 * inch)
     doc.build(elements)
 
 

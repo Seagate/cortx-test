@@ -1,3 +1,23 @@
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
+# -*- coding: utf-8 -*-
+# !/usr/bin/python
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter, inch
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Spacer, Paragraph, PageBreak
@@ -49,13 +69,12 @@ def build_bucket_perf_stats_table(data):
 
 
 def main():
-    doc = SimpleDocTemplate("Exec_Report.pdf", pagesize=letter, leftMargin=0.5 * inch,
-                            rightMargin=0.5 * inch, topMargin=0.5 * inch, bottomMargin=0.5 * inch)
-
     data = common.get_data_from_csv('exec_report.csv')
 
     main_table_data = [data[i] for i in range(MAIN_TABLE_START, MAIN_TABLE_END)]
     main_table = common.build_main_table(main_table_data)
+
+    build = main_table_data[2][1]
 
     reported_bugs_table_data = [
         data[i] for i in range(REPORTED_BUGS_TABLE_START, REPORTED_BUGS_TABLE_END)]
@@ -82,6 +101,9 @@ def main():
                 feature_breakdown_table, Spacer(15, 15), code_maturity_table, Spacer(15, 15),
                 bucket_perf_stats, PageBreak(), timing_summary_table,
                 Paragraph("<em>NA signifies the data is Not Available.</em>")]
+
+    doc = SimpleDocTemplate(f"Exec_Report_{build}.pdf", pagesize=letter, leftMargin=0.5 * inch,
+                            rightMargin=0.5 * inch, topMargin=0.5 * inch, bottomMargin=0.5 * inch)
     doc.build(elements)
 
 
