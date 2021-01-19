@@ -355,8 +355,16 @@ def get_file_checksum(filename: str):
         return False, error
 
 
-def create_file(filename: str, count: int):
-    cmd = commands.CREATE_FILE.format(filename, count)
+def create_file(fpath: str, count: int, dev="/dev/zero", bs="1M"):
+    """
+    Create file using dd command.
+    :param fpath: File path.
+    :param count: size of the file in MB.
+    :param dev: Input file used.
+    :param bs: block size.
+    :return:
+    """
+    cmd = commands.CREATE_FILE.format(dev, fpath, bs, count)
     log.debug(cmd)
     result = run_local_cmd(cmd)
     log.debug("output = {}".format(result))
