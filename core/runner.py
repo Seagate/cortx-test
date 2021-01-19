@@ -1,4 +1,42 @@
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
+# -*- coding: utf-8 -*-
+# !/usr/bin/python
+import os
 import json
+import threading
+import getpass
+from collections import deque
+from typing import Any
+
+
+def get_jira_credential() :
+    jira_id = ''
+    jira_pwd = ''
+    try :
+        jira_id = os.environ['JIRA_ID']
+        jira_pwd = os.environ['JIRA_PASSWORD']
+    except KeyError :
+        print("JIRA credentials not found in environment")
+        jira_id = input("JIRA username: ")
+        jira_pwd = getpass.getpass("JIRA password: ")
+    return jira_id, jira_pwd
 
 
 def parse_json(json_file) :
@@ -30,3 +68,53 @@ def get_cmd_line(cmd, run_using, html_report, log_cli_level) :
     log_cli_level_str = '--log-cli-level={}'.format(log_cli_level)
     cmd_line = ['pytest', log_cli_level_str, result_html_file, cmd]
     return cmd_line
+
+
+class LRUCache:
+    """
+    Inmemory cache for storing test id and test node information
+    """
+    def __init__(self, size: int) -> None:
+        self.maxsize = size
+        self.fifo = deque()
+        self.table = dict()
+        self._lock = threading.Lock()
+
+    def store(self, key: str, value: str) -> None:
+        self._lock.acquire()
+        if key not in self.table:
+            self.fifo.append(key)
+        self.table[key] = value
+
+        if len(self.fifo) > self.maxsize:
+            del_key = self.fifo.popleft()
+            try:
+                del self.table[del_key]
+            except KeyError as ke:
+                pass
+        self._lock.release()
+
+    def lookup(self, key: str) -> str:
+        self._lock.acquire()
+        try:
+            val = self.table[key]
+        finally:
+            self._lock.release()
+        return val
+
+    def delete(self, key: str) -> None:
+        """
+        Removes the table entry. The fifo list entry is removed whenever we
+        cache is full.
+        """
+        self._lock.acquire()
+        try:
+            del self.table[key]
+        except KeyError as ke:
+            pass
+        try:
+            self.fifo.remove(key)
+        except ValueError as ve:
+            pass
+        finally:
+            self._lock.release()
