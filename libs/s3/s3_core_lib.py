@@ -38,8 +38,15 @@ class S3Lib:
     Class initialising s3 connection and including methods for bucket and object operations.
     """
 
-    def __init__(self, access_key: str, secret_key: str, endpoint_url: str,
-                 s3_cert_path: str, region: str, aws_session_token: str = None, debug: bool = False) -> None:
+    def __init__(self,
+                 access_key: str,
+                 secret_key: str,
+                 endpoint_url: str,
+                 s3_cert_path: str,
+                 region: str,
+                 aws_session_token: str = None,
+                 debug: bool = False
+                 ) -> None:
         """
         This method initializes members of S3Lib.
         :param access_key: access key.
@@ -96,8 +103,13 @@ class S3Lib:
 
         return response
 
-    def put_object(self, bucket_name: str, object_name: str, file_path: str,
-                   m_key: str = None, m_value: str = None):
+    def put_object(self,
+                   bucket_name: str,
+                   object_name: str,
+                   file_path: str,
+                   m_key: str = None,
+                   m_value: str = None
+                   ) -> dict:
         """
         Putting Object to the Bucket (mainly small file)
         :param bucket_name: Name of the bucket
@@ -123,11 +135,11 @@ class S3Lib:
 
         return response
 
-    def object_upload(
-            self,
-            bucket_name: str,
-            object_name: str,
-            file_path: str) -> str:
+    def object_upload(self,
+                      bucket_name: str,
+                      object_name: str,
+                      file_path: str
+                      ) -> str:
         """
         Uploading Object to the Bucket.
         :param bucket_name: Name of the bucket.
@@ -224,11 +236,11 @@ class S3Lib:
 
         return response
 
-    def object_download(
-            self,
-            bucket_name: str,
-            obj_name: str,
-            file_path: str) -> str:
+    def object_download(self,
+                        bucket_name: str,
+                        obj_name: str,
+                        file_path: str
+                        ) -> str:
         """
         Downloading Object of the required Bucket.
         :param bucket_name: Name of the bucket.
@@ -273,7 +285,7 @@ class S3Lib:
 
         return response
 
-    def get_object(self, bucket: str, key: str, ranges: str) -> dict:
+    def get_object(self, bucket: str, key: str, ranges: str = None) -> dict:
         """
         Getting byte range of the object.
         :param bucket: Name of the bucket.
@@ -286,12 +298,12 @@ class S3Lib:
 
         return response
 
-    def put_object_with_storage_class(
-            self,
-            bucket_name: str,
-            object_name: str,
-            file_path: str,
-            storage_class: str) -> dict:
+    def put_object_with_storage_class(self,
+                                      bucket_name: str,
+                                      object_name: str,
+                                      file_path: str,
+                                      storage_class: str
+                                      ) -> dict:
         """
         Adds an object to a bucket with specified storage class.
         :param bucket_name: Bucket name to which the PUT operation was initiated.
@@ -318,12 +330,12 @@ class Multipart(S3Lib):
     Class containing methods to implement multipart functionality
     """
 
-    def create_multipart_upload(
-            self,
-            bucket_name: str,
-            obj_name: str,
-            m_key: str = None,
-            m_value: str = None) -> dict:
+    def create_multipart_upload(self,
+                                bucket_name: str,
+                                obj_name: str,
+                                m_key: str = None,
+                                m_value: str = None
+                                ) -> dict:
         """
         Request to initiate a multipart upload.
         :param bucket_name: Name of the bucket.
@@ -342,13 +354,13 @@ class Multipart(S3Lib):
 
         return response
 
-    def upload_part(
-            self,
-            body: str,
-            bucket_name: str,
-            object_name: str,
-            upload_id: int,
-            part_number: int) -> dict:
+    def upload_part(self,
+                    body: str,
+                    bucket_name: str,
+                    object_name: str,
+                    upload_id: int,
+                    part_number: int
+                    ) -> dict:
         """
         Upload parts of a specific multipart upload.
         :param body: content of the object.
@@ -422,7 +434,7 @@ class Multipart(S3Lib):
 
         return response
 
-    def get_object(self, bucket: str, key: str, ranges: str) -> dict:
+    def get_object(self, bucket: str, key: str, ranges: str = None) -> dict:
         """
         Getting byte range of the object.
         :param bucket: Name of the bucket.
@@ -515,13 +527,13 @@ class Tagging(S3Lib):
 
         return response
 
-    def put_object_with_tagging(
-            self,
-            bucket_name: str,
-            object_name: str,
-            file_path: str,
-            tag: str = None,
-            meta: dict = None) -> dict:
+    def put_object_with_tagging(self,
+                                bucket_name: str,
+                                object_name: str,
+                                file_path: str,
+                                tag: str = None,
+                                meta: dict = None
+                                ) -> dict:
         """
         Putting Object to the Bucket (mainly small file) with tagging and metadata.
         :param bucket_name: Name of the bucket.
@@ -582,17 +594,17 @@ class Acl(S3Lib):
         response = self.s3_client.put_object_acl(Bucket=bucket_name, Key=object_name, AccessControlPolicy=acp)
         return response
 
-    def put_object_canned_acl(
-            self,
-            bucket_name: str,
-            key: str,
-            acl: str = None,
-            access_control_policy: dict = None,
-            grant_full_control: str = None,
-            grant_read: str = None,
-            grant_read_acp: str = None,
-            grant_write: str = None,
-            grant_write_acp: str = None) -> dict:
+    def put_object_canned_acl(self,
+                              bucket_name: str,
+                              key: str,
+                              acl: str = None,
+                              access_control_policy: dict = None,
+                              grant_full_control: str = None,
+                              grant_read: str = None,
+                              grant_read_acp: str = None,
+                              grant_write: str = None,
+                              grant_write_acp: str = None
+                              ) -> dict:
         """
         To set the access control list (ACL) permissions for an object that already exists in a bucket.
         :param bucket_name: Name of the bucket.
@@ -662,13 +674,13 @@ class Acl(S3Lib):
         logger.debug(response)
         return response
 
-    def put_object_with_acl2(
-            self,
-            bucket_name: str,
-            key: str,
-            file_path: str,
-            grant_full_control: str,
-            grant_read: str) -> dict:
+    def put_object_with_acl2(self,
+                             bucket_name: str,
+                             key: str,
+                             file_path: str,
+                             grant_full_control: str,
+                             grant_read: str
+                             ) -> dict:
         """
         To set both grant_full_control, grant_read acl while adding an object to a bucket.
         :param bucket_name: Name of the bucket.
@@ -686,16 +698,16 @@ class Acl(S3Lib):
             GrantRead=grant_read)
         return response
 
-    def put_object_with_acl(
-            self,
-            bucket_name: str,
-            key: str,
-            file_path: str,
-            acl: str = None,
-            grant_full_control: str = None,
-            grant_read: str = None,
-            grant_read_acp: str = None,
-            grant_write_acp: str = None) -> dict:
+    def put_object_with_acl(self,
+                            bucket_name: str,
+                            key: str,
+                            file_path: str,
+                            acl: str = None,
+                            grant_full_control: str = None,
+                            grant_read: str = None,
+                            grant_read_acp: str = None,
+                            grant_write_acp: str = None
+                            ) -> dict:
         """
         To set acl while adding an object to a bucket.
         :param bucket_name: Name of the bucket.
@@ -768,15 +780,15 @@ class Acl(S3Lib):
 
         return response
 
-    def create_bucket_with_acl(
-            self,
-            bucket_name: str,
-            acl: str = None,
-            grant_full_control: str = None,
-            grant_read: str = None,
-            grant_read_acp: str = None,
-            grant_write: str = None,
-            grant_write_acp: str = None) -> dict:
+    def create_bucket_with_acl(self,
+                               bucket_name: str,
+                               acl: str = None,
+                               grant_full_control: str = None,
+                               grant_read: str = None,
+                               grant_read_acp: str = None,
+                               grant_write: str = None,
+                               grant_write_acp: str = None
+                               ) -> dict:
         """
         Create bucket with given acl and grant permissions.
         :param bucket_name: Name of the bucket.
@@ -823,16 +835,16 @@ class Acl(S3Lib):
 
         return response
 
-    def put_bucket_acl(
-            self,
-            bucket_name: str,
-            acl: str = None,
-            access_control_policy: dict = None,
-            grant_full_control: str = None,
-            grant_read: str = None,
-            grant_read_acp: str = None,
-            grant_write: str = None,
-            grant_write_acp: str = None) -> bool:
+    def put_bucket_acl(self,
+                       bucket_name: str,
+                       acl: str = None,
+                       access_control_policy: dict = None,
+                       grant_full_control: str = None,
+                       grant_read: str = None,
+                       grant_read_acp: str = None,
+                       grant_write: str = None,
+                       grant_write_acp: str = None
+                       ) -> bool:
         """
         Sets the permissions on a bucket using access control lists (ACL).
         :param bucket_name: Name of the bucket
