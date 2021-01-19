@@ -10,7 +10,7 @@ Suite Teardown  Close All Browsers
 Force Tags  CSM_GUI  CSM_login
 
 *** Variables ***
-${url}  https://10.230.246.58:28100/#/
+${url}
 ${browser}  chrome
 ${headless}  True
 ${navigate_to_subpage}  False
