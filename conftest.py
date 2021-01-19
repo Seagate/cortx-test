@@ -31,7 +31,7 @@ from _pytest.nodes import Item
 from _pytest.runner import CallInfo
 from testfixtures import LogCapture
 from strip_ansi import strip_ansi
-from commons.utils import yaml_utils
+from commons.utils import config_utils
 from commons import Globals
 from commons import cortxlogging
 from commons.utils import jira_utils
@@ -111,6 +111,7 @@ def cleanup(request):
     :param request:
     :return:
     """
+    """
     root_dir = pathlib.Path(request.node.fspath.strpath)
     log_dir = os.path.join(root_dir, 'log')
     now = str(datetime.datetime.now())
@@ -124,7 +125,7 @@ def cleanup(request):
     else:
         os.makedirs(os.path.join(log_dir,'latest'))
 
-
+"""
 # content of conftest.py
 
 def pytest_addoption(parser) :
@@ -165,6 +166,8 @@ def pytest_collection_modifyitems(config, items):
     :param items:
     :return:
     """
+    pass
+    """
     required_tests = read_test_list_csv() # e.g. ['TEST-17413', 'TEST-17414']
     Globals.TE_TKT = config.option.te_tkt
     selected_items = []
@@ -184,7 +187,7 @@ def pytest_collection_modifyitems(config, items):
         CACHE.store(item.nodeid, test_found)
     items[:] = selected_items
 
-
+"""
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_runtest_makereport(item, call):
     """
@@ -228,6 +231,7 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
     :param report:
     :return:
     """
+    """
     jira_id, jira_pwd = get_jira_credential()
     task = jira_utils.JiraTask(jira_id, jira_pwd)
     test_id = CACHE.lookup(report.nodeid)
@@ -252,7 +256,7 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
         elif report.outcome in ['failed', 'Failed']:
             task.update_test_jira_status(Globals.TE_TKT, test_id, 'FAIL')
 
-
+"""
 
 
 
