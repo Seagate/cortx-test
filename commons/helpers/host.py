@@ -68,7 +68,7 @@ class Host():
             if shell:
                 self.host_obj.close()
             if not isinstance(shell, bool):
-                shell.close()
+                self.shell_obj.close()
             raise error
 
     def connect_pysftp(self, private_key=None, private_key_pass: str = None) -> bool:
