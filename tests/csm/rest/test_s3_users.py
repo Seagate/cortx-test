@@ -26,6 +26,7 @@ class TestS3user():
             "config/csm/test_rest_s3_user.yaml")[1]
         self.log.info("Initiating Rest Client for Alert ...")
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_276(self):
@@ -39,6 +40,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_290(self):
@@ -52,6 +54,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_291(self):
@@ -65,6 +68,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_293(self):
@@ -79,6 +83,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_292(self):
@@ -92,6 +97,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_294(self):
@@ -106,6 +112,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_586(self):
@@ -119,6 +126,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_590(self):
@@ -135,6 +143,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_587(self):
@@ -149,6 +158,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_592(self):
@@ -165,6 +175,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_615(self):
@@ -179,6 +190,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_598(self):
@@ -193,6 +205,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_595(self):
@@ -207,6 +220,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_606(self):
@@ -221,6 +235,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_488(self):
@@ -234,6 +249,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_491(self):
@@ -248,6 +264,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_492(self):
@@ -263,6 +280,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_493(self):
@@ -279,6 +297,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_1914(self):
@@ -311,6 +330,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_1915(self):

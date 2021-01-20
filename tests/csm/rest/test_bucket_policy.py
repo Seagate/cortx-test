@@ -22,6 +22,7 @@ class TestBucketPolicy():
         #if not setup_ready:
         #    setup_ready = self.config.setup_csm_s3
         #assert setup_ready
+    def setup_method(self, method):
         self.s3_buckets = RestS3Bucket()
         self.log.info("Creating bucket for test")
         response = self.s3_buckets.create_s3_bucket(
@@ -33,8 +34,8 @@ class TestBucketPolicy():
         self.created_iam_users = set()
         self.log.info("Ended test setups")
         
-    @classmethod
-    def teardown_class(self):
+
+    def teardown_method(self, method):
         self.log.info("Teardown started")
         self.s3_buckets.delete_s3_bucket(
             bucket_name=self.bucket_name,
@@ -43,7 +44,7 @@ class TestBucketPolicy():
             self.rest_iam_user.delete_iam_user(login_as="s3account_user", user=user)
         self.log.info("Teardown ended")
 
-    @pytest.mark.parallel
+
     @pytest.mark.tags("TEST-17414")
     def test_4215(self):
         """test that s3 user can GET current bucket policy
@@ -56,7 +57,7 @@ class TestBucketPolicy():
         assert self.bucket_policy.get_and_verify_bucket_policy()
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
-    @pytest.mark.parallel
+
     @pytest.mark.tags("TEST-17414")
     def test_4218(self):
         """Test that s3 user can delete bucket policy
@@ -68,6 +69,8 @@ class TestBucketPolicy():
         assert self.bucket_policy.delete_and_verify_bucket_policy()
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
+
+    @pytest.mark.tags("TEST-17414")
     def test_4217(self):
         """Test that error is returned when s3 user send GET request on incorrect/invalid bucket
          :avocado: tags=bucket_policy
@@ -81,7 +84,7 @@ class TestBucketPolicy():
                 invalid_bucket=True)
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
-    @pytest.mark.parallel
+
     @pytest.mark.tags("TEST-17414")
     def test_4212(self):
         """Test that s3 user can add bucket policy
@@ -92,7 +95,7 @@ class TestBucketPolicy():
         assert self.bucket_policy.create_and_verify_bucket_policy()
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
-    @pytest.mark.parallel
+
     @pytest.mark.tags("TEST-17414")
     def test_4213(self):
         """Test that s3 user can update bucket policy
@@ -104,6 +107,8 @@ class TestBucketPolicy():
         assert self.bucket_policy.create_and_verify_bucket_policy(operation='update_policy')
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
+
+    @pytest.mark.tags("TEST-17414")
     def test_4214(self):
         """Test that error is retuned when s3 user sends PUT request with invalid json
          :avocado: tags=bucket_policy
@@ -115,6 +120,8 @@ class TestBucketPolicy():
                                                                            validate_expected_response=False)
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
+
+    @pytest.mark.tags("TEST-17414")
     def test_4219(self):
         """Test that error is returned when s3 user try delete bucket policy which doesn't exist
          :avocado: tags=bucket_policy
@@ -124,6 +131,8 @@ class TestBucketPolicy():
         assert self.bucket_policy.delete_and_verify_bucket_policy(expected_status_code=404)
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
+
+    @pytest.mark.tags("TEST-17414")
     def test_4216(self):
         """Test that error code is returned when s3 user send GET request on bucket when no bucket policy exist on it
          :avocado: tags=bucket_policy
@@ -134,6 +143,8 @@ class TestBucketPolicy():
                                                                         validate_expected_response=False)
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
+
+    @pytest.mark.tags("TEST-17414")
     def test_4220(self):
         """test that s3 user can add bucket policy to allow some bucket related actions to specific user
          :avocado: tags=bucket_policy
@@ -153,6 +164,8 @@ class TestBucketPolicy():
         assert self.bucket_policy.get_and_verify_bucket_policy()
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
+
+    @pytest.mark.tags("TEST-17414")
     def test_4222(self):
         """test that s3 user can add bucket policy to deny all bucket related actions to specific user
          :avocado: tags=bucket_policy
@@ -171,6 +184,8 @@ class TestBucketPolicy():
         assert self.bucket_policy.get_and_verify_bucket_policy()
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
+
+    @pytest.mark.tags("TEST-17414")
     def test_4221(self):
         """test that s3 user can add bucket policy to allow many(more than one) bucket related actions
         to many(more than one) users

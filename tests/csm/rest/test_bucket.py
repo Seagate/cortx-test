@@ -25,6 +25,7 @@ class TestS3Bucket():
         self.csm_conf = config_utils.read_yaml(
             "config/csm/test_rest_s3_bucket.yaml")[1]
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_573(self):
@@ -36,6 +37,7 @@ class TestS3Bucket():
         assert self.s3_buckets.create_and_verify_new_bucket(
             self.s3_buckets.success_response)
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_575(self):
@@ -47,6 +49,7 @@ class TestS3Bucket():
         assert self.s3_buckets.create_and_verify_new_bucket(
             self.s3_buckets.bad_request_response, bucket_type="bucket_name_less_than_three_char")
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_576(self):
@@ -58,6 +61,7 @@ class TestS3Bucket():
         assert self.s3_buckets.create_and_verify_new_bucket(
             self.s3_buckets.bad_request_response, bucket_type="bucket_name_more_than_63_char")
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_577(self):
@@ -77,6 +81,7 @@ class TestS3Bucket():
             start_with_uppercase))
         assert start_with_uppercase and start_with_underscore
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_579(self):
@@ -88,6 +93,7 @@ class TestS3Bucket():
         assert self.s3_buckets.create_and_verify_new_bucket(
             self.s3_buckets.bad_request_response, bucket_type="ip_address")
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_580(self):
@@ -100,6 +106,7 @@ class TestS3Bucket():
             bucket_type="valid", login_as="csm_admin_user")
         assert self.s3_buckets.forbidden == response.status_code
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_581(self):
@@ -111,6 +118,7 @@ class TestS3Bucket():
         assert self.s3_buckets.create_and_verify_new_bucket(
             self.s3_buckets.conflict_response, bucket_type="duplicate")
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_589(self):
@@ -122,6 +130,7 @@ class TestS3Bucket():
         assert self.s3_buckets.create_and_verify_new_bucket(
             self.s3_buckets.bad_request_response, bucket_type="invalid")
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_591(self):
@@ -134,6 +143,7 @@ class TestS3Bucket():
             bucket_type="valid", login_as="s3account_user")
         assert self.s3_buckets.list_and_verify_bucket()
     
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_593(self):
@@ -144,8 +154,9 @@ class TestS3Bucket():
         self.log.info("##### Test started -  {} #####".format(test_case_name))
         self.s3_account.create_s3_account(save_new_user=True)
         self.s3_buckets.list_and_verify_bucket(
-            expect_no_user=True, login_as="new_s3_account_user")
+            expect_no_user=True, login_as="s3account_user")
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_594(self):
@@ -158,6 +169,7 @@ class TestS3Bucket():
             login_as="csm_admin_user")
         assert self.s3_buckets.forbidden == response.status_code
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_596(self):
@@ -169,6 +181,7 @@ class TestS3Bucket():
         assert self.s3_buckets.delete_and_verify_new_bucket(
             self.s3_buckets.success_response)
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_599(self):
@@ -181,6 +194,7 @@ class TestS3Bucket():
             bucket_name="any_name", login_as="csm_admin_user")
         assert self.s3_buckets.forbidden == response.status_code
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_597(self):
@@ -192,6 +206,7 @@ class TestS3Bucket():
         assert self.s3_buckets.delete_and_verify_new_bucket(
             self.s3_buckets.method_not_found, bucket_type="does-not-exist")
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_601(self):
@@ -204,6 +219,7 @@ class TestS3Bucket():
             bucket_name="", login_as="s3account_user")
         assert self.s3_buckets.method_not_found == response.status_code
 
+    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_578(self):
