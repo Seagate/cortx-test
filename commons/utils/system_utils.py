@@ -202,7 +202,7 @@ def _format_dict(el: list) -> dict:
     return resp_dict
 
 
-def format_iam_resp(res_msg: str) -> list:
+def format_iam_resp(res_msg: bytes) -> list:
     """
     #TODO remove later as IAM is not supported
     Function to format IAM response which comes in string format.
