@@ -22,11 +22,15 @@ import os
 import json
 import threading
 import getpass
+import pathlib
+import datetime
 from collections import deque
+from typing import Tuple
+from typing import Optional
 from typing import Any
 
 
-def get_jira_credential() :
+def get_jira_credential() -> Tuple[str, Optional[str]]:
     jira_id = ''
     jira_pwd = ''
     try :
@@ -36,6 +40,8 @@ def get_jira_credential() :
         print("JIRA credentials not found in environment")
         jira_id = input("JIRA username: ")
         jira_pwd = getpass.getpass("JIRA password: ")
+        os.environ['JIRA_ID'] = jira_id
+        os.environ['JIRA_PASSWORD'] = jira_pwd
     return jira_id, jira_pwd
 
 
@@ -68,6 +74,27 @@ def get_cmd_line(cmd, run_using, html_report, log_cli_level) :
     log_cli_level_str = '--log-cli-level={}'.format(log_cli_level)
     cmd_line = ['pytest', log_cli_level_str, result_html_file, cmd]
     return cmd_line
+
+
+def cleanup():
+    """
+    This Fixture renames the the log/latest folder to a name with current timestamp
+    and creates a folder named latest.
+    :return:
+    """
+    cd = os.getcwd()
+    root_dir = pathlib.Path(cd)
+    log_dir = os.path.join(root_dir, 'log')
+    now = str(datetime.datetime.now())
+    now = now.replace(' ', '-')  #now has a space in timestamp
+    now = now.replace(':', '_')
+    if os.path.exists(log_dir) and os.path.isdir(log_dir):
+        latest = os.path.join(log_dir,'latest')
+        if os.path.isdir(latest) and os.path.exists(latest):
+            os.rename(latest, os.path.join(log_dir, now))
+        os.makedirs(latest)
+    else:
+        os.makedirs(os.path.join(log_dir,'latest'))
 
 
 class LRUCache:
