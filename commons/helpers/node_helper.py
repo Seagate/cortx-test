@@ -232,7 +232,7 @@ class Node(Host):
         self.remove_file(mdstat_local_path)
         return output
 
-    def is_string_in_remote_file(self, string: str, file_path: str) -> bool:
+    def is_string_in_remote_file(self, string: str, file_path: str) -> Tuple[bool, Any]:
         """
         find given string in file present on s3 server
         :param string: String to be check

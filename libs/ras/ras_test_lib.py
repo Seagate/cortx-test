@@ -7,9 +7,10 @@ class
 import logging
 import os
 import time
+from decimal import Decimal
 from typing import Tuple, Any, Union
 from libs.ras.ras_core_lib import RASCoreLib
-from commons.utils.config_utils import read_yaml, get_config
+from commons.utils.config_utils import read_yaml, get_config, update_cfg_based_on_separator
 from commons import constants as cmn_cons
 from commons import commands as common_commands
 from commons import errorcodes as err
@@ -54,7 +55,7 @@ class RASTestLib(RASCoreLib):
         :return: Command response along with status(True/False)
         :rtype: bool
         """
-        sspl_pass = kwargs.get("sspl_pass")if kwargs.get("sspl_pass") else self.sspl_pass
+        sspl_pass = kwargs.get("sspl_pass") if kwargs.get("sspl_pass") else self.sspl_pass
         try:
             LOGGER.info(f"Start rabbitmq chanel on node {self.host}")
             cmd_output = super().start_rabbitmq_reader_cmd(sspl_exchange, sspl_key, sspl_pass)
@@ -158,7 +159,7 @@ class RASTestLib(RASCoreLib):
                 self.cp_file(path, backup_path)
                 return True
 
-    def validate_alert_log(self, filename: str, string: str) -> bool:
+    def validate_alert_log(self, filename: str, string: str) -> Tuple[bool, Any]:
         """
         This function validates if the specific alerts are generated
         :param filename: Name of the log file in which alerts are stored
@@ -437,7 +438,7 @@ class RASTestLib(RASCoreLib):
             self.node_utils.remove_file(
                 filename=common_cfg["file"]["screen_log"])
 
-    def generate_cpu_usage_alert(self, delta_cpu_usage: str,) -> bool:
+    def generate_cpu_usage_alert(self, delta_cpu_usage: str, ) -> bool:
         """
         Function to generate cpu usage alert, both positive and negative
         based on the delta_cpu_usage value
@@ -844,3 +845,198 @@ class RASTestLib(RASCoreLib):
             raise CTException(err.RAS_ERROR, error.args[0])
 
         return response
+
+    def get_string_from_file(self) -> Tuple[bool, str]:
+        """
+        Function to get the status string of SELinux
+        :return: (Boolean, status).
+        """
+        try:
+            status = False
+            status_file = RAS_VAL["ras_sspl_alert"]["file"]["selinux_status"]
+            local_path = status_file
+            cmd = common_commands.SELINUX_STATUS_CMD.format(status_file)
+            resp = self.node_utils.execute_cmd(cmd=cmd,
+                                               read_nbytes=BYTES_TO_READ, shell=False)
+            LOGGER.info(resp)
+            resp = self.node_utils.copy_file_to_local(remote_path=status_file,
+                                                      local_path=local_path, shell=False)
+
+            LOGGER.info(resp)
+
+            f = open(local_path, "r")
+            string = ""
+            for line in f:
+                if "SELinux status" in line:
+                    string = line.split()[-1]
+                    if string == "enabled":
+                        status = True
+        except Exception as error:
+            LOGGER.error("{0} {1}: {2}".format(
+                cmn_cons.EXCEPTION_ERROR,
+                RASTestLib.get_string_from_file.__name__, error))
+            raise CTException(err.RAS_ERROR, error.args[0])
+
+        return status, string
+
+    def modify_selinux_file(self) -> Tuple[bool, str]:
+        """
+        Function to modify SELinux config file on remote
+        :return: (Boolean, string)
+        :rtype: tuple
+        """
+        try:
+            common_cfg = RAS_VAL["ras_sspl_alert"]
+            local_path = common_cfg["local_selinux_path"]
+            selinux_key = common_cfg["selinux_key"]
+            old_value = common_cfg["selinux_disabled"]
+            new_value = common_cfg["selinux_enforced"]
+            LOGGER.info("Copy Selinux file for romote to local.")
+            self.node_utils.copy_file_to_local(remote_path=cmn_cons.SELINUX_FILE_PATH,
+                                               local_path=local_path, shell=False)
+            LOGGER.info("Updating config file.")
+            update_cfg_based_on_separator(
+                local_path, selinux_key, old_value, new_value)
+            LOGGER.info("Copy modified Selinux file to remote.")
+            resp = self.node_utils.copy_file_to_remote(local_path=local_path,
+                                                       remote_path=cmn_cons.SELINUX_FILE_PATH,
+                                                       shell=False)
+        except Exception as error:
+            LOGGER.error("{0} {1}: {2}".format(
+                cmn_cons.EXCEPTION_ERROR,
+                RASTestLib.modify_selinux_file.__name__, error))
+            raise CTException(err.RAS_ERROR, error.args[0])
+
+        return resp
+
+    def get_fan_name(self) -> Union[str, None]:
+        """
+        This funtion returns the list of fans connected to infrastructure system
+        :return: fan name
+        """
+        try:
+            return super().get_fan_name()
+        except Exception as error:
+            LOGGER.error("{0} {1}: {2}".format(
+                cmn_cons.EXCEPTION_ERROR,
+                RASTestLib.get_fan_name.__name__, error))
+            raise CTException(err.RAS_ERROR, error.args[0])
+
+    def check_sspl_log(self, exp_string: str, filepath: str) -> bool:
+        """
+        Function to verify the alerts generated on specific events
+        :param str exp_string: Expected string in sspl log file
+        :param str filepath: Path of the file to be parsed
+        """
+        common_cfg = RAS_VAL["ras_sspl_alert"]
+
+        LOGGER.info("Fetching sspl log file")
+        time.sleep(common_cfg["sleep_val"])
+        LOGGER.debug("Reading the sspl log file")
+        read_resp = self.node_utils.read_file(filepath, "/tmp/local_sspl.log")
+        LOGGER.debug(read_resp)
+        LOGGER.info("Checking expected strings are in sspl log file")
+        resp = self.validate_alert_log(filepath, exp_string)
+        LOGGER.debug("{} : {}".format(resp[1], exp_string))
+        LOGGER.info("Fetched sspl disk space alert")
+        LOGGER.info("Removing sspl log file from the Node")
+        self.node_utils.remove_file(filename=filepath)
+
+        return resp[0]
+
+    def verify_alert(
+            self,
+            sspl_file_path: dict,
+            sspl_conf: dict,
+            du_val,
+            alert=True,
+    ) -> bool:
+        """
+        Function to verify the sspl disk space alert, both positive and negative
+        based on the disk usage
+        :param sspl_file_path: sspl config path
+        :param sspl_conf: temp local sspl path
+        :param du_val: disk usage value
+        :param alert: if alert true it checks for expected alert response
+        """
+        LOGGER.info("Step 1: Fetching server disk usage")
+        resp = self.node_utils.disk_usage_python_interpreter_cmd(
+            dir_path=sspl_conf.get("server_du_path"))
+        if not resp[0]:
+            return resp[0]
+        LOGGER.info("Step 1: Fetched server disk usage")
+        original_disk_usage = float(resp[1][0])
+        LOGGER.info("Current disk usage of EES server :{}".format(
+            original_disk_usage))
+
+        # Converting value of disk usage to int to update it in sspl.conf
+        if alert:
+            disk_usage = int(Decimal(original_disk_usage)) - du_val
+        else:
+            disk_usage = float(resp[1][0])
+
+        LOGGER.info(
+            "Step 2: Retrieve original value of disk_usage_threshold")
+
+        self.node_utils.copy_file_to_local(sspl_file_path["sspl_conf_filename"],
+                                           sspl_file_path["sspl_cfg_temp"], shell=False)
+
+        orig_key_val = get_config(sspl_file_path["sspl_cfg_temp"],
+                                  sspl_conf["sspl_section"],
+                                  sspl_conf["sspl_du_key"])
+
+        LOGGER.info("Step 2: Original value of {0} :{1}"
+                    .format(sspl_conf["sspl_du_key"], orig_key_val))
+
+        LOGGER.info("Step 3: Setting value of disk_usage_threshold to value"
+                    " less/greater than EES server disk usage")
+
+        res = self.update_threshold_values(cmn_cons.KV_STORE_DISK_USAGE,
+                                           sspl_conf["sspl_du_key"],
+                                           disk_usage)
+        LOGGER.info("Step 3: Updated server disk_usage_threshold value")
+
+        return res
+
+    def verify_the_logs(self, file_path: str, pattern_lst: str) -> bool:
+        """
+        This function generated warning message on server and download the remote file
+        and verifies the log
+        :param str file_path: remote file path
+        :param list pattern_lst: pattern need to search in file
+        :return: True/False
+        :rtype: Boolean
+        """
+        # Generate Warning alert
+        resp_lst = []
+        common_cfg = RAS_VAL["ras_sspl_alert"]
+        self.verify_alert(
+            common_cfg["file"],
+            common_cfg["sspl_config"],
+            common_cfg["disk_usage_val"])
+        time.sleep(common_cfg["max_wait_time"])
+        file_name = file_path.split("/")[-1]
+        local_file_path = os.path.join(os.getcwd(),
+                                       file_name)
+        time.sleep(10)
+        self.node_utils.restart_pcs_resource(
+            common_cfg["sspl_resource_id"], shell=False)
+        LOGGER.info("Sleeping for 120 seconds after restarting sspl services")
+        time.sleep(common_cfg["sleep_val"])
+        resp = self.node_utils.copy_file_to_local(file_path,
+                                                  local_file_path, shell=False)
+        LOGGER.info("Download remote file resp : {}".format(resp))
+        if not os.path.exists(local_file_path):
+            return False
+        # Read the remote file contents
+        with open(local_file_path, "r") as fp:
+            for line in fp:
+                if any(x in line for x in pattern_lst):
+                    resp_lst.append(True)
+                else:
+                    resp_lst.append(False)
+        LOGGER.info("Removing sspl log file from the Node")
+        self.node_utils.remove_file(filename=file_path)
+        self.node_utils.remove_file(local_file_path)
+
+        return any(resp_lst)

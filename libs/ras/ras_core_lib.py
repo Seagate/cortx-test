@@ -25,7 +25,7 @@ Python library which will perform ras component related and system level operati
 import os
 import logging
 import time
-from typing import Tuple, Any
+from typing import Tuple, Any, Union
 from commons.helpers import node_helper
 from commons import constants as cmn_cons
 from commons import commands as common_commands
@@ -137,6 +137,7 @@ class RASCoreLib:
         This function will check for the disk space alert for sspl.
         :param str sspl_exchange: sspl exchange string
         :param str sspl_key: sspl key string
+        :param str sspl_pass: sspl password for starting rabbitmq
         :return: Command response along with status(True/False)
         :rtype: bool
         """
@@ -368,9 +369,6 @@ class RASCoreLib:
         """
         This function runs mdadm utility commands on host and returns their output
         :param list args: list of args passed to the mdadm command
-        :param str host: Hostname of IP of system to run mdadm commands
-        :param str username: Username of the host
-        :param str password: Password of the host
         :return: output response
         :rtype: str
         """
@@ -418,4 +416,66 @@ class RASCoreLib:
         masters = pcs_status[sspl_section + 1].strip()[11:20]
         slaves = pcs_status[sspl_section + 2].strip()[10:19]
         state = {'masters': masters, 'slaves': slaves}
+
         return state
+
+    def cal_sel_space(self) -> int:
+        """
+        This method returns the percentage use of sel cache size
+        :return: percent_use: total percentage of cache used
+        :rtype int
+        """
+        sel_info_cmd = common_commands.SEL_INFO_CMD
+        res = self.node_utils.execute_cmd(sel_info_cmd)
+        if not res[0]:
+            return 0
+        alert_cache_data = res[1]
+        use_percent_lst = [k for k in alert_cache_data if "Percent Used" in k]
+        percent_use = use_percent_lst[0].split(":")[-1].strip().rstrip("%")
+
+        return int(percent_use)
+
+    def generate_log_err_alert(self, logger_alert_cmd: str) -> Tuple[bool, Any]:
+        """
+        This function generate err log on the using logger command on the
+        rabbitmq channel
+        :param str logger_alert_cmd: command to be executed
+        :return: response in tuple
+        """
+        LOGGER.info("Logger cmd : {}".format(logger_alert_cmd))
+        resp = self.node_utils.execute_cmd(logger_alert_cmd)
+
+        return resp
+
+    def get_fan_name(self) -> Union[str, None]:
+        """
+        This funtion returns the list of fans connected to infrastructure system
+        :return: fan name
+        """
+        ipmi_tool_lst_cmd = common_commands.IPMI_SDR_LIST_CMD
+        componets_lst = self.node_utils.execute_cmd(
+            ipmi_tool_lst_cmd,
+            shell=False)
+        if not componets_lst[0]:
+            return None
+        fan_list = [i for i in componets_lst[1] if "FAN" in i]
+        return fan_list[0].split("|")[0].strip()
+
+    @staticmethod
+    def validate_exec_time(time_str: str) -> Tuple[bool, Any]:
+        """
+        This function verifies the time taken to execute command
+        :param str time_str: time to be validate
+        :return: Response in tuple (boolean and time in string)
+        """
+        time_lst = time_str.split()
+        LOGGER.debug(f"Time taken to restart sspl-ll is {time_lst}")
+        if len(time_lst) < 3:
+
+            return True, time_str
+        elif int(time_lst[0][0]) < 3:
+
+            return True, time_str
+        else:
+
+            return False, time_str
