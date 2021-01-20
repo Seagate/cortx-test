@@ -16,6 +16,7 @@ if sys.version >= '3.7':
     # Use dataclass decorator if running Python 3.7 or newer.
     from dataclasses import dataclass
 
+
     @dataclass
     class CTError:
         code: int
@@ -114,7 +115,6 @@ FILE_TYPE_NOT_SUP = CTError(30004, "Type file not supported")
 PCD_RENDERING_ERROR = CTError(30005, "Error during the rendering process")
 PCD_FILE_ERROR = CTError(30006, "PCD file content error")
 ENC_PCD_COMPONENT_MAPPING_ERROR = CTError(30007, "PCD Components not mapping to Enclosure Components")
-
 
 # RAS
 RAS_ERROR = CTError(6007, "RAS Error")

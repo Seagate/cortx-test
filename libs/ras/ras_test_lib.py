@@ -31,7 +31,7 @@ class RASTestLib(RASCoreLib):
             self,
             host: str = COMMON_CFG["host"],
             username: str = COMMON_CFG["username"],
-            password: str = COMMON_CFG["password"]):
+            password: str = COMMON_CFG["password"]) -> None:
         """
         This method initializes members of RASTestLib and its parent class
         :param str host: host
@@ -235,25 +235,16 @@ class RASTestLib(RASCoreLib):
 
         return True
 
-    def get_sspl_state(self, host: str = None,
-                       username: str = None,
-                       password: str = None) -> Tuple[bool, str]:
+    def get_sspl_state(self) -> Tuple[bool, str]:
         """
         This function reads the sspl text file to get the state of
         sspl on master node
-        :param str host: host
-        :param str username: username
-        :param str password: password
         :return: Boolean and response
         :rtype: (bool, str)
         """
-        hostname = host if host else self.host
-        user = username if username else self.username
-        pwd = password if password else self.pwd
         try:
             LOGGER.info("Getting the SSPL state")
-            response = super().get_sspl_state(host=hostname, username=user,
-                                              password=pwd)
+            response = super().get_sspl_state()
             LOGGER.info(response)
         except Exception as error:
             LOGGER.error("{0} {1}: {2}".format(
@@ -446,40 +437,29 @@ class RASTestLib(RASCoreLib):
             self.node_utils.remove_file(
                 filename=common_cfg["file"]["screen_log"])
 
-    def generate_cpu_usage_alert(
-            self,
-            delta_cpu_usage: str,
-            host: str = None,
-            username: str = None,
-            password: str = None) -> bool:
+    def generate_cpu_usage_alert(self, delta_cpu_usage: str,) -> bool:
         """
         Function to generate cpu usage alert, both positive and negative
         based on the delta_cpu_usage value
-        :param host: host machine ip
-        :param username: host machine username
-        :param password: host machine password
         :param delta_cpu_usage: Value to be added or subtracted from current cpu usage as per requirement
         :return: True/False
         :rtype: bool
         """
         try:
             common_cfg = RAS_VAL["ras_sspl_alert"]
-            hostname = host if host else self.host
-            username = username if username else self.username
-            password = password if password else self.pwd
-            LOGGER.info("Fetching cpu usage from server node {}".format(host))
+            LOGGER.info("Fetching cpu usage from server node {}".format(self.host))
             resp = self.node_utils.get_system_cpu_usage(
-                host=hostname, username=username, password=password)
+                host=self.host, username=self.username, password=self.pwd)
 
             current_cpu_usage = resp[1]
             LOGGER.info(
                 "Current cpu usage of server node {} is {}".format(
-                    host, current_cpu_usage))
+                    self.host, current_cpu_usage))
             new_threshold_cpu_usage = float(
                 "{:.1f}".format(sum([resp[1], delta_cpu_usage])))
             LOGGER.info(
                 "Setting new value of cpu_usage_threshold to {} on node {}".format(
-                    new_threshold_cpu_usage, host))
+                    new_threshold_cpu_usage, self.host))
 
             resp = self.update_threshold_values(
                 cmn_cons.KV_STORE_DISK_USAGE,
@@ -489,12 +469,12 @@ class RASTestLib(RASCoreLib):
             LOGGER.info("Updated server cpu_usage_threshold to {}".format(
                 new_threshold_cpu_usage))
 
-            LOGGER.info("Restarting sspl service on node {}".format(host))
+            LOGGER.info("Restarting sspl service on node {}".format(self.host))
             self.node_utils.restart_s3server_service(
                 common_cfg["service"]["sspl_service"],
-                host=hostname,
-                user=username,
-                pwd=password, shell=False)
+                host=self.host,
+                user=self.username,
+                pwd=self.pwd, shell=False)
             LOGGER.info(
                 "Sleeping for {} seconds after restarting sspl service".format(
                     common_cfg["sleep_val"]))

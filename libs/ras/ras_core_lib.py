@@ -40,7 +40,7 @@ class RASCoreLib:
     A class including functions for ras component related operations.
     """
 
-    def __init__(self, host, username, password):
+    def __init__(self, host: str, username: str, password: str) -> None:
         """
         This method initializes members of RASCoreLib
         :param str host: node hostname
@@ -50,7 +50,6 @@ class RASCoreLib:
         self.host = host
         self.username = username
         self.pwd = password
-        # self.sspl_pass = None  # Need caller fun to get sspl_pass
         self.node_utils = node_helper.Node(
             hostname=self.host, username=self.username, password=self.pwd)
 
@@ -121,7 +120,8 @@ class RASCoreLib:
         :param cmd: command to be executed on screen
         :return: screen response
         """
-        self.install_screen_on_machine()
+        if not self.node_utils.execute_cmd("rpm  -qa | grep screen")[0]:
+            self.install_screen_on_machine()
         time.sleep(5)
         LOGGER.debug(f"RabbitMQ command: {cmd}")
         screen_cmd = common_commands.SCREEN_CMD.format(cmd)
@@ -156,7 +156,7 @@ class RASCoreLib:
             return False
 
         cmd = common_commands.START_RABBITMQ_READER_CMD.format(
-            sspl_exchange, sspl_key, self.sspl_pass)
+            sspl_exchange, sspl_key, sspl_pass)
         LOGGER.debug(f"RabbitMQ command: {cmd}")
         response = self.run_cmd_on_screen(cmd=cmd)
 
@@ -383,13 +383,10 @@ class RASCoreLib:
             shell=False)
         return output
 
-    def get_sspl_state(self, host: str, username: str, password: str) -> Tuple[bool, str]:
+    def get_sspl_state(self) -> Tuple[bool, str]:
         """
         This function reads the sspl text file to get the state of
         sspl on master node
-        :param str host: remote server
-        :param str username: username
-        :param str password: password
         :return: Boolean and response
         :rtype: (bool, str)
         """
@@ -397,9 +394,6 @@ class RASCoreLib:
         response = self.node_utils.execute_cmd(
             cmd=sspl_state_cmd,
             read_nbytes=BYTES_TO_READ,
-            host=host if host else self.host,
-            user_password=password if password else self.pwd,
-            user_name=username if username else self.username,
             shell=False)
         response = response[1].decode("utf-8")
         response = response.strip().split("=")[-1]
