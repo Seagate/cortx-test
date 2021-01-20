@@ -53,6 +53,16 @@ CSM GUI Login
     Log To Console And Report  Waiting for receiving GUI responce...
 
 
+Re-login
+    [Documentation]  Functionlity to Logout and login again
+    [Arguments]  ${user_name}  ${password}  ${page}
+    CSM GUI Logout
+    Sleep  2s
+    Enter Username And Password  ${username}  ${password}
+    Click Sigin Button
+    Sleep  5s
+    Navigate To Page  ${page}
+
 
 
 

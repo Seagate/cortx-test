@@ -94,3 +94,228 @@ TEST-1863
     Click On Add User Button
     Verify Missmatch Password Error
     [Teardown]  Close Browser
+
+TEST-1838
+    [Documentation]  Test that monitor user can't able to delete any user
+    ...  Reference : https://jts.seagate.com/browse/TEST-1838
+    [Tags]  Priority_High
+    [Setup]  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
+    ${new_user_name}=  Generate New User Name
+    ${new_password}=  Generate New Password
+    Navigate To Page  ${page name}
+    #  Checking for manage
+    Create New CSM User  ${new_user_name}  ${new_password}  monitor
+    Click On Confirm Button
+    Verify New User  ${new_user_name}
+    Re-login  ${new_user_name}  ${new_password}  ${page name}
+    Verify No Delete Button Present
+    Re-login  ${username}  ${password}  ${page name}
+    Delete CSM User  ${new_user_name}
+    [Teardown]  Close Browser
+
+TEST-1842
+    [Documentation]  Test that root user must present when user navigate to manage page
+    ...  Reference : https://jts.seagate.com/browse/TEST-1842
+    [Tags]  Priority_High
+    [Setup]  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
+    Navigate To Page  ${page name}
+    Verify New User  ${username}
+    [Teardown]  Close Browser
+
+TEST-1864
+    [Documentation]  Test that an error message should show in case password does not follow proper guideline
+    ...  Reference : https://jts.seagate.com/browse/TEST-1864
+    [Tags]  Priority_High
+    [Setup]  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
+    Navigate To Page  ${page name}
+    Click On Add User Button
+    Verify Only Valid Password Get Added
+    [Teardown]  Close Browser
+
+TEST-7396
+    [Documentation]  Test that Root user should able to change other users password without specifying old_password through csm GUI
+    ...  Reference : https://jts.seagate.com/browse/TEST-7396
+    [Tags]  Priority_High
+    [Setup]
+    ${new_password}=  Generate New Password
+    ${users_type}=  Create List  manage  monitor
+    CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
+    Navigate To Page  ${page name}
+    FOR    ${value}    IN    @{users_type}
+        ${new_user_name}=  Generate New User Name
+        Create New CSM User  ${new_user_name}  ${new_password}  ${value}
+        Log To Console And Report  operation for ${value}
+        Click On Confirm Button
+        Verify New User  ${new_user_name}
+        ${new_password}=  Generate New Password
+        Edit CSM User Password  ${new_user_name}  ${new_password}
+        Re-login  ${new_user_name}  ${new_password}  ${page_name}
+        Validate CSM Login Success  ${new_user_name}
+        Re-login  ${username}  ${password}  ${page_name}
+        Delete CSM User  ${new_user_name}
+    END
+    [Teardown]  Close Browser
+
+TEST-7393
+    [Documentation]  Test that root user should able to modify self password through csm GUI
+    ...  Reference : https://jts.seagate.com/browse/TEST-7393
+    [Tags]  Priority_High
+    [Setup]
+    ${new_password}=  Generate New Password
+    CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
+    Navigate To Page  ${page name}
+    Edit CSM User Password  ${username}  ${new_password}  ${password}
+    Re-login  ${username}  ${new_password}  ${page_name}
+    Edit CSM User Password  ${username}  ${password}  ${new_password}
+    [Teardown]  Close Browser
+
+TEST-5325
+    [Documentation]  Test that user should able to edit after create a new user on the User Settings.
+    ...  Reference : https://jts.seagate.com/browse/TEST-5325
+    [Tags]  Priority_High
+    [Setup]
+    ${new_password}=  Generate New Password
+    CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
+    Navigate To Page  ${page name}
+    ${new_user_name}=  Generate New User Name
+    Create New CSM User  ${new_user_name}  ${new_password}  manage
+    Click On Confirm Button
+    Verify New User  ${new_user_name}
+    ${new_password}=  Generate New Password
+    Edit CSM User Password  ${new_user_name}  ${new_password}
+    Edit CSM User Type  ${new_user_name}  monitor
+    Re-login  ${new_user_name}  ${new_password}  ${page_name}
+    Validate CSM Login Success  ${new_user_name}
+    Re-login  ${username}  ${password}  ${page_name}
+    Delete CSM User  ${new_user_name}
+    [Teardown]  Close Browser
+
+TEST-5323
+    [Documentation]  Test that User should able to delete after create a new user on the User Settings
+    ...  Reference : https://jts.seagate.com/browse/TEST-5323
+    [Tags]  Priority_High
+    [Setup]
+    ${new_password}=  Generate New Password
+    CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
+    Navigate To Page  ${page name}
+    ${new_user_name}=  Generate New User Name
+    Create New CSM User  ${new_user_name}  ${new_password}
+    Click On Confirm Button
+    Verify New User  ${new_user_name}
+    Delete CSM User  ${new_user_name}
+    Verify Deleted User  ${new_user_name}
+    [Teardown]  Close Browser
+
+TEST-1865
+    [Documentation]  Test that user should select roles from manage and monitor on the User Settings
+    ...  Reference : https://jts.seagate.com/browse/TEST-1865
+    [Tags]  Priority_High
+    [Setup]
+    ${new_password}=  Generate New Password
+    ${users_type}=  Create List  manage  monitor
+    CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
+    Navigate To Page  ${page name}
+    FOR    ${value}    IN    @{users_type}
+        Create New CSM User  ${value}  ${new_password}  ${value}
+        Log To Console And Report  operation for ${value}
+        Click On Confirm Button
+        Verify New User  ${value}
+        Delete CSM User  ${value}
+    END
+    [Teardown]  Close Browser
+
+TEST-5327
+    [Documentation]  Test that pagination bar must present on the manage user page
+    ...  Reference : https://jts.seagate.com/browse/TEST-1865
+    [Tags]  Priority_High
+    [Setup]
+    CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
+    Navigate To Page  ${page name}
+    Verify Presence of Pagiantion
+    [Teardown]  Close Browser
+
+TEST-5328
+    [Documentation]  Test that pagination bar must have 5/10/15/All rows per page option
+    ...  Reference : https://jts.seagate.com/browse/TEST-5328
+    [Tags]  Priority_High
+    [Setup]
+    CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
+    Navigate To Page  ${page name}
+    ${fetched_values}=  Read Pagiantion Options
+    ${actual_values}=  Create List  5  10  15  All
+    Lists Should Be Equal  ${fetched_values}  ${actual_values}
+    [Teardown]  Close Browser
+
+TEST-3583
+    [Documentation]  Test that csm user is able to login to CSM UI via manage and monitor user
+    ...  Reference : https://jts.seagate.com/browse/TEST-3583
+    [Tags]  Priority_High
+    [Setup]
+    ${new_password}=  Generate New Password
+    ${users_type}=  Create List  manage  monitor
+    CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
+    Navigate To Page  ${page name}
+    FOR    ${value}    IN    @{users_type}
+        Create New CSM User  ${value}  ${new_password}  ${value}
+        Log To Console And Report  operation for ${value}
+        Click On Confirm Button
+        Verify New User  ${value}
+        Re-login  ${value}  ${new_password}  ${page_name}
+        Validate CSM Login Success  ${value}
+        Re-login  ${username}  ${password}  ${page_name}
+        Delete CSM User  ${value}
+    END
+    [Teardown]  Close Browser
+
+TEST-7406
+    [Documentation]  Test that Non root user cannot change roles through csm GUI
+    ...  Reference : https://jts.seagate.com/browse/TEST-7406
+    [Tags]  Priority_High
+    [Setup]
+    ${new_password}=  Generate New Password
+    ${users_type}=  Create List  manage  monitor
+    CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
+    Navigate To Page  ${page name}
+    FOR    ${value}    IN    @{users_type}
+        Create New CSM User  ${value}  ${new_password}  ${value}
+        Log To Console And Report  operation for ${value}
+        Click On Confirm Button
+        Verify New User  ${value}
+        Re-login  ${value}  ${new_password}  ${page_name}
+        Validate CSM Login Success  ${value}
+        Verify Change User Type Radio Button Disabled  ${value}
+        Re-login  ${username}  ${password}  ${page_name}
+        Delete CSM User  ${value}
+    END
+    [Teardown]  Close Browser
+
+TEST-5186
+    [Documentation]  Test that root user is not getting deleted from the system
+    ...  Reference : https://jts.seagate.com/browse/TEST-5186
+    [Tags]  Priority_High
+    [Setup]
+    CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
+    Navigate To Page  ${page name}
+    Verify Admin User Should Not Contain Delete Icon  ${username}
+    [Teardown]  Close Browser
+
+TEST-5229
+    [Documentation]  Test that csm user should not able to visualize the iam user created
+    ...  Reference : https://jts.seagate.com/browse/TEST-5229
+    [Tags]  Priority_High
+    [Setup]
+    CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
+    Verify IAM User Section Not Present
+    [Teardown]  Close Browser
+
+TEST-6338
+    [Documentation]  TTest that on 'Create Local User' form, role section should never be empty
+    ...  Reference : https://jts.seagate.com/browse/TEST-6338
+    [Tags]  Priority_High
+    [Setup]
+    CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
+    Navigate To Page  ${page name}
+    ${value}=  Fetch Radio Button Value
+    Should Not Be Empty  ${value}
+    Should be equal  ${value}  manage
+    [Teardown]  Close Browser
