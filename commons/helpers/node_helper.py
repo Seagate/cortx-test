@@ -19,18 +19,19 @@
 #
 
 import logging
+import mdstat
 import os
+import posixpath
 import re
 import shutil
-import time
-import posixpath
 import stat
+import time
 from typing import Tuple, List, Union
-import mdstat
 from commons import commands
 from commons.helpers.host import Host
 
 log = logging.getLogger(__name__)
+
 EXCEPTION_MSG = "*ERROR* An exception occurred in {}: {}"
 
 
