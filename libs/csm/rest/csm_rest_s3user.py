@@ -392,7 +392,7 @@ class RestS3user(Base):
                 username=account_name, login_as="new_s3_account_user")
 
             # Checking status code
-            self._log.debug("Response to be verified for user: ", account_name)
+            self._log.debug(f"Response to be verified for user: {account_name}")
             if (not response) or response.status_code != const.SUCCESS_STATUS:
                 self._log.debug("Response is not 200")
                 return False

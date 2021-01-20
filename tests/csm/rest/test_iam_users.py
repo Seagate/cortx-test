@@ -15,6 +15,9 @@ class TestIamUser():
         """
         self.log = logging.getLogger(__name__)
         self.log.info("Initializing test setups")
+        self.csm_conf = config_utils.read_yaml(
+            "config/csm/test_rest_iam_user.yaml")[1]
+        self.log.info("Ended test module setups")
         #self.config = CSMConfigsCheck()
         #setup_ready = self.config.check_predefined_s3account_present()
         #if not setup_ready:
@@ -22,18 +25,18 @@ class TestIamUser():
         #assert(setup_ready)
         self.rest_iam_user = RestIamUser()
         self.created_iam_users = set()
-        self.csm_conf = config_utils.read_yaml(
-            "config/csm/test_rest_iam_user.yaml")[1]
-        self.log.info("Ended test setups")
+        self.log.info("Initiating Rest Client ...")
 
-    def tearDown(self):
+    @classmethod
+    def teardown_class(self):
         self.log.info("Teardown started")
         for user in self.created_iam_users:
             self.rest_iam_user.delete_iam_user(
                 login_as="s3account_user", user=user)
         self.log.info("Teardown ended")
 
-    @pytest.mark.test(test_id=5011, tag='csm')
+    @pytest.mark.csmrest
+    @pytest.mark.tags("TEST-17495")
     def test_1133(self):
         """Test that IAM users are not permitted to login
          :avocado: tags=iam_user
@@ -49,7 +52,8 @@ class TestIamUser():
             self.rest_iam_user.iam_user_login(user=user_name)== status_code["status_code"])
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
-    @pytest.mark.test(test_id=5011, tag='csm')
+    @pytest.mark.csmrest
+    @pytest.mark.tags("TEST-17495")
     def test_1041(self):
         """Test that S3 account should have access to create IAM user from back end
         :avocado: tags=iam_user
@@ -73,7 +77,8 @@ class TestIamUser():
 
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
-    @pytest.mark.test(test_id=5011, tag='csm')
+    @pytest.mark.csmrest
+    @pytest.mark.tags("TEST-17495")
     def test_1022(self):
         """
         Test that IAM user is not able to execute and access the CSM REST APIs.	

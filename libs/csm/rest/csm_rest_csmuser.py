@@ -619,7 +619,7 @@ class RestCsmUser(Base):
             response = self.restapi.rest_call(request_type="post",
                                               endpoint=self.config["rest_login_endpoint"],
                                               data=payload_login, headers=self.config["Login_headers"])
-            self._log.debug("response : ", response)
+            self._log.debug(f"response :  {response}")
             if response.status_code == const.SUCCESS_STATUS:
                 headers.update(
                     {'Authorization': response.headers['Authorization']})
@@ -766,3 +766,4 @@ class RestCsmUser(Base):
                 error))
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR, error.args[0])
+

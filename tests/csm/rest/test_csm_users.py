@@ -21,6 +21,8 @@ class TestCsmUser():
         """ This is method is for test suite set-up """
         self.log = logging.getLogger(__name__)
         self.log.info("Initializing test setups ......")
+        self.csm_conf = config_utils.read_yaml(
+            "config/csm/test_rest_csm_user.yaml")[1]
         #self.config = CSMConfigsCheck()
         #user_already_present = self.config.check_predefined_csm_user_present()
         # if not user_already_present:
@@ -30,12 +32,13 @@ class TestCsmUser():
         # if not s3acc_already_present:
         #    s3acc_already_present = self.config.setup_csm_s3
         # assert(s3acc_already_present)
+    # def setup_method(self, method):
         self.csm_user = RestCsmUser()
         self.s3_accounts = RestS3user()
-        self.log.info("Initiating Rest Client for Alert ...")
-        self.csm_conf = config_utils.read_yaml(
-            "config/csm/test_rest_csm_user.yaml")[1]
+        self.log.info("Initiating Rest Client ...")
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_4947(self):
         """Initiating the test case to verify List CSM user.
@@ -48,6 +51,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_4948(self):
         """Initiating the test case to verify List CSM user with offset=<int>.
@@ -60,6 +65,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_4949(self):
         """Initiating the test case to verify List CSM user with offset=<string>.
@@ -72,6 +79,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_4950(self):
         """Initiating the test case to verify List CSM user with offset=<empty>.
@@ -84,6 +93,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_4951(self):
         """Initiating the test case to verify List CSM user with limit=<int>.
@@ -96,6 +107,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_4952(self):
         """Initiating the test case to verify List CSM user with limit=<int>.
@@ -108,6 +121,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    # @pytest.mark.skip(reason="Failing when running in parallel")
+    @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_4954(self):
         """Initiating the test case to create csm users and List CSM user with limit > created csm users.
@@ -119,6 +134,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_4955(self):
         """Initiating the test case to verify List CSM user with limit=<int>.
@@ -132,6 +149,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_5001(self):
         """
@@ -154,6 +173,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_5002(self):
         """
@@ -173,7 +194,9 @@ class TestCsmUser():
 
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
-    
+
+    # @pytest.mark.skip(reason="Test failing when running in parallel")
+    @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_5003(self):
         """
@@ -194,6 +217,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_5011(self):
         """Initiating the test case for the verifying CSM user creating.
@@ -206,6 +231,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_5012(self):
         """Initiating the test case for the verifying response for invalid CSM user creating.
@@ -218,6 +245,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_5013(self):
         """Initiating the test case for the verifying response with missing mandatory argument for CSM user creating.
@@ -230,6 +259,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_5014(self):
         """Initiating the test case for the verifying response unauthorized user trying to create csm user.
@@ -242,6 +273,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_5015(self):
         """Initiating the test case for the verifying response for duplicate CSM user creation.
@@ -254,6 +287,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    # @pytest.mark.skip(reason="Failing when running in parallel")
+    @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_5000(self):
         """
@@ -275,6 +310,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_5004(self):
         """
@@ -294,6 +331,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_5006(self):
         """Initiating the test case to verify list CSM user with valid offset,limit,sort_by and sort_dir parameters provided.
@@ -305,6 +344,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_5008(self):
         """Initiating the test case to verify that 403 is returned by csm list users api for unauthorised access
@@ -319,6 +360,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_5005(self):
         """
@@ -343,6 +386,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_5009(self):
         """
@@ -394,7 +439,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
-    @pytest.mark.skip(reason="Skipping the test as it changes admin password")
+    # @pytest.mark.skip(reason="Skipping the test as it changes admin password")
+    @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_5016(self):
         """
@@ -410,7 +456,8 @@ class TestCsmUser():
             "Test Purpose 1: Verifying that csm root user can modify role and password of csm manage role user")
 
         user = self.csm_conf["test_5016"]["user"]
-        self.log.info("Test Purpose 1: Step 1: Creating csm manage user")
+        self.log.info(
+            f"Test Purpose 1: Step 1: Creating csm manage user : {user}")
         response = self.csm_user.create_csm_user(
             user_type=user[0], user_role=user[1])
         self.log.info(
@@ -485,6 +532,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_1228(self):
         """
@@ -532,6 +581,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_1237(self):
         """
@@ -573,6 +624,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_1235(self):
         """
@@ -612,7 +665,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
-    @pytest.mark.skip(reason="Skipping the test as it changes admin password")
+    # @pytest.mark.skip(reason="Skipping the test as it changes admin password")
+    @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_7421(self):
         """
@@ -670,7 +724,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
-    @pytest.mark.skip(reason="Skipping the test as it changes admin password")
+    # @pytest.mark.skip(reason="Skipping the test as it changes admin password")
+    @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_7411(self):
         """
@@ -726,7 +781,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
-    @pytest.mark.skip(reason="Skipping the test as it changes admin password")
+    # @pytest.mark.skip(reason="Skipping the test as it changes admin password")
+    @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_1229(self):
         """
@@ -867,7 +923,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
-    @pytest.mark.skip(reason="Skipping the test as it changes admin password")
+    # @pytest.mark.skip(reason="Skipping the test as it changes admin password")
+    @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_5019(self):
         """
@@ -1048,7 +1105,8 @@ class TestCsmUser():
         self.log.info("Test Purpose 4: Verified that the password {} was updated successfully for csm user {}".format(
             user[3], username))
 
-
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_7422(self):
         """
@@ -1112,7 +1170,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
-
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_7412(self):
         """
@@ -1192,6 +1251,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_7408(self):
         """
@@ -1277,6 +1338,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_6220(self):
         """
@@ -1375,6 +1438,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_5021(self):
         """
@@ -1423,6 +1488,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_5023(self):
         """
@@ -1438,9 +1505,9 @@ class TestCsmUser():
         #self.log.info("Checking if s3 account is present")
         #self.config = CSMConfigsCheck()
         #user_already_present = self.config.check_predefined_s3account_present()
-        #if not user_already_present:
+        # if not user_already_present:
         #    user_already_present = self.config.setup_csm_s3
-        #assert(user_already_present)
+        # assert(user_already_present)
 
         self.log.info(
             "Sending request to delete csm user with s3 authentication")
@@ -1459,6 +1526,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_5020(self):
         """
@@ -1496,6 +1565,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_5017(self):
         """
@@ -1536,6 +1607,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_5010(self):
         """
@@ -1576,6 +1649,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_5018(self):
         """
@@ -1655,7 +1730,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
-    @pytest.mark.skip(reason="Skipping the test as it changes admin password")
+    # @pytest.mark.skip(reason="Skipping the test as it changes admin password")
+    @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_1173(self):
         """
@@ -1858,6 +1934,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_1227(self):
         """
@@ -1944,6 +2022,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_1040(self):
         """
@@ -1964,6 +2044,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_1172(self):
         """
@@ -2002,6 +2084,8 @@ class TestCsmUser():
 
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_7362(self):
         """
@@ -2073,6 +2157,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_7361(self):
         """
@@ -2145,6 +2231,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
     @pytest.mark.tags("TEST-17495")
     def test_7360(self):
         """
@@ -2260,7 +2348,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
-    @pytest.mark.skip(reason="Skipping the test as it changes admin password")
+    # @pytest.mark.skip(reason="Skipping the test as it changes admin password")
+    @pytest.mark.csmrest
     @pytest.mark.tags("TEST-17495")
     def test_7420(self):
         """

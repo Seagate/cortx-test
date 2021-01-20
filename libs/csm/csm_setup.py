@@ -1,13 +1,13 @@
 """This Module will check the configurations of CSM"""
 import logging
-from eos_test.csm.rest.csm_rest_s3account import RestS3account
-from eos_test.csm.rest.csm_rest_csmuser import RestCsmUser
+from libs.csm.rest.csm_rest_s3user import RestS3user
+from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 
 class CSMConfigsCheck:
     """This class will check the configurations of CSM"""
     def __init__(self):
         self._log = logging.getLogger(__name__)
-        self._s3account = RestS3account()
+        self._s3account = RestS3user()
         self._csm_user = RestCsmUser()
 
     @property
