@@ -43,7 +43,7 @@ class RestTestLib:
             # Building response
             endpoint = self.config["rest_login_endpoint"]
             headers = self.config["Login_headers"]
-            self._log.info(f"endpoint {endpoint}")
+            self._log.debug(f"endpoint {endpoint}")
             # payload = self.config[login_as] # showing some error in Cortx-1.0.0-rc3
             payload = Template(const.LOGIN_PAYLOAD).substitute(
                 **self.config[login_as])
@@ -51,7 +51,7 @@ class RestTestLib:
             # Fetch and verify response
             response = self.restapi.rest_call(
                 "post", endpoint, headers=headers, data=payload, save_json=False)
-            self._log.info(f"response : {response}")
+            self._log.debug(f"response : {response}")
 
             return response
         except BaseException as error:
@@ -76,14 +76,14 @@ class RestTestLib:
             # Building response
             endpoint = self.config["rest_login_endpoint"]
             headers = self.config["Login_headers"]
-            self._log.info(f"endpoint {endpoint}")
+            self._log.debug(f"endpoint {endpoint}")
             payload = "{{\"{}\":\"{}\",\"{}\":\"{}\"}}".format(
                 username_key, username, password_key, password)
 
             # Fetch and verify response
             response = self.restapi.rest_call(
                 "post", endpoint, headers=headers, data=payload, save_json=False)
-            self._log.info(f"response : {response}")
+            self._log.debug(f"response : {response}")
 
         except BaseException as error:
             self._log.error("{0} {1}: {2}".format(
@@ -110,7 +110,7 @@ class RestTestLib:
             :return: function executables
             """
             self.headers = {}  # Initiate headers
-            self._log.info(
+            self._log.debug(
                 "user is getting authorized for REST operations ...")
 
             # Checking the type of login user
@@ -122,7 +122,7 @@ class RestTestLib:
                 "authorized") if "authorized" in kwargs else True
 
             # Fetching the login response
-            self._log.info("user will be logged in as {}".format(login_type))
+            self._log.debug("user will be logged in as {}".format(login_type))
             response = self.rest_login(login_as=login_type)
 
             if authorized and response.status_code == const.SUCCESS_STATUS:
@@ -166,12 +166,12 @@ class RestTestLib:
         try:
             # Matching exact values
             if match_exact:
-                self._log.info("Matching exact values")
+                self._log.debug("Matching exact values")
                 return actual_result == expect_result
 
             # Check for common keys between actual value and expect value
             if actual_result.keys().isdisjoint(expect_result):
-                self._log.info(
+                self._log.debug(
                     "No common keys between actual value and expect value")
                 return False
 

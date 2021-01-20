@@ -173,7 +173,7 @@ class TestCsmUser():
 
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
-
+    
     @pytest.mark.tags("TEST-17495")
     def test_5003(self):
         """
@@ -394,6 +394,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.skip(reason="Skipping the test as it changes admin password")
     @pytest.mark.tags("TEST-17495")
     def test_5016(self):
         """
@@ -611,6 +612,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.skip(reason="Skipping the test as it changes admin password")
     @pytest.mark.tags("TEST-17495")
     def test_7421(self):
         """
@@ -668,6 +670,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.skip(reason="Skipping the test as it changes admin password")
     @pytest.mark.tags("TEST-17495")
     def test_7411(self):
         """
@@ -723,6 +726,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.skip(reason="Skipping the test as it changes admin password")
     @pytest.mark.tags("TEST-17495")
     def test_1229(self):
         """
@@ -863,7 +867,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
-
+    @pytest.mark.skip(reason="Skipping the test as it changes admin password")
     @pytest.mark.tags("TEST-17495")
     def test_5019(self):
         """
@@ -1651,6 +1655,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.skip(reason="Skipping the test as it changes admin password")
     @pytest.mark.tags("TEST-17495")
     def test_1173(self):
         """
@@ -2255,6 +2260,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
 
+    @pytest.mark.skip(reason="Skipping the test as it changes admin password")
     @pytest.mark.tags("TEST-17495")
     def test_7420(self):
         """

@@ -34,13 +34,13 @@ class RestS3Bucket(Base):
         """
         try:
             # Building request url
-            self._log.info("Create s3 bucket ...")
+            self._log.debug("Create s3 bucket ...")
             endpoint = self.config["s3_bucket_endpoint"]
-            self._log.info("Endpoint for s3 accounts is {}". format(endpoint))
+            self._log.debug("Endpoint for s3 accounts is {}". format(endpoint))
 
             # Collecting required payload to be added for request
             user_data = self._bucket_payload[bucket_type]
-            self._log.info("Payload for s3 bucket is {}".format(user_data))
+            self._log.debug("Payload for s3 bucket is {}".format(user_data))
             self.headers.update(self.config["Login_headers"])
             self.recently_created_s3_bucket = user_data
 
@@ -68,9 +68,9 @@ class RestS3Bucket(Base):
         """
         try:
             # Building request url
-            self._log.info("Try to fetch all s3 buckets ...")
+            self._log.debug("Try to fetch all s3 buckets ...")
             endpoint = self.config["s3_bucket_endpoint"]
-            self._log.info("Endpoint for s3 bucket is {}".format(endpoint))
+            self._log.debug("Endpoint for s3 bucket is {}".format(endpoint))
 
             # Fetching api response
             response = self.restapi.rest_call(
@@ -95,10 +95,10 @@ class RestS3Bucket(Base):
         """
         try:
             # Building request url
-            self._log.info("Try to delete s3 bucket : {}".format(bucket_name))
+            self._log.debug("Try to delete s3 bucket : {}".format(bucket_name))
             endpoint = "{}/{}".format(
                 self.config["s3_bucket_endpoint"], bucket_name)
-            self._log.info("Endpoint for s3 accounts is {}".format(endpoint))
+            self._log.debug("Endpoint for s3 accounts is {}".format(endpoint))
 
             # Fetching api response
             response = self.restapi.rest_call(
@@ -143,7 +143,7 @@ class RestS3Bucket(Base):
                 if bucket_type == "duplicate":
                     response = self.create_s3_bucket(
                         bucket_type="duplicate", login_as=login_as)
-                self._log.info(
+                self._log.debug(
                     "Checking the response for {}".format(bucket_type))
                 return response.status_code == expect_status_code
 
@@ -229,7 +229,7 @@ class RestS3Bucket(Base):
         try:
             # Checking special conditions
             if bucket_type == "does-not-exist":
-                self._log.info(
+                self._log.debug(
                     "Checking response for bucket name does not exist")
                 response = self.delete_s3_bucket(
                     bucket_name="does-not-exist", login_as=login_as)
@@ -271,15 +271,15 @@ class RestS3Bucket(Base):
         """
         try:
             # Building request url
-            self._log.info("Create s3 bucket ...")
+            self._log.debug("Create s3 bucket ...")
             endpoint = self.config["s3_bucket_endpoint"]
-            self._log.info("Endpoint for s3 accounts is {}". format(endpoint))
+            self._log.debug("Endpoint for s3 accounts is {}". format(endpoint))
 
             # Collecting required payload to be added for request
             user_data = json.loads(self._bucket_payload["invalid"])
             user_data["bucket_name"] = bucket_name
 
-            self._log.info("Payload for s3 bucket is {}".format(user_data))
+            self._log.debug("Payload for s3 bucket is {}".format(user_data))
             self.headers.update(self.config["Login_headers"])
 
             # Fetching api response
@@ -325,10 +325,10 @@ class RestS3BucketPolicy(Base):
          """
         try:
             # Building request url
-            self._log.info("Put bucket policy")
+            self._log.debug("Put bucket policy")
             endpoint = self.config["bucket_policy_endpoint"].format(
                 self.bucket_name)
-            self._log.info("Endpoint for bucket policy is {}".format(endpoint))
+            self._log.debug("Endpoint for bucket policy is {}".format(endpoint))
 
             # Collecting required payload to be added for request
             if operation == "default":
@@ -352,7 +352,7 @@ class RestS3BucketPolicy(Base):
                                                  principal=custom_policy_params['principal']
                                                  )
 
-            self._log.info("Payload for s3 bucket is {}".format(user_data))
+            self._log.debug("Payload for s3 bucket is {}".format(user_data))
             self.headers.update(self.config["Login_headers"])
             self.user_data = user_data
             # Fetching api response
@@ -425,14 +425,14 @@ class RestS3BucketPolicy(Base):
          """
         try:
             # Building request url
-            self._log.info("Get bucket policy")
+            self._log.debug("Get bucket policy")
             if bucket_name:
                 endpoint = self.config["bucket_policy_endpoint"].format(
                     bucket_name)
             else:
                 endpoint = self.config["bucket_policy_endpoint"].format(
                     self.bucket_name)
-            self._log.info("Endpoint for bucket policy is {}".format(endpoint))
+            self._log.debug("Endpoint for bucket policy is {}".format(endpoint))
 
             self.headers.update(self.config["Login_headers"])
 
@@ -463,7 +463,7 @@ class RestS3BucketPolicy(Base):
         :return: Success(True)/Failure(False)
         """
         try:
-            self._log.info("Get and verify bucket policy")
+            self._log.debug("Get and verify bucket policy")
             if invalid_bucket:
                 invalid_bucket_name = ''.join(('buk', str(int(time.time()))))
                 response = self.get_bucket_policy(
@@ -502,10 +502,10 @@ class RestS3BucketPolicy(Base):
          """
         try:
             # Building request url
-            self._log.info("Delete bucket policy")
+            self._log.debug("Delete bucket policy")
             endpoint = self.config["bucket_policy_endpoint"].format(
                 self.bucket_name)
-            self._log.info("Endpoint for bucket policy is {}".format(endpoint))
+            self._log.debug("Endpoint for bucket policy is {}".format(endpoint))
 
             self.headers.update(self.config["Login_headers"])
 
@@ -531,7 +531,7 @@ class RestS3BucketPolicy(Base):
         :return: Success(True)/Failure(False)
         """
         try:
-            self._log.info("Delete and verify bucket policy")
+            self._log.debug("Delete and verify bucket policy")
             response = self.delete_bucket_policy(login_as=login_as)
             if response.status_code != expected_status_code:
                 self._log.error(

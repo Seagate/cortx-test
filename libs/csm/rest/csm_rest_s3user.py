@@ -25,16 +25,16 @@ class RestS3user(Base):
         """
         try:
             # Building request url
-            self._log.info("Create s3 accounts ...")
+            self._log.debug("Create s3 accounts ...")
             endpoint = self.config["s3accounts_endpoint"]
-            self._log.info("Endpoint for s3 accounts is {}". format(endpoint))
+            self._log.debug("Endpoint for s3 accounts is {}". format(endpoint))
 
             # Collecting required payload to be added for request
             user_data = self.create_payload_for_new_s3_account(user_type)
-            self._log.info("Payload for s3 accounts is {}".format(user_data))
+            self._log.debug("Payload for s3 accounts is {}".format(user_data))
             self.recently_created_s3_account_user = user_data
             if save_new_user:
-                self._log.info(
+                self._log.debug(
                     "Adding s3 accounts is to config with name : new_s3_account_user")
                 self.update_csm_config_for_user(
                     "new_s3_account_user", user_data["account_name"], user_data["password"])
@@ -59,9 +59,9 @@ class RestS3user(Base):
         """
         try:
             # Building request url
-            self._log.info("Try to fetch all s3 accounts ...")
+            self._log.debug("Try to fetch all s3 accounts ...")
             endpoint = self.config["s3accounts_endpoint"]
-            self._log.info("Endpoint for s3 accounts is {}".format(endpoint))
+            self._log.debug("Endpoint for s3 accounts is {}".format(endpoint))
 
             # Fetching api response
             response = self.restapi.rest_call(
@@ -86,14 +86,14 @@ class RestS3user(Base):
         """
         try:
             # Building request url
-            self._log.info("Try to edit s3accounts user : {}".format(username))
+            self._log.debug("Try to edit s3accounts user : {}".format(username))
             endpoint = "{}/{}".format(
                 self.config["s3accounts_endpoint"], username)
-            self._log.info("Endpoint for s3 accounts is {}".format(endpoint))
+            self._log.debug("Endpoint for s3 accounts is {}".format(endpoint))
 
             # Collecting payload
             patch_payload = self.edit_user_payload(payload_type=payload)
-            self._log.info(
+            self._log.debug(
                 "Payload for edit s3 accounts is {}".format(patch_payload))
 
             # Fetching api response
@@ -118,11 +118,11 @@ class RestS3user(Base):
         """
         try:
             # Building request url
-            self._log.info(
+            self._log.debug(
                 "Try to delete s3accounts user : {}".format(username))
             endpoint = "{}/{}".format(
                 self.config["s3accounts_endpoint"], username)
-            self._log.info("Endpoint for s3 accounts is {}".format(endpoint))
+            self._log.debug("Endpoint for s3 accounts is {}".format(endpoint))
 
             # Fetching api response
             response = self.restapi.rest_call(
@@ -148,10 +148,10 @@ class RestS3user(Base):
             response = self.list_all_created_s3account()
 
             # Checking status code
-            self._log.info("Response to be verified : ",
+            self._log.debug("Response to be verified : ",
                            self.recently_created_s3_account_user)
             if (not response) or response.status_code != const.SUCCESS_STATUS:
-                self._log.info("Response is not 200")
+                self._log.debug("Response is not 200")
                 return False
             response = response.json()
 
@@ -192,35 +192,35 @@ class RestS3user(Base):
 
             # Handling specific scenarios
             if user != "valid":
-                self._log.info("verify status code for user {}".format(user))
+                self._log.debug("verify status code for user {}".format(user))
                 return response.status_code == expect_status_code
 
             # Checking status code
-            self._log.info("Response to be verified : ",
+            self._log.debug("Response to be verified : ",
                            self.recently_created_s3_account_user)
             if (not response) or response.status_code != expect_status_code:
-                self._log.info("Response is not 200")
+                self._log.debug("Response is not 200")
                 return False
 
             # Checking presence of access key and secret key
             response = response.json()
             if const.ACCESS_KEY not in response and const.SECRET_KEY not in response:
-                self._log.info("secret key and/or access key is not present")
+                self._log.debug("secret key and/or access key is not present")
                 return False
 
             # Checking account name
-            self._log.info("verifying Newly created account data ...")
+            self._log.debug("verifying Newly created account data ...")
             if response[const.ACC_NAME] != self.recently_created_s3_account_user[const.ACC_NAME]:
-                self._log.info("Miss match user name ...")
+                self._log.debug("Miss match user name ...")
                 return False
 
             # Checking account name
             if response[const.ACC_EMAIL] != self.recently_created_s3_account_user[const.ACC_EMAIL]:
-                self._log.info("Miss match email address ...")
+                self._log.debug("Miss match email address ...")
                 return False
 
             # Checking response in details
-            self._log.info(
+            self._log.debug(
                 "verifying Newly created account data in created list...")
             list_acc = self.list_all_created_s3account().json()["s3_accounts"]
             expected_result = {const.ACC_EMAIL: response[const.ACC_EMAIL],
@@ -245,7 +245,7 @@ class RestS3user(Base):
 
             # Creating s3accounts which are pre-defined in config
             if user_type == "pre-define":
-                self._log.info(
+                self._log.debug(
                     "Creating s3accounts which are pre-defined in config")
                 data = self.config["s3account_user"]
                 return {"account_name": data["username"],
@@ -319,21 +319,21 @@ class RestS3user(Base):
         """
         try:
             # Create new s3 account user
-            self._log.info("creating new s3 account user")
+            self._log.debug("creating new s3 account user")
             self.create_s3_account(save_new_user=True)
 
             # Editing new s3 account user
             account_name = self.recently_created_s3_account_user["account_name"]
-            self._log.info("editing user {}".format(user_payload))
+            self._log.debug("editing user {}".format(user_payload))
             response = self.edit_s3_account_user(
                 username=account_name, payload=user_payload, login_as="new_s3_account_user")
 
             # Handling Unchanged access scenario
             if user_payload in ("unchanged_access", "only_password"):
-                self._log.info(
+                self._log.debug(
                     "verify status code for edit user without changing access")
                 if (not response) or response.status_code != const.SUCCESS_STATUS:
-                    self._log.info("Response is not 200")
+                    self._log.debug("Response is not 200")
                     return False
                 response = response.json()
                 # For edit user without changing access secret key and access key should not be visible
@@ -343,27 +343,27 @@ class RestS3user(Base):
 
             # Handling specific scenarios
             if user_payload != "valid":
-                self._log.info(
+                self._log.debug(
                     "verify status code for user {}".format(user_payload))
                 return (not response) and response.status_code == const.BAD_REQUEST
 
             # Checking status code
-            self._log.info("Response to be verified : ",
+            self._log.debug("Response to be verified : ",
                            self.recently_created_s3_account_user)
             if (not response) or response.status_code != const.SUCCESS_STATUS:
-                self._log.info("Response is not 200")
+                self._log.debug("Response is not 200")
                 return False
 
             # Checking presence of access key and secret key
             response = response.json()
             if const.ACCESS_KEY not in response and const.SECRET_KEY not in response:
-                self._log.info("secret key and/or access key is not present")
+                self._log.debug("secret key and/or access key is not present")
                 return False
 
             # Checking account name
-            self._log.info("verifying Newly created account data ...")
+            self._log.debug("verifying Newly created account data ...")
             if const.ACC_NAME not in response:
-                self._log.info("username key is not present ...")
+                self._log.debug("username key is not present ...")
                 return False
 
             return response[const.ACC_NAME] == account_name
@@ -381,20 +381,20 @@ class RestS3user(Base):
         """
         try:
             # Create new s3 account user and adding it to fet it's IAM users
-            self._log.info("creating new s3 account user")
+            self._log.debug("creating new s3 account user")
             self.create_s3_account(save_new_user=True)
 
             # Deleting account user
             account_name = self.recently_created_s3_account_user["account_name"]
-            self._log.info(
+            self._log.debug(
                 "deleting new s3 account user name : {}".format(account_name))
             response = self.delete_s3_account_user(
                 username=account_name, login_as="new_s3_account_user")
 
             # Checking status code
-            self._log.info("Response to be verified for user: ", account_name)
+            self._log.debug("Response to be verified for user: ", account_name)
             if (not response) or response.status_code != const.SUCCESS_STATUS:
-                self._log.info("Response is not 200")
+                self._log.debug("Response is not 200")
                 return False
 
             return response.json()["message"] == const.DELETE_SUCCESS_MSG
@@ -418,16 +418,16 @@ class RestS3user(Base):
         """
         try:
             # Building request url
-            self._log.info("Try to edit s3accounts user : {}".format(username))
+            self._log.debug("Try to edit s3accounts user : {}".format(username))
             endpoint = "{}/{}".format(
                 self.config["s3accounts_endpoint"], username)
-            self._log.info("Endpoint for s3 accounts is {}".format(endpoint))
+            self._log.debug("Endpoint for s3 accounts is {}".format(endpoint))
 
-            self._log.info(
+            self._log.debug(
                 "Payload for edit s3 accounts is {}".format(payload))
 
             # Fetching api response
-            self._log.info("Fetching api response...")
+            self._log.debug("Fetching api response...")
             response = self.restapi.rest_call(
                 "patch", data=payload, endpoint=endpoint, headers=self.headers)
 

@@ -33,7 +33,7 @@ class RestCsmUser(Base):
 
             # Creating users which are pre-defined in config
             if user_type == "pre-define":
-                self._log.info(
+                self._log.debug(
                     "Creating users which are pre-defined in config")
                 user = "csm_user_manage" if user_defined_role == "manage" else "csm_user_monitor"
                 data = self.config[user]
@@ -92,9 +92,9 @@ class RestCsmUser(Base):
         """
         try:
             # Building request url
-            self._log.info("Creating CSM user")
+            self._log.debug("Creating CSM user")
             endpoint = self.config["csmuser_endpoint"]
-            self._log.info(
+            self._log.debug(
                 "Endpoint for CSM user creation is  {}".format(endpoint))
 
             # Creating required payload to be added for request
@@ -106,12 +106,12 @@ class RestCsmUser(Base):
                 user_data = const.MISSING_USER_DATA
                 user_data = user_data.replace("testusername", data["username"]).replace(
                     "user_role", data["roles"][0])
-            self._log.info("Payload for CSM user is {}".format(user_data))
+            self._log.debug("Payload for CSM user is {}".format(user_data))
             self.recently_created_csm_user = json.loads(user_data)
-            self._log.info("Recently created CSM user is {}".format(
+            self._log.debug("Recently created CSM user is {}".format(
                 self.recently_created_csm_user))
             if save_new_user:
-                self._log.info(
+                self._log.debug(
                     "Adding new CSM user in csm config : new_csm_user")
                 self.update_csm_config_for_user(
                     "new_csm_user", user_data["username"], user_data["password"])
@@ -143,32 +143,32 @@ class RestCsmUser(Base):
             # Create CSM user
             response = self.create_csm_user(
                 user_type=user_type, user_role=user_role)
-            self._log.info(
+            self._log.debug(
                 "response of the create csm user is  {}".format(response))
 
             # Handling specific scenarios
             if not response.status_code:
-                self._log.info("Response is not as expected")
+                self._log.debug("Response is not as expected")
                 return False
 
             if user_type != "valid":
-                self._log.info(
+                self._log.debug(
                     "verify status code for user {}".format(user_type))
-                self._log.info("Expected status code {} and Actual status code {}".format(expect_status_code,
+                self._log.debug("Expected status code {} and Actual status code {}".format(expect_status_code,
                                                                                           response.status_code))
                 return expect_status_code == response.status_code
 
             # Checking status code
-            self._log.info("Response to be verified :{}".format(
+            self._log.debug("Response to be verified :{}".format(
                 self.recently_created_csm_user))
             if expect_status_code != response.status_code:
-                self._log.info("Expected status code {} and Actual status code {}".format(expect_status_code,
+                self._log.debug("Expected status code {} and Actual status code {}".format(expect_status_code,
                                                                                           response.status_code))
-                self._log.info("Response is not as expected")
+                self._log.debug("Response is not as expected")
                 return False
 
             # Checking response in details
-            self._log.info(
+            self._log.debug(
                 "verifying Newly created CSM user data in created list")
             list_acc = self.list_csm_users(expect_status_code=const.SUCCESS_STATUS,
                                            return_actual_response=True).json()["users"]
@@ -202,7 +202,7 @@ class RestCsmUser(Base):
         """
         try:
             # Building request url
-            self._log.info("Fetching csm users ...")
+            self._log.debug("Fetching csm users ...")
             endpoint = self.config["csmuser_endpoint"]
 
             # Adding parameters(if any) to endpoint
@@ -220,32 +220,32 @@ class RestCsmUser(Base):
                         endpoint += '&' + \
                             params_selected[i][1] + str(params_selected[i][0])
 
-            self._log.info("Endpoint to list csm users is {}".format(endpoint))
+            self._log.debug("Endpoint to list csm users is {}".format(endpoint))
 
             # Fetching api response
             response = self.restapi.rest_call(
                 request_type="get", endpoint=endpoint, headers=self.headers)
-            self._log.info(
+            self._log.debug(
                 "response returned is:\n {}".format(response.json()))
 
             # Checking status code
             if expect_status_code == response.status_code:
-                self._log.info("Status code successfully verified\n Value:{}".format(
+                self._log.debug("Status code successfully verified\n Value:{}".format(
                     response.status_code))
             else:
-                self._log.info("Status code is not as expected")
-                self._log.info("Expected Value:{}   Actual Value:{}".format(
+                self._log.debug("Status code is not as expected")
+                self._log.debug("Expected Value:{}   Actual Value:{}".format(
                     expect_status_code, response.status_code))
                 return False
 
             # Verifying status code in case of negative scenario
             if verify_negative_scenario:
-                self._log.info("verifying response for negative scenario")
+                self._log.debug("verifying response for negative scenario")
                 return response.status_code == expect_status_code
 
             # Returning actual response object
             if return_actual_response:
-                self._log.info("Returning actual response")
+                self._log.debug("Returning actual response")
                 return response
 
             return self.verify_list_csm_users(response.json(), offset, limit, sort_by, sort_dir)
@@ -271,7 +271,7 @@ class RestCsmUser(Base):
         """""
         try:
             # Fetching all created csm users
-            self._log.info(
+            self._log.debug(
                 "fetching complete csm users list for verification purpose...")
             if sort_by is not None:
                 response = self.list_csm_users(
@@ -285,18 +285,18 @@ class RestCsmUser(Base):
 
             # Checking status code
             if (not response) or response.status_code != const.SUCCESS_STATUS:
-                self._log.info("Response is not 200")
+                self._log.debug("Response is not 200")
                 return False
             expected_response = response.json()
 
             # Checking for verification and returning result
             if offset:
-                self._log.info("verifying response for offset parameter...")
+                self._log.debug("verifying response for offset parameter...")
                 expected_response["users"] = expected_response["users"][offset:]
                 return self.verify_json_response(actual_result=actual_response, expect_result=expected_response,
                                                  match_exact=True)
             if limit:
-                self._log.info("verifying response for limit parameter...")
+                self._log.debug("verifying response for limit parameter...")
                 expected_response["users"] = expected_response["users"][:limit]
                 return self.verify_json_response(actual_result=actual_response, expect_result=expected_response,
                                                  match_exact=True)
@@ -318,50 +318,50 @@ class RestCsmUser(Base):
 
         try:
             # Get the count of the number of csm users present
-            self._log.info("Getting the initial list of csm users present")
+            self._log.debug("Getting the initial list of csm users present")
             response = self.list_csm_users(
                 expect_status_code=const.SUCCESS_STATUS, return_actual_response=True)
             # Checking status code
             if (not response) or response.status_code != const.SUCCESS_STATUS:
-                self._log.info("Response is not 200")
+                self._log.debug("Response is not 200")
                 return False
 
             # Checking the number of users returned
             expected_response = response.json()
-            self._log.info("Checking the number of users returned")
+            self._log.debug("Checking the number of users returned")
             existing_user_count = len(expected_response['users'])
 
             # Creating more csm users
-            self._log.info("Creating more csm users")
+            self._log.debug("Creating more csm users")
             for num_users in range(1, const.CSM_NUM_OF_USERS_TO_CREATE+1):
                 response = self.create_csm_user(
                     user_type="valid", user_role="monitor")
-                self._log.info(
+                self._log.debug(
                     "response of the create csm user is  {}".format(response))
-                self._log.info("Users created {}".format(num_users))
+                self._log.debug("Users created {}".format(num_users))
 
             # List CSM users
-            self._log.info(
+            self._log.debug(
                 "Setting the limit to be larger than the number of users present ")
             limit = existing_user_count + \
                 const.CSM_NUM_OF_USERS_TO_CREATE + const.CSM_USER_LIST_LIMIT
 
             # Fetching all users for verification purpose based on tha limit provided
-            self._log.info(
+            self._log.debug(
                 "fetching csm users list for verification purpose...")
             response = self.list_csm_users(
                 limit=limit, expect_status_code=const.SUCCESS_STATUS, return_actual_response=True)
             # Checking status code
             if (not response) or response.status_code != const.SUCCESS_STATUS:
-                self._log.info("Response is not 200")
+                self._log.debug("Response is not 200")
                 return False
 
             # Verifying if the response contains the actual number of csm users present, even if the limit provided was bigger
             expected_response = response.json()
             actual_num_of_users = existing_user_count + const.CSM_NUM_OF_USERS_TO_CREATE
-            self._log.info("Reading the actual number of users expected")
+            self._log.debug("Reading the actual number of users expected")
             expected_response["users"] = expected_response["users"][:actual_num_of_users]
-            self._log.info(
+            self._log.debug(
                 "Verifying that even if limit is greater than the users present, only the actual number of users list is returned")
             return self.verify_json_response(actual_result=response.json(), expect_result=expected_response,
                                              match_exact=True)
@@ -380,7 +380,7 @@ class RestCsmUser(Base):
         :rtype: bool
         """
         try:
-            self._log.info("Creating csm users with random count")
+            self._log.debug("Creating csm users with random count")
             self.random_user = True
             for num_users in range(1, const.CSM_NUM_OF_USERS_TO_CREATE+1):
                 self.random_num = random.randint(
@@ -388,48 +388,48 @@ class RestCsmUser(Base):
                 response = self.create_csm_user()
                 # Checking status code
                 if not response.status_code:
-                    self._log.info("Response is not as expected")
+                    self._log.debug("Response is not as expected")
                     return False
-                self._log.info("Users created {}".format(num_users))
+                self._log.debug("Users created {}".format(num_users))
 
             # Fetching all csm users
-            self._log.info(
+            self._log.debug(
                 "fetching all csm users without parameters specified")
             response = self.list_csm_users(
                 expect_status_code=const.SUCCESS_STATUS, return_actual_response=True)
             # Checking status code
             if (not response) or response.status_code != const.SUCCESS_STATUS:
-                self._log.info("Failure in status code, returned code is {} instead of 200".format(
+                self._log.debug("Failure in status code, returned code is {} instead of 200".format(
                     response.status_code))
                 return False
-            self._log.info("Storing the usernames in a list")
+            self._log.debug("Storing the usernames in a list")
             user_list = [item["username"] for item in response.json()["users"]]
             user_list_before = sorted(user_list)
 
             # Fetching csm user list with offset, limit,sort and sort_dir specified
-            self._log.info(
+            self._log.debug(
                 "Fetching user list with parameters offset,limit,sort_by and sort_dir specified")
             response = self.list_csm_users(limit=const.CSM_USER_LIST_LIMIT, offset=const.CSM_USER_LIST_OFFSET, sort_by=const.CSM_USER_LIST_SORT_BY,
                                            sort_dir=const.CSM_USER_LIST_SORT_DIR, expect_status_code=const.SUCCESS_STATUS, return_actual_response=True)
             # Checking status code
             if (not response) or response.status_code != const.SUCCESS_STATUS:
-                self._log.info("Failure in status code,returned code is {} instead of 200".format(
+                self._log.debug("Failure in status code,returned code is {} instead of 200".format(
                     response.status_code))
                 return False
-            self._log.info("Storing the usernames in a list")
+            self._log.debug("Storing the usernames in a list")
             user_list_after = [item["username"]
                                for item in response.json()["users"]]
 
             # Verifying that user list is returned as per the parameters specified
-            self._log.info(
+            self._log.debug(
                 "Verifying if the user list returned is as per the offset,limit, sort_by and sort_dir parameters specified")
             if not user_list_before[const.CSM_USER_LIST_OFFSET:const.CSM_USER_LIST_LIMIT+const.CSM_USER_LIST_OFFSET] == user_list_after:
-                self._log.info(
+                self._log.debug(
                     "CSM user list is not as per the parameters specified")
-                self._log.info(user_list_before)
-                self._log.info(user_list_after)
+                self._log.debug(user_list_before)
+                self._log.debug(user_list_after)
                 return False
-            self._log.info(
+            self._log.debug(
                 "User list returned is as per the parameters specified")
             return True
         except Exception as error:
@@ -446,23 +446,23 @@ class RestCsmUser(Base):
         :return: boolean verification result <True/False>
         """
         try:
-            self._log.info(
+            self._log.debug(
                 "Checking access to csm api with s3 account authentication")
             endpoint = self.config["csmuser_endpoint"]
-            self._log.info("Endpoint to list csm users is {}".format(endpoint))
+            self._log.debug("Endpoint to list csm users is {}".format(endpoint))
             # Fetching api response
-            self._log.info("Fetching the api response...")
+            self._log.debug("Fetching the api response...")
             response = self.restapi.rest_call(
                 request_type="get", endpoint=endpoint, headers=self.headers)
-            self._log.info("Response returned is {}".format(response))
+            self._log.debug("Response returned is {}".format(response))
             # Checking status code
-            self._log.info("Verifying if the status code returned is 403")
+            self._log.debug("Verifying if the status code returned is 403")
             if response.status_code == const.FORBIDDEN:
-                self._log.info("Response code returned is {}".format(
+                self._log.debug("Response code returned is {}".format(
                     response.status_code))
                 result = True
             else:
-                self._log.info("Response is not 403")
+                self._log.debug("Response is not 403")
                 result = False
             return result
         except Exception as error:
@@ -482,7 +482,7 @@ class RestCsmUser(Base):
         :rtype: bool
         """
         try:
-            self._log.info(
+            self._log.debug(
                 "Checking response when empty parameter is provided to list csm user api")
 
             # Validating parameter provided
@@ -492,32 +492,32 @@ class RestCsmUser(Base):
 
             endpoint = self.config["csmuser_endpoint"]
             # Forming the endpoint
-            self._log.info(
+            self._log.debug(
                 "Forming the endpoint with empty value for the specified parameter")
             #endpoint += '?' + csm_list_user_param + '=None'
             endpoint += "{}{}{}".format("?", csm_list_user_param, "=None")
-            self._log.info("Endpoint to list csm users is {}".format(endpoint))
+            self._log.debug("Endpoint to list csm users is {}".format(endpoint))
 
             # Fetching api response
-            self._log.info("Fetching the api response with empty parameter {}". format(
+            self._log.debug("Fetching the api response with empty parameter {}". format(
                 csm_list_user_param))
             response = self.restapi.rest_call(
                 request_type="get", endpoint=endpoint, headers=self.headers)
-            self._log.info("Response returned is {}".format(response))
+            self._log.debug("Response returned is {}".format(response))
 
             # Checking status code
             if expect_status_code == response.status_code:
-                self._log.info("Status code successfully verified\n Value:{}".format(
+                self._log.debug("Status code successfully verified\n Value:{}".format(
                     response.status_code))
             else:
-                self._log.info("Status code is not as expected")
-                self._log.info("Expected Value:{}   Actual Value:{}".format(
+                self._log.debug("Status code is not as expected")
+                self._log.debug("Expected Value:{}   Actual Value:{}".format(
                     expect_status_code, response.status_code))
                 return False
 
             # Returning actual response object
             if return_actual_response:
-                self._log.info("Returning actual response")
+                self._log.debug("Returning actual response")
                 return response
 
             return True
@@ -548,44 +548,44 @@ class RestCsmUser(Base):
             headers.update(self.headers)
             endpoint = self.config["csmuser_endpoint"]
             # Forming the endpoint
-            self._log.info(
+            self._log.debug(
                 "Forming the endpoint for the csm user")
             endpoint += "{}{}".format("/", user)
-            self._log.info("Endpoint to list csm user is {}".format(endpoint))
+            self._log.debug("Endpoint to list csm user is {}".format(endpoint))
 
             if params:
                 # Fetching api response with parameters in the request
-                self._log.info(
+                self._log.debug(
                     "Fetching api response for the csm user {} with parameters in the request".format(user))
                 response = self.restapi.rest_call(
                     request_type=request_type, endpoint=endpoint, params=payload, headers=headers)
             if data:
                 # Fetching api response with data in the request
-                self._log.info(
+                self._log.debug(
                     "Fetching api response for the csm user {} with data in the request".format(user))
                 headers.update(const.CONTENT_TYPE)
                 response = self.restapi.rest_call(
                     request_type=request_type, endpoint=endpoint, data=payload, headers=headers)
             else:
                 # Fetching api response for the request
-                self._log.info(
+                self._log.debug(
                     "Fetching api response for the csm user {}".format(user))
                 response = self.restapi.rest_call(
                     request_type=request_type, endpoint=endpoint, headers=headers)
 
             # Checking status code
             if expect_status_code == response.status_code:
-                self._log.info("Status code successfully verified\n Value:{}".format(
+                self._log.debug("Status code successfully verified\n Value:{}".format(
                     response.status_code))
             else:
-                self._log.info("Status code is not as expected")
-                self._log.info("Expected Value:{}   Actual Value:{}".format(
+                self._log.debug("Status code is not as expected")
+                self._log.debug("Expected Value:{}   Actual Value:{}".format(
                     expect_status_code, response.status_code))
                 return False
 
             # Returning actual response object
             if return_actual_response:
-                self._log.info("Returning actual response")
+                self._log.debug("Returning actual response")
                 return response
 
             return True
@@ -615,37 +615,37 @@ class RestCsmUser(Base):
         """
         try:
             headers = {}
-            self._log.info("Logging in as csm user {}".format(user))
+            self._log.debug("Logging in as csm user {}".format(user))
             response = self.restapi.rest_call(request_type="post",
                                               endpoint=self.config["rest_login_endpoint"],
                                               data=payload_login, headers=self.config["Login_headers"])
-            self._log.info("response : ", response)
+            self._log.debug("response : ", response)
             if response.status_code == const.SUCCESS_STATUS:
                 headers.update(
                     {'Authorization': response.headers['Authorization']})
 
             endpoint = self.config["csmuser_endpoint"]
             # Forming the endpoint
-            self._log.info(
+            self._log.debug(
                 "Forming the csm endpoint")
             endpoint += "{}{}".format("/", user)
-            self._log.info("Endpoint to list csm user is {}".format(endpoint))
+            self._log.debug("Endpoint to list csm user is {}".format(endpoint))
             response = self.restapi.rest_call(request_type="get",
                                               endpoint=endpoint, headers=headers)
 
             # Checking status code
             if expect_status_code == response.status_code:
-                self._log.info("Status code successfully verified\n Value:{}".format(
+                self._log.debug("Status code successfully verified\n Value:{}".format(
                     response.status_code))
             else:
-                self._log.info("Status code is not as expected")
-                self._log.info("Expected Value:{}   Actual Value:{}".format(
+                self._log.debug("Status code is not as expected")
+                self._log.debug("Expected Value:{}   Actual Value:{}".format(
                     expect_status_code, response.status_code))
                 return False
 
             # Returning actual response object
             if return_actual_response:
-                self._log.info("Returning actual response")
+                self._log.debug("Returning actual response")
                 return response
 
             return True
@@ -671,19 +671,19 @@ class RestCsmUser(Base):
             headers = {}
             headers.update(const.CONTENT_TYPE)
 
-            self._log.info(
+            self._log.debug(
                 "Reverting old password {} for csm user {}".format(old_password, username))
 
-            self._log.info(
+            self._log.debug(
                 "Logging in with current password {}".format(current_password))
             payload_login = {"username": username,
                              "password": current_password}
-            self._log.info(
+            self._log.debug(
                 "Payload for the login is : {}".format(payload_login))
             response = self.restapi.rest_call(request_type="post",
                                               endpoint=self.config["rest_login_endpoint"],
                                               data=json.dumps(payload_login), headers=headers)
-            self._log.info("response is : {}".format(response))
+            self._log.debug("response is : {}".format(response))
 
             if response.status_code == const.SUCCESS_STATUS:
                 headers.update({
@@ -691,23 +691,23 @@ class RestCsmUser(Base):
 
             endpoint = self.config["csmuser_endpoint"]
             # Forming the endpoint
-            self._log.info(
+            self._log.debug(
                 "Forming the csm endpoint")
             endpoint = f"{endpoint}/{username}"
-            self._log.info("Endpoint to list csm user is {}".format(endpoint))
+            self._log.debug("Endpoint to list csm user is {}".format(endpoint))
 
             payload = {"current_password": current_password,
                        "password": old_password}
-            self._log.info(
+            self._log.debug(
                 "Payload for reverting password is: {}".format(payload))
 
-            self._log.info("Fetching the response...")
+            self._log.debug("Fetching the response...")
             response = self.restapi.rest_call(
                 request_type="patch", endpoint=endpoint, data=json.dumps(payload), headers=headers)
 
             # Returning actual response object
             if return_actual_response:
-                self._log.info("Returning actual response")
+                self._log.debug("Returning actual response")
                 return response
             return True
         except Exception as error:
@@ -727,11 +727,11 @@ class RestCsmUser(Base):
         """
         users = self.list_csm_users(const.SUCCESS_STATUS,
                                     return_actual_response=True)
-        self._log.info(f"List csm users response: {users.json()}")
+        self._log.debug(f"List csm users response: {users.json()}")
         found = False
         for usr in users.json()['users']:
             if user == usr['username']:
-                self._log.info(
+                self._log.debug(
                     f"Inside loop: user: {user}, username: {usr['username']}")
                 found = True
                 break
@@ -749,10 +749,10 @@ class RestCsmUser(Base):
         """
         try:
             # Building request url
-            self._log.info("Deleting CSM user")
+            self._log.debug("Deleting CSM user")
             endpoint = self.config["csmuser_endpoint"]
             endpoint = f"{endpoint}/{user_id}"
-            self._log.info(
+            self._log.debug(
                 "Endpoint for CSM user creation is  {}".format(endpoint))
 
             # Fetching api response

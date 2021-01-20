@@ -28,5 +28,5 @@ csm_user.revert_csm_user_password(username, "Testuser@123", "Testuser@123", retu
 csm_user.verify_user_exits()
 csm_user.delete_csm_user()
 
-from libs.csm.rest.csm_rest_s3account import RestS3account
-s3_accounts = RestS3account()
+from libs.csm.rest.csm_rest_s3user import RestS3user
+s3_accounts = RestS3user()
