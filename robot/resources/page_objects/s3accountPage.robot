@@ -152,7 +152,7 @@ Verify update s3 account accepts only valid password
     Log To Console And Report   ${confirm_password}
     update s3 account password  ${invalid_password}  ${confirm_password}
     Run Keyword If  ${check_blank_password}
-    ...  Verify message  PASSWORD_REQUIRED_MSG_ID  ${PASSWORD_REQUIRED_MSG}
+    ...  Verify message  PASSWORD_REQUIRED_MSG_ID  ${PASSWORD_REQUIRED_MESSAGE}
     ...  ELSE IF    ${invalid_confirm_password}  Verify message  CONFIRM_PASSWORD_ERROR_MSG_ID  ${INVALID_S3_CONFIRM_PASSWORD_MESSAGE}
     ...  ELSE  Verify message  INVALID_S3_ACCOUNT_PASSWORD_MSG_ID  ${INVALID_S3_PASSWORD_MESSAGE}
     Verify update s3 account button remains disabled
