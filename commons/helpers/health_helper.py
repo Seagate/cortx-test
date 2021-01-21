@@ -29,6 +29,9 @@ EXCEPTION_MSG = "*ERROR* An exception occurred in {}: {}"
 
 class Health(Host):
 
+    def __init__(self, hostname: str, username: str, password: str) -> None:
+        super().__init__(hostname, username, password)
+
     def get_ports_of_service(self, service: str) -> List[str]:
         """
         Find all TCP ports for given running service

@@ -39,6 +39,8 @@ class Node(Host):
     """
     Class to maintain all common functions across component
     """
+    def __init__(self, hostname: str, username: str, password: str) -> None:
+        super().__init__(hostname, username, password)
 
     def get_authserver_log(self, path: str, option: str = "-n 3") -> str:
         cmd = "tail {} {}".format(path, option)
@@ -58,7 +60,7 @@ class Node(Host):
             out.append(self.execute_cmd(cmd, timeout=timeout))
         return out
 
-    def status_service(self, services: str, expected_status: str, timeout: int = 2) -> str:
+    def status_service(self, services: str, expected_status: str, timeout: int = 2) -> dict:
         """
         This function display status of services
         """
@@ -79,6 +81,7 @@ class Node(Host):
             status_list.append(found)
             result["output"][service] = out
         result["success"] = False not in status_list
+
         return result
 
     def configure_jclient_cloud(self, source: str, destination: str, nfs_path: str) -> bool:

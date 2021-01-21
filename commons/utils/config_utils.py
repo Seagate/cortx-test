@@ -55,8 +55,7 @@ def read_yaml(fpath: str) -> tuple:
     return True, data
 
 
-def write_yaml(fpath: str, write_data: dict or list, backup: bool = True) \
-               -> tuple:
+def write_yaml(fpath: str, write_data: dict or list, backup: bool = True) -> tuple:
     """
     This functions overwrites the content of given yaml file with given data
     :param str fpath: yaml file path to be overwritten
