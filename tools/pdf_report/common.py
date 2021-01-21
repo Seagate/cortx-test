@@ -24,9 +24,6 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import inch
 from reportlab.platypus import Table, TableStyle
 
-MAIN_TABLE_ENTRIES = 5
-REPORTED_BUGS_TABLE_ENTRIES = 8
-QA_REPORT_TABLE_ENTRIES = 8
 
 common_table_style = [
     ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),  # Font for complete table
@@ -124,3 +121,14 @@ def get_data_from_csv(csv_file):
         if len(row) > 1 and row[-1] == "":
             del row[-1]
     return data
+
+
+def get_table_data(data, start=0):
+    d = []
+    end = 0
+    for idx, _ in enumerate(data, start=start):
+        if not data[idx]:
+            end = idx + 1
+            break
+        d.append(data[idx])
+    return d, end
