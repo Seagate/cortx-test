@@ -6,8 +6,6 @@ Library  DateTime
 Library    Collections
 Variables  common_variables.py
 Variables  element_locators.py
-*** Variables ***
-@{table_data}
 
 *** Keywords ***
 Log To Console And Report
@@ -31,6 +29,7 @@ Navigate To Page
 Read Table Data
     [Documentation]  This Keyword is for reading the data from the html table and it returns the data in list format.
     [Arguments]  ${table_element}
+    @{table_data}=    Create List
     @{table_elements}=  Get WebElements  ${table_element}
     sleep  2s
     FOR  ${elements}  IN  @{table_elements}
@@ -77,3 +76,9 @@ Generate New Password
     ${password}=  Catenate  SEPARATOR=  ${upper_case}  ${lower_case}  ${numbers}  ${special_char}
     Log To Console And Report  ${password}
     [Return]  ${password}
+
+
+# TEMP
+CSM GUI Logout
+    [Documentation]  Functionlity to CSM GUI Logout
+    Click Element  logout-icon
