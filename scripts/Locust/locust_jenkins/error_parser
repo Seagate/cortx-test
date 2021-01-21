@@ -1,8 +1,0 @@
-# list of errors to be checked in locust console logs
-error /Gateway Timeout/
-error /Service Unavailable/
-error /ValueError/
-error /bad interpreter/
-error /exceptions/
-error /stderr/
-error /error/

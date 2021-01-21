@@ -5,7 +5,7 @@ This file contains the wrapper functions used by Alert Simulation API.
 """
 import logging
 import time
-from libs.ras_test_lib import RASTestLib
+from libs.ras.ras_test_lib import RASTestLib
 from commons.helpers.host import Host
 from commons import constants as cons
 
