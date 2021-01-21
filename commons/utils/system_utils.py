@@ -75,24 +75,24 @@ def run_remote_cmd(cmd: str, hostname: str, username: str, password: str, read_l
     return output
 
 
-def run_local_cmd(cmd: str) -> str:
+def run_local_cmd(cmd: str) -> bytes:
     """
-    Execute any given command on local machine.
+    Execute any given command on local machine(Windows, Linux).
     :param cmd: command to be executed.
     :return: stdout 
     """
-    msg_rsa_key_added = b"Number of key(s) added: 1"
-    lcmd_not_found = b"command not found"
     if not cmd:
         raise ValueError("Missing required parameter: {}".format(cmd))
     log.debug("Command: %s", cmd)
     proc = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
     output, error = proc.communicate()
     log.debug("output = %s", str(output))
-    if msg_rsa_key_added in output:
-        return True, output
-    if lcmd_not_found in error or error:
+    log.debug("error = %s", str(error))
+    if b"Number of key(s) added: 1" in output:
+        return output
+    if b"command not found" in error or b"not recognized as an internal or external command" in error or error:
         raise IOError(error)
+
     return output
 
 
@@ -202,7 +202,7 @@ def _format_dict(el: list) -> dict:
     return resp_dict
 
 
-def format_iam_resp(res_msg: str) -> list:
+def format_iam_resp(res_msg: bytes) -> list:
     """
     #TODO remove later as IAM is not supported
     Function to format IAM response which comes in string format.
@@ -355,8 +355,16 @@ def get_file_checksum(filename: str):
         return False, error
 
 
-def create_file(filename: str, count: int):
-    cmd = commands.CREATE_FILE.format(filename, count)
+def create_file(fpath: str, count: int, dev="/dev/zero", bs="1M"):
+    """
+    Create file using dd command.
+    :param fpath: File path.
+    :param count: size of the file in MB.
+    :param dev: Input file used.
+    :param bs: block size.
+    :return:
+    """
+    cmd = commands.CREATE_FILE.format(dev, fpath, bs, count)
     log.debug(cmd)
     result = run_local_cmd(cmd)
     log.debug("output = {}".format(result))

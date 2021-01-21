@@ -27,6 +27,9 @@ EXCEPTION_MSG = "*ERROR* An exception occurred in {}: {}"
 
 class Bmc(Host):
 
+    def __init__(self, hostname: str, username: str, password: str) -> None:
+        super().__init__(hostname, username, password)
+
     def bmc_node_power_status(
             self,
             bmc_ip: str,

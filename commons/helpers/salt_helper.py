@@ -36,6 +36,10 @@ log = logging.getLogger(__name__)
 
 
 class SaltHelper(Host):
+
+    def __init__(self, hostname: str, username: str, password: str) -> None:
+        super().__init__(hostname, username, password)
+
     def get_pillar_values(
             self,
             component,
