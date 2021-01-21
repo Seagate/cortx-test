@@ -19,14 +19,15 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-import sys
 import logging
+import sys
 import gevent
+
 from gevent import Greenlet
 from gevent.queue import Queue
-from typing import List, Tuple, Any, Optional
 from gevent.pool import Pool
 from gevent.pool import Group
+from typing import List, Tuple, Any, Optional
 
 logger = logging.getLogger(__name__)
 if sys.platform == "win32":
@@ -72,7 +73,7 @@ class GreenletThread(Greenlet):
         self.feed() # Adding thread in queue for keeping track of threads execution
 
     def _run(self, message=None) -> Any:
-        """Build some CPU-intensive tasks to run via multiprocessing here.
+        """Build some IO Bound tasks to run via multithreading here.
         and Return some information back
         Subclasses may override this method to take any number of
         arguments and keyword arguments.
@@ -136,8 +137,8 @@ class GreenletThread(Greenlet):
             logger.info("RESULT: {0}".format(GreenletThread.receive()))
         if GreenletThread.queue.empty():
             return True, GreenletThread.responses
-        else:
-            return False, GreenletThread.responses
+
+        return False, GreenletThread.responses
 
 
 class GeventPool(object):
