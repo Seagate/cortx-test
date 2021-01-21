@@ -2,6 +2,7 @@
 import logging
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.csm.rest.csm_rest_csmuser import RestCsmUser
+from commons.constants import Rest as const
 
 class CSMConfigsCheck:
     """This class will check the configurations of CSM"""
@@ -86,7 +87,7 @@ class CSMConfigsCheck:
         try:
             self._log.info("Checking the presence of pre defined s3 account")
             response = self._s3account.list_all_created_s3account().json()["s3_accounts"]
-            expected_result = {self._s3account.const.ACC_NAME: self._s3account.default_s3user_name}
+            expected_result = {const.ACC_NAME: self._s3account.default_s3user_name}
             result = any(self._s3account.verify_json_response(
                 actual_result, expected_result) for actual_result in response)
         except Exception as error:

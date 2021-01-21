@@ -3,7 +3,7 @@ import pytest
 import logging
 from libs.csm.rest.csm_rest_bucket import RestS3Bucket 
 from libs.csm.rest.csm_rest_s3user import RestS3user
-#from eos_test.csm.csm_setup import CSMConfigsCheck
+from libs.csm.csm_setup import CSMConfigsCheck
 from commons.utils import config_utils
 from commons.constants import Rest as const
 from commons.utils import assert_utils
@@ -14,11 +14,11 @@ class TestS3Bucket():
         """ This is method is for test suite set-up """
         self.log = logging.getLogger(__name__)
         self.log.info("Initializing test setups ......")
-        #self.config = CSMConfigsCheck()
-        #setup_ready = self.config.check_predefined_s3account_present()
-        #if not setup_ready:
-        #    setup_ready = self.config.setup_csm_s3
-        #assert setup_ready)
+        self.config = CSMConfigsCheck()
+        setup_ready = self.config.check_predefined_s3account_present()
+        if not setup_ready:
+            setup_ready = self.config.setup_csm_s3
+        assert setup_ready
         self.s3_buckets = RestS3Bucket()
         self.s3_account = RestS3user()
         self.log.info("Initiating Rest Client for Alert ...")
@@ -27,7 +27,7 @@ class TestS3Bucket():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
+    @pytest.mark.tags("TEST-573")
     def test_573(self):
         """Initiating the test case for the verifying response of create bucket rest
         :avocado: tags=create_s3_bucket
@@ -39,7 +39,7 @@ class TestS3Bucket():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
+    @pytest.mark.tags("TEST-575")
     def test_575(self):
         """Initiating the test case for the verifying response of create bucket rest with bucket name less than three
         :avocado: tags=create_s3_bucket
@@ -51,7 +51,7 @@ class TestS3Bucket():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
+    @pytest.mark.tags("TEST-576")
     def test_576(self):
         """Initiating the test case for the verifying response of create bucket rest with bucket name more than 63
         :avocado: tags=create_s3_bucket
@@ -63,7 +63,7 @@ class TestS3Bucket():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
+    @pytest.mark.tags("TEST-577")
     def test_577(self):
         """Initiating the test case for the verifying response of create bucket rest invalid initial letter of bucket
         :avocado: tags=create_s3_bucket
@@ -83,145 +83,7 @@ class TestS3Bucket():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
-    def test_579(self):
-        """Initiating the test case for the verifying response of create bucket rest for ip address as bucket name
-        :avocado: tags=create_s3_bucket
-        """
-        test_case_name = sys._getframe().f_code.co_name
-        self.log.info("##### Test started -  {} #####".format(test_case_name))
-        assert self.s3_buckets.create_and_verify_new_bucket(
-            self.s3_buckets.bad_request_response, bucket_type="ip_address")
-
-    @pytest.mark.parallel
-    @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
-    def test_580(self):
-        """Initiating the test case for the verifying response of create bucket rest with unauthorized user login
-        :avocado: tags=create_s3_bucket
-        """
-        test_case_name = sys._getframe().f_code.co_name
-        self.log.info("##### Test started -  {} #####".format(test_case_name))
-        response = self.s3_buckets.create_s3_bucket(
-            bucket_type="valid", login_as="csm_admin_user")
-        assert self.s3_buckets.forbidden == response.status_code
-
-    @pytest.mark.parallel
-    @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
-    def test_581(self):
-        """Initiating the test case for the verifying response of create bucket rest with duplicate user
-        :avocado: tags=create_s3_bucket
-        """
-        test_case_name = sys._getframe().f_code.co_name
-        self.log.info("##### Test started -  {} #####".format(test_case_name))
-        assert self.s3_buckets.create_and_verify_new_bucket(
-            self.s3_buckets.conflict_response, bucket_type="duplicate")
-
-    @pytest.mark.parallel
-    @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
-    def test_589(self):
-        """Initiating the test case for the verifying response of create bucket rest with invalid data
-        :avocado: tags=create_s3_bucket
-        """
-        test_case_name = sys._getframe().f_code.co_name
-        self.log.info("##### Test started -  {} #####".format(test_case_name))
-        assert self.s3_buckets.create_and_verify_new_bucket(
-            self.s3_buckets.bad_request_response, bucket_type="invalid")
-
-    @pytest.mark.parallel
-    @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
-    def test_591(self):
-        """Initiating the test case for the verifying response of list bucket rest
-        :avocado: tags=get_s3_bucket
-        """
-        test_case_name = sys._getframe().f_code.co_name
-        self.log.info("##### Test started -  {} #####".format(test_case_name))
-        self.s3_buckets.create_s3_bucket(
-            bucket_type="valid", login_as="s3account_user")
-        assert self.s3_buckets.list_and_verify_bucket()
-    
-    @pytest.mark.parallel
-    @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
-    def test_593(self):
-        """Initiating the test case for the verifying response of bucket rest for newly created s3 account
-        :avocado: tags=get_s3_bucket
-        """
-        test_case_name = sys._getframe().f_code.co_name
-        self.log.info("##### Test started -  {} #####".format(test_case_name))
-        self.s3_account.create_s3_account(save_new_user=True)
-        self.s3_buckets.list_and_verify_bucket(
-            expect_no_user=True, login_as="s3account_user")
-
-    @pytest.mark.parallel
-    @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
-    def test_594(self):
-        """Initiating the test case for the verifying response of list bucket rest with unauthorized user login
-        :avocado: tags=get_s3_bucket
-        """
-        test_case_name = sys._getframe().f_code.co_name
-        self.log.info("##### Test started -  {} #####".format(test_case_name))
-        response = self.s3_buckets.list_all_created_buckets(
-            login_as="csm_admin_user")
-        assert self.s3_buckets.forbidden == response.status_code
-
-    @pytest.mark.parallel
-    @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
-    def test_596(self):
-        """Initiating the test case for the verifying response of delete bucket rest
-        :avocado: tags=delete_s3_bucket
-        """
-        test_case_name = sys._getframe().f_code.co_name
-        self.log.info("##### Test started -  {} #####".format(test_case_name))
-        assert self.s3_buckets.delete_and_verify_new_bucket(
-            self.s3_buckets.success_response)
-
-    @pytest.mark.parallel
-    @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
-    def test_599(self):
-        """Initiating the test case for the verifying response of list bucket rest with unauthorized user login
-        :avocado: tags=get_s3_bucket
-        """
-        test_case_name = sys._getframe().f_code.co_name
-        self.log.info("##### Test started -  {} #####".format(test_case_name))
-        response = self.s3_buckets.delete_s3_bucket(
-            bucket_name="any_name", login_as="csm_admin_user")
-        assert self.s3_buckets.forbidden == response.status_code
-
-    @pytest.mark.parallel
-    @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
-    def test_597(self):
-        """Initiating the test case for the verifying response of delete bucket that does not exist
-        :avocado: tags=delete_s3_bucket
-        """
-        test_case_name = sys._getframe().f_code.co_name
-        self.log.info("##### Test started -  {} #####".format(test_case_name))
-        assert self.s3_buckets.delete_and_verify_new_bucket(
-            self.s3_buckets.method_not_found, bucket_type="does-not-exist")
-
-    @pytest.mark.parallel
-    @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
-    def test_601(self):
-        """Initiating the test case for the verifying response of delete bucket rest with no bucket name
-        :avocado: tags=delete_s3_bucket
-        """
-        test_case_name = sys._getframe().f_code.co_name
-        self.log.info("##### Test started -  {} #####".format(test_case_name))
-        response = self.s3_buckets.delete_s3_bucket(
-            bucket_name="", login_as="s3account_user")
-        assert self.s3_buckets.method_not_found == response.status_code
-
-    @pytest.mark.parallel
-    @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
+    @pytest.mark.tags("TEST-578")
     def test_578(self):
         """Initiating the test to test RESP API to create bucket with bucketname having special or alphanumeric character
         :avocado: tags= rest_s3_bucket_test
@@ -266,3 +128,142 @@ class TestS3Bucket():
 
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
+
+    @pytest.mark.parallel
+    @pytest.mark.csmrest
+    @pytest.mark.tags("TEST-579")
+    def test_579(self):
+        """Initiating the test case for the verifying response of create bucket rest for ip address as bucket name
+        :avocado: tags=create_s3_bucket
+        """
+        test_case_name = sys._getframe().f_code.co_name
+        self.log.info("##### Test started -  {} #####".format(test_case_name))
+        assert self.s3_buckets.create_and_verify_new_bucket(
+            self.s3_buckets.bad_request_response, bucket_type="ip_address")
+
+    @pytest.mark.parallel
+    @pytest.mark.csmrest
+    @pytest.mark.tags("TEST-580")
+    def test_580(self):
+        """Initiating the test case for the verifying response of create bucket rest with unauthorized user login
+        :avocado: tags=create_s3_bucket
+        """
+        test_case_name = sys._getframe().f_code.co_name
+        self.log.info("##### Test started -  {} #####".format(test_case_name))
+        response = self.s3_buckets.create_s3_bucket(
+            bucket_type="valid", login_as="csm_admin_user")
+        assert self.s3_buckets.forbidden == response.status_code
+
+    @pytest.mark.parallel
+    @pytest.mark.csmrest
+    @pytest.mark.tags("TEST-581")
+    def test_581(self):
+        """Initiating the test case for the verifying response of create bucket rest with duplicate user
+        :avocado: tags=create_s3_bucket
+        """
+        test_case_name = sys._getframe().f_code.co_name
+        self.log.info("##### Test started -  {} #####".format(test_case_name))
+        assert self.s3_buckets.create_and_verify_new_bucket(
+            self.s3_buckets.conflict_response, bucket_type="duplicate")
+
+    @pytest.mark.parallel
+    @pytest.mark.csmrest
+    @pytest.mark.tags("TEST-589")
+    def test_589(self):
+        """Initiating the test case for the verifying response of create bucket rest with invalid data
+        :avocado: tags=create_s3_bucket
+        """
+        test_case_name = sys._getframe().f_code.co_name
+        self.log.info("##### Test started -  {} #####".format(test_case_name))
+        assert self.s3_buckets.create_and_verify_new_bucket(
+            self.s3_buckets.bad_request_response, bucket_type="invalid")
+
+    @pytest.mark.parallel
+    @pytest.mark.csmrest
+    @pytest.mark.tags("TEST-591")
+    def test_591(self):
+        """Initiating the test case for the verifying response of list bucket rest
+        :avocado: tags=get_s3_bucket
+        """
+        test_case_name = sys._getframe().f_code.co_name
+        self.log.info("##### Test started -  {} #####".format(test_case_name))
+        self.s3_buckets.create_s3_bucket(
+            bucket_type="valid", login_as="s3account_user")
+        assert self.s3_buckets.list_and_verify_bucket()
+    
+    @pytest.mark.parallel
+    @pytest.mark.csmrest
+    @pytest.mark.tags("TEST-593")
+    def test_593(self):
+        """Initiating the test case for the verifying response of bucket rest for newly created s3 account
+        :avocado: tags=get_s3_bucket
+        """
+        test_case_name = sys._getframe().f_code.co_name
+        self.log.info("##### Test started -  {} #####".format(test_case_name))
+        self.s3_account.create_s3_account(save_new_user=True)
+        self.s3_buckets.list_and_verify_bucket(
+            expect_no_user=True, login_as="s3account_user")
+
+    @pytest.mark.parallel
+    @pytest.mark.csmrest
+    @pytest.mark.tags("TEST-594")
+    def test_594(self):
+        """Initiating the test case for the verifying response of list bucket rest with unauthorized user login
+        :avocado: tags=get_s3_bucket
+        """
+        test_case_name = sys._getframe().f_code.co_name
+        self.log.info("##### Test started -  {} #####".format(test_case_name))
+        response = self.s3_buckets.list_all_created_buckets(
+            login_as="csm_admin_user")
+        assert self.s3_buckets.forbidden == response.status_code
+
+    @pytest.mark.parallel
+    @pytest.mark.csmrest
+    @pytest.mark.tags("TEST-596")
+    def test_596(self):
+        """Initiating the test case for the verifying response of delete bucket rest
+        :avocado: tags=delete_s3_bucket
+        """
+        test_case_name = sys._getframe().f_code.co_name
+        self.log.info("##### Test started -  {} #####".format(test_case_name))
+        assert self.s3_buckets.delete_and_verify_new_bucket(
+            self.s3_buckets.success_response)
+
+    @pytest.mark.parallel
+    @pytest.mark.csmrest
+    @pytest.mark.tags("TEST-597")
+    def test_597(self):
+        """Initiating the test case for the verifying response of delete bucket that does not exist
+        :avocado: tags=delete_s3_bucket
+        """
+        test_case_name = sys._getframe().f_code.co_name
+        self.log.info("##### Test started -  {} #####".format(test_case_name))
+        assert self.s3_buckets.delete_and_verify_new_bucket(
+            self.s3_buckets.method_not_found, bucket_type="does-not-exist")
+
+    @pytest.mark.parallel
+    @pytest.mark.csmrest
+    @pytest.mark.tags("TEST-599")
+    def test_599(self):
+        """Initiating the test case for the verifying response of list bucket rest with unauthorized user login
+        :avocado: tags=get_s3_bucket
+        """
+        test_case_name = sys._getframe().f_code.co_name
+        self.log.info("##### Test started -  {} #####".format(test_case_name))
+        response = self.s3_buckets.delete_s3_bucket(
+            bucket_name="any_name", login_as="csm_admin_user")
+        assert self.s3_buckets.forbidden == response.status_code
+
+    @pytest.mark.parallel
+    @pytest.mark.csmrest
+    @pytest.mark.tags("TEST-601")
+    def test_601(self):
+        """Initiating the test case for the verifying response of delete bucket rest with no bucket name
+        :avocado: tags=delete_s3_bucket
+        """
+        test_case_name = sys._getframe().f_code.co_name
+        self.log.info("##### Test started -  {} #####".format(test_case_name))
+        response = self.s3_buckets.delete_s3_bucket(
+            bucket_name="", login_as="s3account_user")
+        assert self.s3_buckets.method_not_found == response.status_code
+

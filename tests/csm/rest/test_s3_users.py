@@ -6,9 +6,7 @@ import logging
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from commons.utils import config_utils
 from commons.constants import Rest as const
-
-#from avocadoext.log_formatter import CTPLogformatter
-
+from libs.csm.csm_setup import CSMConfigsCheck
 
 class TestS3user():
     @classmethod
@@ -16,11 +14,11 @@ class TestS3user():
         """ This is method is for test suite set-up """
         self.log = logging.getLogger(__name__)
         self.log.info("Initializing test setups ......")
-        #self.config = CSMConfigsCheck()
-        #user_already_present = self.config.check_predefined_s3account_present()
-        # if not user_already_present:
-        #    user_already_present = self.config.setup_csm_s3
-        # assert user_already_present)
+        self.config = CSMConfigsCheck()
+        user_already_present = self.config.check_predefined_s3account_present()
+        if not user_already_present:
+            user_already_present = self.config.setup_csm_s3
+        assert user_already_present)
         self.s3user = RestS3user()
         self.csm_conf = config_utils.read_yaml(
             "config/csm/test_rest_s3_user.yaml")[1]
@@ -28,7 +26,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
+    @pytest.mark.tags("TEST-276")
     def test_276(self):
         """Initiating the test case for the verifying success rest alert response
         :avocado: tags=get_all_s3accounts
@@ -42,7 +40,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
+    @pytest.mark.tags("TEST-290")
     def test_290(self):
         """Initiating the test case for the verifying success rest alert response
         :avocado: tags=create_s3accounts
@@ -56,7 +54,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
+    @pytest.mark.tags("TEST-291")
     def test_291(self):
         """Initiating the test case for the verifying success rest alert response
         :avocado: tags=create_s3accounts_with_invalid_data
@@ -70,7 +68,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
+    @pytest.mark.tags("TEST-293")
     def test_293(self):
         """Initiating the test case for the verifying success rest alert response
         :avocado: tags=create_s3accounts_with_duplicate_data
@@ -85,7 +83,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
+    @pytest.mark.tags("TEST-292")
     def test_292(self):
         """Initiating the test case for the verifying success rest alert response
         :avocado: tags=create_s3accounts_with_missing_data
@@ -99,7 +97,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
+    @pytest.mark.tags("TEST-294")
     def test_294(self):
         """Initiating the test case for unauthorized user try to create s3account user
         :avocado: tags= Sender has no permission to create
@@ -114,7 +112,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
+    @pytest.mark.tags("TEST-586")
     def test_586(self):
         """Initiating the test case for the verifying success rest alert response
         :avocado: tags=s3 account users can successfully get updated
@@ -128,7 +126,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
+    @pytest.mark.tags("TEST-590")
     def test_590(self):
         """
         Initiating the test case for REST API to update S3 account/non_existing_user using PATCH request.
@@ -145,7 +143,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
+    @pytest.mark.tags("TEST-587")
     def test_587(self):
         """
         Initiating the test case for user Does not update secret/access key
@@ -160,7 +158,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
+    @pytest.mark.tags("TEST-592")
     def test_592(self):
         """
         Initiating the test case for Sender has no permission to update s3 account
@@ -177,7 +175,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
+    @pytest.mark.tags("TEST-615")
     def test_615(self):
         """
         Initiating the test case for user Does not update secret/access key
@@ -192,7 +190,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
+    @pytest.mark.tags("TEST-598")
     def test_598(self):
         """
         Initiating the test case for user only reset access key value False
@@ -207,7 +205,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
+    @pytest.mark.tags("TEST-595")
     def test_595(self):
         """
         Initiating the test case for user only reset access key value
@@ -222,7 +220,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
+    @pytest.mark.tags("TEST-606")
     def test_606(self):
         """
         Initiating the test case for user only password field
@@ -237,7 +235,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
+    @pytest.mark.tags("TEST-488")
     def test_488(self):
         """
         Initiating the test case for Successful delete account user
@@ -251,7 +249,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
+    @pytest.mark.tags("TEST-491")
     def test_491(self):
         """
         Initiating the test case for delete non existing s3account user
@@ -266,7 +264,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
+    @pytest.mark.tags("TEST-492")
     def test_492(self):
         """
         Initiating the test case for delete s3account user without permission
@@ -282,7 +280,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
+    @pytest.mark.tags("TEST-493")
     def test_493(self):
         """
         Initiating the test case for delete s3account without account name
@@ -299,7 +297,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
+    @pytest.mark.tags("TEST-1914")
     def test_1914(self):
         """
         Initiating the test to test that error is returned when payload is incorrect
@@ -332,7 +330,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
+    @pytest.mark.tags("TEST-1915")
     def test_1915(self):
         """
         Test that error should be returned when s3 user enters some other s3 user's account name

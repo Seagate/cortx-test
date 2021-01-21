@@ -1,7 +1,7 @@
 import sys
 import pytest
 import logging
-#from eos_test.csm.csm_setup import CSMConfigsCheck
+from libs.csm.csm_setup import CSMConfigsCheck
 from commons.utils import config_utils
 from libs.csm.rest.csm_rest_iamuser import RestIamUser
 
@@ -18,11 +18,11 @@ class TestIamUser():
         self.csm_conf = config_utils.read_yaml(
             "config/csm/test_rest_iam_user.yaml")[1]
         self.log.info("Ended test module setups")
-        #self.config = CSMConfigsCheck()
-        #setup_ready = self.config.check_predefined_s3account_present()
-        #if not setup_ready:
-        #    setup_ready = self.config.setup_csm_s3
-        #assert(setup_ready)
+        self.config = CSMConfigsCheck()
+        setup_ready = self.config.check_predefined_s3account_present()
+        if not setup_ready:
+            setup_ready = self.config.setup_csm_s3
+        assert(setup_ready)
         self.created_iam_users = set()
         self.rest_iam_user = RestIamUser()
         self.log.info("Initiating Rest Client ...")
@@ -35,7 +35,7 @@ class TestIamUser():
         self.log.info("Teardown ended")
 
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
+    @pytest.mark.tags("TEST-1133")
     def test_1133(self):
         """Test that IAM users are not permitted to login
          :avocado: tags=iam_user
@@ -52,7 +52,7 @@ class TestIamUser():
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
+    @pytest.mark.tags("TEST-1041")
     def test_1041(self):
         """Test that S3 account should have access to create IAM user from back end
         :avocado: tags=iam_user
@@ -77,7 +77,7 @@ class TestIamUser():
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-17495")
+    @pytest.mark.tags("TEST-1022")
     def test_1022(self):
         """
         Test that IAM user is not able to execute and access the CSM REST APIs.	
