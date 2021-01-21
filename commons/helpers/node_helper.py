@@ -19,18 +19,19 @@
 #
 
 import logging
+import mdstat
 import os
+import posixpath
 import re
 import shutil
-import time
-import posixpath
 import stat
-from typing import Tuple
-import mdstat
+import time
+from typing import Tuple, List, Union
 from commons import commands
 from commons.helpers.host import Host
 
 log = logging.getLogger(__name__)
+
 EXCEPTION_MSG = "*ERROR* An exception occurred in {}: {}"
 
 
@@ -232,7 +233,7 @@ class Node(Host):
         self.remove_file(mdstat_local_path)
         return output
 
-    def is_string_in_remote_file(self, string: str, file_path: str) -> bool:
+    def is_string_in_remote_file(self, string: str, file_path: str) -> Tuple[bool, Any]:
         """
         find given string in file present on s3 server
         :param string: String to be check
@@ -432,3 +433,25 @@ class Node(Host):
             log.error(EXCEPTION_MSG.format(Node.shutdown_node.__name__, error))
             return False, error
         return True, "Node shutdown successfully"
+
+    def disk_usage_python_interpreter_cmd(self, dir_path: str, field_val: int = 3) -> Tuple[bool, Union[List[str], str, bytes, BaseException]]:
+        """
+        This function will return disk usage associated with given path.
+        :param dir_path: Directory path of which size is to be calculated
+        :type: str
+        :param field_val: 0, 1, 2 and 3 for total, used, free in bytes and percent used space respectively
+        :return: Output of the python interpreter command
+        :rtype: (int/float/str)
+        """
+        try:
+            cmd = "python3 -c 'import psutil; print(psutil.disk_usage(\"{a}\")[{b}])'" \
+                .format(a=str(dir_path), b=int(field_val))
+            log.info(f"Running python command {cmd}")
+            resp = self.execute_cmd(cmd=cmd)
+        except BaseException as error:
+            log.error(
+                EXCEPTION_MSG.format(
+                    Node.disk_usage_python_interpreter_cmd.__name__, error))
+            return False, error
+
+        return resp

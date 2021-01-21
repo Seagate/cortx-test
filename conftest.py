@@ -37,10 +37,9 @@ from commons import cortxlogging
 from commons.utils import jira_utils
 from core.runner import LRUCache
 from core.runner import get_jira_credential
-
-pytest_plugins = [
-    "commons.conftest",
-]
+from commons import constants
+from config import params
+from typing import List
 
 FAILURES_FILE = "failures.txt"
 LOG_DIR = 'log'
@@ -103,29 +102,6 @@ def log_cutter(request, formatter):
     del Globals.records[name]
 
 
-@pytest.fixture(autouse=True, scope='session')
-def cleanup(request):
-    """
-    This Fixture renames the the log/latest folder to a name with current timestamp
-    and creates a folder named latest.
-    :param request:
-    :return:
-    """
-    """
-    root_dir = pathlib.Path(request.node.fspath.strpath)
-    log_dir = os.path.join(root_dir, 'log')
-    now = str(datetime.datetime.now())
-    now = now.replace(' ', '-')  #now has a space in timestamp
-    now = now.replace(':', '_')
-    if os.path.exists(log_dir) and os.path.isdir(log_dir):
-        latest = os.path.join(log_dir,'latest')
-        if os.path.isdir(latest) and os.path.exists(latest):
-            os.rename(latest, os.path.join(log_dir, now))
-        os.makedirs(latest)
-    else:
-        os.makedirs(os.path.join(log_dir,'latest'))
-
-"""
 # content of conftest.py
 
 def pytest_addoption(parser) :
@@ -143,15 +119,23 @@ def pytest_addoption(parser) :
     parser.addoption(
         "--logpath", action="store", default=None, help="Log root folder path"
     )
+    parser.addoption(
+        "--local", action="store", default=False, help="Decide whether run is dev local"
+    )
 
 
-def read_test_list_csv() :
-    try :
-        with open('test_lists.csv') as f :
+def read_test_list_csv() -> List:
+    try:
+        tests = list()
+        with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_TEST_LIST)) as f:
             reader = csv.reader(f)
             test_list = list(reader)
-            return test_list
-    except Exception as e :
+            for test_row in test_list:
+                if not test_row:
+                    continue
+                tests.append(test_row[0])
+        return tests
+    except Exception as e:
         print(e)
 
 
@@ -166,28 +150,37 @@ def pytest_collection_modifyitems(config, items):
     :param items:
     :return:
     """
-    pass
-    """
-    required_tests = read_test_list_csv() # e.g. ['TEST-17413', 'TEST-17414']
-    Globals.TE_TKT = config.option.te_tkt
-    selected_items = []
-    for item in items:
-        parallel_found = 'false'
-        test_found = ''
-        for mark in item.iter_markers():
-            if mark.name == 'parallel':
-                parallel_found = 'true'
-                if config.option.is_parallel == 'false':
-                    break
-            elif mark.name == 'tags' :
-                test_found = mark.args[0]
-        if parallel_found == config.option.is_parallel and test_found != '':
-            if test_found in required_tests:
-                selected_items.append(item)
-        CACHE.store(item.nodeid, test_found)
-    items[:] = selected_items
+    _local = bool(config.option.local)
+    required_tests = list()
+    Globals.LOCAL_RUN = _local
+    if not _local:
+        required_tests = read_test_list_csv() # e.g. required_tests = ['TEST-17413', 'TEST-17414']
+        Globals.TE_TKT = config.option.te_tkt
+        selected_items = []
+        for item in items:
+            parallel_found = 'false'
+            test_found = ''
+            for mark in item.iter_markers():
+                if mark.name == 'parallel':
+                    parallel_found = 'true'
+                    if config.option.is_parallel == 'false':
+                        break
+                elif mark.name == 'tags' :
+                    test_found = mark.args[0]
+            if parallel_found == config.option.is_parallel and test_found != '':
+                if test_found in required_tests:
+                    selected_items.append(item)
+            CACHE.store(item.nodeid, test_found)
+        items[:] = selected_items
+    else:
+        for item in items:
+            test_id = ''
+            for mark in item.iter_markers():
+                if mark.name == 'tags':
+                    test_id = mark.args[0]
+            CACHE.store(item.nodeid, test_id)
 
-"""
+
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_runtest_makereport(item, call):
     """
@@ -231,15 +224,24 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
     :param report:
     :return:
     """
-    """
+    if Globals.LOCAL_RUN:
+        if report.when == 'teardown':
+            log = report.caplog
+            log = strip_ansi(log)
+            logs = log.split('\n')
+            test_id = CACHE.lookup(report.nodeid)
+            name = str(test_id) + '_' + report.nodeid.split('::')[1]
+            test_log = os.path.join(os.getcwd(), LOG_DIR, 'latest', name)
+            with open(test_log, 'w') as fp:
+                for rec in logs:
+                    fp.write(rec + '\n')
+        return
     jira_id, jira_pwd = get_jira_credential()
     task = jira_utils.JiraTask(jira_id, jira_pwd)
     test_id = CACHE.lookup(report.nodeid)
     if report.when == 'setup':
         task.update_test_jira_status(Globals.TE_TKT, test_id, 'Executing')
-        pass
     elif report.when == 'call':
-        task.update_test_jira_status(Globals.TE_TKT, test_id, 'Executing')
         pass
     elif report.when == 'teardown':
         log = report.caplog
@@ -255,8 +257,3 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
             task.update_test_jira_status(Globals.TE_TKT, test_id, 'PASS')
         elif report.outcome in ['failed', 'Failed']:
             task.update_test_jira_status(Globals.TE_TKT, test_id, 'FAIL')
-
-"""
-
-
-
