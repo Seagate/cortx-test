@@ -11,6 +11,7 @@ Helper functions:
 """
 
 import sys
+from typing import Any
 
 if sys.version >= '3.7':
     # Use dataclass decorator if running Python 3.7 or newer.
@@ -105,7 +106,8 @@ CLI_STATUS_FAILED = CTError(24009, "CLI Response Status Failed")
 CLI_LOGIN_FAILED = CTError(24010, "CLI Authentication Unsuccessful")
 CLI_MC_NOT_READY = CTError(24011, "CLI MC Not Ready")
 CLI_CONTROLLER_CHECK_MISSING_PARAMETER = CTError(24012, "CLI Controller Check Missing Parameter")
-
+CSM_REST_AUTHENTICATION_ERROR: Any = CTError(8107, "CSM-REST Authentication Error")
+CSM_REST_VERIFICATION_FAILED: Any = CTError(8108, "Unexpected output fetched for CSM-REST")
 # Product Configuration DataBase Errors
 PCD_SYNTAX_ERROR = CTError(30000, "PCD file Syntax error")
 FILE_MISSING = CTError(30001, "File missing")

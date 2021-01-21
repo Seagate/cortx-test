@@ -111,7 +111,7 @@ class Host():
             except:
                 log.debug("Attempting to reconnect")
                 retry_count -= 1
-                time.sleep(1)
+                time.sleep(10)
 
     def execute_cmd(self, cmd: str, inputs: str = None, read_lines: bool = False,
                     read_nbytes: int = -1, timeout=400, **kwargs) -> Tuple[bool, Union[List[str], str, bytes]]:

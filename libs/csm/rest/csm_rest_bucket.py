@@ -1,0 +1,550 @@
+"""Test library for s3 bucket operations."""
+import time
+import json
+from string import Template
+from commons.constants import Rest as const
+import commons.errorcodes as err
+from commons.exceptions import CTException
+from libs.csm.rest.csm_rest_test_lib import RestTestLib as Base
+
+class RestS3Bucket(Base):
+    """RestS3Bucket contains all the Rest Api calls for s3 account operations"""
+
+    def __init__(self):
+        super(RestS3Bucket, self).__init__()
+        self.recently_created_s3_bucket = None
+        template_payload = Template(const.BUCKET_PAYLOAD)
+        self._bucket_payload = {
+            "valid": template_payload.substitute(value=int(time.time())),
+            "bucket_name_less_than_three_char": template_payload.substitute(value=""),
+            "bucket_name_more_than_63_char": template_payload.substitute(value="n" * 66),
+            "start_with_underscore": "{\"bucket_name\":\"_buk\"}",
+            "start_with_uppercase": "{\"bucket_name\":\"Buket1\"}",
+            "ip_address": "{\"bucket_name\":\"1.1.1.1\"}",
+            "duplicate": "{\"bucket_name\":\"duplicate\"}",
+            "invalid": "{\"bucket_name\":\"\"}",
+        }
+
+    @Base.authenticate_and_login
+    def create_s3_bucket(self, bucket_type):
+        """
+        This function will create new s3 bucket
+        :param bucket_type: type of bucket required
+        :return: response of create bucket
+        """
+        try:
+            # Building request url
+            self._log.debug("Create s3 bucket ...")
+            endpoint = self.config["s3_bucket_endpoint"]
+            self._log.debug("Endpoint for s3 accounts is {}". format(endpoint))
+
+            # Collecting required payload to be added for request
+            user_data = self._bucket_payload[bucket_type]
+            self._log.debug("Payload for s3 bucket is {}".format(user_data))
+            self.headers.update(self.config["Login_headers"])
+            self.recently_created_s3_bucket = user_data
+
+            # Fetching api response
+            return self.restapi.rest_call(
+                "post",
+                endpoint=endpoint,
+                data=user_data,
+                headers=self.headers)
+
+        except BaseException as error:
+            self._log.error("{0} {1}: {2}".format(
+                self.exception_error,
+                RestS3Bucket.create_s3_bucket.__name__,
+                error))
+            raise CTException(
+                err.CSM_REST_AUTHENTICATION_ERROR,
+                error.args[0])
+
+    @Base.authenticate_and_login
+    def list_all_created_buckets(self):
+        """
+        This function will list down all created buckets
+        :return: Returns created bucket list
+        """
+        try:
+            # Building request url
+            self._log.debug("Try to fetch all s3 buckets ...")
+            endpoint = self.config["s3_bucket_endpoint"]
+            self._log.debug("Endpoint for s3 bucket is {}".format(endpoint))
+
+            # Fetching api response
+            response = self.restapi.rest_call(
+                "get", endpoint=endpoint, headers=self.headers)
+
+            return response
+        except BaseException as error:
+            self._log.error("{0} {1}: {2}".format(
+                self.exception_error,
+                RestS3Bucket.list_all_created_buckets.__name__,
+                error))
+            raise CTException(
+                err.CSM_REST_AUTHENTICATION_ERROR,
+                error.args[0])
+
+    @Base.authenticate_and_login
+    def delete_s3_bucket(self, bucket_name):
+        """
+        This function will delete the required bucket
+        :param bucket_name: Bucket name to be deleted
+        :return: response delete s3 bucket
+        """
+        try:
+            # Building request url
+            self._log.debug("Try to delete s3 bucket : {}".format(bucket_name))
+            endpoint = "{}/{}".format(
+                self.config["s3_bucket_endpoint"], bucket_name)
+            self._log.debug("Endpoint for s3 accounts is {}".format(endpoint))
+
+            # Fetching api response
+            response = self.restapi.rest_call(
+                "delete", endpoint=endpoint, headers=self.headers)
+
+            return response
+        except BaseException as error:
+            self._log.error("{0} {1}: {2}".format(
+                self.exception_error,
+                RestS3Bucket.delete_s3_bucket.__name__,
+                error))
+            raise CTException(
+                err.CSM_REST_AUTHENTICATION_ERROR,
+                error.args[0])
+
+    def create_and_verify_new_bucket(
+            self,
+            expect_status_code,
+            bucket_type="valid",
+            login_as="s3account_user"):
+        """
+        This function will create and verify that new created bucket
+        :param bucket_type: type of bucket required (default : valid)
+        possible values (valid, bucket_name_less_than_three_char,
+        bucket_name_more_than_63_char, start_with_underscore,
+        start_with_uppercase, ip_address, duplicate, invalid)
+        :param expect_status_code: expected status code to be verify
+        :param login_as: The type of user you desire to login(default : s3account_user)
+        possible values (csm_admin_user, s3account_user, csm_user_manage, csm_user_monitor)
+        :return: Success(True)/Failure(False)
+        """
+        try:
+            # Checking for user type
+            if bucket_type not in self._bucket_payload:
+                self._log.error("Invalid user type")
+                return False
+
+            # Fetching and verifying response
+            response = self.create_s3_bucket(
+                bucket_type=bucket_type, login_as=login_as)
+            if bucket_type != "valid":
+                if bucket_type == "duplicate":
+                    response = self.create_s3_bucket(
+                        bucket_type="duplicate", login_as=login_as)
+                self._log.debug(
+                    "Checking the response for {}".format(bucket_type))
+                return response.status_code == expect_status_code
+
+            if (not response) or response.status_code != expect_status_code:
+                self._log.error("Response is not 200")
+                return False
+            response = response.json()
+
+            # Validating response value
+            if response["bucket_name"] != json.loads(self.recently_created_s3_bucket)["bucket_name"]:
+                self._log.error("Values does not match ")
+                return False
+            list_response = self.list_all_created_buckets(
+                login_as=login_as).json()["buckets"]
+            response = {"name": response[const.BUCKET_NAME]}
+            return any(self.verify_json_response(actual_result, response)
+                       for actual_result in list_response)
+        except Exception as error:
+            self._log.error("{0} {1}: {2}".format(
+                self.exception_error,
+                RestS3Bucket.create_and_verify_new_bucket.__name__,
+                error))
+            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
+
+    def list_and_verify_bucket(
+            self,
+            expect_no_user=False,
+            login_as="s3account_user"):
+        """
+        This function will list and verity s3 buckets
+        :param expect_no_user: Newly created account scenario
+        :param login_as: The type of user you desire to login(default : s3account_user)
+        possible values (csm_admin_user, s3account_user, csm_user_manage, csm_user_monitor)
+        :return: Success/Failure
+        """
+        try:
+            response = self.list_all_created_buckets(login_as=login_as)
+            if (not response) or response.status_code != const.SUCCESS_STATUS:
+                self._log.error("Response is not 200")
+                return False
+            response = response.json()
+
+            # Verifying response key
+            if const.BUCKET not in response:
+                self._log.error("Bucket key is not present")
+                return False
+
+            # Checking for not "no user" scenario
+            if len(response[const.BUCKET]) == 0 or expect_no_user:
+                self._log.warning("Buckets present till now is : {}".format(
+                    len(response[const.BUCKET])))
+                return len(response[const.BUCKET]) == 0 and expect_no_user
+
+            # Checking format
+            if not all(
+                    const.NAME in key for key in response[const.BUCKET]):
+                self._log.error("Invalid for mat of the json")
+                return False
+
+            return all(isinstance(value[const.NAME], str)
+                       for value in response[const.BUCKET])
+        except Exception as error:
+            self._log.error("{0} {1}: {2}".format(
+                self.exception_error,
+                RestS3Bucket.list_and_verify_bucket.__name__,
+                error))
+            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
+
+    def delete_and_verify_new_bucket(
+            self,
+            expect_status_code,
+            bucket_type="valid",
+            login_as="s3account_user"):
+        """
+        This function will delete and verify that bucket
+        :param bucket_type: type of bucket required (default : valid)
+        possible values (does-not-exist, valid)
+        :param expect_status_code: expected status code to be verify
+        :param login_as: The type of user you desire to login(default : s3account_user)
+        possible values (csm_admin_user, s3account_user, csm_user_manage, csm_user_monitor)
+        :return: Success(True)/Failure(False)
+        """
+        try:
+            # Checking special conditions
+            if bucket_type == "does-not-exist":
+                self._log.debug(
+                    "Checking response for bucket name does not exist")
+                response = self.delete_s3_bucket(
+                    bucket_name="does-not-exist", login_as=login_as)
+                return response.status_code == expect_status_code
+
+            # Fetching and verifying response
+            self.create_s3_bucket(bucket_type=bucket_type, login_as=login_as)
+            bucket_name = json.loads(
+                self.recently_created_s3_bucket)[
+                const.BUCKET_NAME]
+            response = self.delete_s3_bucket(
+                bucket_name=bucket_name, login_as=login_as)
+
+            if (not response) or response.status_code != expect_status_code:
+                self._log.error("Response is not 200")
+                return False
+            response = json.loads(self.recently_created_s3_bucket)
+            list_response = self.list_all_created_buckets(
+                login_as=login_as).json()["buckets"]
+            response = {"name": response[const.BUCKET_NAME]}
+            return all(
+                self.verify_json_response(
+                    actual_result,
+                    response) is False for actual_result in list_response)
+        except Exception as error:
+            self._log.error("{0} {1}: {2}".format(
+                self.exception_error,
+                RestS3Bucket.delete_and_verify_new_bucket.__name__,
+                error))
+            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
+
+    @Base.authenticate_and_login
+    def create_invalid_s3_bucket(self, bucket_name):
+        """
+        This function will verify invalid s3 bucket creation
+        :param bucket_name: type of bucket required
+        :return: response of create bucket
+        :rtype: response object
+        """
+        try:
+            # Building request url
+            self._log.debug("Create s3 bucket ...")
+            endpoint = self.config["s3_bucket_endpoint"]
+            self._log.debug("Endpoint for s3 accounts is {}". format(endpoint))
+
+            # Collecting required payload to be added for request
+            user_data = json.loads(self._bucket_payload["invalid"])
+            user_data["bucket_name"] = bucket_name
+
+            self._log.debug("Payload for s3 bucket is {}".format(user_data))
+            self.headers.update(self.config["Login_headers"])
+
+            # Fetching api response
+            return self.restapi.rest_call("post", endpoint=endpoint, data=json.dumps(user_data), headers=self.headers)
+        except BaseException as error:
+            self._log.error("{0} {1}: {2}".format(
+                self.exception_error, RestS3Bucket.create_invalid_s3_bucket.__name__, error))
+            raise CTException(
+                err.CSM_REST_AUTHENTICATION_ERROR, error.args[0])
+
+
+class RestS3BucketPolicy(Base):
+    """RestS3BucketPolicy contains all the Rest Api calls for s3 bucket policy operations"""
+
+    def __init__(self, bucketname, ):
+        super(RestS3BucketPolicy, self).__init__()
+        template_payload = Template(const.BUCKET_POLICY_PAYLOAD)
+        payload = template_payload.substitute(value=bucketname, s3operation='DeleteObject', effect='Allow',
+                                              principal='*')
+        invalid_payload = template_payload.substitute(value=bucketname, s3operation='GetObct', effect='Allow',
+                                                      principal='*')
+        update_payload = template_payload.substitute(value=bucketname, s3operation='GetObject', effect='Allow',
+                                                     principal='*')
+        iam_principal_payload = Template(const.BUCKET_POLICY_PAYLOAD_IAM)
+        multi_policy_payload = Template(const.MULTI_BUCKET_POLICY_PAYLOAD)
+        self._bucketpolicy_payload = {
+            "payload": payload,
+            "updated_payload": update_payload,
+            "invalid_payload": invalid_payload,
+            "custom": iam_principal_payload,
+            "multi_policy": multi_policy_payload
+        }
+        self.bucket_name = bucketname
+
+    @Base.authenticate_and_login
+    def create_bucket_policy(self, operation="default", custom_policy_params={}):
+        """
+         This function will create new s3 bucket policy
+         :param operation: type of operation to pass in payload (default : "default")
+         possible values ("update_policy","invalid_payload")
+         :param custom_policy_params: customised policy parameter passed to payload
+         :return: response of create bucket policy
+         """
+        try:
+            # Building request url
+            self._log.debug("Put bucket policy")
+            endpoint = self.config["bucket_policy_endpoint"].format(
+                self.bucket_name)
+            self._log.debug("Endpoint for bucket policy is {}".format(endpoint))
+
+            # Collecting required payload to be added for request
+            if operation == "default":
+                user_data = self._bucketpolicy_payload["payload"]
+            elif operation == "update_policy":
+                user_data = self._bucketpolicy_payload["updated_payload"]
+            elif operation == "invalid_payload":
+                user_data = self._bucketpolicy_payload["invalid_payload"]
+            elif operation == "custom":
+                user_data = self._bucketpolicy_payload[operation]
+                user_data = user_data.substitute(value=self.bucket_name,
+                                                 s3operation=custom_policy_params['s3operation'],
+                                                 effect=custom_policy_params['effect'],
+                                                 principal=custom_policy_params['principal'])
+            elif operation == "multi_policy":
+                user_data = self._bucketpolicy_payload[operation]
+                user_data = user_data.substitute(value=self.bucket_name,
+                                                 s3operation1=custom_policy_params['s3operation1'],
+                                                 s3operation2=custom_policy_params['s3operation2'],
+                                                 effect=custom_policy_params['effect'],
+                                                 principal=custom_policy_params['principal']
+                                                 )
+
+            self._log.debug("Payload for s3 bucket is {}".format(user_data))
+            self.headers.update(self.config["Login_headers"])
+            self.user_data = user_data
+            # Fetching api response
+            return self.restapi.rest_call(
+                "put", endpoint=endpoint, data=user_data, headers=self.headers)
+
+        except BaseException as error:
+            self._log.error("{0} {1}: {2}".format(
+                self.exception_error,
+                RestS3BucketPolicy.create_bucket_policy.__name__,
+                error))
+            raise CTException(
+                err.CSM_REST_AUTHENTICATION_ERROR,
+                error.args[0])
+
+    def create_and_verify_bucket_policy(
+            self,
+            expected_status_code=200,
+            login_as="s3account_user",
+            operation="default",
+            custom_policy_params={},
+            validate_expected_response=True):
+        """
+        This function will create and verify that new bucket policy applied
+        :param expected_status_code: expected status code to be verify
+        :param login_as: The type of user you desire to login(default : s3account_user)
+        possible values (csm_admin_user, s3account_user, csm_user_manage, csm_user_monitor)
+        :param operation: type of operation to pass in payload (default : "default")
+         possible values ("update_policy","invalid_payload")
+        :param custom_policy_params: customised policy parameter passed to payload
+        :param validate_expected_response : validation of expected response
+        :return: Success(True)/Failure(False)
+        """
+        try:
+            response = self.create_bucket_policy(
+                operation=operation, custom_policy_params=custom_policy_params, login_as=login_as)
+            if response.status_code != expected_status_code:
+                self._log.error(
+                    "Response is not 200, Response={}".format(
+                        response.status_code))
+                return False
+            self.response = response.json()
+
+            # Validating response value
+            if validate_expected_response:
+                exp_response = {
+                    "message": "Bucket Policy Updated Successfully."}
+                if self.response != exp_response:
+                    self._log.error("Values does not match ")
+                    return False
+            return True
+
+        except BaseException as error:
+            self._log.error("{0} {1}: {2}".format(
+                self.exception_error,
+                RestS3BucketPolicy.create_and_verify_bucket_policy.__name__,
+                error))
+            raise CTException(
+                err.CSM_REST_VERIFICATION_FAILED,
+                error.args[0])
+
+    @Base.authenticate_and_login
+    def get_bucket_policy(self, bucket_name=None, login_as="s3account_user"):
+        """
+         This function will get s3 bucket policy
+         :param bucket_type: type of bucket required
+         :param login_as: The type of user you desire to login(default : s3account_user)
+         possible values (csm_admin_user, s3account_user, csm_user_manage, csm_user_monitor)
+         :return: response of get bucket policy
+         """
+        try:
+            # Building request url
+            self._log.debug("Get bucket policy")
+            if bucket_name:
+                endpoint = self.config["bucket_policy_endpoint"].format(
+                    bucket_name)
+            else:
+                endpoint = self.config["bucket_policy_endpoint"].format(
+                    self.bucket_name)
+            self._log.debug("Endpoint for bucket policy is {}".format(endpoint))
+
+            self.headers.update(self.config["Login_headers"])
+
+            # Fetching api response
+            return self.restapi.rest_call(
+                "get", endpoint=endpoint, headers=self.headers)
+
+        except BaseException as error:
+            self._log.error("{0} {1}: {2}".format(
+                self.exception_error,
+                RestS3BucketPolicy.get_bucket_policy.__name__,
+                error))
+            raise CTException(
+                err.CSM_REST_AUTHENTICATION_ERROR, error.args[0])
+
+    def get_and_verify_bucket_policy(self, validate_expected_response=True,
+                                     expected_status_code=200,
+                                     login_as="s3account_user",
+                                     invalid_bucket=False):
+        """
+        This function will get and verify that bucket policy applied or not
+        :param validate_expected_response : validation of expected response
+        :param expected_status_code: expected status code to be verify
+        :param login_as: The type of user you desire to login(default : s3account_user)
+        possible values (csm_admin_user, s3account_user, csm_user_manage, csm_user_monitor)
+        :param invalid_bucket: type of bucket to pass in payload (default : False)
+        possible value (True)
+        :return: Success(True)/Failure(False)
+        """
+        try:
+            self._log.debug("Get and verify bucket policy")
+            if invalid_bucket:
+                invalid_bucket_name = ''.join(('buk', str(int(time.time()))))
+                response = self.get_bucket_policy(
+                    bucket_name=invalid_bucket_name, login_as=login_as)
+            else:
+                response = self.get_bucket_policy(login_as=login_as)
+            if response.status_code != expected_status_code:
+                self._log.error(
+                    "Response is not 200, Response={}".format(
+                        response.status_code))
+                return False
+            if (validate_expected_response) and (
+                    json.loads(self.user_data) != response.json()):
+                self._log.error(
+                    "Values does not match : response={}".format(
+                        response.json()))
+                return False
+            return True
+
+        except BaseException as error:
+            self._log.error("{0} {1}: {2}".format(
+                self.exception_error,
+                RestS3BucketPolicy.get_and_verify_bucket_policy.__name__,
+                error))
+            raise CTException(
+                err.CSM_REST_VERIFICATION_FAILED,
+                error.args[0])
+
+    @Base.authenticate_and_login
+    def delete_bucket_policy(self, login_as="s3account_user"):
+        """
+         This function will delete s3 bucket policy
+         :param login_as: The type of user you desire to login(default : s3account_user)
+         possible values (csm_admin_user, s3account_user, csm_user_manage, csm_user_monitor)
+         :return: response of delete bucket policy
+         """
+        try:
+            # Building request url
+            self._log.debug("Delete bucket policy")
+            endpoint = self.config["bucket_policy_endpoint"].format(
+                self.bucket_name)
+            self._log.debug("Endpoint for bucket policy is {}".format(endpoint))
+
+            self.headers.update(self.config["Login_headers"])
+
+            # Fetching api response
+            return self.restapi.rest_call(
+                "delete", endpoint=endpoint, headers=self.headers)
+
+        except BaseException as error:
+            self._log.error("{0} {1}: {2}".format(
+                self.exception_error,
+                RestS3BucketPolicy.delete_bucket_policy.__name__,
+                error))
+            raise CTException(
+                err.CSM_REST_AUTHENTICATION_ERROR, error.args[0])
+
+    def delete_and_verify_bucket_policy(self, expected_status_code=200,
+                                        login_as="s3account_user"):
+        """
+        This function will delete and verify that bucket policy deleted or not
+        :param expected_status_code: expected status code to be verify
+        :param login_as: The type of user you desire to login(default : s3account_user)
+        possible values (csm_admin_user, s3account_user, csm_user_manage, csm_user_monitor)
+        :return: Success(True)/Failure(False)
+        """
+        try:
+            self._log.debug("Delete and verify bucket policy")
+            response = self.delete_bucket_policy(login_as=login_as)
+            if response.status_code != expected_status_code:
+                self._log.error(
+                    "Response is not 200, Response={}".format(
+                        response.status_code))
+                return False
+            return True
+
+        except BaseException as error:
+            self._log.error("{0} {1}: {2}".format(
+                self.exception_error,
+                RestS3BucketPolicy.delete_and_verify_bucket_policy.__name__,
+                error))
+            raise CTException(
+                err.CSM_REST_VERIFICATION_FAILED,
+                error.args[0])
