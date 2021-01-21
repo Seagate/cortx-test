@@ -1,0 +1,109 @@
+test_4956:
+  panel_list:
+  - throughput
+  - latency
+  - iops
+  metric_list:
+  - throughput.read
+  - throughput.write
+  - throughput.total
+  - latency.create_object
+  - latency.delete_object
+  - latency.write_object
+  - latency.read_object
+  - latency.getkv
+  - latency.putkv
+  - latency.deletekv
+  - latency.average
+  - iops.read_object
+  - iops.write_object
+  - iops.read_bucket
+  - iops.write_bucket
+  unit_list:
+  - throughput.read.bytes
+  - throughput.read.kb
+  - throughput.read.mb
+  - throughput.read.gb
+  - throughput.write.bytes
+  - throughput.write.kb
+  - throughput.write.mb
+  - throughput.write.gb
+  - throughput.total.bytes
+  - throughput.total.kb
+  - throughput.total.mb
+  - throughput.total.gb
+  - latency.create_object.milliseconds
+  - latency.delete_object.milliseconds
+  - latency.write_object.milliseconds
+  - latency.read_object.milliseconds
+  - latency.getkv.milliseconds
+  - latency.putkv.milliseconds
+  - latency.deletekv.milliseconds
+  - latency.average.milliseconds
+  - iops.read_object.iops
+  - iops.write_object.iops
+  - iops.read_bucket.iops
+  - iops.write_bucket.iops
+
+test_4958:
+  interval_secs: 12
+  epoc_time_diff: 500
+
+test_4959:
+  interval_secs: 12
+  total_sample: 2
+  epoc_time_diff: 500
+
+test_4961:
+  epoc_time_diff: 500
+  valid_interval_secs: 12
+  valid_total_sample: 2
+  invalid_metrics:
+    - "abc"
+  invalid_times:
+    - "aa"
+    - "Abcdefghi"
+  invalid_intervals:
+    - "dd"
+  invalid_samples:
+    - "sd"
+  expected_response: 
+    - 400
+    - 500
+
+test_4962:
+  interval_secs: 12
+  epoc_time_diff: 500
+  total_sample: 2
+  expected_response: 
+    - 400
+    - 500
+
+test_4963:
+  epoc_time_diff: 500
+  total_sample: 2
+  expected_response: 
+    - 400
+    - 500
+
+test_4957:
+  total_sample: 2
+  epoc_time_diff: 500
+  value: ": null"
+
+test_4960:
+  epoc_time_diff: 500
+  default_interval: 10
+  value: ": null"
+
+test_4967:
+  epoc_time_diff: 500
+  default_interval: 10
+  expected_response: 500
+  error_msg: "to time should be grater than from time"
+
+test_4968:
+  epoc_time_diff: 500
+  default_interval: 10
+  error_msg: "403: Forbidden"
+  
