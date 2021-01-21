@@ -56,7 +56,7 @@ logger.setLevel(logging.DEBUG)
 
 def init_loghandler(log):
     log.setLevel(logging.DEBUG)
-    fh = logging.FileHandler(di_params.LOG_FILE, mode='w')
+    fh = logging.FileHandler(os.path.join(os.getcwd(), di_params.LOG_FILE), mode='w')
     fh.setLevel(logging.DEBUG)
     ch = logging.StreamHandler()
     ch.setLevel(logging.DEBUG)

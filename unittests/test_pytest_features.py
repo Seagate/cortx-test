@@ -135,7 +135,7 @@ def test_sel_sort(data, logger):
     logger.info("info %s" % sorted_vals)
 
 
-@pytest.mark.test_id(1501)
+@pytest.mark.tags("1501")
 def test_function():
     assert True
 
