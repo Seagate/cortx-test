@@ -77,8 +77,3 @@ Generate New Password
     Log To Console And Report  ${password}
     [Return]  ${password}
 
-
-# TEMP
-CSM GUI Logout
-    [Documentation]  Functionlity to CSM GUI Logout
-    Click Element  logout-icon
