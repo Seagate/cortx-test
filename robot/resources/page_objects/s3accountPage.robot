@@ -80,8 +80,10 @@ Delete S3 Account
     ...  Enter Username And Password    ${s3_account_name}  ${password}
     ...  AND
     ...  Click Sigin Button
+    Validate CSM Login Success  ${s3_account_name}
     log to console and report   deleting S3 account ${s3_account_name}
     wait until element is visible  ${DELETE_S3_ACCOUNT_ID}  timeout=10
+    sleep  2s
     click element  ${DELETE_S3_ACCOUNT_ID}
     sleep  2s
     click element  ${CONFIRM_DELETE_S3_ACCOUNT_ID}

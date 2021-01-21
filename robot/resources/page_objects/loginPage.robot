@@ -31,7 +31,7 @@ Click Sigin Button
 Validate CSM Login Failure
     [Documentation]  Test keyword is for Validating login failure on CSM GUI.
     ${csm_login_fail_msg}=  get text  ${csm login fail msg id}
-    should be equal  ${csm_login_fail_msg} ${LOGIN_FAILED_MSG}
+    should be equal  ${csm_login_fail_msg} ${LOGIN_FAILED_MESSAGE}
     [Return]  ${csm_login_fail_msg}
 
 Validate CSM Login Success
