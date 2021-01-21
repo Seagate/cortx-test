@@ -126,14 +126,14 @@ class RestIamUser(Base):
             # Building response
             endpoint = self.config["rest_login_endpoint"]
             headers = self.config["Login_headers"]
-            self._log.debug("endpoint ", endpoint)
+            self._log.debug(f"endpoint  {endpoint}")
             payload = Template(const.IAM_USER_LOGIN_PAYLOAD).substitute(username=user,
                                                                              password=password)
 
             # Fetch and verify response
             response = self.restapi.rest_call(
                 "post", endpoint, headers=headers, data=payload, save_json=False)
-            self._log.debug("response : ", response)
+            self._log.debug(f"response :  {response}")
 
             return response.status_code
         except BaseException as error:

@@ -23,12 +23,11 @@ class TestIamUser():
         #if not setup_ready:
         #    setup_ready = self.config.setup_csm_s3
         #assert(setup_ready)
-        self.rest_iam_user = RestIamUser()
         self.created_iam_users = set()
+        self.rest_iam_user = RestIamUser()
         self.log.info("Initiating Rest Client ...")
 
-    @classmethod
-    def teardown_class(self):
+    def teardown_method(self, method):
         self.log.info("Teardown started")
         for user in self.created_iam_users:
             self.rest_iam_user.delete_iam_user(
