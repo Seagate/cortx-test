@@ -30,7 +30,6 @@ from gevent.queue import Queue
 from gevent.pool import Pool
 from gevent.pool import Group
 
-
 logger = logging.getLogger(__name__)
 if sys.platform == "win32":
     # Add stdout handler, with level DEBUG
@@ -40,7 +39,10 @@ threads = list()
 
 
 class GreenletThread(Greenlet):
-    """Class to Create Greenlet Multi-threading Objects and used to further extending child classes. """
+    """
+    Class to Create Greenlet Multi-threading Objects and used to further extending child classes.
+    """
+
     queue = Queue()
 
     def __init__(
@@ -70,15 +72,16 @@ class GreenletThread(Greenlet):
         super().__init__(run, *args, **kwargs)
         logger.debug("Creating GThread Object")
         self.responses = dict()  # Collecting Thread name and Thread Result/Return response
-        self.feed() # Adding thread in queue for keeping track of threads execution
+        self.feed()  # Adding thread in queue for keeping track of threads execution
 
-    def _run(self, message=None) -> Any:
+    def _run(self, *args, **kwargs) -> Any:
         """Build some IO Bound tasks to run via multithreading here.
         and Return some information back.
         Subclasses may override this method to take any number of
         arguments and keyword arguments.
         """
-        logger.info(message)
+        logger.debug(args)
+        logger.debug(kwargs)
 
     def feed(self) -> None:
         """
@@ -109,7 +112,7 @@ class GreenletThread(Greenlet):
         raise NotImplementedError("worker needs to be implemented")
 
     @staticmethod
-    def join() -> None:
+    def join_all() -> None:
         """
         Operating on list/collection of executing thread objects
         Waiting for all threads to complete.
@@ -121,7 +124,8 @@ class GreenletThread(Greenlet):
         logger.debug(threads)
         gevent.joinall(threads)
         logger.debug("All Threads execution is completed")
-        GreenletThread.responses = {thread.name: thread.value for thread in threads}
+        GreenletThread.responses = {
+            thread.name: thread.value for thread in threads}
 
     @staticmethod
     def terminate() -> Tuple[bool, List]:
@@ -130,19 +134,20 @@ class GreenletThread(Greenlet):
         :return: Collection of Boolean with list of thread responses
         :rtype: tuple containing bool and List
         """
-        GreenletThread.join()
+        GreenletThread.join_all()
         logger.debug(
             "Terminating all processes once they finished with task\n")
         while not GreenletThread.queue.empty():
             # get results from the queue...
-            logger.info("RESULT: {0}".format(GreenletThread.receive()))
+            logger.info("RESULT: %s", GreenletThread.receive())
         if GreenletThread.queue.empty():
             return True, GreenletThread.responses
 
         return False, GreenletThread.responses
 
 
-class GeventPool(object):
+class GeventPool:
+    """ Class for using Gevent Pool Capabilities"""
 
     def __init__(self, no_of_threads: int) -> None:
         """
@@ -191,7 +196,7 @@ class GeventPool(object):
         logger.debug("All Threads execution is completed")
         self.responses = {g.name: g.value for g in threads}
 
-    def pool_map(self,func: object, args: Any) -> None:
+    def pool_map(self, func: object, args: Any) -> None:
         """
         :param func: method need to be operated in thread
         :param args: function arguments
@@ -211,4 +216,3 @@ class GeventPool(object):
         :return: thread execution result
         """
         return self.responses
-

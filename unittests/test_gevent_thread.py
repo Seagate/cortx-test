@@ -16,22 +16,26 @@ def fun(*args, **kwargs):
     return True
 
 
-def fun1(x):
+def fun1(x_arg):
     """ function with single param return True"""
-    print("Running fun1 Thread", x)
+    print("Running fun1 Thread", x_arg)
     return True
 
 
-def fun2(y):
+def fun2(y_arg):
     """ function with single param returns False"""
-    print("Running fun2 Thread", y)
+    print("Running fun2 Thread", y_arg)
     return False
 
 
-class MyTestCase(unittest.TestCase):
+class GEventTestCase(unittest.TestCase):
+    """ Testing gevent threads"""
 
     def test_1000_gthread(self):
-        """Testing Greenlet Threading with passing function object or by overriding the _run if run=None """
+        """
+        Testing Greenlet Threading with passing function object or by overriding the _run
+        if run=None.
+        """
         logger.info("Defining Number of Threads to be Started")
         number_of_threads = 100000
         logger.info("Creating GThread Objects and Executing")
@@ -42,15 +46,18 @@ class MyTestCase(unittest.TestCase):
             t_obj.start()
             threads.append(t_obj)
         status, res = GreenletThread.terminate()
-        logger.info(f"All Threads successfully Completed:{status} {res}")
+        logger.info("All Threads successfully Completed:%s %s",status, res)
         self.assertTrue(status, f"All Threads successfully Completed: {res}")
         end = perf_counter()
         logger.info("EndTime is:%f", end)
         logger.info("Total Time Taken with running threads: %f", (end - start))
-        logger.info("-------------------------------------------------------------------------------------------------")
+        logger.info("-----------------------------------------------------------------------------")
 
     def test_separate_gthread(self):
-        """Testing Greenlet Threading with passing function object or by overriding the _run if run=None """
+        """
+        Testing Greenlet Threading with passing function object or by overriding the _run
+        if run=None.
+        """
         logger.info("Defining Number of Threads to be Started")
         logger.info("Creating GThread Objects and Executing")
         start = perf_counter()
@@ -65,15 +72,18 @@ class MyTestCase(unittest.TestCase):
         threads.append(t2_obj)
         threads.append(t3_obj)
         status, res = GreenletThread.terminate()
-        logger.info(f"All Threads successfully Completed:{status} {res}")
+        logger.info("All Threads successfully Completed:%s %s",status, res)
         self.assertTrue(status, f"All Threads successfully Completed: {res}")
         end = perf_counter()
         logger.info("EndTime is:%f", end)
         logger.info("Total Time Taken with running threads: %f", (end - start))
-        logger.info("-------------------------------------------------------------------------------------------------")
+        logger.info("----------------------------------------------------------------------------")
 
     def test_1000_gpool(self):
-        """Testing Greenlet Threading with passing function object or by overriding the _run if run=None """
+        """
+        Testing Greenlet Threading with passing function object or by overriding the _run
+        if run=None.
+        """
         logger.info("Defining Number of Threads to be Started")
         number_of_threads = 100000
         logger.info("Creating GThread Objects and Executing")
@@ -84,15 +94,18 @@ class MyTestCase(unittest.TestCase):
             gp_obj.add_handler(fun1, i)
         gp_obj.join_group()
         gp_obj.shutdown()
-        logger.info(f"All Threads successfully Completed:")
-        # self.assertTrue(status, f"All Threads successfully Completed: {res}")
+        logger.info("All Threads successfully Completed:")
+        self.assertTrue(True)
         end = perf_counter()
         logger.info("EndTime is:%f", end)
         logger.info("Total Time Taken with running threads: %f", (end - start))
-        logger.info("-------------------------------------------------------------------------------------------------")
+        logger.info("----------------------------------------------------------------------------")
 
     def test_gpool(self):
-        """Testing Greenlet Threading with passing function object or by overriding the _run if run=None """
+        """
+        Testing Greenlet Threading with passing function object or by overriding the _run
+        if run=None.
+        """
         logger.info("Defining Number of Threads to be Started")
         logger.info("Creating GThread Objects and Executing")
         start = perf_counter()
@@ -103,12 +116,12 @@ class MyTestCase(unittest.TestCase):
         gp_obj.join_group()
         gp_obj.shutdown()
         logger.info(gp_obj.result())
-        logger.info(f"All Threads successfully Completed:")
-        # self.assertTrue(status, f"All Threads successfully Completed: {res}")
+        logger.info("All Threads successfully Completed:")
+        self.assertTrue(True)
         end = perf_counter()
         logger.info("EndTime is:%f", end)
         logger.info("Total Time Taken with running threads: %f", (end - start))
-        logger.info("-------------------------------------------------------------------------------------------------")
+        logger.info("---------------------------------------------------------------------------")
 
 
 if __name__ == '__main__':
