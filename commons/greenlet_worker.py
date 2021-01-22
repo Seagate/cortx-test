@@ -81,6 +81,9 @@ class GreenletThread(Greenlet):
         and Return some information back.
         Subclasses may override this method to take any number of
         arguments and keyword arguments.
+        :param: args
+        :param: kwargs
+        :return: None
         """
         LOGGER.debug(args)
         LOGGER.debug(kwargs)

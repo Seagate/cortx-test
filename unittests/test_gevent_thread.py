@@ -10,7 +10,7 @@ LOGGER.setLevel(logging.DEBUG)
 
 
 def fun(*args, **kwargs):
-    """function with args and kwargs"""
+    """function with variable args and variable kwargs"""
     print("Executing fun with->:")
     print("Arguments:{0} and Keyword Arguments {1} ", args, kwargs)
     return True
