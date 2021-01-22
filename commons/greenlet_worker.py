@@ -39,10 +39,7 @@ THREADS = list()
 
 
 class GreenletThread(Greenlet):
-    """
-    Class to Create Greenlet Multi-threading Objects and
-    used to further extending child classes.
-    """
+    """Class to Create Greenlet threading Objects and used to further extending child classes."""
 
     queue = Queue()
     responses = dict()

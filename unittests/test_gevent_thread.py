@@ -10,25 +10,26 @@ LOGGER.setLevel(logging.DEBUG)
 
 
 def fun(*args, **kwargs):
-    """function with variable args and variable kwargs."""
+    """Function with variable args and variable kwargs."""
     print("Executing fun with->:")
     print("Arguments:{0} and Keyword Arguments {1} ", args, kwargs)
     return True
 
 
 def fun1(x_arg):
-    """function with single param return True."""
+    """Function with single param return True."""
     print("Running fun1 Thread", x_arg)
     return True
 
 
 def fun2(y_arg):
-    """function with single param returns False."""
+    """Function with single param returns False."""
     print("Running fun2 Thread", y_arg)
     return False
 
 
 class GEventTestCase(unittest.TestCase):
+
     """Testing gevent threads"""
 
     def test_1000_gthread(self):
