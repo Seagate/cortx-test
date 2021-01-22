@@ -29,7 +29,6 @@ from commons import commands
 from commons.helpers.host import Host
 from commons.utils.system_utils import run_local_cmd, run_remote_cmd
 from commons.utils.config_utils import read_yaml, update_config_ini, read_content_json, create_content_json
-from typing import Any
 
 CM_CFG = read_yaml("config/common_config.yaml")[1]
 logger = logging.getLogger(__name__)

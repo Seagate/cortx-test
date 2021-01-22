@@ -33,6 +33,7 @@ class Host:
     """ Interface class for establishing connections. """
 
     def __init__(self, hostname: str, username: str, password: str) -> None:
+        """ Initializer for Host """
         self.hostname = hostname
         self.username = username
         self.password = password
@@ -88,7 +89,8 @@ class Host:
                                             password=self.password,
                                             private_key=private_key,
                                             private_key_pass=private_key_pass,
-                                            cnopts=cnopts)
+                                            cnopts=cnopts,
+                                            **kwargs)
 
     def disconnect(self) -> None:
         """
