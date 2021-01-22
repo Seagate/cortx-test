@@ -40,7 +40,8 @@ THREADS = list()
 
 class GreenletThread(Greenlet):
     """
-    Class to Create Greenlet Multi-threading Objects and used to further extending child classes.
+    Class to Create Greenlet Multi-threading Objects and
+    used to further extending child classes.
     """
 
     queue = Queue()
@@ -87,6 +88,7 @@ class GreenletThread(Greenlet):
         """
         LOGGER.debug(args)
         LOGGER.debug(kwargs)
+        LOGGER.DEBUG(self.responses)
 
     def feed(self) -> None:
         """
@@ -152,6 +154,7 @@ class GreenletThread(Greenlet):
 
 
 class GeventPool:
+
     """Class for using Gevent Pool Capabilities"""
 
     def __init__(self, no_of_threads: int) -> None:
