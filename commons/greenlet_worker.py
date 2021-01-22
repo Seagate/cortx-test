@@ -18,11 +18,11 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-"""Module to support greenlet threading and pool capabilities. """
+"""Module to support greenlet threading and pool capabilities."""
 import logging
 import sys
 
-from typing import List, Tuple, Any, Optional
+from typing import Tuple, Any, Optional
 import gevent
 
 from gevent import Greenlet
@@ -30,12 +30,12 @@ from gevent.queue import Queue
 from gevent.pool import Pool
 from gevent.pool import Group
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 if sys.platform == "win32":
     # Add stdout handler, with level DEBUG
     logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
-threads = list()
+THREADS = list()
 
 
 class GreenletThread(Greenlet):
@@ -44,6 +44,7 @@ class GreenletThread(Greenlet):
     """
 
     queue = Queue()
+    responses = dict()
 
     def __init__(
             self,
@@ -70,18 +71,19 @@ class GreenletThread(Greenlet):
 
         """
         super().__init__(run, *args, **kwargs)
-        logger.debug("Creating GThread Object")
+        LOGGER.debug("Creating GThread Object")
         self.responses = dict()  # Collecting Thread name and Thread Result/Return response
         self.feed()  # Adding thread in queue for keeping track of threads execution
 
-    def _run(self, *args, **kwargs) -> Any:
-        """Build some IO Bound tasks to run via multithreading here.
+    def _run(self, *args, **kwargs) -> None:
+        """
+        Build some IO Bound tasks to run via multithreading here.
         and Return some information back.
         Subclasses may override this method to take any number of
         arguments and keyword arguments.
         """
-        logger.debug(args)
-        logger.debug(kwargs)
+        LOGGER.debug(args)
+        LOGGER.debug(kwargs)
 
     def feed(self) -> None:
         """
@@ -120,26 +122,26 @@ class GreenletThread(Greenlet):
         :return: None.
         :rtype: None.
         """
-        logger.debug("Waiting for all threads to complete\n")
-        logger.debug(threads)
-        gevent.joinall(threads)
-        logger.debug("All Threads execution is completed")
+        LOGGER.debug("Waiting for all threads to complete\n")
+        LOGGER.debug(THREADS)
+        gevent.joinall(THREADS)
+        LOGGER.debug("All Threads execution is completed")
         GreenletThread.responses = {
-            thread.name: thread.value for thread in threads}
+            thread.name: thread.value for thread in THREADS}
 
     @staticmethod
-    def terminate() -> Tuple[bool, List]:
-        """ wait until queue is empty and terminate threads
-
+    def terminate() -> Tuple[bool, dict]:
+        """
+        wait until queue is empty and terminate threads
         :return: Collection of Boolean with list of thread responses
         :rtype: tuple containing bool and List
         """
         GreenletThread.join_all()
-        logger.debug(
+        LOGGER.debug(
             "Terminating all processes once they finished with task\n")
         while not GreenletThread.queue.empty():
             # get results from the queue...
-            logger.info("RESULT: %s", GreenletThread.receive())
+            LOGGER.info("RESULT: %s", GreenletThread.receive())
         if GreenletThread.queue.empty():
             return True, GreenletThread.responses
 
@@ -147,7 +149,7 @@ class GreenletThread(Greenlet):
 
 
 class GeventPool:
-    """ Class for using Gevent Pool Capabilities"""
+    """Class for using Gevent Pool Capabilities"""
 
     def __init__(self, no_of_threads: int) -> None:
         """
@@ -176,12 +178,12 @@ class GeventPool:
         :return: None
         """
         g_obj = self.pool.spawn(func, args)
-        threads.append(g_obj)
+        THREADS.append(g_obj)
         self._group(g_obj)
 
     def _group(self, g_obj: object) -> None:
         """
-        :param g: spawn object needs to be added in group
+        :param g_obj: spawn object needs to be added in group
         :return: None
         """
         self.group.add(g_obj)
@@ -191,10 +193,10 @@ class GeventPool:
         waiting all threads to complete
         :return: None
         """
-        logger.debug("Waiting for all threads to complete\n")
+        LOGGER.debug("Waiting for all threads to complete\n")
         self.group.join()
-        logger.debug("All Threads execution is completed")
-        self.responses = {g.name: g.value for g in threads}
+        LOGGER.debug("All Threads execution is completed")
+        self.responses = {g.name: g.value for g in THREADS}
 
     def pool_map(self, func: object, args: Any) -> None:
         """
