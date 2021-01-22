@@ -30,7 +30,7 @@ import config as cfg
 from libs.di.di_lib import init_loghandler
 
 logger = logging.getLogger(__name__)
-init_loghandler(logger)
+#init_loghandler(logger)
 
 
 def setup_module(module):
@@ -74,7 +74,7 @@ class TestDataIntegrity:
         """ teardown any state that was previously setup with a setup_method
         call.
         """
-
+    @pytest.mark.skip
     @pytest.mark.run(order=2)
     @pytest.mark.test(test_id=12345, tag='di')
     @pytest.mark.dataprovider('', conn=300)
@@ -86,6 +86,7 @@ class TestDataIntegrity:
         cmn_cfg = cfg.CMN_CFG
         users = cfg.constants.USER_JSON
 
+    @pytest.mark.skip
     @pytest.mark.test(test_id=12345, tag='di')
     @pytest.mark.run(order=2)
     def test_very_large_number_s3_connection(self):
