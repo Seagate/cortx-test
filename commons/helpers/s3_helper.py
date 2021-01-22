@@ -41,7 +41,7 @@ class S3Helper:
     def __init__(self) -> None:
         """ Virtually private constructor. """
         if S3Helper.__instance:
-            raise Exception("This class is a singleton!, use S3Helper.get_instance() to access existing object one.")
+            raise ImportError("This class is a singleton!, use S3Helper.get_instance() to access existing object one.")
         else:
             S3Helper.__instance = self
 
@@ -152,7 +152,7 @@ class S3Helper:
                                host: str = CM_CFG["host"],
                                user: str = CM_CFG["username"],
                                pwd: str = CM_CFG["password"]
-                               ) -> Any:
+                               ) -> bool:
         """
         Execute command to start any system service at remote s3 server.
         :param service: Name of the service.
@@ -174,7 +174,7 @@ class S3Helper:
                               host: str = CM_CFG["host"],
                               user: str = CM_CFG["username"],
                               pwd: str = CM_CFG["password"]
-                              ) -> Any:
+                              ) -> bool:
         """
         Execute command to stop any system service at remote s3 server.
         :param service: Name of the service.
@@ -196,7 +196,7 @@ class S3Helper:
                                  host: str = CM_CFG["host"],
                                  user: str = CM_CFG["username"],
                                  pwd: str = CM_CFG["password"]
-                                 ) -> Any:
+                                 ) -> bool:
         """
         Execute command to restart any system service at remote s3 server.
         :param service: Name of the service.
