@@ -18,16 +18,18 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-
+"""Module to support greenlet threading and pool capabilities. """
 import logging
 import sys
+
+from typing import List, Tuple, Any, Optional
 import gevent
 
 from gevent import Greenlet
 from gevent.queue import Queue
 from gevent.pool import Pool
 from gevent.pool import Group
-from typing import List, Tuple, Any, Optional
+
 
 logger = logging.getLogger(__name__)
 if sys.platform == "win32":
@@ -38,9 +40,7 @@ threads = list()
 
 
 class GreenletThread(Greenlet):
-    """
-    Class to Create Greenlet Multi-threading Objects and used to further extending child classes
-    """
+    """Class to Create Greenlet Multi-threading Objects and used to further extending child classes. """
     queue = Queue()
 
     def __init__(
@@ -74,7 +74,7 @@ class GreenletThread(Greenlet):
 
     def _run(self, message=None) -> Any:
         """Build some IO Bound tasks to run via multithreading here.
-        and Return some information back
+        and Return some information back.
         Subclasses may override this method to take any number of
         arguments and keyword arguments.
         """
@@ -99,14 +99,14 @@ class GreenletThread(Greenlet):
         """
         Define observer thread capabilities in subclass
         """
-        raise NotImplemented()
+        raise NotImplementedError("observer needs to be implemented")
 
     def worker(self):
         """
         :return: None.
         :rtype: None.
         """
-        raise NotImplemented()
+        raise NotImplementedError("worker needs to be implemented")
 
     @staticmethod
     def join() -> None:
@@ -126,6 +126,7 @@ class GreenletThread(Greenlet):
     @staticmethod
     def terminate() -> Tuple[bool, List]:
         """ wait until queue is empty and terminate threads
+
         :return: Collection of Boolean with list of thread responses
         :rtype: tuple containing bool and List
         """
@@ -169,17 +170,16 @@ class GeventPool(object):
         :param args: function arguments
         :return: None
         """
-        g = self.pool.spawn(func, args)
-        threads.append(g)
+        g_obj = self.pool.spawn(func, args)
+        threads.append(g_obj)
+        self._group(g_obj)
 
-        self._group(g)
-
-    def _group(self, g: object) -> None:
+    def _group(self, g_obj: object) -> None:
         """
         :param g: spawn object needs to be added in group
         :return: None
         """
-        self.group.add(g)
+        self.group.add(g_obj)
 
     def join_group(self) -> None:
         """
