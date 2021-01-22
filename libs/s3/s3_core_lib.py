@@ -958,7 +958,8 @@ class S3LibCmd(S3Lib):
 
         return response
 
-    def upload_folder_cli(self, bucket_name: str, folder_path: str, profile_name: str) -> bytes:
+    @staticmethod
+    def upload_folder_cli(bucket_name: str, folder_path: str, profile_name: str) -> bytes:
         """
         Uploading folder to the Bucket using aws cli.
         :param bucket_name: Name of the bucket.

@@ -29,6 +29,8 @@ SYSTEM_CTL_START_CMD = "systemctl start {}"
 SYSTEM_CTL_STOP_CMD = "systemctl stop {}"
 
 # S3IAMCLI Commands
+BUNDLE_CMD = "sh /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh"
+CRASH_COMMANDS = ["ls -l /var/crash", "ls -lR /var/motr | grep core"]
 CREATE_ACC_USR_S3IAMCLI = "s3iamcli CreateUser -n {} --access_key={} --secret_key={}"
 CMD_LIST_ACC = "s3iamcli Listaccounts --ldapuser={} --ldappasswd={}"
 CMD_LST_USR = "s3iamcli ListUsers --access_key={} --secret_key={}"

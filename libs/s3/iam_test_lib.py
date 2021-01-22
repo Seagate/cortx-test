@@ -47,8 +47,8 @@ logger = logging.getLogger(__name__)
 
 ACC_ACCESS_KEY = ""
 ACC_SECRET_KEY = ""
-LDAP_USERNAME = const.S3_BUILD_VER[cmn_conf["BUILD_VER_TYPE"]]["ldap_creds"]["ldap_username"]
-LDAP_PASSWD = const.S3_BUILD_VER[cmn_conf["BUILD_VER_TYPE"]]["ldap_creds"]["ldap_passwd"]
+LDAP_USERNAME = const.LDAP_CREDS["ldap_username"]
+LDAP_PASSWD = const.LDAP_CREDS["ldap_passwd"]
 
 
 class IamTestLib(IamLib, S3IamCli):

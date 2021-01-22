@@ -55,7 +55,8 @@ class S3Helper:
             S3Helper()
         return S3Helper.__instance
 
-    def configure_s3cfg(self, access: str, secret: str, path: str = CM_CFG["s3cfg_path"]) -> bool:
+    @staticmethod
+    def configure_s3cfg(access: str, secret: str, path: str = CM_CFG["s3cfg_path"]) -> bool:
         """
         Function to configure access and secret keys in s3cfg file.
         :param access: aws access key.
@@ -73,7 +74,8 @@ class S3Helper:
 
         return res
 
-    def configure_s3fs(self, access: str, secret: str, path: str = CM_CFG["s3fs_path"]) -> bool:
+    @staticmethod
+    def configure_s3fs(access: str, secret: str, path: str = CM_CFG["s3fs_path"]) -> bool:
         """
         Function to configure access and secret keys for s3fs.
         :param access: aws access key.
@@ -159,7 +161,13 @@ class S3Helper:
         :param pwd: password for the user.
         :return: response
         """
-        return run_remote_cmd(commands.SYSTEM_CTL_START_CMD.format(service), host, user, pwd, read_lines=True)
+        result = run_remote_cmd(commands.SYSTEM_CTL_START_CMD.format(service), host, user, pwd, read_lines=True)
+        logging.debug(result)
+        status = self.get_s3server_service_status(service, host, user, pwd)
+        if status:
+            return True
+
+        return False
 
     def stop_s3server_service(self,
                               service: str,
@@ -175,7 +183,13 @@ class S3Helper:
         :param pwd: password for the user.
         :return: response.
         """
-        return run_remote_cmd(commands.SYSTEM_CTL_STOP_CMD.format(service), host, user, pwd, read_lines=True)
+        result = run_remote_cmd(commands.SYSTEM_CTL_STOP_CMD.format(service), host, user, pwd, read_lines=True)
+        logging.debug(result)
+        status = self.get_s3server_service_status(service, host, user, pwd)
+        if not status:
+            return True
+
+        return False
 
     def restart_s3server_service(self,
                                  service: str,
@@ -191,7 +205,13 @@ class S3Helper:
         :param pwd: password for the user.
         :return: response.
         """
-        return run_remote_cmd(commands.SYSTEM_CTL_RESTART_CMD.format(service), host, user, pwd, read_lines=True)
+        result = run_remote_cmd(commands.SYSTEM_CTL_RESTART_CMD.format(service), host, user, pwd, read_lines=True)
+        logging.debug(result)
+        status = self.get_s3server_service_status(service, host, user, pwd)
+        if status:
+            return True
+
+        return False
 
     def restart_s3server_processes(self,
                                    host: str = CM_CFG["host"],
@@ -479,7 +499,8 @@ class S3Helper:
 
         return res
 
-    def get_local_keys(self, path: str = CM_CFG["aws_path"], section: str = CM_CFG["aws_cred_section"]) -> tuple:
+    @staticmethod
+    def get_local_keys(path: str = CM_CFG["aws_path"], section: str = CM_CFG["aws_cred_section"]) -> tuple:
         """
         Get local s3 access and secret keys.
         :param path: credential file path.
