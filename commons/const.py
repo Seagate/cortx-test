@@ -23,7 +23,7 @@ import sys
 import logging
 from typing import Any
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 class _final:
@@ -57,7 +57,7 @@ class _final:
             try:
                 raise self._ConstError
             except self._ConstError:
-                logging.error(f"Error: Can't rebind const {name}")
+                LOGGER.error(f"Error: Can't rebind const {name}")
         else:
             self.__dict__[name] = value
 
@@ -74,7 +74,7 @@ class _final:
             if name not in self.__dict__:
                 raise AttributeError
         except AttributeError:
-            logger.error(f"Error: const {name} not present/binded")
+            LOGGER.error(f"Error: const {name} not present/binded")
 
     def __delattr__(self, name: Any) -> None:
         """
@@ -89,9 +89,9 @@ class _final:
             else:
                 raise self._NameError
         except self._ConstError:
-            logger.error(f"Error: Can't unbind const {name}")
+            LOGGER.error(f"Error: Can't unbind const {name}")
         except self._NameError:
-            logger.error(f"Error: const {name} not binded")
+            LOGGER.error(f"Error: const {name} not binded")
 
 
 sys.modules[__name__] = _final()  # type: ignore
