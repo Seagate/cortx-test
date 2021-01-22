@@ -45,9 +45,9 @@ def min(values):
     logging.getLogger(__name__).info("inner function min is %s" % _min)
     return _min
 
+
 @pytest.mark.tags("TEST-17495")
-@pytest.mark.usefixtures("log_cutter")
-def test_min_lc(request, capture, logger):
+def test_min_lc(logger):
     """
     Alternate way to cut logs for each test
     :param request:
@@ -62,23 +62,17 @@ def test_min_lc(request, capture, logger):
     logger.info("min is %s" % val)
     logger.error("min is %s" % val)
     assert val == 1
-    records = capture.records
-    test_name = request.node.name
-    Globals.records.update({test_name: records})
+
 
 @pytest.mark.tags("TEST-17496")
-@pytest.mark.usefixtures("log_cutter")
-def test_max_lc(request, capture, logger):
+def test_max_lc(logger):
     values = (2, 3, 1, 4, 6)
-
     val = max(values)
     logger.info("max is %s" % val)
     assert val == 6
-    records = capture.records
-    test_name = request.node.name
-    Globals.records.update({test_name: records})
 
 
+@pytest.mark.ha
 @pytest.mark.parallel
 @pytest.mark.tags("TEST-17413")
 def test_min(logger):
@@ -96,6 +90,8 @@ def test_min(logger):
     logger.error("min is %s" % val)
     assert val == 1
 
+
+@pytest.mark.ha
 @pytest.mark.parallel
 @pytest.mark.tags("TEST-17414")
 def test_max(request, capture, logger):

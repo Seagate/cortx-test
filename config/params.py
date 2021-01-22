@@ -18,32 +18,17 @@
 #
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
+import os
 
-# parameter needed for test framework and tests
-# These can be formed at runtime based on basic/common configuration files
 
-NUSERS = 10
+LOG_FILE = 'cortx-test.log'
 
-UPLOADED_FILES = "uploadInfo.csv"
+USER_JSON = '_usersdata'
 
-DATAGEN_HOME = '/var/log/datagen/'
+CONFIG_DIR = 'config'
 
-DATASET_FILES = "/var/log/datagen/createdfile.txt"
+COMMON_CONFIG = os.path.join(CONFIG_DIR, 'common_config.yaml')
 
-deleteOpFileName = "deleteInfo.csv"
+LOG_DIR_NAME = 'log'
 
-comDeleteOpFileName = "combinedDeleteInfo.csv"
-
-uploadDoneFile = UPLOADED_FILES
-
-uploadFinishedFileName = "upload_done.txt"
-
-FailedFiles = "FailedFiles.csv"
-
-FailedFilesServerError = "FailedFilesServerError.csv"
-
-destructiveTestResult = "/root/result_summary.csv"
-
-deletePercentage = 10
-
-DOWNLOAD_HOME = '/var/log/'
+JIRA_TEST_LIST = 'test_lists.csv'

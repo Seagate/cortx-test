@@ -34,11 +34,11 @@ import time
 import errno
 from pathlib import Path
 from boto3.s3.transfer import TransferConfig
-from eos_test.di import di_lib
-from eos_test.di.di_lib import Workers
-from eos_test.di.di_lib import init_loghandler
-from eos_test.di import di_params
-from eos_test.di.di_mgmt_ops import ManagementOPs
+from libs.di import di_lib
+from libs.di.di_lib import Workers
+from libs.di.di_lib import init_loghandler
+from libs.di import di_params
+from libs.di.di_mgmt_ops import ManagementOPs
 
 CM_CFG = di_lib.read_yaml("config/common_config.yaml")
 S3_CFG = di_lib.read_yaml("config/s3/s3_config.yaml")
