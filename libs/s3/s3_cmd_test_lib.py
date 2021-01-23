@@ -37,10 +37,9 @@ try:
 except ImportError as err:
     s3hobj = S3Helper.get_instance()
 
-s3_conf = read_yaml("config/s3/s3_config.yaml")[1]
+S3_CONF = read_yaml("config/s3/s3_config.yaml")[1]
 CM_CFG = read_yaml("config/common_config.yaml")[1]
-
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 class S3CmdTestLib(S3LibCmd):
@@ -51,12 +50,11 @@ class S3CmdTestLib(S3LibCmd):
     def __init__(self,
                  access_key: str = s3hobj.get_local_keys()[0],
                  secret_key: str = s3hobj.get_local_keys()[1],
-                 endpoint_url: str = s3_conf["s3_url"],
-                 s3_cert_path: str = s3_conf["s3_cert_path"],
-                 region: str = s3_conf["region"],
+                 endpoint_url: str = S3_CONF["s3_url"],
+                 s3_cert_path: str = S3_CONF["s3_cert_path"],
+                 region: str = S3_CONF["region"],
                  aws_session_token: str = None,
-                 debug: bool = s3_conf["debug"]
-                 ) -> None:
+                 debug: bool = S3_CONF["debug"]) -> None:
         """
         This method initializes members of S3CmdTestLib and its parent class.
         :param access_key: access key.
@@ -91,24 +89,24 @@ class S3CmdTestLib(S3LibCmd):
         :return: (Boolean, response)
         """
         if not os.path.exists(file_path):
-            logger.debug(
+            LOGGER.debug(
                 "%s do not exists creating as per the size given.",
                 file_path)
             create_file(file_path, obj_size)
         try:
-            logger.info("uploading object using cli")
+            LOGGER.info("uploading object using cli")
             response = self.upload_object_cli(
                 bucket_name, object_name, file_path)
             upload_res = response.split("b'")[1].split("\\r")
-            logger.debug(upload_res)
-            logger.info("output = %s", upload_res)
+            LOGGER.debug(upload_res)
+            LOGGER.info("output = %s", upload_res)
             os.remove(file_path)
             if b"upload:" in upload_res[-1] or "upload:" in upload_res[-1]:
                 return True, upload_res
 
             return False, response
         except BaseException as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          S3CmdTestLib.object_upload_cli.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -126,7 +124,7 @@ class S3CmdTestLib(S3LibCmd):
         :return: (Boolean, response)
         """
         try:
-            logger.info("Uploading folder objects to bucket using cli.")
+            LOGGER.info("Uploading folder objects to bucket using cli.")
             if os.path.exists(folder_path):
                 shutil.rmtree(folder_path)
             os.mkdir(folder_path)
@@ -138,16 +136,16 @@ class S3CmdTestLib(S3LibCmd):
             response = super().upload_folder_cli(
                 bucket_name, folder_path, CM_CFG["aws_cred_section"])
             shutil.rmtree(folder_path)
-            logger.debug(response)
+            LOGGER.debug(response)
             upload_cnt = response.count(b"upload:") if isinstance(
                 response, bytes) else str(response).count("upload:")
-            logger.debug(upload_cnt)
+            LOGGER.debug(upload_cnt)
             if upload_cnt == file_count:
                 return True, response
 
             return False, response
         except BaseException as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          S3CmdTestLib.upload_folder_cli.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -160,16 +158,16 @@ class S3CmdTestLib(S3LibCmd):
         :return: (Boolean, response)
         """
         try:
-            logger.info("Downloading folder from bucket using cli.")
+            LOGGER.info("Downloading folder from bucket using cli.")
             response = super().download_bucket_cli(
                 bucket_name, folder_path, CM_CFG["aws_cred_section"])
-            logger.info(response)
+            LOGGER.info(response)
             if os.path.exists(folder_path):
                 return True, response
 
             return False, response
         except BaseException as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          S3CmdTestLib.download_bucket_cli.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -194,6 +192,6 @@ class S3CmdTestLib(S3LibCmd):
             for argument in cmd_arguments:
                 cmd_elements.append(argument)
         cmd = " ".join(cmd_elements)
-        logger.debug(cmd)
+        LOGGER.debug(cmd)
 
         return cmd

@@ -40,8 +40,8 @@ try:
 except ImportError as err:
     s3hobj = S3Helper.get_instance()
 
-s3_conf = read_yaml("config/s3/s3_config.yaml")[1]
-logger = logging.getLogger(__name__)
+S3_CONF = read_yaml("config/s3/s3_config.yaml")[1]
+LOGGER = logging.getLogger(__name__)
 
 
 class S3TaggingTestLib(Tagging):
@@ -53,12 +53,11 @@ class S3TaggingTestLib(Tagging):
     def __init__(self,
                  access_key: str = s3hobj.get_local_keys()[0],
                  secret_key: str = s3hobj.get_local_keys()[1],
-                 endpoint_url: str = s3_conf["s3_url"],
-                 s3_cert_path: str = s3_conf["s3_cert_path"],
-                 region: str = s3_conf["region"],
+                 endpoint_url: str = S3_CONF["s3_url"],
+                 s3_cert_path: str = S3_CONF["s3_cert_path"],
+                 region: str = S3_CONF["region"],
                  aws_session_token: str = None,
-                 debug: bool = s3_conf["debug"]
-                 ) -> None:
+                 debug: bool = S3_CONF["debug"]) -> None:
         """
         This method initializes members of S3TaggingTestLib and its parent class.
         :param access_key: access key.
@@ -92,7 +91,7 @@ class S3TaggingTestLib(Tagging):
         :param tag_count: Tag count.
         :return: (Boolean, response)
         """
-        logger.info("Set bucket tagging")
+        LOGGER.info("Set bucket tagging")
         try:
             tag_set = list()
             for num in range(tag_count):
@@ -100,12 +99,12 @@ class S3TaggingTestLib(Tagging):
                 tag.update([("Key", "{}{}".format(key, str(num))),
                             ("Value", "{}{}".format(value, str(num)))])
                 tag_set.append(tag)
-            logger.debug(tag_set)
+            LOGGER.debug(tag_set)
             response = super().set_bucket_tags(
                 bucket_name, tag_set={'TagSet': tag_set})
-            logger.info(response)
+            LOGGER.info(response)
         except BaseException as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          S3TaggingTestLib.set_bucket_tag.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -119,14 +118,14 @@ class S3TaggingTestLib(Tagging):
         :return: (Boolean, list of tags)
         """
         try:
-            logger.info("Getting bucket tagging")
+            LOGGER.info("Getting bucket tagging")
             bucket_tagging = self.get_bucket_tagging(bucket_name)
-            logger.debug(bucket_tagging)
+            LOGGER.debug(bucket_tagging)
             tag_set = bucket_tagging["TagSet"]
             for tag in tag_set:
-                logger.info(tag)
+                LOGGER.info(tag)
         except BaseException as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          S3TaggingTestLib.get_bucket_tags.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -140,11 +139,11 @@ class S3TaggingTestLib(Tagging):
         :return: (Boolean, response).
         """
         try:
-            logger.info("Deleting bucket tagging")
+            LOGGER.info("Deleting bucket tagging")
             response = super().delete_bucket_tagging(bucket_name)
-            logger.info(response)
+            LOGGER.info(response)
         except BaseException as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          S3TaggingTestLib.delete_bucket_tagging.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -168,19 +167,19 @@ class S3TaggingTestLib(Tagging):
         :return: (Boolean, response)
         """
         try:
-            logger.info("Set object tagging")
+            LOGGER.info("Set object tagging")
             tag_set = list()
             for num in range(tag_count):
                 tag = dict()
                 tag.update([("Key", "{}{}".format(key, str(num))),
                             ("Value", "{}{}".format(value, str(num)))])
                 tag_set.append(tag)
-            logger.debug(tag_set)
+            LOGGER.debug(tag_set)
             tags = {"TagSet": tag_set}
             response = self.put_object_tagging(bucket_name, obj_name, tags)
-            logger.info(response)
+            LOGGER.info(response)
         except Exception as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          S3TaggingTestLib.set_object_tag.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -195,14 +194,14 @@ class S3TaggingTestLib(Tagging):
         :return: (Boolean, list of object tags)
         """
         try:
-            logger.info("Getting object tags")
+            LOGGER.info("Getting object tags")
             obj_tagging = self.get_object_tagging(
                 bucket_name, obj_name)
-            logger.debug(obj_tagging)
+            LOGGER.debug(obj_tagging)
             tag_set = obj_tagging["TagSet"]
-            logger.info(tag_set)
+            LOGGER.info(tag_set)
         except Exception as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          S3TaggingTestLib.get_object_tags.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -217,12 +216,12 @@ class S3TaggingTestLib(Tagging):
         :return: (Boolean, response)
         """
         try:
-            logger.info("Deleting object tagging")
+            LOGGER.info("Deleting object tagging")
             response = super().delete_object_tagging(
                 bucket_name, obj_name)
-            logger.info(response)
+            LOGGER.info(response)
         except Exception as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          S3TaggingTestLib.delete_object_tagging.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -242,13 +241,13 @@ class S3TaggingTestLib(Tagging):
         :return: (Boolean, response)
         """
         try:
-            logger.info("Creating multipart upload with tagging....")
+            LOGGER.info("Creating multipart upload with tagging....")
             response = self.s3_client.create_multipart_upload(
                 Bucket=bucket_name, Key=obj_name, Tagging=tag)
             mpu_id = response["UploadId"]
-            logger.info("Upload id : %s", str(mpu_id))
+            LOGGER.info("Upload id : %s", str(mpu_id))
         except Exception as error:
-            logger.error(
+            LOGGER.error(
                 "Error in %s: %s",
                 S3TaggingTestLib.create_multipart_upload_with_tagging.__name__,
                 error)
@@ -262,8 +261,7 @@ class S3TaggingTestLib(Tagging):
                                 file_path: str,
                                 tag: str = None,
                                 key: str = None,
-                                value: str = None
-                                ) -> tuple:
+                                value: str = None) -> tuple:
         """
         Putting Object to the Bucket (mainly small file) with tagging and metadata.
         :param bucket_name: Name of the bucket.
@@ -275,13 +273,13 @@ class S3TaggingTestLib(Tagging):
         :return: (Boolean, response)
         """
         try:
-            logger.info("put %s into %s with %s",
+            LOGGER.info("put %s into %s with %s",
                         object_name,
                         bucket_name,
                         tag)
             if not os.path.exists(file_path):
                 create_file(file_path, 1)
-            logger.info("Putting object with tagging")
+            LOGGER.info("Putting object with tagging")
             with open(file_path, "rb") as data:
                 if key:
                     meta = {key: value}
@@ -289,9 +287,9 @@ class S3TaggingTestLib(Tagging):
                         bucket_name, object_name, data, tag, meta)
                 else:
                     response = super().put_object_with_tagging(bucket_name, object_name, data, tag)
-            logger.info(response)
+            LOGGER.info(response)
         except Exception as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          S3TaggingTestLib.put_object_with_tagging.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -311,19 +309,19 @@ class S3TaggingTestLib(Tagging):
         :return: True or False and response.
         """
         try:
-            logger.info("Set bucket tag with duplicate key")
+            LOGGER.info("Set bucket tag with duplicate key")
             tag_set = list()
             for num in range(2):
                 tag = dict()
                 tag.update([("Key", "{}".format(key)),
                             ("Value", "{}{}".format(value, str(num)))])
                 tag_set.append(tag)
-            logger.info("Put bucket tagging with TagSet: %s", str(tag_set))
+            LOGGER.info("Put bucket tagging with TagSet: %s", str(tag_set))
             response = super().set_bucket_tags(
                 bucket_name, tag_set={"TagSet": tag_set})
-            logger.info(response)
+            LOGGER.info(response)
         except BaseException as error:
-            logger.error(
+            LOGGER.error(
                 "Error in %s: %s",
                 S3TaggingTestLib.set_bucket_tag_duplicate_keys.__name__,
                 error)
@@ -344,7 +342,7 @@ class S3TaggingTestLib(Tagging):
         :return: True or False and response.
         """
         try:
-            logger.info("Set bucket tag with invalid special chars in key.")
+            LOGGER.info("Set bucket tag with invalid special chars in key.")
             tag_set = list()
             encoded = base64.b64encode(b'?')
             encoded_str = encoded.decode('utf-8')
@@ -352,12 +350,12 @@ class S3TaggingTestLib(Tagging):
             tag.update([("Key", "{}{}".format(key, encoded_str)),
                         ("Value", "{}{}".format(value, encoded_str))])
             tag_set.append(tag)
-            logger.info(
+            LOGGER.info(
                 "Put bucket tagging with invalid TagSet: %s", str(tag_set))
             response = super().set_bucket_tags(
                 bucket_name, tag_set={'TagSet': tag_set})
         except BaseException as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          S3TaggingTestLib.set_bucket_tag_invalid_char.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -369,8 +367,7 @@ class S3TaggingTestLib(Tagging):
                                   obj_name: str,
                                   key: str,
                                   value: str,
-                                  duplicate_key: bool = True
-                                  ) -> tuple:
+                                  duplicate_key: bool = True) -> tuple:
         """
         Sets the duplicate tag-set to an object that already exists in a bucket.
         :param bucket_name: Name of bucket.
@@ -380,7 +377,7 @@ class S3TaggingTestLib(Tagging):
         :param duplicate_key: Set True for duplicate keys, False for duplicate values, default True.
         :return: True or False and response.
         """
-        logger.info("Set duplicate tag set to an object.")
+        LOGGER.info("Set duplicate tag set to an object.")
         try:
             tag_set = list()
             for num in range(2):
@@ -393,12 +390,12 @@ class S3TaggingTestLib(Tagging):
                     tag.update([("Key", "{}{}".format(key, str(num))),
                                 ("Value", "{}".format(value))])
                     tag_set.append(tag)
-            logger.info("Put object tagging with TagSet: %s", str(tag_set))
+            LOGGER.info("Put object tagging with TagSet: %s", str(tag_set))
             response = super().put_object_tagging(
                 bucket_name, obj_name, tags={'TagSet': tag_set})
-            logger.info(response)
+            LOGGER.info(response)
         except BaseException as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          S3TaggingTestLib.set_duplicate_object_tags.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -421,7 +418,7 @@ class S3TaggingTestLib(Tagging):
         :rtype: (Boolean, dict/str).
         """
         try:
-            logger.info("Set object tag with invalid special char in key.")
+            LOGGER.info("Set object tag with invalid special char in key.")
             tag_set = list()
             encoded = base64.b64encode(b'?')
             encoded_str = encoded.decode('utf-8')
@@ -429,12 +426,12 @@ class S3TaggingTestLib(Tagging):
             tag.update([("Key", "{}{}".format(key, encoded_str)),
                         ("Value", "{}{}".format(value, encoded_str))])
             tag_set.append(tag)
-            logger.info("Put object tagging with TagSet: %s", str(tag_set))
+            LOGGER.info("Put object tagging with TagSet: %s", str(tag_set))
             response = super().put_object_tagging(
                 bucket_name, obj_name, tags={'TagSet': tag_set, })
-            logger.info(response)
+            LOGGER.info(response)
         except BaseException as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          S3TaggingTestLib.set_object_tag_invalid_char.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -449,11 +446,11 @@ class S3TaggingTestLib(Tagging):
         :return: True or False and response.
         """
         try:
-            logger.info("Getting object with tag key: %s", key)
+            LOGGER.info("Getting object with tag key: %s", key)
             response = self.s3_client.get_object(Bucket=bucket_name, Key=key)
-            logger.info(response)
+            LOGGER.info(response)
         except BaseException as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          S3TaggingTestLib.get_object_with_tagging.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])

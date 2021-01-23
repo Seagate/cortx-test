@@ -26,15 +26,14 @@ from typing import Union, Tuple, List
 import pysftp
 import paramiko
 
-log = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 class Host:
-
     """Interface class for establishing connections."""
 
     def __init__(self, hostname: str, username: str, password: str) -> None:
-        """Initializer for Host"""
+        """Initializer for Host."""
         self.hostname = hostname
         self.username = username
         self.password = password
@@ -59,7 +58,7 @@ class Host:
         try:
             self.host_obj = paramiko.SSHClient()
             self.host_obj.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            log.debug("Connecting to host: %s", str(self.hostname))
+            LOGGER.debug("Connecting to host: %s", str(self.hostname))
             self.host_obj.connect(hostname=self.hostname,
                                   username=self.username,
                                   password=self.password,
@@ -69,11 +68,11 @@ class Host:
                 self.shell_obj = self.host_obj.invoke_shell()
 
         except socket.timeout as timeout_exception:
-            log.error("Could not establish connection because of timeout: %s",
-                      timeout_exception)
+            LOGGER.error("Could not establish connection because of timeout: %s",
+                         timeout_exception)
             self.reconnect(retry, shell=shell, timeout=timeout, **kwargs)
         except Exception as error:
-            log.error(
+            LOGGER.error(
                 "Exception while connecting to server: Error: %s",
                 str(error))
             if self.host_obj:
@@ -92,7 +91,7 @@ class Host:
         :param private_key: path to private key file(str) or paramiko.AgentKey
         :param private_key_pass:  password to use, if private_key is encrypted
         """
-        log.debug("Connecting to host: %s", str(self.hostname))
+        LOGGER.debug("Connecting to host: %s", str(self.hostname))
         cnopts = pysftp.CnOpts()
         cnopts.hostkeys = None
         self.pysftp_obj = pysftp.Connection(host=self.hostname,
@@ -132,7 +131,7 @@ class Host:
                 self.connect(**kwargs)
                 break
             except socket.timeout as error:
-                log.debug("Attempting to reconnect: %s", str(error))
+                LOGGER.debug("Attempting to reconnect: %s", str(error))
                 retry_count -= 1
                 time.sleep(wait_time)
 
@@ -160,11 +159,11 @@ class Host:
         stdin, stdout, stderr = self.host_obj.exec_command(
             cmd, timeout=timeout)
         exit_status = stdout.channel.recv_exit_status()
-        log.debug(exit_status)
+        LOGGER.debug(exit_status)
         if exit_status != 0:
             err = stderr.readlines()
             err = [r.strip().strip("\n").strip() for r in err]
-            log.debug("Error: %s", str(err))
+            LOGGER.debug("Error: %s", str(err))
             if err:
                 raise IOError(err)
             raise IOError(stdout.readlines())

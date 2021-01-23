@@ -41,9 +41,9 @@ try:
 except ImportError as err:
     s3hobj = S3Helper.get_instance()
 
-s3_conf = read_yaml("config/s3/s3_config.yaml")[1]
-cmn_conf = read_yaml("config/common_config.yaml")[1]
-logger = logging.getLogger(__name__)
+S3_CONF = read_yaml("config/s3/s3_config.yaml")[1]
+CMN_CONF = read_yaml("config/common_config.yaml")[1]
+LOGGER = logging.getLogger(__name__)
 
 ACC_ACCESS_KEY = ""
 ACC_SECRET_KEY = ""
@@ -52,17 +52,14 @@ LDAP_PASSWD = const.LDAP_CREDS["ldap_passwd"]
 
 
 class IamTestLib(IamLib, S3IamCli):
-    """
-    Test Class for performing IAM related operations
-    """
+    """Test Class for performing IAM related operations."""
 
     def __init__(self,
                  access_key: str = s3hobj.get_local_keys()[0],
                  secret_key: str = s3hobj.get_local_keys()[1],
-                 endpoint_url: str = s3_conf["iam_url"],
-                 iam_cert_path: str = s3_conf["iam_cert_path"],
-                 debug: bool = s3_conf["debug"]
-                 ) -> None:
+                 endpoint_url: str = S3_CONF["iam_url"],
+                 iam_cert_path: str = S3_CONF["iam_cert_path"],
+                 debug: bool = S3_CONF["debug"]) -> None:
         """
         This method initializes members of IamTestLib and its parent class.
         :param access_key: access key.
@@ -87,13 +84,13 @@ class IamTestLib(IamLib, S3IamCli):
         :return: (Boolean, response).
         """
         try:
-            logger.info("Creating new user using boto3")
+            LOGGER.info("Creating new user using boto3")
             response = super().create_user(user_name)
             # Adding sleep in sec due to ldap sync issue EOS-6783
-            time.sleep(s3_conf["create_user_delay"])
-            logger.info(response)
+            time.sleep(S3_CONF["create_user_delay"])
+            LOGGER.info(response)
         except Exception as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          IamTestLib.create_user.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -106,11 +103,11 @@ class IamTestLib(IamLib, S3IamCli):
         :return: (Boolean, response)
         """
         try:
-            logger.info("listing all users")
+            LOGGER.info("listing all users")
             response = super().list_users()["Users"]
-            logger.info(response)
+            LOGGER.info(response)
         except Exception as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          IamTestLib.list_users.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -124,11 +121,11 @@ class IamTestLib(IamLib, S3IamCli):
         :return: (Boolean, response).
         """
         try:
-            logger.info("Creating %s user access key.", user_name)
+            LOGGER.info("Creating %s user access key.", user_name)
             response = super().create_access_key(user_name)
-            logger.info(response)
+            LOGGER.info(response)
         except Exception as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          IamTestLib.create_access_key.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -143,14 +140,14 @@ class IamTestLib(IamLib, S3IamCli):
         :return: (Boolean, response).
         """
         try:
-            logger.info(
+            LOGGER.info(
                 "Deleting %s user access key %s.",
                 user_name,
                 access_key_id)
             response = super().delete_access_key(user_name, access_key_id)
-            logger.info(response)
+            LOGGER.info(response)
         except Exception as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          IamTestLib.delete_access_key.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -164,11 +161,11 @@ class IamTestLib(IamLib, S3IamCli):
         :return: (Boolean, response).
         """
         try:
-            logger.info("Delete user %s.", user_name)
+            LOGGER.info("Delete user %s.", user_name)
             response = super().delete_user(user_name)
-            logger.info(response)
+            LOGGER.info(response)
         except Exception as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          IamTestLib.delete_user.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -182,11 +179,11 @@ class IamTestLib(IamLib, S3IamCli):
         :return: (Boolean, response).
         """
         try:
-            logger.info("list access keys.")
+            LOGGER.info("list access keys.")
             response = super().list_access_keys(user_name)
-            logger.info(response)
+            LOGGER.info(response)
         except Exception as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          IamTestLib.list_access_keys.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -206,11 +203,11 @@ class IamTestLib(IamLib, S3IamCli):
         :return: (Boolean, response).
         """
         try:
-            logger.info("Update access key.")
+            LOGGER.info("Update access key.")
             response = super().update_access_key(access_key_id, status, user_name)
-            logger.info(response)
+            LOGGER.info(response)
         except Exception as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          IamTestLib.update_access_key.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -225,14 +222,14 @@ class IamTestLib(IamLib, S3IamCli):
         :return: (Boolean, response).
         """
         try:
-            logger.info(
+            LOGGER.info(
                 "Update existing %s user name to %s.",
                 user_name,
                 new_user_name)
             response = super().update_user(new_user_name, user_name)
-            logger.info(response)
+            LOGGER.info(response)
         except Exception as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          IamTestLib.update_user.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -252,7 +249,7 @@ class IamTestLib(IamLib, S3IamCli):
         :return: (Boolean, response).
         """
         try:
-            logger.info(
+            LOGGER.info(
                 "Create %s user login profile and password reset is %s.",
                 user_name,
                 password_reset)
@@ -263,9 +260,9 @@ class IamTestLib(IamLib, S3IamCli):
             user_dict['create_date'] = login_profile.create_date.strftime(
                 "%Y-%m-%d %H:%M:%S")
             user_dict['password_reset_required'] = login_profile.password_reset_required
-            logger.debug(user_dict)
+            LOGGER.debug(user_dict)
         except Exception as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          IamTestLib.create_user_login_profile.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -285,15 +282,15 @@ class IamTestLib(IamLib, S3IamCli):
         :return: (Boolean, response)
         """
         try:
-            logger.info(
+            LOGGER.info(
                 "Update %s user login profile with password reset %s.",
                 user_name,
                 password_reset)
             response = super().update_user_login_profile(
                 user_name, password, password_reset)
-            logger.debug(response)
+            LOGGER.debug(response)
         except Exception as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          IamTestLib.update_user_login_profile.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -309,13 +306,13 @@ class IamTestLib(IamLib, S3IamCli):
         :return: (Boolean, response).
         """
         try:
-            logger.info(
+            LOGGER.info(
                 "Update %s user login profile with no password reset.",
                 user_name)
             response = super().update_user_login_profile_no_pwd_reset(user_name, password)
-            logger.info(response)
+            LOGGER.info(response)
         except Exception as error:
-            logger.error(
+            LOGGER.error(
                 "Error in %s: %s",
                 IamTestLib.update_user_login_profile_no_pwd_reset.__name__,
                 error)
@@ -330,7 +327,7 @@ class IamTestLib(IamLib, S3IamCli):
         :return: (Boolean, response).
         """
         try:
-            logger.info("Get %s user login profile details", user_name)
+            LOGGER.info("Get %s user login profile details", user_name)
             user_dict = {}
             # login_profile = self.iam_resource.LoginProfile(user_name)
             login_profile = super().get_user_login_profile(user_name)
@@ -338,9 +335,9 @@ class IamTestLib(IamLib, S3IamCli):
             user_dict['create_date'] = login_profile.create_date.strftime(
                 "%Y-%m-%d %H:%M:%S")
             user_dict['password_reset_required'] = login_profile.password_reset_required
-            logger.info(user_dict)
+            LOGGER.info(user_dict)
         except Exception as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          IamTestLib.get_user_login_profile.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -355,30 +352,30 @@ class IamTestLib(IamLib, S3IamCli):
         :return: (Boolean, response).
         """
         try:
-            logger.info("Creating access key for the specified user")
+            LOGGER.info("Creating access key for the specified user")
             user_acc_key = super().create_access_key(user_name)
             response = user_acc_key
             acc_key = response["AccessKey"]["AccessKeyId"]
             sec_key = response["AccessKey"]["SecretAccessKey"]
-            logger.info("Performing CRUD operations for s3 Data Path")
+            LOGGER.info("Performing CRUD operations for s3 Data Path")
             # need to check this object
             s3obj = S3Lib(
                 acc_key,
                 sec_key,
-                s3_conf["s3_url"],
-                s3_conf["s3_cert_path"],
-                s3_conf["region"])
+                S3_CONF["s3_url"],
+                S3_CONF["s3_cert_path"],
+                S3_CONF["region"])
             op_cb = s3obj.create_bucket(bucket_name)
-            logger.info(op_cb)
+            LOGGER.info(op_cb)
             op_bl = s3obj.bucket_list()
-            logger.info(op_bl)
+            LOGGER.info(op_bl)
             op_db = s3obj.delete_bucket(bucket_name)
-            logger.info(op_db)
+            LOGGER.info(op_db)
             res = super().delete_access_key(user_name, acc_key)
-            logger.info("Access Key deleted successfully: %s", str(res))
+            LOGGER.info("Access Key deleted successfully: %s", str(res))
             response = {"AccountName": user_name, "BucketName": bucket_name}
         except BaseException as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          IamTestLib.s3_user_operation.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -394,22 +391,22 @@ class IamTestLib(IamLib, S3IamCli):
         :return: (Boolean, response).
         """
         try:
-            logger.info("Creating access key for the specified user")
+            LOGGER.info("Creating access key for the specified user")
             user_acckey = super().create_access_key(user_name)
             response = user_acckey
             acc_key = response["AccessKey"]["AccessKeyId"]
-            logger.info("Updating the access key")
+            LOGGER.info("Updating the access key")
             upd_acc_key = super().update_access_key(acc_key, status, user_name)
-            logger.debug(upd_acc_key)
-            logger.info("Deleting the access key")
+            LOGGER.debug(upd_acc_key)
+            LOGGER.info("Deleting the access key")
             delete_acc_key = super().delete_access_key(user_name, acc_key)
-            logger.debug(delete_acc_key)
-            logger.info(
+            LOGGER.debug(delete_acc_key)
+            LOGGER.info(
                 "Listing and Verifying the access key for particular user")
             verify_acc_key = super().list_access_keys(user_name)
-            logger.debug(verify_acc_key)
+            LOGGER.debug(verify_acc_key)
         except BaseException as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          IamTestLib.create_modify_delete_access_key.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -423,33 +420,33 @@ class IamTestLib(IamLib, S3IamCli):
             session_token: str,
             bucket_name: str) -> tuple:
         """
-        Performing s3 operations such as create and delete bucket using temp auth creds and session token.
+        Performing s3 operations such as create and delete bucket using temp auth creds and
+        session token.
         :param access_key: Access key of account/user.
         :param secret_key: Secret key of account/user.
         :param session_token: Session token.
         :param bucket_name: Name of the bucket.
         :return: (Boolean, response)
         """
-        logger.info("Performing s3 operations using temp auth credentials.")
+        LOGGER.info("Performing s3 operations using temp auth credentials.")
         s3_resource = boto3.resource("s3",
-                                     verify=s3_conf["s3_cert_path"],
+                                     verify=S3_CONF["s3_cert_path"],
                                      aws_access_key_id=access_key,
                                      aws_secret_access_key=secret_key,
-                                     endpoint_url=s3_conf["s3_url"],
-                                     region_name=s3_conf["region"],
-                                     aws_session_token=session_token
-                                     )
+                                     endpoint_url=S3_CONF["s3_url"],
+                                     region_name=S3_CONF["region"],
+                                     aws_session_token=session_token)
         try:
-            logger.info("Creating a Bucket")
+            LOGGER.info("Creating a Bucket")
             bucket = s3_resource.create_bucket(Bucket=bucket_name)
-            logger.info("Bucket is Created %s", str(bucket))
-            logger.info("Deleting a bucket")
+            LOGGER.info("Bucket is Created %s", str(bucket))
+            LOGGER.info("Deleting a bucket")
             bucket = s3_resource.Bucket(bucket_name)
             response = bucket.delete()
-            logger.debug(response)
-            logger.info("Deleted bucket")
+            LOGGER.debug(response)
+            LOGGER.info("Deleted bucket")
         except BaseException as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          IamTestLib.s3_ops_using_temp_auth_creds.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -470,7 +467,7 @@ class IamTestLib(IamLib, S3IamCli):
         :param user_count: No. of users to be created.
         :return: (Boolean, response).
         """
-        logger.info("Create %s accounts and %s users", acc_count, user_count)
+        LOGGER.info("Create %s accounts and %s users", acc_count, user_count)
         acc_li = []
         user_li = []
         for _ in range(int(acc_count)):
@@ -481,17 +478,17 @@ class IamTestLib(IamLib, S3IamCli):
             acc_li.append(account_name)
             iam_obj = IamLib(access_key=access_key,
                              secret_key=secret_key,
-                             endpoint_url=s3_conf["iam_url"],
-                             iam_cert_path=s3_conf["iam_cert_path"])
+                             endpoint_url=S3_CONF["iam_url"],
+                             iam_cert_path=S3_CONF["iam_cert_path"])
             for _ in range(int(user_count)):
                 user_name = "testusr{}".format(str(time.time()))
                 iam_obj.create_user(user_name)
                 user_li.append(user_name)
-        logger.debug(len(acc_li), len(user_li))
+        LOGGER.debug(len(acc_li), len(user_li))
         if len(acc_li) == int(acc_count) or len(
                 user_li) == int(user_count) * int(acc_count):
             return True, acc_li
-        logger.error("Error in %s: %s",
+        LOGGER.error("Error in %s: %s",
                      IamTestLib.create_multiple_accounts_users.__name__,
                      "Failed to create given accounts/users")
         raise CTException(
@@ -508,13 +505,13 @@ class IamTestLib(IamLib, S3IamCli):
         :param ldap_password: ldap server user password.
         :return: (Boolean, response)
         """
-        logger.info("Listing accounts using aws s3iamcli.")
+        LOGGER.info("Listing accounts using aws s3iamcli.")
         # Adding sleep in sec due to ldap sync issue EOS-8121
-        time.sleep(s3_conf["list_account_delay"])
+        time.sleep(S3_CONF["list_account_delay"])
         response = super().list_accounts_s3iamcli(ldap_user_id, ldap_password)
-        logger.info(response)
+        LOGGER.info(response)
         if "error" in response:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          IamTestLib.list_accounts_s3iamcli.__name__,
                          response)
             raise CTException(err.S3_CLIENT_ERROR, response)
@@ -528,10 +525,10 @@ class IamTestLib(IamLib, S3IamCli):
         :param secret_key: User secret key.
         :return: (Boolean, response).
         """
-        logger.info("Listing users using aws s3iamcli.")
+        LOGGER.info("Listing users using aws s3iamcli.")
         response = super().list_users_s3iamcli(access_key, secret_key)
         if "error" in response:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          IamTestLib.list_users_s3iamcli.__name__,
                          response)
             raise CTException(err.S3_CLIENT_ERROR, response)
@@ -541,7 +538,7 @@ class IamTestLib(IamLib, S3IamCli):
         user_name_list = filter(lambda x: "UserName" in x, res.split(','))
         users_list = [{"UserName": i.split('=')[-1].strip(' ')}
                       for i in user_name_list]
-        logger.info(users_list)
+        LOGGER.info(users_list)
 
         return True, response
 
@@ -559,7 +556,7 @@ class IamTestLib(IamLib, S3IamCli):
         :param ldap_password: Ldap user password
         :return: (Boolean, response)
         """
-        logger.info("Create new account using s3iamcli.")
+        LOGGER.info("Create new account using s3iamcli.")
         global ACC_ACCESS_KEY
         ACC_ACCESS_KEY = []
         global ACC_SECRET_KEY
@@ -567,39 +564,39 @@ class IamTestLib(IamLib, S3IamCli):
         result = super().create_account_s3iamcli(
             account_name, email_id, ldap_user_id, ldap_password)
         # Adding sleep in sec due to ldap sync issue EOS-5924
-        time.sleep(s3_conf["create_account_delay"])
+        time.sleep(S3_CONF["create_account_delay"])
         res = result.split("b'")[1].replace("\\n',", "")
         new_result = res.split(',')
-        logger.debug(new_result)
+        LOGGER.debug(new_result)
         acc_dict = {}
         for i in new_result:
             if "AccessKeyId" in i:
                 response = i.split('=')
                 ACC_ACCESS_KEY.append(response[1].strip(' '))
-                logger.info("Access Key Id : %s", ACC_ACCESS_KEY)
+                LOGGER.info("Access Key Id : %s", ACC_ACCESS_KEY)
                 acc_dict['access_key'] = response[1].strip(' ')
             elif "SecretKey" in i:
                 response = i.split('=')
                 ACC_SECRET_KEY.append(response[1].strip(' '))
-                logger.info("Secret Key : %s", ACC_SECRET_KEY)
+                LOGGER.info("Secret Key : %s", ACC_SECRET_KEY)
                 acc_dict['secret_key'] = response[1].strip(' ')
             elif "CanonicalId" in i:
                 response = i.split('=')
                 canonical_id = response[1].strip(' ')
-                logger.info("CanonicalId : %s", canonical_id)
+                LOGGER.info("CanonicalId : %s", canonical_id)
                 acc_dict['canonical_id'] = response[1].strip(' ')
             elif "AccountId" in i:
                 response = i.split('=')
                 canonical_id = response[1].strip(' ')
-                logger.info("Account Id : %s", canonical_id)
+                LOGGER.info("Account Id : %s", canonical_id)
                 acc_dict['Account_Id'] = response[1].strip(' ')
         if "Account wasn't created" in result:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          IamTestLib.create_account_s3iamcli.__name__,
                          result)
             raise CTException(err.S3_CLIENT_ERROR, result)
         if "s3iamcli: command not found" in result:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          IamTestLib.create_account_s3iamcli.__name__,
                          result)
             raise CTException(err.S3_CLIENT_ERROR, result)
@@ -620,14 +617,14 @@ class IamTestLib(IamLib, S3IamCli):
         :param force: Delete account forcefully value True/False.
         :return: (Boolean, response).
         """
-        logger.info("Delete account with name %s using s3iamcli", account_name)
+        LOGGER.info("Delete account with name %s using s3iamcli", account_name)
         response = super().delete_account_s3iamcli(
             account_name, access_key, secret_key, force)
         # Adding sleep in sec due to ldap sync issue EOS-5924
-        time.sleep(s3_conf["delete_account_delay"])
-        logger.info(response)
+        time.sleep(S3_CONF["delete_account_delay"])
+        LOGGER.info(response)
         if "Account cannot be deleted" in response:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          IamTestLib.delete_account_s3iamcli.__name__,
                          response)
             raise CTException(err.S3_CLIENT_ERROR, response)
@@ -650,12 +647,12 @@ class IamTestLib(IamLib, S3IamCli):
         :param secret_key: User secret key.
         :return: (Boolean, response)
         """
-        logger.info("Create user login profile using s3iamcli")
+        LOGGER.info("Create user login profile using s3iamcli")
         response = super().create_user_login_profile_s3iamcli(
             user_name, password, password_reset, access_key, secret_key)
-        logger.info(response)
+        LOGGER.info(response)
         if "Failed" in response:
-            logger.error(
+            LOGGER.error(
                 "Error in %s: %s",
                 IamTestLib.create_user_login_profile_s3iamcli.__name__,
                 response)
@@ -679,11 +676,11 @@ class IamTestLib(IamLib, S3IamCli):
         :param password_reset: Password reset value True/False.
         :return: (Boolean, response).
         """
-        logger.info("Create account login profile using s3iamcli")
+        LOGGER.info("Create account login profile using s3iamcli")
         response = super().create_account_login_profile_s3iamcli(
             acc_name, password, access_key, secret_key, password_reset)
         if "Failed" in response:
-            logger.error(
+            LOGGER.error(
                 "Error in %s: %s",
                 IamTestLib.create_account_login_profile_s3iamcli.__name__,
                 response)
@@ -707,12 +704,12 @@ class IamTestLib(IamLib, S3IamCli):
         :param password_reset: Password reset value True/False.
         :return: (Boolean, response)
         """
-        logger.info("Update account login profile using s3iamcli")
+        LOGGER.info("Update account login profile using s3iamcli")
         response = super().update_account_login_profile_s3iamcli(
             acc_name, password, access_key, secret_key, password_reset)
-        logger.info(response)
+        LOGGER.info(response)
         if "Failed" in response or "error" in response:
-            logger.error(
+            LOGGER.error(
                 "Error in %s: %s",
                 IamTestLib.update_account_login_profile_s3iamcli.__name__,
                 response)
@@ -732,12 +729,12 @@ class IamTestLib(IamLib, S3IamCli):
         :param secret_key: Account secret key.
         :return: (Boolean, response)
         """
-        logger.info("Get account login profile using s3iamcli")
+        LOGGER.info("Get account login profile using s3iamcli")
         response = super().get_account_login_profile_s3iamcli(
             acc_name, access_key, secret_key)
-        logger.info(response)
+        LOGGER.info(response)
         if "Failed" in response:
-            logger.error(
+            LOGGER.error(
                 "Error in %s: %s",
                 IamTestLib.get_account_login_profile_s3iamcli.__name__,
                 response)
@@ -762,15 +759,15 @@ class IamTestLib(IamLib, S3IamCli):
         :return: (Boolean, response)
         """
         try:
-            logger.info(
+            LOGGER.info(
                 "Update %s user login profile with password reset as %s",
                 user_name,
                 password_reset)
             response = super().update_user_login_profile_s3iamcli(
                 user_name, password, password_reset, access_key, secret_key)
-            logger.info(response)
+            LOGGER.info(response)
         except BaseException as error:
-            logger.error(
+            LOGGER.error(
                 "Error in %s: %s",
                 IamTestLib.update_user_login_profile_s3iamcli.__name__,
                 error)
@@ -790,11 +787,11 @@ class IamTestLib(IamLib, S3IamCli):
         :param secret_key: Secret key of the user.
         :return: (Boolean, response)
         """
-        logger.info("Get %s user login profile details.", user_name)
+        LOGGER.info("Get %s user login profile details.", user_name)
         response = super().get_user_login_profile_s3iamcli(
             user_name, access_key, secret_key)
         if "Failed" in response:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          IamTestLib.get_user_login_profile_s3iamcli.__name__,
                          response)
             raise CTException(err.S3_CLIENT_ERROR, response)
@@ -817,14 +814,14 @@ class IamTestLib(IamLib, S3IamCli):
         :param both_reset_options: both password reset option.
         :return: (Boolean, response)
         """
-        logger.info(
+        LOGGER.info(
             "Create %s user login profile with both reset options as %s.",
             user_name,
             both_reset_options)
         response = super().create_user_login_profile_s3iamcli_with_both_reset_options(
             user_name, password, access_key, secret_key, both_reset_options)
         if "Failed" in response:
-            logger.error(
+            LOGGER.error(
                 "Error in %s: %s",
                 IamTestLib.create_user_login_profile_s3iamcli_with_both_reset_options.__name__,
                 response)
@@ -844,13 +841,13 @@ class IamTestLib(IamLib, S3IamCli):
         :param ldap_password: Ldap user password.
         :return: (Boolean, response).
         """
-        logger.info("Reset %s access key using s3iamcli.", account_name)
+        LOGGER.info("Reset %s access key using s3iamcli.", account_name)
         resp = super().reset_account_access_key_s3iamcli(
             account_name, ldap_user_id, ldap_password)
-        time.sleep(s3_conf["reset_account_access_key_delay"])
-        logger.info(resp)
+        time.sleep(S3_CONF["reset_account_access_key_delay"])
+        LOGGER.info(resp)
         if "Account access key wasn't reset" in resp:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          IamTestLib.reset_account_access_key_s3iamcli.__name__,
                          resp)
             raise CTException(err.S3_CLIENT_ERROR, resp)
@@ -861,7 +858,7 @@ class IamTestLib(IamLib, S3IamCli):
         for item in new_result:
             response = item.split("=")
             acc_dict[response[0].strip(" ")] = response[1].strip(" ")
-        logger.debug("output = %s", acc_dict)
+        LOGGER.debug("output = %s", acc_dict)
 
         return True, acc_dict
 
@@ -877,29 +874,29 @@ class IamTestLib(IamLib, S3IamCli):
         :param secret_key: User secret key.
         :return: (Boolean, Response)
         """
-        logger.info("Create %s user using s3iamcli", user_name)
+        LOGGER.info("Create %s user using s3iamcli", user_name)
         user_data = {}
         result = super().create_user_using_s3iamcli(user_name, access_key, secret_key)
         # Adding sleep in ms due to ldap sync issue EOS-6783
-        time.sleep(s3_conf["create_user_delay"])
+        time.sleep(S3_CONF["create_user_delay"])
         if "Failed" in result:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          IamTestLib.create_user_using_s3iamcli.__name__,
                          result)
             raise CTException(err.S3_CLIENT_ERROR, result)
 
         res = result.split("b'")[1].replace("\\n',", "")
         new_result = res.split(",")
-        logger.info(new_result)
+        LOGGER.info(new_result)
         for i in new_result:
             if "UserId" in i:
                 response = i.split("=")
                 user_data["User Id"] = response[1].strip(" ")
-                logger.debug("User Id : %s", user_data["User Id"])
+                LOGGER.debug("User Id : %s", user_data["User Id"])
             elif "ARN" in i:
                 response = i.split("=")
                 user_data["ARN"] = response[1].strip(" ")
-                logger.debug("ARN : %s", user_data["ARN"])
+                LOGGER.debug("ARN : %s", user_data["ARN"])
 
         return True, user_data
 
@@ -917,12 +914,12 @@ class IamTestLib(IamLib, S3IamCli):
         :param secret_key: Secret key of the account.
         :return: (Boolean, response)
         """
-        logger.info("Create account login profile with both reset options")
+        LOGGER.info("Create account login profile with both reset options")
         response = super().create_account_login_profile_both_reset_options(
             acc_name, password, access_key, secret_key)
-        logger.info(response)
+        LOGGER.info(response)
         if "Failed" in response:
-            logger.error(
+            LOGGER.error(
                 "Error in %s: %s",
                 IamTestLib.create_account_login_profile_both_reset_options.__name__,
                 response)
@@ -940,12 +937,12 @@ class IamTestLib(IamLib, S3IamCli):
         :param secret_key: Secret key of the account.
         :return: (Boolean, response)
         """
-        logger.info("Create account login profile without reset options")
+        LOGGER.info("Create account login profile without reset options")
         response = super().create_acc_login_profile_without_both_reset_options(
             acc_name, password, access_key, secret_key)
-        logger.info(response)
+        LOGGER.info(response)
         if "Failed" in response:
-            logger.error(
+            LOGGER.error(
                 "Error in %s: %s",
                 IamTestLib.create_account_login_profile_without_both_reset_options.__name__,
                 response)
@@ -967,12 +964,12 @@ class IamTestLib(IamLib, S3IamCli):
         :param secret_key: Secret key of the account.
         :return: (Boolean, response)
         """
-        logger.info("Create account login profile with both reset option")
+        LOGGER.info("Create account login profile with both reset option")
         response = super().update_account_login_profile_both_reset_options(
             acc_name, access_key, secret_key, password)
-        logger.info(response)
+        LOGGER.info(response)
         if "Failed" in response:
-            logger.error(
+            LOGGER.error(
                 "Error in %s: %s",
                 IamTestLib.update_account_login_profile_both_reset_options.__name__,
                 response)
@@ -988,14 +985,14 @@ class IamTestLib(IamLib, S3IamCli):
         :param secret_key: Secret key of the user.
         :return: (Boolean, response)
         """
-        logger.info(
+        LOGGER.info(
             "Update user login profile without password and reset options for user %s",
             user_name)
         response = super().update_user_login_profile_without_password_and_reset_option(
             user_name, access_key, secret_key)
-        logger.info(response)
+        LOGGER.info(response)
         if "Please provide password or password-reset" in response:
-            logger.error(
+            LOGGER.error(
                 "Error in %s: %s",
                 IamTestLib.update_user_login_profile_without_passowrd_and_reset_option.__name__,
                 response)
@@ -1015,39 +1012,39 @@ class IamTestLib(IamLib, S3IamCli):
         :param duration: Duration till account creds will be active.
         :return: (Boolean, response)
         """
-        logger.info("Get temp auth credential for %s account.", account_name)
+        LOGGER.info("Get temp auth credential for %s account.", account_name)
         global ACC_ACCESS_KEY
         ACC_ACCESS_KEY = []
         global ACC_SECRET_KEY
         ACC_SECRET_KEY = []
         result = super().get_temp_auth_credentials_account(
             account_name, account_password, duration)
-        logger.info("output = %s", str(result))
+        LOGGER.info("output = %s", str(result))
         if "error" in result:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          IamTestLib.get_temp_auth_credentials_account.__name__,
                          result)
             raise CTException(err.S3_CLIENT_ERROR, result)
 
         res = result.split("b'")[1].replace("\\n',", "")
         new_result = res.split(',')
-        logger.debug(new_result)
+        LOGGER.debug(new_result)
         temp_auth_dict = {}
         for i in new_result:
             if "AccessKeyId" in i:
                 response = i.split('=')
                 ACC_ACCESS_KEY.append(response[1].strip(' '))
-                logger.debug("Access Key Id : %s", ACC_ACCESS_KEY)
+                LOGGER.debug("Access Key Id : %s", ACC_ACCESS_KEY)
                 temp_auth_dict['access_key'] = response[1].strip(' ')
             elif "SecretAccessKey" in i:
                 response = i.split('=')
                 ACC_SECRET_KEY.append(response[1].strip(' '))
-                logger.debug("Secret Key : %s", ACC_SECRET_KEY)
+                LOGGER.debug("Secret Key : %s", ACC_SECRET_KEY)
                 temp_auth_dict['secret_key'] = response[1].strip(' ')
             elif "SessionToken" in i:
                 response = i.split('=')
                 token = response[1].strip(' ')
-                logger.debug("Session Token : %s", token)
+                LOGGER.debug("Session Token : %s", token)
                 temp_auth_dict['session_token'] = token
 
         return True, temp_auth_dict
@@ -1064,41 +1061,41 @@ class IamTestLib(IamLib, S3IamCli):
         :param user_name: Name of the user.
         :param password: Password for the user.
         :param duration: Duration till user creds will be active.
-        :return: (Boolean, response)
+        :return: (Boolean, response).
         """
-        logger.info("Get temp auth credential for %s user.", user_name)
+        LOGGER.info("Get temp auth credential for %s user.", user_name)
         global ACC_ACCESS_KEY
         ACC_ACCESS_KEY = []
         global ACC_SECRET_KEY
         ACC_SECRET_KEY = []
         result = super().get_temp_auth_credentials_user(
             account_name, user_name, password, duration)
-        logger.info("output = %s", str(result))
+        LOGGER.info("output = %s", str(result))
         if "An error occurred" in result:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          IamTestLib.get_temp_auth_credentials_user.__name__,
                          result)
             raise CTException(err.S3_CLIENT_ERROR, result)
 
         res = result.split("b'")[1].replace("\\n',", "")
         new_result = res.split(',')
-        logger.info(new_result)
+        LOGGER.info(new_result)
         temp_auth_dict = {}
         for i in new_result:
             if "AccessKeyId" in i:
                 response = i.split('=')
                 ACC_ACCESS_KEY.append(response[1].strip(' '))
-                logger.info("Access Key Id : %s", ACC_ACCESS_KEY)
+                LOGGER.info("Access Key Id : %s", ACC_ACCESS_KEY)
                 temp_auth_dict['access_key'] = response[1].strip(' ')
             elif "SecretAccessKey" in i:
                 response = i.split('=')
                 ACC_SECRET_KEY.append(response[1].strip(' '))
-                logger.info("Secret Key : %s", ACC_SECRET_KEY)
+                LOGGER.info("Secret Key : %s", ACC_SECRET_KEY)
                 temp_auth_dict['secret_key'] = response[1].strip(' ')
             elif "SessionToken" in i:
                 response = i.split('=')
                 token = (response[1].strip(' '))
-                logger.info("Session Token : %s", token)
+                LOGGER.info("Session Token : %s", token)
                 temp_auth_dict['session_token'] = token
 
         return True, temp_auth_dict
@@ -1115,13 +1112,13 @@ class IamTestLib(IamLib, S3IamCli):
         :param new_pwd: New password of user.
         :param access_key: Access key of user.
         :param secret_key: Secret key of user.
-        :return: (Boolean, response)
+        :return: (Boolean, response).
         """
-        logger.info("Change user password")
+        LOGGER.info("Change user password")
         result = super().change_user_password(old_pwd, new_pwd, access_key, secret_key)
-        logger.info("output = %s", str(result))
+        LOGGER.info("output = %s", str(result))
         if "failed" in result:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          IamTestLib.change_user_password.__name__,
                          result)
             raise CTException(err.S3_CLIENT_ERROR, result)
@@ -1138,14 +1135,14 @@ class IamTestLib(IamLib, S3IamCli):
         :param secret_key: Secret key of user.
         :return: (Boolean, response)
         """
-        logger.info(
+        LOGGER.info(
             "Update %s user login profile with both reset option.",
             user_name)
         result = super().update_user_login_profile_s3iamcli_with_both_reset_options(
             user_name, password, access_key, secret_key)
-        logger.info("output = %s", str(result))
+        LOGGER.info("output = %s", str(result))
         if "failed" in result:
-            logger.error(
+            LOGGER.error(
                 "Error in %s: %s",
                 IamTestLib.update_user_login_profile_s3iamcli_with_both_reset_options.__name__,
                 result)
@@ -1159,14 +1156,14 @@ class IamTestLib(IamLib, S3IamCli):
         :param acc_list: List of accounts.
         :return: (Boolean, response)
         """
-        logger.debug(acc_list)
-        logger.info("Deleting accounts in the given list....")
+        LOGGER.debug(acc_list)
+        LOGGER.info("Deleting accounts in the given list....")
         deleted_acc_dict = dict()
         for acc in acc_list:
-            logger.info("Deleting account : %s", acc)
+            LOGGER.info("Deleting account : %s", acc)
             result = self.reset_access_key_and_delete_account_s3iamcli(acc)
             deleted_acc_dict[acc] = result[0]
-        logger.info("List of deleted accounts: %s", deleted_acc_dict)
+        LOGGER.info("List of deleted accounts: %s", deleted_acc_dict)
 
         return True, deleted_acc_dict
 
@@ -1185,18 +1182,18 @@ class IamTestLib(IamLib, S3IamCli):
         :return: (Boolean, response)
         """
         try:
-            logger.info("Create and delete an account")
+            LOGGER.info("Create and delete an account")
             acc = self.create_account_s3iamcli(
                 account_name, email_id, LDAP_USERNAME, LDAP_PASSWD)
-            logger.debug(acc)
-            logger.info("Deleting Account")
+            LOGGER.debug(acc)
+            LOGGER.info("Deleting Account")
             del_acc = self.delete_account_s3iamcli(
                 account_name, access_key, secret_key)
-            logger.debug(del_acc)
+            LOGGER.debug(del_acc)
 
             return True, [acc, del_acc]
         except BaseException as error:
-            logger.error(
+            LOGGER.error(
                 "Error in %s: %s",
                 IamTestLib.create_and_delete_account_s3iamcli.__name__,
                 error)
@@ -1209,11 +1206,11 @@ class IamTestLib(IamLib, S3IamCli):
         :param account_name: Name of the account.
         :return: (Boolean, response)
         """
-        logger.info(
+        LOGGER.info(
             "Reset account access key and delete that account using s3iamcli")
         response = self.reset_account_access_key_s3iamcli(
             account_name, LDAP_USERNAME, LDAP_PASSWD)
-        logger.debug(response)
+        LOGGER.debug(response)
         if not response[0]:
             return False, response
         access_key = response[1]["AccessKeyId"]
@@ -1232,16 +1229,16 @@ class IamTestLib(IamLib, S3IamCli):
         :param str user_name: Name of the user to be created.
         :return: (Boolean, response)
         """
-        logger.info("Creating a user and access key in default account")
+        LOGGER.info("Creating a user and access key in default account")
         response = list()
         try:
             create_user = self.create_user(user_name)
             create_acc_key = self.create_access_key(user_name)
             # Adding sleep in sec due to ldap sync issue EOS-5924
-            time.sleep(s3_conf["create_user_access_key_delay"])
+            time.sleep(S3_CONF["create_user_access_key_delay"])
             response.append({"User": create_user, "Keys": create_acc_key})
         except CTException as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          IamTestLib.create_user_access_key.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -1254,23 +1251,23 @@ class IamTestLib(IamLib, S3IamCli):
         :param list iam_users_list: List of users to be deleted.
         :return: (Boolean, response)
         """
-        logger.info("Deleting iam users and access keys from default account.")
+        LOGGER.info("Deleting iam users and access keys from default account.")
         try:
             for user in iam_users_list:
                 resp = self.list_access_keys(user)
                 if resp[0]:
-                    logger.info("Deleting user access key")
+                    LOGGER.info("Deleting user access key")
                     for key in resp[1]["AccessKeyMetadata"]:
                         self.delete_access_key(
                             user, key["AccessKeyId"])
-                    logger.info("Deleted user access key")
-                logger.info(
+                    LOGGER.info("Deleted user access key")
+                LOGGER.info(
                     "Deleting user from default account %s", user)
                 self.delete_user(user)
-                logger.info(
+                LOGGER.info(
                     "Deleted user from default account: %s", user)
         except CTException as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          IamTestLib.delete_users_with_access_key.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -1287,7 +1284,7 @@ class IamTestLib(IamLib, S3IamCli):
         :param str name_prefix: Account name prefix.
         :return: (Boolean, list of tuple with created account details).
         """
-        logger.info(
+        LOGGER.info(
             "Create %s accounts starts with name.",
             acc_count,
             name_prefix)
@@ -1295,13 +1292,13 @@ class IamTestLib(IamLib, S3IamCli):
         try:
             for _ in range(int(acc_count)):
                 account_name = "{}{}".format(name_prefix, str(time.time()))
-                email = "{}{}".format(account_name, s3_conf["email_suffix"])
+                email = "{}{}".format(account_name, S3_CONF["email_suffix"])
                 resp = self.create_account_s3iamcli(
                     account_name, email,
                     LDAP_USERNAME, LDAP_PASSWD)
                 acc_li.append(resp)
         except CTException as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          IamTestLib.create_multiple_accounts.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error)
@@ -1324,14 +1321,14 @@ class IamTestLib(IamLib, S3IamCli):
         :param bool force: --force option used while deleting an account.
         :return: Boolean and delete account response.
         """
-        logger.info(
+        LOGGER.info(
             "Deleting %s accounts using it's temporary credentials",
             account_name)
         response = super().delete_account_s3iamcli_using_temp_creds(
             account_name, access_key, secret_key, session_token, force)
-        logger.info(response)
+        LOGGER.info(response)
         if "An error occurred" in response:
-            logger.error(
+            LOGGER.error(
                 "Error in %s: %s",
                 IamTestLib.delete_account_s3iamcli_using_temp_creds.__name__,
                 response)
@@ -1348,7 +1345,7 @@ class IamTestLib(IamLib, S3IamCli):
         secret_key and s3 objects which required to perform further operations.
         :return tuple
         """
-        logger.info(
+        LOGGER.info(
             "Step : Creating account with name %s and email_id %s",
             account_name,
             email_id)
@@ -1358,13 +1355,13 @@ class IamTestLib(IamLib, S3IamCli):
             access_key = create_account[1]["access_key"]
             secret_key = create_account[1]["secret_key"]
             canonical_id = create_account[1]["canonical_id"]
-            logger.info("Step Successfully created the s3iamcli account")
+            LOGGER.info("Step Successfully created the s3iamcli account")
             s3_obj = S3Lib(
                 access_key,
                 secret_key,
-                s3_conf["s3_url"],
-                s3_conf["s3_cert_path"],
-                s3_conf["region"])
+                S3_CONF["s3_url"],
+                S3_CONF["s3_cert_path"],
+                S3_CONF["region"])
             s3_acl_obj = S3AclTestLib(
                 access_key=access_key, secret_key=secret_key)
             response = (
@@ -1374,7 +1371,7 @@ class IamTestLib(IamLib, S3IamCli):
                 access_key,
                 secret_key)
         except CTException as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          IamTestLib.create_s3iamcli_acc.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error)

@@ -38,7 +38,6 @@ LOGGER = logging.getLogger(__name__)
 
 
 class S3Helper:
-
     """S3 Helper class to perform S3 related operations."""
 
     __instance = None
@@ -133,7 +132,7 @@ class S3Helper:
                     s3services.append(line.strip())
             if not s3services:
                 LOGGER.critical("No s3server service found!")
-                return False
+                return False, s3services
             for service in s3services:
                 if not service.startswith("[started]"):
                     LOGGER.error("S3 service down: %s", s3services)
@@ -174,8 +173,7 @@ class S3Helper:
                                service: str,
                                host: str = CM_CFG["host"],
                                user: str = CM_CFG["username"],
-                               pwd: str = CM_CFG["password"]
-                               ) -> tuple:
+                               pwd: str = CM_CFG["password"]) -> tuple:
         """
         Execute command to start any system service at remote s3 server.
         :param service: Name of the service.
@@ -195,8 +193,7 @@ class S3Helper:
                               service: str,
                               host: str = CM_CFG["host"],
                               user: str = CM_CFG["username"],
-                              pwd: str = CM_CFG["password"]
-                              ) -> tuple:
+                              pwd: str = CM_CFG["password"]) -> tuple:
         """
         Execute command to stop any system service at remote s3 server.
         :param service: Name of the service.
@@ -216,8 +213,7 @@ class S3Helper:
                                  service: str,
                                  host: str = CM_CFG["host"],
                                  user: str = CM_CFG["username"],
-                                 pwd: str = CM_CFG["password"]
-                                 ) -> tuple:
+                                 pwd: str = CM_CFG["password"]) -> tuple:
         """
         Execute command to restart any system service at remote s3 server.
         :param service: Name of the service.
@@ -241,8 +237,7 @@ class S3Helper:
                                    host: str = CM_CFG["host"],
                                    user: str = CM_CFG["username"],
                                    pwd: str = CM_CFG["password"],
-                                   wait_time: int = 30
-                                   ) -> tuple:
+                                   wait_time: int = 30) -> tuple:
         """
         Restart all s3server processes using hctl command.
         :param host: IP of the host.
@@ -318,8 +313,7 @@ class S3Helper:
                                    host: str = CM_CFG["host"],
                                    user: str = CM_CFG["username"],
                                    pwd: str = CM_CFG["password"],
-                                   wait_time: int = 30
-                                   ) -> tuple:
+                                   wait_time: int = 30) -> tuple:
         """
         Restart all s3server resources using pcs command.
         :param host: IP of the host.
@@ -369,12 +363,12 @@ class S3Helper:
                                  user: str = CM_CFG["username"],
                                  pwd: str = CM_CFG["password"]) -> tuple:
         """
-        Check if file exists on s3 server
-        :param path: Absolute path of the file
-        :param host: IP of the host
-        :param user: Username of the host
-        :param pwd: Password for the user
-        :return: bool, response
+        Check if file exists on s3 server.
+        :param path: Absolute path of the file.
+        :param host: IP of the host.
+        :param user: Username of the host.
+        :param pwd: Password for the user.
+        :return: bool, response.
         """
         try:
             response = run_remote_cmd(
@@ -453,8 +447,7 @@ class S3Helper:
     def is_string_in_s3server_file(self,
                                    string: str,
                                    file_path: str,
-                                   **kwargs
-                                   ) -> tuple:
+                                   **kwargs) -> tuple:
         """
         find given string in file present on s3 server.
         :param string: String to be check.
@@ -505,8 +498,7 @@ class S3Helper:
     def enable_disable_s3server_instances(self,
                                           resource_disable: bool = True,
                                           wait_time: int = 10,
-                                          **kwargs
-                                          ) -> tuple:
+                                          **kwargs) -> tuple:
         """
         Enable or disable s3server instances using pcs command.
         :param resource_disable: True for disable and False for enable.
@@ -613,8 +605,7 @@ class S3Helper:
     def is_string_in_file(self,
                           string: str,
                           file_path: str,
-                          **kwargs
-                          ) -> tuple:
+                          **kwargs) -> tuple:
         """
         find given string in file present on s3 server.
         :param string: String to be check.

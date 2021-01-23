@@ -36,8 +36,8 @@ try:
 except ImportError as err:
     s3hobj = S3Helper.get_instance()
 
-s3_conf = read_yaml("config/s3/s3_config.yaml")[1]
-logger = logging.getLogger(__name__)
+S3_CONF = read_yaml("config/s3/s3_config.yaml")[1]
+LOGGER = logging.getLogger(__name__)
 
 
 class S3AclTestLib(Acl):
@@ -50,11 +50,11 @@ class S3AclTestLib(Acl):
             self,
             access_key: str = s3hobj.get_local_keys()[0],
             secret_key: str = s3hobj.get_local_keys()[1],
-            endpoint_url: str = s3_conf["s3_url"],
-            s3_cert_path: str = s3_conf["s3_cert_path"],
-            region: str = s3_conf["region"],
+            endpoint_url: str = S3_CONF["s3_url"],
+            s3_cert_path: str = S3_CONF["s3_cert_path"],
+            region: str = S3_CONF["region"],
             aws_session_token: str = None,
-            debug: bool = s3_conf["debug"]) -> None:
+            debug: bool = S3_CONF["debug"]) -> None:
         """This method initializes members of S3AclTestLib and its parent class
         :param access_key: access key
         :param secret_key: secret key
@@ -81,13 +81,13 @@ class S3AclTestLib(Acl):
         :return: (Boolean, response)
         """
         try:
-            logger.info("Getting object acl.")
+            LOGGER.info("Getting object acl.")
             object_acl = super().get_object_acl(bucket, object_key)
-            logger.debug(object_acl)
+            LOGGER.debug(object_acl)
             response = {"Owner": object_acl.owner, "Grants": object_acl.grants}
-            logger.info(response)
+            LOGGER.info(response)
         except Exception as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          S3AclTestLib.get_object_acl.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -101,13 +101,13 @@ class S3AclTestLib(Acl):
         :return: (Boolean, response)
         """
         try:
-            logger.info("Getting bucket acl.")
+            LOGGER.info("Getting bucket acl.")
             bucket_acl = super().get_bucket_acl(bucket_name)
-            logger.debug(bucket_acl)
+            LOGGER.debug(bucket_acl)
             response = bucket_acl.owner, bucket_acl.grants
-            logger.info(response)
+            LOGGER.info(response)
         except Exception as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          S3AclTestLib.get_bucket_acl.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -127,11 +127,11 @@ class S3AclTestLib(Acl):
         :return: (Boolean, response)
         """
         try:
-            logger.info("Applying acl to existing object")
+            LOGGER.info("Applying acl to existing object")
             response = super().put_object_acl(bucket_name, object_name, acl)
-            logger.info(response)
+            LOGGER.info(response)
         except Exception as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          S3AclTestLib.put_object_acl.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -151,11 +151,11 @@ class S3AclTestLib(Acl):
         :return: response
         """
         try:
-            logger.info("Applying acl to existing object")
+            LOGGER.info("Applying acl to existing object")
             response = super().put_object_acp(bucket_name, object_name, acp)
-            logger.info(response)
+            LOGGER.info(response)
         except Exception as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          S3AclTestLib.put_object_acp.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -193,11 +193,11 @@ class S3AclTestLib(Acl):
             # must do a deepcopy
             modified_acl = copy.deepcopy(acl)
             modified_acl["Grants"].append(new_grant)
-            logger.info(modified_acl)
+            LOGGER.info(modified_acl)
             response = super().put_object_acp(bucket_name, object_name, modified_acl)
-            logger.info(response)
+            LOGGER.info(response)
         except Exception as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          S3AclTestLib.add_grantee.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -236,7 +236,7 @@ class S3AclTestLib(Acl):
         :return: dict
         """
         try:
-            logger.info("Setting canned acl to existing object")
+            LOGGER.info("Setting canned acl to existing object")
             response = super().put_object_canned_acl(
                 bucket_name,
                 key,
@@ -247,9 +247,9 @@ class S3AclTestLib(Acl):
                 grant_read_acp,
                 grant_write,
                 grant_write_acp)
-            logger.info(response)
+            LOGGER.info(response)
         except BaseException as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          S3AclTestLib.put_object_canned_acl.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -274,12 +274,12 @@ class S3AclTestLib(Acl):
         :return: dict
         """
         try:
-            logger.info("Setting acl to new object")
+            LOGGER.info("Setting acl to new object")
             response = super().put_object_with_acl2(
                 bucket_name, key, file_path, grant_full_control, grant_read)
-            logger.info(response)
+            LOGGER.info(response)
         except BaseException as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          S3AclTestLib.put_object_with_acl2.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -313,7 +313,7 @@ class S3AclTestLib(Acl):
         :return: dict
         """
         try:
-            logger.info("Setting acl to new object")
+            LOGGER.info("Setting acl to new object")
             response = super().put_object_with_acl(bucket_name,
                                                    key,
                                                    file_path,
@@ -322,9 +322,9 @@ class S3AclTestLib(Acl):
                                                    grant_read,
                                                    grant_read_acp,
                                                    grant_write_acp)
-            logger.info(response)
+            LOGGER.info(response)
         except BaseException as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          S3AclTestLib.put_object_with_acl.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -355,7 +355,7 @@ class S3AclTestLib(Acl):
         :return: dict
         """
         try:
-            logger.info("Setting acl while creating object")
+            LOGGER.info("Setting acl while creating object")
             response = super().create_bucket_with_acl(bucket_name,
                                                       acl,
                                                       grant_full_control,
@@ -363,9 +363,9 @@ class S3AclTestLib(Acl):
                                                       grant_read_acp,
                                                       grant_write,
                                                       grant_write_acp)
-            logger.info(response)
+            LOGGER.info(response)
         except Exception as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          S3AclTestLib.create_bucket_with_acl.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -399,7 +399,7 @@ class S3AclTestLib(Acl):
         :return: True or False
         """
         try:
-            logger.info("Setting acl while creating object")
+            LOGGER.info("Setting acl while creating object")
             response = super().put_bucket_acl(
                 bucket_name,
                 acl,
@@ -409,9 +409,9 @@ class S3AclTestLib(Acl):
                 grant_read_acp,
                 grant_write,
                 grant_write_acp)
-            logger.info(response)
+            LOGGER.info(response)
         except Exception as error:
-            logger.error("Error in %s: %s",
+            LOGGER.error("Error in %s: %s",
                          S3AclTestLib.put_bucket_acl.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -429,23 +429,23 @@ class S3AclTestLib(Acl):
         :return: Bucket ACL or error
         :rtype: (Boolean, tuple/str)
         """
-        logger.info("Retrieving %s acl attrs using %s, %s.",
+        LOGGER.info("Retrieving %s acl attrs using %s, %s.",
                     bucket_name, access_key, secret_key)
         s3_iam_resource = boto3.resource(
             "s3",
-            verify=s3_conf['s3_cert_path'],
+            verify=S3_CONF['s3_cert_path'],
             aws_access_key_id=access_key,
             aws_secret_access_key=secret_key,
-            endpoint_url=s3_conf['s3_url'],
-            region_name=s3_conf['region'])
+            endpoint_url=S3_CONF['s3_url'],
+            region_name=S3_CONF['region'])
         try:
             bucket_acl = s3_iam_resource.BucketAcl(bucket_name)
             response = bucket_acl.owner, bucket_acl.grants
-            logger.info(response)
+            LOGGER.info(response)
 
             return True, response
         except BaseException as error:
-            logger.error(
+            LOGGER.error(
                 "Error in %s: %s",
                 S3AclTestLib.get_bucket_acl_using_iam_credentials.__name__,
                 error)

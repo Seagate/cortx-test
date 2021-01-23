@@ -21,6 +21,7 @@
 """Python library contains methods for bucket policy."""
 
 import logging
+
 from libs.s3.s3_core_lib import BucketPolicy
 from commons.exceptions import CTException
 from commons import errorcodes as err
@@ -32,9 +33,8 @@ try:
 except ImportError as err:
     s3hobj = S3Helper.get_instance()
 
-s3_conf = read_yaml("config/s3/s3_config.yaml")[1]
-
-logger = logging.getLogger(__name__)
+S3_CONF = read_yaml("config/s3/s3_config.yaml")[1]
+LOGGER = logging.getLogger(__name__)
 
 
 class S3BucketPolicyTestLib(BucketPolicy):
@@ -46,11 +46,11 @@ class S3BucketPolicyTestLib(BucketPolicy):
             self,
             access_key: str = s3hobj.get_local_keys()[0],
             secret_key: str = s3hobj.get_local_keys()[1],
-            endpoint_url: str = s3_conf["s3_url"],
-            s3_cert_path: str = s3_conf["s3_cert_path"],
-            region: str = s3_conf["region"],
+            endpoint_url: str = S3_CONF["s3_url"],
+            s3_cert_path: str = S3_CONF["s3_cert_path"],
+            region: str = S3_CONF["region"],
             aws_session_token: str = None,
-            debug: bool = s3_conf["debug"]) -> None:
+            debug: bool = S3_CONF["debug"]) -> None:
         """This method initializes members of S3BucketPolicyTestLib and its parent class
         :param access_key: access key
         :param secret_key: secret key
@@ -77,11 +77,11 @@ class S3BucketPolicyTestLib(BucketPolicy):
         and Success if successful, None and error message if failed
         """
         try:
-            logger.info("getting bucket policy for the bucket")
+            LOGGER.info("getting bucket policy for the bucket")
             response = super().get_bucket_policy(bucket_name)
-            logger.info(response)
+            LOGGER.info(response)
         except Exception as error:
-            logger.error("Error in  %s: %s",
+            LOGGER.error("Error in  %s: %s",
                          S3BucketPolicyTestLib.get_bucket_policy.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -99,11 +99,11 @@ class S3BucketPolicyTestLib(BucketPolicy):
         :return: Returns status and status message
         """
         try:
-            logger.info("Applying bucket policy to specified bucket")
+            LOGGER.info("Applying bucket policy to specified bucket")
             response = super().put_bucket_policy(bucket_name, bucket_policy)
-            logger.info(response)
+            LOGGER.info(response)
         except Exception as error:
-            logger.error("Error in  %s: %s",
+            LOGGER.error("Error in  %s: %s",
                          S3BucketPolicyTestLib.put_bucket_policy.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -117,11 +117,11 @@ class S3BucketPolicyTestLib(BucketPolicy):
         :return: Returns status and response of delete bucket policy operation.
         """
         try:
-            logger.info("Deletes any policy applied to the bucket")
+            LOGGER.info("Deletes any policy applied to the bucket")
             response = super().delete_bucket_policy(bucket_name)
-            logger.info(response["BucketName"])
+            LOGGER.info(response["BucketName"])
         except Exception as error:
-            logger.error("Error in  %s: %s",
+            LOGGER.error("Error in  %s: %s",
                          S3BucketPolicyTestLib.delete_bucket_policy.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])

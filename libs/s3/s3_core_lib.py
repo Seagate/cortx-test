@@ -30,7 +30,7 @@ import boto3.s3
 from commons import commands
 from commons.utils.system_utils import run_local_cmd, create_file
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 class S3Lib:
@@ -45,8 +45,7 @@ class S3Lib:
                  s3_cert_path: str,
                  region: str,
                  aws_session_token: str = None,
-                 debug: bool = False
-                 ) -> None:
+                 debug: bool = False) -> None:
         """
         This method initializes members of S3Lib.
         :param access_key: access key.
@@ -88,7 +87,7 @@ class S3Lib:
         :return: response.
         """
         response = self.s3_resource.create_bucket(Bucket=bucket_name)
-        logger.debug("Response: %s", str(response))
+        LOGGER.debug("Response: %s", str(response))
 
         return response
 
@@ -98,7 +97,7 @@ class S3Lib:
         :return: response.
         """
         response = [bucket.name for bucket in self.s3_resource.buckets.all()]
-        logger.info(response)
+        LOGGER.info(response)
 
         return response
 
@@ -107,8 +106,7 @@ class S3Lib:
                    object_name: str,
                    file_path: str,
                    m_key: str = None,
-                   m_value: str = None
-                   ) -> dict:
+                   m_value: str = None) -> dict:
         """
         Putting Object to the Bucket (mainly small file)
         :param bucket_name: Name of the bucket
@@ -118,7 +116,7 @@ class S3Lib:
         :param m_value: Value for metadata
         :return: response.
         """
-        logger.debug(bucket_name, object_name, file_path, m_key, m_value)
+        LOGGER.debug(bucket_name, object_name, file_path, m_key, m_value)
         with open(file_path, "rb") as data:
             if m_key:
                 response = self.s3_client.put_object(
@@ -130,15 +128,14 @@ class S3Lib:
             else:
                 response = self.s3_client.put_object(
                     Bucket=bucket_name, Key=object_name, Body=data)
-            logger.debug(response)
+            LOGGER.debug(response)
 
         return response
 
     def object_upload(self,
                       bucket_name: str,
                       object_name: str,
-                      file_path: str
-                      ) -> str:
+                      file_path: str) -> str:
         """
         Uploading Object to the Bucket.
         :param bucket_name: Name of the bucket.
@@ -146,10 +143,10 @@ class S3Lib:
         :param file_path: Path of the file.
         :return: response.
         """
-        logger.info("Uploading object")
+        LOGGER.info("Uploading object")
         self.s3_resource.meta.client.upload_file(
             file_path, bucket_name, object_name)
-        logger.info("Uploading object done")
+        LOGGER.info("Uploading object done")
 
         return file_path
 
@@ -161,7 +158,7 @@ class S3Lib:
         """
         bucket = self.s3_resource.Bucket(bucket_name)
         response_obj = [obj.key for obj in bucket.objects.all()]
-        logger.debug(response_obj)
+        LOGGER.debug(response_obj)
 
         return response_obj
 
@@ -184,9 +181,9 @@ class S3Lib:
         if maxkeys:
             resp = self.s3_client.list_objects(
                 Bucket=bucket_name, MaxKeys=maxkeys)
-        logger.debug("Resp is : %s", str(resp))
+        LOGGER.debug("Resp is : %s", str(resp))
         obj_lst = [obj['Key'] for obj in resp['Contents']]
-        logger.debug(obj_lst)
+        LOGGER.debug(obj_lst)
 
         return obj_lst
 
@@ -201,7 +198,7 @@ class S3Lib:
         # Since we are getting http response from head bucket, we have appended
         # bucket name for validation.
         response_bucket["BucketName"] = bucket_name
-        logger.debug(response_bucket)
+        LOGGER.debug(response_bucket)
 
         return response_bucket
 
@@ -212,11 +209,11 @@ class S3Lib:
         :param obj_name: Name of object.
         :return: response.
         """
-        logger.debug("BucketName: %s, ObjectName: %s", bucket_name, obj_name)
+        LOGGER.debug("BucketName: %s, ObjectName: %s", bucket_name, obj_name)
         resp_obj = self.s3_resource.Object(bucket_name, obj_name)
         response = resp_obj.delete()
         logging.debug(response)
-        logger.info("Object Deleted Successfully")
+        LOGGER.info("Object Deleted Successfully")
 
         return response
 
@@ -226,10 +223,10 @@ class S3Lib:
         :param bucket_name: Name of the bucket.
         :return: response.
         """
-        logger.debug("BucketName: %s", bucket_name)
+        LOGGER.debug("BucketName: %s", bucket_name)
         response = self.s3_resource.meta.client.get_bucket_location(
             Bucket=bucket_name)
-        logger.debug(response)
+        LOGGER.debug(response)
 
         return response
 
@@ -243,15 +240,14 @@ class S3Lib:
         """
         response = self.s3_resource.meta.client.head_object(
             Bucket=bucket_name, Key=key)
-        logger.debug(response)
+        LOGGER.debug(response)
 
         return response
 
     def object_download(self,
                         bucket_name: str,
                         obj_name: str,
-                        file_path: str
-                        ) -> str:
+                        file_path: str) -> str:
         """
         Downloading Object of the required Bucket.
         :param bucket_name: Name of the bucket.
@@ -260,7 +256,7 @@ class S3Lib:
         :return: response.
         """
         self.s3_resource.Bucket(bucket_name).download_file(obj_name, file_path)
-        logger.debug(
+        LOGGER.debug(
             "The %s has been downloaded successfully at mentioned file path %s",
             obj_name,
             file_path)
@@ -276,11 +272,11 @@ class S3Lib:
         """
         bucket = self.s3_resource.Bucket(bucket_name)
         if force:
-            logger.info(
+            LOGGER.info(
                 "This might cause data loss as you have opted for bucket deletion with "
                 "objects in it")
             bucket.objects.all().delete()
-            logger.debug(
+            LOGGER.debug(
                 "Bucket : %s , got deleted successfully with objects in it",
                 bucket_name)
         response = bucket.delete()
@@ -295,9 +291,9 @@ class S3Lib:
         :return: response.
         """
         # total_size = 0
-        logger.info("Getting bucket size")
+        LOGGER.info("Getting bucket size")
         response = self.s3_resource.Bucket(bucket_name)
-        logger.debug(response)
+        LOGGER.debug(response)
 
         return response
 
@@ -318,8 +314,7 @@ class S3Lib:
                                       bucket_name: str,
                                       object_name: str,
                                       file_path: str,
-                                      storage_class: str
-                                      ) -> dict:
+                                      storage_class: str) -> dict:
         """
         Adds an object to a bucket with specified storage class.
         :param bucket_name: Bucket name to which the PUT operation was initiated.
@@ -330,14 +325,14 @@ class S3Lib:
         'GLACIER'|'DEEP_ARCHIVE'
         :return: response.
         """
-        logger.debug(bucket_name, object_name, file_path, storage_class)
+        LOGGER.debug(bucket_name, object_name, file_path, storage_class)
         with open(file_path, "rb") as data:
             response = self.s3_client.put_object(
                 Bucket=bucket_name,
                 Key=object_name,
                 Body=data,
                 StorageClass=storage_class)
-            logger.debug(response)
+            LOGGER.debug(response)
 
         return response
 
@@ -351,8 +346,7 @@ class Multipart(S3Lib):
                                 bucket_name: str,
                                 obj_name: str,
                                 m_key: str = None,
-                                m_value: str = None
-                                ) -> dict:
+                                m_value: str = None) -> dict:
         """
         Request to initiate a multipart upload.
         :param bucket_name: Name of the bucket.
@@ -367,7 +361,7 @@ class Multipart(S3Lib):
         else:
             response = self.s3_client.create_multipart_upload(
                 Bucket=bucket_name, Key=obj_name)
-        logger.debug("Response: %s", str(response))
+        LOGGER.debug("Response: %s", str(response))
 
         return response
 
@@ -376,8 +370,7 @@ class Multipart(S3Lib):
                     bucket_name: str,
                     object_name: str,
                     upload_id: int,
-                    part_number: int
-                    ) -> dict:
+                    part_number: int) -> dict:
         """
         Upload parts of a specific multipart upload.
         :param body: content of the object.
@@ -404,7 +397,7 @@ class Multipart(S3Lib):
         """
         response = self.s3_client.list_parts(
             Bucket=bucket, Key=object_name, UploadId=mpu_id)
-        logger.debug(response)
+        LOGGER.debug(response)
 
         return response
 
@@ -422,13 +415,13 @@ class Multipart(S3Lib):
         :param object_name: Name of the object
         :return: response
         """
-        logger.info("initiated complete multipart upload")
+        LOGGER.info("initiated complete multipart upload")
         result = self.s3_client.complete_multipart_upload(
             Bucket=bucket,
             Key=object_name,
             UploadId=mpu_id,
             MultipartUpload={"Parts": parts})
-        logger.debug(result)
+        LOGGER.debug(result)
 
         return result
 
@@ -439,7 +432,7 @@ class Multipart(S3Lib):
         :return: response.
         """
         result = self.s3_client.list_multipart_uploads(Bucket=bucket)
-        logger.debug(result)
+        LOGGER.debug(result)
 
         return result
 
@@ -458,7 +451,7 @@ class Multipart(S3Lib):
         """
         response = self.s3_client.abort_multipart_upload(
             Bucket=bucket, Key=object_name, UploadId=upload_id)
-        logger.debug(response)
+        LOGGER.debug(response)
 
         return response
 
@@ -472,7 +465,7 @@ class Multipart(S3Lib):
         """
         response = self.s3_client.get_object(
             Bucket=bucket, Key=key, Range=ranges)
-        logger.debug(response)
+        LOGGER.debug(response)
 
         return response
 
@@ -491,7 +484,7 @@ class Tagging(S3Lib):
         """
         bucket_tagging = self.s3_resource.BucketTagging(bucket_name)
         response = bucket_tagging.put(Tagging=tag_set)
-        logger.debug(response)
+        LOGGER.debug(response)
 
         return response
 
@@ -502,7 +495,7 @@ class Tagging(S3Lib):
         :return: response.
         """
         response = self.s3_client.get_bucket_tagging(Bucket=bucket_name)
-        logger.debug(response)
+        LOGGER.debug(response)
 
         return response
 
@@ -514,7 +507,7 @@ class Tagging(S3Lib):
         """
         bucket_tagging = self.s3_resource.BucketTagging(bucket_name)
         response = bucket_tagging.delete()
-        logger.debug(response)
+        LOGGER.debug(response)
 
         return response
 
@@ -528,7 +521,7 @@ class Tagging(S3Lib):
         """
         response = self.s3_client.put_object_tagging(
             Bucket=bucket, Key=key, Tagging=tags)
-        logger.debug(response)
+        LOGGER.debug(response)
 
         return response
 
@@ -541,7 +534,7 @@ class Tagging(S3Lib):
         """
         response = self.s3_client.get_object_tagging(
             Bucket=bucket, Key=obj_name)
-        logger.debug(response)
+        LOGGER.debug(response)
 
         return response
 
@@ -554,7 +547,7 @@ class Tagging(S3Lib):
         """
         response = self.s3_client.delete_object_tagging(
             Bucket=bucket_name, Key=obj_name)
-        logger.debug(response)
+        LOGGER.debug(response)
 
         return response
 
@@ -563,8 +556,7 @@ class Tagging(S3Lib):
                                 object_name: str,
                                 file_path: str,
                                 tag: str = None,
-                                meta: dict = None
-                                ) -> dict:
+                                meta: dict = None) -> dict:
         """
         Putting Object to the Bucket (mainly small file) with tagging and metadata.
         :param bucket_name: Name of the bucket.
@@ -580,7 +572,7 @@ class Tagging(S3Lib):
         else:
             response = self.s3_resource.Bucket(bucket_name).put_object(
                 Key=object_name, Body=file_path, Tagging=tag)
-        logger.debug(response)
+        LOGGER.debug(response)
 
         return response
 
@@ -598,7 +590,7 @@ class Acl(S3Lib):
         :return: response.
         """
         response = self.s3_resource.ObjectAcl(bucket, object_key)
-        logger.debug(response)
+        LOGGER.debug(response)
 
         return response
 
@@ -609,7 +601,7 @@ class Acl(S3Lib):
         :return: response.
         """
         response = self.s3_resource.BucketAcl(bucket_name)
-        logger.debug(response)
+        LOGGER.debug(response)
 
         return response
 
@@ -639,8 +631,7 @@ class Acl(S3Lib):
                               grant_read: str = None,
                               grant_read_acp: str = None,
                               grant_write: str = None,
-                              grant_write_acp: str = None
-                              ) -> dict:
+                              grant_write_acp: str = None) -> dict:
         """
         To set the access control list (ACL) permissions for an object that
         already exists in a bucket.
@@ -661,7 +652,7 @@ class Acl(S3Lib):
         :param grant_write_acp: Allows grantee to write the ACL for the applicable object.
         :return: dict.
         """
-        logger.info("Setting acl to existing object.")
+        LOGGER.info("Setting acl to existing object.")
         if grant_full_control:
             if acl:
                 response = self.s3_client.put_object_acl(
@@ -711,7 +702,7 @@ class Acl(S3Lib):
         else:
             response = self.s3_client.put_object_acl(
                 Bucket=bucket_name, Key=key, ACL=acl)
-        logger.debug(response)
+        LOGGER.debug(response)
         return response
 
     def put_object_with_acl2(self,
@@ -719,8 +710,7 @@ class Acl(S3Lib):
                              key: str,
                              file_path: str,
                              grant_full_control: str,
-                             grant_read: str
-                             ) -> dict:
+                             grant_read: str) -> dict:
         """
         To set both grant_full_control, grant_read acl while adding an object to a bucket.
         :param bucket_name: Name of the bucket.
@@ -747,8 +737,7 @@ class Acl(S3Lib):
                             grant_full_control: str = None,
                             grant_read: str = None,
                             grant_read_acp: str = None,
-                            grant_write_acp: str = None
-                            ) -> dict:
+                            grant_write_acp: str = None) -> dict:
         """
         To set acl while adding an object to a bucket.
         :param bucket_name: Name of the bucket.
@@ -767,7 +756,7 @@ class Acl(S3Lib):
         """
         if not os.path.exists(file_path):
             create_file(file_path, 5)
-        logger.info("Putting object")
+        LOGGER.info("Putting object")
         if grant_full_control:
             if acl:
                 response = self.s3_client.put_object(
@@ -830,8 +819,7 @@ class Acl(S3Lib):
                                grant_read: str = None,
                                grant_read_acp: str = None,
                                grant_write: str = None,
-                               grant_write_acp: str = None
-                               ) -> dict:
+                               grant_write_acp: str = None) -> dict:
         """
         Create bucket with given acl and grant permissions.
         :param bucket_name: Name of the bucket.
@@ -898,8 +886,7 @@ class Acl(S3Lib):
                        grant_read: str = None,
                        grant_read_acp: str = None,
                        grant_write: str = None,
-                       grant_write_acp: str = None
-                       ) -> bool:
+                       grant_write_acp: str = None) -> bool:
         """
         Sets the permissions on a bucket using access control lists (ACL).
         :param bucket_name: Name of the bucket
@@ -978,7 +965,7 @@ class BucketPolicy(S3Lib):
         and Success if successful, None and error message if failed.
         """
         response = self.s3_client.get_bucket_policy(Bucket=bucket_name)
-        logger.debug(response)
+        LOGGER.debug(response)
 
         return response
 
@@ -1000,9 +987,9 @@ class BucketPolicy(S3Lib):
         :param bucket_name: Name of s3 bucket.
         :return: Returns status and response of delete bucket policy operation.
         """
-        logger.debug("BucketName: %s", bucket_name)
+        LOGGER.debug("BucketName: %s", bucket_name)
         resp = self.s3_client.delete_bucket_policy(Bucket=bucket_name)
-        logger.debug("Bucket policy delete resp : %s", str(resp))
+        LOGGER.debug("Bucket policy delete resp : %s", str(resp))
         resp["BucketName"] = bucket_name
 
         return resp
@@ -1028,7 +1015,7 @@ class S3LibCmd(S3Lib):
         cmd = commands.S3_UPLOAD_FILE_CMD.format(
             file_path, bucket_name, object_name)
         response = run_local_cmd(cmd)
-        logger.debug("Response: %s", str(response))
+        LOGGER.debug("Response: %s", str(response))
 
         return response
 
@@ -1047,7 +1034,7 @@ class S3LibCmd(S3Lib):
         cmd = commands.S3_UPLOAD_FOLDER_CMD.format(
             folder_path, bucket_name, profile_name)
         response = run_local_cmd(cmd)
-        logger.debug("Response: %s", str(response))
+        LOGGER.debug("Response: %s", str(response))
 
         return response
 
@@ -1068,6 +1055,6 @@ class S3LibCmd(S3Lib):
         cmd = commands.S3_DOWNLOAD_BUCKET_CMD.format(
             bucket_name, folder_path, profile_name)
         response = run_local_cmd(cmd)
-        logger.debug("Response: %s", str(response))
+        LOGGER.debug("Response: %s", str(response))
 
         return response
