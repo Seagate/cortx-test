@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#
+# -*- coding: utf-8 -*-
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +17,7 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
+"""Interface module for establishing connections."""
 
 import time
 import socket
@@ -41,19 +42,24 @@ class Host:
         self.shell_obj = None
         self.pysftp_obj = None
 
-    def connect(self, shell: bool = False, retry: int = 1, timeout: int = 400, **kwargs) -> None:
+    def connect(
+            self,
+            shell: bool = False,
+            retry: int = 1,
+            timeout: int = 400,
+            **kwargs) -> None:
         """
         Connect to remote host using hostname, username and password attribute.
+        ref: http://docs.paramiko.org/en/stable/api/client.html#paramiko.client.SSHClient.connect
         :param shell: In case required shell invocation.
         :param timeout: timeout in seconds.
         :param retry: retry to connect.
         :param kwargs: Optional keyword arguments for SSHClient.connect func call.
-                       ref: http://docs.paramiko.org/en/stable/api/client.html#paramiko.client.SSHClient.connect
         """
         try:
             self.host_obj = paramiko.SSHClient()
             self.host_obj.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            log.debug(f"Connecting to host: {self.hostname}")
+            log.debug("Connecting to host: %s", str(self.hostname))
             self.host_obj.connect(hostname=self.hostname,
                                   username=self.username,
                                   password=self.password,
@@ -67,21 +73,26 @@ class Host:
                       timeout_exception)
             self.reconnect(retry, shell=shell, timeout=timeout, **kwargs)
         except Exception as error:
-            log.error("Exception while connecting to server")
-            log.error(f"Error message: {error}")
+            log.error(
+                "Exception while connecting to server: Error: %s",
+                str(error))
             if self.host_obj:
                 self.host_obj.close()
             if shell and self.shell_obj:
                 self.shell_obj.close()
             raise error
 
-    def connect_pysftp(self, private_key: str = None, private_key_pass: str = None, **kwargs) -> None:
+    def connect_pysftp(
+            self,
+            private_key: str = None,
+            private_key_pass: str = None,
+            **kwargs) -> None:
         """
         Connect to remote host using pysftp.
         :param private_key: path to private key file(str) or paramiko.AgentKey
         :param private_key_pass:  password to use, if private_key is encrypted
         """
-        log.debug(f"Connecting to host: {self.hostname}")
+        log.debug("Connecting to host: %s", str(self.hostname))
         cnopts = pysftp.CnOpts()
         cnopts.hostkeys = None
         self.pysftp_obj = pysftp.Connection(host=self.hostname,
@@ -106,7 +117,11 @@ class Host:
         self.shell_obj = None
         self.pysftp_obj = None
 
-    def reconnect(self, retry_count: int, wait_time: int = 10, **kwargs) -> None:
+    def reconnect(
+            self,
+            retry_count: int,
+            wait_time: int = 10,
+            **kwargs) -> None:
         """
         This method re-connect to host machine
         :param wait_time: wait for retry connection.
@@ -116,15 +131,22 @@ class Host:
             try:
                 self.connect(**kwargs)
                 break
-            except:
-                log.debug("Attempting to reconnect")
+            except BaseException as error:
+                log.debug("Attempting to reconnect: %s", str(error))
                 retry_count -= 1
                 time.sleep(wait_time)
 
-    def execute_cmd(self, cmd: str, inputs: str = None, read_lines: bool = False,
-                    read_nbytes: int = -1, timeout: int = 400, **kwargs) -> Tuple[Union[List[str], str, bytes]]:
+    def execute_cmd(self,
+                    cmd: str,
+                    inputs: str = None,
+                    read_lines: bool = False,
+                    read_nbytes: int = -1,
+                    timeout: int = 400,
+                    **kwargs) -> Tuple[Union[List[str],
+                                             str,
+                                             bytes]]:
         """
-        If connection is not established,  it will establish the connection and 
+        If connection is not established,  it will establish the connection and
         Execute any command on remote machine/VM
         :param cmd: command user wants to execute on host.
         :param read_lines: Response will be return using readlines() else using read().
@@ -135,22 +157,22 @@ class Host:
         :return: stdout/strerr.
         """
         self.connect(timeout=timeout, **kwargs)
-        stdin, stdout, stderr = self.host_obj.exec_command(cmd, timeout=timeout)
+        stdin, stdout, stderr = self.host_obj.exec_command(
+            cmd, timeout=timeout)
         exit_status = stdout.channel.recv_exit_status()
         log.debug(exit_status)
         if exit_status != 0:
             err = stderr.readlines()
             err = [r.strip().strip("\n").strip() for r in err]
-            log.debug("Error: %s" % str(err))
+            log.debug("Error: %s", str(err))
             if err:
                 raise IOError(err)
             raise IOError(stdout.readlines())
-        else:
-            if inputs:
-                stdin.write('\n'.join(inputs))
-                stdin.write('\n')
-                stdin.flush()
-            if read_lines:
-                return stdout.readlines()
-            else:
-                return stdout.read(read_nbytes)
+        if inputs:
+            stdin.write('\n'.join(inputs))
+            stdin.write('\n')
+            stdin.flush()
+        if read_lines:
+            return stdout.readlines()
+
+        return stdout.read(read_nbytes)

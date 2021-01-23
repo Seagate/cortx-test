@@ -20,7 +20,7 @@
 #
 #
 
-# Python Library using boto3 module to perform account and user operations.
+"""Python Library using boto3 module to perform account and user operations."""
 
 import logging
 import boto3
@@ -36,8 +36,13 @@ class IamLib:
     Class initialising s3 connection and including functions for account and user operations
     """
 
-    def __init__(self, access_key: str, secret_key: str,
-                 endpoint_url: str, iam_cert_path: str, debug: bool = False) -> None:
+    def __init__(
+            self,
+            access_key: str,
+            secret_key: str,
+            endpoint_url: str,
+            iam_cert_path: str,
+            debug: bool = False) -> None:
         """
         This method initializes members of IamLib
         :param access_key: access key
@@ -52,9 +57,9 @@ class IamLib:
         self.iam_cert_path = iam_cert_path
 
         if debug:
-            boto3.set_stream_logger(name="botocore")  # Uncomment to enable debug
+            # Uncomment to enable debug
+            boto3.set_stream_logger(name="botocore")
 
-        """Creating Connection"""
         self.iam = boto3.client("iam", verify=self.iam_cert_path,
                                 aws_access_key_id=self.access_key,
                                 aws_secret_access_key=self.secret_key,
@@ -105,7 +110,8 @@ class IamLib:
         :param access_key_id:
         :return: delete access key response dict.
         """
-        response = self.iam.delete_access_key(AccessKeyId=access_key_id, UserName=user_name)
+        response = self.iam.delete_access_key(
+            AccessKeyId=access_key_id, UserName=user_name)
         logger.debug(response)
 
         return response
@@ -132,7 +138,11 @@ class IamLib:
 
         return response
 
-    def update_access_key(self, access_key_id: str, status: str, user_name: str) -> dict:
+    def update_access_key(
+            self,
+            access_key_id: str,
+            status: str,
+            user_name: str) -> dict:
         """
         Updating access key for given user.
         :param access_key_id: s3 user access key id.
@@ -140,7 +150,8 @@ class IamLib:
         :param user_name: s3 user name.
         :return: update access key response dict.
         """
-        response = self.iam.update_access_key(AccessKeyId=access_key_id, Status=status, UserName=user_name)
+        response = self.iam.update_access_key(
+            AccessKeyId=access_key_id, Status=status, UserName=user_name)
         logger.debug(response)
 
         return response
@@ -152,7 +163,8 @@ class IamLib:
         :param user_name: old s3 user name.
         :return: update user response dict.
         """
-        response = self.iam.update_user(NewUserName=new_user_name, UserName=user_name)
+        response = self.iam.update_user(
+            NewUserName=new_user_name, UserName=user_name)
         logger.debug(response)
 
         return response
@@ -181,7 +193,9 @@ class IamLib:
         :return: create user login profile response dict.
         """
         login_profile = self.iam_resource.LoginProfile(user_name)
-        response = login_profile.create(Password=password, PasswordResetRequired=password_reset)
+        response = login_profile.create(
+            Password=password,
+            PasswordResetRequired=password_reset)
         logger.debug(response)
 
         return response
@@ -201,11 +215,12 @@ class IamLib:
         login_profile = self.iam_resource.LoginProfile(user_name)
         response = login_profile.update(Password=password,
                                         PasswordResetRequired=password_reset)
-        logger.debug("output = {}".format(response))
+        logger.debug("output = %s", str(response))
 
         return response
 
-    def update_user_login_profile_no_pwd_reset(self, user_name: str, password: str) -> dict:
+    def update_user_login_profile_no_pwd_reset(
+            self, user_name: str, password: str) -> dict:
         """
         Update user login profile.
         :param user_name: s3 user name.
@@ -214,12 +229,12 @@ class IamLib:
         """
         login_profile = self.iam_resource.LoginProfile(user_name)
         response = login_profile.update(Password=password)
-        logger.debug("output = {}".format(response))
+        logger.debug("output = %s", str(response))
 
         return response
 
 
-class S3IamCli(object):
+class S3IamCli:
     """Class for performing S3iamcli operations"""
 
     @staticmethod
@@ -231,9 +246,9 @@ class S3IamCli(object):
         :return: list account s3iamcli response.
         """
         cmd = commands.CMD_LIST_ACC.format(ldap_user_id, ldap_password)
-        logger.info("List accounts s3iamcli = {}".format(cmd))
+        logger.info("List accounts s3iamcli = %s", str(cmd))
         result = run_local_cmd(cmd)
-        logger.debug("output = {}".format(result))
+        logger.debug("output = %s", str(result))
 
         return result
 
@@ -248,12 +263,16 @@ class S3IamCli(object):
         cmd = commands.CMD_LST_USR.format(access_key, secret_key)
         logger.info(cmd)
         result = run_local_cmd(cmd)
-        logger.info("output = {}".format(result))
+        logger.info("output = %s", str(result))
 
         return result
 
     @staticmethod
-    def create_account_s3iamcli(account_name: str, email_id: str, ldap_user_id: str, ldap_password: str) -> bytes:
+    def create_account_s3iamcli(
+            account_name: str,
+            email_id: str,
+            ldap_user_id: str,
+            ldap_password: str) -> bytes:
         """
         Creating new account using aws s3iamcli.
         :param account_name: s3 account name.
@@ -262,7 +281,8 @@ class S3IamCli(object):
         :param ldap_password: ldap password.
         :return: create account s3iamcli response.
         """
-        cmd = commands.CMD_CREATE_ACC.format(account_name, email_id, ldap_user_id, ldap_password)
+        cmd = commands.CMD_CREATE_ACC.format(
+            account_name, email_id, ldap_user_id, ldap_password)
         logger.info(cmd)
         response = run_local_cmd(cmd)
         logger.debug(response)
@@ -284,12 +304,14 @@ class S3IamCli(object):
         :return:
         """
         if force:
-            cmd = commands.CMD_DEL_ACC_FORCE.format(account_name, access_key, secret_key)
+            cmd = commands.CMD_DEL_ACC_FORCE.format(
+                account_name, access_key, secret_key)
         else:
-            cmd = commands.CMD_DEL_ACC.format(account_name, access_key, secret_key)
+            cmd = commands.CMD_DEL_ACC.format(
+                account_name, access_key, secret_key)
         logger.info(cmd)
         result = run_local_cmd(cmd)
-        logger.debug("output = {}".format(result))
+        logger.debug("output = %s", str(result))
 
         return result
 
@@ -310,12 +332,14 @@ class S3IamCli(object):
         :return: create user login profile s3iamcli response.
         """
         if password_reset:
-            cmd = commands.CREATE_USR_PROFILE_PWD_RESET.format(user_name, password, access_key, secret_key)
+            cmd = commands.CREATE_USR_PROFILE_PWD_RESET.format(
+                user_name, password, access_key, secret_key)
         else:
-            cmd = commands.CREATE_USR_PROFILE_NO_PWD_RESET.format(user_name, password, access_key, secret_key)
+            cmd = commands.CREATE_USR_PROFILE_NO_PWD_RESET.format(
+                user_name, password, access_key, secret_key)
         logger.info(cmd)
         result = run_local_cmd(cmd)
-        logger.debug("output = {}".format(result))
+        logger.debug("output = %s", str(result))
 
         return result
 
@@ -336,12 +360,14 @@ class S3IamCli(object):
         :return: create account login profile s3iamcli response.
         """
         if password_reset:
-            cmd = commands.CREATE_ACC_PROFILE_PWD_RESET.format(acc_name, password, access_key, secret_key)
+            cmd = commands.CREATE_ACC_PROFILE_PWD_RESET.format(
+                acc_name, password, access_key, secret_key)
         else:
-            cmd = commands.CREATE_ACC_RROFILE_NO_PWD_RESET.format(acc_name, password, access_key, secret_key)
+            cmd = commands.CREATE_ACC_RROFILE_NO_PWD_RESET.format(
+                acc_name, password, access_key, secret_key)
         logger.info(cmd)
         result = run_local_cmd(cmd)
-        logger.debug("output = {}".format(result))
+        logger.debug("output = %s", str(result))
 
         return result
 
@@ -362,17 +388,22 @@ class S3IamCli(object):
         :return: update account login profile s3iamcli response.
         """
         if password_reset:
-            cmd = commands.UPDATE_ACC_PROFILE_RESET.format(acc_name, password, access_key, secret_key)
+            cmd = commands.UPDATE_ACC_PROFILE_RESET.format(
+                acc_name, password, access_key, secret_key)
         else:
-            cmd = commands.UPDATE_ACC_PROFILE_NO_RESET.format(acc_name, password, access_key, secret_key)
+            cmd = commands.UPDATE_ACC_PROFILE_NO_RESET.format(
+                acc_name, password, access_key, secret_key)
         logger.info(cmd)
         result = run_local_cmd(cmd)
-        logger.debug("output = {}".format(result))
+        logger.debug("output = %s", str(result))
 
         return result
 
     @staticmethod
-    def get_account_login_profile_s3iamcli(acc_name: str, access_key: str, secret_key: str) -> bytes:
+    def get_account_login_profile_s3iamcli(
+            acc_name: str,
+            access_key: str,
+            secret_key: str) -> bytes:
         """
         Get account login profile using s3iamcli.
         :param acc_name: s3 account name.
@@ -383,7 +414,7 @@ class S3IamCli(object):
         cmd = commands.GET_ACC_PROFILE.format(acc_name, access_key, secret_key)
         logger.info(cmd)
         result = run_local_cmd(cmd)
-        logger.debug("output = {}".format(result))
+        logger.debug("output = %s", str(result))
 
         return result
 
@@ -404,17 +435,22 @@ class S3IamCli(object):
         :return: update user login profile s3iamcli response.
         """
         if password_reset:
-            cmd = commands.UPDATE_USR_PROFILE_RESET.format(user_name, password, access_key, secret_key)
+            cmd = commands.UPDATE_USR_PROFILE_RESET.format(
+                user_name, password, access_key, secret_key)
         else:
-            cmd = commands.UPDATE_ACC_PROFILE.format(user_name, password, access_key, secret_key)
+            cmd = commands.UPDATE_ACC_PROFILE.format(
+                user_name, password, access_key, secret_key)
         logger.info(cmd)
         result = run_local_cmd(cmd)
-        logger.debug("output = {}".format(result))
+        logger.debug("output = %s", str(result))
 
         return result
 
     @staticmethod
-    def get_user_login_profile_s3iamcli(user_name: str, access_key: str, secret_key: str) -> bytes:
+    def get_user_login_profile_s3iamcli(
+            user_name: str,
+            access_key: str,
+            secret_key: str) -> bytes:
         """
         Get user login profile using s3iamcli.
         :param user_name: s3 user name.
@@ -422,10 +458,11 @@ class S3IamCli(object):
         :param secret_key: s3 secret key.
         :return: get user login profile s3iamcli response.
         """
-        cmd = commands.GET_USRLOGING_PROFILE.format(user_name, access_key, secret_key)
+        cmd = commands.GET_USRLOGING_PROFILE.format(
+            user_name, access_key, secret_key)
         logger.info(cmd)
         result = run_local_cmd(cmd)
-        logger.debug("output = {}".format(result))
+        logger.debug("output = %s", str(result))
 
         return result
 
@@ -447,17 +484,22 @@ class S3IamCli(object):
         """
         logger.info(both_reset_options)
         if both_reset_options:
-            cmd = commands.CREATE_USR_LOGIN_PROFILE_NO_RESET.format(user_name, password, access_key, secret_key)
+            cmd = commands.CREATE_USR_LOGIN_PROFILE_NO_RESET.format(
+                user_name, password, access_key, secret_key)
         else:
-            cmd = commands.CREATE_USR_LOGIN_PROFILE.format(user_name, password, access_key, secret_key)
+            cmd = commands.CREATE_USR_LOGIN_PROFILE.format(
+                user_name, password, access_key, secret_key)
         logger.info(cmd)
         result = run_local_cmd(cmd)
-        logger.debug("output = {}".format(result))
+        logger.debug("output = %s", str(result))
 
         return result
 
     @staticmethod
-    def reset_account_access_key_s3iamcli(account_name: str, ldap_user_id: str, ldap_password: str) -> bytes:
+    def reset_account_access_key_s3iamcli(
+            account_name: str,
+            ldap_user_id: str,
+            ldap_password: str) -> bytes:
         """
         Resets account access key using aws s3iamcli.
         :param account_name: s3 account name.
@@ -465,7 +507,8 @@ class S3IamCli(object):
         :param ldap_password: s3 ldap password.
         :return: reset account access key s3iamcli response.
         """
-        cmd = commands.RESET_ACCESS_ACC.format(account_name, ldap_user_id, ldap_password)
+        cmd = commands.RESET_ACCESS_ACC.format(
+            account_name, ldap_user_id, ldap_password)
         logger.info(cmd)
         result = run_local_cmd(cmd)
         logger.debug(result)
@@ -473,7 +516,10 @@ class S3IamCli(object):
         return result
 
     @staticmethod
-    def create_user_using_s3iamcli(user_name: str, access_key: str, secret_key: str) -> bytes:
+    def create_user_using_s3iamcli(
+            user_name: str,
+            access_key: str,
+            secret_key: str) -> bytes:
         """
         Creating user using s3iamcli.
         :param user_name: s3 user name.
@@ -481,16 +527,17 @@ class S3IamCli(object):
         :param secret_key: s3 secret key.
         :return: create user using s3iamcli response.
         """
-        cmd = commands.CREATE_ACC_USR_S3IAMCLI.format(user_name, access_key, secret_key)
+        cmd = commands.CREATE_ACC_USR_S3IAMCLI.format(
+            user_name, access_key, secret_key)
         logger.info(cmd)
         result = run_local_cmd(cmd)
-        logger.debug("output = {}".format(result))
+        logger.debug("output = %s", str(result))
 
         return result
 
     @staticmethod
-    def create_account_login_profile_both_reset_options(acc_name: str, password: str, access_key: str,
-                                                        secret_key: str) -> bytes:
+    def create_account_login_profile_both_reset_options(
+            acc_name: str, password: str, access_key: str, secret_key: str) -> bytes:
         """
         Create account login profile using s3iamcli.
         :param acc_name: s3 account name.
@@ -499,16 +546,17 @@ class S3IamCli(object):
         :param secret_key: s3 secret key.
         :return: create account login profile both reset options.
         """
-        cmd = commands.CREATE_ACC_RROFILE_WITH_BOTH_RESET.format(acc_name, password, access_key, secret_key)
+        cmd = commands.CREATE_ACC_RROFILE_WITH_BOTH_RESET.format(
+            acc_name, password, access_key, secret_key)
         logger.info(cmd)
         result = run_local_cmd(cmd)
-        logger.debug("output = {}".format(result))
+        logger.debug("output = %s", str(result))
 
         return result
 
     @staticmethod
-    def create_acc_login_profile_without_both_reset_options(acc_name: str, password: str, access_key: str,
-                                                            secret_key: str) -> bytes:
+    def create_acc_login_profile_without_both_reset_options(
+            acc_name: str, password: str, access_key: str, secret_key: str) -> bytes:
         """
         Create account login profile using s3iamcli.
         :param acc_name: s3 account name.
@@ -517,16 +565,20 @@ class S3IamCli(object):
         :param secret_key: s3 secret key.
         :return: create acc login profile without both reset options response.
         """
-        cmd = commands.CREATE_ACC_PROFILE_WITHOUT_BOTH_RESET.format(acc_name, password, access_key, secret_key)
+        cmd = commands.CREATE_ACC_PROFILE_WITHOUT_BOTH_RESET.format(
+            acc_name, password, access_key, secret_key)
         logger.info(cmd)
         result = run_local_cmd(cmd)
-        logger.debug("output = {}".format(result))
+        logger.debug("output = %s", str(result))
 
         return result
 
     @staticmethod
-    def update_account_login_profile_both_reset_options(acc_name: str, access_key: str, secret_key: str,
-                                                        password: str = None) -> bytes:
+    def update_account_login_profile_both_reset_options(
+            acc_name: str,
+            access_key: str,
+            secret_key: str,
+            password: str = None) -> bytes:
         """
         Update account login profile using s3iamcli.
         :param acc_name: s3 account name.
@@ -536,18 +588,20 @@ class S3IamCli(object):
         :return: update account login profile both reset options response.
         """
         if password:
-            cmd = commands.UPDATE_ACC_PROFILE_BOTH_RESET.format(acc_name, password, access_key, secret_key)
+            cmd = commands.UPDATE_ACC_PROFILE_BOTH_RESET.format(
+                acc_name, password, access_key, secret_key)
         else:
-            cmd = commands.UPDATE_ACC_LOGIN_PROFILE.format(acc_name, access_key, secret_key)
+            cmd = commands.UPDATE_ACC_LOGIN_PROFILE.format(
+                acc_name, access_key, secret_key)
         logger.info(cmd)
         result = run_local_cmd(cmd)
-        logger.debug("output = {}".format(result))
+        logger.debug("output = %s", str(result))
 
         return result
 
     @staticmethod
-    def update_user_login_profile_without_password_and_reset_option(user_name: str, access_key: str,
-                                                                    secret_key: str) -> bytes:
+    def update_user_login_profile_without_password_and_reset_option(
+            user_name: str, access_key: str, secret_key: str) -> bytes:
         """
         Update user login profile using s3iamcli without password and reset options.
         :param user_name: s3 user name.
@@ -555,15 +609,19 @@ class S3IamCli(object):
         :param secret_key: s3 secret key.
         :return: update user login profile without password and reset option response.
         """
-        cmd = commands.UPDATE_USR_LOGIN_PROFILE.format(user_name, access_key, secret_key)
+        cmd = commands.UPDATE_USR_LOGIN_PROFILE.format(
+            user_name, access_key, secret_key)
         logger.info(cmd)
         result = run_local_cmd(cmd)
-        logger.debug("output = {}".format(result))
+        logger.debug("output = %s", str(result))
 
         return result
 
     @staticmethod
-    def get_temp_auth_credentials_account(account_name: str, account_password: str, duration: str = None) -> bytes:
+    def get_temp_auth_credentials_account(
+            account_name: str,
+            account_password: str,
+            duration: str = None) -> bytes:
         """
         Retrieving the temporary auth credentials for the given account.
         :param account_name: s3 account name.
@@ -572,17 +630,22 @@ class S3IamCli(object):
         :return: get temp auth credentials account response.
         """
         if duration is not None:
-            cmd = commands.GET_TEMP_ACC_DURATION.format(account_name, account_password, duration)
+            cmd = commands.GET_TEMP_ACC_DURATION.format(
+                account_name, account_password, duration)
         else:
             cmd = commands.GET_TEMP_ACC.format(account_name, account_password)
         logger.info(cmd)
         result = run_local_cmd(cmd)
-        logger.debug("output = {}".format(result))
+        logger.debug("output = %s", str(result))
 
         return result
 
     @staticmethod
-    def get_temp_auth_credentials_user(account_name: str, user_name: str, password: str, duration: str = None) -> bytes:
+    def get_temp_auth_credentials_user(
+            account_name: str,
+            user_name: str,
+            password: str,
+            duration: str = None) -> bytes:
         """
         Retrieving the temporary auth credentials for the given user.
         :param account_name: s3 account name.
@@ -592,17 +655,23 @@ class S3IamCli(object):
         :return: get temp auth credentials user response.
         """
         if duration is not None:
-            cmd = commands.GET_TEMP_USR_DURATION.format(account_name, user_name, password, duration)
+            cmd = commands.GET_TEMP_USR_DURATION.format(
+                account_name, user_name, password, duration)
         else:
-            cmd = commands.GET_TEMP_USR.format(account_name, user_name, password)
+            cmd = commands.GET_TEMP_USR.format(
+                account_name, user_name, password)
         logger.info(cmd)
         result = run_local_cmd(cmd)
-        logger.debug("output = {}".format(result))
+        logger.debug("output = %s", str(result))
 
         return result
 
     @staticmethod
-    def change_user_password(old_pwd: str, new_pwd: str, access_key: str, secret_key: str) -> bytes:
+    def change_user_password(
+            old_pwd: str,
+            new_pwd: str,
+            access_key: str,
+            secret_key: str) -> bytes:
         """
         Change password for IAM user.
         :param old_pwd: old password.
@@ -611,16 +680,17 @@ class S3IamCli(object):
         :param secret_key: s3 secret key.
         :return: change user password response.
         """
-        cmd = commands.CMD_CHANGE_PWD.format(old_pwd, new_pwd, access_key, secret_key)
+        cmd = commands.CMD_CHANGE_PWD.format(
+            old_pwd, new_pwd, access_key, secret_key)
         logger.info(cmd)
         result = run_local_cmd(cmd)
-        logger.debug("output = {}".format(result))
+        logger.debug("output = %s", str(result))
 
         return result
 
     @staticmethod
-    def update_user_login_profile_s3iamcli_with_both_reset_options(user_name: str, password: str, access_key: str,
-                                                                   secret_key: str) -> bytes:
+    def update_user_login_profile_s3iamcli_with_both_reset_options(
+            user_name: str, password: str, access_key: str, secret_key: str) -> bytes:
         """
         Update user login profile using both password reset options.
         :param user_name: Name of user.
@@ -629,10 +699,11 @@ class S3IamCli(object):
         :param secret_key: Secret key of user.
         :return: update user login profile s3iamcli with both reset options response.
         """
-        cmd = commands.UPDATE_USR_PROFILE_BOTH_RESET.format(user_name, password, access_key, secret_key)
+        cmd = commands.UPDATE_USR_PROFILE_BOTH_RESET.format(
+            user_name, password, access_key, secret_key)
         logger.info(cmd)
         result = run_local_cmd(cmd)
-        logger.debug("output = {0}".format(result))
+        logger.debug("output = %s", str(result))
 
         return result
 
@@ -653,11 +724,13 @@ class S3IamCli(object):
         :return: Delete account response.
         """
         if force:
-            cmd = commands.DEL_ACNT_USING_TEMP_CREDS_FORCE.format(account_name, access_key, secret_key, session_token)
+            cmd = commands.DEL_ACNT_USING_TEMP_CREDS_FORCE.format(
+                account_name, access_key, secret_key, session_token)
         else:
-            cmd = commands.DEL_ACNT_USING_TEMP_CREDS.format(account_name, access_key, secret_key, session_token)
+            cmd = commands.DEL_ACNT_USING_TEMP_CREDS.format(
+                account_name, access_key, secret_key, session_token)
         logger.info(cmd)
         result = run_local_cmd(cmd)
-        logger.debug("output = {}".format(result))
+        logger.debug("output = %s", str(result))
 
         return result

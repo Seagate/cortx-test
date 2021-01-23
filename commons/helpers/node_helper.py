@@ -17,15 +17,16 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
+"""Module to maintain all common functions across component."""
 
 import logging
-import mdstat
 import os
 import posixpath
 import re
 import shutil
 import stat
 import time
+import mdstat
 from typing import Tuple, List, Union
 from commons import commands
 from commons.helpers.host import Host
@@ -37,17 +38,19 @@ EXCEPTION_MSG = "*ERROR* An exception occurred in {}: {}"
 
 class Node(Host):
     """
-    Class to maintain all common functions across component
+    Class to maintain all common functions across component.
     """
-    def __init__(self, hostname: str, username: str, password: str) -> None:
-        super().__init__(hostname, username, password)
 
     def get_authserver_log(self, path: str, option: str = "-n 3") -> str:
         cmd = "tail {} {}".format(path, option)
         res = self.execute_cmd(cmd)
         return res
 
-    def send_systemctl_cmd(self, command: str, services: list, timeout: int = 60) -> list:
+    def send_systemctl_cmd(
+            self,
+            command: str,
+            services: list,
+            timeout: int = 60) -> list:
         valid_commands = {"start", "stop",
                           "reload", "enable", "disable", "status"}
         if command not in valid_commands:
@@ -55,12 +58,18 @@ class Node(Host):
                 "command parameter must be one of %r." % valid_commands)
         out = []
         for service in services:
-            log.debug("Performing {} on service {}...".format(command, service))
+            log.debug(
+                "Performing {} on service {}...".format(
+                    command, service))
             cmd = commands.SYSTEM_CTL_CMD.format(command, service)
             out.append(self.execute_cmd(cmd, timeout=timeout))
         return out
 
-    def status_service(self, services: str, expected_status: str, timeout: int = 2) -> dict:
+    def status_service(
+            self,
+            services: str,
+            expected_status: str,
+            timeout: int = 2) -> dict:
         """
         This function display status of services
         """
@@ -84,7 +93,11 @@ class Node(Host):
 
         return result
 
-    def configure_jclient_cloud(self, source: str, destination: str, nfs_path: str) -> bool:
+    def configure_jclient_cloud(
+            self,
+            source: str,
+            destination: str,
+            nfs_path: str) -> bool:
         """
         Function to configure jclient and cloud jar files
         :param source: path to the source dir where .jar are present.
@@ -123,7 +136,12 @@ class Node(Host):
         self.disconnect()
         return True
 
-    def create_file(self, filename: str, mb_count: int, dev="/dev/zero", bs="1M") -> str:
+    def create_file(
+            self,
+            filename: str,
+            mb_count: int,
+            dev="/dev/zero",
+            bs="1M") -> str:
         """
         Creates a new file, size(count) in MB
         :param filename: Name of the file with path
@@ -207,7 +225,8 @@ class Node(Host):
         log.debug("file copied to : {}".format(local_path))
         self.disconnect()
 
-    def write_remote_file_to_local_file(self, file_path: str, local_path: str) -> None:
+    def write_remote_file_to_local_file(
+            self, file_path: str, local_path: str) -> None:
         """
         Writing remote file content in local file
         :param file_path: Remote path
@@ -220,7 +239,8 @@ class Node(Host):
 
     def get_mdstat(self):
         """
-        This function retrieves the /proc/mdstat file from remote host and returns the parsed output in json form
+        This function retrieves the /proc/mdstat file from remote host and
+        returns the parsed output in json form.
         :return: parsed mdstat output
         :rtype: dict
         """
@@ -235,7 +255,8 @@ class Node(Host):
         self.remove_file(mdstat_local_path)
         return output
 
-    def is_string_in_remote_file(self, string: str, file_path: str) -> Tuple[bool, Any]:
+    def is_string_in_remote_file(
+            self, string: str, file_path: str) -> Tuple[bool, Any]:
         """
         find given string in file present on s3 server
         :param string: String to be check
@@ -385,7 +406,14 @@ class Node(Host):
         """
         return self.execute_cmd(commands.PGREP_CMD.format(process))
 
-    def toggle_apc_node_power(self, pdu_ip, pdu_user, pdu_pwd, node_slot, timeout=120, status=None):
+    def toggle_apc_node_power(
+            self,
+            pdu_ip,
+            pdu_user,
+            pdu_pwd,
+            node_slot,
+            timeout=120,
+            status=None):
         """
         Functon to toggle node power status usng APC PDU switch.
         :param string pdu_ip: IP or end pont for the PDU
@@ -436,7 +464,13 @@ class Node(Host):
             return False, error
         return True, "Node shutdown successfully"
 
-    def disk_usage_python_interpreter_cmd(self, dir_path: str, field_val: int = 3) -> Tuple[bool, Union[List[str], str, bytes, BaseException]]:
+    def disk_usage_python_interpreter_cmd(self,
+                                          dir_path: str,
+                                          field_val: int = 3) -> Tuple[bool,
+                                                                       Union[List[str],
+                                                                             str,
+                                                                             bytes,
+                                                                             BaseException]]:
         """
         This function will return disk usage associated with given path.
         :param dir_path: Directory path of which size is to be calculated

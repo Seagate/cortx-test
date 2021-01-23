@@ -18,7 +18,9 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-# Python library contains methods which allows you to perform bucket and object operations using boto3.
+"""
+Python library contains methods which allows you to perform bucket and object operations using boto3.
+"""
 
 import os
 import time
@@ -88,14 +90,15 @@ class S3TestLib(S3Lib):
         try:
             start_time = perf_counter()
             response = super().create_bucket(bucket_name)
-            logger.debug("Create bucket response {}".format(response))
+            logger.debug("Create bucket response %s", str(response))
             end_time = perf_counter()
-            logger.info("############# BUCKET CREATION TIME : {} #############".format(end_time - start_time))
+            logger.info(
+                "############# BUCKET CREATION TIME : %f #############", (
+                    end_time - start_time))
         except Exception as error:
-            logger.error("{0} {1}: {2}".format(
-                "Error in ",
-                S3TestLib.create_bucket.__name__,
-                error))
+            logger.error("Error in %s: %s",
+                         S3TestLib.create_bucket.__name__,
+                         error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
@@ -108,10 +111,9 @@ class S3TestLib(S3Lib):
         try:
             response = super().bucket_list()
         except Exception as error:
-            logger.error("{0} {1}: {2}".format(
-                "Error in ",
-                S3TestLib.bucket_list.__name__,
-                error))
+            logger.error("Error in %s: %s",
+                         S3TestLib.bucket_list.__name__,
+                         error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
         return True, response
 
@@ -124,10 +126,9 @@ class S3TestLib(S3Lib):
             logger.info("Counting number of buckets")
             response = super().bucket_list()
         except Exception as error:
-            logger.error("{0} {1}: {2}".format(
-                "Error in ",
-                S3TestLib.bucket_count.__name__,
-                error))
+            logger.error("Error in %s: %s",
+                         S3TestLib.bucket_count.__name__,
+                         error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, len(response)
@@ -148,15 +149,18 @@ class S3TestLib(S3Lib):
         try:
             response = super().put_object(bucket_name, object_name, file_path, m_key, m_value)
         except Exception as error:
-            logger.error("{0} {1}: {2}".format(
-                "Error in ",
-                S3TestLib.put_object.__name__,
-                error))
+            logger.error("Error in %s: %s",
+                         S3TestLib.put_object.__name__,
+                         error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
 
-    def object_upload(self, bucket_name: str, object_name: str, file_path: str) -> tuple:
+    def object_upload(
+            self,
+            bucket_name: str,
+            object_name: str,
+            file_path: str) -> tuple:
         """
         Uploading Object to the Bucket.
         :param bucket_name: Name of the bucket.
@@ -169,10 +173,9 @@ class S3TestLib(S3Lib):
             response = super().object_upload(bucket_name, object_name, file_path)
             logger.info("Uploading object done")
         except BaseException as error:
-            logger.error("{0} {1}: {2}".format(
-                "Error in ",
-                S3TestLib.object_upload.__name__,
-                error))
+            logger.error("Error in %s: %s",
+                         S3TestLib.object_upload.__name__,
+                         error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
@@ -187,10 +190,9 @@ class S3TestLib(S3Lib):
         try:
             response = super().object_list(bucket_name)
         except Exception as error:
-            logger.error("{0} {1}: {2}".format(
-                "Error in ",
-                S3TestLib.object_list.__name__,
-                error))
+            logger.error("Error in %s: %s",
+                         S3TestLib.object_list.__name__,
+                         error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
@@ -206,10 +208,9 @@ class S3TestLib(S3Lib):
             response = super().head_bucket(bucket_name)
             logger.debug(response)
         except Exception as error:
-            logger.error("{0} {1}: {2}".format(
-                "Error in ",
-                S3TestLib.head_bucket.__name__,
-                error))
+            logger.error("Error in %s: %s",
+                         S3TestLib.head_bucket.__name__,
+                         error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
@@ -223,14 +224,14 @@ class S3TestLib(S3Lib):
         """
         logger.info("Deleting object.")
         try:
-            logger.debug("BucketName: {}, ObjectName: {}".format(bucket_name, obj_name))
+            logger.debug(
+                "BucketName: %s, ObjectName: %s", bucket_name, obj_name)
             response = super().delete_object(bucket_name, obj_name)
             logger.info("Object Deleted Successfully.")
         except Exception as error:
-            logger.error("{0} {1}: {2}".format(
-                "Error in ",
-                S3TestLib.delete_object.__name__,
-                error))
+            logger.error("Error in %s: %s",
+                         S3TestLib.delete_object.__name__,
+                         error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
@@ -246,13 +247,11 @@ class S3TestLib(S3Lib):
         try:
             response = super().bucket_location(bucket_name)
             logger.debug(
-                "The bucket location of {} is {}".format(
-                    bucket_name, response))
+                "The bucket location of %s is %s", bucket_name, response)
         except Exception as error:
-            logger.error("{0} {1}: {2}".format(
-                "Error in ",
-                S3TestLib.bucket_location.__name__,
-                error))
+            logger.error("Error in %s: %s",
+                         S3TestLib.bucket_location.__name__,
+                         error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
@@ -271,15 +270,18 @@ class S3TestLib(S3Lib):
             response = super().object_info(bucket_name, key)
             logger.debug(response)
         except Exception as error:
-            logger.error("{0} {1}: {2}".format(
-                "Error in ",
-                S3TestLib.object_info.__name__,
-                error))
+            logger.error("Error in %s: %s",
+                         S3TestLib.object_info.__name__,
+                         error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
 
-    def object_download(self, bucket_name: str, obj_name: str, file_path: str) -> tuple:
+    def object_download(
+            self,
+            bucket_name: str,
+            obj_name: str,
+            file_path: str) -> tuple:
         """
         Downloading Object of the required Bucket.
         :param bucket_name: Name of the bucket.
@@ -293,14 +295,14 @@ class S3TestLib(S3Lib):
             logger.info("Starting downloading the object")
             response = super().object_download(bucket_name, obj_name, file_path)
             logger.debug(
-                "The {} has been downloaded successfully at mentioned file path {}".format(
-                    obj_name, file_path))
+                "The %s has been downloaded successfully at mentioned file path %s",
+                obj_name,
+                file_path)
             logger.debug(response)
         except Exception as error:
-            logger.error("{0} {1}: {2}".format(
-                "Error in ",
-                S3TestLib.object_download.__name__,
-                error))
+            logger.error("Error in %s: %s",
+                         S3TestLib.object_download.__name__,
+                         error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
@@ -318,12 +320,13 @@ class S3TestLib(S3Lib):
             response = super().delete_bucket(bucket_name, force)
             end_time = perf_counter()
             logger.debug(response)
-            logger.info("############# BUCKET DELETION TIME : {} #############".format(end_time - start_time))
+            logger.info(
+                "############# BUCKET DELETION TIME : %f #############", (
+                    end_time - start_time))
         except Exception as error:
-            logger.error("{0} {1}: {2}".format(
-                "Error in ",
-                S3TestLib.delete_bucket.__name__,
-                error))
+            logger.error("Error in %s: %s",
+                         S3TestLib.delete_bucket.__name__,
+                         error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
@@ -343,15 +346,18 @@ class S3TestLib(S3Lib):
                 logger.info(each_object.size)
             logger.info("Total size: %s", total_size)
         except Exception as error:
-            logger.error("{0} {1}: {2}".format(
-                "Error in ",
-                S3TestLib.get_bucket_size.__name__,
-                error))
+            logger.error("Error in %s: %s",
+                         S3TestLib.get_bucket_size.__name__,
+                         error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, total_size
 
-    def delete_multiple_objects(self, bucket_name, obj_list, quiet=False) -> tuple:
+    def delete_multiple_objects(
+            self,
+            bucket_name,
+            obj_list,
+            quiet=False) -> tuple:
         """
         Deletes multiple objects from a single bucket.
         :param bucket_name: Name of bucket.
@@ -369,16 +375,16 @@ class S3TestLib(S3Lib):
                 objects.append(obj_d)
             if quiet:
                 response = self.s3_client.delete_objects(
-                    Bucket=bucket_name, Delete={"Objects": objects, "Quiet": True})
+                    Bucket=bucket_name, Delete={
+                        "Objects": objects, "Quiet": True})
             else:
                 response = self.s3_client.delete_objects(
                     Bucket=bucket_name, Delete={"Objects": objects})
             logger.info(response)
         except BaseException as error:
-            logger.error("{0} {1}: {2}".format(
-                "Error in ",
-                S3TestLib.delete_multiple_objects.__name__,
-                error))
+            logger.error("Error in %s: %s",
+                         S3TestLib.delete_multiple_objects.__name__,
+                         error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
@@ -397,10 +403,9 @@ class S3TestLib(S3Lib):
                 response_dict["Deleted"].append(bucket)
             else:
                 logger.error(
-                    "{0} {1}: {2}".format(
-                        "Error in ",
-                        S3TestLib.delete_multiple_buckets.__name__,
-                        response[1]))
+                    "Error in %s: %s",
+                    S3TestLib.delete_multiple_buckets.__name__,
+                    response[1])
                 response_dict["CouldNotDelete"].append(bucket)
         if response_dict["CouldNotDelete"]:
             logger.error("Failed to delete bucket")
@@ -418,7 +423,11 @@ class S3TestLib(S3Lib):
 
         return True, response
 
-    def create_multiple_buckets_with_objects(self, bucket_count: int, file_path: str, obj_count: int = 1) -> tuple:
+    def create_multiple_buckets_with_objects(
+            self,
+            bucket_count: int,
+            file_path: str,
+            obj_count: int = 1) -> tuple:
         """
         Create given number of buckets and upload one object to each bucket.
         :param bucket_count: No. of buckets to create.
@@ -430,19 +439,20 @@ class S3TestLib(S3Lib):
         obj_list = list()
         try:
             for count in range(int(bucket_count)):
-                bucket_name = "{}-{}-{}".format("bvtbucket", str(count), str(time.time()))
+                bucket_name = "{}-{}-{}".format("bvtbucket",
+                                                str(count), str(time.time()))
                 resp_bucket = self.create_bucket(bucket_name)
                 for obj in range(obj_count):
-                    object_name = "{}-{}".format("auto-obj", str(obj), bucket_name)
+                    object_name = "{}-{}".format("auto-obj",
+                                                 str(obj), bucket_name)
                     self.object_upload(bucket_name, object_name, file_path)
                     obj_list.append(object_name)
                 response.append({"Bucket": resp_bucket, "Objects": obj_list})
         except Exception as error:
             logger.error(
-                "{0} {1}: {2}".format(
-                    "Error in ",
-                    S3TestLib.create_multiple_buckets_with_objects.__name__,
-                    error))
+                "Error in %s: %s",
+                S3TestLib.create_multiple_buckets_with_objects.__name__,
+                error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
@@ -481,21 +491,20 @@ class S3TestLib(S3Lib):
                                 1024000 *
                                 int(max_size))))
                 logger.info(
-                    "Uploading object of size {}".format(
-                        os.path.getsize(file_path)))
+                    "Uploading object of size %d", os.path.getsize(file_path))
                 self.s3_resource.meta.client.upload_file(
                     file_path, bucket_name, objects)
                 logger.info(
-                    "Uploaded object {} to the bucket {}".format(
-                        objects, bucket_name))
+                    "Uploaded object %s to the bucket %s",
+                    objects,
+                    bucket_name)
                 objects_list.append(objects)
                 os.remove(file_path)
         except BaseException as error:
             logger.error(
-                "{0} {1}: {2}".format(
-                    "Error in ",
-                    S3TestLib.put_random_size_objects.__name__,
-                    error))
+                "Error in %s: %s",
+                S3TestLib.put_random_size_objects.__name__,
+                error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, objects_list
@@ -516,31 +525,34 @@ class S3TestLib(S3Lib):
         """
         response = list()
         try:
-            logger.debug("Creating a bucket with name {0}".format(bucket_name))
+            logger.debug("Creating a bucket with name %s", str(bucket_name))
             create_bucket = self.create_bucket(bucket_name)
-            logger.debug("Created a bucket with name {0}".format(bucket_name))
-            logger.debug("Creating a file {0}".format(file_path))
+            logger.debug("Created a bucket with name %s", str(bucket_name))
+            logger.debug("Creating a file %s", str(file_path))
             create_file(file_path, mb_count)
-            logger.debug("Created a file {0}".format(file_path))
+            logger.debug("Created a file %s", str(file_path))
             logger.debug(
-                "Uploading an object {0} to bucket {1}".format(
-                    object_name, bucket_name))
+                "Uploading an object %s to bucket %s",
+                object_name,
+                bucket_name)
             put_object = self.put_object(bucket_name, object_name, file_path)
             logger.debug(
-                "Uploaded an object {0} to bucket {1}".format(
-                    object_name, bucket_name))
+                "Uploaded an object %s to bucket %s", object_name, bucket_name)
             response.append({"Bucket": create_bucket, "Objects": put_object})
         except BaseException as error:
             logger.error(
-                "{0} {1}: {2}".format(
-                    "Error in ",
-                    S3TestLib.create_bucket_put_object.__name__,
-                    error))
+                "Error in %s: %s",
+                S3TestLib.create_bucket_put_object.__name__,
+                error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
 
-    def get_object(self, bucket_name: str, object_name: str) -> tuple:
+    def get_object(
+            self,
+            bucket_name: str,
+            object_name: str,
+            ranges=None) -> tuple:
         """
         Retrieves object from specified S3 bucket
         :param str bucket_name: The bucket name containing the object.
@@ -551,15 +563,18 @@ class S3TestLib(S3Lib):
             logger.info("Retrieving object from a bucket")
             response = super().get_object(bucket_name, object_name)
         except Exception as error:
-            logger.error("{0} {1}: {2}".format(
-                "Error in ",
-                S3TestLib.get_object.__name__,
-                error))
+            logger.error("Error in %s: %s",
+                         S3TestLib.get_object.__name__,
+                         error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
 
-    def list_objects_with_prefix(self, bucket_name: str, prefix=None, maxkeys=None) -> tuple:
+    def list_objects_with_prefix(
+            self,
+            bucket_name: str,
+            prefix=None,
+            maxkeys=None) -> tuple:
         """
         Listing objects of a bucket having specified prefix.
         :param bucket_name: Name of the bucket
@@ -572,10 +587,9 @@ class S3TestLib(S3Lib):
             response = super().list_objects_with_prefix(
                 bucket_name, prefix=prefix, maxkeys=maxkeys)
         except Exception as error:
-            logger.error("{0} {1}: {2}".format(
-                "Error in ",
-                S3TestLib.list_objects_with_prefix.__name__,
-                error))
+            logger.error("Error in %s: %s",
+                         S3TestLib.list_objects_with_prefix.__name__,
+                         error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
@@ -592,19 +606,25 @@ class S3TestLib(S3Lib):
         :param str object_name: Name of an object to be put to the bucket
         :param str file_path: Path of the file to be created and uploaded to bucket
         :param str storage_class: The type of storage to use for the object
-        e.g.'STANDARD'|'REDUCED_REDUNDANCY'|'STANDARD_IA'|'ONEZONE_IA'|'INTELLIGENT_TIERING'|'GLACIER'|'DEEP_ARCHIVE'
+        e.g.'STANDARD'|'REDUCED_REDUNDANCY'|'STANDARD_IA'|'ONEZONE_IA'|'INTELLIGENT_TIERING'|
+        'GLACIER'|'DEEP_ARCHIVE'
         :return: (Boolean, Response)
         """
-        logger.info("Uploading an object to a bucket with specified storage class.")
-        logger.debug(bucket_name, object_name, file_path, storage_class)
+        logger.info(
+            "Uploading an object to a bucket with specified storage class.")
+        logger.debug(
+            "bucket_name: %s, object_name: %s, file_path: %s, storage_class: %s",
+            bucket_name,
+            object_name,
+            file_path,
+            storage_class)
         try:
             response = super().put_object_with_storage_class(
                 bucket_name, object_name, file_path, storage_class)
         except Exception as error:
-            logger.error("{0} {1}: {2}".format(
-                "Error in ",
-                S3TestLib.put_object_with_storage_class.__name__,
-                error))
+            logger.error("Error in %s: %s",
+                         S3TestLib.put_object_with_storage_class.__name__,
+                         error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
@@ -612,7 +632,8 @@ class S3TestLib(S3Lib):
 
 class S3LibNoAuth(S3TestLib, S3AclTestLib, S3BucketPolicyTestLib):
     """
-    This Class initialising s3 connection and including methods for bucket and object without authentication operations.
+    This Class initialising s3 connection and including methods for bucket and
+    object without authentication operations.
     """
 
     def __init__(self,
@@ -638,8 +659,9 @@ class S3LibNoAuth(S3TestLib, S3AclTestLib, S3BucketPolicyTestLib):
                                       endpoint_url=self.endpoint_url,
                                       config=Config(signature_version=UNSIGNED)
                                       )
-        self.s3_resource = boto3.resource("s3",
-                                          verify=self.s3_cert_path,
-                                          endpoint_url=self.endpoint_url,
-                                          config=Config(signature_version=UNSIGNED)
-                                          )
+        self.s3_resource = boto3.resource(
+            "s3",
+            verify=self.s3_cert_path,
+            endpoint_url=self.endpoint_url,
+            config=Config(
+                signature_version=UNSIGNED))

@@ -19,6 +19,8 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
+"""Global constant module."""
+
 import sys
 import logging
 from typing import Any
@@ -57,41 +59,42 @@ class _final:
             try:
                 raise self._ConstError
             except self._ConstError:
-                LOGGER.error(f"Error: Can't rebind const {name}")
+                LOGGER.error("Error: Can't rebind const %s", str(name))
         else:
             self.__dict__[name] = value
 
     def __getattr__(self, name: Any) -> None:
         """
-        Access the attribute value of an object and also not allowing in case of unavailability of the name.
-        The object whose attributes need to be processed.
+        Access the attribute value of an object and also not allowing in case of unavailability
+        of the name. The object whose attributes need to be processed.
         :param name: The attribute of object.
         :type name: attribute.
         :return: Object value if value is available, default value in case attribute is not present
-                 and returns AttributeError in case attribute is not present and default value is not specified.
+                 and returns AttributeError in case attribute is not present and default value is
+                 not specified.
         """
         try:
             if name not in self.__dict__:
                 raise AttributeError
         except AttributeError:
-            LOGGER.error(f"Error: const {name} not present/binded")
+            LOGGER.error("Error: const %s not present/binded", str(name))
 
     def __delattr__(self, name: Any) -> None:
         """
         The object from which the name attribute is to be removed.
         :param name: name of the attribute which is to be removed.
         :type name: attribute.
-        :return: For any case name attribute is defined or not, it will not be allowed to unbind and catching exception.
+        :return: For any case name attribute is defined or not, it will not be allowed to unbind
+                 and catching exception.
         """
         try:
             if name in self.__dict__:
                 raise self._ConstError
-            else:
-                raise self._NameError
+            raise self._NameError
         except self._ConstError:
-            LOGGER.error(f"Error: Can't unbind const {name}")
+            LOGGER.error("Error: Can't unbind const %s", str(name))
         except self._NameError:
-            LOGGER.error(f"Error: const {name} not binded")
+            LOGGER.error("Error: const %s not binded", str(name))
 
 
-sys.modules[__name__] = _final()  # type: ignore
+sys.modules[__name__] = _final()

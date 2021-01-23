@@ -1,5 +1,5 @@
-# !/usr/bin/python
 # -*- coding: utf-8 -*-
+# !/usr/bin/python
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -18,11 +18,12 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
+""" Exception module to declare CTException class. """
 
 import logging
-import commons.errorcodes as errcodes
 
 from pprint import pformat
+from commons import errorcodes as errcodes
 
 log = logging.getLogger(__name__)
 
@@ -40,6 +41,7 @@ class CTException(Exception):
         :param **kwargs : All other keyword arguments will be stored in self.kwargs.
         :raises TypeError: If ctp_error is not a CTError object.
         """
+        super().__init__()
         if not isinstance(ct_error, errcodes.CTError):
             raise TypeError("'ct_error' has to be of type 'CTError'!")
 
@@ -51,7 +53,8 @@ class CTException(Exception):
         """
         Return human-readable string representation of this exception
         """
-        return "CTException: EC({})\nError Desc: {}\nError Message: {}\nOther info:\n{}".format(self.ct_error.code,
-                                                                                                 self.ct_error.desc,
-                                                                                                 self.message,
-                                                                                                 pformat(self.kwargs))
+        return "CTException: EC({})\nError Desc: {}\nError Message:" \
+               " {}\nOther info:\n{}".format(self.ct_error.code,
+                                             self.ct_error.desc,
+                                             self.message,
+                                             pformat(self.kwargs))

@@ -20,11 +20,11 @@
 #
 #
 
-# Python Library using boto3 module to perform Bucket and object Operations
+"""Python Library using boto3 module to perform Bucket and object Operations."""
 
 import os
-import boto3
 import logging
+import boto3
 import boto3.s3
 
 from commons import commands
@@ -66,7 +66,6 @@ class S3Lib:
         if debug:
             # Uncomment to enable debug
             boto3.set_stream_logger(name="botocore")
-        """ Creating Connection """
         self.s3_resource = boto3.resource(
             "s3",
             verify=self.s3_cert_path,
@@ -89,7 +88,7 @@ class S3Lib:
         :return: response.
         """
         response = self.s3_resource.create_bucket(Bucket=bucket_name)
-        logger.debug("Response: {}".format(response))
+        logger.debug("Response: %s", str(response))
 
         return response
 
@@ -148,7 +147,8 @@ class S3Lib:
         :return: response.
         """
         logger.info("Uploading object")
-        self.s3_resource.meta.client.upload_file(file_path, bucket_name, object_name)
+        self.s3_resource.meta.client.upload_file(
+            file_path, bucket_name, object_name)
         logger.info("Uploading object done")
 
         return file_path
@@ -165,7 +165,11 @@ class S3Lib:
 
         return response_obj
 
-    def list_objects_with_prefix(self, bucket_name: str, prefix: str = None, maxkeys: int = None) -> list:
+    def list_objects_with_prefix(
+            self,
+            bucket_name: str,
+            prefix: str = None,
+            maxkeys: int = None) -> list:
         """
         Listing objects of a bucket having specified prefix.
         :param bucket_name: Name of the bucket
@@ -175,10 +179,12 @@ class S3Lib:
         """
         resp = None
         if prefix:
-            resp = self.s3_client.list_objects(Bucket=bucket_name, Prefix=prefix)
+            resp = self.s3_client.list_objects(
+                Bucket=bucket_name, Prefix=prefix)
         if maxkeys:
-            resp = self.s3_client.list_objects(Bucket=bucket_name, MaxKeys=maxkeys)
-        logger.debug("Resp is : {}".format(resp))
+            resp = self.s3_client.list_objects(
+                Bucket=bucket_name, MaxKeys=maxkeys)
+        logger.debug("Resp is : %s", str(resp))
         obj_lst = [obj['Key'] for obj in resp['Contents']]
         logger.debug(obj_lst)
 
@@ -190,8 +196,10 @@ class S3Lib:
         :param bucket_name: Name of the bucket.
         :return: response.
         """
-        response_bucket = self.s3_resource.meta.client.head_bucket(Bucket=bucket_name)
-        # Since we are getting http response from head bucket, we have appended bucket name for validation.
+        response_bucket = self.s3_resource.meta.client.head_bucket(
+            Bucket=bucket_name)
+        # Since we are getting http response from head bucket, we have appended
+        # bucket name for validation.
         response_bucket["BucketName"] = bucket_name
         logger.debug(response_bucket)
 
@@ -204,7 +212,7 @@ class S3Lib:
         :param obj_name: Name of object.
         :return: response.
         """
-        logger.debug("BucketName: {}, ObjectName: {}".format(bucket_name, obj_name))
+        logger.debug("BucketName: %s, ObjectName: %s", bucket_name, obj_name)
         resp_obj = self.s3_resource.Object(bucket_name, obj_name)
         response = resp_obj.delete()
         logging.debug(response)
@@ -219,19 +227,22 @@ class S3Lib:
         :return: response.
         """
         logger.debug("BucketName: %s", bucket_name)
-        response = self.s3_resource.meta.client.get_bucket_location(Bucket=bucket_name)
+        response = self.s3_resource.meta.client.get_bucket_location(
+            Bucket=bucket_name)
         logger.debug(response)
 
         return response
 
     def object_info(self, bucket_name: str, key: str) -> dict:
         """
-        Retrieves metadata from an object without returning the object itself, you must have READ access to the object.
+        Retrieves metadata from an object without returning the object itself,
+         you must have READ access to the object.
         :param bucket_name: Name of the bucket.
         :param key: Key of object.
         :return: response.
         """
-        response = self.s3_resource.meta.client.head_object(Bucket=bucket_name, Key=key)
+        response = self.s3_resource.meta.client.head_object(
+            Bucket=bucket_name, Key=key)
         logger.debug(response)
 
         return response
@@ -249,7 +260,10 @@ class S3Lib:
         :return: response.
         """
         self.s3_resource.Bucket(bucket_name).download_file(obj_name, file_path)
-        logger.debug("The {} has been downloaded successfully at mentioned file path {}".format(obj_name, file_path))
+        logger.debug(
+            "The %s has been downloaded successfully at mentioned file path %s",
+            obj_name,
+            file_path)
 
         return file_path
 
@@ -263,10 +277,12 @@ class S3Lib:
         bucket = self.s3_resource.Bucket(bucket_name)
         if force:
             logger.info(
-                "This might cause data loss as you have opted for bucket deletion with objects in it")
+                "This might cause data loss as you have opted for bucket deletion with "
+                "objects in it")
             bucket.objects.all().delete()
             logger.debug(
-                "Bucket : {} , got deleted successfully with objects in it".format(bucket_name))
+                "Bucket : %s , got deleted successfully with objects in it",
+                bucket_name)
         response = bucket.delete()
         logging.debug(response)
 
@@ -310,7 +326,8 @@ class S3Lib:
         :param object_name: Name of an object to be put to the bucket.
         :param file_path: Path of the file to be created and uploaded to bucket.
         :param storage_class: The type of storage to use for the object.
-        e.g.'STANDARD'|'REDUCED_REDUNDANCY'|'STANDARD_IA'|'ONEZONE_IA'|'INTELLIGENT_TIERING'|'GLACIER'|'DEEP_ARCHIVE'
+        e.g.'STANDARD'|'REDUCED_REDUNDANCY'|'STANDARD_IA'|'ONEZONE_IA'|'INTELLIGENT_TIERING'|
+        'GLACIER'|'DEEP_ARCHIVE'
         :return: response.
         """
         logger.debug(bucket_name, object_name, file_path, storage_class)
@@ -350,7 +367,7 @@ class Multipart(S3Lib):
         else:
             response = self.s3_client.create_multipart_upload(
                 Bucket=bucket_name, Key=obj_name)
-        logger.debug("Response: {}".format(response))
+        logger.debug("Response: %s", str(response))
 
         return response
 
@@ -385,12 +402,18 @@ class Multipart(S3Lib):
         :param object_name: Name of the object
         :return: response
         """
-        response = self.s3_client.list_parts(Bucket=bucket, Key=object_name, UploadId=mpu_id)
+        response = self.s3_client.list_parts(
+            Bucket=bucket, Key=object_name, UploadId=mpu_id)
         logger.debug(response)
 
         return response
 
-    def complete_multipart_upload(self, mpu_id: str, parts: list, bucket: str, object_name: str) -> dict:
+    def complete_multipart_upload(
+            self,
+            mpu_id: str,
+            parts: list,
+            bucket: str,
+            object_name: str) -> dict:
         """
         Complete a multipart upload, s3 creates an object by concatenating the parts
         :param mpu_id: Multipart upload ID
@@ -420,7 +443,11 @@ class Multipart(S3Lib):
 
         return result
 
-    def abort_multipart_upload(self, bucket: str, object_name: str, upload_id: str) -> dict:
+    def abort_multipart_upload(
+            self,
+            bucket: str,
+            object_name: str,
+            upload_id: str) -> dict:
         """
         Abort multipart upload for given upload_id. After aborting a multipart upload,
         you cannot upload any part using that upload ID again.
@@ -429,7 +456,8 @@ class Multipart(S3Lib):
         :param upload_id: Name of the object.
         :return: response.
         """
-        response = self.s3_client.abort_multipart_upload(Bucket=bucket, Key=object_name, UploadId=upload_id)
+        response = self.s3_client.abort_multipart_upload(
+            Bucket=bucket, Key=object_name, UploadId=upload_id)
         logger.debug(response)
 
         return response
@@ -442,7 +470,8 @@ class Multipart(S3Lib):
         :param ranges: Range in bytes.
         :return: response.
         """
-        response = self.s3_client.get_object(Bucket=bucket, Key=key, Range=ranges)
+        response = self.s3_client.get_object(
+            Bucket=bucket, Key=key, Range=ranges)
         logger.debug(response)
 
         return response
@@ -497,7 +526,8 @@ class Tagging(S3Lib):
         :param tags: Tag for the object.
         :return: response.
         """
-        response = self.s3_client.put_object_tagging(Bucket=bucket, Key=key, Tagging=tags)
+        response = self.s3_client.put_object_tagging(
+            Bucket=bucket, Key=key, Tagging=tags)
         logger.debug(response)
 
         return response
@@ -509,7 +539,8 @@ class Tagging(S3Lib):
         :param obj_name: Name of the object.
         :return: response.
         """
-        response = self.s3_client.get_object_tagging(Bucket=bucket, Key=obj_name)
+        response = self.s3_client.get_object_tagging(
+            Bucket=bucket, Key=obj_name)
         logger.debug(response)
 
         return response
@@ -582,7 +613,11 @@ class Acl(S3Lib):
 
         return response
 
-    def put_object_acp(self, bucket_name: str, object_name: str, acp: str) -> dict:
+    def put_object_acp(
+            self,
+            bucket_name: str,
+            object_name: str,
+            acp: dict) -> dict:
         """
         Set the access control list of an s3 object.
         :param bucket_name: Name of the bucket
@@ -591,7 +626,8 @@ class Acl(S3Lib):
         :return: response.
         """
         # Set the ACL
-        response = self.s3_client.put_object_acl(Bucket=bucket_name, Key=object_name, AccessControlPolicy=acp)
+        response = self.s3_client.put_object_acl(
+            Bucket=bucket_name, Key=object_name, AccessControlPolicy=acp)
         return response
 
     def put_object_canned_acl(self,
@@ -606,18 +642,22 @@ class Acl(S3Lib):
                               grant_write_acp: str = None
                               ) -> dict:
         """
-        To set the access control list (ACL) permissions for an object that already exists in a bucket.
+        To set the access control list (ACL) permissions for an object that
+        already exists in a bucket.
         :param bucket_name: Name of the bucket.
         :param key: Name of the existing object.
         :param acl: The canned ACL to apply to the object.
                      eg. 'private'|'public-read'|'public-read-write'|
                     'authenticated-read'|'aws-exec-read'|
                     'bucket-owner-read'|'bucket-owner-full-control'
-        :param access_control_policy: Contains the elements that set the ACL permissions for an object per grantee.
-        :param grant_full_control: Gives the grantee READ, READ_ACP, and WRITE_ACP permissions on the object.
+        :param access_control_policy: Contains the elements that set the ACL permissions
+        for an object per grantee.
+        :param grant_full_control: Gives the grantee READ, READ_ACP, and WRITE_ACP permissions
+         on the object.
         :param grant_read: Allows grantee to read the object data and its metadata.
         :param grant_read_acp: Allows grantee to read the object ACL.
-        :param grant_write: Allows grantee to create, overwrite, and delete any object in the bucket.
+        :param grant_write: Allows grantee to create, overwrite, and delete any object
+        in the bucket.
         :param grant_write_acp: Allows grantee to write the ACL for the applicable object.
         :return: dict.
         """
@@ -686,7 +726,8 @@ class Acl(S3Lib):
         :param bucket_name: Name of the bucket.
         :param key: Name of the object.
         :param file_path: Path of the file.
-        :param grant_full_control: Gives the grantee READ, READ_ACP, and WRITE_ACP permissions on the object.
+        :param grant_full_control: Gives the grantee READ, READ_ACP, and WRITE_ACP permissions
+         on the object.
         :param grant_read: Allows grantee to read the object data and its metadata.
         :return: dict.
         """
@@ -717,7 +758,8 @@ class Acl(S3Lib):
                     'authenticated-read'|'aws-exec-read'|
                     'bucket-owner-read'|'bucket-owner-full-control'
         :param file_path: Path of the file.
-        :param grant_full_control: Gives the grantee. READ, READ_ACP, and WRITE_ACP permissions on the object.
+        :param grant_full_control: Gives the grantee. READ, READ_ACP, and WRITE_ACP permissions
+         on the object.
         :param grant_read: Allows grantee to read the object data and its metadata.
         :param grant_read_acp: Allows grantee to read the object ACL.
         :param grant_write_acp: Allows grantee to write the ACL for the applicable object.
@@ -776,7 +818,8 @@ class Acl(S3Lib):
                     Body=file_path,
                     GrantWriteACP=grant_write_acp)
         else:
-            response = self.s3_client.put_object(Bucket=bucket_name, Key=key, Body=file_path, ACL=acl)
+            response = self.s3_client.put_object(
+                Bucket=bucket_name, Key=key, Body=file_path, ACL=acl)
 
         return response
 
@@ -794,44 +837,56 @@ class Acl(S3Lib):
         :param bucket_name: Name of the bucket.
         :param acl: The canned ACL to apply to the bucket.
                     e.g.'private'|'public-read'|'public-read-write'|'authenticated-read'.
-        :param grant_full_control: Allows grantee the read, write, read ACP, and write ACP permissions on the bucket.
+        :param grant_full_control: Allows grantee the read, write, read ACP, and write ACP
+         permissions on the bucket.
         :param grant_read: Allows grantee to list the objects in the bucket.
         :param grant_read_acp: Allows grantee to read the bucket ACL.
-        :param grant_write: Allows grantee to create, overwrite, and delete any object in the bucket.
+        :param grant_write: Allows grantee to create, overwrite, and delete any object
+         in the bucket.
         :param grant_write_acp: Allows grantee to write the ACL for the applicable bucket.
         :return: dict
         """
         if grant_full_control:
             if acl:
-                response = self.s3_client.create_bucket(ACL=acl, Bucket=bucket_name,
-                                                        GrantFullControl=grant_full_control)
+                response = self.s3_client.create_bucket(
+                    ACL=acl, Bucket=bucket_name, GrantFullControl=grant_full_control)
             elif grant_read:
-                response = self.s3_client.create_bucket(Bucket=bucket_name, GrantFullControl=grant_full_control,
-                                                        GrantRead=grant_read)
+                response = self.s3_client.create_bucket(
+                    Bucket=bucket_name, GrantFullControl=grant_full_control, GrantRead=grant_read)
             else:
-                response = self.s3_client.create_bucket(Bucket=bucket_name, GrantFullControl=grant_full_control)
+                response = self.s3_client.create_bucket(
+                    Bucket=bucket_name, GrantFullControl=grant_full_control)
         elif grant_read:
             if acl:
-                response = self.s3_client.create_bucket(ACL=acl, Bucket=bucket_name, GrantRead=grant_read)
+                response = self.s3_client.create_bucket(
+                    ACL=acl, Bucket=bucket_name, GrantRead=grant_read)
             else:
-                response = self.s3_client.create_bucket(Bucket=bucket_name, GrantRead=grant_read)
+                response = self.s3_client.create_bucket(
+                    Bucket=bucket_name, GrantRead=grant_read)
         elif grant_read_acp:
             if acl:
-                response = self.s3_client.create_bucket(ACL=acl, Bucket=bucket_name, GrantReadACP=grant_read_acp)
+                response = self.s3_client.create_bucket(
+                    ACL=acl, Bucket=bucket_name, GrantReadACP=grant_read_acp)
             else:
-                response = self.s3_client.create_bucket(Bucket=bucket_name, GrantReadACP=grant_read_acp)
+                response = self.s3_client.create_bucket(
+                    Bucket=bucket_name, GrantReadACP=grant_read_acp)
         elif grant_write:
             if acl:
-                response = self.s3_client.create_bucket(ACL=acl, Bucket=bucket_name, GrantWrite=grant_write)
+                response = self.s3_client.create_bucket(
+                    ACL=acl, Bucket=bucket_name, GrantWrite=grant_write)
             else:
-                response = self.s3_client.create_bucket(Bucket=bucket_name, GrantWrite=grant_write)
+                response = self.s3_client.create_bucket(
+                    Bucket=bucket_name, GrantWrite=grant_write)
         elif grant_write_acp:
             if acl:
-                response = self.s3_client.create_bucket(ACL=acl, Bucket=bucket_name, GrantWriteACP=grant_write_acp)
+                response = self.s3_client.create_bucket(
+                    ACL=acl, Bucket=bucket_name, GrantWriteACP=grant_write_acp)
             else:
-                response = self.s3_client.create_bucket(Bucket=bucket_name, GrantWriteACP=grant_write_acp)
+                response = self.s3_client.create_bucket(
+                    Bucket=bucket_name, GrantWriteACP=grant_write_acp)
         else:
-            response = self.s3_client.create_bucket(ACL=acl, Bucket=bucket_name)
+            response = self.s3_client.create_bucket(
+                ACL=acl, Bucket=bucket_name)
 
         return response
 
@@ -850,48 +905,62 @@ class Acl(S3Lib):
         :param bucket_name: Name of the bucket
         :param acl: The canned ACL to apply to the bucket.
                     e.g.'private'|'public-read'|'public-read-write'|'authenticated-read'
-        :param access_control_policy: Contains the elements that set the ACL permissions for an object per grantee.
-        :param grant_full_control: Allows grantee the read, write, read ACP, and write ACP permissions on the bucket.
+        :param access_control_policy: Contains the elements that set the ACL permissions
+         for an object per grantee.
+        :param grant_full_control: Allows grantee the read, write, read ACP, and write ACP
+         permissions on the bucket.
         :param grant_read: Allows grantee to list the objects in the bucket.
         :param grant_read_acp: Allows grantee to read the bucket ACL.
-        :param grant_write: Allows grantee to create, overwrite, and delete any object in the bucket.
+        :param grant_write: Allows grantee to create, overwrite, and delete any object
+         in the bucket.
         :param grant_write_acp: Allows grantee to write the ACL for the applicable bucket.
         :return: True or False
         """
         if grant_full_control:
             if acl:
-                response = self.s3_client.put_bucket_acl(ACL=acl, Bucket=bucket_name,
-                                                         GrantFullControl=grant_full_control)
+                response = self.s3_client.put_bucket_acl(
+                    ACL=acl, Bucket=bucket_name, GrantFullControl=grant_full_control)
             else:
-                response = self.s3_client.put_bucket_acl(Bucket=bucket_name, GrantFullControl=grant_full_control)
+                response = self.s3_client.put_bucket_acl(
+                    Bucket=bucket_name, GrantFullControl=grant_full_control)
         elif grant_read:
             if acl:
-                response = self.s3_client.put_bucket_acl(ACL=acl, Bucket=bucket_name, GrantRead=grant_read)
+                response = self.s3_client.put_bucket_acl(
+                    ACL=acl, Bucket=bucket_name, GrantRead=grant_read)
             else:
-                response = self.s3_client.put_bucket_acl(Bucket=bucket_name, GrantRead=grant_read)
+                response = self.s3_client.put_bucket_acl(
+                    Bucket=bucket_name, GrantRead=grant_read)
         elif grant_read_acp:
             if acl:
-                response = self.s3_client.put_bucket_acl(ACL=acl, Bucket=bucket_name, GrantReadACP=grant_read_acp)
+                response = self.s3_client.put_bucket_acl(
+                    ACL=acl, Bucket=bucket_name, GrantReadACP=grant_read_acp)
             else:
-                response = self.s3_client.put_bucket_acl(Bucket=bucket_name, GrantReadACP=grant_read_acp)
+                response = self.s3_client.put_bucket_acl(
+                    Bucket=bucket_name, GrantReadACP=grant_read_acp)
         elif grant_write:
             if acl:
-                response = self.s3_client.put_bucket_acl(ACL=acl, Bucket=bucket_name, GrantWrite=grant_write)
+                response = self.s3_client.put_bucket_acl(
+                    ACL=acl, Bucket=bucket_name, GrantWrite=grant_write)
             else:
-                response = self.s3_client.put_bucket_acl(Bucket=bucket_name, GrantWrite=grant_write)
+                response = self.s3_client.put_bucket_acl(
+                    Bucket=bucket_name, GrantWrite=grant_write)
         elif grant_write_acp:
             if acl:
-                response = self.s3_client.put_bucket_acl(ACL=acl, Bucket=bucket_name, GrantWriteACP=grant_write_acp)
+                response = self.s3_client.put_bucket_acl(
+                    ACL=acl, Bucket=bucket_name, GrantWriteACP=grant_write_acp)
             else:
-                response = self.s3_client.put_bucket_acl(Bucket=bucket_name, GrantWriteACP=grant_write_acp)
+                response = self.s3_client.put_bucket_acl(
+                    Bucket=bucket_name, GrantWriteACP=grant_write_acp)
         elif access_control_policy:
             if acl:
-                response = self.s3_client.put_bucket_acl(ACL=acl, AccessControlPolicy=access_control_policy,
-                                                         Bucket=bucket_name)
+                response = self.s3_client.put_bucket_acl(
+                    ACL=acl, AccessControlPolicy=access_control_policy, Bucket=bucket_name)
             else:
-                response = self.s3_client.put_bucket_acl(AccessControlPolicy=access_control_policy, Bucket=bucket_name)
+                response = self.s3_client.put_bucket_acl(
+                    AccessControlPolicy=access_control_policy, Bucket=bucket_name)
         else:
-            response = self.s3_client.put_bucket_acl(ACL=acl, Bucket=bucket_name)
+            response = self.s3_client.put_bucket_acl(
+                ACL=acl, Bucket=bucket_name)
 
         return response
 
@@ -920,7 +989,8 @@ class BucketPolicy(S3Lib):
         :param bucket_policy: Bucket policy
         :return: Returns status and status message
         """
-        self.s3_client.put_bucket_policy(Bucket=bucket_name, Policy=bucket_policy)
+        self.s3_client.put_bucket_policy(
+            Bucket=bucket_name, Policy=bucket_policy)
 
         return bucket_policy
 
@@ -930,9 +1000,9 @@ class BucketPolicy(S3Lib):
         :param bucket_name: Name of s3 bucket.
         :return: Returns status and response of delete bucket policy operation.
         """
-        logger.debug("BucketName: {}".format(bucket_name))
+        logger.debug("BucketName: %s", bucket_name)
         resp = self.s3_client.delete_bucket_policy(Bucket=bucket_name)
-        logger.debug("Bucket policy delete resp : {}".format(resp))
+        logger.debug("Bucket policy delete resp : %s", str(resp))
         resp["BucketName"] = bucket_name
 
         return resp
@@ -944,7 +1014,10 @@ class S3LibCmd(S3Lib):
     """
 
     @staticmethod
-    def upload_object_cli(bucket_name: str, object_name: str, file_path: str) -> bytes:
+    def upload_object_cli(
+            bucket_name: str,
+            object_name: str,
+            file_path: str) -> bytes:
         """
         Uploading Object to the Bucket using aws cli.
         :param bucket_name: Name of the bucket.
@@ -952,14 +1025,18 @@ class S3LibCmd(S3Lib):
         :param file_path: Path of the file.
         :return: response.
         """
-        cmd = commands.S3_UPLOAD_FILE_CMD.format(file_path, bucket_name, object_name)
+        cmd = commands.S3_UPLOAD_FILE_CMD.format(
+            file_path, bucket_name, object_name)
         response = run_local_cmd(cmd)
-        logger.debug("Response: {}".format(response))
+        logger.debug("Response: %s", str(response))
 
         return response
 
     @staticmethod
-    def upload_folder_cli(bucket_name: str, folder_path: str, profile_name: str) -> bytes:
+    def upload_folder_cli(
+            bucket_name: str,
+            folder_path: str,
+            profile_name: str) -> bytes:
         """
         Uploading folder to the Bucket using aws cli.
         :param bucket_name: Name of the bucket.
@@ -967,14 +1044,18 @@ class S3LibCmd(S3Lib):
         :param profile_name: AWS profile name.
         :return: response.
         """
-        cmd = commands.S3_UPLOAD_FOLDER_CMD.format(folder_path, bucket_name, profile_name)
+        cmd = commands.S3_UPLOAD_FOLDER_CMD.format(
+            folder_path, bucket_name, profile_name)
         response = run_local_cmd(cmd)
-        logger.debug("Response: {}".format(response))
+        logger.debug("Response: %s", str(response))
 
         return response
 
     @staticmethod
-    def download_bucket_cli(bucket_name: str, folder_path: str, profile_name: str) -> bytes:
+    def download_bucket_cli(
+            bucket_name: str,
+            folder_path: str,
+            profile_name: str) -> bytes:
         """
         Downloading s3 objects to a local directory recursively using awscli.
         :param bucket_name: Name of the bucket.
@@ -984,8 +1065,9 @@ class S3LibCmd(S3Lib):
         """
         if not os.path.exists(folder_path):
             os.mkdir(folder_path)
-        cmd = commands.S3_DOWNLOAD_BUCKET_CMD.format(bucket_name, folder_path, profile_name)
+        cmd = commands.S3_DOWNLOAD_BUCKET_CMD.format(
+            bucket_name, folder_path, profile_name)
         response = run_local_cmd(cmd)
-        logger.debug("Response: {}".format(response))
+        logger.debug("Response: %s", str(response))
 
         return response

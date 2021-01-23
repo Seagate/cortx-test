@@ -32,8 +32,15 @@ log = logging.getLogger(__name__)
 EXCEPTION_MSG = "*ERROR* An exception occurred in {}: {}"
 
 
-def run_remote_cmd(cmd: str, hostname: str, username: str, password: str, read_lines: bool = False,
-                   read_nbytes: int = -1, timeout_sec: int = 30, **kwargs) -> str:
+def run_remote_cmd(
+        cmd: str,
+        hostname: str,
+        username: str,
+        password: str,
+        read_lines: bool = False,
+        read_nbytes: int = -1,
+        timeout_sec: int = 30,
+        **kwargs) -> str:
     """
     Execute command on remote machine
     :return: stdout
@@ -79,7 +86,7 @@ def run_local_cmd(cmd: str) -> bytes:
     """
     Execute any given command on local machine(Windows, Linux).
     :param cmd: command to be executed.
-    :return: stdout 
+    :return: stdout
     """
     if not cmd:
         raise ValueError("Missing required parameter: {}".format(cmd))
@@ -90,7 +97,8 @@ def run_local_cmd(cmd: str) -> bytes:
     log.debug("error = %s", str(error))
     if b"Number of key(s) added: 1" in output:
         return output
-    if b"command not found" in error or b"not recognized as an internal or external command" in error or error:
+    if b"command not found" in error or \
+            b"not recognized as an internal or external command" in error or error:
         raise IOError(error)
 
     return output
@@ -156,7 +164,10 @@ def command_formatter(cmd_options: dict, utility_path: str = None) -> str:
     return cmd
 
 
-def calculate_checksum(file_path: str, binary_bz64: bool = True, options="") -> str:
+def calculate_checksum(
+        file_path: str,
+        binary_bz64: bool = True,
+        options="") -> str:
     """
     Calculate MD5 checksum with/without binary coversion for a file.
     :param filename: Name of the file with path
@@ -371,7 +382,12 @@ def create_file(fpath: str, count: int, dev="/dev/zero", bs="1M"):
     return result
 
 
-def create_multiple_size_files(start_range, stop_range, file_count, folder_path, test_filename):
+def create_multiple_size_files(
+        start_range,
+        stop_range,
+        file_count,
+        folder_path,
+        test_filename):
     """
     Creating multiple random size files in a folder
     :param start_range: Start range of the file
@@ -542,14 +558,18 @@ def is_machine_clean() -> Tuple[bool, bool]:
     return rpm_installed, eos_prvsnr_present
 
 
-def is_rpm_installed(expected_rpm: str, remote: bool = False, *remoteargs, **remoteKwargs) -> bool:
+def is_rpm_installed(
+        expected_rpm: str,
+        remote: bool = False,
+        *remoteargs,
+        **remoteKwargs) -> bool:
     """
     This function checks that expected rpm is currenty installed or not
     :param expected_rpm: rpm to check
     :return: True if rpm is installed, false otherwise    """
     rpm_installed = False
     cmd = commands.LST_RPM_CMD
-    log.debug(f"command : {cmd}")
+    log.debug("command : %s", cmd)
     cmd_output = execute_cmd(cmd, remote, *remoteargs, **remoteKwargs)
     if cmd_output[1] == []:
         log.debug("RPM not found")
@@ -567,25 +587,31 @@ def is_rpm_installed(expected_rpm: str, remote: bool = False, *remoteargs, **rem
         return rpm_installed, "Expected RPM installed"
 
 
-def install_new_cli_rpm(rpm_link=None, remote=False, *remoteargs, **remoteKwargs):
+def install_new_cli_rpm(
+        rpm_link=None,
+        remote=False,
+        *remoteargs,
+        **remoteKwargs):
     cmd_output = []
     # cmd = f"yum install -y {rpm_link}"
     cmd = commands.RPM_INSTALL_CMD.format(rpm_link)
-    log.debug(f"command : {cmd}")
+    log.debug("command : %s", cmd)
     cmd_output = execute_cmd(cmd, remote, *remoteargs, **remoteKwargs)
     if cmd_output != []:
         log.debug("Successfully installed RPM")
     return cmd_output
 
 
-def list_rpms(filter_str="", remote=False, *remoteargs, **remoteKwargs) -> Tuple[bool, list]:
+def list_rpms(filter_str="", remote=False, *remoteargs,
+              **remoteKwargs) -> Tuple[bool, list]:
     """
-    This function lists the rpms installed on a given host and filters by given string
-    :param str filter_str: string to search in rpm names for filtering results, default lists all the rpms
+    This function lists the rpms installed on a given host and filters by given string.
+    :param str filter_str: string to search in rpm names for filtering results,
+    default lists all the rpms.
     :return: True/False, list of rpms
     """
     cmd = commands.RPM_GREP_CMD.format(filter_str)
-    log.debug(f"command : {cmd}")
+    log.debug("command : %s", cmd)
     resp = execute_cmd(cmd, remote, *remoteargs, **remoteKwargs)
     if isinstance(resp, list):
         rpm_list = [rpm.strip("\n") for rpm in resp]

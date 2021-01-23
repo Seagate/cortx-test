@@ -19,7 +19,8 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 # Python library contains methods which allows you to perform bucket ACL
-# operations using boto3.
+#
+"""operations using boto3."""
 
 import copy
 import logging
@@ -72,7 +73,7 @@ class S3AclTestLib(Acl):
             aws_session_token,
             debug)
 
-    def get_object_acl(self, bucket: str, object_key: str) -> dict:
+    def get_object_acl(self, bucket: str, object_key: str) -> tuple:
         """
         Getting object acl attributes
         :param bucket: Name of the bucket
@@ -86,12 +87,11 @@ class S3AclTestLib(Acl):
             response = {"Owner": object_acl.owner, "Grants": object_acl.grants}
             logger.info(response)
         except Exception as error:
-            logger.error(
-                "{0} {1}: {2}".format(
-                    "Error in ",
-                    S3AclTestLib.get_object_acl.__name__,
-                    error))
+            logger.error("Error in %s: %s",
+                         S3AclTestLib.get_object_acl.__name__,
+                         error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
         return True, response
 
     def get_bucket_acl(self, bucket_name: str) -> tuple:
@@ -107,19 +107,18 @@ class S3AclTestLib(Acl):
             response = bucket_acl.owner, bucket_acl.grants
             logger.info(response)
         except Exception as error:
-            logger.error(
-                "{0} {1}: {2}".format(
-                    "Error in ",
-                    S3AclTestLib.get_bucket_acl.__name__,
-                    error))
+            logger.error("Error in %s: %s",
+                         S3AclTestLib.get_bucket_acl.__name__,
+                         error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
         return True, response
 
     def put_object_acl(
             self,
             bucket_name: str,
             object_name: str,
-            acl: dict) -> bool:
+            acl: dict) -> tuple:
         """
         Set the access control list of an Amazon s3 object.
         :param bucket_name: Name of the bucket
@@ -132,19 +131,18 @@ class S3AclTestLib(Acl):
             response = super().put_object_acl(bucket_name, object_name, acl)
             logger.info(response)
         except Exception as error:
-            logger.error(
-                "{0} {1}: {2}".format(
-                    "Error in ",
-                    S3AclTestLib.put_object_acl.__name__,
-                    error))
+            logger.error("Error in %s: %s",
+                         S3AclTestLib.put_object_acl.__name__,
+                         error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
         return True, response
 
     def put_object_acp(
             self,
             bucket_name: str,
             object_name: str,
-            acp: dict) -> dict:
+            acp: dict) -> tuple:
         """
         Set the access control policy of an Amazon s3 object.
         :param bucket_name: Name of the bucket
@@ -157,12 +155,11 @@ class S3AclTestLib(Acl):
             response = super().put_object_acp(bucket_name, object_name, acp)
             logger.info(response)
         except Exception as error:
-            logger.error(
-                "{0} {1}: {2}".format(
-                    "Error in ",
-                    S3AclTestLib.put_object_acp.__name__,
-                    error))
+            logger.error("Error in %s: %s",
+                         S3AclTestLib.put_object_acp.__name__,
+                         error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
         return True, response
 
     def add_grantee(
@@ -170,7 +167,7 @@ class S3AclTestLib(Acl):
             bucket_name: str,
             object_name: str,
             grantee_id: str,
-            permission: str) -> dict:
+            permission: str) -> tuple:
         """
         Add a grantee with given ACL permission to a object present in a bucket
         :param bucket_name: Name of the bucket
@@ -200,12 +197,11 @@ class S3AclTestLib(Acl):
             response = super().put_object_acp(bucket_name, object_name, modified_acl)
             logger.info(response)
         except Exception as error:
-            logger.error(
-                "{0} {1}: {2}".format(
-                    "Error in ",
-                    S3AclTestLib.add_grantee.__name__,
-                    error))
+            logger.error("Error in %s: %s",
+                         S3AclTestLib.add_grantee.__name__,
+                         error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
         return True, response
 
     def put_object_canned_acl(
@@ -218,7 +214,7 @@ class S3AclTestLib(Acl):
             grant_read: str = None,
             grant_read_acp: str = None,
             grant_write: str = None,
-            grant_write_acp: str = None) -> dict:
+            grant_write_acp: str = None) -> tuple:
         """
         To set the access control list (ACL) permissions
         for an object that already exists in a bucket
@@ -253,12 +249,11 @@ class S3AclTestLib(Acl):
                 grant_write_acp)
             logger.info(response)
         except BaseException as error:
-            logger.error(
-                "{0} {1}: {2}".format(
-                    "Error in ",
-                    S3AclTestLib.put_object_canned_acl.__name__,
-                    error))
+            logger.error("Error in %s: %s",
+                         S3AclTestLib.put_object_canned_acl.__name__,
+                         error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
         return True, response
 
     def put_object_with_acl2(
@@ -267,7 +262,7 @@ class S3AclTestLib(Acl):
             key: str,
             file_path: str,
             grant_full_control: str,
-            grant_read: str) -> dict:
+            grant_read: str) -> tuple:
         """
         To set both grant_full_control, grant_read acl while adding an object to a bucket.
         :param bucket_name: Name of the bucket
@@ -284,12 +279,11 @@ class S3AclTestLib(Acl):
                 bucket_name, key, file_path, grant_full_control, grant_read)
             logger.info(response)
         except BaseException as error:
-            logger.error(
-                "{0} {1}: {2}".format(
-                    "Error in ",
-                    S3AclTestLib.put_object_with_acl2.__name__,
-                    error))
+            logger.error("Error in %s: %s",
+                         S3AclTestLib.put_object_with_acl2.__name__,
+                         error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
         return True, response
 
     def put_object_with_acl(
@@ -301,7 +295,7 @@ class S3AclTestLib(Acl):
             grant_full_control: str = None,
             grant_read: str = None,
             grant_read_acp: str = None,
-            grant_write_acp: str = None) -> dict:
+            grant_write_acp: str = None) -> tuple:
         """
         To set acl while adding an object to a bucket.
         :param bucket_name: Name of the bucket
@@ -320,16 +314,21 @@ class S3AclTestLib(Acl):
         """
         try:
             logger.info("Setting acl to new object")
-            response = super().put_object_with_acl(bucket_name, key, file_path, acl,
-                                                   grant_full_control, grant_read, grant_read_acp, grant_write_acp)
+            response = super().put_object_with_acl(bucket_name,
+                                                   key,
+                                                   file_path,
+                                                   acl,
+                                                   grant_full_control,
+                                                   grant_read,
+                                                   grant_read_acp,
+                                                   grant_write_acp)
             logger.info(response)
         except BaseException as error:
-            logger.error(
-                "{0} {1}: {2}".format(
-                    "Error in ",
-                    S3AclTestLib.put_object_with_acl.__name__,
-                    error))
+            logger.error("Error in %s: %s",
+                         S3AclTestLib.put_object_with_acl.__name__,
+                         error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
         return True, response
 
     def create_bucket_with_acl(
@@ -340,7 +339,7 @@ class S3AclTestLib(Acl):
             grant_read: str = None,
             grant_read_acp: str = None,
             grant_write: str = None,
-            grant_write_acp: str = None) -> dict:
+            grant_write_acp: str = None) -> tuple:
         """
         Create bucket with given acl and grant permissions.
         :param bucket_name: Name of the bucket
@@ -357,16 +356,20 @@ class S3AclTestLib(Acl):
         """
         try:
             logger.info("Setting acl while creating object")
-            response = super().create_bucket_with_acl(bucket_name, acl, grant_full_control,
-                                                      grant_read, grant_read_acp, grant_write, grant_write_acp)
+            response = super().create_bucket_with_acl(bucket_name,
+                                                      acl,
+                                                      grant_full_control,
+                                                      grant_read,
+                                                      grant_read_acp,
+                                                      grant_write,
+                                                      grant_write_acp)
             logger.info(response)
         except Exception as error:
-            logger.error(
-                "{0} {1}: {2}".format(
-                    "Error in ",
-                    S3AclTestLib.create_bucket_with_acl.__name__,
-                    error))
+            logger.error("Error in %s: %s",
+                         S3AclTestLib.create_bucket_with_acl.__name__,
+                         error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
         return True, response
 
     def put_bucket_acl(
@@ -378,7 +381,7 @@ class S3AclTestLib(Acl):
             grant_read: str = None,
             grant_read_acp: str = None,
             grant_write: str = None,
-            grant_write_acp: str = None) -> bool:
+            grant_write_acp: str = None) -> tuple:
         """
         Sets the permissions on a bucket using access control lists (ACL).
         :param bucket_name: Name of the bucket
@@ -408,12 +411,11 @@ class S3AclTestLib(Acl):
                 grant_write_acp)
             logger.info(response)
         except Exception as error:
-            logger.error(
-                "{0} {1}: {2}".format(
-                    "Error in ",
-                    S3AclTestLib.put_bucket_acl.__name__,
-                    error))
+            logger.error("Error in %s: %s",
+                         S3AclTestLib.put_bucket_acl.__name__,
+                         error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
         return True, response
 
     @staticmethod
@@ -427,8 +429,8 @@ class S3AclTestLib(Acl):
         :return: Bucket ACL or error
         :rtype: (Boolean, tuple/str)
         """
-        logger.info(
-            f"Retrieving {bucket_name} acl attrs using {access_key}, {secret_key}.")
+        logger.info("Retrieving %s acl attrs using %s, %s.",
+                    bucket_name, access_key, secret_key)
         s3_iam_resource = boto3.resource(
             "s3",
             verify=s3_conf['s3_cert_path'],
@@ -440,11 +442,11 @@ class S3AclTestLib(Acl):
             bucket_acl = s3_iam_resource.BucketAcl(bucket_name)
             response = bucket_acl.owner, bucket_acl.grants
             logger.info(response)
+
             return True, response
         except BaseException as error:
             logger.error(
-                "{0} {1}: {2}".format(
-                    "Error in ",
-                    S3AclTestLib.get_bucket_acl_using_iam_credentials.__name__,
-                    error))
+                "Error in %s: %s",
+                S3AclTestLib.get_bucket_acl_using_iam_credentials.__name__,
+                error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])

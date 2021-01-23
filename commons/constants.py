@@ -41,7 +41,10 @@ const.CFG_FILES = ["/etc/haproxy/haproxy.cfg",
                    "/opt/seagate/cortx/s3/s3startsystem.sh"]
 const.AUTHSERVER_FILE = "/opt/seagate/cortx/auth/resources/authserver.properties"
 const.SCRIPT_PATH = "cd /opt/seagate/cortx/auth/scripts"
-const.LDAP_CREDS = {"ldap_username": cmn_conf["ldap_username"], "ldap_passwd": cmn_conf["ldap_passwd"]}
+const.LDAP_CREDS = {
+    "ldap_username": cmn_conf["ldap_username"],
+    "ldap_passwd": cmn_conf["ldap_passwd"]
+}
 
 # RAS constant
 BYTES_TO_READ = 8000

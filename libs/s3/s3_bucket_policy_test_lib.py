@@ -18,7 +18,7 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-# Python library contains methods for bucket policy
+"""Python library contains methods for bucket policy."""
 
 import logging
 from libs.s3.s3_core_lib import BucketPolicy
@@ -81,18 +81,17 @@ class S3BucketPolicyTestLib(BucketPolicy):
             response = super().get_bucket_policy(bucket_name)
             logger.info(response)
         except Exception as error:
-            logger.error(
-                "{0} {1}: {2}".format(
-                    "Error in ",
-                    S3BucketPolicyTestLib.get_bucket_policy.__name__,
-                    error))
+            logger.error("Error in  %s: %s",
+                         S3BucketPolicyTestLib.get_bucket_policy.__name__,
+                         error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
         return True, response
 
     def put_bucket_policy(
             self,
             bucket_name: str,
-            bucket_policy: tuple) -> tuple:
+            bucket_policy: dict) -> tuple:
         """
         Applies s3 bucket policy to specified s3 bucket
         :param bucket_name: Name of s3 bucket
@@ -104,12 +103,11 @@ class S3BucketPolicyTestLib(BucketPolicy):
             response = super().put_bucket_policy(bucket_name, bucket_policy)
             logger.info(response)
         except Exception as error:
-            logger.error(
-                "{0} {1}: {2}".format(
-                    "Error in ",
-                    S3BucketPolicyTestLib.put_bucket_policy.__name__,
-                    error))
+            logger.error("Error in  %s: %s",
+                         S3BucketPolicyTestLib.put_bucket_policy.__name__,
+                         error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
         return True, response
 
     def delete_bucket_policy(self, bucket_name: str) -> tuple:
@@ -123,11 +121,9 @@ class S3BucketPolicyTestLib(BucketPolicy):
             response = super().delete_bucket_policy(bucket_name)
             logger.info(response["BucketName"])
         except Exception as error:
-            logger.error(
-                "{0} {1}: {2}".format(
-                    "Error in ",
-                    S3BucketPolicyTestLib.delete_bucket_policy.__name__,
-                    error))
+            logger.error("Error in  %s: %s",
+                         S3BucketPolicyTestLib.delete_bucket_policy.__name__,
+                         error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response["BucketName"]

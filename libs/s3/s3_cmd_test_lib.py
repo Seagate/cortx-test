@@ -19,6 +19,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 #
+"""Python library contains methods for s3 cmd."""
 
 import os
 import shutil
@@ -66,9 +67,21 @@ class S3CmdTestLib(S3LibCmd):
         :param aws_session_token: aws_session_token.
         :param debug: debug mode.
         """
-        super().__init__(access_key, secret_key, endpoint_url, s3_cert_path, region, aws_session_token, debug)
+        super().__init__(
+            access_key,
+            secret_key,
+            endpoint_url,
+            s3_cert_path,
+            region,
+            aws_session_token,
+            debug)
 
-    def object_upload_cli(self, bucket_name: str, object_name: str, file_path: str, obj_size: int) -> tuple:
+    def object_upload_cli(
+            self,
+            bucket_name: str,
+            object_name: str,
+            file_path: str,
+            obj_size: int) -> tuple:
         """
         Uploading Object to the Bucket using aws cli.
         :param bucket_name: Name of the bucket.
@@ -78,28 +91,33 @@ class S3CmdTestLib(S3LibCmd):
         :return: (Boolean, response)
         """
         if not os.path.exists(file_path):
-            logger.debug(f"{file_path} do not exists creating as per the size given.")
+            logger.debug(
+                "%s do not exists creating as per the size given.",
+                file_path)
             create_file(file_path, obj_size)
         try:
             logger.info("uploading object using cli")
-            response = self.upload_object_cli(bucket_name, object_name, file_path)
+            response = self.upload_object_cli(
+                bucket_name, object_name, file_path)
             upload_res = response.split("b'")[1].split("\\r")
             logger.debug(upload_res)
-            logger.info("output = {}".format(upload_res))
+            logger.info("output = %s", upload_res)
             os.remove(file_path)
             if b"upload:" in upload_res[-1] or "upload:" in upload_res[-1]:
                 return True, upload_res
 
             return False, response
         except BaseException as error:
-            logger.error(
-                "{0} {1}: {2}".format(
-                    "Error in",
-                    S3CmdTestLib.object_upload_cli.__name__,
-                    error))
+            logger.error("Error in %s: %s",
+                         S3CmdTestLib.object_upload_cli.__name__,
+                         error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
-    def upload_folder_cli(self, bucket_name: str, folder_path: str, file_count: int) -> tuple:
+    def upload_folder_cli(
+            self,
+            bucket_name: str,
+            folder_path: str,
+            file_count: int) -> tuple:
         """
         Uploading folder to the Bucket using aws cli.
         :param bucket_name: Name of the bucket.
@@ -113,23 +131,25 @@ class S3CmdTestLib(S3LibCmd):
                 shutil.rmtree(folder_path)
             os.mkdir(folder_path)
             for count in range(file_count):
-                file_path = os.path.join(folder_path, "test_file{}".format(str(count)))
+                file_path = os.path.join(
+                    folder_path, "test_file{}".format(
+                        str(count)))
                 create_file(file_path, 10)
-            response = super().upload_folder_cli(bucket_name, folder_path, CM_CFG["aws_cred_section"])
+            response = super().upload_folder_cli(
+                bucket_name, folder_path, CM_CFG["aws_cred_section"])
             shutil.rmtree(folder_path)
             logger.debug(response)
-            upload_cnt = response.count(b"upload:") if isinstance(response, bytes) else str(response).count("upload:")
+            upload_cnt = response.count(b"upload:") if isinstance(
+                response, bytes) else str(response).count("upload:")
             logger.debug(upload_cnt)
             if upload_cnt == file_count:
                 return True, response
 
             return False, response
         except BaseException as error:
-            logger.error(
-                "{0} {1}: {2}".format(
-                    "Error in",
-                    S3CmdTestLib.upload_folder_cli.__name__,
-                    error))
+            logger.error("Error in %s: %s",
+                         S3CmdTestLib.upload_folder_cli.__name__,
+                         error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
     def download_bucket_cli(self, bucket_name: str, folder_path: str) -> tuple:
@@ -141,21 +161,24 @@ class S3CmdTestLib(S3LibCmd):
         """
         try:
             logger.info("Downloading folder from bucket using cli.")
-            response = super().download_bucket_cli(bucket_name, folder_path, CM_CFG["aws_cred_section"])
+            response = super().download_bucket_cli(
+                bucket_name, folder_path, CM_CFG["aws_cred_section"])
             logger.info(response)
             if os.path.exists(folder_path):
                 return True, response
 
             return False, response
         except BaseException as error:
-            logger.error(
-                "{0} {1}: {2}".format(
-                    "Error in",
-                    S3CmdTestLib.download_bucket_cli.__name__,
-                    error))
+            logger.error("Error in %s: %s",
+                         S3CmdTestLib.download_bucket_cli.__name__,
+                         error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
-    def command_formatter(self, s3cmd_cnf: str, operation: str, cmd_arguments: str = None) -> str:
+    def command_formatter(
+            self,
+            s3cmd_cnf: str,
+            operation: str,
+            cmd_arguments: str = None) -> str:
         """
         Creating command fronm dictonary cmd_options.
         :param dict s3cmd_cnf: yml config file pointer.
