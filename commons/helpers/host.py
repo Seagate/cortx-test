@@ -30,10 +30,11 @@ log = logging.getLogger(__name__)
 
 
 class Host:
-    """ Interface class for establishing connections. """
+
+    """Interface class for establishing connections."""
 
     def __init__(self, hostname: str, username: str, password: str) -> None:
-        """ Initializer for Host """
+        """Initializer for Host"""
         self.hostname = hostname
         self.username = username
         self.password = password
@@ -130,7 +131,7 @@ class Host:
             try:
                 self.connect(**kwargs)
                 break
-            except BaseException as error:
+            except socket.timeout as error:
                 log.debug("Attempting to reconnect: %s", str(error))
                 retry_count -= 1
                 time.sleep(wait_time)
@@ -140,7 +141,6 @@ class Host:
                     inputs: str = None,
                     read_lines: bool = False,
                     read_nbytes: int = -1,
-                    timeout: int = 400,
                     **kwargs) -> Tuple[Union[List[str],
                                              str,
                                              bytes]]:
@@ -155,6 +155,7 @@ class Host:
         :param read_nbytes: maximum number of bytes to read.
         :return: stdout/strerr.
         """
+        timeout = kwargs.get("timeout") if kwargs.get("timeout") else 400
         self.connect(timeout=timeout, **kwargs)
         stdin, stdout, stderr = self.host_obj.exec_command(
             cmd, timeout=timeout)

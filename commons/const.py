@@ -28,7 +28,8 @@ from typing import Any
 LOGGER = logging.getLogger(__name__)
 
 
-class _final:
+class _Final:
+
     """
     - Assign the object attribute its value.
     - The object from which the name attribute is to be removed.
@@ -97,4 +98,4 @@ class _final:
             LOGGER.error("Error: const %s not binded", str(name))
 
 
-sys.modules[__name__] = _final()
+sys.modules[__name__] = _Final()
