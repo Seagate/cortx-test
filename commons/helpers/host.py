@@ -22,10 +22,9 @@
 import time
 import socket
 import logging
+from typing import Union, Tuple, List
 import pysftp
 import paramiko
-
-from typing import Union, Tuple, List
 
 log = logging.getLogger(__name__)
 

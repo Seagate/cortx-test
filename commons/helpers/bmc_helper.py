@@ -27,7 +27,9 @@ EXCEPTION_MSG = "*ERROR* An exception occurred in %s: %s"
 
 
 class Bmc(Host):
-    """BMC helper class."""
+    """
+    BMC helper class.
+    """
 
     def bmc_node_power_status(
             self,

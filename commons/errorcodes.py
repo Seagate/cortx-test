@@ -39,12 +39,16 @@ if sys.version >= '3.7':
 
     @dataclass
     class CTError:
-        """Provides an error data object to contain the error code and description."""
+        """
+        Provides an error data object to contain the error code and description.
+        """
         code: int
         desc: str
 else:
     class CTError:
-        """Provides an error data object to contain the error code and description."""
+        """
+        Provides an error data object to contain the error code and description.
+        """
 
         def __init__(self, code, desc):
             self.code = code

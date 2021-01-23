@@ -18,14 +18,14 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-""" Exception module to declare CTException class. """
+"""Exception module to declare CTException class."""
 
 import logging
 
 from pprint import pformat
 from commons import errorcodes as errcodes
 
-log = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 class CTException(Exception):

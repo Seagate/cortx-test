@@ -19,10 +19,12 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
+"""All common constants from cortx-test."""
+
 from commons import const
 from commons.utils import config_utils
 
-cmn_conf = config_utils.read_yaml("config/common_config.yaml")[1]
+CMN_CFG = config_utils.read_yaml("config/common_config.yaml")[1]
 
 #: NWORKERS specifies number of worker (python) threads  in a worker pool.
 NWORKERS = 32
@@ -42,8 +44,8 @@ const.CFG_FILES = ["/etc/haproxy/haproxy.cfg",
 const.AUTHSERVER_FILE = "/opt/seagate/cortx/auth/resources/authserver.properties"
 const.SCRIPT_PATH = "cd /opt/seagate/cortx/auth/scripts"
 const.LDAP_CREDS = {
-    "ldap_username": cmn_conf["ldap_username"],
-    "ldap_passwd": cmn_conf["ldap_passwd"]
+    "ldap_username": CMN_CFG["ldap_username"],
+    "ldap_passwd": CMN_CFG["ldap_passwd"]
 }
 
 # RAS constant

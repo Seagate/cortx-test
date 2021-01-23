@@ -19,7 +19,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-""" s3 helper to have s3 services related classes & methods. """
+"""s3 helper to have s3 services related classes & methods."""
 
 import os
 import re
@@ -33,7 +33,7 @@ from commons.utils import config_utils
 from commons.utils.system_utils import run_local_cmd, run_remote_cmd
 
 CM_CFG = config_utils.read_yaml("config/common_config.yaml")[1]
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 class S3Helper:
@@ -79,7 +79,7 @@ class S3Helper:
                 path, "default", "secret_key", secret)
             res = res1 and res2
         else:
-            logger.warning(
+            LOGGER.warning(
                 "S3cmd is not present, please install it and than run the configuration.")
 
         return res
@@ -102,7 +102,7 @@ class S3Helper:
                 f_write.write(f"{access}:{secret}")
             res = True
         else:
-            logger.warning(
+            LOGGER.warning(
                 "S3fs is not present, please install it and than run the configuration.")
 
         return res
@@ -111,7 +111,7 @@ class S3Helper:
     def check_s3services_online(host: str = CM_CFG["host"],
                                 user: str = CM_CFG["username"],
                                 pwd: str = CM_CFG["password"]
-                                ) -> bool:
+                                ) -> tuple:
         """
         Check whether all s3server services are online.
         :param host: IP of the host.
@@ -136,22 +136,22 @@ class S3Helper:
             for service in s3services:
                 if not service.startswith("[started]"):
                     logging.error("S3 service down: %s", s3services)
-                    return False
+                    return False, service
 
-            return True
+            return True, output
         except BaseException as error:
-            logger.error(
+            LOGGER.error(
                 "Error in %s: %s",
                 S3Helper.check_s3services_online.__name__,
                 str(error))
-            return False
+            return False, error
 
     @staticmethod
     def get_s3server_service_status(service: str,
                                     host: str = CM_CFG["host"],
                                     user: str = CM_CFG["username"],
                                     pwd: str = CM_CFG["password"]
-                                    ) -> bool:
+                                    ) -> tuple:
         """
         Execute command to get status any system service at remote s3 server.
         :param service: Name of the service.
@@ -166,16 +166,16 @@ class S3Helper:
         element = result_.split()
         logging.debug(element)
         if 'active' in element:
-            return True
+            return True, result_
 
-        return False
+        return False, result_
 
     def start_s3server_service(self,
                                service: str,
                                host: str = CM_CFG["host"],
                                user: str = CM_CFG["username"],
                                pwd: str = CM_CFG["password"]
-                               ) -> bool:
+                               ) -> tuple:
         """
         Execute command to start any system service at remote s3 server.
         :param service: Name of the service.
@@ -188,17 +188,15 @@ class S3Helper:
             service), host, user, pwd, read_lines=True)
         logging.debug(result)
         status = self.get_s3server_service_status(service, host, user, pwd)
-        if status:
-            return True
 
-        return False
+        return status
 
     def stop_s3server_service(self,
                               service: str,
                               host: str = CM_CFG["host"],
                               user: str = CM_CFG["username"],
                               pwd: str = CM_CFG["password"]
-                              ) -> bool:
+                              ) -> tuple:
         """
         Execute command to stop any system service at remote s3 server.
         :param service: Name of the service.
@@ -211,17 +209,15 @@ class S3Helper:
             service), host, user, pwd, read_lines=True)
         logging.debug(result)
         status = self.get_s3server_service_status(service, host, user, pwd)
-        if not status:
-            return True
 
-        return False
+        return status
 
     def restart_s3server_service(self,
                                  service: str,
                                  host: str = CM_CFG["host"],
                                  user: str = CM_CFG["username"],
                                  pwd: str = CM_CFG["password"]
-                                 ) -> bool:
+                                 ) -> tuple:
         """
         Execute command to restart any system service at remote s3 server.
         :param service: Name of the service.
@@ -238,17 +234,15 @@ class S3Helper:
             read_lines=True)
         logging.debug(result)
         status = self.get_s3server_service_status(service, host, user, pwd)
-        if status:
-            return True
 
-        return False
+        return status
 
     def restart_s3server_processes(self,
                                    host: str = CM_CFG["host"],
                                    user: str = CM_CFG["username"],
                                    pwd: str = CM_CFG["password"],
                                    wait_time: int = 30
-                                   ) -> bool:
+                                   ) -> tuple:
         """
         Restart all s3server processes using hctl command.
         :param host: IP of the host.
@@ -261,7 +255,7 @@ class S3Helper:
             fids = self.get_s3server_fids()
             logging.debug(fids)
             for pid in fids:
-                logger.info("Restarting fid : %s", str(pid))
+                LOGGER.info("Restarting fid : %s", str(pid))
                 response = run_remote_cmd(
                     commands.SYSTEM_CTL_RESTART_CMD.format(pid),
                     host,
@@ -270,7 +264,7 @@ class S3Helper:
                     read_lines=True)
                 logging.debug(response)
                 time.sleep(wait_time)
-            logger.info("Is motr online.")
+            LOGGER.info("Is motr online.")
             output = run_remote_cmd(
                 commands.MOTR_STATUS_CMD,
                 host,
@@ -282,15 +276,15 @@ class S3Helper:
             logging.debug(fail_list)
             for line in output:
                 if any(fail_str in line for fail_str in fail_list):
-                    return False
+                    return False, line
 
-            return True
+            return True, output
         except BaseException as error:
-            logger.error(
+            LOGGER.error(
                 "Error in %s: %s",
                 S3Helper.restart_s3server_processes.__name__,
                 error)
-            return False
+            return False, error
 
     @staticmethod
     def get_s3server_resource(host: str = CM_CFG["host"],
@@ -310,11 +304,11 @@ class S3Helper:
             user,
             pwd,
             read_lines=True)
-        logger.info("Response: %s", str(output))
+        LOGGER.info("Response: %s", str(output))
         s3_rcs = []
         for line in output:
             if "s3server-c" in line:
-                logger.info(line)
+                LOGGER.info(line)
                 fid = line.split()[0]
                 s3_rcs.append(fid)
         logging.debug(s3_rcs)
@@ -326,7 +320,7 @@ class S3Helper:
                                    user: str = CM_CFG["username"],
                                    pwd: str = CM_CFG["password"],
                                    wait_time: int = 30
-                                   ) -> bool:
+                                   ) -> tuple:
         """
         Restart all s3server resources using pcs command.
         :param host: IP of the host.
@@ -339,7 +333,7 @@ class S3Helper:
             resources = self.get_s3server_resource(
                 host=host, user=user, pwd=pwd)
             for resource in resources:
-                logger.info("Restarting resource : %s", str(resource))
+                LOGGER.info("Restarting resource : %s", str(resource))
                 response = run_remote_cmd(
                     commands.PCS_RESOURCE_RESTART_CMD.format(resource),
                     host,
@@ -348,7 +342,7 @@ class S3Helper:
                     read_lines=True)
                 logging.debug(response)
                 time.sleep(wait_time)
-            logger.info("Is motr online.")
+            LOGGER.info("Is motr online.")
             output = run_remote_cmd(
                 commands.MOTR_STATUS_CMD,
                 host,
@@ -360,22 +354,22 @@ class S3Helper:
             logging.debug(fail_list)
             for line in output:
                 if any(fail_str in line for fail_str in fail_list):
-                    return False
+                    return False, line
 
-            return True
+            return True, output
         except BaseException as error:
-            logger.error(
+            LOGGER.error(
                 "Error in %s: %s",
                 S3Helper.restart_s3server_resources.__name__,
                 error)
-            return False
+            return False, error
 
     @staticmethod
     def is_s3_server_path_exists(path: str,
                                  host: str = CM_CFG["host"],
                                  user: str = CM_CFG["username"],
                                  pwd: str = CM_CFG["password"]
-                                 ) -> bool:
+                                 ) -> tuple:
         """
         Check if file exists on s3 server
         :param path: Absolute path of the file
@@ -390,13 +384,13 @@ class S3Helper:
             logging.debug(response)
             logging.info("Path exists: %s", path)
 
-            return True
+            return True, path
         except BaseException as error:
-            logger.error(
+            LOGGER.error(
                 "Error in %s: %s",
                 S3Helper.is_s3_server_path_exists.__name__,
                 error)
-            return False
+            return False, error
 
     @staticmethod
     def get_s3server_fids(host: str = CM_CFG["host"],
@@ -419,10 +413,10 @@ class S3Helper:
         fids = []
         for line in output:
             if "s3server" in line:
-                logger.info(line)
+                LOGGER.info(line)
                 fid = "{}@{}".format(line.split()[2], line.split()[3])
                 fids.append(fid)
-        logger.info("Fids: %s", str(fids))
+        LOGGER.info("Fids: %s", str(fids))
 
         return fids
 
@@ -432,7 +426,7 @@ class S3Helper:
                            host: str = CM_CFG["host"],
                            user: str = CM_CFG["username"],
                            pwd: str = CM_CFG["password"]
-                           ) -> bool:
+                           ) -> tuple:
         """
         copy file from s3 server to local path.
         :param file_path: Remote path.
@@ -446,19 +440,19 @@ class S3Helper:
             hobj = Host(hostname=host, username=user, password=pwd)
             hobj.connect_pysftp()
             sftp = hobj.pysftp_obj
-            logger.info("sftp connected")
+            LOGGER.info("sftp connected")
             sftp.get(file_path, local_path)
-            logger.info("file copied to : %s", str(local_path))
+            LOGGER.info("file copied to : %s", str(local_path))
             sftp.close()
             hobj.disconnect()
 
-            return os.path.isfile(local_path)
+            return os.path.isfile(local_path), local_path
         except BaseException as error:
-            logger.error(
+            LOGGER.error(
                 "Error in %s: %s",
                 S3Helper.copy_s3server_file.__name__,
                 error)
-            return False
+            return False, error
 
     def is_string_in_s3server_file(self,
                                    string: str,
@@ -466,7 +460,7 @@ class S3Helper:
                                    host: str = CM_CFG["host"],
                                    user: str = CM_CFG["username"],
                                    pwd: str = CM_CFG["password"]
-                                   ) -> bool:
+                                   ) -> tuple:
         """
         find given string in file present on s3 server.
         :param string: String to be check.
@@ -482,8 +476,9 @@ class S3Helper:
                 os.remove(local_path)
             self.copy_s3server_file(file_path, local_path, host, user, pwd)
             if string in open(local_path).read():
-                logger.info("Match '%s' found in : %s", string, file_path)
-                return True
+                LOGGER.info("Match '%s' found in : %s", string, file_path)
+                return True, file_path
+
             num = 1
             while True:
                 if os.path.exists(local_path):
@@ -491,16 +486,16 @@ class S3Helper:
                 self.copy_s3server_file(
                     file_path + '.' + str(num), local_path, host, user, pwd)
                 if string in open(local_path).read():
-                    logger.info(
+                    LOGGER.info(
                         "Match '%s' found in : %s",
                         string,
                         file_path + '.' + str(num))
-                    return True
+                    return True, file_path
                 num = num + 1
                 if num > 6:
                     break
         except BaseException as error:
-            logger.error(
+            LOGGER.error(
                 "Error in %s: %s",
                 S3Helper.is_string_in_s3server_file.__name__,
                 error)
@@ -508,7 +503,7 @@ class S3Helper:
             if os.path.exists(local_path):
                 os.remove(local_path)
 
-        return False
+        return False, file_path
 
     def enable_disable_s3server_instances(self,
                                           resource_disable: bool = True,
@@ -516,7 +511,7 @@ class S3Helper:
                                           user: str = CM_CFG["username"],
                                           pwd: str = CM_CFG["password"],
                                           wait_time: int = 1
-                                          ) -> bool:
+                                          ) -> tuple:
         """
         Enable or disable s3server instances using pcs command.
         :param resource_disable: True for disable and False for enable.
@@ -530,7 +525,7 @@ class S3Helper:
             resources = self.get_s3server_resource()
             for resource in resources:
                 if resource_disable:
-                    logger.info("Disabling resource : %s", str(resource))
+                    LOGGER.info("Disabling resource : %s", str(resource))
                     resp = run_remote_cmd(
                         commands.PCS_RESOURCE_DISABLE_CMD.format(resource),
                         host,
@@ -540,7 +535,7 @@ class S3Helper:
                     logging.debug(resp)
                     time.sleep(wait_time)
                 else:
-                    logger.info("Enabling resource : %s", resource)
+                    LOGGER.info("Enabling resource : %s", resource)
                     resp = run_remote_cmd(
                         commands.PCS_RESOURCE_ENABLE_CMD.format(resource),
                         host,
@@ -549,7 +544,7 @@ class S3Helper:
                         read_lines=True)
                     logging.debug(resp)
                     time.sleep(wait_time)
-            logger.info("Is motr online.")
+            LOGGER.info("Is motr online.")
             output = run_remote_cmd(
                 commands.MOTR_STATUS_CMD,
                 host,
@@ -561,16 +556,16 @@ class S3Helper:
             logging.debug(fail_list)
             for line in output:
                 if any(fail_str in line for fail_str in fail_list):
-                    return False
+                    return False, line
             logging.debug("s3server instances: %s", str(resources))
 
-            return True
+            return True, output
         except BaseException as error:
-            logger.error(
+            LOGGER.error(
                 "Error in %s: %s",
                 S3Helper.enable_disable_s3server_instances.__name__,
                 error)
-            return False
+            return False, error
 
     @staticmethod
     def configure_minio(access: str,
@@ -591,7 +586,7 @@ class S3Helper:
             data["hosts"]["s3"]["secretKey"] = secret
             res = config_utils.create_content_json(path=path, data=data)
         else:
-            logger.warning(
+            LOGGER.warning(
                 "Minio is not installed please install and than run the configuration.")
 
         return os.path.isfile(res)
@@ -613,7 +608,7 @@ class S3Helper:
         config.read(path)
         access_key = config[section]["aws_access_key_id"]
         secret_key = config[section]["aws_secret_access_key"]
-        logger.info("Section %s: fetched access key:%s and secret key: %s.",
+        LOGGER.info("Section %s: fetched access key:%s and secret key: %s.",
                     section, access_key, secret_key)
 
         return access_key, secret_key
@@ -624,7 +619,7 @@ class S3Helper:
                           host: str = CM_CFG["host"],
                           user: str = CM_CFG["username"],
                           pwd: str = CM_CFG["password"]
-                          ) -> bool:
+                          ) -> tuple:
         """
         find given string in file present on s3 server.
         :param string: String to be check.
@@ -644,10 +639,10 @@ class S3Helper:
             data = open(local_path).read()
             match = re.search(string, data)
             if match:
-                logger.info("Match '%s' found in : %s", string, file_path)
-                return True
+                LOGGER.info("Match '%s' found in : %s", string, file_path)
+                return True, file_path
         except BaseException as error:
-            logger.error(
+            LOGGER.error(
                 "An exception occurred in %s: %s",
                 S3Helper.is_string_in_file.__name__,
                 str(error))
@@ -655,4 +650,4 @@ class S3Helper:
             if os.path.exists(local_path):
                 os.remove(local_path)
 
-        return False
+        return False, file_path
