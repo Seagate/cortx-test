@@ -30,12 +30,10 @@ LOGGER = logging.getLogger(__name__)
 
 class _Final:
 
-    """
-    - Assign the object attribute its value.
+    """Assign the object attribute its value.
     - The object from which the name attribute is to be removed.
     - The object whose attributes need to be processed.
-    - Maintain uniqueness across module.
-    """
+    - Maintain uniqueness across module."""
 
     class _ConstError(Exception):
         pass

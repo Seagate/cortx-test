@@ -30,6 +30,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Host:
+
     """Interface class for establishing connections."""
 
     def __init__(self, hostname: str, username: str, password: str) -> None:

@@ -16,7 +16,7 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-"""Module to maintain system utils"""
+"""Module to maintain system utils."""
 
 import logging
 import os
@@ -28,7 +28,7 @@ from hashlib import md5
 from paramiko import SSHClient, AutoAddPolicy
 from commons import commands
 
-log = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 def run_remote_cmd(
@@ -36,26 +36,18 @@ def run_remote_cmd(
         hostname: str,
         username: str,
         password: str,
-        read_lines: bool = False,
-        read_nbytes: int = -1,
-        timeout_sec: int = 30,
         **kwargs) -> str:
     """
-    Execute command on remote machine
+    Execute command on remote machine.
     :return: stdout
     """
-    if not hostname:
-        raise ValueError("Missing required parameter: {}".format(hostname))
-    if not username:
-        raise ValueError("Missing required parameter: {}".format(username))
-    if not password:
-        raise ValueError("Missing required parameter: {}".format(password))
-    if not cmd:
-        raise ValueError("Missing required parameter: {}".format(cmd))
+    read_lines = kwargs.get("read_lines") if kwargs.get("read_lines", None) else False
+    read_nbytes = kwargs.get("read_nbytes") if kwargs.get("read_nbytes", None) else -1
+    timeout_sec = kwargs.get("timeout_sec") if kwargs.get("timeout_sec", None) else 30
 
     client = SSHClient()
     client.set_missing_host_key_policy(AutoAddPolicy())
-    log.debug("Command: %s", str(cmd))
+    LOGGER.debug("Command: %s", str(cmd))
     client.connect(hostname, username=username,
                    password=password, timeout=timeout_sec, **kwargs)
     _, stdout, stderr = client.exec_command(cmd)
@@ -63,14 +55,14 @@ def run_remote_cmd(
     if read_lines:
         output = stdout.readlines()
         output = [r.strip().strip("\n").strip() for r in output]
-        log.debug("Result: %s", str(output))
+        LOGGER.debug("Result: %s", str(output))
         error = stderr.readlines()
         error = [r.strip().strip("\n").strip() for r in error]
-        log.debug("Error: %s", str(error))
+        LOGGER.debug("Error: %s", str(error))
     else:
         output = stdout.read(read_nbytes)
         error = stderr.read()
-    log.debug(exit_status)
+    LOGGER.debug(exit_status)
     if exit_status != 0:
         if error:
             raise IOError(error)
@@ -89,11 +81,11 @@ def run_local_cmd(cmd: str) -> bytes:
     """
     if not cmd:
         raise ValueError("Missing required parameter: {}".format(cmd))
-    log.debug("Command: %s", cmd)
+    LOGGER.debug("Command: %s", cmd)
     proc = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
     output, error = proc.communicate()
-    log.debug("output = %s", str(output))
-    log.debug("error = %s", str(error))
+    LOGGER.debug("output = %s", str(output))
+    LOGGER.debug("error = %s", str(error))
     if b"Number of key(s) added: 1" in output:
         return output
     if b"command not found" in error or \
@@ -182,9 +174,9 @@ def calculate_checksum(
     else:
         cmd = "md5sum {} {}".format(options, file_path)
 
-    log.debug("Executing cmd: %s", cmd)
+    LOGGER.debug("Executing cmd: %s", cmd)
     result = run_local_cmd(cmd)
-    log.debug("Output: %s", str(result))
+    LOGGER.debug("Output: %s", str(result))
     return result
 
 
@@ -234,9 +226,9 @@ def validate_output(output: str, expected_keywords: str):
     """
     Validate output for expected keywords.
     """
-    log.debug("actual output %s", output)
+    LOGGER.debug("actual output %s", output)
     output = [i.strip() for i in output]
-    log.debug("output after strip %s", output)
+    LOGGER.debug("output after strip %s", output)
     validation_steps = dict()
     for ele in expected_keywords:
         validation_steps[ele] = False
@@ -275,7 +267,7 @@ def create_symlink(fpath: str, spath: str) -> bool:
     try:
         os.symlink(fpath, spath)
     except OSError as error:
-        log.error(
+        LOGGER.error(
             "*ERROR* An exception occurred in %s: %s",
             create_symlink.__name__,
             error)
@@ -298,7 +290,7 @@ def cleanup_dir(dpath: str) -> bool:
             elif os.path.isdir(file_path):
                 shutil.rmtree(file_path)
         except OSError as error:
-            log.error(
+            LOGGER.error(
                 "*ERROR* An exception occurred in %s: %s",
                 cleanup_dir.__name__,
                 error)
@@ -314,9 +306,9 @@ def list_dir(dpath: str) -> list:
     """
     try:
         flist = os.listdir(dpath)
-        logging.debug("List: %s", str(flist))
+        LOGGERging.debug("List: %s", str(flist))
     except IOError as error:
-        log.error(
+        LOGGER.error(
             "*ERROR* An exception occurred in %s: %s",
             list_dir.__name__,
             error)
@@ -352,7 +344,7 @@ def make_dirs(dpath: str, mode: int = None):
         else:
             os.makedirs(dpath)
     except IOError as error:
-        log.error(
+        LOGGER.error(
             "*ERROR* An exception occurred in %s: %s",
             make_dirs.__name__,
             error)
@@ -379,14 +371,14 @@ def get_file_checksum(filename: str):
     :param  filename: Name of the file
     :return: (Boolean, response)
     """
-    log.debug("Calculating checksum of file content")
+    LOGGER.debug("Calculating checksum of file content")
     try:
         result = md5(open(filename, "rb").read()).hexdigest()
 
         return True, result
     except BaseException as error:
-        log.error("*ERROR* An exception occurred in %s: %s",
-                  get_file_checksum.__name__, error)
+        LOGGER.error("*ERROR* An exception occurred in %s: %s",
+                     get_file_checksum.__name__, error)
         return False, error
 
 
@@ -400,9 +392,9 @@ def create_file(fpath: str, count: int, dev="/dev/zero", b_size="1M"):
     :return:
     """
     cmd = commands.CREATE_FILE.format(dev, fpath, b_size, count)
-    log.debug(cmd)
+    LOGGER.debug(cmd)
     result = run_local_cmd(cmd)
-    log.debug("output = %s", str(result))
+    LOGGER.debug("output = %s", str(result))
 
     return result
 
@@ -422,11 +414,12 @@ def create_multiple_size_files(
     :return: folder list
     """
     if not os.path.exists(folder_path):
-        log.warning("%s doesnt exist creating new one", folder_path)
+        LOGGER.warning("%s doesnt exist creating new one", folder_path)
         os.mkdir(folder_path)
     try:
         os.chdir(folder_path)
-        log.debug("Creating %d file at path %s", file_count, str(os.getcwd()))
+        LOGGER.debug("Creating %d file at path %s",
+                     file_count, str(os.getcwd()))
         for i in range(file_count):
             filename = "{}{}".format(
                 os.path.join(folder_path, test_filename), i)
@@ -435,8 +428,8 @@ def create_multiple_size_files(
 
         return True, list_dir
     except BaseException as error:
-        log.error("*ERROR* An exception occurred in %s: %s",
-                  create_multiple_size_files.__name__, error)
+        LOGGER.error("*ERROR* An exception occurred in %s: %s",
+                     create_multiple_size_files.__name__, error)
         return False, error
 
 
@@ -451,7 +444,7 @@ def remove_file(file_path: str = None):
 
         return True, "Success"
     except Exception as error:
-        log.error(
+        LOGGER.error(
             "*ERROR* An exception occurred in %s: %s",
             remove_file.__name__,
             error)
@@ -469,10 +462,10 @@ def split_file(filename, size, split_count, random_part_size=False):
     """
 
     if os.path.exists(filename):
-        log.debug("Deleting existing file: %s", str(filename))
+        LOGGER.debug("Deleting existing file: %s", str(filename))
         remove_file(filename)
     create_file(filename, size)
-    log.debug(
+    LOGGER.debug(
         "Created new file %s with size %d MB",
         filename, size)
     dir_path = os.path.dirname(filename)
@@ -490,7 +483,7 @@ def split_file(filename, size, split_count, random_part_size=False):
             with open(fop, 'wb') as split_fin:
                 split_fin.write(fin.read(read_bytes))
                 res_d.append({"Output": fop, "Size": os.stat(fop).st_size})
-    log.debug(res_d)
+    LOGGER.debug(res_d)
 
     return res_d
 
@@ -504,7 +497,7 @@ def is_utility_present(utility_name: str, filepath: str) -> bool:
     cmd = f"ls {filepath}"
     try:
         values = run_local_cmd(cmd)
-        log.debug(values)
+        LOGGER.debug(values)
         if values[0]:
             for val in values[1]:
                 if utility_name == val.split("\n")[0]:
@@ -512,8 +505,8 @@ def is_utility_present(utility_name: str, filepath: str) -> bool:
 
         return False
     except BaseException as error:
-        log.error("*ERROR* An exception occurred in %s: %s",
-                  is_utility_present.__name__, error)
+        LOGGER.error("*ERROR* An exception occurred in %s: %s",
+                     is_utility_present.__name__, error)
         return False
 
 
@@ -525,19 +518,19 @@ def backup_or_restore_files(action,
     """
     try:
         if action == "backup":
-            log.debug('Starting the backup')
+            LOGGER.debug('Starting the backup')
             if not os.path.exists(backup_path):
                 os.mkdir(backup_path)
             for files in backup_list:
                 shutil.copy(files, backup_path)
-                log.debug(
+                LOGGER.debug(
                     "Files :%s copied successfully at path %s",
                     files, backup_path)
             return True, backup_list
         if action == "restore":
-            log.debug('Starting the restore')
+            LOGGER.debug('Starting the restore')
             if not os.path.exists(backup_path):
-                log.debug(
+                LOGGER.debug(
                     "Backup path :%s, does not exist", str(backup_path))
             else:
                 os.chdir(backup_path)
@@ -545,13 +538,13 @@ def backup_or_restore_files(action,
                     file = os.path.basename(files)
                     file_path = os.path.dirname(files)
                     shutil.copy(file, file_path)
-                    log.debug(
+                    LOGGER.debug(
                         "File :%s got copied successfully at path %s",
                         file, file_path)
                 return True, backup_path
     except BaseException as error:
-        log.error("*ERROR* An exception occurred in %s: %s",
-                  backup_or_restore_files.__name__, error)
+        LOGGER.error("*ERROR* An exception occurred in %s: %s",
+                     backup_or_restore_files.__name__, error)
         return False, error
 
 
@@ -582,13 +575,13 @@ def is_machine_clean() -> Tuple[bool, bool]:
     # Check any RPM is being installed on machine
     rpm_cmd = commands.LST_RPM_CMD
     prvsn_dir = commands.LST_PRVSN_DIR
-    log.debug("command : %s", rpm_cmd)
+    LOGGER.debug("command : %s", rpm_cmd)
     cmd_output = run_local_cmd(rpm_cmd)
     if cmd_output[1]:
         rpm_installed = True
 
     # Now check eos-prvsn binaries present at path
-    log.debug("command : %s", prvsn_dir)
+    LOGGER.debug("command : %s", prvsn_dir)
     cmd_output_1 = run_local_cmd(prvsn_dir)
     if cmd_output_1[1]:
         eos_prvsnr_present = True
@@ -597,30 +590,31 @@ def is_machine_clean() -> Tuple[bool, bool]:
 
 
 def is_rpm_installed(
+        *remoteargs,
         expected_rpm: str,
         remote: bool = False,
-        *remoteargs,
         **remoteKwargs) -> tuple:
     """
-    This function checks that expected rpm is currenty installed or not
-    :param expected_rpm: rpm to check
-    :return: True if rpm is installed, false otherwise    """
+    This function checks that expected rpm is currently installed or not.
+    :param expected_rpm: rpm to check.
+    :return: True if rpm is installed, false otherwise.
+    """
     rpm_installed = False
     cmd = commands.LST_RPM_CMD
-    log.debug("command : %s", cmd)
+    LOGGER.debug("command : %s", cmd)
     cmd_output = execute_cmd(cmd, remote, *remoteargs, **remoteKwargs)
     if cmd_output[1]:
-        log.debug("RPM not found")
+        LOGGER.debug("RPM not found")
         rpm_installed = False
         return rpm_installed, "RPM not found"
 
-    log.debug(cmd_output[1])
+    LOGGER.debug(cmd_output[1])
     rpm_list = [rpm.split("\n")[0] for rpm in cmd_output[1]]
-    log.debug("Installed RPM: %s", str(rpm_list))
+    LOGGER.debug("Installed RPM: %s", str(rpm_list))
     for rpm in rpm_list:
         if rpm in expected_rpm:
             rpm_installed = True
-            log.debug("RPM %s already installed", expected_rpm)
+            LOGGER.debug("RPM %s already installed", expected_rpm)
             break
 
     return rpm_installed, "Expected RPM installed"
@@ -637,10 +631,10 @@ def install_new_cli_rpm(
     cmd_output = list()
     # cmd = f"yum install -y {rpm_link}"
     cmd = commands.RPM_INSTALL_CMD.format(rpm_link)
-    log.debug("command : %s", cmd)
+    LOGGER.debug("command : %s", cmd)
     cmd_output = execute_cmd(cmd, remote, *remoteargs, **remoteKwargs)
     if cmd_output:
-        log.debug("Successfully installed RPM")
+        LOGGER.debug("Successfully installed RPM")
 
     return cmd_output
 
@@ -654,7 +648,7 @@ def list_rpms(*remoteargs, filter_str="", remote=False,
     :return: True/False, list of rpms
     """
     cmd = commands.RPM_GREP_CMD.format(filter_str)
-    log.debug("command : %s", cmd)
+    LOGGER.debug("command : %s", cmd)
     resp = execute_cmd(cmd, remote, *remoteargs, **remoteKwargs)
     if isinstance(resp, list):
         rpm_list = [rpm.strip("\n") for rpm in resp]
@@ -692,7 +686,7 @@ def get_disk_usage(path: str) -> str:
     :param path: Path to retrieve disk usage
     :return: Disk usage of given path
     """
-    log.debug("Running local disk usage cmd.")
+    LOGGER.debug("Running local disk usage cmd.")
     stats = os.statvfs(path)
     f_blocks, f_frsize, f_bfree = stats.f_blocks, stats.f_frsize, stats.f_bfree
     total = (f_blocks * f_frsize)

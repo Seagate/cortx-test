@@ -35,9 +35,8 @@ log = logging.getLogger(__name__)
 
 
 class Node(Host):
-    """
-    Class to maintain all common functions across component.
-    """
+
+    """Class to maintain all common functions across component."""
 
     def get_authserver_log(self, path: str, option: str = "-n 3") -> str:
         """
@@ -417,19 +416,19 @@ class Node(Host):
             pdu_user,
             pdu_pwd,
             node_slot,
-            timeout=120,
-            status=None):
+            **kwargs):
         """
-        Functon to toggle node power status usng APC PDU switch.
+        Function to toggle node power status usng APC PDU switch.
         :param string pdu_ip: IP or end pont for the PDU
         :param string pdu_user: PDU login user
         :param string pdu_pwd: PDU logn user password
         :param string node_slot: Node blank sort or port
-        :param int timeout: In case rebot node with time interval in sec
+        :param int timeout: In case reboot node with time interval in sec
         :param string status: In case user want to up or down specific node on/off
         :return: [bool, response]
-        :rtype: tuple
         """
+        timeout = kwargs.get("timeout") if kwargs.get("timeout", None) else 120
+        status = kwargs.get("status") if kwargs.get("status", None) else None
         if not self.execute_cmd("rpm  -qa | grep expect")[0]:
             log.debug("Installing expect package")
             self.execute_cmd("yum install expect")
@@ -485,12 +484,10 @@ class Node(Host):
                                                                              BaseException]]:
         """
         This function will return disk usage associated with given path.
-        :param dir_path: Directory path of which size is to be calculated
-        :type: str
+        :param dir_path: Directory path of which size is to be calculated.
         :param field_val: 0, 1, 2 and 3 for total, used, free in bytes and percent used
-        space respectively
-        :return: Output of the python interpreter command
-        :rtype: (int/float/str)
+        space respectively.
+        :return: Output of the python interpreter command.
         """
         try:
             cmd = "python3 -c 'import psutil; print(psutil.disk_usage(\"{a}\")[{b}])'".format(

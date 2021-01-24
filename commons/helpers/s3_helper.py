@@ -38,8 +38,8 @@ LOGGER = logging.getLogger(__name__)
 
 
 class S3Helper:
-    """S3 Helper class to perform S3 related operations."""
 
+    """S3 Helper class to perform S3 related operations."""
     __instance = None
 
     def __init__(self) -> None:
