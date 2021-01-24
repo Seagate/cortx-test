@@ -306,7 +306,7 @@ def list_dir(dpath: str) -> list:
     """
     try:
         flist = os.listdir(dpath)
-        LOGGERging.debug("List: %s", str(flist))
+        LOGGER.debug("List: %s", str(flist))
     except IOError as error:
         LOGGER.error(
             "*ERROR* An exception occurred in %s: %s",
@@ -424,9 +424,9 @@ def create_multiple_size_files(
             filename = "{}{}".format(
                 os.path.join(folder_path, test_filename), i)
             create_file(filename, random.randint(start_range, stop_range))
-        list_dir = os.listdir(folder_path)
+        dir_list = os.listdir(folder_path)
 
-        return True, list_dir
+        return True, dir_list
     except BaseException as error:
         LOGGER.error("*ERROR* An exception occurred in %s: %s",
                      create_multiple_size_files.__name__, error)
