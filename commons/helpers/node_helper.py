@@ -17,15 +17,17 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
+"""Module to maintain all common functions across component."""
 
 import logging
-import mdstat
 import os
 import posixpath
 import re
 import shutil
 import stat
 import time
+from typing import Tuple, List, Union, Any
+import mdstat
 from typing import Tuple, List, Union
 from typing import Any
 from commons import commands
@@ -37,16 +39,25 @@ EXCEPTION_MSG = "*ERROR* An exception occurred in {}: {}"
 
 
 class Node(Host):
-    """
-    Class to maintain all common functions across component
-    """
+
+    """Class to maintain all common functions across component."""
 
     def get_authserver_log(self, path: str, option: str = "-n 3") -> str:
+        """
+        Get authserver log from node.
+        """
         cmd = "tail {} {}".format(path, option)
         res = self.execute_cmd(cmd)
         return res
 
-    def send_systemctl_cmd(self, command: str, services: list, timeout: int = 60) -> list:
+    def send_systemctl_cmd(
+            self,
+            command: str,
+            services: list,
+            timeout: int = 60) -> list:
+        """
+        send/execute command on remote node.
+        """
         valid_commands = {"start", "stop",
                           "reload", "enable", "disable", "status"}
         if command not in valid_commands:
@@ -54,22 +65,26 @@ class Node(Host):
                 "command parameter must be one of %r." % valid_commands)
         out = []
         for service in services:
-            log.debug("Performing {} on service {}...".format(command, service))
+            log.debug(
+                "Performing %s on service %s...", command, service)
             cmd = commands.SYSTEM_CTL_CMD.format(command, service)
             out.append(self.execute_cmd(cmd, timeout=timeout))
         return out
 
-    def status_service(self, services: str, expected_status: str, timeout: int = 2) -> str:
+    def status_service(
+            self,
+            services: str,
+            expected_status: str,
+            timeout: int = 2) -> dict:
         """
         This function display status of services
         """
-        result = {}
+        result = dict()
         result["output"] = {}
         status_list = []
         for service in services:
-            log.debug(f"service status {service}")
-            cmd = commands.SYSTEMCTL_STATUS
-            cmd = cmd.format(service)
+            log.debug("service status %s", service)
+            cmd = commands.SYSTEM_CTL_STATUS_CMD.format(service)
             out = self.execute_cmd(cmd, read_lines=True, timeout=timeout)
             found = False
             for line in out:
@@ -81,9 +96,14 @@ class Node(Host):
             status_list.append(found)
             result["output"][service] = out
         result["success"] = False not in status_list
+
         return result
 
-    def configure_jclient_cloud(self, source: str, destination: str, nfs_path: str) -> bool:
+    def configure_jclient_cloud(
+            self,
+            source: str,
+            destination: str,
+            nfs_path: str) -> bool:
         """
         Function to configure jclient and cloud jar files
         :param source: path to the source dir where .jar are present.
@@ -105,8 +125,8 @@ class Node(Host):
 
         self.execute_cmd(f"yes | cp -rf {source}*.jar {destination}")
         res_ls = self.execute_cmd(f"ls {destination}")[1]
-        res = True if ".jar" in res_ls else False
-        return res
+
+        return bool(".jar" in res_ls)
 
     def path_exists(self, path: str) -> bool:
         """
@@ -116,23 +136,28 @@ class Node(Host):
         self.connect_pysftp()
         log.debug("client connected")
         try:
-            self.host_obj.stat(path)
+            self.pysftp_obj.stat(path)
         except BaseException:
             return False
         self.disconnect()
         return True
 
-    def create_file(self, filename: str, mb_count: int, dev="/dev/zero", bs="1M") -> str:
+    def create_file(
+            self,
+            filename: str,
+            mb_count: int,
+            dev="/dev/zero",
+            b_size="1M") -> str:
         """
         Creates a new file, size(count) in MB
         :param filename: Name of the file with path
         :param mb_count: size of the file in MB
         :return: output of remote execution cmd
         """
-        cmd = commands.CREATE_FILE.format(dev, filename, bs, mb_count)
+        cmd = commands.CREATE_FILE.format(dev, filename, b_size, mb_count)
         log.debug(cmd)
         result = self.execute_cmd(cmd)
-        log.debug("output = {}".format(result))
+        log.debug("output = %s", str(result))
         return self.path_exists(filename), result
 
     def rename_file(self, old_filename: str, new_filename: str):
@@ -144,7 +169,7 @@ class Node(Host):
         self.connect_pysftp()
         log.debug("sftp connected")
         try:
-            self.host_obj.rename(old_filename, new_filename)
+            self.pysftp_obj.rename(old_filename, new_filename)
         except IOError as error:
             if error.args[0] == 2:
                 raise error
@@ -159,9 +184,9 @@ class Node(Host):
         :param pwd: Password for the user
         """
         self.connect_pysftp()
-        log.debug(f"Connected to {self.hostname}")
+        log.debug("Connected to %s", self.hostname)
         try:
-            self.host_obj.remove(filename)
+            self.pysftp_obj.remove(filename)
         except IOError as error:
             if error.args[0] == 2:
                 raise error
@@ -190,8 +215,8 @@ class Node(Host):
         """
         self.connect_pysftp()
         log.debug("sftp connected")
-        self.host_obj.put(local_path, remote_path)
-        log.debug("file copied to : {}".format(remote_path))
+        self.pysftp_obj.put(local_path, remote_path)
+        log.debug("file copied to : %s", str(remote_path))
         self.disconnect()
 
     def copy_file_to_local(self, remote_path: str, local_path: str) -> None:
@@ -202,11 +227,12 @@ class Node(Host):
         """
         self.connect_pysftp()
         log.debug("sftp connected")
-        self.host_obj.get(remote_path, local_path)
-        log.debug("file copied to : {}".format(local_path))
+        self.pysftp_obj.get(remote_path, local_path)
+        log.debug("file copied to : %s", str(local_path))
         self.disconnect()
 
-    def write_remote_file_to_local_file(self, file_path: str, local_path: str) -> None:
+    def write_remote_file_to_local_file(
+            self, file_path: str, local_path: str) -> None:
         """
         Writing remote file content in local file
         :param file_path: Remote path
@@ -214,19 +240,20 @@ class Node(Host):
         """
         self.connect_pysftp()
         log.debug("sftp connected")
-        with self.host_obj.open(file_path, "r") as remote:
+        with self.pysftp_obj.open(file_path, "r") as remote:
             shutil.copyfileobj(remote, open(local_path, "wb"))
 
     def get_mdstat(self):
         """
-        This function retrieves the /proc/mdstat file from remote host and returns the parsed output in json form
+        This function retrieves the /proc/mdstat file from remote host and
+        returns the parsed output in json form.
         :return: parsed mdstat output
         :rtype: dict
         """
         mdstat_remote_path = "/proc/mdstat"
         mdstat_local_path = "mdstat"
         log.debug(
-            "Fetching /proc/mdstat file from the host {}".format(self.hostname))
+            "Fetching /proc/mdstat file from the host %s", (self.hostname))
         self.write_remote_file_to_local_file(
             mdstat_remote_path, mdstat_local_path)
         log.debug("Parsing mdstat file")
@@ -234,7 +261,8 @@ class Node(Host):
         self.remove_file(mdstat_local_path)
         return output
 
-    def is_string_in_remote_file(self, string: str, file_path: str) -> Tuple[bool, Any]:
+    def is_string_in_remote_file(
+            self, string: str, file_path: str) -> Tuple[bool, Any]:
         """
         find given string in file present on s3 server
         :param string: String to be check
@@ -248,13 +276,13 @@ class Node(Host):
             data = open(local_path).read()
             match = re.search(string, data)
             if match:
-                log.debug("Match found in : {}".format(file_path))
+                log.debug("Match found in : %s", str(file_path))
                 return True, match
-            else:
-                return False, "String Not Found"
+
+            return False, "String Not Found"
         except BaseException as error:
-            log.error(EXCEPTION_MSG.format(
-                Node.is_string_in_remote_file.__name__, error))
+            log.error("*ERROR* An exception occurred in %s: %s",
+                      Node.is_string_in_remote_file.__name__, error)
             return False, error
         finally:
             if os.path.exists(local_path):
@@ -270,15 +298,15 @@ class Node(Host):
         self.connect_pysftp()
         log.debug("client connected")
         try:
-            resp = self.host_obj.isdir(remote_path)
-            self.host_obj.close()
+            resp = self.pysftp_obj.isdir(remote_path)
+            self.pysftp_obj.close()
             if resp:
                 return True, resp
-            else:
-                return False, resp
+
+            return False, resp
         except BaseException as error:
-            log.error(EXCEPTION_MSG.format(
-                Node.validate_is_dir.__name__, error))
+            log.error("*ERROR* An exception occurred in %s: %s",
+                      Node.validate_is_dir.__name__, error)
             return False, error
 
     def list_dir(self, remote_path: str) -> list:
@@ -293,7 +321,7 @@ class Node(Host):
         """
         self.connect_pysftp()
         try:
-            dir_lst = self.host_obj.listdir(remote_path)
+            dir_lst = self.pysftp_obj.listdir(remote_path)
         except IOError as error:
             if error.args[0] == 2:
                 raise error
@@ -307,7 +335,9 @@ class Node(Host):
         if dpath is None:
             raise TypeError("path or dir_name incorrect")
         if not self.path_exists(dpath):
-            log.debug(f"Directory '{dpath}' not exists, creating directory...")
+            log.debug(
+                "Directory '%s' not exists, creating directory...",
+                dpath)
             self.execute_cmd(mkdir_cmd.format(dpath))
         return self.path_exists(dpath)
 
@@ -319,7 +349,7 @@ class Node(Host):
             raise TypeError("Requires path to delete directory")
         if not dpath.startswith("/"):
             raise TypeError("Requires absolute path")
-        log.debug(f"Removing directory : {dpath}")
+        log.debug("Removing directory : %s", dpath)
         ret_val = self.execute_cmd(cmd)
         if ret_val:
             log.debug("Successfully delete directory")
@@ -341,9 +371,9 @@ class Node(Host):
                 continue
             dir_path += r"/{0}".format(dir_folder)
             try:
-                self.host_obj.listdir(dir_path)
+                self.pysftp_obj.listdir(dir_path)
             except IOError:
-                self.host_obj.mkdir(dir_path)
+                self.pysftp_obj.mkdir(dir_path)
         self.disconnect()
         return self.path_exists(dpath)
 
@@ -357,14 +387,14 @@ class Node(Host):
         """
         self.connect_pysftp()
         log.debug("sftp connected")
-        for f in self.host_obj.listdir_attr(dpath):
-            rpath = posixpath.join(dpath, f.filename)
-            if stat.S_ISDIR(f.st_mode):
+        for fpath in self.pysftp_obj.listdir_attr(dpath):
+            rpath = posixpath.join(dpath, fpath.filename)
+            if stat.S_ISDIR(fpath.st_mode):
                 self.delete_dir_sftp(rpath, level=(level + 1))
             else:
-                rpath = posixpath.join(dpath, f.filename)
-                self.host_obj.remove(rpath)
-        self.host_obj.rmdir(dpath)
+                rpath = posixpath.join(dpath, fpath.filename)
+                self.pysftp_obj.remove(rpath)
+        self.pysftp_obj.rmdir(dpath)
         self.disconnect()
         return not self.path_exists(dpath)
 
@@ -384,9 +414,15 @@ class Node(Host):
         """
         return self.execute_cmd(commands.PGREP_CMD.format(process))
 
-    def toggle_apc_node_power(self, pdu_ip, pdu_user, pdu_pwd, node_slot, timeout=120, status=None):
+    def toggle_apc_node_power(
+            self,
+            pdu_ip,
+            pdu_user,
+            pdu_pwd,
+            node_slot,
+            **kwargs):
         """
-        Functon to toggle node power status usng APC PDU switch.
+        Function to toggle node power status usng APC PDU switch.
         :param string pdu_ip: IP or end pont for the PDU
         :param string pdu_user: PDU login user
         :param string pdu_pwd: PDU logn user password
@@ -394,65 +430,78 @@ class Node(Host):
         :param int timeout: In case rebot node with time interval in sec
         :param string status: In case user want to up or down specific node on/off
         :return: [bool, response]
-        :rtype: tuple
         """
+        timeout = kwargs.get("timeout") if kwargs.get("timeout", None) else 120
+        status = kwargs.get("status") if kwargs.get("status", None) else None
         if not self.execute_cmd("rpm  -qa | grep expect")[0]:
             log.debug("Installing expect package")
             self.execute_cmd("yum install expect")
 
         if status.lower() == "on":
-            cmd = f"./scripts/expect_utils/expect_power_on {pdu_ip} {pdu_user} {pdu_pwd} {node_slot} on"
+            cmd = f"./scripts/expect_utils/expect_power_on" \
+                f" {pdu_ip} {pdu_user} {pdu_pwd} {node_slot} on"
         elif status.lower() == "off":
-            cmd = f"./scripts/expect_utils/expect_power_off {pdu_ip} {pdu_user} {pdu_pwd} {node_slot} off"
+            cmd = f"./scripts/expect_utils/expect_power_off" \
+                f" {pdu_ip} {pdu_user} {pdu_pwd} {node_slot} off"
         else:
-            cmd = f"./scripts/expect_utils/expect_power_cycle {pdu_ip} {pdu_user} {pdu_pwd} {node_slot} {timeout}"
+            cmd = f"./scripts/expect_utils/expect_power_cycle" \
+                f" {pdu_ip} {pdu_user} {pdu_pwd} {node_slot} {timeout}"
 
         try:
             if not cmd:
                 return False, "Command not found"
-            log.debug(f"Executing cmd: {cmd}")
+            log.debug("Executing cmd: %s", cmd)
             resp = self.execute_cmd(cmd)
-            log.debug(f"Output: {resp}")
+            log.debug("Output: %s", resp)
         except BaseException as error:
-            log.error(EXCEPTION_MSG.format(
-                Node.toggle_apc_node_power.__name__, error))
+            log.error("*ERROR* An exception occurred in %s: %s",
+                      Node.toggle_apc_node_power.__name__, error)
             return False, error
 
-        log.debug(f"Successfully executed cmd {cmd}")
+        log.debug("Successfully executed cmd %s", cmd)
         return resp
 
     def shutdown_node(self, options=None):
         """
-        Function to shutdown any of the node
+        Function to shutdown any of the node.
         """
         try:
             cmd = "shutdown {}".format(options if options else "")
-            log.debug(f"Shutting down {self.hostname} node using cmd: {cmd}.")
+            log.debug(
+                "Shutting down %s node using cmd: %s.",
+                self.hostname,
+                cmd)
             resp = self.execute_cmd(cmd, shell=False)
             log.debug(resp)
         except BaseException as error:
-            log.error(EXCEPTION_MSG.format(Node.shutdown_node.__name__, error))
+            log.error("*ERROR* An exception occurred in %s: %s",
+                      Node.shutdown_node.__name__, error)
             return False, error
         return True, "Node shutdown successfully"
 
-    def disk_usage_python_interpreter_cmd(self, dir_path: str, field_val: int = 3) -> Tuple[bool, Union[List[str], str, bytes, BaseException]]:
+    def disk_usage_python_interpreter_cmd(self,
+                                          dir_path: str,
+                                          field_val: int = 3) -> Tuple[bool,
+                                                                       Union[List[str],
+                                                                             str,
+                                                                             bytes,
+                                                                             BaseException]]:
         """
         This function will return disk usage associated with given path.
-        :param dir_path: Directory path of which size is to be calculated
-        :type: str
-        :param field_val: 0, 1, 2 and 3 for total, used, free in bytes and percent used space respectively
-        :return: Output of the python interpreter command
-        :rtype: (int/float/str)
+        :param dir_path: Directory path of which size is to be calculated.
+        :param field_val: 0, 1, 2 and 3 for total, used, free in bytes and percent used
+        space respectively.
+        :return: Output of the python interpreter command.
         """
         try:
-            cmd = "python3 -c 'import psutil; print(psutil.disk_usage(\"{a}\")[{b}])'" \
-                .format(a=str(dir_path), b=int(field_val))
-            log.info(f"Running python command {cmd}")
+            cmd = "python3 -c 'import psutil; print(psutil.disk_usage(\"{a}\")[{b}])'".format(
+                a=str(dir_path), b=int(field_val))
+            log.info("Running python command %s", cmd)
             resp = self.execute_cmd(cmd=cmd)
         except BaseException as error:
             log.error(
-                EXCEPTION_MSG.format(
-                    Node.disk_usage_python_interpreter_cmd.__name__, error))
+                "*ERROR* An exception occurred in %s: %s",
+                Node.disk_usage_python_interpreter_cmd.__name__, error)
             return False, error
 
         return resp
