@@ -427,7 +427,7 @@ class Node(Host):
         :param string pdu_user: PDU login user
         :param string pdu_pwd: PDU logn user password
         :param string node_slot: Node blank sort or port
-        :param int timeout: In case rebot node with time interval in sec
+        :param int timeout: In case reboot node with time interval in sec
         :param string status: In case user want to up or down specific node on/off
         :return: [bool, response]
         """
