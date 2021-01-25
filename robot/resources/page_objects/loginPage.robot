@@ -31,7 +31,7 @@ Click Sigin Button
 Validate CSM Login Failure
     [Documentation]  Test keyword is for Validating login failure on CSM GUI.
     ${csm_login_fail_msg}=  get text  ${csm login fail msg id}
-    should be equal  ${csm_login_fail_msg} ${LOGIN_FAILED_MSG}
+    should be equal  ${csm_login_fail_msg} ${LOGIN_FAILED_MESSAGE}
     [Return]  ${csm_login_fail_msg}
 
 Validate CSM Login Success
@@ -52,9 +52,9 @@ CSM GUI Login
     sleep   5s
     Log To Console And Report  Waiting for receiving GUI responce...
 
-
-
-
-
-
+CSM GUI Logout
+    [Documentation]  This keyword is used to logout of CSM GUI.
+    wait until element is visible  ${LOG_OUT_ID}  timeout=20
+    click element  ${LOG_OUT_ID}
+    wait until element is visible  ${CSM_USERNAME_ID}  timeout=30
 
