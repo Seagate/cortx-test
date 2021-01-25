@@ -26,9 +26,10 @@ import re
 import shutil
 import stat
 import time
-from typing import Tuple, List, Union, Any
 import mdstat
-from typing import Tuple, List, Union
+from typing import Tuple
+from typing import List
+from typing import Union
 from typing import Any
 from commons import commands
 from commons.helpers.host import Host
