@@ -181,7 +181,7 @@ class SSPLTest:
         LOGGER.info("Successfully performed Teardown operation")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-1648", "pacemaker_sspl", "sw_alert")
+    @pytest.mark.tags("TEST-14034", "pacemaker_sspl", "sw_alert")
     def test_1648(self):
         """
         EOS-10619: Pacemaker Resource Agents for SSPL service(Stop sspl service
@@ -291,7 +291,7 @@ class SSPLTest:
 
     @pytest.skip
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-1783", "pacemaker_sspl", "sw_alert")
+    @pytest.mark.tags("TEST-14035", "pacemaker_sspl", "sw_alert")
     def test_1783(self):
         """
         EOS-10620: Run SSPL in degraded mode (Fail  SSPL service)
@@ -399,7 +399,7 @@ class SSPLTest:
             "service on Node)")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-1645", "pacemaker_sspl", "sw_alert")
+    @pytest.mark.tags("TEST-14794", "pacemaker_sspl", "sw_alert")
     def test_1645(self):
         """
         EOS-10618: Pacemaker Resource Agents for SSPL service (Reboot the Node

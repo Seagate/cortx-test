@@ -248,7 +248,7 @@ class SSPLTest:
         LOGGER.info("Successfully performed Teardown operation")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-3005", "sspl_disk_space_alert", "sw_alert")
+    @pytest.mark.tags("TEST-9956", "sspl_disk_space_alert", "sw_alert")
     def test_3005(self):
         """
         EES ras SSPL: Node: Disk Space-Full Alerts #1
@@ -291,7 +291,7 @@ class SSPLTest:
                     "Node: Disk Space-Full Alerts #1")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-3006", "sspl_disk_space_alert", "sw_alert")
+    @pytest.mark.tags("TEST-9957", "sspl_disk_space_alert", "sw_alert")
     def test_3006(self):
         """
         EES ras SSPL: Node: Disk Space-Full Alerts #2
@@ -341,7 +341,7 @@ class SSPLTest:
                     "Node: Disk Space-Full Alerts #2")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-3104", "sspl_startup_time", "sw_alert")
+    @pytest.mark.tags("TEST-9958", "sspl_startup_time", "sw_alert")
     def test_3104(self):
         """
         EOS-8135 : Validate EES RAS SSPL: Sync with systemd (to bring down
@@ -374,7 +374,7 @@ class SSPLTest:
                     "(to bring down startup within SLA)")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-3161", "sspl_fan_alert", "sw_alert")
+    @pytest.mark.tags("TEST-9959", "sspl_fan_alert", "sw_alert")
     def test_3161(self):
         """
         EOS-8135 : Validating EOS v1 RAS: Node: IPMI: FAN Failure Alerts
@@ -459,7 +459,7 @@ class SSPLTest:
             "ENDED: Validating EOS v1 RAS: Node: IPMI: FAN Failure Alerts")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-3280", "sspl_fan_alert", "sw_alert")
+    @pytest.mark.tags("TEST-9960", "sspl_fan_alert", "sw_alert")
     def test_3280(self):
         """
         EOS-8135 : RAS: Node: IPMI: FAN Failure Alerts Persistent Cache
@@ -572,7 +572,7 @@ class SSPLTest:
             "Cache")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-1299", "sspl_fan_alert", "sw_alert")
+    @pytest.mark.tags("TEST-9961", "sspl_fan_alert", "sw_alert")
     def test_1299(self):
         """
         EOS-8135 : Validating EOS v1 RAS: Node: IPMI: FAN Failure Alerts
@@ -619,7 +619,7 @@ class SSPLTest:
                     "Alerts")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-4332", "sspl_psu_alert", "hw_alert")
+    @pytest.mark.tags("TEST-10622", "sspl_psu_alert", "hw_alert")
     def test_4332(self):
         """
         EOS-9075: TA RAS Automation: Validate alert for PSU Module Fault/
@@ -680,7 +680,7 @@ class SSPLTest:
             "Fault/cable missing from 5U84 Enclosure.")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-4362", "sspl_ctrl_alert", "hw_alert")
+    @pytest.mark.tags("TEST-10900", "sspl_ctrl_alert", "hw_alert")
     def test_4362(self):
         """
         EOS-9074: TEST: From user perspective validate if alerts are displayed
@@ -746,7 +746,7 @@ class SSPLTest:
             "5U84 Enclosure")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-4335", "sspl_psu_alert", "hw_alert")
+    @pytest.mark.tags("TEST-10623", "sspl_psu_alert", "hw_alert")
     def test_4335(self):
         """
         EOS-9082 : TA RAS Automation: Validate alerts for PSU Module
@@ -808,7 +808,7 @@ class SSPLTest:
             "Module Fault-Resolved from 5U84 Enclosure ")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-4361", "sspl_ctrl_alert", "hw_alert")
+    @pytest.mark.tags("TEST-10624", "sspl_ctrl_alert", "hw_alert")
     def test_4361(self):
         """
         EOS-9078 : TA RAS Automation: Validate if alerts are displayed with
@@ -871,7 +871,7 @@ class SSPLTest:
             "displayed with right message - controller faulted")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-6916", "sspl_log_level", "sw_alert")
+    @pytest.mark.tags("TEST-11225", "sspl_log_level", "sw_alert")
     def test_6916(self):
         """
          EOS-9865 : Validating EES RAS: Allow log level setting is not changed
@@ -918,7 +918,7 @@ class SSPLTest:
                     "changed when after restarting the SSPL service")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-4349", "sspl_disk_space_alert", "sw_alert")
+    @pytest.mark.tags("TEST-11224", "sspl_disk_space_alert", "sw_alert")
     def test_4349(self):
         """
         EOS-9877 : TA RAS Automation: Test scenarios for validating EES RAS:
@@ -1035,7 +1035,7 @@ class SSPLTest:
             " Run SSPL on port 5100")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-3424", "sspl_iem_alert", "sw_alert")
+    @pytest.mark.tags("TEST-12014", "sspl_iem_alert", "sw_alert")
     def test_3424(self):
         """
         EOS-9879 : TA RAS Automation : Sensor to read IEM from syslog
@@ -1091,7 +1091,7 @@ class SSPLTest:
         LOGGER.info("ENDED: TA RAS Automation : Sensor to read IEM from syslog")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-6592", "sspl_log_level", "sw_alert")
+    @pytest.mark.tags("TEST-11760", "sspl_log_level", "sw_alert")
     def test_6592(self):
         """
          EOS-9870: Validating EES RAS: Allow log level setting dynamically
@@ -1137,7 +1137,7 @@ class SSPLTest:
             "dynamically")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-157", "sspl_disk_alert", "hw_alert")
+    @pytest.mark.tags("TEST-11762", "sspl_disk_alert", "hw_alert")
     def test_157(self):
         """
         EOS-9962: TA RAS Automation: Test Disabling a drive from disk group
@@ -1231,7 +1231,7 @@ class SSPLTest:
             "ENDED: TA RAS Automation: Test Disabling a drive from disk group")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-158", "sspl_disk_alert", "hw_alert")
+    @pytest.mark.tags("TEST-11763", "sspl_disk_alert", "hw_alert")
     def test_158(self):
         """
         EOS-9963: TA RAS Automation: Test Enabling a drive from disk group
@@ -1324,7 +1324,7 @@ class SSPLTest:
             "ENDED: TA RAS Automation: Test Enabling a drive from disk group")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-158", "sspl_iem_alert", "sw_alert")
+    @pytest.mark.tags("TEST-11761", "sspl_iem_alert", "sw_alert")
     def test_6335(self):
         """
          EOS-9873: Test Enhanced IEM response through decoded IEC
@@ -1390,7 +1390,7 @@ class SSPLTest:
             "ENDED: Test Enhanced IEM response through decoded IEC")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-5924", "consul_security")
+    @pytest.mark.tags("TEST-14036", "consul_security")
     def test_5924(self):
         """
          EOS-9875: Test Username/Password Security coverage on consul
@@ -1413,7 +1413,7 @@ class SSPLTest:
             "ENDED: Test Username/Password Security coverage on consul")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-4354", "health_view", "sw_alert")
+    @pytest.mark.tags("TEST-14795", "health_view", "sw_alert")
     def test_4354(self):
         """
         EOS-12920: User can view / query EES Nodes (1U Servers) OS health view
@@ -1449,7 +1449,7 @@ class SSPLTest:
             "health view (CPU Usage)")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-4355", "health_view", "sw_alert")
+    @pytest.mark.tags("TEST-15198", "health_view", "sw_alert")
     def test_4355(self):
         """
         EOS-12921: User can view / query EES Nodes (1U Servers) OS health view
