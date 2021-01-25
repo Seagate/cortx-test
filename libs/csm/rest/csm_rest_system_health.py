@@ -17,7 +17,7 @@ class SystemHealth(RestTestLib):
         Initialize the rest api
         """
         super(SystemHealth, self).__init__()
-        self.main_conf = config_utils.read_yaml("config/provisioner/provisioner_config.yaml")[1]
+        self.main_conf = config_utils.read_yaml("config\\common_config.yaml")[1]
 
     @RestTestLib.authenticate_and_login
     def get_health_summary(self):
@@ -244,10 +244,10 @@ class SystemHealth(RestTestLib):
             node_ids.append(const.NODE_ID_OPTIONS["storage"])
         elif node == "node-1" or node == "all":
             node_ids.append(const.NODE_ID_OPTIONS["node"].format(
-                self.main_conf["server_hostname"], self.conf["host_domain"]))
+                self.main_conf["server_hostname"], self.main_conf["host_domain"]))
         elif node == "node-2" or node == "all":
             node_ids.append(const.NODE_ID_OPTIONS["node"].format(
-                self.main_conf["machine1_hostname"], self.conf["host_domain"]))
+                self.main_conf["machine1_hostname"], self.main_conf["host_domain"]))
         elif node == "":
             node_ids.append("")
         else:

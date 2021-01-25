@@ -10,6 +10,7 @@ MEM_USAGE_CMD = "python3 -c 'import psutil; print(psutil.virtual_memory().percen
 MOTR_START_FIDS = "hctl mero process start --fid {}"
 MOTR_STATUS_CMD = "hctl status"
 MOTR_STOP_FIDS = "hctl mero process stop --fid {} --force"
+HCTL_STATUS_CMD_JSON = "hctl status --json"
 NETSAT_CMD = "netstat -tnlp | grep {}"
 PCS_CLUSTER_START = "pcs cluster start {}"
 PCS_CLUSTER_STOP = "pcs cluster stop {}"

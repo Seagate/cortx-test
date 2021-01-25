@@ -39,7 +39,7 @@ class TestSystemStats():
                 expected_response[test_param], actual_response[test_param])
             assert result, "{} didn't match".format(test_param)
         print(actual_response)
-        self.assertFalse(': null' in actual_response,
+        assert_utils.assert_false(': null' in actual_response,
                          "Null values in the response")
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
@@ -80,7 +80,7 @@ class TestSystemStats():
             self.log.info("Actual number of entries : {}".format(actual_cnt))
             assert_utils.assert_equals(actual_cnt, expected_cnt,
                              "Sample count check failed")
-            self.assertFalse(': null' in actual_response,
+            assert_utils.assert_false(': null' in actual_response,
                              "Null values in the response")
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
@@ -120,7 +120,7 @@ class TestSystemStats():
                 "Expected number of entries : {}".format(expected_cnt))
             assert_utils.assert_equals(actual_cnt, expected_cnt,
                              "Sample count check failed")
-            self.assertFalse(': null' in actual_response,
+            assert_utils.assert_false(': null' in actual_response,
                              "Null values in the response")
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
@@ -152,7 +152,7 @@ class TestSystemStats():
                                                    total_sample=total_sample)
             self.log.info(f"Expected response : {expected_response}")
             self.log.info(f"Actual response : {response.status_code}")
-            self.assertIn(response.status_code, expected_response,
+            assert_utils.assert_in(response.status_code, expected_response,
                              "Status code check failed with invalid METRICS.")
 
         self.log.info("##### Testing with invalid TOTAL SAMPLEs param  #####")
@@ -166,7 +166,7 @@ class TestSystemStats():
                                                    total_sample=invalid_sample)
             self.log.info(f"Expected response : {expected_response}")
             self.log.info(f"Actual response : {response.status_code}")
-            self.assertIn(response.status_code, expected_response,
+            assert_utils.assert_in(response.status_code, expected_response,
                              "Status code check failed with invalid TOTAL samples.")
 
         self.log.info("##### Testing with invalid INTERVALs param  #####")
@@ -180,7 +180,7 @@ class TestSystemStats():
                                                    total_sample=total_sample)
             self.log.info(f"Expected response : {expected_response}")
             self.log.info(f"Actual response : {response.status_code}")
-            self.assertIn(response.status_code, expected_response,
+            assert_utils.assert_in(response.status_code, expected_response,
                              "Status code check failed with invalid INTERVALS.")
 
         self.log.info("##### Testing with invalid TO and FROM param  #####")
@@ -194,7 +194,7 @@ class TestSystemStats():
                                                    total_sample=total_sample)
             self.log.info(f"Expected response : {expected_response}")
             self.log.info(f"Actual response : {response.status_code}")
-            self.assertIn(response.status_code, expected_response,
+            assert_utils.assert_in(response.status_code, expected_response,
                              f"Status code check failed with invalid FROM time :{invalid_time}.")
 
             metric = random.choice(metrics)
@@ -205,7 +205,7 @@ class TestSystemStats():
                                                    total_sample=total_sample)
             self.log.info(f"Expected response : {expected_response}")
             self.log.info(f"Actual response : {response.status_code}")
-            self.assertIn(response.status_code, expected_response,
+            assert_utils.assert_in(response.status_code, expected_response,
                              "Status code check failed with invalid TO time.")
 
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
@@ -244,7 +244,7 @@ class TestSystemStats():
                                                total_sample=total_sample)
         self.log.info(f"Expected response : {expected_response}")
         self.log.info(f"Actual response : {response.status_code}")
-        self.assertIn(response.status_code, expected_response,
+        assert_utils.assert_in(response.status_code, expected_response,
                          "Status code check failed with missing FROM param.")
 
         metric = random.choice(metrics)
@@ -255,7 +255,7 @@ class TestSystemStats():
                                                total_sample=total_sample)
         self.log.info(f"Expected response : {expected_response}")
         self.log.info(f"Actual response : {response.status_code}")
-        self.assertIn(response.status_code, expected_response,
+        assert_utils.assert_in(response.status_code, expected_response,
                          "Status code check failed with missing TO param.")
 
         expected_response = self.system_stats.success_response
@@ -320,7 +320,7 @@ class TestSystemStats():
                                                total_sample=total_sample)
         self.log.info(f"Expected response : {expected_response}")
         self.log.info(f"Actual response : {response.status_code}")
-        self.assertIn(response.status_code, expected_response,
+        assert_utils.assert_in(response.status_code, expected_response,
                          "Status code check failed.")
 
         metric = random.choice(metrics)
@@ -332,7 +332,7 @@ class TestSystemStats():
                                                total_sample=total_sample)
         self.log.info(f"Expected response : {expected_response}")
         self.log.info(f"Actual response : {response.status_code}")
-        self.assertIn(response.status_code, expected_response,
+        assert_utils.assert_in(response.status_code, expected_response,
                          "Status code check failed.")
 
         metric = random.choice(metrics)
@@ -344,7 +344,7 @@ class TestSystemStats():
                                                total_sample=total_sample)
         self.log.info(f"Expected response : {expected_response}")
         self.log.info(f"Actual response : {response.status_code}")
-        self.assertIn(response.status_code, expected_response,
+        assert_utils.assert_in(response.status_code, expected_response,
                          "Status code check failed.")
     def test_4957(self):
         """TA CSM REST Automation: TEST-4957: Test that GET API returns 200 
@@ -387,7 +387,7 @@ class TestSystemStats():
             assert_utils.assert_equals(actual_cnt, expected_cnt,
                              "Sample count check failed")
             self.log.debug(f"Verifying the response")
-            self.assertFalse(value in actual_response,
+            assert_utils.assert_false(value in actual_response,
                              "Null values in the response")
         self.log.info(
             "##### Test ended -  {} #####".format(test_case_name))
@@ -428,7 +428,7 @@ class TestSystemStats():
             self.log.info("Actual number of entries : {}".format(actual_cnt))
             assert_utils.assert_equals(actual_cnt, expected_cnt,
                              "Sample count check failed")
-            self.assertFalse(value in actual_response,
+            assert_utils.assert_false(value in actual_response,
                              "Null values in the response")
 
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
@@ -462,7 +462,7 @@ class TestSystemStats():
             expected_response, f"Status code check failed for metric: {metric}")
             actual_response = response.json()['message']
             self.log.info(actual_response)
-            self.assertIn(error_msg,
+            assert_utils.assert_in(error_msg,
                 actual_response,"Error message check failed")
 
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
@@ -493,6 +493,6 @@ class TestSystemStats():
         assert_utils.assert_equals(response.status_code,
         expected_response, f"Status code check failed for metric: {metric}")
         actual_response = response.text
-        self.assertIn(error_msg, actual_response, f"Couldnt find {error_msg} in {actual_response}")
+        assert_utils.assert_in(error_msg, actual_response, f"Couldnt find {error_msg} in {actual_response}")
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
         

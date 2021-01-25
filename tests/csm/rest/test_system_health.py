@@ -28,7 +28,7 @@ class TestSystemHealth():
         self.log.info("##### Test started -  {} #####".format(test_case_name))
         expected_response = self.system_health.success_response
         result = self.system_health.verify_health_summary(expected_response)
-        self.assertTrue(result)
+        assert result
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
@@ -46,9 +46,10 @@ class TestSystemHealth():
             expected_response = self.system_health.success_response
             result = self.system_health.verify_health_node(
                 expected_response, node=node)
-            self.assertTrue(result)
+            assert result
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
+    @pytest.mark.skip(reason="Known issue")
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-")
     def test_6820(self):
@@ -63,9 +64,10 @@ class TestSystemHealth():
         expected_response = self.system_health.success_response
         result = self.system_health.verify_health_node(
             expected_response, node="")
-        self.assertTrue(result)
+        assert result
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
+    @pytest.mark.skip(reason="Known issue")
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-")
     def test_6826(self):
@@ -81,7 +83,7 @@ class TestSystemHealth():
             expected_response = self.system_health.success_response
             result = self.system_health.verify_health_view(
                 expected_response, node=node)
-            self.assertTrue(result)
+            assert result
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
@@ -98,5 +100,5 @@ class TestSystemHealth():
         expected_response = self.system_health.success_response
         result = self.system_health.verify_health_view(
             expected_response, node="")
-        self.assertTrue(result)
+        assert result
         self.log.info("##### Test ended -  {} #####".format(test_case_name))

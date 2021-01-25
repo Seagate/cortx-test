@@ -4,9 +4,14 @@ import re
 from difflib import unified_diff
 from hamcrest import *
 
+def assert_false(x, reason=""):
+    assert_that(x, equal_to(False),reason=reason)
 
-def assert_equals(x, y, reason):
-    assert_that(y, equal_to(x))
+def assert_in(x, y, reason=""):
+    assert x in y, reason
+    
+def assert_equals(x, y, reason=""):
+    assert_that(y, equal_to(x),reason=reason)
 
 
 def assert_length(x, y):

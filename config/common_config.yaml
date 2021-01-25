@@ -16,6 +16,17 @@ enclosure_pwd: "Seagate123$"
 enclosure_user: "manage"
 host: "eosnode-1"
 host2: "eosnode-2"
+# Use below server ip for provisioning test cases
+server_ip: "10.237.66.55"
+machine1: "10.237.65.157"
+machine2: "10.237.65.255"
+server_username: "root"
+nonroot_user: "user1"
+server_password: "seagate"
+nonroot_password: "seagate"
+server_hostname: "sm8-r19"
+machine1_hostname: "sm7-r19"
+machine2_hostname: "eosnode-3"
 host_domain: ".pun.seagate.com"
 
 jClientCloud_path:

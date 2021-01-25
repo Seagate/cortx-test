@@ -3,11 +3,10 @@
 """
 import time
 import json
-#from commons.constants import Rest as const
+from commons.constants import Rest as const
 import commons.errorcodes as err
 from commons.exceptions import CTException
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
-from ctp.utils import ctpyaml
 
 
 class SystemCapacity(RestTestLib):
