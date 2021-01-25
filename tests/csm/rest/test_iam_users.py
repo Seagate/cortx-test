@@ -5,8 +5,10 @@ from libs.csm.csm_setup import CSMConfigsCheck
 from commons.utils import config_utils
 from libs.csm.rest.csm_rest_iamuser import RestIamUser
 
+
 class TestIamUser():
     """REST API Test cases for IAM users"""
+
     @classmethod
     def setup_class(self):
         """
@@ -22,7 +24,7 @@ class TestIamUser():
         setup_ready = self.config.check_predefined_s3account_present()
         if not setup_ready:
             setup_ready = self.config.setup_csm_s3
-        assert(setup_ready)
+        assert (setup_ready)
         self.created_iam_users = set()
         self.rest_iam_user = RestIamUser()
         self.log.info("Initiating Rest Client ...")
@@ -47,8 +49,8 @@ class TestIamUser():
         assert status, response
         user_name = response['user_name']
         self.created_iam_users.add(response['user_name'])
-        assert(
-            self.rest_iam_user.iam_user_login(user=user_name)== status_code["status_code"])
+        assert (
+                self.rest_iam_user.iam_user_login(user=user_name) == status_code["status_code"])
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
@@ -88,7 +90,7 @@ class TestIamUser():
 
         self.log.debug(
             "Verifying that IAM user is not able to execute and access the CSM REST APIs")
-        assert(
+        assert (
             self.rest_iam_user.verify_unauthorized_access_to_csm_user_api())
         self.log.debug(
             "Verified that IAM user is not able to execute and access the CSM REST APIs")

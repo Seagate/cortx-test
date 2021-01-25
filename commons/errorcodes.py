@@ -115,6 +115,7 @@ INVALID_PARAMETER = CTError(3, "Invalid Parameter")
 
 # CT Errors [1000-1999]
 CT_CONFIG_ERROR = CTError(1000, "CTP Config Error")
+CT_SINGLETON_NOT_INITIALIZED = CTError(1001, "CTP Config Error")
 
 # HTTP and HTTPS Errors
 HTTP_ERROR = CTError(2000, "HTTP Error")

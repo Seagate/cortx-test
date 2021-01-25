@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# !/usr/bin/python
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -16,8 +18,8 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-# -*- coding: utf-8 -*-
-# !/usr/bin/python
+
+""" Report Server client to update test results to Mongo DB"""
 import threading
 import requests
 from commons import errorcodes
@@ -30,17 +32,20 @@ REPORT_SRV_UPDATE = REPORT_SRV + "reportsdb/update"
 
 
 class SingletonMixin:
+    """ Singleton helper """
     __instance_lock = threading.Lock()
     __instance = None
 
     @classmethod
     def get_instance(cls):
+        """ class method to get an derived class instance"""
         if not cls.__instance:
             raise CTException(errorcodes.CT_SINGLETON_NOT_INITIALIZED)
         return cls.__instance
 
     @classmethod
     def init_instance(cls, *args, **kwargs):
+        """ Init class instance"""
         if cls.__instance:
             return
         with cls.__instance_lock:
@@ -51,6 +56,7 @@ class SingletonMixin:
 
     @classmethod
     def reinit_instance(cls, *args, **kwargs):
+        """ Only use when created instance is lost"""
         with cls.__instance_lock:
             if not cls.__instance:
                 raise CTException(errorcodes.CT_SINGLETON_NOT_INITIALIZED)
@@ -59,6 +65,7 @@ class SingletonMixin:
 
     @classmethod
     def clear_instance(cls):
+        """Clean up method"""
         with cls.__instance_lock:
             if not cls.__instance:
                 raise CTException(errorcodes.CT_SINGLETON_NOT_INITIALIZED)
@@ -67,6 +74,7 @@ class SingletonMixin:
 
 
 class ReportClient(SingletonMixin):
+    """ Singleton Report client """
 
     def __init__(self):
         self.session = requests.session()
@@ -132,7 +140,8 @@ class ReportClient(SingletonMixin):
         """
         new_build_type = data_kwargs.get('update_build_type')
         payload = {"filter": {"buildType": data_kwargs.get('build_type', "Release")},
-                   "update": {"$set": {"buildType": new_build_type, "OSVersion": data_kwargs.get('os')}},
+                   "update": {"$set": {"buildType": new_build_type,
+                                       "OSVersion": data_kwargs.get('os')}},
                    "db_username": "",
                    "db_password": ""
                    }

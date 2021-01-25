@@ -1,14 +1,16 @@
 import sys
 import pytest
 import logging
-from libs.csm.rest.csm_rest_bucket import RestS3Bucket 
+from libs.csm.rest.csm_rest_bucket import RestS3Bucket
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.csm.csm_setup import CSMConfigsCheck
 from commons.utils import config_utils
 from commons.constants import Rest as const
 from commons.utils import assert_utils
 
+
 class TestS3Bucket():
+    """ S3 bucket test cases"""
     @classmethod
     def setup_class(self):
         """ This is method is for test suite set-up """
@@ -41,7 +43,8 @@ class TestS3Bucket():
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-575")
     def test_575(self):
-        """Initiating the test case for the verifying response of create bucket rest with bucket name less than three
+        """Initiating the test case for the verifying response of create bucket rest
+        with bucket name less than three
         :avocado: tags=create_s3_bucket
         """
         test_case_name = sys._getframe().f_code.co_name
@@ -53,7 +56,8 @@ class TestS3Bucket():
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-576")
     def test_576(self):
-        """Initiating the test case for the verifying response of create bucket rest with bucket name more than 63
+        """Initiating the test case for the verifying response of create bucket rest with
+        bucket name more than 63
         :avocado: tags=create_s3_bucket
         """
         test_case_name = sys._getframe().f_code.co_name
@@ -86,7 +90,7 @@ class TestS3Bucket():
     @pytest.mark.tags("TEST-578")
     def test_578(self):
         """Initiating the test to test RESP API to create bucket with bucketname having special or alphanumeric character
-        :avocado: tags= rest_s3_bucket_test
+        :avocado: tags= rest_s3_bucket_test.
         """
         test_case_name = sys._getframe().f_code.co_name
         self.log.info("##### Test started -  {} #####".format(test_case_name))
@@ -104,9 +108,9 @@ class TestS3Bucket():
         self.log.info("Verifying the status code {} and response returned {}".format(
             response.status_code, response.json()))
         assert_utils.assert_equals(response.status_code,
-                         self.s3_buckets.bad_request_response)
+                                   self.s3_buckets.bad_request_response)
         assert_utils.assert_equals(response.json(),
-                         resp_msg)
+                                   resp_msg)
 
         self.log.info(
             "Step 1: Verified creating bucket with bucket name containing special characters")
@@ -133,7 +137,8 @@ class TestS3Bucket():
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-579")
     def test_579(self):
-        """Initiating the test case for the verifying response of create bucket rest for ip address as bucket name
+        """Initiating the test case for the verifying response of create bucket rest
+        for ip address as bucket name.
         :avocado: tags=create_s3_bucket
         """
         test_case_name = sys._getframe().f_code.co_name
@@ -145,7 +150,8 @@ class TestS3Bucket():
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-580")
     def test_580(self):
-        """Initiating the test case for the verifying response of create bucket rest with unauthorized user login
+        """Initiating the test case for the verifying response of create bucket rest with
+        unauthorized user login.
         :avocado: tags=create_s3_bucket
         """
         test_case_name = sys._getframe().f_code.co_name
@@ -158,7 +164,8 @@ class TestS3Bucket():
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-581")
     def test_581(self):
-        """Initiating the test case for the verifying response of create bucket rest with duplicate user
+        """Initiating the test case for the verifying response of create bucket rest
+        with duplicate user.
         :avocado: tags=create_s3_bucket
         """
         test_case_name = sys._getframe().f_code.co_name
@@ -170,7 +177,8 @@ class TestS3Bucket():
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-589")
     def test_589(self):
-        """Initiating the test case for the verifying response of create bucket rest with invalid data
+        """Initiating the test case for the verifying response of create bucket
+        rest with invalid data.
         :avocado: tags=create_s3_bucket
         """
         test_case_name = sys._getframe().f_code.co_name
@@ -195,7 +203,8 @@ class TestS3Bucket():
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-593")
     def test_593(self):
-        """Initiating the test case for the verifying response of bucket rest for newly created s3 account
+        """Initiating the test case for the verifying response of bucket rest for newly
+        created s3 account.
         :avocado: tags=get_s3_bucket
         """
         test_case_name = sys._getframe().f_code.co_name
@@ -208,7 +217,8 @@ class TestS3Bucket():
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-594")
     def test_594(self):
-        """Initiating the test case for the verifying response of list bucket rest with unauthorized user login
+        """Initiating the test case for the verifying response of list bucket rest
+        with unauthorized user login.
         :avocado: tags=get_s3_bucket
         """
         test_case_name = sys._getframe().f_code.co_name
@@ -233,7 +243,8 @@ class TestS3Bucket():
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-597")
     def test_597(self):
-        """Initiating the test case for the verifying response of delete bucket that does not exist
+        """Initiating the test case for the verifying response of delete bucket
+        that does not exist.
         :avocado: tags=delete_s3_bucket
         """
         test_case_name = sys._getframe().f_code.co_name
@@ -245,7 +256,8 @@ class TestS3Bucket():
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-599")
     def test_599(self):
-        """Initiating the test case for the verifying response of list bucket rest with unauthorized user login
+        """Initiating the test case for the verifying response of list bucket
+        rest with unauthorized user login.
         :avocado: tags=get_s3_bucket
         """
         test_case_name = sys._getframe().f_code.co_name
@@ -258,7 +270,8 @@ class TestS3Bucket():
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-601")
     def test_601(self):
-        """Initiating the test case for the verifying response of delete bucket rest with no bucket name
+        """Initiating the test case for the verifying response of delete
+        bucket rest with no bucket name.
         :avocado: tags=delete_s3_bucket
         """
         test_case_name = sys._getframe().f_code.co_name
@@ -266,4 +279,3 @@ class TestS3Bucket():
         response = self.s3_buckets.delete_s3_bucket(
             bucket_name="", login_as="s3account_user")
         assert self.s3_buckets.method_not_found == response.status_code
-
