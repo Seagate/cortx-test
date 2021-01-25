@@ -28,7 +28,7 @@ ${password}
 TEST-1226
     [Documentation]  Test that CSM user with role manager cannot update or delete s3 accounts
     ...  Reference : https://jts.seagate.com/browse/TEST-1226
-    [Tags]  Priority_High
+    [Tags]  Priority_High  CFT_test
     ${new_password}=  Generate New Password
     Navigate To Page  MANAGE_MENU_ID
     Create New CSM User  manage  ${new_password}  manage
@@ -43,7 +43,7 @@ TEST-1226
 TEST-1219
     [Documentation]  Test that monitor user can view alerts and stats.
     ...  Reference : https://jts.seagate.com/browse/TEST-1219
-    [Tags]  Priority_High
+    [Tags]  Priority_High  CFT_test
     ${new_password}=  Generate New Password
     Navigate To Page  MANAGE_MENU_ID
     Create New CSM User  monitor  ${new_password}  monitor
@@ -58,7 +58,7 @@ TEST-1219
 TEST-1037
     [Documentation]  Test that S3 account user must not have access to create CSM user
     ...  Reference : https://jts.seagate.com/browse/TEST-1037
-    [Tags]  Priority_High  test_111  S3_test  Somoke_test
+    [Tags]  Priority_High  CFT_Test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
