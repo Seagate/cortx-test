@@ -35,9 +35,9 @@ class RAIDOperations:
         Setup operations for the test file.
         """
         LOGGER.info("STARTED: Setup Module operations")
-        self.host = self.CM_CFG["host"]
-        self.uname = self.CM_CFG["username"]
-        self.passwd = self.CM_CFG["password"]
+        self.host = CM_CFG["host"]
+        self.uname = CM_CFG["username"]
+        self.passwd = CM_CFG["password"]
         self.nd_obj = Node(hostname=self.host, username=self.uname, password=self.passwd)
         self.hlt_obj = Health(hostname=self.host, username=self.uname, password=self.passwd)
         try:
@@ -77,8 +77,7 @@ class RAIDOperations:
         LOGGER.info("Updating transmit interval value to 10")
         res = self.ras_obj.update_threshold_values(
             common_cons.KV_STORE_DISK_USAGE,
-
-            ["sspl_config"]
+            self.cm_cfg["sspl_config"]
             ["sspl_trans_intv_key"],
             self.cm_cfg["sspl_config"]
             ["sspl_trans_intv_val"])
@@ -115,16 +114,9 @@ class RAIDOperations:
                                                           self.cm_cfg["sspl_key"])
             assert resp is True
             LOGGER.info("Successfully started rabbitmq_reader.py script on node")
-
-        LOGGER.info("Starting collection of sspl.log")
-        cmd = common_cmds.CHECK_SSPL_LOG_FILE.format(self.cm_cfg["file"]["sspl_log_file"])
-        response = sys_utils.run_remote_cmd(cmd=cmd, hostname=self.host,
-                                            username=self.uname,
-                                            password=self.passwd,
-                                            read_nbytes=BYTES_TO_READ,
-                                            shell=False)
-        assert response[0] is True, response[1]
-        LOGGER.info("Started collection of sspl logs")
+    
+        res = self.ras_obj.sspl_log_collect()
+        assert res[0] is True, res[1]
         self.starttime = time.time()
         LOGGER.info("ENDED: Setup Operations")
 
@@ -198,7 +190,7 @@ class RAIDOperations:
         LOGGER.info("ENDED: Teardown Operations")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-5345", "raid_alert")
+    @pytest.mark.tags("TEST-15733")
     def test_5345(self):
         """
         EOS-10613 RAID: Assemble a array
@@ -281,7 +273,7 @@ class RAIDOperations:
             "ENDED: TEST-5345 RAID: Assemble a array")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-5342", "raid_alert")
+    @pytest.mark.tags("TEST-15732")
     def test_5342(self):
         """
         EOS-10615 RAID: Remove a drive from array
@@ -367,7 +359,7 @@ class RAIDOperations:
             "ENDED: TEST-5342 RAID: Remove a drive from array")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-4785", "raid_alert")
+    @pytest.mark.tags("TEST-15868")
     def test_4785(self):
         """
         EOS-10617 RAID: Fail a drive of array
@@ -417,7 +409,7 @@ class RAIDOperations:
             "ENDED: TEST-4785 RAID: Fail a drive of array")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-5343", "raid_alert")
+    @pytest.mark.tags("TEST-16214")
     def test_5343(self):
         """
         EOS-10614 RAID: Add drive to array

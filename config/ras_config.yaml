@@ -26,6 +26,8 @@ ras_sspl_alert:
     disk_usage_temp_file: "/root/disk_usage_temp.txt"
     lsscsi_file: "/root/lsscsi.txt"
     local_path: "/tmp/rabbitmq_alert.log"
+    selinux_status: "/root/selinux_status.log"
+
   sspl_config:
     sspl_section: "NODEDATAMSGHANDLER"
     sspl_du_key: "disk_usage_threshold"

@@ -1,11 +1,32 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
 """
-Cortx-test error codes and descriptions
+Cortx-test error codes and descriptions.
 
 Provides an error data object to contain the error code and description.
 The error object is in the format: NAME_OF_ERROR(code, description).
 
 Helper functions:
-    - get_error(): Searches through this module to find error objects based on the provided code or description.
+    - get_error(): Searches through this module to find error objects based on the provided code
+        or description.
     - validate_ctp_errors(): Checks for duplicate error codes and missing error descriptions.
         If implemented at the end it will validate the codes at runtime. (TBD)
 """
@@ -18,10 +39,17 @@ if sys.version >= '3.7':
 
     @dataclass
     class CTError:
+        """
+        Provides an error data object to contain the error code and description.
+        """
         code: int
         desc: str
 else:
-    class CTError(object):
+    class CTError:
+        """
+        Provides an error data object to contain the error code and description.
+        """
+
         def __init__(self, code, desc):
             self.code = code
             self.desc = desc
@@ -32,17 +60,16 @@ else:
 
 def get_error(info):
     """ Retrieve an error from a provided error code or error description.
-
     :param info: Error code (int) or message (str) needed to search with.
     :return: The corresponding error or None.
     """
-    gl = globals().copy()
-    for _, vi in gl.items():
-        if isinstance(vi, CTError):
-            if (isinstance(info, int) and info == vi.code) \
-                    or (isinstance(info, str) and info.lower() in vi.desc.lower()):
-                return vi
-    return
+    glob = globals().copy()
+    for _, val in glob.items():
+        if isinstance(val, CTError):
+            if (isinstance(info, int) and info == val.code) or (
+                    isinstance(info, str) and info.lower() in val.desc.lower()):
+                return val
+    return None
 
 
 def validate_ctp_errors(code=None):
@@ -56,23 +83,23 @@ def validate_ctp_errors(code=None):
     :return: True if the code is not used. False if it is already used by a different error.
     :raises Exception: If an error code is used in more than one error.
     """
-    gl = globals().copy()
+    glob = globals().copy()
     if code is None:
-        for i, vi in gl.items():
-            if not isinstance(vi, CTError):
+        for i, vali in glob.items():
+            if not isinstance(vali, CTError):
                 continue
-            if vi.desc is None or vi.desc == '':
+            if vali.desc is None or vali.desc == '':
                 raise Exception("{}({}): Error description cannot be empty!"
-                                .format(i, vi.code))
-            for j, vj in gl.items():
+                                .format(i, vali.code))
+            for j, valj in glob.items():
                 if i == j:
                     continue
-                if isinstance(vj, CTError) and vj.code == vi.code:
+                if isinstance(valj, CTError) and valj.code == vali.code:
                     raise Exception("{} is duplicate error code for {} and {}"
-                                    .format(vj.code, i, j))
+                                    .format(valj.code, i, j))
     else:
-        for _, vi in gl.items():
-            if isinstance(vi, CTError) and vi.code == code:
+        for _, vali in glob.items():
+            if isinstance(vali, CTError) and vali.code == code:
                 return False
         return True
 
@@ -99,11 +126,13 @@ CLI_CONTROLLER_NOT_READY = CTError(24004, "CLI Controller Not Ready")
 CLI_NETWORK_VALIDATION_ERROR = CTError(24005, "CLI Network Validation Error")
 CLI_INVALID_NETWORK_PARAMETER = CTError(24006, "CLI Invalid Network Parameter")
 CLI_SYSTEM_NOT_READY = CTError(24007, "CLI System Not Ready")
-CLI_SYSTEM_CHECK_MISSING_PARAMETER = CTError(24008, "CLI System Check Missing Parameter")
+CLI_SYSTEM_CHECK_MISSING_PARAMETER = CTError(
+    24008, "CLI System Check Missing Parameter")
 CLI_STATUS_FAILED = CTError(24009, "CLI Response Status Failed")
 CLI_LOGIN_FAILED = CTError(24010, "CLI Authentication Unsuccessful")
 CLI_MC_NOT_READY = CTError(24011, "CLI MC Not Ready")
-CLI_CONTROLLER_CHECK_MISSING_PARAMETER = CTError(24012, "CLI Controller Check Missing Parameter")
+CLI_CONTROLLER_CHECK_MISSING_PARAMETER = CTError(
+    24012, "CLI Controller Check Missing Parameter")
 
 # Product Configuration DataBase Errors
 PCD_SYNTAX_ERROR = CTError(30000, "PCD file Syntax error")
@@ -113,4 +142,13 @@ INVALID_CONFIG_FILE = CTError(30003, "Invalid configuration file")
 FILE_TYPE_NOT_SUP = CTError(30004, "Type file not supported")
 PCD_RENDERING_ERROR = CTError(30005, "Error during the rendering process")
 PCD_FILE_ERROR = CTError(30006, "PCD file content error")
-ENC_PCD_COMPONENT_MAPPING_ERROR = CTError(30007, "PCD Components not mapping to Enclosure Components")
+ENC_PCD_COMPONENT_MAPPING_ERROR = CTError(
+    30007, "PCD Components not mapping to Enclosure Components")
+
+# S3 Errors
+S3_SERVER_ERROR = CTError(5007, "S3 Server Error")
+S3_CLIENT_ERROR = CTError(4007, "S3 Client Error")
+S3_ERROR = CTError(0o0001, "S3 Error")
+
+# RAS
+RAS_ERROR = CTError(6007, "RAS Error")
