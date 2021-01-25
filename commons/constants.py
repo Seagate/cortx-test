@@ -49,7 +49,7 @@ const.LDAP_CREDS = {
 }
 
 
-class Rest():
+class Rest:
     # REST LIB
     EXCEPTION_ERROR = "Error in"
     SSL_CERTIFIED = "https://"
@@ -116,14 +116,14 @@ class Rest():
         'error_code': '4099', 'message_id': "{'sort_by': ['Must be one of: user_id,"
                                             " username, user_type, created_time, updated_time.']}",
         'message': 'Invalid Parameter for alerts', 'error_format_args': None}
-    NODE_ID_OPTIONS= {"storage": "storage_encl", "node": "node:{}{}"}
+    NODE_ID_OPTIONS = {"storage": "storage_encl", "node": "node:{}{}"}
     HEALTH_SUMMARY_INSTANCE = "health_summary"
     HEALTH_SUMMARY_SCHEMA = {
         "type": "object",
         "properties": {
-            "total": { "type": "number" },
-            "fault": { "type": "number" },
-            "good":  { "type": "number" }
+            "total": {"type": "number"},
+            "fault": {"type": "number"},
+            "good": {"type": "number"}
         },
         "required": ["total", "good"]
     }
