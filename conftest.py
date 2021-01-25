@@ -221,6 +221,11 @@ def pytest_runtest_makereport(item, call):
                 task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
             elif item.rep_setup.passed and item.rep_call.passed and item.rep_teardown.passed:
                 task.update_test_jira_status(item.config.option.te_tkt, test_id, 'PASS')
+            # TODO report server hook test and data collection
+            # TODO Remove sample usage after completion
+            #ReportClient.init_instance()
+            #rsrv = ReportClient.get_instance()
+            #rsrv.create_db_entry(**kwargs)
 
     if report.when == 'teardown':
         if item.rep_setup.failed or item.rep_teardown.failed:
@@ -230,7 +235,7 @@ def pytest_runtest_makereport(item, call):
             with open(current_file, mode) as f:
                 if "tmpdir" in item.fixturenames :
                     extra = " ({})".format(item.funcargs["tmpdir"])
-                else :
+                else:
                     extra = ""
                 f.write(report.nodeid + extra + "\n")
         elif item.rep_setup.passed and (item.rep_call.failed or item.rep_teardown.failed):
@@ -238,9 +243,9 @@ def pytest_runtest_makereport(item, call):
             current_file = os.path.join(os.getcwd(), LOG_DIR, 'latest', current_file)
             mode = "a" if os.path.exists(current_file) else "w"
             with open(current_file, mode) as f:
-                if "tmpdir" in item.fixturenames :
+                if "tmpdir" in item.fixturenames:
                     extra = " ({})".format(item.funcargs["tmpdir"])
-                else :
+                else:
                     extra = ""
                 f.write(report.nodeid + extra + "\n")
         elif item.rep_setup.passed and item.rep_call.passed and item.rep_teardown.passed:
@@ -248,7 +253,7 @@ def pytest_runtest_makereport(item, call):
             current_file = os.path.join(os.getcwd(), LOG_DIR, 'latest', current_file)
             mode = "a" if os.path.exists(current_file) else "w"
             with open(current_file, mode) as f:
-                if "tmpdir" in item.fixturenames :
+                if "tmpdir" in item.fixturenames:
                     extra = " ({})".format(item.funcargs["tmpdir"])
                 else :
                     extra = ""

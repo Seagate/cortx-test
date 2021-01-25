@@ -48,6 +48,7 @@ const.LDAP_CREDS = {
     "ldap_passwd": CMN_CFG["ldap_passwd"]
 }
 
+
 class Rest():
     # REST LIB
     EXCEPTION_ERROR = "Error in"
@@ -113,6 +114,8 @@ class Rest():
         },
         "required": ["total", "good"]
     }
+
+
 # RAS constant
 BYTES_TO_READ = 8000
 ONE_BYTE_TO_READ = 1
