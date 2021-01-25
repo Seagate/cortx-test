@@ -27,39 +27,45 @@ The error object is in the format: NAME_OF_ERROR(code, description).
 Helper functions:
     - get_error(): Searches through this module to find error objects based on the provided code
         or description.
-    - validate_ctp_errors(): Checks for duplicate error codes and missing error descriptions.
+    - validate_ct_errors(): Checks for duplicate error codes and missing error descriptions.
         If implemented at the end it will validate the codes at runtime. (TBD)
 """
 
 import sys
+import logging
+from typing import Any
+
+LOGGER = logging.getLogger(__name__)
 
 if sys.version >= '3.7':
     # Use dataclass decorator if running Python 3.7 or newer.
     from dataclasses import dataclass
 
+
     @dataclass
     class CTError:
-        """
-        Provides an error data object to contain the error code and description.
-        """
+        """Provides an error data object to contain the error code and description."""
+
         code: int
         desc: str
 else:
     class CTError:
-        """
-        Provides an error data object to contain the error code and description.
-        """
+        """Provides an error data object to contain the error code and description."""
 
         def __init__(self, code, desc):
+            """CTError initializer to initialize error code and description."""
             self.code = code
             self.desc = desc
 
         def __str__(self):
+            """String representation for CTError class."""
             return "{}{}".format(self.__class__.__name__, self.__dict__)
 
 
 def get_error(info):
-    """ Retrieve an error from a provided error code or error description.
+    """
+     Retrieve an error from a provided error code or error description.
+
     :param info: Error code (int) or message (str) needed to search with.
     :return: The corresponding error or None.
     """
@@ -72,12 +78,13 @@ def get_error(info):
     return None
 
 
-def validate_ctp_errors(code=None):
-    """ Validate all CTP errors by checking error codes and descriptions.
-    Check if an error code is already used for a different error.
-    Check if an error is missing its description.
-    If no code is provided it will go through all the errors in the file and compare the codes.
+def validate_ct_errors(code=None) -> bool:
+    """
+    Validate all CT errors by checking error codes and descriptions.
 
+     Check if an error code is already used for a different error.
+     Check if an error is missing its description.
+     If no code is provided it will go through all the errors in the file and compare the codes.
     :param code: Error code (int) to validate.
     :return: Nothing if no error code is provided.
     :return: True if the code is not used. False if it is already used by a different error.
@@ -102,6 +109,39 @@ def validate_ctp_errors(code=None):
             if isinstance(vali, CTError) and vali.code == code:
                 return False
         return True
+
+
+def error_handler(
+        exception_detail: Any,
+        error_code: int = 0,
+        error_desc: Any = '') -> None:
+    """
+    Here logic would be developed by the each program.
+
+    from given exception get the code and take the decision to mark test FAIL or ERROR and take
+    the action accordingly. here it is considering as cterror code is 1 mark FAIL else ERROR.
+    :param exception_detail: detailed exception.
+    :param error_code: error code.
+    :param error_desc: error description.
+    """
+    try:
+        # check the parameter which are passed as expected type
+        assert isinstance(
+            error_code, int), 'failure routine parameter var1 must be int'
+        assert isinstance(
+            error_desc, str), 'failure routine parameter setup msg must be str'
+    except AssertionError as a_err:
+        raise str(a_err)
+    if exception_detail.ct_error.code:
+        LOGGER.debug("Test FAILURE")
+        # Mark test error in result
+        LOGGER.info(error_code)
+        LOGGER.info(error_desc)
+        raise str(exception_detail)
+    LOGGER.error("Test FAILURE")
+    LOGGER.info(error_code)
+    LOGGER.info(error_desc)
+    raise str(f"error code not found: {exception_detail.ct_error.code}")
 
 
 # Cortx Test error codes below this line
