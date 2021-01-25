@@ -26,7 +26,7 @@ BYTES_TO_READ = cons.BYTES_TO_READ
 
 class ControllerLib:
     """
-    RAS helper functions which for Test-cases
+    Controller helper functions
     """
 
     def __init__(self, host=COMMON_CONF["host"], h_user=COMMON_CONF["username"],
@@ -74,7 +74,7 @@ class ControllerLib:
         Function to get the version and serial number of the management
         controller
         :return: version and serial number of the management controller
-        :rtype: String
+        :rtype: Tuple of Strings
         """
         if self.copy:
             try:
