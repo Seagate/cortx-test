@@ -20,7 +20,7 @@ ras_sspl_alert:
     extracted_alert_file: "/root/extracted_alert.log"
     encrypter_local_path: "/root/encryptor_updated.py"
     temp_txt_file: "temp.txt"
-    telnet_xml: "telnet.xml"
+    telnet_xml: "/root/telnet.xml"
     sspl_log_file: "/root/sspl_log.txt"
     screen_log: "/root/screenlog.0"
     disk_usage_temp_file: "/root/disk_usage_temp.txt"
@@ -53,8 +53,25 @@ ras_sspl_alert:
   max_wait_time: 320
   one_min_delay: 60
   disk_clean_time: 120
+  default_cpu_usage: 80
+  csm_error_msg: "Failed to get alerts using CSM REST API"
+  csm_alert_gen_delay: 60
+  default_mem_usage: 80
+  start_rmq: False
 
 mdstat_remote_path: "/proc/mdstat"
 mdstat_local_path: "mdstat"
 mdadm_conf_path: "/etc/mdadm.conf"
 mdadm_conf_local_path: "mdadm.conf"
+
+raid_param:
+  csm_error_msg: "Failed to get alerts using CSM REST API"
+  stop_operation: "stop"
+  assemble_operation: "assemble"
+  fail_operation: "fail_disk"
+  remove_operation: "remove_disk"
+  add_operation: "add_disk"
+  csm_alert_reflection_time: 10
+  md0_path: "/dev/md0"
+  disk_path: "/dev/{}"
+  resync_delay: 300

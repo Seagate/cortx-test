@@ -19,6 +19,7 @@
 #
 
 import logging
+import time
 from typing import Union, Tuple, List
 from commons.helpers.host import Host
 from commons import commands
@@ -29,7 +30,7 @@ EXCEPTION_MSG = "*ERROR* An exception occurred in {}: {}"
 
 class Health(Host):
 
-    def get_ports_of_service(self, service: str) -> List[str]:
+    def get_ports_of_service(self, service: str) -> List[str] or None:
         """
         Find all TCP ports for given running service
         """
@@ -40,13 +41,14 @@ class Health(Host):
             out_list = line.split()
             ports.append(out_list[3].split(':')[-1])
         if not ports:
-            return None, "Does Not Found Running Service '{}'".format(
-                service)
+            log.error("Does Not Found Running Service '{}'".format(service))
+            return None
         return ports
 
-    def get_ports_for_firewall_cmd(self, service: str) -> List[str]:
+    def get_ports_for_firewall_cmd(self, service: str) -> List[str] or None:
         """
-        Find all ports exposed through firewall permanent service for given component
+        Find all ports exposed through firewall permanent service for given
+        component
         """
         output = self.execute_cmd(
             commands.FIREWALL_CMD.format(service), read_lines=True)
@@ -54,15 +56,16 @@ class Health(Host):
         for word in output:
             ports.append(word.split())
         if not ports:
-            return None, "Does Not Found Running Service '{}'".format(
-                service)
+            log.error("Does Not Found Running Service '{}'".format(service))
+            return None
         return ports
 
     def get_disk_usage(self, dir_path: str, field_val: int = 3) -> float:
         """
         This function will return disk usage associated with given path.
         :param dir_path: Directory path of which size is to be calculated
-        :param field_val: 0, 1, 2 and 3 for total, used, free in bytes and percent used space respectively
+        :param field_val: 0, 1, 2 and 3 for total, used, free in bytes and
+        percent used space respectively
         :return: float value of the disk usage
         """
 
@@ -100,7 +103,7 @@ class Health(Host):
         mem_usage = float(res.replace('\n', ''))
         return mem_usage
 
-    def get_pcs_service_systemd(self, service: str) -> str:
+    def get_pcs_service_systemd(self, service: str) -> str or None:
         """
         Function to return pcs service systemd service name.
         This function will be usefull when service is not under systemctl
@@ -122,7 +125,8 @@ class Health(Host):
                 log.debug(res)
                 return res[1]
 
-    def pcs_cluster_start_stop(self, node_name: str, stop_flag: bool) -> str:
+    def pcs_cluster_start_stop(self, node_name: str, stop_flag: bool) -> \
+            str or None:
         """
         This function Gracefully shutdown the given node using pcs cluster 
         stop command
@@ -140,7 +144,7 @@ class Health(Host):
             return None
         return resp[1]
 
-    def pcs_status_grep(self, service: str) -> str:
+    def pcs_status_grep(self, service: str) -> str or None:
         """
         Function to return grepped pcs status services.
         :param str service: Name of the pcs resource service
@@ -154,7 +158,7 @@ class Health(Host):
             return None
         return resp
 
-    def pcs_resource_cleanup(self, options: str = None) -> str:
+    def pcs_resource_cleanup(self, options: str = None) -> str or None:
         """
         Perform pcs resource cleanup
         :param options: option supported in resource cleanup 
@@ -173,7 +177,7 @@ class Health(Host):
             return None
         return resp
 
-    def is_mero_online(self) -> str:
+    def is_mero_online(self) -> str or Tuple[bool, str]:
         """
         Check whether all services are online in mero cluster
         :return: hctl reponse
@@ -235,3 +239,24 @@ class Health(Host):
             else:
                 log.debug("All other services are online")
                 return True, "Server is Online"
+
+    def restart_pcs_resource(self, resource: str, wait_time: int = 30,
+                             shell: bool = False) -> Tuple[bool, str]:
+        """
+        Restart given resource using pcs resource command
+        :param resource: resource name from pcs resource
+        :param wait_time: Wait time in sec after restart
+        :param shell: for interactive shell True/False
+        :return: tuple with boolean and response/error
+        :rtype: tuple
+        """
+        log.info("Restarting resource : {}".format(resource))
+        cmd = commands.PCS_RESOURCE_RESTART_CMD.format(resource)
+
+        resp = self.execute_cmd(cmd, read_lines=True, shell=shell)
+        time.sleep(wait_time)
+        success_msg = "{} successfully restarted".format(resource)
+        if success_msg in resp:
+            return True, resp
+        else:
+            return False, resp

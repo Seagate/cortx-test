@@ -1,6 +1,8 @@
 # All the constants are alphabetically arranged.
 CPU_USAGE_CMD = "python3 -c 'import psutil; print(psutil.cpu_times_percent(interval=1)[2])'"
 CREATE_FILE = "dd if={} of={} bs={} count={}"
+COPY_FILE_CMD = "cp -rfv {} {}"
+EXTRACT_LOG_CMD = "cat {} | grep '{}' > {}"
 FIREWALL_CMD = "firewall-cmd --service={} --get-ports --permanent"
 GREP_PCS_SERVICE_CMD = "pcs status | grep {}"
 LS_CMD = "ls {}"
@@ -14,23 +16,28 @@ NETSAT_CMD = "netstat -tnlp | grep {}"
 PCS_CLUSTER_START = "pcs cluster start {}"
 PCS_CLUSTER_STOP = "pcs cluster stop {}"
 PCS_RESOURCES_CLEANUP = "pcs resource cleanup {}"
+PCS_RESOURCE_DISABLE_ENABLE = "pcs resource {} {}"
 PGREP_CMD = "sudo pgrep {}"
+PCS_RESOURCE_RESTART_CMD = "pcs resource restart {}"
 PKIL_CMD = "pkill {}"
 RPM_GREP_CMD = "rpm -qa | grep {}"
 RPM_INSTALL_CMD = "yum install -y {0}"
 SYSTEM_CTL_CMD = "systemctl {} {}"
 SYSTEMCTL_STATUS = "systemctl status {}"
-
-# Commands used in RAS libs
+SYSTEM_CTL_STOP_CMD = "systemctl stop {}"
+SYSTEM_CTL_START_CMD = "systemctl start {}"
+# RAS Commands
 START_RABBITMQ_READER_CMD = "python3 /opt/seagate/sspl/low-level/tests/manual/rabbitmq_reader.py {} {} {}"
-SHOW_DISKS_CMD = "show disks"
+CHECK_SSPL_LOG_FILE = "tail -f /var/log/cortx/sspl/sspl.log > '{}' 2>&1 &"
 REMOVE_UNWANTED_CONSUL = "/usr/bin/consul kv delete --recurse SSPL_"
+SHOW_DISKS_CMD = "show disks"
 CMD_SHOW_DISK_GROUP = "show disk-groups"
 CMD_SHOW_XP_STATUS = "show expander-status"
 CMD_SHOW_VOLUMES = "show volumes"
 CMD_CLEAR_METADATA = "clear disk-metadata {}"
 SSPL_SERVICE_CMD = "journalctl -xefu sspl-ll.service"
-SET_DRIVE_STATUS_CMD = "set expander-phy encl {} controller {} type drive phy {} {}"
+SET_DRIVE_STATUS_CMD = "set expander-phy encl {} controller {} type drive phy" \
+                       " {} {}"
 ENCRYPT_PASSWORD_CMD = "./encryptor_updated.py encrypt {} {} storage_enclosure"
 GET_CLUSTER_ID_CMD = "salt-call grains.get cluster_id"
 COPY_FILE_CMD = "cp -rfv {} {}"
@@ -43,13 +50,6 @@ SIMULATE_FAULT_CTRL_CMD = "simulatefrufault -enclId {} -pos {} -fruIndex " \
 COPY_LOGS_BACKUP = "cat {} >> {}"
 EMPTY_FILE_CMD = "truncate -s 0 {}"
 EXTRACT_LOG_CMD = "cat {} | grep '{}' > '/root/extracted_alert.log'"
-HEADERS_STREAM_UTILITIES = {"Content-type": "application/x-www-form-urlencoded",
-                            "Accept": "text/plain"}
-URL_STREAM_UTILITIES = "http://utils-stream.sw.lcd.colo.seagate.com/utility" \
-                       "/api/public/v1/get_tripw"
-
-NO_CMD_RECEIVED_MSG = "No command response received !!!"
-
 SEL_INFO_CMD = "ipmitool sel info"
 SEL_LIST_CMD = "ipmitool sel list"
 IEM_LOGGER_CMD = "logger -i -p local3.err {}"
@@ -58,9 +58,12 @@ INSTALL_SSH_PASS_CMD = "yum -y install sshpass"
 SCREEN_CMD = "screen -d -m -L -S 'screen_RMQ' {}"
 SSH_CMD = "sshpass -p {} ssh -o 'StrictHostKeyChecking no' {}@{} {}"
 RESOLVE_FAN_FAULT = "ipmitool event {} {} deassert"
+
+
 STRING_MANIPULATION = "echo '{}' | tr -dc '[:alnum:]-'"
 REBOOT_NODE_CMD = "init 6"
 GENERATE_FAN_FAULT = "ipmitool event {} {}"
+
 MDADM_CMD = "mdadm {}"
 MDADM_UPDATE_CONFIG = "--detail --scan >"
 MDADM_CREATE_ARRAY = "--create {} --run --level=1 --raid-devices={}"
@@ -81,7 +84,6 @@ CMD_PING = "ping -c1 -W1 -q {}"  # parameter: IP address.
 CMD_FAN_FAULT = "fan_fault"
 CMD_FAN_SPEED = "fan_set {} speed {}"
 CMD_FAN_SET_NORMAL = "fan_set {} normal"
-
 MDADM_ZERO_SUPERBLOCK = "--zero-superblock"
 WIPE_DISK_CMD = "dd if=/dev/zero of={} &"
 KILL_WIPE_DISK_PROCESS = "-x dd"

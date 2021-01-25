@@ -29,6 +29,11 @@ from typing import Tuple, Any, Union
 from commons.helpers import node_helper
 from commons import constants as cmn_cons
 from commons import commands as common_commands
+from commons.helpers.health_helper import Health
+from commons.helpers.s3_helper import S3Helper
+from commons.utils import config_utils as conf_util
+
+RAS_VAL = conf_util.read_yaml(cmn_cons.RAS_CONFIG_PATH)[1]
 
 BYTES_TO_READ = cmn_cons.BYTES_TO_READ
 
@@ -52,11 +57,17 @@ class RASCoreLib:
         self.pwd = password
         self.node_utils = node_helper.Node(
             hostname=self.host, username=self.username, password=self.pwd)
+        self.health_obj = Health()
+        try:
+            self.s3obj = S3Helper()
+        except:
+            self.s3obj = S3Helper.get_instance()
 
     def create_remote_dir_recursive(self, file_path: str) -> bool:
         """
         Creates the remote directory structure
-        :param str file_path: Path of the file having complete directory structure
+        :param str file_path: Path of the file having complete directory
+        structure
         :return: Boolean status
         :rtype: bool
         """
@@ -132,7 +143,8 @@ class RASCoreLib:
             shell=False)
         return response
 
-    def start_rabbitmq_reader_cmd(self, sspl_exchange: str, sspl_key: str, sspl_pass: str) -> bool:
+    def start_rabbitmq_reader_cmd(self, sspl_exchange: str, sspl_key: str,
+                                  sspl_pass: str) -> bool:
         """
         This function will check for the disk space alert for sspl.
         :param str sspl_exchange: sspl exchange string
@@ -274,11 +286,12 @@ class RASCoreLib:
         if res:
             if field == "user":
                 val = username
-            elif field == "password":
+            elif field == "password" or field == "secret":
                 password = pwd
 
                 if not (self.node_utils.path_exists(path=path)):
-                    self.node_utils.copy_file_to_remote(local_path=local_path, remote_path=path)
+                    self.node_utils.copy_file_to_remote(local_path=local_path,
+                                                        remote_path=path)
                     if not self.node_utils.path_exists(path=path):
                         LOGGER.debug('Failed to copy the file')
                         return False
@@ -367,7 +380,8 @@ class RASCoreLib:
 
     def run_mdadm_cmd(self, args: list) -> Tuple[bool, Any]:
         """
-        This function runs mdadm utility commands on host and returns their output
+        This function runs mdadm utility commands on host and returns their
+        output
         :param list args: list of args passed to the mdadm command
         :return: output response
         :rtype: str
@@ -479,3 +493,144 @@ class RASCoreLib:
         else:
 
             return False, time_str
+
+    def restart_service(self, service_name: str) -> Tuple[bool, str]:
+        """
+        This function start and stop s3services using the systemctl command
+        :param str service_name: Name of the service to be restarted
+        :return: bool
+        """
+        LOGGER.info("Service to be restarted is: {}".format(service_name))
+        self.health_obj.restart_pcs_resource(service_name, shell=False)
+        time.sleep(60)
+        status = self.s3obj.get_s3server_service_status(service=service_name,
+                                                        host=self.host,
+                                                        user=self.username,
+                                                        pwd=self.pwd)
+        return status
+
+    def enable_disable_service(self, operation: str, service: str) -> \
+            Tuple[bool, str]:
+        """
+        This function start and stop s3services using the pcs resource command
+        :param str operation: Operation to disable or enable the resource
+        :param service: Service to be enabled/disabled
+        :return: status of the service
+        """
+        command = common_commands.PCS_RESOURCE_DISABLE_ENABLE\
+            .format(operation, service)
+        self.node_utils.execute_cmd(cmd=command, read_lines=True)
+        time.sleep(30)
+        resp = self.s3obj.get_s3server_service_status(service=service,
+                                                      host=self.host,
+                                                      user=self.username,
+                                                      pwd=self.pwd)
+        return resp
+
+    def alert_validation(self, string_list: list, restart: bool = True) -> \
+            Tuple[bool, str]:
+        """
+        Function to verify the alerts generated on specific events
+        :param string_list: List of expected strings in alert response having
+        format [resource_type, alert_type, ...]
+        :type: list
+        :param restart: Flag to specify whether to restart the service or not
+        :type: Boolean
+        :return: True/False, Response
+        :rtype: Boolean, String
+        """
+        common_cfg = RAS_VAL["ras_sspl_alert"]
+        if restart:
+            LOGGER.info("Restarting sspl services and waiting some time")
+            self.health_obj.restart_pcs_resource(
+                common_cfg["sspl_resource_id"], shell=False)
+
+            LOGGER.info("Sleeping for 120 seconds after restarting sspl "
+                        "services")
+            time.sleep(common_cfg["sleep_val"])
+
+        LOGGER.info("Checking status of sspl and rabbitmq services")
+        resp = self.s3obj.get_s3server_service_status(
+            service=common_cfg["service"]["sspl_service"],
+            host=self.host, user=self.username, pwd=self.pwd)
+        if not resp[0]:
+            return resp
+        resp = self.s3obj.get_s3server_service_status(
+            service=common_cfg["service"]["rabitmq_service"],
+            host=self.host, user=self.username, pwd=self.pwd)
+        if not resp[0]:
+            return resp
+        LOGGER.info(
+            "Verified sspl and rabbitmq services are in running state")
+        time.sleep(common_cfg["sleep_val"])
+
+        LOGGER.info("Fetching sspl alert response")
+        cmd = common_commands.COPY_FILE_CMD.format(
+            common_cfg["file"]["screen_log"],
+            common_cfg["file"]["alert_log_file"])
+
+        response = self.node_utils.execute_cmd(cmd=cmd,
+                                               read_nbytes=BYTES_TO_READ)
+        if not response[0]:
+            return response
+        LOGGER.info("Successfully fetched the alert response")
+
+        LOGGER.debug("Reading the alert log file")
+        read_resp = self.node_utils.read_file(
+            filename=common_cfg["file"]["alert_log_file"],
+            local_path=common_cfg["file"]["temp_txt_file"])
+        LOGGER.debug(
+            "======================================================")
+        LOGGER.debug(read_resp)
+        LOGGER.debug(
+            "======================================================")
+        LOGGER.info(
+            "Checking if alerts are generated on rabbitmq channel")
+        cmd = common_commands.EXTRACT_LOG_CMD.format(
+            common_cfg["file"]["alert_log_file"], string_list[0],
+            common_cfg["file"]["extracted_alert_file"])
+        response = self.node_utils.execute_cmd(cmd=cmd,
+                                               read_nbytes=BYTES_TO_READ)
+        if not response[0]:
+            return response
+
+        resp = self.validate_alert_msg(
+            remote_file_path=common_cfg["file"]["extracted_alert_file"],
+            pattern_lst=string_list)
+        if not resp[0]:
+            return resp
+
+        LOGGER.info("Fetched sspl alerts")
+        return True, "Fetched alerts successfully"
+
+    def validate_alert_msg(self, remote_file_path: str, pattern_lst: list) ->\
+            Tuple[bool, str]:
+        """
+        This function checks the list of alerts iteratively in the remote file
+        and return boolean value
+        :param str remote_file_path: remote file
+        :param list pattern_lst: list of err alerts generated
+        :return: Boolean, response
+        :rtype: tuple
+        """
+        response = None
+        local_path = os.path.join(os.getcwd(), 'temp_file')
+
+        if os.path.exists(local_path):
+            os.remove(local_path)
+        res = self.s3obj.copy_s3server_file(file_path=remote_file_path,
+                                            local_path=local_path,
+                                            host=self.host,
+                                            user=self.username, pwd=self.pwd,
+                                            shell=False)
+        for pattern in pattern_lst:
+            if pattern in open(local_path).read():
+                response = pattern
+            else:
+                LOGGER.info("Match not found : {}".format(pattern))
+                os.remove(local_path)
+                return False, pattern
+            LOGGER.info("Match found : {}".format(pattern))
+
+        os.remove(local_path)
+        return True, response
