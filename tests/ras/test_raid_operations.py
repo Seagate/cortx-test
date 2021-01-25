@@ -1,3 +1,4 @@
+import pytest
 import os
 import time
 import logging
@@ -20,7 +21,7 @@ LOGGER = logging.getLogger(__name__)
 
 RAS_TEST_CFG = conf_utils.read_yaml("config/ras_config.yaml")[1]
 TEST_CFG = conf_utils.read_yaml("config/ras_test.yaml")[1]
-self.cm_cfg = conf_utils.read_yaml("config/common_config.yaml")[1]
+CM_CFG = conf_utils.read_yaml("config/common_config.yaml")[1]
 CSM_CONF = conf_utils.read_yaml(common_cons.CSM_CONF)[1]
 
 
@@ -34,9 +35,9 @@ class RAIDOperations:
         Setup operations for the test file.
         """
         LOGGER.info("STARTED: Setup Module operations")
-        self.host = self.cm_cfg["host"]
-        self.uname = self.cm_cfg["username"]
-        self.passwd = self.cm_cfg["password"]
+        self.host = self.CM_CFG["host"]
+        self.uname = self.CM_CFG["username"]
+        self.passwd = self.CM_CFG["password"]
         self.nd_obj = Node(hostname=self.host, username=self.uname, password=self.passwd)
         self.hlt_obj = Health(hostname=self.host, username=self.uname, password=self.passwd)
         try:
@@ -76,7 +77,8 @@ class RAIDOperations:
         LOGGER.info("Updating transmit interval value to 10")
         res = self.ras_obj.update_threshold_values(
             common_cons.KV_STORE_DISK_USAGE,
-            self.cm_cfg["sspl_config"]
+
+            ["sspl_config"]
             ["sspl_trans_intv_key"],
             self.cm_cfg["sspl_config"]
             ["sspl_trans_intv_val"])
@@ -115,8 +117,7 @@ class RAIDOperations:
             LOGGER.info("Successfully started rabbitmq_reader.py script on node")
 
         LOGGER.info("Starting collection of sspl.log")
-        cmd = common_cmds.CHECK_SSPL_LOG_FILE.format(self.cm_cfg["file"][
-                                                         "sspl_log_file"])
+        cmd = common_cmds.CHECK_SSPL_LOG_FILE.format(self.cm_cfg["file"]["sspl_log_file"])
         response = sys_utils.run_remote_cmd(cmd=cmd, hostname=self.host,
                                             username=self.uname,
                                             password=self.passwd,
