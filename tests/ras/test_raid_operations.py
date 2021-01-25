@@ -1,3 +1,10 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+"""
+RAS test file for all the RAS tests related to RAID operations.
+"""
+
 import pytest
 import os
 import time
