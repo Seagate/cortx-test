@@ -12,8 +12,7 @@ from commons import constants as common_cons
 from commons import commands as common_cmds
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.csm.rest.csm_rest_csmuser import RestCsmUser
-from commons.alerts_simulator.generate_alert_lib import \
-    GenerateAlertLib, AlertType
+from commons.alerts_simulator.generate_alert_lib import GenerateAlertLib, AlertType
 
 # Global Constants
 BYTES_TO_READ = common_cons.BYTES_TO_READ
@@ -114,7 +113,7 @@ class RAIDOperations:
                                                           self.cm_cfg["sspl_key"])
             assert resp is True
             LOGGER.info("Successfully started rabbitmq_reader.py script on node")
-    
+
         res = self.ras_obj.sspl_log_collect()
         assert res[0] is True, res[1]
         self.starttime = time.time()
@@ -236,7 +235,8 @@ class RAIDOperations:
             "Step 3: Successfully verified RAID fault alert using CSM REST API")
 
         LOGGER.info(
-            "Step 4: Running ALERT API for generating RAID fault_resolved alert by assembling array")
+            "Step 4: Running ALERT API for generating RAID fault_resolved "
+            "alert by assembling array")
         resp = self.alert_api_obj.generate_alert(
             AlertType.raid_assemble_device_alert,
             input_parameters={
@@ -285,8 +285,8 @@ class RAIDOperations:
         csm_error_msg = raid_cmn_cfg["csm_error_msg"]
 
         LOGGER.info(
-            "Step 1: Running ALERT API for generating RAID fault alert by failing disk {} from array {}".format(
-                self.disk2, self.md_device))
+            "Step 1: Running ALERT API for generating RAID fault alert by "
+            "failing disk {} from array {}".format(self.disk2, self.md_device))
         resp = self.alert_api_obj.generate_alert(
             AlertType.raid_fail_disk_alert,
             input_parameters={
@@ -321,8 +321,8 @@ class RAIDOperations:
             "Step 3: Successfully verified RAID fault alert using CSM REST API")
 
         LOGGER.info(
-            "Step 4: Running ALERT API for generating RAID missing alert by removing faulty disk {} from array {}".format(
-                self.disk2, self.md_device))
+            "Step 4: Running ALERT API for generating RAID missing alert by "
+            "removing faulty disk {} from array {}".format(self.disk2, self.md_device))
         resp = self.alert_api_obj.generate_alert(
             AlertType.raid_remove_disk_alert,
             input_parameters={
@@ -493,9 +493,8 @@ class RAIDOperations:
             "Step 6: Successfully verified RAID missing alert using CSM REST API")
 
         LOGGER.info(
-            "Step 7: Running ALERT API for generating RAID fault_resolved alert by adding removed disk {} to array {}".format(
-                self.disk2,
-                self.md_device))
+            "Step 7: Running ALERT API for generating RAID fault_resolved alert by "
+            "adding removed disk {} to array {}".format(self.disk2, self.md_device))
         resp = self.alert_api_obj.generate_alert(
             AlertType.raid_add_disk_alert,
             input_parameters={
@@ -504,7 +503,8 @@ class RAIDOperations:
                 "disk": self.disk2})
         assert resp[0] is True, resp[1]
         LOGGER.info(
-            "Step 7: Ran ALERT API for generating RAID fault_resolved alert by adding removed disk to array")
+            "Step 7: Ran ALERT API for generating RAID fault_resolved alert "
+            "by adding removed disk to array")
 
         md_stat = resp[1]
         if self.start_rmq:
