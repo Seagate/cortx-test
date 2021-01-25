@@ -439,8 +439,9 @@ class SSPLTest:
         if self.start_rmq:
             LOGGER.info("Step 6: Check the RabbitMQ channel for no errors")
             LOGGER.info("Checking the generated alert logs")
-            self.ras_test_obj.alert_validation(test_cfg["alert_type"], test_cfg[
-                "resource_type"])
+            resp = self.ras_test_obj.alert_validation(
+                test_cfg["alert_type"], test_cfg["resource_type"])
+            assert resp[0] is True, resp[1]
             LOGGER.info("Step 6: Successfully verified the RabbitMQ channel "
                         "for no errors")
 
@@ -530,10 +531,10 @@ class SSPLTest:
 
         if self.start_rmq:
             LOGGER.info("Step 9: Check the RabbitMQ channel for no errors")
-            LOGGER.info("Checking the generated alert logs")
             alert_list = [test_cfg["resource_type"], test_cfg["alert_type"]]
             LOGGER.debug(f"RMQ alert check: {alert_list}")
-            self.ras_test_obj.alert_validation(alert_list, False)
+            resp = self.ras_test_obj.alert_validation(alert_list, False)
+            assert resp[0] is True, resp[1]
             LOGGER.info("Step 9: Successfully verified the RabbitMQ channel "
                         "for no errors")
 
@@ -667,8 +668,8 @@ class SSPLTest:
             LOGGER.info("Step 4: Checking the generated alert logs")
             alert_list = [params["resource_type"], params["alert_type"]]
             LOGGER.debug(f"RMQ alert check: {alert_list}")
-            self.ras_test_obj.alert_validation(alert_list, False)
-
+            resp = self.ras_test_obj.alert_validation(alert_list, False)
+            assert resp[0] is True, resp[1]
             LOGGER.info("Step 4: Verified the generated alert logs")
 
         assert resp_csm is True, csm_error_msg
@@ -726,7 +727,8 @@ class SSPLTest:
             LOGGER.info("Step 3: Checking the generated alert logs")
             alert_list = [params["resource_type"], params["alert_type"]]
             LOGGER.debug(f"RMQ alert check: {alert_list}")
-            self.ras_test_obj.alert_validation(alert_list, False)
+            resp = self.ras_test_obj.alert_validation(alert_list, False)
+            assert resp[0] is True, resp[1]
             LOGGER.info("Step 3: Verified the generated alert logs")
 
         time.sleep(common_cfg["sleep_val"])
@@ -788,7 +790,8 @@ class SSPLTest:
             LOGGER.info("Step 3: Checking the generated alert logs")
             alert_list = [params["resource_type"], params["alert_type"]]
             LOGGER.debug(f"RMQ alert check: {alert_list}")
-            self.ras_test_obj.alert_validation(alert_list, False)
+            resp = self.ras_test_obj.alert_validation(alert_list, False)
+            assert resp[0] is True, resp[1]
             LOGGER.info("Step 3: Verified the generated alert logs")
 
         time.sleep(common_cfg["sleep_val"])
@@ -856,7 +859,8 @@ class SSPLTest:
             LOGGER.info("Step 4: Checking the generated alert logs")
             alert_list = [params["resource_type"], params["alert_type"]]
             LOGGER.debug(f"RMQ alert check: {alert_list}")
-            self.ras_test_obj.alert_validation(alert_list, False)
+            resp = self.ras_test_obj.alert_validation(alert_list, False)
+            assert resp[0] is True, resp[1]
             LOGGER.info("Step 4: Verified the generated alert logs")
 
         assert resp_csm is True, csm_error_msg
@@ -1005,7 +1009,9 @@ class SSPLTest:
             alert_list = [params["resource_type"],
                           params["alert_fault"]["alert_type"]]
             LOGGER.debug(f"RMQ alert check: {alert_list}")
-            self.ras_test_obj.alert_validation(alert_list)
+            resp = self.ras_test_obj.alert_validation(alert_list)
+            assert resp[0] is True, resp[1]
+            LOGGER.info("Step 9: Verified the generated alert logs")
 
         LOGGER.info("Step 10: Checking logs in sspl.log")
         exp_string = r"WARNING Disk usage increased to \d{2}.\d%, beyond " \
@@ -1060,7 +1066,8 @@ class SSPLTest:
             LOGGER.info("Step 3: Checking the generated alert logs")
             alert_list = [test_cfg["resource_type"], test_cfg["alert_type"]]
             LOGGER.debug(f"RMQ alert check: {alert_list}")
-            self.ras_test_obj.alert_validation(alert_list, False)
+            resp = self.ras_test_obj.alert_validation(alert_list, False)
+            assert resp[0] is True, resp[1]
             LOGGER.info(
                 "Step 3: Successfully checked the generated alert logs")
 
@@ -1360,11 +1367,10 @@ class SSPLTest:
         LOGGER.info("Step 2-3: Successfully executed the IEM logger command")
 
         time.sleep(test_cfg["wait_time"])
-
-        LOGGER.info("Checking IEM alert responses on RMQ")
         err_msg_lst.insert(0, test_cfg["resource_type"])
 
         if self.start_rmq:
+            LOGGER.info("Step 4: Checking IEM alert responses on RMQ")
             resp = self.ras_test_obj.list_alert_validation(err_msg_lst)
             assert resp[0] is True, resp[1]
 
