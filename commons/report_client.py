@@ -18,7 +18,6 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-
 """ Report Server client to update test results to Mongo DB"""
 import threading
 import requests
@@ -26,26 +25,27 @@ from commons import errorcodes
 from commons.exceptions import CTException
 from commons.utils import web_utils
 
-REPORT_SRV = "http://cftic2.pun.seagate.com:5000/"     # todo discover report server
+REPORT_SRV = "http://cftic2.pun.seagate.com:5000/"  # todo discover report server
 REPORT_SRV_CREATE = REPORT_SRV + "reportsdb/create"
 REPORT_SRV_UPDATE = REPORT_SRV + "reportsdb/update"
 
 
 class SingletonMixin:
+
     """ Singleton helper """
     __instance_lock = threading.Lock()
     __instance = None
 
     @classmethod
     def get_instance(cls):
-        """ class method to get an derived class instance"""
+        """class method to get an derived class instance"""
         if not cls.__instance:
             raise CTException(errorcodes.CT_SINGLETON_NOT_INITIALIZED)
         return cls.__instance
 
     @classmethod
     def init_instance(cls, *args, **kwargs):
-        """ Init class instance"""
+        """Init class instance"""
         if cls.__instance:
             return
         with cls.__instance_lock:
@@ -56,7 +56,7 @@ class SingletonMixin:
 
     @classmethod
     def reinit_instance(cls, *args, **kwargs):
-        """ Only use when created instance is lost"""
+        """Only use when created instance is lost"""
         with cls.__instance_lock:
             if not cls.__instance:
                 raise CTException(errorcodes.CT_SINGLETON_NOT_INITIALIZED)
@@ -74,7 +74,7 @@ class SingletonMixin:
 
 
 class ReportClient(SingletonMixin):
-    """ Singleton Report client """
+    """Singleton Report client"""
 
     def __init__(self):
         self.session = requests.session()
@@ -159,5 +159,3 @@ def init_report_client():
 
 def report_client(server):
     return ReportClient.get_instance()
-
-
