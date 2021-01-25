@@ -5,14 +5,14 @@
 RAS test file for all the RAS tests related to RAID operations.
 """
 
-import pytest
 import os
 import time
 import logging
+import pytest
 from libs.ras.ras_test_lib import RASTestLib
 from commons.utils import config_utils as conf_utils
 from commons.utils import system_utils as sys_utils
-from commons.helpers.s3_helper import S3_helper
+from commons.helpers.s3_helper import S3Helper
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
 from commons import constants as common_cons
@@ -47,9 +47,9 @@ class RAIDOperations:
         self.nd_obj = Node(hostname=self.host, username=self.uname, password=self.passwd)
         self.hlt_obj = Health(hostname=self.host, username=self.uname, password=self.passwd)
         try:
-            self.s3_obj = S3_helper()
+            self.s3_obj = S3Helper()
         except:
-            self.s3_obj = S3_helper.get_instance()
+            self.s3_obj = S3Helper.get_instance()
         self.ras_obj = RASTestLib(host=self.host, username=self.uname, password=self.passwd)
         self.csm_alert_obj = SystemAlerts()
         self.csm_user_obj = RestCsmUser()

@@ -1054,7 +1054,7 @@ class RASTestLib(RASCoreLib):
             response = sys_utils.run_remote_cmd(cmd=cmd, hostname=self.host,
                                             username=self.username,
                                             password=self.pwd,
-                                            read_nbytes=BYTES_TO_READ,
+                                            read_lines=True,
                                             shell=False)
             LOGGER.info("Started collection of sspl logs")
         except Exception as error:
