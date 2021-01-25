@@ -101,7 +101,7 @@ Mongo DB Collection for storing test execution details.
     | Yes         | testPlanID          | String             |
     | Yes         | testExecutionID     | String             |
     | Yes         | testType            | String             |
-    | Yes         | testComponent       | String             |
+    | Yes         | testExecutionLabel       | String             |
     | Yes         | testTeam            | String             |
     | Yes         | testStartTime       | String in ISO 8601 |
     | Yes         | testExecutionTime   | Integer            |
@@ -138,7 +138,7 @@ curl -L -X POST 'http://127.0.0.1:5000/reportsdb/create' \
         "sm7-r18.pun.seagate.com",
         "sm8-r18.pun.seagate.com"
     ],
-    "testComponent": "S3",
+    "testExecutionLabel": "S3",
     "testExecutionID": "TEST-0000",
     "testExecutionTime": 0,
     "testID": "TEST-0000",
@@ -184,7 +184,7 @@ payload = {
         "sm7-r18.pun.seagate.com",
         "sm8-r18.pun.seagate.com"
     ],
-    "testComponent": "S3",
+    "testExecutionLabel": "S3",
     "testExecutionID": "TEST-0000",
     "testExecutionTime": 0,
     "testID": "TEST-1111",
@@ -239,7 +239,7 @@ This allows to execute complex queries using operators.
 curl -L -X GET 'http://127.0.0.1:5000/reportsdb/search' \
 -H 'Content-Type: application/json' \
 --data-raw '{
-    "query": {"testComponent": { "$in": ["S3", "Motr"]},
+    "query": {"testExecutionLabel": { "$in": ["S3", "Motr"]},
               "healthCheckResult": "Fail" },
     "projection": {"OSVersion": true, "buildNo": true},
     "db_username": "db_username",
@@ -254,7 +254,7 @@ endpoint = "reportsdb/search"
 host = "http://127.0.0.1:5000/"
 
 payload = {
-    "query": {"testComponent": { "$in": ["S3", "Motr"]},
+    "query": {"testExecutionLabel": { "$in": ["S3", "Motr"]},
               "healthCheckResult": "Fail" },
     "projection": {"OSVersion": true, "buildNo": true},
     "db_username": "db_username",
