@@ -55,7 +55,7 @@ class CTFailOn:
             try:
                 return func(*args, **kwargs)
             except Exception as exc:
-                raise str(exc)
+                raise Exception(str(exc))
             except self.exception as details:
                 # Here CT exception caught and calling the failure routine
                 # functions with the parameters
@@ -67,7 +67,7 @@ class CTFailOn:
                             self.routine_param_values.append(
                                 getattr(args[0], i))
                         except AttributeError as err:
-                            raise str(err)
+                            raise Exception(str(err))
                 self.routine_func(details, *self.routine_param_values)
 
         return __wrap
