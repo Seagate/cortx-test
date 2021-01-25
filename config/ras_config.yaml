@@ -64,3 +64,8 @@ ras_sspl_alert:
   mdstat_local_path: "mdstat"
   mdadm_conf_path: "/etc/mdadm.conf"
   mdadm_conf_local_path: "mdadm.conf"
+
+mdstat_remote_path: "/proc/mdstat"
+mdstat_local_path: "mdstat"
+mdadm_conf_path: "/etc/mdadm.conf"
+mdadm_conf_local_path: "mdadm.conf"
