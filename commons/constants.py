@@ -1,3 +1,5 @@
+# !/usr/bin/python
+# -*- coding: utf-8 -*-
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -16,14 +18,35 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-# -*- coding: utf-8 -*-
-# !/usr/bin/python
+
+"""All common constants from cortx-test."""
+
+from commons import const
+from commons.utils import config_utils
+
+CMN_CFG = config_utils.read_yaml("config/common_config.yaml")[1]
 
 #: NWORKERS specifies number of worker (python) threads  in a worker pool.
 NWORKERS = 32
 
 #: NGREENLETS specifies number of greenlets in a thread. These greenlets will run in parallel.
 NGREENLETS = 32
+
+""" S3 constants """
+const.S3_CONFIG = "/opt/seagate/cortx/s3/conf/s3config.yaml"
+const.CA_CERT_PATH = "/opt/seagate/cortx/provisioner/srv/components/s3clients/files/ca.crt"
+const.REMOTE_DEFAULT_DIR = "/var/motr"
+const.CFG_FILES = ["/etc/haproxy/haproxy.cfg",
+                   "/opt/seagate/cortx/s3/conf/s3config.yaml",
+                   "/opt/seagate/cortx/auth/resources/authserver.properties",
+                   "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml",
+                   "/opt/seagate/cortx/s3/s3startsystem.sh"]
+const.AUTHSERVER_FILE = "/opt/seagate/cortx/auth/resources/authserver.properties"
+const.SCRIPT_PATH = "cd /opt/seagate/cortx/auth/scripts"
+const.LDAP_CREDS = {
+    "ldap_username": CMN_CFG["ldap_username"],
+    "ldap_passwd": CMN_CFG["ldap_passwd"]
+}
 
 # RAS constant
 BYTES_TO_READ = 8000
