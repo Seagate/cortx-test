@@ -1,0 +1,8 @@
+test_1914:
+  payload:
+    password: "abc"
+    reset_access_key: "false" 
+test_1915:
+  response_msg:
+    error_code: "4101"
+    message: "Access denied. Verify account name."   

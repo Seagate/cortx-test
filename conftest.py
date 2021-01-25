@@ -139,6 +139,12 @@ def read_test_list_csv() -> List:
         print(e)
 
 
+@pytest.hookimpl(trylast=True)
+def pytest_sessionfinish(session, exitstatus):
+    pass #todo add html hook file = session.config._htmlfile
+    #todo clear cache
+
+
 def pytest_collection_modifyitems(config, items):
     """
     A hooks which gets called after pytest collects items. This provides an intercept
@@ -195,25 +201,63 @@ def pytest_runtest_makereport(item, call):
     :return:
     """
     outcome = yield
-    rep = outcome.get_result()
+    report = outcome.get_result()
+    setattr(item, "rep_" + report.when, report)
     # print(rep)
-    # we only look at actual failing test calls, not setup/teardown
+    _local = bool(item.config.option.local)
+    Globals.LOCAL_RUN = _local
     fail_file = 'failed_tests.log'
     pass_file = 'passed_tests.log'
     current_file = 'other_test_calls.log'
-    if rep.failed :
-        current_file = fail_file
-    elif rep.passed :
-        current_file = pass_file
-    current_file = os.path.join(os.getcwd(), LOG_DIR, 'latest', current_file)
-    mode = "a" if os.path.exists(current_file) else "w"
-    with open(current_file, mode) as f :
-        # let's also access a fixture
-        if "tmpdir" in item.fixturenames :
-            extra = " ({})".format(item.funcargs["tmpdir"])
-        else :
-            extra = ""
-        f.write(rep.nodeid + extra + "\n")
+
+    if not _local:
+        jira_id, jira_pwd = get_jira_credential()
+        task = jira_utils.JiraTask(jira_id, jira_pwd)
+        test_id = CACHE.lookup(report.nodeid)
+        if report.when == 'teardown':
+            if item.rep_setup.failed or item.rep_teardown.failed:
+                task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
+            elif item.rep_setup.passed and (item.rep_call.failed or item.rep_teardown.failed):
+                task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
+            elif item.rep_setup.passed and item.rep_call.passed and item.rep_teardown.passed:
+                task.update_test_jira_status(item.config.option.te_tkt, test_id, 'PASS')
+            # TODO report server hook test and data collection
+            # TODO Remove sample usage after completion
+            #ReportClient.init_instance()
+            #rsrv = ReportClient.get_instance()
+            #rsrv.create_db_entry(**kwargs)
+
+    if report.when == 'teardown':
+        if item.rep_setup.failed or item.rep_teardown.failed:
+            current_file = fail_file
+            current_file = os.path.join(os.getcwd(), LOG_DIR, 'latest', current_file)
+            mode = "a" if os.path.exists(current_file) else "w"
+            with open(current_file, mode) as f:
+                if "tmpdir" in item.fixturenames :
+                    extra = " ({})".format(item.funcargs["tmpdir"])
+                else:
+                    extra = ""
+                f.write(report.nodeid + extra + "\n")
+        elif item.rep_setup.passed and (item.rep_call.failed or item.rep_teardown.failed):
+            current_file = fail_file
+            current_file = os.path.join(os.getcwd(), LOG_DIR, 'latest', current_file)
+            mode = "a" if os.path.exists(current_file) else "w"
+            with open(current_file, mode) as f:
+                if "tmpdir" in item.fixturenames:
+                    extra = " ({})".format(item.funcargs["tmpdir"])
+                else:
+                    extra = ""
+                f.write(report.nodeid + extra + "\n")
+        elif item.rep_setup.passed and item.rep_call.passed and item.rep_teardown.passed:
+            current_file = pass_file
+            current_file = os.path.join(os.getcwd(), LOG_DIR, 'latest', current_file)
+            mode = "a" if os.path.exists(current_file) else "w"
+            with open(current_file, mode) as f:
+                if "tmpdir" in item.fixturenames:
+                    extra = " ({})".format(item.funcargs["tmpdir"])
+                else :
+                    extra = ""
+                f.write(report.nodeid + extra + "\n")
 
 
 def pytest_runtest_logreport(report: "TestReport") -> None:
@@ -253,7 +297,3 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
         with open(test_log, 'w') as fp:
             for rec in logs:
                 fp.write(rec + '\n')
-        if report.outcome in ['passed', 'Passed']:
-            task.update_test_jira_status(Globals.TE_TKT, test_id, 'PASS')
-        elif report.outcome in ['failed', 'Failed']:
-            task.update_test_jira_status(Globals.TE_TKT, test_id, 'FAIL')
