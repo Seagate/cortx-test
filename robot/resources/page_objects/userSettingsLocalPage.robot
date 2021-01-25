@@ -124,3 +124,21 @@ Verify Missmatch Password Error
     Page Should Contain Element  ${PASSWORD_MISS_MATCH_MSG_ID}
     ${text}=  get text  ${PASSWORD_MISS_MATCH_MSG_ID}
     should be equal  ${text}  ${missmatch password msg}
+
+# FOR CFT TEST
+Verify Absence of Edit And Delete Button on S3account
+    [Documentation]  Verify Presence of Edit And Delete Button on S3account
+    Click Element  ${S3_ACCOUNTS_TAB_ID}
+    Sleep  2s  # Took time to load s3 accounts
+    Page Should Not Contain Element  ${EDIT_S3_ACCOUNT_OPTION_ID}
+    Page Should Not Contain Element  ${DELETE_S3_ACCOUNT_ID}
+
+Verify Presence of Stats And Alerts
+    [Documentation]  Verify Presence of Edit And Delete Button on S3account
+    Page Should Contain Element  ${CSM_STATS_CHART_ID}
+    Page Should Contain Element  ${DASHBOARD_ALERT_SECTION_ID}
+
+Verify Absence of Admin User Section
+    [Documentation]  Verify Presence of Edit And Delete Button on S3account
+    Page Should Not Contain Element  ${ADMINISTRATIVE_USER_TAB_ID}
+    Page Should Not Contain Button  ${ADD_USER_BUTTON_ID}

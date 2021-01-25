@@ -42,3 +42,8 @@ NEW_USER_CONFIRM_OK_BUTTON_ID = "user-dialog-close-btn"
 INVALID_LOCAL_USER_MSG_ID = "localuser-invalid"
 PASSWORD_MISS_MATCH_MSG_ID = "localuser-confirmpassword-notmatch"
 CONFIRM_DELETE_BOX_BTN_ID = "confirmation-dialogbox-btn"
+
+# CFT
+CSM_STATS_CHART_ID = 'line_chart'
+DASHBOARD_ALERT_SECTION_ID = 'alertMediumContainer'
+DASHBOARD_MENU_ID = "Dashboard"
