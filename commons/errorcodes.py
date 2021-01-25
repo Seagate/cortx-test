@@ -53,7 +53,7 @@ else:
         """Provides an error data object to contain the error code and description."""
 
         def __init__(self, code, desc):
-            """CTError initializer to initialize error code and description."""
+            """Initializer CTError to initialize error code and description."""
             self.code = code
             self.desc = desc
 
@@ -131,17 +131,17 @@ def error_handler(
         assert isinstance(
             error_desc, str), 'failure routine parameter setup msg must be str'
     except AssertionError as a_err:
-        raise str(a_err)
+        raise Exception(str(a_err))
     if exception_detail.ct_error.code:
         LOGGER.debug("Test FAILURE")
         # Mark test error in result
         LOGGER.info(error_code)
         LOGGER.info(error_desc)
-        raise str(exception_detail)
+        raise Exception(str(exception_detail))
     LOGGER.error("Test FAILURE")
     LOGGER.info(error_code)
     LOGGER.info(error_desc)
-    raise str(f"error code not found: {exception_detail.ct_error.code}")
+    raise Exception(str(f"error code not found: {exception_detail.ct_error.code}"))
 
 
 # Cortx Test error codes below this line
