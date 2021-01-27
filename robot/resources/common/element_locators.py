@@ -16,6 +16,8 @@ MANAGE_MENU_ID = 'Manage'
 S3_ACCOUNTS_TAB_ID = 's3accountstab'
 SETTINGS_ID = 'Settings'
 EMAIL_NOTIFICATION_ID = 'goToNotifications'
+IAM_USER_TAB_ID = "s3iamuserstab"
+DASHBOARD_MENU_ID = "Dashboard"
 
 #  S3 Config
 S3_ACCOUNTS_TABLE_XPATH = '//*[@id="s3-datatable"]//table/tbody/tr/td'
@@ -66,3 +68,13 @@ NEW_USER_CONFIRM_OK_BUTTON_ID = "user-dialog-close-btn"
 INVALID_LOCAL_USER_MSG_ID = "localuser-invalid"
 PASSWORD_MISS_MATCH_MSG_ID = "localuser-confirmpassword-notmatch"
 CONFIRM_DELETE_BOX_BTN_ID = "confirmation-dialogbox-btn"
+DELETE_USER_BTN_ID = "localuser-deleteicon"
+INVALID_PASSWORD_MSG_ID = "localuser-password-invalid"
+CHANGE_PASSWORD_BTN_ID = "change-password-text"
+UPDATE_USER_BTN_ID = "lblLocalApplyInterface"
+CONFIRM_NEW_PASSWORD_INPUT_ID = "txtLocalConfirmNewPass"
+OLD_PASSWORD_INPUT_ID = "txtLocalOldPass"
+PAGINATION_BAR_XPATH = "//div[@class='v-data-footer']"
+PAGIANTION_PAGE_OPTIONS_XPATH = "//*[@role='option']"
+RADIO_BTN_VALUE_XPATH = "//*[@type='radio']"
+PAGINATION_LIST_ICON_XPATH = "//*[@class='v-select__selection v-select__selection--comma']"
