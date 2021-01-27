@@ -6,8 +6,7 @@ Library  DateTime
 Library    Collections
 Variables  common_variables.py
 Variables  element_locators.py
-*** Variables ***
-@{table_data}
+
 
 *** Keywords ***
 Log To Console And Report
@@ -19,18 +18,17 @@ Log To Console And Report
 Navigate To Page
     [Documentation]  This Keyword is for naviagting to certain page
     [Arguments]  ${page_name}  ${sub_page}=False
-    #${page_name}=  Catenate  ${page_name}  menu  id
     log to console and report  Navigating to ${page_name}
     Click Element  ${${page_name}}
     Sleep  1s
     ${value}=  Convert To Boolean  ${sub_page}
-    #${sub_page}=  Catenate  ${sub_page}  tab  id
     Run Keyword If  ${value}
     ...  Click Element  ${${sub_page}}
 
 Read Table Data
     [Documentation]  This Keyword is for reading the data from the html table and it returns the data in list format.
     [Arguments]  ${table_element}
+    @{table_data}=    Create List
     @{table_elements}=  Get WebElements  ${table_element}
     sleep  2s
     FOR  ${elements}  IN  @{table_elements}
@@ -77,3 +75,11 @@ Generate New Password
     ${password}=  Catenate  SEPARATOR=  ${upper_case}  ${lower_case}  ${numbers}  ${special_char}
     Log To Console And Report  ${password}
     [Return]  ${password}
+
+Verify message
+    [Documentation]  This keyword verifies error messages for provided element with expected message.
+    [Arguments]  ${element_locator}  ${message_to_verify}
+    wait until element is visible  ${${element_locator}}  timeout=10
+    ${msg_from_gui}=  get text  ${${element_locator}}
+    Log To Console And Report  message from guI is ${msg_from_gui}
+    should be equal  ${msg_from_gui}  ${message_to_verify}
