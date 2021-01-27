@@ -11,6 +11,7 @@ from decimal import Decimal
 from typing import Tuple, Any, Union
 from libs.ras.ras_core_lib import RASCoreLib
 from commons.utils.config_utils import read_yaml, get_config, update_cfg_based_on_separator
+from commons.utils import system_utils as sys_utils
 from commons import constants as cmn_cons
 from commons import commands as common_commands
 from commons import errorcodes as err
@@ -1040,3 +1041,26 @@ class RASTestLib(RASCoreLib):
         self.node_utils.remove_file(local_file_path)
 
         return any(resp_lst)
+
+    def sspl_log_collect(self) -> Tuple[bool, str]:
+        """
+        This function starts the collection of SSPl logs.
+        :return: (boolean, stdout)
+        """
+        common_cfg = RAS_VAL["ras_sspl_alert"]
+        try:
+            LOGGER.info("Starting collection of sspl.log")
+            cmd = common_commands.CHECK_SSPL_LOG_FILE.format(common_cfg["file"]["sspl_log_file"])
+            response = sys_utils.run_remote_cmd(cmd=cmd, hostname=self.host,
+                                            username=self.username,
+                                            password=self.pwd,
+                                            read_lines=True,
+                                            shell=False)
+            LOGGER.info("Started collection of sspl logs")
+        except Exception as error:
+            LOGGER.error("{0} {1}: {2}".format(
+                cmn_cons.EXCEPTION_ERROR,
+                RASTestLib.get_fan_name.__name__, error))
+            raise CTException(err.RAS_ERROR, error.args[0])
+
+        return response
