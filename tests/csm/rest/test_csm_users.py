@@ -38,7 +38,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-4947")
+    @pytest.mark.tags('TEST-10720')
     def test_4947(self):
         """Initiating the test case to verify List CSM user.
 
@@ -52,7 +52,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-4948")
+    @pytest.mark.tags('TEST-10721')
     def test_4948(self):
         """Initiating the test case to verify List CSM user with offset=<int>.
 
@@ -66,7 +66,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-4949")
+    @pytest.mark.tags('TEST-10722')
     def test_4949(self):
         """Initiating the test case to verify List CSM user with offset=<string>.
 
@@ -80,7 +80,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-4950")
+    @pytest.mark.tags('TEST-10723')
     def test_4950(self):
         """Initiating the test case to verify List CSM user with offset=<empty>.
 
@@ -94,7 +94,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-4951")
+    @pytest.mark.tags('TEST-10724')
     def test_4951(self):
         """Initiating the test case to verify List CSM user with limit=<int>.
 
@@ -108,7 +108,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-4952")
+    @pytest.mark.tags('TEST-10725')
     def test_4952(self):
         """Initiating the test case to verify List CSM user with limit=<int>.
 
@@ -121,7 +121,7 @@ class TestCsmUser():
             "##### Test completed -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-4954")
+    @pytest.mark.tags('TEST-10711')
     def test_4954(self):
         """Initiating the test case to create csm users and List CSM user with limit > created csm users.
 
@@ -134,7 +134,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-4955")
+    @pytest.mark.tags('TEST-10726')
     def test_4955(self):
         """Initiating the test case to verify List CSM user with limit=<int>.
 
@@ -149,7 +149,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-5001")
+    @pytest.mark.tags('TEST-10727')
     def test_5001(self):
         """
         Test that GET API with invalid value for sort_by param returns 400 response code
@@ -173,7 +173,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-5002")
+    @pytest.mark.tags('TEST-10728')
     def test_5002(self):
         """
         Test that GET API with no value for sort_by param returns 400 response code
@@ -195,7 +195,7 @@ class TestCsmUser():
 
     # @pytest.mark.skip(reason="Test failing when running in parallel")
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-5003")
+    @pytest.mark.tags('TEST-17864')
     def test_5003(self):
         """
         Test that GET API with valid value for sort_dir param returns 200 response code and appropriate json data
@@ -217,7 +217,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-5011")
+    @pytest.mark.tags('TEST-10715')
     def test_5011(self):
         """Initiating the test case for the verifying CSM user creating.
 
@@ -231,7 +231,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-5012")
+    @pytest.mark.tags('TEST-10716')
     def test_5012(self):
         """Initiating the test case for the verifying response for invalid CSM user creating.
 
@@ -245,7 +245,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-5013")
+    @pytest.mark.tags('TEST-10717')
     def test_5013(self):
         """Initiating the test case for the verifying response with missing mandatory argument for CSM user creating.
 
@@ -259,7 +259,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-5014")
+    @pytest.mark.tags('TEST-10718')
     def test_5014(self):
         """Initiating the test case for the verifying response unauthorized user trying to create csm user.
 
@@ -273,7 +273,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-5015")
+    @pytest.mark.tags('TEST-10719')
     def test_5015(self):
         """Initiating the test case for the verifying response for duplicate CSM user creation.
 
@@ -286,7 +286,6 @@ class TestCsmUser():
             "##### Test completed -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-5000")
     def test_5000(self):
         """
         Test that GET API with valid value for sort_by param returns 200 response code
@@ -309,7 +308,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-5004")
+    @pytest.mark.tags('TEST-10730')
     def test_5004(self):
         """
         Test that GET API with invalid value for sort_dir param returns 400 response code and appropriate error json data
@@ -330,7 +329,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-5006")
+    @pytest.mark.tags('TEST-10713')
     def test_5006(self):
         """Initiating the test case to verify list CSM user with valid offset,limit,sort_by and sort_dir parameters provided.
 
@@ -343,7 +342,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-5008")
+    @pytest.mark.tags('TEST-10714')
     def test_5008(self):
         """Initiating the test case to verify that 403 is returned by csm list users api for unauthorised access
 
@@ -359,7 +358,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-5005")
+    @pytest.mark.tags('TEST-10712')
     def test_5005(self):
         """
         Test that GET API with empty value for sort_dir param returns 400 response code
@@ -385,7 +384,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-5009")
+    @pytest.mark.tags('TEST-10795')
     def test_5009(self):
         """
         Test that GET API returns 200 response code and appropriate json data for valid username input.
@@ -438,7 +437,7 @@ class TestCsmUser():
 
     # @pytest.mark.skip(reason="Skipping the test as it changes admin password")
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-5016")
+    @pytest.mark.tags('TEST-10797')
     def test_5016(self):
         """
         Test that PATCH API returns 200 response code and appropriate json data for valid payload data.
@@ -531,7 +530,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-1228")
+    @pytest.mark.tags('TEST-12023')
     def test_1228(self):
         """
         Test that CSM user with role manager can perform GET and POST API request on S3 Accounts
@@ -580,7 +579,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-1237")
+    @pytest.mark.tags('TEST-12022')
     def test_1237(self):
         """
         Test that CSM user with monitor role can perform GET API request for CSM user
@@ -623,7 +622,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-1235")
+    @pytest.mark.tags('TEST-12021')
     def test_1235(self):
         """
         Test that CSM user with role monitor can perform GET API request for S3 Accounts
@@ -663,7 +662,7 @@ class TestCsmUser():
             "##### Test completed -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-7421")
+    @pytest.mark.tags('TEST-12018')
     def test_7421(self):
         """
         Test Non root user should able to change its password by specifying old_password and new password
@@ -721,7 +720,7 @@ class TestCsmUser():
             "##### Test completed -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-7411")
+    @pytest.mark.tags('TEST-12024')
     def test_7411(self):
         """
         Test that root user should able to modify self password through CSM-REST
@@ -777,7 +776,7 @@ class TestCsmUser():
             "##### Test completed -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-1229")
+    @pytest.mark.tags('TEST-12025')
     def test_1229(self):
         """
         Test that CSM user with manage role can perform GET, POST, PATCH and DELETE API request for CSM user
@@ -918,7 +917,7 @@ class TestCsmUser():
             "##### Test completed -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-5019")
+    @pytest.mark.tags('TEST-12026')
     def test_5019(self):
         """
         Test that PATCH API returns 200 response code and appropriate json data for partial payload.
@@ -1100,7 +1099,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-7422")
+    @pytest.mark.tags('TEST-12838')
     def test_7422(self):
         """
         Test that Non root user cannot change roles through CSM-REST
@@ -1165,7 +1164,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-7412")
+    @pytest.mark.tags('TEST-12839')
     def test_7412(self):
         """
         Test that user should not able to change roles for root user through CSM-REST
@@ -1246,7 +1245,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-7408")
+    @pytest.mark.tags('TEST-12840')
     def test_7408(self):
         """
         Test that user should not be able to change its username through CSM-REST
@@ -1333,7 +1332,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-6220")
+    @pytest.mark.tags('TEST-17865')
     def test_6220(self):
         """
         Test that duplicate users should not be created between csm users and s3 account users in CSM REST
@@ -1433,7 +1432,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-5021")
+    @pytest.mark.tags('TEST-14657')
     def test_5021(self):
         """
         Test that DELETE API with default argument returns 200 response code and appropriate json data.
@@ -1483,7 +1482,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-5023")
+    @pytest.mark.tags('TEST-14658')
     def test_5023(self):
         """
         Test that DELETE API returns 403 response for unauthorized request.
@@ -1521,7 +1520,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-5020")
+    @pytest.mark.tags('TEST-14659')
     def test_5020(self):
         """
         Test that PATCH API returns 400 response code and appropriate json data for empty payload.
@@ -1560,7 +1559,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-5017")
+    @pytest.mark.tags('TEST-14660')
     def test_5017(self):
         """
         Test that PATCH API returns 404 response code and appropriate json data for user that does not exist.
@@ -1602,7 +1601,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-5010")
+    @pytest.mark.tags('TEST-14661')
     def test_5010(self):
         """
         Test that GET API returns 404 response code and appropriate json data for non-existing username input.
@@ -1644,7 +1643,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-5018")
+    @pytest.mark.tags('TEST-14696')
     def test_5018(self):
         """
         Test that PATCH API returns 400 response code and appropriate error json data for invalid payload.
@@ -1724,7 +1723,7 @@ class TestCsmUser():
             "##### Test completed -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-1173")
+    @pytest.mark.tags('TEST-15862')
     def test_1173(self):
         """
         Test that in case the password is changed the user should not be able to login with the old password
@@ -1928,7 +1927,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-1227")
+    @pytest.mark.tags('TEST-16550')
     def test_1227(self):
         """
         Test that CSM user with role manager cannot perform any REST API request on IAM user
@@ -2016,7 +2015,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-1040")
+    @pytest.mark.tags('TEST-16551')
     def test_1040(self):
         """
         Test that S3 account should not have access to create csm user from backend
@@ -2038,7 +2037,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-1172")
+    @pytest.mark.tags('TEST-16552')
     def test_1172(self):
         """
         Test that the error messages related to the Log-in should not display any important information.
@@ -2078,7 +2077,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-7362")
+    @pytest.mark.tags('TEST-16936')
     def test_7362(self):
         """
         Test that CSM user with monitor role cannot perform POST, PATCH and DELTE request on CSM user
@@ -2151,7 +2150,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-7361")
+    @pytest.mark.tags('TEST-16935')
     def test_7361(self):
         """
         Test that CSM user with role manager cannot perform DELETE and PATCH API request on S3 Accounts
@@ -2225,7 +2224,7 @@ class TestCsmUser():
 
     @pytest.mark.csmrest
     @pytest.mark.parallel
-    @pytest.mark.tags("TEST-7360")
+    @pytest.mark.tags('TEST-17191')
     def test_7360(self):
         """
         Test that CSM user with role manager cannot perform REST API request on S3 Buckets
@@ -2341,7 +2340,7 @@ class TestCsmUser():
             "##### Test completed -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-7420")
+    @pytest.mark.tags('TEST-12019')
     def test_7420(self):
         """
         Test that Root user should able to change other users password and roles without specifying old_password through CSM-REST

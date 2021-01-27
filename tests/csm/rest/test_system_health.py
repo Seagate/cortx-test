@@ -18,7 +18,7 @@ class TestSystemHealth():
         pass
 
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-")
+    @pytest.mark.tags('TEST-12786')
     def test_6813(self):
         """Test that GET request for API '/api/v1/system/health/summary ' 
         returns 200 response with overall health status of the system.
@@ -32,7 +32,7 @@ class TestSystemHealth():
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-")
+    @pytest.mark.tags('TEST-17867')
     def test_6819(self):
         """
         Test that GET request for API '/api/v1/system/health/node?node_id=<node_id>' 
@@ -51,7 +51,7 @@ class TestSystemHealth():
 
     @pytest.mark.skip(reason="Known issue")
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-")
+    @pytest.mark.tags('TEST-17868')
     def test_6820(self):
         """
         Test that GET request for API '/api/v1/system/health/node?' 
@@ -69,7 +69,7 @@ class TestSystemHealth():
 
     @pytest.mark.skip(reason="Known issue")
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-")
+    @pytest.mark.tags('TEST-17869')
     def test_6826(self):
         """
         Test that GET request for API '/api/v1/system/health/view?node_id=<node_id>' 
@@ -87,7 +87,7 @@ class TestSystemHealth():
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-")
+    @pytest.mark.tags('TEST-17870')
     def test_6827(self):
         """
         Test that GET request for API '/api/v1/system/health/view?' for node health view 

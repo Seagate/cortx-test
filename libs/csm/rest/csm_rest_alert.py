@@ -11,7 +11,7 @@ from libs.csm.rest.csm_rest_test_lib import RestTestLib
 from commons.utils import config_utils
 from commons.helpers.node_helper import Node
 from commons.alerts_simulator.generate_alert_lib import GenerateAlertLib, AlertType
-from commons.constants.ras.constants as ras_cons
+from commons.constants import Ras as ras_cons
 
 class SystemAlerts(RestTestLib):
     """SystemAlerts contains all the Rest API calls for system health related operations"""

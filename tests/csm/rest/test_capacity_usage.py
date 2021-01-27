@@ -21,7 +21,7 @@ class TestSystemCapacity():
                                     main_conf["server_password"])
 
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-")
+    @pytest.mark.tags('TEST-15200')
     def test_4202(self):
         """Test REST API for GET request with default arguments return 200 and json response
         :avocado: tags=capacity_usage

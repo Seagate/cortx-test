@@ -45,6 +45,9 @@ class TestAuditLogs():
         self.csm_conf = config_utils.read_yaml(
             "config/csm/test_rest_audit_logs.yaml")[1]
 
+
+    @pytest.mark.csmrest
+    @pytest.mark.tags('TEST-10733')
     def test_4918(self):
         """Test that s3 account and iam user don't have access to audit logs
         :avocado: tags=audit_logs
@@ -64,6 +67,9 @@ class TestAuditLogs():
                                                                    )
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
+
+    @pytest.mark.csmrest
+    @pytest.mark.tags('TEST-10735')
     def test_4926(self):
         """Verify that API to download audit logs returns 404 error code on invalid component name
         :avocado: tags=audit_logs
@@ -77,6 +83,9 @@ class TestAuditLogs():
                                                                        invalid_component=True)
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
+
+    @pytest.mark.csmrest
+    @pytest.mark.tags('TEST-10736')
     def test_4925(self):
         """Verify that API to show audit logs returns 404 error code on invalid component name
         :avocado: tags=audit_logs
@@ -89,7 +98,10 @@ class TestAuditLogs():
                                                                    validate_expected_response=False,
                                                                    invalid_component=True)
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
+    
 
+    @pytest.mark.csmrest
+    @pytest.mark.tags('TEST-10737')
     def test_4913(self):
         """Test that GET API returns audit logs in binary format for both csm and s3 components
         :avocado: tags=audit_logs
@@ -108,7 +120,7 @@ class TestAuditLogs():
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-4213")
+    @pytest.mark.tags('TEST-10738')
     def test_4914(self):
         """Test that API response of audit logs API for CSM component
         contain info reagrding specified parameters and in specified format.
@@ -123,7 +135,7 @@ class TestAuditLogs():
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-4213")
+    @pytest.mark.tags('TEST-10739')
     def test_4917(self):
         """Test that admin can download and see audit logs
         :avocado: tags=audit_logs
@@ -141,7 +153,7 @@ class TestAuditLogs():
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-4213")
+    @pytest.mark.tags('TEST-10741')
     def test_4919(self):
         """Test that audit log is returned for different time intervals
         :avocado: tags=audit_logs
@@ -154,7 +166,9 @@ class TestAuditLogs():
                                                                    validate_expected_response=True
                                                                    )
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
-
+    
+    @pytest.mark.csmrest
+    @pytest.mark.tags('TEST-10743')
     def test_4916(self):
         """Test that csm user(having manage or monitor rights) can download and see audit logs
         :avocado: tags=audit_logs
@@ -178,7 +192,7 @@ class TestAuditLogs():
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-4213")
+    @pytest.mark.tags('EOS-11177')
     def test_4920(self):
         """Test that Verify that content of both 'show' and 'dowload' api is exactly same
         :avocado: tags=audit_logs
@@ -223,7 +237,7 @@ class TestAuditLogs():
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-4213")
+    @pytest.mark.tags('TEST-15865')
     def test_4922(self):
         """
         Test that GET api returns audit logs for date range specified and total count should not exceed more than 10000
@@ -276,7 +290,7 @@ class TestAuditLogs():
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-4213")
+    @pytest.mark.tags('TEST-16553')
     def test_4915(self):
         """
         Test that API response of audit logs for s3 component 

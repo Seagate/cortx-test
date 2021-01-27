@@ -35,7 +35,7 @@ class TestIamUser():
         self.log.info("Teardown ended")
 
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-1133")
+    @pytest.mark.tags('TEST-10732')
     def test_1133(self):
         """Test that IAM users are not permitted to login
          :avocado: tags=iam_user
@@ -52,7 +52,7 @@ class TestIamUser():
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-1041")
+    @pytest.mark.tags('TEST-14749')
     def test_1041(self):
         """Test that S3 account should have access to create IAM user from back end
         :avocado: tags=iam_user
@@ -77,7 +77,7 @@ class TestIamUser():
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-1022")
+    @pytest.mark.tags('TEST-17189')
     def test_1022(self):
         """
         Test that IAM user is not able to execute and access the CSM REST APIs.	
