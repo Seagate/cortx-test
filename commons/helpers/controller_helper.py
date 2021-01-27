@@ -69,7 +69,6 @@ class ControllerLib:
         Function to get the version and serial number of the management controller.
 
         :return: version and serial number of the management controller
-        :rtype: Tuple of Strings
         """
         if self.copy:
             try:
@@ -102,6 +101,8 @@ class ControllerLib:
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return status, mc_ver, mc_sr
+
+        return "False", "File not found :",  "telnet_operations.py"
 
     @staticmethod
     def get_mc_debug_pswd(mc_ver: str, mc_sr: str) -> str:
@@ -185,6 +186,8 @@ class ControllerLib:
 
             return status, password_str
 
+        return "False", "File not found : telnet_operations.py"
+
     def show_disks(self, telnet_file: str) -> Tuple[str, str]:
         """
         Show disk.
@@ -226,7 +229,9 @@ class ControllerLib:
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
             return status, path
 
-    def get_total_drive_count(self, telnet_file: str) -> Tuple[str, int]:
+        return "False", "File not found : telnet_operations.py"
+
+    def get_total_drive_count(self, telnet_file: str) -> Tuple[str, int or str]:
         """
         Get total number of drives mapped.
 
@@ -263,6 +268,8 @@ class ControllerLib:
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return resp[0], len(drive_dict)
+
+        return "False", "File not found : telnet_operations.py"
 
     def check_phy_health(self, phy_num: str, telnet_file: str) -> Tuple[bool,
                                                                         str]:
@@ -309,6 +316,8 @@ class ControllerLib:
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return resp[0], status
+
+        return False, "File not found : telnet_operations.py"
 
     def set_drive_status_telnet(self, enclosure_id: str, controller_name: str,
                                 drive_number: str, status: str) -> Tuple[str,
@@ -358,8 +367,10 @@ class ControllerLib:
 
             return status, drive_status
 
+        return "False", "File not found : telnet_operations.py"
+
     def get_show_volumes(self, output_file_path: str = cons.CTRL_LOG_PATH) ->\
-            Tuple[bool, dict]:
+            Tuple[bool, dict or str]:
         """
         Execute "show volumes" command on primary enclosure.
 
@@ -457,9 +468,11 @@ class ControllerLib:
 
             return True, disk_volumes_dict
 
+        return False, "File not found : telnet_operations.py"
+
     def get_show_expander_status(self,
                                  output_file_path: str = cons.CTRL_LOG_PATH) \
-            -> Tuple[bool, dict]:
+            -> Tuple[bool, dict or str]:
         """
         Get "show expander-status" output from enclosure.
 
@@ -562,8 +575,10 @@ class ControllerLib:
 
             return True, expander_status_dict
 
+        return False, "File not found : telnet_operations.py"
+
     def get_show_disk_group(self, output_file_path: str = cons.CTRL_LOG_PATH)\
-            -> Tuple[bool, dict]:
+            -> Tuple[bool, dict or str]:
         """
         Execute "show disk-groups" command on primary controller.
 
@@ -644,8 +659,10 @@ class ControllerLib:
 
             return True, disk_group_dict
 
+        return False, "File not found : telnet_operations.py"
+
     def get_show_disks(self, output_file_path: str = cons.CTRL_LOG_PATH) -> \
-            Tuple[bool, dict]:
+            Tuple[bool, dict or str]:
         """
         Execute "show disks" command on primary controller.
 
@@ -726,6 +743,8 @@ class ControllerLib:
 
             return True, disks_dict
 
+        return False, "File not found : telnet_operations.py"
+
     def clear_drive_metadata(self, drive_num: str) -> str:
         """
         Execute "clear metadata" command on primary controller.
@@ -768,3 +787,5 @@ class ControllerLib:
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return status
+
+        return "False"
