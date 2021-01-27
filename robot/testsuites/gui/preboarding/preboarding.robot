@@ -5,7 +5,8 @@ Resource  ../../../resources/common/common.robot
 Variables  ../../../resources/common/element_locators.py
 Variables  ../../../resources/common/common_variables.py
 
-
+Test Setup  Preboarding  ${url}  ${browser}  ${headless}  ${username}  ${password}
+Test Teardown  Close Browser
 Suite Teardown  Close All Browsers
 Force Tags  CSM_GUI  Preboarding
 
@@ -21,13 +22,9 @@ ${Sub_tab}  None
 test_4906
     [Documentation]  Test that pop-up with GDPR compliance content is getting displayed on click of Get Started button on first page of onboarding.
     [Tags]  Priority_High
-    [Setup]   Preboarding  ${url}  ${browser}  ${headless}
     Validate ELUA Success  
-    [Teardown]  Close Browser
 
 test_3594
     [Documentation]  Test that on preboarding "EULA" is documentation related information is getting displayed.
     [Tags]  Priority_High
-    [Setup]   Preboarding  ${url}  ${browser}  ${headless}
     Validate ELUA Success
-    [Teardown]  Close Browser
