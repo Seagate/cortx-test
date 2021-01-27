@@ -29,7 +29,8 @@ class ControllerLib:
                  enclosure_ip=COMMON_CONF["primary_enclosure_ip"],
                  enclosure_user=COMMON_CONF["enclosure_user"],
                  enclosure_pwd=COMMON_CONF["enclosure_pwd"]):
-        """Method to initialize members of ControllerLib class.
+        """
+        Method to initialize members of ControllerLib class.
 
         :param host: IP of the remote host
         :type: str
@@ -64,7 +65,8 @@ class ControllerLib:
             self.copy = False
 
     def get_mc_ver_sr(self) -> Tuple[str, str, str]:
-        """Function to get the version and serial number of the management controller.
+        """
+        Function to get the version and serial number of the management controller.
 
         :return: version and serial number of the management controller
         :rtype: Tuple of Strings
@@ -103,7 +105,8 @@ class ControllerLib:
 
     @staticmethod
     def get_mc_debug_pswd(mc_ver: str, mc_sr: str) -> str:
-        """Function to get the password for management controller debug console.
+        """
+        Function to get the password for management controller debug console.
 
         :param mc_ver: Management controller version
         :type: str
@@ -130,7 +133,8 @@ class ControllerLib:
     def simulate_fault_ctrl(self, mc_deb_password: str, enclid: str, pos: str,
                             fru: str, type_fault: str, ctrl_name: str) -> \
             Tuple[str, str]:
-        """Function to simulate faults on the controller.
+        """
+        Function to simulate faults on the controller.
 
         :param mc_deb_password: Password of Management controller debug console
         :type: str
@@ -182,7 +186,8 @@ class ControllerLib:
             return status, password_str
 
     def show_disks(self, telnet_file: str) -> Tuple[str, str]:
-        """Show disk.
+        """
+        Show disk.
 
         :param telnet_file: File path to save response of telnet command
         :type: str
@@ -222,7 +227,8 @@ class ControllerLib:
             return status, path
 
     def get_total_drive_count(self, telnet_file: str) -> Tuple[str, int]:
-        """Get total number of drives mapped.
+        """
+        Get total number of drives mapped.
 
         :param telnet_file: File path to save response of telnet command
         :type: str
@@ -260,7 +266,8 @@ class ControllerLib:
 
     def check_phy_health(self, phy_num: str, telnet_file: str) -> Tuple[bool,
                                                                         str]:
-        """Check health of the phy.
+        """
+        Check health of the phy.
 
         :param phy_num: number of the phy to be disabled
         :type: int
@@ -306,7 +313,8 @@ class ControllerLib:
     def set_drive_status_telnet(self, enclosure_id: str, controller_name: str,
                                 drive_number: str, status: str) -> Tuple[str,
                                                                          str]:
-        """Enable or Disable drive status from disk group.
+        """
+        Enable or Disable drive status from disk group.
 
         :param enclosure_id: Enclosure ID of the machine
         :type: str
@@ -352,7 +360,8 @@ class ControllerLib:
 
     def get_show_volumes(self, output_file_path: str = cons.CTRL_LOG_PATH) ->\
             Tuple[bool, dict]:
-        """Execute "show volumes" command on primary enclosure.
+        """
+        Execute "show volumes" command on primary enclosure.
 
         Parse output file.
         Return response dict: {key: disk-group, {Values: key: volume,
@@ -451,7 +460,8 @@ class ControllerLib:
     def get_show_expander_status(self,
                                  output_file_path: str = cons.CTRL_LOG_PATH) \
             -> Tuple[bool, dict]:
-        """Get "show expander-status" output from enclosure.
+        """
+        Get "show expander-status" output from enclosure.
 
         Parse the output files.
         Return response dict: {key: controller, {Values: key: wide-port-index,
@@ -554,7 +564,8 @@ class ControllerLib:
 
     def get_show_disk_group(self, output_file_path: str = cons.CTRL_LOG_PATH)\
             -> Tuple[bool, dict]:
-        """Execute "show disk-groups" command on primary controller.
+        """
+        Execute "show disk-groups" command on primary controller.
 
         Parse output xml.
         Get response dict: key-"disk group" and values dict of "name, size,
@@ -635,7 +646,8 @@ class ControllerLib:
 
     def get_show_disks(self, output_file_path: str = cons.CTRL_LOG_PATH) -> \
             Tuple[bool, dict]:
-        """Execute "show disks" command on primary controller.
+        """
+        Execute "show disks" command on primary controller.
 
         Parse output xml.
         Get response dict: key-"disks" and values dict of "durable-id",
@@ -715,7 +727,8 @@ class ControllerLib:
             return True, disks_dict
 
     def clear_drive_metadata(self, drive_num: str) -> str:
-        """Execute "clear metadata" command on primary controller.
+        """
+        Execute "clear metadata" command on primary controller.
 
         :param drive_num: Drive of which metadata is to be cleared
         :type: str
