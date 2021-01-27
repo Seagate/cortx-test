@@ -10,17 +10,17 @@ class TestBucketPolicy():
     """S3 Bucket Policy Testsuite
     """
     @classmethod
-    def setup_class(self):
+    def setup_class(cls):
         """
         This function will be invoked prior to each test case.
         It will perform all prerequisite test steps if any.a
         """
-        self.log = logging.getLogger(__name__)
-        self.log.info("Initializing test setups")
-        self.config = CSMConfigsCheck()
-        setup_ready = self.config.check_predefined_s3account_present()
+        cls.log = logging.getLogger(__name__)
+        cls.log.info("Initializing test setups")
+        cls.config = CSMConfigsCheck()
+        setup_ready = cls.config.check_predefined_s3account_present()
         if not setup_ready:
-            setup_ready = self.config.setup_csm_s3
+            setup_ready = cls.config.setup_csm_s3
         assert setup_ready
 
     def setup_method(self, method):
@@ -206,4 +206,3 @@ class TestBucketPolicy():
                 operation='custom', custom_policy_params=policy_params)
         assert self.bucket_policy.get_and_verify_bucket_policy()
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
-

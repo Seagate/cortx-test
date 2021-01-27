@@ -8,7 +8,9 @@ from commons.utils import config_utils
 from commons.constants import Rest as const
 from commons.utils import assert_utils
 
+
 class TestS3Bucket():
+    """ S3 bucket test cases"""
     @classmethod
     def setup_class(self):
         """ This is method is for test suite set-up """
@@ -104,9 +106,9 @@ class TestS3Bucket():
         self.log.info("Verifying the status code {} and response returned {}".format(
             response.status_code, response.json()))
         assert_utils.assert_equals(response.status_code,
-                         self.s3_buckets.bad_request_response)
+                                   self.s3_buckets.bad_request_response)
         assert_utils.assert_equals(response.json(),
-                         resp_msg)
+                                   resp_msg)
 
         self.log.info(
             "Step 1: Verified creating bucket with bucket name containing special characters")
@@ -266,4 +268,3 @@ class TestS3Bucket():
         response = self.s3_buckets.delete_s3_bucket(
             bucket_name="", login_as="s3account_user")
         assert self.s3_buckets.method_not_found == response.status_code
-

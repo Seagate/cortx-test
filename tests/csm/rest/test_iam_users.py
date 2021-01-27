@@ -5,27 +5,29 @@ from libs.csm.csm_setup import CSMConfigsCheck
 from commons.utils import config_utils
 from libs.csm.rest.csm_rest_iamuser import RestIamUser
 
+
 class TestIamUser():
     """REST API Test cases for IAM users"""
+
     @classmethod
-    def setup_class(self):
+    def setup_class(cls):
         """
         This function will be invoked prior to each test case.
         It will perform all prerequisite test steps if any.
         """
-        self.log = logging.getLogger(__name__)
-        self.log.info("Initializing test setups")
-        self.csm_conf = config_utils.read_yaml(
+        cls.log = logging.getLogger(__name__)
+        cls.log.info("Initializing test setups")
+        cls.csm_conf = config_utils.read_yaml(
             "config/csm/test_rest_iam_user.yaml")[1]
-        self.log.info("Ended test module setups")
-        self.config = CSMConfigsCheck()
-        setup_ready = self.config.check_predefined_s3account_present()
+        cls.log.info("Ended test module setups")
+        cls.config = CSMConfigsCheck()
+        setup_ready = cls.config.check_predefined_s3account_present()
         if not setup_ready:
-            setup_ready = self.config.setup_csm_s3
-        assert(setup_ready)
-        self.created_iam_users = set()
-        self.rest_iam_user = RestIamUser()
-        self.log.info("Initiating Rest Client ...")
+            setup_ready = cls.config.setup_csm_s3
+        assert (setup_ready)
+        cls.created_iam_users = set()
+        cls.rest_iam_user = RestIamUser()
+        cls.log.info("Initiating Rest Client ...")
 
     def teardown_method(self, method):
         self.log.info("Teardown started")
@@ -88,7 +90,7 @@ class TestIamUser():
 
         self.log.debug(
             "Verifying that IAM user is not able to execute and access the CSM REST APIs")
-        assert(
+        assert (
             self.rest_iam_user.verify_unauthorized_access_to_csm_user_api())
         self.log.debug(
             "Verified that IAM user is not able to execute and access the CSM REST APIs")

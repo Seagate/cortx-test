@@ -49,7 +49,7 @@ class TestSystemHealth():
             assert result
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
-    @pytest.mark.skip(reason="Known issue")
+    @pytest.mark.skip(reason="Known issue EOS-15448 ")
     @pytest.mark.csmrest
     @pytest.mark.tags('TEST-17868')
     def test_6820(self):
@@ -67,7 +67,7 @@ class TestSystemHealth():
         assert result
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
-    @pytest.mark.skip(reason="Known issue")
+    @pytest.mark.skip(reason="Known issue EOS-15448 ")
     @pytest.mark.csmrest
     @pytest.mark.tags('TEST-17869')
     def test_6826(self):

@@ -323,7 +323,8 @@ class TestS3user():
         assert response.status_code == const.BAD_REQUEST
 
         self.log.info(
-            "Verified that response returned for invalid password in Patch request for s3 account {} is {}".format(account_name, response))
+            "Verified that response returned for invalid password in Patch request for s3 account {} is {}".format(
+                account_name, response))
 
         self.log.info(
             "##### Test completed -  {} #####".format(test_case_name))
@@ -353,16 +354,17 @@ class TestS3user():
 
         s3_acc = response.json()["account_name"]
 
-        self.log.info("Logging in with with existing s3 account {} and trying to change the password for new {} account".format(
-            self.s3user.config["s3account_user"]["username"], s3_acc))
+        self.log.info(
+            "Logging in with with existing s3 account {} and trying to change the "
+            "password for new {} account".format(self.s3user.config["s3account_user"]["username"], s3_acc))
         response = self.s3user.edit_s3_account_user(
             username=s3_acc, payload="valid", login_as="s3account_user")
 
         self.log.debug("Verifying the response returned {}".format(response))
         assert response.status_code, self.s3user.forbidden
         assert response.json(), response_msg
-        self.log.debug("Verified that expected status code {} and expected response message {} was returned".format(
-            response.status_code, response.json()))
+        self.log.debug("Verified that expected status code {} and expected response "
+                       "message {} was returned".format(response.status_code, response.json()))
 
         self.log.info(
             "Verified that is returned when s3 user enters some other s3 user's account name")

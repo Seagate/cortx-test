@@ -137,8 +137,7 @@ class Health(Host):
         log.debug(f"Executing cmd: {cmd}")
         resp = self.execute_cmd(cmd, read_lines=False)
         log.debug(resp)
-        if not resp:
-            return None
+
         return resp[1]
 
     def pcs_status_grep(self, service: str) -> str:
@@ -151,8 +150,7 @@ class Health(Host):
         log.debug(f"Executing cmd: {cmd}")
         resp = self.execute_cmd(cmd, read_lines=False)
         log.debug(resp)
-        if not resp:
-            return None
+
         return resp
 
     def pcs_resource_cleanup(self, options: str = None) -> str:
@@ -170,22 +168,23 @@ class Health(Host):
         log.debug(f"Executing cmd: {cmd}")
         resp = self.execute_cmd(cmd, read_lines=False)
         log.debug(resp)
-        if not resp:
-            return None
+
         return resp
 
-    def is_mero_online(self) -> str:
+    def is_motr_online(self) -> bool:
         """
-        Check whether all services are online in mero cluster
-        :return: hctl reponse
+        Check whether all services are online in motr cluster.
+        :return: hctl response.
         """
         output = self.execute_cmd(commands.MOTR_STATUS_CMD, read_lines=True)
         log.debug(output)
         fail_list = ['failed', 'not running', 'offline']
+        log.debug(fail_list)
         for line in output:
             if any(fail_str in line for fail_str in fail_list):
-                return False, output
-        return output
+                return False
+
+        return True
 
     def is_machine_already_configured(self) -> bool:
         """
@@ -193,9 +192,9 @@ class Health(Host):
         ex - mero_status_cmd = "hctl status"
         :return: boolean
         """
-        mero_status_cmd = commands.MOTR_STATUS_CMD
-        log.debug(f"command : {mero_status_cmd}")
-        cmd_output = self.execute_cmd(mero_status_cmd, read_lines=True)
+        motr_status_cmd = commands.MOTR_STATUS_CMD
+        log.debug(f"command : {motr_status_cmd}")
+        cmd_output = self.execute_cmd(motr_status_cmd, read_lines=True)
         if not cmd_output[0] or "command not found" in str(cmd_output[1]):
             log.debug("Machine is not configured..!")
             return False

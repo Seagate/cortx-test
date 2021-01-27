@@ -192,7 +192,7 @@ class TestAuditLogs():
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
-    @pytest.mark.tags('EOS-11177')
+    @pytest.mark.tags('TEST-12841')
     def test_4920(self):
         """Test that Verify that content of both 'show' and 'dowload' api is exactly same
         :avocado: tags=audit_logs
