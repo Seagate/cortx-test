@@ -38,7 +38,7 @@ def test_health_helper():
     x.get_pcs_service_systemd('csm')
     x.pcs_status_grep('csm')
     x.pcs_resource_cleanup()
-    x.is_mero_online()
+    x.is_motr_online()
     x.is_machine_already_configured()
     x.all_cluster_services_online()
 

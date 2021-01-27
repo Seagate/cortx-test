@@ -1,3 +1,5 @@
+# !/usr/bin/python
+# -*- coding: utf-8 -*-
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -16,14 +18,116 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-# -*- coding: utf-8 -*-
-# !/usr/bin/python
+
+"""All common constants from cortx-test."""
+
+from commons import const
+from commons.utils import config_utils
+
+CMN_CFG = config_utils.read_yaml("config/common_config.yaml")[1]
 
 #: NWORKERS specifies number of worker (python) threads  in a worker pool.
 NWORKERS = 32
 
 #: NGREENLETS specifies number of greenlets in a thread. These greenlets will run in parallel.
 NGREENLETS = 32
+
+""" S3 constants """
+const.S3_CONFIG = "/opt/seagate/cortx/s3/conf/s3config.yaml"
+const.CA_CERT_PATH = "/opt/seagate/cortx/provisioner/srv/components/s3clients/files/ca.crt"
+const.REMOTE_DEFAULT_DIR = "/var/motr"
+const.CFG_FILES = ["/etc/haproxy/haproxy.cfg",
+                   "/opt/seagate/cortx/s3/conf/s3config.yaml",
+                   "/opt/seagate/cortx/auth/resources/authserver.properties",
+                   "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml",
+                   "/opt/seagate/cortx/s3/s3startsystem.sh"]
+const.AUTHSERVER_FILE = "/opt/seagate/cortx/auth/resources/authserver.properties"
+const.SCRIPT_PATH = "cd /opt/seagate/cortx/auth/scripts"
+const.LDAP_CREDS = {
+    "ldap_username": CMN_CFG["ldap_username"],
+    "ldap_passwd": CMN_CFG["ldap_passwd"]
+}
+
+
+class Rest:
+    # REST LIB
+    EXCEPTION_ERROR = "Error in"
+    SSL_CERTIFIED = "https://"
+    NON_SSL = "http://"
+    JOSN_FILE = "json_report.json"
+    DELETE_SUCCESS_MSG = "Account Deleted Successfully."
+    S3_ACCOUNTS = "s3_accounts"
+    ACC_NAME = "account_name"
+    ACC_EMAIL = "account_email"
+    SECRET_KEY = "secret_key"
+    IAMUSERS = "iam_users"
+    ACCESS_KEY = "access_key"
+    USER_NAME = "user_name"
+    USER_ID = "user_id"
+    IAM_USER = "test_iam_user"
+    IAM_PASSWORD = ""
+    ARN = "arn"
+    BAD_REQUEST = 400
+    UNAUTHORIZED = 401
+    CONFLICT = 409
+    SUCCESS_STATUS = 200
+    FORBIDDEN = 403
+    METHOD_NOT_FOUND = 404
+    SUCCESS_STATUS_FOR_POST = 201
+    USER_DATA = "{\"username\": \"testusername\", \"password\": \"Testuser@123\"," \
+                " \"roles\": [\"user_role\"],\"email\":\"testmonitoruser@seagate.com\"," \
+                "\"alert_notification\":true}"
+    MISSING_USER_DATA = "{\"username\": \"testusername\", \"roles\": [\"user_role\"]}"
+    CONTENT_TYPE = {'Content-Type': 'application/json'}
+    BUCKET_NAME = "bucket_name"
+    BUCKET = "buckets"
+    NAME = "name"
+    LOGIN_PAYLOAD = "{\"username\":\"$username\",\"password\":\"$password\"}"
+    BUCKET_PAYLOAD = "{\"bucket_name\":\"buk$value\"}"
+    BUCKET_POLICY_PAYLOAD = "{\"Statement\": [{\"Action\": [\"s3:$s3operation\"]," \
+                            "\"Effect\": \"$effect\",\"Resource\": \"arn:aws:s3:::$value/*\"," \
+                            "\"Principal\": \"$principal\"}]}"
+    BUCKET_POLICY_PAYLOAD_IAM = "{\"Statement\": [{\"Action\": [\"s3:$s3operation\"]," \
+                                "\"Effect\": \"$effect\",\"Resource\": \"arn:aws:s3:::$value/*\"," \
+                                "\"Principal\": {\"AWS\":\"$principal\"}}]}"
+    IAM_USER_DATA_PAYLOAD = "{\"user_name\": \"$iamuser\",\"password\": \"$iampassword\"," \
+                            "\"require_reset\": $requireresetval}"
+    IAM_USER_LOGIN_PAYLOAD = "{\"username\":\"$username\",\"password\":\"$password\"}"
+    MULTI_BUCKET_POLICY_PAYLOAD = "{\"Statement\": [{\"Action\": [\"s3:$s3operation1\"," \
+                                  "\"s3:$s3operation2\"],\"Effect\": \"$effect\"," \
+                                  "\"Resource\": \"arn:aws:s3:::$value/*\"," \
+                                  "\"Principal\": {\"AWS\":\"$principal\"}}]}"
+    SORT_BY_ERROR = "{\'sort_by\': [\'Must be one of: user_id, username," \
+                    " user_type, created_time, updated_time.\']}"
+    CSM_USER_LIST_OFFSET = 1
+    CSM_USER_LIST_LIMIT = 5
+    CSM_USER_LIST_SORT_BY = "username"
+    CSM_USER_LIST_SORT_DIR = "asc"
+    CSM_NUM_OF_USERS_TO_CREATE = 5
+    RANDOM_NUM_START = 3
+    RANDOM_NUM_END = 9
+    SORT_DIR_ERROR = "{\'sort_dir\': [\'Must be one of: desc, asc.\']}"
+    CSM_USER_LIST_OFFSET = 1
+    CSM_USER_LIST_LIMIT = 5
+    CSM_USER_LIST_SORT_BY = "username"
+    CSM_USER_LIST_SORT_DIR = "asc"
+    CSM_NUM_OF_USERS_TO_CREATE = 5
+    SORT_BY_EMPTY_PARAM_ERROR_RESPONSE = {
+        'error_code': '4099', 'message_id': "{'sort_by': ['Must be one of: user_id,"
+                                            " username, user_type, created_time, updated_time.']}",
+        'message': 'Invalid Parameter for alerts', 'error_format_args': None}
+    NODE_ID_OPTIONS = {"storage": "storage_encl", "node": "node:{}{}"}
+    HEALTH_SUMMARY_INSTANCE = "health_summary"
+    HEALTH_SUMMARY_SCHEMA = {
+        "type": "object",
+        "properties": {
+            "total": {"type": "number"},
+            "fault": {"type": "number"},
+            "good": {"type": "number"}
+        },
+        "required": ["total", "good"]
+    }
+
 
 # RAS constant
 BYTES_TO_READ = 8000
