@@ -102,7 +102,7 @@ class ControllerLib:
 
             return status, mc_ver, mc_sr
 
-        return "False", "File not found :",  "telnet_operations.py"
+        return "False", "File not found :", "telnet_operations.py"
 
     @staticmethod
     def get_mc_debug_pswd(mc_ver: str, mc_sr: str) -> str:
