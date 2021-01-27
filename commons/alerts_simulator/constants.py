@@ -1,4 +1,4 @@
-"""This file consists constants to be used for alert simulator."""
+"""File consists constants to be used for alert simulator."""
 # dicts of default values for input_parameters
 PSU_FAULT = {"enclid": 0, "pos": "left", "fru": "psu",
              "type_fault": "e", "ctrl_name": "a"}

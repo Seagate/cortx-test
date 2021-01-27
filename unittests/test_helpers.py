@@ -1,4 +1,4 @@
-"""This file consists of unit tests for the methods in helper files."""
+"""File consists of unit tests for the methods in helper files."""
 import pytest
 from commons.helpers.node_helper import Node
 from commons.helpers.health_helper import Health

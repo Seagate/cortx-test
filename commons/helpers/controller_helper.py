@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-"""This test helper lib implements the base functions for controller operations."""
+"""Controller helper lib implements the base functions for controller
+operations."""
 import os
 import logging
 from typing import Tuple
@@ -22,6 +23,7 @@ BYTES_TO_READ = cons.BYTES_TO_READ
 
 
 class ControllerLib:
+
     """Controller helper functions."""
 
     def __init__(self, host=COMMON_CONF["host"], h_user=COMMON_CONF["username"],
@@ -30,7 +32,6 @@ class ControllerLib:
                  enclosure_user=COMMON_CONF["enclosure_user"],
                  enclosure_pwd=COMMON_CONF["enclosure_pwd"]):
         """This method initializes members of ControllerLib class
-
         :param host: IP of the remote host
         :type: str
         :param h_user: User of the remote host
@@ -540,14 +541,14 @@ class ControllerLib:
                             else:
                                 d[expander_status_dict[k].get(
                                     'controller')].update({
-                                    int(expander_status_dict[k]
-                                        ["wide-port-index"]):
+                                        int(expander_status_dict[k]
+                                            ["wide-port-index"]):
                                         dict([(ik, expander_status_dict[k][iv])
                                               for ik, iv in
                                               expander_param.items()
                                               if
                                               expander_status_dict[k].get(iv)])
-                                })
+                                        })
                     expander_status_dict = d
                 # Remove local log file.
                 if os.path.exists(output_file_path):

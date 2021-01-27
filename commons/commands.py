@@ -1,4 +1,4 @@
-"""This file consists of the commands used in all the components."""
+"""File consists of the commands used in all the components."""
 # RAS Commands
 START_RABBITMQ_READER_CMD = "python3 /opt/seagate/sspl/low-level/tests/" \
                             "manual/rabbitmq_reader.py {} {} {}"
