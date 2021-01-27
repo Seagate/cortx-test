@@ -63,7 +63,6 @@ TEST-1037
     sleep  2s
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
     sleep  3s
-    Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
     Re-login  ${S3_account_name}  ${password}  MANAGE_MENU_ID
     Verify Absence of Admin User Section
     sleep  2s
