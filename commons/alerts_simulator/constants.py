@@ -1,3 +1,4 @@
+"""This file consists constants to be used for alert simulator."""
 # dicts of default values for input_parameters
 PSU_FAULT = {"enclid": 0, "pos": "left", "fru": "psu",
              "type_fault": "e", "ctrl_name": "a"}
@@ -40,5 +41,5 @@ RAID_FAIL_DISK_ALERT = {"operation": "fail_disk", "md_device": None,
 RAID_REMOVE_DISK_ALERT = {"operation": "remove_disk", "md_device": None,
                           "disk": None}
 RAID_ADD_DISK_ALERT = {"operation": "add_disk", "md_device": None, "disk": None}
-IEM_TEST_ERROR_ALERT = {"cmd":'logger -i -p local3.err '
-                              'IEC: EO0090090900:Test IEM'}
+IEM_TEST_ERROR_ALERT = {"cmd": 'logger -i -p local3.err '
+                               'IEC: EO0090090900:Test IEM'}

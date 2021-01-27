@@ -1,15 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-"""
-This test helper lib implements the base functions for controller
-operations
-"""
-
+"""This test helper lib implements the base functions for controller operations."""
 import os
 import logging
 from typing import Tuple
 import requests
-from commons.helpers.host import Host
 from commons.helpers.node_helper import Node
 from commons import constants as cons
 from commons import commands as common_cmd
@@ -27,9 +22,7 @@ BYTES_TO_READ = cons.BYTES_TO_READ
 
 
 class ControllerLib:
-    """
-    Controller helper functions
-    """
+    """Controller helper functions."""
 
     def __init__(self, host=COMMON_CONF["host"], h_user=COMMON_CONF["username"],
                  h_pwd=COMMON_CONF["password"],
@@ -51,6 +44,7 @@ class ControllerLib:
         :param enclosure_pwd: password of the enclosure
         :type enclosure_pwd: str
         """
+
         self.host = host
         self.h_user = h_user
         self.h_pwd = h_pwd
@@ -77,6 +71,7 @@ class ControllerLib:
         :return: version and serial number of the management controller
         :rtype: Tuple of Strings
         """
+
         if self.copy:
             try:
                 cmd = common_cmd.SET_DEBUG_CMD
@@ -120,6 +115,7 @@ class ControllerLib:
         :return: Password string
         :rtype: String
         """
+
         header_data = {'mc_version': mc_ver, 'serial_number': mc_sr}
         headers = cons.HEADERS_STREAM_UTILITIES
         url = cons.URL_STREAM_UTILITIES
@@ -155,6 +151,7 @@ class ControllerLib:
         :return: Boolean, Response
         :rtype: Tuple of (bool, String)
         """
+
         if self.copy:
             try:
                 ras_sspl_cfg = RAS_VAL["ras_sspl_alert"]
@@ -197,6 +194,7 @@ class ControllerLib:
         :return: Boolean, file path
         :rtype: Tuple of (bool, String)
         """
+
         if self.copy:
             try:
                 LOGGER.info(f"Show disks for {self.enclosure_ip} enclosure.")
@@ -237,6 +235,7 @@ class ControllerLib:
         :return: (Boolean, Number of drives)
         :rtype: Boolean, Integer
         """
+
         if self.copy:
             common_cfg = RAS_VAL["ras_sspl_alert"]
             try:
@@ -277,6 +276,7 @@ class ControllerLib:
         :return: (Boolean, status of the phy)
         :rtype: Boolean, String
         """
+
         if self.copy:
             common_cfg = RAS_VAL["ras_sspl_alert"]
             try:
@@ -326,6 +326,7 @@ class ControllerLib:
         :type: str
         :return: None
         """
+
         if self.copy:
             try:
                 cmd = common_cmd.SET_DRIVE_STATUS_CMD.format(
@@ -374,6 +375,7 @@ class ControllerLib:
         :return: (Boolean, disk volume dict).
         :rtype: tuple
         """
+
         if self.copy:
             try:
                 cmd = common_cmd.CMD_SHOW_VOLUMES
@@ -456,8 +458,9 @@ class ControllerLib:
 
             return True, disk_volumes_dict
 
-    def get_show_expander_status(self, output_file_path: str
-                                 = cons.CTRL_LOG_PATH) -> Tuple[bool, dict]:
+    def get_show_expander_status(self,
+                                 output_file_path: str = cons.CTRL_LOG_PATH) \
+            -> Tuple[bool, dict]:
         """
         Get "show expander-status" output from enclosure.
         Parse the output files.
@@ -470,6 +473,7 @@ class ControllerLib:
         :return: (Boolean, controller dict).
         :rtype: tuple
         """
+
         if self.copy:
             try:
                 cmd = common_cmd.CMD_SHOW_XP_STATUS
@@ -536,14 +540,14 @@ class ControllerLib:
                             else:
                                 d[expander_status_dict[k].get(
                                     'controller')].update({
-                                    int(expander_status_dict[k][
-                                            "wide-port-index"]):
+                                    int(expander_status_dict[k]
+                                        ["wide-port-index"]):
                                         dict([(ik, expander_status_dict[k][iv])
                                               for ik, iv in
                                               expander_param.items()
                                               if
-                                              expander_status_dict[k].get(iv)])}
-                                )
+                                              expander_status_dict[k].get(iv)])
+                                })
                     expander_status_dict = d
                 # Remove local log file.
                 if os.path.exists(output_file_path):
@@ -572,6 +576,7 @@ class ControllerLib:
         :return: (Boolean, disk group dict).
         :rtype: tuple
         """
+
         if self.copy:
             try:
                 cmd = common_cmd.CMD_SHOW_DISK_GROUP
@@ -656,6 +661,7 @@ class ControllerLib:
         :return: (Boolean, disks dict).
         :rtype: tuple
         """
+
         if self.copy:
             try:
                 cmd = common_cmd.SHOW_DISKS_CMD
@@ -729,6 +735,7 @@ class ControllerLib:
         :return: (Boolean, disks dict).
         :rtype: tuple
         """
+
         if self.copy:
             try:
                 cmd = common_cmd.CMD_CLEAR_METADATA.format(drive_num)
