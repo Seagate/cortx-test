@@ -18,12 +18,13 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-""""This module has implements decorator to catch CT exceptions."""
+"""This module has implements decorator to catch CT exceptions."""
 
 from commons.exceptions import CTException
 
 
 class CTFailOn:
+    
     """
     This class has implemented to use as a decorator.
 

@@ -153,6 +153,7 @@ INVALID_PARAMETER = CTError(3, "Invalid Parameter")
 
 # CT Errors [1000-1999]
 CT_CONFIG_ERROR = CTError(1000, "CTP Config Error")
+CT_SINGLETON_NOT_INITIALIZED = CTError(1001, "CTP Config Error")
 
 # HTTP and HTTPS Errors
 HTTP_ERROR = CTError(2000, "HTTP Error")
@@ -166,11 +167,12 @@ CLI_CONTROLLER_NOT_READY = CTError(24004, "CLI Controller Not Ready")
 CLI_NETWORK_VALIDATION_ERROR = CTError(24005, "CLI Network Validation Error")
 CLI_INVALID_NETWORK_PARAMETER = CTError(24006, "CLI Invalid Network Parameter")
 CLI_SYSTEM_NOT_READY = CTError(24007, "CLI System Not Ready")
-CLI_SYSTEM_CHECK_MISSING_PARAMETER = CTError(
-    24008, "CLI System Check Missing Parameter")
+CLI_SYSTEM_CHECK_MISSING_PARAMETER = CTError(24008, "CLI System Check Missing Parameter")
 CLI_STATUS_FAILED = CTError(24009, "CLI Response Status Failed")
 CLI_LOGIN_FAILED = CTError(24010, "CLI Authentication Unsuccessful")
 CLI_MC_NOT_READY = CTError(24011, "CLI MC Not Ready")
+CSM_REST_AUTHENTICATION_ERROR: Any = CTError(8107, "CSM-REST Authentication Error")
+CSM_REST_VERIFICATION_FAILED: Any = CTError(8108, "Unexpected output fetched for CSM-REST")
 CLI_CONTROLLER_CHECK_MISSING_PARAMETER = CTError(
     24012, "CLI Controller Check Missing Parameter")
 
