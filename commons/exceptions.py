@@ -33,7 +33,7 @@ class CTException(Exception):
     Exception class for CT failures.
     """
 
-    def __init__(self, ct_error, msg, **kwargs) -> None:
+    def __init__(self, ct_error, msg=None, **kwargs) -> None:
         """
         Create an CTException.
         :param ct_error: CTError object.

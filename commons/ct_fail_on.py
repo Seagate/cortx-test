@@ -39,6 +39,8 @@ class CTFailOn:
             exception_type=CTException,
             routine_params=None):
         """
+        Initializer CTFailOn to exception, routine func, params and description.
+
         exception_type : exception to handled.
         routine_func : function which need to be called as an exception handler(routine)
         routine_param : Arguments for exception handler function(routine)
@@ -53,21 +55,22 @@ class CTFailOn:
         """CT exception caught and calling the failure routine."""
         def __wrap(*args, **kwargs):
             try:
-                return func(*args, **kwargs)
+                try:
+                    return func(*args, **kwargs)
+                except self.exception as details:
+                    # Here CT exception caught and calling the failure routine
+                    # functions with the parameters
+                    if self.routine_params:
+                        for i in self.routine_params:
+                            # Here args[0] will be the decorated function obj
+                            # TestError: if the object attribute is not found
+                            try:
+                                self.routine_param_values.append(
+                                    getattr(args[0], i))
+                            except AttributeError as err:
+                                raise CTException(err) from err
+                    self.routine_func(details, *self.routine_param_values)
             except Exception as exc:
-                raise Exception(str(exc))
-            except self.exception as details:
-                # Here CT exception caught and calling the failure routine
-                # functions with the parameters
-                if self.routine_params:
-                    for i in self.routine_params:
-                        # Here args[0] will be the decorated function obj
-                        # TestError: if the object attribute is not found
-                        try:
-                            self.routine_param_values.append(
-                                getattr(args[0], i))
-                        except AttributeError as err:
-                            raise Exception(str(err))
-                self.routine_func(details, *self.routine_param_values)
+                raise CTException(exc) from exc
 
         return __wrap
