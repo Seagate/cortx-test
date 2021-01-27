@@ -39,15 +39,15 @@ Validate ELUA Success
     Page Should Contain Button  ${license_cancle_button_id}
     Page Should Contain Image  ${license_cancle_image_id}
     Page Should Contain Button  ${license_button_id}
-#    Page Should Contain Element ${license_title_id}
-#    Page Should Contain Element ${license_data_id}
+    Page Should Contain Element  ${license_title_id}
+    Page Should Contain Element  ${license_data_id}
     Click License Cancle Button
     Click Accept Button
     Page Should Contain Button  ${license_cancle_button_id}
     Page Should Contain Image  ${license_cancle_image_id}
     Page Should Contain Button  ${license_button_id}
-#    Page Should Contain Element ${license_title_id}
-#    Page Should Contain Element ${license_data_id}
+    Page Should Contain Element  ${license_title_id}
+    Page Should Contain Element  ${license_data_id}
     Click License Cancle Image
     Click Accept Button
     Click License Button

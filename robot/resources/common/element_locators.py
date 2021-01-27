@@ -29,8 +29,6 @@ LICENSE_CANCLE_BUTTON_ID = 'license-cancelagreementbtn'
 LICENSE_CANCLE_IMAGE_ID = 'license-cancelagreementicon'
 LICENSE_TITLE_ID = 'agreement-title'
 LICENSE_DATA_ID = 'agreement-data'
-LICENSE_TITLE_XPATH = '//*[@id="agreement-title"]'
-LICENSE_DATA_XPATH = '//*[@id="agreement-data"]'
 
 #  CSM User section
 CSM_USERS_TABLE_XPATH = '//*[@id="localuser-tabledata"]//table'
