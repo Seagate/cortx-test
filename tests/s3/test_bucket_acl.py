@@ -17,6 +17,8 @@
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
+#
+# This file contains test related to Bucket ACL (Access Control Lists)
 
 import copy
 import time
@@ -36,14 +38,14 @@ utils = node_helper.Node()
 
 bkt_acl_config = read_yaml("config/s3/test_bucket_acl.yaml")[1]
 cmn_conf = read_yaml("config/common_config.yaml")[1]
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 asrtobj = assert_utils
 
-
 class TestBucketACL():
-    """Bucket ACL Test suite"""
+    """Bucket ACL Test suite."""
 
     def helper_method(self, bucket, acl, error_msg):
+        """Helper method for creating bucket with acl."""
         account_name = "{}{}".format(self.account_name, str(int(time.time())))
         email_id = "{}{}".format(str(int(time.time())), self.email_id)
         resp = iam_obj.create_account_s3iamcli(
@@ -69,7 +71,7 @@ class TestBucketACL():
             This function will be invoked prior to each test case.
             It will perform all prerequisite test steps if any.
         """
-        logger.info("STARTED: Setup Operations")
+        LOGGER.info("STARTED: Setup Operations")
         self.random_id = str(time.time())
         self.account_name = "{}{}".format(
             bkt_acl_config["bucket_acl"]["acc_name_prefix"],
@@ -81,14 +83,14 @@ class TestBucketACL():
                                             ]["ldap_creds"]["ldap_username"]
         self.ldap_pwd = const.S3_BUILD_VER[cmn_conf["BUILD_VER_TYPE"]
                                            ]["ldap_creds"]["ldap_passwd"]
-        logger.info("ENDED: Setup Operations")
+        LOGGER.info("ENDED: Setup Operations")
 
     def teardown_method(self):
         """
         Function to perform the clean up for each test.
         """
-        logger.info("STARTED: Teardown Operations")
-        logger.info("Deleting buckets in default account")
+        LOGGER.info("STARTED: Teardown Operations")
+        LOGGER.info("Deleting buckets in default account")
         resp = s3_obj.bucket_list()
         pref_list = [
             each_bucket for each_bucket in resp[1] if each_bucket.startswith(
@@ -97,15 +99,14 @@ class TestBucketACL():
             acl_obj.put_bucket_acl(
                 bucket, acl=bkt_acl_config["bucket_acl"]["bkt_permission"])
         s3_obj.delete_multiple_buckets(pref_list)
-        logger.info("Deleted buckets in default account")
-        logger.info(
-            "Deleting IAM accounts with prefix: {0}".format(
-                self.account_name))
+        LOGGER.info("Deleted buckets in default account")
+        LOGGER.info(
+            "Deleting IAM accounts with prefix: %s", self.account_name)
         acc_list = iam_obj.list_accounts_s3iamcli(
             self.ldap_user, self.ldap_pwd)[1]
         all_acc = [acc["AccountName"]
                    for acc in acc_list if self.account_name in acc["AccountName"]]
-        logger.info(all_acc)
+        LOGGER.info(all_acc)
         for acc_name in all_acc:
             resp = iam_obj.reset_account_access_key_s3iamcli(
                 acc_name,
@@ -114,26 +115,25 @@ class TestBucketACL():
             access_key = resp[1]["AccessKeyId"]
             secret_key = resp[1]["SecretKey"]
             s3_obj_temp = s3_test_lib.S3TestLib(access_key, secret_key)
-            logger.info(
-                "Deleting buckets in {0} account if any".format(acc_name))
+            LOGGER.info(
+                "Deleting buckets in %s account if any", acc_name)
             bucket_list = s3_obj_temp.bucket_list()[1]
-            logger.info(bucket_list)
+            LOGGER.info(bucket_list)
             s3_obj_acl = s3_acl_test_lib.S3AclTestLib(
                 access_key, secret_key)
             for bucket in bucket_list:
                 s3_obj_acl.put_bucket_acl(bucket, acl="private")
             s3_obj_temp.delete_all_buckets()
             iam_obj.reset_access_key_and_delete_account_s3iamcli(acc_name)
-        logger.info("Deleted IAM accounts successfully")
-        logger.info("ENDED: Teardown Operations")
+        LOGGER.info("Deleted IAM accounts successfully")
+        LOGGER.info("ENDED: Teardown Operations")
 
     @pytest.mark.tags("get_bucket_acl")
-    def test_3012(self):
+    def test_verify_get_bucket_acl_3012(self):
         """
         verify Get Bucket ACL of existing Bucket
-        :avocado: tags=get_bucket_acl
         """
-        logger.info("verify Get Bucket ACL of existing Bucket")
+        LOGGER.info("verify Get Bucket ACL of existing Bucket")
         bucket_name = "{}{}".format(
             bkt_acl_config["bucket_acl"]["bkt_name_prefix"],
             bkt_acl_config["test_10008"]["bucket_name"])
@@ -146,30 +146,28 @@ class TestBucketACL():
             resp[1][1][0]["Permission"],
             bucket_permission,
             resp[1])
-        logger.info("verify Get Bucket ACL of existing Bucket")
+        LOGGER.info("verify Get Bucket ACL of existing Bucket")
 
     @pytest.mark.tags("get_bucket_acl")
-    def test_3013(self):
+    def test_verify_get_bucket_acl_3013(self):
         """
         verify Get Bucekt ACL of non existing Bucket
-        :avocado: tags=get_bucket_acl
         """
-        logger.info("verify Get Bucket ACL of non existing Bucket")
+        LOGGER.info("verify Get Bucket ACL of non existing Bucket")
         bucket_name = bkt_acl_config["test_10009"]["bucket_name"]
         try:
             acl_obj.get_bucket_acl(bucket_name)
         except CTException as error:
             assert bkt_acl_config["test_10009"]["err_message"] not in str(
                 error.message), error.message
-        logger.info("verify Get Bucket ACL of non existing Bucket")
+        LOGGER.info("verify Get Bucket ACL of non existing Bucket")
 
     @pytest.mark.tags("get_bucket_acl")
-    def test_3014(self):
+    def test_verify_get_bucket_acl_3014(self):
         """
         verify Get Bucket ACL of an empty Bucket
-        :avocado: tags=get_bucket_acl
         """
-        logger.info("verify Get Bucket ACL of an empty Bucket")
+        LOGGER.info("verify Get Bucket ACL of an empty Bucket")
         bucket_name = "{}{}".format(
             bkt_acl_config["bucket_acl"]["bkt_name_prefix"],
             bkt_acl_config["test_10010"]["bucket_name"])
@@ -182,15 +180,14 @@ class TestBucketACL():
             resp[1][1][0]["Permission"],
             bucket_permission,
             resp[1])
-        logger.info("verify Get Bucket ACL of an empty Bucket")
+        LOGGER.info("verify Get Bucket ACL of an empty Bucket")
 
     @pytest.mark.tags("get_bucket_acl")
-    def test_3015(self):
+    def test_verify_get_bucket_acl_3015(self):
         """
         verify Get Bucket ACL of an existing Bucket having objects
-        :avocado: tags=get_bucket_acl
         """
-        logger.info(
+        LOGGER.info(
             "verify Get Bucket ACL of an existing Bucket having objects")
         bucket_name = "{}{}".format(
             bkt_acl_config["bucket_acl"]["bkt_name_prefix"],
@@ -212,30 +209,28 @@ class TestBucketACL():
             resp[1][1][0]["Permission"],
             bucket_permission,
             resp[1])
-        logger.info(
+        LOGGER.info(
             "verify Get Bucket ACL of an existing Bucket having objects")
 
     @pytest.mark.tags("get_bucket_acl")
-    def test_3016(self):
+    def test_verify_get_bucket_acl_3016(self):
         """
         Verify Get Bucket ACL without Bucket name
-        :avocado: tags=get_bucket_acl
         """
-        logger.info("Verify Get Bucket ACL without Bucket name")
+        LOGGER.info("Verify Get Bucket ACL without Bucket name")
         try:
             acl_obj.get_bucket_acl(None)
         except CTException as error:
             assert bkt_acl_config["test_10012"]["err_message"] in str(
                 error.message), error.message
-        logger.info("Verify Get Bucket ACL without Bucket name")
+        LOGGER.info("Verify Get Bucket ACL without Bucket name")
 
     @pytest.mark.tags("get_bucket_acl")
-    def test_3017(self):
+    def test_delete_and_verify_bucket_acl_3017(self):
         """
         Delete Bucket and verify Bucket ACL
-        :avocado: tags=get_bucket_acl
         """
-        logger.info("Delete Bucket and verify Bucket ACL")
+        LOGGER.info("Delete Bucket and verify Bucket ACL")
         bucket_name = "{}{}".format(
             bkt_acl_config["bucket_acl"]["bkt_name_prefix"],
             bkt_acl_config["test_10013"]["bucket_name"])
@@ -248,15 +243,14 @@ class TestBucketACL():
         except CTException as error:
             assert bkt_acl_config["test_10013"]["err_message"] in str(
                 error.message), error.message
-        logger.info("Delete Bucket and verify Bucket ACL")
+        LOGGER.info("Delete Bucket and verify Bucket ACL")
 
     @pytest.mark.tags("get_bucket_acl")
-    def test_3018(self):
+    def test_verify_get_bucket_acl_3018(self):
         """
         verify Get Bucket ACL of existing Bucket with associated Account credentials
-        :avocado: tags=get_bucket_acl
         """
-        logger.info(
+        LOGGER.info(
             "verify Get Bucket ACL of existing Bucket with associated Account credentials")
         acc_name = "{}{}".format(self.account_name, str(int(time.time())))
         email = "{}{}".format(str(int(time.time())), self.email_id,)
@@ -288,16 +282,15 @@ class TestBucketACL():
             resp[1][1][0]["Permission"],
             bucket_permission,
             resp[1])
-        logger.info(
+        LOGGER.info(
             "verify Get Bucket ACL of existing Bucket with associated Account credentials")
 
     @pytest.mark.tags("get_bucket_acl")
-    def test_3019(self):
+    def test_verify_get_bucket_acl_3019(self):
         """
         verify Get Bucket ACL of existing Bucket with different Account credentials
-        :avocado: tags=get_bucket_acl
         """
-        logger.info(
+        LOGGER.info(
             "verify Get Bucket ACL of existing Bucket with different Account credentials")
         accounts = bkt_acl_config["test_10015"]["accounts"]
         emails = bkt_acl_config["test_10015"]["emails"]
@@ -329,16 +322,15 @@ class TestBucketACL():
             assert err_message in str(error.message), error.message
         resp = s3_obj_acl.delete_bucket(bucket_name)
         assert resp[0], resp[1]
-        logger.info(
+        LOGGER.info(
             "verify Get Bucket ACL of existing Bucket with different Account credentials")
 
     @pytest.mark.tags("get_bucket_acl")
-    def test_3020(self):
+    def test_verify_get_bucket_acl_3020(self):
         """
         verify Get Bucket ACL of existing Bucket with IAM User credentials
-        :avocado: tags=get_bucket_acl
         """
-        logger.info(
+        LOGGER.info(
             "verify Get Bucket ACL of existing Bucket with IAM User credentials")
         accounts = bkt_acl_config["test_10016"]["accounts"]
         emails = bkt_acl_config["test_10016"]["emails"]
@@ -381,157 +373,149 @@ class TestBucketACL():
             assert err_message in str(error.message), error.message
         resp = s3_obj_acl.delete_bucket(bucket_name)
         assert resp[0], resp[1]
-        logger.info(
+        LOGGER.info(
             "verify Get Bucket ACL of existing Bucket with IAM User credentials")
 
     @pytest.mark.tags("create_bucket_acl")
-    def test_3527(self):
+    def test_add_canned_acl_bucket_3527(self):
         """
         Add canned ACL bucket-owner-full-control along with READ ACL grant permission
-        :avocado: tags=create_bucket_acl
         """
-        logger.info(
+        LOGGER.info(
             "Add canned ACL bucket-owner-full-control along with READ ACL grant permission")
         self.helper_method(bkt_acl_config["test_10766"]["bucket_name"],
                            bkt_acl_config["test_10766"]["acl"],
                            bkt_acl_config["test_10766"]["error"])
-        logger.info(
+        LOGGER.info(
             "Add canned ACL bucket-owner-full-control along with READ ACL grant permission")
 
     @pytest.mark.tags("create_bucket_acl")
-    def test_3528(self):
+    def test_add_canned_acl_bucket_3528(self):
         """
         Add canned ACL bucket-owner-read along with READ ACL grant permission
-        :avocado: tags=create_bucket_acl
         """
-        logger.info(
+        LOGGER.info(
             "Add canned ACL bucket-owner-read along with READ ACL grant permission")
         self.helper_method(bkt_acl_config["test_10767"]["bucket_name"],
                            bkt_acl_config["test_10767"]["acl"],
                            bkt_acl_config["test_10767"]["error"])
-        logger.info(
+        LOGGER.info(
             "Add canned ACL bucket-owner-read along with READ ACL grant permission")
 
     @pytest.mark.tags("create_bucket_acl")
-    def test_3529(self):
+    def test_add_canned_acl_private_3529(self):
         """
         Add canned ACL "private" along with "READ" ACL grant permission
-        :avocado: tags=create_bucket_acl
         """
-        logger.info(
+        LOGGER.info(
             "Add canned ACL 'private' along with 'READ' ACL grant permission")
         self.helper_method(bkt_acl_config["test_10768"]["bucket_name"],
                            bkt_acl_config["test_10768"]["acl"],
                            bkt_acl_config["test_10768"]["error"])
-        logger.info(
+        LOGGER.info(
             "Add canned ACL 'private' along with 'READ' ACL grant permission")
 
     @pytest.mark.tags("create_bucket_acl")
-    def test_3530(self):
+    def test_add_canned_acl_private_3530(self):
         """
         Add canned ACL "private" along with "FULL_CONTROL" ACL grant permission
-        :avocado: tags=create_bucket_acl
         """
-        logger.info(
+        LOGGER.info(
             "Add canned ACL 'private' along with 'FULL_CONTROL' ACL grant permission")
         self.helper_method(bkt_acl_config["test_10769"]["bucket_name"],
                            bkt_acl_config["test_10769"]["acl"],
                            bkt_acl_config["test_10769"]["error"])
-        logger.info(
+        LOGGER.info(
             "Add canned ACL 'private' along with 'FULL_CONTROL' ACL grant permission")
 
     @pytest.mark.tags("create_bucket_acl")
-    def test_3531(self):
+    def test_add_canned_acl_public_read_3531(self):
         """
         Add canned ACL "public-read" along with "READ_ACP" ACL grant permission
-        :avocado: tags=create_bucket_acl
         """
-        logger.info(
+        LOGGER.info(
             "Add canned ACL 'public-read' along with 'READ_ACP' ACL grant permission")
         self.helper_method(bkt_acl_config["test_10770"]["bucket_name"],
                            bkt_acl_config["test_10770"]["acl"],
                            bkt_acl_config["test_10770"]["error"])
-        logger.info(
+        LOGGER.info(
             "Add canned ACL 'public-read' along with 'READ_ACP' ACL grant permission")
 
     @pytest.mark.tags("create_bucket_acl")
-    def test_3532(self):
+    def test_add_canned_acl_public_read_3532(self):
         """
         Add canned ACL "public-read" along with "WRITE_ACP" ACL grant permission
-        :avocado: tags=create_bucket_acl
         """
-        logger.info(
+        LOGGER.info(
             "Add canned ACL 'public-read' along with 'WRITE_ACP' ACL grant permission")
         self.helper_method(bkt_acl_config["test_10771"]["bucket_name"],
                            bkt_acl_config["test_10771"]["acl"],
                            bkt_acl_config["test_10771"]["error"])
-        logger.info(
+        LOGGER.info(
             "Add canned ACL 'public-read' along with 'WRITE_ACP' ACL grant permission")
 
     @pytest.mark.tags("create_bucket_acl")
-    def test_3533(self):
+    def test_add_canned_acl_public_read_write_3533(self):
         """
         Add canned ACL 'public-read-write' along with "WRITE_ACP" ACL grant permission
-        :avocado: tags=create_bucket_acl
         """
-        logger.info(
+        LOGGER.info(
             "Add canned ACL 'public-read-write' along with 'WRITE_ACP' ACL grant permission")
         self.helper_method(bkt_acl_config["test_10772"]["bucket_name"],
                            bkt_acl_config["test_10772"]["acl"],
                            bkt_acl_config["test_10772"]["error"])
-        logger.info(
+        LOGGER.info(
             "Add canned ACL 'public-read-write' along with 'WRITE_ACP' ACL grant permission")
 
     @pytest.mark.tags("create_bucket_acl")
-    def test_3534(self):
+    def test_add_canned_acl_public_read_write_3534(self):
         """
         Add canned ACL 'public-read-write' along with "FULL_CONTROL" ACL grant permission
-        :avocado: tags=create_bucket_acl
         """
-        logger.info(
+        LOGGER.info(
             "Add canned ACL 'public-read-write' along with 'FULL_CONTROL' ACL grant permission")
         self.helper_method(bkt_acl_config["test_10773"]["bucket_name"],
                            bkt_acl_config["test_10773"]["acl"],
                            bkt_acl_config["test_10773"]["error"])
-        logger.info(
+        LOGGER.info(
             "Add canned ACL 'public-read-write' along with 'FULL_CONTROL' ACL grant permission")
 
     @pytest.mark.tags("create_bucket_acl")
-    def test_3535(self):
+    def test_add_canned_acl_authenticate_read_3535(self):
         """
         Add canned ACL 'authenticate-read' along with "READ" ACL grant permission
-        :avocado: tags=create_bucket_acl
         """
-        logger.info(
+        LOGGER.info(
             "Add canned ACL 'authenticate-read' along with 'READ' ACL grant permission")
         self.helper_method(bkt_acl_config["test_10774"]["bucket_name"],
                            bkt_acl_config["test_10774"]["acl"],
                            bkt_acl_config["test_10774"]["error"])
-        logger.info(
+        LOGGER.info(
             "Add canned ACL 'authenticate-read' along with 'READ' ACL grant permission")
 
     @pytest.mark.tags("create_bucket_acl")
-    def test_3536(self):
+    def test_add_canned_acl_authenticate_read_3536(self):
         """
         Add canned ACL 'authenticate-read' along with "READ_ACP" ACL grant permission
-        :avocado: tags=create_bucket_acl
         """
-        logger.info(
+        LOGGER.info(
             "Add canned ACL 'authenticate-read' along with 'READ_ACP' ACL grant permission")
         self.helper_method(bkt_acl_config["test_10775"]["bucket_name"],
                            bkt_acl_config["test_10775"]["acl"],
                            bkt_acl_config["test_10775"]["error"])
-        logger.info(
+        LOGGER.info(
             "Add canned ACL 'authenticate-read' along with 'READ_ACP' ACL grant permission")
 
     @pytest.mark.tags("put_bucket_acl")
-    def test_3537(self):
+    def test_add_canned_acl_private_3537(self):
         """
-        Add canned ACL "private" as a request header along with FULL_CONTROL ACL grant permission as request body
+        Add canned ACL "private" as a request header along with FULL_CONTROL
+        ACL grant permission as request body
         :avocado: tags=put_bucket_acl
         """
-        logger.info(
-            "Add canned ACL 'private' as a request header along with FULL_CONTROL ACL grant permission as request body")
+        LOGGER.info(
+            "Add canned ACL 'private' as a request header along with FULL_CONTROL"
+            " ACL grant permission as request body")
         account_name = "{}{}".format(
             bkt_acl_config["test_10776"]["account_name"], str(int(time.time())))
         email_id = "{}{}".format(str(int(time.time())),
@@ -562,8 +546,8 @@ class TestBucketACL():
         asrtobj.assert_equals(resp[1], bucket_name, resp[1])
         resp = s3_obj_acl.get_bucket_acl(bucket_name=bucket_name)
         newresp = {"Owner": resp[1][0], "Grants": resp[1][1]}
-        logger.info(
-            "New dict to pass ACP with permission private:{}".format(newresp))
+        LOGGER.info(
+            "New dict to pass ACP with permission private:%s",newresp)
         newresp["Grants"][0]["Permission"] = bkt_acl_config["test_10776"]["acl"]
         try:
             s3_obj_acl.put_bucket_acl(
@@ -571,27 +555,29 @@ class TestBucketACL():
                 acl=bkt_acl_config["test_10776"]["canned_acl"],
                 access_control_policy=newresp)
         except CTException as error:
-            logger.debug(error.message)
+            LOGGER.debug(error.message)
             assert bkt_acl_config["test_10776"]["error_message"] in error.message, error.message
-        logger.info("Cleanup activity")
-        logger.info("Deleting a bucket {}".format(bucket_name))
+        LOGGER.info("Cleanup activity")
+        LOGGER.info("Deleting a bucket %s", bucket_name)
         resp = s3_test.delete_bucket(bucket_name)
         assert resp[0], resp[1]
-        logger.info("Deleting an account {}".format(account_name))
+        LOGGER.info("Deleting an account %s", account_name)
         resp = iam_obj.delete_account_s3iamcli(
             account_name, access_key, secret_key)
         assert resp[0], resp[1]
-        logger.info(
-            "Add canned ACL 'private' as a request header along with FULL_CONTROL ACL grant permission as request body")
+        LOGGER.info(
+            "Add canned ACL 'private' as a request header along with FULL_CONTROL"
+            " ACL grant permission as request body")
 
     @pytest.mark.tags("put_bucket_acl")
-    def test_3538(self):
+    def test_add_canned_acl_private_3538(self):
         """
-        Add canned ACL "private" in request body along with "FULL_CONTROL" ACL grant permission in request header
-        :avocado: tags=put_bucket_acl
+        Add canned ACL "private" in request body along with "FULL_CONTROL"
+        ACL grant permission in request header
         """
-        logger.info(
-            "Add canned ACL private in request body along with FULL_CONTROL ACL grant permission in request header")
+        LOGGER.info(
+            "Add canned ACL private in request body along with FULL_CONTROL"
+            " ACL grant permission in request header")
         account_name = "{}{}".format(
             bkt_acl_config["test_10777"]["account_name"], str(int(time.time())))
         email_id = "{}{}".format(str(int(time.time())),
@@ -624,8 +610,8 @@ class TestBucketACL():
 
         resp = s3_obj_acl.get_bucket_acl(bucket_name=bucket_name)
         newresp = {"Owner": resp[1][0], "Grants": resp[1][1]}
-        logger.info(
-            "New dict to pass ACP with permission private:{}".format(newresp))
+        LOGGER.info(
+            "New dict to pass ACP with permission private:%s", newresp)
         newresp["Grants"][0]["Permission"] = bkt_acl_config["test_10777"]["canned_acl"]
         try:
             s3_obj_acl.put_bucket_acl(
@@ -633,27 +619,29 @@ class TestBucketACL():
                 acl=bkt_acl_config["test_10777"]["acl"],
                 access_control_policy=newresp)
         except CTException as error:
-            logger.debug(error.message)
+            LOGGER.debug(error.message)
             assert bkt_acl_config["test_10777"]["error_message"] in error.message, error.message
-        logger.info("Cleanup activity")
-        logger.info("Deleting a bucket {}".format(bucket_name))
+        LOGGER.info("Cleanup activity")
+        LOGGER.info("Deleting a bucket %s", bucket_name)
         resp = s3_test.delete_bucket(bucket_name, force=True)
         assert resp[0], resp[1]
-        logger.info("Deleting an account {}".format(account_name))
+        LOGGER.info("Deleting an account %s", account_name)
         resp = iam_obj.delete_account_s3iamcli(
             account_name, access_key, secret_key)
         assert resp[0], resp[1]
-        logger.info(
-            "Add canned ACL private in request body along with FULL_CONTROL ACL grant permission in request header")
+        LOGGER.info(
+            "Add canned ACL private in request body along with FULL_CONTROL"
+            " ACL grant permission in request header")
 
     @pytest.mark.tags("put_bucket_acl")
-    def test_3539(self):
+    def test_add_canned_acl_private_3539(self):
         """
-        Add canned ACL "private" in request body along with "FULL_CONTROL" ACL grant permission in request body
-        :avocado: tags=put_bucket_acl
+        Add canned ACL "private" in request body along with "FULL_CONTROL"
+        ACL grant permission in request body
         """
-        logger.info(
-            "Add canned ACL private in request body along with FULL_CONTROL ACL grant permission in request body")
+        LOGGER.info(
+            "Add canned ACL private in request body along with FULL_CONTROL"
+            " ACL grant permission in request body")
 
         account_name = "{}{}".format(
             bkt_acl_config["test_10778"]["account_name"], str(int(time.time())))
@@ -686,8 +674,8 @@ class TestBucketACL():
         asrtobj.assert_equals(resp[1], bucket_name, resp[1])
         resp = s3_obj_acl.get_bucket_acl(bucket_name=bucket_name)
         newresp = {"Owner": resp[1][0], "Grants": resp[1][1]}
-        logger.info(
-            "New dict to pass ACP with permission private:{}".format(newresp))
+        LOGGER.info(
+            "New dict to pass ACP with permission private:%s", newresp)
         newresp["Grants"][0]["Permission"] = bkt_acl_config["test_10778"]["canned_acl"]
         new_grant = {
             "Grantee": {
@@ -700,34 +688,34 @@ class TestBucketACL():
         # must do a deepcopy
         modified_acl = copy.deepcopy(newresp)
         modified_acl["Grants"].append(new_grant)
-        logger.info(
-            "ACP with permission private and Full control:{}".format(modified_acl))
+        LOGGER.info(
+            "ACP with permission private and Full control:%s", modified_acl)
         try:
             s3_obj_acl.put_bucket_acl(
                 bucket_name=bucket_name,
                 access_control_policy=newresp)
         except CTException as error:
-            logger.debug(error.message)
+            LOGGER.debug(error.message)
             assert bkt_acl_config["test_10778"]["error_message"] in error.message, error.message
-        logger.info("Cleanup activity")
-        logger.info("Deleting a bucket {}".format(bucket_name))
+        LOGGER.info("Cleanup activity")
+        LOGGER.info("Deleting a bucket %s", bucket_name)
         resp = s3_test.delete_bucket(bucket_name)
         assert resp[0], resp[1]
-        logger.info("Deleting an account {}".format(account_name))
+        LOGGER.info("Deleting an account %s", account_name)
         resp = iam_obj.delete_account_s3iamcli(
             account_name, access_key, secret_key)
         assert resp[0], resp[1]
-        logger.info(
-            "Add canned ACL private in request body along with FULL_CONTROL ACL grant permission in request body")
+        LOGGER.info(
+            "Add canned ACL private in request body along with FULL_CONTROL"
+            " ACL grant permission in request body")
 
     @pytest.mark.tags("bucket_acl")
-    def test_3577(self):
+    def test_add_canned_acl_authenticated_read_3577(self):
         """
         Apply authenticated-read canned ACL to account2 and execute head-bucket from
         account2 on a bucket. Bucket belongs to account1
-        :avocado: tags=bucket_acl
         """
-        logger.info(
+        LOGGER.info(
             "Apply authenticated-read canned ACL to account2 and execute head-bucket "
             "from account2 on a bucket. Bucket belongs to account1")
         accounts = bkt_acl_config["test_10837"]["accounts"]
@@ -760,44 +748,44 @@ class TestBucketACL():
             access_key=access_keys[1],
             secret_key=secret_keys[1])
 
-        logger.info("Creating new bucket from first account")
+        LOGGER.info("Creating new bucket from first account")
         resp = s3_obj1.create_bucket(bucket_name)
         assert resp[0], resp[1]
         asrtobj.assert_equals(resp[1], bucket_name, resp[1])
-        logger.info("Performing head bucket with first account credentials")
+        LOGGER.info("Performing head bucket with first account credentials")
         resp = s3_obj1.head_bucket(bucket_name)
         asrtobj.assert_equals(resp[1]["BucketName"], bucket_name, resp[1])
-        logger.info("Performing authenticated read acl")
+        LOGGER.info("Performing authenticated read acl")
         resp = acl_obj1.put_bucket_acl(
             bucket_name, acl=bkt_acl_config["test_10837"]["bucket_acl"])
         assert resp[0], resp[1]
-        logger.info("Getting bucket acl")
+        LOGGER.info("Getting bucket acl")
         resp = acl_obj1.get_bucket_acl_using_iam_credentials(
             access_keys[0], secret_keys[0], bucket_name)
         assert resp[0], resp[1]
         print("aa {}".format(resp))
-        assert bkt_acl_config["test_10837"]["grant_permission"] in resp[1][1][1]["Permission"], resp[1]
-        logger.info(
+        assert bkt_acl_config["test_10837"]["grant_permission"] in resp[1][1][1]["Permission"], \
+            resp[1]
+        LOGGER.info(
             "Performing head bucket with second account credentials")
         resp = s3_obj2.head_bucket(bucket_name)
         assert resp[0], resp[1]
         asrtobj.assert_equals(resp[1]["BucketName"], bucket_name, resp[1])
-        logger.info("Deleting bucket")
+        LOGGER.info("Deleting bucket")
         s3_obj1.delete_bucket(bucket_name, force=True)
-        logger.info("Deleting multiple accounts")
+        LOGGER.info("Deleting multiple accounts")
         iam_obj.delete_multiple_accounts(account_name)
-        logger.info(
+        LOGGER.info(
             "Apply authenticated-read canned ACL to account2 and execute "
             "head-bucket from account2 on a bucket. Bucket belongs to account1")
 
     @pytest.mark.tags("bucket_acl")
-    def test_3578(self):
+    def test_apply_private_canned_acl_3578(self):
         """
         Apply private canned ACL to account2 and execute head-bucket
         from account2 on a bucket. Bucket belongs to account1
-        :avocado: tags=bucket_acl
         """
-        logger.info(
+        LOGGER.info(
             "Apply private canned ACL to account2 and execute head-bucket "
             "from account2 on a bucket. Bucket belongs to account1")
         accounts = bkt_acl_config["test_10838"]["accounts"]
@@ -830,44 +818,43 @@ class TestBucketACL():
             access_key=access_keys[1],
             secret_key=secret_keys[1])
 
-        logger.info("Creating new bucket from first account")
+        LOGGER.info("Creating new bucket from first account")
         resp = s3_obj1.create_bucket(bucket_name)
         assert resp[0], resp[1]
         asrtobj.assert_equals(resp[1], bucket_name, resp[1])
-        logger.info("Performing head bucket with first account credentials")
+        LOGGER.info("Performing head bucket with first account credentials")
         resp = s3_obj1.head_bucket(bucket_name)
         asrtobj.assert_equals(resp[1]["BucketName"], bucket_name, resp[1])
-        logger.info("Performing authenticated read acl")
+        LOGGER.info("Performing authenticated read acl")
         resp = acl_obj1.put_bucket_acl(
             bucket_name, acl=bkt_acl_config["test_10838"]["bucket_acl"])
         assert resp[0], resp[1]
-        logger.info("Getting bucket acl")
+        LOGGER.info("Getting bucket acl")
         resp = acl_obj1.get_bucket_acl_using_iam_credentials(
             access_keys[0], secret_keys[0], bucket_name)
         assert resp[0], resp[1]
-        logger.info(
+        LOGGER.info(
             "Performing head bucket with second account credentials")
         try:
             s3_obj2.head_bucket(bucket_name)
         except CTException as error:
-            logger.debug(error.message)
+            LOGGER.debug(error.message)
             assert bkt_acl_config["test_10838"]["error_message"] in error.message, error.message
-        logger.info("Deleting bucket")
+        LOGGER.info("Deleting bucket")
         s3_obj1.delete_bucket(bucket_name, force=True)
-        logger.info("Deleting multiple accounts")
+        LOGGER.info("Deleting multiple accounts")
         iam_obj.delete_multiple_accounts(account_name)
-        logger.info(
+        LOGGER.info(
             "Apply private canned ACL to account2 and execute "
             "head-bucket from account2 on a bucket. Bucket belongs to account1")
 
     @pytest.mark.tags("bucket_acl")
-    def test_3579(self):
+    def test_grant_read_permission_acl_3579(self):
         """
         Grant read permission to account2 and execute head-bucket
         from account2 on a bucket. Bucket belongs to account1
-        :avocado: tags=bucket_acl
         """
-        logger.info(
+        LOGGER.info(
             "Grant read permission to account2 and execute head-bucket "
             "from account2 on a bucket. Bucket belongs to account1")
         accounts = bkt_acl_config["test_10839"]["accounts"]
@@ -899,21 +886,21 @@ class TestBucketACL():
             access_key=access_keys[1],
             secret_key=secret_keys[1])
 
-        logger.info("Creating new bucket from first account")
+        LOGGER.info("Creating new bucket from first account")
         resp = s3_obj1.create_bucket(bucket_name)
         assert resp[0], resp[1]
         asrtobj.assert_equals(resp[1], bucket_name, resp[1])
-        logger.info("Performing head bucket with first account credentials")
+        LOGGER.info("Performing head bucket with first account credentials")
         resp = s3_obj1.head_bucket(bucket_name)
         asrtobj.assert_equals(resp[1]["BucketName"], bucket_name, resp[1])
-        logger.info("Performing grant read permission to second account")
+        LOGGER.info("Performing grant read permission to second account")
         resp = acl_obj1.put_bucket_acl(
             bucket_name,
             grant_read="{}{}".format(
                 bkt_acl_config["test_10839"]["id_str"],
                 canonical_ids[1]))
         assert resp[0], resp[1]
-        logger.info("Getting bucket acl")
+        LOGGER.info("Getting bucket acl")
         resp = acl_obj1.get_bucket_acl_using_iam_credentials(
             access_keys[0], secret_keys[0], bucket_name)
         asrtobj.assert_equals(
@@ -924,28 +911,27 @@ class TestBucketACL():
             bkt_acl_config["test_10839"]["grant_permission"],
             resp[1][1][0]["Permission"],
             resp[1])
-        logger.info(
+        LOGGER.info(
             "Performing head bucket with second account credentials")
         resp = s3_obj2.head_bucket(bucket_name)
         asrtobj.assert_equals(resp[1]["BucketName"], bucket_name, resp[1])
         acl_obj1.put_bucket_acl(
             bucket_name,
             acl=bkt_acl_config["test_10839"]["default_acl"])
-        logger.info("Deleting bucket")
+        LOGGER.info("Deleting bucket")
         s3_obj1.delete_bucket(bucket_name, force=True)
-        logger.info("Deleting multiple accounts")
+        LOGGER.info("Deleting multiple accounts")
         iam_obj.delete_multiple_accounts(account_name)
-        logger.info(
+        LOGGER.info(
             "Grant read permission to account2 and execute head-bucket "
             "from account2 on a bucket. Bucket belongs to account1")
 
     @pytest.mark.tags("bucket_acl")
-    def test_3580(self):
+    def test_perform_head_bucket_acl_3580(self):
         """
         Perform a head bucket on a bucket
-        :avocado: tags=bucket_acl
         """
-        logger.info("Perform a head bucket on a bucket")
+        LOGGER.info("Perform a head bucket on a bucket")
         bucket_name = "{}{}".format(
             bkt_acl_config["bucket_acl"]["bkt_name_prefix"],
             bkt_acl_config["test_10840"]["bucket_name"])
@@ -955,15 +941,14 @@ class TestBucketACL():
         resp = s3_obj.head_bucket(bucket_name)
         assert resp[0], resp[1]
         asrtobj.assert_equals(resp[1]["BucketName"], bucket_name, resp[1])
-        logger.info("Perform a head bucket on a bucket")
+        LOGGER.info("Perform a head bucket on a bucket")
 
     @pytest.mark.tags("bucket_acl")
-    def test_3581(self):
+    def test_create_verify_default_acl_3581(self):
         """
         Create a bucket and verify default ACL
-        :avocado: tags=bucket_acl
         """
-        logger.info("Create a bucket and verify default ACL")
+        LOGGER.info("Create a bucket and verify default ACL")
         bucket_name = "{}{}".format(
             bkt_acl_config["bucket_acl"]["bkt_name_prefix"],
             bkt_acl_config["test_10841"]["bucket_name"])
@@ -977,39 +962,37 @@ class TestBucketACL():
             resp[1][1][0]["Permission"],
             bucket_permission,
             resp[1])
-        logger.info("Create a bucket and verify default ACL")
+        LOGGER.info("Create a bucket and verify default ACL")
 
     @pytest.mark.tags("bucket_acl")
-    def test_312(self):
+    def test_put_get_bucket_acl_312(self):
         """
         put bucket in account1 and get-bucket-acl for that bucket
-        :avocado: tags=get_bucket_acl_1
         """
-        logger.info(
+        LOGGER.info(
             "STARTED: put bucket in account1 and get-bucket-acl for that bucket")
         test_cfg = bkt_acl_config["test_312"]
         bkt_name = "{}{}".format(
             bkt_acl_config["bucket_acl"]["bkt_name_prefix"],
             test_cfg["bucket_name"].format(self.random_id))
-        logger.info("Step 1: Creating bucket: {}".format(bkt_name))
+        LOGGER.info("Step 1: Creating bucket: %s", bkt_name)
         resp = s3_obj.create_bucket(bkt_name)
         assert resp[0], resp[1]
-        logger.info("Step 1: Bucket: {} created".format(bkt_name))
-        logger.info("Step 2: Retrieving bucket acl attributes")
+        LOGGER.info("Step 1: Bucket: %s created", bkt_name)
+        LOGGER.info("Step 2: Retrieving bucket acl attributes")
         resp = acl_obj.get_bucket_acl(bkt_name)
         assert resp[0], resp[1]
-        logger.info("Step 2: Bucket ACL was verified")
-        logger.info(
+        LOGGER.info("Step 2: Bucket ACL was verified")
+        LOGGER.info(
             "ENDED: put bucket in account1 and get-bucket-acl for that bucket")
 
     @pytest.mark.tags("bucket_acl")
-    def test_313(self):
+    def test_put_get_bucket_acl_313(self):
         """
         put bucket in account1 and dont give any permissions or
         canned acl for account2 and get-bucket-acl details from account2
-        :avocado: tags=get_bucket_acl_1
         """
-        logger.info(
+        LOGGER.info(
             "STARTED: put bucket in account1 and dont give any permissions or "
             "canned acl for account2 and get-bucket-acl details from account2")
         test_cfg = bkt_acl_config["test_313"]
@@ -1018,35 +1001,34 @@ class TestBucketACL():
             test_cfg["bucket_name"].format(self.random_id))
         acc_name_2 = test_cfg["account_name"].format(self.random_id)
         emailid_2 = test_cfg["email_id"].format(self.random_id)
-        logger.info("Step 1: Creating bucket: {}".format(bkt_name))
+        LOGGER.info("Step 1: Creating bucket: %s", bkt_name)
         resp = s3_obj.create_bucket(bkt_name)
         assert resp[0], resp[1]
-        logger.info("Step 1: Bucket : {} created".format(bkt_name))
+        LOGGER.info("Step 1: Bucket : %s created", bkt_name)
         create_acc = iam_obj.create_s3iamcli_acc(acc_name_2, emailid_2)
         assert create_acc[0], create_acc[1]
         acl_test_2 = create_acc[1][2]
-        logger.info(
+        LOGGER.info(
             "Step 2: Retrieving bucket acl attributes using account 2")
         try:
             acl_test_2.get_bucket_acl(bkt_name)
         except CTException as error:
-            logger.error(error.message)
+            LOGGER.error(error.message)
             assert test_cfg["err_message"] in error.message, error.message
-            logger.info(
-                "Step 2: retrieving bucket acl using account 2 failed with error {0}".format(
-                    test_cfg["err_message"]))
-        logger.info(
+            LOGGER.info(
+                "Step 2: retrieving bucket acl using account 2 failed with error %s",
+                    test_cfg["err_message"])
+        LOGGER.info(
             "ENDED: put bucket in account1 and dont give any permissions or"
             " canned acl for account2 and get-bucket-acl details from account2")
 
     @pytest.mark.tags("bucket_acl")
-    def test_431(self):
+    def test_put_get_bucket_acl_431(self):
         """
         put bucket in account1 and give read-acp permissions to
         account2 and get-bucket-acl for that bucket
-        :avocado: tags=get_bucket_acl_1
         """
-        logger.info(
+        LOGGER.info(
             "STARTED: put bucket in account1 and give read-acp permissions to "
             "account2 and get-bucket-acl for that bucket")
         test_cfg = bkt_acl_config["test_431"]
@@ -1055,36 +1037,37 @@ class TestBucketACL():
             test_cfg["bucket_name"].format(self.random_id))
         acc_name_2 = test_cfg["account_name"].format(self.random_id)
         emailid_2 = test_cfg["email_id"].format(self.random_id)
-        logger.info("Step 1: Creating bucket: {}".format(bkt_name))
+        LOGGER.info("Step 1: Creating bucket: %s", bkt_name)
         resp = s3_obj.create_bucket(bkt_name)
         assert resp[0], resp[1]
-        logger.info("Step 1: Bucket : {} is created".format(bkt_name))
+        LOGGER.info("Step 1: Bucket : %s is created", bkt_name)
         create_acc = iam_obj.create_s3iamcli_acc(acc_name_2, emailid_2)
         assert create_acc[0], create_acc[1]
         cannonical_id = create_acc[1][0]
         acl_test_2 = create_acc[1][2]
-        logger.info("Step 2: Performing authenticated read acp")
+        LOGGER.info("Step 2: Performing authenticated read acp")
         resp = acl_obj.put_bucket_acl(
             bkt_name, grant_read_acp=test_cfg["id_str"].format(cannonical_id))
         assert resp[0], resp[1]
-        logger.info(
+        LOGGER.info(
             "Step 2: Bucket with read ACP permission was set for account 2")
-        logger.info("Step 3: Retrieving bucket acl attributes")
+        LOGGER.info("Step 3: Retrieving bucket acl attributes")
         resp = acl_test_2.get_bucket_acl(bkt_name)
         assert resp[0], resp[1]
-        logger.info("Step 3: Bucket ACL was verified")
-        logger.info(
+        LOGGER.info("Step 3: Bucket ACL was verified")
+        LOGGER.info(
             "ENDED: put bucket in account1 and give read-acp permissions to "
             "account2 and get-bucket-acl for that bucket")
 
     @pytest.mark.tags("bucket_acl")
-    def test_6423(self):
+    def test_full_control_acl_6423(self):
         """
-        Test full-control on bucket to cross account and test delete bucket from owner account
-        :avocado: tags=bucket_acl
+        Test full-control on bucket to cross account and test delete bucket
+        from owner account
         """
-        logger.info(
-            "STARTED: Test full-control on bucket to cross account and test delete bucket from owner account")
+        LOGGER.info(
+            "STARTED: Test full-control on bucket to cross account and test delete"
+            " bucket from owner account")
         test_cfg = bkt_acl_config["test_6423"]
         bkt_name = "{0}{1}".format(
             bkt_acl_config["bucket_acl"]["bkt_name_prefix"],
@@ -1093,34 +1076,37 @@ class TestBucketACL():
             self.account_name, self.email_id)
         assert create_acc[0], create_acc[1]
         cannonical_id = create_acc[1][0]
-        logger.info("Step 1: Creating bucket with name {0}".format(bkt_name))
+        LOGGER.info("Step 1: Creating bucket with name %s", bkt_name)
         resp = s3_obj.create_bucket(bkt_name)
         assert resp[0], resp[1]
-        logger.info("Step 1: Created a bucket with name {0}".format(bkt_name))
-        logger.info("Step 2: Verifying that bucket is created")
+        LOGGER.info("Step 1: Created a bucket with name %s", bkt_name)
+        LOGGER.info("Step 2: Verifying that bucket is created")
         resp = s3_obj.bucket_list()
         assert resp[0], resp[1]
         assert bkt_name in resp[1]
-        logger.info("Step 2: Verified that bucket is created")
-        logger.info(
-            "Step 3: Performing put bucket acl on a bucket {0} and granting full control to account 2".format(bkt_name))
+        LOGGER.info("Step 2: Verified that bucket is created")
+        LOGGER.info(
+            "Step 3: Performing put bucket acl on a bucket %s and granting"
+            " full control to account 2",bkt_name)
         resp = acl_obj.put_bucket_acl(
             bkt_name, grant_full_control=test_cfg["id_str"].format(cannonical_id))
         assert resp[0], resp[1]
-        logger.info(
-            "Step 3: Performed put bucket acl on a bucket {0} and granted full control to account 2".format(bkt_name))
-        logger.info("Step 4: Retrieving acl of a bucket {0}".format(bkt_name))
+        LOGGER.info(
+            "Step 3: Performed put bucket acl on a bucket %s and granted full"
+            " control to account 2", bkt_name)
+        LOGGER.info("Step 4: Retrieving acl of a bucket %s", bkt_name)
         resp = acl_obj.get_bucket_acl(bkt_name)
         assert resp[0], resp[1]
-        logger.info("Step 4: Retrieved acl of a bucket {0}".format(bkt_name))
-        logger.info("Step 5: Deleting a bucket {0}".format(bkt_name))
+        LOGGER.info("Step 4: Retrieved acl of a bucket %s", bkt_name)
+        LOGGER.info("Step 5: Deleting a bucket %s", bkt_name)
         resp = s3_obj.delete_bucket(bkt_name)
         assert resp[0], resp[1]
-        logger.info("Step 5: Deleted a bucket {0}".format(bkt_name))
-        logger.info("Step 6: Verifying that bucket is deleted")
+        LOGGER.info("Step 5: Deleted a bucket %s", bkt_name)
+        LOGGER.info("Step 6: Verifying that bucket is deleted")
         resp = s3_obj.bucket_list()
         assert resp[0], resp[1]
         assert bkt_name not in resp[1], resp[1]
-        logger.info("Step 6: Verified that bucket is deleted")
-        logger.info(
-            "ENDED: Test full-control on bucket to cross account and test delete bucket from owner account")
+        LOGGER.info("Step 6: Verified that bucket is deleted")
+        LOGGER.info(
+            "ENDED: Test full-control on bucket to cross account and test delete"
+            " bucket from owner account")
