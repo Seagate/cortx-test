@@ -48,7 +48,8 @@ class RAIDOperations:
         self.hlt_obj = Health(hostname=self.host, username=self.uname, password=self.passwd)
         try:
             self.s3_obj = S3Helper()
-        except:
+        except ImportError as err:
+            LOGGER.info(str(err))
             self.s3_obj = S3Helper.get_instance()
         self.ras_obj = RASTestLib(host=self.host, username=self.uname, password=self.passwd)
         self.csm_alert_obj = SystemAlerts()
@@ -70,7 +71,7 @@ class RAIDOperations:
         self.start_rmq = self.cm_cfg["start_rmq"]
 
         LOGGER.info(
-            "Fetching the disks details from mdstat for RAID array {}".format(
+            "Fetching the disks details from mdstat for RAID array %s".format(
                 self.md_device))
         md_stat = self.nd_obj.get_mdstat()
         self.disks = md_stat["devices"][os.path.basename(
@@ -177,7 +178,7 @@ class RAIDOperations:
             "======================================================")
 
         LOGGER.info(
-            "Removing file {}".format(
+            "Removing file %s".format(
                 self.cm_cfg["file"]["sspl_log_file"]))
         self.nd_obj.remove_file(filename=self.cm_cfg["file"]["sspl_log_file"])
 
@@ -293,7 +294,7 @@ class RAIDOperations:
 
         LOGGER.info(
             "Step 1: Running ALERT API for generating RAID fault alert by "
-            "failing disk {} from array {}".format(self.disk2, self.md_device))
+            "failing disk %s from array %s".format(self.disk2, self.md_device))
         resp = self.alert_api_obj.generate_alert(
             AlertType.raid_fail_disk_alert,
             input_parameters={
@@ -329,7 +330,7 @@ class RAIDOperations:
 
         LOGGER.info(
             "Step 4: Running ALERT API for generating RAID missing alert by "
-            "removing faulty disk {} from array {}".format(self.disk2, self.md_device))
+            "removing faulty disk %s from array %s".format(self.disk2, self.md_device))
         resp = self.alert_api_obj.generate_alert(
             AlertType.raid_remove_disk_alert,
             input_parameters={
@@ -340,7 +341,8 @@ class RAIDOperations:
         self.removed_disk = self.disk2
         self.failed_disk = False
         LOGGER.info(
-            "Step 4: Ran ALERT API for generating RAID missing alert by removing faulty disk from array")
+            "Step 4: Ran ALERT API for generating RAID missing alert "
+            "by removing faulty disk from array")
 
         if self.start_rmq:
             LOGGER.info(
@@ -378,8 +380,8 @@ class RAIDOperations:
         csm_error_msg = raid_cmn_cfg["csm_error_msg"]
 
         LOGGER.info(
-            "Step 1: Running ALERT API for generating RAID fault alert by failing disk {} from array {}".format(
-                self.disk2, self.md_device))
+            "Step 1: Running ALERT API for generating RAID fault alert by "
+            "failing disk %s from array %s".format(self.disk2, self.md_device))
         resp = self.alert_api_obj.generate_alert(
             AlertType.raid_fail_disk_alert,
             input_parameters={
@@ -464,8 +466,8 @@ class RAIDOperations:
             "Step 3: Successfully verified RAID fault alert using CSM REST API")
 
         LOGGER.info(
-            "Step 4: Running ALERT API for generating RAID missing alert by removing faulty disk {} from array {}".format(
-                self.disk2, self.md_device))
+            "Step 4: Running ALERT API for generating RAID missing alert by "
+            "removing faulty disk %s from array %s".format(self.disk2, self.md_device))
         resp = self.alert_api_obj.generate_alert(
             AlertType.raid_remove_disk_alert,
             input_parameters={
@@ -501,7 +503,7 @@ class RAIDOperations:
 
         LOGGER.info(
             "Step 7: Running ALERT API for generating RAID fault_resolved alert by "
-            "adding removed disk {} to array {}".format(self.disk2, self.md_device))
+            "adding removed disk %s to array %s".format(self.disk2, self.md_device))
         resp = self.alert_api_obj.generate_alert(
             AlertType.raid_add_disk_alert,
             input_parameters={
