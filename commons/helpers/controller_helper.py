@@ -1,12 +1,14 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 """
-This test helper lib implements the base functions for controller operations
+This test helper lib implements the base functions for controller
+operations
 """
-import logging
-import requests
+
 import os
+import logging
 from typing import Tuple
+import requests
 from commons.helpers.host import Host
 from commons.helpers.node_helper import Node
 from commons import constants as cons
@@ -35,6 +37,7 @@ class ControllerLib:
                  enclosure_user=COMMON_CONF["enclosure_user"],
                  enclosure_pwd=COMMON_CONF["enclosure_pwd"]):
         """This method initializes members of ControllerLib class
+
         :param host: IP of the remote host
         :type: str
         :param h_user: User of the remote host
@@ -54,8 +57,6 @@ class ControllerLib:
         self.enclosure_ip = enclosure_ip
         self.enclosure_user = enclosure_user
         self.enclosure_pwd = enclosure_pwd
-        self.host_connect = Host(hostname=self.host, username=self.h_user,
-                                 password=self.h_pwd)
         self.node_obj = Node(hostname=self.host, username=self.h_user,
                              password=self.h_pwd)
 
@@ -81,34 +82,35 @@ class ControllerLib:
                 cmd = common_cmd.SET_DEBUG_CMD
 
                 command = f"python3 /root/telnet_operations.py " \
-                          f"--telnet_op=" \
-                          f"'get_mc_ver_sr(enclosure_ip=\"{self.enclosure_ip}\", " \
+                          f"--telnet_op='get_mc_ver_sr(" \
+                          f"enclosure_ip=\"{self.enclosure_ip}\", " \
                           f"enclosure_user=\"{self.enclosure_user}\", " \
-                          f"enclosure_pwd=\"{self.enclosure_pwd}\", cmd=\"{cmd}\")'"
+                          f"enclosure_pwd=\"{self.enclosure_pwd}\", " \
+                          f"cmd=\"{cmd}\")'"
 
                 LOGGER.info(f"Running command {command}")
-                response = self.host_connect.execute_cmd(cmd=command,
-                                                         read_lines=True,
-                                                         shell=False)
+                response = self.node_obj.execute_cmd(cmd=command,
+                                                     read_lines=True)
                 response = response[0].split()
 
                 status = os.popen(
                     (common_cmd.STRING_MANIPULATION.format(response[0])).
-                        replace('\n', ' ').replace('\\n', ' ')).read()
+                    replace('\n', ' ').replace('\\n', ' ')).read()
                 mc_ver = os.popen(
                     (common_cmd.STRING_MANIPULATION.format(response[1])).
-                        replace('\n', ' ').replace('\\n', ' ')).read()
+                    replace('\n', ' ').replace('\\n', ' ')).read()
                 mc_sr = os.popen(
                     (common_cmd.STRING_MANIPULATION.format(response[2])).
-                        replace('\n', ' ').replace('\\n', ' ')).read()
-
-                return status, mc_ver, mc_sr
+                    replace('\n', ' ').replace('\\n', ' ')).read()
             except BaseException as error:
                 LOGGER.error(f"Error in {ControllerLib.get_mc_ver_sr.__name__}:"
                              f" {error}")
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
-    def get_mc_debug_pswd(self, mc_ver: str, mc_sr: str) -> str:
+            return status, mc_ver, mc_sr
+
+    @staticmethod
+    def get_mc_debug_pswd(mc_ver: str, mc_sr: str) -> str:
         """
         Function to get the password for management controller debug console
         :param mc_ver: Management controller version
@@ -128,7 +130,7 @@ class ControllerLib:
         except BaseException as error:
             LOGGER.error(f"Error in {ControllerLib.get_mc_debug_pswd.__name__}:"
                          f" {error}")
-            raise CTException(cterr.RAS_ERROR, error.args[0])
+            raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
         LOGGER.info(f"MC debug password: {mc_password}")
         return mc_password
@@ -165,30 +167,27 @@ class ControllerLib:
                           f"--telnet_op='simulate_fault_ctrl(" \
                           f"mc_deb_password=\"{mc_deb_password}\", " \
                           f"enclosure_ip=\"{self.enclosure_ip}\", " \
-                          f"telnet_port=\"{telnet_port}\", timeout=\"{timeout}\", " \
-                          f"cmd=\"{cmd}\")'"
+                          f"telnet_port=\"{telnet_port}\", " \
+                          f"timeout=\"{timeout}\", cmd=\"{cmd}\")'"
 
                 LOGGER.info(f"Running command {command}")
-                response = self.host_connect.execute_cmd(cmd=command,
-                                                         read_lines=True,
-                                                         shell=False)
+                response = self.node_obj.execute_cmd(cmd=command,
+                                                     read_lines=True)
                 response = response[0].split()
 
                 status = os.popen(
                     (common_cmd.STRING_MANIPULATION.format(response[0])).
-                        replace('\n', ' ').replace('\\n', ' ')).read()
+                    replace('\n', ' ').replace('\\n', ' ')).read()
                 password_str = os.popen(
-                    (common_cmd.STRING_MANIPULATION.format(
-                        response[1])).replace(
-                        '\n', ' ').replace(
-                        '\\n', ' ')).read()
-
-                return status, password_str
+                    (common_cmd.STRING_MANIPULATION.format(response[1]))
+                    .replace('\n', ' ').replace('\\n', ' ')).read()
             except BaseException as error:
                 LOGGER.error(f"Error in "
                              f"{ControllerLib.simulate_fault_ctrl.__name__}:"
                              f" {error}")
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
+
+            return status, password_str
 
     def show_disks(self, telnet_file: str) -> Tuple[str, str]:
         """
@@ -200,32 +199,30 @@ class ControllerLib:
         """
         if self.copy:
             try:
-                common_cfg = RAS_VAL["ras_sspl_alert"]
                 LOGGER.info(f"Show disks for {self.enclosure_ip} enclosure.")
                 cmd = common_cmd.SHOW_DISKS_CMD
 
                 command = f"python3 /root/telnet_operations.py " \
-                          f"--telnet_op=" \
-                          f"'show_disks(enclosure_ip=\"{self.enclosure_ip}\", " \
+                          f"--telnet_op='show_disks(" \
+                          f"enclosure_ip=\"{self.enclosure_ip}\", " \
                           f"enclosure_user=\"{self.enclosure_user}\", " \
                           f"enclosure_pwd=\"{self.enclosure_pwd}\", " \
                           f"telnet_filepath=\"{telnet_file}\", " \
                           f"cmd=\"{cmd}\")'"
 
                 LOGGER.info(f"Running command : {command}")
-                response = self.host_connect.execute_cmd(cmd=command,
-                                                         read_lines=True,
-                                                         shell=False)
+                response = self.node_obj.execute_cmd(cmd=command,
+                                                     read_lines=True)
 
                 LOGGER.info(response)
                 response = response[0].split()
 
                 status = os.popen(
                     (common_cmd.STRING_MANIPULATION.format(response[0])).
-                        replace('\n', ' ').replace('\\n', ' ')).read()
+                    replace('\n', ' ').replace('\\n', ' ')).read()
                 path = os.popen(
                     (common_cmd.STRING_MANIPULATION.format(response[1])).
-                        replace('\n', ' ').replace('\\n', ' ')).read()
+                    replace('\n', ' ').replace('\\n', ' ')).read()
             except BaseException as error:
                 LOGGER.error(
                     f"Error in {ControllerLib.show_disks.__name__}: {error}")
@@ -261,13 +258,13 @@ class ControllerLib:
                     return resp
 
                 drive_dict = resp[1]
-
-                return resp[0], len(drive_dict)
             except BaseException as error:
                 LOGGER.error(
                     f"Error on {ControllerLib.get_total_drive_count.__name__}:"
                     f" {error}")
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
+
+            return resp[0], len(drive_dict)
 
     def check_phy_health(self, phy_num: str, telnet_file: str) -> Tuple[bool,
                                                                         str]:
@@ -306,13 +303,13 @@ class ControllerLib:
                     if v['location'] == '0.{}'.format(phy_num):
                         status = v['health']
                         break
-
-                return resp[0], status
             except BaseException as error:
                 LOGGER.error(
                     f"Error in {ControllerLib.check_phy_health.__name__}: "
                     f"{error}")
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
+
+            return resp[0], status
 
     def set_drive_status_telnet(self, enclosure_id: str, controller_name: str,
                                 drive_number: str, status: str) -> Tuple[str,
@@ -342,27 +339,24 @@ class ControllerLib:
                           f"status=\"{status}\", cmd=\"{cmd}\")'"
 
                 LOGGER.info(f"Running command {command}")
-                response = self.host_connect.execute_cmd(cmd=command,
-                                                         read_lines=True,
-                                                         shell=False)
+                response = self.node_obj.execute_cmd(cmd=command,
+                                                     read_lines=True)
 
                 response = response[0].split()
 
                 status = os.popen(
                     (common_cmd.STRING_MANIPULATION.format(response[0])).
-                        replace('\n', ' ').replace('\\n', ' ')).read()
+                    replace('\n', ' ').replace('\\n', ' ')).read()
                 drive_status = os.popen(
-                    (common_cmd.STRING_MANIPULATION.format(
-                        response[1])).replace(
-                        '\n', ' ').replace(
-                        '\\n', ' ')).read()
-
-                return status, drive_status
+                    (common_cmd.STRING_MANIPULATION.format(response[1]))
+                    .replace('\n', ' ').replace('\\n', ' ')).read()
             except BaseException as error:
                 LOGGER.error(f"Error in"
                              f" {ControllerLib.set_drive_status_telnet.__name__}:"
                              f" {error}")
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
+
+            return status, drive_status
 
     def get_show_volumes(self, output_file_path: str = cons.CTRL_LOG_PATH) ->\
             Tuple[bool, dict]:
@@ -374,7 +368,8 @@ class ControllerLib:
                             "total-size", "allocated-size", "storage-type",
                             "health", "health-reason",
                             "health-recommendation"}}}
-        :param output_file_path: File path to save response of telnet common_cmd.
+        :param output_file_path: File path to save response of telnet
+        common_cmd.
         :type: str
         :return: (Boolean, disk volume dict).
         :rtype: tuple
@@ -403,9 +398,8 @@ class ControllerLib:
                           f"enclosure_pwd=\"{self.enclosure_pwd}\", " \
                           f"file_path=\"{output_file_path}\", cmd=\"{cmd}\")'"
                 LOGGER.info(f"Running command : {command}")
-                resp = self.host_connect.execute_cmd(cmd=command,
-                                                     read_lines=True,
-                                                     shell=False)
+                resp = self.node_obj.execute_cmd(cmd=command,
+                                                 read_lines=True)
                 LOGGER.info(f"Show volumes response log: {resp}")
                 # Copy remote log file to local path.
                 LOGGER.info("Copying log file from node to client")
@@ -454,16 +448,16 @@ class ControllerLib:
                     os.remove(output_file_path)
                 if not disk_volumes_dict:
                     return False, disk_volumes_dict
-
-                return True, disk_volumes_dict
             except BaseException as error:
                 LOGGER.error(
                     f"Error in {ControllerLib.get_show_volumes.__name__}: "
                     f"{error}")
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
-    def get_show_expander_status(self, output_file_path: str = cons.CTRL_LOG_PATH) \
-            -> Tuple[bool, dict]:
+            return True, disk_volumes_dict
+
+    def get_show_expander_status(self, output_file_path: str
+                                 = cons.CTRL_LOG_PATH) -> Tuple[bool, dict]:
         """
         Get "show expander-status" output from enclosure.
         Parse the output files.
@@ -501,9 +495,8 @@ class ControllerLib:
                           f"{self.enclosure_pwd}\", " \
                           f"file_path=\"{output_file_path}\", cmd=\"{cmd}\")'"
                 LOGGER.info(f"Running command : {command}")
-                resp = self.host_connect.execute_cmd(cmd=command,
-                                                     read_lines=True,
-                                                     shell=False)
+                resp = self.node_obj.execute_cmd(cmd=command,
+                                                 read_lines=True)
                 LOGGER.info(f"Show show expander-status response log: {resp}")
                 LOGGER.info("Copying log file from node to client")
                 status, res_path = self.node_obj.write_remote_file_to_local_file(
@@ -529,11 +522,11 @@ class ControllerLib:
                     keys = expander_status_dict.keys()
                     for k in keys:
                         if expander_status_dict[k].get("type") == "Drive":
-                            if expander_status_dict[k].get(
-                                    'controller') not in d:
+                            if expander_status_dict[k].get('controller') \
+                                    not in d:
                                 d[expander_status_dict[k].get('controller')] = {
-                                    int(expander_status_dict[k][
-                                            "wide-port-index"]):
+                                    int(expander_status_dict[k]
+                                        ["wide-port-index"]):
                                         dict([(ik, expander_status_dict[k][iv])
                                               for ik, iv in
                                               expander_param.items()
@@ -549,22 +542,22 @@ class ControllerLib:
                                               for ik, iv in
                                               expander_param.items()
                                               if
-                                              expander_status_dict[k].get(iv)])
-                                })
+                                              expander_status_dict[k].get(iv)])}
+                                )
                     expander_status_dict = d
                 # Remove local log file.
                 if os.path.exists(output_file_path):
                     os.remove(output_file_path)
                 if not expander_status_dict:
                     return False, expander_status_dict
-
-                return True, expander_status_dict
             except BaseException as error:
                 LOGGER.error(
                     f"Error in "
                     f"{ControllerLib.get_show_expander_status.__name__}:"
                     f" {error}")
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
+
+            return True, expander_status_dict
 
     def get_show_disk_group(self, output_file_path: str = cons.CTRL_LOG_PATH)\
             -> Tuple[bool, dict]:
@@ -573,7 +566,8 @@ class ControllerLib:
         Parse output xml.
         Get response dict: key-"disk group" and values dict of "name, size,
         health, health-reason, health-recommendation".
-        :param output_file_path: File path to save response of telnet common_cmd.
+        :param output_file_path: File path to save response of telnet
+        common_cmd.
         :type: str
         :return: (Boolean, disk group dict).
         :rtype: tuple
@@ -602,9 +596,8 @@ class ControllerLib:
                           f"enclosure_pwd=\"{self.enclosure_pwd}\", " \
                           f"file_path=\"{output_file_path}\", cmd=\"{cmd}\")'"
                 LOGGER.info(f"Running command : {command}")
-                resp = self.host_connect.execute_cmd(cmd=command,
-                                                     read_lines=True,
-                                                     shell=False)
+                resp = self.node_obj.execute_cmd(cmd=command,
+                                                 read_lines=True)
                 LOGGER.info(f"Show disk group response log: {resp}")
                 # Copy remote log file to local path.
                 LOGGER.info("Copying log file from node to client")
@@ -639,13 +632,13 @@ class ControllerLib:
                     os.remove(output_file_path)
                 if not disk_group_dict:
                     return False, disk_group_dict
-
-                return True, disk_group_dict
             except BaseException as error:
                 LOGGER.error(
                     f"Error in {ControllerLib.get_show_disk_group.__name__}: "
                     f"{error}")
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
+
+            return True, disk_group_dict
 
     def get_show_disks(self, output_file_path: str = cons.CTRL_LOG_PATH) -> \
             Tuple[bool, dict]:
@@ -657,7 +650,8 @@ class ControllerLib:
                     "revision", "description", "interface", "usage", "size",
                     "disk-group", "storage-pool-name", "storage-tier",
                     "health", "health-reason", "health-recommendation".
-        :param output_file_path: File path to save response of telnet common_cmd.
+        :param output_file_path: File path to save response of telnet
+        common_cmd.
         :type: str
         :return: (Boolean, disks dict).
         :rtype: tuple
@@ -685,9 +679,8 @@ class ControllerLib:
                           f"{self.enclosure_pwd}\", " \
                           f"file_path=\"{output_file_path}\", cmd=\"{cmd}\")'"
                 LOGGER.info(f"Running command : {command}")
-                resp = self.host_connect.execute_cmd(cmd=command,
-                                                     read_lines=True,
-                                                     shell=False)
+                resp = self.node_obj.execute_cmd(cmd=command,
+                                                 read_lines=True)
                 LOGGER.info(f"Show disk group response log: {resp}")
                 # Copy remote log file to local path.
                 LOGGER.info("Copying log file from node to client")
@@ -713,20 +706,20 @@ class ControllerLib:
                     disks_dict = dict([(disks_dict[k]['durable-id'],
                                         dict([(ik, v[iv])
                                               for ik, iv in disks_param.items()
-                                              if v.get(iv)])
-                                        ) for k, v in disks_dict.items()])
+                                              if v.get(iv)]))
+                                       for k, v in disks_dict.items()])
                 # Remove local log file.
                 if os.path.exists(output_file_path):
                     os.remove(output_file_path)
                 if not disks_dict:
                     return False, disks_dict
-
-                return True, disks_dict
             except BaseException as error:
                 LOGGER.error(
                     f"Error in {ControllerLib.get_show_disks.__name__}: "
                     f"{error}")
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
+
+            return True, disks_dict
 
     def clear_drive_metadata(self, drive_num: str) -> str:
         """
@@ -754,18 +747,15 @@ class ControllerLib:
                           f"{self.enclosure_user}\", enclosure_pwd=\"" \
                           f"{self.enclosure_pwd}\", cmd=\"{cmd}\")'"
                 LOGGER.info(f"Running command : {command}")
-                resp = self.host_connect.execute_cmd(cmd=command,
-                                                     read_lines=True,
-                                                     shell=False)
+                resp = self.node_obj.execute_cmd(cmd=command,
+                                                 read_lines=True)
 
                 LOGGER.debug(resp)
                 response = resp[0].split()
 
                 status = os.popen(
-                    (common_cmd.STRING_MANIPULATION.format(response[
-                                                               0])).
-                        replace('\n', ' ').replace('\\n', ' ')).read()
-
+                    (common_cmd.STRING_MANIPULATION.format(response[0])).
+                    replace('\n', ' ').replace('\\n', ' ')).read()
             except Exception as error:
                 LOGGER.error("Error in {0}: {1}".format(
                     ControllerLib.clear_drive_metadata.__name__, error))

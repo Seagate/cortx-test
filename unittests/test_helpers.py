@@ -1,3 +1,7 @@
+"""
+This file consists of unit tests for the methods in helper files
+"""
+
 import pytest
 import logging
 from commons.helpers.node_helper import Node
@@ -5,6 +9,7 @@ from commons.helpers.health_helper import Health
 from commons.helpers.bmc_helper import Bmc
 from commons.helpers.telnet_helper import Telnet
 from commons.helpers.controller_helper import ControllerLib
+
 
 def test_node_helper():
     x = Node("10.237.65.202","root","seagate")
