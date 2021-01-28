@@ -1,20 +1,20 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+"""SSPL test cases: Primary Node."""
+
 import os
 import time
 import random
 import logging
 import pytest
-from commons.libs.ras.ras_test_lib import RASTestLib
+from libs.ras.ras_test_lib import RASTestLib
 from commons.helpers.node_helper import Node
 from commons.helpers.health_helper import Health
 from commons.helpers.controller_helper import ControllerLib
 from commons.helpers.s3_helper import S3Helper
 from commons import constants as cons
 from commons import commands as common_cmd
-from commons import errorcodes as cterr
-from commons.exceptions import CTException
 from commons.utils import config_utils as conf_util
 from commons.utils.assert_utils import *
 from libs.csm.rest.csm_rest_alert import SystemAlerts
@@ -30,18 +30,18 @@ RAS_TEST_CFG = conf_util.read_yaml(cons.SSPL_TEST_CONFIG_PATH)[1]
 COMMON_CONF = conf_util.read_yaml(cons.COMMON_CONFIG_PATH)[1]
 RAS_VAL = conf_util.read_yaml(cons.RAS_CONFIG_PATH)[1]
 BYTES_TO_READ = cons.BYTES_TO_READ
+CM_CFG = RAS_VAL["ras_sspl_alert"]
 LOGGER = logging.getLogger(__name__)
 
-test_data = [COMMON_CONF["host"]]
+TEST_DATA = [COMMON_CONF["host"]]
 
 
 class SSPLTest:
-    """
-    SSPL Test Suite
-    """
-    @pytest.mark.parametrize("host", test_data)
+    """SSPL Test Suite."""
+
+    @pytest.mark.parametrize("host", TEST_DATA)
     def setup_module(self, host):
-        cm_cfg = RAS_VAL["ras_sspl_alert"]
+        """Setup for module."""
         self.host = host
         self.uname = COMMON_CONF["username"]
         self.passwd = COMMON_CONF["password"]
@@ -54,7 +54,8 @@ class SSPLTest:
                                        password=self.passwd)
         self.node_obj = Node(hostname=self.host, username=self.uname,
                              password=self.passwd)
-        self.health_obj = Health()
+        self.health_obj = Health(hostname=self.host, username=self.uname,
+                                 password=self.passwd)
         self.controller_obj = ControllerLib(
             host=self.host, h_user=self.uname, h_pwd=self.passwd,
             enclosure_ip=COMMON_CONF["primary_enclosure_ip"],
@@ -62,11 +63,12 @@ class SSPLTest:
             enclosure_pwd=COMMON_CONF["enclosure_pwd"])
         try:
             self.s3obj = S3Helper()
-        except:
+        except ImportError as err:
+            LOGGER.info(str(err))
             self.s3obj = S3Helper.get_instance()
 
         # Enable this flag for starting RMQ channel
-        self.start_rmq = cm_cfg["start_rmq"]
+        self.start_rmq = CM_CFG["start_rmq"]
 
         field_list = ["primary_controller_ip", "secondary_controller_ip",
                       "primary_controller_port", "secondary_controller_port",
@@ -79,16 +81,10 @@ class SSPLTest:
             assert res is True
 
     def setup_function(self):
-        """
-        Setup operations
-        :return:
-        """
+        """Setup operations."""
         self.starttime = time.time()
-
-        cm_cfg = RAS_VAL["ras_sspl_alert"]
-
         LOGGER.info("Retaining the original/default config")
-        self.ras_test_obj.retain_config(cm_cfg["file"]["original_sspl_conf"],
+        self.ras_test_obj.retain_config(CM_CFG["file"]["original_sspl_conf"],
                                         False)
 
         LOGGER.info("Performing Setup operations")
@@ -108,14 +104,14 @@ class SSPLTest:
         assert response[0] is True, response[1]
 
         LOGGER.info("Restarting sspl service")
-        self.health_obj.restart_pcs_resource(cm_cfg["sspl_resource_id"],
+        self.health_obj.restart_pcs_resource(CM_CFG["sspl_resource_id"],
                                              shell=False)
-        time.sleep(cm_cfg["after_service_restart_sleep_val"])
+        time.sleep(CM_CFG["after_service_restart_sleep_val"])
         LOGGER.info(
             "Verifying the status of sspl and rabittmq service is online")
 
         # Getting SSPl and RabbitMQ service status
-        services = cm_cfg["service"]
+        services = CM_CFG["service"]
         for service in services:
             resp = self.s3obj.get_s3server_service_status(
                 service=service, host=self.host, user=self.uname,
@@ -128,54 +124,44 @@ class SSPLTest:
         if self.start_rmq:
             LOGGER.info("Running rabbitmq_reader.py script on node")
             resp = self.ras_test_obj.start_rabbitmq_reader_cmd(
-                cm_cfg["sspl_exch"], cm_cfg["sspl_key"])
+                CM_CFG["sspl_exch"], CM_CFG["sspl_key"])
             assert resp is True, "Failed to start RMQ channel"
             LOGGER.info(
                 "Successfully started rabbitmq_reader.py script on node")
 
         LOGGER.info("Starting collection of sspl.log")
-        cmd = common_cmd.CHECK_SSPL_LOG_FILE.\
-            format(cm_cfg["file"]["sspl_log_file"])
-        response = self.node_obj.execute_cmd(cmd=cmd,
-                                             read_nbytes=BYTES_TO_READ)
-        assert response[0] is True, response[1]
+        res = self.ras_test_obj.sspl_log_collect()
+        assert res[0] is True, res[1]
         LOGGER.info("Started collection of sspl logs")
 
         LOGGER.info("Successfully performed Setup operations")
 
     def teardown_function(self):
-        """
-        Teardown operations
-        """
+        """Teardown operations."""
         LOGGER.info("Performing Teardown operation")
-        cm_cfg = RAS_VAL["ras_sspl_alert"]
-        self.ras_test_obj.retain_config(cm_cfg["file"]["original_sspl_conf"],
+        self.ras_test_obj.retain_config(CM_CFG["file"]["original_sspl_conf"],
                                         True)
 
         LOGGER.info("Restoring values to default in consul")
         LOGGER.info("Updating disk usage threshold value")
         res = self.ras_test_obj.update_threshold_values(
-            cons.KV_STORE_DISK_USAGE, cm_cfg["sspl_config"]["sspl_du_key"],
-            cm_cfg["sspl_config"]["sspl_du_dval"])
+            cons.KV_STORE_DISK_USAGE, CM_CFG["sspl_config"]["sspl_du_key"],
+            CM_CFG["sspl_config"]["sspl_du_dval"])
         assert res is True
 
         if not self.default_cpu_usage:
             LOGGER.info("Updating default cpu usage threshold value")
             res = self.ras_test_obj.update_threshold_values(
                 cons.KV_STORE_DISK_USAGE, cons.CPU_USAGE_KEY,
-                cm_cfg["default_cpu_usage"])
+                CM_CFG["default_cpu_usage"])
             assert res is True
 
         if not self.default_mem_usage:
             LOGGER.info("Updating default memory usage threshold value")
             res = self.ras_test_obj.update_threshold_values(
                 cons.KV_STORE_DISK_USAGE, cons.MEM_USAGE_KEY,
-                cm_cfg["default_mem_usage"])
+                CM_CFG["default_mem_usage"])
             assert res is True
-
-        if self.start_rmq:
-            LOGGER.info("Terminating the process rabbitmq_reader.py")
-            self.ras_test_obj.kill_remote_process("rabbitmq_reader.py")
 
         if self.changed_level:
             kv_store_path = cons.LOG_STORE_PATH
@@ -186,9 +172,9 @@ class SSPLTest:
                 update=True)
             assert res is True
 
-        if os.path.exists(cm_cfg["file"]["telnet_xml"]):
+        if os.path.exists(CM_CFG["file"]["telnet_xml"]):
             LOGGER.info("Remove telnet file")
-            os.remove(cm_cfg["file"]["telnet_xml"])
+            os.remove(CM_CFG["file"]["telnet_xml"])
 
         if self.node_obj.path_exists(
                 RAS_VAL["ras_sspl_alert"]["file"]["disk_usage_temp_file"]):
@@ -201,7 +187,9 @@ class SSPLTest:
         self.ras_test_obj.kill_remote_process("/sspl/sspl.log")
 
         LOGGER.debug("Copying contents of sspl.log")
-        read_resp = self.node_obj.read_file(cm_cfg["file"]["sspl_log_file"])
+        read_resp = self.node_obj.read_file(
+            filename=CM_CFG["file"]["sspl_log_file"],
+            local_path=CM_CFG["file"]["sspl_log_file"])
         LOGGER.debug(
             "======================================================")
         LOGGER.debug(read_resp)
@@ -209,25 +197,27 @@ class SSPLTest:
             "======================================================")
 
         LOGGER.info(
-            "Removing file {}".format(cm_cfg["file"]["sspl_log_file"]))
-        self.node_obj.remove_file(filename=cm_cfg["file"]["sspl_log_file"])
+            "Removing file {}".format(CM_CFG["file"]["sspl_log_file"]))
+        self.node_obj.remove_file(filename=CM_CFG["file"]["sspl_log_file"])
 
         if self.start_rmq:
-            files = [cm_cfg["file"]["alert_log_file"],
-                     cm_cfg["file"]["extracted_alert_file"],
-                     cm_cfg["file"]["screen_log"]]
+            LOGGER.info("Terminating the process rabbitmq_reader.py")
+            self.ras_test_obj.kill_remote_process("rabbitmq_reader.py")
+            files = [CM_CFG["file"]["alert_log_file"],
+                     CM_CFG["file"]["extracted_alert_file"],
+                     CM_CFG["file"]["screen_log"]]
             for file in files:
                 LOGGER.info(f"Removing log file {file} from the Node")
                 self.node_obj.remove_file(filename=file)
 
         self.health_obj.restart_pcs_resource(
-            resource=cm_cfg["sspl_resource_id"], shell=False)
-        time.sleep(cm_cfg["sleep_val"])
+            resource=CM_CFG["sspl_resource_id"], shell=False)
+        time.sleep(CM_CFG["sleep_val"])
 
         if self.selinux_enabled:
-            local_path = cm_cfg["local_selinux_path"]
-            new_value = cm_cfg["selinux_disabled"]
-            old_value = cm_cfg["selinux_enforced"]
+            local_path = CM_CFG["local_selinux_path"]
+            new_value = CM_CFG["selinux_disabled"]
+            old_value = CM_CFG["selinux_enforced"]
             LOGGER.info("Modifying selinux status from {} to {} on node {}"
                         .format(old_value, new_value, self.host))
             resp = self.ras_test_obj.modify_selinux_file()
@@ -240,7 +230,7 @@ class SSPLTest:
                     self.host))
             response = self.node_obj.execute_cmd(cmd=common_cmd.REBOOT_NODE_CMD)
 
-            time.sleep(cm_cfg["reboot_delay"])
+            time.sleep(CM_CFG["reboot_delay"])
             os.remove(local_path)
             LOGGER.info("Rebooted node {} after modifying selinux status"
                         .format(self.host))
@@ -248,10 +238,12 @@ class SSPLTest:
         LOGGER.info("Successfully performed Teardown operation")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-9956", "sspl_disk_space_alert", "sw_alert")
+    @pytest.mark.sw_alert
+    @pytest.mark.tags("TEST-9956")
     def test_3005(self):
         """
         EES ras SSPL: Node: Disk Space-Full Alerts #1
+        sspl_disk_space_alert
         """
         LOGGER.info("STARTED: TEST-3005: EES ras SSPL: "
                     "Node: Disk Space-Full Alerts #1")
@@ -291,10 +283,12 @@ class SSPLTest:
                     "Node: Disk Space-Full Alerts #1")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-9957", "sspl_disk_space_alert", "sw_alert")
+    @pytest.mark.sw_alert
+    @pytest.mark.tags("TEST-9957")
     def test_3006(self):
         """
         EES ras SSPL: Node: Disk Space-Full Alerts #2
+        sspl_disk_space_alert
         """
         LOGGER.info("STARTED:TEST-3006: EES ras SSPL: "
                     "Node: Disk Space-Full Alerts #2")
@@ -341,11 +335,13 @@ class SSPLTest:
                     "Node: Disk Space-Full Alerts #2")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-9958", "sspl_startup_time", "sw_alert")
+    @pytest.mark.sw_alert
+    @pytest.mark.tags("TEST-9958")
     def test_3104(self):
         """
         EOS-8135 : Validate EES RAS SSPL: Sync with systemd (to bring down
         startup within SLA
+        sspl_startup_time
         """
         LOGGER.info(
             "STARTED: Validate EES RAS SSPL: Sync with systemd "
@@ -374,10 +370,12 @@ class SSPLTest:
                     "(to bring down startup within SLA)")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-9959", "sspl_fan_alert", "sw_alert")
+    @pytest.mark.sw_alert
+    @pytest.mark.tags("TEST-9959")
     def test_3161(self):
         """
         EOS-8135 : Validating EOS v1 RAS: Node: IPMI: FAN Failure Alerts
+        sspl_fan_alert
         """
         LOGGER.info(
             "STARTED: Validating EOS v1 RAS: Node: IPMI: FAN Failure Alerts")
@@ -425,9 +423,9 @@ class SSPLTest:
 
         operations = test_cfg["operations"]
         for op in operations:
-            LOGGER.info(f"Ste 5: Resolving fan fault using ipmi tool using"
+            LOGGER.info(f"Step 5: Resolving fan fault using ipmi tool using"
                         f" {op}")
-            cmd = cons.RESOLVE_FAN_FAULT.format(fan_name, op)
+            cmd = common_cmd.RESOLVE_FAN_FAULT.format(fan_name, op)
             LOGGER.info(f"Running command: {cmd}")
             resp = self.node_obj.execute_cmd(cmd=cmd,
                                              read_nbytes=test_cfg["buffer_sz"])
@@ -459,10 +457,12 @@ class SSPLTest:
             "ENDED: Validating EOS v1 RAS: Node: IPMI: FAN Failure Alerts")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-9960", "sspl_fan_alert", "sw_alert")
+    @pytest.mark.sw_alert
+    @pytest.mark.tags("TEST-9960")
     def test_3280(self):
         """
         EOS-8135 : RAS: Node: IPMI: FAN Failure Alerts Persistent Cache
+        sspl_fan_alert
         """
         LOGGER.info("STARTED: RAS: Node: IPMI: FAN Failure Alerts Persistent"
                     " Cache")
@@ -572,10 +572,12 @@ class SSPLTest:
             "Cache")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-9961", "sspl_fan_alert", "sw_alert")
+    @pytest.mark.sw_alert
+    @pytest.mark.tags("TEST-9961")
     def test_1299(self):
         """
         EOS-8135 : Validating EOS v1 RAS: Node: IPMI: FAN Failure Alerts
+        sspl_fan_alert
         """
         LOGGER.info(
             "STARTED: Validate EES RAS SSPL: Sync with systemd "
@@ -619,11 +621,13 @@ class SSPLTest:
                     "Alerts")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-10622", "sspl_psu_alert", "hw_alert")
+    @pytest.mark.hw_alert
+    @pytest.mark.tags("TEST-10622")
     def test_4332(self):
         """
         EOS-9075: TA RAS Automation: Validate alert for PSU Module Fault/
         cable missing from 5U84 Enclosure.
+        sspl_fan_alert
         """
         LOGGER.info(
             "STARTED: EOS-9075: TA RAS Automation: Validate alert for PSU "
@@ -680,12 +684,14 @@ class SSPLTest:
             "Fault/cable missing from 5U84 Enclosure.")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-10900", "sspl_ctrl_alert", "hw_alert")
+    @pytest.mark.hw_alert
+    @pytest.mark.tags("TEST-10900")
     def test_4362(self):
         """
         EOS-9074: TEST: From user perspective validate if alerts are displayed
         with right message alerts - controller fault resolved
         Fault-Resolved from 5U84 Enclosure
+        sspl_ctrl_alert
         """
         LOGGER.info(
             "STARTED: EOS-9074: TEST: From user perspective validate if alerts "
@@ -746,11 +752,13 @@ class SSPLTest:
             "5U84 Enclosure")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-10623", "sspl_psu_alert", "hw_alert")
+    @pytest.mark.hw_alert
+    @pytest.mark.tags("TEST-10623")
     def test_4335(self):
         """
         EOS-9082 : TA RAS Automation: Validate alerts for PSU Module
         Fault-Resolved from 5U84 Enclosure
+        sspl_psu_alert
         """
         LOGGER.info(
             "STARTED: EOS-9082: TA RAS Automation: Validate alerts for PSU "
@@ -808,11 +816,13 @@ class SSPLTest:
             "Module Fault-Resolved from 5U84 Enclosure ")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-10624", "sspl_ctrl_alert", "hw_alert")
+    @pytest.mark.hw_alert
+    @pytest.mark.tags("TEST-10624")
     def test_4361(self):
         """
         EOS-9078 : TA RAS Automation: Validate if alerts are displayed with
         right message - controller faulted
+        sspl_ctrl_alert
         """
         LOGGER.info(
             "STARTED: EOS-9078: TA RAS Automation: Validate if alerts are "
@@ -871,11 +881,13 @@ class SSPLTest:
             "displayed with right message - controller faulted")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-11225", "sspl_log_level", "sw_alert")
+    @pytest.mark.sw_alert
+    @pytest.mark.tags("TEST-11225")
     def test_6916(self):
         """
          EOS-9865 : Validating EES RAS: Allow log level setting is not changed
          when after restarting the SSPL service
+         sspl_log_level
          """
         LOGGER.info("STARTED: Validating EES RAS: Allow log level setting is "
                     "not changed when after restarting the SSPL service")
@@ -918,11 +930,13 @@ class SSPLTest:
                     "changed when after restarting the SSPL service")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-11224", "sspl_disk_space_alert", "sw_alert")
+    @pytest.mark.sw_alert
+    @pytest.mark.tags("TEST-11224")
     def test_4349(self):
         """
         EOS-9877 : TA RAS Automation: Test scenarios for validating EES RAS:
         Run SSPL on port 5100
+        sspl_disk_space_alert
         """
         LOGGER.info(
             "STARTED: TA RAS Automation: Test scenarios for validating EES RAS:"
@@ -1035,10 +1049,12 @@ class SSPLTest:
             " Run SSPL on port 5100")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-12014", "sspl_iem_alert", "sw_alert")
+    @pytest.mark.sw_alert
+    @pytest.mark.tags("TEST-12014")
     def test_3424(self):
         """
         EOS-9879 : TA RAS Automation : Sensor to read IEM from syslog
+        sspl_iem_alert
         """
         LOGGER.info(
             "STARTED: TA RAS Automation : Sensor to read IEM from syslog")
@@ -1091,10 +1107,12 @@ class SSPLTest:
         LOGGER.info("ENDED: TA RAS Automation : Sensor to read IEM from syslog")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-11760", "sspl_log_level", "sw_alert")
+    @pytest.mark.sw_alert
+    @pytest.mark.tags("TEST-11760")
     def test_6592(self):
         """
          EOS-9870: Validating EES RAS: Allow log level setting dynamically
+         sspl_log_level
          """
         LOGGER.info(
             "STARTED: Test QA :Validating EES RAS: Allow log level setting "
@@ -1137,10 +1155,12 @@ class SSPLTest:
             "dynamically")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-11762", "sspl_disk_alert", "hw_alert")
+    @pytest.mark.hw_alert
+    @pytest.mark.tags("TEST-11762")
     def test_157(self):
         """
         EOS-9962: TA RAS Automation: Test Disabling a drive from disk group
+        sspl_disk_alert
         """
         LOGGER.info("STARTED: TA RAS Automation: Test Disabling a drive from "
                     "disk group")
@@ -1202,10 +1222,9 @@ class SSPLTest:
                 input_parameters={"enclid": test_cfg["encl"],
                                   "ctrl_name": test_cfg["ctrl"],
                                   "phy_num": phy_num,
-                                  "operation": test_cfg[
-                    "operation_fault_resolved"],
-                    "exp_status": test_cfg["ok_phy_status"],
-                    "telnet_file": common_cfg["file"]["telnet_xml"]})
+                                  "operation": test_cfg["operation_fault_resolved"],
+                                  "exp_status": test_cfg["ok_phy_status"],
+                                  "telnet_file": common_cfg["file"]["telnet_xml"]})
 
             phy_stat = test_cfg["ok_phy_status"]
             if resp[1] == phy_stat:
@@ -1231,10 +1250,12 @@ class SSPLTest:
             "ENDED: TA RAS Automation: Test Disabling a drive from disk group")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-11763", "sspl_disk_alert", "hw_alert")
+    @pytest.mark.hw_alert
+    @pytest.mark.tags("TEST-11763")
     def test_158(self):
         """
         EOS-9963: TA RAS Automation: Test Enabling a drive from disk group
+        sspl_disk_alert
         """
         LOGGER.info(
             "STARTED: TA RAS Automation: Test Enabling a drive from disk group")
@@ -1282,10 +1303,9 @@ class SSPLTest:
                 input_parameters={"enclid": test_cfg["encl"],
                                   "ctrl_name": test_cfg["ctrl"],
                                   "phy_num": phy_num,
-                                  "operation": test_cfg[
-                    "operation_fault_resolved"],
-                    "exp_status": test_cfg["ok_phy_status"],
-                    "telnet_file": common_cfg["file"]["telnet_xml"]})
+                                  "operation": test_cfg["operation_fault_resolved"],
+                                  "exp_status": test_cfg["ok_phy_status"],
+                                  "telnet_file": common_cfg["file"]["telnet_xml"]})
 
             phy_stat = test_cfg["ok_phy_status"]
             if resp[1] == phy_stat:
@@ -1324,10 +1344,12 @@ class SSPLTest:
             "ENDED: TA RAS Automation: Test Enabling a drive from disk group")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-11761", "sspl_iem_alert", "sw_alert")
+    @pytest.mark.sw_alert
+    @pytest.mark.tags("TEST-11761")
     def test_6335(self):
         """
          EOS-9873: Test Enhanced IEM response through decoded IEC
+         sspl_iem_alert
          """
         LOGGER.info(
             "STARTED: Test Enhanced IEM response through decoded IEC "
@@ -1390,17 +1412,17 @@ class SSPLTest:
             "ENDED: Test Enhanced IEM response through decoded IEC")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-14036", "consul_security")
+    @pytest.mark.tags("TEST-14036")
     def test_5924(self):
         """
          EOS-9875: Test Username/Password Security coverage on consul
+         consul_security
          """
         LOGGER.info(
             "STARTED: Test Username/Password Security coverage on consul")
         LOGGER.info("Step 1: Modifying and validating enclosure username to "
-                    "'{0}' and password to '{1}'".format(
-                     COMMON_CONF["enclosure_user"],
-                     COMMON_CONF["enclosure_pwd"]))
+                    "'{0}' and password to '{1}'".format(COMMON_CONF["enclosure_user"],
+                                                         COMMON_CONF["enclosure_pwd"]))
         test_cfg = RAS_TEST_CFG["test_5924"]
         for field in test_cfg["fields"]:
             res = self.ras_test_obj.put_kv_store(COMMON_CONF["enclosure_user"],
@@ -1413,11 +1435,13 @@ class SSPLTest:
             "ENDED: Test Username/Password Security coverage on consul")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-14795", "health_view", "sw_alert")
+    @pytest.mark.sw_alert
+    @pytest.mark.tags("TEST-14795")
     def test_4354(self):
         """
         EOS-12920: User can view / query EES Nodes (1U Servers) OS health view
         (CPU Usage)
+        health_view
         """
         LOGGER.info(
             "STARTED: TEST-4354 User can view / query EES Nodes (1U Servers) "
@@ -1449,11 +1473,13 @@ class SSPLTest:
             "health view (CPU Usage)")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-15198", "health_view", "sw_alert")
+    @pytest.mark.sw_alert
+    @pytest.mark.tags("TEST-15198")
     def test_4355(self):
         """
         EOS-12921: User can view / query EES Nodes (1U Servers) OS health view
         (Main Memory Usage)
+        health_view
         """
         LOGGER.info(
             "STARTED: TEST-4355 User can view / query EES Nodes (1U Servers) "
@@ -1486,10 +1512,12 @@ class SSPLTest:
             "health view (Main Memory Usage)")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-4584", "health_view", "sw_alert")
+    @pytest.mark.sw_alert
+    @pytest.mark.tags("TEST-4584")
     def test_4584(self):
         """
         EOS-9876: Test SSPL with SELinux enabled
+        health_view
         """
         LOGGER.info(
             "STARTED: TEST-4584 Test SSPL with SELinux enabled")
