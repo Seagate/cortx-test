@@ -69,12 +69,9 @@ class S3TestLib(S3Lib):
         :param aws_session_token: aws_session_token.
         :param debug: debug mode.
         """
-        kwargs["region"] = kwargs.get("region") if kwargs.get(
-            "region", None) else S3_CONF["region"]
-        kwargs["aws_session_token"] = kwargs.get(
-            "aws_session_token") if kwargs.get("aws_session_token", None) else None
-        kwargs["debug"] = kwargs.get("debug") if kwargs.get(
-            "debug", None) else S3_CONF["debug"]
+        kwargs["region"] = kwargs.get("region", S3_CONF["region"])
+        kwargs["aws_session_token"] = kwargs.get("aws_session_token", None)
+        kwargs["debug"] = kwargs.get("debug", S3_CONF["debug"])
         super().__init__(access_key,
                          secret_key,
                          endpoint_url,
@@ -151,12 +148,12 @@ class S3TestLib(S3Lib):
         :param m_value: Value for metadata
         :return: (Boolean, object of put object method)
         """
-        m_key = kwargs.get("m_key") if kwargs.get("m_key", None) else None
-        m_value = kwargs.get("m_value") if kwargs.get("m_value", None) else None
+        kwargs["m_key"] = kwargs.get("m_key", None)
+        kwargs["m_value"] = kwargs.get("m_value", None)
         LOGGER.info("Putting object")
-        LOGGER.debug(bucket_name, object_name, file_path, m_key, m_value)
+        LOGGER.debug(bucket_name, object_name, file_path, **kwargs)
         try:
-            response = super().put_object(bucket_name, object_name, file_path, m_key, m_value)
+            response = super().put_object(bucket_name, object_name, file_path, **kwargs)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          S3TestLib.put_object.__name__,
@@ -662,12 +659,9 @@ class S3LibNoAuth(S3TestLib, S3AclTestLib, S3BucketPolicyTestLib):
                  s3_cert_path: str = None,
                  **kwargs) -> None:
         """S3 connection initializer for bucket and object without authentication."""
-        kwargs["region"] = kwargs.get("region") if kwargs.get(
-            "region", None) else S3_CONF["region"]
-        kwargs["aws_session_token"] = kwargs.get(
-            "aws_session_token") if kwargs.get("aws_session_token", None) else None
-        kwargs["debug"] = kwargs.get("debug") if kwargs.get(
-            "debug", None) else S3_CONF["debug"]
+        kwargs["region"] = kwargs.get("region", S3_CONF["region"])
+        kwargs["aws_session_token"] = kwargs.get("aws_session_token", None)
+        kwargs["debug"] = kwargs.get("debug", S3_CONF["debug"])
         super().__init__(access_key,
                          secret_key,
                          endpoint_url,
