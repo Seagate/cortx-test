@@ -1,5 +1,7 @@
 #!/usr/bin/python
-#
+
+"""File consists methods related to the health of the cluster."""
+
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,15 +22,16 @@
 
 import logging
 import time
-from typing import Union, Tuple, List
+from typing import Tuple, List
 from commons.helpers.host import Host
 from commons import commands
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 EXCEPTION_MSG = "*ERROR* An exception occurred in {}: {}"
 
 
 class Health(Host):
+    """Class for health related methods."""
 
     def get_ports_of_service(self, service: str) -> List[str] or None:
         """
@@ -41,7 +44,7 @@ class Health(Host):
             out_list = line.split()
             ports.append(out_list[3].split(':')[-1])
         if not ports:
-            log.error("Does Not Found Running Service '{}'".format(service))
+            LOG.error("Does Not Found Running Service '{}'".format(service))
             return None
         return ports
 
@@ -56,13 +59,14 @@ class Health(Host):
         for word in output:
             ports.append(word.split())
         if not ports:
-            log.error("Does Not Found Running Service '{}'".format(service))
+            LOG.error("Does Not Found Running Service '{}'".format(service))
             return None
         return ports
 
     def get_disk_usage(self, dir_path: str, field_val: int = 3) -> float:
         """
-        This function will return disk usage associated with given path.
+        Function will return disk usage associated with given path.
+
         :param dir_path: Directory path of which size is to be calculated
         :param field_val: 0, 1, 2 and 3 for total, used, free in bytes and
         percent used space respectively
@@ -71,34 +75,36 @@ class Health(Host):
 
         cmd = "python3 -c 'import psutil; print(psutil.disk_usage(\"{a}\")[{b}])'" \
             .format(a=str(dir_path), b=int(field_val))
-        log.debug(f"Running python command {cmd}")
+        LOG.debug(f"Running python command {cmd}")
         res = self.execute_cmd(cmd)
-        log.debug(res)
+        LOG.debug(res)
         res = res.decode("utf-8")
         return float(res.replace('\n', ''))
 
     def get_cpu_usage(self) -> float:
         """
-        This function with fetch the system cpu usage percentage from remote host
+        Function with fetch the system cpu usage percentage from remote host
+
         :return: system cpu usage
         """
-        log.debug("Fetching system cpu usage from node {}".format(self.hostname))
-        log.debug(commands.CPU_USAGE_CMD)
+        LOG.debug("Fetching system cpu usage from node {}".format(self.hostname))
+        LOG.debug(commands.CPU_USAGE_CMD)
         res = self.execute_cmd(commands.CPU_USAGE_CMD)
-        log.debug(res)
+        LOG.debug(res)
         res = res.decode("utf-8")
         cpu_usage = float(res.replace('\n', ''))
         return cpu_usage
 
     def get_memory_usage(self):
         """
-        This function with fetch the system memory usage percentage from remote host
+        Function with fetch the system memory usage percentage from remote host
+
         :return: system memory usage in percent
         """
-        log.debug("Fetching system memory usage from node {}".format(self.hostname))
-        log.debug(commands.MEM_USAGE_CMD)
+        LOG.debug("Fetching system memory usage from node {}".format(self.hostname))
+        LOG.debug(commands.MEM_USAGE_CMD)
         res = self.execute_cmd(commands.MEM_USAGE_CMD)
-        log.debug(res)
+        LOG.debug(res)
         res = res.decode("utf-8")
         mem_usage = float(res.replace('\n', ''))
         return mem_usage
@@ -107,13 +113,14 @@ class Health(Host):
         """
         Function to return pcs service systemd service name.
         This function will be usefull when service is not under systemctl
+
         :param service: Name of the pcs resource service
         :return: name of the service mentioned in systemd
         """
         cmd = commands.GREP_PCS_SERVICE_CMD.format(service)
-        log.debug(f"Executing cmd: {cmd}")
+        LOG.debug(f"Executing cmd: {cmd}")
         resp = self.execute_cmd(cmd, read_lines=False)
-        log.debug(resp)
+        LOG.debug(resp)
         if not resp:
             return None
 
@@ -122,44 +129,48 @@ class Health(Host):
         for element in resp1:
             if "systemd:" in element:
                 res = element.split("(systemd:")
-                log.debug(res)
+                LOG.debug(res)
                 return res[1]
 
     def pcs_cluster_start_stop(self, node_name: str, stop_flag: bool) -> \
             str or None:
         """
-        This function Gracefully shutdown the given node using pcs cluster 
+        This function Gracefully shutdown the given node using pcs cluster
         stop command
-        :param stopFlag: Shutdown if flag is True else Start the node
+
+        :param node_name: Name of the node
+        :param stop_flag: Shutdown if flag is True else Start the node
         """
         if stop_flag:
             cmd = commands.PCS_CLUSTER_STOP.format(node_name)
         else:
             cmd = commands.PCS_CLUSTER_START.format(node_name)
 
-        log.debug(f"Executing cmd: {cmd}")
+        LOG.debug(f"Executing cmd: {cmd}")
         resp = self.execute_cmd(cmd, read_lines=False)
-        log.debug(resp)
+        LOG.debug(resp)
 
         return resp[1]
 
     def pcs_status_grep(self, service: str) -> str or None:
         """
         Function to return grepped pcs status services.
+
         :param str service: Name of the pcs resource service
         :return: pcs staus str response)
         """
         cmd = commands.GREP_PCS_SERVICE_CMD.format(service)
-        log.debug(f"Executing cmd: {cmd}")
+        LOG.debug(f"Executing cmd: {cmd}")
         resp = self.execute_cmd(cmd, read_lines=False)
-        log.debug(resp)
+        LOG.debug(resp)
 
         return resp
 
     def pcs_resource_cleanup(self, options: str = None) -> str or None:
         """
         Perform pcs resource cleanup
-        :param options: option supported in resource cleanup 
+
+        :param options: option supported in resource cleanup
         eg: [<resource id>] [--node <node>]
         :return:  pcs str response
         """
@@ -168,21 +179,22 @@ class Health(Host):
         else:
             options = " "
             cmd = commands.PCS_RESOURCES_CLEANUP.format(options)
-        log.debug(f"Executing cmd: {cmd}")
+        LOG.debug(f"Executing cmd: {cmd}")
         resp = self.execute_cmd(cmd, read_lines=False)
-        log.debug(resp)
+        LOG.debug(resp)
 
         return resp
 
     def is_motr_online(self) -> bool:
         """
         Check whether all services are online in motr cluster.
+
         :return: hctl response.
         """
         output = self.execute_cmd(commands.MOTR_STATUS_CMD, read_lines=True)
-        log.debug(output)
+        LOG.debug(output)
         fail_list = ['failed', 'not running', 'offline']
-        log.debug(fail_list)
+        LOG.debug(fail_list)
         for line in output:
             if any(fail_str in line for fail_str in fail_list):
                 return False
@@ -192,35 +204,37 @@ class Health(Host):
     def is_machine_already_configured(self) -> bool:
         """
         This method checks that machine is already configured or not.
+
         ex - mero_status_cmd = "hctl status"
         :return: boolean
         """
         motr_status_cmd = commands.MOTR_STATUS_CMD
-        log.debug(f"command : {motr_status_cmd}")
+        LOG.debug(f"command : {motr_status_cmd}")
         cmd_output = self.execute_cmd(motr_status_cmd, read_lines=True)
         if not cmd_output[0] or "command not found" in str(cmd_output[1]):
-            log.debug("Machine is not configured..!")
+            LOG.debug("Machine is not configured..!")
             return False
         cmd_output = [line.split("\n")[0] for line in cmd_output[1]]
         for output in cmd_output:
             if ('[' and ']') in output:
-                log.debug(output)
-        log.debug("Machine is already configured..!")
+                LOG.debug(output)
+        LOG.debug("Machine is already configured..!")
         return True
 
     def all_cluster_services_online(self, timeout=400) -> Tuple[bool, str]:
         """
-        This function will verify hctl status commands output. Check for
+        Function will verify hctl status commands output. Check for
         all cluster services are online using hctl mero status command.
+
         ex - mero_status_cmd = "hctl status"
         :return: boolean
         """
         mero_status_cmd = commands.MOTR_STATUS_CMD
-        log.debug(f"command : {mero_status_cmd}")
+        LOG.debug(f"command : {mero_status_cmd}")
         cmd_output = self.execute_cmd(
             mero_status_cmd, timeout=timeout, read_lines=True)
         if not cmd_output[0]:
-            log.error(f"Command {mero_status_cmd} failed..!")
+            LOG.error(f"Command {mero_status_cmd} failed..!")
             return False, cmd_output[1]
         # removing \n character from each line of output
         cmd_output = [line.split("\n")[0] for line in cmd_output[1]]
@@ -229,33 +243,33 @@ class Health(Host):
             if ']' in output:
                 service_status = output.split(']')[0].split('[')[1].strip()
                 if 'started' not in service_status:
-                    log.error("services not starts successfully")
+                    LOG.error("services not starts successfully")
                     return False, "Services are not online"
             elif ("command not found" in output) or \
                     ("Cluster is not running." in output):
-                log.debug("Machine is not configured..!")
+                LOG.debug("Machine is not configured..!")
                 return False, f"{commands.MOTR_STATUS_CMD} command not found"
             else:
-                log.debug("All other services are online")
+                LOG.debug("All other services are online")
                 return True, "Server is Online"
 
-    def restart_pcs_resource(self, resource: str, wait_time: int = 30,
-                             shell: bool = False) -> Tuple[bool, str]:
+    def restart_pcs_resource(self, resource: str, wait_time: int = 30) \
+            -> Tuple[bool, str]:
         """
         Restart given resource using pcs resource command
+
         :param resource: resource name from pcs resource
         :param wait_time: Wait time in sec after restart
-        :param shell: for interactive shell True/False
         :return: tuple with boolean and response/error
         :rtype: tuple
         """
-        log.info("Restarting resource : {}".format(resource))
+        LOG.info("Restarting resource : {}".format(resource))
         cmd = commands.PCS_RESOURCE_RESTART_CMD.format(resource)
 
-        resp = self.execute_cmd(cmd, read_lines=True, shell=shell)
+        resp = self.execute_cmd(cmd, read_lines=True)
         time.sleep(wait_time)
         success_msg = "{} successfully restarted".format(resource)
         if success_msg in resp:
             return True, resp
-        else:
-            return False, resp
+
+        return False, resp

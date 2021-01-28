@@ -104,8 +104,7 @@ class SSPLTest:
         assert response[0] is True, response[1]
 
         LOGGER.info("Restarting sspl service")
-        self.health_obj.restart_pcs_resource(CM_CFG["sspl_resource_id"],
-                                             shell=False)
+        self.health_obj.restart_pcs_resource(CM_CFG["sspl_resource_id"])
         time.sleep(CM_CFG["after_service_restart_sleep_val"])
         LOGGER.info(
             "Verifying the status of sspl and rabittmq service is online")
@@ -211,7 +210,7 @@ class SSPLTest:
                 self.node_obj.remove_file(filename=file)
 
         self.health_obj.restart_pcs_resource(
-            resource=CM_CFG["sspl_resource_id"], shell=False)
+            resource=CM_CFG["sspl_resource_id"])
         time.sleep(CM_CFG["sleep_val"])
 
         if self.selinux_enabled:
@@ -511,7 +510,7 @@ class SSPLTest:
         curr_sel_index = res[1].decode("utf-8").strip()
         assert str(prev_sel_index) == str(curr_sel_index).strip(), res[1]
 
-        sel_lst_cmd = cons.SEL_LIST_CMD
+        sel_lst_cmd = common_cmd.SEL_LIST_CMD
         resp = self.node_obj.execute_cmd(cmd=sel_lst_cmd,
                                          read_nbytes=buffer_sz)
         assert resp[0] is True, resp[1]
@@ -558,7 +557,7 @@ class SSPLTest:
         LOGGER.info("Step 11: Successfully checked CSM REST API for alerts")
 
         LOGGER.info("Step 12: Resolving fan fault using ipmi tool")
-        cmd = cons.RESOLVE_FAN_FAULT.format(fan_name, test_cfg["op"])
+        cmd = common_cmd.RESOLVE_FAN_FAULT.format(fan_name, test_cfg["op"])
         LOGGER.info(f"Running command: {cmd}")
         resp = self.node_obj.execute_cmd(cmd=cmd,
                                          read_nbytes=test_cfg["buffer_sz"])
@@ -1290,7 +1289,7 @@ class SSPLTest:
 
         LOGGER.info(f"Step 3: Clearing metadata of drive {phy_num}")
         drive_num = f"0.{phy_num}"
-        resp = self.ras_test_obj.clear_drive_metadata(drive_num=drive_num)
+        resp = self.controller_obj.clear_drive_metadata(drive_num=drive_num)
         assert resp[0] is True, resp[1]
         LOGGER.info(f"Step 3: Cleared {drive_num} drive metadata "
                     f"successfully")
@@ -1381,7 +1380,7 @@ class SSPLTest:
             for line in resp[1]:
                 line = line.strip().split(",")
                 ied_code_str = ied_code_initial.format(line[0], line[2])
-                iem_log_cmd_str = cons.IEM_LOGGER_CMD.format(ied_code_str)
+                iem_log_cmd_str = common_cmd.IEM_LOGGER_CMD.format(ied_code_str)
                 self.ras_test_obj.generate_log_err_alert(iem_log_cmd_str)
                 err_msg_lst.append(line[2].strip())
                 time.sleep(test_cfg["alert_wait"])

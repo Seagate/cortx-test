@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-"""SSPL test cases: Secondary Node"""
+"""SSPL test cases: Secondary Node."""
 
 import os
 import time
@@ -39,7 +39,6 @@ class SSPLTest:
     @pytest.mark.parametrize("host", TEST_DATA)
     def setup_module(self, host):
         """Setup for module"""
-
         self.host2 = host
         self.host = COMMON_CONF["host"]
         self.uname = COMMON_CONF["username"]
@@ -79,7 +78,6 @@ class SSPLTest:
 
     def setup_function(self):
         """Setup operations"""
-
         self.starttime = time.time()
         LOGGER.info("Retaining the original/default config")
         self.ras_test_obj2.retain_config(
@@ -102,8 +100,7 @@ class SSPLTest:
         assert response[0] is True, response[1]
 
         LOGGER.info("Restarting sspl service")
-        self.health_obj2.restart_pcs_resource(CM_CFG["sspl_resource_id"],
-                                              shell=False)
+        self.health_obj2.restart_pcs_resource(CM_CFG["sspl_resource_id"])
         time.sleep(CM_CFG["after_service_restart_sleep_val"])
         LOGGER.info(
             "Verifying the status of sspl and rabittmq service is online")
@@ -136,7 +133,6 @@ class SSPLTest:
 
     def teardown_function(self):
         """Teardown operations"""
-
         LOGGER.info("Performing Teardown operation")
         self.ras_test_obj2.retain_config(CM_CFG["file"]["original_sspl_conf"],
                                          True)
@@ -173,7 +169,7 @@ class SSPLTest:
                 self.node_obj2.remove_file(filename=file)
 
         self.health_obj2.restart_pcs_resource(
-            resource=CM_CFG["sspl_resource_id"], shell=False)
+            resource=CM_CFG["sspl_resource_id"])
         time.sleep(CM_CFG["sleep_val"])
 
         LOGGER.info("Successfully performed Teardown operation")
@@ -369,7 +365,7 @@ class SSPLTest:
                                                      False,
                                                      test_cfg["resource_type"])
 
-        LOGGER.info(f"Step 9: Resolving fan fault using ipmi tool")
+        LOGGER.info("Step 9: Resolving fan fault using ipmi tool")
         cmd = cons.RESOLVE_FAN_FAULT.format(fan_name, test_cfg["op"])
         LOGGER.info(f"Running command: {cmd}")
         resp = self.node_obj2.execute_cmd(cmd=cmd,
@@ -436,7 +432,7 @@ class SSPLTest:
                                password=self.passwd)
         node_obj_slave = Node(hostname=slave_node, username=self.uname,
                               password=self.passwd)
-        ras_obj_slave = RASTestLib(hostname=slave_node, username=self.uname,
+        ras_obj_slave = RASTestLib(host=slave_node, username=self.uname,
                                    password=self.passwd)
         LOGGER.info(
             "Step 3: Rebooting node {0} having sspl service status as active"
@@ -490,7 +486,7 @@ class SSPLTest:
                         .format(slave_node))
             alert_list = [test_cfg["resource_type"], test_cfg["alert_type"]]
             LOGGER.debug(f"RMQ alert check: {alert_list}")
-            resp = ras_obj_slave(alert_list, restart=False)
+            resp = ras_obj_slave.alert_validation(alert_list, restart=False)
             assert resp[0] is True, resp[1]
             LOGGER.info(
                 "Step 6: Successfully verified the RabbitMQ channel for fan "
