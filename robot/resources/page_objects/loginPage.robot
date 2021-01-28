@@ -26,6 +26,7 @@ Enter Username And Password
     input password  ${csm password id}  ${password}
 
 Click Sigin Button
+    [Documentation]  Test keyword is for clicking Sign in button
     click button    ${signin_button_id}
     Sleep  5s  #  Sigin take some initial time
 
