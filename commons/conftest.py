@@ -21,10 +21,16 @@
 import pytest
 import pathlib
 import json
+import logging
+import csv
+from _pytest.nodes import Item
+from _pytest.runner import CallInfo
+from testfixtures import LogCapture
 from commons.utils import config_utils
+from commons import Globals
+from commons import cortxlogging
 
 FAILURES_FILE = "failures.txt"
-
 
 @pytest.fixture(autouse=True)
 def _read_project_config(request):
@@ -42,7 +48,6 @@ def data():
     pytest.req_timeout_global = 30
 
 
-@pytest.fixture
 def test_config():
     test_cfg = config_utils.read_yaml('di_config.yaml')
-    yield test_cfg
+    yield
