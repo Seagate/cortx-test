@@ -31,6 +31,8 @@ from _pytest.nodes import Item
 from _pytest.runner import CallInfo
 from testfixtures import LogCapture
 from strip_ansi import strip_ansi
+from typing import List
+from filelock import FileLock
 from commons.utils import config_utils
 from commons import Globals
 from commons import cortxlogging
@@ -39,11 +41,21 @@ from core.runner import LRUCache
 from core.runner import get_jira_credential
 from commons import constants
 from config import params
-from typing import List
+
 
 FAILURES_FILE = "failures.txt"
 LOG_DIR = 'log'
 CACHE = LRUCache(1024 * 10)
+cache_json = 'nodes-cache.yaml'
+
+logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
+log = logging.getLogger(__name__)
+
+
+def _get_items_from_cache():
+    """ Intended for internal use after modifying collected items """
+    return CACHE.table
+
 
 @pytest.fixture(autouse=True, scope='session')
 def read_project_config(request):
@@ -76,8 +88,40 @@ def logger():
     logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
-    cortxlogging.init_loghandler(logger)
+    #cortxlogging.init_loghandler(logger)
     return logger
+
+
+def expensive_data():
+    return dict()
+
+
+@pytest.fixture(scope="session")
+def session_data(tmp_path_factory, worker_id):
+    if worker_id == "master":
+        # not executing in with multiple workers, just produce the data and let
+        # pytest's fixture caching do its job
+        return ()
+
+    # get the temp directory shared by all workers
+    root_tmp_dir = tmp_path_factory.getbasetemp().parent
+
+    fn = root_tmp_dir / "data.json"
+    with FileLock(str(fn) + ".lock"):
+        if fn.is_file():
+            data = json.loads(fn.read_text())
+        else:
+            data = expensive_data()
+            fn.write_text(json.dumps(data))
+    return data
+
+
+@pytest.fixture()
+def csm_user(worker_id):
+    """ use a different csm account in each worker
+        PYTEST_XDIST_WORKER env variable can be used to get worker name
+    """
+    return "csm_%s" % worker_id
 
 
 @pytest.fixture(scope='function')
@@ -104,7 +148,7 @@ def log_cutter(request, formatter):
 
 # content of conftest.py
 
-def pytest_addoption(parser) :
+def pytest_addoption(parser):
     """
     Hook to add options at runtime to pytest command
     :param parser:
@@ -139,28 +183,34 @@ def read_test_list_csv() -> List:
         print(e)
 
 
+# @pytest.mark.trylast
+# def pytest_sessionstart(session):
+#     pass
+#
+#
 @pytest.hookimpl(trylast=True)
 def pytest_sessionfinish(session, exitstatus):
-    pass #todo add html hook file = session.config._htmlfile
-    #todo clear cache
+    """Remove handlers from all loggers"""
+    pass  # todo add html hook file = session.config._htmlfile
+    loggers = [logging.getLogger()] + list(logging.Logger.manager.loggerDict.values())
+    for logger in loggers:
+        handlers = getattr(logger, 'handlers', [])
+        for handler in handlers:
+            logger.removeHandler(handler)
 
 
-def pytest_collection_modifyitems(config, items):
-    """
-    A hooks which gets called after pytest collects items. This provides an intercept
-     to modify items at run time based on tags. Intention is to group TE tests into
-     parallel and non parallel groups.
-     This function's behaviour will change depending on the test execution framework
-     integration.
-    :param config:
-    :param items:
-    :return:
-    """
+@pytest.hookimpl(tryfirst=True)
+def pytest_collection(session):
+    items = session.perform_collect()
+    log.info(dir(session.config))
+    config = session.config
     _local = bool(config.option.local)
     required_tests = list()
+    global CACHE
+    CACHE = LRUCache(1024 * 10)
     Globals.LOCAL_RUN = _local
     if not _local:
-        required_tests = read_test_list_csv() # e.g. required_tests = ['TEST-17413', 'TEST-17414']
+        required_tests = read_test_list_csv()  # e.g. required_tests = ['TEST-17413', 'TEST-17414']
         Globals.TE_TKT = config.option.te_tkt
         selected_items = []
         for item in items:
@@ -171,7 +221,7 @@ def pytest_collection_modifyitems(config, items):
                     parallel_found = 'true'
                     if config.option.is_parallel == 'false':
                         break
-                elif mark.name == 'tags' :
+                elif mark.name == 'tags':
                     test_found = mark.args[0]
             if parallel_found == config.option.is_parallel and test_found != '':
                 if test_found in required_tests:
@@ -185,6 +235,9 @@ def pytest_collection_modifyitems(config, items):
                 if mark.name == 'tags':
                     test_id = mark.args[0]
             CACHE.store(item.nodeid, test_id)
+    cache_path = os.path.join(os.getcwd(), LOG_DIR)
+    _path = config_utils.create_content_json(cache_path, _get_items_from_cache(), cache_json)
+    return items
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
@@ -233,7 +286,7 @@ def pytest_runtest_makereport(item, call):
             current_file = os.path.join(os.getcwd(), LOG_DIR, 'latest', current_file)
             mode = "a" if os.path.exists(current_file) else "w"
             with open(current_file, mode) as f:
-                if "tmpdir" in item.fixturenames :
+                if "tmpdir" in item.fixturenames:
                     extra = " ({})".format(item.funcargs["tmpdir"])
                 else:
                     extra = ""
@@ -255,7 +308,7 @@ def pytest_runtest_makereport(item, call):
             with open(current_file, mode) as f:
                 if "tmpdir" in item.fixturenames:
                     extra = " ({})".format(item.funcargs["tmpdir"])
-                else :
+                else:
                     extra = ""
                 f.write(report.nodeid + extra + "\n")
 
@@ -291,7 +344,7 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
         log = report.caplog
         log = strip_ansi(log)
         logs = log.split('\n')
-        test_id = CACHE.lookup(report.nodeid)
+        #test_id = CACHE.lookup(report.nodeid)
         name = str(test_id) + '_' + report.nodeid.split('::')[1]
         test_log = os.path.join(os.getcwd(), LOG_DIR, 'latest', name)
         with open(test_log, 'w') as fp:

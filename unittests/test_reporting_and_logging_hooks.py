@@ -1,32 +1,38 @@
 import pytest
 import logging
+import os
 from commons import Globals
+from commons import cortxlogging
 # import _pytest.logging.LogCaptureFixture
 from testfixtures import LogCapture
 from _pytest import runner
 
+# Do not set logging in imports
+#log = logging.getLogger(__name__)
+#cortxlogging.init_loghandler(log)
 
 def setup_module(module):
-    logging.getLogger(__name__).info('Entered teardown module')
+    """"""
+    print('Entered teardown module')
 
 
 def teardown_module(module):
-    logging.getLogger(__name__).info('Exited teardown module')
+    """ """
+    print('Exited teardown module')
 
 
 def setup_function(function):
     """ setup any state tied to the execution of the given function.
     Invoked for every test function in the module.
     """
-    logging.getLogger(__name__).info('Entered setup function')
+    print('Entered setup function')
 
 
 def teardown_function(function):
     """ teardown any state that was previously setup with a setup_function
     call.
     """
-    logging.getLogger(__name__).info('Entered teardown function')
-
+    print('Exited teardown function')
 
 
 def max(values):
@@ -85,19 +91,47 @@ def test_min(logger):
     :param logger:
     :return:
     """
+    logger.info(str(os.environ.get('PYTEST_XDIST_WORKER')))
     values = (2, 3, 1, 4, 6)
     val = min(values)
     logger.debug("min is %s" % val)
     logger.warning("min is %s" % val)
     logger.info("min is %s" % val)
-    logger.error("min is %s" % val)
+    logger.info("suppress error min is %s" % val)
     assert val == 1
 
 
 @pytest.mark.ha
 @pytest.mark.parallel
 @pytest.mark.tags("TEST-17414")
-def test_max(request, capture, logger):
+def test_max(logger):
+    values = (2, 3, 1, 4, 6)
+    val = max(values)
+    logger.info("max is %s" % val)
+    assert val == 6
+
+
+@pytest.mark.parallel
+@pytest.mark.tags("TEST-17498")
+def test_max2(logger):
+    values = (2, 3, 1, 4, 6)
+    val = max(values)
+    logger.info("max is %s" % val)
+    assert val == 6
+    logger.info("xdist" + str(os.environ.get('PYTEST_XDIST_WORKER')))
+
+
+@pytest.mark.ha
+@pytest.mark.parallel
+@pytest.mark.tags("TEST-17497")
+def test_max4(logger):
+    logger.info("test pass executed")
+
+
+@pytest.mark.ha
+@pytest.mark.parallel
+@pytest.mark.tags("TEST-17499")
+def test_max3(logger):
     values = (2, 3, 1, 4, 6)
     val = max(values)
     logger.info("max is %s" % val)

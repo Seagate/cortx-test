@@ -26,14 +26,14 @@ def parse_args():
     return parser.parse_args()
 
 
-def run_pytest_cmd(args, te_tag, parallel_red):
+def run_pytest_cmd(args, te_tag, parallel_red, env=None):
     tag = '-m ' + te_tag
     is_parallel = "--is_parallel=" + parallel_red
     log_level = "--log-cli-level=" + str(args.log_level)
     prc_cnt = str(args.prc_cnt) + "*popen"
     if parallel_red == "true":
         report_name = "--html=log/parallel_" + args.html_report
-        cmd_line = ["pytest", is_parallel, log_level, report_name, "--tx", prc_cnt]
+        cmd_line = ["pytest", is_parallel, log_level, report_name, '-d', "--tx", prc_cnt]
     else:
         report_name = "--html=log/non_parallel_" + args.html_report
         cmd_line = ["pytest", is_parallel, log_level, report_name]
@@ -98,10 +98,11 @@ def main(args):
             write = csv.writer(f)
             for test in test_list:
                 write.writerow([test])
+        _env = os.environ.copy()
         # First execute all tests with parallel tag which are mentioned in given tag.
-        run_pytest_cmd(args, te_tag, 'true')
+        run_pytest_cmd(args, te_tag, 'true', env=_env)
         # Execute all tests having no parallel tag and which are mentioned in given tag.
-        run_pytest_cmd(args, te_tag, 'false')
+        run_pytest_cmd(args, te_tag, 'false', env=_env)
     else:
         print("Json or test execution id is expected")
 
