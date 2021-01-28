@@ -41,7 +41,7 @@ from core.runner import LRUCache
 from core.runner import get_jira_credential
 from commons import constants
 from config import params
-
+from typing import List
 
 FAILURES_FILE = "failures.txt"
 LOG_DIR = 'log'
@@ -88,7 +88,7 @@ def logger():
     logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
-    #cortxlogging.init_loghandler(logger)
+    cortxlogging.init_loghandler(logger)
     return logger
 
 
@@ -148,7 +148,7 @@ def log_cutter(request, formatter):
 
 # content of conftest.py
 
-def pytest_addoption(parser):
+def pytest_addoption(parser) :
     """
     Hook to add options at runtime to pytest command
     :param parser:
@@ -344,7 +344,7 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
         log = report.caplog
         log = strip_ansi(log)
         logs = log.split('\n')
-        #test_id = CACHE.lookup(report.nodeid)
+        test_id = CACHE.lookup(report.nodeid)
         name = str(test_id) + '_' + report.nodeid.split('::')[1]
         test_log = os.path.join(os.getcwd(), LOG_DIR, 'latest', name)
         with open(test_log, 'w') as fp:

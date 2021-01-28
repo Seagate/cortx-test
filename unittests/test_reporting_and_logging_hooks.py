@@ -97,7 +97,7 @@ def test_min(logger):
     logger.debug("min is %s" % val)
     logger.warning("min is %s" % val)
     logger.info("min is %s" % val)
-    logger.info("suppress error min is %s" % val)
+    logger.error("min is %s" % val)
     assert val == 1
 
 

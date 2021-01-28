@@ -7,7 +7,6 @@ Library    Collections
 Variables  common_variables.py
 Variables  element_locators.py
 
-
 *** Keywords ***
 Log To Console And Report
     [Documentation]  This Keyword is for logging the same string to console and report.
@@ -83,3 +82,4 @@ Verify message
     ${msg_from_gui}=  get text  ${${element_locator}}
     Log To Console And Report  message from guI is ${msg_from_gui}
     should be equal  ${msg_from_gui}  ${message_to_verify}
+
