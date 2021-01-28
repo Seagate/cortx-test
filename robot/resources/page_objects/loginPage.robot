@@ -26,6 +26,7 @@ Enter Username And Password
     input password  ${csm password id}  ${password}
 
 Click Sigin Button
+    [Documentation]  This keyword is for entring the username and password on login form.
     Wait Until Element Is Visible  ${signin_button_id}  timeout=10
     click button    ${signin_button_id}
     Sleep  5s  #  Sigin take some initial time
