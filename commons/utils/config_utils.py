@@ -19,6 +19,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
+
 """
 Python library which have config related operations using package
 like config parser, yaml etc.
@@ -29,9 +30,8 @@ import os
 import json
 import shutil
 import re
-# from xml.etree.ElementTree import parse
-from defusedxml.cElementTree import parse
 from configparser import ConfigParser, MissingSectionHeaderError
+from defusedxml.cElementTree import parse
 import yaml
 import commons.errorcodes as cterr
 from commons.exceptions import CTException
@@ -304,7 +304,7 @@ def update_cfg_based_on_separator(filename: str, key: str, old_value: str,
             'Old value : %s is incorrect, please correct it and try again',
             old_value)
         return False, error
-    except Exception as error:
+    except IOError as error:
         os.remove(filename)
         os.rename(filename + '_bkp', filename)
         LOG.debug(
@@ -324,7 +324,7 @@ def read_write_config(config: str or int, path: str) -> None:
     :return: None
     """
     LOG.debug("Reading and updating : %s at %s", config, path)
-    conf_values = read_yaml(MAIN_CONFIG_PATH)[0]
+    conf_values = read_yaml(MAIN_CONFIG_PATH)[1]
     LOG.debug("VALUES TO UPDATE: %s", conf_values[config])
     dict_val = conf_values[config]
     keys = dict_val.keys()
@@ -341,7 +341,7 @@ def read_write_config(config: str or int, path: str) -> None:
                         curr_values[key][i_key] = dict_val[key][i_key]
                         LOG.debug(
                             "New value : %s", dict_val[key][i_key])
-            except BaseException as error:
+            except IOError as error:
                 LOG.debug("Replacing key : %s", key)
                 LOG.debug("Old value : %s", curr_values[key])
                 curr_values[key] = dict_val[key]
