@@ -1,7 +1,7 @@
 import sys
 import pytest
 import logging
-from libs.csm.rest.csm_rest_bucket import RestS3Bucket 
+from libs.csm.rest.csm_rest_bucket import RestS3Bucket
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.csm.csm_setup import CSMConfigsCheck
 from commons.utils import config_utils
@@ -121,9 +121,9 @@ class TestS3Bucket():
         self.log.info("Verifying the status code {} and response returned {}".format(
             response.status_code, response.json()))
         assert_utils.assert_equals(response.status_code,
-                         self.s3_buckets.bad_request_response)
+                                   self.s3_buckets.bad_request_response)
         assert_utils.assert_equals(response.json(),
-                         resp_msg)
+                                   resp_msg)
 
         self.log.info(
             "Step 1: Verified creating bucket with bucket name containing alphanumeric characters")
@@ -192,7 +192,7 @@ class TestS3Bucket():
         self.s3_buckets.create_s3_bucket(
             bucket_type="valid", login_as="s3account_user")
         assert self.s3_buckets.list_and_verify_bucket()
-    
+
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.tags('TEST-10773')

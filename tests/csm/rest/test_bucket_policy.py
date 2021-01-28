@@ -6,6 +6,7 @@ from libs.csm.rest.csm_rest_bucket import RestS3BucketPolicy
 from libs.csm.rest.csm_rest_iamuser import RestIamUser
 from libs.csm.csm_setup import CSMConfigsCheck
 
+
 class TestBucketPolicy():
     """S3 Bucket Policy Testsuite
     """
@@ -41,7 +42,8 @@ class TestBucketPolicy():
             bucket_name=self.bucket_name,
             login_as="s3account_user")
         for user in self.created_iam_users:
-            self.rest_iam_user.delete_iam_user(login_as="s3account_user", user=user)
+            self.rest_iam_user.delete_iam_user(
+                login_as="s3account_user", user=user)
         self.log.info("Teardown ended")
 
     @pytest.mark.csmrest
@@ -64,7 +66,8 @@ class TestBucketPolicy():
         test_case_name = sys._getframe().f_code.co_name
         self.log.info("##### Test started -  {} #####".format(test_case_name))
         assert self.bucket_policy.create_and_verify_bucket_policy()
-        assert self.bucket_policy.create_and_verify_bucket_policy(operation='update_policy')
+        assert self.bucket_policy.create_and_verify_bucket_policy(
+            operation='update_policy')
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
@@ -76,8 +79,8 @@ class TestBucketPolicy():
         test_case_name = sys._getframe().f_code.co_name
         self.log.info("##### Test started -  {} #####".format(test_case_name))
         assert self.bucket_policy.create_and_verify_bucket_policy(expected_status_code=400,
-                                                                           operation="invalid_payload",
-                                                                           validate_expected_response=False)
+                                                                  operation="invalid_payload",
+                                                                  validate_expected_response=False)
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
@@ -89,7 +92,7 @@ class TestBucketPolicy():
         test_case_name = sys._getframe().f_code.co_name
         self.log.info("##### Test started -  {} #####".format(test_case_name))
         assert self.bucket_policy.create_and_verify_bucket_policy(
-                login_as="s3account_user")
+            login_as="s3account_user")
         assert self.bucket_policy.get_and_verify_bucket_policy()
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
@@ -102,7 +105,7 @@ class TestBucketPolicy():
         test_case_name = sys._getframe().f_code.co_name
         self.log.info("##### Test started -  {} #####".format(test_case_name))
         assert self.bucket_policy.get_and_verify_bucket_policy(expected_status_code=404,
-                                                                        validate_expected_response=False)
+                                                               validate_expected_response=False)
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
@@ -115,9 +118,9 @@ class TestBucketPolicy():
         self.log.info("##### Test started -  {} #####".format(test_case_name))
         assert self.bucket_policy.create_and_verify_bucket_policy()
         assert self.bucket_policy.get_and_verify_bucket_policy(
-                validate_expected_response=False,
-                expected_status_code=404,
-                invalid_bucket=True)
+            validate_expected_response=False,
+            expected_status_code=404,
+            invalid_bucket=True)
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
@@ -140,7 +143,8 @@ class TestBucketPolicy():
          """
         test_case_name = sys._getframe().f_code.co_name
         self.log.info("##### Test started -  {} #####".format(test_case_name))
-        assert self.bucket_policy.delete_and_verify_bucket_policy(expected_status_code=404)
+        assert self.bucket_policy.delete_and_verify_bucket_policy(
+            expected_status_code=404)
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
@@ -159,8 +163,8 @@ class TestBucketPolicy():
                          'effect': 'Allow',
                          'principal': user_id}
         assert self.bucket_policy.create_and_verify_bucket_policy(
-                operation='custom', custom_policy_params=policy_params,
-                validate_expected_response=False)
+            operation='custom', custom_policy_params=policy_params,
+            validate_expected_response=False)
         assert self.bucket_policy.get_and_verify_bucket_policy()
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
@@ -181,9 +185,9 @@ class TestBucketPolicy():
                          's3operation2': 'DeleteObject',
                          'effect': 'Allow',
                          'principal': user_id
-                        }
+                         }
         assert self.bucket_policy.create_and_verify_bucket_policy(
-                operation='multi_policy', custom_policy_params=policy_params)
+            operation='multi_policy', custom_policy_params=policy_params)
         assert self.bucket_policy.get_and_verify_bucket_policy()
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
@@ -203,6 +207,6 @@ class TestBucketPolicy():
                          'effect': 'Deny',
                          'principal': user_id}
         assert self.bucket_policy.create_and_verify_bucket_policy(
-                operation='custom', custom_policy_params=policy_params)
+            operation='custom', custom_policy_params=policy_params)
         assert self.bucket_policy.get_and_verify_bucket_policy()
         self.log.info("##### Test ended -  {} #####".format(test_case_name))

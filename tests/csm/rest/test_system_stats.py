@@ -1,3 +1,6 @@
+"""Test cases related to System Statistics.
+   Author: Divya Kachhwaha (532698)
+"""
 import sys
 import time
 import random
@@ -7,31 +10,33 @@ from libs.csm.rest.csm_rest_stats import SystemStats
 from commons.utils import config_utils
 from commons.utils import assert_utils
 
+
 class TestSystemStats():
+
     """System Health Testsuite"""
+    
     @classmethod
-    def setup_class(self):
+    def setup_class(cls):
         """ This is method is for test suite set-up """
-        self.log = logging.getLogger(__name__)
-        self.log.info("Initializing test setups ......")
-        self.system_stats = SystemStats()
-        self.log.info("Initiating Rest Client for Alert ...")
-        self.test_conf = config_utils.read_yaml(
+        cls.log = logging.getLogger(__name__)
+        cls.log.info("Initializing test setups ......")
+        cls.system_stats = SystemStats()
+        cls.log.info("Initiating Rest Client for Alert ...")
+        cls.test_conf = config_utils.read_yaml(
             "config/csm/test_rest_system_stats.yaml")[1]
 
     @pytest.mark.csmrest
     @pytest.mark.tags('TEST-14752')
     def test_4956(self):
-        """Test that GET API returns 200 response code 
+        """Test that GET API returns 200 response code
         and appropriate json response for metric stats
-        :avocado: tags=system_stats
         """
         test_case_name = sys._getframe().f_code.co_name
-        self.log.info("##### Test started -  {} #####".format(test_case_name))
+        self.log.info(f"##### Test started -  {test_case_name} #####")
         expected_response = self.system_stats.success_response
         response = self.system_stats.get_stats()
         assert_utils.assert_equals(response.status_code, expected_response,
-                         "Status code check failed.")
+                                   "Status code check failed.")
         actual_response = response.json()
         expected_response = self.test_conf["test_4956"]
         for test_param in ['panel_list', 'metric_list', 'unit_list']:
@@ -40,16 +45,15 @@ class TestSystemStats():
             assert result, "{} didn't match".format(test_param)
         print(actual_response)
         assert_utils.assert_false(': null' in actual_response,
-                         "Null values in the response")
+                                  "Null values in the response")
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
     @pytest.mark.tags('TEST-14751')
     def test_4958(self):
-        """TA CSM REST Automation: TEST-4958: Test that GET API returns 200 
-        as response code and appropriate json response with valid values 
+        """TA CSM REST Automation: TEST-4958: Test that GET API returns 200
+        as response code and appropriate json response with valid values
         for paramerter `from`, `to`, `interval` and `metric`,
-        :avocado: tags=system_stats
         """
 
         test_case_name = sys._getframe().f_code.co_name
@@ -68,7 +72,7 @@ class TestSystemStats():
                                                    to_time=to_time,
                                                    interval=interval)
             assert_utils.assert_equals(response.status_code,
-                             expected_response, "Status code check failed.")
+                                       expected_response, "Status code check failed.")
             actual_response = response.json()
             assert_utils.assert_equals(
                 actual_response["metrics"][0]["name"], metric, "Metric name mismatch")
@@ -79,18 +83,17 @@ class TestSystemStats():
             actual_cnt = len(actual_response["metrics"][0]["data"][0])
             self.log.info("Actual number of entries : {}".format(actual_cnt))
             assert_utils.assert_equals(actual_cnt, expected_cnt,
-                             "Sample count check failed")
+                                       "Sample count check failed")
             assert_utils.assert_false(': null' in actual_response,
-                             "Null values in the response")
+                                      "Null values in the response")
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
     @pytest.mark.tags('TEST-14753')
     def test_4959(self):
-        """Test that GET API returns 200 as response code and 
-        appropriate json response with valid values for paramerter 
+        """Test that GET API returns 200 as response code and
+        appropriate json response with valid values for paramerter
         `from`, `to`, `metric` and both (`interval`, `total_sample`)
-        :avocado: tags=system_stats
         """
         test_case_name = sys._getframe().f_code.co_name
         self.log.info("##### Test started -  {} #####".format(test_case_name))
@@ -110,25 +113,28 @@ class TestSystemStats():
                                                    interval=interval,
                                                    total_sample=total_sample)
             assert_utils.assert_equals(response.status_code,
-                             expected_response, "Status code check failed.")
+                                       expected_response, "Status code check failed.")
             actual_response = response.json()
             actual_cnt = len(actual_response["metrics"][0]["data"][0])
             self.log.info("Actual number of entries : {}".format(actual_cnt))
-            expected_cnt = self.system_stats.expected_entry_cnt(to_time,
-                                                                from_time, interval=interval, total_sample=total_sample)
+            expected_cnt = self.system_stats.expected_entry_cnt(
+                to_time,
+                from_time,
+                interval=interval,
+                total_sample=total_sample)
             self.log.info(
                 "Expected number of entries : {}".format(expected_cnt))
             assert_utils.assert_equals(actual_cnt, expected_cnt,
-                             "Sample count check failed")
+                                       "Sample count check failed")
             assert_utils.assert_false(': null' in actual_response,
-                             "Null values in the response")
+                                      "Null values in the response")
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
     @pytest.mark.tags('TEST-13084')
     def test_4961(self):
-        """Test that GET API returns 400 and appropriate error response with invalid values for params.
-        :avocado: tags=system_stats
+        """Test that GET API returns 400 and appropriate error response with
+        invalid values for params.
         """
         test_case_name = sys._getframe().f_code.co_name
         self.log.info("##### Test started -  {} #####".format(test_case_name))
@@ -153,7 +159,7 @@ class TestSystemStats():
             self.log.info(f"Expected response : {expected_response}")
             self.log.info(f"Actual response : {response.status_code}")
             assert_utils.assert_in(response.status_code, expected_response,
-                             "Status code check failed with invalid METRICS.")
+                                   "Status code check failed with invalid METRICS.")
 
         self.log.info("##### Testing with invalid TOTAL SAMPLEs param  #####")
         invalid_samples = self.test_conf["test_4961"]["invalid_samples"]
@@ -167,7 +173,7 @@ class TestSystemStats():
             self.log.info(f"Expected response : {expected_response}")
             self.log.info(f"Actual response : {response.status_code}")
             assert_utils.assert_in(response.status_code, expected_response,
-                             "Status code check failed with invalid TOTAL samples.")
+                                   "Status code check failed with invalid TOTAL samples.")
 
         self.log.info("##### Testing with invalid INTERVALs param  #####")
         invalid_intervals = self.test_conf["test_4961"]["invalid_intervals"]
@@ -181,7 +187,7 @@ class TestSystemStats():
             self.log.info(f"Expected response : {expected_response}")
             self.log.info(f"Actual response : {response.status_code}")
             assert_utils.assert_in(response.status_code, expected_response,
-                             "Status code check failed with invalid INTERVALS.")
+                                   "Status code check failed with invalid INTERVALS.")
 
         self.log.info("##### Testing with invalid TO and FROM param  #####")
         invalid_times = self.test_conf["test_4961"]["invalid_times"]
@@ -195,7 +201,8 @@ class TestSystemStats():
             self.log.info(f"Expected response : {expected_response}")
             self.log.info(f"Actual response : {response.status_code}")
             assert_utils.assert_in(response.status_code, expected_response,
-                             f"Status code check failed with invalid FROM time :{invalid_time}.")
+                                   f"Status code check failed with invalid FROM"
+                                   " time :{invalid_time}.")
 
             metric = random.choice(metrics)
             response = self.system_stats.get_stats(metrics=[metric],
@@ -206,7 +213,7 @@ class TestSystemStats():
             self.log.info(f"Expected response : {expected_response}")
             self.log.info(f"Actual response : {response.status_code}")
             assert_utils.assert_in(response.status_code, expected_response,
-                             "Status code check failed with invalid TO time.")
+                                   "Status code check failed with invalid TO time.")
 
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
@@ -214,7 +221,6 @@ class TestSystemStats():
     @pytest.mark.tags('TEST-16547')
     def test_4962(self):
         """Test that GET API returns 400 for missing mandatory params.
-        :avocado: tags=system_stats
         """
         test_case_name = sys._getframe().f_code.co_name
         self.log.info("##### Test started -  {} #####".format(test_case_name))
@@ -227,13 +233,13 @@ class TestSystemStats():
         total_sample = int(self.test_conf["test_4962"]["total_sample"])
         interval = int(self.test_conf["test_4962"]["interval_secs"])
 
-        #self.log.info("##### Testing with missing METRIC param  #####")
-        #response = self.system_stats.get_stats(from_time=from_time,
+        # self.log.info("##### Testing with missing METRIC param  #####")
+        # response = self.system_stats.get_stats(from_time=from_time,
         #                                       to_time=to_time,
         #                                       total_sample=total_sample)
         #self.log.info(f"Expected response : {expected_response}")
         #self.log.info(f"Actual response : {response.status_code}")
-        #assert_utils.assert_equals(response.status_code, expected_response,
+        # assert_utils.assert_equals(response.status_code, expected_response,
         #                 "Status code check failed with missing METRIC param.")
 
         metric = random.choice(metrics)
@@ -245,7 +251,7 @@ class TestSystemStats():
         self.log.info(f"Expected response : {expected_response}")
         self.log.info(f"Actual response : {response.status_code}")
         assert_utils.assert_in(response.status_code, expected_response,
-                         "Status code check failed with missing FROM param.")
+                               "Status code check failed with missing FROM param.")
 
         metric = random.choice(metrics)
         self.log.info(
@@ -256,24 +262,26 @@ class TestSystemStats():
         self.log.info(f"Expected response : {expected_response}")
         self.log.info(f"Actual response : {response.status_code}")
         assert_utils.assert_in(response.status_code, expected_response,
-                         "Status code check failed with missing TO param.")
+                               "Status code check failed with missing TO param.")
 
         expected_response = self.system_stats.success_response
         metric = random.choice(metrics)
         self.log.info(
-            f"##### Testing with missing TOTAL SAMPLE AND INTERVAL param for metric {metric} #####")
+            f"##### Testing with missing TOTAL SAMPLE AND INTERVAL param for "
+            "metric {metric} #####")
         response = self.system_stats.get_stats(metrics=[metric],
                                                from_time=from_time,
                                                to_time=to_time)
         self.log.info(f"Expected response : {expected_response}")
         self.log.info(f"Actual response : {response.status_code}")
         assert_utils.assert_equals(response.status_code, expected_response,
-                         "Status code check failed with missing TOTAL SAMPLE AND INTERVAL param.")
+                                   "Status code check failed with missing TOTAL"
+                                   " SAMPLE AND INTERVAL param.")
 
-        
         metric = random.choice(metrics)
         self.log.info(
-            f"##### Testing with missing INTERVAL param and with TOTAL SAMPLE for metric {metric} #####")
+            f"##### Testing with missing INTERVAL param and with TOTAL SAMPLE "
+            "for metric {metric} #####")
         response = self.system_stats.get_stats(metrics=[metric],
                                                from_time=from_time,
                                                to_time=to_time,
@@ -281,11 +289,13 @@ class TestSystemStats():
         self.log.info(f"Expected response : {expected_response}")
         self.log.info(f"Actual response : {response.status_code}")
         assert_utils.assert_equals(response.status_code, expected_response,
-                         "Status code check failed with missing INTERVAL param and with TOTAL SAMPLE.")
+                                   "Status code check failed with missing "
+                                   "INTERVAL param and with TOTAL SAMPLE.")
 
         metric = random.choice(metrics)
         self.log.info(
-            f"##### Testing with missing TOTAL SAMPLE param and with INTERVAL for metric {metric} #####")
+            f"##### Testing with missing TOTAL SAMPLE param and with INTERVAL"
+            " for metric {metric} #####")
         response = self.system_stats.get_stats(metrics=[metric],
                                                from_time=from_time,
                                                to_time=to_time,
@@ -293,7 +303,8 @@ class TestSystemStats():
         self.log.info(f"Expected response : {expected_response}")
         self.log.info(f"Actual response : {response.status_code}")
         assert_utils.assert_equals(response.status_code, expected_response,
-                         "Status code check failed with missing TOTAL SAMPLE param and with INTERVA.")
+                                   "Status code check failed with missing TOTAL"
+                                   " SAMPLE param and with INTERVA.")
 
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
@@ -301,7 +312,6 @@ class TestSystemStats():
     @pytest.mark.tags('TEST-16548')
     def test_4963(self):
         """Test that GET API returns 400 for empty values for params from, to, metric.
-        :avocado: tags=system_stats
         """
         test_case_name = sys._getframe().f_code.co_name
         self.log.info("##### Test started -  {} #####".format(test_case_name))
@@ -321,7 +331,7 @@ class TestSystemStats():
         self.log.info(f"Expected response : {expected_response}")
         self.log.info(f"Actual response : {response.status_code}")
         assert_utils.assert_in(response.status_code, expected_response,
-                         "Status code check failed.")
+                               "Status code check failed.")
 
         metric = random.choice(metrics)
         self.log.info(
@@ -333,7 +343,7 @@ class TestSystemStats():
         self.log.info(f"Expected response : {expected_response}")
         self.log.info(f"Actual response : {response.status_code}")
         assert_utils.assert_in(response.status_code, expected_response,
-                         "Status code check failed.")
+                               "Status code check failed.")
 
         metric = random.choice(metrics)
         self.log.info(
@@ -345,14 +355,13 @@ class TestSystemStats():
         self.log.info(f"Expected response : {expected_response}")
         self.log.info(f"Actual response : {response.status_code}")
         assert_utils.assert_in(response.status_code, expected_response,
-                         "Status code check failed.")
-                         
+                               "Status code check failed.")
+
     @pytest.mark.tags('EOS-12359')
     def test_4957(self):
-        """TA CSM REST Automation: TEST-4957: Test that GET API returns 200 
-        as response code and appropriate json response with valid values 
+        """TA CSM REST Automation: TEST-4957: Test that GET API returns 200
+        as response code and appropriate json response with valid values
         for paramerter `from`, `to`, `total_sample` and `metric`
-        :avocado: tags=system_stats
         """
 
         test_case_name = sys._getframe().f_code.co_name
@@ -373,7 +382,7 @@ class TestSystemStats():
                                                    total_sample=total_sample)
             self.log.debug("Verifying the response:{}".format(response))
             assert_utils.assert_equals(response.status_code,
-                             expected_response, "Status code check failed.")
+                                       expected_response, "Status code check failed.")
             actual_response = response.json()
 
             self.log.debug("Verifying the metric name:{}".format(
@@ -387,19 +396,19 @@ class TestSystemStats():
             actual_cnt = len(actual_response["metrics"][0]["data"][0])
             self.log.debug("Actual number of entries : {}".format(actual_cnt))
             assert_utils.assert_equals(actual_cnt, expected_cnt,
-                             "Sample count check failed")
-            self.log.debug(f"Verifying the response")
+                                       "Sample count check failed")
+            self.log.debug("Verifying the response")
             assert_utils.assert_false(value in actual_response,
-                             "Null values in the response")
+                                      "Null values in the response")
         self.log.info(
             "##### Test ended -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
     @pytest.mark.tags('TEST-16218')
     def test_4960(self):
-        """TA CSM REST Automation: TEST-4960: Test the GET API returns 200 
-        as response code and appropriate json response for no param interval and total_sample in the request
-        :avocado: tags=system_stats
+        """TA CSM REST Automation: TEST-4960: Test the GET API returns 200
+        as response code and appropriate json response for no param interval
+        and total_sample in the request
         """
 
         test_case_name = sys._getframe().f_code.co_name
@@ -418,7 +427,7 @@ class TestSystemStats():
                                                    from_time=from_time,
                                                    to_time=to_time)
             assert_utils.assert_equals(response.status_code,
-                             expected_response, "Status code check failed.")
+                                       expected_response, "Status code check failed.")
             actual_response = response.json()
             assert_utils.assert_equals(
                 actual_response["metrics"][0]["name"], metric, "Metric name mismatch")
@@ -429,19 +438,17 @@ class TestSystemStats():
             actual_cnt = len(actual_response["metrics"][0]["data"][0])
             self.log.info("Actual number of entries : {}".format(actual_cnt))
             assert_utils.assert_equals(actual_cnt, expected_cnt,
-                             "Sample count check failed")
+                                       "Sample count check failed")
             assert_utils.assert_false(value in actual_response,
-                             "Null values in the response")
+                                      "Null values in the response")
 
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
-
 
     @pytest.mark.csmrest
     @pytest.mark.tags('TEST-16545')
     def test_4967(self):
         """Test that GET API returns 400 response code if value of
-         `from` param is greater that value of `to` param	
-        :avocado: tags=system_stats
+         `from` param is greater that value of `to` param
         """
 
         test_case_name = sys._getframe().f_code.co_name
@@ -453,7 +460,7 @@ class TestSystemStats():
         metrics = self.system_stats.get_metrics()
         for metric in metrics:
             self.log.info(
-                "============== Checking for metrics : {}==============".format(metric))
+                f"============== Checking for metrics : {metric}==============")
             to_time = int(time.time())
             from_time = int(time.time() + epoc_time_diff)
             response = self.system_stats.get_stats(metrics=[metric],
@@ -461,20 +468,19 @@ class TestSystemStats():
                                                    from_time=from_time,
                                                    to_time=to_time)
             assert_utils.assert_equals(response.status_code,
-            expected_response, f"Status code check failed for metric: {metric}")
+                                       expected_response,
+                            f"Status code check failed for metric: {metric}")
             actual_response = response.json()['message']
             self.log.info(actual_response)
             assert_utils.assert_in(error_msg,
-                actual_response,"Error message check failed")
+                                   actual_response, "Error message check failed")
 
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
-    
+
     @pytest.mark.csmrest
     @pytest.mark.tags('TEST-16546')
     def test_4968(self):
-
         """Test that GET API returns 403 for unauthorized request of stats
-        :avocado: tags=system_stats
         """
         test_case_name = sys._getframe().f_code.co_name
         self.log.info("##### Test started -  {} #####".format(test_case_name))
@@ -488,13 +494,14 @@ class TestSystemStats():
         to_time = int(time.time())
         from_time = int(time.time() - epoc_time_diff)
         response = self.system_stats.get_stats(metrics=[metric],
-                                                interval=interval,
-                                                from_time=from_time,
-                                                to_time=to_time,
-                                                login_as="s3account_user")
+                                               interval=interval,
+                                               from_time=from_time,
+                                               to_time=to_time,
+                                               login_as="s3account_user")
         assert_utils.assert_equals(response.status_code,
-        expected_response, f"Status code check failed for metric: {metric}")
+                                   expected_response,
+                            f"Status code check failed for metric: {metric}")
         actual_response = response.text
-        assert_utils.assert_in(error_msg, actual_response, f"Couldnt find {error_msg} in {actual_response}")
+        assert_utils.assert_in(error_msg, actual_response,
+                               f"Couldnt find {error_msg} in {actual_response}")
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
-        

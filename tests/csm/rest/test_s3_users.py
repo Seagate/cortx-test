@@ -8,6 +8,7 @@ from commons.utils import config_utils
 from commons.constants import Rest as const
 from libs.csm.csm_setup import CSMConfigsCheck
 
+
 class TestS3user():
     @classmethod
     def setup_class(self):

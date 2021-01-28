@@ -11,6 +11,7 @@ from commons.utils import config_utils
 from commons.constants import Rest as const
 from commons.utils import assert_utils
 
+
 class TestAuditLogs():
     """Audit logs Testsuite"""
 
@@ -45,7 +46,6 @@ class TestAuditLogs():
         self.csm_conf = config_utils.read_yaml(
             "config/csm/test_rest_audit_logs.yaml")[1]
 
-
     @pytest.mark.csmrest
     @pytest.mark.tags('TEST-10733')
     def test_4918(self):
@@ -61,12 +61,11 @@ class TestAuditLogs():
             setup_ready = self.config.setup_csm_s3
         assert setup_ready
         assert self.audit_logs.verify_audit_logs_csm_show(params=params,
-                                                                   expected_status_code=403,
-                                                                   login_as="s3account_user",
-                                                                   validate_expected_response=False,
-                                                                   )
+                                                          expected_status_code=403,
+                                                          login_as="s3account_user",
+                                                          validate_expected_response=False,
+                                                          )
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
-
 
     @pytest.mark.csmrest
     @pytest.mark.tags('TEST-10735')
@@ -78,11 +77,10 @@ class TestAuditLogs():
         self.log.info("##### Test started -  {} #####".format(test_case_name))
         params = {"start_date": self.start_time, "end_date": self.end_time}
         assert self.audit_logs.verify_audit_logs_csm_download(params=params,
-                                                                       expected_status_code=404,
-                                                                       validate_expected_response=False,
-                                                                       invalid_component=True)
+                                                              expected_status_code=404,
+                                                              validate_expected_response=False,
+                                                              invalid_component=True)
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
-
 
     @pytest.mark.csmrest
     @pytest.mark.tags('TEST-10736')
@@ -94,11 +92,10 @@ class TestAuditLogs():
         self.log.info("##### Test started -  {} #####".format(test_case_name))
         params = {"start_date": self.start_time, "end_date": self.end_time}
         assert self.audit_logs.verify_audit_logs_csm_show(params=params,
-                                                                   expected_status_code=404,
-                                                                   validate_expected_response=False,
-                                                                   invalid_component=True)
+                                                          expected_status_code=404,
+                                                          validate_expected_response=False,
+                                                          invalid_component=True)
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
-    
 
     @pytest.mark.csmrest
     @pytest.mark.tags('TEST-10737')
@@ -110,13 +107,13 @@ class TestAuditLogs():
         self.log.info("##### Test started -  {} #####".format(test_case_name))
         params = {"start_date": self.start_time, "end_date": self.end_time}
         assert self.audit_logs.verify_audit_logs_s3_download(params=params,
-                                                                      validate_expected_response=True,
-                                                                      response_type=str
-                                                                      )
+                                                             validate_expected_response=True,
+                                                             response_type=str
+                                                             )
         assert self.audit_logs.verify_audit_logs_csm_download(params=params,
-                                                                       validate_expected_response=True,
-                                                                       response_type=str
-                                                                       )
+                                                              validate_expected_response=True,
+                                                              response_type=str
+                                                              )
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
@@ -130,8 +127,8 @@ class TestAuditLogs():
         self.log.info("##### Test started -  {} #####".format(test_case_name))
         params = {"start_date": self.start_time, "end_date": self.end_time}
         assert self.audit_logs.verify_audit_logs_csm_show(params=params,
-                                                                   validate_expected_response=True
-                                                                   )
+                                                          validate_expected_response=True
+                                                          )
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
@@ -144,12 +141,12 @@ class TestAuditLogs():
         self.log.info("##### Test started -  {} #####".format(test_case_name))
         params = {"start_date": self.start_time, "end_date": self.end_time}
         assert self.audit_logs.verify_audit_logs_csm_show(params=params,
-                                                                   validate_expected_response=True
-                                                                   )
+                                                          validate_expected_response=True
+                                                          )
         assert self.audit_logs.verify_audit_logs_csm_download(params=params,
-                                                                       validate_expected_response=True,
-                                                                       response_type=str
-                                                                       )
+                                                              validate_expected_response=True,
+                                                              response_type=str
+                                                              )
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
@@ -163,10 +160,10 @@ class TestAuditLogs():
         start_time = self.end_time - ((4 * 24) * 60 * 60)
         params = {"start_date": start_time, "end_date": self.end_time}
         assert self.audit_logs.verify_audit_logs_csm_show(params=params,
-                                                                   validate_expected_response=True
-                                                                   )
+                                                          validate_expected_response=True
+                                                          )
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
-    
+
     @pytest.mark.csmrest
     @pytest.mark.tags('TEST-10743')
     def test_4916(self):
@@ -181,14 +178,14 @@ class TestAuditLogs():
             config.setup_csm_users
         params = {"start_date": self.start_time, "end_date": self.end_time}
         assert self.audit_logs.verify_audit_logs_csm_show(params=params,
-                                                                   login_as="csm_user_manage",
-                                                                   validate_expected_response=True
-                                                                   )
+                                                          login_as="csm_user_manage",
+                                                          validate_expected_response=True
+                                                          )
         assert self.audit_logs.verify_audit_logs_csm_download(params=params,
-                                                                       login_as="csm_user_monitor",
-                                                                       validate_expected_response=True,
-                                                                       response_type=str
-                                                                       )
+                                                              login_as="csm_user_monitor",
+                                                              validate_expected_response=True,
+                                                              response_type=str
+                                                              )
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest
@@ -213,7 +210,7 @@ class TestAuditLogs():
             params=params, invalid_component=False)
         self.log.info("Verifying if success response was returned")
         assert_utils.assert_equals(audit_log_show_response.status_code,
-                         const.SUCCESS_STATUS)
+                                   const.SUCCESS_STATUS)
         self.log.info("Step 1: Verified that audit log show request returned status: {}".format(
             audit_log_show_response.status_code))
 
@@ -223,7 +220,7 @@ class TestAuditLogs():
             params=params, invalid_component=False)
         self.log.info("Verifying if success response was returned")
         assert_utils.assert_equals(audit_log_download_response.status_code,
-                         const.SUCCESS_STATUS)
+                                   const.SUCCESS_STATUS)
         self.log.info("Step 2: Verified that audit log show request returned status: {}".format(
             audit_log_download_response.status_code))
 
@@ -261,7 +258,7 @@ class TestAuditLogs():
             response = self.audit_logs.audit_logs_csm_show(
                 params, login_as=data["user_list"][i])
             assert_utils.assert_equals(response.status_code,
-                             self.audit_logs.success_response)
+                                       self.audit_logs.success_response)
         self.log.info(
             "Step 1: Verified that GET api returns audit logs for date range specified")
 
@@ -308,7 +305,7 @@ class TestAuditLogs():
 
         self.log.info("Verifying S3 bucket was created")
         assert_utils.assert_equals(response.status_code,
-                         const.SUCCESS_STATUS)
+                                   const.SUCCESS_STATUS)
         self.log.info("Verified s3 bucket: {} was created".format(
             response.json()["bucket_name"]))
         bucket = response.json()["bucket_name"]
@@ -325,9 +322,9 @@ class TestAuditLogs():
         self.log.info(
             "Verifying audit logs for s3 component contain info regarding specified parameters and in specified format ")
         assert self.audit_logs.verify_audit_logs_s3_show(params=params,
-                                                                  validate_expected_response=True,
-                                                                  bucket=bucket
-                                                                  )
+                                                         validate_expected_response=True,
+                                                         bucket=bucket
+                                                         )
         self.log.info(
             "Verified audit logs for s3 component contain info regarding specified parameters and in specified format ")
 

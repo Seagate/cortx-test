@@ -50,7 +50,7 @@ class TestIamUser():
         user_name = response['user_name']
         self.created_iam_users.add(response['user_name'])
         assert(
-            self.rest_iam_user.iam_user_login(user=user_name)== status_code["status_code"])
+            self.rest_iam_user.iam_user_login(user=user_name) == status_code["status_code"])
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
 
     @pytest.mark.csmrest

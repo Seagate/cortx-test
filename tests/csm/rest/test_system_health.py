@@ -3,6 +3,7 @@ import pytest
 import logging
 from libs.csm.rest.csm_rest_system_health import SystemHealth
 
+
 class TestSystemHealth():
     """System Health Testsuite"""
 
@@ -20,7 +21,7 @@ class TestSystemHealth():
     @pytest.mark.csmrest
     @pytest.mark.tags('TEST-12786')
     def test_6813(self):
-        """Test that GET request for API '/api/v1/system/health/summary ' 
+        """Test that GET request for API '/api/v1/system/health/summary '
         returns 200 response with overall health status of the system.
         :avocado: tags=system_health
         """
@@ -35,8 +36,8 @@ class TestSystemHealth():
     @pytest.mark.tags('TEST-17867')
     def test_6819(self):
         """
-        Test that GET request for API '/api/v1/system/health/node?node_id=<node_id>' 
-        for node health summary returns 200 response with overall health summary 
+        Test that GET request for API '/api/v1/system/health/node?node_id=<node_id>'
+        for node health summary returns 200 response with overall health summary
         for the specific node or enclosure
         :avocado: tags=system_health
         """
@@ -55,7 +56,7 @@ class TestSystemHealth():
     def test_6820(self):
         """
         Test that GET request for API '/api/v1/system/health/node?' 
-        for node health summary returns 200 response with overall health summary 
+        for node health summary returns 200 response with overall health summary
         for entire system in case user does not provide specific node or enclosure id.
         :avocado: tags=system_health
         """
@@ -72,8 +73,8 @@ class TestSystemHealth():
     @pytest.mark.tags('TEST-17869')
     def test_6826(self):
         """
-        Test that GET request for API '/api/v1/system/health/view?node_id=<node_id>' 
-        for node health view returns 200 response with overall health summary 
+        Test that GET request for API '/api/v1/system/health/view?node_id=<node_id>'
+        for node health view returns 200 response with overall health summary
         and list of alerts for that specific node or enclosure
         :avocado: tags=system_health
         """
@@ -90,8 +91,8 @@ class TestSystemHealth():
     @pytest.mark.tags('TEST-17870')
     def test_6827(self):
         """
-        Test that GET request for API '/api/v1/system/health/view?' for node health view 
-        returns 200 response with overall health summary and list of alerts 
+        Test that GET request for API '/api/v1/system/health/view?' for node health view
+        returns 200 response with overall health summary and list of alerts
         for entire system in case user does not provide specific node or enclosure id.
         :avocado: tags=system_health
         """

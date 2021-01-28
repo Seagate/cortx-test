@@ -6,6 +6,7 @@ from commons.helpers.health_helper import Health
 from commons.utils import assert_utils
 from commons.utils import config_utils
 
+
 class TestSystemCapacity():
     """System Capacity Testsuite"""
     @classmethod
@@ -29,13 +30,18 @@ class TestSystemCapacity():
         test_case_name = sys._getframe().f_code.co_name
         self.log.info("##### Test started -  {} #####".format(test_case_name))
         csm_total, csm_avail, csm_used, csm_used_percent, csm_unit = self.system_capacity.parse_capacity_usage()
-        ha_total,ha_avail,ha_used = self.health_helper.get_sys_capacity()
+        ha_total, ha_avail, ha_used = self.health_helper.get_sys_capacity()
         ha_used_percent = round((ha_used / ha_total) * 100, 1)
         csm_used_percent = round(csm_used_percent, 1)
-        assert_utils.assert_equals(csm_total,ha_total,"Total capacity check failed.")
-        assert_utils.assert_equals(csm_avail,ha_avail,"Available capacity check failed.")
-        assert_utils.assert_equals(csm_used,ha_used,"Used capacity check failed.")
-        assert_utils.assert_equals(csm_used_percent, ha_used_percent,"Used capacity percentage check failed.")
-        assert_utils.assert_equals(csm_unit,'BYTES',"Capacity unit check failed.")
+        assert_utils.assert_equals(
+            csm_total, ha_total, "Total capacity check failed.")
+        assert_utils.assert_equals(
+            csm_avail, ha_avail, "Available capacity check failed.")
+        assert_utils.assert_equals(
+            csm_used, ha_used, "Used capacity check failed.")
+        assert_utils.assert_equals(
+            csm_used_percent, ha_used_percent, "Used capacity percentage check failed.")
+        assert_utils.assert_equals(
+            csm_unit, 'BYTES', "Capacity unit check failed.")
         self.log.info("Capacity reported by CSM matched HCTL response.")
         self.log.info("##### Test ended -  {} #####".format(test_case_name))
