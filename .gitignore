@@ -13,4 +13,4 @@ build
 .coverage
 tmp
 venv/
-.venv/
+.vscode/
