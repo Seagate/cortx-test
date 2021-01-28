@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -17,18 +19,24 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
+
+"""
+Python library which have config related operations using package
+like config parser, yaml etc.
+"""
+
 import logging
 import os
-import yaml
 import json
 import shutil
 import re
-import xml.etree.ElementTree
 from configparser import ConfigParser, MissingSectionHeaderError
+from defusedxml.cElementTree import parse
+import yaml
 import commons.errorcodes as cterr
 from commons.exceptions import CTException
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 MAIN_CONFIG_PATH = "config/main_config.yaml"
 
 
@@ -44,18 +52,21 @@ def read_yaml(fpath: str) -> tuple:
                 data = yaml.safe_load(fin)
             except yaml.YAMLError as exc:
                 err_msg = "Failed to parse: {}\n{}".format(fpath, str(exc))
-                log.error(err_msg)
+                LOG.error(err_msg)
                 return False, exc
 
     else:
         err_msg = "Specified file doesn't exist: {}".format(fpath)
-        log.error(err_msg)
+        LOG.error(err_msg)
         return False, cterr.FILE_MISSING
 
     return True, data
 
 
-def write_yaml(fpath: str, write_data: dict or list, backup: bool = True) -> tuple:
+def write_yaml(
+        fpath: str,
+        write_data: dict or list,
+        backup: bool = True) -> tuple:
     """
     This functions overwrites the content of given yaml file with given data
     :param str fpath: yaml file path to be overwritten
@@ -69,13 +80,13 @@ def write_yaml(fpath: str, write_data: dict or list, backup: bool = True) -> tup
         if backup:
             bkup_path = f'{fpath}.bkp'
             shutil.copy2(fpath, bkup_path)
-            log.debug("Backup file {} at {}".format(fpath, bkup_path))
+            LOG.debug("Backup file %s at %s", fpath, bkup_path)
         with open(fpath, 'w') as fobj:
             yaml.safe_dump(write_data, fobj)
-        log.debug("Updated yaml file at {}".format(fpath))
-    except BaseException as error:
-        log.error(
-            "{}".format(CTException(cterr.FILE_MISSING, error)))
+        LOG.debug("Updated yaml file at %s", fpath)
+    except FileNotFoundError as error:
+        LOG.error(
+            "%s", CTException(cterr.FILE_MISSING, error))
         return False, error
     return True, fpath
 
@@ -97,9 +108,9 @@ def read_content_json(fpath: str) -> dict:
     :param fpath: Path of the json file
     :return: Data of the json file
     """
-    data = dict()
     with open(fpath, 'rb') as json_file:
         data = json.loads(json_file.read())
+
     return data
 
 
@@ -113,43 +124,43 @@ def parse_xml_controller(filepath: str, field_list: list, xml_tag: str =
     :type: list of the strings
     :param xml_tag: Tag in the xml file
     :type: str
-    :return: Nested dictionary having values of the fields mentioned in
-    field list
-    :rtype: Nested dict
+    :return: Nested dictionary having values of the fields
+    mentioned in field list
     """
     try:
-        e = xml.etree.ElementTree.parse(filepath).getroot()
-        d = {}
+        elem_parse = parse(filepath).getroot()
+        # elem_parse = defusedxml.ElementTree.parse(filepath)
+        dict_data = {}
         new_d = {}
-        listkeys = []
+        list_keys = []
         i = 0
 
         fields = field_list
-        for child in e.iter(xml_tag):
-            d['dict_{}'.format(i)] = {}
+        for child in elem_parse.iter(xml_tag):
+            dict_data['dict_{}'.format(i)] = {}
             for field in fields:
                 if (child.attrib['name']) == field:
                     new_d[field] = child.text
-                    listkeys.append('True')
-                    d['dict_{}'.format(i)] = new_d
-            if listkeys.count('True') == len(fields):
+                    list_keys.append('True')
+                    dict_data['dict_{}'.format(i)] = new_d
+            if list_keys.count('True') == len(fields):
                 i += 1
                 new_d = {}
-                listkeys = []
+                list_keys = []
 
-        log.debug("Removing empty dictionaries")
+        LOG.debug("Removing empty dictionaries")
         i = 0
         while True:
-            if d['dict_{}'.format(i)] == {}:
-                del (d['dict_{}'.format(i)])
+            if dict_data['dict_{}'.format(i)] == {}:
+                del dict_data['dict_{}'.format(i)]
                 break
             i += 1
 
-        log.debug(d)
-        return True, d
-    except BaseException as error:
-        log.error(
-            "{}".format(CTException(cterr.FILE_MISSING, error)))
+        LOG.debug(dict_data)
+        return True, dict_data
+    except FileNotFoundError as error:
+        LOG.error(
+            "%s", CTException(cterr.FILE_MISSING, error))
         return False, error
 
 
@@ -165,17 +176,16 @@ def get_config(path: str, section: str = None, key: str = None) -> list or str:
         config = ConfigParser()
         config.read(path)
         if section and key:
-            log.debug(config.get(section, key))
+            LOG.debug(config.get(section, key))
             return config.get(section, key)
-        else:
-            log.debug(config.items(section))
-            return config.items(section)
+        LOG.debug(config.items(section))
+        return config.items(section)
     except MissingSectionHeaderError:
-        keystr = "{}=".format(key)
-        with open(path, "r") as fp:
-            for line in fp:
-                if keystr in line and "#" not in line:
-                    return line[len(keystr):].strip()
+        key_str = "{}=".format(key)
+        with open(path, "r") as file_pointer:
+            for line in file_pointer:
+                if key_str in line and "#" not in line:
+                    return line[len(key_str):].strip()
         return None
 
 
@@ -194,8 +204,8 @@ def update_config_ini(path: str, section: str, key: str, value: str) -> bool:
         config.set(section, key, value)
         with open(path, "w") as configfile:
             config.write(configfile)
-    except Exception as error:
-        log.error("{}".format(CTException(cterr.INVALID_CONFIG_FILE, error)))
+    except TypeError as error:
+        LOG.error("%s", CTException(cterr.INVALID_OPTION_VALUE, error))
         return False
     return True
 
@@ -232,8 +242,8 @@ def update_config_helper(filename: str, key: str, old_value: str,
                                     key, ":", " ", old_value)
                                 new_pattern = '{}{}{}{}'.format(
                                     key, ":", " ", new_value)
-                            log.debug("old_pattern: {}".format(old_pattern))
-                            log.debug("new_pattern: {}".format(new_pattern))
+                            LOG.debug("old_pattern: %s", old_pattern)
+                            LOG.debug("new_pattern: %s", new_pattern)
                         else:
                             old_pattern = key + "=" + old_value
                             new_pattern = key + "=" + new_value
@@ -245,10 +255,9 @@ def update_config_helper(filename: str, key: str, old_value: str,
                                 span_ = match.span()
                                 f_in.seek(span_[0])
                                 f_in.write(new_pattern)
-                                log.debug(
-                                    "Old pattern {} got replaced by new "
-                                    "pattern {}".format(
-                                        old_pattern, new_pattern))
+                                LOG.debug(
+                                    "Old pattern %s got replaced by new "
+                                    "pattern %s", old_pattern, new_pattern)
                                 f_in.seek(0, 0)
                                 new_data = f_in.read()
                                 return True, new_data
@@ -258,10 +267,9 @@ def update_config_helper(filename: str, key: str, old_value: str,
                                 span_ = match.span()
                                 f_in.seek(span_[0])
                                 f_in.write(new_pattern)
-                                log.debug(
-                                    "Old pattern {} got replaced by "
-                                    "new pattern {}".format(
-                                        old_pattern, new_pattern))
+                                LOG.debug(
+                                    "Old pattern %s got replaced by "
+                                    "new pattern %s", old_pattern, new_pattern)
                                 f_in.seek(0, 0)
                                 new_data = f_in.read()
                                 return True, new_data
@@ -292,17 +300,17 @@ def update_cfg_based_on_separator(filename: str, key: str, old_value: str,
                         filename, key, old_value, new_value, ":")
         return status, resp
     except AttributeError as error:
-        log.debug(
-            'Old value : {} is incorrect, please correct it and try again'.
-            format(old_value))
+        LOG.debug(
+            'Old value : %s is incorrect, please correct it and try again',
+            old_value)
         return False, error
-    except Exception as error:
+    except IOError as error:
         os.remove(filename)
         os.rename(filename + '_bkp', filename)
-        log.debug(
+        LOG.debug(
             "Removed original corrupted file and Backup file has been restored")
-        log.debug(
-            "*ERROR* An exception occurred in upload_config : {}".format(error))
+        LOG.debug(
+            "*ERROR* An exception occurred in upload_config : %s", error)
 
         return False, error
 
@@ -315,36 +323,35 @@ def read_write_config(config: str or int, path: str) -> None:
     :type path: str
     :return: None
     """
-    log.debug("Reading and updating : {} at {}".format(config, path))
-    conf_values = read_yaml(MAIN_CONFIG_PATH)
-    log.debug("VALUES TO UPDATE:",  conf_values[config])
+    LOG.debug("Reading and updating : %s at %s", config, path)
+    conf_values = read_yaml(MAIN_CONFIG_PATH)[1]
+    LOG.debug("VALUES TO UPDATE: %s", conf_values[config])
     dict_val = conf_values[config]
     keys = dict_val.keys()
-    log.debug(keys)
-    curr_values = read_yaml(path)
-    log.debug("OLD CONFIG : {}".format(curr_values))
+    LOG.debug(keys)
+    curr_values = read_yaml(path)[1]
+    LOG.debug("OLD CONFIG : %s", curr_values)
     for key in keys:
         if key in curr_values:
             try:
                 for i_key in dict_val[key].keys():
                     if i_key in curr_values[key]:
-                        log.debug("Replacing inner_key : {}".format(i_key))
-                        log.debug("Old value : {}".
-                                  format(curr_values[key][i_key]))
+                        LOG.debug("Replacing inner_key : %s", i_key)
+                        LOG.debug("Old value : %s", curr_values[key][i_key])
                         curr_values[key][i_key] = dict_val[key][i_key]
-                        log.debug("New value : {}".format(dict_val[key][i_key]))
-            except BaseException as error:
-                log.debug("Replacing key : {}".format(key))
-                log.debug("Old value : {}".format(curr_values[key]))
+                        LOG.debug(
+                            "New value : %s", dict_val[key][i_key])
+            except IOError as error:
+                LOG.debug("Replacing key : %s", key)
+                LOG.debug("Old value : %s", curr_values[key])
                 curr_values[key] = dict_val[key]
-                log.debug("New value : {}".format(dict_val[key]))
-                log.error(
-                    "*ERROR* An exception occurred in upload_config : {}".
-                    format(error))
+                LOG.debug("New value : %s", dict_val[key])
+                LOG.error(
+                    "*ERROR* An exception occurred in upload_config : %s", error)
 
     write_yaml(path, curr_values, backup=False)
     updated_values = read_yaml(path)
-    log.debug("UPDATED CONFIG : {}".format(updated_values))
+    LOG.debug("UPDATED CONFIG : %s", updated_values)
 
 
 def update_configs(all_configs: dict) -> None:
