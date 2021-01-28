@@ -20,6 +20,7 @@
 from collections import Counter
 from datetime import date
 from http import HTTPStatus
+import sys
 
 import requests
 
@@ -50,11 +51,10 @@ def get_test_executions_from_test_plan(test_plan: str, username: str, password: 
     response = requests.get(jira_url, auth=(username, password))
     if response.status_code == HTTPStatus.OK:
         return response.json()
-    else:
-        print(f'get_test_executions GET on {jira_url} failed')
-        print(f'HEADERS={response.request.headers}\n'
-              f'BODY={response.request.body}')
-        exit(1)
+    print(f'get_test_executions GET on {jira_url} failed')
+    print(f'HEADERS={response.request.headers}\n'
+          f'BODY={response.request.body}')
+    sys.exit(1)
 
 
 def get_test_list_from_test_plan(test_plan: str, username: str, password: str) -> [dict]:
@@ -87,7 +87,7 @@ def get_test_list_from_test_plan(test_plan: str, username: str, password: str) -
             print(f'RESPONSE={response.text}\n'
                   f'HEADERS={response.request.headers}\n'
                   f'BODY={response.request.body}')
-            exit(1)
+            sys.exit(1)
     return responses
 
 
@@ -110,13 +110,13 @@ def get_test_from_test_execution(test_execution: str, username: str, password: s
         return response.json()
     elif response.status_code == HTTPStatus.OK and not len(response.json()):
         print("No tests associated with this test execution")
-        exit(1)
+        sys.exit(1)
     else:
         print(f'get_test_from_test_execution GET on {jira_url} failed')
         print(f'RESPONSE={response.text}\n'
               f'HEADERS={response.request.headers}\n'
               f'BODY={response.request.body}')
-        exit(1)
+        sys.exit(1)
 
 
 def get_issue_details(issue_id: str, username: str, password: str):
@@ -151,12 +151,11 @@ def get_issue_details(issue_id: str, username: str, password: str):
     response = requests.get(jira_url, auth=(username, password))
     if response.status_code == HTTPStatus.OK:
         return response.json()
-    else:
-        print(f'get_bug_details GET on {jira_url} failed')
-        print(f'RESPONSE={response.text}\n'
-              f'HEADERS={response.request.headers}\n'
-              f'BODY={response.request.body}')
-        exit(1)
+    print(f'get_bug_details GET on {jira_url} failed')
+    print(f'RESPONSE={response.text}\n'
+          f'HEADERS={response.request.headers}\n'
+          f'BODY={response.request.body}')
+    sys.exit(1)
 
 
 def get_defects_from_test_plan(test_plan: str, username: str, password: str) -> set:
@@ -187,7 +186,7 @@ def get_build_from_test_plan(test_plan: str, username: str, password: str):
         build_no = test_plan_details["environment"]
     else:
         print(f"Test Plan {test_plan} has environment field empty. Setup it to build number.")
-        exit(1)
+        sys.exit(1)
     return build_no
 
 
@@ -242,7 +241,7 @@ def get_overall_qa_report_table_data(test_plan: str, test_plan1: str,
     return data
 
 
-def get_timing_summary(build: str):
+def get_timing_summary():
     """
     ToDo: Need to decide on how to figure out these timings from test JIRAs? DO we need to add or
           remove some timings for R2

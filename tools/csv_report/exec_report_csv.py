@@ -73,7 +73,7 @@ def get_feature_breakdown_summary_table_data(test_plan: str):
     data = [["Feature Breakdown Summary"],
             ["Features", "Total", "Pass", "Failed", "% Pass", "% Failed"]]
 
-    for feature in total_count.keys():
+    for feature in total_count:
         f_pass = pass_count[feature]
         f_total = total_count[feature]
         f_fail = fail_count[feature]
@@ -111,7 +111,7 @@ def get_code_maturity_data(test_plan: str, test_plan1: str, test_plan2: str):
     return data
 
 
-def get_single_bucket_perf_data(build: str):
+def get_single_bucket_perf_data():
     """
     ToDo: Need to complete this by taking help from performance team
     """
@@ -134,7 +134,7 @@ def main(test_plans):
     feature_breakdown_summary_table_data = get_feature_breakdown_summary_table_data(test_plans.tp)
     code_maturity_table_data = get_code_maturity_data(test_plans.tp, test_plans.tp1, test_plans.tp2)
     # single_bucket_perf_table_data = get_single_bucket_perf_data(build)
-    timing_summary_table_data = common.get_timing_summary(build)
+    timing_summary_table_data = common.get_timing_summary()
 
     data = []
     data.extend(main_table_data)

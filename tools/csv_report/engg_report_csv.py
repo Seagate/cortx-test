@@ -97,21 +97,21 @@ def get_component_level_summary(test_plans: list):
     return data
 
 
-def get_single_bucket_perf_stats(build: str):
+def get_single_bucket_perf_stats():
     """
         ToDo: Need to complete by taking help from performance team
     """
     return [[]]
 
 
-def get_multiple_bucket_perf_stats(build: str):
+def get_multiple_bucket_perf_stats():
     """
         ToDo: Need to complete by taking help from performance team
     """
     return [[]]
 
 
-def get_metadata_latencies(build: str):
+def get_metadata_latencies():
     """
         ToDo: Need to complete by taking help from performance team
     """
