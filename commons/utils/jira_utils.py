@@ -112,7 +112,6 @@ class JiraTask:
         """
         Update test jira status in xray jira
         """
-        return ""
         state = {}
         status = {}
         state["testExecutionKey"] = test_exe_id
