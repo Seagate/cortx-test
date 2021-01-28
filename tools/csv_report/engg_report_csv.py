@@ -20,13 +20,18 @@
 import argparse
 import csv
 import getpass
+import os
 
 from jira import JIRA
 
 import common
 
-username = input("JIRA username: ")
-password = getpass.getpass("JIRA password: ")
+try:
+    username = os.environ["JIRA_ID"]
+    password = os.environ["JIRA_PASSWORD"]
+except KeyError:
+    username = input("JIRA username: ")
+    password = getpass.getpass("JIRA password: ")
 
 jiraURL = 'https://jts.seagate.com/'
 options = {'server': jiraURL}

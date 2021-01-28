@@ -72,13 +72,16 @@ def get_test_list_from_test_plan(test_plan: str, username: str, password: str) -
     """
     jira_url = f'https://jts.seagate.com/rest/raven/1.0/api/testplan/{test_plan}/test'
     responses = []
-    for i in range(1, 10):
+    all_tests = False
+    i = 0
+    while not all_tests:
+        i = i + 1
         query = {'limit': 100, 'page': i}
         response = requests.get(jira_url, auth=(username, password), params=query)
         if response.status_code == HTTPStatus.OK and len(response.json()):
             responses.extend(response.json())
         elif response.status_code == HTTPStatus.OK and not len(response.json()):
-            break
+            all_tests = True
         else:
             print(f'get_test_list GET on {jira_url} failed')
             print(f'RESPONSE={response.text}\n'
