@@ -21,8 +21,8 @@ DASHBOARD_MENU_ID = "Dashboard"
 
 #  S3 Config
 S3_ACCOUNTS_TABLE_XPATH = '//*[@id="s3-datatable"]//table/tbody/tr/td'
-S3_ACCOUNT_NUMBER_OF_ROWS = '//*[@id="s3-datatable"]//table/tbody/tr'
-S3_ACCOUNT_NUMBER_OF_COLUMNS = '//*[@id="s3-datatable"]//table/tbody/tr[1]/td'
+S3_Account_NUMBER_OF_ROWS = '//*[@id="s3-datatable"]//table/tbody/tr'
+S3_Account_NUMBER_OF_COLUMNS = '//*[@id="s3-datatable"]//table/tbody/tr[1]/td'
 ADD_S3_ACCOUNT_BUTTON_ID = 's3-addnewuserbtn'
 CREATE_S3_ACCOUNT_BUTTON_ID = 's3-crete-accountbtn'
 CANCEL_S3_ACCOUNT_ID = 's3-account-cancelbtn'
