@@ -119,7 +119,7 @@ class S3MultipartTestLib(Multipart):
             part_number = kwargs.get("part_number", None)
             LOGGER.info("uploading part")
             response = super().upload_part(
-                body, bucket_name, object_name, upload_id, part_number)
+                body, bucket_name, object_name, upload_id=upload_id, part_number=part_number)
             LOGGER.info(response)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
@@ -162,7 +162,7 @@ class S3MultipartTestLib(Multipart):
                     LOGGER.info("data_len %s", str(len(data)))
                     if not data:
                         break
-                    part = super().upload_part(data, bucket_name, object_name, mpu_id, i)
+                    part = super().upload_part(data, bucket_name, object_name, mpu_id=mpu_id, i=i)
                     LOGGER.debug("Part : %s", str(part))
                     parts.append({"PartNumber": i, "ETag": part["ETag"]})
                     uploaded_bytes += len(data)

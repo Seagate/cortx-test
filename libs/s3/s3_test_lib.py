@@ -90,8 +90,9 @@ class S3TestLib(S3Lib):
             response = super().create_bucket(bucket_name)
             LOGGER.debug("Create bucket response %s", str(response))
             end_time = perf_counter()
-            LOGGER.info("############# BUCKET CREATION TIME : %f #############",
-                        (end_time - start_time))
+            LOGGER.info(
+                "############# BUCKET CREATION TIME : %f #############",
+                (end_time - start_time))
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          S3TestLib.create_bucket.__name__,
@@ -334,8 +335,9 @@ class S3TestLib(S3Lib):
             response = super().delete_bucket(bucket_name, force)
             end_time = perf_counter()
             LOGGER.debug(response)
-            LOGGER.info("############# BUCKET DELETION TIME : %f #############",
-                        (end_time - start_time))
+            LOGGER.info(
+                "############# BUCKET DELETION TIME : %f #############",
+                (end_time - start_time))
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          S3TestLib.delete_bucket.__name__,
@@ -461,7 +463,8 @@ class S3TestLib(S3Lib):
                                                 str(count), str(time.time()))
                 resp_bucket = self.create_bucket(bucket_name)
                 for obj in range(obj_count):
-                    object_name = "{}-{}-{}".format("auto-obj", str(obj), bucket_name)
+                    object_name = "{}-{}-{}".format("auto-obj",
+                                                    str(obj), bucket_name)
                     self.object_upload(bucket_name, object_name, file_path)
                     obj_list.append(object_name)
                 response.append({"Bucket": resp_bucket, "Objects": obj_list})
@@ -502,7 +505,9 @@ class S3TestLib(S3Lib):
                     os.remove(file_path)
                 with open(file_path, 'wb') as fout:
                     fout.write(
-                        SystemRandom().randint(1024000 * int(min_size), 1024000 * int(max_size)))
+                        SystemRandom().randint(
+                            1024000 * int(min_size),
+                            1024000 * int(max_size)))
                 LOGGER.info(
                     "Uploading object of size %d", os.path.getsize(file_path))
                 self.s3_resource.meta.client.upload_file(
@@ -563,19 +568,22 @@ class S3TestLib(S3Lib):
 
     def get_object(
             self,
-            bucket_name: str,
-            object_name: str,
-            ranges: str = None) -> tuple:
+            bucket: str = None,
+            key: str = None,
+            ranges: str = None,) -> tuple:
         """
         Retrieve object from specified S3 bucket.
 
+        :param key: Key of the object to get.
+        :param bucket: The bucket name containing the object.
+        :param ranges:
         :param str bucket_name: The bucket name containing the object.
         :param str object_name: Key of the object to get.
         :return: (Boolean, Response)
         """
         try:
             LOGGER.info("Retrieving object from a bucket")
-            response = super().get_object(bucket_name, object_name, ranges)
+            response = super().get_object(bucket, key, ranges)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          S3TestLib.get_object.__name__,

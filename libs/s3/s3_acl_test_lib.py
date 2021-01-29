@@ -248,8 +248,8 @@ class S3AclTestLib(Acl):
             response = super().put_object_canned_acl(
                 bucket_name,
                 key,
-                acl,
-                access_control_policy,
+                acl=acl,
+                access_control_policy=access_control_policy,
                 **kwargs)
             LOGGER.info(response)
         except BaseException as error:
@@ -323,9 +323,9 @@ class S3AclTestLib(Acl):
             kwargs["grant_write_acp"] = kwargs.get("grant_write_acp", None)
             LOGGER.info("Setting acl to new object")
             response = super().put_object_with_acl(bucket_name,
-                                                   key,
-                                                   file_path,
-                                                   acl,
+                                                   key=key,
+                                                   file_path=file_path,
+                                                   acl=acl,
                                                    **kwargs)
             LOGGER.info(response)
         except BaseException as error:
