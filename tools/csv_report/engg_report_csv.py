@@ -104,15 +104,14 @@ def get_metadata_latencies():
 
 def get_test_ids_from_linked_issues(linked_issues):
     """
-    Summary: Get test IDs from linked issues.
-
-    Description: Returns test IDs from linked issues dictionary.
-        linked_issues = [
-            {
-                "type": {"name": "Defect", "inward": "created by"},
-                "inwardIssue": {"key": "TEST-5342"}
-            }, {}
-        ]
+    Get test IDs from linked issues.
+    Returns test IDs from linked issues dictionary.
+    linked_issues = [
+        {
+            "type": {"name": "Defect", "inward": "created by"},
+            "inwardIssue": {"key": "TEST-5342"}
+        }, {}
+    ]
     """
     tests = []
     for issue in linked_issues:
