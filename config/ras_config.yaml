@@ -1,9 +1,6 @@
 enclosure_id: "1234"
 sspl_exch: "sspl-out"
 sspl_key: "sensor-key"
-username: "root"
-password: "seagate"
-host: "eosnode-1"
 sspl_user: "sspluser"
 sspl_pass: "sspl4ever"
 
@@ -20,7 +17,7 @@ ras_sspl_alert:
     extracted_alert_file: "/root/extracted_alert.log"
     encrypter_local_path: "/root/encryptor_updated.py"
     temp_txt_file: "temp.txt"
-    telnet_xml: "telnet.xml"
+    telnet_xml: "/root/telnet.xml"
     sspl_log_file: "/root/sspl_log.txt"
     screen_log: "/root/screenlog.0"
     disk_usage_temp_file: "/root/disk_usage_temp.txt"
@@ -53,13 +50,18 @@ ras_sspl_alert:
   mc_debug_port: 7900
   telnet_sleep_val: 120
   max_wait_time: 320
-  one_min_delay: 60
-  disk_clean_time: 120
   default_cpu_usage: 80
   csm_error_msg: "Failed to get alerts using CSM REST API"
   csm_alert_gen_delay: 60
   default_mem_usage: 80
   start_rmq: False
+  selinux_key: "selinux"
+  selinux_disabled: "disabled"
+  selinux_enforced: "enforced"
+  local_selinux_path: "selinux_config"
+  reboot_delay: 600
+  one_min_delay: 60
+  disk_clean_time: 120
 
 mdstat_remote_path: "/proc/mdstat"
 mdstat_local_path: "mdstat"
