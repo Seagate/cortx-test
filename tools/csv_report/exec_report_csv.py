@@ -1,3 +1,4 @@
+"""Script used to generate executive csv report."""
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -19,31 +20,22 @@
 # -*- coding: utf-8 -*-
 import argparse
 import csv
-import getpass
-import os
 from collections import Counter
 
 from jira import JIRA
 
 import common
 
-try:
-    username = os.environ["JIRA_ID"]
-    password = os.environ["JIRA_PASSWORD"]
-except KeyError:
-    username = input("JIRA username: ")
-    password = getpass.getpass("JIRA password: ")
 
-jiraURL = 'https://jts.seagate.com/'
-options = {'server': jiraURL}
-jira = JIRA(options, basic_auth=(username, password))
-
-
-def get_feature_breakdown_summary_table_data(test_plan: str):
+def get_feature_breakdown_summary_table_data(test_plan: str, username: str, password: str):
+    """Get feature breakdown summary table data."""
     fail_count = {}
     pass_count = {}
     total_count = {}
-    for feature in common.features:
+    jira_url = 'https://jts.seagate.com/'
+    options = {'server': jira_url}
+    jira = JIRA(options, basic_auth=(username, password))
+    for feature in common.FEATURES:
         fail_count[feature] = jira.search_issues(
             f'issue in testPlanFolderTests({test_plan},\'{feature}\',\'true\',\'FAIL\',\'\')',
             maxResults=500, json_result=True)["total"]
@@ -88,14 +80,16 @@ def get_feature_breakdown_summary_table_data(test_plan: str):
     return data
 
 
-def get_code_maturity_data(test_plan: str, test_plan1: str, test_plan2: str):
+def get_code_maturity_data(test_plan: str, test_plan1: str, test_plan2: str,
+                           username: str, password: str):
+    """Get code maturity data."""
     counters = []
     builds = []
-    for tp in [test_plan, test_plan1, test_plan2]:
-        if tp:
+    for t_plan in [test_plan, test_plan1, test_plan2]:
+        if t_plan:
             tests = common.get_test_list_from_test_plan(test_plan, username, password)
             counters.append(Counter(test['latestStatus'] for test in tests))
-            builds.append(common.get_build_from_test_plan(tp, username, password))
+            builds.append(common.get_build_from_test_plan(t_plan, username, password))
         else:
             counters.append(Counter())
             builds.append("NA")
@@ -104,7 +98,7 @@ def get_code_maturity_data(test_plan: str, test_plan1: str, test_plan2: str):
         ["Code Maturity"], ["", builds[0], builds[1], builds[2]],
         ["Total", sum(counters[0].values()), sum(counters[1].values()), sum(counters[2].values())],
     ]
-    for status in common.test_status:
+    for status in common.TEST_STATUS:
         data.append(
             [status.capitalize(), counters[0][status], counters[1][status], counters[2][status]]
         )
@@ -112,9 +106,7 @@ def get_code_maturity_data(test_plan: str, test_plan1: str, test_plan2: str):
 
 
 def get_single_bucket_perf_data():
-    """
-    ToDo: Need to complete this by taking help from performance team
-    """
+    """ToDo: Need to complete this by taking help from performance team."""
     data = [
         ["Single Bucket Performance Statistics (Average) using S3Bench - in a Nutshell"],
         ["Statistics", "4 KB Object", "256 MB Object"],
@@ -126,13 +118,24 @@ def get_single_bucket_perf_data():
     return data
 
 
-def main(test_plans):
+def main():
+    """Generate csv executive report from test plan JIRA."""
+    parser = argparse.ArgumentParser()
+    parser.add_argument('tp', help='Testplan for current build')
+    parser.add_argument('--tp1', help='Testplan for current-1 build', default=None)
+    parser.add_argument('--tp2', help='Testplan for current-2 build', default=None)
+
+    test_plans = parser.parse_args()
+
+    username, password = common.get_username_password()
     main_table_data, build = common.get_main_table_data(test_plans.tp, username, password)
     report_bugs_table_data = common.get_reported_bug_table_data(test_plans.tp, username, password)
     overall_qa_table_data = common.get_overall_qa_report_table_data(test_plans.tp, test_plans.tp1,
                                                                     build, username, password)
-    feature_breakdown_summary_table_data = get_feature_breakdown_summary_table_data(test_plans.tp)
-    code_maturity_table_data = get_code_maturity_data(test_plans.tp, test_plans.tp1, test_plans.tp2)
+    feature_breakdown_summary_table_data = get_feature_breakdown_summary_table_data(
+        test_plans.tp, username, password)
+    code_maturity_table_data = get_code_maturity_data(test_plans.tp, test_plans.tp1, test_plans.tp2,
+                                                      username, password)
     # single_bucket_perf_table_data = get_single_bucket_perf_data(build)
     timing_summary_table_data = common.get_timing_summary()
 
@@ -150,17 +153,10 @@ def main(test_plans):
     # data.extend(single_bucket_perf_table_data)
     # data.extend([""])
     data.extend(timing_summary_table_data)
-    with open("../exec_report.csv", "a", newline='') as f:
-        writer = csv.writer(f)
+    with open("../exec_report.csv", "a", newline='') as csv_file:
+        writer = csv.writer(csv_file)
         writer.writerows(data)
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('tp', help='Testplan for current build')
-    parser.add_argument('--tp1', help='Testplan for current-1 build', default=None)
-    parser.add_argument('--tp2', help='Testplan for current-2 build', default=None)
-
-    test_plan_args = parser.parse_args()
-
-    main(test_plan_args)
+    main()

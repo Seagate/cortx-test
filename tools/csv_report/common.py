@@ -1,3 +1,4 @@
+"""Common functions used while generating engineering and executive csv reports."""
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -17,21 +18,27 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 # -*- coding: utf-8 -*-
+import getpass
+import os
+import sys
 from collections import Counter
 from datetime import date
 from http import HTTPStatus
-import sys
 
 import requests
 
-bugs_priority = ["Blocker", "Critical", "Major", "Minor", "Trivial"]
-test_status = ["PASS", "FAIL", "ABORTED", "BLOCKED", "TODO"]
-features = ["User Operations", "Scalability", "Availability", "Longevity", "Usecases",
+BUGS_PRIORITY = ["Blocker", "Critical", "Major", "Minor", "Trivial"]
+TEST_STATUS = ["PASS", "FAIL", "ABORTED", "BLOCKED", "TODO"]
+FEATURES = ["User Operations", "Scalability", "Availability", "Longevity", "Usecases",
             "Data Recovery", "CrossConnect"]
 
 
 def get_test_executions_from_test_plan(test_plan: str, username: str, password: str) -> [dict]:
     """
+    Summary: Get test executions from test plan
+
+    Description: Returns dictionary of test executions from test plan
+
     Args:
         test_plan (str): Test plan number in JIRA
         username (str): JIRA Username
@@ -78,16 +85,15 @@ def get_test_list_from_test_plan(test_plan: str, username: str, password: str) -
         i = i + 1
         query = {'limit': 100, 'page': i}
         response = requests.get(jira_url, auth=(username, password), params=query)
-        if response.status_code == HTTPStatus.OK and len(response.json()):
+        if response.status_code == HTTPStatus.OK and response.json():
             responses.extend(response.json())
-        elif response.status_code == HTTPStatus.OK and not len(response.json()):
+        if response.status_code == HTTPStatus.OK and not response.json():
             all_tests = True
-        else:
-            print(f'get_test_list GET on {jira_url} failed')
-            print(f'RESPONSE={response.text}\n'
-                  f'HEADERS={response.request.headers}\n'
-                  f'BODY={response.request.body}')
-            sys.exit(1)
+        print(f'get_test_list GET on {jira_url} failed')
+        print(f'RESPONSE={response.text}\n'
+              f'HEADERS={response.request.headers}\n'
+              f'BODY={response.request.body}')
+        sys.exit(1)
     return responses
 
 
@@ -106,17 +112,16 @@ def get_test_from_test_execution(test_execution: str, username: str, password: s
     jira_url = f'https://jts.seagate.com/rest/raven/1.0/api/testexec/{test_execution}/test'
     query = {'detailed': "true"}
     response = requests.get(jira_url, auth=(username, password), params=query)
-    if response.status_code == HTTPStatus.OK and len(response.json()):
+    if response.status_code == HTTPStatus.OK and response.json():
         return response.json()
-    elif response.status_code == HTTPStatus.OK and not len(response.json()):
+    if response.status_code == HTTPStatus.OK and not response.json():
         print("No tests associated with this test execution")
         sys.exit(1)
-    else:
-        print(f'get_test_from_test_execution GET on {jira_url} failed')
-        print(f'RESPONSE={response.text}\n'
-              f'HEADERS={response.request.headers}\n'
-              f'BODY={response.request.body}')
-        sys.exit(1)
+    print(f'get_test_from_test_execution GET on {jira_url} failed')
+    print(f'RESPONSE={response.text}\n'
+          f'HEADERS={response.request.headers}\n'
+          f'BODY={response.request.body}')
+    sys.exit(1)
 
 
 def get_issue_details(issue_id: str, username: str, password: str):
@@ -159,6 +164,7 @@ def get_issue_details(issue_id: str, username: str, password: str):
 
 
 def get_defects_from_test_plan(test_plan: str, username: str, password: str) -> set:
+    """Get defect list from given test plan."""
     defects = set()
 
     # Get test execution keys from test plan
@@ -166,11 +172,10 @@ def get_defects_from_test_plan(test_plan: str, username: str, password: str) -> 
     te_keys = [te["key"] for te in test_executions]
 
     # Get test and defect details for each test execution
-    test_keys = {te: get_test_from_test_execution(te, username, password) for te in
-                 te_keys}
+    test_keys = {te: get_test_from_test_execution(te, username, password) for te in te_keys}
 
     # Collect defects
-    for te, tests in test_keys.items():
+    for _, tests in test_keys.items():
         for test in tests:
             if test["status"] == "FAIL" and test["defects"]:
                 for defect in test["defects"]:
@@ -179,6 +184,7 @@ def get_defects_from_test_plan(test_plan: str, username: str, password: str) -> 
 
 
 def get_build_from_test_plan(test_plan: str, username: str, password: str):
+    """Get build number from given test plan."""
     test_plan_details = get_issue_details(test_plan, username, password)
     test_plan_details = test_plan_details["fields"]
     build_no = "None"
@@ -191,6 +197,7 @@ def get_build_from_test_plan(test_plan: str, username: str, password: str):
 
 
 def get_main_table_data(test_plan: str, username: str, password: str):
+    """Get header table data."""
     build_no = get_build_from_test_plan(test_plan, username, password)
     data = [["CFT Exec Report"], ["Product", "Lyve Rack"],
             ["Build", build_no],
@@ -199,8 +206,9 @@ def get_main_table_data(test_plan: str, username: str, password: str):
 
 
 def get_reported_bug_table_data(test_plan: str, username: str, password: str):
-    test_bugs = {x: 0 for x in bugs_priority}
-    cortx_bugs = {x: 0 for x in bugs_priority}
+    """Get reported bug table data."""
+    test_bugs = {x: 0 for x in BUGS_PRIORITY}
+    cortx_bugs = {x: 0 for x in BUGS_PRIORITY}
     defects = get_defects_from_test_plan(test_plan, username, password)
     for defect in defects:
         defect = get_issue_details(defect, username, password)
@@ -213,7 +221,7 @@ def get_reported_bug_table_data(test_plan: str, username: str, password: str):
         ["Reported Bugs"], ["Priority", "Test Setup", "Cortx Stack"],
         ["Total", sum(test_bugs.values()), sum(cortx_bugs.values())],
     ]
-    for priority in bugs_priority:
+    for priority in BUGS_PRIORITY:
         data.extend([[priority, test_bugs[priority], cortx_bugs[priority]]])
 
     return data
@@ -221,6 +229,7 @@ def get_reported_bug_table_data(test_plan: str, username: str, password: str):
 
 def get_overall_qa_report_table_data(test_plan: str, test_plan1: str,
                                      build: str, username: str, password: str):
+    """Get overall qa report table data."""
     tests = get_test_list_from_test_plan(test_plan, username, password)
     count_0 = Counter(test['latestStatus'] for test in tests)
     build1 = "NA"
@@ -234,7 +243,7 @@ def get_overall_qa_report_table_data(test_plan: str, test_plan1: str,
         ["Overall QA Report"], ["", build, build1],
         ["Total", sum(count_0.values()), sum(count_1.values())],
     ]
-    for status in test_status:
+    for status in TEST_STATUS:
         data.extend([
             [status.capitalize(), count_0[status], count_1[status]],
         ])
@@ -244,7 +253,7 @@ def get_overall_qa_report_table_data(test_plan: str, test_plan1: str,
 def get_timing_summary():
     """
     ToDo: Need to decide on how to figure out these timings from test JIRAs? DO we need to add or
-          remove some timings for R2
+          remove some timings for R2.
     """
     data = [
         ["Timing Summary (Seconds)"],
@@ -266,3 +275,14 @@ def get_timing_summary():
         ["Bucket Deletion", 5.0, "NA", 4.0, "NA", "NA"]
     ]
     return data
+
+
+def get_username_password():
+    """Get username and password fro JIRA."""
+    try:
+        username = os.environ["JIRA_ID"]
+        password = os.environ["JIRA_PASSWORD"]
+    except KeyError:
+        username = input("JIRA username: ")
+        password = getpass.getpass("JIRA password: ")
+    return username, password

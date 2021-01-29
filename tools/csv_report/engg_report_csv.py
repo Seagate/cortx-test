@@ -1,3 +1,4 @@
+"""Script used to generate engineering csv report."""
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -19,35 +20,21 @@
 # -*- coding: utf-8 -*-
 import argparse
 import csv
-import getpass
-import os
-
-from jira import JIRA
 
 import common
 
-try:
-    username = os.environ["JIRA_ID"]
-    password = os.environ["JIRA_PASSWORD"]
-except KeyError:
-    username = input("JIRA username: ")
-    password = getpass.getpass("JIRA password: ")
 
-jiraURL = 'https://jts.seagate.com/'
-options = {'server': jiraURL}
-jira = JIRA(options, basic_auth=(username, password))
-
-
-def get_component_breakup_from_testplan(test_plan: str):
+def get_component_breakup_from_testplan(test_plan: str, username: str, password: str):
+    """Get component breakup from testplan."""
     te_keys = common.get_test_executions_from_test_plan(test_plan, username, password)
     te_keys = [te["key"] for te in te_keys]
     components = {}
-    for te in te_keys:
-        tests = common.get_test_from_test_execution(te, username, password)
+    for test_execution in te_keys:
+        tests = common.get_test_from_test_execution(test_execution, username, password)
         fail_count = sum(d['status'] == 'FAIL' for d in tests)
         pass_count = sum(d['status'] == 'PASS' for d in tests)
         total_count = len(tests)
-        detail = common.get_issue_details(te, username, password)
+        detail = common.get_issue_details(test_execution, username, password)
         component = detail['fields']['labels'][0]
         if component in components:
             components[component] = {
@@ -60,13 +47,16 @@ def get_component_breakup_from_testplan(test_plan: str):
     return components
 
 
-def get_component_level_summary(test_plans: list):
+def get_component_level_summary(test_plans: list, username: str, password: str):
+    """Get component level summary from testplan."""
     component_summary = []
     builds = []
-    for tp in test_plans:
-        if tp:
-            component_summary.append(get_component_breakup_from_testplan(tp))
-            builds.append(common.get_build_from_test_plan(tp, username, password))
+    for t_plan in test_plans:
+        if t_plan:
+            component_summary.append(
+                get_component_breakup_from_testplan(t_plan, username, password)
+            )
+            builds.append(common.get_build_from_test_plan(t_plan, username, password))
         else:
             component_summary.append({})
             builds.append("NA")
@@ -98,28 +88,25 @@ def get_component_level_summary(test_plans: list):
 
 
 def get_single_bucket_perf_stats():
-    """
-        ToDo: Need to complete by taking help from performance team
-    """
+    """ToDo: Need to complete by taking help from performance team."""
     return [[]]
 
 
 def get_multiple_bucket_perf_stats():
-    """
-        ToDo: Need to complete by taking help from performance team
-    """
+    """ToDo: Need to complete by taking help from performance team."""
     return [[]]
 
 
 def get_metadata_latencies():
-    """
-        ToDo: Need to complete by taking help from performance team
-    """
+    """ToDo: Need to complete by taking help from performance team."""
     return [[]]
 
 
 def get_test_ids_from_linked_issues(linked_issues):
     """
+    Summary: Get test IDs from linked issues.
+
+    Description: Returns test IDs from linked issues dictionary
         linked_issues = [
             {
                 "type": {"name": "Defect", "inward": "created by"},
@@ -135,7 +122,10 @@ def get_test_ids_from_linked_issues(linked_issues):
     return tests
 
 
-def get_detailed_reported_bugs(test_plan: str):
+def get_detailed_reported_bugs(test_plan: str, username: str, password: str):
+    """
+    summary: Get detailed reported bugs from testplan.
+    """
     defects = common.get_defects_from_test_plan(test_plan, username, password)
     data = [
         ["Detailed Reported Bugs"],
@@ -154,19 +144,30 @@ def get_detailed_reported_bugs(test_plan: str):
     return data
 
 
-def main(test_plans):
+def main():
+    """Generate csv engineering report from test plan JIRA."""
+    parser = argparse.ArgumentParser()
+    parser.add_argument('tp', help='Testplan for current build')
+    parser.add_argument('--tp1', help='Testplan for current-1 build', default=None)
+    parser.add_argument('--tp2', help='Testplan for current-2 build', default=None)
+    parser.add_argument('--tp3', help='Testplan for current-3 build', default=None)
+
+    test_plans = parser.parse_args()
+
+    username, password = common.get_username_password()
     main_table_data, build = common.get_main_table_data(test_plans.tp, username, password)
     report_bugs_table_data = common.get_reported_bug_table_data(test_plans.tp, username, password)
     overall_qa_table_data = common.get_overall_qa_report_table_data(test_plans.tp, test_plans.tp1,
                                                                     build, username,
                                                                     password)
-    component_level_summary_data = get_component_level_summary([test_plans.tp, test_plans.tp1,
-                                                                test_plans.tp2, test_plans.tp3])
+    component_level_summary_data = get_component_level_summary(
+        [test_plans.tp, test_plans.tp1, test_plans.tp2, test_plans.tp3], username, password
+    )
     # single_bucket_perf_stats = get_single_bucket_perf_stats(build)
     # get_multiple_bucket_perf = get_multiple_bucket_perf_stats(build)
     # metadata_latencies = get_metadata_latencies(build)
     # timing_summary_table_data = common.get_timing_summary(build)
-    detailed_reported_bugs = get_detailed_reported_bugs(test_plans.tp)
+    detailed_reported_bugs = get_detailed_reported_bugs(test_plans.tp, username, password)
 
     data = []
     data.extend(main_table_data)
@@ -178,18 +179,10 @@ def main(test_plans):
     data.extend(component_level_summary_data)
     data.extend([""])
     data.extend(detailed_reported_bugs)
-    with open("../engg_report.csv", "a", newline='') as f:
-        writer = csv.writer(f)
+    with open("../engg_report.csv", "a", newline='') as csv_file:
+        writer = csv.writer(csv_file)
         writer.writerows(data)
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('tp', help='Testplan for current build')
-    parser.add_argument('--tp1', help='Testplan for current-1 build', default=None)
-    parser.add_argument('--tp2', help='Testplan for current-2 build', default=None)
-    parser.add_argument('--tp3', help='Testplan for current-3 build', default=None)
-
-    test_plan_args = parser.parse_args()
-
-    main(test_plan_args)
+    main()
