@@ -12,26 +12,25 @@ def setup_module(module):
 
 
 def teardown_module(module):
-    """Tear module. """
+    """Tear module."""
     print('Exited teardown module')
 
 
 def setup_function(function):
-    """Setup any state tied to the execution of the given function.
+    """
+    Setup any state tied to the execution of the given function.
     Invoked for every test function in the module.
     """
     print('Entered setup function')
 
 
 def teardown_function(function):
-    """Teardown any state that was previously setup with a setup_function
-    call.
-    """
+    """Teardown any state that was previously setup with a setup_function call."""
     print('Exited teardown function')
 
 
 def max(values):
-    """A test function"""
+    """A test function."""
     _max = values[0]
 
     for val in values:

@@ -50,7 +50,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 def _get_items_from_cache():
-    """ Intended for internal use after modifying collected items """
+    """Intended for internal use after modifying collected items."""
     return CACHE.table
 
 
@@ -117,9 +117,9 @@ def session_data(tmp_path_factory, worker_id):
 
 @pytest.fixture()
 def csm_user(worker_id):
-    """Use a different csm account in each worker.
-
-       PYTEST_XDIST_WORKER env variable can be used to get worker name.
+    """
+    Use a different csm account in each worker.
+    PYTEST_XDIST_WORKER env variable can be used to get worker name.
     """
     return "csm_%s" % worker_id
 
@@ -234,7 +234,7 @@ def pytest_collection(session):
     cache_path = os.path.join(os.getcwd(), LOG_DIR, CACHE_JSON)
     _path = config_utils.create_content_json(cache_path, _get_items_from_cache())
     if not os.path.exists(_path):
-        LOGGER.info("Items Cache file {} not created" % (_path,))
+        LOGGER.info("Items Cache file %s not created" % (_path,))
     return items
 
 
