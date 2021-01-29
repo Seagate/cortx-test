@@ -27,6 +27,26 @@ from jira import JIRA
 import common
 
 
+def prepare_feature_data(total_count, pass_count, fail_count):
+    """Create feature summary data."""
+    data = [["Feature Breakdown Summary"],
+            ["Features", "Total", "Pass", "Failed", "% Pass", "% Failed"]]
+
+    for feature in total_count:
+        f_pass = pass_count[feature]
+        f_total = total_count[feature]
+        f_fail = fail_count[feature]
+        if f_total:
+            pct_pass = f_pass * 100 // f_total
+            pct_fail = f_fail * 100 // f_total
+        else:
+            pct_pass = 0
+            pct_fail = 0
+        data.extend([[feature, f_total, f_pass, f_fail, pct_pass, pct_fail]])
+
+    return data
+
+
 def get_feature_breakdown_summary_table_data(test_plan: str, username: str, password: str):
     """Get feature breakdown summary table data."""
     fail_count = {}
@@ -62,22 +82,7 @@ def get_feature_breakdown_summary_table_data(test_plan: str, username: str, pass
     pass_count["Orphans"] = pass_count["Total"] - total_pass_non_orphans
     fail_count["Orphans"] = fail_count["Total"] - total_fail_non_orphans
 
-    data = [["Feature Breakdown Summary"],
-            ["Features", "Total", "Pass", "Failed", "% Pass", "% Failed"]]
-
-    for feature in total_count:
-        f_pass = pass_count[feature]
-        f_total = total_count[feature]
-        f_fail = fail_count[feature]
-        if f_total:
-            pct_pass = f_pass * 100 // f_total
-            pct_fail = f_fail * 100 // f_total
-        else:
-            pct_pass = 0
-            pct_fail = 0
-        data.extend([[feature, f_total, f_pass, f_fail, pct_pass, pct_fail]])
-
-    return data
+    return prepare_feature_data(total_count, pass_count, fail_count)
 
 
 def get_code_maturity_data(test_plan: str, test_plan1: str, test_plan2: str,

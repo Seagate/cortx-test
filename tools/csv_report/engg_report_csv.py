@@ -106,7 +106,7 @@ def get_test_ids_from_linked_issues(linked_issues):
     """
     Summary: Get test IDs from linked issues.
 
-    Description: Returns test IDs from linked issues dictionary
+    Description: Returns test IDs from linked issues dictionary.
         linked_issues = [
             {
                 "type": {"name": "Defect", "inward": "created by"},

@@ -35,9 +35,9 @@ FEATURES = ["User Operations", "Scalability", "Availability", "Longevity", "Usec
 
 def get_test_executions_from_test_plan(test_plan: str, username: str, password: str) -> [dict]:
     """
-    Summary: Get test executions from test plan
+    Summary: Get test executions from test plan.
 
-    Description: Returns dictionary of test executions from test plan
+    Description: Returns dictionary of test executions from test plan.
 
     Args:
         test_plan (str): Test plan number in JIRA
@@ -47,12 +47,12 @@ def get_test_executions_from_test_plan(test_plan: str, username: str, password: 
     Returns:
         List of dictionaries
         Each dict will have id, key, summary, self, testEnvironments
-        [{'id': 311993, 'key': 'TEST-16653', 'summary': 'TE:Auto-Stability-Release 515',
-         'self': 'https://jts.seagate.com/rest/api/2/issue/311993',
-         'testEnvironments': ['515_full']},
-        {'id': 311992, 'key': 'TEST-16652', 'summary': 'TE:Manual-RAS_Release 515',
-         'self': 'https://jts.seagate.com/rest/api/2/issue/311992',
-         'testEnvironments': ['515_full']}]
+        [{"id": 311993, "key": "TEST-16653", "summary": "TE:Auto-Stability-Release 515",
+         "self": "https://jts.seagate.com/rest/api/2/issue/311993",
+         "testEnvironments": ["515_full"]},
+        {"id": 311992, "key": "TEST-16652", "summary": "TE:Manual-RAS_Release 515",
+         "self": "https://jts.seagate.com/rest/api/2/issue/311992",
+         "testEnvironments": ["515_full"]}]
     """
     jira_url = f'https://jts.seagate.com/rest/raven/1.0/api/testplan/{test_plan}/testexecution'
     response = requests.get(jira_url, auth=(username, password))
