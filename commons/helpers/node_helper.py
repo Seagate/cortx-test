@@ -26,12 +26,17 @@ import re
 import shutil
 import stat
 import time
-from typing import Tuple, List, Union, Any
 import mdstat
+from typing import Tuple
+from typing import List
+from typing import Union
+from typing import Any
 from commons import commands
 from commons.helpers.host import Host
 
 log = logging.getLogger(__name__)
+
+EXCEPTION_MSG = "*ERROR* An exception occurred in {}: {}"
 
 
 class Node(Host):
