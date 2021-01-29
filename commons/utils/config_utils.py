@@ -19,12 +19,10 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-
 """
 Python library which have config related operations using package
 like config parser, yaml etc.
 """
-
 import logging
 import os
 import json
@@ -129,7 +127,6 @@ def parse_xml_controller(filepath: str, field_list: list, xml_tag: str =
     """
     try:
         elem_parse = parse(filepath).getroot()
-        # elem_parse = defusedxml.ElementTree.parse(filepath)
         dict_data = {}
         new_d = {}
         list_keys = []
@@ -248,31 +245,18 @@ def update_config_helper(filename: str, key: str, old_value: str,
                             old_pattern = key + "=" + old_value
                             new_pattern = key + "=" + new_value
                         if len(ol_value) > len(nw_value):
-                            count = len(ol_value) - len(nw_value)
-                            new_pattern = new_pattern + " " * count
-                            match = re.search(old_pattern, data)
-                            if match:
-                                span_ = match.span()
-                                f_in.seek(span_[0])
-                                f_in.write(new_pattern)
-                                LOG.debug(
-                                    "Old pattern %s got replaced by new "
-                                    "pattern %s", old_pattern, new_pattern)
-                                f_in.seek(0, 0)
-                                new_data = f_in.read()
-                                return True, new_data
-                        else:
-                            match = re.search(old_pattern, data)
-                            if match:
-                                span_ = match.span()
-                                f_in.seek(span_[0])
-                                f_in.write(new_pattern)
-                                LOG.debug(
-                                    "Old pattern %s got replaced by "
-                                    "new pattern %s", old_pattern, new_pattern)
-                                f_in.seek(0, 0)
-                                new_data = f_in.read()
-                                return True, new_data
+                            new_pattern = new_pattern + " " * (len(ol_value) - len(nw_value))
+                        match = re.search(old_pattern, data)
+                        if match:
+                            span_ = match.span()
+                            f_in.seek(span_[0])
+                            f_in.write(new_pattern)
+                            LOG.debug(
+                                "Old pattern %s got replaced by "
+                                "new pattern %s", old_pattern, new_pattern)
+                            f_in.seek(0, 0)
+                            new_data = f_in.read()
+                            return True, new_data
 
     return False, "Failed to replace Old pattern {} with new pattern {}".format(
         old_value, new_value)
