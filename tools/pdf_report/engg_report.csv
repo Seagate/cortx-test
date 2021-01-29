@@ -21,7 +21,7 @@ Failed,41,42
 Aborted,51,52
 Pass,61,62
 ToDo,71,72
-,
+
 Component Level Summary
 Component,Total,#Build,,#Build-1,,#Build-2,,#Build-3
 ,,Pass,Fail,Pass,Fail,Pass,Fail,Pass,Fail
@@ -48,7 +48,7 @@ Write IOPS,1,2,3,4,5,6,7,8,
 Read IOPS,1,2,3,4,5,6,7,8,
 Write TTFB (ms),1,2,3,4,5,6,7,8
 Read TTFB (ms),1,2,3,4,5,6,7,8
-,
+
 Multiple Buckets Performance Statistics (Average) using HSBench and COSBench
 Bench,Statistics,4 KB,100 KB,1 MB,5 MB,36 MB,64 MB,128 MB,256 MB
 ,Write Throughput,0,6,50,475,1625,2100,2225,2375
@@ -93,7 +93,7 @@ Operation Latency (ms),Response Time
 Add / Edit Object Tags,338.0
 Read Object Tags,73.0
 Read Object Metadata,73.0,
-,
+
 Timing Summary (Seconds)
 Parameters,515,463,403,398,394
 Update,1440.0,NA,NA,NA,NA
@@ -125,3 +125,4 @@ CFT_NEW_TEST,TEST-14347,Major,EOS-15336,In Progress,DR : service failed to recov
 CSM,TEST-12846,Major,EOS-15350,In Progress,Stopping Node-2 services causes the node-1 to shutdown
 CFT_NEW_TEST,TEST-14990,Major,EOS-15390,In Progress,Build 515: No alerts observed for enclosure disk disable/enable and enclosure fan removal/insertion operations
 CSM,TEST-6150,Major,EOS-15443,New,Firmware upgrade status shows FAIL on UI even if it is passed on controller
+
