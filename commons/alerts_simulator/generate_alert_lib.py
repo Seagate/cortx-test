@@ -5,57 +5,45 @@ This file contains the Alert Simulation API.
 """
 import json
 import logging
-from eos_test.utility import utility
-from eos_test.ras.ras_test_lib import RASTestLib
-import eos_test.ras.constants as cons
-from ctp.common.ctpexception import CTPException
-import eos_test.common.eos_errors as err
-from ctp.utils import ctpyaml
 from aenum import Enum, NoAlias
-import eos_test.utility.alerts_simulator.constants as dict_cons
-from eos_test.utility.alerts_simulator.generate_alert_wrappers import GenerateAlertWrapper
+from commons import constants as cons
+import commons.alerts_simulator.constants as dict_cons
+from commons.utils import config_utils as conf_util
+from commons.alerts_simulator.generate_alert_wrappers import \
+    GenerateAlertWrapper
 
 LOGGER = logging.getLogger(__name__)
-
-UTIL_OBJ = utility.Utility()
-RAS_TEST_OBJ = RASTestLib()
 ALERT_WRAP = GenerateAlertWrapper()
-
-COMMON_CONF = ctpyaml.read_yaml(cons.COMMON_CONFIG_PATH)
-CONS_OBJ_DICT = cons.RAS_BUILD_VER[COMMON_CONF["BUILD_VER_TYPE"]]
-
-RAS_VAL = ctpyaml.read_yaml(CONS_OBJ_DICT["CONFIG_PATH"])
-SSPL_VAL = ctpyaml.read_yaml(CONS_OBJ_DICT["SSPL_CONFIG_PATH"])
-
-BYTES_TO_READ = cons.BYTES_TO_READ
+COMMON_CONF = conf_util.read_yaml(cons.COMMON_CONFIG_PATH)
 
 
 class AlertType(Enum, settings=NoAlias):
-    controller_fault = 1
-    controller_fault_resolved = 1
-    controller_a_fault = 1
-    controller_a_fault_resolved = 1
-    controller_b_fault = 1
-    controller_b_fault_resolved = 1
-    psu_fault = 1
-    psu_fault_resolved = 1
-    disk_disable = 2
-    disk_enable = 2
-    disk_fault_no_alert = 3
-    disk_fault_alert = 3
-    disk_fault_resolved_alert = 3
-    cpu_usage_no_alert = 4
-    cpu_usage_alert = 4
-    cpu_usage_resolved_alert = 4
-    mem_usage_no_alert = 5
-    mem_usage_alert = 5
-    mem_usage_resolved_alert = 5
-    raid_assemble_device_alert = 6
-    raid_stop_device_alert = 6
-    raid_fail_disk_alert = 6
-    raid_remove_disk_alert = 6
-    raid_add_disk_alert = 6
-    iem_test_error_alert = 7
+    CONTROLLER_FAULT = 1
+    CONTROLLER_FAULT_RESOLVED = 1
+    CONTROLLER_A_FAULT = 1
+    CONTROLLER_A_FAULT_RESOLVED = 1
+    CONTROLLER_B_FAULT = 1
+    CONTROLLER_B_FAULT_RESOLVED = 1
+    PSU_FAULT = 1
+    PSU_FAULT_RESOLVED = 1
+    DISK_DISABLE = 2
+    DISK_ENABLE = 2
+    DISK_FAULT_NO_ALERT = 3
+    DISK_FAULT_ALERT = 3
+    DISK_FAULT_RESOLVED_ALERT = 3
+    CPU_USAGE_NO_ALERT = 4
+    CPU_USAGE_ALERT = 4
+    CPU_USAGE_RESOLVED_ALERT = 4
+    MEM_USAGE_NO_ALERT = 5
+    MEM_USAGE_ALERT = 5
+    MEM_USAGE_RESOLVED_ALERT = 5
+    RAID_ASSEMBLE_DEVICE_ALERT = 6
+    RAID_STOP_DEVICE_ALERT = 6
+    RAID_FAIL_DISK_ALERT = 6
+    RAID_REMOVE_DISK_ALERT = 6
+    RAID_ADD_DISK_ALERT = 6
+    IEM_TEST_ERROR_ALERT = 7
+
 
 class GenerateAlertLib:
     """

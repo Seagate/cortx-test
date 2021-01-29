@@ -120,6 +120,9 @@ CT_SINGLETON_NOT_INITIALIZED = CTError(1001, "CTP Config Error")
 # HTTP and HTTPS Errors
 HTTP_ERROR = CTError(2000, "HTTP Error")
 
+# RAS CT Errors
+CONTROLLER_ERROR = CTError(6000, "CONTROLLER Error")
+
 # CLI Errors
 CLI_ERROR = CTError(24000, "CLI Error")
 CLI_INVALID_COMMAND = CTError(24001, "CLI Invalid Command")
