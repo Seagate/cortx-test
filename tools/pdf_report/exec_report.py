@@ -1,3 +1,4 @@
+"""Script used to generate executive pdf report"""
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -26,6 +27,13 @@ import common
 
 
 def build_feature_breakdown_table(data):
+    """
+    Build feature breakdown table
+    Args:
+        data (list): Table data
+
+    Returns: table
+    """
     component_table = Table(data, 6 * [1.26 * inch], 11 * [0.225 * inch],
                             style=common.common_table_style)
     component_table.setStyle(TableStyle([
@@ -37,18 +45,35 @@ def build_feature_breakdown_table(data):
 
 
 def build_code_maturity_table(data):
+    """
+    Build code maturity table
+    Args:
+        data (list): Table data
+
+    Returns: table
+    """
     code_maturity_table = Table(data, 4 * [1.89 * inch], 7 * [0.225 * inch],
                                 style=common.common_table_style)
     return code_maturity_table
 
 
 def build_bucket_perf_stats_table(data):
+    """
+    Build bucket performance statistics table
+    Args:
+        data (list): Table data
+
+    Returns: table
+    """
     bucket_perf_stats = Table(data, 3 * [2.52 * inch], 6 * [0.25 * inch],
                               style=common.common_table_style)
     return bucket_perf_stats
 
 
 def main():
+    """
+    Generate PDF executive report from csv executive report
+    """
     all_data = common.get_data_from_csv('../exec_report.csv')
 
     main_table_data, table2_start = common.get_table_data(all_data, 0)
@@ -57,7 +82,7 @@ def main():
     feature_breakdown_table_data, table5_start = common.get_table_data(all_data, table4_start)
     code_maturity_table_data, table6_start = common.get_table_data(all_data, table5_start)
     bucket_perf_stats_table_data, table7_start = common.get_table_data(all_data, table6_start)
-    timing_summary_table_data, table8_data = common.get_table_data(all_data, table7_start)
+    timing_summary_table_data, _ = common.get_table_data(all_data, table7_start)
 
     build = main_table_data[2][1]
 

@@ -1,3 +1,4 @@
+"""Common functions used while generating engineering and executive pdf reports"""
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -19,11 +20,11 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 import csv
+from typing import List
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import inch
 from reportlab.platypus import Table, TableStyle
-
 
 common_table_style = [
     ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),  # Font for complete table
@@ -45,7 +46,16 @@ common_table_style = [
 
 
 def build_main_table(data):
-    table = Table(data, 2 * [3.8 * inch], len(data) * [0.23 * inch])
+    """
+    Build Header table
+    Args:
+        data (list): Table data
+
+    Returns: table
+    """
+    row_heights = len(data) * [0.23 * inch]
+    row_heights[0] = 0.32 * inch
+    table = Table(data, 2 * [3.8 * inch], row_heights)
     table.setStyle(TableStyle([
         ('SPAN', (0, 0), (1, 0)),  # Merge Cells in row 1
         ('BOX', (0, 0), (-1, -1), 0.5, colors.black),  # Table outline
@@ -62,12 +72,20 @@ def build_main_table(data):
         ('RIGHTPADDING', (0, 0), (-1, -1), 0),  # No padding
         ('BOTTOMPADDING', (0, 0), (-1, -1), 0),  # No padding
     ]))
-    table._argH[0] = 0.32 * inch
     return table
 
 
 def build_reported_bugs_table(data):
-    reported_bugs_table = Table(data, 3 * [1.25 * inch], len(data) * [0.225 * inch],
+    """
+    Build reported bugs table
+    Args:
+        data (list): Table data
+
+    Returns: table
+    """
+    row_heights = len(data) * [0.225 * inch]
+    row_heights[0] = 0.3 * inch
+    reported_bugs_table = Table(data, 3 * [1.25 * inch], row_heights,
                                 style=common_table_style)
 
     reported_bugs_table.setStyle(TableStyle([
@@ -77,12 +95,21 @@ def build_reported_bugs_table(data):
         ('TEXTCOLOR', (0, 5), (-1, 5), colors.HexColor(0x0070c0)),  # Blue for 5nd row
         ('TEXTCOLOR', (0, 7), (-1, 7), colors.HexColor(0x009933)),  # Green for 7nd row
     ]))
-    reported_bugs_table._argH[0] = 0.3 * inch
+
     return reported_bugs_table
 
 
 def build_qa_report_table(data):
-    qa_report_table = Table(data, 3 * [1.25 * inch], len(data) * [0.225 * inch],
+    """
+    Build qa report table
+    Args:
+        data (list): Table data
+
+    Returns: table
+    """
+    row_heights = len(data) * [0.225 * inch]
+    row_heights[0] = 0.3 * inch
+    qa_report_table = Table(data, 3 * [1.25 * inch], row_heights,
                             style=common_table_style)
 
     qa_report_table.setStyle(TableStyle([
@@ -90,32 +117,53 @@ def build_qa_report_table(data):
         ('TEXTCOLOR', (0, 3), (-1, 3), colors.HexColor(0x009933)),  # Green for 3nd row
         ('TEXTCOLOR', (0, 4), (-1, 4), colors.HexColor(0xff0000)),  # Red for 4nd row
     ]))
-    qa_report_table._argH[0] = 0.3 * inch
     return qa_report_table
 
 
 def build_two_tables(reported_bugs_table_data, qa_report_table_data):
+    """
+    Build Reported bugs & QA Report tables
+    Args:
+        reported_bugs_table_data (list): Reported bugs table data
+        qa_report_table_data (list): QA Report table data
+
+    Returns: table
+    """
     bugs_table = build_reported_bugs_table(reported_bugs_table_data)
     qa_report_table = build_qa_report_table(qa_report_table_data)
 
     data_comb = [(bugs_table, qa_report_table)]
-    t = Table(data_comb, 2 * [3.85 * inch], 1 * [1.8 * inch])
-    t.setStyle(TableStyle([
+    table = Table(data_comb, 2 * [3.85 * inch], 1 * [1.8 * inch])
+    table.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('ALIGN', (0, 0), (-1, -1), 'CENTRE'),
     ]))
-    return t
+    return table
 
 
 def build_timing_summary_table(data):
+    """
+    Build timings summary table
+    Args:
+        data (list): Table data
+
+    Returns: table
+    """
     timing_summary_table = Table(data, 6 * [1.26 * inch], len(data) * [0.25 * inch],
                                  style=common_table_style)
     return timing_summary_table
 
 
-def get_data_from_csv(csv_file):
-    with open(csv_file, newline='') as f:
-        reader = csv.reader(f)
+def get_data_from_csv(csv_file: str) -> List[List]:
+    """
+    Read report data from csv file
+    Args:
+        csv_file (str): Report file location
+
+    Returns: data in list[list] format
+    """
+    with open(csv_file, newline='') as report_file:
+        reader = csv.reader(report_file)
         data = list(reader)
     for row in data:
         if len(row) > 1 and row[-1] == "":
@@ -124,11 +172,19 @@ def get_data_from_csv(csv_file):
 
 
 def get_table_data(data, start=0):
-    d = []
+    """
+    Read report data from csv file
+    Args:
+        start (int): Table location
+        data (list[list]): Complete report data
+
+    Returns: data in list[list] format
+    """
+    table_data = []
     end = 0
     for idx, _ in enumerate(data, start=start):
         if not data[idx]:
             end = idx + 1
             break
-        d.append(data[idx])
-    return d, end
+        table_data.append(data[idx])
+    return table_data, end

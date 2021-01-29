@@ -1,3 +1,4 @@
+"""Script used to generate engineering pdf report"""
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -27,7 +28,16 @@ import common
 
 
 def build_component_table(data):
-    component_table = Table(data, 10 * [0.71 * inch], len(data) * [0.25 * inch],
+    """
+    Build component table
+    Args:
+        data (list): Table data
+
+    Returns: table
+    """
+    col_width = 10 * [0.71 * inch]
+    col_width[0] = 1.25 * inch
+    component_table = Table(data, col_width, len(data) * [0.25 * inch],
                             style=common.common_table_style)
     component_table.setStyle(TableStyle([
         ('SPAN', (0, 1), (0, 2)),  # Merge Cells for Component
@@ -51,19 +61,37 @@ def build_component_table(data):
         ('TEXTCOLOR', (8, 2), (8, -1), colors.HexColor(0x009933)),  # Green for 9th column
         ('TEXTCOLOR', (9, 2), (9, -1), colors.HexColor(0xff0000)),  # Red for 10th column
     ]))
-    component_table._argW[0] = 1.25 * inch
     return component_table
 
 
 def build_single_bucket_perf_stats(data):
-    single_bucket_perf_stats = Table(data, 9 * [0.71 * inch], 10 * [0.24 * inch],
+    """
+    Build single bucket performance table
+    Args:
+        data (list): Table data
+
+    Returns: table
+    """
+    col_width = 9 * [0.71 * inch]
+    col_width[0] = 2 * inch
+    single_bucket_perf_stats = Table(data, col_width, 10 * [0.24 * inch],
                                      style=common.common_table_style)
-    single_bucket_perf_stats._argW[0] = 2 * inch
     return single_bucket_perf_stats
 
 
 def build_multi_bucket_perf_stats(data):
-    multi_bucket_perf_stats = Table(data, 10 * [0.71 * inch], 38 * [0.24 * inch],
+    """
+    Build multi bucket performance table
+    Args:
+        data (list): Table data
+
+    Returns: table
+    """
+    col_width = 10 * [0.71 * inch]
+    col_width[0] = 1 * inch
+    col_width[1] = 1.25 * inch
+
+    multi_bucket_perf_stats = Table(data, col_width, 38 * [0.24 * inch],
                                     style=common.common_table_style)
     multi_bucket_perf_stats.setStyle(TableStyle([
         ('LINEABOVE', (0, 3), (0, 7), 1, colors.HexColor(0xededed)),
@@ -73,18 +101,30 @@ def build_multi_bucket_perf_stats(data):
         ('LINEABOVE', (0, 27), (0, 31), 1, colors.HexColor(0xededed)),
         ('LINEABOVE', (0, 33), (0, 37), 1, colors.HexColor(0xededed)),
     ]))
-    multi_bucket_perf_stats._argW[0] = 1 * inch
-    multi_bucket_perf_stats._argW[1] = 1.25 * inch
     return multi_bucket_perf_stats
 
 
 def build_metadata_latencies_table(data):
+    """
+    Build metadata latencies table
+    Args:
+        data (list): Table data
+
+    Returns: table
+    """
     single_bucket_perf_stats = Table(data, 2 * [3.8 * inch], 5 * [0.25 * inch],
                                      style=common.common_table_style)
     return single_bucket_perf_stats
 
 
 def build_defect_table(data):
+    """
+    Build defect table
+    Args:
+        data (list): Table data
+
+    Returns: table
+    """
     stylesheet = getSampleStyleSheet()
 
     # Set wrap text style for 5th column (Bug Description) in table.
@@ -93,7 +133,12 @@ def build_defect_table(data):
             row[5] = Paragraph(row[5], stylesheet['BodyText'])
             row[1] = Paragraph(row[1].replace("/", "<br/>"), stylesheet['BodyText'])
 
-    defect_table = Table(data, 6 * [0.72 * inch], None,
+    col_width = 6 * [0.72 * inch]
+    col_width[5] = 3.5 * inch
+    col_width[0] = 1.25 * inch
+    col_width[1] = 1 * inch
+
+    defect_table = Table(data, col_width, None,
                          style=common.common_table_style)
     defect_table.setStyle(TableStyle([
         ('FONTNAME', (0, 2), (-1, -1), 'Helvetica'),  # Font for complete table
@@ -103,15 +148,13 @@ def build_defect_table(data):
         ('RIGHTPADDING', (0, 0), (-1, -1), 5),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
     ]))
-    defect_table._argW[5] = 3.5 * inch
-    defect_table._argW[0] = 1.25 * inch
-    defect_table._argW[1] = 1 * inch
-    defect_table._argH[1] = 0.25 * inch
-    defect_table._argH[0] = 0.25 * inch
     return defect_table
 
 
 def main():
+    """
+    Generate PDF engineering report from csv executive report
+    """
     all_data = common.get_data_from_csv('../engg_report.csv')
 
     main_table_data, table2_start = common.get_table_data(all_data, 0)
@@ -144,7 +187,7 @@ def main():
 
     elements = [main_table, Spacer(15, 15), two_tables, Spacer(15, 15),
                 component_table, Spacer(15, 15), single_bucket_perf_stats, Spacer(15, 15),
-                PageBreak(), multi_bucket_perf_stats, PageBreak(), metadata_latencies_table,
+                multi_bucket_perf_stats, PageBreak(), metadata_latencies_table,
                 Spacer(15, 15), timing_summary_table,
                 Paragraph("<em>NA signifies the data is Not Available.</em>"),
                 Spacer(15, 15), defect_table]
