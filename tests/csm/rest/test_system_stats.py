@@ -1,7 +1,25 @@
-"""Test cases related to System Statistics.
-   Author: Divya Kachhwaha (532698)
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
+"""Tests system statistics using REST API
 """
-import sys
 import time
 import random
 import logging
@@ -9,12 +27,14 @@ import pytest
 from libs.csm.rest.csm_rest_stats import SystemStats
 from commons.utils import config_utils
 from commons.utils import assert_utils
+from commons import cortxlogging
 
 
 class TestSystemStats():
 
-    """System Health Testsuite"""
-    
+    """System Health Testsuite
+    """
+
     @classmethod
     def setup_class(cls):
         """ This is method is for test suite set-up """
@@ -31,8 +51,8 @@ class TestSystemStats():
         """Test that GET API returns 200 response code
         and appropriate json response for metric stats
         """
-        test_case_name = sys._getframe().f_code.co_name
-        self.log.info(f"##### Test started -  {test_case_name} #####")
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started - %s #####" , test_case_name)
         expected_response = self.system_stats.success_response
         response = self.system_stats.get_stats()
         assert_utils.assert_equals(response.status_code, expected_response,
@@ -41,12 +61,12 @@ class TestSystemStats():
         expected_response = self.test_conf["test_4956"]
         for test_param in ['panel_list', 'metric_list', 'unit_list']:
             result = self.system_stats.verify_list(
-                expected_response[test_param], actual_response[test_param])
-            assert result, "{} didn't match".format(test_param)
-        print(actual_response)
+                expected_response[test_param],
+                actual_response[test_param])
+            assert result, self.log.error("%s didn't match", test_param)
         assert_utils.assert_false(': null' in actual_response,
                                   "Null values in the response")
-        self.log.info("##### Test ended -  {} #####".format(test_case_name))
+        self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
     @pytest.mark.tags('TEST-14751')
@@ -56,15 +76,15 @@ class TestSystemStats():
         for paramerter `from`, `to`, `interval` and `metric`,
         """
 
-        test_case_name = sys._getframe().f_code.co_name
-        self.log.info("##### Test started -  {} #####".format(test_case_name))
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
         interval = self.test_conf["test_4958"]["interval_secs"]
         epoc_time_diff = self.test_conf["test_4958"]["epoc_time_diff"]
         expected_response = self.system_stats.success_response
         metrics = self.system_stats.get_metrics()
         for metric in metrics:
             self.log.info(
-                "============== Checking for metrics : {}==============".format(metric))
+                "============== Checking for metrics : %s==============", metric)
             to_time = int(time.time())
             from_time = int(time.time() - epoc_time_diff)
             response = self.system_stats.get_stats(metrics=[metric],
@@ -79,14 +99,14 @@ class TestSystemStats():
             expected_cnt = self.system_stats.expected_entry_cnt(
                 to_time, from_time, interval=interval)
             self.log.info(
-                "Expected number of entries : {}".format(expected_cnt))
+                "Expected number of entries : %s", expected_cnt)
             actual_cnt = len(actual_response["metrics"][0]["data"][0])
-            self.log.info("Actual number of entries : {}".format(actual_cnt))
+            self.log.info("Actual number of entries : %s", actual_cnt)
             assert_utils.assert_equals(actual_cnt, expected_cnt,
                                        "Sample count check failed")
             assert_utils.assert_false(': null' in actual_response,
                                       "Null values in the response")
-        self.log.info("##### Test ended -  {} #####".format(test_case_name))
+        self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
     @pytest.mark.tags('TEST-14753')
@@ -95,8 +115,8 @@ class TestSystemStats():
         appropriate json response with valid values for paramerter
         `from`, `to`, `metric` and both (`interval`, `total_sample`)
         """
-        test_case_name = sys._getframe().f_code.co_name
-        self.log.info("##### Test started -  {} #####".format(test_case_name))
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
         expected_response = self.system_stats.success_response
         interval = int(self.test_conf["test_4959"]["interval_secs"])
         total_sample = int(self.test_conf["test_4959"]["total_sample"])
@@ -104,7 +124,7 @@ class TestSystemStats():
         metrics = self.system_stats.get_metrics()
         for metric in metrics:
             self.log.info(
-                "============== Checking for metrics : {}==============".format(metric))
+                "============== Checking for metrics : %s==============", metric)
             to_time = int(time.time())
             from_time = int(time.time() - epoc_time_diff)
             response = self.system_stats.get_stats(metrics=[metric],
@@ -116,19 +136,19 @@ class TestSystemStats():
                                        expected_response, "Status code check failed.")
             actual_response = response.json()
             actual_cnt = len(actual_response["metrics"][0]["data"][0])
-            self.log.info("Actual number of entries : {}".format(actual_cnt))
+            self.log.info("Actual number of entries : %s", actual_cnt)
             expected_cnt = self.system_stats.expected_entry_cnt(
                 to_time,
                 from_time,
                 interval=interval,
                 total_sample=total_sample)
             self.log.info(
-                "Expected number of entries : {}".format(expected_cnt))
+                "Expected number of entries : %s", expected_cnt)
             assert_utils.assert_equals(actual_cnt, expected_cnt,
                                        "Sample count check failed")
             assert_utils.assert_false(': null' in actual_response,
                                       "Null values in the response")
-        self.log.info("##### Test ended -  {} #####".format(test_case_name))
+        self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
     @pytest.mark.tags('TEST-13084')
@@ -136,8 +156,8 @@ class TestSystemStats():
         """Test that GET API returns 400 and appropriate error response with
         invalid values for params.
         """
-        test_case_name = sys._getframe().f_code.co_name
-        self.log.info("##### Test started -  {} #####".format(test_case_name))
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
 
         epoc_time_diff = self.test_conf["test_4961"]["epoc_time_diff"]
         to_time = int(time.time())
@@ -215,15 +235,15 @@ class TestSystemStats():
             assert_utils.assert_in(response.status_code, expected_response,
                                    "Status code check failed with invalid TO time.")
 
-        self.log.info("##### Test ended -  {} #####".format(test_case_name))
+        self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
     @pytest.mark.tags('TEST-16547')
     def test_4962(self):
         """Test that GET API returns 400 for missing mandatory params.
         """
-        test_case_name = sys._getframe().f_code.co_name
-        self.log.info("##### Test started -  {} #####".format(test_case_name))
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
         epoc_time_diff = self.test_conf["test_4962"]["epoc_time_diff"]
         to_time = int(time.time())
         from_time = int(time.time() - epoc_time_diff)
@@ -306,15 +326,15 @@ class TestSystemStats():
                                    "Status code check failed with missing TOTAL"
                                    " SAMPLE param and with INTERVA.")
 
-        self.log.info("##### Test ended -  {} #####".format(test_case_name))
+        self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
     @pytest.mark.tags('TEST-16548')
     def test_4963(self):
         """Test that GET API returns 400 for empty values for params from, to, metric.
         """
-        test_case_name = sys._getframe().f_code.co_name
-        self.log.info("##### Test started -  {} #####".format(test_case_name))
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
         empty_val = ""
         epoc_time_diff = self.test_conf["test_4963"]["epoc_time_diff"]
         to_time = int(time.time())
@@ -364,8 +384,8 @@ class TestSystemStats():
         for paramerter `from`, `to`, `total_sample` and `metric`
         """
 
-        test_case_name = sys._getframe().f_code.co_name
-        self.log.info("##### Test started -  {} #####".format(test_case_name))
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
         total_sample = self.test_conf["test_4957"]["total_sample"]
         epoc_time_diff = self.test_conf["test_4957"]["epoc_time_diff"]
         value = self.test_conf["test_4957"]["value"]
@@ -373,35 +393,35 @@ class TestSystemStats():
         metrics = self.system_stats.get_metrics()
         for metric in metrics:
             self.log.info(
-                "============== Checking for metrics : {}==============".format(metric))
+                "============== Checking for metrics : %s==============", metric)
             to_time = int(time.time())
             from_time = int(time.time() - epoc_time_diff)
             response = self.system_stats.get_stats(metrics=[metric],
                                                    from_time=from_time,
                                                    to_time=to_time,
                                                    total_sample=total_sample)
-            self.log.debug("Verifying the response:{}".format(response))
+            self.log.debug("Verifying the response:%s", response)
             assert_utils.assert_equals(response.status_code,
                                        expected_response, "Status code check failed.")
             actual_response = response.json()
 
-            self.log.debug("Verifying the metric name:{}".format(
-                actual_response["metrics"][0]["name"]))
+            self.log.debug("Verifying the metric name:%s", 
+                actual_response["metrics"][0]["name"])
             assert_utils.assert_equals(
                 actual_response["metrics"][0]["name"], metric, "Metric name mismatch")
             expected_cnt = self.system_stats.expected_entry_cnt(
                 to_time, from_time, total_sample=total_sample)
             self.log.info(
-                "Expected number of entries : {}".format(expected_cnt))
+                "Expected number of entries : %s", expected_cnt)
             actual_cnt = len(actual_response["metrics"][0]["data"][0])
-            self.log.debug("Actual number of entries : {}".format(actual_cnt))
+            self.log.debug("Actual number of entries : %s", actual_cnt)
             assert_utils.assert_equals(actual_cnt, expected_cnt,
                                        "Sample count check failed")
             self.log.debug("Verifying the response")
             assert_utils.assert_false(value in actual_response,
                                       "Null values in the response")
         self.log.info(
-            "##### Test ended -  {} #####".format(test_case_name))
+            "##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
     @pytest.mark.tags('TEST-16218')
@@ -411,8 +431,8 @@ class TestSystemStats():
         and total_sample in the request
         """
 
-        test_case_name = sys._getframe().f_code.co_name
-        self.log.info("##### Test started -  {} #####".format(test_case_name))
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
         epoc_time_diff = self.test_conf["test_4960"]["epoc_time_diff"]
         default_interval = self.test_conf["test_4960"]["default_interval"]
         value = self.test_conf["test_4960"]["value"]
@@ -420,7 +440,7 @@ class TestSystemStats():
         metrics = self.system_stats.get_metrics()
         for metric in metrics:
             self.log.info(
-                "============== Checking for metrics : {}==============".format(metric))
+                "============== Checking for metrics : %s==============", metric)
             to_time = int(time.time())
             from_time = int(time.time() - epoc_time_diff)
             response = self.system_stats.get_stats(metrics=[metric],
@@ -434,15 +454,15 @@ class TestSystemStats():
             expected_cnt = self.system_stats.expected_entry_cnt(
                 to_time, from_time, interval=default_interval)
             self.log.info(
-                "Expected number of entries : {}".format(expected_cnt))
+                "Expected number of entries : %s", expected_cnt)
             actual_cnt = len(actual_response["metrics"][0]["data"][0])
-            self.log.info("Actual number of entries : {}".format(actual_cnt))
+            self.log.info("Actual number of entries : %s", actual_cnt)
             assert_utils.assert_equals(actual_cnt, expected_cnt,
                                        "Sample count check failed")
             assert_utils.assert_false(value in actual_response,
                                       "Null values in the response")
 
-        self.log.info("##### Test ended -  {} #####".format(test_case_name))
+        self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
     @pytest.mark.tags('TEST-16545')
@@ -451,8 +471,8 @@ class TestSystemStats():
          `from` param is greater that value of `to` param
         """
 
-        test_case_name = sys._getframe().f_code.co_name
-        self.log.info("##### Test started -  {} #####".format(test_case_name))
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
         epoc_time_diff = self.test_conf["test_4967"]["epoc_time_diff"]
         interval = self.test_conf["test_4967"]["default_interval"]
         expected_response = self.test_conf["test_4967"]["expected_response"]
@@ -475,22 +495,22 @@ class TestSystemStats():
             assert_utils.assert_in(error_msg,
                                    actual_response, "Error message check failed")
 
-        self.log.info("##### Test ended -  {} #####".format(test_case_name))
+        self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
     @pytest.mark.tags('TEST-16546')
     def test_4968(self):
         """Test that GET API returns 403 for unauthorized request of stats
         """
-        test_case_name = sys._getframe().f_code.co_name
-        self.log.info("##### Test started -  {} #####".format(test_case_name))
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
         epoc_time_diff = self.test_conf["test_4968"]["epoc_time_diff"]
         interval = self.test_conf["test_4968"]["default_interval"]
         error_msg = self.test_conf["test_4968"]["error_msg"]
         expected_response = self.system_stats.forbidden
         metrics = self.system_stats.get_metrics()
         metric = random.choice(metrics)
-        self.log.info("Checking for metrics : {}".format(metric))
+        self.log.info("Checking for metrics : %s", metric)
         to_time = int(time.time())
         from_time = int(time.time() - epoc_time_diff)
         response = self.system_stats.get_stats(metrics=[metric],
@@ -504,4 +524,4 @@ class TestSystemStats():
         actual_response = response.text
         assert_utils.assert_in(error_msg, actual_response,
                                f"Couldnt find {error_msg} in {actual_response}")
-        self.log.info("##### Test ended -  {} #####".format(test_case_name))
+        self.log.info("##### Test ended -  %s #####", test_case_name)
