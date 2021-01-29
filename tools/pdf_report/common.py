@@ -1,4 +1,4 @@
-"""Common functions used while generating engineering and executive pdf reports"""
+"""Common functions used while generating engineering and executive pdf reports."""
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -45,14 +45,8 @@ common_table_style = [
 ]
 
 
-def build_main_table(data):
-    """
-    Build Header table
-    Args:
-        data (list): Table data
-
-    Returns: table
-    """
+def build_main_table(data: List[list]):
+    """Build Header table."""
     row_heights = len(data) * [0.23 * inch]
     row_heights[0] = 0.32 * inch
     table = Table(data, 2 * [3.8 * inch], row_heights)
@@ -75,14 +69,8 @@ def build_main_table(data):
     return table
 
 
-def build_reported_bugs_table(data):
-    """
-    Build reported bugs table
-    Args:
-        data (list): Table data
-
-    Returns: table
-    """
+def build_reported_bugs_table(data: List[list]):
+    """Build reported bugs table."""
     row_heights = len(data) * [0.225 * inch]
     row_heights[0] = 0.3 * inch
     reported_bugs_table = Table(data, 3 * [1.25 * inch], row_heights,
@@ -99,14 +87,8 @@ def build_reported_bugs_table(data):
     return reported_bugs_table
 
 
-def build_qa_report_table(data):
-    """
-    Build qa report table
-    Args:
-        data (list): Table data
-
-    Returns: table
-    """
+def build_qa_report_table(data: List[list]):
+    """Build qa report table."""
     row_heights = len(data) * [0.225 * inch]
     row_heights[0] = 0.3 * inch
     qa_report_table = Table(data, 3 * [1.25 * inch], row_heights,
@@ -120,15 +102,8 @@ def build_qa_report_table(data):
     return qa_report_table
 
 
-def build_two_tables(reported_bugs_table_data, qa_report_table_data):
-    """
-    Build Reported bugs & QA Report tables
-    Args:
-        reported_bugs_table_data (list): Reported bugs table data
-        qa_report_table_data (list): QA Report table data
-
-    Returns: table
-    """
+def build_two_tables(reported_bugs_table_data: List[list], qa_report_table_data: List[list]):
+    """Build Reported bugs & QA Report tables."""
     bugs_table = build_reported_bugs_table(reported_bugs_table_data)
     qa_report_table = build_qa_report_table(qa_report_table_data)
 
@@ -141,27 +116,15 @@ def build_two_tables(reported_bugs_table_data, qa_report_table_data):
     return table
 
 
-def build_timing_summary_table(data):
-    """
-    Build timings summary table
-    Args:
-        data (list): Table data
-
-    Returns: table
-    """
+def build_timing_summary_table(data: List[list]):
+    """Build timings summary table."""
     timing_summary_table = Table(data, 6 * [1.26 * inch], len(data) * [0.25 * inch],
                                  style=common_table_style)
     return timing_summary_table
 
 
 def get_data_from_csv(csv_file: str) -> List[List]:
-    """
-    Read report data from csv file
-    Args:
-        csv_file (str): Report file location
-
-    Returns: data in list[list] format
-    """
+    """Read report data from csv file."""
     with open(csv_file, newline='') as report_file:
         reader = csv.reader(report_file)
         data = list(reader)
@@ -171,15 +134,8 @@ def get_data_from_csv(csv_file: str) -> List[List]:
     return data
 
 
-def get_table_data(data, start=0):
-    """
-    Read report data from csv file
-    Args:
-        start (int): Table location
-        data (list[list]): Complete report data
-
-    Returns: data in list[list] format
-    """
+def get_table_data(data: List[list], start: int = 0):
+    """Read report data from csv file."""
     table_data = []
     end = 0
     for idx, _ in enumerate(data, start=start):

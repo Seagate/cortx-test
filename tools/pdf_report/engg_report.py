@@ -1,4 +1,4 @@
-"""Script used to generate engineering pdf report"""
+"""Script used to generate engineering pdf report."""
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -19,6 +19,8 @@
 #
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
+from typing import List
+
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter, inch
 from reportlab.lib.styles import getSampleStyleSheet
@@ -27,14 +29,8 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Spacer, Pag
 import common
 
 
-def build_component_table(data):
-    """
-    Build component table
-    Args:
-        data (list): Table data
-
-    Returns: table
-    """
+def build_component_table(data: List[list]):
+    """Build component table."""
     col_width = 10 * [0.71 * inch]
     col_width[0] = 1.25 * inch
     component_table = Table(data, col_width, len(data) * [0.25 * inch],
@@ -64,14 +60,8 @@ def build_component_table(data):
     return component_table
 
 
-def build_single_bucket_perf_stats(data):
-    """
-    Build single bucket performance table
-    Args:
-        data (list): Table data
-
-    Returns: table
-    """
+def build_single_bucket_perf_stats(data: List[list]):
+    """Build single bucket performance table."""
     col_width = 9 * [0.71 * inch]
     col_width[0] = 2 * inch
     single_bucket_perf_stats = Table(data, col_width, 10 * [0.24 * inch],
@@ -79,14 +69,8 @@ def build_single_bucket_perf_stats(data):
     return single_bucket_perf_stats
 
 
-def build_multi_bucket_perf_stats(data):
-    """
-    Build multi bucket performance table
-    Args:
-        data (list): Table data
-
-    Returns: table
-    """
+def build_multi_bucket_perf_stats(data: List[list]):
+    """Build multi bucket performance table."""
     col_width = 10 * [0.71 * inch]
     col_width[0] = 1 * inch
     col_width[1] = 1.25 * inch
@@ -104,27 +88,15 @@ def build_multi_bucket_perf_stats(data):
     return multi_bucket_perf_stats
 
 
-def build_metadata_latencies_table(data):
-    """
-    Build metadata latencies table
-    Args:
-        data (list): Table data
-
-    Returns: table
-    """
+def build_metadata_latencies_table(data: List[list]):
+    """Build metadata latencies table."""
     single_bucket_perf_stats = Table(data, 2 * [3.8 * inch], 5 * [0.25 * inch],
                                      style=common.common_table_style)
     return single_bucket_perf_stats
 
 
-def build_defect_table(data):
-    """
-    Build defect table
-    Args:
-        data (list): Table data
-
-    Returns: table
-    """
+def build_defect_table(data: List[list]):
+    """Build defect table."""
     stylesheet = getSampleStyleSheet()
 
     # Set wrap text style for 5th column (Bug Description) in table.
@@ -152,9 +124,7 @@ def build_defect_table(data):
 
 
 def main():
-    """
-    Generate PDF engineering report from csv executive report
-    """
+    """Generate PDF engineering report from csv executive report."""
     all_data = common.get_data_from_csv('../engg_report.csv')
 
     main_table_data, table2_start = common.get_table_data(all_data, 0)

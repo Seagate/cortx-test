@@ -1,4 +1,4 @@
-"""Script used to generate executive pdf report"""
+"""Script used to generate executive pdf report."""
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -19,6 +19,8 @@
 #
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
+from typing import List
+
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter, inch
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Spacer, Paragraph, PageBreak
@@ -26,14 +28,8 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Spacer, Par
 import common
 
 
-def build_feature_breakdown_table(data):
-    """
-    Build feature breakdown table
-    Args:
-        data (list): Table data
-
-    Returns: table
-    """
+def build_feature_breakdown_table(data: List[list]):
+    """Build feature breakdown table."""
     component_table = Table(data, 6 * [1.26 * inch], 11 * [0.225 * inch],
                             style=common.common_table_style)
     component_table.setStyle(TableStyle([
@@ -44,36 +40,22 @@ def build_feature_breakdown_table(data):
     return component_table
 
 
-def build_code_maturity_table(data):
-    """
-    Build code maturity table
-    Args:
-        data (list): Table data
-
-    Returns: table
-    """
+def build_code_maturity_table(data: List[list]):
+    """Build code maturity table."""
     code_maturity_table = Table(data, 4 * [1.89 * inch], 7 * [0.225 * inch],
                                 style=common.common_table_style)
     return code_maturity_table
 
 
-def build_bucket_perf_stats_table(data):
-    """
-    Build bucket performance statistics table
-    Args:
-        data (list): Table data
-
-    Returns: table
-    """
+def build_bucket_perf_stats_table(data: List[list]):
+    """Build bucket performance statistics table."""
     bucket_perf_stats = Table(data, 3 * [2.52 * inch], 6 * [0.25 * inch],
                               style=common.common_table_style)
     return bucket_perf_stats
 
 
 def main():
-    """
-    Generate PDF executive report from csv executive report
-    """
+    """Generate PDF executive report from csv executive report."""
     all_data = common.get_data_from_csv('../exec_report.csv')
 
     main_table_data, table2_start = common.get_table_data(all_data, 0)
