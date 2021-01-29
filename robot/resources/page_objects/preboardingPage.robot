@@ -55,7 +55,7 @@ Validate ELUA Success
 
 Preboarding
     [Documentation]  This keyword is used to login to CSM GUI.
-    [Arguments]  ${url}  ${browser}  ${headless}
+    [Arguments]  ${url}  ${browser}  ${headless}  ${username}  ${password}
     Run Keyword If  ${headless} == True  Open URL In Headless  ${url}  ${browser}
     ...  ELSE  Open URL  ${url}preboarding/welcome  ${browser}
     Page Should Contain Button  ${welcome_start_button_id}
@@ -63,5 +63,4 @@ Preboarding
     sleep   3s
     Page Should Contain Button  ${elua_button_id}
     sleep   3s
-    Log To Console And Report  Waiting for receiving GUI responce...
-
+    Log To Console And Report  Waiting for receiving GUI response...

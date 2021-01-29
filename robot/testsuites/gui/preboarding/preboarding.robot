@@ -1,5 +1,5 @@
 *** Settings ***
-Documentation    This suite verifies the testcases for preboarding and EULA
+Documentation    This suite verifies the test-cases for Pre-boarding and EULA
 Resource    ../../../resources/page_objects/preboardingPage.robot
 Resource  ../../../resources/common/common.robot
 Variables  ../../../resources/common/element_locators.py
