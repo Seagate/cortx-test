@@ -1,41 +1,37 @@
-import pytest
-import logging
 import os
-from commons import Globals
-from commons import cortxlogging
-# import _pytest.logging.LogCaptureFixture
-from testfixtures import LogCapture
-from _pytest import runner
+import logging
+import pytest
 
-# Do not set logging in imports
-#log = logging.getLogger(__name__)
-#cortxlogging.init_loghandler(log)
+# Do not set logging after imports
+# log = logging.getLogger(__name__)
+# cortxlogging.init_loghandler(log)
 
 def setup_module(module):
-    """"""
+    """Setup module."""
     print('Entered teardown module')
 
 
 def teardown_module(module):
-    """ """
+    """Tear module. """
     print('Exited teardown module')
 
 
 def setup_function(function):
-    """ setup any state tied to the execution of the given function.
+    """Setup any state tied to the execution of the given function.
     Invoked for every test function in the module.
     """
     print('Entered setup function')
 
 
 def teardown_function(function):
-    """ teardown any state that was previously setup with a setup_function
+    """Teardown any state that was previously setup with a setup_function
     call.
     """
     print('Exited teardown function')
 
 
 def max(values):
+    """A test function"""
     _max = values[0]
 
     for val in values:
@@ -46,6 +42,7 @@ def max(values):
 
 
 def min(values):
+    """A test function"""
     _min = values[0]
 
     for val in values:
@@ -75,6 +72,7 @@ def test_min_lc(logger):
 
 @pytest.mark.tags("TEST-17496")
 def test_max_lc(logger):
+    """A test function"""
     values = (2, 3, 1, 4, 6)
     val = max(values)
     logger.info("max is %s" % val)
@@ -105,6 +103,7 @@ def test_min(logger):
 @pytest.mark.parallel
 @pytest.mark.tags("TEST-17414")
 def test_max(logger):
+    """A test function"""
     values = (2, 3, 1, 4, 6)
     val = max(values)
     logger.info("max is %s" % val)
@@ -114,6 +113,7 @@ def test_max(logger):
 @pytest.mark.parallel
 @pytest.mark.tags("TEST-17498")
 def test_max2(logger):
+    """A test function"""
     values = (2, 3, 1, 4, 6)
     val = max(values)
     logger.info("max is %s" % val)
@@ -125,6 +125,7 @@ def test_max2(logger):
 @pytest.mark.parallel
 @pytest.mark.tags("TEST-17497")
 def test_max4(logger):
+    """A test function"""
     logger.info("test pass executed")
 
 
@@ -132,6 +133,7 @@ def test_max4(logger):
 @pytest.mark.parallel
 @pytest.mark.tags("TEST-17499")
 def test_max3(logger):
+    """A test function"""
     values = (2, 3, 1, 4, 6)
     val = max(values)
     logger.info("max is %s" % val)

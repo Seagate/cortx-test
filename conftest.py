@@ -24,9 +24,6 @@ import pathlib
 import json
 import logging
 import csv
-import re
-import builtins
-import datetime
 from _pytest.nodes import Item
 from _pytest.runner import CallInfo
 from testfixtures import LogCapture
@@ -41,15 +38,15 @@ from core.runner import LRUCache
 from core.runner import get_jira_credential
 from commons import constants
 from config import params
-from typing import List
+
 
 FAILURES_FILE = "failures.txt"
 LOG_DIR = 'log'
 CACHE = LRUCache(1024 * 10)
-cache_json = 'nodes-cache.yaml'
+CACHE_JSON = 'nodes-cache.yaml'
 
 logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
-log = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 def _get_items_from_cache():
@@ -93,11 +90,13 @@ def logger():
 
 
 def expensive_data():
+    """Dummy expensive data function to be implemented later."""
     return dict()
 
 
 @pytest.fixture(scope="session")
 def session_data(tmp_path_factory, worker_id):
+    """Session level fixture to load expensive data."""
     if worker_id == "master":
         # not executing in with multiple workers, just produce the data and let
         # pytest's fixture caching do its job
@@ -106,20 +105,21 @@ def session_data(tmp_path_factory, worker_id):
     # get the temp directory shared by all workers
     root_tmp_dir = tmp_path_factory.getbasetemp().parent
 
-    fn = root_tmp_dir / "data.json"
-    with FileLock(str(fn) + ".lock"):
-        if fn.is_file():
-            data = json.loads(fn.read_text())
+    name = root_tmp_dir / "data.json"
+    with FileLock(str(name) + ".lock"):
+        if name.is_file():
+            data = json.loads(name.read_text())
         else:
             data = expensive_data()
-            fn.write_text(json.dumps(data))
+            name.write_text(json.dumps(data))
     return data
 
 
 @pytest.fixture()
 def csm_user(worker_id):
-    """ use a different csm account in each worker
-        PYTEST_XDIST_WORKER env variable can be used to get worker name
+    """Use a different csm account in each worker.
+
+       PYTEST_XDIST_WORKER env variable can be used to get worker name.
     """
     return "csm_%s" % worker_id
 
@@ -185,19 +185,20 @@ def read_test_list_csv() -> List:
 
 @pytest.hookimpl(trylast=True)
 def pytest_sessionfinish(session, exitstatus):
-    """Remove handlers from all loggers"""
-    pass  # todo add html hook file = session.config._htmlfile
+    """Remove handlers from all loggers."""
+    # todo add html hook file = session.config._htmlfile
     loggers = [logging.getLogger()] + list(logging.Logger.manager.loggerDict.values())
-    for logger in loggers:
-        handlers = getattr(logger, 'handlers', [])
+    for _logger in loggers:
+        handlers = getattr(_logger, 'handlers', [])
         for handler in handlers:
-            logger.removeHandler(handler)
+            _logger.removeHandler(handler)
 
 
 @pytest.hookimpl(tryfirst=True)
 def pytest_collection(session):
+    """Collect tests in master and filter out test from TE ticket."""
     items = session.perform_collect()
-    log.info(dir(session.config))
+    LOGGER.info(dir(session.config))
     config = session.config
     _local = bool(config.option.local)
     required_tests = list()
@@ -230,8 +231,10 @@ def pytest_collection(session):
                 if mark.name == 'tags':
                     test_id = mark.args[0]
             CACHE.store(item.nodeid, test_id)
-    cache_path = os.path.join(os.getcwd(), LOG_DIR, cache_json)
+    cache_path = os.path.join(os.getcwd(), LOG_DIR, CACHE_JSON)
     _path = config_utils.create_content_json(cache_path, _get_items_from_cache())
+    if not os.path.exists(_path):
+        LOGGER.info("Items Cache file {} not created" % (_path,))
     return items
 
 

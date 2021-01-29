@@ -27,6 +27,7 @@ def parse_args():
 
 
 def run_pytest_cmd(args, te_tag, parallel_red, env=None):
+    """Form a pytest command for execution."""
     tag = '-m ' + te_tag
     is_parallel = "--is_parallel=" + parallel_red
     log_level = "--log-cli-level=" + str(args.log_level)
@@ -39,8 +40,8 @@ def run_pytest_cmd(args, te_tag, parallel_red, env=None):
         cmd_line = ["pytest", is_parallel, log_level, report_name]
     if args.te_ticket:
         cmd_line = cmd_line + ["--te_tkt=" + str(args.te_ticket)]
-    prc = subprocess.Popen(cmd_line)
-    out, err = prc.communicate()
+    prc = subprocess.Popen(cmd_line, env=env)
+    prc.communicate()
 
 
 def delete_status_files():

@@ -2,9 +2,9 @@
 JIRA Access Utility Class
 """
 import json
+import traceback
 import requests
 import datetime
-import traceback
 from jira import JIRA
 from http import HTTPStatus
 
@@ -26,8 +26,9 @@ class JiraTask:
             jira_url = 'https://jts.seagate.com/rest/raven/1.0/testruns?testExecKey=' + test_exe_id
             response = requests.get(jira_url, auth=(self.jira_id, self.jira_password))
             if response.status_code != HTTPStatus.OK:
-                print("Response code/text from Jira is {} and {}".format(response.status_code, str(response)))
-        except requests.exceptions.RequestException as e:
+                print("Response code/text from Jira is {} and {}".format(response.status_code,
+                                                                         str(response)))
+        except requests.exceptions.RequestException:
             print(traceback.print_exc())
         test_list = []
         te_tag = ""
@@ -99,10 +100,10 @@ class JiraTask:
                         print("Exception found during parsing timeout {}".format(com.body))
                         print("Exception : {}".format(ex))
 
-            label = issue.fields.labels
-            s = issue.fields.summary
+            # label = issue.fields.labels
+            # s = issue.fields.summary
             test_name = issue.fields.summary
-            test_name_full = test_id + "_" + test_name.replace(" ", "_")
+            # test_name_full = test_id + "_" + test_name.replace(" ", "_")
             test_details.append([test_id, test_name, test_to_execute])
         else:
             print("Returned code from xray jira request: {}".format(response.status_code))
