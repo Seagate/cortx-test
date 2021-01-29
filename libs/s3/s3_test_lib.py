@@ -18,17 +18,15 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-"""
-Library contains methods which allows you to perform bucket and object operations using boto3.
-"""
+"""Library contains methods which allows to perform bucket and object operations using boto3."""
 
 import os
 import time
 import logging
-import boto3
-
 from time import perf_counter
-from random import randint
+from random import SystemRandom
+
+import boto3
 from botocore import UNSIGNED
 from botocore.client import Config
 from commons.exceptions import CTException
@@ -40,30 +38,29 @@ from libs.s3.s3_core_lib import S3Lib
 from libs.s3.s3_acl_test_lib import S3AclTestLib
 from libs.s3.s3_bucket_policy_test_lib import S3BucketPolicyTestLib
 
+LOGGER = logging.getLogger(__name__)
+
 try:
-    s3hobj = S3Helper()
-except ImportError as err:
-    s3hobj = S3Helper.get_instance()
+    S3H_OBJ = S3Helper()
+except ImportError as ierr:
+    LOGGER.warning(str(ierr))
+    S3H_OBJ = S3Helper.get_instance()
 
 S3_CONF = read_yaml("config/s3/s3_config.yaml")[1]
-LOGGER = logging.getLogger(__name__)
 
 
 class S3TestLib(S3Lib):
-    """
-    This Class initialising s3 connection and including methods for S3 core operations.
-    """
+    """Class initialising s3 connection and including methods for S3 core operations."""
 
     def __init__(self,
-                 access_key: str = s3hobj.get_local_keys()[0],
-                 secret_key: str = s3hobj.get_local_keys()[1],
+                 access_key: str = S3H_OBJ.get_local_keys()[0],
+                 secret_key: str = S3H_OBJ.get_local_keys()[1],
                  endpoint_url: str = S3_CONF["s3_url"],
                  s3_cert_path: str = S3_CONF["s3_cert_path"],
-                 region: str = S3_CONF["region"],
-                 aws_session_token: str = None,
-                 debug: bool = S3_CONF["debug"]) -> None:
+                 **kwargs) -> None:
         """
-        This method initializes members of SS3TestLib and its parent class.
+        Initialize members of SS3TestLib and its parent class.
+
         :param access_key: access key.
         :param secret_key: secret key.
         :param endpoint_url: endpoint url.
@@ -72,17 +69,19 @@ class S3TestLib(S3Lib):
         :param aws_session_token: aws_session_token.
         :param debug: debug mode.
         """
+        kwargs["region"] = kwargs.get("region", S3_CONF["region"])
+        kwargs["aws_session_token"] = kwargs.get("aws_session_token", None)
+        kwargs["debug"] = kwargs.get("debug", S3_CONF["debug"])
         super().__init__(access_key,
                          secret_key,
                          endpoint_url,
                          s3_cert_path,
-                         region,
-                         aws_session_token,
-                         debug)
+                         **kwargs)
 
     def create_bucket(self, bucket_name: str) -> tuple:
         """
         Creating Bucket.
+
         :param bucket_name: Name of the bucket
         :return: True, response if bucket created else False, response.
         """
@@ -91,9 +90,8 @@ class S3TestLib(S3Lib):
             response = super().create_bucket(bucket_name)
             LOGGER.debug("Create bucket response %s", str(response))
             end_time = perf_counter()
-            LOGGER.info(
-                "############# BUCKET CREATION TIME : %f #############", (
-                        end_time - start_time))
+            LOGGER.info("############# BUCKET CREATION TIME : %f #############",
+                        (end_time - start_time))
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          S3TestLib.create_bucket.__name__,
@@ -105,6 +103,7 @@ class S3TestLib(S3Lib):
     def bucket_list(self) -> tuple:
         """
         Listing all the buckets.
+
         :return: List of buckets.
         """
         try:
@@ -118,7 +117,8 @@ class S3TestLib(S3Lib):
 
     def bucket_count(self) -> tuple:
         """
-        Counts total number of buckets present.
+        Count total number of buckets present.
+
         :return: bucket count.
         """
         try:
@@ -132,10 +132,15 @@ class S3TestLib(S3Lib):
 
         return True, len(response)
 
-    def put_object(self, bucket_name: str, object_name: str, file_path: str,
-                   m_key: str = None, m_value: str = None) -> tuple:
+    def put_object(
+            self,
+            bucket_name: str,
+            object_name: str,
+            file_path: str,
+            **kwargs) -> tuple:
         """
-        Putting Object to the Bucket (mainly small file)
+        Putting Object to the Bucket (mainly small file).
+
         :param bucket_name: Name of the bucket
         :param object_name: Name of the object
         :param file_path: Path of the file
@@ -143,10 +148,12 @@ class S3TestLib(S3Lib):
         :param m_value: Value for metadata
         :return: (Boolean, object of put object method)
         """
+        kwargs["m_key"] = kwargs.get("m_key", None)
+        kwargs["m_value"] = kwargs.get("m_value", None)
         LOGGER.info("Putting object")
-        LOGGER.debug(bucket_name, object_name, file_path, m_key, m_value)
+        LOGGER.debug(bucket_name, object_name, file_path, **kwargs)
         try:
-            response = super().put_object(bucket_name, object_name, file_path, m_key, m_value)
+            response = super().put_object(bucket_name, object_name, file_path, **kwargs)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          S3TestLib.put_object.__name__,
@@ -162,6 +169,7 @@ class S3TestLib(S3Lib):
             file_path: str) -> tuple:
         """
         Uploading Object to the Bucket.
+
         :param bucket_name: Name of the bucket.
         :param object_name: Name of the object.
         :param file_path: Path of the file.
@@ -182,6 +190,7 @@ class S3TestLib(S3Lib):
     def object_list(self, bucket_name: str) -> tuple:
         """
         Listing Objects.
+
         :param bucket_name: Name of the bucket.
         :return: (Boolean, list of objects)
         """
@@ -199,6 +208,7 @@ class S3TestLib(S3Lib):
     def head_bucket(self, bucket_name: str) -> tuple:
         """
         To determine if a bucket exists and you have permission to access it.
+
         :param bucket_name: Name of the bucket.
         :return: (Boolean, response)
         """
@@ -217,6 +227,7 @@ class S3TestLib(S3Lib):
     def delete_object(self, bucket_name: str, obj_name: str) -> tuple:
         """
         Deleting Object.
+
         :param bucket_name: Name of the bucket.
         :param obj_name: Name of object.
         :return: (Boolean, response)
@@ -238,6 +249,7 @@ class S3TestLib(S3Lib):
     def bucket_location(self, bucket_name: str) -> tuple:
         """
         Getting Bucket Location.
+
         :param bucket_name: Name of the bucket.
         :return: (Boolean, response)
         """
@@ -257,8 +269,9 @@ class S3TestLib(S3Lib):
 
     def object_info(self, bucket_name: str, key: str) -> tuple:
         """
-        retrieves metadata from an object without returning the object itself
-        , you must have READ access to the object.
+        Retrieve metadata from an object without returning the object itself.
+
+        You must have READ access to the object.
         :param bucket_name: Name of the bucket.
         :param key: Key of object.
         :return: (Boolean, response)
@@ -283,6 +296,7 @@ class S3TestLib(S3Lib):
             file_path: str) -> tuple:
         """
         Downloading Object of the required Bucket.
+
         :param bucket_name: Name of the bucket.
         :param obj_name: Name of the object.
         :param file_path: Path of the file.
@@ -309,6 +323,7 @@ class S3TestLib(S3Lib):
     def delete_bucket(self, bucket_name: str, force: bool = False) -> tuple:
         """
         Deleting the empty bucket or deleting the buckets along with objects stored in it.
+
         :param bucket_name: Name of the bucket.
         :param force: Value for delete bucket with object or without object
         :return: (Boolean, response)
@@ -319,9 +334,8 @@ class S3TestLib(S3Lib):
             response = super().delete_bucket(bucket_name, force)
             end_time = perf_counter()
             LOGGER.debug(response)
-            LOGGER.info(
-                "############# BUCKET DELETION TIME : %f #############", (
-                        end_time - start_time))
+            LOGGER.info("############# BUCKET DELETION TIME : %f #############",
+                        (end_time - start_time))
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          S3TestLib.delete_bucket.__name__,
@@ -333,6 +347,7 @@ class S3TestLib(S3Lib):
     def get_bucket_size(self, bucket_name: str) -> tuple:
         """
         Getting size of bucket.
+
         :param bucket_name: Name of the bucket.
         :return: (Boolean, size of bucket in int)
         """
@@ -358,7 +373,8 @@ class S3TestLib(S3Lib):
             obj_list,
             quiet=False) -> tuple:
         """
-        Deletes multiple objects from a single bucket.
+        Delete multiple objects from a single bucket.
+
         :param bucket_name: Name of bucket.
         :param obj_list: List of objects to be deleted.
         :param quiet: It enables a quiet mode.
@@ -390,7 +406,8 @@ class S3TestLib(S3Lib):
 
     def delete_multiple_buckets(self, bucket_list: list) -> tuple:
         """
-        Deletes multiple empty/non-empty buckets.
+        Delete multiple empty/non-empty buckets.
+
         :param bucket_list: List of bucket names.
         :return: True or False and deleted and non-deleted buckets.
         """
@@ -414,7 +431,8 @@ class S3TestLib(S3Lib):
 
     def delete_all_buckets(self) -> tuple:
         """
-        Deletes all empty/non-empty buckets.
+        Delete all empty/non-empty buckets.
+
         :return: response from delete_multiple_buckets.
         """
         all_buckets = self.bucket_list()
@@ -429,6 +447,7 @@ class S3TestLib(S3Lib):
             obj_count: int = 1) -> tuple:
         """
         Create given number of buckets and upload one object to each bucket.
+
         :param bucket_count: No. of buckets to create.
         :param file_path: Path of file to upload.
         :param obj_count: No. of objects to create into each bucket.
@@ -442,8 +461,7 @@ class S3TestLib(S3Lib):
                                                 str(count), str(time.time()))
                 resp_bucket = self.create_bucket(bucket_name)
                 for obj in range(obj_count):
-                    object_name = "{}-{}".format("auto-obj",
-                                                 str(obj), bucket_name)
+                    object_name = "{}-{}-{}".format("auto-obj", str(obj), bucket_name)
                     self.object_upload(bucket_name, object_name, file_path)
                     obj_list.append(object_name)
                 response.append({"Bucket": resp_bucket, "Objects": obj_list})
@@ -461,10 +479,10 @@ class S3TestLib(S3Lib):
                                 object_name: str,
                                 min_size: int,
                                 max_size: int,
-                                object_count: int,
-                                file_path: str) -> tuple:
+                                *args) -> tuple:
         """
         Put random size objects into the bucket.
+
         :param bucket_name: Name of bucket.
         :param object_name: Name of object.
         :param min_size: Minimum size of object in MB.
@@ -473,6 +491,8 @@ class S3TestLib(S3Lib):
         :param file_path: Object file path.
         :return: True or False and list of objects or error.
         """
+        object_count = args[0]
+        file_path = args[1]
         objects_list = list()
         try:
             for obj in range(int(object_count)):
@@ -482,12 +502,7 @@ class S3TestLib(S3Lib):
                     os.remove(file_path)
                 with open(file_path, 'wb') as fout:
                     fout.write(
-                        os.urandom(
-                            randint(
-                                1024000 *
-                                int(min_size),
-                                1024000 *
-                                int(max_size))))
+                        SystemRandom().randint(1024000 * int(min_size), 1024000 * int(max_size)))
                 LOGGER.info(
                     "Uploading object of size %d", os.path.getsize(file_path))
                 self.s3_resource.meta.client.upload_file(
@@ -513,7 +528,8 @@ class S3TestLib(S3Lib):
                                  file_path: str,
                                  mb_count: int) -> tuple:
         """
-        This function will create a bucket and uploads an object to it.
+        The function will create a bucket and uploads an object to it.
+
         :param bucket_name: Name of bucket to be created.
         :param object_name: Name of an object to be put to the bucket.
         :param file_path: Path of the file to be created and uploaded to bucket.
@@ -549,16 +565,17 @@ class S3TestLib(S3Lib):
             self,
             bucket_name: str,
             object_name: str,
-            ranges=None) -> tuple:
+            ranges: str = None) -> tuple:
         """
-        Retrieves object from specified S3 bucket
+        Retrieve object from specified S3 bucket.
+
         :param str bucket_name: The bucket name containing the object.
         :param str object_name: Key of the object to get.
         :return: (Boolean, Response)
         """
         try:
             LOGGER.info("Retrieving object from a bucket")
-            response = super().get_object(bucket_name, object_name)
+            response = super().get_object(bucket_name, object_name, ranges)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          S3TestLib.get_object.__name__,
@@ -574,6 +591,7 @@ class S3TestLib(S3Lib):
             maxkeys: int = None) -> tuple:
         """
         Listing objects of a bucket having specified prefix.
+
         :param bucket_name: Name of the bucket
         :param prefix: Object prefix used while uploading an object to bucket
         :param maxkeys: Sets the maximum number of keys returned in the response.
@@ -597,7 +615,8 @@ class S3TestLib(S3Lib):
                                       file_path: str,
                                       storage_class: str) -> tuple:
         """
-        Adds an object to a bucket with specified storage class
+        Add an object to a bucket with specified storage class.
+
         :param str bucket_name: Bucket name to which the PUT operation was initiated
         :param str object_name: Name of an object to be put to the bucket
         :param str file_path: Path of the file to be created and uploaded to bucket
@@ -628,8 +647,9 @@ class S3TestLib(S3Lib):
 
 class S3LibNoAuth(S3TestLib, S3AclTestLib, S3BucketPolicyTestLib):
     """
-    This Class initialising s3 connection and including methods for bucket and
-    object without authentication operations.
+    Class initialising s3 connection.
+
+    Including methods for bucket and object without authentication operations.
     """
 
     def __init__(self,
@@ -637,22 +657,24 @@ class S3LibNoAuth(S3TestLib, S3AclTestLib, S3BucketPolicyTestLib):
                  secret_key: str = None,
                  endpoint_url: str = S3_CONF["s3_url"],
                  s3_cert_path: str = None,
-                 region: str = None,
-                 aws_session_token: str = None,
-                 debug: bool = S3_CONF["debug"]) -> None:
+                 **kwargs) -> None:
+        """S3 connection initializer for bucket and object without authentication."""
+        kwargs["region"] = kwargs.get("region", S3_CONF["region"])
+        kwargs["aws_session_token"] = kwargs.get("aws_session_token", None)
+        kwargs["debug"] = kwargs.get("debug", S3_CONF["debug"])
         super().__init__(access_key,
                          secret_key,
                          endpoint_url,
                          s3_cert_path,
-                         region,
-                         aws_session_token,
-                         debug)
+                         **kwargs)
         self.s3_cert_path = s3_cert_path
         self.endpoint_url = endpoint_url
-        self.s3_client = boto3.client("s3",
-                                      verify=self.s3_cert_path,
-                                      endpoint_url=self.endpoint_url,
-                                      config=Config(signature_version=UNSIGNED))
+        self.s3_client = boto3.client(
+            "s3",
+            verify=self.s3_cert_path,
+            endpoint_url=self.endpoint_url,
+            config=Config(
+                signature_version=UNSIGNED))
         self.s3_resource = boto3.resource(
             "s3",
             verify=self.s3_cert_path,
