@@ -18,12 +18,15 @@ def setup_function(function):
     """ setup any state tied to the execution of the given function.
     Invoked for every test function in the module.
     """
+    logging.getLogger(__name__).info('Entered setup function')
 
 
 def teardown_function(function):
     """ teardown any state that was previously setup with a setup_function
     call.
     """
+    logging.getLogger(__name__).info('Entered teardown function')
+
 
 
 def max(values):
