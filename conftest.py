@@ -183,11 +183,6 @@ def read_test_list_csv() -> List:
         print(e)
 
 
-# @pytest.mark.trylast
-# def pytest_sessionstart(session):
-#     pass
-#
-#
 @pytest.hookimpl(trylast=True)
 def pytest_sessionfinish(session, exitstatus):
     """Remove handlers from all loggers"""
@@ -235,8 +230,8 @@ def pytest_collection(session):
                 if mark.name == 'tags':
                     test_id = mark.args[0]
             CACHE.store(item.nodeid, test_id)
-    cache_path = os.path.join(os.getcwd(), LOG_DIR)
-    _path = config_utils.create_content_json(cache_path, _get_items_from_cache(), cache_json)
+    cache_path = os.path.join(os.getcwd(), LOG_DIR, cache_json)
+    _path = config_utils.create_content_json(cache_path, _get_items_from_cache())
     return items
 
 

@@ -6,7 +6,7 @@ Steps to run test automation locally:
 
 1. Setup virtual environment with Python 3.7. 
    Install all required packages from requirements.txt file.
-2. 
+2. Run one of the following commands as per your needs.
 
 Running Test locally in distributed mode:
 
