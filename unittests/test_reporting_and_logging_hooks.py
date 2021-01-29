@@ -1,3 +1,4 @@
+"""Sample module to be referred while writing tests."""
 import os
 import logging
 import pytest
@@ -41,7 +42,7 @@ def max(values):
 
 
 def min(values):
-    """A test function"""
+    """A test function."""
     _min = values[0]
 
     for val in values:
@@ -54,7 +55,7 @@ def min(values):
 @pytest.mark.tags("TEST-17495")
 def test_min_lc(logger):
     """
-    Alternate way to cut logs for each test
+    Alternate way to cut logs for each test.
     :param request:
     :param capture:
     :param logger:
@@ -71,7 +72,7 @@ def test_min_lc(logger):
 
 @pytest.mark.tags("TEST-17496")
 def test_max_lc(logger):
-    """A test function"""
+    """A test function."""
     values = (2, 3, 1, 4, 6)
     val = max(values)
     logger.info("max is %s" % val)
@@ -83,7 +84,7 @@ def test_max_lc(logger):
 @pytest.mark.tags("TEST-17413")
 def test_min(logger):
     """
-    Preferred way to cut logs for each test and sample to be refered to
+    Preferred way to cut logs for each test and sample to be referred to
     write test cases.
     :param logger:
     :return:
@@ -102,7 +103,7 @@ def test_min(logger):
 @pytest.mark.parallel
 @pytest.mark.tags("TEST-17414")
 def test_max(logger):
-    """A test function"""
+    """A test function."""
     values = (2, 3, 1, 4, 6)
     val = max(values)
     logger.info("max is %s" % val)
@@ -112,7 +113,7 @@ def test_max(logger):
 @pytest.mark.parallel
 @pytest.mark.tags("TEST-17498")
 def test_max2(logger):
-    """A test function"""
+    """A test function."""
     values = (2, 3, 1, 4, 6)
     val = max(values)
     logger.info("max is %s" % val)
@@ -124,7 +125,7 @@ def test_max2(logger):
 @pytest.mark.parallel
 @pytest.mark.tags("TEST-17497")
 def test_max4(logger):
-    """A test function"""
+    """A test function."""
     logger.info("test pass executed")
 
 
@@ -132,7 +133,7 @@ def test_max4(logger):
 @pytest.mark.parallel
 @pytest.mark.tags("TEST-17499")
 def test_max3(logger):
-    """A test function"""
+    """A test function."""
     values = (2, 3, 1, 4, 6)
     val = max(values)
     logger.info("max is %s" % val)
