@@ -1,35 +1,37 @@
-import pytest
+"""Sample module to be referred while writing tests."""
+import os
 import logging
-from commons import Globals
-# import _pytest.logging.LogCaptureFixture
-from testfixtures import LogCapture
-from _pytest import runner
+import pytest
 
+# Do not set logging after imports
+# log = logging.getLogger(__name__)
+# cortxlogging.init_loghandler(log)
 
 def setup_module(module):
-    logging.getLogger(__name__).info('Entered teardown module')
+    """Setup module."""
+    print('Entered teardown module')
 
 
 def teardown_module(module):
-    logging.getLogger(__name__).info('Exited teardown module')
+    """Tear module."""
+    print('Exited teardown module')
 
 
 def setup_function(function):
-    """ setup any state tied to the execution of the given function.
+    """
+    Setup any state tied to the execution of the given function.
     Invoked for every test function in the module.
     """
-    logging.getLogger(__name__).info('Entered setup function')
+    print('Entered setup function')
 
 
 def teardown_function(function):
-    """ teardown any state that was previously setup with a setup_function
-    call.
-    """
-    logging.getLogger(__name__).info('Entered teardown function')
-
+    """Teardown any state that was previously setup with a setup_function call."""
+    print('Exited teardown function')
 
 
 def max(values):
+    """A test function."""
     _max = values[0]
 
     for val in values:
@@ -40,6 +42,7 @@ def max(values):
 
 
 def min(values):
+    """A test function."""
     _min = values[0]
 
     for val in values:
@@ -52,7 +55,7 @@ def min(values):
 @pytest.mark.tags("TEST-17495")
 def test_min_lc(logger):
     """
-    Alternate way to cut logs for each test
+    Alternate way to cut logs for each test.
     :param request:
     :param capture:
     :param logger:
@@ -69,6 +72,7 @@ def test_min_lc(logger):
 
 @pytest.mark.tags("TEST-17496")
 def test_max_lc(logger):
+    """A test function."""
     values = (2, 3, 1, 4, 6)
     val = max(values)
     logger.info("max is %s" % val)
@@ -80,11 +84,12 @@ def test_max_lc(logger):
 @pytest.mark.tags("TEST-17413")
 def test_min(logger):
     """
-    Preferred way to cut logs for each test and sample to be refered to
+    Preferred way to cut logs for each test and sample to be referred to
     write test cases.
     :param logger:
     :return:
     """
+    logger.info(str(os.environ.get('PYTEST_XDIST_WORKER')))
     values = (2, 3, 1, 4, 6)
     val = min(values)
     logger.debug("min is %s" % val)
@@ -97,7 +102,38 @@ def test_min(logger):
 @pytest.mark.ha
 @pytest.mark.parallel
 @pytest.mark.tags("TEST-17414")
-def test_max(request, capture, logger):
+def test_max(logger):
+    """A test function."""
+    values = (2, 3, 1, 4, 6)
+    val = max(values)
+    logger.info("max is %s" % val)
+    assert val == 6
+
+
+@pytest.mark.parallel
+@pytest.mark.tags("TEST-17498")
+def test_max2(logger):
+    """A test function."""
+    values = (2, 3, 1, 4, 6)
+    val = max(values)
+    logger.info("max is %s" % val)
+    assert val == 6
+    logger.info("xdist" + str(os.environ.get('PYTEST_XDIST_WORKER')))
+
+
+@pytest.mark.ha
+@pytest.mark.parallel
+@pytest.mark.tags("TEST-17497")
+def test_max4(logger):
+    """A test function."""
+    logger.info("test pass executed")
+
+
+@pytest.mark.ha
+@pytest.mark.parallel
+@pytest.mark.tags("TEST-17499")
+def test_max3(logger):
+    """A test function."""
     values = (2, 3, 1, 4, 6)
     val = max(values)
     logger.info("max is %s" % val)

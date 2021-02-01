@@ -3,7 +3,7 @@ Product,Lyve Rack
 Build,#Build
 Date,Date,
 System,System
-,
+
 Reported Bugs
 Priority,Test Setup,Cortx Stack
 Total,21,22
@@ -12,7 +12,7 @@ Critical,41,42,
 Major,51,52
 Minor,61,62
 Trivial,71,72
-,
+
 Overall QA Report
 Status,#Build,#Build-1
 Total,21,22
@@ -21,7 +21,7 @@ Failed,41,42
 Aborted,51,52
 Pass,61,62,
 ToDo,71,72
-,
+
 Feature Breakdown Summary
 Features,Total,Pass,Failed,% Pass,% Failed
 User Operations,1,2,201,88,88
@@ -41,7 +41,7 @@ Pass,1,2,3
 Failed,1,2,3,
 Aborted,1,2,3
 Blocked,1,2,3
-,
+
 Single Bucket Performance Statistics (Average) using S3Bench - in a Nutshell
 Statistics,4 KB Object,256 MB Object
 Write Throughput (MBps),92,9
@@ -66,3 +66,4 @@ Node Failback,160.0,NA,205.0,NA,NA
 Start All Services,196.0,NA,205.0,NA,NA
 Bucket Creation,1.0,NA,1.0,NA,NA
 Bucket Deletion,5.0,NA,4.0,NA,NA
+

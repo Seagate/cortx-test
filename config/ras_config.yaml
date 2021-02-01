@@ -62,10 +62,6 @@ ras_sspl_alert:
   reboot_delay: 600
   one_min_delay: 60
   disk_clean_time: 120
-  mdstat_remote_path: "/proc/mdstat"
-  mdstat_local_path: "mdstat"
-  mdadm_conf_path: "/etc/mdadm.conf"
-  mdadm_conf_local_path: "mdadm.conf"
 
 mdstat_remote_path: "/proc/mdstat"
 mdstat_local_path: "mdstat"
