@@ -291,9 +291,10 @@ class S3TaggingTestLib(Tagging):
                 if key:
                     meta = {key: value}
                     response = super().put_object_with_tagging(
-                        bucket_name, object_name, data, tag, meta)
+                        bucket_name, object_name, data=data, tag=tag, meta=meta)
                 else:
-                    response = super().put_object_with_tagging(bucket_name, object_name, data, tag)
+                    response = super().put_object_with_tagging(bucket_name, object_name,
+                                                               data=data, tag=tag)
             LOGGER.info(response)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
