@@ -23,7 +23,7 @@
 import os
 import logging
 import time
-from typing import Tuple, Any, Union
+from typing import Tuple, Any, Union, List
 from commons.helpers import node_helper
 from commons import constants as cmn_cons
 from commons import commands as common_commands
@@ -86,7 +86,8 @@ class RASCoreLib:
 
         return True
 
-    def truncate_file(self, file_path: str) -> Tuple[bool, Any]:
+    def truncate_file(self, file_path: str) -> \
+            Tuple[Union[List[str], str, bytes]]:
         """
         Empty remote file content using truncate cmd.
 
@@ -98,7 +99,8 @@ class RASCoreLib:
             cmd=reset_file_cmd, read_nbytes=BYTES_TO_READ)
         return res
 
-    def cp_file(self, path: str, backup_path: str) -> Tuple[bool, Any]:
+    def cp_file(self, path: str, backup_path: str) -> \
+            Tuple[Union[List[str], str, bytes]]:
         """
         copy file with remote machine cp cmd.
 
@@ -110,7 +112,7 @@ class RASCoreLib:
         resp = self.node_utils.execute_cmd(cmd=cmd, read_nbytes=BYTES_TO_READ)
         return resp
 
-    def install_screen_on_machine(self) -> Tuple[bool, bytes]:
+    def install_screen_on_machine(self) -> Tuple[Union[List[str], str, bytes]]:
         """
         Install screen utility on remote machine.
 
@@ -118,12 +120,13 @@ class RASCoreLib:
         """
         LOGGER.info("Installing screen utility")
         cmd = common_commands.INSTALL_SCREEN_CMD
-        LOGGER.info(f"Running command {cmd}")
+        LOGGER.info("Running command %s", cmd)
         response = self.node_utils.execute_cmd(cmd=cmd,
                                                read_nbytes=BYTES_TO_READ)
         return response
 
-    def run_cmd_on_screen(self, cmd: str) -> Tuple[bool, bytes]:
+    def run_cmd_on_screen(self, cmd: str) -> \
+            Tuple[Union[List[str], str, bytes]]:
         """
         Start screen on remote machine and run specified command within screen.
 
@@ -133,29 +136,29 @@ class RASCoreLib:
         if not self.node_utils.execute_cmd("rpm  -qa | grep screen")[0]:
             self.install_screen_on_machine()
         time.sleep(5)
-        LOGGER.debug(f"RabbitMQ command: {cmd}")
+        LOGGER.debug("RabbitMQ command: %s", cmd)
         screen_cmd = common_commands.SCREEN_CMD.format(cmd)
-        LOGGER.info(f"Running command {screen_cmd}")
+        LOGGER.info("Running command %s", screen_cmd)
         response = self.node_utils.execute_cmd(cmd=screen_cmd,
                                                read_nbytes=BYTES_TO_READ)
         return response
 
     def start_rabbitmq_reader_cmd(self, sspl_exchange: str, sspl_key: str,
-                                  sspl_pass: str) -> bool:
+                                  **kwargs) -> bool:
         """
         Function will check for the disk space alert for sspl.
 
         :param str sspl_exchange: sspl exchange string
         :param str sspl_key: sspl key string
-        :param str sspl_pass: sspl password for starting rabbitmq
         :return: Command response along with status(True/False)
         :rtype: bool
         """
         file_path = cmn_cons.RABBIT_MQ_FILE
         local_path_rabittmq = cmn_cons.RABBIT_MQ_LOCAL_PATH
         resp = self.create_remote_dir_recursive(file_path)
+        sspl_pass = kwargs.get("sspl_pass")
         if resp:
-            LOGGER.debug(f'Copying file to {self.host}')
+            LOGGER.debug("Copying file to %s", self.host)
             self.node_utils.copy_file_to_remote(
                 local_path=local_path_rabittmq, remote_path=file_path)
             copy_res = self.node_utils.path_exists(file_path)
@@ -168,12 +171,12 @@ class RASCoreLib:
 
         cmd = common_commands.START_RABBITMQ_READER_CMD.format(
             sspl_exchange, sspl_key, sspl_pass)
-        LOGGER.debug(f"RabbitMQ command: {cmd}")
+        LOGGER.debug("RabbitMQ command: %s", cmd)
         response = self.run_cmd_on_screen(cmd=cmd)
 
         return response[0]
 
-    def check_status_file(self) -> Tuple[bool, Any]:
+    def check_status_file(self) -> Tuple[Union[List[str], str, bytes]]:
         """
         Function checks the state.txt file of sspl service and sets the
         status=active.
@@ -183,13 +186,14 @@ class RASCoreLib:
         LOGGER.info("Creating/Updating sspl status file")
         stat_cmd = common_commands.UPDATE_STAT_FILE_CMD.format(
             cmn_cons.SERVICE_STATUS_PATH)
-        LOGGER.debug(f"Running cmd: {stat_cmd} on host:{self.host}")
+        LOGGER.debug("Running cmd: %s on host: %s", stat_cmd, self.host)
         response = self.node_utils.execute_cmd(cmd=stat_cmd,
                                                read_nbytes=BYTES_TO_READ)
 
         return response
 
-    def change_file_mode(self, path: str) -> Tuple[bool, bytes]:
+    def change_file_mode(self, path: str) -> \
+            Tuple[Union[List[str], str, bytes]]:
         """
         Function to change file mode using cmd chmod on remote machine.
 
@@ -197,23 +201,24 @@ class RASCoreLib:
         :return: response in tuple
         """
         cmd = common_commands.FILE_MODE_CHANGE_CMD.format(path)
-        LOGGER.debug(f"Executing cmd : {cmd} on {self.host} node.")
+        LOGGER.debug("Executing cmd : %s on %s node.", cmd, self.host)
         res = self.node_utils.execute_cmd(cmd=cmd, read_nbytes=BYTES_TO_READ)
         return res
 
-    def get_cluster_id(self) -> Tuple[bool, bytes]:
+    def get_cluster_id(self) -> Tuple[Union[List[str], str, bytes]]:
         """
         Function to get cluster ID.
 
         :return: get cluster id cmd console resp in str
         """
         cmd = common_commands.GET_CLUSTER_ID_CMD
-        LOGGER.debug(f"Running cmd: {cmd} on host: {self.host}")
+        LOGGER.debug("Running cmd: %s on host: %s", cmd, self.host)
         cluster_id = self.node_utils.execute_cmd(cmd=cmd,
                                                  read_nbytes=BYTES_TO_READ)
         return cluster_id
 
-    def encrypt_pwd(self, password: str, cluster_id: str) -> Tuple[bool, bytes]:
+    def encrypt_pwd(self, password: str, cluster_id: str) -> \
+            Tuple[Union[List[str], str, bytes]]:
         """
         Encrypt password for the cluster ID.
 
@@ -222,11 +227,12 @@ class RASCoreLib:
         :return: response
         """
         cmd = common_commands.ENCRYPT_PASSWORD_CMD.format(password, cluster_id)
-        LOGGER.debug(f"Running cmd: {cmd} on host:{self.host}")
+        LOGGER.debug("Running cmd: %s on host: %s", cmd, self.host)
         res = self.node_utils.execute_cmd(cmd=cmd, read_nbytes=BYTES_TO_READ)
         return res
 
-    def kv_put(self, field: str, val: str, kv_path: str) -> Tuple[bool, bytes]:
+    def kv_put(self, field: str, val: str, kv_path: str) -> \
+            Tuple[Union[List[str], str, bytes]]:
         """
         Store KV using consul KV put for specified path.
 
@@ -236,7 +242,7 @@ class RASCoreLib:
         :return: response in tupple
         """
         LOGGER.info(
-            f"Putting value {val} of {field} from {kv_path}")
+            "Putting value %s of %s from %s", val, field, kv_path)
         put_cmd = "{} kv put {}/{} {}" \
             .format(cmn_cons.CONSUL_PATH,
                     kv_path, field, val)
@@ -244,7 +250,8 @@ class RASCoreLib:
                                            read_nbytes=cmn_cons.ONE_BYTE_TO_READ)
         return resp
 
-    def kv_get(self, field: str, kv_path: str) -> Tuple[bool, bytes]:
+    def kv_get(self, field: str, kv_path: str) -> \
+            Tuple[Union[List[str], str, bytes]]:
         """
         To get KV from specified KV store path.
 
@@ -300,13 +307,13 @@ class RASCoreLib:
                 val = (repr(val)[2:-1]).replace('\'', '')
             else:
                 LOGGER.info(
-                    f"Getting value of {field} from storage_enclosure.sls")
+                    "Getting value of %s from storage_enclosure.sls", field)
                 if field.split('_')[0] == 'primary':
                     lin = 2
                 elif field.split('_')[0] == 'secondary':
                     lin = 1
                 else:
-                    LOGGER.debug(f"Unexpected field entered")
+                    LOGGER.debug("Unexpected field entered")
                     return False
 
                 str_f = field.split('_')[-1]
@@ -318,17 +325,17 @@ class RASCoreLib:
                 val = " ".join(val.split())
 
             LOGGER.info(
-                f"Putting value {val} of {field} from storage_enclosure.sls")
+                "Putting value %s of %s from storage_enclosure.sls", val, field)
             self.kv_put(field, val, cmn_cons.KV_STORE_PATH)
-            LOGGER.info(f"Validating the value")
+            LOGGER.info("Validating the value")
             response = self.kv_get(field, cmn_cons.KV_STORE_PATH)
             response = response[1].decode("utf-8")
             response = " ".join(response.split())
             if val == response:
-                LOGGER.debug(f"Successfully written data for {field}")
+                LOGGER.debug("Successfully written data for %s", field)
                 return True
             else:
-                LOGGER.debug(f"Failed to write data for {field}")
+                LOGGER.debug("Failed to write data for %s", field)
                 return False
         else:
             LOGGER.info("Please check path of storage_enclosure.sls")
@@ -347,10 +354,12 @@ class RASCoreLib:
         :rtype: bool
         """
         if update:
-            LOGGER.info(f"Putting value {value} of {field} on {kv_store_path}")
+            LOGGER.info("Putting value %s of %s on %s", value, field,
+                        kv_store_path)
             self.kv_put(field, value, kv_store_path)
-            LOGGER.info(f"Validating the value")
-        LOGGER.info(f"Getting value {value} of {field} from {kv_store_path}")
+            LOGGER.info("Validating the value")
+        LOGGER.info("Getting value %s of %s from %s", value, field,
+                    kv_store_path)
         response = self.kv_get(field, kv_store_path)
         response = response[1].decode("utf-8")
         if isinstance(value, int):
@@ -362,13 +371,13 @@ class RASCoreLib:
             response = response.strip()
 
         if value == response:
-            LOGGER.debug(f"Successfully written data for {field}")
+            LOGGER.debug("Successfully written data for %s", field)
             return True
         else:
-            LOGGER.debug(f"Failed to write data for {field}")
+            LOGGER.debug("Failed to write data for %s", field)
             return False
 
-    def run_mdadm_cmd(self, args: list) -> Tuple[bool, Any]:
+    def run_mdadm_cmd(self, args: list) -> Tuple[Union[List[str], str, bytes]]:
         """
         Function runs mdadm utility commands on host and returns their
         output.
@@ -379,7 +388,7 @@ class RASCoreLib:
         """
         arguments = " ".join(args)
         mdadm_cmd = common_commands.MDADM_CMD.format(arguments)
-        LOGGER.info("Executing {} cmd on host {}".format(mdadm_cmd, self.host))
+        LOGGER.info("Executing %s cmd on host %s", mdadm_cmd, self.host)
         output = self.node_utils.execute_cmd(cmd=mdadm_cmd,
                                              read_nbytes=BYTES_TO_READ)
         return output
@@ -391,16 +400,15 @@ class RASCoreLib:
         :return: Boolean and response
         :rtype: (bool, str)
         """
+        flag = False
         sspl_state_cmd = cmn_cons.SSPL_STATE_CMD
         response = self.node_utils.execute_cmd(cmd=sspl_state_cmd,
                                                read_nbytes=BYTES_TO_READ)
         response = response[1].decode("utf-8")
         response = response.strip().split("=")[-1]
-        LOGGER.debug("SSPL state resp : {}".format(response))
+        LOGGER.debug("SSPL state resp : %s", response)
         if response == "active":
             flag = True
-        else:
-            flag = False
 
         return flag, response
 
@@ -438,7 +446,8 @@ class RASCoreLib:
 
         return int(percent_use)
 
-    def generate_log_err_alert(self, logger_alert_cmd: str) -> Tuple[bool, Any]:
+    def generate_log_err_alert(self, logger_alert_cmd: str) -> \
+            Tuple[Union[List[str], str, bytes]]:
         """
         Function generate err log on the using logger command on the
         rabbitmq channel.
@@ -446,7 +455,7 @@ class RASCoreLib:
         :param str logger_alert_cmd: command to be executed
         :return: response in tuple
         """
-        LOGGER.info("Logger cmd : {}".format(logger_alert_cmd))
+        LOGGER.info("Logger cmd : %s", logger_alert_cmd)
         resp = self.node_utils.execute_cmd(logger_alert_cmd)
 
         return resp
@@ -473,7 +482,7 @@ class RASCoreLib:
         :return: Response in tuple (boolean and time in string)
         """
         time_lst = time_str.split()
-        LOGGER.debug(f"Time taken to restart sspl-ll is {time_lst}")
+        LOGGER.debug("Time taken to restart sspl-ll is %s ", time_lst)
         if len(time_lst) < 3:
             return True, time_str
         elif int(time_lst[0][0]) < 3:
@@ -489,13 +498,13 @@ class RASCoreLib:
         :param str service_name: Name of the service to be restarted
         :return: bool
         """
-        LOGGER.info("Service to be restarted is: {}".format(service_name))
+        LOGGER.info("Service to be restarted is: %s", service_name)
         self.health_obj.restart_pcs_resource(service_name)
         time.sleep(60)
-        status = self.s3obj.get_s3server_service_status(service=service_name,
-                                                        host=self.host,
-                                                        user=self.username,
-                                                        pwd=self.pwd)
+        status = S3Helper.get_s3server_service_status(service=service_name,
+                                                      host=self.host,
+                                                      user=self.username,
+                                                      pwd=self.pwd)
         return status
 
     def enable_disable_service(self, operation: str, service: str) -> \
@@ -511,10 +520,10 @@ class RASCoreLib:
             .format(operation, service)
         self.node_utils.execute_cmd(cmd=command, read_lines=True)
         time.sleep(30)
-        resp = self.s3obj.get_s3server_service_status(service=service,
-                                                      host=self.host,
-                                                      user=self.username,
-                                                      pwd=self.pwd)
+        resp = S3Helper.get_s3server_service_status(service=service,
+                                                    host=self.host,
+                                                    user=self.username,
+                                                    pwd=self.pwd)
         return resp
 
     def alert_validation(self, string_list: list, restart: bool = True) -> \
@@ -540,12 +549,12 @@ class RASCoreLib:
             time.sleep(common_cfg["sleep_val"])
 
         LOGGER.info("Checking status of sspl and rabbitmq services")
-        resp = self.s3obj.get_s3server_service_status(
+        resp = S3Helper.get_s3server_service_status(
             service=common_cfg["service"]["sspl_service"],
             host=self.host, user=self.username, pwd=self.pwd)
         if not resp[0]:
             return resp
-        resp = self.s3obj.get_s3server_service_status(
+        resp = S3Helper.get_s3server_service_status(
             service=common_cfg["service"]["rabitmq_service"],
             host=self.host, user=self.username, pwd=self.pwd)
         if not resp[0]:
@@ -609,18 +618,18 @@ class RASCoreLib:
 
         if os.path.exists(local_path):
             os.remove(local_path)
-        res = self.s3obj.copy_s3server_file(file_path=remote_file_path,
-                                            local_path=local_path,
-                                            host=self.host,
-                                            user=self.username, pwd=self.pwd)
+        res = S3Helper.copy_s3server_file(file_path=remote_file_path,
+                                          local_path=local_path,
+                                          host=self.host,
+                                          user=self.username, pwd=self.pwd)
         for pattern in pattern_lst:
             if pattern in open(local_path).read():
                 response = pattern
             else:
-                LOGGER.info("Match not found : {}".format(pattern))
+                LOGGER.info("Match not found : %s", pattern)
                 os.remove(local_path)
                 return False, pattern
-            LOGGER.info("Match found : {}".format(pattern))
+            LOGGER.info("Match found : %s", pattern)
 
         os.remove(local_path)
         return True, response

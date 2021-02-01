@@ -45,10 +45,8 @@ class SSPLTest:
         self.host = host
         self.uname = COMMON_CONF["username"]
         self.passwd = COMMON_CONF["password"]
-        self.changed_level = False
-        self.default_cpu_usage = True
-        self.default_mem_usage = True
-        self.selinux_enabled = False
+        self.changed_level = self.selinux_enabled = False
+        self.default_cpu_usage = self.default_mem_usage = True
 
         self.ras_test_obj = RASTestLib(host=self.host, username=self.uname,
                                        password=self.passwd)
@@ -70,9 +68,9 @@ class SSPLTest:
         # Enable this flag for starting RMQ channel
         self.start_rmq = CM_CFG["start_rmq"]
 
-        field_list = ["primary_controller_ip", "secondary_controller_ip",
+        field_list = ("primary_controller_ip", "secondary_controller_ip",
                       "primary_controller_port", "secondary_controller_port",
-                      "user", "password", "secret"]
+                      "user", "password", "secret")
         LOGGER.info("Putting expected values in KV store")
         for field in field_list:
             res = self.ras_test_obj.put_kv_store(COMMON_CONF["enclosure_user"],
@@ -884,10 +882,10 @@ class SSPLTest:
     @pytest.mark.tags("TEST-11225")
     def test_6916(self):
         """
-         EOS-9865 : Validating EES RAS: Allow log level setting is not changed
-         when after restarting the SSPL service
-         sspl_log_level
-         """
+        EOS-9865 : Validating EES RAS: Allow log level setting is not changed
+        when after restarting the SSPL service
+        sspl_log_level
+        """
         LOGGER.info("STARTED: Validating EES RAS: Allow log level setting is "
                     "not changed when after restarting the SSPL service")
         common_cfg = RAS_VAL["ras_sspl_alert"]
@@ -1110,9 +1108,9 @@ class SSPLTest:
     @pytest.mark.tags("TEST-11760")
     def test_6592(self):
         """
-         EOS-9870: Validating EES RAS: Allow log level setting dynamically
-         sspl_log_level
-         """
+        EOS-9870: Validating EES RAS: Allow log level setting dynamically
+        sspl_log_level
+        """
         LOGGER.info(
             "STARTED: Test QA :Validating EES RAS: Allow log level setting "
             "dynamically")
@@ -1347,9 +1345,9 @@ class SSPLTest:
     @pytest.mark.tags("TEST-11761")
     def test_6335(self):
         """
-         EOS-9873: Test Enhanced IEM response through decoded IEC
-         sspl_iem_alert
-         """
+        EOS-9873: Test Enhanced IEM response through decoded IEC
+        sspl_iem_alert
+        """
         LOGGER.info(
             "STARTED: Test Enhanced IEM response through decoded IEC "
             "dynamically")
@@ -1414,9 +1412,9 @@ class SSPLTest:
     @pytest.mark.tags("TEST-14036")
     def test_5924(self):
         """
-         EOS-9875: Test Username/Password Security coverage on consul
-         consul_security
-         """
+        EOS-9875: Test Username/Password Security coverage on consul
+        consul_security
+        """
         LOGGER.info(
             "STARTED: Test Username/Password Security coverage on consul")
         LOGGER.info("Step 1: Modifying and validating enclosure username to "

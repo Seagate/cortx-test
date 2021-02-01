@@ -158,3 +158,8 @@ Verify update s3 account accepts only valid password
     ...  ELSE IF    ${invalid_confirm_password}  Verify message  CONFIRM_PASSWORD_ERROR_MSG_ID  ${INVALID_S3_CONFIRM_PASSWORD_MESSAGE}
     ...  ELSE  Verify message  INVALID_S3_ACCOUNT_PASSWORD_MSG_ID  ${INVALID_S3_PASSWORD_MESSAGE}
     Verify update s3 account button remains disabled
+
+Verify Presence of Stats And Alerts
+    [Documentation]  Verify Presence of Edit And Delete Button on S3account
+    Page Should Contain Element  ${CSM_STATS_CHART_ID}
+    Page Should Contain Element  ${DASHBOARD_ALERT_SECTION_ID}
