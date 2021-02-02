@@ -1,7 +1,7 @@
-import pytest
 import time
 import sys
 import logging
+import pytest
 from commons.utils import assert_utils
 from libs.csm.cli.cli_iam_user import CortxCliIAMLib
 
@@ -10,6 +10,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 def setup_function(function):
+
     """
     This function will be invoked prior to each test function in the module.
     It is performing below operations as pre-requisites.
@@ -18,11 +19,12 @@ def setup_function(function):
     LOGGER.info("STARTED : Setup operations for test function")
     LOGGER.info("Login to CORTX CLI using s3 account")
     login = IAM_OBJ.login_cortx_cli(username="cli_s3acc", password="Seagate@1")
-    assert_utils.assert_equals(login[0], True)
+    assert_utils.assert_equals(login[0], True, "Server authentication check failed")
     LOGGER.info("ENDED : Setup operations for test function")
 
 
 def teardown_function(function):
+
     """
     This function will be invoked after each test function in the module.
     It is performing below operations.
@@ -36,57 +38,53 @@ def teardown_function(function):
                          for user in resp if "iam_user" in user["user_name"]]
         for each_user in user_del_list:
             LOGGER.info(
-                "Deleting IAM user {0}".format(
-                    each_user))
+                "Deleting IAM user %s", each_user)
             resp = IAM_OBJ.delete_iam_user(each_user)
             assert_utils.assert_exact_string(resp[1], "IAM User Deleted")
             LOGGER.info(
-                "Deleted IAM user {0}".format(
-                    each_user))
+                "Deleted IAM user %s", each_user)
     IAM_OBJ.logout_cortx_cli()
 
 
+@pytest.mark.csm
+@pytest.mark.csm.iamuser
 @pytest.mark.tags("TEST-10858")
 def test_867():
     """
-    Test that ` s3iamuser create <user_name>` with correct username and password should create new IAM user
+    Test that ` s3iamuser create <user_name>` with
+    correct username and password should create new IAM user
     """
     test_case_name = sys._getframe().f_code.co_name
-    LOGGER.info("##### Test started -  {0} #####".format(test_case_name))
+    LOGGER.info("##### Test started -  %s #####", test_case_name)
     user_name = "{0}{1}".format("iam_user", str(int(time.time())))
-    LOGGER.info("Creating iam user with name {0}".format(user_name))
-    resp = IAM_OBJ.create_iam_user(user_name=user_name, password="Seagate@1", confirm_password="Seagate@1")
+    password = "Seagate@1"
+    LOGGER.info("Creating iam user with name %s", user_name)
+    resp = IAM_OBJ.create_iam_user(user_name=user_name,
+                                   password=password,
+                                   confirm_password=password)
     assert_utils.assert_exact_string(resp[1], user_name)
-    LOGGER.info("Created iam user with name {0}".format(user_name))
-    LOGGER.info("##### Test Ended -  {0} #####".format(test_case_name))
+    LOGGER.info("Created iam user with name %s", user_name)
+    LOGGER.info("##### Test Ended -  %s #####", test_case_name)
 
 
+@pytest.mark.csm
+@pytest.mark.csm.iamuser
 @pytest.mark.tags("TEST-10861")
 def test_875():
     """
     Test that ` s3iamuser delete <iam_user_name>` must delete the given IAM user
     """
     test_case_name = sys._getframe().f_code.co_name
-    LOGGER.info("##### Test started -  {0} #####".format(test_case_name))
+    LOGGER.info("##### Test Started -  %s #####", test_case_name)
     user_name = "{0}{1}".format("iam_user", str(int(time.time())))
-    LOGGER.info("Creating iam user with name {0}".format(user_name))
-    resp = IAM_OBJ.create_iam_user(user_name=user_name, password="Seagate@1", confirm_password="Seagate@1")
+    LOGGER.info("Creating iam user with name %s", user_name)
+    resp = IAM_OBJ.create_iam_user(user_name=user_name,
+                                   password="Seagate@1",
+                                   confirm_password="Seagate@1")
     assert_utils.assert_exact_string(resp[1], user_name)
-    LOGGER.info("Created iam user with name {0}".format(user_name))
-    LOGGER.info("Deleting iam user with name {0}".format(user_name))
+    LOGGER.info("Created iam user with name %s", user_name)
+    LOGGER.info("Deleting iam user with name %s", user_name)
     resp = IAM_OBJ.delete_iam_user(user_name)
     assert_utils.assert_exact_string(resp[1], "IAM User Deleted")
-    LOGGER.info("Deleted iam user with name {0}".format(user_name))
-    LOGGER.info("##### Test Ended -  {0} #####".format(test_case_name))
-
-
-
-
-
-
-
-
-
-
-
-
+    LOGGER.info("Deleted iam user with name %s", user_name)
+    LOGGER.info("##### Test Ended -  %s #####", test_case_name)

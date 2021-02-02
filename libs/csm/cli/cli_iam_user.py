@@ -2,7 +2,7 @@ import logging
 from typing import Tuple
 from libs.csm.cli.cortxcli_test_lib import CortxCliTestLib
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 
 class CortxCliIAMLib(CortxCliTestLib):
@@ -32,7 +32,7 @@ class CortxCliIAMLib(CortxCliTestLib):
                 [create_iam_user, user_name])
         output = self.execute_cli_commands(cmd=cmd)[1]
         if help_param:
-            log.info("Displaying usage for create iam users")
+            LOG.info("Displaying usage for create iam users")
             return True, output
 
         if "Password" in output:
@@ -48,7 +48,8 @@ class CortxCliIAMLib(CortxCliTestLib):
 
         return False, output
 
-    def list_iam_user(self, output_format: str = None, help_param: bool = False):
+    def list_iam_user(self, output_format: str = None,
+                      help_param: bool = False) -> Tuple[bool, str]:
         """
         This function will list IAM users with given format
         (CLI will list IAM users in table format if format is set to None)
@@ -61,10 +62,10 @@ class CortxCliIAMLib(CortxCliTestLib):
             list_iam_user = " ".join([list_iam_user, "-h"])
         if output_format:
             list_iam_user = " ".join(
-            [list_iam_user, "-f", output_format])
+                [list_iam_user, "-f", output_format])
         output = self.execute_cli_commands(cmd=list_iam_user)[1]
         if help_param:
-            log.info("Displaying usage for show iam users")
+            LOG.info("Displaying usage for show iam users")
             return True, output
         if not ("user_name" in output or
                 "user_id" in output or
@@ -79,7 +80,11 @@ class CortxCliIAMLib(CortxCliTestLib):
 
         return True, output
 
-    def delete_iam_user(self, user_name: str = None, confirm: str = "Y", help_param: bool = False):
+    def delete_iam_user(
+            self,
+            user_name: str = None,
+            confirm: str = "Y",
+            help_param: bool = False) -> Tuple[bool, str]:
         """
         This function will delete IAM user
         :param user_name: Name of IAM user to be created
@@ -93,7 +98,7 @@ class CortxCliIAMLib(CortxCliTestLib):
             cmd = " ".join([delete_iam_user, user_name])
         output = self.execute_cli_commands(cmd=cmd)[1]
         if help_param:
-            log.info("Displaying usage for delete iam user")
+            LOG.info("Displaying usage for delete iam user")
             return True, output
 
         if "[Y/n]" in output:
@@ -101,7 +106,3 @@ class CortxCliIAMLib(CortxCliTestLib):
 
             return True, output
         return False, output
-
-
-
-
