@@ -2,7 +2,7 @@ import logging
 from typing import Tuple
 from libs.csm.cli.cortxcli_test_lib import CortxCliTestLib
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 
 class CortxCliCsmLib(CortxCliTestLib):
@@ -30,7 +30,7 @@ class CortxCliCsmLib(CortxCliTestLib):
         :param help_param: True for displaying help/usage
         :return: (Boolean/Response)
         """
-        log.info("Creating csm user")
+        LOG.info("Creating csm user")
         create_csm_user = "users create"
         if help_param:
             cmd = " ".join([create_csm_user, "-h"])
@@ -39,7 +39,7 @@ class CortxCliCsmLib(CortxCliTestLib):
                 [create_csm_user, csm_user_name, email_id, role])
         output = self.execute_cli_commands(cmd=cmd)[1]
         if help_param:
-            log.info("Displaying usage for create csm users")
+            LOG.info("Displaying usage for create csm users")
             return True, output
 
         if "Password" in output:
@@ -65,7 +65,7 @@ class CortxCliCsmLib(CortxCliTestLib):
         :param help_param: True for displaying help/usage
         :return: (Boolean/Response)
         """
-        log.info("Deleting csm user")
+        LOG.info("Deleting csm user")
         delete_iam_user = "users delete"
         if help_param:
             cmd = " ".join([delete_iam_user, "-h"])
@@ -73,7 +73,7 @@ class CortxCliCsmLib(CortxCliTestLib):
             cmd = " ".join([delete_iam_user, user_name])
         output = self.execute_cli_commands(cmd=cmd)[1]
         if help_param:
-            log.info("Displaying usage for delete csm user")
+            LOG.info("Displaying usage for delete csm user")
             return True, output
 
         if "[Y/n]" in output:
@@ -98,7 +98,7 @@ class CortxCliCsmLib(CortxCliTestLib):
         :param bool help_param: True for displaying help/usage
         :return: (Boolean/Response)
         """
-        log.info("Updating role of CSM user")
+        LOG.info("Updating role of CSM user")
         update_role = "users update"
         if help_param:
             cmd = "{0} -h".format(update_role)
@@ -109,7 +109,7 @@ class CortxCliCsmLib(CortxCliTestLib):
         output = self.execute_cli_commands(cmd=cmd)[1]
 
         if help_param:
-            log.info("Displaying usage for update role")
+            LOG.info("Displaying usage for update role")
             return True, output
 
         if "Current Password" in output:
@@ -139,7 +139,7 @@ class CortxCliCsmLib(CortxCliTestLib):
         :param bool help_param: True for displaying help/usage
         :return: (Boolean/Response)
         """
-        log.info("Resetting root user password")
+        LOG.info("Resetting root user password")
         reset_pwd = "users reset_password"
         if help_param:
             cmd = "{0} -h".format(reset_pwd)
@@ -150,7 +150,7 @@ class CortxCliCsmLib(CortxCliTestLib):
         output = self.execute_cli_commands(cmd=cmd)[1]
 
         if help_param:
-            log.info("Displaying usage for reset password")
+            LOG.info("Displaying usage for reset password")
             return True, output
 
         if "Current Password" in output:
@@ -184,7 +184,7 @@ class CortxCliCsmLib(CortxCliTestLib):
             if "Password" in output:
                 output = self.execute_cli_commands(cmd=password)[1]
                 if "CORTX Interactive Shell" in output:
-                    log.info(
+                    LOG.info(
                         "Logged in CORTX CLI as user {} successfully".format(username))
 
                     return True, output
@@ -215,7 +215,7 @@ class CortxCliCsmLib(CortxCliTestLib):
         :param help_param: True for displaying help/usage
         :return: (boolean/response)
         """
-        log.info("List CSM users")
+        LOG.info("List CSM users")
         cmd = "users show"
         if offset:
             cmd = "{0} -o {1}".format(cmd, offset)

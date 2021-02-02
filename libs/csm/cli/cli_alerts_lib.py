@@ -2,7 +2,7 @@ import logging
 from typing import Tuple
 from libs.csm.cli.cortxcli_test_lib import CortxCliTestLib
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 
 class CortxCliAlerts(CortxCliTestLib):
@@ -42,12 +42,12 @@ class CortxCliAlerts(CortxCliTestLib):
         output = self.execute_cli_commands(cmd=show_alert_cmd)[1]
 
         if help_param:
-            self.log.info("Displaying usage for show alerts")
+            self.LOG.info("Displaying usage for show alerts")
             return True, output
 
         if not ("Alert Id" in output or "total_records" in output):
-            log.error(
-                "Show alerts failed with error: {0}".format(output))
+            LOG.error(
+                "Show alerts failed with error: %s", output)
             return False, output
 
         return True, output
