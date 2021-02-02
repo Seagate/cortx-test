@@ -4,7 +4,7 @@ from http import HTTPStatus
 db_keys_int = ["noOfNodes", "testExecutionTime"]
 db_keys_array = ["nodesHostname", "testIDLabels", "testTags"]
 db_keys_str = ["clientHostname", "OSVersion", "testName", "testID", "testPlanID",
-               "testExecutionID", "testType", "testComponent", "testTeam",
+               "testExecutionID", "testType", "testExecutionLabel", "testTeam",
                "testStartTime", "buildType", "buildNo", "logPath",
                "testResult", "healthCheckResult", "executionType"]
 db_keys = db_keys_int + db_keys_array + db_keys_str
