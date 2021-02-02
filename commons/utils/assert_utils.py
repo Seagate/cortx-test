@@ -1,65 +1,80 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+"""Function for comparison."""
 import re
 from difflib import unified_diff
 from hamcrest import *
 
 
-def assert_equals(x, y, reason):
+def assert_equals(x, y):
+    """Comparison of int, float, etc."""
     assert_that(y, equal_to(x))
 
 
 def assert_length(x, y):
+    """Comparison of list length."""
     assert_that(y, has_length(len(x)))
 
 
 def assert_exact_string(string1, string2):
+    """String comparison."""
     assert_that(string1, contains_string(string2))
 
 
 def assert_string(string1, string2):
+    """String comparison ignoring case."""
     assert_that(string1, equal_to_ignoring_case(string2))
 
 
 def assert_dict_equal(x, y):
+    """Dict comparison."""
     assert_that(x, has_entries(y))
 
 
 def assert_dict_equal_key(x, y):
+    """Dict key comparison."""
     assert_that(x, has_key(y))
 
 
 def assert_dict_equal_value(x, y):
+    """Dict value comparison."""
     assert_that(x, has_value(y))
 
 
 def assert_list_order(x, y):
+    """List order comparison."""
     assert_that(x, contains_exactly(*y))
 
 
 def assert_list_equal(x, y):
+    """Comparison of list ignoring order."""
     assert_that(x, contains_inanyorder(*y))
 
 
 def assert_list_items(x, y):
+    """Comparison of list elements."""
     assert_that(x, has_items(*y))
 
 
 def assert_list_item(x, y):
+    """Comparison of list single element."""
     assert_that(x, has_item(*y))
 
 
 def assert_and(x, y):
+    """Byte comparison (AND)."""
     assert_that(x, all_of(y))
 
 
 def assert_or(x, y):
+    """Byte comparison (OR)."""
     assert_that(x, any_of(y))
 
 
 def assert_compare_text(x, y, context):
     """
-    Function to compare multi-lined test having different datatypes.
+    Function to compare multi-lined test having different data types.
+
     :param x: First object to be compared
     :param y: Second object to be compared
     :param context: Dict having the flag values
@@ -102,6 +117,7 @@ def assert_compare_text(x, y, context):
 def compare(*argv, **kwargs):
     """
     Function to compare objects of any data type.
+
     Optional parameters:
     case_check: Case check for str comparison (True: Check case, False:
     Ignore case)

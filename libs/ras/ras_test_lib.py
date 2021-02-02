@@ -35,6 +35,7 @@ class RASTestLib(RASCoreLib):
             password: str = COMMON_CFG["password"]) -> None:
         """
         Method initializes members of RASTestLib and its parent class
+
         :param str host: host
         :param str username: username
         :param str password: password
@@ -50,6 +51,7 @@ class RASTestLib(RASCoreLib):
                                   **kwargs) -> bool:
         """
         Function will check for the disk space alert for sspl.
+
         :param str sspl_exchange: sspl exchange string
         :param str sspl_key: sspl key string
         :keyword sspl_pass: sspl_pass
@@ -74,6 +76,7 @@ class RASTestLib(RASCoreLib):
         """
         Check for relevant events are generated on RabbitMQ Channel for the
         specific volumes inside disk group.
+
         :return: (Boolean, response)
         :rtype: (bool, str)
         """
@@ -95,6 +98,7 @@ class RASTestLib(RASCoreLib):
         """
         Function checks the state.txt file of sspl service and sets the
         status=active.
+
         :return: (Boolean, response)
         :rtype: (bool, resp)
         """
@@ -112,6 +116,7 @@ class RASTestLib(RASCoreLib):
         """
         Function updates the values in KV store as per the values in
         storage_enclosure.sls.
+
         :param str username: Username of the enclosure
         :param str pwd: password for the enclosure user
         :param str field: Field in K store to be updated
@@ -132,6 +137,7 @@ class RASTestLib(RASCoreLib):
         """
         Function renames the sspl.cong file to sspl_original.cong to retain
         the original config
+
         :param str filename: Name of the file to be renamed
         :param bool restore: boolean value to specify te operation
         :return: Boolean
@@ -165,7 +171,8 @@ class RASTestLib(RASCoreLib):
 
     def validate_alert_log(self, filename: str, string: str) -> Tuple[bool, Any]:
         """
-        Function validates if the specific alerts are generated
+        Function validates if the specific alerts are generated.
+
         :param filename: Name of the log file in which alerts are stored
         :param string: String of the alert message
         :return: Boolean
@@ -185,6 +192,7 @@ class RASTestLib(RASCoreLib):
         Function kills the process running on remote server with process
         name (Be careful while using this function as it kills all the processes
         having specified name)
+
         :param process_name: Name of the process to be killed
         :returns: Response in tuple
         """
@@ -195,6 +203,7 @@ class RASTestLib(RASCoreLib):
                                 update: bool = True) -> bool:
         """
         Function updates the values in KV store as per the values.
+
         :param kv_store_path: Path of the field in kv-store
         :param field: Field in KV store to be updated
         :param value: Threshold value to be updated
@@ -216,7 +225,8 @@ class RASTestLib(RASCoreLib):
 
     def reset_log_file(self, file_path: str) -> bool:
         """
-        Function takes the backup of the log file and then empties the file
+        Function takes the backup of the log file and then empties the file.
+
         :param str file_path: path of the remote file
         :return: True/False
         :rtype: bool
@@ -239,8 +249,8 @@ class RASTestLib(RASCoreLib):
 
     def get_sspl_state(self) -> Tuple[bool, str]:
         """
-        Function reads the sspl text file to get the state of
-        sspl on master node
+        Function reads the sspl text file to get state of sspl on master node.
+
         :return: Boolean and response
         :rtype: (bool, str)
         """
@@ -263,6 +273,7 @@ class RASTestLib(RASCoreLib):
         """
         Function to verify the sspl disk space alert, both positive and negative
         based on the disk usage
+
         :param int du_val: Value to be added to current disk usage to form new
          disk_usage_threshold
         :param bool fault: True to generate disk full fault alert, default True
@@ -360,7 +371,8 @@ class RASTestLib(RASCoreLib):
 
     def list_alert_validation(self, string_list: list) -> Tuple[bool, Any]:
         """
-        Function to verify the alerts generated on specific events
+        Function to verify the alerts generated on specific events.
+
         :param list string_list: List of expected strings in alert response
         having
         format [resource_type, alert_type, ...]
@@ -432,6 +444,7 @@ class RASTestLib(RASCoreLib):
         """
         Function to generate cpu usage alert, both positive and negative
         based on the delta_cpu_usage value
+
         :param delta_cpu_usage: Value to be added or subtracted from current cpu
          usage as per requirement
         :return: True/False
@@ -481,6 +494,7 @@ class RASTestLib(RASCoreLib):
         """
         Function to generate memory usage alert, both positive and negative
         based on the delta_mem_usage value
+
         :param host: host machine ip
         :param delta_mem_usage: Value to be added or subtracted from current
         memory usage as per requirement
@@ -528,7 +542,8 @@ class RASTestLib(RASCoreLib):
 
     def update_mdadm_config(self) -> str:
         """
-        Method updates the current MDRAID devices details into mdadm config
+        Method updates the current MDRAID devices details into mdadm config.
+
         :return: content of mdadm config
         :rtype: str
         """
@@ -543,8 +558,8 @@ class RASTestLib(RASCoreLib):
             self.node_utils.write_remote_file_to_local_file(
                 mdadm_conf_path,
                 local_path)
-            with open(local_path, "r") as fp:
-                mdadm_conf = fp.read()
+            with open(local_path, "r") as f_pointer:
+                mdadm_conf = f_pointer.read()
         except Exception as error:
             LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
                          RASTestLib.update_mdadm_config.__name__, error)
@@ -557,7 +572,8 @@ class RASTestLib(RASCoreLib):
             md_device: str,
             *disks: Any) -> Tuple[bool, Union[str, dict]]:
         """
-        Method creates a MDRAID array device with the given list of disks
+        Method creates a MDRAID array device with the given list of disks.
+
         :param str md_device: MDRAID device to be created
         :param disks: Disks to be added in the MDRAID array
         :return: True/False and mdstat response
@@ -596,7 +612,8 @@ class RASTestLib(RASCoreLib):
 
     def assemble_mdraid_device(self, md_device: str) -> Tuple[bool, Union[str, dict]]:
         """
-        Method re-assembles/restarts the given MDRAID device on the given host
+        Method re-assembles/restarts the given MDRAID device on the given host.
+
         :param str md_device: MDRAID device to be assemble
         :return: True/False and mdstat response
         :rtype: bool, dict
@@ -623,7 +640,8 @@ class RASTestLib(RASCoreLib):
             self,
             md_device: str) -> Tuple[bool, Union[str, dict]]:
         """
-        Method stops the given MDRAID device on the given host
+        Method stops the given MDRAID device on the given host.
+
         :param str md_device: MDRAID device to be stopped
         :return: True/False and mdstat response
         :rtype: bool, dict
@@ -651,7 +669,8 @@ class RASTestLib(RASCoreLib):
             md_device: str,
             disk: str) -> Tuple[bool, Union[str, dict]]:
         """
-        Method simulates disk failure from a given MRAID device
+        Method simulates disk failure from a given MRAID device.
+
         :param str md_device: MDRAID device
         :param str disk: Disk from MDRAID device which is to be declare as
         faulty
@@ -682,7 +701,8 @@ class RASTestLib(RASCoreLib):
             md_device: str,
             disk: str) -> Tuple[bool, Union[str, dict]]:
         """
-        Method removes given faulty disk from the given MRAID device
+        Method removes given faulty disk from the given MRAID device.
+
         :param str md_device: MDRAID device
         :param str disk: Faulty Disk which is to be removed from MDRAID device
         :return: True/False and mdstat response
@@ -713,7 +733,8 @@ class RASTestLib(RASCoreLib):
             md_device: str,
             disk: str) -> Tuple[bool, dict]:
         """
-        Method adds new disk to the given MRAID device
+        Method adds new disk to the given MRAID device.
+
         :param str md_device: MDRAID device
         :param str disk: Disk to be added to MDRAID device
         :return: True/False and mdstat response
@@ -743,6 +764,7 @@ class RASTestLib(RASCoreLib):
         """
         Method removes given MDRAID array device anc cleanup all the disks
          from array
+
         :param str md_device: MDRAID device to be created
         :return: True/False and content of mdadm config
         :rtype: bool, str
@@ -788,8 +810,8 @@ class RASTestLib(RASCoreLib):
 
     def get_sspl_state_pcs(self) -> dict:
         """
-        Function reads the sspl text file to get the state of
-        sspl on master node
+        Function reads the sspl text file to get state of sspl on master node.
+
         :return: Boolean and response
         :rtype: dict
         """
@@ -806,7 +828,8 @@ class RASTestLib(RASCoreLib):
 
     def get_string_from_file(self) -> Tuple[bool, str]:
         """
-        Function to get the status string of SELinux
+        Function to get the status string of SELinux.
+
         :return: (Boolean, status).
         """
         try:
@@ -823,9 +846,9 @@ class RASTestLib(RASCoreLib):
 
             LOGGER.info(resp)
 
-            f = open(local_path, "r")
+            f_pointer = open(local_path, "r")
             string = ""
-            for line in f:
+            for line in f_pointer:
                 if "SELinux status" in line:
                     string = line.split()[-1]
                     if string == "enabled":
@@ -839,7 +862,8 @@ class RASTestLib(RASCoreLib):
 
     def modify_selinux_file(self) -> Tuple[bool, str]:
         """
-        Function to modify SELinux config file on remote
+        Function to modify SELinux config file on remote.
+
         :return: (Boolean, string)
         :rtype: tuple
         """
@@ -867,7 +891,8 @@ class RASTestLib(RASCoreLib):
 
     def get_fan_name(self) -> Union[str, None]:
         """
-        Function returns the list of fans connected to infrastructure system
+        Function returns the list of fans connected to infrastructure system.
+
         :return: fan name
         """
         try:
@@ -879,7 +904,8 @@ class RASTestLib(RASCoreLib):
 
     def check_sspl_log(self, exp_string: str, filepath: str) -> bool:
         """
-        Function to verify the alerts generated on specific events
+        Function to verify the alerts generated on specific events.
+
         :param str exp_string: Expected string in sspl log file
         :param str filepath: Path of the file to be parsed
         """
@@ -909,6 +935,7 @@ class RASTestLib(RASCoreLib):
         """
         Function to verify the sspl disk space alert, both positive and negative
         based on the disk usage
+
         :param sspl_file_path: sspl config path
         :param sspl_conf: temp local sspl path
         :param du_val: disk usage value
@@ -956,6 +983,7 @@ class RASTestLib(RASCoreLib):
         """
         Function generated warning message on server and download the
         remote file and verifies the log
+
         :param str file_path: remote file path
         :param list pattern_lst: pattern need to search in file
         :return: True/False
@@ -981,8 +1009,8 @@ class RASTestLib(RASCoreLib):
         if not os.path.exists(local_file_path):
             return False
         # Read the remote file contents
-        with open(local_file_path, "r") as fp:
-            for line in fp:
+        with open(local_file_path, "r") as f_pointer:
+            for line in f_pointer:
                 if any(x in line for x in pattern_lst):
                     resp_lst.append(True)
                 else:
@@ -996,6 +1024,7 @@ class RASTestLib(RASCoreLib):
     def sspl_log_collect(self) -> Tuple[bool, str]:
         """
         Function starts the collection of SSPl logs.
+
         :return: (boolean, stdout)
         """
         common_cfg = RAS_VAL["ras_sspl_alert"]

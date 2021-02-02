@@ -1,3 +1,7 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+"""File contains methods for performing telnet operations."""
 import logging
 import telnetlib
 import time
@@ -17,7 +21,8 @@ class TelnetOperations:
     def get_mc_ver_sr(self, enclosure_ip, enclosure_user, enclosure_pwd, cmd):
         """
         Function to get the version and serial number of the management
-        controller
+        controller.
+
         :param enclosure_ip: IP of the enclosure
         :type: str
         :param enclosure_user: Username of the enclosure
@@ -29,31 +34,31 @@ class TelnetOperations:
         :return: version and serial number of the management controller
         :rtype: Boolean, Strings
         """
-        tn = telnetlib.Telnet(host=enclosure_ip)
+        tel_obj = telnetlib.Telnet(host=enclosure_ip)
 
         try:
-            output = tn.read_until(b"login: ", 15)
-            tn.write(enclosure_user.encode() + b"\r\n")
+            output = tel_obj.read_until(b"login: ", 15)
+            tel_obj.write(enclosure_user.encode() + b"\r\n")
 
-            tn.read_until(b"Password: ", 15)
-            tn.write(enclosure_pwd.encode() + b"\r\n")
+            tel_obj.read_until(b"Password: ", 15)
+            tel_obj.write(enclosure_pwd.encode() + b"\r\n")
             time.sleep(5)
 
-            LOGGER.info(f"Running command {cmd}")
-            tn.write(cmd.encode() + b"\r\n")
+            LOGGER.info("Running command %s", cmd)
+            tel_obj.write(cmd.encode() + b"\r\n")
             time.sleep(5)
-            out = tn.read_very_eager()
+            out = tel_obj.read_very_eager()
             LOGGER.info(out)
-            tn.write(b"exit\r\n")
+            tel_obj.write(b"exit\r\n")
             time.sleep(10)
             LOGGER.info("Telnet Connection closed")
-        except Exception as e:
-            LOGGER.info(f"{e.__class__} occurred")
-            return False, e
+        except Exception as err:
+            LOGGER.info("%s occurred", err.__class__)
+            return False, err
 
-        f = open('temp.txt', 'wb')
-        fw = f.write(output)
-        f.close()
+        f_pointer = open('temp.txt', 'wb')
+        f_write = f_pointer.write(output)
+        f_pointer.close()
 
         mc_ver = os.popen("sed '/MC Version/!d' temp.txt | awk '{print "
                           "$NF}'").read()
@@ -67,7 +72,8 @@ class TelnetOperations:
     def simulate_fault_ctrl(self, mc_deb_password, enclosure_ip, telnet_port,
                             timeout, cmd):
         """
-        Function to simulate faults on the controller
+        Function to simulate faults on the controller.
+
         :param mc_deb_password: Password of Management controller debug console
         :type: str
         :param enclosure_ip: IP of the enclosure
@@ -83,37 +89,37 @@ class TelnetOperations:
         :rtype: Tuple of (bool, String)
         """
         try:
-            tn = telnetlib.Telnet(host=enclosure_ip,
-                                  port=telnet_port,
-                                  timeout=int(timeout))
+            tel_obj = telnetlib.Telnet(host=enclosure_ip,
+                                       port=telnet_port,
+                                       timeout=int(timeout))
 
-            read_str = tn.read_until(b"Password: ", 15)
+            read_str = tel_obj.read_until(b"Password: ", 15)
             if read_str.decode() == "Password:":
                 LOGGER.info("Entering the password")
-                tn.write(mc_deb_password.encode())
+                tel_obj.write(mc_deb_password.encode())
                 time.sleep(2)
-                out = tn.read_very_eager()
+                out = tel_obj.read_very_eager()
                 LOGGER.info(out)
-                tn.write(b"\r\n\n\n")
+                tel_obj.write(b"\r\n\n\n")
                 time.sleep(5)
 
-                tn.write(b"\r\n\n")
-                LOGGER.info(f"Running command {cmd}")
-                tn.write(cmd.encode() + b"\r\n")
-                tn.write(b"\r\n\n\n")
+                tel_obj.write(b"\r\n\n")
+                LOGGER.info("Running command %s", cmd)
+                tel_obj.write(cmd.encode() + b"\r\n")
+                tel_obj.write(b"\r\n\n\n")
                 LOGGER.info("Waiting for 15 seconds for alert generation")
                 time.sleep(15)
-                out = tn.read_very_eager()
+                out = tel_obj.read_very_eager()
                 LOGGER.info(out)
-                tn.write(b"exit\r\n")
+                tel_obj.write(b"exit\r\n")
                 time.sleep(5)
                 return True, read_str.decode()
             else:
-                tn.close()
+                tel_obj.close()
                 return False, read_str.decode()
-        except Exception as e:
-            LOGGER.info(f"{e.__class__} occurred")
-            return False, e
+        except Exception as err:
+            LOGGER.info("%s occurred", err.__class__)
+            return False, err
 
     def set_drive_status_telnet(
             self,
@@ -124,6 +130,7 @@ class TelnetOperations:
             cmd):
         """
         Enable or Disable drive status from disk group.
+
         :param enclosure_ip: IP of the Enclosure
         :type: str
         :param username: Username of the enclosure
@@ -137,38 +144,39 @@ class TelnetOperations:
         :return: True/False, drive status
         :rtype: Boolean, string
         """
-        tn = telnetlib.Telnet(host=enclosure_ip)
+        tel_obj = telnetlib.Telnet(host=enclosure_ip)
 
         try:
-            tn.read_until(b"login: ", 15)
-            tn.write(username.encode() + b"\r\n")
+            tel_obj.read_until(b"login: ", 15)
+            tel_obj.write(username.encode() + b"\r\n")
 
-            tn.read_until(b"Password: ", 15)
-            tn.write(pwd.encode() + b"\r\n")
+            tel_obj.read_until(b"Password: ", 15)
+            tel_obj.write(pwd.encode() + b"\r\n")
             time.sleep(5)
 
-            LOGGER.info(f"Running command {cmd}")
+            LOGGER.info("Running command %s", cmd)
 
-            out = tn.write(cmd.encode() + b"\r\n")
+            out = tel_obj.write(cmd.encode() + b"\r\n")
             time.sleep(5)
             if status == "Disabled":
-                out = tn.write(b"y\r\n")
+                out = tel_obj.write(b"y\r\n")
                 time.sleep(5)
 
             LOGGER.info(out)
-            tn.write(b"exit\r\n")
+            tel_obj.write(b"exit\r\n")
             time.sleep(10)
             LOGGER.info("Telnet Connection closed")
             return True, status
-        except Exception as e:
-            LOGGER.info(f"{e.__class__} occurred")
-            return False, e
+        except Exception as err:
+            LOGGER.info("%s occurred", err.__class__)
+            return False, err
 
     def show_disks(self, enclosure_ip, enclosure_user, enclosure_pwd,
                    telnet_filepath, cmd):
         """
         Function to get the version and serial number of the management
-        controller
+        controller.
+
         :param enclosure_ip: IP of the enclosure
         :type: str
         :param enclosure_user: Username of the enclosure
@@ -192,11 +200,11 @@ class TelnetOperations:
                                   enclosure_ip, cmd)
 
             resp = subprocess.call(command, stdout=open(telnet_filepath, 'w'),
-                                   shell=True)
+                                   shell=False)
             return True, telnet_filepath
-        except Exception as e:
-            LOGGER.info(f"{e.__class__} occurred")
-            return False, e
+        except Exception as err:
+            LOGGER.info("%s occurred", err.__class__)
+            return False, err
 
     def execute_cmd_on_enclosure(self,
                                  enclosure_ip,
@@ -206,6 +214,7 @@ class TelnetOperations:
                                  cmd):
         """
         Function to execute command on enclosure and save result into log file path.
+
         :param enclosure_ip: IP of the enclosure.
         :type: str
         :param enclosure_user: Username of the enclosure.
@@ -221,27 +230,32 @@ class TelnetOperations:
         """
         try:
             command = "yum -y install sshpass"
-            LOGGER.info(f"Command: {command}")
+            LOGGER.info("Command: %s", command)
             os.system(command)
             time.sleep(5)
             command = "sshpass -p {} ssh -o 'StrictHostKeyChecking no' {}@{} " \
                       "{}".format(enclosure_pwd, enclosure_user,
                                   enclosure_ip, cmd)
-            LOGGER.info(f"Execution command: {command}")
-            status = subprocess.call(command, stdout=open(file_path, 'w'), shell=True)
+            LOGGER.info("Execution command: %s", command)
+            status = subprocess.call(command, stdout=open(file_path, 'w'),
+                                     shell=False)
             if status != 0:
                 raise Exception("Execution failed.")
             if not os.path.exists(file_path):
                 raise Exception(f"Log file path not exists: {file_path}")
-            os.system("sed -i '1d; $d' {}".format(file_path))  # Added to remove first line from log.
+            # Added to remove first line from log.
+            os.system("sed -i '1d; $d' {}".format(file_path))
             return True, file_path
         except Exception as err:
-            LOGGER.error(f"Error occurred in {TelnetOperations.execute_cmd_on_enclosure.__name__}. Error: {err}")
+            LOGGER.error("Error occurred in %s: %s",
+                         TelnetOperations.execute_cmd_on_enclosure.__name__,
+                         err)
             return False, err
 
     def clear_metadata(self, enclosure_ip, enclosure_user, enclosure_pwd, cmd):
         """
-        Function to clear the metadata of given drive
+        Function to clear the metadata of given drive.
+
         :param enclosure_ip: IP of the enclosure
         :type: str
         :param enclosure_user: Username of the enclosure
@@ -253,34 +267,34 @@ class TelnetOperations:
         :return: version and serial number of the management controller
         :rtype: Boolean, Strings
         """
-        tn = telnetlib.Telnet(host=enclosure_ip)
+        tel_obj = telnetlib.Telnet(host=enclosure_ip)
 
         try:
-            tn.read_until(b"login: ", 15)
-            tn.write(enclosure_user.encode() + b"\r\n")
+            tel_obj.read_until(b"login: ", 15)
+            tel_obj.write(enclosure_user.encode() + b"\r\n")
 
-            tn.read_until(b"Password: ", 15)
-            tn.write(enclosure_pwd.encode() + b"\r\n")
+            tel_obj.read_until(b"Password: ", 15)
+            tel_obj.write(enclosure_pwd.encode() + b"\r\n")
             time.sleep(5)
 
-            LOGGER.info(f"Running command {cmd}")
-            tn.write(cmd.encode() + b"\r\n")
+            LOGGER.info("Running command %s", cmd)
+            tel_obj.write(cmd.encode() + b"\r\n")
             time.sleep(5)
-            tn.write(b"y\r\n")
+            tel_obj.write(b"y\r\n")
             time.sleep(10)
 
-            out = tn.read_very_eager()
+            out = tel_obj.read_very_eager()
             LOGGER.info(out)
-            tn.write(b"exit\r\n")
+            tel_obj.write(b"exit\r\n")
             time.sleep(10)
             LOGGER.info("Telnet Connection closed")
-        except Exception as e:
-            LOGGER.info(f"{e.__class__} occurred")
-            return False, e
+        except Exception as err:
+            LOGGER.info("%s occurred", err.__class__)
+            return False, err
 
-        f = open('temp.txt', 'wb')
-        fw = f.write(out)
-        f.close()
+        f_pointer = open('temp.txt', 'wb')
+        fw_write = f_pointer.write(out)
+        f_pointer.close()
 
         status = False
         string = "Success: Command completed successfully. " \
@@ -294,18 +308,18 @@ class TelnetOperations:
         return status, out
 
 
-def main(op):
-    op = op.replace("\\", "")
+def main(telnet_op):
+    telnet_op = telnet_op.replace("\\", "")
     operation = TelnetOperations()
-    response = eval("operation.{}".format(op))
+    response = eval("operation.{}".format(telnet_op))
     print(response)
     return response
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Telnet Operations')
-    parser.add_argument('--telnet_op', dest='telnet_op', required=True,
+    PARSER = argparse.ArgumentParser(description='Telnet Operations')
+    PARSER.add_argument('--telnet_op', dest='telnet_op', required=True,
                         help='Telnet operation to be performed')
-    args = parser.parse_args()
+    ARGS = PARSER.parse_args()
 
-    main(args.telnet_op)
+    main(ARGS.telnet_op)

@@ -79,7 +79,7 @@ class SSPLTest:
             assert res is True
 
     def setup_function(self):
-        """Setup operations."""
+        """Setup operations per test."""
         self.starttime = time.time()
         LOGGER.info("Retaining the original/default config")
         self.ras_test_obj.retain_config(CM_CFG["file"]["original_sspl_conf"],
@@ -110,7 +110,7 @@ class SSPLTest:
         # Getting SSPl and RabbitMQ service status
         services = CM_CFG["service"]
         for service in services:
-            resp = self.s3obj.get_s3server_service_status(
+            resp = S3Helper.get_s3server_service_status(
                 service=service, host=self.host, user=self.uname,
                 pwd=self.passwd)
             assert resp is True
@@ -194,7 +194,7 @@ class SSPLTest:
             "======================================================")
 
         LOGGER.info(
-            "Removing file {}".format(CM_CFG["file"]["sspl_log_file"]))
+            "Removing file %s", CM_CFG["file"]["sspl_log_file"])
         self.node_obj.remove_file(filename=CM_CFG["file"]["sspl_log_file"])
 
         if self.start_rmq:
@@ -204,7 +204,7 @@ class SSPLTest:
                      CM_CFG["file"]["extracted_alert_file"],
                      CM_CFG["file"]["screen_log"]]
             for file in files:
-                LOGGER.info(f"Removing log file {file} from the Node")
+                LOGGER.info("Removing log file %s from the Node", file)
                 self.node_obj.remove_file(filename=file)
 
         self.health_obj.restart_pcs_resource(
@@ -215,22 +215,21 @@ class SSPLTest:
             local_path = CM_CFG["local_selinux_path"]
             new_value = CM_CFG["selinux_disabled"]
             old_value = CM_CFG["selinux_enforced"]
-            LOGGER.info("Modifying selinux status from {} to {} on node {}"
-                        .format(old_value, new_value, self.host))
+            LOGGER.info("Modifying selinux status from %s to %s on node %s",
+                        old_value, new_value, self.host)
             resp = self.ras_test_obj.modify_selinux_file()
             assert resp[0] is True, resp[1]
             LOGGER.info(
-                "Modified selinux status to {}".format(new_value))
+                "Modified selinux status to %s", new_value)
 
             LOGGER.info(
-                "Rebooting node {} after modifying selinux status".format(
-                    self.host))
+                "Rebooting node %s after modifying selinux status", self.host)
             response = self.node_obj.execute_cmd(cmd=common_cmd.REBOOT_NODE_CMD)
 
             time.sleep(CM_CFG["reboot_delay"])
             os.remove(local_path)
-            LOGGER.info("Rebooted node {} after modifying selinux status"
-                        .format(self.host))
+            LOGGER.info("Rebooted node %s after modifying selinux status",
+                        self.host)
 
         LOGGER.info("Successfully performed Teardown operation")
 
@@ -384,7 +383,7 @@ class SSPLTest:
         LOGGER.info(
             "Step 1: run 'ipmitool sdr list' to inquire about FAN "
             "state/details")
-        fan_name = self.ras_test_obj.get_fan_name(self.host)
+        fan_name = self.ras_test_obj.get_fan_name()
         LOGGER.info("Step 1: Received the FAN state/details")
 
         LOGGER.info(
@@ -403,7 +402,7 @@ class SSPLTest:
             ipmitool_cmd = k.format(fan_name)
             resp = self.node_obj.execute_cmd(cmd=ipmitool_cmd,
                                              read_nbytes=buffer_sz)
-            LOGGER.info("SEL response : {}".format(resp))
+            LOGGER.info("SEL response : %s", resp)
             assert resp[0] is True, resp[1]
             time.sleep(test_cfg["wait_time"])
         LOGGER.info("Step 3: Generated all the ipmitool FAN events")
@@ -416,20 +415,20 @@ class SSPLTest:
         new_event_lst = resp[1]
         assert len(old_event_lst) <= len(new_event_lst), new_event_lst
         LOGGER.info("Step 4: Successfully generate all the ipmitool FAN events "
-                    "and resp is :{}".format(resp))
+                    "and resp is :%s", resp)
 
         operations = test_cfg["operations"]
-        for op in operations:
-            LOGGER.info(f"Step 5: Resolving fan fault using ipmi tool using"
-                        f" {op}")
-            cmd = common_cmd.RESOLVE_FAN_FAULT.format(fan_name, op)
-            LOGGER.info(f"Running command: {cmd}")
+        for resolve_op in operations:
+            LOGGER.info("Step 5: Resolving fan fault using ipmi tool using"
+                        " %s", resolve_op)
+            cmd = common_cmd.RESOLVE_FAN_FAULT.format(fan_name, resolve_op)
+            LOGGER.info("Running command: %s", cmd)
             resp = self.node_obj.execute_cmd(cmd=cmd,
                                              read_nbytes=test_cfg["buffer_sz"])
-            LOGGER.info("SEL response : {}".format(resp))
+            LOGGER.info("SEL response : %s", resp)
             assert resp[0] is True, resp[1]
-            LOGGER.info("Step 5: Successfully resolved fault on fan {0}"
-                        .format(fan_name))
+            LOGGER.info("Step 5: Successfully resolved fault on fan %s",
+                        fan_name)
 
         if self.start_rmq:
             LOGGER.info("Step 6: Check the RabbitMQ channel for no errors")
@@ -471,8 +470,8 @@ class SSPLTest:
 
         LOGGER.info("Step 1: run 'ipmitool sdr list' to inquire about FAN "
                     "state/details")
-        fan_name = self.ras_test_obj.get_fan_name(self.host)
-        LOGGER.info(f"Step 1: Received the FAN state/details: {fan_name}")
+        fan_name = self.ras_test_obj.get_fan_name()
+        LOGGER.info("Step 1: Received the FAN state/details: %s", fan_name)
 
         LOGGER.info("Step 2 and 3: Stop the SSPL service")
         resp = self.ras_test_obj.enable_disable_service(
@@ -486,10 +485,9 @@ class SSPLTest:
         resp = self.node_obj.execute_cmd(cmd=last_sel_index,
                                          read_nbytes=buffer_sz)
         assert resp[0] is True, resp[1]
-        LOGGER.info("SEL cmd response : {}".format(resp))
+        LOGGER.info("SEL cmd response : %s", resp)
         prev_sel_index = resp[1].decode("utf-8").strip()
-        LOGGER.info("Step 4: The last sel index value resp : {}".
-                    format(resp[1]))
+        LOGGER.info("Step 4: The last sel index value resp : %s", resp[1])
 
         LOGGER.info("Step 5: Generate ipmi sel entry for respective "
                     "FAN through below commands")
@@ -497,7 +495,7 @@ class SSPLTest:
         resp = self.node_obj.execute_cmd(cmd=ipmitool_cmd,
                                          read_nbytes=buffer_sz)
         assert resp[0] is True, resp[1]
-        LOGGER.info("SEL cmd response : {}".format(resp))
+        LOGGER.info("SEL cmd response : %s", resp)
         LOGGER.info("Step 5: Successfully generated the ipmitool FAN events")
 
         LOGGER.info(
@@ -517,7 +515,7 @@ class SSPLTest:
         assert index_val != curr_sel_index, index_val
         LOGGER.info(
             "Step 6 and 7: Successfully validated the last sel index "
-            "value and resp : {}".format(resp))
+            "value and resp : %s", resp)
 
         LOGGER.info("Step 8: Restart  the SSPL service")
         resp = self.ras_test_obj.enable_disable_service("enable",
@@ -529,7 +527,7 @@ class SSPLTest:
         if self.start_rmq:
             LOGGER.info("Step 9: Check the RabbitMQ channel for no errors")
             alert_list = [test_cfg["resource_type"], test_cfg["alert_type"]]
-            LOGGER.debug(f"RMQ alert check: {alert_list}")
+            LOGGER.debug("RMQ alert check: %s", alert_list)
             resp = self.ras_test_obj.alert_validation(alert_list, False)
             assert resp[0] is True, resp[1]
             LOGGER.info("Step 9: Successfully verified the RabbitMQ channel "
@@ -543,7 +541,7 @@ class SSPLTest:
         assert str(prev_sel_index) != str(curr_sel_index_after_res).strip(), \
             res[1]
         LOGGER.info("Step 10: Successfully validate the SSL index cache and "
-                    "resp is : {}".format(res))
+                    "resp is : %s", res)
 
         time.sleep(common_cfg["sleep_val"])
         LOGGER.info("Step 11: Checking CSM REST API for alert")
@@ -556,13 +554,12 @@ class SSPLTest:
 
         LOGGER.info("Step 12: Resolving fan fault using ipmi tool")
         cmd = common_cmd.RESOLVE_FAN_FAULT.format(fan_name, test_cfg["op"])
-        LOGGER.info(f"Running command: {cmd}")
+        LOGGER.info("Running command: %s", cmd)
         resp = self.node_obj.execute_cmd(cmd=cmd,
                                          read_nbytes=test_cfg["buffer_sz"])
-        LOGGER.info("SEL response : {}".format(resp))
+        LOGGER.info("SEL response : %s", resp)
         assert resp[0] is True, resp[1]
-        LOGGER.info("Step 12: Successfully resolved fault on fan {0}".
-                    format(fan_name))
+        LOGGER.info("Step 12: Successfully resolved fault on fan %s", fan_name)
 
         LOGGER.info(
             "ENDED: RAS: Node: IPMI: FAN Failure Alerts Persistent "
@@ -584,7 +581,7 @@ class SSPLTest:
 
         LOGGER.info("Step 1: run 'ipmitool sdr list' to inquire about FAN "
                     "state/details")
-        fan_name = self.ras_test_obj.get_fan_name(self.host)
+        fan_name = self.ras_test_obj.get_fan_name()
         LOGGER.info("Step 1: Received the FAN state/details")
 
         LOGGER.info("Step 2 and 3: Generate ipmi sel entry for till cache "
@@ -597,22 +594,21 @@ class SSPLTest:
             for _ in range(test_cfg["batch_count"]):
                 resp = self.node_obj.execute_cmd(cmd=ipmitool_cmd,
                                                  read_nbytes=buffer_sz)
-                LOGGER.info("SEL cmd response : {}".format(resp))
+                LOGGER.info("SEL cmd response : %s", resp)
                 assert resp[0] is True, resp[1]
             cache_per = self.ras_test_obj.cal_sel_space()
-            LOGGER.info("Cache percentage usage : {}%".format(cache_per))
+            LOGGER.info("Cache percentage usage : %s", cache_per)
             if cache_per >= test_cfg["range_max"]:
                 cache_flag = False
         assert cache_flag is False, resp
         LOGGER.info("Step 2 and 3: Validate the cache sel entry up to max")
         # List sel
         LOGGER.info("Step 4: To check the sel entries cleared or not")
-        sel_lst_cmd = cons.SEL_LIST_CMD
+        sel_lst_cmd = common_cmd.SEL_LIST_CMD
         resp = self.node_obj.execute_cmd(cmd=sel_lst_cmd,
                                          read_nbytes=buffer_sz)
         assert resp[0] is True, resp[1]
-        LOGGER.info("Step 4: Verified the sel list entries and resp : {}".
-                    format(resp))
+        LOGGER.info("Step 4: Verified the sel list entries and resp : %s", resp)
 
         LOGGER.info("ENDED: Validating EOS v1 RAS: Node: IPMI: FAN Failure "
                     "Alerts")
@@ -668,7 +664,7 @@ class SSPLTest:
         if self.start_rmq:
             LOGGER.info("Step 4: Checking the generated alert logs")
             alert_list = [params["resource_type"], params["alert_type"]]
-            LOGGER.debug(f"RMQ alert check: {alert_list}")
+            LOGGER.debug("RMQ alert check: %s", alert_list)
             resp = self.ras_test_obj.alert_validation(alert_list, False)
             assert resp[0] is True, resp[1]
             LOGGER.info("Step 4: Verified the generated alert logs")
@@ -729,7 +725,7 @@ class SSPLTest:
         if self.start_rmq:
             LOGGER.info("Step 3: Checking the generated alert logs")
             alert_list = [params["resource_type"], params["alert_type"]]
-            LOGGER.debug(f"RMQ alert check: {alert_list}")
+            LOGGER.debug("RMQ alert check: %s", alert_list)
             resp = self.ras_test_obj.alert_validation(alert_list, False)
             assert resp[0] is True, resp[1]
             LOGGER.info("Step 3: Verified the generated alert logs")
@@ -794,7 +790,7 @@ class SSPLTest:
         if self.start_rmq:
             LOGGER.info("Step 3: Checking the generated alert logs")
             alert_list = [params["resource_type"], params["alert_type"]]
-            LOGGER.debug(f"RMQ alert check: {alert_list}")
+            LOGGER.debug("RMQ alert check: %s", alert_list)
             resp = self.ras_test_obj.alert_validation(alert_list, False)
             assert resp[0] is True, resp[1]
             LOGGER.info("Step 3: Verified the generated alert logs")
@@ -865,7 +861,7 @@ class SSPLTest:
         if self.start_rmq:
             LOGGER.info("Step 4: Checking the generated alert logs")
             alert_list = [params["resource_type"], params["alert_type"]]
-            LOGGER.debug(f"RMQ alert check: {alert_list}")
+            LOGGER.debug("RMQ alert check: %s", alert_list)
             resp = self.ras_test_obj.alert_validation(alert_list, False)
             assert resp[0] is True, resp[1]
             LOGGER.info("Step 4: Verified the generated alert logs")
@@ -893,7 +889,7 @@ class SSPLTest:
         kv_store_path = cons.LOG_STORE_PATH
         log_level_val = test_cfg["log_level_val"]
         LOGGER.info("Step 1: Ensure SSPL service is up and running")
-        resp = self.s3obj.get_s3server_service_status(
+        resp = S3Helper.get_s3server_service_status(
             service=common_cfg["service"]["sspl_service"], host=self.host,
             user=self.uname, pwd=self.passwd)
         assert resp[0] is True, resp[1]
@@ -946,11 +942,11 @@ class SSPLTest:
         LOGGER.info("Step 1: Checking status of sspl services")
         services = common_cfg["service"]
         for service in services:
-            resp = self.s3obj.get_s3server_service_status(
+            resp = S3Helper.get_s3server_service_status(
                 service=common_cfg["service"][service], host=self.host,
                 user=self.uname, pwd=self.passwd)
             assert resp[0] is True, resp[1]
-            LOGGER.info(f"{service} service is up and running")
+            LOGGER.info("%s service is up and running", service)
 
         LOGGER.info("Step 2: Updating sspl.log log level to WARNING")
         res = self.ras_test_obj.update_threshold_values(
@@ -978,11 +974,11 @@ class SSPLTest:
 
         LOGGER.info("Step 5: Checking status of sspl services")
         for service in services:
-            resp = self.s3obj.get_s3server_service_status(
+            resp = S3Helper.get_s3server_service_status(
                 service=common_cfg["service"], host=self.host,
                 user=self.uname, pwd=self.passwd)
             assert resp[0] is True, resp[1]
-            LOGGER.info(f"{service} service is up and running")
+            LOGGER.info("%s service is up and running", service)
 
         params = RAS_TEST_CFG["test_3006"]
         LOGGER.info("Step 6: Fetching server disk usage")
@@ -991,14 +987,13 @@ class SSPLTest:
         assert resp[0] is True, resp[1][0]
         LOGGER.info("Step 6: Fetched server disk usage")
         original_disk_usage = float(resp[1][0])
-        LOGGER.info(
-            f"Current disk usage of EES server :{original_disk_usage}")
+        LOGGER.info("Current disk usage of EES server :%s", original_disk_usage)
 
         # Converting value of disk usage to int to update it in sspl.conf
         disk_usage = original_disk_usage + params["alert_fault"]["du_val"]
 
-        LOGGER.info(f"Step 7: Setting value of disk_usage_threshold to value"
-                    f" {disk_usage}")
+        LOGGER.info("Step 7: Setting value of disk_usage_threshold to value"
+                    "%s", disk_usage)
 
         LOGGER.info("Generating disk full alert")
 
@@ -1019,7 +1014,7 @@ class SSPLTest:
                         "channel")
             alert_list = [params["resource_type"],
                           params["alert_fault"]["alert_type"]]
-            LOGGER.debug(f"RMQ alert check: {alert_list}")
+            LOGGER.debug("RMQ alert check: %s", alert_list)
             resp = self.ras_test_obj.alert_validation(alert_list)
             assert resp[0] is True, resp[1]
             LOGGER.info("Step 9: Verified the generated alert logs")
@@ -1062,23 +1057,23 @@ class SSPLTest:
 
         LOGGER.info("Step 1: Checking status of rsyslog services")
         service = test_cfg["rsyslog_service"]
-        resp = self.s3obj.get_s3server_service_status(
+        resp = S3Helper.get_s3server_service_status(
             service=service, host=self.host, user=self.uname, pwd=self.passwd)
         assert resp[0] is True, resp[1]
-        LOGGER.info(f"Step 1: {service} service is up and running")
+        LOGGER.info("Step 1: %s service is up and running", service)
 
         cmd = test_cfg["logger_cmd"]
-        LOGGER.info(f"Step 2: Running command {cmd}")
+        LOGGER.info("Step 2: Running command %s", cmd)
         response = self.node_obj.execute_cmd(cmd=cmd,
                                              read_nbytes=cons.BYTES_TO_READ)
 
         assert response[0] is True, response[1]
-        LOGGER.info(f"Step 2: Successfully ran command {cmd}")
+        LOGGER.info("Step 2: Successfully ran command %s", cmd)
 
         if self.start_rmq:
             LOGGER.info("Step 3: Checking the generated alert logs")
             alert_list = [test_cfg["resource_type"], test_cfg["alert_type"]]
-            LOGGER.debug(f"RMQ alert check: {alert_list}")
+            LOGGER.debug("RMQ alert check: %s", alert_list)
             resp = self.ras_test_obj.alert_validation(alert_list, False)
             assert resp[0] is True, resp[1]
             LOGGER.info(
@@ -1090,7 +1085,8 @@ class SSPLTest:
                 string=string, file_path=common_cfg["file"]["alert_log_file"])
 
             assert resp[0] is True, "{} : {}".format(resp[1], string)
-            LOGGER.info(f"Step 4: Description of generated alert is : {string}")
+            LOGGER.info("Step 4: Description of generated alert is : %s",
+                        string)
 
         time.sleep(common_cfg["sleep_val"])
         LOGGER.info("Step 5: Checking CSM REST API for alert")
@@ -1120,7 +1116,7 @@ class SSPLTest:
         log_level_val = test_cfg["log_level_val"][0]
         log_level_val_lst = test_cfg["log_level_val"]
         LOGGER.info("Step 1: Ensure SSPL service is up and running")
-        resp = self.s3obj.get_s3server_service_status(
+        resp = S3Helper.get_s3server_service_status(
             service=common_cfg["service"]["sspl_service"], host=self.host,
             user=self.uname, pwd=self.passwd)
         assert resp[0] is True, resp[1]
@@ -1171,12 +1167,12 @@ class SSPLTest:
             telnet_file=common_cfg["file"]["telnet_xml"])
 
         assert resp[0] is True, resp[1]
-        LOGGER.info(f"Step 1: Total number of mapped drives is {resp[1]}")
+        LOGGER.info("Step 1: Total number of mapped drives is %s", resp[1])
 
         LOGGER.info("Randomly picking phy to disable")
         phy_num = random.randint(0, resp[1] - 1)
 
-        LOGGER.info(f"Step 2: Disabling phy number {phy_num}")
+        LOGGER.info("Step 2: Disabling phy number %s", phy_num)
         resp = ALERT_API_OBJ.generate_alert(
             AlertType.disk_disable,
             input_parameters={"enclid": test_cfg["encl"],
@@ -1188,7 +1184,7 @@ class SSPLTest:
         assert resp[0] is True, resp[1]
 
         phy_stat = test_cfg["degraded_phy_status"]
-        LOGGER.info(f"Step 2: Successfully put phy in {phy_stat} state")
+        LOGGER.info("Step 2: Successfully put phy in %s state", phy_stat)
 
         if phy_num < 10:
             resource_id = "disk_00.0{}".format(phy_num)
@@ -1204,14 +1200,13 @@ class SSPLTest:
                                                      test_cfg["resource_type"],
                                                      resource_id)
 
-        LOGGER.info(f"Step 4: Clearing metadata of drive {phy_num}")
+        LOGGER.info("Step 4: Clearing metadata of drive %s", phy_num)
         drive_num = f"0.{phy_num}"
         resp = self.controller_obj.clear_drive_metadata(drive_num=drive_num)
         assert resp[0] is True, resp[1]
-        LOGGER.info(f"Step 4: Cleared {drive_num} drive metadata "
-                    f"successfully")
+        LOGGER.info("Step 4: Cleared %s drive metadata successfully", drive_num)
 
-        LOGGER.info(f"Step 5: Again enabling phy number {phy_num}")
+        LOGGER.info("Step 5: Again enabling phy number %s", phy_num)
         i = 0
         while i < test_cfg["retry"]:
             resp = ALERT_API_OBJ.generate_alert(
@@ -1230,7 +1225,7 @@ class SSPLTest:
                 assert phy_stat == resp[1], f"Step 4: Failed to put phy in " \
                                             f"{phy_stat} state"
 
-        LOGGER.info(f"Step 5: Successfully put phy in {phy_stat} state")
+        LOGGER.info("Step 5: Successfully put phy in %s state", phy_stat)
 
         if self.start_rmq:
             LOGGER.info("Step 6: Checking the generated alert logs")
@@ -1266,12 +1261,12 @@ class SSPLTest:
             telnet_file=common_cfg["file"]["telnet_xml"])
 
         assert resp[0] is True, resp[1]
-        LOGGER.info(f"Step 1: Total number of mapped drives is {resp[1]}")
+        LOGGER.info("Step 1: Total number of mapped drives is %s", resp[1])
 
         LOGGER.info("Randomly picking phy to disable")
         phy_num = random.randint(0, resp[1] - 1)
 
-        LOGGER.info(f"Step 2: Disabling phy number {phy_num}")
+        LOGGER.info("Step 2: Disabling phy number %s", phy_num)
         resp = ALERT_API_OBJ.generate_alert(
             AlertType.disk_disable,
             input_parameters={"enclid": test_cfg["encl"],
@@ -1283,16 +1278,15 @@ class SSPLTest:
         assert resp[0] is True, resp[1]
 
         phy_stat = test_cfg["degraded_phy_status"]
-        LOGGER.info(f"Step 2: Successfully put phy in {phy_stat} state")
+        LOGGER.info("Step 2: Successfully put phy in %s state", phy_stat)
 
-        LOGGER.info(f"Step 3: Clearing metadata of drive {phy_num}")
+        LOGGER.info("Step 3: Clearing metadata of drive %s", phy_num)
         drive_num = f"0.{phy_num}"
         resp = self.controller_obj.clear_drive_metadata(drive_num=drive_num)
         assert resp[0] is True, resp[1]
-        LOGGER.info(f"Step 3: Cleared {drive_num} drive metadata "
-                    f"successfully")
+        LOGGER.info("Step 3: Cleared %s drive metadata successfully", drive_num)
 
-        LOGGER.info(f"Step 4: Again enabling phy number {phy_num}")
+        LOGGER.info("Step 4: Again enabling phy number %s", phy_num)
         i = 0
         while i < test_cfg["retry"]:
             resp = ALERT_API_OBJ.generate_alert(
@@ -1311,7 +1305,7 @@ class SSPLTest:
                 assert phy_stat == resp[1], f"Step 3: Failed to put phy in " \
                                             f"{phy_stat} state"
 
-        LOGGER.info(f"Step 4: Successfully put phy in {phy_stat} state")
+        LOGGER.info("Step 4: Successfully put phy in %s state", phy_stat)
 
         if phy_num < 10:
             resource_id = "disk_00.0{}".format(phy_num)
@@ -1374,7 +1368,7 @@ class SSPLTest:
             resp = self.node_obj.execute_cmd(cmd=read_file_cmd,
                                              read_lines=True)
             assert resp[0] is True, resp[1]
-            LOGGER.info("Alert generation for : {}".format(file))
+            LOGGER.info("Alert generation for : %s", file)
             for line in resp[1]:
                 line = line.strip().split(",")
                 ied_code_str = ied_code_initial.format(line[0], line[2])
@@ -1418,8 +1412,8 @@ class SSPLTest:
         LOGGER.info(
             "STARTED: Test Username/Password Security coverage on consul")
         LOGGER.info("Step 1: Modifying and validating enclosure username to "
-                    "'{0}' and password to '{1}'".format(COMMON_CONF["enclosure_user"],
-                                                         COMMON_CONF["enclosure_pwd"]))
+                    "'%s' and password to '%s'", COMMON_CONF["enclosure_user"],
+                    COMMON_CONF["enclosure_pwd"])
         test_cfg = RAS_TEST_CFG["test_5924"]
         for field in test_cfg["fields"]:
             res = self.ras_test_obj.put_kv_store(COMMON_CONF["enclosure_user"],
@@ -1523,35 +1517,34 @@ class SSPLTest:
         old_value = common_cfg["selinux_disabled"]
         new_value = common_cfg["selinux_enforced"]
 
-        LOGGER.info(f"Step 1: Checking selinux status on node {self.host}")
+        LOGGER.info("Step 1: Checking selinux status on node %s", self.host)
         resp = self.ras_test_obj.get_string_from_file()
-        LOGGER.info(f"SELinux Status: {resp[1]}")
+        LOGGER.info("SELinux Status: %s", resp[1])
         if not resp[0]:
             LOGGER.info(
-                "Step 2: Modifying selinux status from {} to {} on node {}"
-                .format(old_value, new_value, self.host))
+                "Step 2: Modifying selinux status from %s to %s on node %s",
+                old_value, new_value, self.host)
             resp = self.ras_test_obj.modify_selinux_file()
             assert resp[0] is True, resp[1]
-            LOGGER.info(
-                "Step 2: Modified selinux status to {}".format(new_value))
+            LOGGER.info("Step 2: Modified selinux status to %s", new_value)
 
             LOGGER.info(
-                "Step 3: Rebooting node {} after modifying selinux "
-                "status".format(self.host))
+                "Step 3: Rebooting node %s after modifying selinux "
+                "status", self.host)
             resp = self.node_obj.execute_cmd(cmd=common_cmd.REBOOT_NODE_CMD,
                                              read_lines=True)
 
             time.sleep(common_cfg["reboot_delay"])
             self.selinux_enabled = True
             LOGGER.info(
-                "Step 3: Rebooted node {} after modifying selinux "
-                "status".format(self.host))
+                "Step 3: Rebooted node %s after modifying selinux "
+                "status", self.host)
 
-            LOGGER.info(f"Step 4: Again checking selinux status on node"
-                        f" {self.host}")
+            LOGGER.info("Step 4: Again checking selinux status on node"
+                        " %s", self.host)
             resp = self.ras_test_obj.get_string_from_file()
             assert resp[0] is True, resp
-            LOGGER.info(f"Step 4: SELinux Status: {resp[1]}")
+            LOGGER.info("Step 4: SELinux Status: %s", resp[1])
 
         LOGGER.info(
             "Step 5: Running ALERT API for generating and resolving disk full "
@@ -1579,7 +1572,7 @@ class SSPLTest:
         LOGGER.info("Step 6: Successfully checked CSM REST API for alerts")
 
         LOGGER.info("Step 7: Checking the status of sspl service")
-        resp = self.s3obj.get_s3server_service_status(
+        resp = S3Helper.get_s3server_service_status(
             service=common_cfg["service"]["sspl_service"], host=self.host,
             user=self.uname, pwd=self.passwd)
         assert resp[0] is True, resp[1]

@@ -3,7 +3,6 @@
 """
 This file contains the Alert Simulation API.
 """
-import json
 import logging
 from aenum import Enum, NoAlias
 from commons import constants as cons
@@ -14,10 +13,12 @@ from commons.alerts_simulator.generate_alert_wrappers import \
 
 LOGGER = logging.getLogger(__name__)
 ALERT_WRAP = GenerateAlertWrapper()
-COMMON_CONF = conf_util.read_yaml(cons.COMMON_CONFIG_PATH)
+COMMON_CONF = conf_util.read_yaml(cons.COMMON_CONFIG_PATH)[1]
 
 
 class AlertType(Enum, settings=NoAlias):
+    """Enums for alert types."""
+
     CONTROLLER_FAULT = 1
     CONTROLLER_FAULT_RESOLVED = 1
     CONTROLLER_A_FAULT = 1
@@ -49,10 +50,13 @@ class GenerateAlertLib:
     """
     This class provides the Alert Simulation API.
     """
-    def generate_alert(self, alert_type: AlertType, host_details=None,
+
+    @staticmethod
+    def generate_alert(alert_type: AlertType, host_details=None,
                        enclosure_details=None, input_parameters=None):
         """
-        This API can be used to simulate faults using different tools
+        API to simulate faults using different tools.
+
         :param alert_type: Type of the alert to be simulated
         :type: str (Get alert type string from the enum above)
         :param host_details: This contains IP, username and password of the host
@@ -66,7 +70,7 @@ class GenerateAlertLib:
         :return: Returns response tuple
         :rtype: (Boolean, string)
         """
-        LOGGER.info(f"Generating fault {alert_type.name}")
+        LOGGER.info("Generating fault %s", alert_type.name)
 
         if host_details is not None:
             host = host_details["host"]
@@ -132,6 +136,6 @@ class GenerateAlertLib:
 
         cmd = switcher[alert_type.value]['cmd']
         command = f"ALERT_WRAP.{cmd}{arguments}"
-        LOGGER.info(f"Running command {command}")
+        LOGGER.info("Running command %s", command)
         resp = eval(command)
         return resp

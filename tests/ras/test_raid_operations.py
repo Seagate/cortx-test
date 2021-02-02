@@ -44,14 +44,17 @@ class RAIDOperations:
         self.host = CM_CFG["host"]
         self.uname = CM_CFG["username"]
         self.passwd = CM_CFG["password"]
-        self.nd_obj = Node(hostname=self.host, username=self.uname, password=self.passwd)
-        self.hlt_obj = Health(hostname=self.host, username=self.uname, password=self.passwd)
+        self.nd_obj = Node(hostname=self.host, username=self.uname,
+                           password=self.passwd)
+        self.hlt_obj = Health(hostname=self.host, username=self.uname,
+                              password=self.passwd)
         try:
             self.s3_obj = S3Helper()
         except ImportError as err:
             LOGGER.info(str(err))
             self.s3_obj = S3Helper.get_instance()
-        self.ras_obj = RASTestLib(host=self.host, username=self.uname, password=self.passwd)
+        self.ras_obj = RASTestLib(host=self.host, username=self.uname,
+                                  password=self.passwd)
         self.csm_alert_obj = SystemAlerts()
         self.csm_user_obj = RestCsmUser()
         self.alert_api_obj = GenerateAlertLib()
@@ -71,8 +74,8 @@ class RAIDOperations:
         self.start_rmq = self.cm_cfg["start_rmq"]
 
         LOGGER.info(
-            "Fetching the disks details from mdstat for RAID array {}".format(
-                self.md_device))
+            "Fetching the disks details from mdstat for RAID array %s",
+            self.md_device)
         md_stat = self.nd_obj.get_mdstat()
         self.disks = md_stat["devices"][os.path.basename(
             self.md_device)]["disks"].keys()
@@ -100,16 +103,16 @@ class RAIDOperations:
         assert response[0] is True, response[1]
 
         LOGGER.info("Restarting sspl service")
-        self.hlt_obj.restart_pcs_resource(self.cm_cfg["sspl_resource_id"], shell=False)
+        self.hlt_obj.restart_pcs_resource(self.cm_cfg["sspl_resource_id"])
         time.sleep(self.cm_cfg["after_service_restart_sleep_val"])
 
         LOGGER.info(
             "Verifying the status of sspl and rabittmq service is online")
-        resp = self.s3_obj.get_s3server_service_status(
+        resp = S3Helper.get_s3server_service_status(
             self.cm_cfg["service"]["sspl_service"])
         assert resp[0] is True, resp[1]
 
-        resp = self.s3_obj.get_s3server_service_status(
+        resp = S3Helper.get_s3server_service_status(
             self.cm_cfg["service"]["rabitmq_service"])
         assert resp[0] is True, resp[1]
         LOGGER.info(
@@ -178,8 +181,7 @@ class RAIDOperations:
             "======================================================")
 
         LOGGER.info(
-            "Removing file {}".format(
-                self.cm_cfg["file"]["sspl_log_file"]))
+            "Removing file %s", self.cm_cfg["file"]["sspl_log_file"])
         self.nd_obj.remove_file(filename=self.cm_cfg["file"]["sspl_log_file"])
 
         if self.start_rmq:
@@ -191,7 +193,7 @@ class RAIDOperations:
 
         LOGGER.info("Removing screen log file")
         self.nd_obj.remove_file(filename=self.cm_cfg["file"]["screen_log"])
-        self.hlt_obj.restart_pcs_resource(self.cm_cfg["sspl_resource_id"], shell=False)
+        self.hlt_obj.restart_pcs_resource(self.cm_cfg["sspl_resource_id"])
         time.sleep(self.cm_cfg["sleep_val"])
 
         LOGGER.info("ENDED: Teardown Operations")
@@ -209,7 +211,8 @@ class RAIDOperations:
         csm_error_msg = raid_cmn_cfg["csm_error_msg"]
 
         LOGGER.info(
-            "Step 1: Running ALERT API for generating RAID fault alert by stopping array")
+            "Step 1: Running ALERT API for generating RAID fault alert by "
+            "stopping array")
         resp = self.alert_api_obj.generate_alert(
             AlertType.raid_stop_device_alert,
             input_parameters={
@@ -218,12 +221,12 @@ class RAIDOperations:
                 "disk": None})
         assert resp[0] is True, resp[1]
         self.raid_stopped = True
-        LOGGER.info(
-            "Step 1: Ran ALERT API for generating RAID fault alert by stopping array")
+        LOGGER.info("Step 1: Ran ALERT API for generating RAID fault alert by "
+                    "stopping array")
 
         if self.start_rmq:
-            LOGGER.info(
-                "Step 2: Checking the generated RAID fault alert on RMQ channel logs")
+            LOGGER.info("Step 2: Checking the generated RAID fault alert on RMQ"
+                        " channel logs")
             alert_list = [test_cfg["resource_type"],
                           test_cfg["alert_fault"]]
             resp = self.ras_obj.list_alert_validation(alert_list)
@@ -253,12 +256,12 @@ class RAIDOperations:
                 "disk": None})
         assert resp[0] is True, resp[1]
         self.raid_stopped = False
-        LOGGER.info(
-            "Step 4: Ran ALERT API for generating RAID fault_resolved alerts by assembling array")
+        LOGGER.info("Step 4: Ran ALERT API for generating RAID fault_resolved "
+                    "alerts by assembling array")
 
         if self.start_rmq:
-            LOGGER.info(
-                "Step 5: Checking the generated RAID fault alert on RMQ channel logs")
+            LOGGER.info("Step 5: Checking the generated RAID fault alert on RMQ"
+                        " channel logs")
             alert_list = [test_cfg["resource_type"],
                           test_cfg["alert_fault_resolved"]]
             resp = self.ras_obj.list_alert_validation(alert_list)
@@ -275,8 +278,8 @@ class RAIDOperations:
             True,
             test_cfg["resource_type"])
         assert resp is True, csm_error_msg
-        LOGGER.info(
-            "Step 6: Successfully verified RAID fault_resolved alert using CSM REST API")
+        LOGGER.info("Step 6: Successfully verified RAID fault_resolved alert "
+                    "using CSM REST API")
         LOGGER.info(
             "ENDED: TEST-5345 RAID: Assemble a array")
 
@@ -294,7 +297,7 @@ class RAIDOperations:
 
         LOGGER.info(
             "Step 1: Running ALERT API for generating RAID fault alert by "
-            "failing disk {} from array {}".format(self.disk2, self.md_device))
+            "failing disk %s from array %s", self.disk2, self.md_device)
         resp = self.alert_api_obj.generate_alert(
             AlertType.raid_fail_disk_alert,
             input_parameters={
@@ -305,11 +308,13 @@ class RAIDOperations:
         self.failed_disk = self.disk2
         resource_id = "{}:{}".format(self.md_device, self.disk2)
         LOGGER.info(
-            "Step 1: Ran ALERT API for generating RAID fault alert by failing a disk from array")
+            "Step 1: Ran ALERT API for generating RAID fault alert by failing "
+            "a disk from array")
 
         if self.start_rmq:
             LOGGER.info(
-                "Step 2: Checking the generated RAID fault alert on RMQ channel logs")
+                "Step 2: Checking the generated RAID fault alert on RMQ channel"
+                " logs")
             alert_list = [test_cfg["resource_type"],
                           test_cfg["alert_fault"], resource_id]
             resp = self.ras_obj.list_alert_validation(alert_list)
@@ -330,7 +335,7 @@ class RAIDOperations:
 
         LOGGER.info(
             "Step 4: Running ALERT API for generating RAID missing alert by "
-            "removing faulty disk {} from array {}".format(self.disk2, self.md_device))
+            "removing faulty disk %s from array %s", self.disk2, self.md_device)
         resp = self.alert_api_obj.generate_alert(
             AlertType.raid_remove_disk_alert,
             input_parameters={
@@ -346,7 +351,8 @@ class RAIDOperations:
 
         if self.start_rmq:
             LOGGER.info(
-                "Step 5: Checking the generated RAID missing alert on RMQ channel logs")
+                "Step 5: Checking the generated RAID missing alert on RMQ "
+                "channel logs")
             alert_list = [test_cfg["resource_type"],
                           test_cfg["alert_missing"], resource_id]
             resp = self.ras_obj.list_alert_validation(alert_list)
@@ -362,8 +368,8 @@ class RAIDOperations:
             False,
             test_cfg["resource_type"])
         assert resp is True, csm_error_msg
-        LOGGER.info(
-            "Step 6: Successfully verified RAID missing alert using CSM REST API")
+        LOGGER.info("Step 6: Successfully verified RAID missing alert using CSM"
+                    " REST API")
         LOGGER.info(
             "ENDED: TEST-5342 RAID: Remove a drive from array")
 
@@ -381,7 +387,7 @@ class RAIDOperations:
 
         LOGGER.info(
             "Step 1: Running ALERT API for generating RAID fault alert by "
-            "failing disk {} from array {}".format(self.disk2, self.md_device))
+            "failing disk %s from array %s", self.disk2, self.md_device)
         resp = self.alert_api_obj.generate_alert(
             AlertType.raid_fail_disk_alert,
             input_parameters={
@@ -392,11 +398,13 @@ class RAIDOperations:
         self.failed_disk = self.disk2
         resource_id = "{}:{}".format(self.md_device, self.disk2)
         LOGGER.info(
-            "Step 1: Ran ALERT API for generating RAID fault alert by failing a disk from array")
+            "Step 1: Ran ALERT API for generating RAID fault alert by failing "
+            "a disk from array")
 
         if self.start_rmq:
             LOGGER.info(
-                "Step 2: Checking the generated RAID fault alert on RMQ channel logs")
+                "Step 2: Checking the generated RAID fault alert on RMQ channel"
+                " logs")
             alert_list = [test_cfg["resource_type"],
                           test_cfg["alert_fault"], resource_id]
             resp = self.ras_obj.list_alert_validation(alert_list)
@@ -430,8 +438,8 @@ class RAIDOperations:
         csm_error_msg = raid_cmn_cfg["csm_error_msg"]
 
         LOGGER.info(
-            "Step 1: Running ALERT API for generating RAID fault alert by failing disk {} from array {}".format(
-                self.disk2, self.md_device))
+            "Step 1: Running ALERT API for generating RAID fault alert by "
+            "failing disk %s from array %s", self.disk2, self.md_device)
         resp = self.alert_api_obj.generate_alert(
             AlertType.raid_fail_disk_alert,
             input_parameters={
@@ -442,11 +450,13 @@ class RAIDOperations:
         self.failed_disk = self.disk2
         resource_id = "{}:{}".format(self.md_device, self.disk2)
         LOGGER.info(
-            "Step 1: Ran ALERT API for generating RAID fault alert by failing a disk from array")
+            "Step 1: Ran ALERT API for generating RAID fault alert by failing "
+            "a disk from array")
 
         if self.start_rmq:
             LOGGER.info(
-                "Step 2: Checking the generated RAID fault alert on RMQ channel logs")
+                "Step 2: Checking the generated RAID fault alert on RMQ channel"
+                " logs")
             alert_list = [test_cfg["resource_type"],
                           test_cfg["alert_fault"], resource_id]
             resp = self.ras_obj.list_alert_validation(alert_list)
@@ -467,7 +477,7 @@ class RAIDOperations:
 
         LOGGER.info(
             "Step 4: Running ALERT API for generating RAID missing alert by "
-            "removing faulty disk {} from array {}".format(self.disk2, self.md_device))
+            "removing faulty disk %s from array %s", self.disk2, self.md_device)
         resp = self.alert_api_obj.generate_alert(
             AlertType.raid_remove_disk_alert,
             input_parameters={
@@ -478,11 +488,13 @@ class RAIDOperations:
         self.failed_disk = False
         self.removed_disk = self.disk2
         LOGGER.info(
-            "Step 4: Ran ALERT API for generating RAID missing alert by removing faulty disk from array")
+            "Step 4: Ran ALERT API for generating RAID missing alert by "
+            "removing faulty disk from array")
 
         if self.start_rmq:
             LOGGER.info(
-                "Step 5: Checking the generated RAID missing alert on RMQ channel logs")
+                "Step 5: Checking the generated RAID missing alert on RMQ "
+                "channel logs")
             alert_list = [test_cfg["resource_type"],
                           test_cfg["alert_missing"], resource_id]
             resp = self.ras_obj.list_alert_validation(alert_list)
@@ -498,12 +510,12 @@ class RAIDOperations:
             False,
             test_cfg["resource_type"])
         assert resp is True, csm_error_msg
-        LOGGER.info(
-            "Step 6: Successfully verified RAID missing alert using CSM REST API")
+        LOGGER.info("Step 6: Successfully verified RAID missing alert using CSM"
+                    " REST API")
 
         LOGGER.info(
-            "Step 7: Running ALERT API for generating RAID fault_resolved alert by "
-            "adding removed disk {} to array {}".format(self.disk2, self.md_device))
+            "Step 7: Running ALERT API for generating RAID fault_resolved alert"
+            "by adding removed disk %s to array %s", self.disk2, self.md_device)
         resp = self.alert_api_obj.generate_alert(
             AlertType.raid_add_disk_alert,
             input_parameters={
@@ -517,8 +529,8 @@ class RAIDOperations:
 
         md_stat = resp[1]
         if self.start_rmq:
-            LOGGER.info(
-                "Step 8: Checking the generated RAID insertion alert on RMQ channel logs")
+            LOGGER.info("Step 8: Checking the generated RAID insertion alert on"
+                        " RMQ channel logs")
             alert_list = [test_cfg["resource_type"],
                           test_cfg["alert_insertion"], resource_id]
             resp = self.ras_obj.list_alert_validation(alert_list)
@@ -534,22 +546,22 @@ class RAIDOperations:
             True,
             test_cfg["resource_type"])
         assert resp is True, csm_error_msg
-        LOGGER.info(
-            "Step 9: Successfully verified RAID insertion alert using CSM REST API")
+        LOGGER.info("Step 9: Successfully verified RAID insertion alert using "
+                    "CSM REST API")
 
         if not all(md_stat["devices"][os.path.basename(self.md_device)]["status"]["synced"]):
             time.sleep(raid_cmn_cfg["resync_delay"])
 
         if all(md_stat["devices"][os.path.basename(self.md_device)]["status"]["synced"]):
             if self.start_rmq:
-                LOGGER.info(
-                    "Step 10: Checking the generated RAID fault_resolved alert on RMQ channel logs")
+                LOGGER.info("Step 10: Checking the generated RAID "
+                            "fault_resolved alert on RMQ channel logs")
                 alert_list = [test_cfg["resource_type"],
                               test_cfg["alert_fault_resolved"], resource_id]
                 resp = self.ras_obj.list_alert_validation(alert_list)
                 assert resp[0] is True, resp[1]
-                LOGGER.info(
-                    "Step 10: Verified the RAID fault_resolved alert on RMQ channel logs")
+                LOGGER.info("Step 10: Verified the RAID fault_resolved alert on"
+                            " RMQ channel logs")
 
             LOGGER.info(
                 "Step 11: Checking CSM REST API for RAID fault_resolved alert")
@@ -561,7 +573,7 @@ class RAIDOperations:
                 test_cfg["resource_type"])
             assert resp is True, csm_error_msg
         self.removed_disk = False
-        LOGGER.info(
-            "Step 11: Successfully verified RAID fault_resolved alert using CSM REST API")
+        LOGGER.info("Step 11: Successfully verified RAID fault_resolved alert "
+                    "using CSM REST API")
         LOGGER.info(
             "ENDED: TEST-5343 RAID: Add drive to array")
