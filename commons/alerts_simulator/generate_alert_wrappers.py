@@ -123,7 +123,7 @@ class GenerateAlertWrapper:
             resp = None
             timeout, starttime = 120, time.time()
             while time.time() <= starttime + timeout:  # Added to avoid hardcoded wait.
-                status, resp = controller_obj.check_phy_health(
+                _, resp = controller_obj.check_phy_health(
                     phy_num=phy_num, telnet_file=telnet_file)
                 if isinstance(exp_status, list):
                     if resp in (exp_status[0], exp_status[1]):

@@ -57,7 +57,7 @@ class TelnetOperations:
             return False, err
 
         f_pointer = open('temp.txt', 'wb')
-        f_write = f_pointer.write(output)
+        _ = f_pointer.write(output)
         f_pointer.close()
 
         mc_ver = os.popen("sed '/MC Version/!d' temp.txt | awk '{print "
@@ -293,7 +293,7 @@ class TelnetOperations:
             return False, err
 
         f_pointer = open('temp.txt', 'wb')
-        fw_write = f_pointer.write(out)
+        _ = f_pointer.write(out)
         f_pointer.close()
 
         status = False
