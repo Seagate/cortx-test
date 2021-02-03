@@ -46,6 +46,19 @@ UPDATE_S3_ACCOUNT_BTN_ID = 'btnEditPassword'
 INVALID_S3_ACCOUNT_PASSWORD_MSG_ID = 's3-editpassword-invalid'
 PASSWORD_REQUIRED_MSG_ID = 's3-editpassword-required'
 CONFIRM_PASSWORD_ERROR_MSG_ID = 's3-editpassword-notmatch'
+SELECT_FROM_PAGINATION_XPATH = "//*[@id='s3-datatable']//i[contains(@class,'mdi-menu-down')]"
+SELECT_ALL_RECORDS_FROM_PAGINATION_XPATH = "//*[contains(@id,'all-list-item-')]"
+S3_ACCOUNT_NAME_SAME_AS_CSM_USER_ID = 'dialog-message-label'
+CLOSE_ALERT_BOX_FOR_DUPLICATE_USER_ID = 'close-msg-dialogbox'
+ACCESS_KEY_TABLE_HEADERS_XPATH = '//*[@id="s3-accesskey-datatable"]//table/tr/th/span'
+ACCESS_KEY_TABLE_DATA_XPATH = '//*[@id="s3-accesskey-datatable"]//table/tbody/tr/td'
+ADD_S3_ACCOUNT_ACCESS_KEY_ID = 's3-accesskey-add-btn'
+ACCESS_KEY_GENERATE_MEG_XPATH = '//*[@id="app"]//div[@class="v-card v-sheet theme--light"]//span'
+ACCESS_KEY_DOWNLOAD_AND_CLOSE_BTN_ID = 'download-csv-dialog-btn'
+DELETE_ACCESS_KEY_ID = 's3-accesskey-datatable-delete-{0}'
+NEW_ACCESS_KEY_TABLE_XPATH = '//*[@id="download-csv-dialog-datatable"]/tr/td'
+CONFIRM_DELET_ACCESS_KEY_ID = 'confirmation-dialogbox-btn'
+EDIT_S3_ACCOUNT_OPTIONS_XPATH = '//*[@id="app"]//div[@class ="py-0 col-5 col"]//input'
 
 #  CSM User section
 CSM_USERS_TABLE_XPATH = '//*[@id="localuser-tabledata"]//table'

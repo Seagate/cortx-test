@@ -29,6 +29,7 @@ Read Table Data
     [Arguments]  ${table_element}
     @{table_data}=    Create List
     @{table_elements}=  Get WebElements  ${table_element}
+    Log To Console And Report  ${table_element}
     sleep  2s
     FOR  ${elements}  IN  @{table_elements}
             ${text}=    Get Text    ${elements}
