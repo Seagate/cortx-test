@@ -22,12 +22,11 @@
 
 import logging
 import time
-from typing import Tuple, List
+from typing import Tuple, List, Any
 from commons.helpers.host import Host
 from commons import commands
 
 LOG = logging.getLogger(__name__)
-EXCEPTION_MSG = "*ERROR* An exception occurred in {}: {}"
 
 
 class Health(Host):
@@ -44,7 +43,7 @@ class Health(Host):
             out_list = line.split()
             ports.append(out_list[3].split(':')[-1])
         if not ports:
-            LOG.error("Does Not Found Running Service '{}'".format(service))
+            LOG.error("Does Not Found Running Service %s", service)
             return None
         return ports
 
@@ -59,7 +58,7 @@ class Health(Host):
         for word in output:
             ports.append(word.split())
         if not ports:
-            LOG.error("Does Not Found Running Service '{}'".format(service))
+            LOG.error("Does Not Found Running Service %s", service)
             return None
         return ports
 
@@ -75,7 +74,7 @@ class Health(Host):
 
         cmd = "python3 -c 'import psutil; print(psutil.disk_usage(\"{a}\")[{b}])'" \
             .format(a=str(dir_path), b=int(field_val))
-        LOG.debug(f"Running python command {cmd}")
+        LOG.debug("Running python command %s", cmd)
         res = self.execute_cmd(cmd)
         LOG.debug(res)
         res = res.decode("utf-8")
@@ -87,7 +86,7 @@ class Health(Host):
 
         :return: system cpu usage
         """
-        LOG.debug("Fetching system cpu usage from node {}".format(self.hostname))
+        LOG.debug("Fetching system cpu usage from node %s", self.hostname)
         LOG.debug(commands.CPU_USAGE_CMD)
         res = self.execute_cmd(commands.CPU_USAGE_CMD)
         LOG.debug(res)
@@ -101,7 +100,8 @@ class Health(Host):
 
         :return: system memory usage in percent
         """
-        LOG.debug("Fetching system memory usage from node {}".format(self.hostname))
+        LOG.debug(
+            "Fetching system memory usage from node %s", self.hostname)
         LOG.debug(commands.MEM_USAGE_CMD)
         res = self.execute_cmd(commands.MEM_USAGE_CMD)
         LOG.debug(res)
@@ -109,7 +109,7 @@ class Health(Host):
         mem_usage = float(res.replace('\n', ''))
         return mem_usage
 
-    def get_pcs_service_systemd(self, service: str) -> str or None:
+    def get_pcs_service_systemd(self, service: str) -> Any:
         """
         Function to return pcs service systemd service name.
         This function will be usefull when service is not under systemctl
@@ -118,7 +118,7 @@ class Health(Host):
         :return: name of the service mentioned in systemd
         """
         cmd = commands.GREP_PCS_SERVICE_CMD.format(service)
-        LOG.debug(f"Executing cmd: {cmd}")
+        LOG.debug("Executing cmd:%s", cmd)
         resp = self.execute_cmd(cmd, read_lines=False)
         LOG.debug(resp)
         if not resp:
@@ -131,6 +131,7 @@ class Health(Host):
                 res = element.split("(systemd:")
                 LOG.debug(res)
                 return res[1]
+        return None
 
     def pcs_cluster_start_stop(self, node_name: str, stop_flag: bool) -> \
             str or None:
@@ -146,7 +147,7 @@ class Health(Host):
         else:
             cmd = commands.PCS_CLUSTER_START.format(node_name)
 
-        LOG.debug(f"Executing cmd: {cmd}")
+        LOG.debug("Executing cmd: %s", cmd)
         resp = self.execute_cmd(cmd, read_lines=False)
         LOG.debug(resp)
 
@@ -160,7 +161,7 @@ class Health(Host):
         :return: pcs staus str response)
         """
         cmd = commands.GREP_PCS_SERVICE_CMD.format(service)
-        LOG.debug(f"Executing cmd: {cmd}")
+        LOG.debug("Executing cmd: %s", cmd)
         resp = self.execute_cmd(cmd, read_lines=False)
         LOG.debug(resp)
 
@@ -179,7 +180,7 @@ class Health(Host):
         else:
             options = " "
             cmd = commands.PCS_RESOURCES_CLEANUP.format(options)
-        LOG.debug(f"Executing cmd: {cmd}")
+        LOG.debug("Executing cmd: %s", cmd)
         resp = self.execute_cmd(cmd, read_lines=False)
         LOG.debug(resp)
 
@@ -209,7 +210,7 @@ class Health(Host):
         :return: boolean
         """
         motr_status_cmd = commands.MOTR_STATUS_CMD
-        LOG.debug(f"command : {motr_status_cmd}")
+        LOG.debug("command %s:", motr_status_cmd)
         cmd_output = self.execute_cmd(motr_status_cmd, read_lines=True)
         if not cmd_output[0] or "command not found" in str(cmd_output[1]):
             LOG.debug("Machine is not configured..!")
@@ -230,11 +231,11 @@ class Health(Host):
         :return: boolean
         """
         mero_status_cmd = commands.MOTR_STATUS_CMD
-        LOG.debug(f"command : {mero_status_cmd}")
+        LOG.debug("command :%s", mero_status_cmd)
         cmd_output = self.execute_cmd(
             mero_status_cmd, timeout=timeout, read_lines=True)
         if not cmd_output[0]:
-            LOG.error(f"Command {mero_status_cmd} failed..!")
+            LOG.error("Command %s failed..!", mero_status_cmd)
             return False, cmd_output[1]
         # removing \n character from each line of output
         cmd_output = [line.split("\n")[0] for line in cmd_output[1]]
@@ -252,6 +253,7 @@ class Health(Host):
             else:
                 LOG.debug("All other services are online")
                 return True, "Server is Online"
+        return True, "Server is Online"
 
     def restart_pcs_resource(self, resource: str, wait_time: int = 30) \
             -> Tuple[bool, str]:
@@ -263,7 +265,7 @@ class Health(Host):
         :return: tuple with boolean and response/error
         :rtype: tuple
         """
-        LOG.info("Restarting resource : {}".format(resource))
+        LOG.info("Restarting resource : %s", resource)
         cmd = commands.PCS_RESOURCE_RESTART_CMD.format(resource)
 
         resp = self.execute_cmd(cmd, read_lines=True)

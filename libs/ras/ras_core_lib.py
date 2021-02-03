@@ -326,9 +326,16 @@ class RASCoreLib:
 
             LOGGER.info(
                 "Putting value %s of %s from storage_enclosure.sls", val, field)
-            self.kv_put(field, val, cmn_cons.KV_STORE_PATH)
+            if field == "secret":
+                self.kv_put(cmn_cons.SECRET_KEY, val, cmn_cons.KV_STORE_PATH)
+            else:
+                self.kv_put(field, val, cmn_cons.KV_STORE_PATH)
             LOGGER.info("Validating the value")
-            response = self.kv_get(field, cmn_cons.KV_STORE_PATH)
+            if field == "secret":
+                response = self.kv_get(cmn_cons.SECRET_KEY,
+                                       cmn_cons.KV_STORE_PATH)
+            else:
+                response = self.kv_get(field, cmn_cons.KV_STORE_PATH)
             response = response[1].decode("utf-8")
             response = " ".join(response.split())
             if val == response:
