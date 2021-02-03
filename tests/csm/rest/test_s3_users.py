@@ -51,7 +51,7 @@ class TestS3user():
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-10744")
     def test_276(self):
-        """Initiating the test case for the verifying success rest alert 
+        """Initiating the test case for the verifying success rest alert
         response.
 
         """
@@ -123,7 +123,7 @@ class TestS3user():
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-10750")
     def test_294(self):
-        """Initiating the test case for unauthorized user try to create 
+        """Initiating the test case for unauthorized user try to create
         s3account user.
 
         """

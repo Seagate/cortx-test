@@ -43,13 +43,13 @@ class RestClient:
         # Building final endpoint request url
         set_secure = const.SSL_CERTIFIED if secure_connection else const.NON_SSL
         request_url = "{}{}{}".format(set_secure, self._base_url, endpoint)
-        self._log.debug("fetching data from : {}".format(request_url))
+        self._log.debug("fetching data from : %s", request_url)
 
         # Request a REST call
         response_object = self._request[request_type](
             request_url, headers=headers,
             data=data, params=params, verify=False, json=json_dict)
-        self._log.debug("result of request is: {}".format(response_object))
+        self._log.debug("result of request is: %s", response_object)
 
         # Can be used in case of larger response
         if save_json:

@@ -2,9 +2,9 @@
 import time
 import commons.errorcodes as err
 from commons.exceptions import CTException
-from libs.csm.rest.csm_rest_test_lib import RestTestLib as Base
-import logging
 from commons.constants import Rest as const
+from libs.csm.rest.csm_rest_test_lib import RestTestLib as Base
+
 
 class RestS3user(Base):
     """RestS3user contains all the Rest Api calls for s3 account operations"""
@@ -27,29 +27,31 @@ class RestS3user(Base):
             # Building request url
             self._log.debug("Create s3 accounts ...")
             endpoint = self.config["s3accounts_endpoint"]
-            self._log.debug("Endpoint for s3 accounts is {}". format(endpoint))
-
+            self._log.debug("Endpoint for s3 accounts is %s", endpoint)
             # Collecting required payload to be added for request
             user_data = self.create_payload_for_new_s3_account(user_type)
-            self._log.debug("Payload for s3 accounts is {}".format(user_data))
+            self._log.debug("Payload for s3 accounts is %s", user_data)
             self.recently_created_s3_account_user = user_data
             if save_new_user:
                 self._log.debug(
-                    "Adding s3 accounts is to config with name : new_s3_account_user")
+                    "Adding s3 accounts is to config with name : "
+                    "new_s3_account_user")
                 self.update_csm_config_for_user(
-                    "new_s3_account_user", user_data["account_name"], user_data["password"])
+                    "new_s3_account_user",
+                    user_data["account_name"],
+                    user_data["password"])
 
             # Fetching api response
             return self.restapi.rest_call(
                 "post", endpoint=endpoint, data=user_data, headers=self.headers)
 
         except BaseException as error:
-            self._log.error("{0} {1}: {2}".format(
-                self.exception_error,
-                RestS3user.create_s3_account.__name__,
-                error))
+            self._log.error("%s %s: %s",
+                            self.exception_error,
+                            RestS3user.create_s3_account.__name__,
+                            error)
             raise CTException(
-                err.CSM_REST_AUTHENTICATION_ERROR, error.args[0])
+                err.CSM_REST_AUTHENTICATION_ERROR, error.args[0]) from error
 
     @Base.authenticate_and_login
     def list_all_created_s3account(self):
@@ -61,7 +63,7 @@ class RestS3user(Base):
             # Building request url
             self._log.debug("Try to fetch all s3 accounts ...")
             endpoint = self.config["s3accounts_endpoint"]
-            self._log.debug("Endpoint for s3 accounts is {}".format(endpoint))
+            self._log.debug("Endpoint for s3 accounts is %s", endpoint)
 
             # Fetching api response
             response = self.restapi.rest_call(
@@ -69,12 +71,12 @@ class RestS3user(Base):
 
             return response
         except BaseException as error:
-            self._log.error("{0} {1}: {2}".format(
-                self.exception_error,
-                RestS3user.list_all_created_s3account.__name__,
-                error))
+            self._log.error("%s %s: %s",
+                            self.exception_error,
+                            RestS3user.list_all_created_s3account.__name__,
+                            error)
             raise CTException(
-                err.CSM_REST_AUTHENTICATION_ERROR, error.args[0])
+                err.CSM_REST_AUTHENTICATION_ERROR, error.args[0]) from error
 
     @Base.authenticate_and_login
     def edit_s3_account_user(self, username, payload="valid"):
@@ -86,28 +88,29 @@ class RestS3user(Base):
         """
         try:
             # Building request url
-            self._log.debug("Try to edit s3accounts user : {}".format(username))
+            self._log.debug("Try to edit s3accounts user : %s", username)
             endpoint = "{}/{}".format(
                 self.config["s3accounts_endpoint"], username)
-            self._log.debug("Endpoint for s3 accounts is {}".format(endpoint))
+            self._log.debug("Endpoint for s3 accounts is %s", endpoint)
 
             # Collecting payload
             patch_payload = self.edit_user_payload(payload_type=payload)
             self._log.debug(
-                "Payload for edit s3 accounts is {}".format(patch_payload))
+                "Payload for edit s3 accounts is %s", patch_payload)
 
             # Fetching api response
             response = self.restapi.rest_call(
-                "patch", data=patch_payload, endpoint=endpoint, headers=self.headers)
+                "patch", data=patch_payload, endpoint=endpoint,
+                headers=self.headers)
 
             return response
         except BaseException as error:
-            self._log.error("{0} {1}: {2}".format(
-                self.exception_error,
-                RestS3user.edit_s3_account_user.__name__,
-                error))
+            self._log.error("%s %s: %s",
+                            self.exception_error,
+                            RestS3user.edit_s3_account_user.__name__,
+                            error)
             raise CTException(
-                err.CSM_REST_AUTHENTICATION_ERROR, error.args[0])
+                err.CSM_REST_AUTHENTICATION_ERROR, error.args[0]) from error
 
     @Base.authenticate_and_login
     def delete_s3_account_user(self, username):
@@ -119,10 +122,10 @@ class RestS3user(Base):
         try:
             # Building request url
             self._log.debug(
-                "Try to delete s3accounts user : {}".format(username))
+                "Try to delete s3accounts user : %s", username)
             endpoint = "{}/{}".format(
                 self.config["s3accounts_endpoint"], username)
-            self._log.debug("Endpoint for s3 accounts is {}".format(endpoint))
+            self._log.debug("Endpoint for s3 accounts is %s", endpoint)
 
             # Fetching api response
             response = self.restapi.rest_call(
@@ -130,12 +133,12 @@ class RestS3user(Base):
 
             return response
         except BaseException as error:
-            self._log.error("{0} {1}: {2}".format(
-                self.exception_error,
-                RestS3user.delete_s3_account_user.__name__,
-                error))
+            self._log.error("%s %s: %s",
+                            self.exception_error,
+                            RestS3user.delete_s3_account_user.__name__,
+                            error)
             raise CTException(
-                err.CSM_REST_AUTHENTICATION_ERROR, error.args[0])
+                err.CSM_REST_AUTHENTICATION_ERROR, error.args[0]) from error
 
     def verify_list_s3account_details(self, expect_no_user=False):
         """
@@ -149,7 +152,7 @@ class RestS3user(Base):
 
             # Checking status code
             self._log.debug("Response to be verified : ",
-                           self.recently_created_s3_account_user)
+                            self.recently_created_s3_account_user)
             if (not response) or response.status_code != const.SUCCESS_STATUS:
                 self._log.debug("Response is not 200")
                 return False
@@ -162,17 +165,19 @@ class RestS3user(Base):
 
             # Checking for not "no user" scenario
             if len(response["s3_accounts"]) == 0 or expect_no_user:
-                self._log.warning("No accounts present till now is : {}".format(
-                    len(response["iam_users"])))
+                self._log.warning("No accounts present till now is : %s",
+                                  len(response["iam_users"]))
                 return len(response["s3_accounts"]) == 0 and expect_no_user
 
-            return all(const.ACC_NAME in key and const.ACC_EMAIL in key for key in response["s3_accounts"])
+            return all(const.ACC_NAME in key and const.ACC_EMAIL in key
+                       for key in response["s3_accounts"])
         except Exception as error:
-            self._log.error("{0} {1}: {2}".format(
-                self.exception_error,
-                RestS3user.verify_list_s3account_details.__name__,
-                error))
-            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
+            self._log.error("%s %s: %s",
+                            self.exception_error,
+                            RestS3user.verify_list_s3account_details.__name__,
+                            error)
+            raise CTException(
+                err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
 
     def create_and_verify_s3account(self, user, expect_status_code):
         """
@@ -192,12 +197,12 @@ class RestS3user(Base):
 
             # Handling specific scenarios
             if user != "valid":
-                self._log.debug("verify status code for user {}".format(user))
+                self._log.debug("verify status code for user %s", user)
                 return response.status_code == expect_status_code
 
             # Checking status code
             self._log.debug("Response to be verified : ",
-                           self.recently_created_s3_account_user)
+                            self.recently_created_s3_account_user)
             if (not response) or response.status_code != expect_status_code:
                 self._log.debug("Response is not 200")
                 return False
@@ -226,13 +231,15 @@ class RestS3user(Base):
             expected_result = {const.ACC_EMAIL: response[const.ACC_EMAIL],
                                const.ACC_NAME: response[const.ACC_NAME]}
 
-            return any(self.verify_json_response(actual_result, expected_result) for actual_result in list_acc)
+            return any(self.verify_json_response(actual_result, expected_result)
+                       for actual_result in list_acc)
         except Exception as error:
-            self._log.error("{0} {1}: {2}".format(
-                self.exception_error,
-                RestS3user.create_and_verify_s3account.__name__,
-                error))
-            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
+            self._log.error("%s %s: %s",
+                            self.exception_error,
+                            RestS3user.create_and_verify_s3account.__name__,
+                            error)
+            raise CTException(
+                err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
 
     def create_payload_for_new_s3_account(self, user_type):
         """
@@ -253,9 +260,8 @@ class RestS3user(Base):
                         "password": data["password"]}
 
             if user_type == "valid":
-                user_name, email_id = "test{}".format(
-                    int(time.time())), "test{}@seagate.com".format(int(time.time()))
-
+                user_name = "test%s" % int(time.time())
+                email_id = "test%s@seagate.com" % int(time.time())
             if user_type == "duplicate":
                 # creating new user to make it as duplicate
                 self.create_s3_account()
@@ -265,10 +271,14 @@ class RestS3user(Base):
                 return {"password": self.config["test_s3account_password"]}
 
             if user_type == "invalid":
-                return {"user_name": "xys", "mail": "abc@email.com", "pass_word": "password"}
+                return {"user_name": "xys",
+                        "mail": "abc@email.com",
+                        "pass_word": "password"}
 
             if user_type == "invalid_for_ui":
-                return {"account_name": "*ask%^*&", "account_email": "seagate*mail-com", "password": "password"}
+                return {"account_name": "*ask%^*&",
+                        "account_email": "seagate*mail-com",
+                        "password": "password"}
 
             user_data = {"account_name": user_name,
                          "account_email": email_id,
@@ -276,11 +286,12 @@ class RestS3user(Base):
 
             return user_data
         except Exception as error:
-            self._log.error("{0} {1}: {2}".format(
-                self.exception_error,
-                RestS3user.create_payload_for_new_s3_account.__name__,
-                error))
-            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
+            self._log.error("%s %s: %s",
+                            self.exception_error,
+                            RestS3user.create_payload_for_new_s3_account.__name__,
+                            error)
+            raise CTException(
+                err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
 
     def edit_user_payload(self, payload_type):
         """
@@ -291,10 +302,14 @@ class RestS3user(Base):
         try:
             # Creating payload for edit user type
             payload_values = {
-                "valid": {"password": self.config["test_s3account_password"], "reset_access_key": "true"},
-                "unchanged_access": {"password": self.config["test_s3account_password"], "reset_access_key": "false"},
+                "valid": {"password": self.config["test_s3account_password"],
+                          "reset_access_key": "true"},
+                "unchanged_access": {
+                    "password": self.config["test_s3account_password"],
+                    "reset_access_key": "false"},
                 "only_reset_access_key": {"reset_access_key": "true"},
-                "only_password": {"password": self.config["test_s3account_password"]},
+                "only_password": {
+                    "password": self.config["test_s3account_password"]},
                 "no_payload": {}
             }
 
@@ -305,11 +320,12 @@ class RestS3user(Base):
 
             return payload_values[payload_type]
         except Exception as error:
-            self._log.error("{0} {1}: {2}".format(
-                self.exception_error,
-                RestS3user.edit_user_payload.__name__,
-                error))
-            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
+            self._log.error("%s %s: %s",
+                            self.exception_error,
+                            RestS3user.edit_user_payload.__name__,
+                            error)
+            raise CTException(
+                err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
 
     def edit_and_verify_s3_account_user(self, user_payload):
         """
@@ -324,9 +340,11 @@ class RestS3user(Base):
 
             # Editing new s3 account user
             account_name = self.recently_created_s3_account_user["account_name"]
-            self._log.debug("editing user {}".format(user_payload))
+            self._log.debug("editing user %s", user_payload)
             response = self.edit_s3_account_user(
-                username=account_name, payload=user_payload, login_as="new_s3_account_user")
+                username=account_name,
+                payload=user_payload,
+                login_as="new_s3_account_user")
 
             # Handling Unchanged access scenario
             if user_payload in ("unchanged_access", "only_password"):
@@ -336,7 +354,8 @@ class RestS3user(Base):
                     self._log.debug("Response is not 200")
                     return False
                 response = response.json()
-                # For edit user without changing access secret key and access key should not be visible
+                # For edit user without changing access secret key and access
+                # key should not be visible
                 return (response[const.ACC_NAME] == account_name) and (
                     const.ACCESS_KEY not in response) and (
                     const.SECRET_KEY not in response)
@@ -344,12 +363,12 @@ class RestS3user(Base):
             # Handling specific scenarios
             if user_payload != "valid":
                 self._log.debug(
-                    "verify status code for user {}".format(user_payload))
+                    "verify status code for user %s", user_payload)
                 return (not response) and response.status_code == const.BAD_REQUEST
 
             # Checking status code
             self._log.debug("Response to be verified : ",
-                           self.recently_created_s3_account_user)
+                            self.recently_created_s3_account_user)
             if (not response) or response.status_code != const.SUCCESS_STATUS:
                 self._log.debug("Response is not 200")
                 return False
@@ -368,11 +387,12 @@ class RestS3user(Base):
 
             return response[const.ACC_NAME] == account_name
         except Exception as error:
-            self._log.error("{0} {1}: {2}".format(
-                self.exception_error,
-                RestS3user.edit_and_verify_s3_account_user.__name__,
-                error))
-            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
+            self._log.error("%s %s: %s",
+                            self.exception_error,
+                            RestS3user.edit_and_verify_s3_account_user.__name__,
+                            error)
+            raise CTException(
+                err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
 
     def delete_and_verify_s3_account_user(self):
         """
@@ -387,23 +407,25 @@ class RestS3user(Base):
             # Deleting account user
             account_name = self.recently_created_s3_account_user["account_name"]
             self._log.debug(
-                "deleting new s3 account user name : {}".format(account_name))
+                "deleting new s3 account user name : %s", account_name)
             response = self.delete_s3_account_user(
                 username=account_name, login_as="new_s3_account_user")
 
             # Checking status code
-            self._log.debug(f"Response to be verified for user: {account_name}")
+            self._log.debug(
+                f"Response to be verified for user: {account_name}")
             if (not response) or response.status_code != const.SUCCESS_STATUS:
                 self._log.debug("Response is not 200")
                 return False
 
             return response.json()["message"] == const.DELETE_SUCCESS_MSG
         except Exception as error:
-            self._log.error("{0} {1}: {2}".format(
-                self.exception_error,
-                RestS3user.delete_and_verify_s3_account_user.__name__,
-                error))
-            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
+            self._log.error("%s %s: %s",
+                            self.exception_error,
+                            RestS3user.delete_and_verify_s3_account_user.__name__,
+                            error)
+            raise CTException(
+                err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
 
     @Base.authenticate_and_login
     def edit_s3_account_user_invalid_password(self, username, payload):
@@ -414,17 +436,17 @@ class RestS3user(Base):
         :param username: name of the s3 account that need to be edited
         :type username: str
         :return: response
-        :rtype: json 
+        :rtype: json
         """
         try:
             # Building request url
-            self._log.debug("Try to edit s3accounts user : {}".format(username))
+            self._log.debug("Try to edit s3accounts user : %s", username)
             endpoint = "{}/{}".format(
                 self.config["s3accounts_endpoint"], username)
-            self._log.debug("Endpoint for s3 accounts is {}".format(endpoint))
+            self._log.debug("Endpoint for s3 accounts is %s", endpoint)
 
             self._log.debug(
-                "Payload for edit s3 accounts is {}".format(payload))
+                "Payload for edit s3 accounts is %s", payload)
 
             # Fetching api response
             self._log.debug("Fetching api response...")
@@ -433,9 +455,9 @@ class RestS3user(Base):
 
             return response
         except BaseException as error:
-            self._log.error("{0} {1}: {2}".format(
-                self.exception_error,
-                RestS3user.edit_s3_account_user_invalid_password.__name__,
-                error))
+            self._log.error("%s %s: %s",
+                            self.exception_error,
+                            RestS3user.edit_s3_account_user_invalid_password.__name__,
+                            error)
             raise CTException(
-                err.CSM_REST_AUTHENTICATION_ERROR, error.args[0])
+                err.CSM_REST_AUTHENTICATION_ERROR, error.args[0]) from error

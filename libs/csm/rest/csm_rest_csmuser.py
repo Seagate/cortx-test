@@ -45,11 +45,12 @@ class RestCsmUser(Base):
 
             if user_type == "valid":
                 if self.random_user:
-                    user_name, user_role = "test{}{}".format(
-                        int(self.random_num), int(time.time())), [user_defined_role]
+                    user_name = "test{}{}".format(
+                        int(self.random_num), int(time.time()))
+                    user_role = [user_defined_role]
                 else:
-                    user_name, user_role = "test{}".format(int(time.time())), [
-                        user_defined_role]
+                    user_name,  = "test{}".format(int(time.time()))
+                    user_role = [user_defined_role]
 
             if user_type == "duplicate":
                 # creating new user to make it as duplicate
@@ -75,14 +76,16 @@ class RestCsmUser(Base):
                          }
             return user_data
         except Exception as error:
-            self._log.error("{0} {1}: {2}".format(
+            self._log.error("%s %s: %s",
                 self.exception_error,
                 RestCsmUser.create_payload_for_new_csm_user.__name__,
-                error))
-            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
+                error)
+            raise CTException(
+        err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
 
     @Base.authenticate_and_login
-    def create_csm_user(self, user_type="valid", user_role="manage", save_new_user=False):
+    def create_csm_user(self, user_type="valid", user_role="manage",
+                        save_new_user=False):
         """
         This function will create new CSM user
         :param user_type: type of user required
@@ -95,7 +98,7 @@ class RestCsmUser(Base):
             self._log.debug("Creating CSM user")
             endpoint = self.config["csmuser_endpoint"]
             self._log.debug(
-                "Endpoint for CSM user creation is  {}".format(endpoint))
+                "Endpoint for CSM user creation is  %s", endpoint)
 
             # Creating required payload to be added for request
             data = self.create_payload_for_new_csm_user(user_type, user_role)
@@ -106,10 +109,10 @@ class RestCsmUser(Base):
                 user_data = const.MISSING_USER_DATA
                 user_data = user_data.replace("testusername", data["username"]).replace(
                     "user_role", data["roles"][0])
-            self._log.debug("Payload for CSM user is {}".format(user_data))
+            self._log.debug("Payload for CSM user is %s", user_data)
             self.recently_created_csm_user = json.loads(user_data)
-            self._log.debug("Recently created CSM user is {}".format(
-                self.recently_created_csm_user))
+            self._log.debug("Recently created CSM user is %s",
+                self.recently_created_csm_user)
             if save_new_user:
                 self._log.debug(
                     "Adding new CSM user in csm config : new_csm_user")
@@ -117,16 +120,18 @@ class RestCsmUser(Base):
                     "new_csm_user", user_data["username"], user_data["password"])
             # Fetching api response
             self.headers.update(const.CONTENT_TYPE)
-            return self.restapi.rest_call("post", endpoint=endpoint, data=user_data, headers=self.headers)
+            return self.restapi.rest_call("post", endpoint=endpoint,
+                                          data=user_data, headers=self.headers)
         except BaseException as error:
-            self._log.error("{0} {1}: {2}".format(
+            self._log.error("%s %s: %s",
                 self.exception_error,
                 RestCsmUser.create_csm_user.__name__,
-                error))
+                error)
             raise CTException(
-                err.CSM_REST_AUTHENTICATION_ERROR, error.args[0])
+                err.CSM_REST_AUTHENTICATION_ERROR, error.args[0]) from error
 
-    def create_and_verify_csm_user_creation(self, user_type, user_role, expect_status_code):
+    def create_and_verify_csm_user_creation(self, user_type, user_role,
+                                            expect_status_code):
         """
         This function will create and verify new CSM user.
         :param user_type: type of user required
@@ -144,7 +149,7 @@ class RestCsmUser(Base):
             response = self.create_csm_user(
                 user_type=user_type, user_role=user_role)
             self._log.debug(
-                "response of the create csm user is  {}".format(response))
+                "response of the create csm user is  %s", response)
 
             # Handling specific scenarios
             if not response.status_code:
@@ -153,17 +158,18 @@ class RestCsmUser(Base):
 
             if user_type != "valid":
                 self._log.debug(
-                    "verify status code for user {}".format(user_type))
-                self._log.debug("Expected status code {} and Actual status code {}".format(expect_status_code,
-                                                                                          response.status_code))
+                    "verify status code for user %s", user_type)
+                self._log.debug("Expected status code %s and Actual status code %s",
+                                expect_status_code,
+                                response.status_code)
                 return expect_status_code == response.status_code
-
             # Checking status code
-            self._log.debug("Response to be verified :{}".format(
-                self.recently_created_csm_user))
+            self._log.debug("Response to be verified :%s",
+                self.recently_created_csm_user)
             if expect_status_code != response.status_code:
-                self._log.debug("Expected status code {} and Actual status code {}".format(expect_status_code,
-                                                                                          response.status_code))
+                self._log.debug("Expected status code %s and Actual status code %s",
+                                expect_status_code,
+                                response.status_code)
                 self._log.debug("Response is not as expected")
                 return False
 
@@ -175,17 +181,20 @@ class RestCsmUser(Base):
             expected_result = self.recently_created_csm_user.copy()
             expected_result.pop("password")
             expected_result.pop("alert_notification")
-            return any(self.verify_json_response(actual_result, expected_result) for actual_result in list_acc)
+            return any(self.verify_json_response(actual_result,
+                expected_result) for actual_result in list_acc)
         except Exception as error:
-            self._log.error("{0} {1}: {2}".format(
+            self._log.error("%s %s: %s",
                 self.exception_error,
                 RestCsmUser.create_and_verify_csm_user_creation.__name__,
-                error))
-            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
+                error)
+            raise CTException(
+        err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
 
     @Base.authenticate_and_login
-    def list_csm_users(self, expect_status_code, offset=None, limit=None, sort_by=None, sort_dir=None,
-                       return_actual_response=False, verify_negative_scenario=False):
+    def list_csm_users(self, expect_status_code, offset=None, limit=None,
+        sort_by=None, sort_dir=None, return_actual_response=False,
+        verify_negative_scenario=False):
         """
         This function will list all existing csm users
         :param expect_status_code: expected status code
@@ -206,7 +215,9 @@ class RestCsmUser(Base):
             endpoint = self.config["csmuser_endpoint"]
 
             # Adding parameters(if any) to endpoint
-            parameters = {"offset": [offset, "offset="], "limit": [limit, "limit="], "sort_by": [sort_by, "sort_by="],
+            parameters = {"offset": [offset, "offset="],
+                          "limit": [limit, "limit="],
+                          "sort_by": [sort_by, "sort_by="],
                           "sort_dir": [sort_dir, "sort_dir="]}
             params_selected = [
                 value for key, value in parameters.items() if value[0] is not None]
@@ -220,22 +231,22 @@ class RestCsmUser(Base):
                         endpoint += '&' + \
                             params_selected[i][1] + str(params_selected[i][0])
 
-            self._log.debug("Endpoint to list csm users is {}".format(endpoint))
+            self._log.debug("Endpoint to list csm users is %s", endpoint)
 
             # Fetching api response
             response = self.restapi.rest_call(
                 request_type="get", endpoint=endpoint, headers=self.headers)
             self._log.debug(
-                "response returned is:\n {}".format(response.json()))
+                "response returned is:\n %s", response.json())
 
             # Checking status code
             if expect_status_code == response.status_code:
-                self._log.debug("Status code successfully verified\n Value:{}".format(
-                    response.status_code))
+                self._log.debug("Status code successfully verified\n Value:%s",
+                    response.status_code)
             else:
                 self._log.debug("Status code is not as expected")
-                self._log.debug("Expected Value:{}   Actual Value:{}".format(
-                    expect_status_code, response.status_code))
+                self._log.debug("Expected Value:%s   Actual Value:%s",
+                    expect_status_code, response.status_code)
                 return False
 
             # Verifying status code in case of negative scenario
@@ -250,14 +261,15 @@ class RestCsmUser(Base):
 
             return self.verify_list_csm_users(response.json(), offset, limit, sort_by, sort_dir)
         except BaseException as error:
-            self._log.error("{0} {1}: {2}".format(
+            self._log.error("%s %s: %s",
                 self.exception_error,
                 RestCsmUser.list_csm_users.__name__,
-                error))
+                error)
             raise CTException(
-                err.CSM_REST_AUTHENTICATION_ERROR, error.args[0])
+                err.CSM_REST_AUTHENTICATION_ERROR, error.args[0]) from error
 
-    def verify_list_csm_users(self, actual_response, offset=None, limit=None, sort_by=None, sort_dir=None):
+    def verify_list_csm_users(self, actual_response, offset=None, limit=None,
+                              sort_by=None, sort_dir=None):
         """
         This function will verify the response details for list csm users
         :param actual_response: response to be verified
@@ -274,8 +286,9 @@ class RestCsmUser(Base):
             self._log.debug(
                 "fetching complete csm users list for verification purpose...")
             if sort_by is not None:
-                response = self.list_csm_users(
-                    expect_status_code=200, return_actual_response=True, sort_by=sort_by)
+                response = self.list_csm_users(expect_status_code=200,
+                                                return_actual_response=True,
+                                                sort_by=sort_by)
             elif sort_dir is not None:
                 response = self.list_csm_users(
                     expect_status_code=200, return_actual_response=True, sort_dir=sort_dir)
@@ -293,29 +306,30 @@ class RestCsmUser(Base):
             if offset:
                 self._log.debug("verifying response for offset parameter...")
                 expected_response["users"] = expected_response["users"][offset:]
-                return self.verify_json_response(actual_result=actual_response, expect_result=expected_response,
-                                                 match_exact=True)
+                return self.verify_json_response(actual_result=actual_response,
+                    expect_result=expected_response, match_exact=True)
             if limit:
                 self._log.debug("verifying response for limit parameter...")
                 expected_response["users"] = expected_response["users"][:limit]
-                return self.verify_json_response(actual_result=actual_response, expect_result=expected_response,
-                                                 match_exact=True)
-            return self.verify_json_response(actual_result=actual_response, expect_result=expected_response,
-                                             match_exact=True)
+                return self.verify_json_response(actual_result=actual_response,
+                expect_result=expected_response, match_exact=True)
+            return self.verify_json_response(actual_result=actual_response,
+                expect_result=expected_response, match_exact=True)
         except Exception as error:
-            self._log.error("{0} {1}: {2}".format(
+            self._log.error("%s %s: %s",
                 self.exception_error,
                 RestCsmUser.verify_list_csm_users.__name__,
-                error))
-            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
+                error)
+            raise CTException(
+        err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
 
     def list_actual_num_of_csm_users(self):
         """
-        Function to verify that even if the limit is greater 
-        than the actual users present,only the list with actual number of users present will be returned 
-        :return: boolean verification result <True/False>     
+        Function to verify that even if the limit is greater
+        than the actual users present,only the list with actual number of users
+        present will be returned
+        :return: boolean verification result <True/False>
         """
-
         try:
             # Get the count of the number of csm users present
             self._log.debug("Getting the initial list of csm users present")
@@ -337,8 +351,8 @@ class RestCsmUser(Base):
                 response = self.create_csm_user(
                     user_type="valid", user_role="monitor")
                 self._log.debug(
-                    "response of the create csm user is  {}".format(response))
-                self._log.debug("Users created {}".format(num_users))
+                    "response of the create csm user is  %s", response)
+                self._log.debug("Users created %s", num_users)
 
             # List CSM users
             self._log.debug(
@@ -356,25 +370,28 @@ class RestCsmUser(Base):
                 self._log.debug("Response is not 200")
                 return False
 
-            # Verifying if the response contains the actual number of csm users present, even if the limit provided was bigger
+            # Verifying if the response contains the actual number of csm users
+            # present, even if the limit provided was bigger
             expected_response = response.json()
             actual_num_of_users = existing_user_count + const.CSM_NUM_OF_USERS_TO_CREATE
             self._log.debug("Reading the actual number of users expected")
             expected_response["users"] = expected_response["users"][:actual_num_of_users]
             self._log.debug(
-                "Verifying that even if limit is greater than the users present, only the actual number of users list is returned")
-            return self.verify_json_response(actual_result=response.json(), expect_result=expected_response,
-                                             match_exact=True)
+                "Verifying that even if limit is greater than the users present"
+                ", only the actual number of users list is returned")
+            return self.verify_json_response(actual_result=response.json(),
+                expect_result=expected_response, match_exact=True)
         except Exception as error:
-            self._log.error("{0} {1}: {2}".format(
+            self._log.error("%s %s: %s",
                 self.exception_error,
                 RestCsmUser.list_actual_num_of_csm_users.__name__,
-                error))
-            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
+                error)
+            raise CTException(
+        err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
 
     def verify_csm_user_list_valid_params(self):
         """
-        Function to test that when all valid params such as 
+        Function to test that when all valid params such as
         offset, limit, sort and sort_dir, correct user list is returned
         :return: Verification response
         :rtype: bool
@@ -390,7 +407,7 @@ class RestCsmUser(Base):
                 if not response.status_code:
                     self._log.debug("Response is not as expected")
                     return False
-                self._log.debug("Users created {}".format(num_users))
+                self._log.debug("Users created %s", num_users)
 
             # Fetching all csm users
             self._log.debug(
@@ -399,8 +416,8 @@ class RestCsmUser(Base):
                 expect_status_code=const.SUCCESS_STATUS, return_actual_response=True)
             # Checking status code
             if (not response) or response.status_code != const.SUCCESS_STATUS:
-                self._log.debug("Failure in status code, returned code is {} instead of 200".format(
-                    response.status_code))
+                self._log.debug("Failure in status code, returned code is %s "
+                "instead of 200", response.status_code)
                 return False
             self._log.debug("Storing the usernames in a list")
             user_list = [item["username"] for item in response.json()["users"]]
@@ -408,13 +425,18 @@ class RestCsmUser(Base):
 
             # Fetching csm user list with offset, limit,sort and sort_dir specified
             self._log.debug(
-                "Fetching user list with parameters offset,limit,sort_by and sort_dir specified")
-            response = self.list_csm_users(limit=const.CSM_USER_LIST_LIMIT, offset=const.CSM_USER_LIST_OFFSET, sort_by=const.CSM_USER_LIST_SORT_BY,
-                                           sort_dir=const.CSM_USER_LIST_SORT_DIR, expect_status_code=const.SUCCESS_STATUS, return_actual_response=True)
+                "Fetching user list with parameters offset,limit,sort_by and "
+                "sort_dir specified")
+            response = self.list_csm_users(limit=const.CSM_USER_LIST_LIMIT,
+                                        offset=const.CSM_USER_LIST_OFFSET,
+                                        sort_by=const.CSM_USER_LIST_SORT_BY,
+                                        sort_dir=const.CSM_USER_LIST_SORT_DIR,
+                                        expect_status_code=const.SUCCESS_STATUS,
+                                        return_actual_response=True)
             # Checking status code
             if (not response) or response.status_code != const.SUCCESS_STATUS:
-                self._log.debug("Failure in status code,returned code is {} instead of 200".format(
-                    response.status_code))
+                self._log.debug("Failure in status code,returned code is %s "
+                "instead of 200", response.status_code)
                 return False
             self._log.debug("Storing the usernames in a list")
             user_list_after = [item["username"]
@@ -422,8 +444,11 @@ class RestCsmUser(Base):
 
             # Verifying that user list is returned as per the parameters specified
             self._log.debug(
-                "Verifying if the user list returned is as per the offset,limit, sort_by and sort_dir parameters specified")
-            if not user_list_before[const.CSM_USER_LIST_OFFSET:const.CSM_USER_LIST_LIMIT+const.CSM_USER_LIST_OFFSET] == user_list_after:
+                "Verifying if the user list returned is as per the offset,limit"
+                ", sort_by and sort_dir parameters specified")
+            if not user_list_before[
+                const.CSM_USER_LIST_OFFSET:const.CSM_USER_LIST_LIMIT+const.CSM_USER_LIST_OFFSET
+                ] == user_list_after:
                 self._log.debug(
                     "CSM user list is not as per the parameters specified")
                 self._log.debug(user_list_before)
@@ -433,11 +458,12 @@ class RestCsmUser(Base):
                 "User list returned is as per the parameters specified")
             return True
         except Exception as error:
-            self._log.error("{0} {1}: {2}".format(
+            self._log.error("%s %s: %s",
                 self.exception_error,
                 RestCsmUser.verify_csm_user_list_valid_params.__name__,
-                error))
-            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
+                error)
+            raise CTException(
+        err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
 
     @Base.authenticate_and_login
     def verify_list_csm_users_unauthorised_access_failure(self):
@@ -449,34 +475,37 @@ class RestCsmUser(Base):
             self._log.debug(
                 "Checking access to csm api with s3 account authentication")
             endpoint = self.config["csmuser_endpoint"]
-            self._log.debug("Endpoint to list csm users is {}".format(endpoint))
+            self._log.debug("Endpoint to list csm users is %s", endpoint)
             # Fetching api response
             self._log.debug("Fetching the api response...")
             response = self.restapi.rest_call(
                 request_type="get", endpoint=endpoint, headers=self.headers)
-            self._log.debug("Response returned is {}".format(response))
+            self._log.debug("Response returned is %s", response)
             # Checking status code
             self._log.debug("Verifying if the status code returned is 403")
             if response.status_code == const.FORBIDDEN:
-                self._log.debug("Response code returned is {}".format(
-                    response.status_code))
+                self._log.debug("Response code returned is %s",
+                    response.status_code)
                 result = True
             else:
                 self._log.debug("Response is not 403")
                 result = False
             return result
         except Exception as error:
-            self._log.error("{0} {1}: {2}".format(
+            self._log.error("%s %s: %s",
                 self.exception_error,
                 RestCsmUser.verify_list_csm_users_unauthorised_access_failure.__name__,
-                error))
-            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
+                error)
+            raise CTException(
+        err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
 
     @Base.authenticate_and_login
-    def list_csm_users_empty_param(self, expect_status_code, csm_list_user_param, return_actual_response=False):
+    def list_csm_users_empty_param(self, expect_status_code,
+        csm_list_user_param, return_actual_response=False):
         """
-        This function returns response for the empty parameter provided 
-        :param csm_list_user_param: csm list user api parameter name(offset,limit,sort_by or sort_dir)
+        This function returns response for the empty parameter provided
+        :param csm_list_user_param: csm list user api parameter name
+        (offset,limit,sort_by or sort_dir)
         :return: boolean result as per the verification <True/False>
                  returns actual response if return_actual_response=True
         :rtype: bool
@@ -496,23 +525,23 @@ class RestCsmUser(Base):
                 "Forming the endpoint with empty value for the specified parameter")
             #endpoint += '?' + csm_list_user_param + '=None'
             endpoint += "{}{}{}".format("?", csm_list_user_param, "=None")
-            self._log.debug("Endpoint to list csm users is {}".format(endpoint))
+            self._log.debug("Endpoint to list csm users is %s", endpoint)
 
             # Fetching api response
-            self._log.debug("Fetching the api response with empty parameter {}". format(
-                csm_list_user_param))
+            self._log.debug("Fetching the api response with empty parameter %s",
+                csm_list_user_param)
             response = self.restapi.rest_call(
                 request_type="get", endpoint=endpoint, headers=self.headers)
-            self._log.debug("Response returned is {}".format(response))
+            self._log.debug("Response returned is %s", response)
 
             # Checking status code
             if expect_status_code == response.status_code:
-                self._log.debug("Status code successfully verified\n Value:{}".format(
-                    response.status_code))
+                self._log.debug("Status code successfully verified\n Value:%s",
+                    response.status_code)
             else:
                 self._log.debug("Status code is not as expected")
-                self._log.debug("Expected Value:{}   Actual Value:{}".format(
-                    expect_status_code, response.status_code))
+                self._log.debug("Expected Value:%s   Actual Value:%s",
+                    expect_status_code, response.status_code)
                 return False
 
             # Returning actual response object
@@ -522,17 +551,20 @@ class RestCsmUser(Base):
 
             return True
         except Exception as error:
-            self._log.error("{0} {1}: {2}".format(
+            self._log.error("%s %s: %s",
                 self.exception_error,
                 RestCsmUser.list_csm_users_empty_param.__name__,
-                error))
-            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
+                error)
+            raise CTException(
+        err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
 
     @Base.authenticate_and_login
-    def list_csm_single_user(self, request_type, expect_status_code, user, payload=None, data=False, params=False, return_actual_response=False):
+    def list_csm_single_user(self, request_type, expect_status_code, user,
+        payload=None, data=False, params=False, return_actual_response=False):
         """
-        This function returns trues/false verification response or json response for single csm user
-        :param request_type: request type of the request 
+        This function returns trues/false verification response or json
+        response for single csm user
+        :param request_type: request type of the request
         :param expect_status_code:Expected status code for verification
         :param user: csm user info
         :param payload: payload for the request
@@ -551,36 +583,38 @@ class RestCsmUser(Base):
             self._log.debug(
                 "Forming the endpoint for the csm user")
             endpoint += "{}{}".format("/", user)
-            self._log.debug("Endpoint to list csm user is {}".format(endpoint))
+            self._log.debug("Endpoint to list csm user is %s", endpoint)
 
             if params:
                 # Fetching api response with parameters in the request
                 self._log.debug(
-                    "Fetching api response for the csm user {} with parameters in the request".format(user))
+                    "Fetching api response for the csm user %s with parameters"
+                    " in the request", user)
                 response = self.restapi.rest_call(
                     request_type=request_type, endpoint=endpoint, params=payload, headers=headers)
             if data:
                 # Fetching api response with data in the request
                 self._log.debug(
-                    "Fetching api response for the csm user {} with data in the request".format(user))
+                    "Fetching api response for the csm user %s with data in the request", user)
                 headers.update(const.CONTENT_TYPE)
                 response = self.restapi.rest_call(
-                    request_type=request_type, endpoint=endpoint, data=payload, headers=headers)
+                    request_type=request_type, endpoint=endpoint, data=payload,
+                    headers=headers)
             else:
                 # Fetching api response for the request
                 self._log.debug(
-                    "Fetching api response for the csm user {}".format(user))
+                    "Fetching api response for the csm user %s", user)
                 response = self.restapi.rest_call(
                     request_type=request_type, endpoint=endpoint, headers=headers)
 
             # Checking status code
             if expect_status_code == response.status_code:
-                self._log.debug("Status code successfully verified\n Value:{}".format(
-                    response.status_code))
+                self._log.debug("Status code successfully verified\n Value:%s",
+                    response.status_code)
             else:
                 self._log.debug("Status code is not as expected")
-                self._log.debug("Expected Value:{}   Actual Value:{}".format(
-                    expect_status_code, response.status_code))
+                self._log.debug("Expected Value:%s\n   Actual Value:%s",
+                    expect_status_code, response.status_code)
                 return False
 
             # Returning actual response object
@@ -590,13 +624,15 @@ class RestCsmUser(Base):
 
             return True
         except Exception as error:
-            self._log.error("{0} {1}: {2}".format(
+            self._log.error("%s %s: %s",
                 self.exception_error,
                 RestCsmUser.list_csm_single_user.__name__,
-                error))
-            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
+                error)
+            raise CTException(
+        err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
 
-    def verify_modify_csm_user(self, user, payload_login, expect_status_code, return_actual_response=False):
+    def verify_modify_csm_user(self, user, payload_login, expect_status_code,
+        return_actual_response=False):
         """
         This function verifies the modified csm user
         :param user: csm user info
@@ -615,11 +651,13 @@ class RestCsmUser(Base):
         """
         try:
             headers = {}
-            self._log.debug("Logging in as csm user {}".format(user))
-            response = self.restapi.rest_call(request_type="post",
-                                              endpoint=self.config["rest_login_endpoint"],
-                                              data=payload_login, headers=self.config["Login_headers"])
-            self._log.debug(f"response :  {response}")
+            self._log.debug("Logging in as csm user %s", user)
+            response = self.restapi.rest_call(
+                request_type="post",
+                endpoint=self.config["rest_login_endpoint"],
+                data=payload_login,
+                headers=self.config["Login_headers"])
+            self._log.debug("response :  %s",response)
             if response.status_code == const.SUCCESS_STATUS:
                 headers.update(
                     {'Authorization': response.headers['Authorization']})
@@ -629,18 +667,18 @@ class RestCsmUser(Base):
             self._log.debug(
                 "Forming the csm endpoint")
             endpoint += "{}{}".format("/", user)
-            self._log.debug("Endpoint to list csm user is {}".format(endpoint))
+            self._log.debug("Endpoint to list csm user is %s", endpoint)
             response = self.restapi.rest_call(request_type="get",
                                               endpoint=endpoint, headers=headers)
 
             # Checking status code
             if expect_status_code == response.status_code:
-                self._log.debug("Status code successfully verified\n Value:{}".format(
-                    response.status_code))
+                self._log.debug("Status code successfully verified\n Value:%s",
+                    response.status_code)
             else:
                 self._log.debug("Status code is not as expected")
-                self._log.debug("Expected Value:{}   Actual Value:{}".format(
-                    expect_status_code, response.status_code))
+                self._log.debug("Expected Value:%s   Actual Value:%s",
+                    expect_status_code, response.status_code)
                 return False
 
             # Returning actual response object
@@ -650,13 +688,15 @@ class RestCsmUser(Base):
 
             return True
         except Exception as error:
-            self._log.error("{0} {1}: {2}".format(
+            self._log.error("%s %s: %s",
                 self.exception_error,
                 RestCsmUser.verify_modify_csm_user.__name__,
-                error))
-            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
+                error)
+            raise CTException(
+        err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
 
-    def revert_csm_user_password(self, username, current_password, old_password, return_actual_response=False):
+    def revert_csm_user_password(self, username, current_password, old_password,
+    return_actual_response=False):
         """
         This function reverts the csm root password if it is updated
         :param current_password: updated csm root password
@@ -672,18 +712,18 @@ class RestCsmUser(Base):
             headers.update(const.CONTENT_TYPE)
 
             self._log.debug(
-                "Reverting old password {} for csm user {}".format(old_password, username))
+                "Reverting old password %s for csm user %s", old_password, username)
 
             self._log.debug(
-                "Logging in with current password {}".format(current_password))
+                "Logging in with current password %s", current_password)
             payload_login = {"username": username,
                              "password": current_password}
             self._log.debug(
-                "Payload for the login is : {}".format(payload_login))
+                "Payload for the login is : %s", payload_login)
             response = self.restapi.rest_call(request_type="post",
                                               endpoint=self.config["rest_login_endpoint"],
                                               data=json.dumps(payload_login), headers=headers)
-            self._log.debug("response is : {}".format(response))
+            self._log.debug("response is : %s", response)
 
             if response.status_code == const.SUCCESS_STATUS:
                 headers.update({
@@ -694,12 +734,12 @@ class RestCsmUser(Base):
             self._log.debug(
                 "Forming the csm endpoint")
             endpoint = f"{endpoint}/{username}"
-            self._log.debug("Endpoint to list csm user is {}".format(endpoint))
+            self._log.debug("Endpoint to list csm user is %s", endpoint)
 
             payload = {"current_password": current_password,
                        "password": old_password}
             self._log.debug(
-                "Payload for reverting password is: {}".format(payload))
+                "Payload for reverting password is: %s", payload)
 
             self._log.debug("Fetching the response...")
             response = self.restapi.rest_call(
@@ -711,11 +751,12 @@ class RestCsmUser(Base):
                 return response
             return True
         except Exception as error:
-            self._log.error("{0} {1}: {2}".format(
+            self._log.error("%s %s: %s",
                 self.exception_error,
                 RestCsmUser.revert_csm_user_password.__name__,
-                error))
-            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
+                error)
+            raise CTException(
+        err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
 
     def verify_user_exits(self, user: str) -> bool:
         """
@@ -753,17 +794,16 @@ class RestCsmUser(Base):
             endpoint = self.config["csmuser_endpoint"]
             endpoint = f"{endpoint}/{user_id}"
             self._log.debug(
-                "Endpoint for CSM user creation is  {}".format(endpoint))
+                "Endpoint for CSM user creation is  %s", endpoint)
 
             # Fetching api response
             self.headers.update(const.CONTENT_TYPE)
             return self.restapi.rest_call("delete", endpoint=endpoint, headers=self.headers)
 
         except BaseException as error:
-            self._log.error("{0} {1}: {2}".format(
+            self._log.error("%s %s: %s",
                 self.exception_error,
                 RestCsmUser.delete_csm_user.__name__,
-                error))
+                error)
             raise CTException(
-                err.CSM_REST_AUTHENTICATION_ERROR, error.args[0])
-
+                err.CSM_REST_AUTHENTICATION_ERROR, error.args[0]) from error

@@ -176,8 +176,8 @@ class TestSystemStats():
                                                    to_time=to_time,
                                                    interval=interval,
                                                    total_sample=total_sample)
-            self.log.info(f"Expected response : {expected_response}")
-            self.log.info(f"Actual response : {response.status_code}")
+            self.log.info("Expected response : %s",expected_response)
+            self.log.info("Actual response : %s",response.status_code)
             assert_utils.assert_in(response.status_code, expected_response,
                                    "Status code check failed with invalid METRICS.")
 
@@ -190,8 +190,8 @@ class TestSystemStats():
                                                    to_time=to_time,
                                                    interval=interval,
                                                    total_sample=invalid_sample)
-            self.log.info(f"Expected response : {expected_response}")
-            self.log.info(f"Actual response : {response.status_code}")
+            self.log.info("Expected response : %s",expected_response)
+            self.log.info("Actual response : %s",response.status_code)
             assert_utils.assert_in(response.status_code, expected_response,
                                    "Status code check failed with invalid TOTAL samples.")
 
@@ -204,8 +204,8 @@ class TestSystemStats():
                                                    to_time=to_time,
                                                    interval=invalid_interval,
                                                    total_sample=total_sample)
-            self.log.info(f"Expected response : {expected_response}")
-            self.log.info(f"Actual response : {response.status_code}")
+            self.log.info("Expected response : %s",expected_response)
+            self.log.info("Actual response : %s",response.status_code)
             assert_utils.assert_in(response.status_code, expected_response,
                                    "Status code check failed with invalid INTERVALS.")
 
@@ -218,8 +218,8 @@ class TestSystemStats():
                                                    to_time=to_time,
                                                    interval=interval,
                                                    total_sample=total_sample)
-            self.log.info(f"Expected response : {expected_response}")
-            self.log.info(f"Actual response : {response.status_code}")
+            self.log.info("Expected response : %s",expected_response)
+            self.log.info("Actual response : %s",response.status_code)
             assert_utils.assert_in(response.status_code, expected_response,
                                    f"Status code check failed with invalid FROM"
                                    " time :{invalid_time}.")
@@ -230,8 +230,8 @@ class TestSystemStats():
                                                    to_time=invalid_time,
                                                    interval=interval,
                                                    total_sample=total_sample)
-            self.log.info(f"Expected response : {expected_response}")
-            self.log.info(f"Actual response : {response.status_code}")
+            self.log.info("Expected response : %s",expected_response)
+            self.log.info("Actual response : %s",response.status_code)
             assert_utils.assert_in(response.status_code, expected_response,
                                    "Status code check failed with invalid TO time.")
 
@@ -268,8 +268,8 @@ class TestSystemStats():
         response = self.system_stats.get_stats(metrics=[metric],
                                                to_time=to_time,
                                                total_sample=total_sample)
-        self.log.info(f"Expected response : {expected_response}")
-        self.log.info(f"Actual response : {response.status_code}")
+        self.log.info("Expected response : %s",expected_response)
+        self.log.info("Actual response : %s",response.status_code)
         assert_utils.assert_in(response.status_code, expected_response,
                                "Status code check failed with missing FROM param.")
 
@@ -279,49 +279,49 @@ class TestSystemStats():
         response = self.system_stats.get_stats(metrics=[metric],
                                                from_time=from_time,
                                                total_sample=total_sample)
-        self.log.info(f"Expected response : {expected_response}")
-        self.log.info(f"Actual response : {response.status_code}")
+        self.log.info("Expected response : %s", expected_response)
+        self.log.info("Actual response : %s", response.status_code)
         assert_utils.assert_in(response.status_code, expected_response,
                                "Status code check failed with missing TO param.")
 
         expected_response = self.system_stats.success_response
         metric = random.choice(metrics)
         self.log.info(
-            f"##### Testing with missing TOTAL SAMPLE AND INTERVAL param for "
-            "metric {metric} #####")
+            "##### Testing with missing TOTAL SAMPLE AND INTERVAL param for "
+            "metric %s #####", metric)
         response = self.system_stats.get_stats(metrics=[metric],
                                                from_time=from_time,
                                                to_time=to_time)
-        self.log.info(f"Expected response : {expected_response}")
-        self.log.info(f"Actual response : {response.status_code}")
+        self.log.info("Expected response : %s",expected_response)
+        self.log.info("Actual response : %s",response.status_code)
         assert_utils.assert_equals(response.status_code, expected_response,
                                    "Status code check failed with missing TOTAL"
                                    " SAMPLE AND INTERVAL param.")
 
         metric = random.choice(metrics)
         self.log.info(
-            f"##### Testing with missing INTERVAL param and with TOTAL SAMPLE "
-            "for metric {metric} #####")
+            "##### Testing with missing INTERVAL param and with TOTAL SAMPLE "
+            "for metric %s #####", metric)
         response = self.system_stats.get_stats(metrics=[metric],
                                                from_time=from_time,
                                                to_time=to_time,
                                                total_sample=total_sample)
-        self.log.info(f"Expected response : {expected_response}")
-        self.log.info(f"Actual response : {response.status_code}")
+        self.log.info("Expected response : %s",expected_response)
+        self.log.info("Actual response : %s",response.status_code)
         assert_utils.assert_equals(response.status_code, expected_response,
                                    "Status code check failed with missing "
                                    "INTERVAL param and with TOTAL SAMPLE.")
 
         metric = random.choice(metrics)
         self.log.info(
-            f"##### Testing with missing TOTAL SAMPLE param and with INTERVAL"
-            " for metric {metric} #####")
+            "##### Testing with missing TOTAL SAMPLE param and with INTERVAL"
+            " for metric %s #####", metric)
         response = self.system_stats.get_stats(metrics=[metric],
                                                from_time=from_time,
                                                to_time=to_time,
                                                interval=interval)
-        self.log.info(f"Expected response : {expected_response}")
-        self.log.info(f"Actual response : {response.status_code}")
+        self.log.info("Expected response : %s",expected_response)
+        self.log.info("Actual response : %s",response.status_code)
         assert_utils.assert_equals(response.status_code, expected_response,
                                    "Status code check failed with missing TOTAL"
                                    " SAMPLE param and with INTERVA.")
@@ -348,32 +348,32 @@ class TestSystemStats():
                                                from_time=from_time,
                                                to_time=to_time,
                                                total_sample=total_sample)
-        self.log.info(f"Expected response : {expected_response}")
-        self.log.info(f"Actual response : {response.status_code}")
+        self.log.info("Expected response : %s",expected_response)
+        self.log.info("Actual response : %s",response.status_code)
         assert_utils.assert_in(response.status_code, expected_response,
                                "Status code check failed.")
 
         metric = random.choice(metrics)
         self.log.info(
-            f"##### Testing with empty FROM param for metrics {metric} #####")
+            "##### Testing with empty FROM param for metrics %s #####", metric)
         response = self.system_stats.get_stats(metrics=[metric],
                                                from_time=empty_val,
                                                to_time=to_time,
                                                total_sample=total_sample)
-        self.log.info(f"Expected response : {expected_response}")
-        self.log.info(f"Actual response : {response.status_code}")
+        self.log.info("Expected response : %s",expected_response)
+        self.log.info("Actual response : %s",response.status_code)
         assert_utils.assert_in(response.status_code, expected_response,
                                "Status code check failed.")
 
         metric = random.choice(metrics)
         self.log.info(
-            f"##### Testing with empty TO param for metric {metric} #####")
+            "##### Testing with empty TO param for metric %s #####", metric)
         response = self.system_stats.get_stats(metrics=[metric],
                                                from_time=from_time,
                                                to_time=empty_val,
                                                total_sample=total_sample)
-        self.log.info(f"Expected response : {expected_response}")
-        self.log.info(f"Actual response : {response.status_code}")
+        self.log.info("Expected response : %s",expected_response)
+        self.log.info("Actual response : %s",response.status_code)
         assert_utils.assert_in(response.status_code, expected_response,
                                "Status code check failed.")
 
@@ -405,7 +405,7 @@ class TestSystemStats():
                                        expected_response, "Status code check failed.")
             actual_response = response.json()
 
-            self.log.debug("Verifying the metric name:%s", 
+            self.log.debug("Verifying the metric name:%s",
                 actual_response["metrics"][0]["name"])
             assert_utils.assert_equals(
                 actual_response["metrics"][0]["name"], metric, "Metric name mismatch")
@@ -480,7 +480,7 @@ class TestSystemStats():
         metrics = self.system_stats.get_metrics()
         for metric in metrics:
             self.log.info(
-                f"============== Checking for metrics : {metric}==============")
+                "============== Checking for metrics : %s ==============", metric)
             to_time = int(time.time())
             from_time = int(time.time() + epoc_time_diff)
             response = self.system_stats.get_stats(metrics=[metric],

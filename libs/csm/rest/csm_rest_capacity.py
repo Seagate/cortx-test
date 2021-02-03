@@ -1,8 +1,6 @@
 """Test library for capacity related operations.
    Author: Divya Kachhwaha
 """
-import time
-import json
 from commons.constants import Rest as const
 import commons.errorcodes as err
 from commons.exceptions import CTException
@@ -10,13 +8,8 @@ from libs.csm.rest.csm_rest_test_lib import RestTestLib
 
 
 class SystemCapacity(RestTestLib):
-    """RestCsmUser contains all the Rest API calls for system health related operations"""
-
-    def __init__(self):
-        """
-        Initialize the rest api
-        """
-        super(SystemCapacity, self).__init__()
+    """RestCsmUser contains all the Rest API calls for system health related
+    operations"""
 
     @RestTestLib.authenticate_and_login
     def get_capacity_usage(self):
@@ -36,16 +29,16 @@ class SystemCapacity(RestTestLib):
                                               endpoint=endpoint,
                                               headers=self.headers)
             self._log.info(
-                "CSM REST response returned is:\n {}".format(response.json()))
+                "CSM REST response returned is:\n %s", response.json())
             return response
 
         except BaseException as error:
-            self._log.error("{0} {1}: {2}".format(
+            self._log.error("%s %s: %s",
                 self.exception_error,
                 SystemCapacity.get_capacity_usage.__name__,
-                error))
+                error)
             raise CTException(
-                err.CSM_REST_VERIFICATION_FAILED, error.args[0])
+                err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
 
     def parse_capacity_usage(self, expected_response=const.SUCCESS_STATUS):
         """Parse the Json response to extract used, available and total capacity
