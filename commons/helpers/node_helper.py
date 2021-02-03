@@ -36,8 +36,6 @@ from commons.helpers.host import Host
 
 log = logging.getLogger(__name__)
 
-EXCEPTION_MSG = "*ERROR* An exception occurred in {}: {}"
-
 
 class Node(Host):
 
