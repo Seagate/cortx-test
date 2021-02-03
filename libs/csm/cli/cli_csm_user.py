@@ -1,3 +1,5 @@
+""" Library for csm users operations """
+
 import logging
 from typing import Tuple
 from libs.csm.cli.cortxcli_test_lib import CortxCliTestLib
@@ -175,7 +177,7 @@ class CortxCliCsmLib(CortxCliTestLib):
         :param str password: Password to login csmcli
         :return: (Boolean/response)
         """
-        log.info("Login to csmcli using {0}".format(username))
+        LOG.info("Login to csmcli using %s", username)
 
         cmd = "cortxcli --username {0}".format(username)
         output = self.execute_cli_commands(cmd=cmd)[1]
@@ -185,7 +187,7 @@ class CortxCliCsmLib(CortxCliTestLib):
                 output = self.execute_cli_commands(cmd=password)[1]
                 if "CORTX Interactive Shell" in output:
                     LOG.info(
-                        "Logged in CORTX CLI as user {} successfully".format(username))
+                        "Logged in CORTX CLI as user %s successfully", username)
 
                     return True, output
 

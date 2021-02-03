@@ -1,7 +1,9 @@
+"""CSM CLI csm user TestSuite"""
+
 import sys
 import logging
-import pytest
 import time
+import pytest
 from commons.utils import assert_utils
 from libs.csm.cli.cli_csm_user import CortxCliCsmLib
 from libs.csm.cli.cli_alerts_lib import CortxCliAlerts
