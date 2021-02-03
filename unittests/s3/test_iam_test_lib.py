@@ -9,9 +9,9 @@ import shutil
 import logging
 import pytest
 
-from commons.constants import const
 from commons.utils import system_utils
 from commons.exceptions import CTException
+from commons.utils.config_utils import read_yaml
 from commons.helpers.s3_helper import S3Helper
 from libs.s3 import iam_test_lib, s3_test_lib
 
@@ -22,6 +22,8 @@ try:
     S3OBJ = S3Helper()
 except ImportError as err:
     S3OBJ = S3Helper.get_instance()
+
+CMN_CFG = read_yaml("config/common_config.yaml")[1]
 
 
 class TestIamLib:
@@ -38,19 +40,10 @@ class TestIamLib:
         cls.user_name_prefix = "ut-usr"
         cls.bkt_name_prefix = "ut-bkt"
         cls.acc_name_prefix = "ut-accnt"
-        cls.obj_prefix = "ut-obj"
-        cls.success_msg = "Success"
-        cls.dummy_bucket = "dummybucket"
-        cls.file_size = 5
-        cls.obj_name = "ut_obj"
         cls.test_file_path = "/root/test_folder/hello.txt"
-        cls.obj_size = 1
         cls.test_folder_path = "/root/test_folder"
-        cls.cid_key = "id={}"
-        cls.single_part_size = 10
-        cls.total_parts = 10
-        cls.ldap_user = const.LDAP_CREDS["ldap_username"]
-        cls.ldap_pwd = const.LDAP_CREDS["ldap_passwd"]
+        cls.ldap_user = CMN_CFG["ldap_username"]
+        cls.ldap_pwd = CMN_CFG["ldap_passwd"]
 
     @classmethod
     def teardown_class(cls):
