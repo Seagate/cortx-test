@@ -26,7 +26,6 @@ import time
 import logging
 import boto3
 
-from commons.constants import const
 from commons import errorcodes as err
 from commons.exceptions import CTException
 from commons.utils.config_utils import read_yaml
@@ -45,10 +44,10 @@ S3_CONF = read_yaml("config/s3/s3_config.yaml")[1]
 CMN_CONF = read_yaml("config/common_config.yaml")[1]
 LOGGER = logging.getLogger(__name__)
 
-ACC_ACCESS_KEY = ""
-ACC_SECRET_KEY = ""
-LDAP_USERNAME = const.LDAP_CREDS["ldap_username"]
-LDAP_PASSWD = const.LDAP_CREDS["ldap_passwd"]
+ACC_ACCESS_KEY = list()
+ACC_SECRET_KEY = list()
+LDAP_USERNAME = CMN_CONF["ldap_username"]
+LDAP_PASSWD = CMN_CONF["ldap_passwd"]
 
 
 class IamTestLib(IamLib, S3IamCli):
@@ -56,30 +55,31 @@ class IamTestLib(IamLib, S3IamCli):
 
     def __init__(self,
                  access_key: str = s3hobj.get_local_keys()[0],
-                 secret_key: str = s3hobj.get_local_keys()[1],
-                 endpoint_url: str = S3_CONF["iam_url"],
-                 iam_cert_path: str = S3_CONF["iam_cert_path"],
-                 debug: bool = S3_CONF["debug"]) -> None:
+                 secret_key: str = s3hobj.get_local_keys(),
+                 **kwargs) -> None:
         """
-        This method initializes members of IamTestLib and its parent class.
+        Method initializes members of IamTestLib and its parent class.
+
         :param access_key: access key.
         :param secret_key: secret key.
         :param endpoint_url: endpoint url.
         :param iam_cert_path: iam certificate path.
         :param debug: debug mode.
         """
-        super(
-            IamTestLib,
-            self).__init__(
-            access_key,
-            secret_key,
-            endpoint_url,
-            iam_cert_path,
-            debug)
+        endpoint_url = kwargs.get("endpoint_url", S3_CONF["iam_url"])
+        iam_cert_path = kwargs.get("iam_cert_path", S3_CONF["iam_cert_path"])
+        debug = kwargs.get("debug", S3_CONF["debug"])
+        super().__init__(
+            access_key=access_key,
+            secret_key=secret_key,
+            endpoint_url=endpoint_url,
+            iam_cert_path=iam_cert_path,
+            debug=debug)
 
-    def create_user(self, user_name: str) -> tuple:
+    def create_user(self, user_name: str = None) -> tuple:
         """
         Creating new user.
+
         :param user_name: Name of the user.
         :return: (Boolean, response).
         """
@@ -99,7 +99,8 @@ class IamTestLib(IamLib, S3IamCli):
 
     def list_users(self) -> tuple:
         """
-        List the users in current account
+        List the users in current account.
+
         :return: (Boolean, response)
         """
         try:
@@ -114,9 +115,10 @@ class IamTestLib(IamLib, S3IamCli):
 
         return True, response
 
-    def create_access_key(self, user_name: str) -> tuple:
+    def create_access_key(self, user_name: str = None) -> tuple:
         """
         Creating access key for given user.
+
         :param user_name: Name of the user.
         :return: (Boolean, response).
         """
@@ -132,9 +134,13 @@ class IamTestLib(IamLib, S3IamCli):
 
         return True, response
 
-    def delete_access_key(self, user_name: str, access_key_id: str) -> tuple:
+    def delete_access_key(
+            self,
+            user_name: str = None,
+            access_key_id: str = None) -> tuple:
         """
         Deleting access key for given user.
+
         :param user_name: Name of the user.
         :param access_key_id: Access key of the associated user.
         :return: (Boolean, response).
@@ -154,9 +160,10 @@ class IamTestLib(IamLib, S3IamCli):
 
         return True, response
 
-    def delete_user(self, user_name: str) -> tuple:
+    def delete_user(self, user_name: str = None) -> tuple:
         """
         Deleting given user.
+
         :param user_name: Name of the user.
         :return: (Boolean, response).
         """
@@ -172,9 +179,10 @@ class IamTestLib(IamLib, S3IamCli):
 
         return True, response
 
-    def list_access_keys(self, user_name: str) -> tuple:
+    def list_access_keys(self, user_name: str = None) -> tuple:
         """
         Listing access keys for given user.
+
         :param user_name: Name of the user.
         :return: (Boolean, response).
         """
@@ -192,11 +200,12 @@ class IamTestLib(IamLib, S3IamCli):
 
     def update_access_key(
             self,
-            access_key_id: str,
-            status: str,
-            user_name: str) -> tuple:
+            access_key_id: str = None,
+            status: str = None,
+            user_name: str = None) -> tuple:
         """
         Updating access key for given user.
+
         :param user_name: Name of the user.
         :param access_key_id: Access key of the user.
         :param status: Status of the user Value Active/Inactive.
@@ -214,9 +223,11 @@ class IamTestLib(IamLib, S3IamCli):
 
         return True, response
 
-    def update_user(self, new_user_name: str, user_name: str) -> tuple:
+    def update_user(self, new_user_name: str = None,
+                    user_name: str = None) -> tuple:
         """
         Updating given user.
+
         :param new_user_name: New user name.
         :param user_name: Existing user name.
         :return: (Boolean, response).
@@ -238,11 +249,12 @@ class IamTestLib(IamLib, S3IamCli):
 
     def create_user_login_profile(
             self,
-            user_name: str,
-            password: str,
+            user_name: str = None,
+            password: str = None,
             password_reset: bool = False) -> tuple:
         """
         Create user login profile.
+
         :param user_name: Name of the user.
         :param password: password for the user login profile.
         :param password_reset: with or without password reset value: True/False.
@@ -271,11 +283,12 @@ class IamTestLib(IamLib, S3IamCli):
 
     def update_user_login_profile(
             self,
-            user_name: str,
-            password: str,
+            user_name: str = None,
+            password: str = None,
             password_reset: bool = False) -> tuple:
         """
         Update user login profile.
+
         :param user_name: Name of the user.
         :param password: password for the user login profile.
         :param password_reset: Password reset value True/False.
@@ -298,9 +311,10 @@ class IamTestLib(IamLib, S3IamCli):
         return True, response
 
     def update_user_login_profile_no_pwd_reset(
-            self, user_name: str, password: str) -> tuple:
+            self, user_name: str = None, password: str = None) -> tuple:
         """
         Update user login profile.
+
         :param user_name: Name of the user.
         :param password: Password for the user login profile.
         :return: (Boolean, response).
@@ -320,9 +334,10 @@ class IamTestLib(IamLib, S3IamCli):
 
         return True, response
 
-    def get_user_login_profile(self, user_name: str) -> tuple:
+    def get_user_login_profile(self, user_name: str = None) -> tuple:
         """
         Get user login profile if exists.
+
         :param user_name: Name of the user.
         :return: (Boolean, response).
         """
@@ -344,9 +359,13 @@ class IamTestLib(IamLib, S3IamCli):
 
         return True, user_dict
 
-    def s3_user_operation(self, user_name: str, bucket_name: str) -> tuple:
+    def s3_user_operation(
+            self,
+            user_name: str = None,
+            bucket_name: str = None) -> tuple:
         """
         Performing CRUD operations using user access key and secret key.
+
         :param user_name: Name of the user.
         :param bucket_name: Bucket name.
         :return: (Boolean, response).
@@ -362,9 +381,9 @@ class IamTestLib(IamLib, S3IamCli):
             s3obj = S3Lib(
                 acc_key,
                 sec_key,
-                S3_CONF["s3_url"],
-                S3_CONF["s3_cert_path"],
-                S3_CONF["region"])
+                endpoint_url=S3_CONF["s3_url"],
+                s3_cert_path=S3_CONF["s3_cert_path"],
+                region=S3_CONF["region"])
             op_cb = s3obj.create_bucket(bucket_name)
             LOGGER.info(op_cb)
             op_bl = s3obj.bucket_list()
@@ -383,9 +402,10 @@ class IamTestLib(IamLib, S3IamCli):
         return True, response
 
     def create_modify_delete_access_key(
-            self, user_name: str, status: str) -> tuple:
+            self, user_name: str = None, status: str = None) -> tuple:
         """
         Create access key, modify it and delete it.
+
         :param user_name: Name of the user.
         :param status: Status.
         :return: (Boolean, response).
@@ -415,13 +435,13 @@ class IamTestLib(IamLib, S3IamCli):
 
     @ staticmethod
     def s3_ops_using_temp_auth_creds(
-            access_key: str,
-            secret_key: str,
-            session_token: str,
-            bucket_name: str) -> tuple:
+            access_key: str = None,
+            secret_key: str = None,
+            session_token: str = None,
+            bucket_name: str = None) -> tuple:
         """
-        Performing s3 operations such as create and delete bucket using temp auth creds and
-        session token.
+        Performing s3 operations using temp auth creds and session token.
+
         :param access_key: Access key of account/user.
         :param secret_key: Secret key of account/user.
         :param session_token: Session token.
@@ -455,12 +475,13 @@ class IamTestLib(IamLib, S3IamCli):
 
     def create_multiple_accounts_users(
             self,
-            access_key: str,
-            secret_key: str,
-            acc_count: str,
-            user_count: str) -> tuple:
+            access_key: str = None,
+            secret_key: str = None,
+            acc_count: str = None,
+            user_count: str = None) -> tuple:
         """
         Create given number of accounts and given number of users per account.
+
         :param access_key: Access key of account/user.
         :param secret_key: Secret key of account/user.
         :param acc_count: No. of Account to be created.
@@ -497,10 +518,11 @@ class IamTestLib(IamLib, S3IamCli):
 
     def list_accounts_s3iamcli(
             self,
-            ldap_user_id: str,
-            ldap_password: str) -> tuple:
+            ldap_user_id: str = None,
+            ldap_password: str = None) -> tuple:
         """
         Listing accounts using aws s3iamcli.
+
         :param ldap_user_id: ldap server user id.
         :param ldap_password: ldap server user password.
         :return: (Boolean, response)
@@ -518,9 +540,13 @@ class IamTestLib(IamLib, S3IamCli):
 
         return True, format_iam_resp(response)
 
-    def list_users_s3iamcli(self, access_key: str, secret_key: str) -> tuple:
+    def list_users_s3iamcli(
+            self,
+            access_key: str = None,
+            secret_key: str = None) -> tuple:
         """
         Listing users using aws s3iamcli.
+
         :param access_key: User access key.
         :param secret_key: User secret key.
         :return: (Boolean, response).
@@ -544,12 +570,13 @@ class IamTestLib(IamLib, S3IamCli):
 
     def create_account_s3iamcli(
             self,
-            account_name: str,
-            email_id: str,
-            ldap_user_id: str,
-            ldap_password: str) -> tuple:
+            account_name: str = None,
+            email_id: str = None,
+            ldap_user_id: str = None,
+            ldap_password: str = None) -> tuple:
         """
-        Creating new account using s3iamcli
+        Creating new account using s3iamcli.
+
         :param account_name: Account name
         :param email_id: Email id of the account
         :param ldap_user_id: Ldap user name/ID
@@ -605,12 +632,13 @@ class IamTestLib(IamLib, S3IamCli):
 
     def delete_account_s3iamcli(
             self,
-            account_name: str,
-            access_key: str,
-            secret_key: str,
+            account_name: str = None,
+            access_key: str = None,
+            secret_key: str = None,
             force: bool = True) -> tuple:
         """
         Deleting account using aws s3iamcli.
+
         :param account_name: Name of the account.
         :param access_key: Account access key.
         :param secret_key: Account secret key.
@@ -633,13 +661,13 @@ class IamTestLib(IamLib, S3IamCli):
 
     def create_user_login_profile_s3iamcli(
             self,
-            user_name: str,
-            password: str,
-            password_reset: str,
-            access_key: str,
-            secret_key: str) -> tuple:
+            user_name: str = None,
+            password: str = None,
+            password_reset: str = None,
+            **kwargs) -> tuple:
         """
         Create user login profile using aws s3iamcli.
+
         :param user_name: Account user name.
         :param password: User password.
         :param password_reset: Password reset value True/False.
@@ -647,9 +675,14 @@ class IamTestLib(IamLib, S3IamCli):
         :param secret_key: User secret key.
         :return: (Boolean, response)
         """
+        access_key = kwargs.get("access_key", None)
+        secret_key = kwargs.get("secret_key", None)
         LOGGER.info("Create user login profile using s3iamcli")
-        response = super().create_user_login_profile_s3iamcli(
-            user_name, password, password_reset, access_key, secret_key)
+        response = super().create_user_login_profile_s3iamcli(user_name=user_name,
+                                                              password=password,
+                                                              password_reset=password_reset,
+                                                              access_key=access_key,
+                                                              secret_key=secret_key)
         LOGGER.info(response)
         if "Failed" in response:
             LOGGER.error(
@@ -662,13 +695,13 @@ class IamTestLib(IamLib, S3IamCli):
 
     def create_account_login_profile_s3iamcli(
             self,
-            acc_name: str,
-            password: str,
-            access_key: str,
-            secret_key: str,
-            password_reset: bool = False) -> tuple:
+            acc_name: str = None,
+            password: str = None,
+            password_reset: bool = False,
+            **kwargs) -> tuple:
         """
         Create account login profile using s3iamcli.
+
         :param acc_name: Account user name.
         :param password: Account password.
         :param access_key: Account access key.
@@ -676,9 +709,12 @@ class IamTestLib(IamLib, S3IamCli):
         :param password_reset: Password reset value True/False.
         :return: (Boolean, response).
         """
+        access_key = kwargs.get("access_key", None)
+        secret_key = kwargs.get("secret_key", None)
         LOGGER.info("Create account login profile using s3iamcli")
         response = super().create_account_login_profile_s3iamcli(
-            acc_name, password, access_key, secret_key, password_reset)
+            acc_name=acc_name, password=password, access_key=access_key, secret_key=secret_key,
+            password_reset=password_reset)
         if "Failed" in response:
             LOGGER.error(
                 "Error in %s: %s",
@@ -690,13 +726,13 @@ class IamTestLib(IamLib, S3IamCli):
 
     def update_account_login_profile_s3iamcli(
             self,
-            acc_name: str,
-            password: str,
-            access_key: str,
-            secret_key: str,
-            password_reset: bool = False) -> tuple:
+            acc_name: str = None,
+            password: str = None,
+            password_reset: bool = False,
+            **kwargs) -> tuple:
         """
         Update account login profile using s3iamcli.
+
         :param acc_name: Account user name.
         :param password: Account password.
         :param access_key: Account access key.
@@ -704,6 +740,9 @@ class IamTestLib(IamLib, S3IamCli):
         :param password_reset: Password reset value True/False.
         :return: (Boolean, response)
         """
+        access_key = kwargs.get("access_key", None)
+        secret_key = kwargs.get("secret_key", None)
+
         LOGGER.info("Update account login profile using s3iamcli")
         response = super().update_account_login_profile_s3iamcli(
             acc_name, password, access_key, secret_key, password_reset)
@@ -719,11 +758,12 @@ class IamTestLib(IamLib, S3IamCli):
 
     def get_account_login_profile_s3iamcli(
             self,
-            acc_name: str,
-            access_key: str,
-            secret_key: str) -> tuple:
+            acc_name: str = None,
+            access_key: str = None,
+            secret_key: str = None) -> tuple:
         """
         Get account login profile using s3iamcli.
+
         :param acc_name: Account user name.
         :param access_key: Account access key.
         :param secret_key: Account secret key.
@@ -744,13 +784,13 @@ class IamTestLib(IamLib, S3IamCli):
 
     def update_user_login_profile_s3iamcli(
             self,
-            user_name: str,
-            password: str,
-            password_reset: str,
-            access_key: str,
-            secret_key: str) -> tuple:
+            user_name: str = None,
+            password: str = None,
+            password_reset: str = None,
+            **kwargs) -> tuple:
         """
         Update user login profile using s3iamcli.
+
         :param user_name: Account user name.
         :param password: User password.
         :param password_reset: Password reset value True/False.
@@ -758,13 +798,16 @@ class IamTestLib(IamLib, S3IamCli):
         :param secret_key: User secret key.
         :return: (Boolean, response)
         """
+        access_key = kwargs.get("access_key", None)
+        secret_key = kwargs.get("secret_key", None)
         try:
             LOGGER.info(
                 "Update %s user login profile with password reset as %s",
                 user_name,
                 password_reset)
             response = super().update_user_login_profile_s3iamcli(
-                user_name, password, password_reset, access_key, secret_key)
+                user_name=user_name, password=password,
+                password_reset=password_reset, access_key=access_key, secret_key=secret_key)
             LOGGER.info(response)
         except BaseException as error:
             LOGGER.error(
@@ -777,11 +820,12 @@ class IamTestLib(IamLib, S3IamCli):
 
     def get_user_login_profile_s3iamcli(
             self,
-            user_name: str,
-            access_key: str,
-            secret_key: str) -> tuple:
+            user_name: str = None,
+            access_key: str = None,
+            secret_key: str = None) -> tuple:
         """
         Get user login profile using s3iamcli.
+
         :param user_name: Name of the user.
         :param access_key: Access key of the user.
         :param secret_key: Secret key of the user.
@@ -800,13 +844,13 @@ class IamTestLib(IamLib, S3IamCli):
 
     def create_user_login_profile_s3iamcli_with_both_reset_options(
             self,
-            user_name: str,
-            password: str,
-            access_key: str,
-            secret_key: str,
-            both_reset_options: bool = False) -> tuple:
+            user_name: str = None,
+            password: str = None,
+            both_reset_options: bool = False,
+            **kwargs) -> tuple:
         """
         Create user login profile using s3iamcli with both reset options.
+
         :param user_name: Name of the user.
         :param password: Password for the user login.
         :param access_key: Access key of the user.
@@ -814,12 +858,15 @@ class IamTestLib(IamLib, S3IamCli):
         :param both_reset_options: both password reset option.
         :return: (Boolean, response)
         """
+        access_key = kwargs.get("access_key", None)
+        secret_key = kwargs.get("secret_key", None)
         LOGGER.info(
             "Create %s user login profile with both reset options as %s.",
             user_name,
             both_reset_options)
         response = super().create_user_login_profile_s3iamcli_with_both_reset_options(
-            user_name, password, access_key, secret_key, both_reset_options)
+            user_name=user_name, password=password, access_key=access_key, secret_key=secret_key,
+            both_reset_options=both_reset_options)
         if "Failed" in response:
             LOGGER.error(
                 "Error in %s: %s",
@@ -831,11 +878,12 @@ class IamTestLib(IamLib, S3IamCli):
 
     def reset_account_access_key_s3iamcli(
             self,
-            account_name: str,
-            ldap_user_id: str,
-            ldap_password: str) -> tuple:
+            account_name: str = None,
+            ldap_user_id: str = None,
+            ldap_password: str = None) -> tuple:
         """
-        Resets account access key using aws s3iamcli.
+        Reset account access key using aws s3iamcli.
+
         :param account_name: Name of the account.
         :param ldap_user_id: Ldap user name.
         :param ldap_password: Ldap user password.
@@ -864,11 +912,12 @@ class IamTestLib(IamLib, S3IamCli):
 
     def create_user_using_s3iamcli(
             self,
-            user_name: str,
-            access_key: str,
-            secret_key: str) -> tuple:
+            user_name: str = None,
+            access_key: str = None,
+            secret_key: str = None) -> tuple:
         """
         Creating user using s3iamcli.
+
         :param user_name: Name of the user.
         :param access_key: User access key.
         :param secret_key: User secret key.
@@ -902,12 +951,13 @@ class IamTestLib(IamLib, S3IamCli):
 
     def create_account_login_profile_both_reset_options(
             self,
-            acc_name: str,
-            password: str,
-            access_key: str,
-            secret_key: str) -> tuple:
+            acc_name: str = None,
+            password: str = None,
+            access_key: str = None,
+            secret_key: str = None) -> tuple:
         """
         Create account login profile using s3iamcli.
+
         :param acc_name: Name of the account.
         :param password: Password for the account login.
         :param access_key: Access key of the account.
@@ -928,9 +978,11 @@ class IamTestLib(IamLib, S3IamCli):
         return True, response
 
     def create_account_login_profile_without_both_reset_options(
-            self, acc_name: str, password: str, access_key: str, secret_key: str) -> tuple:
+            self, acc_name: str = None, password: str = None,
+            access_key: str = None, secret_key: str = None) -> tuple:
         """
         Create account login profile using s3iamcli.
+
         :param acc_name: Name of the account.
         :param password: Password for the account login.
         :param access_key: Access key of the account.
@@ -952,12 +1004,13 @@ class IamTestLib(IamLib, S3IamCli):
 
     def update_account_login_profile_both_reset_options(
             self,
-            acc_name: str,
-            access_key: str,
-            secret_key: str,
+            acc_name: str = None,
+            access_key: str = None,
+            secret_key: str = None,
             password: str = None) -> tuple:
         """
         Update account login profile using s3iamcli.
+
         :param acc_name: Name of the account.
         :param password: Password for the account login.
         :param access_key: Access key of the account.
@@ -977,9 +1030,13 @@ class IamTestLib(IamLib, S3IamCli):
         return True, response
 
     def update_user_login_profile_without_passowrd_and_reset_option(
-            self, user_name: str, access_key: str, secret_key: str) -> tuple:
+            self,
+            user_name: str = None,
+            access_key: str = None,
+            secret_key: str = None) -> tuple:
         """
         Update user login profile using s3iamcli without password and reset options.
+
         :param user_name: Name of the user.
         :param access_key: Access key of the user.
         :param secret_key: Secret key of the user.
@@ -1002,11 +1059,12 @@ class IamTestLib(IamLib, S3IamCli):
 
     def get_temp_auth_credentials_account(
             self,
-            account_name: str,
-            account_password: str,
+            account_name: str = None,
+            account_password: str = None,
             duration: str = None) -> tuple:
         """
         Retrieving the temporary auth credentials for the given account.
+
         :param account_name: Name of the account.
         :param account_password: Password for the account.
         :param duration: Duration till account creds will be active.
@@ -1051,12 +1109,13 @@ class IamTestLib(IamLib, S3IamCli):
 
     def get_temp_auth_credentials_user(
             self,
-            account_name: str,
-            user_name: str,
-            password: str,
+            account_name: str = None,
+            user_name: str = None,
+            password: str = None,
             duration: str = None) -> tuple:
         """
         Retrieving the temporary auth credentials for the given user.
+
         :param account_name: Name of the account.
         :param user_name: Name of the user.
         :param password: Password for the user.
@@ -1102,12 +1161,13 @@ class IamTestLib(IamLib, S3IamCli):
 
     def change_user_password(
             self,
-            old_pwd: str,
-            new_pwd: str,
-            access_key: str,
-            secret_key: str) -> tuple:
+            old_pwd: str = None,
+            new_pwd: str = None,
+            access_key: str = None,
+            secret_key: str = None) -> tuple:
         """
         Change user password.
+
         :param old_pwd: Old password of user.
         :param new_pwd: New password of user.
         :param access_key: Access key of user.
@@ -1126,9 +1186,11 @@ class IamTestLib(IamLib, S3IamCli):
         return True, result
 
     def update_user_login_profile_s3iamcli_with_both_reset_options(
-            self, user_name: str, password: str, access_key: str, secret_key: str) -> tuple:
+            self, user_name: str = None, password: str = None,
+            access_key: str = None, secret_key: str = None) -> tuple:
         """
         Update user login profile using both password reset options.
+
         :param user_name: Name of user.
         :param password: User password.
         :param access_key: Access key of user.
@@ -1153,6 +1215,7 @@ class IamTestLib(IamLib, S3IamCli):
     def delete_multiple_accounts(self, acc_list: list) -> tuple:
         """
         Delete multiple accounts.
+
         :param acc_list: List of accounts.
         :return: (Boolean, response)
         """
@@ -1169,12 +1232,13 @@ class IamTestLib(IamLib, S3IamCli):
 
     def create_and_delete_account_s3iamcli(
             self,
-            account_name: str,
-            email_id: str,
-            secret_key: str,
-            access_key: str) -> tuple:
+            account_name: str = None,
+            email_id: str = None,
+            secret_key: str = None,
+            access_key: str = None) -> tuple:
         """
         Creating and Deleting Account.
+
         :param account_name: Name of the account.
         :param email_id: Email IF for the account.
         :param secret_key: Secret key.
@@ -1200,9 +1264,10 @@ class IamTestLib(IamLib, S3IamCli):
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
     def reset_access_key_and_delete_account_s3iamcli(
-            self, account_name: str) -> tuple:
+            self, account_name: str = None) -> tuple:
         """
         Reset account access key and delete the account using aws s3iamcli.
+
         :param account_name: Name of the account.
         :return: (Boolean, response)
         """
@@ -1223,9 +1288,10 @@ class IamTestLib(IamLib, S3IamCli):
 
         return result
 
-    def create_user_access_key(self, user_name: str) -> tuple:
+    def create_user_access_key(self, user_name: str = None) -> tuple:
         """
-        This function will create a user and access key in default account.
+        Function will create a user and access key in default account.
+
         :param str user_name: Name of the user to be created.
         :return: (Boolean, response)
         """
@@ -1247,7 +1313,8 @@ class IamTestLib(IamLib, S3IamCli):
 
     def delete_users_with_access_key(self, iam_users_list: list) -> bool:
         """
-        This function will delete the list of users from default account.
+        Function will delete the list of users from default account.
+
         :param list iam_users_list: List of users to be deleted.
         :return: (Boolean, response)
         """
@@ -1280,12 +1347,13 @@ class IamTestLib(IamLib, S3IamCli):
             name_prefix: str = "iamtestacc") -> tuple:
         """
         Create given no of accounts with specified prefix.
+
         :param int acc_count: No of accounts.
         :param str name_prefix: Account name prefix.
         :return: (Boolean, list of tuple with created account details).
         """
         LOGGER.info(
-            "Create %s accounts starts with name.",
+            "Create %s accounts starts with name.%s",
             acc_count,
             name_prefix)
         acc_li = []
@@ -1307,13 +1375,13 @@ class IamTestLib(IamLib, S3IamCli):
 
     def delete_account_s3iamcli_using_temp_creds(
             self,
-            account_name: str,
-            access_key: str,
-            secret_key: str,
-            session_token: str,
-            force: bool = False) -> tuple:
+            account_name: str = None,
+            session_token: str = None,
+            force: bool = False,
+            **kwargs) -> tuple:
         """
         Deleting a specified account using it's temporary credentials.
+
         :param str account_name: Name of an account to be deleted.
         :param str access_key: Temporary access key of an account.
         :param str secret_key: Temporary secret key of an account.
@@ -1321,11 +1389,14 @@ class IamTestLib(IamLib, S3IamCli):
         :param bool force: --force option used while deleting an account.
         :return: Boolean and delete account response.
         """
+        access_key = kwargs.get("access_key", None)
+        secret_key = kwargs.get("secret_key", None)
         LOGGER.info(
             "Deleting %s accounts using it's temporary credentials",
             account_name)
         response = super().delete_account_s3iamcli_using_temp_creds(
-            account_name, access_key, secret_key, session_token, force)
+            account_name=account_name, access_key=access_key, secret_key=secret_key,
+            session_token=session_token, force=force)
         LOGGER.info(response)
         if "An error occurred" in response:
             LOGGER.error(
@@ -1336,9 +1407,13 @@ class IamTestLib(IamLib, S3IamCli):
 
         return True, response
 
-    def create_s3iamcli_acc(self, account_name: str, email_id: str) -> tuple:
+    def create_s3iamcli_acc(
+            self,
+            account_name: str = None,
+            email_id: str = None) -> tuple:
         """
-        This function will create IAM accounts with specified account name and email-id.
+        Function will create IAM accounts with specified account name and email-id.
+
         :param str account_name: Name of account to be created.
         :param str email_id: Email id for account creation.
         :return tuple: It returns multiple values such as canonical_id, access_key,
@@ -1359,9 +1434,9 @@ class IamTestLib(IamLib, S3IamCli):
             s3_obj = S3Lib(
                 access_key,
                 secret_key,
-                S3_CONF["s3_url"],
-                S3_CONF["s3_cert_path"],
-                S3_CONF["region"])
+                endpoint_url=S3_CONF["s3_url"],
+                s3_cert_path=S3_CONF["s3_cert_path"],
+                region=S3_CONF["region"])
             s3_acl_obj = S3AclTestLib(
                 access_key=access_key, secret_key=secret_key)
             response = (

@@ -32,29 +32,25 @@ LOGGER = logging.getLogger(__name__)
 
 
 class IamLib:
-    """
-    Class initialising s3 connection and including functions for account and user operations
-    """
+    """Class initialising s3 connection and including functions for account and user operations."""
 
     def __init__(
             self,
-            access_key: str,
-            secret_key: str,
-            endpoint_url: str,
-            iam_cert_path: str,
-            debug: bool = False) -> None:
+            debug: bool = False,
+            **kwargs) -> None:
         """
-        This method initializes members of IamLib.
+        Method initializes members of IamLib.
+
         :param access_key: access key.
         :param secret_key: secret key.
         :param endpoint_url: endpoint url.
         :param iam_cert_path: iam certificate path.
         :param debug: debug mode.
         """
-        self.access_key = access_key
-        self.secret_key = secret_key
-        self.endpoint_url = endpoint_url
-        self.iam_cert_path = iam_cert_path
+        self.access_key = kwargs.get("access_key", None)
+        self.secret_key = kwargs.get("secret_key", None)
+        self.endpoint_url = kwargs.get("endpoint_url", None)
+        self.iam_cert_path = kwargs.get("iam_cert_path", None)
 
         if debug:
             # Uncomment to enable debug
@@ -71,9 +67,10 @@ class IamLib:
             aws_secret_access_key=self.secret_key,
             endpoint_url=self.endpoint_url)
 
-    def create_user(self, user_name: str) -> dict:
+    def create_user(self, user_name: str = None) -> dict:
         """
         Creating new user.
+
         :param user_name: user name.
         :return: user dict.
         """
@@ -85,6 +82,7 @@ class IamLib:
     def list_users(self) -> dict:
         """
         List the users in current account.
+
         :return: s3 users dict.
         """
         response = self.iam.list_users()
@@ -92,9 +90,10 @@ class IamLib:
 
         return response
 
-    def create_access_key(self, user_name: str) -> dict:
+    def create_access_key(self, user_name: str = None) -> dict:
         """
         Creating access key for given s3 user.
+
         :param user_name: s3 user name.
         :return: user dict.
         """
@@ -103,9 +102,13 @@ class IamLib:
 
         return response
 
-    def delete_access_key(self, user_name: str, access_key_id: str) -> dict:
+    def delete_access_key(
+            self,
+            user_name: str = None,
+            access_key_id: str = None) -> dict:
         """
-        Deleting access key for given user
+        Deleting access key for given user.
+
         :param user_name:
         :param access_key_id:
         :return: delete access key response dict.
@@ -116,9 +119,10 @@ class IamLib:
 
         return response
 
-    def delete_user(self, user_name: str) -> dict:
+    def delete_user(self, user_name: str = None) -> dict:
         """
         Deleting given user.
+
         :param user_name: s3 user name.
         :return: delete user response dict.
         """
@@ -127,9 +131,10 @@ class IamLib:
 
         return response
 
-    def list_access_keys(self, user_name: str) -> dict:
+    def list_access_keys(self, user_name: str = None) -> dict:
         """
         Listing access keys for given user.
+
         :param user_name:
         :return: list access key response dict.
         """
@@ -140,11 +145,12 @@ class IamLib:
 
     def update_access_key(
             self,
-            access_key_id: str,
-            status: str,
-            user_name: str) -> dict:
+            access_key_id: str = None,
+            status: str = None,
+            user_name: str = None) -> dict:
         """
         Updating access key for given user.
+
         :param access_key_id: s3 user access key id.
         :param status: 'Active'|'Inactive'
         :param user_name: s3 user name.
@@ -156,9 +162,11 @@ class IamLib:
 
         return response
 
-    def update_user(self, new_user_name: str, user_name: str) -> dict:
+    def update_user(self, new_user_name: str = None,
+                    user_name: str = None) -> dict:
         """
         Updating given user.
+
         :param new_user_name: new s3 user name.
         :param user_name: old s3 user name.
         :return: update user response dict.
@@ -169,9 +177,10 @@ class IamLib:
 
         return response
 
-    def get_user_login_profile(self, user_name: str) -> dict:
+    def get_user_login_profile(self, user_name: str = None) -> dict:
         """
         Get user login profile if exists.
+
         :param user_name: s3 user name.
         :return: get user login profile response dict.
         """
@@ -182,11 +191,12 @@ class IamLib:
 
     def create_user_login_profile(
             self,
-            user_name: str,
-            password: str,
+            user_name: str = None,
+            password: str = None,
             password_reset=False):
         """
-        Create user login profile
+        Create user login profile.
+
         :param user_name: s3 user name.
         :param password: s3 password.
         :param password_reset: True/False
@@ -202,11 +212,12 @@ class IamLib:
 
     def update_user_login_profile(
             self,
-            user_name: str,
-            password: str,
+            user_name: str = None,
+            password: str = None,
             password_reset=False) -> dict:
         """
-        Update user login profile
+        Update user login profile.
+
         :param user_name: s3 user name.
         :param password: s3 password.
         :param password_reset: True/False
@@ -220,9 +231,10 @@ class IamLib:
         return response
 
     def update_user_login_profile_no_pwd_reset(
-            self, user_name: str, password: str) -> dict:
+            self, user_name: str = None, password: str = None) -> dict:
         """
         Update user login profile.
+
         :param user_name: s3 user name.
         :param password: s3 password.
         :return: update user login profile no pwd reset response dict.
@@ -235,12 +247,15 @@ class IamLib:
 
 
 class S3IamCli:
-    """Class for performing S3iamcli operations"""
+    """Class for performing S3iamcli operations."""
 
     @staticmethod
-    def list_accounts_s3iamcli(ldap_user_id: str, ldap_password: str) -> bytes:
+    def list_accounts_s3iamcli(
+            ldap_user_id: str = None,
+            ldap_password: str = None) -> bytes:
         """
         Listing accounts using aws s3iamcli.
+
         :param ldap_user_id: ldap user id.
         :param ldap_password: ldap password.
         :return: list account s3iamcli response.
@@ -253,9 +268,12 @@ class S3IamCli:
         return result
 
     @staticmethod
-    def list_users_s3iamcli(access_key: str, secret_key: str) -> bytes:
+    def list_users_s3iamcli(
+            access_key: str = None,
+            secret_key: str = None) -> bytes:
         """
         Listing users using aws s3iamcli.
+
         :param access_key: s3 user access key.
         :param secret_key: s3 user secret key.
         :return: list users s3iamcli response.
@@ -269,12 +287,13 @@ class S3IamCli:
 
     @staticmethod
     def create_account_s3iamcli(
-            account_name: str,
-            email_id: str,
-            ldap_user_id: str,
-            ldap_password: str) -> bytes:
+            account_name: str = None,
+            email_id: str = None,
+            ldap_user_id: str = None,
+            ldap_password: str = None) -> bytes:
         """
         Creating new account using aws s3iamcli.
+
         :param account_name: s3 account name.
         :param email_id: s3 user mail id.
         :param ldap_user_id: ldap user id.
@@ -291,12 +310,13 @@ class S3IamCli:
 
     @staticmethod
     def delete_account_s3iamcli(
-            account_name: str,
-            access_key: str,
-            secret_key: str,
+            account_name: str = None,
+            access_key: str = None,
+            secret_key: str = None,
             force: bool = True) -> bytes:
         """
         Deleting account using aws s3iamcli.
+
         :param account_name: s3 account name.
         :param access_key: s3 access key.
         :param secret_key: s3 secret key.
@@ -317,13 +337,14 @@ class S3IamCli:
 
     @staticmethod
     def create_user_login_profile_s3iamcli(
-            user_name: str,
-            password: str,
-            password_reset: str,
-            access_key: str,
-            secret_key: str) -> bytes:
+            user_name: str = None,
+            password: str = None,
+            password_reset: str = None,
+            access_key: str = None,
+            secret_key: str = None) -> bytes:
         """
         Create user login profile using aws s3iamcli.
+
         :param user_name: s3 user name.
         :param password: s3 password.
         :param password_reset:
@@ -345,13 +366,14 @@ class S3IamCli:
 
     @staticmethod
     def create_account_login_profile_s3iamcli(
-            acc_name: str,
-            password: str,
-            access_key: str,
-            secret_key: str,
+            acc_name: str = None,
+            password: str = None,
+            access_key: str = None,
+            secret_key: str = None,
             password_reset: bool = False) -> bytes:
         """
         Create account login profile using s3iamcli.
+
         :param acc_name: s3 account name.
         :param password: s3 password.
         :param access_key: s3 access key.
@@ -373,13 +395,14 @@ class S3IamCli:
 
     @staticmethod
     def update_account_login_profile_s3iamcli(
-            acc_name: str,
-            password: str,
-            access_key: str,
-            secret_key: str,
+            acc_name: str = None,
+            password: str = None,
+            access_key: str = None,
+            secret_key: str = None,
             password_reset: bool = False) -> bytes:
         """
         Update account login profile using s3iamcli.
+
         :param acc_name: s3 account name.
         :param password: s3 password.
         :param access_key: s3 access key.
@@ -401,11 +424,12 @@ class S3IamCli:
 
     @staticmethod
     def get_account_login_profile_s3iamcli(
-            acc_name: str,
-            access_key: str,
-            secret_key: str) -> bytes:
+            acc_name: str = None,
+            access_key: str = None,
+            secret_key: str = None) -> bytes:
         """
         Get account login profile using s3iamcli.
+
         :param acc_name: s3 account name.
         :param access_key: s3 access key.
         :param secret_key: s3 secret key.
@@ -420,13 +444,14 @@ class S3IamCli:
 
     @staticmethod
     def update_user_login_profile_s3iamcli(
-            user_name: str,
-            password: str,
-            password_reset: str,
-            access_key: str,
-            secret_key: str) -> bytes:
+            user_name: str = None,
+            password: str = None,
+            password_reset: str = None,
+            access_key: str = None,
+            secret_key: str = None) -> bytes:
         """
         Update user login profile using s3iamcli.
+
         :param user_name: s3 user name.
         :param password: s3 password.
         :param password_reset: password reset.
@@ -448,11 +473,12 @@ class S3IamCli:
 
     @staticmethod
     def get_user_login_profile_s3iamcli(
-            user_name: str,
-            access_key: str,
-            secret_key: str) -> bytes:
+            user_name: str = None,
+            access_key: str = None,
+            secret_key: str = None) -> bytes:
         """
         Get user login profile using s3iamcli.
+
         :param user_name: s3 user name.
         :param access_key: s3 access key.
         :param secret_key: s3 secret key.
@@ -468,13 +494,14 @@ class S3IamCli:
 
     @staticmethod
     def create_user_login_profile_s3iamcli_with_both_reset_options(
-            user_name: str,
-            password: str,
-            access_key: str,
-            secret_key: str,
+            user_name: str = None,
+            password: str = None,
+            access_key: str = None,
+            secret_key: str = None,
             both_reset_options: bool = False) -> bytes:
         """
         Create user login profile using s3iamcli with both reset options.
+
         :param user_name: s3 user name.
         :param password: s3 password.
         :param access_key: s3 access key.
@@ -497,11 +524,12 @@ class S3IamCli:
 
     @staticmethod
     def reset_account_access_key_s3iamcli(
-            account_name: str,
-            ldap_user_id: str,
-            ldap_password: str) -> bytes:
+            account_name: str = None,
+            ldap_user_id: str = None,
+            ldap_password: str = None) -> bytes:
         """
-        Resets account access key using aws s3iamcli.
+        Reset account access key using aws s3iamcli.
+
         :param account_name: s3 account name.
         :param ldap_user_id: s3 ldap user id.
         :param ldap_password: s3 ldap password.
@@ -517,11 +545,12 @@ class S3IamCli:
 
     @staticmethod
     def create_user_using_s3iamcli(
-            user_name: str,
-            access_key: str,
-            secret_key: str) -> bytes:
+            user_name: str = None,
+            access_key: str = None,
+            secret_key: str = None) -> bytes:
         """
         Creating user using s3iamcli.
+
         :param user_name: s3 user name.
         :param access_key: s3 access key.
         :param secret_key: s3 secret key.
@@ -537,9 +566,11 @@ class S3IamCli:
 
     @staticmethod
     def create_account_login_profile_both_reset_options(
-            acc_name: str, password: str, access_key: str, secret_key: str) -> bytes:
+            acc_name: str = None, password: str = None, access_key: str = None,
+            secret_key: str = None) -> bytes:
         """
         Create account login profile using s3iamcli.
+
         :param acc_name: s3 account name.
         :param password: s3 password.
         :param access_key: s3 access key.
@@ -556,9 +587,11 @@ class S3IamCli:
 
     @staticmethod
     def create_acc_login_profile_without_both_reset_options(
-            acc_name: str, password: str, access_key: str, secret_key: str) -> bytes:
+            acc_name: str = None, password: str = None,
+            access_key: str = None, secret_key: str = None) -> bytes:
         """
         Create account login profile using s3iamcli.
+
         :param acc_name: s3 account name.
         :param password: s3 password.
         :param access_key: s3 access key.
@@ -575,12 +608,13 @@ class S3IamCli:
 
     @staticmethod
     def update_account_login_profile_both_reset_options(
-            acc_name: str,
-            access_key: str,
-            secret_key: str,
+            acc_name: str = None,
+            access_key: str = None,
+            secret_key: str = None,
             password: str = None) -> bytes:
         """
         Update account login profile using s3iamcli.
+
         :param acc_name: s3 account name.
         :param access_key: s3 access key.
         :param secret_key: s3 secret key.
@@ -601,9 +635,10 @@ class S3IamCli:
 
     @staticmethod
     def update_user_login_profile_without_password_and_reset_option(
-            user_name: str, access_key: str, secret_key: str) -> bytes:
+            user_name: str = None, access_key: str = None, secret_key: str = None) -> bytes:
         """
         Update user login profile using s3iamcli without password and reset options.
+
         :param user_name: s3 user name.
         :param access_key: s3 access key.
         :param secret_key: s3 secret key.
@@ -619,11 +654,12 @@ class S3IamCli:
 
     @staticmethod
     def get_temp_auth_credentials_account(
-            account_name: str,
-            account_password: str,
+            account_name: str = None,
+            account_password: str = None,
             duration: str = None) -> bytes:
         """
         Retrieving the temporary auth credentials for the given account.
+
         :param account_name: s3 account name.
         :param account_password: s3 account password.
         :param duration:
@@ -642,12 +678,13 @@ class S3IamCli:
 
     @staticmethod
     def get_temp_auth_credentials_user(
-            account_name: str,
-            user_name: str,
-            password: str,
+            account_name: str = None,
+            user_name: str = None,
+            password: str = None,
             duration: str = None) -> bytes:
         """
         Retrieving the temporary auth credentials for the given user.
+
         :param account_name: s3 account name.
         :param user_name: s3 user name.
         :param password: s3 password.
@@ -668,12 +705,13 @@ class S3IamCli:
 
     @staticmethod
     def change_user_password(
-            old_pwd: str,
-            new_pwd: str,
-            access_key: str,
-            secret_key: str) -> bytes:
+            old_pwd: str = None,
+            new_pwd: str = None,
+            access_key: str = None,
+            secret_key: str = None) -> bytes:
         """
         Change password for IAM user.
+
         :param old_pwd: old password.
         :param new_pwd: new password.
         :param access_key: s3 access key.
@@ -690,9 +728,11 @@ class S3IamCli:
 
     @staticmethod
     def update_user_login_profile_s3iamcli_with_both_reset_options(
-            user_name: str, password: str, access_key: str, secret_key: str) -> bytes:
+            user_name: str = None, password: str = None, access_key: str = None,
+            secret_key: str = None) -> bytes:
         """
         Update user login profile using both password reset options.
+
         :param user_name: Name of user.
         :param password: User password.
         :param access_key: Access key of user.
@@ -707,14 +747,15 @@ class S3IamCli:
 
         return result
 
-    def delete_account_s3iamcli_using_temp_creds(self,
-                                                 account_name: str,
-                                                 access_key: str,
-                                                 secret_key: str,
-                                                 session_token: str,
+    @staticmethod
+    def delete_account_s3iamcli_using_temp_creds(account_name: str = None,
+                                                 access_key: str = None,
+                                                 secret_key: str = None,
+                                                 session_token: str = None,
                                                  force: bool = False) -> bytes:
         """
         Deleting a specified account using it's temporary credentials.
+
         :param account_name: Name of an account to be deleted.
         :param access_key: Temporary access key of an account.
         :param secret_key: Temporary secret key of an account.
