@@ -23,7 +23,6 @@ urllib3==1.25.3
 Werkzeug==0.15.5
 pyyaml==5.1.2
 pandas==0.25.1
-matplotlib==3.1.1
 paramiko==2.6.0
 setuptools==41.6.0
 pysftp==0.2.9
@@ -38,6 +37,12 @@ pymongo
 aenum==2.2.4
 mdstat==1.0.4
 fabric~=2.5.0
-
+Cython==0.29.21
 pytest~=6.2.1
 testfixtures~=6.17.0
+matplotlib==3.1.1
+PyHamcrest==2.0.2
+strip-ansi==0.1.1
+matplotlib==3.1.1
+filelock==3.0.12
+defusedxml
