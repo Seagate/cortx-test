@@ -29,13 +29,11 @@ LOGGER = logging.getLogger(__name__)
 
 
 class _Final:
-    """
-    Assign the object attribute its value.
 
-    The object from which the name attribute is to be removed.
-    The object whose attributes need to be processed.
-    Maintain uniqueness across module.
-    """
+    """Assign the object attribute its value.
+       The object from which the name attribute is to be removed.
+       The object whose attributes need to be processed.
+       Maintain uniqueness across module."""
 
     class _ConstError(Exception):
         pass
@@ -46,16 +44,16 @@ class _Final:
     class _AttributeError(AttributeError):
         pass
 
-    def __setattr__(self, name: Any, value: Any) -> None:
-        """
-        Assign the object attribute its value.
+    def __len__(self):
+        return len(self.__dict__)
 
+    def __setattr__(self, name: Any, value: Any) -> None:
+        """Assign the object attribute its value.
         The object whose attributes need to be processed.
         :param name: object attribute which has to be assigned.
         :param value: value with which variable is to be assigned.
         :return: If name already defined then another value cant be assigned
-        and will raise error.
-        """
+        and will raise error."""
         if name in self.__dict__:
             try:
                 raise self._ConstError
@@ -65,15 +63,13 @@ class _Final:
             self.__dict__[name] = value
 
     def __getattr__(self, name: Any) -> None:
-        """
-        Access the attribute value of an object and also not allowing in case of unavailability.
-
+        """Access the attribute value of an object and also not allowing in case of unavailability
+        of the name. The object whose attributes need to be processed.
         :param name: The attribute of object.
         :type name: attribute.
         :return: Object value if value is available, default value in case attribute is not present
                  and returns AttributeError in case attribute is not present and default value is
-                 not specified.
-        """
+                 not specified."""
         try:
             if name not in self.__dict__:
                 raise AttributeError
@@ -81,14 +77,11 @@ class _Final:
             LOGGER.error("Error: const %s not present/binded", str(name))
 
     def __delattr__(self, name: Any) -> None:
-        """
-        The object from which the name attribute is to be removed.
-
+        """The object from which the name attribute is to be removed.
         :param name: name of the attribute which is to be removed.
         :type name: attribute.
         :return: For any case name attribute is defined or not, it will not be allowed to unbind
-                 and catching exception.
-        """
+                 and catching exception."""
         try:
             if name in self.__dict__:
                 raise self._ConstError
@@ -97,6 +90,3 @@ class _Final:
             LOGGER.error("Error: Can't unbind const %s", str(name))
         except self._NameError:
             LOGGER.error("Error: const %s not binded", str(name))
-
-
-sys.modules[__name__] = _Final()

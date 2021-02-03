@@ -20,7 +20,6 @@
 #
 
 """All common constants from cortx-test."""
-
 from commons import const
 from commons.utils import config_utils
 
