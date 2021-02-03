@@ -26,7 +26,9 @@ Enter Username And Password
     input password  ${csm password id}  ${password}
 
 Click Sigin Button
+    Wait Until Element Is Visible  ${signin_button_id}  timeout=10
     click button    ${signin_button_id}
+    Sleep  5s  #  Sigin take some initial time
 
 Validate CSM Login Failure
     [Documentation]  Test keyword is for Validating login failure on CSM GUI.
@@ -58,3 +60,11 @@ CSM GUI Logout
     click element  ${LOG_OUT_ID}
     wait until element is visible  ${CSM_USERNAME_ID}  timeout=30
 
+Re-login
+    [Documentation]  Functionlity to Logout and login again
+    [Arguments]  ${user_name}  ${password}  ${page}
+    CSM GUI Logout
+    Wait Until Element Is Visible  ${csm username id}  timeout=10
+    Enter Username And Password  ${username}  ${password}
+    Click Sigin Button
+    Navigate To Page  ${page}

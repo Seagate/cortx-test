@@ -18,8 +18,7 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-"""Tests operations on S3 Users using REST API
-"""
+"""Tests operations on S3 Users using REST API"""
 
 import json
 import logging
@@ -31,12 +30,11 @@ from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_s3user import RestS3user
 
 class TestS3user():
-    """S3 user test class
-    """
+    """S3 user test class"""
 
     @classmethod
     def setup_class(cls):
-        """ This is method is for test suite set-up """
+        """This is method is for test suite set-up"""
         cls.log = logging.getLogger(__name__)
         cls.log.info("Initializing test setups ......")
         cls.config = CSMConfigsCheck()
@@ -53,7 +51,9 @@ class TestS3user():
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-10744")
     def test_276(self):
-        """Initiating the test case for the verifying success rest alert response
+        """Initiating the test case for the verifying success rest alert 
+        response.
+
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -123,7 +123,8 @@ class TestS3user():
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-10750")
     def test_294(self):
-        """Initiating the test case for unauthorized user try to create s3account user
+        """Initiating the test case for unauthorized user try to create 
+        s3account user.
 
         """
         test_case_name = cortxlogging.get_frame()
@@ -378,7 +379,7 @@ class TestS3user():
         self.log.debug("Verifying new S3 account got created successfully")
         assert response.status_code == const.SUCCESS_STATUS
         self.log.debug("Verified new S3 account %s got created successfully",
-            response.json()["account_name"])
+                        response.json()["account_name"])
 
         s3_acc = response.json()["account_name"]
 

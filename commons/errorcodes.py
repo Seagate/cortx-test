@@ -62,6 +62,7 @@ else:
 
 def get_error(info):
     """ Retrieve an error from a provided error code or error description.
+
     :param info: Error code (int) or message (str) needed to search with.
     :return: The corresponding error or None.
     """
@@ -120,6 +121,9 @@ CT_SINGLETON_NOT_INITIALIZED = CTError(1001, "CTP Config Error")
 # HTTP and HTTPS Errors
 HTTP_ERROR = CTError(2000, "HTTP Error")
 
+# RAS CT Errors
+CONTROLLER_ERROR = CTError(6000, "CONTROLLER Error")
+
 # CLI Errors
 CLI_ERROR = CTError(24000, "CLI Error")
 CLI_INVALID_COMMAND = CTError(24001, "CLI Invalid Command")
@@ -133,10 +137,12 @@ CLI_SYSTEM_CHECK_MISSING_PARAMETER = CTError(24008, "CLI System Check Missing Pa
 CLI_STATUS_FAILED = CTError(24009, "CLI Response Status Failed")
 CLI_LOGIN_FAILED = CTError(24010, "CLI Authentication Unsuccessful")
 CLI_MC_NOT_READY = CTError(24011, "CLI MC Not Ready")
+CLI_CONTROLLER_CHECK_MISSING_PARAMETER = CTError(24012, "CLI Controller Check Missing Parameter")
+
+# CSM
 CSM_REST_AUTHENTICATION_ERROR: Any = CTError(8107, "CSM-REST Authentication Error")
 CSM_REST_VERIFICATION_FAILED: Any = CTError(8108, "Unexpected output fetched for CSM-REST")
-CLI_CONTROLLER_CHECK_MISSING_PARAMETER = CTError(
-    24012, "CLI Controller Check Missing Parameter")
+
 
 # Product Configuration DataBase Errors
 PCD_SYNTAX_ERROR = CTError(30000, "PCD file Syntax error")
@@ -153,6 +159,7 @@ ENC_PCD_COMPONENT_MAPPING_ERROR = CTError(
 S3_SERVER_ERROR = CTError(5007, "S3 Server Error")
 S3_CLIENT_ERROR = CTError(4007, "S3 Client Error")
 S3_ERROR = CTError(0o0001, "S3 Error")
+
 
 # RAS
 RAS_ERROR = CTError(6007, "RAS Error")
