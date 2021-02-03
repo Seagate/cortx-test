@@ -24,7 +24,6 @@ from typing import Any
 from commons.helpers.host import Host
 
 LOGGER = logging.getLogger(__name__)
-EXCEPTION_MSG = "*ERROR* An exception occurred in %s: %s"
 
 
 class Bmc(Host):

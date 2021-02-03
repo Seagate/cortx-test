@@ -27,7 +27,6 @@ from commons.helpers.host import Host
 from commons import commands
 
 LOG = logging.getLogger(__name__)
-EXCEPTION_MSG = "*ERROR* An exception occurred in {}: {}"
 
 
 class Health(Host):
@@ -87,7 +86,9 @@ class Health(Host):
 
         :return: system cpu usage
         """
-        LOG.debug("Fetching system cpu usage from node {}".format(self.hostname))
+        LOG.debug(
+            "Fetching system cpu usage from node {}".format(
+                self.hostname))
         LOG.debug(commands.CPU_USAGE_CMD)
         res = self.execute_cmd(commands.CPU_USAGE_CMD)
         LOG.debug(res)
@@ -101,7 +102,9 @@ class Health(Host):
 
         :return: system memory usage in percent
         """
-        LOG.debug("Fetching system memory usage from node {}".format(self.hostname))
+        LOG.debug(
+            "Fetching system memory usage from node {}".format(
+                self.hostname))
         LOG.debug(commands.MEM_USAGE_CMD)
         res = self.execute_cmd(commands.MEM_USAGE_CMD)
         LOG.debug(res)
