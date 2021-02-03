@@ -1,3 +1,5 @@
+"""CSM CLI IAM user TestSuite"""
+
 import time
 import sys
 import logging
