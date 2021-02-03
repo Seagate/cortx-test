@@ -174,10 +174,12 @@ CLI_SYSTEM_CHECK_MISSING_PARAMETER = CTError(24008, "CLI System Check Missing Pa
 CLI_STATUS_FAILED = CTError(24009, "CLI Response Status Failed")
 CLI_LOGIN_FAILED = CTError(24010, "CLI Authentication Unsuccessful")
 CLI_MC_NOT_READY = CTError(24011, "CLI MC Not Ready")
+CLI_CONTROLLER_CHECK_MISSING_PARAMETER = CTError(24012, "CLI Controller Check Missing Parameter")
+
+# CSM
 CSM_REST_AUTHENTICATION_ERROR: Any = CTError(8107, "CSM-REST Authentication Error")
 CSM_REST_VERIFICATION_FAILED: Any = CTError(8108, "Unexpected output fetched for CSM-REST")
-CLI_CONTROLLER_CHECK_MISSING_PARAMETER = CTError(
-    24012, "CLI Controller Check Missing Parameter")
+
 
 # Product Configuration DataBase Errors
 PCD_SYNTAX_ERROR = CTError(30000, "PCD file Syntax error")
