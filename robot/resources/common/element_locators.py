@@ -78,3 +78,19 @@ PAGINATION_BAR_XPATH = "//div[@class='v-data-footer']"
 PAGIANTION_PAGE_OPTIONS_XPATH = "//*[@role='option']"
 RADIO_BTN_VALUE_XPATH = "//*[@type='radio']"
 PAGINATION_LIST_ICON_XPATH = "//*[@class='v-select__selection v-select__selection--comma']"
+
+#About Section
+MAINTENANCEM_MENU_ID = 'Maintenance'
+ABOUT_VIEW_ID = 'menu-actionmanagebtn'
+ISSUER_DETAILS_TAB_ID = 'Issuertab'
+SUBJECT_DETAILS_TAB_ID = 'Subjecttab'
+#ISSUER_DETAILS_INFO_ID = 'ssl-issuer-details'
+#SUBJECT_DETAILS_INFO_ID = 'ssl-subject-details'
+ISSUER_COMMON_NAME_VALUE_ID = 'issuer_common_name_value'
+ISSUER_COUNTRY_NAME_VALUE_ID = 'issuer_country_name_value'
+ISSUER_LOCALITY_NAME_VALUE_ID = 'issuer_locality_name_value'
+ISSUER_ORGANIZATION_VALUE_ID = 'issuer_organization_name_value'
+SUBJECT_COMMON_NAME_VALUE_ID = 'subject_common_name_value'
+SUBJECT_COUNTRY_NAME_VALUE_ID = 'subject-country_name_value'
+SUBJECT_LOCALITY_NAME_VALUE_ID = 'subject_locality_name_value'
+SUBJECT_ORGANIZATION_VALUE_ID = 'subject_organization_name_value'
