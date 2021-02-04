@@ -1,5 +1,22 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
 
 """Account User Management test module."""
 
@@ -128,7 +145,7 @@ class TestAccountUserManagement:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5440", "account_user_management")
+    @pytest.mark.tags("TEST-5440")
     @CTFailOn(error_handler)
     def test_create_new_account_1968(self):
         """Create new account."""
@@ -145,7 +162,7 @@ class TestAccountUserManagement:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5429", "account_user_management")
+    @pytest.mark.tags("TEST-5429")
     @CTFailOn(error_handler)
     def test_list_account_1969(self):
         """List account."""
@@ -167,7 +184,7 @@ class TestAccountUserManagement:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5432", "account_user_management")
+    @pytest.mark.tags("TEST-5432")
     @CTFailOn(error_handler)
     def test_delete_account_1970(self):
         """Delete Account."""
@@ -189,7 +206,7 @@ class TestAccountUserManagement:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5443", "account_user_management")
+    @pytest.mark.tags("TEST-5443")
     @CTFailOn(error_handler)
     def test_create_n_number_of_account_1971(self):
         """Create 'N' No of Accounts."""
@@ -229,7 +246,7 @@ class TestAccountUserManagement:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5437", "account_user_management")
+    @pytest.mark.tags("TEST-5437")
     @CTFailOn(error_handler)
     def test_create_new_account_with_existing_name_1972(self):
         """Creating new account with existing account name."""
@@ -256,7 +273,7 @@ class TestAccountUserManagement:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5434", "account_user_management")
+    @pytest.mark.tags("TEST-5434")
     @CTFailOn(error_handler)
     def test_crud_operations_with_valid_cred_1973(self):
         """CRUD operations with valid login credentials."""
@@ -278,8 +295,8 @@ class TestAccountUserManagement:
         assert resp[0], resp[1]
         LOGGER.info("Created new account and new user in it")
         LOGGER.info("Step 2: Create access key for newly created user")
-        NEW_S3H_OBJ = IamTestLib(access_key=access_key, secret_key=secret_key)
-        resp = NEW_S3H_OBJ.create_access_key(user_name)
+        new_s3h_obj = IamTestLib(access_key=access_key, secret_key=secret_key)
+        resp = new_s3h_obj.create_access_key(user_name)
         LOGGER.info(resp)
         assert resp[0], resp[1]
         user_access_key = resp[1]["AccessKey"]["AccessKeyId"]
@@ -322,7 +339,7 @@ class TestAccountUserManagement:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5435", "account_user_management")
+    @pytest.mark.tags("TEST-5435")
     @CTFailOn(error_handler)
     def test_crud_operations_with_invalid_cred_1974(self):
         """CRUD operations with invalid login credentials."""
@@ -392,7 +409,7 @@ class TestAccountUserManagement:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5439", "account_user_management")
+    @pytest.mark.tags("TEST-5439")
     @CTFailOn(error_handler)
     def test_create_new_user_from_current_account_2076(self):
         """Create new user for current Account."""
@@ -425,7 +442,7 @@ class TestAccountUserManagement:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5422", "account_user_management")
+    @pytest.mark.tags("TEST-5422")
     @CTFailOn(error_handler)
     def test_update_user_2077(self):
         """Update User."""
@@ -444,9 +461,9 @@ class TestAccountUserManagement:
         assert resp[0], resp[1]
         LOGGER.info("Step 1: Created new account and new user in it")
         LOGGER.info("Step 2: Updating user name of already existing user")
-        NEW_S3H_OBJ = IamTestLib(access_key=access_key, secret_key=secret_key)
+        new_s3h_obj = IamTestLib(access_key=access_key, secret_key=secret_key)
         new_user_name = TEST_CFG["test_8676"]["new_user_name"]
-        resp = NEW_S3H_OBJ.update_user(new_user_name, user_name)
+        resp = new_s3h_obj.update_user(new_user_name, user_name)
         LOGGER.info(resp)
         assert resp[0], resp[1]
         LOGGER.info("Updated user name of already existing user")
@@ -460,7 +477,7 @@ class TestAccountUserManagement:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5428", "account_user_management")
+    @pytest.mark.tags("TEST-5428")
     @CTFailOn(error_handler)
     def test_list_user_2078(self):
         """List user."""
@@ -486,7 +503,7 @@ class TestAccountUserManagement:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5431", "account_user_management")
+    @pytest.mark.tags("TEST-5431")
     @CTFailOn(error_handler)
     def test_delete_user_2079(self):
         """Delete User."""
@@ -503,15 +520,15 @@ class TestAccountUserManagement:
         assert resp[0], resp[1]
         LOGGER.info("Created new account and new user in it")
         LOGGER.info("Step 2: Deleting user")
-        NEW_S3H_OBJ = IamTestLib(access_key=access_key, secret_key=secret_key)
-        resp = NEW_S3H_OBJ.delete_user(user_name)
+        new_s3h_obj = IamTestLib(access_key=access_key, secret_key=secret_key)
+        resp = new_s3h_obj.delete_user(user_name)
         assert resp[0], resp[1]
         LOGGER.info("Step 2: Deleted user successfully")
         LOGGER.info("END: Delete User")
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5438", "account_user_management")
+    @pytest.mark.tags("TEST-5438")
     @CTFailOn(error_handler)
     def test_create_n_number_of_users_2080(self):
         """Created 'N' No of Users."""
@@ -534,9 +551,9 @@ class TestAccountUserManagement:
             assert resp[0], resp[1]
             LOGGER.info("Created user with name %s", str(my_user_name))
         LOGGER.info("Step 2: Created %s users", str(total_users))
-        LOGGER.info("Verifying %s users are created", (total_users))
-        NEW_S3H_OBJ = IamTestLib(access_key=access_key, secret_key=secret_key)
-        list_of_users = NEW_S3H_OBJ.list_users()[1]
+        LOGGER.info("Verifying %s users are created", total_users)
+        new_s3h_obj = IamTestLib(access_key=access_key, secret_key=secret_key)
+        list_of_users = new_s3h_obj.list_users()[1]
         LOGGER.info(list_of_users)
         LOGGER.info("Number of users : %s", str(len(list_of_users)))
         assert resp[0], resp[1]
@@ -546,7 +563,7 @@ class TestAccountUserManagement:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5438", "account_user_management")
+    @pytest.mark.tags("TEST-5438")
     @CTFailOn(error_handler)
     def test_create_user_with_existing_name_2081(self):
         """Creating user with existing name."""
@@ -570,7 +587,7 @@ class TestAccountUserManagement:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5442", "account_user_management")
+    @pytest.mark.tags("TEST-5442")
     @CTFailOn(error_handler)
     def test_create_access_key_to_the_user_2082(self):
         """Create Access key to the user."""
@@ -594,7 +611,7 @@ class TestAccountUserManagement:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5430", "account_user_management")
+    @pytest.mark.tags("TEST-5430")
     @CTFailOn(error_handler)
     def test_list_access_keys_for_the_user_2083(self):
         """List accesskeys for the user."""
@@ -619,7 +636,7 @@ class TestAccountUserManagement:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5433", "account_user_management")
+    @pytest.mark.tags("TEST-5433")
     @CTFailOn(error_handler)
     def test_delete_access_key_of_a_user_2084(self):
         """Delete Accesskey of a user."""
@@ -648,7 +665,7 @@ class TestAccountUserManagement:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5425", "account_user_management")
+    @pytest.mark.tags("TEST-5425")
     @CTFailOn(error_handler)
     def test_update_access_key_of_a_user_2085(self):
         """Update Accesskey of a user."""
@@ -681,7 +698,7 @@ class TestAccountUserManagement:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5424", "account_user_management")
+    @pytest.mark.tags("TEST-5424")
     @CTFailOn(error_handler)
     def test_update_accesskey_of_user_with_inactive_mode_2086(self):
         """Update accesskey of a user with inactive mode."""
@@ -714,7 +731,7 @@ class TestAccountUserManagement:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5441", "account_user_management")
+    @pytest.mark.tags("TEST-5441")
     @CTFailOn(error_handler)
     def test_create_max_accesskey_with_existing_user_name_2087(self):
         """Create max accesskey with existing user name."""
@@ -735,7 +752,7 @@ class TestAccountUserManagement:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5423", "account_user_management")
+    @pytest.mark.tags("TEST-5423")
     @CTFailOn(error_handler)
     def test_update_login_profile_2088(self):
         """Update login profile."""
@@ -765,7 +782,7 @@ class TestAccountUserManagement:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5427", "account_user_management")
+    @pytest.mark.tags("TEST-5427")
     @CTFailOn(error_handler)
     def test_ssl_certificate_2090(self):
         """SSL certificate."""
@@ -788,7 +805,7 @@ class TestAccountUserManagement:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5426", "account_user_management")
+    @pytest.mark.tags("TEST-5426")
     @CTFailOn(error_handler)
     def test_check_ssl_certificate_present_2091(self):
         """Check SSL certificate present."""
@@ -805,7 +822,7 @@ class TestAccountUserManagement:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5444", "account_user_management")
+    @pytest.mark.tags("TEST-5444")
     @CTFailOn(error_handler)
     def test_change_pwd_for_iam_user_2092(self):
         """Change passsword for IAM user."""
@@ -844,7 +861,7 @@ class TestAccountUserManagement:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-8718", "account_user_management")
+    @pytest.mark.tags("TEST-8718")
     @CTFailOn(error_handler)
     def test_create_user_account_and_check_arn_4625(self):
         """Test Create user for the account and verify output with proper ARN format."""
