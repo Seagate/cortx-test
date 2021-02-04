@@ -28,30 +28,30 @@ from commons import errorcodes as err
 from commons.utils.config_utils import read_yaml
 from commons.helpers.s3_helper import S3Helper
 
+LOGGER = logging.getLogger(__name__)
+
 try:
-    s3hobj = S3Helper()
-except ImportError as err:
-    s3hobj = S3Helper.get_instance()
+    S3H_OBJ = S3Helper()
+except ImportError as ierr:
+    LOGGER.warning(str(ierr))
+    S3H_OBJ = S3Helper.get_instance()
 
 S3_CONF = read_yaml("config/s3/s3_config.yaml")[1]
-LOGGER = logging.getLogger(__name__)
 
 
 class S3BucketPolicyTestLib(BucketPolicy):
-    """
-    This Class initialising s3 connection and including methods for bucket policy operations.
-    """
+    """Class initialising s3 connection and including methods for bucket policy operations."""
 
     def __init__(
             self,
-            access_key: str = s3hobj.get_local_keys()[0],
-            secret_key: str = s3hobj.get_local_keys()[1],
+            access_key: str = S3H_OBJ.get_local_keys()[0],
+            secret_key: str = S3H_OBJ.get_local_keys()[1],
             endpoint_url: str = S3_CONF["s3_url"],
             s3_cert_path: str = S3_CONF["s3_cert_path"],
-            region: str = S3_CONF["region"],
-            aws_session_token: str = None,
-            debug: bool = S3_CONF["debug"]) -> None:
-        """This method initializes members of S3BucketPolicyTestLib and its parent class
+            **kwargs) -> None:
+        """
+        Method to initializes members of S3BucketPolicyTestLib and its parent class.
+
         :param access_key: access key
         :param secret_key: secret key
         :param endpoint_url: endpoint url
@@ -60,18 +60,20 @@ class S3BucketPolicyTestLib(BucketPolicy):
         :param aws_session_token: aws_session_token
         :param debug: debug mode
         """
+        kwargs["region"] = kwargs.get("region", S3_CONF["region"])
+        kwargs["aws_session_token"] = kwargs.get("aws_session_token", None)
+        kwargs["debug"] = kwargs.get("debug", S3_CONF["debug"])
         super().__init__(
             access_key,
             secret_key,
             endpoint_url,
             s3_cert_path,
-            region,
-            aws_session_token,
-            debug)
+            **kwargs)
 
     def get_bucket_policy(self, bucket_name: str) -> tuple:
         """
-        Retrieve policy of the specified s3 bucket
+        Retrieve policy of the specified s3 bucket.
+
         :param bucket_name: Name of s3 bucket
         :return: Returns the policy of a specified s3 bucket
         and Success if successful, None and error message if failed
@@ -93,7 +95,8 @@ class S3BucketPolicyTestLib(BucketPolicy):
             bucket_name: str,
             bucket_policy: dict) -> tuple:
         """
-        Applies s3 bucket policy to specified s3 bucket
+        Apply s3 bucket policy to specified s3 bucket.
+
         :param bucket_name: Name of s3 bucket
         :param bucket_policy: Bucket policy
         :return: Returns status and status message
@@ -112,7 +115,8 @@ class S3BucketPolicyTestLib(BucketPolicy):
 
     def delete_bucket_policy(self, bucket_name: str) -> tuple:
         """
-        This function will delete the policy applied to the specified S3 bucke
+        Function will delete the policy applied to the specified S3 bucket.
+
         :param bucket_name: Name of s3 bucket
         :return: Returns status and response of delete bucket policy operation.
         """
