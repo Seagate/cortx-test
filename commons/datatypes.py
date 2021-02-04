@@ -46,6 +46,9 @@ class _Final:
     class _AttributeError(AttributeError):
         pass
 
+    def __len__(self):
+        return len(self.__dict__)
+
     def __setattr__(self, name: Any, value: Any) -> None:
         """
         Assign the object attribute its value.
@@ -97,6 +100,3 @@ class _Final:
             LOGGER.error("Error: Can't unbind const %s", str(name))
         except self._NameError:
             LOGGER.error("Error: const %s not binded", str(name))
-
-
-sys.modules[__name__] = _Final()
