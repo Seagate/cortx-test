@@ -27,7 +27,7 @@ Action on the table
 Click on add new s3 account button
     [Documentation]  This keyword is to click on the add new s3 account.
     wait until element is visible  ${ADD_S3_ACCOUNT_BUTTON_ID}  timeout=10
-    Set Window Position  250  0
+    Execute JavaScript    window.scrollTo(200,0)
     click button  ${ADD_S3_ACCOUNT_BUTTON_ID}
 
 Click on create new S3 account button
