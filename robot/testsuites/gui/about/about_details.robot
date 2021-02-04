@@ -26,15 +26,10 @@ test_1111
     [Documentation]  Test that about section has ssl details
     [Tags]  Priority_High  Smoke_test
    Navigate To About 
-    sleep  5s
     Click Issuer Option
-    sleep  5s
     Click Subject Option
-    sleep  2s
     Verify Subject Details
-    sleep  2s
     Click Issuer Option
-    sleep  2s
     Verify Issuer Details
 
     
