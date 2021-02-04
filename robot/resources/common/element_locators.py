@@ -60,6 +60,15 @@ NEW_ACCESS_KEY_TABLE_XPATH = '//*[@id="download-csv-dialog-datatable"]/tr/td'
 CONFIRM_DELET_ACCESS_KEY_ID = 'confirmation-dialogbox-btn'
 EDIT_S3_ACCOUNT_OPTIONS_XPATH = '//*[@id="app"]//div[@class ="py-0 col-5 col"]//input'
 
+# Preboarding 
+WELCOME_START_BUTTON_ID = 'welcome-startbtn'
+ELUA_BUTTON_ID = 'show-license-agreement-dialogbtn'
+LICENSE_BUTTON_ID = 'license-acceptagreement'
+LICENSE_CANCLE_BUTTON_ID = 'license-cancelagreementbtn'
+LICENSE_CANCLE_IMAGE_ID = 'license-cancelagreementicon'
+LICENSE_TITLE_ID = 'agreement-title'
+LICENSE_DATA_ID = 'agreement-data'
+
 #  CSM User section
 CSM_USERS_TABLE_XPATH = '//*[@id="localuser-tabledata"]//table'
 CSM_USERS_NUMBER_OF_ROWS_XPATH = '//*[@id="localuser-tabledata"]//table/tbody/tr[2]'
