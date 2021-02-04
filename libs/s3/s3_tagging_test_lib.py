@@ -20,9 +20,7 @@
 #
 #
 
-"""
-Python library contains methods which allows you to perform bucket tagging operations using boto3.
-"""
+"""Library contains methods which allows to perform bucket tagging operations using boto3."""
 
 import os
 import base64
@@ -35,31 +33,29 @@ from commons.helpers.s3_helper import S3Helper
 from commons.utils.system_utils import create_file
 from libs.s3.s3_core_lib import Tagging
 
+LOGGER = logging.getLogger(__name__)
+
 try:
-    s3hobj = S3Helper()
-except ImportError as err:
-    s3hobj = S3Helper.get_instance()
+    S3H_OBJ = S3Helper()
+except ImportError as ierr:
+    LOGGER.warning(ierr)
+    S3H_OBJ = S3Helper.get_instance()
 
 S3_CONF = read_yaml("config/s3/s3_config.yaml")[1]
-LOGGER = logging.getLogger(__name__)
 
 
 class S3TaggingTestLib(Tagging):
-    """
-    This Class initialising s3 connection and including methods for bucket and
-    object tagging operations.
-    """
+    """Initialising s3 connection and including methods for bucket, object tagging operations."""
 
     def __init__(self,
-                 access_key: str = s3hobj.get_local_keys()[0],
-                 secret_key: str = s3hobj.get_local_keys()[1],
+                 access_key: str = S3H_OBJ.get_local_keys()[0],
+                 secret_key: str = S3H_OBJ.get_local_keys()[1],
                  endpoint_url: str = S3_CONF["s3_url"],
                  s3_cert_path: str = S3_CONF["s3_cert_path"],
-                 region: str = S3_CONF["region"],
-                 aws_session_token: str = None,
-                 debug: bool = S3_CONF["debug"]) -> None:
+                 **kwargs) -> None:
         """
-        This method initializes members of S3TaggingTestLib and its parent class.
+        The method initializes members of S3TaggingTestLib and its parent class.
+
         :param access_key: access key.
         :param secret_key: secret key.
         :param endpoint_url: endpoint url.
@@ -68,14 +64,15 @@ class S3TaggingTestLib(Tagging):
         :param aws_session_token: aws_session_token.
         :param debug: debug mode.
         """
+        kwargs["region"] = kwargs.get("region", S3_CONF["region"])
+        kwargs["aws_session_token"] = kwargs.get("aws_session_token", None)
+        kwargs["debug"] = kwargs.get("debug", S3_CONF["debug"])
         super().__init__(
             access_key,
             secret_key,
             endpoint_url,
             s3_cert_path,
-            region,
-            aws_session_token,
-            debug)
+            **kwargs)
 
     def set_bucket_tag(
             self,
@@ -85,6 +82,7 @@ class S3TaggingTestLib(Tagging):
             tag_count: int = 1) -> tuple:
         """
         Set one or multiple tags to a bucket.
+
         :param bucket_name: Name of the bucket.
         :param key: Key for bucket tagging.
         :param value: Value for bucket tagging.
@@ -114,6 +112,7 @@ class S3TaggingTestLib(Tagging):
     def get_bucket_tags(self, bucket_name: str) -> tuple:
         """
         List all bucket tags if any.
+
         :param bucket_name: Name of the bucket.
         :return: (Boolean, list of tags)
         """
@@ -135,6 +134,7 @@ class S3TaggingTestLib(Tagging):
     def delete_bucket_tagging(self, bucket_name: str) -> tuple:
         """
         Delete all bucket tags.
+
         :param bucket_name: Name of the bucket.
         :return: (Boolean, response).
         """
@@ -156,9 +156,10 @@ class S3TaggingTestLib(Tagging):
             obj_name: str,
             key: str,
             value: str,
-            tag_count: int = 1) -> tuple:
+            **kwargs) -> tuple:
         """
-        Sets the supplied tag-set to an object that already exists in a bucket.
+        Set the supplied tag-set to an object that already exists in a bucket.
+
         :param bucket_name: Name of the bucket.
         :param obj_name: Name of the object.
         :param key: Key for object tagging.
@@ -166,6 +167,7 @@ class S3TaggingTestLib(Tagging):
         :param tag_count: Tag count.
         :return: (Boolean, response)
         """
+        tag_count = kwargs.get("tag_count", 1)
         try:
             LOGGER.info("Set object tagging")
             tag_set = list()
@@ -188,7 +190,8 @@ class S3TaggingTestLib(Tagging):
 
     def get_object_tags(self, bucket_name: str, obj_name: str) -> tuple:
         """
-        Returns the tag-set of an object.
+        Return the tag-set of an object.
+
         :param bucket_name: Name of the bucket.
         :param obj_name: Name of the object.
         :return: (Boolean, list of object tags)
@@ -210,7 +213,8 @@ class S3TaggingTestLib(Tagging):
 
     def delete_object_tagging(self, bucket_name: str, obj_name: str) -> tuple:
         """
-        Removes the tag-set from an existing object.
+        Remove the tag-set from an existing object.
+
         :param bucket_name: Name of the bucket.
         :param obj_name: Name of the object.
         :return: (Boolean, response)
@@ -235,6 +239,7 @@ class S3TaggingTestLib(Tagging):
             tag: str) -> tuple:
         """
         request to initiate a multipart upload.
+
         :param bucket_name: Name of the bucket.
         :param obj_name: Name of the object.
         :param tag: Tag value(eg: "aaa=bbb").
@@ -260,10 +265,10 @@ class S3TaggingTestLib(Tagging):
                                 object_name: str,
                                 file_path: str,
                                 tag: str = None,
-                                key: str = None,
-                                value: str = None) -> tuple:
+                                **kwargs) -> tuple:
         """
         Putting Object to the Bucket (mainly small file) with tagging and metadata.
+
         :param bucket_name: Name of the bucket.
         :param object_name: Name of the object.
         :param file_path: Path of the file.
@@ -272,6 +277,8 @@ class S3TaggingTestLib(Tagging):
         :param value: Value for metadata.
         :return: (Boolean, response)
         """
+        key = kwargs.get("key", None)
+        value = kwargs.get("value", None)
         try:
             LOGGER.info("put %s into %s with %s",
                         object_name,
@@ -284,9 +291,10 @@ class S3TaggingTestLib(Tagging):
                 if key:
                     meta = {key: value}
                     response = super().put_object_with_tagging(
-                        bucket_name, object_name, data, tag, meta)
+                        bucket_name, object_name, data=data, tag=tag, meta=meta)
                 else:
-                    response = super().put_object_with_tagging(bucket_name, object_name, data, tag)
+                    response = super().put_object_with_tagging(bucket_name, object_name,
+                                                               data=data, tag=tag)
             LOGGER.info(response)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
@@ -303,6 +311,7 @@ class S3TaggingTestLib(Tagging):
             value: str) -> tuple:
         """
         Set tags to a bucket with duplicate keys.
+
         :param bucket_name: Name of bucket.
         :param key: Key for bucket tagging.
         :param value: Value for bucket tagging.
@@ -336,6 +345,7 @@ class S3TaggingTestLib(Tagging):
             value: str) -> tuple:
         """
         Set tag to a bucket with invalid special characters(convert tag to encode base64).
+
         :param bucket_name: Name of bucket.
         :param key: Key for bucket tagging.
         :param value: Value for bucket tagging.
@@ -367,9 +377,10 @@ class S3TaggingTestLib(Tagging):
                                   obj_name: str,
                                   key: str,
                                   value: str,
-                                  duplicate_key: bool = True) -> tuple:
+                                  **kwargs) -> tuple:
         """
-        Sets the duplicate tag-set to an object that already exists in a bucket.
+        Set the duplicate tag-set to an object that already exists in a bucket.
+
         :param bucket_name: Name of bucket.
         :param obj_name: Name of object.
         :param key: Key for object tagging.
@@ -378,6 +389,7 @@ class S3TaggingTestLib(Tagging):
         :return: True or False and response.
         """
         LOGGER.info("Set duplicate tag set to an object.")
+        duplicate_key = kwargs.get("duplicate_key", True)
         try:
             tag_set = list()
             for num in range(2):
@@ -410,6 +422,7 @@ class S3TaggingTestLib(Tagging):
             value: str) -> tuple:
         """
         Set tag to a object with invalid special characters(convert tag to encode base64).
+
         :param bucket_name: Name of bucket.
         :param obj_name: Name of object.
         :param key: Key for object tagging.
@@ -441,6 +454,7 @@ class S3TaggingTestLib(Tagging):
     def get_object_with_tagging(self, bucket_name: str, key: str) -> tuple:
         """
         Get object using tag key.
+
         :param bucket_name: Name of bucket.
         :param key: tag key of the object.
         :return: True or False and response.

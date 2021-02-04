@@ -21,8 +21,8 @@ DASHBOARD_MENU_ID = "Dashboard"
 
 #  S3 Config
 S3_ACCOUNTS_TABLE_XPATH = '//*[@id="s3-datatable"]//table/tbody/tr/td'
-S3_Account_NUMBER_OF_ROWS = '//*[@id="s3-datatable"]//table/tbody/tr'
-S3_Account_NUMBER_OF_COLUMNS = '//*[@id="s3-datatable"]//table/tbody/tr[1]/td'
+S3_ACCOUNT_NUMBER_OF_ROWS = '//*[@id="s3-datatable"]//table/tbody/tr'
+S3_ACCOUNT_NUMBER_OF_COLUMNS = '//*[@id="s3-datatable"]//table/tbody/tr[1]/td'
 ADD_S3_ACCOUNT_BUTTON_ID = 's3-addnewuserbtn'
 CREATE_S3_ACCOUNT_BUTTON_ID = 's3-crete-accountbtn'
 CANCEL_S3_ACCOUNT_ID = 's3-account-cancelbtn'
@@ -77,6 +77,9 @@ NEW_USER_CONFIRM_OK_BUTTON_ID = "user-dialog-close-btn"
 INVALID_LOCAL_USER_MSG_ID = "localuser-invalid"
 PASSWORD_MISS_MATCH_MSG_ID = "localuser-confirmpassword-notmatch"
 CONFIRM_DELETE_BOX_BTN_ID = "confirmation-dialogbox-btn"
+# CFT
+CSM_STATS_CHART_ID = 'line_chart'
+DASHBOARD_ALERT_SECTION_ID = 'alertMediumContainer'
 DELETE_USER_BTN_ID = "localuser-deleteicon"
 INVALID_PASSWORD_MSG_ID = "localuser-password-invalid"
 CHANGE_PASSWORD_BTN_ID = "change-password-text"

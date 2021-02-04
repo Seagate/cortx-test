@@ -44,7 +44,7 @@ class TestBucketPolicy():
             self.rest_iam_user.delete_iam_user(login_as="s3account_user", user=user)
         self.log.info("Teardown ended")
 
-    @pytest.mark.tags("TEST-4212","TEST-10783")
+    @pytest.mark.tags("TEST-4212")
     def test_4212(self):
         """Test that s3 user can add bucket policy
          :avocado: tags=bucket_policy

@@ -31,29 +31,28 @@ from commons.helpers.s3_helper import S3Helper
 from commons.utils.system_utils import create_file, cal_percent
 from libs.s3.s3_core_lib import Multipart
 
-try:
-    s3hobj = S3Helper()
-except ImportError as err:
-    s3hobj = S3Helper.get_instance()
-
 LOGGER = logging.getLogger(__name__)
+
+try:
+    S3H_OBJ = S3Helper()
+except ImportError as ierr:
+    LOGGER.warning(str(ierr))
+    S3H_OBJ = S3Helper.get_instance()
+
 S3_CONF = read_yaml("config/s3/s3_config.yaml")[1]
 
 
 class S3MultipartTestLib(Multipart):
-    """
-    This Class initialising s3 connection and including methods for multipart operations.
-    """
+    """Class initialising s3 connection and including methods for multipart operations."""
 
-    def __init__(self, access_key: str = s3hobj.get_local_keys()[0],
-                 secret_key: str = s3hobj.get_local_keys()[1],
+    def __init__(self, access_key: str = S3H_OBJ.get_local_keys()[0],
+                 secret_key: str = S3H_OBJ.get_local_keys()[1],
                  endpoint_url: str = S3_CONF["s3_url"],
                  s3_cert_path: str = S3_CONF["s3_cert_path"],
-                 region: str = S3_CONF["region"],
-                 aws_session_token: str = None,
-                 debug: bool = S3_CONF["debug"]) -> None:
+                 **kwargs) -> None:
         """
         This method initializes members of S3MultipartTestLib and its parent class.
+
         :param access_key: access key.
         :param secret_key: secret key.
         :param endpoint_url: endpoint url.
@@ -62,14 +61,15 @@ class S3MultipartTestLib(Multipart):
         :param aws_session_token: aws_session_token.
         :param debug: debug mode.
         """
+        kwargs["region"] = kwargs.get("region", S3_CONF["region"])
+        kwargs["aws_session_token"] = kwargs.get("aws_session_token", None)
+        kwargs["debug"] = kwargs.get("debug", S3_CONF["debug"])
         super().__init__(
             access_key,
             secret_key,
             endpoint_url,
             s3_cert_path,
-            region,
-            aws_session_token,
-            debug)
+            **kwargs)
 
     def create_multipart_upload(self,
                                 bucket_name: str,
@@ -78,6 +78,7 @@ class S3MultipartTestLib(Multipart):
                                 m_value: str = None) -> tuple:
         """
         Request to initiate a multipart upload.
+
         :param bucket_name: Name of the bucket.
         :param obj_name: Name of the object.
         :param m_key: Key for metadata.
@@ -102,10 +103,10 @@ class S3MultipartTestLib(Multipart):
                     body: str,
                     bucket_name: str,
                     object_name: str,
-                    upload_id: int,
-                    part_number: int) -> tuple:
+                    **kwargs) -> tuple:
         """
         Upload parts of a specific multipart upload.
+
         :param body: content of the object.
         :param bucket_name: Name of the bucket.
         :param object_name: Name of the object.
@@ -114,9 +115,11 @@ class S3MultipartTestLib(Multipart):
         :return: (Boolean, response)
         """
         try:
+            upload_id = kwargs.get("upload_id", None)
+            part_number = kwargs.get("part_number", None)
             LOGGER.info("uploading part")
             response = super().upload_part(
-                body, bucket_name, object_name, upload_id, part_number)
+                body, bucket_name, object_name, upload_id=upload_id, part_number=part_number)
             LOGGER.info(response)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
@@ -131,10 +134,10 @@ class S3MultipartTestLib(Multipart):
                      bucket_name: str,
                      object_name: str,
                      multipart_obj_size: int,
-                     total_parts: int,
-                     multipart_obj_path: str) -> tuple:
+                     **kwargs) -> tuple:
         """
         Upload parts for a specific multipart upload ID.
+
         :param mpu_id: Multipart Upload ID.
         :param bucket_name: Name of the bucket.
         :param object_name: Name of the object.
@@ -144,7 +147,9 @@ class S3MultipartTestLib(Multipart):
         :return: (Boolean, List of uploaded parts).
         """
         try:
-            parts = []
+            total_parts = kwargs.get("total_parts", None)
+            multipart_obj_path = kwargs.get("multipart_obj_path", None)
+            parts = list()
             uploaded_bytes = 0
             single_part_size = int(multipart_obj_size) // int(total_parts)
             if os.path.exists(multipart_obj_path):
@@ -157,7 +162,7 @@ class S3MultipartTestLib(Multipart):
                     LOGGER.info("data_len %s", str(len(data)))
                     if not data:
                         break
-                    part = super().upload_part(data, bucket_name, object_name, mpu_id, i)
+                    part = super().upload_part(data, bucket_name, object_name, mpu_id=mpu_id, i=i)
                     LOGGER.debug("Part : %s", str(part))
                     parts.append({"PartNumber": i, "ETag": part["ETag"]})
                     uploaded_bytes += len(data)
@@ -187,6 +192,7 @@ class S3MultipartTestLib(Multipart):
             object_name: str) -> tuple:
         """
         List parts of a specific multipart upload.
+
         :param mpu_id: Id of complete multipart upload.
         :param bucket_name: Name of the bucket.
         :param object_name: Name of the object.
@@ -212,6 +218,7 @@ class S3MultipartTestLib(Multipart):
             object_name: str) -> tuple:
         """
         Complete a multipart upload, s3 creates an object by concatenating the parts.
+
         :param mpu_id: Id of complete multipart upload.
         :param parts: Upload parts.
         :param bucket: Name of the bucket.
@@ -234,6 +241,7 @@ class S3MultipartTestLib(Multipart):
     def list_multipart_uploads(self, bucket: str):
         """
         List all initiated multipart uploads.
+
         :param bucket: Name of the bucket.
         :return: (Boolean, response)
         """
@@ -255,8 +263,9 @@ class S3MultipartTestLib(Multipart):
             object_name: str,
             upload_id: str) -> tuple:
         """
-        Abort multipart upload for given upload_id. After aborting a multipart upload,
-        you cannot upload any part using that upload ID again.
+        Abort multipart upload for given upload_id.
+
+        After aborting a multipart upload, you cannot upload any part using that upload ID again.
         :param bucket: Name of the bucket.
         :param object_name: Name of the object.
         :param upload_id: Name of the object.
@@ -275,8 +284,9 @@ class S3MultipartTestLib(Multipart):
 
     def abort_multipart_all(self, bucket: str, object_name: str) -> tuple:
         """
-        Abort all the multipart uploads. After aborting a multipart upload,
-        you cannot upload any part using that upload ID again.
+        Abort all the multipart uploads.
+
+        After aborting a multipart upload, you cannot upload any part using that upload ID again.
         :param bucket: Name of the bucket.
         :param object_name: Name of the object.
         :return: (Boolean, response)
@@ -308,6 +318,7 @@ class S3MultipartTestLib(Multipart):
             stop_byte: int) -> tuple:
         """
         Getting byte range of the object.
+
         :param bucket_name: Name of the bucket.
         :param my_key: Key of object.
         :param start_byte: Start byte range.
