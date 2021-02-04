@@ -15,18 +15,19 @@ class CortxCliIAMLib(CortxCliTestLib):
             user_name: str = None,
             password: str = None,
             confirm_password: str = None,
-            confirm: str = "Y",
-            help_param: bool = False) -> Tuple[bool, str]:
+            **kwargs) -> Tuple[bool, str]:
         """
         This function will create new IAM user
         :param user_name: Name of IAM user to be created
         :param password: Password to create s3 IAM user.
         :param confirm_password: Confirm password to create s3 IAM user.
-        :param confirm: Confirm option for creating a IAM user
-        :param help_param: True for displaying help/usage
+        :keyword confirm: Confirm option for creating a IAM user
+        :keyword help_param: True for displaying help/usage
         :return: (Boolean/Response)
         """
         create_iam_user = "s3iamusers create"
+        help_param = kwargs.get("help_param", False)
+        confirm = kwargs.get("confirm", "Y")
         if help_param:
             cmd = " ".join([create_iam_user, "-h"])
         else:

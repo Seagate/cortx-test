@@ -1,17 +1,17 @@
 """CSM CLI IAM user TestSuite"""
 
 import time
-import sys
 import logging
 import pytest
 from commons.utils import assert_utils
 from libs.csm.cli.cli_iam_user import CortxCliIAMLib
+from commons import cortxlogging
 
 IAM_OBJ = CortxCliIAMLib()
 LOGGER = logging.getLogger(__name__)
 
 
-def setup_function(function):
+def setup_function():
 
     """
     This function will be invoked prior to each test function in the module.
@@ -25,7 +25,7 @@ def setup_function(function):
     LOGGER.info("ENDED : Setup operations for test function")
 
 
-def teardown_function(function):
+def teardown_function():
 
     """
     This function will be invoked after each test function in the module.
@@ -56,7 +56,7 @@ def test_867():
     Test that ` s3iamuser create <user_name>` with
     correct username and password should create new IAM user
     """
-    test_case_name = sys._getframe().f_code.co_name
+    test_case_name = cortxlogging.get_frame()
     LOGGER.info("##### Test started -  %s #####", test_case_name)
     user_name = "{0}{1}".format("iam_user", str(int(time.time())))
     password = "Seagate@1"
@@ -76,8 +76,8 @@ def test_875():
     """
     Test that ` s3iamuser delete <iam_user_name>` must delete the given IAM user
     """
-    test_case_name = sys._getframe().f_code.co_name
-    LOGGER.info("##### Test Started -  %s #####", test_case_name)
+    test_case_name = cortxlogging.get_frame()
+    LOGGER.info("##### Test started -  %s #####", test_case_name)
     user_name = "{0}{1}".format("iam_user", str(int(time.time())))
     LOGGER.info("Creating iam user with name %s", user_name)
     resp = IAM_OBJ.create_iam_user(user_name=user_name,
