@@ -110,67 +110,67 @@ class TestS3ACLTestLib:
             remove_file(self.test_file_path)
         self.log.info("ENDED: Teardown operations")
 
-    def test_15_create_multipart_upload(self):
+    def test_01_create_multipart_upload(self):
         """Test create multipart upload."""
-        S3_TEST_OBJ.create_bucket("ut-bkt-15")
+        S3_TEST_OBJ.create_bucket("ut-bkt-01")
         resp = S3_MP_OBJ.create_multipart_upload(
-            "ut-bkt-15",
+            "ut-bkt-01",
             self.obj_name)
         assert resp[0], resp[1]
-        S3_TEST_OBJ.create_bucket("ut-bkt-15")
+        S3_TEST_OBJ.create_bucket("ut-bkt-01")
         resp = S3_MP_OBJ.create_multipart_upload(
-            "ut-bkt-15",
+            "ut-bkt-01",
             self.obj_name,
             "test_key",
             "test_value")
         assert resp[0], resp[1]
 
-    def test_16_upload_parts(self):
+    def test_02_upload_parts(self):
         """Test upload parts."""
-        S3_TEST_OBJ.create_bucket("ut-bkt-16")
+        S3_TEST_OBJ.create_bucket("ut-bkt-02")
         resp = S3_MP_OBJ.create_multipart_upload(
-            "ut-bkt-16",
+            "ut-bkt-02",
             self.obj_name)
         mpu_id = resp[1]["UploadId"]
         resp = S3_MP_OBJ.upload_parts(
             mpu_id,
-            "ut-bkt-16",
+            "ut-bkt-02",
             self.obj_name,
             50,
             5,
             self.test_file_path)
         assert resp[0], resp[1]
 
-    def test_17_list_parts(self):
+    def test_03_list_parts(self):
         """Test list parts."""
-        S3_TEST_OBJ.create_bucket("ut-bkt-17")
+        S3_TEST_OBJ.create_bucket("ut-bkt-03")
         resp = S3_MP_OBJ.create_multipart_upload(
-            "ut-bkt-17",
+            "ut-bkt-03",
             self.obj_name)
         mpu_id = resp[1]["UploadId"]
         S3_MP_OBJ.upload_parts(
             mpu_id,
-            "ut-bkt-17",
+            "ut-bkt-03",
             self.obj_name,
             50,
             5,
             self.test_file_path)
         resp = S3_MP_OBJ.list_parts(
             mpu_id,
-            "ut-bkt-17",
+            "ut-bkt-03",
             self.obj_name)
         assert resp[0], resp[1]
 
-    def test_18_complete_multipart_upload(self):
+    def test_04_complete_multipart_upload(self):
         """Test complete multipart upload."""
-        S3_TEST_OBJ.create_bucket("ut-bkt-18")
+        S3_TEST_OBJ.create_bucket("ut-bkt-04")
         resp = S3_MP_OBJ.create_multipart_upload(
-            "ut-bkt-18",
+            "ut-bkt-04",
             self.obj_name)
         mpu_id = resp[1]["UploadId"]
         resp = S3_MP_OBJ.upload_parts(
             mpu_id,
-            "ut-bkt-18",
+            "ut-bkt-04",
             self.obj_name,
             50,
             5,
@@ -179,33 +179,33 @@ class TestS3ACLTestLib:
         resp = S3_MP_OBJ.complete_multipart_upload(
             mpu_id,
             parts,
-            "ut-bkt-18",
+            "ut-bkt-04",
             self.obj_name)
         assert resp[0], resp[1]
 
-    def test_19_abort_multipart_all(self):
+    def test_05_abort_multipart_all(self):
         """Test abort multipart all."""
-        S3_TEST_OBJ.create_bucket("ut-bkt-19")
+        S3_TEST_OBJ.create_bucket("ut-bkt-05")
         resp = S3_MP_OBJ.create_multipart_upload(
-            "ut-bkt-19",
+            "ut-bkt-05",
             self.obj_name)
         mpu_id = resp[1]["UploadId"]
         S3_MP_OBJ.upload_parts(
             mpu_id,
-            "ut-bkt-19",
+            "ut-bkt-05",
             self.obj_name,
             50,
             5,
             self.test_file_path)
         resp = S3_MP_OBJ.abort_multipart_all(
-            "ut-bkt-19",
+            "ut-bkt-05",
             self.obj_name)
         assert resp[0], resp[1]
 
-    def test_55_list_multipart_uploads(self):
+    def test_06_list_multipart_uploads(self):
         """Test list multipart uploads."""
-        bkt_name = "ut-bkt-55"
-        obj_name = "ut-obj-55"
+        bkt_name = "ut-bkt-06"
+        obj_name = "ut-obj-06"
         S3_TEST_OBJ.create_bucket(bkt_name)
         op_val = S3_MP_OBJ.create_multipart_upload(bkt_name, obj_name)
         global MPID
@@ -223,24 +223,24 @@ class TestS3ACLTestLib:
         except CTException as error:
             assert "NoSuchBucket" not in str(error.message), error.message
 
-    def test_58_get_byte_range_of_object(self):
+    def test_07_get_byte_range_of_object(self):
         """Test get byte range of object."""
         create_file(
             self.test_file_path,
             self.obj_size)
-        S3_TEST_OBJ.create_bucket("ut-bkt-58")
+        S3_TEST_OBJ.create_bucket("ut-bkt-07")
         op_val = S3_TEST_OBJ.put_object(
-            "ut-bkt-58",
-            "ut-obj-58",
+            "ut-bkt-07",
+            "ut-obj-07",
             self.test_file_path)
         assert op_val[0], op_val[1]
         op_val = S3_MP_OBJ.get_byte_range_of_object(
-            "ut-bkt-58", "ut-obj-58",
+            "ut-bkt-07", "ut-obj-07",
             0, 5)
         assert op_val[0], op_val[1]
         try:
             S3_MP_OBJ.get_byte_range_of_object(
-                self.dummy_bucket, "ut-obj-58",
+                self.dummy_bucket, "ut-obj-07",
                 0, 5)
         except CTException as error:
             assert "NoSuchBucket" not in str(error.message), error.message

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-"""UnitTest for s3 tagging test helper library which contains s3 tagging policy operations."""
+"""UnitTest for s3 tagging test helper library which contains s3 tagging operations."""
 
 import os
 import shutil
@@ -110,122 +110,122 @@ class TestS3ACLTestLib:
             remove_file(self.test_file_path)
         self.log.info("ENDED: Teardown operations")
 
-    def test_25_set_bucket_tag(self):
+    def test_01_set_bucket_tag(self):
         """Test set bucket tag."""
-        S3_TEST_OBJ.create_bucket("ut-bkt-25")
+        S3_TEST_OBJ.create_bucket("ut-bkt-01")
         resp = S3_TAG_OBJ.set_bucket_tag(
-            "ut-bkt-25",
+            "ut-bkt-01",
             "test_key",
             "test_value",
             10)
         assert resp[0], resp[1]
 
-    def test_26_get_bucket_tags(self):
+    def test_02_get_bucket_tags(self):
         """Test get bucket tag."""
-        S3_TEST_OBJ.create_bucket("ut-bkt-26")
+        S3_TEST_OBJ.create_bucket("ut-bkt-02")
         S3_TAG_OBJ.set_bucket_tag(
-            "ut-bkt-26",
+            "ut-bkt-02",
             "test_key",
             "test_value",
             10)
         resp = S3_TAG_OBJ.get_bucket_tags(
-            "ut-bkt-26")
+            "ut-bkt-02")
         assert resp[0], resp[1]
 
-    def test_27_delete_bucket_tagging(self):
+    def test_03_delete_bucket_tagging(self):
         """Test delete bucket tagging."""
-        S3_TEST_OBJ.create_bucket("ut-bkt-27")
+        S3_TEST_OBJ.create_bucket("ut-bkt-03")
         S3_TAG_OBJ.set_bucket_tag(
-            "ut-bkt-27",
+            "ut-bkt-03",
             "test_key",
             "test_value",
             10)
         resp = S3_TAG_OBJ.delete_bucket_tagging(
-            "ut-bkt-27")
+            "ut-bkt-03")
         assert resp[0], resp[1]
 
-    def test_28_set_object_tag(self):
+    def test_04_set_object_tag(self):
         """Test set object tag."""
-        S3_TEST_OBJ.create_bucket("ut-bkt-28")
+        S3_TEST_OBJ.create_bucket("ut-bkt-04")
         create_file(
             self.test_file_path,
             self.file_size)
         S3_TEST_OBJ.put_object(
-            "ut-bkt-28",
+            "ut-bkt-04",
             self.obj_name,
             self.test_file_path)
         resp = S3_TAG_OBJ.set_object_tag(
-            "ut-bkt-28",
+            "ut-bkt-04",
             self.obj_name,
             "test_key",
             "test_value",
             10)
         assert resp[0], resp[1]
 
-    def test_29_get_object_tags(self):
+    def test_05_get_object_tags(self):
         """Test get object tags."""
-        S3_TEST_OBJ.create_bucket("ut-bkt-29")
+        S3_TEST_OBJ.create_bucket("ut-bkt-05")
         create_file(
             self.test_file_path,
             self.file_size)
         S3_TEST_OBJ.put_object(
-            "ut-bkt-29",
+            "ut-bkt-05",
             self.obj_name,
             self.test_file_path)
         S3_TAG_OBJ.set_object_tag(
-            "ut-bkt-29",
+            "ut-bkt-05",
             self.obj_name,
             "test_key",
             "test_value",
             10)
         resp = S3_TAG_OBJ.get_object_tags(
-            "ut-bkt-29",
+            "ut-bkt-05",
             self.obj_name)
         assert resp[0], resp[1]
 
-    def test_30_delete_object_tagging(self):
+    def test_06_delete_object_tagging(self):
         """Test delete object tagging."""
-        S3_TEST_OBJ.create_bucket("ut-bkt-30")
+        S3_TEST_OBJ.create_bucket("ut-bkt-06")
         create_file(
             self.test_file_path,
             self.file_size)
         S3_TEST_OBJ.put_object(
-            "ut-bkt-30",
+            "ut-bkt-06",
             self.obj_name,
             self.test_file_path)
         S3_TAG_OBJ.set_object_tag(
-            "ut-bkt-30",
+            "ut-bkt-06",
             self.obj_name,
             "test_key",
             "test_value")
         resp = S3_TAG_OBJ.delete_object_tagging(
-            "ut-bkt-30",
+            "ut-bkt-06",
             self.obj_name)
         assert resp[0], resp[1]
 
-    def test_31_create_multipart_upload_with_tagging(self):
+    def test_07_create_multipart_upload_with_tagging(self):
         """Test create multipart upload with tagging."""
-        S3_TEST_OBJ.create_bucket("ut-bkt-31")
+        S3_TEST_OBJ.create_bucket("ut-bkt-07")
         resp = S3_TAG_OBJ.create_multipart_upload_with_tagging(
-            "ut-bkt-31",
+            "ut-bkt-07",
             self.obj_name,
             "test_key=test_value")
         assert resp[0], resp[1]
 
-    def test_45_set_bucket_tag_duplicate_keys(self):
+    def test_08_set_bucket_tag_duplicate_keys(self):
         """"Test set bucket tag duplicate keys."""
-        S3_TEST_OBJ.create_bucket("ut-bkt-45")
+        S3_TEST_OBJ.create_bucket("ut-bkt-08")
         try:
             S3_TAG_OBJ.set_bucket_tag_duplicate_keys(
-                "ut-bkt-45", "aaa1", "bbb2")
+                "ut-bkt-08", "aaa1", "bbb2")
         except CTException as error:
             assert "MalformedXML" not in str(error.message), error.message
 
-    def test_46_set_bucket_tag_base64_encode(self):
+    def test_09_set_bucket_tag_base64_encode(self):
         """Test set bucket tag base64 encode."""
-        S3_TEST_OBJ.create_bucket("ut-bkt-46")
+        S3_TEST_OBJ.create_bucket("ut-bkt-09")
         op_val = S3_TAG_OBJ.set_bucket_tag_invalid_char(
-            "ut-bkt-46", "aaa", "aaa")
+            "ut-bkt-09", "aaa", "aaa")
         assert op_val[0], op_val[1]
         try:
             S3_TAG_OBJ.set_bucket_tag_invalid_char(
@@ -233,47 +233,47 @@ class TestS3ACLTestLib:
         except CTException as error:
             assert "NoSuchBucket" not in str(error.message), error.message
 
-    def test_47_set_duplicate_object_tag_key(self):
+    def test_10_set_duplicate_object_tag_key(self):
         """Test set duplicate object tag key."""
         create_file(
             self.test_file_path,
             self.obj_size)
-        S3_TEST_OBJ.create_bucket("ut-bkt-47")
+        S3_TEST_OBJ.create_bucket("ut-bkt-10")
         S3_TEST_OBJ.put_object(
-            "ut-bkt-47",
-            "ut-obj-47",
+            "ut-bkt-10",
+            "ut-obj-10",
             file_path=self.test_file_path)
         op_val = S3_TAG_OBJ.set_duplicate_object_tags(
-            "ut-bkt-47",
-            "ut-obj-47",
+            "ut-bkt-10",
+            "ut-obj-10",
             "aaa",
             "bbb",
             False)
         assert op_val[0], op_val[1]
         try:
             S3_TAG_OBJ.set_duplicate_object_tags(
-                "ut-bkt-47",
-                "ut-obj-47",
+                "ut-bkt-10",
+                "ut-obj-10",
                 "aaa",
                 "bbb")
         except CTException as error:
             assert "MalformedXML" not in str(error.message), error.message
 
-    def test_48_put_object_tag_with_tagging(self):
+    def test_11_put_object_tag_with_tagging(self):
         """Test put object tag with tagging."""
         create_file(
             self.test_file_path,
             self.obj_size)
-        S3_TEST_OBJ.create_bucket("ut-bkt-48")
+        S3_TEST_OBJ.create_bucket("ut-bkt-11")
         op_val = S3_TAG_OBJ.put_object_with_tagging(
-            "ut-bkt-48",
-            "ut-obj-48",
+            "ut-bkt-11",
+            "ut-obj-11",
             self.test_file_path,
             "aaa=bbb")
         assert op_val[0], op_val[1]
         op_val = S3_TAG_OBJ.put_object_with_tagging(
-            "ut-bkt-48",
-            "ut-obj-48",
+            "ut-bkt-11",
+            "ut-obj-11",
             self.test_file_path,
             "aaa=bbb",
             "aaa",
@@ -282,7 +282,7 @@ class TestS3ACLTestLib:
         try:
             S3_TAG_OBJ.put_object_with_tagging(
                 self.dummy_bucket,
-                "ut-obj-48",
+                "ut-obj-11",
                 self.test_file_path,
                 "aaa=bbb",
                 "aaa",
@@ -290,43 +290,43 @@ class TestS3ACLTestLib:
         except CTException as error:
             assert "NoSuchBucket" not in str(error.message), error.message
 
-    def test_49_put_object_tag_base64_encode(self):
+    def test_12_put_object_tag_base64_encode(self):
         """Test put object tag base64 encode."""
         create_file(
             self.test_file_path,
             self.obj_size)
-        S3_TEST_OBJ.create_bucket("ut-bkt-49")
+        S3_TEST_OBJ.create_bucket("ut-bkt-12")
         S3_TEST_OBJ.put_object(
-            "ut-bkt-49",
-            "ut-obj-49",
+            "ut-bkt-12",
+            "ut-obj-12",
             self.test_file_path)
         op_val = S3_TAG_OBJ.set_object_tag_invalid_char(
-            "ut-bkt-49", "ut-obj-49",
+            "ut-bkt-12", "ut-obj-12",
             "aaa", "bbb")
         assert op_val[0], op_val[1]
         try:
             S3_TAG_OBJ.set_object_tag_invalid_char(
-                self.dummy_bucket, "ut-obj-49",
+                self.dummy_bucket, "ut-obj-12",
                 "aaa", "bbb")
         except CTException as error:
             assert "NoSuchBucket" not in str(error.message), error.message
 
-    def test_50_get_object_tagging(self):
+    def test_13_get_object_tagging(self):
         """Test get object tagging."""
         create_file(
             self.test_file_path,
             self.obj_size)
-        S3_TEST_OBJ.create_bucket("ut-bkt-50")
+        S3_TEST_OBJ.create_bucket("ut-bkt-13")
         S3_TAG_OBJ.put_object_with_tagging(
-            "ut-bkt-50",
-            "ut-obj-50",
+            "ut-bkt-13",
+            "ut-obj-13",
             self.test_file_path,
             "aaa=bbb")
         op_val = S3_TAG_OBJ.get_object_with_tagging(
-            "ut-bkt-50", "ut-obj-50")
+            "ut-bkt-13", "ut-obj-13")
         assert op_val[0], op_val[1]
         try:
             S3_TAG_OBJ.get_object_with_tagging(
-                self.dummy_bucket, "ut-obj-50")
+                self.dummy_bucket, "ut-obj-13")
         except CTException as error:
             assert "NoSuchBucket" not in str(error.message), error.message
