@@ -15,70 +15,68 @@ from commons.helpers.controller_helper import ControllerLib
 from commons.helpers.s3_helper import S3Helper
 from commons import constants as cons
 from commons import commands as common_cmd
-from commons.utils import config_utils as conf_util
 from commons.utils.assert_utils import *
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 from commons.alerts_simulator.generate_alert_lib import \
      GenerateAlertLib, AlertType
+from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
 
 CSM_ALERT_OBJ = SystemAlerts()
 CSM_USER_OBJ = RestCsmUser()
 ALERT_API_OBJ = GenerateAlertLib()
 
-RAS_TEST_CFG = conf_util.read_yaml(cons.SSPL_TEST_CONFIG_PATH)[1]
-COMMON_CONF = conf_util.read_yaml(cons.COMMON_CONFIG_PATH)[1]
-RAS_VAL = conf_util.read_yaml(cons.RAS_CONFIG_PATH)[1]
 BYTES_TO_READ = cons.BYTES_TO_READ
 CM_CFG = RAS_VAL["ras_sspl_alert"]
 LOGGER = logging.getLogger(__name__)
 
-TEST_DATA = [COMMON_CONF["host"]]
+TEST_DATA = [CMN_CFG["host"]]
 
 
-class SSPLTest:
+class TestSSPL:
     """SSPL Test Suite."""
 
+    @classmethod
     @pytest.mark.parametrize("host", TEST_DATA)
-    def setup_module(self, host):
+    def setup_class(cls, host):
         """Setup for module."""
-        self.host = host
-        self.uname = COMMON_CONF["username"]
-        self.passwd = COMMON_CONF["password"]
-        self.changed_level = self.selinux_enabled = False
-        self.default_cpu_usage = self.default_mem_usage = True
+        cls.host = host
+        cls.uname = CMN_CFG["username"]
+        cls.passwd = CMN_CFG["password"]
+        cls.changed_level = cls.selinux_enabled = False
+        cls.default_cpu_usage = cls.default_mem_usage = True
 
-        self.ras_test_obj = RASTestLib(host=self.host, username=self.uname,
-                                       password=self.passwd)
-        self.node_obj = Node(hostname=self.host, username=self.uname,
-                             password=self.passwd)
-        self.health_obj = Health(hostname=self.host, username=self.uname,
-                                 password=self.passwd)
-        self.controller_obj = ControllerLib(
-            host=self.host, h_user=self.uname, h_pwd=self.passwd,
-            enclosure_ip=COMMON_CONF["primary_enclosure_ip"],
-            enclosure_user=COMMON_CONF["enclosure_user"],
-            enclosure_pwd=COMMON_CONF["enclosure_pwd"])
+        cls.ras_test_obj = RASTestLib(host=cls.host, username=cls.uname,
+                                      password=cls.passwd)
+        cls.node_obj = Node(hostname=cls.host, username=cls.uname,
+                            password=cls.passwd)
+        cls.health_obj = Health(hostname=cls.host, username=cls.uname,
+                                password=cls.passwd)
+        cls.controller_obj = ControllerLib(
+            host=cls.host, h_user=cls.uname, h_pwd=cls.passwd,
+            enclosure_ip=CMN_CFG["primary_enclosure_ip"],
+            enclosure_user=CMN_CFG["enclosure_user"],
+            enclosure_pwd=CMN_CFG["enclosure_pwd"])
         try:
-            self.s3obj = S3Helper()
+            cls.s3obj = S3Helper()
         except ImportError as err:
             LOGGER.info(str(err))
-            self.s3obj = S3Helper.get_instance()
+            cls.s3obj = S3Helper.get_instance()
 
         # Enable this flag for starting RMQ channel
-        self.start_rmq = CM_CFG["start_rmq"]
+        cls.start_rmq = CM_CFG["start_rmq"]
 
         field_list = ("primary_controller_ip", "secondary_controller_ip",
                       "primary_controller_port", "secondary_controller_port",
                       "user", "password", "secret")
         LOGGER.info("Putting expected values in KV store")
         for field in field_list:
-            res = self.ras_test_obj.put_kv_store(COMMON_CONF["enclosure_user"],
-                                                 COMMON_CONF["enclosure_pwd"],
-                                                 field)
+            res = cls.ras_test_obj.put_kv_store(CMN_CFG["enclosure_user"],
+                                                CMN_CFG["enclosure_pwd"],
+                                                field)
             assert res is True
 
-    def setup_function(self):
+    def setup_method(self):
         """Setup operations per test."""
         self.starttime = time.time()
         LOGGER.info("Retaining the original/default config")
@@ -133,7 +131,7 @@ class SSPLTest:
 
         LOGGER.info("Successfully performed Setup operations")
 
-    def teardown_function(self):
+    def teardown_method(self):
         """Teardown operations."""
         LOGGER.info("Performing Teardown operation")
         self.ras_test_obj.retain_config(CM_CFG["file"]["original_sspl_conf"],
@@ -1412,12 +1410,12 @@ class SSPLTest:
         LOGGER.info(
             "STARTED: Test Username/Password Security coverage on consul")
         LOGGER.info("Step 1: Modifying and validating enclosure username to "
-                    "'%s' and password to '%s'", COMMON_CONF["enclosure_user"],
-                    COMMON_CONF["enclosure_pwd"])
+                    "'%s' and password to '%s'", CMN_CFG["enclosure_user"],
+                    CMN_CFG["enclosure_pwd"])
         test_cfg = RAS_TEST_CFG["test_5924"]
         for field in test_cfg["fields"]:
-            res = self.ras_test_obj.put_kv_store(COMMON_CONF["enclosure_user"],
-                                                 COMMON_CONF["enclosure_pwd"],
+            res = self.ras_test_obj.put_kv_store(CMN_CFG["enclosure_user"],
+                                                 CMN_CFG["enclosure_pwd"],
                                                  field)
             assert res is True, f"Failed to update value for {field}"
         LOGGER.info(

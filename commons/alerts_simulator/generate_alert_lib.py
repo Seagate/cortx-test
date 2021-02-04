@@ -10,10 +10,10 @@ import commons.alerts_simulator.constants as dict_cons
 from commons.utils import config_utils as conf_util
 from commons.alerts_simulator.generate_alert_wrappers import \
     GenerateAlertWrapper
+from config import CMN_CFG as COMMON_CONF
 
 LOGGER = logging.getLogger(__name__)
 ALERT_WRAP = GenerateAlertWrapper()
-COMMON_CONF = conf_util.read_yaml(cons.COMMON_CONFIG_PATH)[1]
 
 
 class AlertType(Enum, settings=NoAlias):

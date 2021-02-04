@@ -16,10 +16,9 @@ from commons import constants as cmn_cons
 from commons import commands as common_commands
 from commons import errorcodes as err
 from commons.exceptions import CTException
+from config import CMN_CFG, RAS_VAL
 
 # Global Constants
-RAS_VAL = read_yaml(cmn_cons.RAS_CFG)[1]
-COMMON_CFG = read_yaml("config/common_config.yaml")[1]
 BYTES_TO_READ = cmn_cons.BYTES_TO_READ
 LOGGER = logging.getLogger(__name__)
 
@@ -30,9 +29,9 @@ class RASTestLib(RASCoreLib):
     """
     def __init__(
             self,
-            host: str = COMMON_CFG["host"],
-            username: str = COMMON_CFG["username"],
-            password: str = COMMON_CFG["password"]) -> None:
+            host: str = CMN_CFG["host"],
+            username: str = CMN_CFG["username"],
+            password: str = CMN_CFG["password"]) -> None:
         """
         Method initializes members of RASTestLib and its parent class
 
@@ -43,8 +42,8 @@ class RASTestLib(RASCoreLib):
         self.host = host
         self.username = username
         self.pwd = password
-        self.common_cfg = COMMON_CFG
-        self.sspl_pass = COMMON_CFG["sspl_pass"]
+        self.common_cfg = CMN_CFG
+        self.sspl_pass = CMN_CFG["sspl_pass"]
         super().__init__(host, username, password)
 
     def start_rabbitmq_reader_cmd(self, sspl_exchange: str, sspl_key: str,

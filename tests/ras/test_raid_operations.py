@@ -10,7 +10,6 @@ import time
 import logging
 import pytest
 from libs.ras.ras_test_lib import RASTestLib
-from commons.utils import config_utils as conf_utils
 from commons.utils import system_utils as sys_utils
 from commons.helpers.s3_helper import S3Helper
 from commons.helpers.health_helper import Health
@@ -19,46 +18,44 @@ from commons import constants as common_cons
 from commons import commands as common_cmds
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.csm.rest.csm_rest_csmuser import RestCsmUser
-from commons.alerts_simulator.generate_alert_lib import GenerateAlertLib, AlertType
+from commons.alerts_simulator.generate_alert_lib import GenerateAlertLib, \
+    AlertType
+from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
 
 # Global Constants
 BYTES_TO_READ = common_cons.BYTES_TO_READ
 LOGGER = logging.getLogger(__name__)
 
-RAS_TEST_CFG = conf_utils.read_yaml("config/ras_config.yaml")[1]
-TEST_CFG = conf_utils.read_yaml("config/ras_test.yaml")[1]
-CM_CFG = conf_utils.read_yaml("config/common_config.yaml")[1]
-CSM_CONF = conf_utils.read_yaml(common_cons.CSM_CONF)[1]
 
-
-class RAIDOperations:
+class TestRAIDOperations:
     """
     Test suite for performing RAID related operations
     """
 
-    def setup_module(self):
+    @classmethod
+    def setup_class(cls):
         """
         Setup operations for the test file.
         """
         LOGGER.info("STARTED: Setup Module operations")
-        self.host = CM_CFG["host"]
-        self.uname = CM_CFG["username"]
-        self.passwd = CM_CFG["password"]
-        self.nd_obj = Node(hostname=self.host, username=self.uname,
-                           password=self.passwd)
-        self.hlt_obj = Health(hostname=self.host, username=self.uname,
-                              password=self.passwd)
+        cls.host = CMN_CFG["host"]
+        cls.uname = CMN_CFG["username"]
+        cls.passwd = CMN_CFG["password"]
+        cls.nd_obj = Node(hostname=cls.host, username=cls.uname,
+                          password=cls.passwd)
+        cls.hlt_obj = Health(hostname=cls.host, username=cls.uname,
+                             password=cls.passwd)
         try:
-            self.s3_obj = S3Helper()
+            cls.s3_obj = S3Helper()
         except ImportError as err:
             LOGGER.info(str(err))
-            self.s3_obj = S3Helper.get_instance()
-        self.ras_obj = RASTestLib(host=self.host, username=self.uname,
-                                  password=self.passwd)
-        self.csm_alert_obj = SystemAlerts()
-        self.csm_user_obj = RestCsmUser()
-        self.alert_api_obj = GenerateAlertLib()
-        self.cm_cfg = RAS_TEST_CFG["ras_sspl_alert"]
+            cls.s3_obj = S3Helper.get_instance()
+        cls.ras_obj = RASTestLib(host=cls.host, username=cls.uname,
+                                 password=cls.passwd)
+        cls.csm_alert_obj = SystemAlerts()
+        cls.csm_user_obj = RestCsmUser()
+        cls.alert_api_obj = GenerateAlertLib()
+        cls.cm_cfg = RAS_VAL["ras_sspl_alert"]
         LOGGER.info("Done: Setup module operations")
 
     def setup_function(self):
@@ -66,7 +63,7 @@ class RAIDOperations:
         Setup operations for each test.
         """
         LOGGER.info("STARTED: Setup Operations")
-        self.md_device = RAS_TEST_CFG["raid_param"]["md0_path"]
+        self.md_device = RAS_VAL["raid_param"]["md0_path"]
         self.raid_stopped = False
         self.failed_disk = False
         self.removed_disk = False
@@ -79,9 +76,9 @@ class RAIDOperations:
         md_stat = self.nd_obj.get_mdstat()
         self.disks = md_stat["devices"][os.path.basename(
             self.md_device)]["disks"].keys()
-        self.disk1 = RAS_TEST_CFG["raid_param"]["disk_path"].format(
+        self.disk1 = RAS_VAL["raid_param"]["disk_path"].format(
             list(self.disks)[0])
-        self.disk2 = RAS_TEST_CFG["raid_param"]["disk_path"].format(
+        self.disk2 = RAS_VAL["raid_param"]["disk_path"].format(
             list(self.disks)[1])
 
         LOGGER.info("Updating transmit interval value to 10")
@@ -139,7 +136,7 @@ class RAIDOperations:
             resp = self.alert_api_obj.generate_alert(
                 AlertType.raid_remove_disk_alert,
                 input_parameters={
-                    "operation": RAS_TEST_CFG["raid_param"]["remove_operation"],
+                    "operation": RAS_VAL["raid_param"]["remove_operation"],
                     "md_device": self.md_device,
                     "disk": self.failed_disk})
             assert resp[0] is True, resp[1]
@@ -149,7 +146,7 @@ class RAIDOperations:
             resp = self.alert_api_obj.generate_alert(
                 AlertType.raid_add_disk_alert,
                 input_parameters={
-                    "operation": RAS_TEST_CFG["raid_param"]["add_operation"],
+                    "operation": RAS_VAL["raid_param"]["add_operation"],
                     "md_device": self.md_device,
                     "disk": self.removed_disk})
             assert resp[0] is True, resp[1]
@@ -206,8 +203,8 @@ class RAIDOperations:
         """
         LOGGER.info(
             "STARTED: TEST-5345 RAID: Assemble a array")
-        raid_cmn_cfg = RAS_TEST_CFG["raid_param"]
-        test_cfg = TEST_CFG["test_5345"]
+        raid_cmn_cfg = RAS_VAL["raid_param"]
+        test_cfg = RAS_TEST_CFG["test_5345"]
         csm_error_msg = raid_cmn_cfg["csm_error_msg"]
 
         LOGGER.info(
@@ -291,8 +288,8 @@ class RAIDOperations:
         """
         LOGGER.info(
             "STARTED: TEST-5342 RAID: Remove a drive from array")
-        raid_cmn_cfg = RAS_TEST_CFG["raid_param"]
-        test_cfg = TEST_CFG["test_5342"]
+        raid_cmn_cfg = RAS_VAL["raid_param"]
+        test_cfg = RAS_TEST_CFG["test_5342"]
         csm_error_msg = raid_cmn_cfg["csm_error_msg"]
 
         LOGGER.info(
@@ -381,8 +378,8 @@ class RAIDOperations:
         """
         LOGGER.info(
             "STARTED: TEST-4785 RAID: Fail a drive of array")
-        raid_cmn_cfg = RAS_TEST_CFG["raid_param"]
-        test_cfg = TEST_CFG["test_4785"]
+        raid_cmn_cfg = RAS_VAL["raid_param"]
+        test_cfg = RAS_TEST_CFG["test_4785"]
         csm_error_msg = raid_cmn_cfg["csm_error_msg"]
 
         LOGGER.info(
@@ -433,8 +430,8 @@ class RAIDOperations:
         """
         LOGGER.info(
             "STARTED: TEST-5343 RAID: Add drive to array")
-        raid_cmn_cfg = RAS_TEST_CFG["raid_param"]
-        test_cfg = TEST_CFG["test_5343"]
+        raid_cmn_cfg = RAS_VAL["raid_param"]
+        test_cfg = RAS_TEST_CFG["test_5343"]
         csm_error_msg = raid_cmn_cfg["csm_error_msg"]
 
         LOGGER.info(

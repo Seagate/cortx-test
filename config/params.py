@@ -32,3 +32,9 @@ COMMON_CONFIG = os.path.join(CONFIG_DIR, 'common_config.yaml')
 LOG_DIR_NAME = 'log'
 
 JIRA_TEST_LIST = 'test_lists.csv'
+
+RAS_CONFIG_PATH = "config/ras_config.yaml"
+
+SSPL_TEST_CONFIG_PATH = "config/ras_test.yaml"
+
+COMMON_DESTRUCTIVE_CONFIG_PATH = "config/common_destructive.yaml"

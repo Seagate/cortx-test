@@ -11,24 +11,20 @@ from commons import commands as common_cmd
 from commons import errorcodes as cterr
 from commons.exceptions import CTException
 from commons.utils import config_utils as conf_util
+from config import CMN_CFG, RAS_VAL, CMN_DESTRUCTIVE_CFG
 
 LOGGER = logging.getLogger(__name__)
-
-COMMON_CONF = conf_util.read_yaml(cons.COMMON_CONFIG_PATH)[1]
-COMMON_DESTRUCTIVE_VAL = conf_util.read_yaml(cons.COMMON_CONFIG_PATH)[1]
-RAS_VAL = conf_util.read_yaml(cons.RAS_CONFIG_PATH)[1]
-
 BYTES_TO_READ = cons.BYTES_TO_READ
 
 
 class ControllerLib:
     """Controller helper functions."""
 
-    def __init__(self, host=COMMON_CONF["host"], h_user=COMMON_CONF["username"],
-                 h_pwd=COMMON_CONF["password"],
-                 enclosure_ip=COMMON_CONF["primary_enclosure_ip"],
-                 enclosure_user=COMMON_CONF["enclosure_user"],
-                 enclosure_pwd=COMMON_CONF["enclosure_pwd"]):
+    def __init__(self, host=CMN_CFG["host"], h_user=CMN_CFG["username"],
+                 h_pwd=CMN_CFG["password"],
+                 enclosure_ip=CMN_CFG["primary_enclosure_ip"],
+                 enclosure_user=CMN_CFG["enclosure_user"],
+                 enclosure_pwd=CMN_CFG["enclosure_pwd"]):
         """
         Method to initialize members of ControllerLib class.
 
@@ -388,7 +384,7 @@ class ControllerLib:
             try:
                 cmd = common_cmd.CMD_SHOW_VOLUMES
                 LOGGER.debug(cmd)
-                volumes_param = COMMON_DESTRUCTIVE_VAL.get("show_volumes")
+                volumes_param = CMN_DESTRUCTIVE_CFG.get("show_volumes")
                 LOGGER.debug(volumes_param)
                 if not isinstance(volumes_param, dict):
                     raise Exception(f"Failed to get show_volumes: "
@@ -485,7 +481,7 @@ class ControllerLib:
             try:
                 cmd = common_cmd.CMD_SHOW_XP_STATUS
                 LOGGER.debug(cmd)
-                expander_param = COMMON_DESTRUCTIVE_VAL.get("show_expander_"
+                expander_param = CMN_DESTRUCTIVE_CFG.get("show_expander_"
                                                             "status")
                 LOGGER.debug(expander_param)
                 if not isinstance(expander_param, dict):
@@ -587,7 +583,7 @@ class ControllerLib:
             try:
                 cmd = common_cmd.CMD_SHOW_DISK_GROUP
                 LOGGER.debug(cmd)
-                diskgroup_param = COMMON_DESTRUCTIVE_VAL.get("show_disk_groups")
+                diskgroup_param = CMN_DESTRUCTIVE_CFG.get("show_disk_groups")
                 LOGGER.debug(diskgroup_param)
                 if not isinstance(diskgroup_param, dict):
                     raise Exception(f"Failed to get show_disk_group: "
@@ -671,7 +667,7 @@ class ControllerLib:
             try:
                 cmd = common_cmd.SHOW_DISKS_CMD
                 LOGGER.debug(cmd)
-                disks_param = COMMON_DESTRUCTIVE_VAL.get("show_disks")
+                disks_param = CMN_DESTRUCTIVE_CFG.get("show_disks")
                 LOGGER.debug(disks_param)
                 if not isinstance(disks_param, dict):
                     raise Exception(f"Failed to get shows_disks: {disks_param}")

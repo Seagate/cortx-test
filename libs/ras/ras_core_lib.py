@@ -29,9 +29,7 @@ from commons import constants as cmn_cons
 from commons import commands as common_commands
 from commons.helpers.health_helper import Health
 from commons.helpers.s3_helper import S3Helper
-from commons.utils import config_utils as conf_util
-
-RAS_VAL = conf_util.read_yaml(cmn_cons.RAS_CONFIG_PATH)[1]
+from config import RAS_VAL
 
 BYTES_TO_READ = cmn_cons.BYTES_TO_READ
 
