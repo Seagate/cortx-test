@@ -47,6 +47,15 @@ INVALID_S3_ACCOUNT_PASSWORD_MSG_ID = 's3-editpassword-invalid'
 PASSWORD_REQUIRED_MSG_ID = 's3-editpassword-required'
 CONFIRM_PASSWORD_ERROR_MSG_ID = 's3-editpassword-notmatch'
 
+# Preboarding 
+WELCOME_START_BUTTON_ID = 'welcome-startbtn'
+ELUA_BUTTON_ID = 'show-license-agreement-dialogbtn'
+LICENSE_BUTTON_ID = 'license-acceptagreement'
+LICENSE_CANCLE_BUTTON_ID = 'license-cancelagreementbtn'
+LICENSE_CANCLE_IMAGE_ID = 'license-cancelagreementicon'
+LICENSE_TITLE_ID = 'agreement-title'
+LICENSE_DATA_ID = 'agreement-data'
+
 #  CSM User section
 CSM_USERS_TABLE_XPATH = '//*[@id="localuser-tabledata"]//table'
 CSM_USERS_NUMBER_OF_ROWS_XPATH = '//*[@id="localuser-tabledata"]//table/tbody/tr[2]'

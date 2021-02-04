@@ -21,9 +21,7 @@
 
 """All common constants from cortx-test."""
 from commons import const
-from commons.utils import config_utils
 
-CMN_CFG = config_utils.read_yaml("config/common_config.yaml")[1]
 
 #: NWORKERS specifies number of worker (python) threads  in a worker pool.
 NWORKERS = 32
@@ -88,10 +86,7 @@ const.CFG_FILES = ["/etc/haproxy/haproxy.cfg",
                    "/opt/seagate/cortx/s3/s3startsystem.sh"]
 const.AUTHSERVER_FILE = "/opt/seagate/cortx/auth/resources/authserver.properties"
 const.SCRIPT_PATH = "cd /opt/seagate/cortx/auth/scripts"
-const.LDAP_CREDS = {
-    "ldap_username": CMN_CFG["ldap_username"],
-    "ldap_passwd": CMN_CFG["ldap_passwd"]
-}
+
 
 
 class Rest:
