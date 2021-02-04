@@ -18,16 +18,17 @@ class CortxCliAlerts(CortxCliTestLib):
             limit: int = None,
             output_format: str = None,
             other_param: str = None,
-            help_param: bool = False) -> Tuple[bool, str]:
+            **kwargs) -> Tuple[bool, str]:
         """
         This function will list alerts using cortxcli as per the provided parameters
         :param duration: Time period, for which we request alerts e.g., '30s', '5m', '8h', '2d' etc
         :param limit: No. of alerts to display
         :param output_format: Format of output like "table", "json" or "xml"
         :param other_param: '-s' to display all alerts, '-a' to display active alerts
-        :param help_param: True for displaying help/usage
+        :keyword help_param: True for displaying help/usage
         :return: (Boolean/response)
         """
+        help_param = kwargs.get("help_param", False)
         show_alert_cmd = "alerts show"
         if duration:
             show_alert_cmd = "{0} -d {1}".format(show_alert_cmd, duration)

@@ -16,24 +16,27 @@ class CortxCliCsmLib(CortxCliTestLib):
             self,
             csm_user_name: str = None,
             email_id: str = None,
-            role: str = None,
             password: str = None,
             confirm_password: str = None,
-            confirm: str = "Y",
-            help_param: bool = False) -> Tuple[bool, str]:
+            **kwargs) -> Tuple[bool, str]:
         """
         This function will create new csm user
         :param csm_user_name: New csm user's name
         :param email_id: Email id of csm user
-        :param role: role of the new user
+        :keyword role: role of the new user
         :param password: Password to create csm user.
         :param confirm_password: Confirm password to create csm user.
-        :param confirm: Confirm option for creating a csm user
-        :param help_param: True for displaying help/usage
+        :keyword confirm: Confirm option for creating a csm user
+        :keyword help_param: True for displaying help/usage
         :return: (Boolean/Response)
         """
         LOG.info("Creating csm user")
         create_csm_user = "users create"
+
+        help_param = kwargs.get("help_param", False)
+        confirm = kwargs.get("confirm", "Y")
+        role = kwargs.get("role", "manage")
+
         if help_param:
             cmd = " ".join([create_csm_user, "-h"])
         else:
@@ -90,17 +93,18 @@ class CortxCliCsmLib(CortxCliTestLib):
             role: str = None,
             current_password: str = None,
             confirm: str = "y",
-            help_param: bool = False) -> Tuple[bool, str]:
+            **kwargs) -> Tuple[bool, str]:
         """
         This function will update role of user
         :param str user_name: Name of a root user whose role to be updated.
         :param str role: Role to be updated
         :param str current_password: Current password
         :param confirm: Confirm option for updating role of a csm user
-        :param bool help_param: True for displaying help/usage
+        :keyword bool help_param: True for displaying help/usage
         :return: (Boolean/Response)
         """
         LOG.info("Updating role of CSM user")
+        help_param = kwargs.get("help_param", False)
         update_role = "users update"
         if help_param:
             cmd = "{0} -h".format(update_role)
@@ -129,19 +133,20 @@ class CortxCliCsmLib(CortxCliTestLib):
             current_password: str = None,
             new_password: str = None,
             confirm_password: str = None,
-            confirm: str = "y",
-            help_param: bool = False) -> Tuple[bool, str]:
+            **kwargs) -> Tuple[bool, str]:
         """
         This function will reset the user password
         :param str user_name: Name of a root user whose password to be updated.
         :param str current_password: Current password
         :param str new_password: New password to be updated.
         :param bool confirm_password: Confirm password to update new password.
-        :param: str confirm: Confirm option for resetting a user password.
-        :param bool help_param: True for displaying help/usage
+        :keyword: str confirm: Confirm option for resetting a user password.
+        :keyword bool help_param: True for displaying help/usage
         :return: (Boolean/Response)
         """
         LOG.info("Resetting root user password")
+        help_param = kwargs.get("help_param", False)
+        confirm = kwargs.get("confirm", "Y")
         reset_pwd = "users reset_password"
         if help_param:
             cmd = "{0} -h".format(reset_pwd)
@@ -187,11 +192,12 @@ class CortxCliCsmLib(CortxCliTestLib):
                 output = self.execute_cli_commands(cmd=password)[1]
                 if "CORTX Interactive Shell" in output:
                     LOG.info(
-                        "Logged in CORTX CLI as user %s successfully", username)
+                        "Logged in CORTX CLI as user %s successfully",
+                        username)
 
                     return True, output
 
-            return False, output
+        return False, output
 
     def list_csm_users(
             self,
@@ -199,9 +205,7 @@ class CortxCliCsmLib(CortxCliTestLib):
             limit: int = None,
             sort_by: str = None,
             sort_dir: str = None,
-            format: str = None,
-            other_param: str = None,
-            help_param: bool = False) -> Tuple[bool, str]:
+            **kwargs) -> Tuple[bool, str]:
         """
         This function will verify list of csm users
         :param offset: value for offset parameter
@@ -210,14 +214,17 @@ class CortxCliCsmLib(CortxCliTestLib):
                         possible values: <user_id/user_type/created_time/updated_time>
         :param sort_dir: order/direction in which list should be sorted
                          possible values: <asc/desc>
-        :param format: format to list csm users
+        :keyword op_format: format to list csm users
                        possible values: <table/xml/json>
-        :param other_param: Combination of above all params
+        :keyword other_param: Combination of above all params
                         e.g : <users show -l 2 -d desc -f json>
-        :param help_param: True for displaying help/usage
+        :keyword help_param: True for displaying help/usage
         :return: (boolean/response)
         """
         LOG.info("List CSM users")
+        help_param = kwargs.get("help_param", False)
+        other_param = kwargs.get("other_param", None)
+        op_format = kwargs.get("op_format", None)
         cmd = "users show"
         if offset:
             cmd = "{0} -o {1}".format(cmd, offset)
@@ -227,8 +234,8 @@ class CortxCliCsmLib(CortxCliTestLib):
             cmd = "{0} -s {1}".format(cmd, sort_by)
         if sort_dir:
             cmd = "{0} -d {1}".format(cmd, sort_dir)
-        if format:
-            cmd = "{0} -f {1}".format(cmd, format)
+        if op_format:
+            cmd = "{0} -f {1}".format(cmd, op_format)
         if other_param:
             cmd = "{0} {1}".format(cmd, other_param)
         if help_param:
