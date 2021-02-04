@@ -4,12 +4,10 @@ Library     SeleniumLibrary
 Variables  ../common/element_locators.py
 Variables  ../common/common_variables.py
 
-*** Variables ***
-
 *** Keywords ***
 Navigate To About
-   Wait Until Element Is Visible  ${MAINTENANCEM_MENU_ID}  timeout=10
-   Navigate To Page  MAINTENANCEM_MENU_ID  ABOUT_VIEW_ID
+    Wait Until Element Is Visible  ${MAINTENANCEM_MENU_ID}  timeout=10
+    Navigate To Page  MAINTENANCEM_MENU_ID  ABOUT_VIEW_ID
 
 Click Issuer Option
     Wait Until Element Is Visible  ${ISSUER_DETAILS_TAB_ID}  timeout=10

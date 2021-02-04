@@ -24,7 +24,7 @@ INVALID_PASSWORD_MSG = "Invalid password."
 INVALID_USER_TYPE_MESSAGE = "Invalid username."
 MISSMATCH_PASSWORD_MESSAGE = "Passwords do not match."
 
-#S3 Expected Messages
+# S3 Expected Messages
 INVALID_S3_ACCOUNT_MESSAGE = 'Invalid account name.'
 INVALID_S3_EMAIL_MESSAGE = 'Invalid email id.'
 INVALID_S3_PASSWORD_MESSAGE = 'Invalid password.'
@@ -33,9 +33,8 @@ DUPLICATE_S3_ACCOUNT_ALERT_MESSAGE = 'The request was rejected because it attemp
 PASSWORD_REQUIRED_MESSAGE = 'Password is required.'
 
 
-#About Section
+# About Section
 COMMON_NAME_SSL_MESSAGE = 'seagate.com'
 COUNTRY_NAME_SSL_MESSAGE = 'IN'
 LOCALITY_NAME_SSL_MESSAGE = 'Pune'
 ORGANIZATION_NAME_SSL_MESSAGE = 'Seagate Tech'
-
