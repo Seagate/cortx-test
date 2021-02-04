@@ -1,22 +1,10 @@
 *** Settings ***
 Resource  ../common/common.robot
+Resource  ./loginPage.robot
 Library     SeleniumLibrary
 Variables  ../common/element_locators.py
 
-*** Variables ***
-
 *** Keywords ***
-Open URL
-    [Documentation]  Test keyword is for opening the URL in the browser, with specific options.
-    [Arguments]  ${url}  ${browser}
-    open browser  ${url}  ${browser}    options=add_argument('--ignore-ssl-errors');add_argument('--ignore-certificate-errors')
-    maximize browser window
-
-Open URL In Headless
-    [Documentation]  Test keyword is for opening the URL in the browser in headless mode, with specific options.
-    [Arguments]  ${url}  ${browser}
-    open browser  ${url}  ${browser}    options=add_argument('--ignore-ssl-errors');add_argument('--ignore-certificate-errors');add_argument('--no-sandbox');add_argument('--headless')
-    maximize browser window
 
 Click Start Button
     click button    ${welcome_start_button_id}
@@ -51,11 +39,10 @@ Validate ELUA Success
     Click License Cancle Image
     Click Accept Button
     Click License Button
-    [Return]
 
 Preboarding
     [Documentation]  This keyword is used to login to CSM GUI.
-    [Arguments]  ${url}  ${browser}  ${headless}  ${username}  ${password}
+    [Arguments]  ${url}  ${browser}  ${headless}
     Run Keyword If  ${headless} == True  Open URL In Headless  ${url}  ${browser}
     ...  ELSE  Open URL  ${url}preboarding/welcome  ${browser}
     Page Should Contain Button  ${welcome_start_button_id}

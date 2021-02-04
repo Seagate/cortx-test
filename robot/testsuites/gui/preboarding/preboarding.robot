@@ -5,7 +5,7 @@ Resource  ../../../resources/common/common.robot
 Variables  ../../../resources/common/element_locators.py
 Variables  ../../../resources/common/common_variables.py
 
-Test Setup  Preboarding  ${url}  ${browser}  ${headless}  ${username}  ${password}
+Test Setup  Preboarding  ${url}  ${browser}  ${headless}
 Test Teardown  Close Browser
 Suite Teardown  Close All Browsers
 Force Tags  CSM_GUI  Preboarding
@@ -14,7 +14,6 @@ Force Tags  CSM_GUI  Preboarding
 ${url}
 ${browser}  chrome
 ${headless}  True
-${navigate_to_subpage}  False
 ${Sub_tab}  None
 
 *** Test Cases ***
