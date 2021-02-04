@@ -56,7 +56,7 @@ test_4332:
   type_fault: e
   fault_resolved: r
   ctrl_name: a
-  enclId: 0
+  enclId : 0
   alert_type: "fault"
   resource_type: "enclosure:fru:psu"
 
@@ -66,7 +66,7 @@ test_4362:
   type_fault: e
   fault_resolved: r
   ctrl_name: a
-  enclId: 0
+  enclId : 0
   alert_type: "fault_resolved"
   resource_type: "enclosure:fru:controller"
   err_msg: "Couldn't connect to telnet port 7900. Please try on other controller (Generating Fault) - {}"
@@ -76,8 +76,8 @@ test_4335:
   type_fault: e
   fault_resolved: r
   ctrl_name: a
-  enclId: 0
-  pos: left
+  enclId : 0
+  pos : left
   alert_type: "fault_resolved"
   resource_type: "enclosure:fru:psu"
 
@@ -86,8 +86,8 @@ test_4361:
   type_fault: e
   fault_resolved: r
   ctrl_name: a
-  enclId: 0
-  pos: a
+  enclId : 0
+  pos : a
   alert_type: "fault"
   resource_type: "enclosure:fru:controller"
 

@@ -1,5 +1,7 @@
 """File consists of the commands used in all the components."""
 # RAS Commands
+PCS_RESOURCE_DISABLE_ENABLE = "pcs resource {} {}"
+SYSTEMCTL_STATUS = "systemctl status {}"
 START_RABBITMQ_READER_CMD = "python3 /opt/seagate/sspl/low-level/tests/" \
                             "manual/rabbitmq_reader.py {} {} {}"
 REMOVE_UNWANTED_CONSUL = "/usr/bin/consul kv delete --recurse SSPL_"

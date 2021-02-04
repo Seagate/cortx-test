@@ -13,7 +13,8 @@ Click On Cancel Button
 
 Click On Confirm Button
     [Documentation]  Perform click operation on confirm pop up button
-    Sleep  3s
+    Sleep  5s
+    Wait Until Element Is Visible  ${NEW_USER_CONFIRM_OK_BUTTON_ID}  timeout=10
     Click button    ${NEW_USER_CONFIRM_OK_BUTTON_ID}
 
 Verify A Form Got Open To Create CSM Users
@@ -57,6 +58,7 @@ Create New CSM User
 Verify New User
     [Documentation]  Functionality to validate correc user name
     [Arguments]  ${user_name}
+    Sleep  5s  #  Reloading take some initial time
     ${users_list}=  Read Table Data  ${CSM_TABLE_ELEMENTS_XPATH}
     List Should Contain Value  ${users_list}  ${user_name}
 
@@ -125,6 +127,18 @@ Verify Missmatch Password Error
     Page Should Contain Element  ${PASSWORD_MISS_MATCH_MSG_ID}
     ${text}=  get text  ${PASSWORD_MISS_MATCH_MSG_ID}
     should be equal  ${text}  ${missmatch password msg}
+
+Verify Absence of Edit And Delete Button on S3account
+    [Documentation]  Verify Presence of Edit And Delete Button on S3account
+    Click Element  ${S3_ACCOUNTS_TAB_ID}
+    Sleep  2s  # Took time to load s3 accounts
+    Page Should Not Contain Element  ${EDIT_S3_ACCOUNT_OPTION_ID}
+    Page Should Not Contain Element  ${DELETE_S3_ACCOUNT_ID}
+
+Verify Absence of Admin User Section
+    [Documentation]  Verify Presence of Edit And Delete Button on S3account
+    Page Should Not Contain Element  ${ADMINISTRATIVE_USER_TAB_ID}
+    Page Should Not Contain Button  ${ADD_USER_BUTTON_ID}
 
 Verify No Delete Button Present
     [Documentation]  Verify No delete icon should be present
