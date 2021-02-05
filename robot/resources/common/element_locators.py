@@ -90,3 +90,22 @@ PAGINATION_BAR_XPATH = "//div[@class='v-data-footer']"
 PAGIANTION_PAGE_OPTIONS_XPATH = "//*[@role='option']"
 RADIO_BTN_VALUE_XPATH = "//*[@type='radio']"
 PAGINATION_LIST_ICON_XPATH = "//*[@class='v-select__selection v-select__selection--comma']"
+
+#  IAM Users
+ADD_IAM_USER_BUTTON_ID = "iam-user-create-formbtn"
+CREATE_IAM_USER_USERNAME_ID = "userName"
+CREATE_IAM_USER_PASSWORD_ID = "userPassword"
+CREATE_IAM_USER_CONFIRM_PASSWORD_ID = "confirmPassword"
+CREATE_IAM_USER_BUTTON_ID = "iam-create-userbtn"
+CANCEL_IAM_USER_BUTTON_ID = "iam-usercancelbtn"
+IAM_USER_TOOLTIP_ID = "tooltip-msg"
+IAM_USER_TOOLTIP_USER_IMAGE_ID = "Username*"
+IAM_USER_PASSWD_TOOLTIP_IMAGE_ID = "Password*"
+IAM_USER_PASSWD_MISSMATCH_ID = "iam-confirmpass-notmatch"
+IAM_USER_DOWNLOAD_CSV_BUTTON_ID = "iam-downloadcsvfile"
+IAM_USER_DELETE_ICON_XPATH = '//tr[@id="{0}"]//*[@id="iam-delete-user"]'
+IAM_USER_ROW_ELEMENT_XPATH = '//tr[@id="{0}"]'
+DUPLICATE_USER_MSG_ID = "dialog-message-label"
+IAM_USER_USERNAME_LABEL_ID = "iam-userlbl"
+IAM_USER_PASSWORD_LABEL_ID = "iam-passwordlbl"
+IAM_USER_CONFIRM_PASSWORD_LABEL_ID = "iam-confirmpasslbl"
