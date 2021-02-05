@@ -38,6 +38,7 @@ aenum==2.2.4
 mdstat==1.0.4
 fabric~=2.5.0
 Cython==0.29.21
+dataclasses
 pytest~=6.2.1
 testfixtures~=6.17.0
 matplotlib==3.1.1
@@ -46,3 +47,4 @@ strip-ansi==0.1.1
 pytest-xdist==2.2.0
 matplotlib==3.1.1
 filelock==3.0.12
+defusedxml

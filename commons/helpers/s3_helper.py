@@ -39,6 +39,7 @@ LOGGER = logging.getLogger(__name__)
 
 class S3Helper:
     """S3 Helper class to perform S3 related operations."""
+
     __instance = None
 
     def __init__(self) -> None:
@@ -53,6 +54,7 @@ class S3Helper:
     def get_instance() -> object:
         """
         Static method to access singleton instance.
+
         :return: S3Helper object.
         """
         if not S3Helper.__instance:
@@ -66,6 +68,7 @@ class S3Helper:
             path: str = CM_CFG["s3cfg_path"]) -> bool:
         """
         Function to configure access and secret keys in s3cfg file.
+
         :param access: aws access key.
         :param secret: aws secret key.
         :param path: path to s3cfg file.
@@ -91,6 +94,7 @@ class S3Helper:
             path: str = CM_CFG["s3fs_path"]) -> bool:
         """
         Function to configure access and secret keys for s3fs.
+
         :param access: aws access key.
         :param secret: aws secret key.
         :param path: s3fs config file.
@@ -113,6 +117,7 @@ class S3Helper:
                                 pwd: str = CM_CFG["password"]) -> tuple:
         """
         Check whether all s3server services are online.
+
         :param host: IP of the host.
         :param user: user name of the host.
         :param pwd: password for the user.
@@ -152,6 +157,7 @@ class S3Helper:
                                     pwd: str = CM_CFG["password"]) -> tuple:
         """
         Execute command to get status any system service at remote s3 server.
+
         :param service: Name of the service.
         :param host: IP of the host.
         :param user: user name of the host.
@@ -175,6 +181,7 @@ class S3Helper:
                                pwd: str = CM_CFG["password"]) -> tuple:
         """
         Execute command to start any system service at remote s3 server.
+
         :param service: Name of the service.
         :param host: IP of the host.
         :param user: user name of the host.
@@ -195,6 +202,7 @@ class S3Helper:
                               pwd: str = CM_CFG["password"]) -> tuple:
         """
         Execute command to stop any system service at remote s3 server.
+
         :param service: Name of the service.
         :param host: IP of the host.
         :param user: user name of the host.
@@ -215,6 +223,7 @@ class S3Helper:
                                  pwd: str = CM_CFG["password"]) -> tuple:
         """
         Execute command to restart any system service at remote s3 server.
+
         :param service: Name of the service.
         :param host: IP of the host.
         :param user: user name of the host.
@@ -239,6 +248,7 @@ class S3Helper:
                                    wait_time: int = 30) -> tuple:
         """
         Restart all s3server processes using hctl command.
+
         :param host: IP of the host.
         :param user: user name of the host.
         :param pwd: password for the user.
@@ -286,6 +296,7 @@ class S3Helper:
                               pwd: str = CM_CFG["password"]) -> list:
         """
         Get resources of all s3server instances using pcs command.
+
         :param host: IP of the host.
         :param user: user name of the host.
         :param pwd: password for the user.
@@ -315,6 +326,7 @@ class S3Helper:
                                    wait_time: int = 30) -> tuple:
         """
         Restart all s3server resources using pcs command.
+
         :param host: IP of the host.
         :param user: user name of the host.
         :param pwd: password for the user.
@@ -363,6 +375,7 @@ class S3Helper:
                                  pwd: str = CM_CFG["password"]) -> tuple:
         """
         Check if file exists on s3 server.
+
         :param path: Absolute path of the file.
         :param host: IP of the host.
         :param user: Username of the host.
@@ -389,6 +402,7 @@ class S3Helper:
                           pwd: str = CM_CFG["password"]) -> list:
         """
         Get fid's of all s3server processes.
+
         :param host: IP of the host.
         :param user: user name of the host.
         :param pwd: password for the user.
@@ -418,6 +432,7 @@ class S3Helper:
                            pwd: str = CM_CFG["password"]) -> tuple:
         """
         copy file from s3 server to local path.
+
         :param file_path: Remote path.
         :param local_path: Local path.
         :param host: IP of the host.
@@ -449,6 +464,7 @@ class S3Helper:
                                    **kwargs) -> tuple:
         """
         find given string in file present on s3 server.
+
         :param string: String to be check.
         :param file_path: file path.
         :param host: IP of the host.
@@ -456,9 +472,12 @@ class S3Helper:
         :param pwd: password for the user.
         :return: Boolean.
         """
-        host = kwargs.get("host") if kwargs.get("host", None) else CM_CFG["host"]
-        user = kwargs.get("user") if kwargs.get("user", None) else CM_CFG["username"]
-        pwd = kwargs.get("password") if kwargs.get("password", None) else CM_CFG["password"]
+        host = kwargs.get("host") if kwargs.get(
+            "host", None) else CM_CFG["host"]
+        user = kwargs.get("user") if kwargs.get(
+            "user", None) else CM_CFG["username"]
+        pwd = kwargs.get("password") if kwargs.get(
+            "password", None) else CM_CFG["password"]
         local_path = os.path.join(os.getcwd(), 'temp_file')
         try:
             if os.path.exists(local_path):
@@ -500,6 +519,7 @@ class S3Helper:
                                           **kwargs) -> tuple:
         """
         Enable or disable s3server instances using pcs command.
+
         :param resource_disable: True for disable and False for enable.
         :param host: IP of the host.
         :param user: user name of the host.
@@ -508,9 +528,12 @@ class S3Helper:
         :return: tuple with boolean and response/error.
         """
         try:
-            host = kwargs.get("host") if kwargs.get("host", None) else CM_CFG["host"]
-            user = kwargs.get("user") if kwargs.get("user", None) else CM_CFG["username"]
-            pwd = kwargs.get("password") if kwargs.get("password", None) else CM_CFG["password"]
+            host = kwargs.get("host") if kwargs.get(
+                "host", None) else CM_CFG["host"]
+            user = kwargs.get("user") if kwargs.get(
+                "user", None) else CM_CFG["username"]
+            pwd = kwargs.get("password") if kwargs.get(
+                "password", None) else CM_CFG["password"]
             resources = self.get_s3server_resource()
             for resource in resources:
                 if resource_disable:
@@ -562,6 +585,7 @@ class S3Helper:
                         path: str = CM_CFG["minio_path"]) -> bool:
         """
         Function to configure minio creds in config.json file.
+
         :param access: aws access key.
         :param secret: aws secret key.
         :param path: path to minio cfg file.
@@ -585,6 +609,7 @@ class S3Helper:
             section: str = CM_CFG["aws_cred_section"]) -> tuple:
         """
         Get local s3 access and secret keys.
+
         :param path: credential file path.
         :param section: section name for the profile.
         :return:
@@ -607,6 +632,7 @@ class S3Helper:
                           **kwargs) -> tuple:
         """
         find given string in file present on s3 server.
+
         :param string: String to be check.
         :param file_path: file path.
         :param host: IP of the host.
@@ -614,9 +640,12 @@ class S3Helper:
         :param pwd: password for the user.
         :return: Boolean.
         """
-        host = kwargs.get("host") if kwargs.get("host", None) else CM_CFG["host"]
-        user = kwargs.get("user") if kwargs.get("user", None) else CM_CFG["username"]
-        pwd = kwargs.get("password") if kwargs.get("password", None) else CM_CFG["password"]
+        host = kwargs.get("host") if kwargs.get(
+            "host", None) else CM_CFG["host"]
+        user = kwargs.get("user") if kwargs.get(
+            "user", None) else CM_CFG["username"]
+        pwd = kwargs.get("password") if kwargs.get(
+            "password", None) else CM_CFG["password"]
         local_path = os.path.join(os.getcwd(), "temp_file")
         try:
             if os.path.exists(local_path):

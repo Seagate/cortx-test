@@ -21,8 +21,8 @@ DASHBOARD_MENU_ID = "Dashboard"
 
 #  S3 Config
 S3_ACCOUNTS_TABLE_XPATH = '//*[@id="s3-datatable"]//table/tbody/tr/td'
-S3_Account_NUMBER_OF_ROWS = '//*[@id="s3-datatable"]//table/tbody/tr'
-S3_Account_NUMBER_OF_COLUMNS = '//*[@id="s3-datatable"]//table/tbody/tr[1]/td'
+S3_ACCOUNT_NUMBER_OF_ROWS = '//*[@id="s3-datatable"]//table/tbody/tr'
+S3_ACCOUNT_NUMBER_OF_COLUMNS = '//*[@id="s3-datatable"]//table/tbody/tr[1]/td'
 ADD_S3_ACCOUNT_BUTTON_ID = 's3-addnewuserbtn'
 CREATE_S3_ACCOUNT_BUTTON_ID = 's3-crete-accountbtn'
 CANCEL_S3_ACCOUNT_ID = 's3-account-cancelbtn'
@@ -46,6 +46,15 @@ UPDATE_S3_ACCOUNT_BTN_ID = 'btnEditPassword'
 INVALID_S3_ACCOUNT_PASSWORD_MSG_ID = 's3-editpassword-invalid'
 PASSWORD_REQUIRED_MSG_ID = 's3-editpassword-required'
 CONFIRM_PASSWORD_ERROR_MSG_ID = 's3-editpassword-notmatch'
+
+# Preboarding 
+WELCOME_START_BUTTON_ID = 'welcome-startbtn'
+ELUA_BUTTON_ID = 'show-license-agreement-dialogbtn'
+LICENSE_BUTTON_ID = 'license-acceptagreement'
+LICENSE_CANCLE_BUTTON_ID = 'license-cancelagreementbtn'
+LICENSE_CANCLE_IMAGE_ID = 'license-cancelagreementicon'
+LICENSE_TITLE_ID = 'agreement-title'
+LICENSE_DATA_ID = 'agreement-data'
 
 #  CSM User section
 CSM_USERS_TABLE_XPATH = '//*[@id="localuser-tabledata"]//table'
