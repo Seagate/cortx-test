@@ -26,12 +26,15 @@ Enter Username And Password
     input password  ${csm password id}  ${password}
 
 Click Sigin Button
+    [Documentation]  This keyword is for entring the username and password on login form.
+    Wait Until Element Is Visible  ${signin_button_id}  timeout=10
     click button    ${signin_button_id}
+    Sleep  5s  #  Sigin take some initial time
 
 Validate CSM Login Failure
     [Documentation]  Test keyword is for Validating login failure on CSM GUI.
     ${csm_login_fail_msg}=  get text  ${csm login fail msg id}
-    should be equal  ${csm_login_fail_msg} ${LOGIN_FAILED_MSG}
+    should be equal  ${csm_login_fail_msg} ${LOGIN_FAILED_MESSAGE}
     [Return]  ${csm_login_fail_msg}
 
 Validate CSM Login Success
@@ -52,9 +55,17 @@ CSM GUI Login
     sleep   5s
     Log To Console And Report  Waiting for receiving GUI responce...
 
+CSM GUI Logout
+    [Documentation]  This keyword is used to logout of CSM GUI.
+    wait until element is visible  ${LOG_OUT_ID}  timeout=20
+    click element  ${LOG_OUT_ID}
+    wait until element is visible  ${CSM_USERNAME_ID}  timeout=30
 
-
-
-
-
-
+Re-login
+    [Documentation]  Functionlity to Logout and login again
+    [Arguments]  ${user_name}  ${password}  ${page}
+    CSM GUI Logout
+    Wait Until Element Is Visible  ${csm username id}  timeout=10
+    Enter Username And Password  ${username}  ${password}
+    Click Sigin Button
+    Navigate To Page  ${page}

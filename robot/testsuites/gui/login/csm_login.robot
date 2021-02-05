@@ -9,8 +9,11 @@ Variables  ../../../resources/common/common_variables.py
 Suite Teardown  Close All Browsers
 Force Tags  CSM_GUI  CSM_login
 
+Test Setup  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
+Test Teardown  Close Browser
+
 *** Variables ***
-${url}  https://10.230.246.58:28100/#/
+${url}
 ${browser}  chrome
 ${headless}  True
 ${navigate_to_subpage}  False
@@ -21,7 +24,5 @@ ${password}
 *** Test Cases ***
 test_4242
     [Documentation]  Test that csm user is able to login to CSM UI
-    [Tags]  Priority_High
-    [Setup]   CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
+    [Tags]  Priority_High  Smoke_test
     Validate CSM Login Success  ${username}
-    [Teardown]  Close Browser

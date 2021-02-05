@@ -1,50 +1,3 @@
-ras_sspl_alert:
-  ees_server_path: "/"
-  disk_usage_val: 5
-  wait_time: 5
-  create_dir_cmd: "mkdir -p {}"
-  file:
-    sspl_conf_filename: "/etc/sspl.conf"
-    sspl_cfg_temp: "/tmp/sspl.conf"
-    original_sspl_conf: "/etc/sspl_original.conf"
-    alert_log_file: "/root/rabbitmq_alert.log"
-    extracted_alert_file: "/root/extracted_alert.log"
-    encrypter_local_path: "/root/encryptor_updated.py"
-    temp_txt_file: "temp.txt"
-    telnet_xml: "/root/telnet.xml"
-    sspl_log_file: "/root/sspl_log.txt"
-    screen_log: "/root/screenlog.0"
-  sspl_config:
-    sspl_section: "NODEDATAMSGHANDLER"
-    sspl_du_key: "disk_usage_threshold"
-    sspl_du_dval: "80"
-    server_du_path: "/"
-    sspl_trans_intv_key: "transmit_interval"
-    sspl_trans_intv_dval: 300
-    sspl_trans_intv_val: 10
-    sspl_log_level_key: "log_level"
-    sspl_log_level_val: "WARNING"
-    sspl_log_dval: "INFO"
-  ldap_user: "sgiamadmin"
-  ldap_pwd: "ldapadmin"
-  sleep_val: 120
-  after_service_restart_sleep_val: 60
-  ipmitool_sdr_cmd: "ipmitool sdr list"
-  sspl_exch: "sspl-out"
-  sspl_key: "sensor-key"
-  service:
-    sspl_service: "sspl-ll"
-    rabitmq_service: "rabbitmq-server"
-  sspl_resource_id: "sspl-master"
-  mc_debug_port: 7900
-  telnet_sleep_val: 120
-  max_wait_time: 320
-  default_cpu_usage: 80
-  csm_error_msg: "Failed to get alerts using CSM REST API"
-  csm_alert_gen_delay: 60
-  default_mem_usage: 80
-  start_rmq: False
-
 test_3005:
   alert: True
   du_val: 3
@@ -237,3 +190,25 @@ test_4355:
   delta_mem_usage: -3
   alert_type: "fault"
   resource_type: "node:os:memory_usage"
+
+test_5345:
+  alert_fault: "fault"
+  alert_fault_resolved: "fault_resolved"
+  resource_type: "node:os:raid_data"
+  csm_error_msg: "Failed to get alerts using CSM REST API"
+
+test_5342:
+  alert_fault: "fault"
+  resource_type: "node:os:raid_data"
+  alert_missing: "missing"
+
+test_4785:
+  alert_fault: "fault"
+  resource_type: "node:os:raid_data"
+
+test_5343:
+  alert_fault: "fault"
+  resource_type: "node:os:raid_data"
+  alert_missing: "missing"
+  alert_insertion: "insertion"
+  alert_fault_resolved: "fault_resolved"
