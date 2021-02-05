@@ -29,8 +29,15 @@ INVALID_S3_ACCOUNT_MESSAGE = 'Invalid account name.'
 INVALID_S3_EMAIL_MESSAGE = 'Invalid email id.'
 INVALID_S3_PASSWORD_MESSAGE = 'Invalid password.'
 INVALID_S3_CONFIRM_PASSWORD_MESSAGE = 'Passwords do not match'
-DUPLICATE_S3_ACCOUNT_ALERT_MESSAGE = 'The request was rejected because it attempted to create an account that already exists.'
+DUPLICATE_S3_ACCOUNT_ALERT_MESSAGE = 'The request was rejected because it ' \
+                                     'attempted to create an account that already exists.'
 PASSWORD_REQUIRED_MESSAGE = 'Password is required.'
+S3_ACCOUNT_NAME_SAME_AS_CSM_USER_MESSAGE = 'CSM user with same username as ' \
+                                           'passed S3 account name already exists'
+S3_TABLE_HEADER_ACCOUNTNAME = 'Access key'
+S3_TABLE_HEADER_SECRET_KEY = 'Secret key'
+S3_TABLE_HEADER_ACTION = 'common.action'
+ACCESS_KEY_GENERATED_MESSAGE = 'Access key created'
 
 #  IAM Users Messages
 IAM_USER_USERNAME_TOOLTIP_MSG = "The username must be of minimum 4 characters and maximum 56 characters"

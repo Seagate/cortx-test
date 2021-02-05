@@ -69,7 +69,7 @@ TEST-954
     [Tags]  Priority_High
     Click Create IAM User Button
     Verify IAM User Username Tooltip
-    Verify IAM User Passwd Tooltip
+    Verify IAM User Password Tooltip
 
 TEST-955
     [Documentation]  Test error msg shown when user enters different password in "password" and "confirm password"
@@ -141,7 +141,7 @@ TEST-960
     ...  Reference : https://jts.seagate.com/browse/TEST-960
     [Tags]  Priority_High
     Click Create IAM User Button
-    Verify Blank IAMuser Form
+    Verify No Data Retains After Cancel IAMuser
 
 TEST-961
     [Documentation]  Test username, arn and user id should be present

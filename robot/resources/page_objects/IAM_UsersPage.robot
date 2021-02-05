@@ -68,7 +68,7 @@ Verify IAM User Username Tooltip
     Log To Console And Report  ${text}
     Should Contain    ${text}  ${IAM_USER_USERNAME_TOOLTIP_MSG}
 
-Verify IAM User Passwd Tooltip
+Verify IAM User Password Tooltip
     [Documentation]  This keyword will fetch tooltip for IAMuser Password
     wait until element is visible  ${IAM_USER_PASSWD_TOOLTIP_IMAGE_ID}  timeout=60
     Mouse Over  ${IAM_USER_PASSWD_TOOLTIP_IMAGE_ID}
@@ -148,8 +148,8 @@ Verify All Mandatory Fields In IAMusers Has astreic sign
     Log To Console And Report  ${confirm_password}
     Should Contain  ${confirm_password}  *
 
-Verify Blank IAMuser Form
-    [Documentation]  Verify Blank IAMuser Form
+Verify No Data Retains After Cancel IAMuser
+    [Documentation]  Verify Blank IAMuser Form opens after IAM user got canceled
     Verify Create IAMuser Button Must Remain disbaled
     Click on IAM User Cancel Button
     Click Create IAM User Button
@@ -161,7 +161,7 @@ Verify Blank IAMuser Form
     Should Be Empty  ${value}
 
 Verify ARN Username UserID
-    [Documentation]  Verify Blank IAMuser Form
+    [Documentation]  Verify ARN, username and UserID of IAMuser
     [Arguments]  ${user_name}
     Sleep  5s  # Need to reload the uses
     ${status}=  Is IAMuser Present  ${username}
