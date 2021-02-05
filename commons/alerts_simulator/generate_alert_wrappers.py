@@ -5,13 +5,12 @@ This file contains the wrapper functions used by Alert Simulation API.
 """
 import logging
 import time
-from eos_test.utility import utility
-from eos_test.ras.ras_test_lib import RASTestLib
-import eos_test.ras.constants as cons
+from libs.ras.ras_test_lib import RASTestLib
+from commons.helpers.host import Host
+from commons import constants as cons
 
 LOGGER = logging.getLogger(__name__)
 
-UTIL_OBJ = utility.Utility()
 RAS_TEST_OBJ = RASTestLib()
 
 
@@ -20,7 +19,6 @@ class GenerateAlertWrapper:
     This class contains the wrappers for simulating alerts using different
     tools.
     """
-
     def simulatefault(self, encl_ip, encl_user, encl_pwd, host, h_user, h_pwd,
                       input_parameters):
         """
@@ -305,7 +303,7 @@ class GenerateAlertWrapper:
         """
         logger_alert_cmd = input_parameters['cmd']
         LOGGER.info("Logger cmd : {}".format(logger_alert_cmd))
-        resp = UTIL_OBJ.execute_command(logger_alert_cmd, host=host,
-                                        username=h_user,
-                                        password=h_pwd)
+        host_connect = Host(hostname=host, username=h_user, password=h_pwd)
+        resp = host_connect.execute_cmd(cmd=logger_alert_cmd, read_lines=True,
+                                        shell=False)
         return resp

@@ -1,0 +1,50 @@
+acc_user_mng:
+  account_name: "accusrmgmt_account"
+  email_id: "{}@seagate.com"
+  user_name: "accusrmgmt_user"
+  test_file_path: "/home/testfile"
+test_8531:
+  total_accounts: 100
+test_8532:
+  err_message: "EntityAlreadyExists"
+test_8533:
+  file_size: 1
+  bucket_name: "testbucket8533"
+  obj_name: "testobj8533"
+test_8534:
+  file_size: 1
+  user_access_key: "alfjkalfjiecnk@#&kafjkancsmnc"
+  user_secret_key: "*HSLKJMDqpowdapofmamcamc"
+  bucket_name: "testbucket8533"
+  obj_name: "testobj8533"
+  error: "InvalidAccessKeyId"
+  download_obj_err: "Forbidden"
+test_8676:
+  new_user_name: "testuser8676"
+test_8679:
+  total_users: 100
+test_8680:
+  err_message: "EntityAlreadyExists"
+test_8684:
+  status: "Active"
+test_8685:
+  status: "Inactive"
+test_8686:
+  max_access_keys: 2
+test_8687:
+  password: "seagate"
+  password_reset: True
+  new_password: "calsoft"
+test_8689:
+  local_cert_path: "ca.crt"
+  starts_with: "-----BEGIN CERTIFICATE-----"
+  ends_with: "-----END CERTIFICATE-----"
+  err_message_1: "Certificate does not begin with {}"
+  err_message_2: "Certificate does not end with {}"
+test_8691:
+  password: "seagate"
+  pwd_reset: True
+  new_password: "calsoft"
+test_4625:
+  arn_str: "arn:aws:iam::{}:user/{}"
+  err_message: "Invalid user ARN format"
