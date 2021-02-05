@@ -1,0 +1,8 @@
+# for rest server
+pymongo
+flask-restx
+flask
+# for pdf report
+reportlab
+# for csv report
+jira
