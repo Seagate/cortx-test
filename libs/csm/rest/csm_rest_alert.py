@@ -26,7 +26,7 @@ class SystemAlerts(RestTestLib):
         """
         Initialize the rest api
         """
-        super(SystemAlerts, self).__init__()
+        super(SystemAlerts).__init__()
         self.conf = CMN_CFG
         self.host = host
         self.username = username
@@ -56,7 +56,7 @@ class SystemAlerts(RestTestLib):
             endpoint = self._add_parameters(
                 endpoint, alert_id, acknowledged, resolved, show_active,
                 sortby, direction, offset, limit, severity)
-            self._log.info("Endpoint for reading alert is {}".format(endpoint))
+            self._log.info("Endpoint for reading alert is %s", endpoint)
             # Fetching api response
             response = self.restapi.rest_call(request_type="get",
                                               endpoint=endpoint,
@@ -99,7 +99,7 @@ class SystemAlerts(RestTestLib):
             return response
 
         except BaseException as error:
-            self._log.error("%s %S: %s", self.exception_error,
+            self._log.error("%s %s: %s", self.exception_error,
                             SystemAlerts.edit_alerts.__name__, error)
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED, error.args[0])
@@ -172,13 +172,13 @@ class SystemAlerts(RestTestLib):
         expected results
         """
         starttime = int(starttime)
-        self._log.info("Start Time : {}".format(starttime))
+        self._log.info("Start Time : %s", starttime)
         self._log.info("Extended information to be checked : %s",
                        response_checks)
         self._log.info("CSM: Verifying the new Fault is reported...")
         alert_ids = self.get_alerts_id_after(starttime)
         if alert_ids:
-            self._log.info("CSM: New alerts detected are {}".format(alert_ids))
+            self._log.info("CSM: New alerts detected are %s", alert_ids)
         else:
             self._log.error("No New Alerts Detected")
             return False
@@ -187,7 +187,7 @@ class SystemAlerts(RestTestLib):
             response = self.get_alerts(alert_id)
             if response.status_code == const.SUCCESS_STATUS:
                 self._log.info(
-                    "Alert ID {} details from Rest API".format(response))
+                    "Alert ID %s details from Rest API", response)
                 resp_flag = True
             else:
                 self._log.error("Couldn't read the alert details from Alert ID"
@@ -207,7 +207,7 @@ class SystemAlerts(RestTestLib):
                     for arg in response_checks:
                         if str(arg) in alert_info:
                             self._log.info("Verified %s in the response of "
-                                           "alert ID %S", arg, alert_id)
+                                           "alert ID %s", arg, alert_id)
                         else:
                             self._log.error("Couldn't find %s in the response "
                                             "of alert ID %s", arg, alert_id)
@@ -235,12 +235,12 @@ class SystemAlerts(RestTestLib):
                 alert_ids.append(entry['alert_uuid'])
         if alert_ids == []:
             return False
-        else:
-            starttime = time.strftime(
-                '%Y-%m-%d %H:%M:%S', time.localtime(starttime))
-            self._log.info("Alerts generated after %s are : %S", starttime,
-                           alert_ids)
-            return alert_ids
+
+        starttime = time.strftime(
+            '%Y-%m-%d %H:%M:%S', time.localtime(starttime))
+        self._log.info("Alerts generated after %s are : %s", starttime,
+                       alert_ids)
+        return alert_ids
 
     @RestTestLib.authenticate_and_login
     def add_comment_to_alerts(self, alert_id, comment_text):
@@ -525,7 +525,7 @@ class SystemAlerts(RestTestLib):
                 endpoint, sortby=sortby, dirby=direction, offset=offset,
                 limit=limit, sensor_info=sensor_info, start_date=start_date,
                 end_date=end_date, duration=duration)
-            self._log.info("Endpoint formed is {}".format(endpoint))
+            self._log.info("Endpoint formed is %s", endpoint)
 
             # Fetching api response
             response = self.restapi.rest_call(request_type="get",
@@ -536,7 +536,7 @@ class SystemAlerts(RestTestLib):
             return response
 
         except BaseException as error:
-            self._log.error("%s %s: %S", self.exception_error,
+            self._log.error("%s %s: %s", self.exception_error,
                             SystemAlerts.get_alerts_history.__name__, error)
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED, error.args[0])
@@ -598,7 +598,7 @@ class SystemAlerts(RestTestLib):
                                               endpoint=endpoint,
                                               headers=self.headers)
             self._log.info(
-                "response returned is:\n {}".format(response))
+                "response returned is:\n %s", response)
             return response
 
         except BaseException as error:

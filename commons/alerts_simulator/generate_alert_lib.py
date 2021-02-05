@@ -5,9 +5,7 @@ This file contains the Alert Simulation API.
 """
 import logging
 from aenum import Enum, NoAlias
-from commons import constants as cons
 import commons.alerts_simulator.constants as dict_cons
-from commons.utils import config_utils as conf_util
 from commons.alerts_simulator.generate_alert_wrappers import \
     GenerateAlertWrapper
 from config import CMN_CFG as COMMON_CONF

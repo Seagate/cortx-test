@@ -10,7 +10,7 @@ import time
 from decimal import Decimal
 from typing import Tuple, Any, Union
 from libs.ras.ras_core_lib import RASCoreLib
-from commons.utils.config_utils import read_yaml, get_config, update_cfg_based_on_separator
+from commons.utils.config_utils import get_config, update_cfg_based_on_separator
 from commons.utils import system_utils as sys_utils
 from commons import constants as cmn_cons
 from commons import commands as common_commands
