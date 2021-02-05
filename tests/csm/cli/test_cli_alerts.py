@@ -4,10 +4,10 @@ import time
 import logging
 import pytest
 from commons.utils import assert_utils
-from libs.csm.cli.cli_alerts_lib import CortxCliAlerts
 from commons.alerts_simulator.generate_alert_lib import \
     GenerateAlertLib, AlertType
 from commons import cortxlogging
+from libs.csm.cli.cli_alerts_lib import CortxCliAlerts
 
 
 ALERT_OBJ = CortxCliAlerts()
