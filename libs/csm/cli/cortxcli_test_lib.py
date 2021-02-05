@@ -1,6 +1,6 @@
+import logging
 import json
 import xmltodict
-import logging
 import commons.errorcodes as err
 from commons.exceptions import CTException
 from commons.utils import config_utils

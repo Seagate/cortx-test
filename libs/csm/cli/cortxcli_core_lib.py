@@ -1,7 +1,7 @@
 """ This is a core library which will execute commands on interactive cortxcli"""
 
-import time
 import logging
+import time
 from commons.helpers.host import Host
 
 
@@ -30,7 +30,7 @@ class CortxCliClient:
         self.host_obj.connect(shell=True, port=self.port)
         self.session_obj = self.host_obj.shell_obj
 
-    def execute_cli_commands(self, cmd, time_out=300) -> str:
+    def execute_cli_commands(self, cmd: str, time_out: int = 300) -> str:
         """
         This function executes command on interactive shell on csm server and returns output
         :param str cmd: command to execute on shell
@@ -42,7 +42,7 @@ class CortxCliClient:
         self.session_obj.send("".join([cmd, "\n"]))
         poll = time.time() + time_out  # max timeout
         while poll > time.time():
-            time.sleep(1)
+            time.sleep(2)
             if self.session_obj.recv_ready():
                 output = output + \
                     self.session_obj.recv(9999).decode("utf-8")
