@@ -1,3 +1,8 @@
+"""
+This library contains common methods for CORTX CLI which will be used
+across all other libraries and test suites
+"""
+
 import logging
 import json
 import xmltodict
@@ -10,7 +15,7 @@ common_cfg = config_utils.read_yaml("config/common_config.yaml")[1]
 
 
 class CortxCliTestLib(CortxCliClient):
-    """This class has all common methods that will be used by all test libraries"""
+    """This class contains common methods for CORTX CLI derived from core lib"""
 
     def __init__(
             self,
@@ -41,10 +46,11 @@ class CortxCliTestLib(CortxCliClient):
                 return False, output
             return True, output
         except Exception as error:
-            self.log.error("An error in {0}: {1}:".format(
+            self.log.error(
+                "An error in %s: %s:",
                 CortxCliTestLib.execute_cli_commands.__name__,
-                error))
-            raise CTException(err.CLI_ERROR, error.args[0])
+                error)
+            raise CTException(err.CLI_ERROR, error.args[0]) from error
 
     def login_cortx_cli(
             self,
@@ -61,13 +67,13 @@ class CortxCliTestLib(CortxCliClient):
         output = self.execute_cli_commands(login_cmd)[1]
 
         if "Username:" in output:
-            self.log.info("Logging in CORTX CLI as user {}".format(username))
+            self.log.info("Logging in CORTX CLI as user %s", username)
             output = self.execute_cli_commands(cmd=username)[1]
             if "Password:" in output:
                 output = self.execute_cli_commands(cmd=password)[1]
                 if "CORTX Interactive Shell" in output:
                     self.log.info(
-                        "Logged in CORTX CLI as user {} successfully".format(username))
+                        "Logged in CORTX CLI as user %s successfully", username)
                     return True, output
 
         return False, output
@@ -92,24 +98,14 @@ class CortxCliTestLib(CortxCliClient):
         :return: Dictionary created from given input string.
         :rtype: dict
         """
-        start_index = 0
-        end_index = 0
         if not input_str:
             self.log.error("Empty string received!!")
             return None
-        self.log.debug("Data received \n {0}".format(input_str))
-        for i in range(len(input_str)):
-            if input_str[i] == "{":
-                start_index = i
-                break
-        count = 0
-        for j in input_str[::-1]:
-            if j == "}":
-                end_index = count
-                break
-            count += 1
-        json_data = json.loads(input_str[start_index:-(end_index)])
-        self.log.debug("JSON output \n {0}".format(json_data))
+        self.log.debug("Data received \n %s", input_str)
+        start_index = input_str.find("{")
+        end_index = input_str.rfind("}") + 1
+        json_data = json.loads(input_str[start_index:end_index])
+        self.log.debug("JSON output \n %s", json_data)
         return json_data
 
     def xml_data_parsing(self, input_str: str) -> list:
@@ -122,30 +118,30 @@ class CortxCliTestLib(CortxCliClient):
         if not input_str:
             self.log.error("String is empty")
             return resp_list
-        self.log.debug("Data received \n {0}".format(input_str))
+        self.log.debug("Data received \n %s", input_str)
         formatted_data = input_str.replace("\r\n  ", "").replace(
             "\r\n", ",").replace(",</", "</").split(",")[1:-1]
         for node in formatted_data:
-            dict = json.dumps(xmltodict.parse(node))
-            json_format = json.loads(dict)
+            temp_dict = json.dumps(xmltodict.parse(node))
+            json_format = json.loads(temp_dict)
             resp_list.append(json_format)
-        self.log.debug("Extracted output \n {0}".format(resp_list))
+        self.log.debug("Extracted output \n %s", resp_list)
         return resp_list
 
-    def split_table_response(self, response: str) -> list:
+    def split_table_response(self, ip_response: str) -> list:
         """
         This function will split response into list making it suitable for verification
-        :param response: response which is to be split
+        :param ip_response: response which is to be split
         :return: List formed after splitting response
         """
         # Splitting response row-wise
-        response = str(response).split('\r\n')
+        response = str(ip_response).split('\r\n')
 
         # Splitting values of each row column-wise
-        for i in range(len(response)):
-            response[i] = response[i].split('|')
-            for j in range(len(response[i])):
-                response[i][j] = response[i][j].strip()
+        for i, string in enumerate(response):
+            response[i] = string.split('|')
+            for j, substr in enumerate(string):
+                response[i][j] = substr.strip()
         response = response[4:len(response) - 2]
         self.log.info(response)
         return response
@@ -158,7 +154,8 @@ class CortxCliTestLib(CortxCliClient):
         try:
             super().close_connection()
         except Exception as error:
-            self.log.error("An error in {0}: {1}:".format(
+            self.log.error(
+                "An error in %s: %s:",
                 CortxCliTestLib.close_connection.__name__,
-                error))
-            raise CTException(err.CLI_ERROR, error.args[0])
+                error)
+            raise CTException(err.CLI_ERROR, error.args[0]) from error

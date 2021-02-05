@@ -7,7 +7,8 @@ from commons.helpers.host import Host
 
 class CortxCliClient:
     """
-    This class is responsible to establish connection  to CSM server and execute commands on interactive cortxcli
+    This class is responsible to establish connection to CSM server
+    and execute commands on interactive cortxcli
     """
 
     def __init__(self, host, username, password, port=22):
@@ -27,7 +28,7 @@ class CortxCliClient:
             hostname=self.host,
             username=self.username,
             password=self.password)
-        self.host_obj.connect(shell=True, port=self.port)
+        self.host_obj.connect(True, port=self.port)
         self.session_obj = self.host_obj.shell_obj
 
     def execute_cli_commands(self, cmd: str, time_out: int = 300) -> str:
@@ -38,8 +39,9 @@ class CortxCliClient:
         :return: output of executed command
         """
         output = ""
-        self.log.info("Sending command: {}".format("".join([cmd, "\n"])))
-        self.session_obj.send("".join([cmd, "\n"]))
+        cmd = "".join([cmd, "\n"])
+        self.log.info("Sending command: %s", cmd)
+        self.session_obj.send(cmd)
         poll = time.time() + time_out  # max timeout
         while poll > time.time():
             time.sleep(2)
