@@ -244,6 +244,7 @@ class RASCoreLib:
         put_cmd = "{} kv put {}/{} {}" \
             .format(cmn_cons.CONSUL_PATH,
                     kv_path, field, val)
+        LOGGER.info("Running command: %s", put_cmd)
         resp = self.node_utils.execute_cmd(cmd=put_cmd,
                                            read_nbytes=cmn_cons.ONE_BYTE_TO_READ)
         return resp
@@ -260,6 +261,7 @@ class RASCoreLib:
         get_cmd = "{} kv get {}/{}" \
             .format(cmn_cons.CONSUL_PATH,
                     kv_path, field)
+        LOGGER.info("Running command: %s", get_cmd)
         response = self.node_utils.execute_cmd(cmd=get_cmd,
                                                read_nbytes=BYTES_TO_READ)
         return response
@@ -294,13 +296,13 @@ class RASCoreLib:
                     self.change_file_mode(path=path)
                 LOGGER.info("Getting cluster id")
                 cluster_id = self.get_cluster_id()
-                cluster_id = cluster_id[1].decode("utf-8")
+                cluster_id = cluster_id.decode("utf-8")
                 cluster_id = " ".join(cluster_id.split())
                 cluster_id = cluster_id.split(' ')[-1]
 
                 LOGGER.info("Encrypting the password")
                 val = self.encrypt_pwd(password, cluster_id)
-                val = val[1].split()[-1]
+                val = val.split()[-1]
                 val = val.decode("utf-8")
                 val = (repr(val)[2:-1]).replace('\'', '')
             else:
@@ -319,7 +321,7 @@ class RASCoreLib:
                     str_f, cmn_cons.STORAGE_ENCLOSURE_PATH, lin)
                 val = self.node_utils.execute_cmd(cmd=cmd,
                                                   read_nbytes=BYTES_TO_READ)
-                val = val[1].decode("utf-8")
+                val = val.decode("utf-8")
                 val = " ".join(val.split())
 
             LOGGER.info(
@@ -334,7 +336,7 @@ class RASCoreLib:
                                        cmn_cons.KV_STORE_PATH)
             else:
                 response = self.kv_get(field, cmn_cons.KV_STORE_PATH)
-            response = response[1].decode("utf-8")
+            response = response.decode("utf-8")
             response = " ".join(response.split())
             if val == response:
                 LOGGER.debug("Successfully written data for %s", field)

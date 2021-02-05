@@ -22,7 +22,6 @@ from commons.alerts_simulator.generate_alert_lib import \
      GenerateAlertLib, AlertType
 from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
 
-CSM_ALERT_OBJ = SystemAlerts()
 CSM_USER_OBJ = RestCsmUser()
 ALERT_API_OBJ = GenerateAlertLib()
 
@@ -38,9 +37,10 @@ class TestSSPL:
 
     @classmethod
     @pytest.mark.parametrize("host", TEST_DATA)
-    def setup_class(cls, host):
+    def setup_class(cls):
         """Setup for module."""
-        cls.host = host
+        LOGGER.info("Running setup_class")
+        cls.host = CMN_CFG["host"]
         cls.uname = CMN_CFG["username"]
         cls.passwd = CMN_CFG["password"]
         cls.changed_level = cls.selinux_enabled = False
@@ -63,6 +63,8 @@ class TestSSPL:
             LOGGER.info(str(err))
             cls.s3obj = S3Helper.get_instance()
 
+        cls.csm_alert_obj = SystemAlerts(host=cls.host, username=cls.uname,
+                                         password=cls.passwd)
         # Enable this flag for starting RMQ channel
         cls.start_rmq = CM_CFG["start_rmq"]
 
@@ -78,6 +80,7 @@ class TestSSPL:
 
     def setup_method(self):
         """Setup operations per test."""
+        LOGGER.info("Running setup_method")
         self.starttime = time.time()
         LOGGER.info("Retaining the original/default config")
         self.ras_test_obj.retain_config(CM_CFG["file"]["original_sspl_conf"],
@@ -265,7 +268,7 @@ class TestSSPL:
 
         time.sleep(common_cfg["sleep_val"])
         LOGGER.info("Step 3: Checking CSM REST API for no alerts")
-        resp = CSM_ALERT_OBJ.verify_csm_response(self.starttime,
+        resp = self.csm_alert_obj.verify_csm_response(self.starttime,
                                                  params["alert_type"], False,
                                                  params["resource_type"])
 
@@ -316,7 +319,7 @@ class TestSSPL:
 
         LOGGER.info("Step 3: Checking CSM REST API for alert type "
                     "fault_resolved")
-        resp = CSM_ALERT_OBJ.verify_csm_response(
+        resp = self.csm_alert_obj.verify_csm_response(
             self.starttime,
             params["alert_fault_resolved"]["alert_type"],
             True,
@@ -439,7 +442,7 @@ class TestSSPL:
 
         LOGGER.info("Step 7: Checking CSM REST API for alerts")
         time.sleep(common_cfg["sleep_val"])
-        resp = CSM_ALERT_OBJ.verify_csm_response(self.starttime,
+        resp = self.csm_alert_obj.verify_csm_response(self.starttime,
                                                  test_cfg["alert_type"],
                                                  False,
                                                  test_cfg["resource_type"])
@@ -543,7 +546,7 @@ class TestSSPL:
 
         time.sleep(common_cfg["sleep_val"])
         LOGGER.info("Step 11: Checking CSM REST API for alert")
-        resp = CSM_ALERT_OBJ.verify_csm_response(self.starttime,
+        resp = self.csm_alert_obj.verify_csm_response(self.starttime,
                                                  test_cfg["alert_type"], False,
                                                  test_cfg["resource_type"])
 
@@ -642,7 +645,7 @@ class TestSSPL:
         time.sleep(RAS_VAL["ras_sspl_alert"]["telnet_sleep_val"])
 
         LOGGER.info("Step 2: Checking CSM REST API for alert")
-        resp_csm = CSM_ALERT_OBJ.verify_csm_response(self.starttime,
+        resp_csm = self.csm_alert_obj.verify_csm_response(self.starttime,
                                                      params["alert_type"],
                                                      False,
                                                      params["resource_type"])
@@ -730,7 +733,7 @@ class TestSSPL:
 
         time.sleep(common_cfg["sleep_val"])
         LOGGER.info("Step 4: Checking CSM REST API for alert")
-        resp = CSM_ALERT_OBJ.verify_csm_response(self.starttime,
+        resp = self.csm_alert_obj.verify_csm_response(self.starttime,
                                                  params["alert_type"], True,
                                                  params["resource_type"])
 
@@ -795,7 +798,7 @@ class TestSSPL:
 
         time.sleep(common_cfg["sleep_val"])
         LOGGER.info("Step 4: Checking CSM REST API for alert")
-        resp = CSM_ALERT_OBJ.verify_csm_response(self.starttime,
+        resp = self.csm_alert_obj.verify_csm_response(self.starttime,
                                                  params["alert_type"], True,
                                                  params["resource_type"])
 
@@ -838,7 +841,7 @@ class TestSSPL:
         time.sleep(RAS_VAL["ras_sspl_alert"]["telnet_sleep_val"])
 
         LOGGER.info("Step 2: Checking CSM REST API for alert")
-        resp_csm = CSM_ALERT_OBJ.verify_csm_response(self.starttime,
+        resp_csm = self.csm_alert_obj.verify_csm_response(self.starttime,
                                                      params["alert_type"],
                                                      False,
                                                      params["resource_type"])
@@ -1025,7 +1028,7 @@ class TestSSPL:
 
         time.sleep(common_cfg["sleep_val"])
         LOGGER.info("Step 11: Checking CSM REST API for alert")
-        resp = CSM_ALERT_OBJ.verify_csm_response(
+        resp = self.csm_alert_obj.verify_csm_response(
             self.starttime,
             params["alert_fault"]["alert_type"],
             False,
@@ -1088,7 +1091,7 @@ class TestSSPL:
 
         time.sleep(common_cfg["sleep_val"])
         LOGGER.info("Step 5: Checking CSM REST API for alert")
-        resp = CSM_ALERT_OBJ.verify_csm_response(self.starttime,
+        resp = self.csm_alert_obj.verify_csm_response(self.starttime,
                                                  test_cfg["alert_type"], False,
                                                  test_cfg["resource_type"])
 
@@ -1192,7 +1195,7 @@ class TestSSPL:
 
         LOGGER.info("Step 3: Checking CSM REST API for alert")
         time.sleep(common_cfg["csm_alert_gen_delay"])
-        resp_csm = CSM_ALERT_OBJ.verify_csm_response(self.starttime,
+        resp_csm = self.csm_alert_obj.verify_csm_response(self.starttime,
                                                      test_cfg["alert_type"],
                                                      False,
                                                      test_cfg["resource_type"],
@@ -1321,7 +1324,7 @@ class TestSSPL:
 
         LOGGER.info("Step 6: Checking CSM REST API for alert")
         time.sleep(common_cfg["csm_alert_gen_delay"])
-        resp = CSM_ALERT_OBJ.verify_csm_response(self.starttime,
+        resp = self.csm_alert_obj.verify_csm_response(self.starttime,
                                                  test_cfg["alert_type"], True,
                                                  test_cfg["resource_type"],
                                                  resource_id)
@@ -1390,7 +1393,7 @@ class TestSSPL:
                 "on the RabbitMQ channel")
 
         LOGGER.info("Step 5: Checking CSM REST API for alert")
-        resp = CSM_ALERT_OBJ.verify_csm_response(self.starttime,
+        resp = self.csm_alert_obj.verify_csm_response(self.starttime,
                                                  test_cfg["alert_type"], False,
                                                  test_cfg["resource_type"])
 
@@ -1450,7 +1453,7 @@ class TestSSPL:
 
         LOGGER.info("Step 2: Checking CSM REST API for CPU usage alerts")
         time.sleep(common_cfg["csm_alert_gen_delay"])
-        resp = CSM_ALERT_OBJ.verify_csm_response(
+        resp = self.csm_alert_obj.verify_csm_response(
             self.starttime, test_cfg["alert_type"], False,
             test_cfg["resource_type"])
 
@@ -1489,7 +1492,7 @@ class TestSSPL:
 
         LOGGER.info("Step 2: Checking CSM REST API for memory usage alerts")
         time.sleep(common_cfg["csm_alert_gen_delay"])
-        resp = CSM_ALERT_OBJ.verify_csm_response(
+        resp = self.csm_alert_obj.verify_csm_response(
             self.starttime, test_cfg["alert_type"], False,
             test_cfg["resource_type"])
         assert resp is True, csm_error_msg
@@ -1560,7 +1563,7 @@ class TestSSPL:
 
         LOGGER.info("Step 6: Checking CSM REST API for alert type "
                     "fault_resolved")
-        resp = CSM_ALERT_OBJ.verify_csm_response(
+        resp = self.csm_alert_obj.verify_csm_response(
             self.starttime,
             params["alert_fault_resolved"]["alert_type"],
             True,

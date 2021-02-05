@@ -15,11 +15,7 @@ from commons import constants as cons
 from commons import commands as common_cmd
 from commons.utils.assert_utils import *
 from libs.csm.rest.csm_rest_alert import SystemAlerts
-from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
-
-CSM_ALERT_OBJ = SystemAlerts()
-CSM_USER_OBJ = RestCsmUser()
 
 BYTES_TO_READ = cons.BYTES_TO_READ
 CM_CFG = RAS_VAL["ras_sspl_alert"]
@@ -60,6 +56,9 @@ class TestSSPLSecondary:
                              password=cls.passwd)
         cls.health_obj2 = Health(hostname=cls.host2, username=cls.uname,
                                  password=cls.passwd)
+
+        cls.csm_alert_obj = SystemAlerts(host=cls.host2, username=cls.uname,
+                                         password=cls.passwd)
 
         # Enable this flag for starting RMQ channel
         cls.start_rmq = CM_CFG["start_rmq"]
@@ -249,10 +248,9 @@ class TestSSPLSecondary:
 
         time.sleep(test_cfg["wait_time"])
         LOGGER.info("Step 8: Checking CSM REST API for no alerts")
-        csm_resp = CSM_ALERT_OBJ.verify_csm_response(self.starttime,
-                                                     test_cfg["alert_type"],
-                                                     False,
-                                                     test_cfg["resource_type"])
+        csm_resp = self.csm_alert_obj.verify_csm_response(
+            self.starttime, test_cfg["alert_type"], False,
+            test_cfg["resource_type"])
 
         LOGGER.info("Step 9: Resolving fan fault using ipmi tool")
         cmd = common_cmd.RESOLVE_FAN_FAULT.format(fan_name, test_cfg["op"])
@@ -358,10 +356,9 @@ class TestSSPLSecondary:
 
         time.sleep(test_cfg["wait_time"])
         LOGGER.info("Step 8: Checking CSM REST API for no alerts")
-        csm_resp = CSM_ALERT_OBJ.verify_csm_response(self.starttime,
-                                                     test_cfg["alert_type"],
-                                                     False,
-                                                     test_cfg["resource_type"])
+        csm_resp = self.csm_alert_obj.verify_csm_response(
+            self.starttime, test_cfg["alert_type"], False,
+            test_cfg["resource_type"])
 
         LOGGER.info("Step 9: Resolving fan fault using ipmi tool")
         cmd = common_cmd.RESOLVE_FAN_FAULT.format(fan_name, test_cfg["op"])
@@ -462,10 +459,9 @@ class TestSSPLSecondary:
 
         time.sleep(test_cfg["alert_delay"])
         LOGGER.info("Step 5: Checking CSM REST API for no alerts")
-        csm_resp = CSM_ALERT_OBJ.verify_csm_response(self.starttime,
-                                                     test_cfg["alert_type"],
-                                                     False,
-                                                     test_cfg["resource_type"])
+        csm_resp = self.csm_alert_obj.verify_csm_response(
+            self.starttime, test_cfg["alert_type"], False,
+            test_cfg["resource_type"])
 
         LOGGER.info("Step 6: Resolving fan fault using ipmi tool")
         cmd = common_cmd.RESOLVE_FAN_FAULT.format(fan_name, test_cfg["op"])

@@ -17,7 +17,6 @@ from commons.helpers.node_helper import Node
 from commons import constants as common_cons
 from commons import commands as common_cmds
 from libs.csm.rest.csm_rest_alert import SystemAlerts
-from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 from commons.alerts_simulator.generate_alert_lib import GenerateAlertLib, \
     AlertType
 from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
@@ -52,8 +51,8 @@ class TestRAIDOperations:
             cls.s3_obj = S3Helper.get_instance()
         cls.ras_obj = RASTestLib(host=cls.host, username=cls.uname,
                                  password=cls.passwd)
-        cls.csm_alert_obj = SystemAlerts()
-        cls.csm_user_obj = RestCsmUser()
+        cls.csm_alert_obj = SystemAlerts(host=cls.host, username=cls.uname,
+                                         password=cls.passwd)
         cls.alert_api_obj = GenerateAlertLib()
         cls.cm_cfg = RAS_VAL["ras_sspl_alert"]
         LOGGER.info("Done: Setup module operations")
