@@ -2,12 +2,12 @@
 
 import logging
 from typing import Tuple
-from libs.csm.cli.cortxcli_test_lib import CortxCliTestLib
+from libs.csm.cli.cortx_cli import CortxCli
 
 LOG = logging.getLogger(__name__)
 
 
-class CortxCliIAMLib(CortxCliTestLib):
+class CortxCliIAMLib(CortxCli):
     """This class has all IAM methods"""
 
     def create_iam_user(
