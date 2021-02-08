@@ -1,4 +1,23 @@
-"""CSM CLI alert TestSuite"""
+#!/usr/bin/python
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
+"""CLI Alert Testsuit"""
 
 import time
 import logging
@@ -13,6 +32,8 @@ from libs.csm.cli.cli_alerts_lib import CortxCliAlerts
 ALERT_OBJ = CortxCliAlerts()
 GENERATE_ALERT_OBJ = GenerateAlertLib()
 LOGGER = logging.getLogger(__name__)
+START_LOG_FORMAT = "##### Test started -  "
+END_LOG_FORMAT = "##### Test Ended -  "
 
 
 def setup_function():
@@ -47,8 +68,7 @@ def test_131():
     """
     Test alerts acknowledge <alert id> -ack should acknowledge the given alert
     """
-    test_case_name = cortxlogging.get_frame()
-    LOGGER.info("##### Test started -  %s #####", test_case_name)
+    LOGGER.info("%s %s", START_LOG_FORMAT, cortxlogging.get_frame())
     start_time = time.time()
     LOGGER.info("Step 1: Generating disk fault alert")
     resp = GENERATE_ALERT_OBJ.generate_alert(
@@ -57,21 +77,16 @@ def test_131():
             "du_val": -3,
             "fault": True,
             "fault_resolved": False})
-    time.sleep(180)
+    assert_utils.assert_equals(resp[0], True, resp)
+    LOGGER.info("Step 1: Generated disk fault alert")
+    LOGGER.info("Step 2: Verifying alerts are generated")
+    resp = ALERT_OBJ.wait_for_alert(start_time=start_time)
     assert_utils.assert_equals(resp[0], True, resp)
     end_time = time.time()
     duration = "{0}{1}".format(
         int(end_time - start_time), "s")
-    LOGGER.info("Step 1: Generated disk fault alert")
-    LOGGER.info("Step 2: Listing alerts")
-    resp = ALERT_OBJ.show_alerts_cli(duration=duration,
-                                     limit=1,
-                                     output_format="json")
-    LOGGER.info(resp)
-    assert_utils.assert_equals(resp[0], True, resp)
-    assert len(resp[1]["alerts"]) > 0
     alert_id = resp[1]["alerts"][0]["alert_uuid"]
-    LOGGER.info("Step 2: Listed alerts")
+    LOGGER.info("Step 2: Verified alerts are generated")
     LOGGER.info(
         "Step 3: Acknowledge alert %s from given list", alert_id)
     resp = ALERT_OBJ.acknowledge_alert_cli(alert_id=alert_id)
@@ -87,8 +102,7 @@ def test_131():
     assert_utils.assert_equals(
         resp[1]["alerts"][0]["acknowledged"], True, resp[1])
     LOGGER.info("Step 4: Verified alert is acknowledged")
-    LOGGER.info(
-        "##### Test completed -  %s #####", test_case_name)
+    LOGGER.info("%s %s", END_LOG_FORMAT, cortxlogging.get_frame())
 
 
 @pytest.mark.csm
@@ -98,8 +112,7 @@ def test_6306():
     """
     Verify that all comments on alert is returned in table format on executing show alert command
     """
-    test_case_name = cortxlogging.get_frame()
-    LOGGER.info("##### Test started -  %s #####", test_case_name)
+    LOGGER.info("%s %s", START_LOG_FORMAT, cortxlogging.get_frame())
     start_time = time.time()
     LOGGER.info("Step 1: Generating disk fault alert")
     resp = GENERATE_ALERT_OBJ.generate_alert(
@@ -108,21 +121,13 @@ def test_6306():
             "du_val": -3,
             "fault": True,
             "fault_resolved": False})
-    time.sleep(180)
     assert_utils.assert_equals(resp[0], True, resp)
-    end_time = time.time()
-    duration = "{0}{1}".format(
-        int(end_time - start_time), "s")
     LOGGER.info("Step 1: Generated disk fault alert")
-    LOGGER.info("Step 2: Listing alerts")
-    resp = ALERT_OBJ.show_alerts_cli(
-        duration=duration,
-        limit=1)
-    LOGGER.info(resp)
+    LOGGER.info("Step 2: Verifying alerts are generated")
+    resp = ALERT_OBJ.wait_for_alert(start_time=start_time)
     assert_utils.assert_equals(resp[0], True, resp)
-    assert len(resp[1]) > 0
-    alert_id = resp[1][0][1]
-    LOGGER.info("Step 2: Listed alerts")
+    alert_id = resp[1]["alerts"][0]["alert_uuid"]
+    LOGGER.info("Step 2: Verified alerts are generated")
     LOGGER.info("Step 3: Adding comment to an alert")
     resp = ALERT_OBJ.add_comment_alert(
         alert_id, "Default_alert")
@@ -136,8 +141,7 @@ def test_6306():
     assert_utils.assert_equals(resp[0], True, resp)
     LOGGER.info(
         "Step 4: Verified that alert is returned in table format with all details")
-    LOGGER.info(
-        "##### Test completed -  %s #####", test_case_name)
+    LOGGER.info("%s %s", END_LOG_FORMAT, cortxlogging.get_frame())
 
 
 @pytest.mark.csm
@@ -147,8 +151,7 @@ def test_3289(self):
     """
     csmcli alerts acknowledge <alert id> <comment> with invalid <alert id>
     """
-    test_case_name = cortxlogging.get_frame()
-    LOGGER.info("##### Test started -  %s #####", test_case_name)
+    LOGGER.info("%s %s", START_LOG_FORMAT, cortxlogging.get_frame())
     self.log.info(
         "Step 1: Acknowledge alert with invalid id")
     resp = ALERT_OBJ.acknowledge_alert_cli(alert_id="74659q349694-4r4r43")
@@ -157,8 +160,7 @@ def test_3289(self):
     self.log.info(
         "Step 3: Acknowledging alert with invalid id is failed with error %s",
         resp[1])
-    self.log.info(
-        "##### Test completed -  %s #####", test_case_name)
+    LOGGER.info("%s %s", END_LOG_FORMAT, cortxlogging.get_frame())
 
 
 @pytest.mark.csm
@@ -168,8 +170,7 @@ def test_3290():
     """
     Test "csmcli alerts acknowledge" command
     """
-    test_case_name = cortxlogging.get_frame()
-    LOGGER.info("##### Test started -  %s #####", test_case_name)
+    LOGGER.info("%s %s", START_LOG_FORMAT, cortxlogging.get_frame())
     start_time = time.time()
     LOGGER.info("Step 1: Running ALERT API for generating fault")
     resp = GENERATE_ALERT_OBJ.generate_alert(
@@ -179,22 +180,16 @@ def test_3290():
             "fault": True,
             "fault_resolved": False})
     assert_utils.assert_equals(resp[0], True, resp)
+    LOGGER.info(
+        "Step 1: Successfully run ALERT API for generating fault")
+    LOGGER.info("Step 2: Verifying alerts are generated")
+    resp = ALERT_OBJ.wait_for_alert(start_time=start_time)
+    assert_utils.assert_equals(resp[0], True, resp)
     end_time = time.time()
     duration = "{0}{1}".format(
         int(end_time - start_time), "s")
-    LOGGER.info(
-        "Step 1: Successfully run ALERT API for generating fault")
-    LOGGER.info("Step 2: Listing alerts")
-    resp = ALERT_OBJ.show_alerts_cli(
-        duration=duration,
-        limit=1,
-        output_format="json")
-    LOGGER.info(resp)
-    assert_utils.assert_equals(resp[0], True, resp)
-    assert len(resp[1]["alerts"]) > 0
     alert_id = resp[1]["alerts"][0]["alert_uuid"]
-    #self.restart_sspl = True
-    LOGGER.info("Step 2: Listed alerts")
+    LOGGER.info("Step 2: Verified alerts are generated")
     LOGGER.info(
         "Step 3: Acknowledge alert %s from given list", alert_id)
     resp = ALERT_OBJ.acknowledge_alert_cli(alert_id)
@@ -211,8 +206,7 @@ def test_3290():
     assert_utils.assert_equals(
         resp[1]["alerts"][0]["acknowledged"], True, resp[1])
     LOGGER.info("Step 4: Verified alert is acknowledged")
-    LOGGER.info(
-        "##### Test completed -  %s #####", test_case_name)
+    LOGGER.info("%s %s", END_LOG_FORMAT, cortxlogging.get_frame())
 
 
 @pytest.mark.csm
@@ -223,8 +217,7 @@ def test_6309():
     Test that help menu opens for both 'show'
     and 'add' comments options along with parameter details
     """
-    test_case_name = cortxlogging.get_frame()
-    LOGGER.info("##### Test started -  %s #####", test_case_name)
+    LOGGER.info("%s %s", START_LOG_FORMAT, cortxlogging.get_frame())
     LOGGER.info("Verifying help menu for show comment command")
     resp = ALERT_OBJ.show_alerts_comment_cli(help_param=True)
     assert_utils.assert_equals(resp[0], True, resp)
@@ -235,8 +228,7 @@ def test_6309():
     assert_utils.assert_equals(resp[0], True, resp)
     LOGGER.info(resp[1])
     LOGGER.info("Verified help menu for add comment command")
-    LOGGER.info(
-        "##### Test completed -  %s #####", test_case_name)
+    LOGGER.info("%s %s", END_LOG_FORMAT, cortxlogging.get_frame())
 
 
 @pytest.mark.csm
@@ -246,8 +238,7 @@ def test_245():
     """
     Test 'alerts acknowledge <wrong_alert id> -ack' should give error message
     """
-    test_case_name = cortxlogging.get_frame()
-    LOGGER.info("##### Test started -  %s #####", test_case_name)
+    LOGGER.info("%s %s", START_LOG_FORMAT, cortxlogging.get_frame())
     LOGGER.info(
         "Step 1: Acknowledge alert with invalid id")
     resp = ALERT_OBJ.acknowledge_alert_cli(alert_id="74659q349694-4r4r43-cc")
@@ -256,8 +247,7 @@ def test_245():
     LOGGER.info(
         "Step 3: Acknowledging alert with invalid id is failed with error %s",
         resp[1])
-    LOGGER.info(
-        "##### Test completed -  %s #####", test_case_name)
+    LOGGER.info("%s %s", END_LOG_FORMAT, cortxlogging.get_frame())
 
 
 @pytest.mark.csm
@@ -267,8 +257,7 @@ def test_3288():
     """
     Test "csmcli alerts acknowledge" command
     """
-    test_case_name = cortxlogging.get_frame()
-    LOGGER.info("##### Test started -  %s #####", test_case_name)
+    LOGGER.info("%s %s", START_LOG_FORMAT, cortxlogging.get_frame())
     start_time = time.time()
     LOGGER.info("Step 1: Running ALERT API for generating fault")
     resp = GENERATE_ALERT_OBJ.generate_alert(
@@ -278,22 +267,16 @@ def test_3288():
             "fault": True,
             "fault_resolved": False})
     assert_utils.assert_equals(resp[0], True, resp)
+    LOGGER.info(
+        "Step 1: Successfully run ALERT API for generating fault")
+    LOGGER.info("Step 2: Verifying alerts are generated")
+    resp = ALERT_OBJ.wait_for_alert(start_time=start_time)
+    assert_utils.assert_equals(resp[0], True, resp)
     end_time = time.time()
     duration = "{0}{1}".format(
         int(end_time - start_time), "s")
-    LOGGER.info(
-        "Step 1: Successfully run ALERT API for generating fault")
-    LOGGER.info("Step 2: Listing alerts")
-    resp = ALERT_OBJ.show_alerts_cli(
-        duration=duration,
-        limit=1,
-        output_format="json")
-    LOGGER.info(resp)
-    assert_utils.assert_equals(resp[0], True, resp)
-    assert len(resp[1]["alerts"]) > 0
     alert_id = resp[1]["alerts"][0]["alert_uuid"]
-    # self.restart_sspl = True
-    LOGGER.info("Step 2: Listed alerts")
+    LOGGER.info("Step 2: Verified alerts are generated")
     LOGGER.info(
         "Step 3: Acknowledge alert %s from given list", alert_id)
     resp = ALERT_OBJ.acknowledge_alert_cli(alert_id)
@@ -310,8 +293,7 @@ def test_3288():
     assert_utils.assert_equals(
         resp[1]["alerts"][0]["acknowledged"], True, resp[1])
     LOGGER.info("Step 4: Verified alert is acknowledged")
-    LOGGER.info(
-        "##### Test completed -  %s #####", test_case_name)
+    LOGGER.info("%s %s", END_LOG_FORMAT, cortxlogging.get_frame())
 
 
 @pytest.mark.csm
@@ -321,8 +303,7 @@ def test_6308():
     """
     Test that error is returned when wrong alert_uuid is entered in show alert command
     """
-    test_case_name = cortxlogging.get_frame()
-    LOGGER.info("##### Test started -  %s #####", test_case_name)
+    LOGGER.info("%s %s", START_LOG_FORMAT, cortxlogging.get_frame())
     LOGGER.info(
         "Step 1: Performing show alert command with invalid alert id")
     resp = ALERT_OBJ.show_alerts_comment_cli(alert_id="74659q349694-4r4r43-cc")
@@ -331,8 +312,7 @@ def test_6308():
     LOGGER.info(
         "Step 1: Show alert command with invalid alert id is failed with error %s",
         resp[1])
-    LOGGER.info(
-        "##### Test completed -  %s #####", test_case_name)
+    LOGGER.info("%s %s", END_LOG_FORMAT, cortxlogging.get_frame())
 
 
 @pytest.mark.csm
@@ -342,8 +322,7 @@ def test_247(self):
     """
     Test 'alerts acknowledge' with missing parameter throws error
     """
-    test_case_name = cortxlogging.get_frame()
-    LOGGER.info("##### Test started -  %s #####", test_case_name)
+    LOGGER.info("%s %s", START_LOG_FORMAT, cortxlogging.get_frame())
     self.log.info(
         "Step 1: Performing alerts acknowledge with missing parameter")
     resp = ALERT_OBJ.acknowledge_alert_cli(alert_id="")
@@ -353,8 +332,7 @@ def test_247(self):
     self.log.info(
         "Step 1: Alerts acknowledge with missing parameter is failed with error %s",
         resp[1])
-    self.log.info(
-        "##### Test completed -  %s #####", test_case_name)
+    LOGGER.info("%s %s", END_LOG_FORMAT, cortxlogging.get_frame())
 
 
 @pytest.mark.csm
@@ -364,8 +342,7 @@ def test_252():
     """
     Test 'alerts comments -h' should show the help
     """
-    test_case_name = cortxlogging.get_frame()
-    LOGGER.info("##### Test started -  %s #####", test_case_name)
+    LOGGER.info("%s %s", START_LOG_FORMAT, cortxlogging.get_frame())
     cmd = "alerts comment"
     alert_comment_help = ["positional arguments:",
                           "{show,add}",
@@ -381,8 +358,7 @@ def test_252():
     assert_utils.assert_equals(result, True, result)
     LOGGER.info(
         "Step 1: Verified help option for alerts comments")
-    LOGGER.info(
-        "##### Test completed -  %s #####", test_case_name)
+    LOGGER.info("%s %s", END_LOG_FORMAT, cortxlogging.get_frame())
 
 
 @pytest.mark.csm
@@ -392,8 +368,7 @@ def test_1440():
     """
     Test if we give negative value or wrong value for any of the options it should throw error
     """
-    test_case_name = cortxlogging.get_frame()
-    LOGGER.info("##### Test started -  %s #####", test_case_name)
+    LOGGER.info("%s %s", START_LOG_FORMAT, cortxlogging.get_frame())
     LOGGER.info(
         "Step 1: Verifying show alert command with negative value")
     resp = ALERT_OBJ.show_alerts_cli(duration="-1")
@@ -402,8 +377,7 @@ def test_1440():
     LOGGER.info(
         "Step 1: Verifying show alert command with negative value is failed with error %s",
         resp[1])
-    LOGGER.info(
-        "##### Test completed -  %s #####", test_case_name)
+    LOGGER.info("%s %s", END_LOG_FORMAT, cortxlogging.get_frame())
 
 
 @pytest.mark.csm
@@ -413,8 +387,7 @@ def test_1438():
     Test if `alerts show -f <format> -d<>` displays alert in desired given format
     :avocado: tags=cli_alerts
     """
-    test_case_name = cortxlogging.get_frame()
-    LOGGER.info("##### Test started -  %s #####", test_case_name)
+    LOGGER.info("%s %s", START_LOG_FORMAT, cortxlogging.get_frame())
     start_time = time.time()
     LOGGER.info("Step 1: Generating disk fault alert")
     resp = GENERATE_ALERT_OBJ.generate_alert(
@@ -423,13 +396,16 @@ def test_1438():
             "du_val": -3,
             "fault": True,
             "fault_resolved": False})
-    time.sleep(180)
+    assert_utils.assert_equals(resp[0], True, resp)
+    LOGGER.info("Step 1: Generated disk fault alert")
+    LOGGER.info("Step 2: Verifying alerts are generated")
+    resp = ALERT_OBJ.wait_for_alert(start_time=start_time)
     assert_utils.assert_equals(resp[0], True, resp)
     end_time = time.time()
     duration = "{0}{1}".format(
         int(end_time - start_time), "s")
-    LOGGER.info("Step 1: Generated disk fault alert")
-    LOGGER.info("Step 2: Listing alerts in different formats")
+    LOGGER.info("Step 2: Verified alerts are generated")
+    LOGGER.info("Step 3: Listing alerts in different formats")
     LOGGER.info("1. Listing alert in json format")
     resp = ALERT_OBJ.show_alerts_cli(
         duration=duration,
@@ -451,6 +427,5 @@ def test_1438():
         output_format="table")
     LOGGER.info("Output in table format %s", resp)
     assert_utils.assert_equals(resp[0], True, resp)
-    LOGGER.info("Step 2: Listed alerts in different formats")
-    LOGGER.info(
-        "##### Test completed -  %s #####", test_case_name)
+    LOGGER.info("Step 3: Listed alerts in different formats")
+    LOGGER.info("%s %s", END_LOG_FORMAT, cortxlogging.get_frame())

@@ -1,13 +1,34 @@
-""" Library for csm alerts Operations """
+#!/usr/bin/python
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
+
+""" This file contains methods for CLI alert feature"""
 
 import logging
+import time
 from typing import Tuple
-from libs.csm.cli.cortxcli_test_lib import CortxCliTestLib
+from libs.csm.cli.cortx_cli import CortxCli
 
 LOG = logging.getLogger(__name__)
 
 
-class CortxCliAlerts(CortxCliTestLib):
+class CortxCliAlerts(CortxCli):
     """
     This class has methods for performing operations on alerts using cortxcli
     """
@@ -197,8 +218,7 @@ class CortxCliAlerts(CortxCliTestLib):
 
         return alerts
 
-    def help_option(
-            self, command: str = None):
+    def help_option(self, command: str = None) -> Tuple[bool, str]:
         """
         This function will check the help response for the specified command.
         :param command: Command whose help response to be validated.
@@ -217,6 +237,33 @@ class CortxCliAlerts(CortxCliTestLib):
             self.log.error(
                 "Checking help response for command %s failed with %s", (
                     command, output))
+            return False, output
+
+        return True, output
+
+    def wait_for_alert(self,
+                       timeout: int = 180,
+                       start_time: float = 0,
+                       **kwargs) -> Tuple[bool,
+                                          str]:
+        """
+        This function is used to wait till alert gets generated within expected time
+        :param timeout: max time to wait for alert generation
+        :param start_time: start time of command execution of generate alert
+        :return: True/False, Response)
+        """
+        poll = int(time.time()) + timeout
+        while poll > time.time():
+            duration = "{0}{1}".format(int((time.time() - start_time)), "s")
+            output = self.show_alerts_cli(
+                duration=duration,
+                limit=1,
+                output_format="json",
+                **kwargs)[1]
+            if len(output["alerts"]) > 0:
+                break
+        else:
+            self.log.error("No alert received within expected duration")
             return False, output
 
         return True, output
