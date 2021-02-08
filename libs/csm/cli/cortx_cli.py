@@ -1,3 +1,22 @@
+#!/usr/bin/python
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
 """
 This library contains common methods for CORTX CLI which will be used
 across all other libraries and test suites
@@ -7,24 +26,22 @@ import logging
 import json
 import xmltodict
 import commons.errorcodes as err
+from config import CMN_CFG
 from commons.exceptions import CTException
-from commons.utils import config_utils
-from libs.csm.cli.cortxcli_core_lib import CortxCliClient
-
-common_cfg = config_utils.read_yaml("config/common_config.yaml")[1]
+from libs.csm.cli.cortx_cli_client import CortxCliClient
 
 
-class CortxCliTestLib(CortxCliClient):
-    """This class contains common methods for CORTX CLI derived from core lib"""
+class CortxCli(CortxCliClient):
+    """This class contains common methods for CORTX CLI derived from cli client lib"""
 
     def __init__(
             self,
-            host: str = common_cfg["csm"]["mgmt_vip"],
-            username: str = common_cfg["csm"]["admin_user"],
-            password: str = common_cfg["csm"]["admin_pass"],
+            host: str = CMN_CFG["csm"]["mgmt_vip"],
+            username: str = CMN_CFG["csm"]["admin_user"],
+            password: str = CMN_CFG["csm"]["admin_pass"],
             port: int = 22):
         """
-        This method initializes members of CortxCliTestLib and its parent class
+        This method initializes members of CortxCli and its parent class
         :param str host: host/ip of CSM server
         :param str username: username of CSM server
         :param str password: password of CSM server
@@ -48,14 +65,14 @@ class CortxCliTestLib(CortxCliClient):
         except Exception as error:
             self.log.error(
                 "An error in %s: %s:",
-                CortxCliTestLib.execute_cli_commands.__name__,
+                CortxCli.execute_cli_commands.__name__,
                 error)
             raise CTException(err.CLI_ERROR, error.args[0]) from error
 
     def login_cortx_cli(
             self,
-            username: str = common_cfg["csm"]["admin_user"],
-            password: str = common_cfg["csm"]["admin_pass"]) -> tuple:
+            username: str = CMN_CFG["csm"]["admin_user"],
+            password: str = CMN_CFG["csm"]["admin_pass"]) -> tuple:
         """
         This function will be used to login to CORTX CLI with given credentials
         :param str username: User name to login
@@ -156,6 +173,6 @@ class CortxCliTestLib(CortxCliClient):
         except Exception as error:
             self.log.error(
                 "An error in %s: %s:",
-                CortxCliTestLib.close_connection.__name__,
+                CortxCli.close_connection.__name__,
                 error)
             raise CTException(err.CLI_ERROR, error.args[0]) from error
