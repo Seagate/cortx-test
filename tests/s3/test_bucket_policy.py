@@ -57,10 +57,11 @@ class BucketPolicy(Test):
     """Bucket Policy Testsuite"""
 
     @CTFailOn(error_handler)
-    @CTPLogformatter()
-    def setUp(self):
+    def setup_method(self):
         """
-        This function will be invoked prior to each test case.
+        Summary: Setup method
+
+        Description: This function will be invoked prior to each test case.
         It will perform all prerequisite test steps if any.
         Initializing common variable which will be used in test and
         teardown for cleanup
@@ -72,9 +73,11 @@ class BucketPolicy(Test):
         self.ldap_pwd = CMN_CONF["ldap_passwd"]
         LOGGER.info("ENDED: Setup operations.")
 
-    def tearDown(self):
+    def teardown_method(self):
         """
-        This function will be invoked after each test case.
+        Summary: Teardown method
+
+        Description: This function will be invoked after each test case.
         It will perform all cleanup operations.
         This function will delete iam accounts, buckets and objects uploaded to that bucket.
         """
@@ -142,18 +145,16 @@ class BucketPolicy(Test):
 
     def create_bucket_put_objects(
             self,
-            bucket_name,
-            object_count,
-            obj_name_prefix,
-            obj_lst=None):
+            bucket_name: str,
+            object_count: int,
+            obj_name_prefix: str,
+            obj_lst=None) -> None:
         """
         This method will create specified bucket and upload given numbers of objects into it.
+
         :param bucket_name: Name of s3 bucket
-        :type bucket_name: str
         :param object_count: Number of object to upload
-        :type object_count: int
         :param obj_name_prefix: Object prefix used while uploading an object to bucket
-        :type obj_name_prefix: str
         :param obj_lst: Empty list for adding newly created objects if not passed explicitly
         :return: None
         """
@@ -181,13 +182,12 @@ class BucketPolicy(Test):
         LOGGER.info(
             "Created a bucket and uploaded {0} objects".format(object_count))
 
-    def create_s3iamcli_acc(self, account_name, email_id):
+    def create_s3iamcli_acc(self, account_name: str, email_id: str) -> tuple:
         """
         This function will create IAM accounts with specified account name and email-id
+
         :param account_name: Name of account to be created
-        :type account_name: str
         :param email_id: Email id for account creation
-        :type email_id: str
         :return: It returns account details such as canonical_id, access_key, secret_key, account_id and
         s3 objects whcich will be required to perform further operations.
         :type: tuple
@@ -220,26 +220,22 @@ class BucketPolicy(Test):
         return canonical_id, s3_obj, ACL_OBJ, S3_BKT_POLICY_OBJ, \
             access_key, secret_key, account_id, s3_bkt_tag_obj, S3_MULTIPART_OBJ
 
-    def delete_bucket_policy_with_err_msg(self, bucket_name, s3_obj_one,
-                                          ACL_OBJ_one,
-                                          S3_BKT_POLICY_OBJ_one,
-                                          S3_BKT_POLICY_OBJ_two,
-                                          test_config):
+    def delete_bucket_policy_with_err_msg(self, bucket_name: str,
+                                          s3_obj_one: object,
+                                          ACL_OBJ_one: object,
+                                          S3_BKT_POLICY_OBJ_one: object,
+                                          S3_BKT_POLICY_OBJ_two: object,
+                                          test_config: dict) -> None:
         """
         This method will delete a bucket policy applied to the specified bucket.
         It will also handle exceptions occurred while deleting a bucket policy, if any.
+
         :param bucket_name: s3 bucket
-        :type bucket_name: str
         :param s3_obj_one: s3 test object of account one
-        :type s3_obj_one: object
         :param ACL_OBJ_one: s3 acl test lib object of account one
-        :type ACL_OBJ_one: object
         :param S3_BKT_POLICY_OBJ_one: s3 bucket policy class object of account 1
-        :type S3_BKT_POLICY_OBJ_one: object
         :param S3_BKT_POLICY_OBJ_two: s3 bucket policy class object of account 2
-        :type S3_BKT_POLICY_OBJ_two: object
         :param test_config: test-case yaml config values
-        :type test_config: dict
         :return: None
         """
         LOGGER.info("Retrieving bucket acl attributes")
@@ -276,16 +272,15 @@ class BucketPolicy(Test):
             "Delete bucket policy should through error message {}".format(
                 test_config["error_message"]))
 
-    def create_bucket_put_obj_with_dir(
-            self, bucket_name, obj_name_1, obj_name_2):
+    def create_bucket_put_obj_with_dir(self, bucket_name: str,
+                                       obj_name_1: str, 
+                                       obj_name_2: str) -> None:
         """
         This function will create a bucket and upload objects from a directory to a bucket.
+
         :param bucket_name: Name of bucket to be created
-        :type bucket_name: str
         :param obj_name_1: Name of an object to be put to the bucket
-        :type obj_name_1: str
         :param obj_name_2: Name of an object from a dir which is getting uploaded
-        :type obj_name_2: str
         :return: None
         """
         LOGGER.info("Creating a bucket with name {0}".format(bucket_name))
@@ -323,11 +318,11 @@ class BucketPolicy(Test):
             "Uploaded an object {0} from a dir to a bucket{1}".format(
                 obj_name_2, bucket_name))
 
-    def create_bucket_validate(self, bucket_name):
+    def create_bucket_validate(self, bucket_name: str) -> None:
         """
         Create a new bucket and validate it
+
         :param bucket_name: Name of bucket to be created
-        :type bucket_name: str
         :return: None
         """
         LOGGER.info(
