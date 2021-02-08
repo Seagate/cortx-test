@@ -31,8 +31,8 @@ from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils.config_utils import read_yaml
 
-s3_test_obj = s3_test_lib.S3TestLib()
-obj_metadata_conf = read_yaml(
+S3_TEST_OBJ = s3_test_lib.S3TestLib()
+OBJ_METADATA_CONF = read_yaml(
     "config/s3/test_object_metadata_operations.yaml")
 
 
@@ -51,14 +51,14 @@ class TestObjectMetadataOperations():
     def setup_method(self):
         """Setup method."""
         self.LOGGER.info("STARTED: Setup/Teardown operations")
-        bucket_list = s3_test_obj.bucket_list()
+        bucket_list = S3_TEST_OBJ.bucket_list()
         pref_list = [
             each_bucket for each_bucket in bucket_list[1] if each_bucket.startswith(
-                obj_metadata_conf["object_metadata"]["bkt_name_prefix"])]
-        s3_test_obj.delete_multiple_buckets(pref_list)
-        if os.path.exists(obj_metadata_conf["object_metadata"]["file_path"]):
+                OBJ_METADATA_CONF["object_metadata"]["bkt_name_prefix"])]
+        S3_TEST_OBJ.delete_multiple_buckets(pref_list)
+        if os.path.exists(OBJ_METADATA_CONF["object_metadata"]["file_path"]):
             remove_file(
-                obj_metadata_conf["object_metadata"]["file_path"])
+                OBJ_METADATA_CONF["object_metadata"]["file_path"])
         self.LOGGER.info("ENDED: Setup/Teardown operations")
 
     def teardown_method(self):
@@ -87,20 +87,20 @@ class TestObjectMetadataOperations():
         m_key = kwargs.get("m_key", None)
         m_value = kwargs.get("m_value", None)
         self.LOGGER.info("Creating a bucket %s", bucket_name)
-        resp = s3_test_obj.create_bucket(bucket_name)
+        resp = S3_TEST_OBJ.create_bucket(bucket_name)
         assert resp[0], resp[1]
         self.LOGGER.info("Created a bucket %s", bucket_name)
         create_file(file_path, mb_count)
         self.LOGGER.info(
             "Uploading an object %s to bucket %s",
             obj_name, bucket_name)
-        resp = s3_test_obj.put_object(
+        resp = S3_TEST_OBJ.put_object(
             bucket_name, obj_name, file_path, m_key, m_value)
         assert resp[0], resp[1]
         self.LOGGER.info(
             "Uploaded an object %s to bucket %s", obj_name, bucket_name)
         self.LOGGER.info("Listing objects from a bucket %s", bucket_name)
-        resp = s3_test_obj.object_list(bucket_name)
+        resp = S3_TEST_OBJ.object_list(bucket_name)
         assert resp[0], resp[1]
         assert obj_name in resp[1], resp[1]
         self.LOGGER.info(
@@ -108,7 +108,7 @@ class TestObjectMetadataOperations():
         if m_key:
             self.LOGGER.info(
                 "Retrieving metadata of an object %s", obj_name)
-            resp = s3_test_obj.object_info(bucket_name, obj_name)
+            resp = S3_TEST_OBJ.object_info(bucket_name, obj_name)
             assert resp[0], resp[1]
             assert m_key in resp[1]["Metadata"], resp[1]
             self.LOGGER.info(
@@ -122,10 +122,10 @@ class TestObjectMetadataOperations():
         """Create object key with alphanumeric characters."""
         self.LOGGER.info("Create object key with alphanumeric characters")
         self.create_bucket_put_list_object(
-            obj_metadata_conf["test_8543"]["bucket_name"],
-            obj_metadata_conf["test_8543"]["obj_name"],
-            obj_metadata_conf["object_metadata"]["file_path"],
-            obj_metadata_conf["object_metadata"]["mb_count"])
+            OBJ_METADATA_CONF["test_8543"]["bucket_name"],
+            OBJ_METADATA_CONF["test_8543"]["obj_name"],
+            OBJ_METADATA_CONF["object_metadata"]["file_path"],
+            OBJ_METADATA_CONF["object_metadata"]["mb_count"])
         self.LOGGER.info("Create object key with alphanumeric characters")
 
     @pytest.mark.parallel
@@ -136,10 +136,10 @@ class TestObjectMetadataOperations():
         """Create object key with valid special characters."""
         self.LOGGER.info("Create object key with valid special characters")
         self.create_bucket_put_list_object(
-            obj_metadata_conf["test_8544"]["bucket_name"],
-            obj_metadata_conf["test_8544"]["obj_name"],
-            obj_metadata_conf["object_metadata"]["file_path"],
-            obj_metadata_conf["object_metadata"]["mb_count"])
+            OBJ_METADATA_CONF["test_8544"]["bucket_name"],
+            OBJ_METADATA_CONF["test_8544"]["obj_name"],
+            OBJ_METADATA_CONF["object_metadata"]["file_path"],
+            OBJ_METADATA_CONF["object_metadata"]["mb_count"])
         self.LOGGER.info("Create object key with valid special characters")
 
     @pytest.mark.parallel
@@ -151,10 +151,10 @@ class TestObjectMetadataOperations():
         self.LOGGER.info(
             "Create object key with combinations of alphanumeric and valid special characters")
         self.create_bucket_put_list_object(
-            obj_metadata_conf["test_8545"]["bucket_name"],
-            obj_metadata_conf["test_8545"]["obj_name"],
-            obj_metadata_conf["object_metadata"]["file_path"],
-            obj_metadata_conf["object_metadata"]["mb_count"])
+            OBJ_METADATA_CONF["test_8545"]["bucket_name"],
+            OBJ_METADATA_CONF["test_8545"]["obj_name"],
+            OBJ_METADATA_CONF["object_metadata"]["file_path"],
+            OBJ_METADATA_CONF["object_metadata"]["mb_count"])
         self.LOGGER.info(
             "Create object key with combinations of alphanumeric and valid special characters")
 
@@ -167,33 +167,33 @@ class TestObjectMetadataOperations():
         self.LOGGER.info(
             "Create object key with existing object key in the same bucket")
         self.create_bucket_put_list_object(
-            obj_metadata_conf["test_8546"]["bucket_name"],
-            obj_metadata_conf["test_8546"]["obj_name"],
-            obj_metadata_conf["object_metadata"]["file_path"],
-            obj_metadata_conf["object_metadata"]["mb_count"],
-            key=obj_metadata_conf["test_8546"]["key"],
-            value=obj_metadata_conf["test_8546"]["value"])
+            OBJ_METADATA_CONF["test_8546"]["bucket_name"],
+            OBJ_METADATA_CONF["test_8546"]["obj_name"],
+            OBJ_METADATA_CONF["object_metadata"]["file_path"],
+            OBJ_METADATA_CONF["object_metadata"]["mb_count"],
+            key=OBJ_METADATA_CONF["test_8546"]["key"],
+            value=OBJ_METADATA_CONF["test_8546"]["value"])
         create_file(
-            obj_metadata_conf["test_8546"]["new_file_path"],
-            obj_metadata_conf["object_metadata"]["mb_count"])
+            OBJ_METADATA_CONF["test_8546"]["new_file_path"],
+            OBJ_METADATA_CONF["object_metadata"]["mb_count"])
         self.LOGGER.info("Uploading an object with same key and new content")
-        resp = s3_test_obj.object_upload(
-            obj_metadata_conf["test_8546"]["bucket_name"],
-            obj_metadata_conf["test_8546"]["obj_name"],
-            obj_metadata_conf["test_8546"]["new_file_path"])
+        resp = S3_TEST_OBJ.object_upload(
+            OBJ_METADATA_CONF["test_8546"]["bucket_name"],
+            OBJ_METADATA_CONF["test_8546"]["obj_name"],
+            OBJ_METADATA_CONF["test_8546"]["new_file_path"])
         assert resp[0], resp[1]
-        assert resp[1] == obj_metadata_conf["test_8546"]["new_file_path"], resp[1]
+        assert resp[1] == OBJ_METADATA_CONF["test_8546"]["new_file_path"], resp[1]
         self.LOGGER.info(
             "Verified that object is uploaded with same key and new content")
         self.LOGGER.info("Listing objects from a bucket")
-        resp = s3_test_obj.object_list(
-            obj_metadata_conf["test_8546"]["bucket_name"])
+        resp = S3_TEST_OBJ.object_list(
+            OBJ_METADATA_CONF["test_8546"]["bucket_name"])
         assert resp[0], resp[1]
-        assert obj_metadata_conf["test_8546"]["obj_name"] in resp[1], resp[1]
+        assert OBJ_METADATA_CONF["test_8546"]["obj_name"] in resp[1], resp[1]
         self.LOGGER.info("Objects are listed from a bucket")
         self.LOGGER.info("Cleanup activity")
-        if os.path.exists(obj_metadata_conf["test_8546"]["new_file_path"]):
-            remove_file(obj_metadata_conf["test_8546"]["new_file_path"])
+        if os.path.exists(OBJ_METADATA_CONF["test_8546"]["new_file_path"]):
+            remove_file(OBJ_METADATA_CONF["test_8546"]["new_file_path"])
         self.LOGGER.info(
             "Create object key with existing object key in the same bucket")
 
@@ -210,12 +210,12 @@ class TestObjectMetadataOperations():
                     string.ascii_uppercase,
                     string.ascii_lowercase,
                     string.digits),
-                k=obj_metadata_conf["test_8547"]["obj_key_length"]))
+                k=OBJ_METADATA_CONF["test_8547"]["obj_key_length"]))
         self.create_bucket_put_list_object(
-            obj_metadata_conf["test_8547"]["bucket_name"],
+            OBJ_METADATA_CONF["test_8547"]["bucket_name"],
             obj_key,
-            obj_metadata_conf["object_metadata"]["file_path"],
-            obj_metadata_conf["object_metadata"]["mb_count"])
+            OBJ_METADATA_CONF["object_metadata"]["file_path"],
+            OBJ_METADATA_CONF["object_metadata"]["mb_count"])
         self.LOGGER.info("Create object key 1024 byte long")
 
     @pytest.mark.parallel
@@ -227,10 +227,10 @@ class TestObjectMetadataOperations():
         self.LOGGER.info(
             "Create object key name with numbers only in the name and no other characters")
         self.create_bucket_put_list_object(
-            obj_metadata_conf["test_8549"]["bucket_name"],
-            obj_metadata_conf["test_8549"]["obj_name"],
-            obj_metadata_conf["object_metadata"]["file_path"],
-            obj_metadata_conf["object_metadata"]["mb_count"])
+            OBJ_METADATA_CONF["test_8549"]["bucket_name"],
+            OBJ_METADATA_CONF["test_8549"]["obj_name"],
+            OBJ_METADATA_CONF["object_metadata"]["file_path"],
+            OBJ_METADATA_CONF["object_metadata"]["mb_count"])
         self.LOGGER.info(
             "Create object key name with numbers only in the name and no other characters")
 
@@ -239,34 +239,34 @@ class TestObjectMetadataOperations():
         self.LOGGER.info("Create object key greater than 1024 byte long")
         self.LOGGER.info(
             "Creating a bucket with name %s",
-            obj_metadata_conf["test_8550"]["bucket_name"])
-        resp = s3_test_obj.create_bucket(
-            obj_metadata_conf["test_8550"]["bucket_name"])
+            OBJ_METADATA_CONF["test_8550"]["bucket_name"])
+        resp = S3_TEST_OBJ.create_bucket(
+            OBJ_METADATA_CONF["test_8550"]["bucket_name"])
         assert resp[0], resp[1]
-        assert resp[1] == obj_metadata_conf["test_8550"]["bucket_name"], resp[1]
+        assert resp[1] == OBJ_METADATA_CONF["test_8550"]["bucket_name"], resp[1]
         self.LOGGER.info(
             "Created a bucket with name %s",
-            obj_metadata_conf["test_8550"]["bucket_name"])
+            OBJ_METADATA_CONF["test_8550"]["bucket_name"])
         create_file(
-            obj_metadata_conf["object_metadata"]["file_path"],
-            obj_metadata_conf["object_metadata"]["mb_count"])
+            OBJ_METADATA_CONF["object_metadata"]["file_path"],
+            OBJ_METADATA_CONF["object_metadata"]["mb_count"])
         count_limit = random.choice(
             range(
-                obj_metadata_conf["test_8550"]["start_range"],
-                obj_metadata_conf["test_8550"]["stop_range"]))
+                OBJ_METADATA_CONF["test_8550"]["start_range"],
+                OBJ_METADATA_CONF["test_8550"]["stop_range"]))
         obj_key = "".join(
             random.choices(
                 string.ascii_lowercase,
                 k=count_limit))
         self.LOGGER.info("Uploading an object to a bucket %s",
-                         obj_metadata_conf["test_8550"]["bucket_name"])
+                         OBJ_METADATA_CONF["test_8550"]["bucket_name"])
         try:
-            s3_test_obj.put_object(
-                obj_metadata_conf["test_8550"]["bucket_name"],
+            S3_TEST_OBJ.put_object(
+                OBJ_METADATA_CONF["test_8550"]["bucket_name"],
                 obj_key,
-                obj_metadata_conf["object_metadata"]["file_path"])
+                OBJ_METADATA_CONF["object_metadata"]["file_path"])
         except CTException as error:
-            assert obj_metadata_conf["test_8550"]["error_message"] in error.message, error.message
+            assert OBJ_METADATA_CONF["test_8550"]["error_message"] in error.message, error.message
         self.LOGGER.info("Create object key greater than 1024 byte long")
 
     @pytest.mark.parallel
@@ -282,10 +282,10 @@ class TestObjectMetadataOperations():
             "Create object-key name with delimiters to "
             "enable or use the concept of hierarchy and folders")
         self.create_bucket_put_list_object(
-            obj_metadata_conf["test_8551"]["bucket_name"],
-            obj_metadata_conf["test_8551"]["obj_name"],
-            obj_metadata_conf["object_metadata"]["file_path"],
-            obj_metadata_conf["object_metadata"]["mb_count"])
+            OBJ_METADATA_CONF["test_8551"]["bucket_name"],
+            OBJ_METADATA_CONF["test_8551"]["obj_name"],
+            OBJ_METADATA_CONF["object_metadata"]["file_path"],
+            OBJ_METADATA_CONF["object_metadata"]["mb_count"])
         self.LOGGER.info(
             "Create object key name with delimiters to "
             "enable or use the concept of hierarchy and folders")
@@ -301,39 +301,39 @@ class TestObjectMetadataOperations():
         object_list = []
         self.LOGGER.info(
             "Creating a bucket with name %s",
-            obj_metadata_conf["test_8552"]["bucket_name"])
-        resp = s3_test_obj.create_bucket(
-            obj_metadata_conf["test_8552"]["bucket_name"])
+            OBJ_METADATA_CONF["test_8552"]["bucket_name"])
+        resp = S3_TEST_OBJ.create_bucket(
+            OBJ_METADATA_CONF["test_8552"]["bucket_name"])
         assert resp[0], resp[1]
-        assert resp[1] == obj_metadata_conf["test_8552"]["bucket_name"], resp[1]
+        assert resp[1] == OBJ_METADATA_CONF["test_8552"]["bucket_name"], resp[1]
         self.LOGGER.info(
             "Created a bucket with name %s",
-            obj_metadata_conf["test_8552"]["bucket_name"])
+            OBJ_METADATA_CONF["test_8552"]["bucket_name"])
         create_file(
-            obj_metadata_conf["object_metadata"]["file_path"],
-            obj_metadata_conf["object_metadata"]["mb_count"])
-        for each_obj in obj_metadata_conf["test_8552"]["obj_list"]:
+            OBJ_METADATA_CONF["object_metadata"]["file_path"],
+            OBJ_METADATA_CONF["object_metadata"]["mb_count"])
+        for each_obj in OBJ_METADATA_CONF["test_8552"]["obj_list"]:
             self.LOGGER.info(
                 "Uploading an oject %s to a bucket", each_obj)
-            resp = s3_test_obj.put_object(
-                obj_metadata_conf["test_8552"]["bucket_name"],
+            resp = S3_TEST_OBJ.put_object(
+                OBJ_METADATA_CONF["test_8552"]["bucket_name"],
                 each_obj,
-                obj_metadata_conf["object_metadata"]["file_path"])
+                OBJ_METADATA_CONF["object_metadata"]["file_path"])
             assert resp[0], resp[1]
             object_list.append(each_obj)
             self.LOGGER.info(
                 "Uploaded an object %s to a bucket", each_obj)
         self.LOGGER.info(
             "Verifying objects are uploaded to a bucket %s",
-            obj_metadata_conf["test_8552"]["bucket_name"])
-        resp = s3_test_obj.object_list(
-            obj_metadata_conf["test_8552"]["bucket_name"])
+            OBJ_METADATA_CONF["test_8552"]["bucket_name"])
+        resp = S3_TEST_OBJ.object_list(
+            OBJ_METADATA_CONF["test_8552"]["bucket_name"])
         assert resp[0], resp[1]
         for each_obj in object_list:
             assert each_obj in resp[1], resp[1]
         self.LOGGER.info(
             "Verified that objects are uploaded to a bucket %s",
-            obj_metadata_conf["test_8552"]["bucket_name"])
+            OBJ_METADATA_CONF["test_8552"]["bucket_name"])
         self.LOGGER.info(
             "Create object key name with Characters That Might Require Special Handling")
 
@@ -348,39 +348,39 @@ class TestObjectMetadataOperations():
         object_list = []
         self.LOGGER.info(
             "Creating a bucket with name %s",
-            obj_metadata_conf["test_8553"]["bucket_name"])
-        resp = s3_test_obj.create_bucket(
-            obj_metadata_conf["test_8553"]["bucket_name"])
+            OBJ_METADATA_CONF["test_8553"]["bucket_name"])
+        resp = S3_TEST_OBJ.create_bucket(
+            OBJ_METADATA_CONF["test_8553"]["bucket_name"])
         assert resp[0], resp[1]
-        assert resp[1] == obj_metadata_conf["test_8553"]["bucket_name"], resp[1]
+        assert resp[1] == OBJ_METADATA_CONF["test_8553"]["bucket_name"], resp[1]
         self.LOGGER.info(
             "Created a bucket with name %s",
-            obj_metadata_conf["test_8553"]["bucket_name"])
+            OBJ_METADATA_CONF["test_8553"]["bucket_name"])
         create_file(
-            obj_metadata_conf["object_metadata"]["file_path"],
-            obj_metadata_conf["object_metadata"]["mb_count"])
-        for each_obj in obj_metadata_conf["test_8553"]["obj_list"]:
+            OBJ_METADATA_CONF["object_metadata"]["file_path"],
+            OBJ_METADATA_CONF["object_metadata"]["mb_count"])
+        for each_obj in OBJ_METADATA_CONF["test_8553"]["obj_list"]:
             self.LOGGER.info(
                 "Uploading an oject %s to a bucket", each_obj)
-            resp = s3_test_obj.put_object(
-                obj_metadata_conf["test_8553"]["bucket_name"],
+            resp = S3_TEST_OBJ.put_object(
+                OBJ_METADATA_CONF["test_8553"]["bucket_name"],
                 each_obj,
-                obj_metadata_conf["object_metadata"]["file_path"])
+                OBJ_METADATA_CONF["object_metadata"]["file_path"])
             assert resp[0], resp[1]
             object_list.append(each_obj)
             self.LOGGER.info(
                 "Uploaded an object %s to a bucket", each_obj)
         self.LOGGER.info(
             "Verifying objects are uploaded to a bucket %s",
-            obj_metadata_conf["test_8553"]["bucket_name"])
-        resp = s3_test_obj.object_list(
-            obj_metadata_conf["test_8553"]["bucket_name"])
+            OBJ_METADATA_CONF["test_8553"]["bucket_name"])
+        resp = S3_TEST_OBJ.object_list(
+            OBJ_METADATA_CONF["test_8553"]["bucket_name"])
         assert resp[0], resp[1]
         for each_obj in object_list:
             assert each_obj in resp[1], resp[1]
         self.LOGGER.info(
             "Verified that objects are uploaded to a bucket %s",
-            obj_metadata_conf["test_8553"]["bucket_name"])
+            OBJ_METADATA_CONF["test_8553"]["bucket_name"])
         self.LOGGER.info(
             "Create object key name from Characters to Avoid list")
 
@@ -393,12 +393,12 @@ class TestObjectMetadataOperations():
         self.LOGGER.info(
             "Add user defined metadata while adding the new object to the bucket")
         self.create_bucket_put_list_object(
-            obj_metadata_conf["test_8554"]["bucket_name"],
-            obj_metadata_conf["test_8554"]["obj_name"],
-            obj_metadata_conf["object_metadata"]["file_path"],
-            obj_metadata_conf["object_metadata"]["mb_count"],
-            obj_metadata_conf["test_8554"]["key"],
-            obj_metadata_conf["test_8554"]["value"])
+            OBJ_METADATA_CONF["test_8554"]["bucket_name"],
+            OBJ_METADATA_CONF["test_8554"]["obj_name"],
+            OBJ_METADATA_CONF["object_metadata"]["file_path"],
+            OBJ_METADATA_CONF["object_metadata"]["mb_count"],
+            OBJ_METADATA_CONF["test_8554"]["key"],
+            OBJ_METADATA_CONF["test_8554"]["value"])
         self.LOGGER.info(
             "Add user defined metadata while adding the new object to the bucket")
 
@@ -415,42 +415,42 @@ class TestObjectMetadataOperations():
             "Add or update user defined metadata while "
             "copying/ updating an existing object to the bucket")
         self.create_bucket_put_list_object(
-            obj_metadata_conf["test_8555"]["bucket_name"],
-            obj_metadata_conf["test_8555"]["obj_name"],
-            obj_metadata_conf["object_metadata"]["file_path"],
-            obj_metadata_conf["object_metadata"]["mb_count"],
-            obj_metadata_conf["test_8555"]["key"],
-            obj_metadata_conf["test_8555"]["value"])
+            OBJ_METADATA_CONF["test_8555"]["bucket_name"],
+            OBJ_METADATA_CONF["test_8555"]["obj_name"],
+            OBJ_METADATA_CONF["object_metadata"]["file_path"],
+            OBJ_METADATA_CONF["object_metadata"]["mb_count"],
+            OBJ_METADATA_CONF["test_8555"]["key"],
+            OBJ_METADATA_CONF["test_8555"]["value"])
         create_file(
-            obj_metadata_conf["test_8555"]["new_file_path"],
-            obj_metadata_conf["object_metadata"]["mb_count"])
+            OBJ_METADATA_CONF["test_8555"]["new_file_path"],
+            OBJ_METADATA_CONF["object_metadata"]["mb_count"])
         self.LOGGER.info(
             "Updating user defined metadata while adding new object")
-        resp = s3_test_obj.put_object(
-            obj_metadata_conf["test_8555"]["bucket_name"],
-            obj_metadata_conf["test_8555"]["new_obj"],
-            obj_metadata_conf["test_8555"]["new_file_path"],
-            obj_metadata_conf["test_8555"]["new_key"],
-            obj_metadata_conf["test_8555"]["new_value"])
+        resp = S3_TEST_OBJ.put_object(
+            OBJ_METADATA_CONF["test_8555"]["bucket_name"],
+            OBJ_METADATA_CONF["test_8555"]["new_obj"],
+            OBJ_METADATA_CONF["test_8555"]["new_file_path"],
+            OBJ_METADATA_CONF["test_8555"]["new_key"],
+            OBJ_METADATA_CONF["test_8555"]["new_value"])
         assert resp[0], resp[1]
         self.LOGGER.info("Updated user defined metadata")
         self.LOGGER.info("Listing object from a bucket %s",
-                         obj_metadata_conf["test_8555"]["bucket_name"])
-        resp = s3_test_obj.object_list(
-            obj_metadata_conf["test_8555"]["bucket_name"])
+                         OBJ_METADATA_CONF["test_8555"]["bucket_name"])
+        resp = S3_TEST_OBJ.object_list(
+            OBJ_METADATA_CONF["test_8555"]["bucket_name"])
         assert resp[0], resp[1]
-        assert obj_metadata_conf["test_8555"]["new_obj"] in resp[1], resp[1]
+        assert OBJ_METADATA_CONF["test_8555"]["new_obj"] in resp[1], resp[1]
         self.LOGGER.info("Objects are listed from a bucket")
         self.LOGGER.info("Retrieving updated object info")
-        resp = s3_test_obj.object_info(
-            obj_metadata_conf["test_8555"]["bucket_name"],
-            obj_metadata_conf["test_8555"]["new_obj"])
+        resp = S3_TEST_OBJ.object_info(
+            OBJ_METADATA_CONF["test_8555"]["bucket_name"],
+            OBJ_METADATA_CONF["test_8555"]["new_obj"])
         assert resp[0], resp[1]
-        assert obj_metadata_conf["test_8555"]["new_key"] in resp[1]["Metadata"], resp[1]
+        assert OBJ_METADATA_CONF["test_8555"]["new_key"] in resp[1]["Metadata"], resp[1]
         self.LOGGER.info("Retrieved updated object info")
         self.LOGGER.info("Cleanup activity")
-        if os.path.exists(obj_metadata_conf["test_8555"]["new_file_path"]):
-            remove_file(obj_metadata_conf["test_8555"]["new_file_path"])
+        if os.path.exists(OBJ_METADATA_CONF["test_8555"]["new_file_path"]):
+            remove_file(OBJ_METADATA_CONF["test_8555"]["new_file_path"])
         self.LOGGER.info(
             "Add or update user defined metadata while "
             "copying/ updating an existing object to the bucket")
@@ -468,19 +468,19 @@ class TestObjectMetadataOperations():
                     string.ascii_uppercase,
                     string.ascii_lowercase,
                     string.digits),
-                k=obj_metadata_conf["test_8557"]["byte_count"]))
+                k=OBJ_METADATA_CONF["test_8557"]["byte_count"]))
         m_val = "".join(
             random.choices(
                 "{0}{1}{2}".format(
                     string.ascii_uppercase,
                     string.ascii_lowercase,
                     string.digits),
-                k=obj_metadata_conf["test_8557"]["byte_count"]))
+                k=OBJ_METADATA_CONF["test_8557"]["byte_count"]))
         self.create_bucket_put_list_object(
-            obj_metadata_conf["test_8557"]["bucket_name"],
-            obj_metadata_conf["test_8557"]["obj_name"],
-            obj_metadata_conf["object_metadata"]["file_path"],
-            obj_metadata_conf["object_metadata"]["mb_count"],
+            OBJ_METADATA_CONF["test_8557"]["bucket_name"],
+            OBJ_METADATA_CONF["test_8557"]["obj_name"],
+            OBJ_METADATA_CONF["object_metadata"]["file_path"],
+            OBJ_METADATA_CONF["object_metadata"]["mb_count"],
             m_key,
             m_val)
         self.LOGGER.info("Update user defined metadata upto 2KB")
@@ -490,21 +490,21 @@ class TestObjectMetadataOperations():
         self.LOGGER.info("Update user defined metadata greater than 2 KB")
         self.LOGGER.info(
             "Creating a bucket with name %s",
-            obj_metadata_conf["test_8558"]["bucket_name"])
-        resp = s3_test_obj.create_bucket(
-            obj_metadata_conf["test_8558"]["bucket_name"])
+            OBJ_METADATA_CONF["test_8558"]["bucket_name"])
+        resp = S3_TEST_OBJ.create_bucket(
+            OBJ_METADATA_CONF["test_8558"]["bucket_name"])
         assert resp[0], resp[1]
-        assert resp[1] == obj_metadata_conf["test_8558"]["bucket_name"], resp[1]
+        assert resp[1] == OBJ_METADATA_CONF["test_8558"]["bucket_name"], resp[1]
         self.LOGGER.info(
             "Created a bucket with name %s",
-            obj_metadata_conf["test_8558"]["bucket_name"])
+            OBJ_METADATA_CONF["test_8558"]["bucket_name"])
         create_file(
-            obj_metadata_conf["object_metadata"]["file_path"],
-            obj_metadata_conf["object_metadata"]["mb_count"])
+            OBJ_METADATA_CONF["object_metadata"]["file_path"],
+            OBJ_METADATA_CONF["object_metadata"]["mb_count"])
         count_limit = random.choice(
             range(
-                obj_metadata_conf["test_8558"]["start_range"],
-                obj_metadata_conf["test_8558"]["stop_range"]))
+                OBJ_METADATA_CONF["test_8558"]["start_range"],
+                OBJ_METADATA_CONF["test_8558"]["stop_range"]))
         m_key = "".join(
             random.choices("{0}{1}{2}".format(
                 string.ascii_uppercase,
@@ -517,16 +517,16 @@ class TestObjectMetadataOperations():
                 string.digits), k=count_limit))
         self.LOGGER.info(
             "Uploading an object to a bucket %s with metadata size greater than 2KB",
-            obj_metadata_conf["test_8558"]["bucket_name"])
+            OBJ_METADATA_CONF["test_8558"]["bucket_name"])
         try:
-            s3_test_obj.put_object(
-                obj_metadata_conf["test_8558"]["bucket_name"],
-                obj_metadata_conf["test_8558"]["obj_name"],
-                obj_metadata_conf["object_metadata"]["file_path"],
+            S3_TEST_OBJ.put_object(
+                OBJ_METADATA_CONF["test_8558"]["bucket_name"],
+                OBJ_METADATA_CONF["test_8558"]["obj_name"],
+                OBJ_METADATA_CONF["object_metadata"]["file_path"],
                 m_key,
                 m_val)
         except CTException as error:
-            assert obj_metadata_conf["test_8558"]["error_message"] in error.message, error.message
+            assert OBJ_METADATA_CONF["test_8558"]["error_message"] in error.message, error.message
         self.LOGGER.info("Update user defined metadata greater than 2 KB")
 
     @ pytest.mark.parallel
@@ -538,40 +538,40 @@ class TestObjectMetadataOperations():
         self.LOGGER.info("Verification of max. no. of objects user can upload")
         self.LOGGER.info(
             "Creating a bucket with name %s",
-            obj_metadata_conf["test_8913"]["bucket_name"])
-        resp = s3_test_obj.create_bucket(
-            obj_metadata_conf["test_8913"]["bucket_name"])
+            OBJ_METADATA_CONF["test_8913"]["bucket_name"])
+        resp = S3_TEST_OBJ.create_bucket(
+            OBJ_METADATA_CONF["test_8913"]["bucket_name"])
         assert resp[0], resp[1]
-        assert resp[1] == obj_metadata_conf["test_8913"]["bucket_name"], resp[1]
+        assert resp[1] == OBJ_METADATA_CONF["test_8913"]["bucket_name"], resp[1]
         self.LOGGER.info(
             "Created a bucket with name %s",
-            obj_metadata_conf["test_8913"]["bucket_name"])
+            OBJ_METADATA_CONF["test_8913"]["bucket_name"])
         create_file(
-            obj_metadata_conf["object_metadata"]["file_path"],
-            obj_metadata_conf["object_metadata"]["mb_count"])
+            OBJ_METADATA_CONF["object_metadata"]["file_path"],
+            OBJ_METADATA_CONF["object_metadata"]["mb_count"])
         self.LOGGER.info("Uploading objects to a bucket %s",
-                         obj_metadata_conf["test_8913"]["bucket_name"])
-        for count in range(obj_metadata_conf["test_8913"]["obj_count"]):
+                         OBJ_METADATA_CONF["test_8913"]["bucket_name"])
+        for count in range(OBJ_METADATA_CONF["test_8913"]["obj_count"]):
             obj_name = "{0}{1}".format(
-                obj_metadata_conf["test_8913"]["obj_name"], str(count))
-            resp = s3_test_obj.object_upload(
-                obj_metadata_conf["test_8913"]["bucket_name"],
+                OBJ_METADATA_CONF["test_8913"]["obj_name"], str(count))
+            resp = S3_TEST_OBJ.object_upload(
+                OBJ_METADATA_CONF["test_8913"]["bucket_name"],
                 obj_name,
-                obj_metadata_conf["object_metadata"]["file_path"])
+                OBJ_METADATA_CONF["object_metadata"]["file_path"])
             assert resp[0], resp[1]
         self.LOGGER.info("Objects are uploaded to a bucket %s",
-                         obj_metadata_conf["test_8913"]["bucket_name"])
+                         OBJ_METADATA_CONF["test_8913"]["bucket_name"])
         self.LOGGER.info(
             "Verifying objects are uploaded to a bucket %s",
-            obj_metadata_conf["test_8913"]["bucket_name"])
-        resp = s3_test_obj.object_list(
-            obj_metadata_conf["test_8913"]["bucket_name"])
+            OBJ_METADATA_CONF["test_8913"]["bucket_name"])
+        resp = S3_TEST_OBJ.object_list(
+            OBJ_METADATA_CONF["test_8913"]["bucket_name"])
         assert resp[0], resp[1]
         assert len(
-            resp[1]) == obj_metadata_conf["test_8913"]["obj_count"], resp[1]
+            resp[1]) == OBJ_METADATA_CONF["test_8913"]["obj_count"], resp[1]
         self.LOGGER.info(
             "Verified that %s objects are uploaded to a bucket",
-            obj_metadata_conf["test_8913"]["obj_count"])
+            OBJ_METADATA_CONF["test_8913"]["obj_count"])
         self.LOGGER.info("Verification of max. no. of objects user can upload")
 
     @ pytest.mark.parallel
@@ -582,8 +582,8 @@ class TestObjectMetadataOperations():
         """Verification of max size of object, user can upload."""
         self.LOGGER.info("Verification of max size of object, user can upload")
         self.create_bucket_put_list_object(
-            obj_metadata_conf["test_8918"]["bucket_name"],
-            obj_metadata_conf["test_8918"]["obj_name"],
-            obj_metadata_conf["object_metadata"]["file_path"],
-            obj_metadata_conf["test_8918"]["mb_count"])
+            OBJ_METADATA_CONF["test_8918"]["bucket_name"],
+            OBJ_METADATA_CONF["test_8918"]["obj_name"],
+            OBJ_METADATA_CONF["object_metadata"]["file_path"],
+            OBJ_METADATA_CONF["test_8918"]["mb_count"])
         self.LOGGER.info("Verification of max size of object, user can upload")
