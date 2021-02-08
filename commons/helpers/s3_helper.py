@@ -681,10 +681,8 @@ class S3Helper:
             if not os.path.isfile(path):
                 raise "{} file is not present. Please configure aws in the system".format(
                     path)
-            config = configparser.ConfigParser()
-            config.read(path)
-            access_key = config[section]["aws_access_key_id"]
-            secret_key = config[section]["aws_secret_access_key"]
+            access_key = config_utils.get_config(path, section, "aws_access_key_id")
+            secret_key = config_utils.get_config(path, section, "aws_secret_access_key")
             LOGGER.info(
                 "Section %s: fetched access key:%s and secret key: %s.",
                 section,

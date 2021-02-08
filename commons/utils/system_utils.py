@@ -63,7 +63,9 @@ def run_remote_cmd(
         LOGGER.debug("Error: %s", str(error))
     else:
         output = stdout.read(read_nbytes)
+        LOGGER.debug("Result: %s", str(output))
         error = stderr.read()
+        LOGGER.debug("Error: %s", str(error))
     LOGGER.debug(exit_status)
     if exit_status != 0:
         if error:
@@ -72,10 +74,11 @@ def run_remote_cmd(
     client.close()
     if error:
         return False, error
+
     return True, output
 
 
-def run_local_cmd(cmd: str) -> bytes:
+def run_local_cmd(cmd: str) -> tuple:
     """
     Execute any given command on local machine(Windows, Linux).
     :param cmd: command to be executed.
@@ -89,15 +92,15 @@ def run_local_cmd(cmd: str) -> bytes:
     LOGGER.debug("output = %s", str(output))
     LOGGER.debug("error = %s", str(error))
     if b"Number of key(s) added: 1" in output:
-        return output
+        return True, output
     if b"command not found" in error or \
             b"not recognized as an internal or external command" in error or error:
-        raise IOError(error)
+        return False, error
 
-    return output
+    return True, output
 
 
-def execute_cmd(cmd: str, remote: bool, *remoteargs, **remoteKwargs) -> str:
+def execute_cmd(cmd: str, remote: bool, *remoteargs, **remoteKwargs) -> tuple:
     """Execute command on local / remote machine based on remote flag
     :param cmd: cmd to be executed
     :param remote: if True executes on remote machine
