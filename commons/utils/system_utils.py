@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -36,20 +38,20 @@ def run_remote_cmd(
         hostname: str,
         username: str,
         password: str,
-        **kwargs) -> str:
+        **kwargs) -> tuple:
     """
     Execute command on remote machine.
     :return: stdout
     """
-    read_lines = kwargs.get("read_lines") if kwargs.get("read_lines", None) else False
-    read_nbytes = kwargs.get("read_nbytes") if kwargs.get("read_nbytes", None) else -1
-    timeout_sec = kwargs.get("timeout_sec") if kwargs.get("timeout_sec", None) else 30
-
+    LOGGER.info("Host: %s, User: %s, Password: %s", hostname, username, password)
+    read_lines = kwargs.get("read_lines", False)
+    read_nbytes = kwargs.get("read_nbytes", -1)
+    timeout_sec = kwargs.get("timeout_sec", 30)
     client = SSHClient()
     client.set_missing_host_key_policy(AutoAddPolicy())
     LOGGER.debug("Command: %s", str(cmd))
     client.connect(hostname, username=username,
-                   password=password, timeout=timeout_sec, **kwargs)
+                   password=password, timeout=timeout_sec)
     _, stdout, stderr = client.exec_command(cmd)
     exit_status = stdout.channel.recv_exit_status()
     if read_lines:
@@ -61,19 +63,22 @@ def run_remote_cmd(
         LOGGER.debug("Error: %s", str(error))
     else:
         output = stdout.read(read_nbytes)
+        LOGGER.debug("Result: %s", str(output))
         error = stderr.read()
+        LOGGER.debug("Error: %s", str(error))
     LOGGER.debug(exit_status)
     if exit_status != 0:
         if error:
-            raise IOError(error)
-        raise IOError(output)
+            return False, error
+        return False, output
     client.close()
     if error:
-        raise IOError(error)
-    return output
+        return False, error
+
+    return True, output
 
 
-def run_local_cmd(cmd: str) -> bytes:
+def run_local_cmd(cmd: str) -> tuple:
     """
     Execute any given command on local machine(Windows, Linux).
     :param cmd: command to be executed.
@@ -87,15 +92,15 @@ def run_local_cmd(cmd: str) -> bytes:
     LOGGER.debug("output = %s", str(output))
     LOGGER.debug("error = %s", str(error))
     if b"Number of key(s) added: 1" in output:
-        return output
+        return True, output
     if b"command not found" in error or \
             b"not recognized as an internal or external command" in error or error:
-        raise IOError(error)
+        return False, error
 
-    return output
+    return True, output
 
 
-def execute_cmd(cmd: str, remote: bool, *remoteargs, **remoteKwargs) -> str:
+def execute_cmd(cmd: str, remote: bool, *remoteargs, **remoteKwargs) -> tuple:
     """Execute command on local / remote machine based on remote flag
     :param cmd: cmd to be executed
     :param remote: if True executes on remote machine
