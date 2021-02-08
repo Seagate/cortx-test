@@ -4,8 +4,8 @@ import time
 import logging
 import pytest
 from commons.utils import assert_utils
-from libs.csm.cli.cli_iam_user import CortxCliIAMLib
 from commons import cortxlogging
+from libs.csm.cli.cli_iam_user import CortxCliIAMLib
 
 IAM_OBJ = CortxCliIAMLib()
 LOGGER = logging.getLogger(__name__)
