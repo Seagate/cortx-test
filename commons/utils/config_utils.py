@@ -28,7 +28,7 @@ import os
 import json
 import shutil
 import re
-from configparser import ConfigParser, MissingSectionHeaderError
+from configparser import ConfigParser, MissingSectionHeaderError, NoSectionError
 from defusedxml.cElementTree import parse
 import yaml
 import commons.errorcodes as cterr
@@ -198,7 +198,12 @@ def update_config_ini(path: str, section: str, key: str, value: str) -> bool:
     config = ConfigParser()
     config.read(path)
     try:
-        config.set(section, key, value)
+        try:
+            config.set(section, key, value)
+        except NoSectionError as error:
+            LOG.warning(error)
+            config.add_section(section)
+            config.set(section, key, value)
         with open(path, "w") as configfile:
             config.write(configfile)
     except TypeError as error:
