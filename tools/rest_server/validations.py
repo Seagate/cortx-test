@@ -6,7 +6,7 @@ db_keys_array = ["nodesHostname", "testIDLabels", "testTags"]
 db_keys_str = ["clientHostname", "OSVersion", "testName", "testID", "testPlanID",
                "testExecutionID", "testType", "testExecutionLabel", "testTeam",
                "testStartTime", "buildType", "buildNo", "logPath",
-               "testResult", "healthCheckResult", "executionType"]
+               "testResult", "healthCheckResult", "executionType", "testPlanLabel"]
 db_keys = db_keys_int + db_keys_array + db_keys_str
 
 extra_db_keys_str = ["issueType", "issueID"]
@@ -14,20 +14,29 @@ extra_db_keys_bool = ["isRegression", "logCollectionDone"]
 extra_db_keys = extra_db_keys_bool + extra_db_keys_str
 
 
-def check_db_keys(json_data: dict) -> bool:
+def check_db_keys(json_data: dict) -> tuple:
     """
-    Check if mandatory db fields present
+    Check if all fields present in request
+    Check if unknown fields are not present
 
     Args:
         json_data: Data from request
 
     Returns:
-        bool
+        bool, fields
     """
+    # Check if mandatory fields are present
     for key in db_keys:
         if key not in json_data:
-            return False
-    return True
+            return False, key
+
+    # Check if unknown fields are present
+    master_set = set(db_keys).union(set(extra_db_keys)).union({"db_username", "db_password"})
+    unknown_fields = set(json_data) - master_set
+    if unknown_fields:
+        return False, unknown_fields
+
+    return True, None
 
 
 def check_user_pass(json_data: dict) -> bool:
