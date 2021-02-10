@@ -54,6 +54,10 @@ class TestAllUsers:
         It will perform all prerequisite test suite steps if any.
         """
         cls.LOGGER = logging.getLogger(__name__)
+        cls.bucket_name = "{0}{1}".format(
+            cls.all_user_cfg["bucket_name"], str(int(time.time())))
+        cls.obj_name = "{0}{1}".format(
+            cls.all_user_cfg["obj_name"], str(int(time.time())))
 
     def put_object_acl(self, acl):
         """helper method to put object acl and verify it."""
@@ -149,7 +153,7 @@ class TestAllUsers:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-6019", "account_user_management")
+    @pytest.mark.tags("TEST-6019")
     @CTFailOn(error_handler)
     def test_695(self):
         """
@@ -180,13 +184,13 @@ class TestAllUsers:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-6016", "account_user_management")
+    @pytest.mark.tags("TEST-6016")
     @CTFailOn(error_handler)
     def test_697(self):
         """
         Delete an object from bucket without Authentication.
 
-        when AllUsers have READ permission on object
+        Condition: AllUsers have READ permission on object
         """
         test_697_cfg = ALL_USERS_CONF["test_697"]
         self.LOGGER.info(
@@ -208,7 +212,7 @@ class TestAllUsers:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-6014", "account_user_management")
+    @pytest.mark.tags("TEST-6014")
     def test_698(self):
         """
         Read an object ACL from bucket without Authentication.
@@ -239,7 +243,7 @@ class TestAllUsers:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-6011", "account_user_management")
+    @pytest.mark.tags("TEST-6011")
     def test_699(self):
         """
         Update an object ACL in bucket without Authentication.
@@ -271,7 +275,7 @@ class TestAllUsers:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-6009", "account_user_management")
+    @pytest.mark.tags("TEST-6009")
     @CTFailOn(error_handler)
     def test_700(self):
         """
@@ -303,7 +307,7 @@ class TestAllUsers:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-6006", "account_user_management")
+    @pytest.mark.tags("TEST-6006")
     @CTFailOn(error_handler)
     def test_701(self):
         """
@@ -332,7 +336,7 @@ class TestAllUsers:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-6004", "account_user_management")
+    @pytest.mark.tags("TEST-6004")
     def test_702(self):
         """
         Read an object ACL from bucket without Authentication.
@@ -361,7 +365,7 @@ class TestAllUsers:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-6002", "account_user_management")
+    @pytest.mark.tags("TEST-6002")
     def test_703(self):
         """
         Update an object ACL in bucket without Authentication.
@@ -391,7 +395,7 @@ class TestAllUsers:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-6001", "all_users_object_acl")
+    @pytest.mark.tags("TEST-6001")
     @CTFailOn(error_handler)
     def test_704(self):
         """
@@ -424,7 +428,7 @@ class TestAllUsers:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5970", "all_users_object_acl")
+    @pytest.mark.tags("TEST-5970")
     @CTFailOn(error_handler)
     def test_757(self):
         """
@@ -454,7 +458,7 @@ class TestAllUsers:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5968", "account_user_management")
+    @pytest.mark.tags("TEST-5968")
     def test_758(self):
         """
         GET an object from bucket without Autentication.
@@ -488,7 +492,7 @@ class TestAllUsers:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5999", "all_users_object_acl")
+    @pytest.mark.tags("TEST-5999")
     @CTFailOn(error_handler)
     def test_705(self):
         """
@@ -524,7 +528,7 @@ class TestAllUsers:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5997", "all_users_object_acl")
+    @pytest.mark.tags("TEST-5997")
     @CTFailOn(error_handler)
     def test_706(self):
         """
@@ -554,7 +558,7 @@ class TestAllUsers:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5995", "all_users_object_acl")
+    @pytest.mark.tags("TEST-5995")
     @CTFailOn(error_handler)
     def test_707(self):
         """
@@ -586,7 +590,7 @@ class TestAllUsers:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5993", "all_users_object_acl")
+    @pytest.mark.tags("TEST-5993")
     @CTFailOn(error_handler)
     def test_708(self):
         """
@@ -617,7 +621,7 @@ class TestAllUsers:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5986", "all_users_object_acl")
+    @pytest.mark.tags("TEST-5986")
     @CTFailOn(error_handler)
     def test_709(self):
         """
@@ -650,7 +654,7 @@ class TestAllUsers:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5984", "all_users_object_acl")
+    @pytest.mark.tags("TEST-5984")
     @CTFailOn(error_handler)
     def test_710(self):
         """
@@ -683,7 +687,7 @@ class TestAllUsers:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5982", "all_users_object_acl")
+    @pytest.mark.tags("TEST-5982")
     @CTFailOn(error_handler)
     def test_711(self):
         """
@@ -710,7 +714,7 @@ class TestAllUsers:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5979", "all_users_object_acl")
+    @pytest.mark.tags("TEST-5979")
     @CTFailOn(error_handler)
     def test_712(self):
         """
@@ -741,7 +745,7 @@ class TestAllUsers:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5977", "all_users_object_acl")
+    @pytest.mark.tags("TEST-5977")
     @CTFailOn(error_handler)
     def test_713(self):
         """
@@ -771,7 +775,7 @@ class TestAllUsers:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5975", "all_users_object_acl")
+    @pytest.mark.tags("TEST-5975")
     @CTFailOn(error_handler)
     def test_714(self):
         """
@@ -800,7 +804,7 @@ class TestAllUsers:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5973", "all_users_object_acl")
+    @pytest.mark.tags("TEST-5973")
     @CTFailOn(error_handler)
     def test_715(self):
         """

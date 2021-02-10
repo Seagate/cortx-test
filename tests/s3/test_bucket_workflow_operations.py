@@ -24,7 +24,9 @@ import os
 import time
 import logging
 import pytest
+
 from libs.s3 import s3_test_lib, iam_test_lib, s3_acl_test_lib
+
 from commons.utils.system_utils import create_file, remove_file
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
@@ -42,7 +44,7 @@ BKT_OPS_CONF = read_yaml(
 CMN_CONF = read_yaml("config/common_config.yaml")
 
 
-class TestBucketWorkflowOperations():
+class TestBucketWorkflowOperations:
     """Bucket Workflow Operations Test suite."""
 
     @classmethod
@@ -104,7 +106,7 @@ class TestBucketWorkflowOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5463", "bucket_workflow_operations")
+    @pytest.mark.tags("TEST-5463")
     @CTFailOn(error_handler)
     def test_1975(self):
         """Bucket names must start with a lowercase letter or number."""
@@ -139,7 +141,7 @@ class TestBucketWorkflowOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5469", "bucket_workflow_operations")
+    @pytest.mark.tags("TEST-5469")
     @CTFailOn(error_handler)
     def test_1976(self):
         """Bucket name can contain only lower-case characters, numbers, periods and dashes."""
@@ -160,7 +162,7 @@ class TestBucketWorkflowOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5467", "bucket_workflow_operations")
+    @pytest.mark.tags("TEST-5467")
     @CTFailOn(error_handler)
     def test_1977(self):
         """Bucket names must be at least 3 and no more than 63 characters long."""
@@ -195,7 +197,7 @@ class TestBucketWorkflowOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5468", "bucket_workflow_operations")
+    @pytest.mark.tags("TEST-5468")
     def test_1978(self):
         """Bucket name with less than 3 characters and more than 63 characters."""
         self.LOGGER.info(
@@ -215,7 +217,7 @@ class TestBucketWorkflowOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5464", "bucket_workflow_operations")
+    @pytest.mark.tags("TEST-5464")
     def test_1979(self):
         """Bucket names must not contain uppercase characters."""
         self.LOGGER.info(
@@ -234,7 +236,7 @@ class TestBucketWorkflowOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5465", "bucket_workflow_operations")
+    @pytest.mark.tags("TEST-5465")
     def test_1980(self):
         """Bucket names must not contain underscores."""
         self.LOGGER.info("STARTED: Bucket names must not contain underscores")
@@ -251,7 +253,7 @@ class TestBucketWorkflowOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5462", "bucket_workflow_operations")
+    @pytest.mark.tags("TEST-5462")
     def test_1981(self):
         """Bucket names with special characters."""
         self.LOGGER.info("STARTED: Bucket names with special characters")
@@ -281,7 +283,7 @@ class TestBucketWorkflowOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5466", "bucket_workflow_operations")
+    @pytest.mark.tags("TEST-5466")
     def test_1982(self):
         """Bucket names must not be formatted as an IP address (for example, 192.168.5.4)."""
         self.LOGGER.info(
@@ -300,7 +302,7 @@ class TestBucketWorkflowOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5459", "bucket_workflow_operations")
+    @pytest.mark.tags("TEST-5459")
     @CTFailOn(error_handler)
     def test_2039(self):
         """Create single bucket."""
@@ -324,7 +326,7 @@ class TestBucketWorkflowOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5460", "bucket_workflow_operations")
+    @pytest.mark.tags("TEST-5460")
     @CTFailOn(error_handler)
     def test_2040(self):
         """Create multiple buckets."""
@@ -348,7 +350,7 @@ class TestBucketWorkflowOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5461", "bucket_workflow_operations")
+    @pytest.mark.tags("TEST-5461")
     def test_2043(self):
         """Create bucket with same bucket name already present."""
         self.LOGGER.info(
@@ -375,7 +377,7 @@ class TestBucketWorkflowOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5447", "bucket_workflow_operations")
+    @pytest.mark.tags("TEST-5447")
     @CTFailOn(error_handler)
     def test_2044(self):
         """Verification of max. no. of buckets user can create."""
@@ -397,7 +399,7 @@ class TestBucketWorkflowOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5457", "bucket_workflow_operations")
+    @pytest.mark.tags("TEST-5457")
     def test_2045(self):
         """Delete bucket which has objects."""
         self.LOGGER.info("STARTED: Delete bucket which has objects")
@@ -434,7 +436,7 @@ class TestBucketWorkflowOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5458", "bucket_workflow_operations")
+    @pytest.mark.tags("TEST-5458")
     @CTFailOn(error_handler)
     def test_2046(self):
         """Delete bucket forcefully which has objects."""
@@ -468,7 +470,7 @@ class TestBucketWorkflowOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5455", "bucket_workflow_operations")
+    @pytest.mark.tags("TEST-5455")
     @CTFailOn(error_handler)
     def test_2047(self):
         """Delete empty bucket."""
@@ -492,7 +494,7 @@ class TestBucketWorkflowOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5454", "bucket_workflow_operations")
+    @pytest.mark.tags("TEST-5454")
     @CTFailOn(error_handler)
     def test_2048(self):
         """Delete multiple empty buckets."""
@@ -515,7 +517,7 @@ class TestBucketWorkflowOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5456", "bucket_workflow_operations")
+    @pytest.mark.tags("TEST-5456")
     def test_2049(self):
         """Delete bucket when Bucket does not exists."""
         self.LOGGER.info("STARTED: Delete bucket when Bucket does not exists")
@@ -533,7 +535,7 @@ class TestBucketWorkflowOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5452", "bucket_workflow_operations")
+    @pytest.mark.tags("TEST-5452")
     @CTFailOn(error_handler)
     def test_2050(self):
         """List all objects in a bucket."""
@@ -574,7 +576,7 @@ class TestBucketWorkflowOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5448", "bucket_workflow_operations")
+    @pytest.mark.tags("TEST-5448")
     @CTFailOn(error_handler)
     def test_2051(self):
         """Verification of disk usage by bucket."""
@@ -611,7 +613,7 @@ class TestBucketWorkflowOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5453", "bucket_workflow_operations")
+    @pytest.mark.tags("TEST-5453")
     def test_2055(self):
         """HEAD bucket when Bucket does not exists."""
         self.LOGGER.info("STARTED: HEAD bucket when Bucket does not exists")
@@ -626,7 +628,7 @@ class TestBucketWorkflowOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5445", "bucket_workflow_operations")
+    @pytest.mark.tags("TEST-5445")
     @CTFailOn(error_handler)
     def test_2056(self):
         """Verify HEAD bucket."""
@@ -644,7 +646,8 @@ class TestBucketWorkflowOperations():
         self.LOGGER.info(
             "Performing head bucket on a bucket %s",
             BKT_OPS_CONF["test_8655"]["bucket_name"])
-        resp = S3_TEST_OBJ.head_bucket(BKT_OPS_CONF["test_8655"]["bucket_name"])
+        resp = S3_TEST_OBJ.head_bucket(
+            BKT_OPS_CONF["test_8655"]["bucket_name"])
         assert resp[0], resp[1]
         assert resp[1]["BucketName"] == BKT_OPS_CONF["test_8655"]["bucket_name"], resp
         self.LOGGER.info(
@@ -654,7 +657,7 @@ class TestBucketWorkflowOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5446", "bucket_workflow_operations")
+    @pytest.mark.tags("TEST-5446")
     @CTFailOn(error_handler)
     def test_2057(self):
         """Verify 'LIST buckets' command."""
@@ -679,7 +682,7 @@ class TestBucketWorkflowOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5450", "bucket_workflow_operations")
+    @pytest.mark.tags("TEST-5450")
     @CTFailOn(error_handler)
     def test_2059(self):
         """Verification of bucket location."""
@@ -700,7 +703,7 @@ class TestBucketWorkflowOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-8031", "bucket_workflow_operations")
+    @pytest.mark.tags("TEST-8031")
     @CTFailOn(error_handler)
     def test_432(self):
         """Delete multiobjects which are present in bucket."""
@@ -745,7 +748,7 @@ class TestBucketWorkflowOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-8032", "bucket_workflow_operations")
+    @pytest.mark.tags("TEST-8032")
     def test_433(self):
         """Delete multiobjects where the bucket is not present."""
         self.LOGGER.info(
@@ -777,7 +780,7 @@ class TestBucketWorkflowOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-8033", "bucket_workflow_operations")
+    @pytest.mark.tags("TEST-8033")
     def test_434(self):
         """
         create bucket and upload objects from account1.
@@ -790,7 +793,6 @@ class TestBucketWorkflowOperations():
             " any permissions to account2 and delete multiple objects from account2")
         test_cfg = BKT_OPS_CONF["test_434"]
         bktname = test_cfg["bucket_name"].format(self.random_id)
-        obj_cnt = test_cfg["range"]
         acc_name_2 = test_cfg["account_name"].format(self.random_id)
         emailid_2 = test_cfg["email_id"].format(self.random_id)
         self.LOGGER.info(
@@ -814,7 +816,7 @@ class TestBucketWorkflowOperations():
         create_file(BKT_OPS_CONF["bucket_workflow"]["file_path"],
                     BKT_OPS_CONF["bucket_workflow"]["file_size"])
         obj_lst = []
-        for i in range(obj_cnt):
+        for i in range(test_cfg["range"]):
             obj = "{}{}".format(test_cfg["obj_pre"], str(i))
             res = S3_TEST_OBJ.put_object(
                 bktname, obj, BKT_OPS_CONF["bucket_workflow"]["file_path"])
@@ -844,7 +846,7 @@ class TestBucketWorkflowOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-8035", "bucket_workflow_operations")
+    @pytest.mark.tags("TEST-8035")
     @CTFailOn(error_handler)
     def test_435(self):
         """
@@ -859,7 +861,6 @@ class TestBucketWorkflowOperations():
             " any permissions to account2 and delete multiple objects from account2")
         test_cfg = BKT_OPS_CONF["test_435"]
         bktname = test_cfg["bucket_name"].format(self.random_id)
-        obj_cnt = test_cfg["range"]
         acc_name_2 = test_cfg["account_name"].format(self.random_id)
         emailid_2 = test_cfg["email_id"].format(self.random_id)
         self.LOGGER.info(
@@ -874,7 +875,6 @@ class TestBucketWorkflowOperations():
         access_key = create_account[1]["access_key"]
         secret_key = create_account[1]["secret_key"]
         self.LOGGER.info("Step Successfully created the s3iamcli account")
-        cannonical_id = create_account[1]["canonical_id"]
         s3_obj_2 = s3_test_lib.S3TestLib(
             access_key=access_key, secret_key=secret_key)
         self.LOGGER.info(
@@ -884,7 +884,7 @@ class TestBucketWorkflowOperations():
         create_file(BKT_OPS_CONF["bucket_workflow"]["file_path"],
                     BKT_OPS_CONF["bucket_workflow"]["file_size"])
         obj_lst = []
-        for i in range(obj_cnt):
+        for i in range(test_cfg["range"]):
             obj = "{}{}".format(test_cfg["obj_pre"], str(i))
             res = S3_TEST_OBJ.put_object(
                 bktname, obj, BKT_OPS_CONF["bucket_workflow"]["file_path"])
@@ -902,7 +902,8 @@ class TestBucketWorkflowOperations():
         self.LOGGER.info(
             "Step 3: give full-control permissions for account2 for the bucket")
         resp = ACL_OBJ.put_bucket_acl(
-            bktname, grant_full_control=test_cfg["id_str"].format(cannonical_id))
+            bktname, grant_full_control=test_cfg["id_str"].format(
+                create_account[1]["canonical_id"]))
         assert resp[0], resp[1]
         self.LOGGER.info(
             "Step 3: Full-control permission was successfully assigned to account 2")

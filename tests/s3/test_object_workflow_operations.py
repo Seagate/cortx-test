@@ -42,7 +42,7 @@ OBJ_OPS_CONF = read_yaml(
     "config/s3/test_object_workflow_operations.yaml")
 
 
-class TestObjectWorkflowOperations():
+class TestObjectWorkflowOperations:
     """Object Workflow Operations Testsuite."""
 
     @classmethod
@@ -71,6 +71,7 @@ class TestObjectWorkflowOperations():
     def teardown_method(self):
         """Teardown method."""
         self.LOGGER.info("STARTED: teardown method")
+        self.setup_method()
         self.LOGGER.info("ENDED: teardown method")
 
     def create_bucket_put_objects(self, bucket_name, object_count):
@@ -112,7 +113,7 @@ class TestObjectWorkflowOperations():
 
     @ pytest.mark.parallel
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5498", "object_workflow_operations")
+    @ pytest.mark.tags("TEST-5498")
     @ CTFailOn(error_handler)
     def test_2208(self):
         """Copying/PUT a local file to s3."""
@@ -150,7 +151,7 @@ class TestObjectWorkflowOperations():
 
     @ pytest.mark.parallel
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5499", "object_workflow_operations")
+    @ pytest.mark.tags("TEST-5499")
     @ CTFailOn(error_handler)
     def test_2209(self):
         """Copying file/object of different type & size to s3."""
@@ -188,7 +189,7 @@ class TestObjectWorkflowOperations():
 
     @ pytest.mark.parallel
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5496", "object_workflow_operations")
+    @ pytest.mark.tags("TEST-5496")
     @ CTFailOn(error_handler)
     def test_2210(self):
         """Recursively copying local files to s3."""
@@ -216,7 +217,7 @@ class TestObjectWorkflowOperations():
 
     @ pytest.mark.parallel
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5502", "object_workflow_operations")
+    @ pytest.mark.tags("TEST-5502")
     def test_2211(self):
         """Add Object to non existing bucket."""
         self.LOGGER.info("STARTED: Add Object to non existing bucket")
@@ -237,7 +238,7 @@ class TestObjectWorkflowOperations():
 
     @ pytest.mark.parallel
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5500", "object_workflow_operations")
+    @ pytest.mark.tags("TEST-5500")
     @ CTFailOn(error_handler)
     def test_2213(self):
         """Copying an s3 object to a local file."""
@@ -291,7 +292,7 @@ class TestObjectWorkflowOperations():
 
     @ pytest.mark.parallel
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5495", "object_workflow_operations")
+    @ pytest.mark.tags("TEST-5495")
     @ CTFailOn(error_handler)
     def test_2214(self):
         """Recursively copying s3 objects to a local directory."""
@@ -329,7 +330,7 @@ class TestObjectWorkflowOperations():
 
     @ pytest.mark.parallel
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5501", "object_workflow_operations")
+    @ pytest.mark.tags("TEST-5501")
     @ CTFailOn(error_handler)
     def test_2215(self):
         """Copy/Download byte range of object."""
@@ -373,7 +374,7 @@ class TestObjectWorkflowOperations():
 
     @ pytest.mark.parallel
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5493", "object_workflow_operations")
+    @ pytest.mark.tags("TEST-5493")
     @ CTFailOn(error_handler)
     def test_2217(self):
         """Retrieve Metadata of object."""
@@ -416,7 +417,7 @@ class TestObjectWorkflowOperations():
 
     @ pytest.mark.parallel
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5503", "object_workflow_operations")
+    @ pytest.mark.tags("TEST-5503")
     @ CTFailOn(error_handler)
     def test_2218(self):
         """Add new metadata to the object and check if the new data is getting reflected."""
@@ -482,7 +483,7 @@ class TestObjectWorkflowOperations():
 
     @ pytest.mark.parallel
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5494", "object_workflow_operations")
+    @ pytest.mark.tags("TEST-5494")
     @ CTFailOn(error_handler)
     def test_2219(self):
         """Remove the existing metadata and check if the entry is not shown."""
@@ -537,7 +538,7 @@ class TestObjectWorkflowOperations():
 
     @ pytest.mark.parallel
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5497", "object_workflow_operations")
+    @ pytest.mark.tags("TEST-5497")
     @ CTFailOn(error_handler)
     def test_2220(self):
         """Delete object from bucket."""
@@ -590,7 +591,7 @@ class TestObjectWorkflowOperations():
 
     @ pytest.mark.parallel
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5492", "object_workflow_operations")
+    @ pytest.mark.tags("TEST-5492")
     @ CTFailOn(error_handler)
     def test_2221(self):
         """Try deleting object not present."""

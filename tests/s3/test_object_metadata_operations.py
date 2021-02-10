@@ -24,7 +24,9 @@ import random
 import string
 import logging
 import pytest
+
 from libs.s3 import s3_test_lib
+
 from commons.utils.system_utils import create_file, remove_file
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
@@ -36,7 +38,7 @@ OBJ_METADATA_CONF = read_yaml(
     "config/s3/test_object_metadata_operations.yaml")
 
 
-class TestObjectMetadataOperations():
+class TestObjectMetadataOperations:
     """"Object Metadata Operations Testsuite."""
 
     @classmethod
@@ -116,7 +118,7 @@ class TestObjectMetadataOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5432", "object_metadata_operations")
+    @pytest.mark.tags("TEST-5432")
     @CTFailOn(error_handler)
     def test_1983(self):
         """Create object key with alphanumeric characters."""
@@ -130,7 +132,7 @@ class TestObjectMetadataOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5432", "object_metadata_operations")
+    @pytest.mark.tags("TEST-5432")
     @CTFailOn(error_handler)
     def test_1984(self):
         """Create object key with valid special characters."""
@@ -144,7 +146,7 @@ class TestObjectMetadataOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5432", "object_metadata_operations")
+    @pytest.mark.tags("TEST-5432")
     @CTFailOn(error_handler)
     def test_1985(self):
         """Create object key with combinations of alphanumeric and valid special characters."""
@@ -160,7 +162,7 @@ class TestObjectMetadataOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5432", "object_metadata_operations")
+    @pytest.mark.tags("TEST-5432")
     @CTFailOn(error_handler)
     def test_1986(self):
         """Create object key with existing object key in the same bucket."""
@@ -199,7 +201,7 @@ class TestObjectMetadataOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5432", "object_metadata_operations")
+    @pytest.mark.tags("TEST-5432")
     @CTFailOn(error_handler)
     def test_1987(self):
         """Create object key 1024 byte long."""
@@ -220,7 +222,7 @@ class TestObjectMetadataOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5432", "object_metadata_operations")
+    @pytest.mark.tags("TEST-5432")
     @CTFailOn(error_handler)
     def test_1989(self):
         """Create object key name with numbers only in the name and no other characters."""
@@ -271,7 +273,7 @@ class TestObjectMetadataOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5432", "object_metadata_operations")
+    @pytest.mark.tags("TEST-5432")
     @CTFailOn(error_handler)
     def test_1991(self):
         """Create object key-name with delimiters and prefixes to enable.
@@ -292,7 +294,7 @@ class TestObjectMetadataOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5432", "object_metadata_operations")
+    @pytest.mark.tags("TEST-5432")
     @CTFailOn(error_handler)
     def test_1992(self):
         """Create object key name with Characters That Might Require Special Handling."""
@@ -339,7 +341,7 @@ class TestObjectMetadataOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5432", "object_metadata_operations")
+    @pytest.mark.tags("TEST-5432")
     @CTFailOn(error_handler)
     def test_1993(self):
         """Create object key name from Characters to Avoid list."""
@@ -386,7 +388,7 @@ class TestObjectMetadataOperations():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5432", "object_metadata_operations")
+    @pytest.mark.tags("TEST-5432")
     @CTFailOn(error_handler)
     def test_1994(self):
         """Add user defined metadata while adding the new object to the bucket."""
@@ -397,14 +399,14 @@ class TestObjectMetadataOperations():
             OBJ_METADATA_CONF["test_8554"]["obj_name"],
             OBJ_METADATA_CONF["object_metadata"]["file_path"],
             OBJ_METADATA_CONF["object_metadata"]["mb_count"],
-            OBJ_METADATA_CONF["test_8554"]["key"],
-            OBJ_METADATA_CONF["test_8554"]["value"])
+            key=OBJ_METADATA_CONF["test_8554"]["key"],
+            value=OBJ_METADATA_CONF["test_8554"]["value"])
         self.LOGGER.info(
             "Add user defined metadata while adding the new object to the bucket")
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5432", "object_metadata_operations")
+    @pytest.mark.tags("TEST-5432")
     @CTFailOn(error_handler)
     def test_1995(self):
         """Add or update user defined metadata while copying.
@@ -419,8 +421,8 @@ class TestObjectMetadataOperations():
             OBJ_METADATA_CONF["test_8555"]["obj_name"],
             OBJ_METADATA_CONF["object_metadata"]["file_path"],
             OBJ_METADATA_CONF["object_metadata"]["mb_count"],
-            OBJ_METADATA_CONF["test_8555"]["key"],
-            OBJ_METADATA_CONF["test_8555"]["value"])
+            key=OBJ_METADATA_CONF["test_8555"]["key"],
+            value=OBJ_METADATA_CONF["test_8555"]["value"])
         create_file(
             OBJ_METADATA_CONF["test_8555"]["new_file_path"],
             OBJ_METADATA_CONF["object_metadata"]["mb_count"])
@@ -457,7 +459,7 @@ class TestObjectMetadataOperations():
 
     @ pytest.mark.parallel
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5432", "object_metadata_operations")
+    @ pytest.mark.tags("TEST-5432")
     @ CTFailOn(error_handler)
     def test_1997(self):
         """Update user defined metadata upto 2KB."""
@@ -481,8 +483,8 @@ class TestObjectMetadataOperations():
             OBJ_METADATA_CONF["test_8557"]["obj_name"],
             OBJ_METADATA_CONF["object_metadata"]["file_path"],
             OBJ_METADATA_CONF["object_metadata"]["mb_count"],
-            m_key,
-            m_val)
+            m_key=m_key,
+            m_val=m_val)
         self.LOGGER.info("Update user defined metadata upto 2KB")
 
     def test_1998(self):
@@ -531,7 +533,7 @@ class TestObjectMetadataOperations():
 
     @ pytest.mark.parallel
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5432", "object_metadata_operations")
+    @ pytest.mark.tags("TEST-5432")
     @ CTFailOn(error_handler)
     def test_2287(self):
         """Verification of max. no. of objects user can upload."""
@@ -576,7 +578,7 @@ class TestObjectMetadataOperations():
 
     @ pytest.mark.parallel
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5432", "object_metadata_operations")
+    @ pytest.mark.tags("TEST-5432")
     @ CTFailOn(error_handler)
     def test_2292(self):
         """Verification of max size of object, user can upload."""
