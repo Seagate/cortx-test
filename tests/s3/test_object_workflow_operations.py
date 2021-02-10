@@ -57,6 +57,11 @@ class TestObjectWorkflowOperations:
     def setup_method(self):
         """Setup method."""
         self.LOGGER.info("STARTED: setup method")
+        self.LOGGER.info("ENDED: setup method")
+
+    def teardown_method(self):
+        """Teardown method."""
+        self.LOGGER.info("STARTED: teardown method")
         bucket_list = S3_TEST_OBJ.bucket_list()
         pref_list = [
             each_bucket for each_bucket in bucket_list[1] if each_bucket.startswith(
@@ -66,12 +71,6 @@ class TestObjectWorkflowOperations:
             remove_file(OBJ_OPS_CONF["object_workflow"]["file_path"])
         if os.path.exists(OBJ_OPS_CONF["object_workflow"]["folder_path"]):
             shutil.rmtree(OBJ_OPS_CONF["object_workflow"]["folder_path"])
-        self.LOGGER.info("ENDED: setup method")
-
-    def teardown_method(self):
-        """Teardown method."""
-        self.LOGGER.info("STARTED: teardown method")
-        self.setup_method()
         self.LOGGER.info("ENDED: teardown method")
 
     def create_bucket_put_objects(self, bucket_name, object_count):
@@ -218,7 +217,7 @@ class TestObjectWorkflowOperations:
     @ pytest.mark.parallel
     @ pytest.mark.s3
     @ pytest.mark.tags("TEST-5502")
-    def test_add_object_nobucket_2211(self):
+    def test_add_object_non_existing_bucket2211(self):
         """Add Object to non existing bucket."""
         self.LOGGER.info("STARTED: Add Object to non existing bucket")
         self.LOGGER.info("Uploading an object to non existing bucket")
@@ -240,7 +239,7 @@ class TestObjectWorkflowOperations:
     @ pytest.mark.s3
     @ pytest.mark.tags("TEST-5500")
     @ CTFailOn(error_handler)
-    def test_copy_object_localfile_2213(self):
+    def test_copy_object_local_file_2213(self):
         """Copying an s3 object to a local file."""
         self.LOGGER.info("STARTED: Copying an s3 object to a local file")
         self.LOGGER.info(
@@ -366,11 +365,6 @@ class TestObjectWorkflowOperations:
         assert resp[0], resp[1]
         self.LOGGER.info("Byte range of an object is downloaded")
         self.LOGGER.info("ENDED: Copy/Download byte range of object")
-
-    # def test_2216(self):
-    #   """Cancel the in progress GET object operation"""
-    #   Cannot automate this test case as it needs manual intervention to abort
-    #   GET operation
 
     @ pytest.mark.parallel
     @ pytest.mark.s3
