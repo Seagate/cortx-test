@@ -31,7 +31,6 @@ from commons.utils.system_utils import create_file, remove_file
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
-from commons import const
 from commons.utils.config_utils import read_yaml
 
 
@@ -43,6 +42,7 @@ BKT_OPS_CONF = read_yaml(
     "config/s3/test_bucket_workflow_operations.yaml")
 CMN_CONF = read_yaml("config/common_config.yaml")
 CMN_CFG = read_yaml("config/common_config.yaml")[1]
+
 
 class TestBucketWorkflowOperations:
     """Bucket Workflow Operations Test suite."""
@@ -57,7 +57,7 @@ class TestBucketWorkflowOperations:
         cls.LOGGER = logging.getLogger(__name__)
         cls.random_id = str(time.time())
         cls.ldap_user = CMN_CFG["ldap_username"]
-        cls.ldap_passwd = CMN_CFG["ldap_passwd"]
+        cls.ldap_pwd = CMN_CFG["ldap_passwd"]
         cls.account_name = BKT_OPS_CONF["bucket_workflow"]["acc_name_prefix"]
 
     def setup_method(self):
