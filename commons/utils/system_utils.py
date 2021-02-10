@@ -91,13 +91,15 @@ def run_local_cmd(cmd: str) -> tuple:
     output, error = proc.communicate()
     LOGGER.debug("output = %s", str(output))
     LOGGER.debug("error = %s", str(error))
+    if proc.returncode != 0:
+        return False, str(error)
     if b"Number of key(s) added: 1" in output:
-        return True, output
+        return True, str(output)
     if b"command not found" in error or \
             b"not recognized as an internal or external command" in error or error:
-        return False, error
+        return False, str(error)
 
-    return True, output
+    return True, str(output)
 
 
 def execute_cmd(cmd: str, remote: bool, *remoteargs, **remoteKwargs) -> tuple:
