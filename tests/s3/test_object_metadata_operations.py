@@ -120,7 +120,7 @@ class TestObjectMetadataOperations:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5432")
     @CTFailOn(error_handler)
-    def test_1983(self):
+    def test_objectkey_alphanumeric_chars_1983(self):
         """Create object key with alphanumeric characters."""
         self.LOGGER.info("Create object key with alphanumeric characters")
         self.create_bucket_put_list_object(
@@ -134,7 +134,7 @@ class TestObjectMetadataOperations:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5432")
     @CTFailOn(error_handler)
-    def test_1984(self):
+    def test_object_valid_special_chars_1984(self):
         """Create object key with valid special characters."""
         self.LOGGER.info("Create object key with valid special characters")
         self.create_bucket_put_list_object(
@@ -148,7 +148,7 @@ class TestObjectMetadataOperations:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5432")
     @CTFailOn(error_handler)
-    def test_1985(self):
+    def test_key_alphanumeric_valid_special_chars_1985(self):
         """Create object key with combinations of alphanumeric and valid special characters."""
         self.LOGGER.info(
             "Create object key with combinations of alphanumeric and valid special characters")
@@ -164,7 +164,7 @@ class TestObjectMetadataOperations:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5432")
     @CTFailOn(error_handler)
-    def test_1986(self):
+    def test_key_existing_object_key_1986(self):
         """Create object key with existing object key in the same bucket."""
         self.LOGGER.info(
             "Create object key with existing object key in the same bucket")
@@ -203,7 +203,7 @@ class TestObjectMetadataOperations:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5432")
     @CTFailOn(error_handler)
-    def test_1987(self):
+    def test_key_1024byte_long_1987(self):
         """Create object key 1024 byte long."""
         self.LOGGER.info("Create object key 1024 byte long")
         obj_key = "".join(
@@ -224,7 +224,7 @@ class TestObjectMetadataOperations:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5432")
     @CTFailOn(error_handler)
-    def test_1989(self):
+    def test_key_with_numeric_1989(self):
         """Create object key name with numbers only in the name and no other characters."""
         self.LOGGER.info(
             "Create object key name with numbers only in the name and no other characters")
@@ -236,7 +236,7 @@ class TestObjectMetadataOperations:
         self.LOGGER.info(
             "Create object key name with numbers only in the name and no other characters")
 
-    def test_1990(self):
+    def test_keysize_morethan_1024bytes_1990(self):
         """Create object key greater than 1024 byte long."""
         self.LOGGER.info("Create object key greater than 1024 byte long")
         self.LOGGER.info(
@@ -275,7 +275,7 @@ class TestObjectMetadataOperations:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5432")
     @CTFailOn(error_handler)
-    def test_1991(self):
+    def test_keyname_delimiters_prefixes_1991(self):
         """Create object key-name with delimiters and prefixes to enable.
 
         or use the concept of hierarchy and folders
@@ -296,7 +296,7 @@ class TestObjectMetadataOperations:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5432")
     @CTFailOn(error_handler)
-    def test_1992(self):
+    def test_key_chars_require_special_handling_1992(self):
         """Create object key name with Characters That Might Require Special Handling."""
         self.LOGGER.info(
             "Create object key name with Characters That Might Require Special Handling")
@@ -343,7 +343,7 @@ class TestObjectMetadataOperations:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5432")
     @CTFailOn(error_handler)
-    def test_1993(self):
+    def test_keyname_chars_avoidlist_1993(self):
         """Create object key name from Characters to Avoid list."""
         self.LOGGER.info(
             "Create object key name from Characters to Avoid list")
@@ -390,7 +390,7 @@ class TestObjectMetadataOperations:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5432")
     @CTFailOn(error_handler)
-    def test_1994(self):
+    def test_metadata_with_adding_new_object_1994(self):
         """Add user defined metadata while adding the new object to the bucket."""
         self.LOGGER.info(
             "Add user defined metadata while adding the new object to the bucket")
@@ -408,7 +408,7 @@ class TestObjectMetadataOperations:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5432")
     @CTFailOn(error_handler)
-    def test_1995(self):
+    def test_update_metadat_while_copying_1995(self):
         """Add or update user defined metadata while copying.
 
         updating an existing object to the bucket.
@@ -461,7 +461,7 @@ class TestObjectMetadataOperations:
     @ pytest.mark.s3
     @ pytest.mark.tags("TEST-5432")
     @ CTFailOn(error_handler)
-    def test_1997(self):
+    def test_update_metadata_upto2kb_1997(self):
         """Update user defined metadata upto 2KB."""
         self.LOGGER.info("Update user defined metadata upto 2KB")
         m_key = "".join(
@@ -487,7 +487,7 @@ class TestObjectMetadataOperations:
             m_val=m_val)
         self.LOGGER.info("Update user defined metadata upto 2KB")
 
-    def test_1998(self):
+    def test_metadata_morethan2kb_1998(self):
         """Update user defined metadata greater than 2 KB."""
         self.LOGGER.info("Update user defined metadata greater than 2 KB")
         self.LOGGER.info(
@@ -535,7 +535,7 @@ class TestObjectMetadataOperations:
     @ pytest.mark.s3
     @ pytest.mark.tags("TEST-5432")
     @ CTFailOn(error_handler)
-    def test_2287(self):
+    def test_maxobjects_2287(self):
         """Verification of max. no. of objects user can upload."""
         self.LOGGER.info("Verification of max. no. of objects user can upload")
         self.LOGGER.info(
@@ -580,7 +580,7 @@ class TestObjectMetadataOperations:
     @ pytest.mark.s3
     @ pytest.mark.tags("TEST-5432")
     @ CTFailOn(error_handler)
-    def test_2292(self):
+    def test_max_object_size_2292(self):
         """Verification of max size of object, user can upload."""
         self.LOGGER.info("Verification of max size of object, user can upload")
         self.create_bucket_put_list_object(

@@ -155,9 +155,9 @@ class TestAllUsers:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-6019")
     @CTFailOn(error_handler)
-    def test_695(self):
+    def test_put_duplicate_object_without_auth_695(self):
         """
-        Put an object with same name in bucket without Autentication.
+        Put an object with same name in bucket without Authentication.
 
         when AllUsers have READ permission on object
         """
@@ -186,7 +186,7 @@ class TestAllUsers:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-6016")
     @CTFailOn(error_handler)
-    def test_697(self):
+    def test_delete_object_without_authentication_697(self):
         """
         Delete an object from bucket without Authentication.
 
@@ -213,7 +213,7 @@ class TestAllUsers:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-6014")
-    def test_698(self):
+    def test_read_object_acl_without_auth_698(self):
         """
         Read an object ACL from bucket without Authentication.
 
@@ -244,7 +244,7 @@ class TestAllUsers:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-6011")
-    def test_699(self):
+    def test_update_object_acl_without_auth_699(self):
         """
         Update an object ACL in bucket without Authentication.
 
@@ -277,15 +277,15 @@ class TestAllUsers:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-6009")
     @CTFailOn(error_handler)
-    def test_700(self):
+    def test_put_duplicate_object_without_authentication_700(self):
         """
-        Put an object with same name in bucket without Autentication.
+        Put an object with same name in bucket without Authentication.
 
         when AllUsers have WRITE permission on object
         """
         test_700_cfg = ALL_USERS_CONF["test_700"]
         self.LOGGER.info(
-            "STARTED: Put an object with same name in bucket without Autentication "
+            "STARTED: Put an object with same name in bucket without Authentication "
             "when AllUsers have WRITE permission on object")
         self.LOGGER.info(
             "Step 1: Changing object's acl to WRITE for all users")
@@ -309,7 +309,7 @@ class TestAllUsers:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-6006")
     @CTFailOn(error_handler)
-    def test_701(self):
+    def test_delete_obj_without_auth_701(self):
         """
         Delete an object from bucket without Authentication.
 
@@ -337,7 +337,7 @@ class TestAllUsers:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-6004")
-    def test_702(self):
+    def test_read_obj_acl_without_auth_702(self):
         """
         Read an object ACL from bucket without Authentication.
 
@@ -366,7 +366,7 @@ class TestAllUsers:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-6002")
-    def test_703(self):
+    def test_update_obj_write_permission_without_auth_703(self):
         """
         Update an object ACL in bucket without Authentication.
 
@@ -397,7 +397,7 @@ class TestAllUsers:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-6001")
     @CTFailOn(error_handler)
-    def test_704(self):
+    def test_put_duplicate_object_read_acp_704(self):
         """
         Put an object with same name in bucket without Authentication.
 
@@ -430,9 +430,9 @@ class TestAllUsers:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5970")
     @CTFailOn(error_handler)
-    def test_757(self):
+    def test_get_object_without_authentication_read_permission_757(self):
         """
-        GET an object from bucket without Autentication.
+        GET an object from bucket without Authentication.
 
         when AllUsers have READ permission on object
         """
@@ -459,9 +459,9 @@ class TestAllUsers:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5968")
-    def test_758(self):
+    def test_get_allusers_object_without_auth_758(self):
         """
-        GET an object from bucket without Autentication.
+        GET an object from bucket without Authentication.
 
         when AllUsers have WRITE permission on object
         """
@@ -494,7 +494,7 @@ class TestAllUsers:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5999")
     @CTFailOn(error_handler)
-    def test_705(self):
+    def test_get_object_read_acp_705(self):
         """
         GET an object from bucket without Authentication.
 
@@ -530,7 +530,7 @@ class TestAllUsers:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5997")
     @CTFailOn(error_handler)
-    def test_706(self):
+    def test_read_obj_without_auth_read_acp_706(self):
         """
         Read an object ACL from bucket without Authentication.
 
@@ -560,7 +560,7 @@ class TestAllUsers:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5995")
     @CTFailOn(error_handler)
-    def test_707(self):
+    def test_update_obj_without_auth_read_acp_707(self):
         """
         Update an object ACL in bucket without Authentication.
 
@@ -592,7 +592,7 @@ class TestAllUsers:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5993")
     @CTFailOn(error_handler)
-    def test_708(self):
+    def test_put_object_without_auth_write_acp_708(self):
         """
         Put an object with same name in bucket without Authentication.
 
@@ -623,7 +623,7 @@ class TestAllUsers:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5986")
     @CTFailOn(error_handler)
-    def test_709(self):
+    def test_get_object_without_auth_write_acp_709(self):
         """
         GET an object from bucket without Authentication.
 
@@ -656,7 +656,7 @@ class TestAllUsers:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5984")
     @CTFailOn(error_handler)
-    def test_710(self):
+    def test_read_object_without_auth_write_acp_710(self):
         """
         Read an object ACL from bucket without Authentication.
 
@@ -689,7 +689,7 @@ class TestAllUsers:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5982")
     @CTFailOn(error_handler)
-    def test_711(self):
+    def test_update_object_without_auth_write_acp_711(self):
         """
         Update an object ACL in bucket without Authentication.
 
@@ -716,15 +716,15 @@ class TestAllUsers:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5979")
     @CTFailOn(error_handler)
-    def test_712(self):
+    def test_put_duplicate_object_full_control_712(self):
         """
-        Put an object with same name in bucket without Autentication.
+        Put an object with same name in bucket without Authentication.
 
         when AllUsers have FULL_CONTROL permission on object
         """
         test_712_cfg = ALL_USERS_CONF["test_712"]
         self.LOGGER.info(
-            "Started:Put an object with same name in bucket without Autentication "
+            "Started:Put an object with same name in bucket without Authentication"
             "when AllUsers have FULL_CONTROL permission on object")
         self.LOGGER.info(
             "Step 1: Changing object's acl to FULL_CONTROL for all users")
@@ -747,7 +747,7 @@ class TestAllUsers:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5977")
     @CTFailOn(error_handler)
-    def test_713(self):
+    def test_get_object_without_auth_full_control_713(self):
         """
         GET an object from bucket without Authentication.
 
@@ -777,7 +777,7 @@ class TestAllUsers:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5975")
     @CTFailOn(error_handler)
-    def test_714(self):
+    def test_read_object_without_auth_full_control_714(self):
         """
         Read an object ACL from bucket without Authentication.
 
@@ -806,7 +806,7 @@ class TestAllUsers:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5973")
     @CTFailOn(error_handler)
-    def test_715(self):
+    def test_update_object_without_auth_full_control_715(self):
         """
         Update an object ACL in bucket without Authentication.
 

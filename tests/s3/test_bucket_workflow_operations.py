@@ -42,7 +42,7 @@ ACL_OBJ = s3_acl_test_lib.S3AclTestLib()
 BKT_OPS_CONF = read_yaml(
     "config/s3/test_bucket_workflow_operations.yaml")
 CMN_CONF = read_yaml("config/common_config.yaml")
-
+CMN_CFG = read_yaml("config/common_config.yaml")[1]
 
 class TestBucketWorkflowOperations:
     """Bucket Workflow Operations Test suite."""
@@ -56,10 +56,8 @@ class TestBucketWorkflowOperations:
         """
         cls.LOGGER = logging.getLogger(__name__)
         cls.random_id = str(time.time())
-        cls.ldap_user = const.S3_BUILD_VER[CMN_CONF["BUILD_VER_TYPE"]
-                                           ]["ldap_creds"]["ldap_username"]
-        cls.ldap_pwd = const.S3_BUILD_VER[CMN_CONF["BUILD_VER_TYPE"]
-                                          ]["ldap_creds"]["ldap_passwd"]
+        cls.ldap_user = CMN_CFG["ldap_username"]
+        cls.ldap_passwd = CMN_CFG["ldap_passwd"]
         cls.account_name = BKT_OPS_CONF["bucket_workflow"]["acc_name_prefix"]
 
     def setup_method(self):
@@ -108,7 +106,7 @@ class TestBucketWorkflowOperations:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5463")
     @CTFailOn(error_handler)
-    def test_1975(self):
+    def test_name_lowercase_letters_1975(self):
         """Bucket names must start with a lowercase letter or number."""
         self.LOGGER.info(
             "STARTED: Bucket names must start with a lowercase letter or number")
@@ -143,7 +141,7 @@ class TestBucketWorkflowOperations:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5469")
     @CTFailOn(error_handler)
-    def test_1976(self):
+    def test_name_constains_alphanumeric_1976(self):
         """Bucket name can contain only lower-case characters, numbers, periods and dashes."""
         self.LOGGER.info(
             "STARTED: Bucket name can contain only lower-case chars, numbers, periods and dashes")
@@ -164,7 +162,7 @@ class TestBucketWorkflowOperations:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5467")
     @CTFailOn(error_handler)
-    def test_1977(self):
+    def test_bucketname_2to63_chars_long_1977(self):
         """Bucket names must be at least 3 and no more than 63 characters long."""
         self.LOGGER.info(
             "STARTED: Bucket names must be at least 3 and no more than 63 characters long")
@@ -198,7 +196,7 @@ class TestBucketWorkflowOperations:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5468")
-    def test_1978(self):
+    def test_name_lessthan3chars_morethan63chars_1978(self):
         """Bucket name with less than 3 characters and more than 63 characters."""
         self.LOGGER.info(
             "STARTED: Bucket name with less than 3 characters and more than 63 characters")
@@ -218,7 +216,7 @@ class TestBucketWorkflowOperations:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5464")
-    def test_1979(self):
+    def test_name_nouppercase_1979(self):
         """Bucket names must not contain uppercase characters."""
         self.LOGGER.info(
             "STARTED: Bucket names must not contain uppercase characters")
@@ -237,7 +235,7 @@ class TestBucketWorkflowOperations:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5465")
-    def test_1980(self):
+    def test_name_without_underscores_1980(self):
         """Bucket names must not contain underscores."""
         self.LOGGER.info("STARTED: Bucket names must not contain underscores")
         self.LOGGER.info(
@@ -254,7 +252,7 @@ class TestBucketWorkflowOperations:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5462")
-    def test_1981(self):
+    def test_name_special_characters_1981(self):
         """Bucket names with special characters."""
         self.LOGGER.info("STARTED: Bucket names with special characters")
         count_limit = random.choice(
@@ -284,7 +282,7 @@ class TestBucketWorkflowOperations:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5466")
-    def test_1982(self):
+    def test_name_formatting_1982(self):
         """Bucket names must not be formatted as an IP address (for example, 192.168.5.4)."""
         self.LOGGER.info(
             "STARTED: Bucket names must not be formatted as an IP address(for eg., 192.168.5.4)")
@@ -304,7 +302,7 @@ class TestBucketWorkflowOperations:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5459")
     @CTFailOn(error_handler)
-    def test_2039(self):
+    def test_create_single_bucket_2039(self):
         """Create single bucket."""
         self.LOGGER.info("STARTED: Create single bucket")
         self.LOGGER.info(
@@ -328,7 +326,7 @@ class TestBucketWorkflowOperations:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5460")
     @CTFailOn(error_handler)
-    def test_2040(self):
+    def test_create_multiple_buckets_2040(self):
         """Create multiple buckets."""
         self.LOGGER.info("STARTED: Create multiple buckets")
         self.LOGGER.info("Creating multiple buckets")
@@ -351,7 +349,7 @@ class TestBucketWorkflowOperations:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5461")
-    def test_2043(self):
+    def test_duplicate_name_2043(self):
         """Create bucket with same bucket name already present."""
         self.LOGGER.info(
             "STARTED: Create bucket with same bucket name already present")
@@ -379,7 +377,7 @@ class TestBucketWorkflowOperations:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5447")
     @CTFailOn(error_handler)
-    def test_2044(self):
+    def test_max_bucket_creation_2044(self):
         """Verification of max. no. of buckets user can create."""
         self.LOGGER.info(
             "STARTED: Verification of max. no. of buckets user can create")
@@ -400,7 +398,7 @@ class TestBucketWorkflowOperations:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5457")
-    def test_2045(self):
+    def test_delete_bucket_with_objects_2045(self):
         """Delete bucket which has objects."""
         self.LOGGER.info("STARTED: Delete bucket which has objects")
         self.LOGGER.info(
@@ -438,7 +436,7 @@ class TestBucketWorkflowOperations:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5458")
     @CTFailOn(error_handler)
-    def test_2046(self):
+    def test_forcefully_delete_objects_2046(self):
         """Delete bucket forcefully which has objects."""
         self.LOGGER.info("STARTED: Delete bucket forcefully which has objects")
         self.LOGGER.info(
@@ -472,7 +470,7 @@ class TestBucketWorkflowOperations:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5455")
     @CTFailOn(error_handler)
-    def test_2047(self):
+    def test_delete_empty_bucket_2047(self):
         """Delete empty bucket."""
         self.LOGGER.info("STARTED: Delete empty bucket")
         self.LOGGER.info(
@@ -496,7 +494,7 @@ class TestBucketWorkflowOperations:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5454")
     @CTFailOn(error_handler)
-    def test_2048(self):
+    def test_delete_multiple_buckets_2048(self):
         """Delete multiple empty buckets."""
         self.LOGGER.info("STARTED: Delete multiple empty buckets")
         self.LOGGER.info("Creating multiple buckets")
@@ -518,7 +516,7 @@ class TestBucketWorkflowOperations:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5456")
-    def test_2049(self):
+    def test_delete_non_existing_bucket_2049(self):
         """Delete bucket when Bucket does not exists."""
         self.LOGGER.info("STARTED: Delete bucket when Bucket does not exists")
         self.LOGGER.info(
@@ -537,7 +535,7 @@ class TestBucketWorkflowOperations:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5452")
     @CTFailOn(error_handler)
-    def test_2050(self):
+    def test_list_all_buckets_2050(self):
         """List all objects in a bucket."""
         self.LOGGER.info("STARTED: List all objects in a bucket")
         self.LOGGER.info(
@@ -578,7 +576,7 @@ class TestBucketWorkflowOperations:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5448")
     @CTFailOn(error_handler)
-    def test_2051(self):
+    def test_disk_usages_verification_2051(self):
         """Verification of disk usage by bucket."""
         self.LOGGER.info("STARTED: Verification of disk usage by bucket")
         self.LOGGER.info(
@@ -614,7 +612,7 @@ class TestBucketWorkflowOperations:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5453")
-    def test_2055(self):
+    def test_head_non_existing_bucket_2055(self):
         """HEAD bucket when Bucket does not exists."""
         self.LOGGER.info("STARTED: HEAD bucket when Bucket does not exists")
         self.LOGGER.info("Performing head bucket on non existing bucket")
@@ -630,7 +628,7 @@ class TestBucketWorkflowOperations:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5445")
     @CTFailOn(error_handler)
-    def test_2056(self):
+    def test_verify_head_bucket_2056(self):
         """Verify HEAD bucket."""
         self.LOGGER.info("STARTED: Verify HEAD bucket")
         self.LOGGER.info(
@@ -659,7 +657,7 @@ class TestBucketWorkflowOperations:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5446")
     @CTFailOn(error_handler)
-    def test_2057(self):
+    def test_verify_list_bucket_2057(self):
         """Verify 'LIST buckets' command."""
         self.LOGGER.info("STARTED: Verify 'LIST buckets' command")
         self.LOGGER.info("Creating multiple buckets")
@@ -684,7 +682,7 @@ class TestBucketWorkflowOperations:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5450")
     @CTFailOn(error_handler)
-    def test_2059(self):
+    def test_bucket_location_verification_2059(self):
         """Verification of bucket location."""
         self.LOGGER.info("STARTED: Verification of bucket location")
         self.LOGGER.info(
@@ -705,7 +703,7 @@ class TestBucketWorkflowOperations:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-8031")
     @CTFailOn(error_handler)
-    def test_432(self):
+    def test_delete_multiobjects_432(self):
         """Delete multiobjects which are present in bucket."""
         self.LOGGER.info(
             "STARTED: Delete multiobjects which are present in bucket")
@@ -749,7 +747,7 @@ class TestBucketWorkflowOperations:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-8032")
-    def test_433(self):
+    def test_delete_non_existing_multibuckets_433(self):
         """Delete multiobjects where the bucket is not present."""
         self.LOGGER.info(
             "STARTED: Delete multiobjects where the bucket is not present")
@@ -781,7 +779,7 @@ class TestBucketWorkflowOperations:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-8033")
-    def test_434(self):
+    def test_delete_object_without_permission_434(self):
         """
         create bucket and upload objects from account1.
 
@@ -848,7 +846,7 @@ class TestBucketWorkflowOperations:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-8035")
     @CTFailOn(error_handler)
-    def test_435(self):
+    def test_delete_multiple_objects_without_permission_435(self):
         """
         create bucket and upload objects from account1.
 

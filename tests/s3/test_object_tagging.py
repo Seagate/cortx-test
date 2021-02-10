@@ -102,7 +102,7 @@ class TestObjectTagging:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5549")
     @CTFailOn(error_handler)
-    def test_2457(self):
+    def test_verify_putobj_tagging_2457(self):
         """Verify PUT object tagging."""
         self.LOGGER.info("Verify PUT object tagging")
         self.LOGGER.info(
@@ -129,7 +129,7 @@ class TestObjectTagging:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5557")
     @CTFailOn(error_handler)
-    def test_2458(self):
+    def test_getobj_tagging_2458(self):
         """Verify GET object tagging."""
         self.LOGGER.info("Verify GET object tagging")
         self.LOGGER.info(
@@ -156,7 +156,7 @@ class TestObjectTagging:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5561")
     @CTFailOn(error_handler)
-    def test_2459(self):
+    def test_delobj_tagging_2459(self):
         """Verify DELETE object tagging."""
         self.LOGGER.info("Verify DELETE object tagging")
         self.LOGGER.info(
@@ -195,7 +195,7 @@ class TestObjectTagging:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5547")
     @CTFailOn(error_handler)
-    def test_2460(self):
+    def test_putobj_taggingsupport_2460(self):
         """Verify put object with tagging support."""
         self.LOGGER.info("Verify put object with tagging support")
         self.LOGGER.info(
@@ -229,7 +229,7 @@ class TestObjectTagging:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5555")
     @CTFailOn(error_handler)
-    def test_2461(self):
+    def test_getobj_taggingsupport_2461(self):
         """Verify get object with tagging support."""
         self.LOGGER.info("Verify get object with tagging support")
         self.LOGGER.info(
@@ -270,7 +270,7 @@ class TestObjectTagging:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5553")
     @CTFailOn(error_handler)
-    def test_2462(self):
+    def test_multipartupload_taggingsupport_2462(self):
         """Verify Multipart Upload with tagging support."""
         self.LOGGER.info("Verify Multipart Upload with tagging support")
         self.LOGGER.info("Creating a bucket with name %s",
@@ -337,7 +337,7 @@ class TestObjectTagging:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5574")
     @CTFailOn(error_handler)
-    def test_2463(self):
+    def test_addmaximumtags_existingobject_2463(self):
         """Add up to 10 or maximum tags with an existing object."""
         self.LOGGER.info(
             "Add up to 10 or maximum tags with an existing object")
@@ -368,7 +368,7 @@ class TestObjectTagging:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5576")
     @CTFailOn(error_handler)
-    def test_2464(self):
+    def test_add10tags_existingobject_2464(self):
         """Add more than 10 tags to an existing object."""
         self.LOGGER.info("Add more than 10 tags to an existing object")
         self.LOGGER.info(
@@ -408,7 +408,7 @@ class TestObjectTagging:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5564")
-    def test_2465(self):
+    def test_unique_tagkeys_2465(self):
         """Tag associated with an object must have unique tag keys."""
         self.LOGGER.info(
             "Tags associated with an object must have unique tag keys.")
@@ -449,7 +449,7 @@ class TestObjectTagging:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5578")
     @CTFailOn(error_handler)
-    def test_2466(self):
+    def test_add_duplicate_tags_2466(self):
         """Add a tag with duplicate tag values to an existing object."""
         self.LOGGER.info(
             "Add a tag with duplicate tag values to an existing object")
@@ -497,7 +497,7 @@ class TestObjectTagging:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5579")
     @CTFailOn(error_handler)
-    def test_2467(self):
+    def test_key_128unicodechars_2467(self):
         """A tag key can be up to 128 Unicode characters in length."""
         self.LOGGER.info(
             "A tag key can be up to 128 Unicode characters in length")
@@ -525,7 +525,7 @@ class TestObjectTagging:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5570")
-    def test_2468(self):
+    def test_keywithmorethan128chargs_2468(self):
         """Create a tag whose key is more than 128 Unicode characters in length."""
         self.LOGGER.info(
             "Create a tag whose key is more than 128 Unicode characters in length")
@@ -567,7 +567,7 @@ class TestObjectTagging:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5572")
     @CTFailOn(error_handler)
-    def test_2469(self):
+    def test_tagvalue256chars_2469(self):
         """Create a tag having tag values up to 256 Unicode characters in length."""
         self.LOGGER.info(
             "Create a tag having tag values up to 256 Unicode characters in length")
@@ -595,7 +595,7 @@ class TestObjectTagging:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5571")
-    def test_2470(self):
+    def test_tagvalue512chars_2470(self):
         """Create a tag having values more than 512 Unicode characters in length."""
         self.LOGGER.info(
             "Create a tag having values more than 512 Unicode characters in length")
@@ -637,7 +637,7 @@ class TestObjectTagging:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5552")
     @CTFailOn(error_handler)
-    def test_2471(self):
+    def test_tagkeys_labels_2471(self):
         """Verify Object Tag Keys with case sensitive labels."""
         self.LOGGER.info("Verify Object Tag Keys with case sensitive labels")
         self.LOGGER.info(
@@ -678,7 +678,7 @@ class TestObjectTagging:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5551")
     @CTFailOn(error_handler)
-    def test_2472(self):
+    def test_casesensitivelabels_2472(self):
         """Verify Object Tag Values with case sensitive labels."""
         self.LOGGER.info("Verify Object Tag Values with case sensitive labels")
         self.LOGGER.info(
@@ -720,7 +720,7 @@ class TestObjectTagging:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5566")
     @CTFailOn(error_handler)
-    def test_2473(self):
+    def test_validspecialchars_2473(self):
         """Create Object tags with valid special characters."""
         self.LOGGER.info("Create Object tags with valid special characters.")
         self.LOGGER.info(
@@ -746,7 +746,7 @@ class TestObjectTagging:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5569")
-    def test_2474(self):
+    def test_invalidspecialchars_2474(self):
         """Create multiple tags with tag keys having invalid special characters."""
         self.LOGGER.info(
             "Create multiple tags with tag keys having invalid special characters")
@@ -795,7 +795,7 @@ class TestObjectTagging:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5568")
-    def test_2475(self):
+    def test_invalidchars_2475(self):
         """Create multiple tags with tag values having invalid special characters."""
         self.LOGGER.info(
             "Create multiple tags with tag values having invalid special characters")
@@ -845,7 +845,7 @@ class TestObjectTagging:
     @ pytest.mark.s3
     @ pytest.mark.tags("TEST-5567")
     @ CTFailOn(error_handler)
-    def test_2476(self):
+    def test_specialchars_2476(self):
         """Create Object tags with invalid (characters o/s the allowed set) special characters."""
         self.LOGGER.info(
             "Create Object tags with invalid "
@@ -894,7 +894,7 @@ class TestObjectTagging:
     @ pytest.mark.s3
     @ pytest.mark.tags("TEST-5565")
     @ CTFailOn(error_handler)
-    def test_2477(self):
+    def test_duplicatenameobject_tagsupport_2477(self):
         """PUT object when object with same name already present in bucket with tag support."""
         self.LOGGER.info(
             "PUT object when object with same name already present in bucket with tag support")
@@ -950,7 +950,7 @@ class TestObjectTagging:
     @ pytest.mark.s3
     @ pytest.mark.tags("TEST-5562")
     @ CTFailOn(error_handler)
-    def test_2478(self):
+    def test_maxobject_mactags_2478(self):
         """Verification of max. no. of Objects user can upload with max no. of tags per Object."""
         self.LOGGER.info(
             "Verification of max. no. of Objects user can upload with max no. of tags per Object")
@@ -1007,7 +1007,7 @@ class TestObjectTagging:
     @ pytest.mark.s3
     @ pytest.mark.tags("TEST-5573")
     @ CTFailOn(error_handler)
-    def test_2479(self):
+    def test_metadata_objecttags_2479(self):
         """Add user defined metadata and Object tags while adding the new object to the bucket."""
         self.LOGGER.info(
             "Add user defined metadata and Object tags while adding the new object to the bucket")
@@ -1049,7 +1049,7 @@ class TestObjectTagging:
     @ pytest.mark.s3
     @ pytest.mark.tags("TEST-5575")
     @ CTFailOn(error_handler)
-    def test_2480(self):
+    def test_userdefined_metadata_2480(self):
         """Add or update user defined metadata and verify the Object Tags."""
         self.LOGGER.info(
             "Add or update user defined metadata and verify the Object Tags")
@@ -1122,10 +1122,10 @@ class TestObjectTagging:
     @ pytest.mark.s3
     @ pytest.mark.tags("TEST-5563")
     @ CTFailOn(error_handler)
-    def test_2481(self):
-        """Upload Object with user definced metadata upto 2KB and upto 10 object tags."""
+    def test_userdefined_metadata2481(self):
+        """Upload Object with user defined metadata upto 2KB and upto 10 object tags."""
         self.LOGGER.info(
-            "Upload Object with user definced metadata upto 2KB and upto 10 object tags")
+            "Upload Object with user defined metadata upto 2KB and upto 10 object tags")
         self.LOGGER.info(
             "Creating a bucket with name %s",
             OBJ_TAG_CONFIG["test_9437"]["bucket_name"])
@@ -1166,7 +1166,7 @@ class TestObjectTagging:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5577")
-    def test_2482(self):
+    def test_maximum_objecttags_2482(self):
         """Add maximum nos. of Object tags >100 using json file."""
         self.LOGGER.info(
             "Add maximum nos. of Object tags >100 using json file")
@@ -1210,7 +1210,7 @@ class TestObjectTagging:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5548")
-    def test_2483(self):
+    def test_putobject_tagging_2483(self):
         """Verify PUT object tagging to non-existing object."""
         self.LOGGER.info("verify PUT object tagging to non-existing object")
         self.LOGGER.info("Creating a bucket with name %s",
@@ -1237,7 +1237,7 @@ class TestObjectTagging:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5556")
-    def test_2484(self):
+    def test_getobject_tagging_2484(self):
         """Verify GET object tagging to non-existing object."""
         self.LOGGER.info("verify GET object tagging to non-existing object")
         self.LOGGER.info("Creating a bucket with name %s",
@@ -1262,7 +1262,7 @@ class TestObjectTagging:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5559")
-    def test_2485(self):
+    def test_delobj_tagging_2485(self):
         """Verify DELETE object tagging to non-existing object."""
         self.LOGGER.info("verify DELETE object tagging to non-existing object")
         self.LOGGER.info("Creating a bucket with name %s",
@@ -1287,7 +1287,7 @@ class TestObjectTagging:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5546")
-    def test_2486(self):
+    def test_put_non_existing_object_tagging_2486(self):
         """Verify put object with tagging support to non-existing object."""
         self.LOGGER.info(
             "Verify put object with tagging support to non-existing object")
@@ -1316,7 +1316,7 @@ class TestObjectTagging:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5554")
-    def test_2487(self):
+    def test_get_non_existing_object_tagging_2487(self):
         """Verify get object with tagging support to non-existing object."""
         self.LOGGER.info(
             "Verify get object with tagging support to non-existing object")

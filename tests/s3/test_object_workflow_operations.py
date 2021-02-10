@@ -115,7 +115,7 @@ class TestObjectWorkflowOperations:
     @ pytest.mark.s3
     @ pytest.mark.tags("TEST-5498")
     @ CTFailOn(error_handler)
-    def test_2208(self):
+    def test_put_file_2208(self):
         """Copying/PUT a local file to s3."""
         self.LOGGER.info("Copying/PUT a local file to s3")
         self.LOGGER.info(
@@ -153,7 +153,7 @@ class TestObjectWorkflowOperations:
     @ pytest.mark.s3
     @ pytest.mark.tags("TEST-5499")
     @ CTFailOn(error_handler)
-    def test_2209(self):
+    def test_copy_different_sizes_2209(self):
         """Copying file/object of different type & size to s3."""
         self.LOGGER.info(
             "STARTED: Copying file/object of different type & size to s3")
@@ -191,7 +191,7 @@ class TestObjectWorkflowOperations:
     @ pytest.mark.s3
     @ pytest.mark.tags("TEST-5496")
     @ CTFailOn(error_handler)
-    def test_2210(self):
+    def test_recursive_copy_2210(self):
         """Recursively copying local files to s3."""
         self.LOGGER.info("STARTED: Recursively copying local files to s3")
         self.LOGGER.info(
@@ -218,7 +218,7 @@ class TestObjectWorkflowOperations:
     @ pytest.mark.parallel
     @ pytest.mark.s3
     @ pytest.mark.tags("TEST-5502")
-    def test_2211(self):
+    def test_add_object_nobucket_2211(self):
         """Add Object to non existing bucket."""
         self.LOGGER.info("STARTED: Add Object to non existing bucket")
         self.LOGGER.info("Uploading an object to non existing bucket")
@@ -240,7 +240,7 @@ class TestObjectWorkflowOperations:
     @ pytest.mark.s3
     @ pytest.mark.tags("TEST-5500")
     @ CTFailOn(error_handler)
-    def test_2213(self):
+    def test_copy_object_localfile_2213(self):
         """Copying an s3 object to a local file."""
         self.LOGGER.info("STARTED: Copying an s3 object to a local file")
         self.LOGGER.info(
@@ -294,7 +294,7 @@ class TestObjectWorkflowOperations:
     @ pytest.mark.s3
     @ pytest.mark.tags("TEST-5495")
     @ CTFailOn(error_handler)
-    def test_2214(self):
+    def test_recursive_copy_local_dir_2214(self):
         """Recursively copying s3 objects to a local directory."""
         self.LOGGER.info(
             "STARTED: Recursively copying s3 objects to a local directory")
@@ -332,7 +332,7 @@ class TestObjectWorkflowOperations:
     @ pytest.mark.s3
     @ pytest.mark.tags("TEST-5501")
     @ CTFailOn(error_handler)
-    def test_2215(self):
+    def test_download_byte_range_2215(self):
         """Copy/Download byte range of object."""
         self.LOGGER.info("STARTED: Copy/Download byte range of object")
         self.LOGGER.info(
@@ -368,7 +368,7 @@ class TestObjectWorkflowOperations:
         self.LOGGER.info("ENDED: Copy/Download byte range of object")
 
     # def test_2216(self):
-    #   """Cancel the in-progess GET object operation"""
+    #   """Cancel the in progress GET object operation"""
     #   Cannot automate this test case as it needs manual intervention to abort
     #   GET operation
 
@@ -376,7 +376,7 @@ class TestObjectWorkflowOperations:
     @ pytest.mark.s3
     @ pytest.mark.tags("TEST-5493")
     @ CTFailOn(error_handler)
-    def test_2217(self):
+    def test_retrieve_metadata_2217(self):
         """Retrieve Metadata of object."""
         self.LOGGER.info("STARTED: Retrieve Metadata of object")
         self.LOGGER.info(
@@ -419,7 +419,7 @@ class TestObjectWorkflowOperations:
     @ pytest.mark.s3
     @ pytest.mark.tags("TEST-5503")
     @ CTFailOn(error_handler)
-    def test_2218(self):
+    def test_add_metadata_verify_object_2218(self):
         """Add new metadata to the object and check if the new data is getting reflected."""
         self.LOGGER.info(
             "STARTED: Add new metadata to the object and check "
@@ -485,7 +485,7 @@ class TestObjectWorkflowOperations:
     @ pytest.mark.s3
     @ pytest.mark.tags("TEST-5494")
     @ CTFailOn(error_handler)
-    def test_2219(self):
+    def test_remove_metadata_2219(self):
         """Remove the existing metadata and check if the entry is not shown."""
         self.LOGGER.info(
             "Remove the existing metadata and check if the entry is not shown")
@@ -540,7 +540,7 @@ class TestObjectWorkflowOperations:
     @ pytest.mark.s3
     @ pytest.mark.tags("TEST-5497")
     @ CTFailOn(error_handler)
-    def test_2220(self):
+    def test_delete_object_2220(self):
         """Delete object from bucket."""
         self.LOGGER.info("STARTED: Delete object from bucket")
         self.LOGGER.info(
@@ -593,7 +593,7 @@ class TestObjectWorkflowOperations:
     @ pytest.mark.s3
     @ pytest.mark.tags("TEST-5492")
     @ CTFailOn(error_handler)
-    def test_2221(self):
+    def test_delete_non_existing_object_2221(self):
         """Try deleting object not present."""
         self.LOGGER.info("STARTED: Try deleting object not present")
         self.LOGGER.info(
@@ -617,9 +617,9 @@ class TestObjectWorkflowOperations:
 
     @ pytest.mark.parallel
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-8713", "delete_objects")
+    @ pytest.mark.tags("TEST-8713")
     @ CTFailOn(error_handler)
-    def test_7653(self):
+    def test_del_object_verbose_mode_7653(self):
         """Test Delete objects which exists with verbose mode."""
         self.LOGGER.info(
             "STARTED: Test Delete objects which exists with verbose mode .")
@@ -647,9 +647,9 @@ class TestObjectWorkflowOperations:
 
     @ pytest.mark.parallel
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-8714", "delete_objects")
+    @ pytest.mark.tags("TEST-8714")
     @ CTFailOn(error_handler)
-    def test_7655(self):
+    def test_delete_object_quiet_mode_7655(self):
         """Delete objects mentioning object which doesn't exists as well with quiet mode."""
         self.LOGGER.info(
             "STARTED: Delete objects mentioning object "
@@ -683,8 +683,8 @@ class TestObjectWorkflowOperations:
 
     @ pytest.mark.parallel
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-8175", "delete_objects")
-    def test_7656(self):
+    @ pytest.mark.tags("TEST-8175")
+    def test_del_1001objects_7656(self):
         """Delete objects and mention 1001 objects."""
         self.LOGGER.info("STARTED: Delete objects and mention 1001 objects.")
         cfg_7656 = OBJ_OPS_CONF["test_7656"]
@@ -708,9 +708,9 @@ class TestObjectWorkflowOperations:
 
     @ pytest.mark.parallel
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-8716", "delete_objects")
+    @ pytest.mark.tags("TEST-8716")
     @ CTFailOn(error_handler)
-    def test_7657(self):
+    def test_delete_1001object_7657(self):
         """Delete objects and mention 1000 objects."""
         self.LOGGER.info("STARTED: Delete objects and mention 1000 objects.")
         cfg_7657 = OBJ_OPS_CONF["test_7657"]
