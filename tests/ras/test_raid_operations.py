@@ -17,7 +17,7 @@ from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
 from commons import constants as common_cons
 from commons import commands as common_cmds
-from libs.csm.rest.csm_rest_alert import SystemAlerts
+#from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 from commons.alerts_simulator.generate_alert_lib import GenerateAlertLib, AlertType
 

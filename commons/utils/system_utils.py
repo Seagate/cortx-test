@@ -20,6 +20,7 @@
 
 import logging
 import os
+import sys
 import random
 import shutil
 from typing import Tuple
@@ -27,6 +28,17 @@ from subprocess import Popen, PIPE
 from hashlib import md5
 from paramiko import SSHClient, AutoAddPolicy
 from commons import commands
+
+if sys.platform == 'win32':
+    try:
+        import msvcrt
+    except ImportError:
+        MSVCRT = None
+if sys.platform in ['linux', 'linux2']:
+    try:
+        import fcntl
+    except ImportError:
+        FCNTL = None
 
 LOGGER = logging.getLogger(__name__)
 
@@ -694,3 +706,86 @@ def get_disk_usage(path: str) -> str:
     result = format((float(used) / total) * 100, ".1f")
 
     return result
+
+
+def file_lock(lock_file, nb=False):
+    """
+    Uses the :func:`msvcrt.locking` function to hard lock the lock file on
+    windows systems. Or a
+    """
+
+    if sys.platform == 'win32':
+        # try:
+        #     sa = w32s.SECURITY_ATTRIBUTES()
+        #     sa.SetSecurityDescriptorDacl(True, None, False)
+        #     fmutex = win32event.CreateMutex(sa, False, fname)
+        # except pywintypes.error, fault:
+        #     if fault.winerror == 5:
+        #         fmutex = win32event.OpenMutex(win32event.SYNCHRONIZE, False, fname)
+        #     else:
+        #         raise
+        #
+        # if nb:
+        #     wtime = 0
+        # else:
+        #     wtime = win32event.INFINITE
+        #
+        # rc = win32event.WaitForSingleObject(fmutex, wtime)
+        # if rc == win32event.WAIT_TIMEOUT or rc == win32event.WAIT_FAILED:
+        #     win32api.CloseHandle(fmutex)
+        #     return None, False
+        open_mode = os.O_RDWR | os.O_CREAT | os.O_TRUNC
+        lock_file_fd = None
+        try:
+            lock_file_fd = os.open(lock_file, open_mode)
+        except OSError:
+            pass
+        else:
+            try:
+                msvcrt.locking(lock_file_fd, msvcrt.LK_LOCK, 1)
+            except (IOError, OSError):
+                os.close(lock_file_fd)
+                return None, False
+            else:
+                LOGGER.debug("Lock file created.")
+        return lock_file_fd, True
+
+    else:
+        if not lock_file.startswith('/'):
+            # If Not an absolute path name, prefix in $HOME/.runner
+            fname = os.path.join(os.getenv('HOME'), '.runner', lock_file)
+
+        fdir = os.path.dirname(fname)
+        if not os.path.exists(fdir):
+            os.makedirs(fdir)
+
+        try:
+            fmutex = open(fname, "rb+")
+        except (OSError, IOError) as fault:
+            fmutex = open(fname, "wb+")
+        try:
+            flags = fcntl.LOCK_EX
+            if nb:
+                flags |= fcntl.LOCK_NB
+            fcntl.flock(fmutex.fileno(), flags)
+        except IOError:
+            return None, False
+
+    return fmutex, True
+
+
+def file_unlock(fmutex):
+    if sys.platform == 'win32':
+        msvcrt.locking(fmutex, msvcrt.LK_UNLCK, 1)
+        os.close(fmutex)
+        try:
+            os.remove(fmutex.name)
+        # Probably another instance of the application
+        # that acquired the file lock.
+        except OSError:
+            pass
+        return None
+
+    else:
+        fcntl.flock(fmutex.fileno(), fcntl.LOCK_UN)
+        fmutex.close()
