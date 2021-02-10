@@ -32,31 +32,30 @@ from commons.utils.config_utils import read_yaml
 from commons.helpers.s3_helper import S3Helper
 from commons.utils.system_utils import create_file
 
+LOGGER = logging.getLogger(__name__)
+
 try:
-    s3hobj = S3Helper()
-except ImportError as err:
-    s3hobj = S3Helper.get_instance()
+    S3H_OBJ = S3Helper()
+except ImportError as ierr:
+    LOGGER.warning(str(ierr))
+    S3H_OBJ = S3Helper.get_instance()
 
 S3_CONF = read_yaml("config/s3/s3_config.yaml")[1]
 CM_CFG = read_yaml("config/common_config.yaml")[1]
-LOGGER = logging.getLogger(__name__)
 
 
 class S3CmdTestLib(S3LibCmd):
-    """
-    This Class initialising s3 connection and including methods for s3 using CLI.
-    """
+    """Class initialising s3 connection and including methods for s3 using CLI."""
 
     def __init__(self,
-                 access_key: str = s3hobj.get_local_keys()[0],
-                 secret_key: str = s3hobj.get_local_keys()[1],
+                 access_key: str = S3H_OBJ.get_local_keys()[0],
+                 secret_key: str = S3H_OBJ.get_local_keys()[1],
                  endpoint_url: str = S3_CONF["s3_url"],
                  s3_cert_path: str = S3_CONF["s3_cert_path"],
-                 region: str = S3_CONF["region"],
-                 aws_session_token: str = None,
-                 debug: bool = S3_CONF["debug"]) -> None:
+                 **kwargs) -> None:
         """
-        This method initializes members of S3CmdTestLib and its parent class.
+        Method to initializes members of S3CmdTestLib and its parent class.
+
         :param access_key: access key.
         :param secret_key: secret key.
         :param endpoint_url: endpoint url.
@@ -65,14 +64,15 @@ class S3CmdTestLib(S3LibCmd):
         :param aws_session_token: aws_session_token.
         :param debug: debug mode.
         """
+        kwargs["region"] = kwargs.get("region", S3_CONF["region"])
+        kwargs["aws_session_token"] = kwargs.get("aws_session_token", None)
+        kwargs["debug"] = kwargs.get("debug", S3_CONF["debug"])
         super().__init__(
             access_key,
             secret_key,
             endpoint_url,
             s3_cert_path,
-            region,
-            aws_session_token,
-            debug)
+            **kwargs)
 
     def object_upload_cli(
             self,
@@ -82,6 +82,7 @@ class S3CmdTestLib(S3LibCmd):
             obj_size: int) -> tuple:
         """
         Uploading Object to the Bucket using aws cli.
+
         :param bucket_name: Name of the bucket.
         :param object_name: Name of the object.
         :param file_path: Path of the file.
@@ -118,6 +119,7 @@ class S3CmdTestLib(S3LibCmd):
             file_count: int) -> tuple:
         """
         Uploading folder to the Bucket using aws cli.
+
         :param bucket_name: Name of the bucket.
         :param folder_path: Path of the folder.
         :param file_count: Number of files.
@@ -153,6 +155,7 @@ class S3CmdTestLib(S3LibCmd):
     def download_bucket_cli(self, bucket_name: str, folder_path: str) -> tuple:
         """
         Downloading s3 objects to a local directory recursively using awscli.
+
         :param bucket_name: Name of the bucket.
         :param folder_path: Folder path.
         :return: (Boolean, response)
@@ -172,13 +175,14 @@ class S3CmdTestLib(S3LibCmd):
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
+    @staticmethod
     def command_formatter(
-            self,
             s3cmd_cnf: str,
             operation: str,
             cmd_arguments: str = None) -> str:
         """
-        Creating command fronm dictonary cmd_options.
+        Creating command from dictionary cmd_options.
+
         :param dict s3cmd_cnf: yml config file pointer.
         :param str operation: type of operation to be performed on s3.
         :param list cmd_arguments: parameters for the command.

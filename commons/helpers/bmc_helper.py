@@ -20,44 +20,44 @@
 """BMC helper library."""
 
 import logging
+from typing import Any
 from commons.helpers.host import Host
 
-logger = logging.getLogger(__name__)
-EXCEPTION_MSG = "*ERROR* An exception occurred in %s: %s"
+LOGGER = logging.getLogger(__name__)
 
 
 class Bmc(Host):
-    """
-    BMC helper class.
-    """
+    """BMC helper class."""
 
     def bmc_node_power_status(
             self,
             bmc_ip: str,
             bmc_user: str,
-            bmc_pwd: str) -> str:
+            bmc_pwd: str) -> Any:
         """
-        Function to check node power states using BMC
+        Function to check node power states using BMC.
+
         :param bmc_ip: Node BMC IP
         :param bmc_user: Node BMC user name
         :param bmc_pwd: Node BMC user pwd
         :return: resp
         """
         if not self.execute_cmd("rpm  -qa | grep ipmitool")[0]:
-            logger.debug("Installing ipmitool")
+            LOGGER.debug("Installing ipmitool")
             self.execute_cmd("yum install ipmitool")
         try:
             cmd = f"ipmitool -I lanplus -H {bmc_ip} -U {bmc_user} -P {bmc_pwd} chassis power status"
             if not cmd:
                 return "Command not found"
-            logger.info("Executing cmd: %s", cmd)
+            LOGGER.info("Executing cmd: %s", cmd)
             resp = self.execute_cmd(cmd)
-            logger.debug("Output: %s", str(resp))
+            LOGGER.debug("Output: %s", str(resp))
         except BaseException as error:
-            logger.error(EXCEPTION_MSG, Bmc.bmc_node_power_status.__name__,
+            LOGGER.error("*ERROR* An exception occurred in %s: %s",
+                         Bmc.bmc_node_power_status.__name__,
                          error)
             raise error
-        logger.info("Successfully executed cmd: %s", cmd)
+        LOGGER.info("Successfully executed cmd: %s", cmd)
 
         return resp
 
@@ -66,9 +66,10 @@ class Bmc(Host):
             bmc_ip: str,
             bmc_user: str,
             bmc_pwd: str,
-            status: str = "on") -> str:
+            status: str = "on") -> Any:
         """
-        Function to on and off node power using BMC IP
+        Function to on and off node power using BMC IP.
+
         :param bmc_ip: Node BMC IP
         :param bmc_user: Node BMC user name
         :param bmc_pwd: Node BMC user pwd
@@ -76,48 +77,52 @@ class Bmc(Host):
         :return: resp
         """
         if not self.execute_cmd("rpm  -qa | grep ipmitool")[0]:
-            logger.debug("Installing ipmitool")
+            LOGGER.debug("Installing ipmitool")
             self.execute_cmd("yum install ipmitool")
         cmd = f"ipmitool -I lanplus -H {bmc_ip} -U {bmc_user} -P " \
             f"{bmc_pwd} chassis power {status.lower()}"
         try:
             if not cmd:
                 return "Command not found"
-            logger.info("Executing cmd: %s", cmd)
+            LOGGER.info("Executing cmd: %s", cmd)
             resp = self.execute_cmd(cmd)
-            logger.debug("Output: %s", str(resp))
+            LOGGER.debug("Output: %s", str(resp))
         except BaseException as error:
-            logger.error(EXCEPTION_MSG, Bmc.bmc_node_power_on_off.__name__,
+            LOGGER.error("*ERROR* An exception occurred in %s: %s",
+                         Bmc.bmc_node_power_on_off.__name__,
                          error)
             raise error
-        logger.info("Successfully executed cmd %s", cmd)
+        LOGGER.info("Successfully executed cmd %s", cmd)
 
         return resp
 
     def get_bmc_ip(self) -> str:
         """
         Execute 'ipmitool lan print' on node and return bmc ip.
+
         :return: bmc ip or none
         """
         bmc_ip = None
         try:
             cmd = "ipmitool lan print"
-            logger.info("Running command: %s", cmd)
+            LOGGER.info("Running command: %s", cmd)
             response = self.execute_cmd(cmd=cmd, read_lines=False,
                                         read_nbytes=8000)
             response = response.decode(
                 "utf-8") if isinstance(response, bytes) else response
-            logger.debug(response)
+            LOGGER.debug(response)
             for res in str(response[1]).split("\\n"):
                 if "IP Address" in res and "IP Address Source" not in res:
                     bmc_ip = res.split(":")[-1].strip()
                     break
-            logger.debug("BMC IP: %s", bmc_ip)
+            LOGGER.debug("BMC IP: %s", bmc_ip)
         except AttributeError as error:
-            logger.error(EXCEPTION_MSG, Bmc.get_bmc_ip.__name__, error)
+            LOGGER.error("*ERROR* An exception occurred in %s: %s",
+                         Bmc.get_bmc_ip.__name__, error)
             raise error
         except BaseException as error:
-            logger.error(EXCEPTION_MSG, Bmc.get_bmc_ip.__name__, error)
+            LOGGER.error("*ERROR* An exception occurred in %s: %s",
+                         Bmc.get_bmc_ip.__name__, error)
             raise error
 
         return bmc_ip
@@ -125,17 +130,18 @@ class Bmc(Host):
     def set_bmc_ip(self, bmc_ip: str) -> bool:
         """
         Execute 'ipmitool lan set 1 ipaddr {ip}' on node to change/set/update bmc ip.
+
         :param bmc_ip: any valid ip.
         :return: True if bmc ip changed else False.
         """
         try:
-            logger.info(
+            LOGGER.info(
                 "Update bmc ip on primary node and set to '%s'.", bmc_ip)
             cmd = "ipmitool lan set 1 ipaddr {}".format(bmc_ip)
-            logger.info("Running command %s", cmd)
+            LOGGER.info("Running command %s", cmd)
             response = self.execute_cmd(cmd=cmd, read_nbytes=8000)
             up_bmc_ip = self.get_bmc_ip()
-            logger.debug("Updated bmc ip: %s", up_bmc_ip)
+            LOGGER.debug("Updated bmc ip: %s", up_bmc_ip)
             flg = bool(
                 "Setting LAN IP Address to {}".format(bmc_ip) in str(
                     response[1]))
@@ -143,23 +149,25 @@ class Bmc(Host):
 
             return flg
         except Exception as error:
-            logger.error(EXCEPTION_MSG, Bmc.set_bmc_ip.__name__, error)
+            LOGGER.error("*ERROR* An exception occurred in %s: %s",
+                         Bmc.set_bmc_ip.__name__, error)
             raise error
 
     def create_bmc_ip_change_fault(self, bmc_ip: str) -> bool:
         """
         Create bmc ip change fault by updating non ping-able valid ip.
+
         :param bmc_ip: non ping-able valid ip.
         :return: True if bmc ip changed else False.
         """
         try:
             if not bmc_ip:
                 raise ValueError(f"Invalid ip: {bmc_ip}")
-            logger.info("Create bmc ip change fault on  node.")
+            LOGGER.info("Create bmc ip change fault on  node.")
             return self.set_bmc_ip(bmc_ip)
         except Exception as error:
-            logger.error(
-                EXCEPTION_MSG,
+            LOGGER.error(
+                "*ERROR* An exception occurred in %s: %s",
                 Bmc.create_bmc_ip_change_fault.__name__,
                 error)
             raise error
@@ -167,17 +175,18 @@ class Bmc(Host):
     def resolve_bmc_ip_change_fault(self, bmc_ip: str) -> bool:
         """
         Resolve bmc ip fault.
+
         :param bmc_ip: bmc ip.
         :return: True if bmc ip changed else False.
         """
         try:
             if not bmc_ip:
                 raise Exception(f"Invalid ip: {bmc_ip}")
-            logger.info("Resolve bmc ip change fault on node.")
+            LOGGER.info("Resolve bmc ip change fault on node.")
             return self.set_bmc_ip(bmc_ip)
         except Exception as error:
-            logger.error(
-                EXCEPTION_MSG,
+            LOGGER.error(
+                "*ERROR* An exception occurred in %s: %s",
                 Bmc.resolve_bmc_ip_change_fault.__name__,
                 error)
             raise error
