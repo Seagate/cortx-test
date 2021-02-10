@@ -25,8 +25,8 @@ import os
 import re
 import time
 import logging
-import configparser
 
+from configparser import NoSectionError
 from paramiko.ssh_exception import SSHException
 from commons import commands
 from commons.helpers.host import Host
@@ -206,9 +206,9 @@ class S3Helper:
             if not status:
                 return status, result
             time.sleep(10)
-            status = self.get_s3server_service_status(service, host, user, pwd)
+            response = self.get_s3server_service_status(service, host, user, pwd)
 
-            return status
+            return response
         except (SSHException, OSError) as error:
             LOGGER.error(
                 "Error in %s: %s",
@@ -273,9 +273,9 @@ class S3Helper:
             if not status:
                 return status, result
             time.sleep(10)
-            status = self.get_s3server_service_status(service, host, user, pwd)
+            response = self.get_s3server_service_status(service, host, user, pwd)
 
-            return status
+            return response
         except (SSHException, OSError) as error:
             LOGGER.error(
                 "Error in %s: %s",
@@ -287,7 +287,7 @@ class S3Helper:
                                    host: str = CM_CFG["host"],
                                    user: str = CM_CFG["username"],
                                    pwd: str = CM_CFG["password"],
-                                   wait_time: int = 30) -> tuple:
+                                   wait_time: int = 20) -> tuple:
         """
         Restart all s3server processes using hctl command.
 
@@ -375,7 +375,7 @@ class S3Helper:
                                    host: str = CM_CFG["host"],
                                    user: str = CM_CFG["username"],
                                    pwd: str = CM_CFG["password"],
-                                   wait_time: int = 30) -> tuple:
+                                   wait_time: int = 20) -> tuple:
         """
         Restart all s3server resources using pcs command.
 
@@ -690,7 +690,7 @@ class S3Helper:
                 secret_key)
 
             return access_key, secret_key
-        except KeyError as error:
+        except (KeyError, NoSectionError) as error:
             LOGGER.error(
                 "An exception occurred in %s: %s",
                 S3Helper.get_local_keys.__name__,
