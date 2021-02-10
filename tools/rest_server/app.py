@@ -94,14 +94,17 @@ class Create(Resource):
         if not json_data:
             return flask.Response(status=HTTPStatus.BAD_REQUEST,
                                   response="Body is empty")
-        if not validations.check_db_keys(json_data):
-            return flask.Response(status=HTTPStatus.BAD_REQUEST,
-                                  response="Please provide all db keys")
         if not validations.check_user_pass(json_data):
             return flask.Response(status=HTTPStatus.BAD_REQUEST,
                                   response="db_username/db_password missing in request body")
 
-        # Validate formats of mandatory fields
+        response = validations.check_db_keys(json_data)
+        if not response[0]:
+            return flask.Response(status=HTTPStatus.BAD_REQUEST,
+                                  response=f"Unknown fields given or mandatory fields missing  "
+                                           f"{response[1]}")
+
+            # Validate formats of mandatory fields
         validate_result = validations.validate_mandatory_db_fields(json_data)
         if not validate_result[0]:
             return flask.Response(status=validate_result[1][0],
