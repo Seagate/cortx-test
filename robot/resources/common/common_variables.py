@@ -45,3 +45,9 @@ S3_TABLE_HEADER_ACCOUNTNAME = 'Access key'
 S3_TABLE_HEADER_SECRET_KEY = 'Secret key'
 S3_TABLE_HEADER_ACTION = 'common.action'
 ACCESS_KEY_GENERATED_MESSAGE = 'Access key created'
+
+#  IAM Users Messages
+IAM_USER_USERNAME_TOOLTIP_MSG = "The username must be of minimum 4 characters and maximum 56 characters"
+IAM_USER_PASSWD_TOOLTIP_MSG = "Password must contain: Minimum 8 characters"
+IAM_USER_PASSWD_MISSMATCH_MSG = "Passwords do not match"
+DUPLICATE_IAM_USER_ERROR_MSG = "The request was rejected because it attempted to create or update a resource that already exists."
