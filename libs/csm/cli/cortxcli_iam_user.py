@@ -27,7 +27,7 @@ from libs.csm.cli.cortx_cli import CortxCli
 LOG = logging.getLogger(__name__)
 
 
-class CortxCliIAMLib(CortxCli):
+class CortxCliIamUser(CortxCli):
     """This class has all IAM methods"""
 
     def create_iam_user(
@@ -127,5 +127,7 @@ class CortxCliIAMLib(CortxCli):
         if "[Y/n]" in output:
             output = self.execute_cli_commands(cmd=confirm)[1]
 
-            return True, output
-        return False, output
+        if "error" in output.lower() or "exception" in output.lower():
+            return False, output
+
+        return True, output

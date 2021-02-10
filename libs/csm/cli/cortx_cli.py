@@ -33,12 +33,11 @@ from libs.csm.cli.cortx_cli_client import CortxCliClient
 
 class CortxCli(CortxCliClient):
     """This class contains common methods for CORTX CLI derived from cli client lib"""
-
     def __init__(
             self,
-            host: str = CMN_CFG["csm"]["mgmt_vip"],
-            username: str = CMN_CFG["csm"]["admin_user"],
-            password: str = CMN_CFG["csm"]["admin_pass"],
+            host: str = CMN_CFG[1]["csm"]["mgmt_vip"],
+            username: str = CMN_CFG[1]["csm"]["admin_user"],
+            password: str = CMN_CFG[1]["csm"]["admin_pass"],
             port: int = 22):
         """
         This method initializes members of CortxCli and its parent class
@@ -71,8 +70,8 @@ class CortxCli(CortxCliClient):
 
     def login_cortx_cli(
             self,
-            username: str = CMN_CFG["csm"]["admin_user"],
-            password: str = CMN_CFG["csm"]["admin_pass"]) -> tuple:
+            username: str = CMN_CFG[1]["csm"]["admin_user"],
+            password: str = CMN_CFG[1]["csm"]["admin_pass"]) -> tuple:
         """
         This function will be used to login to CORTX CLI with given credentials
         :param str username: User name to login

@@ -22,24 +22,35 @@
 
 import time
 import logging
+import random
+import string
 import pytest
 from commons.utils import assert_utils
 from commons.utils import config_utils as conf_util
 from commons.helpers import node_helper
 from commons import cortxlogging as log
 from config import CMN_CFG
-from libs.csm.cli.cortxcli_iam_user import CortxCliIAMLib
+from libs.csm.cli.cortxcli_iam_user import CortxCliIamUser
 
 
-IAM_OBJ = CortxCliIAMLib()
-NODE_HELPER_OBJ = node_helper.Node(hostname=CMN_CFG["csm"]["mgmt_vip"],
-                                   username=CMN_CFG["username"],
-                                   password=CMN_CFG["password"])
+IAM_OBJ = CortxCliIamUser()
+NODE_HELPER_OBJ = node_helper.Node(hostname=CMN_CFG[1]["csm"]["mgmt_vip"],
+                                   username=CMN_CFG[1]["username"],
+                                   password=CMN_CFG[1]["password"])
 CLI_CONF = conf_util.read_yaml("config/csm/csm_config.yaml")
 
 
-class CliIAMUser:
+class TestCliIAMUser:
     """IAM user Testsuite for CLI"""
+
+    @pytest.fixture(scope='function')
+    def generate_random_string(self):
+        """
+        This fixture will return random string with lowercase
+        :return: random string
+        :rtype: str
+        """
+        return ''.join(random.choice(string.ascii_lowercase) for i in range(5))
 
     @classmethod
     def setup_class(cls):
@@ -49,8 +60,8 @@ class CliIAMUser:
         """
         cls.LOGGER = logging.getLogger(__name__)
         cls.LOGGER.info("STARTED : Setup operations for test suit")
-        cls.iam_password = CMN_CFG["CliConfig"]["iam_password"]
-        cls.acc_password = CMN_CFG["CliConfig"]["acc_password"]
+        cls.iam_password = CLI_CONF[1]["CliConfig"]["iam_password"]
+        cls.acc_password = CLI_CONF[1]["CliConfig"]["acc_password"]
         cls.START_LOG_FORMAT = "##### Test started -  "
         cls.END_LOG_FORMAT = "##### Test Ended -  "
 
@@ -93,7 +104,7 @@ class CliIAMUser:
         self.LOGGER.info("ENDED : Teardown operations for test function")
 
     @pytest.mark.csm
-    @pytest.mark.csm.iamuser
+    @pytest.mark.csm_iamuser
     @pytest.mark.tags("TEST-10858")
     def test_867(self):
         """
@@ -105,12 +116,12 @@ class CliIAMUser:
         resp = IAM_OBJ.create_iam_user(user_name=self.user_name,
                                        password=self.iam_password,
                                        confirm_password=self.iam_password)
-        assert_utils.assert_exact_string(resp[1], self.iam_password)
+        assert_utils.assert_exact_string(resp[1], self.user_name)
         self.LOGGER.info("Created iam user with name %s", self.iam_password)
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.csm
-    @pytest.mark.csm.iamuser
+    @pytest.mark.csm_iamuser
     @pytest.mark.tags("TEST-10861")
     def test_875(self):
         """
@@ -130,7 +141,7 @@ class CliIAMUser:
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.csm
-    @pytest.mark.csm.iamuser
+    @pytest.mark.csm_iamuser
     @pytest.mark.tags("TEST-10852")
     def test_873(self):
         """
@@ -158,7 +169,7 @@ class CliIAMUser:
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.csm
-    @pytest.mark.csm.iamuser
+    @pytest.mark.csm_iamuser
     @pytest.mark.tags("TEST-10851")
     def test_870(self):
         """
@@ -173,7 +184,7 @@ class CliIAMUser:
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.csm
-    @pytest.mark.csm.iamuser
+    @pytest.mark.csm_iamuser
     @pytest.mark.tags("TEST-10854")
     def test_871(self):
         """
@@ -185,7 +196,8 @@ class CliIAMUser:
             "Verifying iam user will not get created with invalid name")
         resp = IAM_OBJ.create_iam_user(
             user_name=invalid_username,
-            password=self.iam_password)
+            password=self.iam_password,
+            confirm_password=self.iam_password)
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(
             resp[1], "Invalid request message received")
@@ -194,7 +206,7 @@ class CliIAMUser:
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.csm
-    @pytest.mark.csm.iamuser
+    @pytest.mark.csm_iamuser
     @pytest.mark.tags("TEST-10855")
     def test_872(self):
         """
@@ -204,7 +216,9 @@ class CliIAMUser:
         self.LOGGER.info(
             "Verifying that error will through with missing user name parameter")
         resp = IAM_OBJ.create_iam_user(
-            user_name="", password=self.iam_password)
+            user_name="",
+            password=self.iam_password,
+            confirm_password=self.iam_password)
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(
             resp[1], "The following arguments are required: user_name")
@@ -213,17 +227,20 @@ class CliIAMUser:
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.csm
-    @pytest.mark.csm.iamuser
+    @pytest.mark.csm_iamuser
     @pytest.mark.tags("TEST-10856")
-    def test_874(self):
+    def test_874(self, generate_random_string):
         """
         Initiating the test case to verify invalid IAM user password
         """
         self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        invalid_password = "invalidpwd"
+        invalid_password = generate_random_string
         self.LOGGER.info(
             "Verifying that iam user will not create with invalid password")
-        resp = IAM_OBJ.create_iam_user(self.user_name, invalid_password)
+        resp = IAM_OBJ.create_iam_user(
+            user_name=self.user_name,
+            password=invalid_password,
+            confirm_password=invalid_password)
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(
             resp[1], "Invalid request message received")
@@ -232,7 +249,7 @@ class CliIAMUser:
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.csm
-    @pytest.mark.csm.iamuser
+    @pytest.mark.csm_iamuser
     @pytest.mark.tags("TEST-10859")
     def test_6453(self):
         """
@@ -254,7 +271,7 @@ class CliIAMUser:
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.csm
-    @pytest.mark.csm.iamuser
+    @pytest.mark.csm_iamuser
     @pytest.mark.tags("TEST-10860")
     def test_876(self):
         """
@@ -273,7 +290,7 @@ class CliIAMUser:
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.csm
-    @pytest.mark.csm.iamuser
+    @pytest.mark.csm_iamuser
     @pytest.mark.tags("TEST-10862")
     def test_1145(self):
         """
@@ -309,7 +326,7 @@ class CliIAMUser:
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.csm
-    @pytest.mark.csm.iamuser
+    @pytest.mark.csm_iamuser
     @pytest.mark.tags("TEST-10863")
     def test_878(self):
         """
@@ -319,7 +336,8 @@ class CliIAMUser:
         self.LOGGER.info("Creating iam user with name %s", self.user_name)
         resp = IAM_OBJ.create_iam_user(
             user_name=self.user_name,
-            password=self.iam_password)
+            password=self.iam_password,
+            confirm_password=self.iam_password)
         assert_utils.assert_equals(resp[0], True, resp)
         self.LOGGER.info("Created iam user with name %s", self.user_name)
         self.LOGGER.info(
@@ -346,7 +364,7 @@ class CliIAMUser:
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.csm
-    @pytest.mark.csm.iamuser
+    @pytest.mark.csm_iamuser
     @pytest.mark.tags("TEST-10864")
     def test_1152(self):
         """
@@ -366,15 +384,15 @@ class CliIAMUser:
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.csm
-    @pytest.mark.csm.iamuser
+    @pytest.mark.csm_iamuser
     @pytest.mark.tags("TEST-10865")
-    def test_1149(self):
+    def test_1149(self, generate_random_string):
         """
         Initiating the test case to verify appropriate
         error should be returned when user enters invalid password
         """
         self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        invalid_password = "Invalidpwd@123"
+        invalid_password = generate_random_string
         self.LOGGER.info("Creating iam user with name %s", self.user_name)
         resp = IAM_OBJ.create_iam_user(
             user_name=self.user_name,
@@ -408,7 +426,7 @@ class CliIAMUser:
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.csm
-    @pytest.mark.csm.iamuser
+    @pytest.mark.csm_iamuser
     @pytest.mark.tags("TEST-10866")
     def test_1148(self):
         """
@@ -435,7 +453,7 @@ class CliIAMUser:
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.csm
-    @pytest.mark.csm.iamuser
+    @pytest.mark.csm_iamuser
     @pytest.mark.tags("TEST-10868")
     def test_1154(self):
         """
@@ -458,7 +476,7 @@ class CliIAMUser:
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.csm
-    @pytest.mark.csm.iamuser
+    @pytest.mark.csm_iamuser
     @pytest.mark.tags("TEST-10867")
     def test_1150(self):
         """
