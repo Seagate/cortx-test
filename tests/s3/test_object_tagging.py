@@ -841,10 +841,10 @@ class TestObjectTagging:
         self.LOGGER.info(
             "Create multiple tags with tag values having invalid special characters")
 
-    @ pytest.mark.parallel
-    @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5567")
-    @ CTFailOn(error_handler)
+    @pytest.mark.parallel
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5567")
+    @CTFailOn(error_handler)
     def test_specialchars_2476(self):
         """Create Object tags with invalid (characters o/s the allowed set) special characters."""
         self.LOGGER.info(
@@ -890,10 +890,10 @@ class TestObjectTagging:
             "Create Object tags with invalid "
             "(characters outside the allowed set) special characters")
 
-    @ pytest.mark.parallel
-    @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5565")
-    @ CTFailOn(error_handler)
+    @pytest.mark.parallel
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5565")
+    @CTFailOn(error_handler)
     def test_duplicatenameobject_tagsupport_2477(self):
         """PUT object when object with same name already present in bucket with tag support."""
         self.LOGGER.info(
@@ -946,10 +946,10 @@ class TestObjectTagging:
         self.LOGGER.info(
             "PUT object when object with same name already present in bucket with tag support")
 
-    @ pytest.mark.parallel
-    @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5562")
-    @ CTFailOn(error_handler)
+    @pytest.mark.parallel
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5562")
+    @CTFailOn(error_handler)
     def test_maxobject_mactags_2478(self):
         """Verification of max. no. of Objects user can upload with max no. of tags per Object."""
         self.LOGGER.info(
@@ -1003,10 +1003,10 @@ class TestObjectTagging:
         self.LOGGER.info(
             "Verification of max. no. of Objects user can upload with max no. of tags per Object")
 
-    @ pytest.mark.parallel
-    @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5573")
-    @ CTFailOn(error_handler)
+    @pytest.mark.parallel
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5573")
+    @CTFailOn(error_handler)
     def test_metadata_objecttags_2479(self):
         """Add user defined metadata and Object tags while adding the new object to the bucket."""
         self.LOGGER.info(
@@ -1045,10 +1045,10 @@ class TestObjectTagging:
         self.LOGGER.info(
             "Add user defined metadata and Object tags while adding the new object to the bucket")
 
-    @ pytest.mark.parallel
-    @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5575")
-    @ CTFailOn(error_handler)
+    @pytest.mark.parallel
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5575")
+    @CTFailOn(error_handler)
     def test_userdefined_metadata_2480(self):
         """Add or update user defined metadata and verify the Object Tags."""
         self.LOGGER.info(
@@ -1118,10 +1118,10 @@ class TestObjectTagging:
         self.LOGGER.info(
             "Add or update user defined metadata and verify the Object Tags")
 
-    @ pytest.mark.parallel
-    @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5563")
-    @ CTFailOn(error_handler)
+    @pytest.mark.parallel
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5563")
+    @CTFailOn(error_handler)
     def test_userdefined_metadata2481(self):
         """Upload Object with user defined metadata upto 2KB and upto 10 object tags."""
         self.LOGGER.info(
