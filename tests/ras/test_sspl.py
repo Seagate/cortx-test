@@ -98,9 +98,8 @@ class TestSSPL:
 
         LOGGER.info("Delete keys with prefix SSPL_")
         cmd = common_cmd.REMOVE_UNWANTED_CONSUL
-        response = self.node_obj.execute_cmd(cmd=cmd,
-                                             read_nbytes=BYTES_TO_READ)
-        assert response[0] is True, response[1]
+        response = self.node_obj.execute_cmd(cmd=cmd, read_lines=True)
+        assert response, "Failed to remove SSPL_ keys"
 
         LOGGER.info("Restarting sspl service")
         self.health_obj.restart_pcs_resource(CM_CFG["sspl_resource_id"])

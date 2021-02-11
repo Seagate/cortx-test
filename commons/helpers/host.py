@@ -152,16 +152,18 @@ class Host:
         :param inputs: used to pass yes argument to commands.
         :param nbytes: nbytes returns string buffer.
         :param timeout: command and connect timeout.
+        :param exc: Flag to disable/enable exception raising
         :param read_nbytes: maximum number of bytes to read.
         :return: stdout/strerr.
         """
         timeout = kwargs.get("timeout") if kwargs.get("timeout") else 400
+        exc = kwargs.get('exc', True)
         self.connect(timeout=timeout, **kwargs)
         stdin, stdout, stderr = self.host_obj.exec_command(
             cmd, timeout=timeout)
         exit_status = stdout.channel.recv_exit_status()
         LOGGER.debug(exit_status)
-        if exit_status != 0:
+        if exc and exit_status != 0:
             err = stderr.readlines()
             err = [r.strip().strip("\n").strip() for r in err]
             LOGGER.debug("Error: %s", str(err))

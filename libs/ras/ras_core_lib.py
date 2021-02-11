@@ -411,7 +411,7 @@ class RASCoreLib:
         sspl_state_cmd = cmn_cons.SSPL_STATE_CMD
         response = self.node_utils.execute_cmd(cmd=sspl_state_cmd,
                                                read_nbytes=BYTES_TO_READ)
-        response = response[1].decode("utf-8")
+        response = response.decode("utf-8")
         response = response.strip().split("=")[-1]
         LOGGER.debug("SSPL state resp : %s", response)
         if response == "active":
