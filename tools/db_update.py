@@ -29,20 +29,28 @@
 #             insert new entry with latest data from JIRA
 
 import argparse
+import configparser
 import json
 import sys
+from http import HTTPStatus
 
 import requests
 
 from csv_report import common
 
-HOSTNAME = "http://cftic2.pun.seagate.com:5000/reportsdb/"
-DB_USERNAME = "dataread"
-DB_PASSWORD = "seagate@123"
-
 headers = {
     'Content-Type': 'application/json'
 }
+
+config = configparser.ConfigParser()
+config.read('config.ini')
+try:
+    HOSTNAME = config["REST"]["hostname"]
+    DB_USERNAME = config["REST"]["db_username"]
+    DB_PASSWORD = config["REST"]["db_password"]
+except KeyError:
+    print("Could not start REST server. Please verify config.ini file")
+    exit(1)
 
 
 def patch_db_request(payload: dict) -> None:
@@ -60,7 +68,7 @@ def patch_db_request(payload: dict) -> None:
 
     response = requests.request(request, HOSTNAME + endpoint, headers=headers,
                                 data=json.dumps(payload))
-    if response.status_code != 200:
+    if response.status_code != HTTPStatus.OK:
         print(f'{request} on {HOSTNAME + endpoint} failed')
         print(f'HEADERS={response.request.headers}\n'
               f'BODY={response.request.body}',
@@ -83,7 +91,7 @@ def create_db_request(payload: dict) -> None:
 
     response = requests.request(request, HOSTNAME + endpoint, headers=headers,
                                 data=json.dumps(payload))
-    if response.status_code != 200:
+    if response.status_code != HTTPStatus.OK:
         print(f'{request} on {HOSTNAME + endpoint} failed')
         print(f'HEADERS={response.request.headers}\n'
               f'BODY={response.request.body}',
@@ -109,9 +117,9 @@ def search_db_request(payload: dict):
 
     response = requests.request(request, HOSTNAME + endpoint, headers=headers,
                                 data=json.dumps(payload))
-    if response.status_code == 200:
+    if response.status_code == HTTPStatus.OK:
         return response.json()["result"]
-    elif response.status_code == 404 and "No results" in response.text:
+    elif response.status_code == HTTPStatus.NOT_FOUND and "No results" in response.text:
         return None
     else:
         print(f'{request} on {HOSTNAME + endpoint} failed')
@@ -122,7 +130,7 @@ def search_db_request(payload: dict):
 
 
 def main():
-    """Generate csv engineering report from test plan JIRA."""
+    """Update test executions from JIRA to MongoDB."""
 
     # Parse testplan argument
     parser = argparse.ArgumentParser()
@@ -164,7 +172,6 @@ def main():
                     "buildType": "",
                     "testTags": [""],
                     "testType": "",
-                    "testTeam": "",
                     # Data from JIRA
                     "testPlanID": tp,
                     "buildNo": build,
@@ -173,6 +180,7 @@ def main():
                     "testStartTime": test["startedOn"],
                     "testName": test_issue["fields"]["summary"],
                     "testID": test["key"],
+                    "testTeam": test_execution_issue["fields"]["components"][0]["name"],
                     "testIDLabels": test_issue["fields"]["labels"],
                     "testExecutionID": te["key"],
                     "testExecutionLabel": test_execution_issue["fields"]["labels"][0],
