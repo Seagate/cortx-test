@@ -40,7 +40,6 @@ ACL_OBJ = s3_acl_test_lib.S3AclTestLib()
 
 BKT_OPS_CONF = read_yaml(
     "config/s3/test_bucket_workflow_operations.yaml")
-CMN_CONF = read_yaml("config/common_config.yaml")
 CMN_CFG = read_yaml("config/common_config.yaml")[1]
 
 

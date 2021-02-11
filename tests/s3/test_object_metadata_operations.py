@@ -50,8 +50,8 @@ class TestObjectMetadataOperations:
         """
         cls.LOGGER = logging.getLogger(__name__)
 
-    def setup_method(self):
-        """Setup method."""
+    def teardown_method(self):
+        """Teardown method."""
         self.LOGGER.info("STARTED: Setup/Teardown operations")
         bucket_list = S3_TEST_OBJ.bucket_list()
         pref_list = [
@@ -62,11 +62,6 @@ class TestObjectMetadataOperations:
             remove_file(
                 OBJ_METADATA_CONF["object_metadata"]["file_path"])
         self.LOGGER.info("ENDED: Setup/Teardown operations")
-
-    def teardown_method(self):
-        """Teardown Method."""
-        self.LOGGER.info("STARTED: Teardown operations")
-        self.LOGGER.info("ENDED: Teardown operations")
 
     def create_bucket_put_list_object(
             self,
@@ -457,10 +452,10 @@ class TestObjectMetadataOperations:
             "Add or update user defined metadata while "
             "copying/ updating an existing object to the bucket")
 
-    @ pytest.mark.parallel
-    @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5432")
-    @ CTFailOn(error_handler)
+    @pytest.mark.parallel
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5432")
+    @CTFailOn(error_handler)
     def test_update_metadata_upto2kb_1997(self):
         """Update user defined metadata upto 2KB."""
         self.LOGGER.info("Update user defined metadata upto 2KB")
@@ -531,10 +526,10 @@ class TestObjectMetadataOperations:
             assert OBJ_METADATA_CONF["test_8558"]["error_message"] in error.message, error.message
         self.LOGGER.info("Update user defined metadata greater than 2 KB")
 
-    @ pytest.mark.parallel
-    @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5432")
-    @ CTFailOn(error_handler)
+    @pytest.mark.parallel
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5432")
+    @CTFailOn(error_handler)
     def test_maxobjects_2287(self):
         """Verification of max. no. of objects user can upload."""
         self.LOGGER.info("Verification of max. no. of objects user can upload")
@@ -576,10 +571,10 @@ class TestObjectMetadataOperations:
             OBJ_METADATA_CONF["test_8913"]["obj_count"])
         self.LOGGER.info("Verification of max. no. of objects user can upload")
 
-    @ pytest.mark.parallel
-    @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5432")
-    @ CTFailOn(error_handler)
+    @pytest.mark.parallel
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5432")
+    @CTFailOn(error_handler)
     def test_max_object_size_2292(self):
         """Verification of max size of object, user can upload."""
         self.LOGGER.info("Verification of max size of object, user can upload")

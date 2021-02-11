@@ -110,10 +110,10 @@ class TestObjectWorkflowOperations:
 
         return obj_list
 
-    @ pytest.mark.parallel
-    @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5498")
-    @ CTFailOn(error_handler)
+    @pytest.mark.parallel
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5498")
+    @CTFailOn(error_handler)
     def test_put_file_2208(self):
         """Copying/PUT a local file to s3."""
         self.LOGGER.info("Copying/PUT a local file to s3")
@@ -148,10 +148,10 @@ class TestObjectWorkflowOperations:
         self.LOGGER.info("Verified that object is uploaded successfully")
         self.LOGGER.info("ENDED: Copying/PUT a local file to s3")
 
-    @ pytest.mark.parallel
-    @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5499")
-    @ CTFailOn(error_handler)
+    @pytest.mark.parallel
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5499")
+    @CTFailOn(error_handler)
     def test_copy_different_sizes_2209(self):
         """Copying file/object of different type & size to s3."""
         self.LOGGER.info(
@@ -186,10 +186,10 @@ class TestObjectWorkflowOperations:
         self.LOGGER.info(
             "ENDED: Copying file/object of different type & size to s3")
 
-    @ pytest.mark.parallel
-    @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5496")
-    @ CTFailOn(error_handler)
+    @pytest.mark.parallel
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5496")
+    @CTFailOn(error_handler)
     def test_recursive_copy_2210(self):
         """Recursively copying local files to s3."""
         self.LOGGER.info("STARTED: Recursively copying local files to s3")
@@ -214,9 +214,9 @@ class TestObjectWorkflowOperations:
         self.LOGGER.info("Copied local files to a bucket")
         self.LOGGER.info("ENDED: Recursively copying local files to s3")
 
-    @ pytest.mark.parallel
-    @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5502")
+    @pytest.mark.parallel
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5502")
     def test_add_object_non_existing_bucket2211(self):
         """Add Object to non existing bucket."""
         self.LOGGER.info("STARTED: Add Object to non existing bucket")
@@ -235,10 +235,10 @@ class TestObjectWorkflowOperations:
         self.LOGGER.info("Uploading an object to non existing is failed")
         self.LOGGER.info("ENDED: Add Object to non existing bucket")
 
-    @ pytest.mark.parallel
-    @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5500")
-    @ CTFailOn(error_handler)
+    @pytest.mark.parallel
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5500")
+    @CTFailOn(error_handler)
     def test_copy_object_local_file_2213(self):
         """Copying an s3 object to a local file."""
         self.LOGGER.info("STARTED: Copying an s3 object to a local file")
@@ -289,10 +289,10 @@ class TestObjectWorkflowOperations:
             remove_file(OBJ_OPS_CONF["test_2213"]["file_path"])
         self.LOGGER.info("ENDED: Copying an s3 object to a local file")
 
-    @ pytest.mark.parallel
-    @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5495")
-    @ CTFailOn(error_handler)
+    @pytest.mark.parallel
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5495")
+    @CTFailOn(error_handler)
     def test_recursive_copy_local_dir_2214(self):
         """Recursively copying s3 objects to a local directory."""
         self.LOGGER.info(
@@ -327,10 +327,10 @@ class TestObjectWorkflowOperations:
         self.LOGGER.info(
             "ENDED: Recursively copying s3 objects to a local directory")
 
-    @ pytest.mark.parallel
-    @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5501")
-    @ CTFailOn(error_handler)
+    @pytest.mark.parallel
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5501")
+    @CTFailOn(error_handler)
     def test_download_byte_range_2215(self):
         """Copy/Download byte range of object."""
         self.LOGGER.info("STARTED: Copy/Download byte range of object")
@@ -366,10 +366,10 @@ class TestObjectWorkflowOperations:
         self.LOGGER.info("Byte range of an object is downloaded")
         self.LOGGER.info("ENDED: Copy/Download byte range of object")
 
-    @ pytest.mark.parallel
-    @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5493")
-    @ CTFailOn(error_handler)
+    @pytest.mark.parallel
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5493")
+    @CTFailOn(error_handler)
     def test_retrieve_metadata_2217(self):
         """Retrieve Metadata of object."""
         self.LOGGER.info("STARTED: Retrieve Metadata of object")
@@ -409,10 +409,10 @@ class TestObjectWorkflowOperations:
         self.LOGGER.info("Retrieved metadata of an object")
         self.LOGGER.info("ENDED: Retrieve Metadata of object")
 
-    @ pytest.mark.parallel
-    @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5503")
-    @ CTFailOn(error_handler)
+    @pytest.mark.parallel
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5503")
+    @CTFailOn(error_handler)
     def test_add_metadata_verify_object_2218(self):
         """Add new metadata to the object and check if the new data is getting reflected."""
         self.LOGGER.info(
@@ -475,10 +475,10 @@ class TestObjectWorkflowOperations:
         self.LOGGER.info(
             "ENDED: Add new metadata to the object and check if the new data is getting reflected")
 
-    @ pytest.mark.parallel
-    @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5494")
-    @ CTFailOn(error_handler)
+    @pytest.mark.parallel
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5494")
+    @CTFailOn(error_handler)
     def test_remove_metadata_2219(self):
         """Remove the existing metadata and check if the entry is not shown."""
         self.LOGGER.info(
@@ -530,10 +530,10 @@ class TestObjectWorkflowOperations:
         self.LOGGER.info(
             "Remove the existing metadata and check if the entry is not shown")
 
-    @ pytest.mark.parallel
-    @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5497")
-    @ CTFailOn(error_handler)
+    @pytest.mark.parallel
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5497")
+    @CTFailOn(error_handler)
     def test_delete_object_2220(self):
         """Delete object from bucket."""
         self.LOGGER.info("STARTED: Delete object from bucket")
@@ -583,10 +583,10 @@ class TestObjectWorkflowOperations:
         self.LOGGER.info("Verified that object is deleted from a bucket")
         self.LOGGER.info("ENDED: Delete object from bucket")
 
-    @ pytest.mark.parallel
-    @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-5492")
-    @ CTFailOn(error_handler)
+    @pytest.mark.parallel
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5492")
+    @CTFailOn(error_handler)
     def test_delete_non_existing_object_2221(self):
         """Try deleting object not present."""
         self.LOGGER.info("STARTED: Try deleting object not present")
@@ -609,10 +609,10 @@ class TestObjectWorkflowOperations:
             "Performed object delete operation on non exist object")
         self.LOGGER.info("ENDED: Try deleting object not present")
 
-    @ pytest.mark.parallel
-    @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-8713")
-    @ CTFailOn(error_handler)
+    @pytest.mark.parallel
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-8713")
+    @CTFailOn(error_handler)
     def test_del_object_verbose_mode_7653(self):
         """Test Delete objects which exists with verbose mode."""
         self.LOGGER.info(
@@ -639,10 +639,10 @@ class TestObjectWorkflowOperations:
         self.LOGGER.info(
             "ENDED: Test Delete objects which exists with verbose mode .")
 
-    @ pytest.mark.parallel
-    @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-8714")
-    @ CTFailOn(error_handler)
+    @pytest.mark.parallel
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-8714")
+    @CTFailOn(error_handler)
     def test_delete_object_quiet_mode_7655(self):
         """Delete objects mentioning object which doesn't exists as well with quiet mode."""
         self.LOGGER.info(
@@ -675,9 +675,9 @@ class TestObjectWorkflowOperations:
         self.LOGGER.info(
             "ENDED: Delete objects mentioning object which doesn't exists as well with quiet mode.")
 
-    @ pytest.mark.parallel
-    @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-8175")
+    @pytest.mark.parallel
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-8175")
     def test_del_1001objects_7656(self):
         """Delete objects and mention 1001 objects."""
         self.LOGGER.info("STARTED: Delete objects and mention 1001 objects.")
@@ -700,10 +700,10 @@ class TestObjectWorkflowOperations:
             cfg_7656["err_message"])
         self.LOGGER.info("ENDED: Delete objects and mention 1001 objects.")
 
-    @ pytest.mark.parallel
-    @ pytest.mark.s3
-    @ pytest.mark.tags("TEST-8716")
-    @ CTFailOn(error_handler)
+    @pytest.mark.parallel
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-8716")
+    @CTFailOn(error_handler)
     def test_delete_1001object_7657(self):
         """Delete objects and mention 1000 objects."""
         self.LOGGER.info("STARTED: Delete objects and mention 1000 objects.")

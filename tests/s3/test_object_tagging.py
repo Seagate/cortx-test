@@ -49,9 +49,9 @@ class TestObjectTagging:
         cls.LOGGER = logging.getLogger(__name__)
 
     @CTFailOn(error_handler)
-    def setup_method(self):
+    def teardown_method(self):
         """setup method."""
-        self.LOGGER.info("STARTED: Setup Method")
+        self.LOGGER.info("STARTED:  Teardown Method")
         bucket_list = S3_TEST_OBJ.bucket_list()
         pref_list = [
             each_bucket for each_bucket in bucket_list[1] if each_bucket.startswith(
@@ -59,7 +59,7 @@ class TestObjectTagging:
         S3_TEST_OBJ.delete_multiple_buckets(pref_list)
         if os.path.exists(OBJ_TAG_CONFIG["object_tagging"]["file_path"]):
             remove_file(OBJ_TAG_CONFIG["object_tagging"]["file_path"])
-        self.LOGGER.info("ENDED: Setup Method")
+        self.LOGGER.info("ENDED: Teardown Method")
 
     def create_put_set_object_tag(
             self,
