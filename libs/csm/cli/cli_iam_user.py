@@ -54,7 +54,7 @@ class CortxCliIAMLib(CortxCli):
     def list_iam_user(self, output_format: str = None,
                       help_param: bool = False) -> Tuple[bool, str]:
         """
-        This function will list IAM users with given format
+        This function lists IAM users with given format
         (CLI will list IAM users in table format if format is set to None)
         :param output_format: Format of Output(table,xml,json)
         :param help_param: True for displaying help/usage
