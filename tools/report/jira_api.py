@@ -24,6 +24,7 @@ import sys
 from collections import Counter
 from datetime import date
 from http import HTTPStatus
+from jira import JIRA
 
 import requests
 
@@ -87,13 +88,14 @@ def get_test_list_from_test_plan(test_plan: str, username: str, password: str) -
         response = requests.get(jira_url, auth=(username, password), params=query)
         if response.status_code == HTTPStatus.OK and response.json():
             responses.extend(response.json())
-        if response.status_code == HTTPStatus.OK and not response.json():
+        elif response.status_code == HTTPStatus.OK and not response.json():
             all_tests = True
-        print(f'get_test_list GET on {jira_url} failed')
-        print(f'RESPONSE={response.text}\n'
-              f'HEADERS={response.request.headers}\n'
-              f'BODY={response.request.body}')
-        sys.exit(1)
+        else:
+            print(f'get_test_list GET on {jira_url} failed')
+            print(f'RESPONSE={response.text}\n'
+                  f'HEADERS={response.request.headers}\n'
+                  f'BODY={response.request.body}')
+            sys.exit(1)
     return responses
 
 
@@ -107,7 +109,7 @@ def get_test_from_test_execution(test_execution: str, username: str, password: s
 
     Returns:
         [{"key":"TEST-10963", "status":"FAIL", "defects": []}, {...}]
-        "defects" = [{key:"TEST-123", "summary": "Bug Title", "status": "New/Started/Closed"},{}]
+        "defects" = [{key:"EOS-123", "summary": "Bug Title", "status": "New/Started/Closed"},{}]
     """
     jira_url = f'https://jts.seagate.com/rest/raven/1.0/api/testexec/{test_execution}/test'
     query = {'detailed': "true"}
@@ -136,7 +138,7 @@ def get_issue_details(issue_id: str, username: str, password: str):
         {
             "fields":{
                 "labels":["Integration","QA"],
-                "environment":"515"},
+                "environment":"515",
                 "components":[
                     {
                         "name": "CSM"
@@ -144,23 +146,19 @@ def get_issue_details(issue_id: str, username: str, password: str):
                     {
                         "name": "CFT"
                     }
+                ],
                 "priority":{"name": "Critical"},
                 "summary": "JIRA Title",
                 "status": {"name": "In Progress"},
                 "issuelinks": [{"inwardIssue": {"key": "TEST-5342"}},
-                               {"inwardIssue": {"key": "TEST-1034"}}}]
-                ],
+                               {"inwardIssue": {"key": "TEST-1034"}}]
+                },
         }
     """
-    jira_url = f'https://jts.seagate.com/rest/api/latest/issue/{issue_id}'
-    response = requests.get(jira_url, auth=(username, password))
-    if response.status_code == HTTPStatus.OK:
-        return response.json()
-    print(f'get_bug_details GET on {jira_url} failed')
-    print(f'RESPONSE={response.text}\n'
-          f'HEADERS={response.request.headers}\n'
-          f'BODY={response.request.body}')
-    sys.exit(1)
+    jira_url = "https://jts.seagate.com/"
+    options = {'server': jira_url}
+    auth_jira = JIRA(options, basic_auth=(username, password))
+    return auth_jira.issue(issue_id)
 
 
 def get_defects_from_test_plan(test_plan: str, username: str, password: str) -> set:
@@ -186,10 +184,9 @@ def get_defects_from_test_plan(test_plan: str, username: str, password: str) -> 
 def get_build_from_test_plan(test_plan: str, username: str, password: str):
     """Get build number from given test plan."""
     test_plan_details = get_issue_details(test_plan, username, password)
-    test_plan_details = test_plan_details["fields"]
     build_no = "None"
-    if test_plan_details["environment"]:
-        build_no = test_plan_details["environment"]
+    if test_plan_details.fields.environment:
+        build_no = test_plan_details.fields.environment
     else:
         print(f"Test Plan {test_plan} has environment field empty. Setup it to build number.")
         sys.exit(1)
@@ -212,11 +209,11 @@ def get_reported_bug_table_data(test_plan: str, username: str, password: str):
     defects = get_defects_from_test_plan(test_plan, username, password)
     for defect in defects:
         defect = get_issue_details(defect, username, password)
-        components = [component["name"] for component in defect["fields"]["components"]]
-        if "CFT" in components:
-            test_bugs[defect["fields"]["priority"]["name"]] += 1
+        components = [component.name for component in defect.fields.components]
+        if "CFT" in components or "Automation" in components:
+            test_bugs[defect.fields.priority.name] += 1
         else:
-            cortx_bugs[defect["fields"]["priority"]["name"]] += 1
+            cortx_bugs[defect.fields.priority.name] += 1
     data = [
         ["Reported Bugs"], ["Priority", "Test Setup", "Cortx Stack"],
         ["Total", sum(test_bugs.values()), sum(cortx_bugs.values())],
@@ -278,7 +275,7 @@ def get_timing_summary():
 
 
 def get_username_password():
-    """Get username and password fro JIRA."""
+    """Get username and password from JIRA."""
     try:
         username = os.environ["JIRA_ID"]
         password = os.environ["JIRA_PASSWORD"]

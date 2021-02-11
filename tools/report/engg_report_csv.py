@@ -20,22 +20,23 @@
 # -*- coding: utf-8 -*-
 import argparse
 import csv
+from collections import defaultdict
 
-import common
+import jira_api
 
 
 def get_component_breakup_from_testplan(test_plan: str, username: str, password: str):
     """Get component breakup from testplan."""
-    te_keys = common.get_test_executions_from_test_plan(test_plan, username, password)
+    te_keys = jira_api.get_test_executions_from_test_plan(test_plan, username, password)
     te_keys = [te["key"] for te in te_keys]
     components = {}
     for test_execution in te_keys:
-        tests = common.get_test_from_test_execution(test_execution, username, password)
+        tests = jira_api.get_test_from_test_execution(test_execution, username, password)
         fail_count = sum(d['status'] == 'FAIL' for d in tests)
         pass_count = sum(d['status'] == 'PASS' for d in tests)
         total_count = len(tests)
-        detail = common.get_issue_details(test_execution, username, password)
-        component = detail['fields']['labels'][0]
+        detail = jira_api.get_issue_details(test_execution, username, password)
+        component = detail.fields.labels[0]
         if component in components:
             components[component] = {
                 'total': components[component]['total'] + total_count,
@@ -56,7 +57,7 @@ def get_component_level_summary(test_plans: list, username: str, password: str):
             component_summary.append(
                 get_component_breakup_from_testplan(t_plan, username, password)
             )
-            builds.append(common.get_build_from_test_plan(t_plan, username, password))
+            builds.append(jira_api.get_build_from_test_plan(t_plan, username, password))
         else:
             component_summary.append({})
             builds.append("NA")
@@ -115,9 +116,9 @@ def get_test_ids_from_linked_issues(linked_issues):
     """
     tests = []
     for issue in linked_issues:
-        if issue["type"]["name"] == "Defect" and issue["type"]["inward"] == "created by" and \
-                issue["inwardIssue"]["key"].startswith("TEST-"):
-            tests.append(issue["inwardIssue"]["key"])
+        if issue.type.name == "Defect" and issue.type.inward == "created by" and \
+                issue.inwardIssue.key.startswith("TEST-"):
+            tests.append(issue.inwardIssue.key)
     return tests
 
 
@@ -125,20 +126,28 @@ def get_detailed_reported_bugs(test_plan: str, username: str, password: str):
     """
     summary: Get detailed reported bugs from testplan.
     """
-    defects = common.get_defects_from_test_plan(test_plan, username, password)
+    test_executions = jira_api.get_test_executions_from_test_plan(test_plan, username, password)
+    defects = defaultdict(list)
+    for te in test_executions:
+        tests = jira_api.get_test_from_test_execution(te["key"], username, password)
+        for test in tests:
+            if test["status"] == "FAIL" and test["defects"]:
+                for defect in test["defects"]:
+                    defects[defect["key"]].append(test["key"])
     data = [
         ["Detailed Reported Bugs"],
         ["Component", "Test ID", "Priority", "JIRA ID", "Status", "Description"],
     ]
-    for defect_id in defects:
-        defect_details = common.get_issue_details(defect_id, username, password)
-        defect_details = defect_details["fields"]
-        component = defect_details["components"][0]["name"]
-        priority = defect_details["priority"]["name"]
-        summary = defect_details["summary"]
-        status = defect_details["status"]["name"]
-        tests = get_test_ids_from_linked_issues(defect_details["issuelinks"])
-        data.extend([[component, "/".join(tests), priority, defect_id, status, summary]])
+    for defect, tests in defects.items():
+        defect_details = jira_api.get_issue_details(defect, username, password)
+        defect_details = defect_details.fields
+        component = ""
+        if defect_details.components:
+            component = defect_details.components[0].name
+        priority = defect_details.priority.name
+        summary = defect_details.summary
+        status = defect_details.status.name
+        data.extend([[component, "/".join(tests), priority, defect, status, summary]])
 
     return data
 
@@ -153,19 +162,19 @@ def main():
 
     test_plans = parser.parse_args()
 
-    username, password = common.get_username_password()
-    main_table_data, build = common.get_main_table_data(test_plans.tp, username, password)
-    report_bugs_table_data = common.get_reported_bug_table_data(test_plans.tp, username, password)
-    overall_qa_table_data = common.get_overall_qa_report_table_data(test_plans.tp, test_plans.tp1,
-                                                                    build, username,
-                                                                    password)
+    username, password = jira_api.get_username_password()
+    main_table_data, build = jira_api.get_main_table_data(test_plans.tp, username, password)
+    report_bugs_table_data = jira_api.get_reported_bug_table_data(test_plans.tp, username, password)
+    overall_qa_table_data = jira_api.get_overall_qa_report_table_data(test_plans.tp, test_plans.tp1,
+                                                                      build, username,
+                                                                      password)
     component_level_summary_data = get_component_level_summary(
         [test_plans.tp, test_plans.tp1, test_plans.tp2, test_plans.tp3], username, password
     )
     # single_bucket_perf_stats = get_single_bucket_perf_stats(build)
     # get_multiple_bucket_perf = get_multiple_bucket_perf_stats(build)
     # metadata_latencies = get_metadata_latencies(build)
-    # timing_summary_table_data = common.get_timing_summary(build)
+    # timing_summary_table_data = jira_api.get_timing_summary(build)
     detailed_reported_bugs = get_detailed_reported_bugs(test_plans.tp, username, password)
 
     data = []
@@ -178,6 +187,7 @@ def main():
     data.extend(component_level_summary_data)
     data.extend([""])
     data.extend(detailed_reported_bugs)
+    data.extend([""])
     with open("../engg_report.csv", "a", newline='') as csv_file:
         writer = csv.writer(csv_file)
         writer.writerows(data)
