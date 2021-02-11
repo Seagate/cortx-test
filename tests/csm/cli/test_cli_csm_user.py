@@ -25,10 +25,10 @@ import time
 import pytest
 from commons.utils import assert_utils
 from commons import cortxlogging
-from libs.csm.cli.cli_csm_user import CortxCliCsmLib
+from libs.csm.cli.cli_csm_user import CortxCliCsmUser
 from libs.csm.cli.cli_alerts_lib import CortxCliAlerts
 
-CSM_USER = CortxCliCsmLib()
+CSM_USER = CortxCliCsmUser()
 CSM_ALERT = CortxCliAlerts()
 LOGGER = logging.getLogger(__name__)
 

@@ -27,7 +27,7 @@ from libs.csm.cli.cortx_cli import CortxCli
 LOG = logging.getLogger(__name__)
 
 
-class CortxCliCsmLib(CortxCli):
+class CortxCliCsmUser(CortxCli):
     """
     This class has methods for performing operations on CSM user using cortxcli
     """
