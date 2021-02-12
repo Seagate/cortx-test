@@ -28,7 +28,7 @@ import jira_api
 def get_component_breakup_from_testplan(test_plan: str, username: str, password: str):
     """Get component breakup from testplan."""
     te_keys = jira_api.get_test_executions_from_test_plan(test_plan, username, password)
-    te_keys = [te["key"] for te in te_keys]
+    te_keys = [te_key["key"] for te_key in te_keys]
     components = {}
     for test_execution in te_keys:
         tests = jira_api.get_test_from_test_execution(test_execution, username, password)
@@ -128,8 +128,8 @@ def get_detailed_reported_bugs(test_plan: str, username: str, password: str):
     """
     test_executions = jira_api.get_test_executions_from_test_plan(test_plan, username, password)
     defects = defaultdict(list)
-    for te in test_executions:
-        tests = jira_api.get_test_from_test_execution(te["key"], username, password)
+    for te_issue in test_executions:
+        tests = jira_api.get_test_from_test_execution(te_issue["key"], username, password)
         for test in tests:
             if test["status"] == "FAIL" and test["defects"]:
                 for defect in test["defects"]:
