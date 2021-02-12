@@ -15,10 +15,10 @@ Click Accept Button
 Click License Button
     click button    ${license_button_id}
 
-Click License Cancle Button
+Click LicenseCancle Button
     click button    ${license_cancle_button_id}
 
-Click License Cancle Image
+Click LicenseCancle Image
     click image    ${license_cancle_image_id}
 
 Validate ELUA Success
@@ -29,14 +29,14 @@ Validate ELUA Success
     Page Should Contain Button  ${license_button_id}
     Page Should Contain Element  ${license_title_id}
     Page Should Contain Element  ${license_data_id}
-    Click License Cancle Button
+    Click LicenseCancle Button
     Click Accept Button
     Page Should Contain Button  ${license_cancle_button_id}
     Page Should Contain Image  ${license_cancle_image_id}
     Page Should Contain Button  ${license_button_id}
     Page Should Contain Element  ${license_title_id}
     Page Should Contain Element  ${license_data_id}
-    Click License Cancle Image
+    Click LicenseCancle Image
     Click Accept Button
     Click License Button
 

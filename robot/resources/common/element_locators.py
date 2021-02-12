@@ -19,6 +19,17 @@ EMAIL_NOTIFICATION_ID = 'goToNotifications'
 IAM_USER_TAB_ID = "s3iamuserstab"
 DASHBOARD_MENU_ID = "Dashboard"
 
+# Alerts
+ALERT_IMAGE_ID_1='alert-zoom'  # from Dashbard
+ALERT_IMAGE_ID_2='alert-dotwhite'  # from All pages
+ALERT_COMMENT_SAVE_BUTTON_ID = 'alert-save-commnetbtn'
+ALERT_COMMENT_CLOSE_BUTTON_ID = 'alert-close-comment-dialogbtn'
+ALERT_COMMENT_CLOSE_IMAGE_ID = 'alert-closeadd-comment-dialog'
+ALERT_COMMENT_TEXT_ID= 'alert-comment-textarea'
+ALERT_DETAILS_PAGE_ICON_XPATH = '//*[@id="tblAlertLarge"]/div/table/tbody/tr[1]/td[5]/img'
+ALERT_COMMENT_ICON_XPATH = '//*[@id="tblAlertLarge"]/div/table/tbody/tr[1]/td[5]/div/div'
+ALERT_ACKNOWLEDGE_ICON_XPATH = '//*[@id="tblAlertLarge"]/div/table/tbody/tr[1]/td[5]/div/span[2]/div'
+
 #  S3 Config
 S3_ACCOUNTS_TABLE_XPATH = '//*[@id="s3-datatable"]//table/tbody/tr/td'
 S3_ACCOUNT_NUMBER_OF_ROWS = '//*[@id="s3-datatable"]//table/tbody/tr'
@@ -123,7 +134,6 @@ IAM_USER_USERNAME_LABEL_ID = "iam-userlbl"
 IAM_USER_PASSWORD_LABEL_ID = "iam-passwordlbl"
 IAM_USER_CONFIRM_PASSWORD_LABEL_ID = "iam-confirmpasslbl"
 
-=======
 #About Section
 MAINTENANCEM_MENU_ID = 'Maintenance'
 ABOUT_VIEW_ID = 'menu-actionmanagebtn'
