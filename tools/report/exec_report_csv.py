@@ -20,6 +20,7 @@
 # -*- coding: utf-8 -*-
 import argparse
 import csv
+import math
 from collections import Counter
 
 from jira import JIRA
@@ -37,12 +38,12 @@ def prepare_feature_data(total_count, pass_count, fail_count):
         f_total = total_count[feature]
         f_fail = fail_count[feature]
         if f_total:
-            pct_pass = f_pass * 100 / f_total
-            pct_fail = f_fail * 100 / f_total
+            pct_pass = math.ceil(f_pass * 100 / f_total)
+            pct_fail = math.floor(f_fail * 100 / f_total)
         else:
             pct_pass = 0
             pct_fail = 0
-        data.extend([[feature, f_total, f_pass, f_fail, "%.2f" % pct_pass, "%.2f" % pct_fail]])
+        data.extend([[feature, f_total, f_pass, f_fail, pct_pass, pct_fail]])
 
     return data
 
