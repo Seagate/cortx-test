@@ -23,24 +23,12 @@
 """ACL operations using boto3."""
 
 import copy
-import logging
 import boto3
 
-from libs.s3.s3_core_lib import Acl
-from commons.exceptions import CTException
 from commons import errorcodes as err
-from commons.utils.config_utils import read_yaml
-from commons.helpers.s3_helper import S3Helper
-
-LOGGER = logging.getLogger(__name__)
-
-try:
-    S3H_OBJ = S3Helper()
-except ImportError as ierr:
-    LOGGER.warning(str(ierr))
-    S3H_OBJ = S3Helper.get_instance()
-
-S3_CONF = read_yaml("config/s3/s3_config.yaml")[1]
+from commons.exceptions import CTException
+from libs.s3 import S3_CFG, LOGGER, ACCESS_KEY, SECRET_KEY
+from libs.s3.s3_core_lib import Acl
 
 
 class S3AclTestLib(Acl):
@@ -48,10 +36,10 @@ class S3AclTestLib(Acl):
 
     def __init__(
             self,
-            access_key: str = S3H_OBJ.get_local_keys()[0],
-            secret_key: str = S3H_OBJ.get_local_keys()[1],
-            endpoint_url: str = S3_CONF["s3_url"],
-            s3_cert_path: str = S3_CONF["s3_cert_path"],
+            access_key: str = ACCESS_KEY,
+            secret_key: str = SECRET_KEY,
+            endpoint_url: str = S3_CFG["s3_url"],
+            s3_cert_path: str = S3_CFG["s3_cert_path"],
             **kwargs) -> None:
         """
         Method initializes members of S3AclTestLib and its parent class.
@@ -64,9 +52,9 @@ class S3AclTestLib(Acl):
         :param aws_session_token: aws_session_token
         :param debug: debug mode
         """
-        kwargs["region"] = kwargs.get("region", S3_CONF["region"])
+        kwargs["region"] = kwargs.get("region", S3_CFG["region"])
         kwargs["aws_session_token"] = kwargs.get("aws_session_token", None)
-        kwargs["debug"] = kwargs.get("debug", S3_CONF["debug"])
+        kwargs["debug"] = kwargs.get("debug", S3_CFG["debug"])
         super().__init__(
             access_key,
             secret_key,
@@ -74,7 +62,10 @@ class S3AclTestLib(Acl):
             s3_cert_path,
             **kwargs)
 
-    def get_object_acl(self, bucket: str, object_key: str) -> tuple:
+    def get_object_acl(
+            self,
+            bucket: str = None,
+            object_key: str = None) -> tuple:
         """
         Getting object acl attributes.
 
@@ -96,7 +87,7 @@ class S3AclTestLib(Acl):
 
         return True, response
 
-    def get_bucket_acl(self, bucket_name: str) -> tuple:
+    def get_bucket_acl(self, bucket_name: str = None) -> tuple:
         """
         Retrieving bucket acl attributes.
 
@@ -119,9 +110,9 @@ class S3AclTestLib(Acl):
 
     def put_object_acl(
             self,
-            bucket_name: str,
-            object_name: str,
-            acl: dict) -> tuple:
+            bucket_name: str = None,
+            object_name: str = None,
+            acl: dict = None) -> tuple:
         """
         Set the access control list of an Amazon s3 object.
 
@@ -144,9 +135,9 @@ class S3AclTestLib(Acl):
 
     def put_object_acp(
             self,
-            bucket_name: str,
-            object_name: str,
-            acp: dict) -> tuple:
+            bucket_name: str = None,
+            object_name: str = None,
+            acp: dict = None) -> tuple:
         """
         Set the access control policy of an Amazon s3 object.
 
@@ -169,10 +160,10 @@ class S3AclTestLib(Acl):
 
     def add_grantee(
             self,
-            bucket_name: str,
-            object_name: str,
-            grantee_id: str,
-            permission: str) -> tuple:
+            bucket_name: str = None,
+            object_name: str = None,
+            grantee_id: str = None,
+            permission: str = None) -> tuple:
         """
         Add a grantee with given ACL permission to a object present in a bucket.
 
@@ -212,8 +203,8 @@ class S3AclTestLib(Acl):
 
     def put_object_canned_acl(
             self,
-            bucket_name: str,
-            key: str,
+            bucket_name: str = None,
+            key: str = None,
             acl: str = None,
             access_control_policy: dict = None,
             **kwargs) -> tuple:
@@ -239,7 +230,8 @@ class S3AclTestLib(Acl):
         :return: dict
         """
         try:
-            kwargs["grant_full_control"] = kwargs.get("grant_full_control", None)
+            kwargs["grant_full_control"] = kwargs.get(
+                "grant_full_control", None)
             kwargs["grant_read"] = kwargs.get("grant_read", None)
             kwargs["grant_read_acp"] = kwargs.get("grant_read_acp", None)
             kwargs["grant_write"] = kwargs.get("grant_write", None)
@@ -262,9 +254,9 @@ class S3AclTestLib(Acl):
 
     def put_object_with_acl2(
             self,
-            bucket_name: str,
-            key: str,
-            file_path: str,
+            bucket_name: str = None,
+            key: str = None,
+            file_path: str = None,
             **kwargs) -> tuple:
         """
         To set both grant_full_control, grant_read acl while adding an object to a bucket.
@@ -278,7 +270,8 @@ class S3AclTestLib(Acl):
         :return: dict
         """
         try:
-            kwargs["grant_full_control"] = kwargs.get("grant_full_control", None)
+            kwargs["grant_full_control"] = kwargs.get(
+                "grant_full_control", None)
             kwargs["grant_read"] = kwargs.get("grant_read", None)
             LOGGER.info("Setting acl to new object")
             response = super().put_object_with_acl2(
@@ -294,9 +287,9 @@ class S3AclTestLib(Acl):
 
     def put_object_with_acl(
             self,
-            bucket_name: str,
-            key: str,
-            file_path: str,
+            bucket_name: str = None,
+            key: str = None,
+            file_path: str = None,
             acl: str = None,
             **kwargs) -> tuple:
         """
@@ -317,7 +310,8 @@ class S3AclTestLib(Acl):
         :return: dict
         """
         try:
-            kwargs["grant_full_control"] = kwargs.get("grant_full_control", None)
+            kwargs["grant_full_control"] = kwargs.get(
+                "grant_full_control", None)
             kwargs["grant_read"] = kwargs.get("grant_read", None)
             kwargs["grant_read_acp"] = kwargs.get("grant_read_acp", None)
             kwargs["grant_write_acp"] = kwargs.get("grant_write_acp", None)
@@ -338,7 +332,7 @@ class S3AclTestLib(Acl):
 
     def create_bucket_with_acl(
             self,
-            bucket_name: str,
+            bucket_name: str = None,
             acl: str = None,
             **kwargs) -> tuple:
         """
@@ -357,7 +351,8 @@ class S3AclTestLib(Acl):
         :return: dict
         """
         try:
-            kwargs["grant_full_control"] = kwargs.get("grant_full_control", None)
+            kwargs["grant_full_control"] = kwargs.get(
+                "grant_full_control", None)
             kwargs["grant_read"] = kwargs.get("grant_read", None)
             kwargs["grant_read_acp"] = kwargs.get("grant_read_acp", None)
             kwargs["grant_write"] = kwargs.get("grant_write", None)
@@ -377,7 +372,7 @@ class S3AclTestLib(Acl):
 
     def put_bucket_acl(
             self,
-            bucket_name: str,
+            bucket_name: str = None,
             acl: str = None,
             access_control_policy: dict = None,
             **kwargs) -> tuple:
@@ -399,7 +394,8 @@ class S3AclTestLib(Acl):
         :return: True or False
         """
         try:
-            kwargs["grant_full_control"] = kwargs.get("grant_full_control", None)
+            kwargs["grant_full_control"] = kwargs.get(
+                "grant_full_control", None)
             kwargs["grant_read"] = kwargs.get("grant_read", None)
             kwargs["grant_read_acp"] = kwargs.get("grant_read_acp", None)
             kwargs["grant_write"] = kwargs.get("grant_write", None)
@@ -421,7 +417,9 @@ class S3AclTestLib(Acl):
 
     @staticmethod
     def get_bucket_acl_using_iam_credentials(
-            access_key: str, secret_key: str, bucket_name: str) -> tuple:
+            access_key: str = None,
+            secret_key: str = None,
+            bucket_name: str = None) -> tuple:
         """
         Retrieving bucket acl attributes using iam credentials.
 
@@ -435,11 +433,11 @@ class S3AclTestLib(Acl):
                     bucket_name, access_key, secret_key)
         s3_iam_resource = boto3.resource(
             "s3",
-            verify=S3_CONF['s3_cert_path'],
+            verify=S3_CFG['s3_cert_path'],
             aws_access_key_id=access_key,
             aws_secret_access_key=secret_key,
-            endpoint_url=S3_CONF['s3_url'],
-            region_name=S3_CONF['region'])
+            endpoint_url=S3_CFG['s3_url'],
+            region_name=S3_CFG['region'])
         try:
             bucket_acl = s3_iam_resource.BucketAcl(bucket_name)
             response = bucket_acl.owner, bucket_acl.grants

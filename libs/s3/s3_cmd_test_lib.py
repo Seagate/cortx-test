@@ -23,35 +23,23 @@
 
 import os
 import shutil
-import logging
 
-from libs.s3.s3_core_lib import S3LibCmd
 from commons import errorcodes as err
 from commons.exceptions import CTException
-from commons.utils.config_utils import read_yaml
-from commons.helpers.s3_helper import S3Helper
 from commons.utils.system_utils import create_file
-
-LOGGER = logging.getLogger(__name__)
-
-try:
-    S3H_OBJ = S3Helper()
-except ImportError as ierr:
-    LOGGER.warning(str(ierr))
-    S3H_OBJ = S3Helper.get_instance()
-
-S3_CONF = read_yaml("config/s3/s3_config.yaml")[1]
-CM_CFG = read_yaml("config/common_config.yaml")[1]
+from libs.s3 import LOGGER, CM_CFG
+from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
+from libs.s3.s3_core_lib import S3LibCmd
 
 
 class S3CmdTestLib(S3LibCmd):
     """Class initialising s3 connection and including methods for s3 using CLI."""
 
     def __init__(self,
-                 access_key: str = S3H_OBJ.get_local_keys()[0],
-                 secret_key: str = S3H_OBJ.get_local_keys()[1],
-                 endpoint_url: str = S3_CONF["s3_url"],
-                 s3_cert_path: str = S3_CONF["s3_cert_path"],
+                 access_key: str = ACCESS_KEY,
+                 secret_key: str = SECRET_KEY,
+                 endpoint_url: str = S3_CFG["s3_url"],
+                 s3_cert_path: str = S3_CFG["s3_cert_path"],
                  **kwargs) -> None:
         """
         Method to initializes members of S3CmdTestLib and its parent class.
@@ -64,9 +52,9 @@ class S3CmdTestLib(S3LibCmd):
         :param aws_session_token: aws_session_token.
         :param debug: debug mode.
         """
-        kwargs["region"] = kwargs.get("region", S3_CONF["region"])
+        kwargs["region"] = kwargs.get("region", S3_CFG["region"])
         kwargs["aws_session_token"] = kwargs.get("aws_session_token", None)
-        kwargs["debug"] = kwargs.get("debug", S3_CONF["debug"])
+        kwargs["debug"] = kwargs.get("debug", S3_CFG["debug"])
         super().__init__(
             access_key,
             secret_key,
@@ -76,10 +64,10 @@ class S3CmdTestLib(S3LibCmd):
 
     def object_upload_cli(
             self,
-            bucket_name: str,
-            object_name: str,
-            file_path: str,
-            obj_size: int) -> tuple:
+            bucket_name: str = None,
+            object_name: str = None,
+            file_path: str = None,
+            obj_size: int = None) -> tuple:
         """
         Uploading Object to the Bucket using aws cli.
 
@@ -96,14 +84,14 @@ class S3CmdTestLib(S3LibCmd):
             create_file(file_path, obj_size)
         try:
             LOGGER.info("uploading object using cli")
-            response = self.upload_object_cli(
+            status, response = self.upload_object_cli(
                 bucket_name, object_name, file_path)
             upload_res = response.split("b'")[1].split("\\r")
             LOGGER.debug(upload_res)
             LOGGER.info("output = %s", upload_res)
             os.remove(file_path)
             if b"upload:" in upload_res[-1] or "upload:" in upload_res[-1]:
-                return True, upload_res
+                return status, upload_res
 
             return False, response
         except BaseException as error:
@@ -114,9 +102,9 @@ class S3CmdTestLib(S3LibCmd):
 
     def upload_folder_cli(
             self,
-            bucket_name: str,
-            folder_path: str,
-            file_count: int) -> tuple:
+            bucket_name: str = None,
+            folder_path: str = None,
+            file_count: int = None) -> tuple:
         """
         Uploading folder to the Bucket using aws cli.
 
@@ -135,7 +123,7 @@ class S3CmdTestLib(S3LibCmd):
                     folder_path, "test_file{}".format(
                         str(count)))
                 create_file(file_path, 10)
-            response = super().upload_folder_cli(
+            status, response = super().upload_folder_cli(
                 bucket_name, folder_path, CM_CFG["aws_cred_section"])
             shutil.rmtree(folder_path)
             LOGGER.debug(response)
@@ -143,7 +131,7 @@ class S3CmdTestLib(S3LibCmd):
                 response, bytes) else str(response).count("upload:")
             LOGGER.debug(upload_cnt)
             if upload_cnt == file_count:
-                return True, response
+                return status, response
 
             return False, response
         except BaseException as error:
@@ -152,23 +140,26 @@ class S3CmdTestLib(S3LibCmd):
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
-    def download_bucket_cli(self, bucket_name: str, folder_path: str) -> tuple:
+    def download_bucket_cli(
+            self,
+            bucket_name: str = None,
+            folder_path: str = None,
+            profile_name: str = CM_CFG["aws_cred_section"]) -> tuple:
         """
         Downloading s3 objects to a local directory recursively using awscli.
 
+        :param profile_name: AWS profile name.
         :param bucket_name: Name of the bucket.
         :param folder_path: Folder path.
         :return: (Boolean, response)
         """
         try:
             LOGGER.info("Downloading folder from bucket using cli.")
-            response = super().download_bucket_cli(
-                bucket_name, folder_path, CM_CFG["aws_cred_section"])
+            status, response = super().download_bucket_cli(
+                bucket_name, folder_path, profile_name)
             LOGGER.info(response)
-            if os.path.exists(folder_path):
-                return True, response
 
-            return False, response
+            return status, response
         except BaseException as error:
             LOGGER.error("Error in %s: %s",
                          S3CmdTestLib.download_bucket_cli.__name__,
@@ -177,8 +168,8 @@ class S3CmdTestLib(S3LibCmd):
 
     @staticmethod
     def command_formatter(
-            s3cmd_cnf: str,
-            operation: str,
+            s3cmd_cnf: str = None,
+            operation: str = None,
             cmd_arguments: str = None) -> str:
         """
         Creating command from dictionary cmd_options.
