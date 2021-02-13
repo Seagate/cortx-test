@@ -78,11 +78,12 @@ def run_remote_cmd(
     return True, output
 
 
-def run_local_cmd(cmd: str) -> tuple:
+def run_local_cmd(cmd: str = None, flg: bool = False) -> tuple:
     """
     Execute any given command on local machine(Windows, Linux).
     :param cmd: command to be executed.
-    :return: stdout
+    :param flg: To get str(proc.communicate())
+    :return: bool, response.
     """
     if not cmd:
         raise ValueError("Missing required parameter: {}".format(cmd))
@@ -91,6 +92,8 @@ def run_local_cmd(cmd: str) -> tuple:
     output, error = proc.communicate()
     LOGGER.debug("output = %s", str(output))
     LOGGER.debug("error = %s", str(error))
+    if flg:
+        return True, str((output, error))
     if proc.returncode != 0:
         return False, str(error)
     if b"Number of key(s) added: 1" in output:
