@@ -499,7 +499,8 @@ class IamTestLib(IamLib, S3IamCli):
                 user_name = "testusr{}".format(str(time.time()))
                 iam_obj.create_user(user_name)
                 user_li.append(user_name)
-        LOGGER.debug(len(acc_li), len(user_li))
+        LOGGER.debug("Account list: %d", len(acc_li))
+        LOGGER.debug("User list: %d", len(user_li))
         if len(acc_li) == int(acc_count) or len(
                 user_li) == int(user_count) * int(acc_count):
             return True, acc_li
@@ -1227,9 +1228,7 @@ class IamTestLib(IamLib, S3IamCli):
     def create_and_delete_account_s3iamcli(
             self,
             account_name: str = None,
-            email_id: str = None,
-            secret_key: str = None,
-            access_key: str = None) -> tuple:
+            email_id: str = None,) -> tuple:
         """
         Creating and Deleting Account.
 
@@ -1241,15 +1240,15 @@ class IamTestLib(IamLib, S3IamCli):
         """
         try:
             LOGGER.info("Create and delete an account")
-            acc = self.create_account_s3iamcli(
+            status, acc = self.create_account_s3iamcli(
                 account_name, email_id, LDAP_USERNAME, LDAP_PASSWD)
             LOGGER.debug(acc)
             LOGGER.info("Deleting Account")
-            del_acc = self.delete_account_s3iamcli(
-                account_name, access_key, secret_key)
+            status, del_acc = self.delete_account_s3iamcli(
+                account_name, acc['access_key'], acc['secret_key'])
             LOGGER.debug(del_acc)
 
-            return True, [acc, del_acc]
+            return status, [acc, del_acc]
         except BaseException as error:
             LOGGER.error(
                 "Error in %s: %s",
