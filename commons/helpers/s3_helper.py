@@ -75,18 +75,18 @@ class S3Helper:
         :param path: path to s3cfg file.
         :return: True if s3cmd configured else False.
         """
-        res = False
-        if run_local_cmd("s3cmd --version"):
+        status, resp = run_local_cmd("s3cmd --version")
+        if status:
             res1 = config_utils.update_config_ini(
                 path, "default", "access_key", access)
             res2 = config_utils.update_config_ini(
                 path, "default", "secret_key", secret)
-            res = res1 and res2
+            status = res1 and res2 and status
         else:
             LOGGER.warning(
                 "S3cmd is not present, please install it and than run the configuration.")
 
-        return res
+        return status
 
     @staticmethod
     def configure_s3fs(
@@ -101,16 +101,15 @@ class S3Helper:
         :param path: s3fs config file.
         :return: True if s3fs configured else False.
         """
-        res = False
-        if run_local_cmd("s3fs --version"):
+        status, resp = run_local_cmd("s3fs --version")
+        if status:
             with open(path, "w+") as f_write:
                 f_write.write(f"{access}:{secret}")
-            res = True
         else:
             LOGGER.warning(
                 "S3fs is not present, please install it and than run the configuration.")
 
-        return res
+        return status
 
     @staticmethod
     def check_s3services_online(host: str = CM_CFG["host"],
