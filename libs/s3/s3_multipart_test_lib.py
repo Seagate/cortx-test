@@ -22,12 +22,15 @@
 """Python library contains methods for s3 multipart upload."""
 
 import os
+import logging
 
 from commons import errorcodes as err
 from commons.exceptions import CTException
 from commons.utils.system_utils import create_file, cal_percent
-from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY, LOGGER
+from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_core_lib import Multipart
+
+LOGGER = logging.getLogger(__name__)
 
 
 class S3MultipartTestLib(Multipart):
@@ -106,8 +109,8 @@ class S3MultipartTestLib(Multipart):
             upload_id = kwargs.get("upload_id", None)
             part_number = kwargs.get("part_number", None)
             LOGGER.info("uploading part")
-            response = super().upload_part(
-                body, bucket_name, object_name, upload_id=upload_id, part_number=part_number)
+            response = super().upload_part(body, bucket_name, object_name,
+                                           upload_id=upload_id, part_number=part_number)
             LOGGER.info(response)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
@@ -150,7 +153,8 @@ class S3MultipartTestLib(Multipart):
                     LOGGER.info("data_len %s", str(len(data)))
                     if not data:
                         break
-                    part = super().upload_part(data, bucket_name, object_name, mpu_id=mpu_id, i=i)
+                    part = super().upload_part(
+                        data, bucket_name, object_name, upload_id=mpu_id, part_number=i)
                     LOGGER.debug("Part : %s", str(part))
                     parts.append({"PartNumber": i, "ETag": part["ETag"]})
                     uploaded_bytes += len(data)
@@ -270,7 +274,10 @@ class S3MultipartTestLib(Multipart):
 
         return True, response
 
-    def abort_multipart_all(self, bucket: str = None, object_name: str = None) -> tuple:
+    def abort_multipart_all(
+            self,
+            bucket: str = None,
+            object_name: str = None) -> tuple:
         """
         Abort all the multipart uploads.
 
@@ -302,7 +309,7 @@ class S3MultipartTestLib(Multipart):
             self,
             bucket_name: str = None,
             my_key: str = None,
-            start_byte: str = None,
+            start_byte: int = None,
             stop_byte: int = None) -> tuple:
         """
         Getting byte range of the object.

@@ -24,17 +24,19 @@
 
 import time
 import boto3
+import logging
 
 from commons import errorcodes as err
 from commons.exceptions import CTException
 from commons.utils.system_utils import format_iam_resp
-from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY, LOGGER, LDAP_USERNAME, LDAP_PASSWD
+from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY, LDAP_USERNAME, LDAP_PASSWD
 from libs.s3.s3_core_lib import S3Lib
 from libs.s3.iam_core_lib import IamLib, S3IamCli
 from libs.s3.s3_acl_test_lib import S3AclTestLib
 
 ACC_ACCESS_KEY = list()
 ACC_SECRET_KEY = list()
+LOGGER = logging.getLogger(__name__)
 
 
 class IamTestLib(IamLib, S3IamCli):

@@ -23,13 +23,16 @@
 
 import os
 import shutil
+import logging
 
 from commons import errorcodes as err
 from commons.exceptions import CTException
 from commons.utils.system_utils import create_file
-from libs.s3 import LOGGER, CM_CFG
+from libs.s3 import CM_CFG
 from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_core_lib import S3LibCmd
+
+LOGGER = logging.getLogger(__name__)
 
 
 class S3CmdTestLib(S3LibCmd):
@@ -90,7 +93,7 @@ class S3CmdTestLib(S3LibCmd):
             LOGGER.debug(upload_res)
             LOGGER.info("output = %s", upload_res)
             os.remove(file_path)
-            if b"upload:" in upload_res[-1] or "upload:" in upload_res[-1]:
+            if "upload:" in str(upload_res[-1]):
                 return status, upload_res
 
             return False, response

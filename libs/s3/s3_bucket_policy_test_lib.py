@@ -20,10 +20,14 @@
 #
 """Python library contains methods for bucket policy."""
 
+import logging
+
 from commons import errorcodes as err
 from commons.exceptions import CTException
-from libs.s3 import S3_CFG, LOGGER, ACCESS_KEY, SECRET_KEY
+from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_core_lib import BucketPolicy
+
+LOGGER = logging.getLogger(__name__)
 
 
 class S3BucketPolicyTestLib(BucketPolicy):

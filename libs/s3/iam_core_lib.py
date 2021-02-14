@@ -23,10 +23,12 @@
 """Python Library using boto3 module to perform account and user operations."""
 
 import boto3
+import logging
 
 from commons import commands
 from commons.utils.system_utils import run_local_cmd
-from libs.s3 import LOGGER
+
+LOGGER = logging.getLogger(__name__)
 
 
 class IamLib:

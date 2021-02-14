@@ -29,8 +29,10 @@ import logging
 from commons import errorcodes as err
 from commons.exceptions import CTException
 from commons.utils.system_utils import create_file
-from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY, LOGGER
+from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_core_lib import Tagging
+
+LOGGER = logging.getLogger(__name__)
 
 
 class S3TaggingTestLib(Tagging):
@@ -177,7 +179,8 @@ class S3TaggingTestLib(Tagging):
 
         return True, response
 
-    def get_object_tags(self, bucket_name: str = None, obj_name: str = None) -> tuple:
+    def get_object_tags(self, bucket_name: str = None,
+                        obj_name: str = None) -> tuple:
         """
         Return the tag-set of an object.
 
@@ -200,7 +203,10 @@ class S3TaggingTestLib(Tagging):
 
         return True, tag_set
 
-    def delete_object_tagging(self, bucket_name: str = None, obj_name: str = None) -> tuple:
+    def delete_object_tagging(
+            self,
+            bucket_name: str = None,
+            obj_name: str = None) -> tuple:
         """
         Remove the tag-set from an existing object.
 
@@ -282,8 +288,8 @@ class S3TaggingTestLib(Tagging):
                     response = super().put_object_with_tagging(
                         bucket_name, object_name, data=data, tag=tag, meta=meta)
                 else:
-                    response = super().put_object_with_tagging(bucket_name, object_name,
-                                                               data=data, tag=tag)
+                    response = super().put_object_with_tagging(
+                        bucket_name, object_name, data=data, tag=tag)
             LOGGER.info(response)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
@@ -440,7 +446,10 @@ class S3TaggingTestLib(Tagging):
 
         return True, response
 
-    def get_object_with_tagging(self, bucket_name: str = None, key: str = None) -> tuple:
+    def get_object_with_tagging(
+            self,
+            bucket_name: str = None,
+            key: str = None) -> tuple:
         """
         Get object using tag key.
 

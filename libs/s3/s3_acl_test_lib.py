@@ -24,11 +24,14 @@
 
 import copy
 import boto3
+import logging
 
 from commons import errorcodes as err
 from commons.exceptions import CTException
-from libs.s3 import S3_CFG, LOGGER, ACCESS_KEY, SECRET_KEY
+from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_core_lib import Acl
+
+LOGGER = logging.getLogger(__name__)
 
 
 class S3AclTestLib(Acl):

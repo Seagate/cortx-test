@@ -32,10 +32,12 @@ from botocore.client import Config
 from commons import errorcodes as err
 from commons.exceptions import CTException
 from commons.utils.system_utils import create_file
-from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY, LOGGER
+from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_core_lib import S3Lib
 from libs.s3.s3_acl_test_lib import S3AclTestLib
 from libs.s3.s3_bucket_policy_test_lib import S3BucketPolicyTestLib
+
+LOGGER = logging.getLogger(__name__)
 
 
 class S3TestLib(S3Lib):
@@ -141,7 +143,6 @@ class S3TestLib(S3Lib):
         kwargs["m_key"] = kwargs.get("m_key", None)
         kwargs["m_value"] = kwargs.get("m_value", None)
         LOGGER.info("Putting object")
-        LOGGER.debug(bucket_name, object_name, file_path, **kwargs)
         try:
             response = super().put_object(bucket_name, object_name, file_path, **kwargs)
         except Exception as error:
