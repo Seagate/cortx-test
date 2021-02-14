@@ -9,15 +9,13 @@ import logging
 import pytest
 
 from commons.exceptions import CTException
-from commons.utils.config_utils import read_yaml
 from commons.utils.system_utils import create_file, remove_file
+from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
 from libs.s3 import iam_test_lib, s3_test_lib, s3_tagging_test_lib
 
-IAM_TEST_OBJ = iam_test_lib.IamTestLib()
+IAM_OBJ = iam_test_lib.IamTestLib()
 S3_TEST_OBJ = s3_test_lib.S3TestLib()
 S3_TAG_OBJ = s3_tagging_test_lib.S3TaggingTestLib()
-
-CMN_CFG = read_yaml("config/common_config.yaml")[1]
 
 
 class TestS3ACLTestLib:
@@ -26,10 +24,6 @@ class TestS3ACLTestLib:
     @classmethod
     def setup_class(cls):
         """test setup class."""
-        logging.basicConfig(
-            filename="unittest.log",
-            filemode="w",
-            level=logging.DEBUG)
         cls.log = logging.getLogger(__name__)
         cls.bkt_name_prefix = "ut-bkt"
         cls.acc_name_prefix = "ut-accnt"
@@ -39,45 +33,89 @@ class TestS3ACLTestLib:
         cls.obj_size = 1
         cls.test_file_path = "/root/test_folder/hello.txt"
         cls.test_folder_path = "/root/test_folder"
-        cls.ldap_user = CMN_CFG["ldap_username"]
-        cls.ldap_pwd = CMN_CFG["ldap_passwd"]
+        cls.ldap_user = LDAP_USERNAME
+        cls.ldap_pwd = LDAP_PASSWD
 
     @classmethod
     def teardown_class(cls):
         """Test teardown class."""
-        cls.log.info("Test teardown completed.")
+        cls.log.info("STARTED: teardown class operations.")
+        cls.log.info("teardown class completed.")
+        cls.log.info("STARTED: teardown class operations completed.")
 
     def setup_method(self):
         """
-        Function will be invoked before test suit execution.
+        Function will be invoked before test execution.
 
         It will perform prerequisite test steps if any
-        Defined var for log, onfig, creating common dir
+        Defined var for log, config, creating common dir
         """
         self.log.info("STARTED: Setup operations")
+        self.d_user_name = "dummy_user"
+        self.status = "Inactive"
+        self.d_status = "dummy_Inactive"
+        self.d_nw_user_name = "dummy_user"
+        self.email = "{}@seagate.com"
+        self.log.info("deleting Common dir and files...")
         if not os.path.exists(self.test_folder_path):
-            os.mkdir(self.test_folder_path)
+            os.makedirs(self.test_folder_path)
+        if os.path.exists(self.test_file_path):
+            remove_file(self.test_file_path)
+        self.log.info("Create file: %s", self.test_file_path)
+        resp = create_file(self.test_file_path, self.obj_size)
+        self.log.info(resp)
+        if not os.path.exists(self.test_file_path):
+            raise IOError(self.test_file_path)
+        # list & delete buckets.
+        bucket_list = S3_TEST_OBJ.bucket_list()[1]
+        pref_list = [
+            each_bucket for each_bucket in bucket_list if each_bucket.startswith(
+                self.bkt_name_prefix)]
+        self.log.info("bucket-list: %s", pref_list)
+        if pref_list:
+            S3_TEST_OBJ.delete_multiple_buckets(pref_list)
+        # Delete account created with prefix.
+        self.log.info(
+            "Delete created account with prefix: %s",
+            self.acc_name_prefix)
+        acc_list = IAM_OBJ.list_accounts_s3iamcli(
+            self.ldap_user,
+            self.ldap_pwd)[1]
+        self.log.debug("Listing account %s", acc_list)
+        all_acc = [acc["AccountName"]
+                   for acc in acc_list if self.acc_name_prefix in acc["AccountName"]]
+        if all_acc:
+            IAM_OBJ.delete_multiple_accounts(all_acc)
         self.log.info("ENDED: Setup operations")
 
     def teardown_method(self):
         """
-        Function will be invoked after test suit.
+        Function will be invoked after test case.
 
         It will clean up resources which are getting created during test case execution.
         This function will reset accounts, delete buckets, accounts and files.
         """
         self.log.info("STARTED: Teardown operations")
+        self.log.info("deleting Common dir and files...")
+        if os.path.exists(self.test_folder_path):
+            shutil.rmtree(self.test_folder_path)
+        if os.path.exists(self.test_file_path):
+            remove_file(self.test_file_path)
+        # list buckets.
         bucket_list = S3_TEST_OBJ.bucket_list()[1]
-        account_name = self.acc_name_prefix
-        acc_list = IAM_TEST_OBJ.list_accounts_s3iamcli(
+        # Delete account created with prefix and all buckets.
+        self.log.info(
+            "Delete created account with prefix: %s",
+            self.acc_name_prefix)
+        acc_list = IAM_OBJ.list_accounts_s3iamcli(
             self.ldap_user,
             self.ldap_pwd)[1]
         self.log.debug("Listing account %s", acc_list)
         all_acc = [acc["AccountName"]
-                   for acc in acc_list if account_name in acc["AccountName"]]
+                   for acc in acc_list if self.acc_name_prefix in acc["AccountName"]]
         if all_acc:
             for acc in all_acc:
-                resp = IAM_TEST_OBJ.reset_account_access_key_s3iamcli(
+                resp = IAM_OBJ.reset_account_access_key_s3iamcli(
                     acc, self.ldap_user, self.ldap_pwd)
                 access_key = resp[1]["AccessKeyId"]
                 secret_key = resp[1]["SecretKey"]
@@ -95,21 +133,18 @@ class TestS3ACLTestLib:
                     assert resp[0], resp[1]
                     self.log.info("Deleted all buckets")
                 self.log.info("Deleting IAM accounts...")
-                resp = IAM_TEST_OBJ.reset_access_key_and_delete_account_s3iamcli(
+                resp = IAM_OBJ.reset_access_key_and_delete_account_s3iamcli(
                     acc)
                 assert resp[0], resp[1]
         pref_list = [
             each_bucket for each_bucket in bucket_list if each_bucket.startswith(
                 self.bkt_name_prefix)]
         self.log.info("bucket-list: %s", pref_list)
-        S3_TEST_OBJ.delete_multiple_buckets(pref_list)
-        self.log.info("Deleting Common dir and files...")
-        if os.path.exists(self.test_folder_path):
-            shutil.rmtree(self.test_folder_path)
-        if os.path.exists(self.test_file_path):
-            remove_file(self.test_file_path)
+        if pref_list:
+            S3_TEST_OBJ.delete_multiple_buckets(pref_list)
         self.log.info("ENDED: Teardown operations")
 
+    @pytest.mark.s3unittest
     def test_01_set_bucket_tag(self):
         """Test set bucket tag."""
         S3_TEST_OBJ.create_bucket("ut-bkt-01")
@@ -120,6 +155,7 @@ class TestS3ACLTestLib:
             10)
         assert resp[0], resp[1]
 
+    @pytest.mark.s3unittest
     def test_02_get_bucket_tags(self):
         """Test get bucket tag."""
         S3_TEST_OBJ.create_bucket("ut-bkt-02")
@@ -132,6 +168,7 @@ class TestS3ACLTestLib:
             "ut-bkt-02")
         assert resp[0], resp[1]
 
+    @pytest.mark.s3unittest
     def test_03_delete_bucket_tagging(self):
         """Test delete bucket tagging."""
         S3_TEST_OBJ.create_bucket("ut-bkt-03")
@@ -144,6 +181,7 @@ class TestS3ACLTestLib:
             "ut-bkt-03")
         assert resp[0], resp[1]
 
+    @pytest.mark.s3unittest
     def test_04_set_object_tag(self):
         """Test set object tag."""
         S3_TEST_OBJ.create_bucket("ut-bkt-04")
@@ -159,9 +197,10 @@ class TestS3ACLTestLib:
             self.obj_name,
             "test_key",
             "test_value",
-            10)
+            tag_count=10)
         assert resp[0], resp[1]
 
+    @pytest.mark.s3unittest
     def test_05_get_object_tags(self):
         """Test get object tags."""
         S3_TEST_OBJ.create_bucket("ut-bkt-05")
@@ -177,12 +216,13 @@ class TestS3ACLTestLib:
             self.obj_name,
             "test_key",
             "test_value",
-            10)
+            tag_count=10)
         resp = S3_TAG_OBJ.get_object_tags(
             "ut-bkt-05",
             self.obj_name)
         assert resp[0], resp[1]
 
+    @pytest.mark.s3unittest
     def test_06_delete_object_tagging(self):
         """Test delete object tagging."""
         S3_TEST_OBJ.create_bucket("ut-bkt-06")
@@ -203,6 +243,7 @@ class TestS3ACLTestLib:
             self.obj_name)
         assert resp[0], resp[1]
 
+    @pytest.mark.s3unittest
     def test_07_create_multipart_upload_with_tagging(self):
         """Test create multipart upload with tagging."""
         S3_TEST_OBJ.create_bucket("ut-bkt-07")
@@ -212,6 +253,7 @@ class TestS3ACLTestLib:
             "test_key=test_value")
         assert resp[0], resp[1]
 
+    @pytest.mark.s3unittest
     def test_08_set_bucket_tag_duplicate_keys(self):
         """"Test set bucket tag duplicate keys."""
         S3_TEST_OBJ.create_bucket("ut-bkt-08")
@@ -219,8 +261,9 @@ class TestS3ACLTestLib:
             S3_TAG_OBJ.set_bucket_tag_duplicate_keys(
                 "ut-bkt-08", "aaa1", "bbb2")
         except CTException as error:
-            assert "MalformedXML" not in str(error.message), error.message
+            assert "MalformedXML" in str(error.message), error.message
 
+    @pytest.mark.s3unittest
     def test_09_set_bucket_tag_base64_encode(self):
         """Test set bucket tag base64 encode."""
         S3_TEST_OBJ.create_bucket("ut-bkt-09")
@@ -231,8 +274,9 @@ class TestS3ACLTestLib:
             S3_TAG_OBJ.set_bucket_tag_invalid_char(
                 self.dummy_bucket, "aaa", "aaa")
         except CTException as error:
-            assert "NoSuchBucket" not in str(error.message), error.message
+            assert "NoSuchBucket" in str(error.message), error.message
 
+    @pytest.mark.s3unittest
     def test_10_set_duplicate_object_tag_key(self):
         """Test set duplicate object tag key."""
         create_file(
@@ -248,7 +292,7 @@ class TestS3ACLTestLib:
             "ut-obj-10",
             "aaa",
             "bbb",
-            False)
+            duplicate_key=False)
         assert op_val[0], op_val[1]
         try:
             S3_TAG_OBJ.set_duplicate_object_tags(
@@ -257,8 +301,9 @@ class TestS3ACLTestLib:
                 "aaa",
                 "bbb")
         except CTException as error:
-            assert "MalformedXML" not in str(error.message), error.message
+            assert "MalformedXML" in str(error.message), error.message
 
+    @pytest.mark.s3unittest
     def test_11_put_object_tag_with_tagging(self):
         """Test put object tag with tagging."""
         create_file(
@@ -276,8 +321,8 @@ class TestS3ACLTestLib:
             "ut-obj-11",
             self.test_file_path,
             "aaa=bbb",
-            "aaa",
-            "bbb")
+            key="aaa",
+            value="bbb")
         assert op_val[0], op_val[1]
         try:
             S3_TAG_OBJ.put_object_with_tagging(
@@ -285,11 +330,12 @@ class TestS3ACLTestLib:
                 "ut-obj-11",
                 self.test_file_path,
                 "aaa=bbb",
-                "aaa",
-                "bbb")
+                key="aaa",
+                value="bbb")
         except CTException as error:
-            assert "NoSuchBucket" not in str(error.message), error.message
+            assert "NoSuchBucket" in str(error.message), error.message
 
+    @pytest.mark.s3unittest
     def test_12_put_object_tag_base64_encode(self):
         """Test put object tag base64 encode."""
         create_file(
@@ -309,8 +355,9 @@ class TestS3ACLTestLib:
                 self.dummy_bucket, "ut-obj-12",
                 "aaa", "bbb")
         except CTException as error:
-            assert "NoSuchBucket" not in str(error.message), error.message
+            assert "NoSuchBucket" in str(error.message), error.message
 
+    @pytest.mark.s3unittest
     def test_13_get_object_tagging(self):
         """Test get object tagging."""
         create_file(
@@ -329,4 +376,4 @@ class TestS3ACLTestLib:
             S3_TAG_OBJ.get_object_with_tagging(
                 self.dummy_bucket, "ut-obj-13")
         except CTException as error:
-            assert "NoSuchBucket" not in str(error.message), error.message
+            assert "NoSuchBucket" in str(error.message), error.message

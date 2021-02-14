@@ -9,15 +9,14 @@ import logging
 import pytest
 
 from commons.exceptions import CTException
-from commons.utils.config_utils import read_yaml
 from commons.utils.system_utils import create_file, remove_file
 from libs.s3 import iam_test_lib, s3_test_lib, s3_acl_test_lib
+from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
 
 IAM_TEST_OBJ = iam_test_lib.IamTestLib()
 S3_TEST_OBJ = s3_test_lib.S3TestLib()
 S3_ACL_OBJ = s3_acl_test_lib.S3AclTestLib()
-
-CMN_CFG = read_yaml("config/common_config.yaml")[1]
+IAM_OBJ = iam_test_lib.IamTestLib()
 
 
 class TestS3ACLTestLib:
@@ -26,10 +25,6 @@ class TestS3ACLTestLib:
     @classmethod
     def setup_class(cls):
         """test setup class."""
-        logging.basicConfig(
-            filename="unittest.log",
-            filemode="w",
-            level=logging.DEBUG)
         cls.log = logging.getLogger(__name__)
         cls.bkt_name_prefix = "ut-bkt"
         cls.acc_name_prefix = "ut-accnt"
@@ -42,42 +37,73 @@ class TestS3ACLTestLib:
         cls.test_file_path = "/root/test_folder/hello.txt"
         cls.obj_size = 1
         cls.test_folder_path = "/root/test_folder"
-        cls.ldap_user = CMN_CFG["ldap_username"]
-        cls.ldap_pwd = CMN_CFG["ldap_passwd"]
+        cls.ldap_user = LDAP_USERNAME
+        cls.ldap_pwd = LDAP_PASSWD
 
     @classmethod
     def teardown_class(cls):
         """Test teardown class."""
-        cls.log.info("Test teardown completed.")
+        cls.log.info("STARTED: teardown class operations.")
+        cls.log.info("teardown class completed.")
+        cls.log.info("STARTED: teardown class operations completed.")
 
     def setup_method(self):
         """
-        Function will be invoked before test suit execution.
+        Function will be invoked before test execution.
 
         It will perform prerequisite test steps if any
-        Defined var for log, onfig, creating common dir
+        Defined var for log, config, creating common dir
         """
         self.log.info("STARTED: Setup operations")
+        self.d_user_name = "dummy_user"
+        self.status = "Inactive"
+        self.d_status = "dummy_Inactive"
+        self.d_nw_user_name = "dummy_user"
+        self.email = "{}@seagate.com"
+        self.log.info("deleting Common dir and files...")
         if not os.path.exists(self.test_folder_path):
-            os.mkdir(self.test_folder_path)
+            os.makedirs(self.test_folder_path)
+        if os.path.exists(self.test_file_path):
+            remove_file(self.test_file_path)
+        # Delete account created with prefix.
+        self.log.info(
+            "Delete created account with prefix: %s",
+            self.acc_name_prefix)
+        acc_list = IAM_OBJ.list_accounts_s3iamcli(
+            self.ldap_user,
+            self.ldap_pwd)[1]
+        self.log.debug("Listing account %s", acc_list)
+        all_acc = [acc["AccountName"]
+                   for acc in acc_list if self.acc_name_prefix in acc["AccountName"]]
+        if all_acc:
+            IAM_OBJ.delete_multiple_accounts(all_acc)
         self.log.info("ENDED: Setup operations")
 
     def teardown_method(self):
         """
-        Function will be invoked after test suit.
+        Function will be invoked after test case.
 
         It will clean up resources which are getting created during test case execution.
         This function will reset accounts, delete buckets, accounts and files.
         """
         self.log.info("STARTED: Teardown operations")
+        self.log.info("deleting Common dir and files...")
+        if os.path.exists(self.test_folder_path):
+            shutil.rmtree(self.test_folder_path)
+        if os.path.exists(self.test_file_path):
+            remove_file(self.test_file_path)
+        # list buckets.
         bucket_list = S3_TEST_OBJ.bucket_list()[1]
-        account_name = self.acc_name_prefix
-        acc_list = IAM_TEST_OBJ.list_accounts_s3iamcli(
+        # Delete account created with prefix and all buckets.
+        self.log.info(
+            "Delete created account with prefix: %s",
+            self.acc_name_prefix)
+        acc_list = IAM_OBJ.list_accounts_s3iamcli(
             self.ldap_user,
             self.ldap_pwd)[1]
         self.log.debug("Listing account %s", acc_list)
         all_acc = [acc["AccountName"]
-                   for acc in acc_list if account_name in acc["AccountName"]]
+                   for acc in acc_list if self.acc_name_prefix in acc["AccountName"]]
         if all_acc:
             for acc in all_acc:
                 resp = IAM_TEST_OBJ.reset_account_access_key_s3iamcli(
@@ -105,14 +131,11 @@ class TestS3ACLTestLib:
             each_bucket for each_bucket in bucket_list if each_bucket.startswith(
                 self.bkt_name_prefix)]
         self.log.info("bucket-list: %s", pref_list)
-        S3_TEST_OBJ.delete_multiple_buckets(pref_list)
-        self.log.info("Deleting Common dir and files...")
-        if os.path.exists(self.test_folder_path):
-            shutil.rmtree(self.test_folder_path)
-        if os.path.exists(self.test_file_path):
-            remove_file(self.test_file_path)
+        if pref_list:
+            S3_TEST_OBJ.delete_multiple_buckets(pref_list)
         self.log.info("ENDED: Teardown operations")
 
+    @pytest.mark.s3unittest
     def test_01_get_object_acl(self):
         """Test get object acl."""
         create_file(self.test_file_path, self.obj_size)
@@ -129,8 +152,9 @@ class TestS3ACLTestLib:
             S3_ACL_OBJ.get_object_acl(
                 self.dummy_bucket, "ut-obj-01")
         except CTException as error:
-            assert "NoSuchBucket" not in str(error.message), error.message
+            assert "NoSuchBucket" in str(error.message), error.message
 
+    @pytest.mark.s3unittest
     def test_02_get_bucket_acl(self):
         """Test get bucket acl."""
         S3_TEST_OBJ.create_bucket("ut-bkt-02")
@@ -141,11 +165,12 @@ class TestS3ACLTestLib:
             S3_ACL_OBJ.get_bucket_acl(
                 self.dummy_bucket)
         except CTException as error:
-            assert "NoSuchBucket" not in str(error.message), error.message
+            assert "NoSuchBucket" in str(error.message), error.message
 
+    @pytest.mark.s3unittest
     def test_03_get_bucket_acl_using_iam_credentials(self):
         """Test get bucket acl using iam credentials."""
-        op_val0 = IAM_TEST_OBJ.create_account_s3iamcli(
+        op_val0 = IAM_OBJ.create_account_s3iamcli(
             "ut-accnt-03",
             self.mail.format("ut-accnt-03"),
             self.ldap_user,
@@ -163,9 +188,10 @@ class TestS3ACLTestLib:
             S3_ACL_OBJ.get_bucket_acl_using_iam_credentials(
                 "dummyAccKey", "dummySecKey", "ut-bkt-03")
         except CTException as error:
-            assert "InvalidAccessKeyId" not in str(
+            assert "InvalidAccessKeyId" in str(
                 error.message), error.message
 
+    @pytest.mark.s3unittest
     def test_04_put_object_acl(self):
         """Test put object acl."""
         create_file(
@@ -178,7 +204,7 @@ class TestS3ACLTestLib:
             "ut-obj-04",
             self.test_file_path)
         assert op_val[0], op_val[1]
-        op_im = IAM_TEST_OBJ.create_account_s3iamcli(
+        op_im = IAM_OBJ.create_account_s3iamcli(
             "ut-accnt-04",
             self.mail.format("ut-accnt-04"),
             self.ldap_user,
@@ -191,6 +217,7 @@ class TestS3ACLTestLib:
             "READ")
         assert op_val[0], op_val[1]
 
+    @pytest.mark.s3unittest
     def test_05_put_object_canned_acl(self):
         """Test put object canned acl."""
         create_file(
@@ -203,7 +230,7 @@ class TestS3ACLTestLib:
             "ut-obj-05",
             self.test_file_path)
         assert op_val[0], op_val[1]
-        op_val = IAM_TEST_OBJ.create_account_s3iamcli(
+        op_val = IAM_OBJ.create_account_s3iamcli(
             "ut-accnt-63",
             self.mail.format("ut-accnt-05"),
             self.ldap_user,
@@ -223,11 +250,9 @@ class TestS3ACLTestLib:
                 acl="private",
                 grant_read_acp=self.cid_key.format(can_id))
         except CTException as error:
-            assert "InvalidRequest" not in str(error.message), error.message
+            assert "InvalidRequest" in str(error.message), error.message
 
-        IAM_TEST_OBJ.reset_access_key_and_delete_account_s3iamcli(
-            "ut-accnt-05")
-
+    @pytest.mark.s3unittest
     def test_06_put_object_with_acl(self):
         """Test put object with acl."""
         create_file(
@@ -240,7 +265,7 @@ class TestS3ACLTestLib:
             "ut-obj-06",
             self.test_file_path)
         assert op_val[0], op_val[1]
-        op_val = IAM_TEST_OBJ.create_account_s3iamcli(
+        op_val = IAM_OBJ.create_account_s3iamcli(
             "ut-accnt-06",
             self.mail.format("ut-accnt-06"),
             self.ldap_user,
@@ -263,14 +288,12 @@ class TestS3ACLTestLib:
                 acl="bucket-owner-read",
                 grant_read_acp=self.cid_key.format(can_id))
         except CTException as error:
-            assert "InvalidRequest" not in str(error.message), error.message
+            assert "InvalidRequest" in str(error.message), error.message
 
-        IAM_TEST_OBJ.reset_access_key_and_delete_account_s3iamcli(
-            "ut-accnt-06")
-
+    @pytest.mark.s3unittest
     def test_07_create_bucket_with_acl(self):
         """Test create bucket with acl."""
-        op_val = IAM_TEST_OBJ.create_account_s3iamcli(
+        op_val = IAM_OBJ.create_account_s3iamcli(
             "ut-accnt-07",
             self.mail.format("ut-accnt-07"),
             self.ldap_user,
@@ -285,19 +308,17 @@ class TestS3ACLTestLib:
                 acl="private",
                 grant_read_acp=self.cid_key.format(can_id))
         except CTException as error:
-            assert "InvalidRequest" not in str(error.message), error.message
+            assert "InvalidRequest" in str(error.message), error.message
 
-        IAM_TEST_OBJ.reset_access_key_and_delete_account_s3iamcli(
-            "ut-accnt-07")
-
+    @pytest.mark.s3unittest
     def test_08_put_bucket_acl(self):
         """Test put bucket acl."""
         op_val = S3_TEST_OBJ.create_bucket("ut-bkt-08")
         assert op_val[0], op_val[1]
         op_val = S3_ACL_OBJ.put_bucket_acl(
-            "ut-bkt-60", acl="private")
+            "ut-bkt-08", acl="private")
         assert op_val[0], op_val[1]
-        op_val = IAM_TEST_OBJ.create_account_s3iamcli(
+        op_val = IAM_OBJ.create_account_s3iamcli(
             "ut-accnt-08",
             self.mail.format("ut-accnt-08"),
             self.ldap_user,
@@ -309,7 +330,4 @@ class TestS3ACLTestLib:
                 acl="private",
                 grant_read_acp=self.cid_key.format(can_id))
         except CTException as error:
-            assert "NoSuchBucket" not in str(error.message), error.message
-
-        IAM_TEST_OBJ.reset_access_key_and_delete_account_s3iamcli(
-            "ut-accnt-08")
+            assert "NoSuchBucket" in str(error.message), error.message
