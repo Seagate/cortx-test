@@ -627,12 +627,11 @@ class TestBucketPolicy(Test):
                 "Listed objects with %s prefix successfully", obj_name_prefix)
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6102")
     @CTFailOn(error_handler)
     def test_254(self):
         """
         create bucket and get-bucket-policy for that bucket
-        :avocado: tags=get_bucket_policy
         """
         LOGGER.info(
             "STARTED: create bucket and get-bucket-policy for that bucket")
@@ -653,12 +652,11 @@ class TestBucketPolicy(Test):
             "ENDED: create bucket and get-bucket-policy for that bucket")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6101")
     @CTFailOn(error_handler)
     def test_260(self):
         """
         verify get-bucket-policy for the bucket which is not present
-        :avocado: tags=get_bucket_policy
         """
         LOGGER.info(
             "STARTED: verify get-bucket-policy for the bucket which is not present")
@@ -677,12 +675,11 @@ class TestBucketPolicy(Test):
             "ENDED: verify get-bucket-policy for the bucket which is not present")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6100")
     @CTFailOn(error_handler)
     def test_261(self):
         """
         check get-bucket-policy for the bucket which is having policy for that bucket
-        :avocado: tags=get_bucket_policy
         """
         LOGGER.info(
             "STARTED: check get-bucket-policy for the "
@@ -724,13 +721,12 @@ class TestBucketPolicy(Test):
             "ENDED: check get-bucket-policy for the bucket which is having policy for that bucket")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6099")
     @CTFailOn(error_handler)
     def test_262(self):
         """
         verify get-bucket-policy for the bucket from account2.Do not apply
         any ACL permissions or canned ACL to account2 and verify get-bucket-policy
-        :avocado: tags=get_bucket_policy
         """
         LOGGER.info(
             "STARTED: verify get-bucket-policy for the bucket from account2."
@@ -807,13 +803,11 @@ class TestBucketPolicy(Test):
             "canned ACL to account2 and verify get-bucket-policy")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6079")
     @CTFailOn(error_handler)
     def test_642(self):
         """
-        Test resource arn combination with bucket name and all objects.
-        :avocado: tags=bucket_policy_with_arn
-        """
+        Test resource arn combination with bucket name and all objects."""
         LOGGER.info(
             "STARTED: Test resource arn combination with bucket name and all objects.")
         bkt_cnf_642 = BKT_POLICY_CONF["test_642"]
@@ -846,13 +840,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test resource arn combination with bucket name and all objects.")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6077")
     @CTFailOn(error_handler)
     def test_644(self):
         """
-        Test resource arn combination with bucket name and no object name
-        :avocado: tags=bucket_policy_with_arn
-        """
+        Test resource arn combination with bucket name and no object name"""
         LOGGER.info(
             "STARTED: Test resource arn combination with bucket name and all objects.")
         self.create_bucket_put_obj_with_dir(
@@ -866,13 +858,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test resource arn combination with bucket name and all objects.")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6075")
     @CTFailOn(error_handler)
     def test_646(self):
         """
-        Test resource arn combination without mentioning bucket name
-        :avocado: tags=bucket_policy_with_arn
-        """
+        Test resource arn combination without mentioning bucket name"""
         LOGGER.info(
             "STARTED: Test resource arn combination without mentioning bucket name")
         self.create_bucket_put_obj_with_dir(
@@ -886,13 +876,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test resource arn combination without mentioning bucket name")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6073")
     @CTFailOn(error_handler)
     def test_658(self):
         """
-        Test resource arn combination with not present bucket name
-        :avocado: tags=bucket_policy_with_arn
-        """
+        Test resource arn combination with not present bucket name"""
         LOGGER.info(
             "STARTED: Test resource arn combination with not present bucket name")
         self.create_bucket_put_obj_with_dir(
@@ -906,13 +894,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test resource arn combination with not present bucket name")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6071")
     @CTFailOn(error_handler)
     def test_659(self):
         """
-        Test resource arn combination with object name
-        :avocado: tags=bucket_policy_with_arn
-        """
+        Test resource arn combination with object name"""
         LOGGER.info(
             "STARTED: Test resource arn combination with object name")
         bkt_cnf_659 = BKT_POLICY_CONF["test_659"]
@@ -943,13 +929,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test resource arn combination with object name")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6069")
     @CTFailOn(error_handler)
     def test_679(self):
         """
-        Test resource arn combination with object name inside folder
-        :avocado: tags=bucket_policy_with_arn
-        """
+        Test resource arn combination with object name inside folder"""
         LOGGER.info(
             "STARTED: Test resource arn combination with object name inside folder")
         bkt_cnf_679 = BKT_POLICY_CONF["test_679"]
@@ -978,13 +962,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test resource arn combination with object name inside folder")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6067")
     @CTFailOn(error_handler)
     def test_680(self):
         """
-        Test resource arn combination mentioning IAM details
-        :avocado: tags=bucket_policy_with_arn
-        """
+        Test resource arn combination mentioning IAM details"""
         LOGGER.info(
             "STARTED: Test resource arn combination mentioning IAM details")
         self.create_bucket_put_obj_with_dir(
@@ -998,13 +980,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test resource arn combination mentioning IAM details")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6065")
     @CTFailOn(error_handler)
     def test_682(self):
         """
-        Test resource arn combination with missing required component/value as per arn format
-        :avocado: tags=bucket_policy_with_arn
-        """
+        Test resource arn combination with missing required component/value as per arn format"""
         LOGGER.info(
             "STARTED: Test resource arn combination "
             "with missing required component/value as per arn format")
@@ -1020,13 +1000,11 @@ class TestBucketPolicy(Test):
             "missing required component/value as per arn format")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6063")
     @CTFailOn(error_handler)
     def test_688(self):
         """
-        Test resource arn combination with multiple arns
-        :avocado: tags=bucket_policy_with_arn
-        """
+        Test resource arn combination with multiple arns"""
         LOGGER.info(
             "STARTED: Test resource arn combination with multiple arns")
         self.create_bucket_put_obj_with_dir(
@@ -1040,13 +1018,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test resource arn combination with multiple arns")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6061")
     @CTFailOn(error_handler)
     def test_689(self):
         """
-        Test resource arn combination with wildcard * for bucket
-        :avocado: tags=bucket_policy_with_arn
-        """
+        Test resource arn combination with wildcard * for bucket"""
         LOGGER.info(
             "STARTED: Test resource arn combination with wildcard * for bucket")
         self.create_bucket_put_obj_with_dir(
@@ -1061,13 +1037,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test resource arn combination with wildcard * for bucket")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6059")
     @CTFailOn(error_handler)
     def test_690(self):
         """
-        Test resource arn specifying wildcard * for specifying part of object name
-        :avocado: tags=bucket_policy_with_arn
-        """
+        Test resource arn specifying wildcard * for specifying part of object name"""
         LOGGER.info(
             "STARTED: Test resource arn specifying wildcard * for specifying part of object name")
         bkt_cnf_690 = BKT_POLICY_CONF["test_690"]
@@ -1098,12 +1072,12 @@ class TestBucketPolicy(Test):
             "ENDED: Test resource arn specifying wildcard * for specifying part of object name")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6005")
     @CTFailOn(error_handler)
     def test_1300(self):
         """
         Create Bucket Policy using NumericLessThan Condition Operator
-        :avocado: tags=put_bucket_policy
+
         """
         LOGGER.info(
             "STARTED: Create Bucket Policy using NumericLessThan Condition Operator")
@@ -1141,12 +1115,12 @@ class TestBucketPolicy(Test):
             "ENDED: Create Bucket Policy using NumericLessThan Condition Operator")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6003")
     @CTFailOn(error_handler)
     def test_1303(self):
         """
         Create Bucket Policy using NumericLessThanEquals Condition Operator
-        :avocado: tags=put_bucket_policy
+
         """
         LOGGER.info(
             "STARTED: Create Bucket Policy using NumericLessThanEquals Condition Operator")
@@ -1184,12 +1158,12 @@ class TestBucketPolicy(Test):
             "ENDED: Create Bucket Policy using NumericLessThanEquals Condition Operator")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6000")
     @CTFailOn(error_handler)
     def test_1307(self):
         """
         Create Bucket Policy using NumericGreaterThan Condition Operator
-        :avocado: tags=put_bucket_policy
+
         """
         LOGGER.info(
             "STARTED: Create Bucket Policy using NumericGreaterThan Condition Operator")
@@ -1225,12 +1199,12 @@ class TestBucketPolicy(Test):
             "ENDED: Create Bucket Policy using NumericGreaterThan Condition Operator")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-5998")
     @CTFailOn(error_handler)
     def test_1308(self):
         """
         Create Bucket Policy using NumericGreaterThanEquals Condition Operator
-        :avocado: tags=put_bucket_policy
+
         """
         LOGGER.info(
             "STARTED: Create Bucket Policy using NumericGreaterThanEquals Condition Operator")
@@ -1259,12 +1233,12 @@ class TestBucketPolicy(Test):
             "ENDED: Create Bucket Policy using NumericGreaterThanEquals Condition Operator")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6010")
     @CTFailOn(error_handler)
     def test_1294(self):
         """
         Create Bucket Policy using StringNotEquals Condition Operator and Allow Action
-        :avocado: tags=put_bucket_policy_string
+_string
         """
         LOGGER.info(
             "STARTED: Create Bucket Policy using StringEquals Condition Operator and Allow Action")
@@ -1307,12 +1281,12 @@ class TestBucketPolicy(Test):
             "ENDED: Create Bucket Policy using StringEquals Condition Operator and Allow Action")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6007")
     @CTFailOn(error_handler)
     def test_1296(self):
         """
         Create Bucket Policy using NumericGreaterThanEquals Condition Operator
-        :avocado: tags=put_bucket_policy_string
+_string
         """
         LOGGER.info(
             "STARTED: Create Bucket Policy using NumericGreaterThanEquals Condition Operator")
@@ -1365,12 +1339,11 @@ class TestBucketPolicy(Test):
             "ENDED: Create Bucket Policy using NumericGreaterThanEquals Condition Operator")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6098")
     @CTFailOn(error_handler)
     def test_558(self):
         """
         Apply Delete-bucket-policy on existing bucket
-        :avocado: tags=delete_bucket_policy
         """
         LOGGER.info("STARTED: Apply Delete-bucket-policy on existing bucket")
         test_558_cfg = BKT_POLICY_CONF["test_558"]
@@ -1397,12 +1370,11 @@ class TestBucketPolicy(Test):
         LOGGER.info("ENDED: Apply Delete-bucket-policy on existing bucket")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6097")
     @CTFailOn(error_handler)
     def test_560(self):
         """
         Apply Delete-bucket-policy on non existing bucket
-        :avocado: tags=delete_bucket_policy
         """
         LOGGER.info(
             "STARTED: Apply Delete-bucket-policy on non existing bucket")
@@ -1420,12 +1392,11 @@ class TestBucketPolicy(Test):
             "ENDED: Apply Delete-bucket-policy on non existing bucket.")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6096")
     @CTFailOn(error_handler)
     def test_562(self):
         """
         Apply Delete-bucket-policy without specifying bucket name
-        :avocado: tags=delete_bucket_policy
         """
         LOGGER.info(
             "STARTED: Apply Delete-bucket-policy without specifying bucket name")
@@ -1457,12 +1428,11 @@ class TestBucketPolicy(Test):
             "ENDED: Apply Delete-bucket-policy without specifying bucket name")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6095")
     @CTFailOn(error_handler)
     def test_563(self):
         """
         Apply Delete-bucket-policy without specifying policy.
-        :avocado: tags=delete_bucket_policy
         """
         LOGGER.info(
             "STARTED: Apply Delete-bucket-policy without specifying policy.")
@@ -1484,12 +1454,11 @@ class TestBucketPolicy(Test):
             "ENDED: Apply Delete-bucket-policy without specifying policy.")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6093 ")
     @CTFailOn(error_handler)
     def test_566(self):
         """
         Apply Delete-bucket-policy from another account given read permission on bucket
-        :avocado: tags=delete_bucket_policy
         """
         LOGGER.info(
             "STARTED: Apply Delete-bucket-policy from another account given read permission on bucket")
@@ -1530,12 +1499,11 @@ class TestBucketPolicy(Test):
             "ENDED: Apply Delete-bucket-policy from another account given read permission on bucket")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6091")
     @CTFailOn(error_handler)
     def test_569(self):
         """
         Apply Delete-bucket-policy from another account given write permission on bucket
-        :avocado: tags=delete_bucket_policy
         """
         LOGGER.info(
             "STARTED: Apply Delete-bucket-policy from another account given write permission on bucket")
@@ -1576,12 +1544,11 @@ class TestBucketPolicy(Test):
             "ENDED: Apply Delete-bucket-policy from another account given write permission on bucket")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6089")
     @CTFailOn(error_handler)
     def test_570(self):
         """
         Apply Delete-bucket-policy from another account given read-acp permission on bucket
-        :avocado: tags=delete_bucket_policy
         """
         LOGGER.info(
             "STARTED: Apply Delete-bucket-policy from another account given read-acp permission on bucket")
@@ -1622,12 +1589,11 @@ class TestBucketPolicy(Test):
             "ENDED: Apply Delete-bucket-policy from another account given read-acp permission on bucket")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6087")
     @CTFailOn(error_handler)
     def test_574(self):
         """
         Apply Delete-bucket-policy from another account given write-acp permission on bucket
-        :avocado: tags=delete_bucket_policy
         """
         LOGGER.info(
             "STARTED: Apply Delete-bucket-policy from another account given write-acp permission on bucket")
@@ -1669,12 +1635,11 @@ class TestBucketPolicy(Test):
             "another account given write-acp permission on bucket")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6085")
     @CTFailOn(error_handler)
     def test_582(self):
         """
         Test Apply Delete-bucket-policy from another account given full-control permission on bucket.
-        :avocado: tags=delete_bucket_policy
         """
         LOGGER.info(
             "STARTED: Apply Delete-bucket-policy "
@@ -1717,12 +1682,11 @@ class TestBucketPolicy(Test):
             "another account given full-control permission on bucket")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6083")
     @CTFailOn(error_handler)
     def test_583(self):
         """
         Apply Delete-bucket-policy from another account with no permissions
-        :avocado: tags=delete_bucket_policy
         """
         LOGGER.info(
             "STARTED: Apply Delete-bucket-policy from another account with no permissions")
@@ -1766,12 +1730,11 @@ class TestBucketPolicy(Test):
             "ENDED: Apply Delete-bucket-policy from another account with no permissions")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6081")
     @CTFailOn(error_handler)
     def test_584(self):
         """
         Apply Delete-bucket-policy from another account with authenticated-read permission on bucket
-        :avocado: tags=delete_bucket_policy
         """
         LOGGER.info(
             "STARTED: Apply Delete-bucket-policy from another account"
@@ -1819,13 +1782,11 @@ class TestBucketPolicy(Test):
             " authenticated-read permission on bucket")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6053")
     @CTFailOn(error_handler)
     def test_693(self):
         """
-        Test principal arn combination with invalid account-id
-        :avocado: tags=bucket_policy_with_arn
-        """
+        Test principal arn combination with invalid account-id"""
         LOGGER.info(
             "STARTED: Test principal arn combination with invalid account-id")
         bkt_cnf_693 = BKT_POLICY_CONF["test_693"]
@@ -1863,13 +1824,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test principal arn combination with invalid account-id")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6051")
     @CTFailOn(error_handler)
     def test_694(self):
         """
-        Test principal arn combination with invalid user name
-        :avocado: tags=bucket_policy_with_arn
-        """
+        Test principal arn combination with invalid user name"""
         LOGGER.info(
             "STARTED: Test principal arn combination with invalid user name")
         bkt_cnf_694 = BKT_POLICY_CONF["test_694"]
@@ -1897,13 +1856,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test principal arn combination with invalid user name")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6049")
     @CTFailOn(error_handler)
     def test_716(self):
         """
-        Test principal arn combination with valid accountid and valid user but of different account
-        :avocado: tags=bucket_policy_with_arn
-        """
+        Test principal arn combination with valid accountid and valid user but of different account"""
         LOGGER.info(
             "STARTED: Test principal arn combination with "
             "valid accountid and valid user but of different account")
@@ -1941,13 +1898,11 @@ class TestBucketPolicy(Test):
             "valid accountid and valid user but of different account")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6045")
     @CTFailOn(error_handler)
     def test_718(self):
         """
-        Test principal arn combination with wildcard * for all accounts.
-        :avocado: tags=bucket_policy_with_arn
-        """
+        Test principal arn combination with wildcard * for all accounts."""
         LOGGER.info(
             "STARTED: Test principal arn combination with wildcard * for all accounts.")
         bkt_cnf_718 = BKT_POLICY_CONF["test_718"]
@@ -1964,13 +1919,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test principal arn combination with wildcard * for all accounts.")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6043")
     @CTFailOn(error_handler)
     def test_719(self):
         """
-        Test principal arn combination with wildcard * for all users in account
-        :avocado: tags=bucket_policy_with_arn
-        """
+        Test principal arn combination with wildcard * for all users in account"""
         LOGGER.info(
             "STARTED: Test principal arn combination with wildcard * for all users in account")
         bkt_cnf_719 = BKT_POLICY_CONF["test_719"]
@@ -1998,14 +1951,12 @@ class TestBucketPolicy(Test):
             "ENDED: Test principal arn combination with wildcard * for all users in account")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6041")
     @CTFailOn(error_handler)
     def test_720(self):
         """
         Test principal arn specifying wildcard in
-        the portion of the ARN that specifies the resource type
-        :avocado: tags=bucket_policy_with_arn
-        """
+        the portion of the ARN that specifies the resource type"""
         LOGGER.info(
             "STARTED: Test principal arn specifying wildcard "
             "in the portion of the ARN that specifies the resource type")
@@ -2035,13 +1986,11 @@ class TestBucketPolicy(Test):
             "in the portion of the ARN that specifies the resource type")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6039")
     @CTFailOn(error_handler)
     def test_721(self):
         """
-        Test arn specifying invalid text in place of arn
-        :avocado: tags=bucket_policy_with_arn
-        """
+        Test arn specifying invalid text in place of arn"""
         LOGGER.info(
             "STARTED: Test arn specifying invalid text in place of arn")
         bkt_cnf_721 = BKT_POLICY_CONF["test_721"]
@@ -2079,13 +2028,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test arn specifying invalid text in place of arn")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6037")
     @CTFailOn(error_handler)
     def test_722(self):
         """
-        Test arn specifying invalid text for partition value
-        :avocado: tags=bucket_policy_with_arn
-        """
+        Test arn specifying invalid text for partition value"""
         LOGGER.info(
             "STARTED: Test arn specifying invalid text for partition value")
         bkt_cnf_722 = BKT_POLICY_CONF["test_722"]
@@ -2123,13 +2070,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test arn specifying invalid text for partition value")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6034")
     @CTFailOn(error_handler)
     def test_723(self):
         """
-        Test arn specifying invalid text for service value
-        :avocado: tags=bucket_policy_with_arn
-        """
+        Test arn specifying invalid text for service value"""
         LOGGER.info(
             "STARTED: Test arn specifying invalid text for service value.")
         bkt_cnf_723 = BKT_POLICY_CONF["test_723"]
@@ -2167,13 +2112,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test arn specifying invalid text for service value.")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6032")
     @CTFailOn(error_handler)
     def test_724(self):
         """
-        Test arn specifying invalid text for region value .
-        :avocado: tags=bucket_policy_with_arn
-        """
+        Test arn specifying invalid text for region value ."""
         LOGGER.info(
             "STARTED: Test arn specifying invalid text for region value .")
         bkt_cnf_724 = BKT_POLICY_CONF["test_724"]
@@ -2211,13 +2154,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test arn specifying invalid text for region value .")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6030")
     @CTFailOn(error_handler)
     def test_725(self):
         """
-        Test arn specifying component/value as per arn format at inchanged position
-        :avocado: tags=bucket_policy_with_arn
-        """
+        Test arn specifying component/value as per arn format at inchanged position"""
         LOGGER.info(
             "STARTED: Test arn specifying component/value as per arn format at inchanged position.")
         bkt_cnf_725 = BKT_POLICY_CONF["test_725"]
@@ -2262,12 +2203,11 @@ class TestBucketPolicy(Test):
     #     """
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6103")
     @CTFailOn(error_handler)
     def test_551(self):
         """
         Test missing key fields in bucket policy json
-        :avocado: tags=get_bucket_policy
         """
         LOGGER.info(
             "STARTED: Test extra spaces in key fields and values in bucket policy json")
@@ -2287,12 +2227,11 @@ class TestBucketPolicy(Test):
     #     """
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6104")
     @CTFailOn(error_handler)
     def test_549(self):
         """
         Test invalid field in bucket policy json
-        :avocado: tags=get_bucket_policy
         """
         LOGGER.info(
             "STARTED: Test invalid field in bucket policy json")
@@ -2305,12 +2244,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test invalid field in bucket policy json")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6105")
     @CTFailOn(error_handler)
     def test_545(self):
         """
         Test the case sensitivity of key fields in bucket policy json
-        :avocado: tags=get_bucket_policy
         """
         LOGGER.info(
             "STARTED: Test the case sensitivity of key fields in bucket policy json")
@@ -2324,12 +2262,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test the case sensitivity of key fields in bucket policy json")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6106")
     @CTFailOn(error_handler)
     def test_555(self):
         """
         Test invalid values in the key fields in bucket policy json
-        :avocado: tags=get_bucket_policy
         """
         LOGGER.info(
             "STARTED: Test invalid values in the key fields in bucket policy json")
@@ -2360,12 +2297,11 @@ class TestBucketPolicy(Test):
     #         "ENDED: Test specifying duplicate key in same statement in bucket policy json")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6108")
     @CTFailOn(error_handler)
     def test_553(self):
         """
         Test blank values for the key fields in bucket policy json.
-        :avocado: tags=get_bucket_policy
         """
         LOGGER.info(
             "STARTED: Test blank values for the key fields in bucket policy json.")
@@ -2379,12 +2315,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test blank values for the key fields in bucket policy json.")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6015")
     @CTFailOn(error_handler)
     def test_1080(self):
         """
         Test ? wildcard for part of s3 api in action field of statement of the json file
-        :avocado: tags=bucket_policy_json
         """
         LOGGER.info(
             "STARTED: Test ? wildcard for part of s3 "
@@ -2414,13 +2349,12 @@ class TestBucketPolicy(Test):
             "ENDED: Test ? wildcard for part of s3 api in action field of statement of the json file")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6017")
     @CTFailOn(error_handler)
     def test_1079(self):
         """
         Test * wildcard for part of s3 api in action
         field of statement of the json file
-        :avocado: tags=bucket_policy_json
         """
         LOGGER.info(
             "STARTED: Test * wildcard for part of s3 "
@@ -2468,12 +2402,11 @@ class TestBucketPolicy(Test):
             "in action field of statement of the json file")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6020")
     @CTFailOn(error_handler)
     def test_1078(self):
         """
         Test * wildcard for all s3 apis in action field of statement of the json file
-        :avocado: tags=bucket_policy_json
         """
         LOGGER.info(
             "STARTED: Test * wildcard for all s3 apis "
@@ -2510,12 +2443,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test * wildcard for all s3 apis in action field of statement of the json file")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6022")
     @CTFailOn(error_handler)
     def test_1077(self):
         """
         Test * wildcard for all apis in action field of statement of the json file
-        :avocado: tags=bucket_policy_json
         """
         LOGGER.info(
             "STARTED: Test * wildcard for all apis in action field of statement of the json file")
@@ -2550,13 +2482,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test * wildcard for all apis in action field of statement of the json file")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-") # TODO Find Generic ticket -> EOS-7534
     @CTFailOn(error_handler)
     def test_717(self):
         """
-        Test principal arn combination with multiple arns
-        :avocado: tags=bucket_policy_with_arn
-        """
+        Test principal arn combination with multiple arns"""
         LOGGER.info(
             "STARTED: Test principal arn combination with multiple arns")
         bkt_cnf_717 = BKT_POLICY_CONF["test_717"]
@@ -2651,13 +2581,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test principal arn combination with multiple arns")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6055")
     @CTFailOn(error_handler)
     def test_692(self):
         """
-        Test principal arn combination with user name
-        :avocado: tags=bucket_policy_with_arn
-        """
+        Test principal arn combination with user name"""
         LOGGER.info(
             "STARTED: Test principal arn combination with user name")
         bkt_cnf_692 = BKT_POLICY_CONF["test_692"]
@@ -2722,13 +2650,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test principal arn combination with user name")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-6075")
     @CTFailOn(error_handler)
     def test_691(self):
         """
-        Test principal arn combination with account-id
-        :avocado: tags=bucket_policy_with_arn
-        """
+        Test principal arn combination with account-id"""
         LOGGER.info(
             "STARTED: Test principal arn combination with account-id")
         bkt_cnf_691 = BKT_POLICY_CONF["test_691"]
@@ -2793,13 +2719,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test principal arn combination with account-id")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-5996")
     @CTFailOn(error_handler)
     def test_4134(self):
         """
-        Create Bucket Policy using NumericLessThan Condition Operator, key "s3:max-keys" and Effect Allow
-        :avocado: tags=put_bucket_policy_numeric
-        """
+        Create Bucket Policy using NumericLessThan Condition Operator, key "s3:max-keys" and Effect Allow"""
         LOGGER.info(
             "STARTED: Create Bucket Policy using NumericLessThan Condition"
             " Operator,key s3:max-keys and Effect Allow")
@@ -2851,13 +2775,11 @@ class TestBucketPolicy(Test):
             " Operator,key s3:max-keys and Effect Allow")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-5994")
     @CTFailOn(error_handler)
     def test_4136(self):
         """
-        Create Bucket Policy using NumericLessThan Condition Operator, key s3:max-keys and Effect Deny
-        :avocado: tags=put_bucket_policy_numeric
-        """
+        Create Bucket Policy using NumericLessThan Condition Operator, key s3:max-keys and Effect Deny"""
         LOGGER.info(
             "STARTED: Create Bucket Policy using NumericLessThan Condition Operator,"
             "key s3:max-keys and Effect Deny")
@@ -2913,13 +2835,11 @@ class TestBucketPolicy(Test):
             "key s3:max-keys and Effect Deny")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-5992")
     @CTFailOn(error_handler)
     def test_4143(self):
         """
-        Create Bucket Policy using NumericGreaterThan Condition Operator, key "s3:max-keys" and Effect Allow
-        :avocado: tags=put_bucket_policy_numeric
-        """
+        Create Bucket Policy using NumericGreaterThan Condition Operator, key "s3:max-keys" and Effect Allow"""
         LOGGER.info(
             "STARTED: Create Bucket Policy using NumericGreaterThan Condition"
             " Operator,key s3:max-keys and Effect Allow")
@@ -2971,13 +2891,11 @@ class TestBucketPolicy(Test):
             " Operator,key s3:max-keys and Effect Allow")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-5985")
     @CTFailOn(error_handler)
     def test_4144(self):
         """
-        Create Bucket Policy using NumericGreaterThan Condition Operator, key s3:max-keys and Effect Deny
-        :avocado: tags=put_bucket_policy_numeric
-        """
+        Create Bucket Policy using NumericGreaterThan Condition Operator, key s3:max-keys and Effect Deny"""
         LOGGER.info(
             "STARTED: Create Bucket Policy using NumericGreaterThan Condition Operator,"
             "key s3:max-keys and Effect Deny")
@@ -3033,13 +2951,11 @@ class TestBucketPolicy(Test):
             "key s3:max-keys and Effect Deny")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-5983")
     @CTFailOn(error_handler)
     def test_4145(self):
         """
-        Create Bucket Policy using NumericEquals Condition Operator, key "s3:max-keys" and Effect Allow
-        :avocado: tags=put_bucket_policy_numeric
-        """
+        Create Bucket Policy using NumericEquals Condition Operator, key "s3:max-keys" and Effect Allow"""
         LOGGER.info(
             "STARTED: Create Bucket Policy using NumericEquals Condition"
             " Operator,key s3:max-keys and Effect Allow")
@@ -3091,13 +3007,11 @@ class TestBucketPolicy(Test):
             " Operator,key s3:max-keys and Effect Allow")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-5980")
     @CTFailOn(error_handler)
     def test_4146(self):
         """
-        Create Bucket Policy using NumericNotEquals Condition Operator, key s3:max-keys and Effect Deny
-        :avocado: tags=put_bucket_policy_numeric
-        """
+        Create Bucket Policy using NumericNotEquals Condition Operator, key s3:max-keys and Effect Deny"""
         LOGGER.info(
             "STARTED: Create Bucket Policy using NumericNotEquals Condition Operator,"
             "key s3:max-keys and Effect Deny")
@@ -3153,13 +3067,11 @@ class TestBucketPolicy(Test):
             "key s3:max-keys and Effect Deny")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST- ")
     @CTFailOn(error_handler)
     def test_4147(self):
         """
-        Create Bucket Policy using NumericLessThanEquals Condition Operator, key "s3:max-keys" and Effect Allow
-        :avocado: tags=put_bucket_policy_numeric
-        """
+        Create Bucket Policy using NumericLessThanEquals Condition Operator, key "s3:max-keys" and Effect Allow"""
         LOGGER.info(
             "STARTED: Create Bucket Policy using NumericLessThanEquals "
             "Condition Operator,key s3:max-keys and Effect Allow")
@@ -3211,14 +3123,12 @@ class TestBucketPolicy(Test):
             "Condition Operator,key s3:max-keys and Effect Allow")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST- ")
     @CTFailOn(error_handler)
     def test_4148(self):
         """
         Create Bucket Policy using NumericGreaterThanEquals
-        Condition Operator, key s3:max-keys and Effect Deny
-        :avocado: tags=put_bucket_policy_numeric
-        """
+        Condition Operator, key s3:max-keys and Effect Deny"""
         LOGGER.info(
             "STARTED: Create Bucket Policy using NumericGreaterThanEquals Condition Operator,"
             "key s3:max-keys and Effect Deny")
@@ -3275,13 +3185,11 @@ class TestBucketPolicy(Test):
             "key s3:max-keys and Effect Deny")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST- ")
     @CTFailOn(error_handler)
     def test_1190(self):
         """
-        Test bucket policy with Effect "Allow" and "Deny " using invalid user id
-        :avocado: tags=authorize_bucket_policy
-        """
+        Test bucket policy with Effect "Allow" and "Deny " using invalid user id"""
         LOGGER.info(
             "STARTED: Test bucket policy with Effect Allow and Deny using invalid user id")
         bkt_cnf_1190 = BKT_POLICY_CONF["test_1190"]
@@ -3321,14 +3229,12 @@ class TestBucketPolicy(Test):
             "ENDED: Test bucket policy with Effect Allow and Deny using invalid user id")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST- ")
     @CTFailOn(error_handler)
     def test_1180(self):
         """
         Test Bucket policy on action field with delete-bucket-policy where effect is
-        Allow and verify user can delete-bucket-policy
-        :avocado: tags=authorize_bucket_policy
-        """
+        Allow and verify user can delete-bucket-policy"""
         LOGGER.info(
             "STARTED: Test Bucket policy on action field with delete-bucket-policy "
             "where effect is Allow and verify user can delete-bucket-policy")
@@ -3370,13 +3276,11 @@ class TestBucketPolicy(Test):
             "effect is Allow and verify user can delete-bucket-policy")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST- ")
     @CTFailOn(error_handler)
     def test_1191(self):
         """
-        Test bucket policy with Effect "Allow" and "Deny " using invalid Account id
-        :avocado: tags=authorize_bucket_policy
-        """
+        Test bucket policy with Effect "Allow" and "Deny " using invalid Account id"""
         LOGGER.info(
             "STARTED: Test bucket policy with Effect Allow and Deny using invalid Account id")
         bkt_cnf_1191 = BKT_POLICY_CONF["test_1191"]
@@ -3402,13 +3306,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test bucket policy with Effect Allow and Deny using invalid Account id")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST- ")
     @CTFailOn(error_handler)
     def test_1184(self):
         """
-        Test bucket policy with Wildcard ? in action for delete bucket policy
-        :avocado: tags=authorize_bucket_policy
-        """
+        Test bucket policy with Wildcard ? in action for delete bucket policy"""
         LOGGER.info(
             "Test bucket policy with Wildcard ? in action for delete bucket policy")
         bkt_cnf_1184 = BKT_POLICY_CONF["test_1184"]
@@ -3434,14 +3336,12 @@ class TestBucketPolicy(Test):
             "ENDED: Test bucket policy with Wildcard ? in action for delete bucket policy")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST- ")
     @CTFailOn(error_handler)
     def test_1171(self):
         """
         Test Bucket policy on action field with get-bucket-policy
-         and verify other account can get-bucket-policy
-        :avocado: tags=authorize_bucket_policy
-        """
+         and verify other account can get-bucket-policy"""
         LOGGER.info(
             "STARTED: Test Bucket policy on action field with get-bucket-policy"
             " and verify other account can get-bucket-policy")
@@ -3480,14 +3380,12 @@ class TestBucketPolicy(Test):
             "and verify other account can get-bucket-policy")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST- ")
     @CTFailOn(error_handler)
     def test_1182(self):
         """
         Test Bucket policy on action field with delete-bucket-policy where effect is
-         Deny and verify user can delete-bucket-policy
-        :avocado: tags=authorize_bucket_policy
-        """
+         Deny and verify user can delete-bucket-policy"""
         LOGGER.info(
             "STARTED: Test Bucket policy on action field with delete-bucket-policy where effect "
             "is Deny and verify user can delete-bucket-policy")
@@ -3523,13 +3421,11 @@ class TestBucketPolicy(Test):
             "is Deny and verify user can delete-bucket-policy")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST- ")
     @CTFailOn(error_handler)
     def test_1110(self):
         """
-        Test bucket policy statement Effect "Deny" using json
-        :avocado: tags=authorize_bucket_policy
-        """
+        Test bucket policy statement Effect "Deny" using json"""
         LOGGER.info(
             "STARTED: Test bucket policy statement Effect Deny using json")
         bkt_cnf_1110 = BKT_POLICY_CONF["test_1110"]
@@ -3567,13 +3463,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test bucket policy statement Effect Deny using json")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST- ")
     @CTFailOn(error_handler)
     def test_1187(self):
         """
-        Test bucket policy with Effect "Allow " and "Deny" using user id
-        :avocado: tags=authorize_bucket_policy
-        """
+        Test bucket policy with Effect "Allow " and "Deny" using user id"""
         LOGGER.info(
             "STARTED: Test bucket policy with Effect Allow and Deny using user id")
         bkt_cnf_1187 = BKT_POLICY_CONF["test_1187"]
@@ -3658,14 +3552,12 @@ class TestBucketPolicy(Test):
             "ENDED: Test bucket policy with Effect Allow and Deny using user id")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST- ")
     @CTFailOn(error_handler)
     def test_1166(self):
         """
         Test * Wildcard for all s3apis in action
-        field of statement of the json file with effect "Allow"
-        :avocado: tags=authorize_bucket_policy
-        """
+        field of statement of the json file with effect "Allow""""
         LOGGER.info(
             "STARTED: Test * Wildcard for all s3apis in "
             "action field of statement of the json file with effect Allow")
@@ -3699,14 +3591,12 @@ class TestBucketPolicy(Test):
             "action field of statement of the json file with effect Allow")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST- ")
     @CTFailOn(error_handler)
     def test_1177(self):
         """
         Test Bucket policy on action field with delete-bucket-policy
-        and verify other account can delete-bucket-policy
-        :avocado: tags=authorize_bucket_policy
-        """
+        and verify other account can delete-bucket-policy"""
         LOGGER.info(
             "STARTED: Test Bucket policy on action field with "
             "delete-bucket-policy and verify other account can delete-bucket-policy")
@@ -3742,12 +3632,12 @@ class TestBucketPolicy(Test):
             " and verify other account can delete-bucket-policy")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST- ")
     @CTFailOn(error_handler)
     def test_360(self):
         """
         Apply put-bucket-policy on existing bucket
-        :avocado: tags=put_bucket_policy
+
         """
         LOGGER.info("STARTED: Apply put-bucket-policy on existing bucket")
         test_360_cfg = BKT_POLICY_CONF["test_360"]
@@ -3769,12 +3659,12 @@ class TestBucketPolicy(Test):
         LOGGER.info("ENDED: Apply put-bucket-policy on existing bucket")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST- ")
     @CTFailOn(error_handler)
     def test_362(self):
         """
         Apply put-bucket-policy on non existing bucket
-        :avocado: tags=put_bucket_policy
+
         """
         LOGGER.info(
             "STARTED: Apply put-bucket-policy on non existing bucket")
@@ -3797,12 +3687,12 @@ class TestBucketPolicy(Test):
         LOGGER.info("ENDED: Apply put-bucket-policy on non existing bucket")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST- ")
     @CTFailOn(error_handler)
     def test_363(self):
         """
         Apply put-bucket-policy without specifying bucket name
-        :avocado: tags=put_bucket_policy
+
         """
         LOGGER.info(
             "STARTED: Apply put-bucket-policy without specifying bucket name")
@@ -3823,12 +3713,12 @@ class TestBucketPolicy(Test):
             "ENDED: Apply put-bucket-policy without specifying bucket name")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST- ")
     @CTFailOn(error_handler)
     def test_364(self):
         """
         Test Apply put-bucket-policy without specifying policy
-        :avocado: tags=put_bucket_policy
+
         """
         LOGGER.info(
             "STARTED: Apply put-bucket-policy without specifying policy")
@@ -3856,12 +3746,12 @@ class TestBucketPolicy(Test):
             "ENDED: Apply put-bucket-policy without specifying policy")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST- ")
     @CTFailOn(error_handler)
     def test_365(self):
         """
         Apply put-bucket-policy with specifying policy in non json format
-        :avocado: tags=put_bucket_policy
+
         """
         LOGGER.info(
             "STARTED: Apply put-bucket-policy with specifying policy in non json format")
@@ -3889,12 +3779,12 @@ class TestBucketPolicy(Test):
             "ENDED: Apply put-bucket-policy with specifying policy in non json format")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST- ")
     @CTFailOn(error_handler)
     def test_366(self):
         """
         Apply put-bucket-policy from another account given read permission on bucket
-        :avocado: tags=put_bucket_policy
+
         """
         LOGGER.info(
             "STARTED: Apply put-bucket-policy from another account given read permission on bucket")
@@ -3919,12 +3809,12 @@ class TestBucketPolicy(Test):
             "ENDED: Apply put-bucket-policy from another account given read permission on bucket")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST- ")
     @CTFailOn(error_handler)
     def test_367(self):
         """
         Apply put-bucket-policy from another account given write permission on bucket
-        :avocado: tags=put_bucket_policy
+
         """
         LOGGER.info(
             "STARTED: Apply put-bucket-policy from "
@@ -3949,12 +3839,12 @@ class TestBucketPolicy(Test):
             "ENDED: Apply put-bucket-policy from another account given write permission on bucket")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST- ")
     @CTFailOn(error_handler)
     def test_368(self):
         """
         Apply put-bucket-policy from another account given read-acp permission on bucket
-        :avocado: tags=put_bucket_policy
+
         """
         LOGGER.info(
             "STARTED: Apply put-bucket-policy from another account given read-acp permission on bucket")
@@ -3979,12 +3869,12 @@ class TestBucketPolicy(Test):
             "another account given read-acp permission on bucket")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST- ")
     @CTFailOn(error_handler)
     def test_369(self):
         """
         Apply put-bucket-policy from another account given write-acp permission on bucket
-        :avocado: tags=put_bucket_policy
+
         """
         LOGGER.info(
             "STARTED: Apply put-bucket-policy from "
@@ -4010,12 +3900,12 @@ class TestBucketPolicy(Test):
             "account given write-acp permission on bucket")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST- ")
     @CTFailOn(error_handler)
     def test_370(self):
         """
         Apply put-bucket-policy from another account given full-control permission on bucket
-        :avocado: tags=put_bucket_policy
+
         """
         LOGGER.info(
             "STARTED: Apply put-bucket-policy from another "
@@ -4043,12 +3933,12 @@ class TestBucketPolicy(Test):
             "another account given full-control permission on bucket")
 
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST- ")
     @CTFailOn(error_handler)
     def test_371(self):
         """
         Apply put-bucket-policy from another account with no permissions.
-        :avocado: tags=put_bucket_policy
+
         """
         LOGGER.info(
             "STARTED: Apply put-bucket-policy from another account with no permissions.")
@@ -4082,12 +3972,12 @@ class TestBucketPolicy(Test):
             "ENDED: Apply put-bucket-policy from another account with no permissions.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_372(self):
         """
         Apply put-bucket-policy from another account with authenticated-read permission on bucket
-        :avocado: tags=put_bucket_policy
+
         """
         LOGGER.info(
             "STARTED: Apply put-bucket-policy from another "
@@ -4130,12 +4020,12 @@ class TestBucketPolicy(Test):
             "authenticated-read permission on bucket")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_373(self):
         """
         Test Apply put-bucket-policy from public domain with public-read permission on bucket.
-        :avocado: tags=put_bucket_policy
+
         """
         LOGGER.info(
             "STARTED: Test Apply put-bucket-policy from public"
@@ -4170,13 +4060,13 @@ class TestBucketPolicy(Test):
             " domain with public-read permission on bucket")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_374(self):
         """
         Test Apply put-bucket-policy from public domain
          with public-read-write permission on bucket.
-        :avocado: tags=put_bucket_policy
+
         """
         LOGGER.info(
             "STARTED: Test Apply put-bucket-policy from public "
@@ -4211,14 +4101,12 @@ class TestBucketPolicy(Test):
             "domain with public-read-write permission on bucket.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_1188(self):
         """
         Test bucket policy with Effect "Allow " and "Deny" using account id
-        and verify other account can delete-bucket-policy
-        :avocado: tags=authorize_bucket_policy
-        """
+        and verify other account can delete-bucket-policy"""
         LOGGER.info(
             "STARTED: Test bucket policy with Effect Allow and Deny using account id")
         bkt_cnf_1188=BKT_POLICY_CONF["test_1188"]
@@ -4265,14 +4153,12 @@ class TestBucketPolicy(Test):
             "ENDED: Test bucket policy with Effect Allow and Deny using account id")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_1174(self):
         """
         Test Bucket policy on action field with put-bucket-policy
-        and verify other account can put-bucket-policy
-        :avocado: tags=authorize_bucket_policy
-        """
+        and verify other account can put-bucket-policy"""
         LOGGER.info(
             "STARTED: Test Bucket policy on action field with"
             "put-bucket-policy and verify other account can put-bucket-policy")
@@ -4304,13 +4190,11 @@ class TestBucketPolicy(Test):
             "and verify other account can put-bucket-policy")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_1185(self):
         """
-        Test Wildcard * in action for delete bucket policy with effect is Deny
-        :avocado: tags=authorize_bucket_policy
-        """
+        Test Wildcard * in action for delete bucket policy with effect is Deny"""
         LOGGER.info(
             "STARTED: Test Wildcard * in action for delete bucket policy with effect is Deny")
         bkt_cnf_1185=BKT_POLICY_CONF["test_1185"]
@@ -4340,13 +4224,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test Wildcard * in action for delete bucket policy with effect is Deny")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_1186(self):
         """
-        Test Wildcard * in action where effect is Allow
-        :avocado: tags=authorize_bucket_policy
-        """
+        Test Wildcard * in action where effect is Allow"""
         LOGGER.info(
             "STARTED: Test Wildcard * in action where effect is Allow")
         bkt_cnf_1186=BKT_POLICY_CONF["test_1186"]
@@ -4380,13 +4262,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test Wildcard * in action where effect is Allow")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_1114(self):
         """
-        Test bucket policy statement Effect "Allow" and "Deny" combinations using json
-        :avocado: tags=authorize_bucket_policy
-        """
+        Test bucket policy statement Effect "Allow" and "Deny" combinations using json"""
         LOGGER.info(
             "STARTED: Test bucket policy statement Effect Allow and Deny combinations using json")
         bkt_cnf_1114=BKT_POLICY_CONF["test_1114"]
@@ -4424,14 +4304,12 @@ class TestBucketPolicy(Test):
             "ENDED: Test bucket policy statement Effect Allow and Deny combinations using json")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_1169(self):
         """
         Test * Wildcard for all s3apis in action field of
-        statement of the json file with combination effect "Allow" and "Deny"
-        :avocado: tags=authorize_bucket_policy
-        """
+        statement of the json file with combination effect "Allow" and "Deny""""
         LOGGER.info(
             "STARTED: Test * Wildcard for all s3apis in action field of "
             "statement of the json file with combination effect Allow and Deny")
@@ -4471,14 +4349,12 @@ class TestBucketPolicy(Test):
             "statement of the json file with combination effect Allow and Deny")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_1167(self):
         """
         Test * Wildcard for all s3apis in action
-        field of statement of the json file with effect "Deny"
-        :avocado: tags=authorize_bucket_policy
-        """
+        field of statement of the json file with effect "Deny""""
         LOGGER.info(
             "STARTED: Test * Wildcard for all s3apis in action field "
             "of statement of the json file with effect Deny")
@@ -4513,13 +4389,11 @@ class TestBucketPolicy(Test):
             "of statement of the json file with effect Deny")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_1113(self):
         """
-        Test bucket policy statement Effect "None" using json
-        :avocado: tags=authorize_bucket_policy
-        """
+        Test bucket policy statement Effect "None" using json"""
         LOGGER.info(
             "STARTED: Test bucket policy statement Effect None using json")
         bkt_cnf_1113=BKT_POLICY_CONF["test_1113"]
@@ -4541,14 +4415,12 @@ class TestBucketPolicy(Test):
             "ENDED: Test bucket policy statement Effect None using json")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_1116(self):
         """
         Test bucket policy statement Effect "Allow" ,
-        "Deny" and "None" combinations using json
-        :avocado: tags=authorize_bucket_policy
-        """
+        "Deny" and "None" combinations using json"""
         LOGGER.info(
             "STARTED: Test bucket policy statement Effect Allow, "
             "Deny and None combinations using json")
@@ -4571,13 +4443,11 @@ class TestBucketPolicy(Test):
             "Deny and None combinations using json")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_1109(self):
         """
-        Test bucket policy statement Effect "Allow" using json
-        :avocado: tags=authorize_bucket_policy
-        """
+        Test bucket policy statement Effect "Allow" using json"""
         LOGGER.info(
             "STARTED: Test bucket policy statement Effect Allow using json")
         bkt_cnf_1109=BKT_POLICY_CONF["test_1109"]
@@ -4623,12 +4493,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test bucket policy statement Effect Allow using json")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_270(self):
         """
         verify get-bucket-policy for the bucket which is having read permissions for account2
-        :avocado: tags=get_bucket_policy
         """
         LOGGER.info(
             "STARTED: verify get-bucket-policy for the bucket which is having read permissions for account2")
@@ -4700,12 +4569,11 @@ class TestBucketPolicy(Test):
             "ENDED: verify get-bucket-policy for the bucket which is having read permissions for account2")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_271(self):
         """
         Do not apply policy from account 1 and give read permission to account2 and verify get-bucket-policy
-        :avocado: tags=get_bucket_policy
         """
         LOGGER.info(
             "STARTED: Do not apply policy from account 1 and give read permission to account2"
@@ -4761,12 +4629,11 @@ class TestBucketPolicy(Test):
             " and verify get-bucket-policy")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_4156(self):
         """
         Create Bucket Policy using StringEquals Condition Operator, key "s3:prefix" and Effect Allow
-        :avocado: tags=bucket_policy_string
         """
         LOGGER.info(
             "STARTED: Create Bucket Policy using StringEquals "
@@ -4816,13 +4683,12 @@ class TestBucketPolicy(Test):
             "Condition Operator, key 's3:prefix' and Effect Allow")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_4161(self):
         """
         Create Bucket Policy using StringNotEquals Condition
         Operator, key "s3:prefix" and Effect Deny
-        :avocado: tags=bucket_policy_string
         """
         LOGGER.info(
             "STARTED: Create Bucket Policy using StringNotEquals Condition Operator,"
@@ -4872,12 +4738,11 @@ class TestBucketPolicy(Test):
             "Condition Operator, key 's3:prefix' and Effect Deny")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_4173(self):
         """
         Create Bucket Policy using StringEquals Condition Operator, key "s3:prefix" and Effect Deny
-        :avocado: tags=bucket_policy_string
         """
         LOGGER.info(
             "STARTED: Create Bucket Policy using StringEquals"
@@ -4927,13 +4792,12 @@ class TestBucketPolicy(Test):
             "Condition Operator, key 's3:prefix' and Effect Deny")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_4170(self):
         """
         Create Bucket Policy using StringNotEquals
         Condition Operator, key "s3:prefix" and Effect Allow
-        :avocado: tags=bucket_policy_string
         """
         LOGGER.info(
             "STARTED: Create Bucket Policy using StringNotEquals Condition Operator,"
@@ -4992,13 +4856,12 @@ class TestBucketPolicy(Test):
             " key 's3:prefix' and Effect Allow")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_4183(self):
         """
         Create Bucket Policy using "StringEquals" Condition Operator,
         key "s3:x-amz-grant-write",Effect Allow and Action "s3:ListBucket"
-        :avocado: tags=bucket_policy_string
         """
         LOGGER.info(
             "STARTED: Create Bucket Policy using 'StringEquals' Condition Operator,"
@@ -5045,12 +4908,11 @@ class TestBucketPolicy(Test):
             " key 's3:x-amz-grant-write',Effect Allow and Action 's3:ListBucket'")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_1069(self):
         """
         Test invalid Account ID in the bucket policy json
-        :avocado: tags=bucket_policy_json
         """
         LOGGER.info(
             "STARTED: Test invalid Account ID in the bucket policy json")
@@ -5068,12 +4930,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test invalid Account ID in the bucket policy json")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_1075(self):
         """
         Test invalid User name in the bucket policy json
-        :avocado: tags=bucket_policy_json
         """
         LOGGER.info(
             "STARTED: Test invalid User name in the bucket policy json")
@@ -5100,13 +4961,13 @@ class TestBucketPolicy(Test):
             "ENDED: Test invalid User name in the bucket policy json")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_4502(self):
         """
         Test Bucket Policy using Condition Operator "DateEquals", key "aws:CurrentTime",
         Effect "Allow", Action "PutObject" and Date format.
-        :avocado: tags=put_bucket_policy_date
+_date
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateEquals', "
@@ -5131,13 +4992,13 @@ class TestBucketPolicy(Test):
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_4504(self):
         """
         Test Bucket Policy using Condition Operator 'DateNotEquals',
         key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format
-        :avocado: tags=put_bucket_policy_date
+_date
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateNotEquals', "
@@ -5162,13 +5023,13 @@ class TestBucketPolicy(Test):
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_4505(self):
         """
         Test Bucket Policy using Condition Operator 'DateLessThan',
         key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format
-        :avocado: tags=put_bucket_policy_date
+_date
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateLessThan', "
@@ -5193,13 +5054,13 @@ class TestBucketPolicy(Test):
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_4506(self):
         """
         Test Bucket Policy using Condition Operator 'DateLessThanEquals',
         key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format
-        :avocado: tags=put_bucket_policy_date
+_date
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateLessThanEquals', "
@@ -5224,13 +5085,13 @@ class TestBucketPolicy(Test):
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_4507(self):
         """
         Test Bucket Policy using Condition Operator 'DateGreaterThan',
         key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format
-        :avocado: tags=put_bucket_policy_date
+_date
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateGreaterThan', "
@@ -5255,13 +5116,13 @@ class TestBucketPolicy(Test):
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_4508(self):
         """
         Test Bucket Policy using Condition Operator 'DateGreaterThanEquals', "
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format
-        :avocado: tags=put_bucket_policy_date
+_date
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateGreaterThanEquals', "
@@ -5286,13 +5147,13 @@ class TestBucketPolicy(Test):
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_4509(self):
         """
         Test Bucket Policy using Condition Operator "DateEquals", key "aws:CurrentTime",
         Effect "Allow", Action "PutObject" and Date format.
-        :avocado: tags=put_bucket_policy_date
+_date
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateEquals', "
@@ -5317,13 +5178,13 @@ class TestBucketPolicy(Test):
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_4510(self):
         """
         Test Bucket Policy using Condition Operator 'DateNotEquals',
         key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format
-        :avocado: tags=put_bucket_policy_date
+_date
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateNotEquals', "
@@ -5348,13 +5209,13 @@ class TestBucketPolicy(Test):
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_4511(self):
         """
         Test Bucket Policy using Condition Operator 'DateLessThan',
         key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format
-        :avocado: tags=put_bucket_policy_date
+_date
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateLessThan', "
@@ -5379,13 +5240,13 @@ class TestBucketPolicy(Test):
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_4512(self):
         """
         Test Bucket Policy using Condition Operator 'DateGreaterThan',
         key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format
-        :avocado: tags=put_bucket_policy_date
+_date
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateGreaterThan', "
@@ -5410,13 +5271,13 @@ class TestBucketPolicy(Test):
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_4513(self):
         """
         Test Bucket Policy using Condition Operator 'DateNotEquals',
         key 'aws:EpochTime', Effect 'Deny', Action 'PutObject' and Date format
-        :avocado: tags=put_bucket_policy_date
+_date
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateNotEquals', "
@@ -5440,13 +5301,13 @@ class TestBucketPolicy(Test):
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_4514(self):
         """
         Test Bucket Policy using Condition Operator 'DateLessThan',
         key 'aws:EpochTime', Effect 'Deny', Action 'PutObject' and Date format
-        :avocado: tags=put_bucket_policy_date
+_date
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateLessThan', "
@@ -5470,13 +5331,13 @@ class TestBucketPolicy(Test):
             "key 'aws:EpochTime', Effect 'Deny', Action 'PutObject' and Date format")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_4515(self):
         """
         Test Bucket Policy using Condition Operator 'DateLessThanEquals',
         key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format
-        :avocado: tags=put_bucket_policy_date
+_date
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateLessThanEquals', "
@@ -5501,13 +5362,13 @@ class TestBucketPolicy(Test):
             "key 'aws:EpochTime', Effect 'Allow', Action 'PutObject' and Date format")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_4516(self):
         """
         Test Bucket Policy using Condition Operator 'DateGreaterThan',
         key 'aws:EpochTime', Effect 'Deny', Action 'PutObject' and Date format
-        :avocado: tags=put_bucket_policy_date
+_date
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateGreaterThan', "
@@ -5531,13 +5392,13 @@ class TestBucketPolicy(Test):
             "key 'aws:EpochTime', Effect 'Deny', Action 'PutObject' and Date format")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_4517(self):
         """
         Test Bucket Policy using Condition Operator 'DateGreaterThanEquals', "
         "key 'aws:EpochTime', Effect 'Allow', Action 'PutObject' and Date format
-        :avocado: tags=put_bucket_policy_date
+_date
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateGreaterThanEquals', "
@@ -5562,13 +5423,12 @@ class TestBucketPolicy(Test):
             "key 'aws:EpochTime', Effect 'Allow', Action 'PutObject' and Date format")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5770(self):
         """
         Test Bucket Policy using Condition Operator 'DateGreaterThanIfExists',
         key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format.
-        :avocado: tags=bucket_policy_date_if_exists
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateGreaterThanIfExists', "
@@ -5621,13 +5481,12 @@ class TestBucketPolicy(Test):
     #         "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5831(self):
         """
         Test Bucket Policy using Condition Operator 'DateNotEqualsIfExists',
         key 'aws:EpochTime', Effect 'Deny' and Action 'PutObject'.
-        :avocado: tags=bucket_policy_date_if_exists
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateNotEqualsIfExists', "
@@ -5651,13 +5510,12 @@ class TestBucketPolicy(Test):
             "key 'aws:EpochTime', Effect 'Deny' and Action 'PutObject'.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5832(self):
         """
         Test Bucket Policy using Condition Operator 'DateLessThanIfExists',
         key 'aws:EpochTime', Effect 'Deny' and Action 'PutObject'.
-        :avocado: tags=bucket_policy_date_if_exists
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateLessThanIfExists', "
@@ -5681,13 +5539,12 @@ class TestBucketPolicy(Test):
             "key 'aws:EpochTime', Effect 'Deny' and Action 'PutObject'.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5778(self):
         """
         Test Bucket Policy using Condition Operator 'DateGreaterThanEqualsIfExists',
         key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format.
-        :avocado: tags=bucket_policy_date_if_exists
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateGreaterThanEqualsIfExists', "
@@ -5711,13 +5568,12 @@ class TestBucketPolicy(Test):
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5740(self):
         """
         Test Bucket Policy using Condition Operator 'DateEqualsIfExists',
         key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format.
-        :avocado: tags=bucket_policy_date_if_exists
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateEqualsIfExists', "
@@ -5741,13 +5597,12 @@ class TestBucketPolicy(Test):
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5751(self):
         """
         Test Bucket Policy using Condition Operator 'DateNotEqualsIfExists',
         key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format.
-        :avocado: tags=bucket_policy_date_if_exists
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateNotEqualsIfExists', "
@@ -5771,13 +5626,12 @@ class TestBucketPolicy(Test):
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5773(self):
         """
         Test Bucket Policy using Condition Operator 'DateLessThanIfExist',
         key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format.
-        :avocado: tags=bucket_policy_date_if_exists
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateLessThanIfExist', "
@@ -5830,13 +5684,12 @@ class TestBucketPolicy(Test):
     #         "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5764(self):
         """
         Test Bucket Policy using Condition Operator 'DateLessThanEqualsIfExists',
         key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format.
-        :avocado: tags=bucket_policy_date_if_exists
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateLessThanEqualsIfExists', "
@@ -5908,13 +5761,12 @@ class TestBucketPolicy(Test):
     #         "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5758(self):
         """
         Test Bucket Policy using Condition Operator 'DateLessThanIfExists',
         key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format.
-        :avocado: tags=bucket_policy_date_if_exists
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateLessThanIfExists', "
@@ -5938,13 +5790,12 @@ class TestBucketPolicy(Test):
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5925(self):
         """
         Test Bucket Policy using Condition Operator 'DateLessThanEqualsIfExists',
         key 'aws:EpochTime', Effect 'Allow', Action 'PutObject'.
-        :avocado: tags=bucket_policy_date_if_exists
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateLessThanEqualsIfExists', "
@@ -5989,13 +5840,12 @@ class TestBucketPolicy(Test):
             "key 'aws:EpochTime', Effect 'Allow', Action 'PutObject'.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5926(self):
         """
         Test Bucket Policy using Condition Operator 'DateGreaterThanIfExists',
         key 'aws:EpochTime', Effect 'Deny', Action 'PutObject'.
-        :avocado: tags=bucket_policy_date_if_exists
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateGreaterThanIfExists', "
@@ -6019,13 +5869,12 @@ class TestBucketPolicy(Test):
             "key 'aws:EpochTime', Effect 'Deny', Action 'PutObject'.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5937(self):
         """
         Test Bucket Policy using Condition Operator 'DateGreaterThanEqualsIfExists',
         key 'aws:EpochTime', Effect 'Allow', Action 'PutObject'.
-        :avocado: tags=bucket_policy_date_if_exists
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateGreaterThanEqualsIfExists', "
@@ -6049,13 +5898,13 @@ class TestBucketPolicy(Test):
             "key 'aws:EpochTime', Effect 'Allow', Action 'PutObject'.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_1902(self):
         """
         Create Bucket Policy using "StringEquals" Condition Operator,
         key "s3:x-amz-acl" and value "public-read"
-        :avocado: tags=put_bucket_policy
+
         """
         LOGGER.info(
             "STARTED: Create Bucket Policy using StringEquals Condition Operator, "
@@ -6107,13 +5956,13 @@ class TestBucketPolicy(Test):
             "key 's3:x-amz-acl' and value public-read")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_1903(self):
         """
         Create Bucket Policy using "StringEquals" Condition Operator,
         key "s3:x-amz-acl" and value "bucket-owner-full-control"
-        :avocado: tags=put_bucket_policy
+
         """
         LOGGER.info(
             "STARTED: Create Bucket Policy using StringEquals Condition Operator, "
@@ -6164,13 +6013,13 @@ class TestBucketPolicy(Test):
             "key 's3:x-amz-acl' and value bucket-owner-full-control")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_1904(self):
         """
         Create Bucket Policy using 'StringEquals' Condition Operator,
         key 's3:x-amz-grant-full-control'
-        :avocado: tags=put_bucket_policy
+
         """
         LOGGER.info(
             "STARTED: Create Bucket Policy using 'StringEquals' Condition Operator, "
@@ -6225,13 +6074,13 @@ class TestBucketPolicy(Test):
             "key 's3:x-amz-grant-full-control'")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_1908(self):
         """
         Create Bucket Policy using 'StringEquals' Condition Operator,
         key 's3:x-amz-grant-write-acp''
-        :avocado: tags=put_bucket_policy
+
         """
         LOGGER.info(
             "STARTED: Create Bucket Policy using 'StringEquals' Condition Operator, "
@@ -6286,12 +6135,12 @@ class TestBucketPolicy(Test):
             "key 's3:x-amz-grant-write-acp'")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_4937(self):
         """
         Create Bucket Policy using NumericLessThanIfExists Condition, key "s3:max-keys" and Effect Allow
-        :avocado: tags=bucket_policy_numeric_if_exists
+
         """
         LOGGER.info(
             "STARTED: Create Bucket Policy using NumericLessThanIfExists"
@@ -6348,12 +6197,12 @@ class TestBucketPolicy(Test):
             " Condition, key 's3:max-keys' and Effect Allow")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_4939(self):
         """
         Create Bucket Policy using NumericLessThanIfExists Condition, key "s3:max-keys" and Effect Deny
-        :avocado: tags=bucket_policy_numeric_if_exists
+
         """
         LOGGER.info(
             "STARTED: Create Bucket Policy using NumericLessThanIfExists"
@@ -6413,12 +6262,12 @@ class TestBucketPolicy(Test):
             " Condition, key 's3:max-keys' and Effect Deny")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_4940(self):
         """
         Create Bucket Policy using NumericGreaterThanIfExists Condition, key "s3:max-keys" and Effect Allow
-        :avocado: tags=bucket_policy_numeric_if_exists
+
         """
         LOGGER.info(
             "STARTED: Create Bucket Policy using NumericGreaterThanIfExists"
@@ -6475,12 +6324,12 @@ class TestBucketPolicy(Test):
             " Condition, key 's3:max-keys' and Effect Allow")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_4941(self):
         """
         Create Bucket Policy using NumericGreaterThanIfExists Condition, key "s3:max-keys" and Effect Deny
-        :avocado: tags=bucket_policy_numeric_if_exists
+
         """
         LOGGER.info(
             "STARTED: Create Bucket Policy using NumericGreaterThanIfExists"
@@ -6538,12 +6387,12 @@ class TestBucketPolicy(Test):
             " Condition, key 's3:max-keys' and Effect Deny")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_4942(self):
         """
         Create Bucket Policy using NumericEquals Condition Operator, key "s3:max-keys" and Effect Allow
-        :avocado: tags=bucket_policy_numeric_if_exists
+
         """
         LOGGER.info(
             "STARTED: Create Bucket Policy using NumericEquals"
@@ -6600,13 +6449,13 @@ class TestBucketPolicy(Test):
             " Condition Operator, key 's3:max-keys' and Effect Allow")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_4943(self):
         """
         Create Bucket Policy using NumericNotEqualsIfExists Condition,
          key "s3:max-keys" and Effect Deny
-        :avocado: tags=bucket_policy_numeric_if_exists
+
         """
         LOGGER.info(
             "STARTED: Create Bucket Policy using NumericNotEqualsIfExists"
@@ -6664,13 +6513,13 @@ class TestBucketPolicy(Test):
             " Condition, key 's3:max-keys' and Effect Deny")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_4944(self):
         """
         Create Bucket Policy using NumericLessThanEqualsIfExists
          Condition, key "s3:max-keys" and Effect Allow
-        :avocado: tags=bucket_policy_numeric_if_exists
+
         """
         LOGGER.info(
             "STARTED: Create Bucket Policy using NumericLessThanEqualsIfExists"
@@ -6727,12 +6576,12 @@ class TestBucketPolicy(Test):
             " Condition, key 's3:max-keys' and Effect Allow")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_4945(self):
         """
         Create Bucket Policy using NumericGreaterThanEqualsIfExists Condition, key "s3:max-keys" and Effect Deny
-        :avocado: tags=bucket_policy_numeric_if_exists
+
         """
         LOGGER.info(
             "STARTED: Create Bucket Policy using NumericGreaterThanEqualsIfExists"
@@ -6790,13 +6639,13 @@ class TestBucketPolicy(Test):
             " Condition, key 's3:max-keys' and Effect Deny")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5449(self):
         """
         Test Create Bucket Policy using StringEqualsIfExists
         Condition, key "s3:prefix" and Effect Allow
-        :avocado: tags=bkt_policy_str_ifexists
+
         """
         LOGGER.info(
             "STARTED: Test Create Bucket Policy using StringEqualsIfExists "
@@ -6849,13 +6698,13 @@ class TestBucketPolicy(Test):
             " Condition, key s3:prefix and Effect Allow")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5471(self):
         """
         Test Create Bucket Policy using StringNotEqualsIfExists
         Condition Operator, key "s3:prefix" and Effect Deny
-        :avocado: tags=bkt_policy_str_ifexists
+
         """
         LOGGER.info(
             "STARTED: Test Create Bucket Policy using StringNotEqualsIfExists "
@@ -6913,13 +6762,13 @@ class TestBucketPolicy(Test):
             "Condition Operator, key s3:prefix and Effect Deny")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5473(self):
         """
         Test Create Bucket Policy using StringNotEqualsIfExists
         Condition Operator, key "s3:prefix" and Effect Allow
-        :avocado: tags=bkt_policy_str_ifexists
+
         """
         LOGGER.info(
             "STARTED: Test Create Bucket Policy using StringNotEqualsIfExists "
@@ -6975,13 +6824,13 @@ class TestBucketPolicy(Test):
             "Condition Operator, key s3:prefix and Effect Allow")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5481(self):
         """
         Test Create Bucket Policy using StringEqualsIfExists
         Condition Operator, key "s3:prefix" and Effect Deny
-        :avocado: tags=bkt_policy_str_ifexists
+
         """
         LOGGER.info(
             "STARTED: Test Create Bucket Policy using StringEqualsIfExists "
@@ -7038,13 +6887,13 @@ class TestBucketPolicy(Test):
             "Condition Operator, key s3:prefix and Effect Deny")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5490(self):
         """
         Test Create Bucket Policy using "StringEqualsIfExists" Condition Operator,
         key "s3:x-amz-grant-write",Effect Allow and Action "s3:ListBucket"
-        :avocado: tags=bkt_policy_str_ifexists
+
         """
         LOGGER.info(
             "STARTED: Test Create Bucket Policy using StringEqualsIfExists "
@@ -7085,12 +6934,12 @@ class TestBucketPolicy(Test):
             "Condition Operator, key s3:x-amz-grant-write,Effect Allow and Action s3:ListBucket")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6550(self):
         """
         Test Bucket Policy having Single Condition with Single Key and Multiple Values
-        :avocado: tags=bkt_policy_multi_keys_values
+
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy having Single Condition"
@@ -7166,12 +7015,12 @@ class TestBucketPolicy(Test):
             " with Single Key and Multiple Values")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6553(self):
         """
         Test Bucket Policy Single Condition, Multiple Keys having Single Value for each Key
-        :avocado: tags=bkt_policy_multi_keys_values
+
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy Single Condition, "
@@ -7287,13 +7136,12 @@ class TestBucketPolicy(Test):
             "Multiple Keys having Single Value for each Key")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6693(self):
         """
         Test Bucket Policy having Null Condition operator Key "s3:x-amz-acl" and Value "True".
         Verify the result.
-        :avocado: tags=bkt_policy_null_condition_operator
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-acl' and Value 'True'")
@@ -7348,13 +7196,12 @@ class TestBucketPolicy(Test):
             "ENDED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-acl' and Value 'True'")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6703(self):
         """
         Test Bucket Policy having Null Condition operator Key "s3:x-amz-acl" and Value "False".
         Verify the result.
-        :avocado: tags=bkt_policy_null_condition_operator
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-acl' and Value 'False'")
@@ -7412,13 +7259,12 @@ class TestBucketPolicy(Test):
             "ENDED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-acl' and Value 'False'")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6704(self):
         """
         Test Bucket Policy having Null Condition operator Key "s3:x-amz-acl" and Values ["False", "True"].
         Verify the result.
-        :avocado: tags=bkt_policy_null_condition_operator
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-acl'"
@@ -7475,13 +7321,12 @@ class TestBucketPolicy(Test):
             " and Values ['False', 'True']")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6760(self):
         """
         Test Bucket Policy having Null Condition operator Key "s3:x-amz-grant-read"
         and Values ["False", "True"]. Verify the result.
-        :avocado: tags=bkt_policy_null_condition_operator
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-read'"
@@ -7539,13 +7384,12 @@ class TestBucketPolicy(Test):
             " and Values ['False', 'True']")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6761(self):
         """
         Test Bucket Policy having Null Condition operator Key "s3:x-amz-grant-write"
         and Values "True". Verify the result.
-        :avocado: tags=bkt_policy_null_condition_operator
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-write'"
@@ -7593,13 +7437,12 @@ class TestBucketPolicy(Test):
             " and Values 'True'")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6763(self):
         """
         Test Bucket Policy having Null Condition operator Key "s3:x-amz-grant-write"
         and Values ["False", "True" ]. Verify the result.
-        :avocado: tags=bkt_policy_null_condition_operator
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-write'"
@@ -7647,13 +7490,12 @@ class TestBucketPolicy(Test):
             " and Values ['False', 'True']")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6764(self):
         """
         Test Bucket Policy having Null Condition operator Key "s3:x-amz-grant-read-acp"
         and Values "True". Verify the result.
-        :avocado: tags=bkt_policy_null_condition_operator
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-read-acp'"
@@ -7711,13 +7553,12 @@ class TestBucketPolicy(Test):
             " and Values 'True'")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6765(self):
         """
         Test Bucket Policy having Null Condition operator Key "s3:x-amz-grant-read-acp"
         and Values "False". Verify the result.
-        :avocado: tags=bkt_policy_null_condition_operator
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-read-acp'"
@@ -7775,13 +7616,12 @@ class TestBucketPolicy(Test):
             " and Values 'False'")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6766(self):
         """
         Test Bucket Policy having Null Condition operator Key "s3:x-amz-grant-read-acp"
         and Values ['False', 'True']. Verify the result.
-        :avocado: tags=bkt_policy_null_condition_operator
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-read-acp'"
@@ -7838,13 +7678,12 @@ class TestBucketPolicy(Test):
             " and Values ['False', 'True']")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6767(self):
         """
         Test Bucket Policy having Null Condition operator Key "s3:x-amz-grant-write-acp"
         and Value 'True'. Verify the result.
-        :avocado: tags=bkt_policy_null_condition_operator
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-write-acp'"
@@ -7902,13 +7741,12 @@ class TestBucketPolicy(Test):
             " and Value 'True'")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6768(self):
         """
         Test Bucket Policy having Null Condition operator Key "s3:x-amz-grant-write-acp"
         and Value 'False'. Verify the result.
-        :avocado: tags=bkt_policy_null_condition_operator
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-write-acp'"
@@ -7966,13 +7804,12 @@ class TestBucketPolicy(Test):
             " and Value 'False'")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6769(self):
         """
         Test Bucket Policy having Null Condition operator Key "s3:x-amz-grant-write-acp"
         and Values ["False", "True"]. Verify the result.
-        :avocado: tags=bkt_policy_null_condition_operator
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-write-acp'"
@@ -8029,13 +7866,12 @@ class TestBucketPolicy(Test):
             " and Values ['False', 'True']")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6770(self):
         """
         Test Bucket Policy having Null Condition operator Key "s3:x-amz-grant-full-control"
         and Value "True". Verify the result.
-        :avocado: tags=bkt_policy_null_condition_operator
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-full-control'"
@@ -8093,12 +7929,11 @@ class TestBucketPolicy(Test):
             " and Value 'True'")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5921(self):
         """
         Test when blank file is provided for put bucket policy
-        :avocado: tags=bkt_policy_json
         """
         LOGGER.info(
             "STARTED: Test when blank file is provided for put bucket policy")
@@ -8113,13 +7948,12 @@ class TestBucketPolicy(Test):
             "ENDED: Test when blank file is provided for put bucket policy")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5211(self):
         """
         Test Give own user permission for PutBucketPolicy and
         from user deny its account for Get/PutBucketPolicy
-        :avocado: tags=bkt_policy_json
         """
         LOGGER.info(
             "STARTED: Test Give own user permission for PutBucketPolicy"
@@ -8190,12 +8024,11 @@ class TestBucketPolicy(Test):
             "and from user deny its account for Get/PutBucketPolicy")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5210(self):
         """
         Test Give own and cross account user permission specifying userid in principal and allow GetBucketPolicy.
-        :avocado: tags=bkt_policy_json
         """
         LOGGER.info(
             "STARTED: Test Give own and cross account user permission "
@@ -8271,12 +8104,11 @@ class TestBucketPolicy(Test):
             "specifying userid in principal and allow GetBucketPolicy.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5206(self):
         """
         Test give own user permission specifying user id in principal and allow GetBucketPolicy.
-        :avocado: tags=bkt_policy_json
         """
         LOGGER.info(
             "STARTED: Test give own user permission specifying user id in principal and allow GetBucketPolicy.")
@@ -8317,13 +8149,12 @@ class TestBucketPolicy(Test):
             "ENDED: Test give own user permission specifying user id in principal and allow GetBucketPolicy.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5212(self):
         """
         Test Give cross account user permission for Get/PutBucketPolicy
         and deny the bucket owner account for Get/PutBucketPolicy .
-        :avocado: tags=bkt_policy_json
         """
         LOGGER.info(
             "STARTED: Test Give cross account user permission for "
@@ -8445,13 +8276,12 @@ class TestBucketPolicy(Test):
             "Get/PutBucketPolicy and deny the bucket owner account for Get/PutBucketPolicy .")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5214(self):
         """
         Test Give user permission for PutBucketPolicy and from user allow
          Get/PutBucketPolicy,GetBucketAcl permission to cross account
-        :avocado: tags=bkt_policy_json
         """
         LOGGER.info(
             "STARTED: Test Give user permission for PutBucketPolicy and"
@@ -8536,13 +8366,12 @@ class TestBucketPolicy(Test):
             "from user allow Get/PutBucketPolicy,GetBucketAcl permission to cross account")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5215(self):
         """
         Test Give user permission for PutBucketPolicy and from user
         allow Get/PutBucketPolicy,PutBucketAcl permission to cross account user.
-        :avocado: tags=bkt_policy_json
         """
         LOGGER.info(
             "STARTED: Test Give user permission for PutBucketPolicy and "
@@ -8655,13 +8484,12 @@ class TestBucketPolicy(Test):
             "from user allow Get/PutBucketPolicy,PutBucketAcl permission to cross account user.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6771(self):
         """
         Test Bucket Policy having Null Condition operator
         Key "s3:x-amz-grant-full-control" and Value "False"
-        :avocado: tags=bkt_policy_null_condition_operator
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy having Null Condition operator Key "
@@ -8721,13 +8549,12 @@ class TestBucketPolicy(Test):
             "s3:x-amz-grant-full-control and Value False")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6772(self):
         """
         Test Bucket Policy having Null Condition operator
         Key "s3:x-amz-grant-full-control" and Values ["False", "True"]
-        :avocado: tags=bkt_policy_null_condition_operator
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy having Null Condition operator "
@@ -8782,12 +8609,11 @@ class TestBucketPolicy(Test):
             "operator Key s3:x-amz-grant-full-control and Values [False, True]")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6773(self):
         """
         Test Bucket Policy having Null Condition operator Key "s3:max-keys" and Value "True"
-        :avocado: tags=bkt_policy_null_condition_operator
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy having Null Condition operator Key s3:max-keys and Value True")
@@ -8834,12 +8660,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test Bucket Policy having Null Condition operator Key s3:max-keys and Value True")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6774(self):
         """
         Test Bucket Policy having Null Condition operator Key "s3:max-keys" and Value "False"
-        :avocado: tags=bkt_policy_null_condition_operator
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy having Null Condition operator Key s3:max-keys and Value False")
@@ -8887,12 +8712,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test Bucket Policy having Null Condition operator Key s3:max-keys and Value False")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6775(self):
         """
         Test Bucket Policy having Null Condition operator Key "s3:max-keys" and Value ["False", "True"]
-        :avocado: tags=bkt_policy_null_condition_operator
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy having Null Condition operator Key s3:max-keys and Value [False, True]")
@@ -8935,12 +8759,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test Bucket Policy having Null Condition operator Key s3:max-keys and Value [False, True]")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6776(self):
         """
         Test Bucket Policy having Null Condition operator Key "s3:prefix" and Value "True"
-        :avocado: tags=bkt_policy_null_condition_operator
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy having Null Condition operator Key s3:prefix and Value True")
@@ -8999,12 +8822,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test Bucket Policy having Null Condition operator Key s3:prefix and Value True")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6777(self):
         """
         Test Bucket Policy having Null Condition operator Key "s3:prefix" and Value "False"
-        :avocado: tags=bkt_policy_null_condition_operator
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy having Null Condition operator Key s3:prefix and Value False")
@@ -9063,12 +8885,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test Bucket Policy having Null Condition operator Key s3:prefix and Value False")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6779(self):
         """
         Test Bucket Policy having Null Condition operator Key "s3:prefix" and Values ["False", "True"]
-        :avocado: tags=bkt_policy_null_condition_operator
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy having Null Condition operator Key s3:prefix and Values [False, True]")
@@ -9122,12 +8943,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test Bucket Policy having Null Condition operator Key s3:prefix and Values [False, True]")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6783(self):
         """
         Test Bucket Policy having Null Condition operator Key "s3:x-amz-content-sha256" and Value "True"
-        :avocado: tags=bkt_policy_null_condition_operator
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy having Null Condition operator Key s3:x-amz-content-sha256 and Value True")
@@ -9171,13 +8991,12 @@ class TestBucketPolicy(Test):
             "ENDED: Test Bucket Policy having Null Condition operator Key s3:x-amz-content-sha256 and Value True")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6787(self):
         """
         Test Bucket Policy having Null Condition operator
         Key "s3:x-amz-content-sha256" and Value "False"
-        :avocado: tags=bkt_policy_null_condition_operator
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy having Null Condition "
@@ -9218,13 +9037,12 @@ class TestBucketPolicy(Test):
             "operator Key s3:x-amz-content-sha256 and Value False")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6788(self):
         """
         Test Bucket Policy having Null Condition operator Key
         "s3:x-amz-content-sha256" and Values ["False", "True"]
-        :avocado: tags=bkt_policy_null_condition_operator
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy having Null Condition "
@@ -9265,12 +9083,11 @@ class TestBucketPolicy(Test):
             "operator Key s3:x-amz-content-sha256 and Values False,True")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6790(self):
         """
         Test Bucket Policy having Null Condition operator Key "s3:x-amz-storage-class" and Value "True"
-        :avocado: tags=bkt_policy_null_condition_operator
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy having Null "
@@ -9328,12 +9145,11 @@ class TestBucketPolicy(Test):
             "operator Key s3:x-amz-storage-class and Value True")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6791(self):
         """
         Test Bucket Policy having Null Condition operator Key "s3:x-amz-storage-class" and Value "False"
-        :avocado: tags=bkt_policy_null_condition_operator
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy having Null Condition "
@@ -9391,12 +9207,11 @@ class TestBucketPolicy(Test):
             "operator Key s3:x-amz-storage-class and Value False")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6792(self):
         """
         Test Bucket Policy having Null Condition operator Key "s3:x-amz-storage-class" and Values ["True", "False"]
-        :avocado: tags=bucket_policy_cross_acc
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-storage-class' and Values ['True', 'False']")
@@ -9453,12 +9268,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-storage-class' and Values ['True', 'False']")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6762(self):
         """
         Test Bucket Policy having Null Condition operator Key "s3:x-amz-grant-write" and Value "False"
-        :avocado: tags=bucket_policy_cross_acc
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-write' and Value 'False'")
@@ -9545,12 +9359,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-write' and Value 'False'")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6707(self):
         """
         Test Bucket Policy having Null Condition operator Key "s3:x-amz-grant-read" and Value "True"
-        :avocado: tags=bucket_policy_cross_acc
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-read' and Value 'True'")
@@ -9631,12 +9444,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-read' and Value 'True'")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6708(self):
         """
         Test Bucket Policy having Null Condition operator Key "s3:x-amz-grant-read" and Value "False"
-        :avocado: tags=bucket_policy_cross_acc
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-read' and Value 'False'")
@@ -9717,12 +9529,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-read' and Value 'False'")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_7051(self):
         """
         Test Verify Bucket Policy having Valid Condition Key and Invalid Value
-        :avocado: tags=bucket_policy_cross_acc
         """
         LOGGER.info(
             "STARTED: Test Verify Bucket Policy having Valid Condition Key and Invalid Value")
@@ -9838,12 +9649,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test Verify Bucket Policy having Valid Condition Key and Invalid Value")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_7052(self):
         """
         Test Verify Bucket Policy having Invalid Condition Key
-        :avocado: tags=bucket_policy_cross_acc
         """
         LOGGER.info(
             "STARTED: Test Verify Bucket Policy having Invalid Condition Key")
@@ -9910,12 +9720,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test Verify Bucket Policy having Invalid Condition Key")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_7054(self):
         """
         Test Verify Bucket Policy multiple conflicting Condition types(operators)
-        :avocado: tags=bucket_policy_cross_acc
         """
         LOGGER.info(
             "STARTED: Test Verify Bucket Policy multiple conflicting Condition types(operators)")
@@ -10017,12 +9826,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test Verify Bucket Policy multiple conflicting Condition types(operators)")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_7055(self):
         """
         Test Verify Bucket Policy Condition Values are case sensitive
-        :avocado: tags=bucket_policy_cross_acc
         """
         LOGGER.info(
             "STARTED: Test Verify Bucket Policy Condition Values are case sensitive")
@@ -10124,12 +9932,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test Verify Bucket Policy Condition Values are case sensitive")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_7056(self):
         """
         Test Create Bucket Policy using StringEqualsIgnoreCase Condition Operator, key "s3:prefix" and Effect Allow
-        :avocado: tags=bucket_policy_cross_acc
         """
         LOGGER.info(
             "STARTED: Test Create Bucket Policy using StringEqualsIgnoreCase Condition Operator, key 's3:prefix' and Effect Allow")
@@ -10203,12 +10010,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test Create Bucket Policy using StringEqualsIgnoreCase Condition Operator, key 's3:prefix' and Effect Allow")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_7057(self):
         """
         Test Create Bucket Policy using StringNotEqualsIgnoreCase Condition Operator, key "s3:prefix" and Effect Allow
-        :avocado: tags=bucket_policy_cross_acc
         """
         LOGGER.info(
             "STARTED: Test Create Bucket Policy using StringNotEqualsIgnoreCase Condition Operator, key 's3:prefix' and Effect Allow")
@@ -10294,12 +10100,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test Create Bucket Policy using StringNotEqualsIgnoreCase Condition Operator, key 's3:prefix' and Effect Allow")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_7058(self):
         """
         Test Create Bucket Policy using StringLike Condition Operator, key "s3:x-amz-acl"
-        :avocado: tags=bucket_policy_cross_acc
         """
         LOGGER.info(
             "STARTED: Test Create Bucket Policy using StringLike Condition Operator, key 's3:x-amz-acl'")
@@ -10366,12 +10171,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test Create Bucket Policy using StringLike Condition Operator, key 's3:x-amz-acl'")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_7059(self):
         """
         Test Create Bucket Policy using StringNotLike Condition Operator, key "s3:x-amz-acl"
-        :avocado: tags=bucket_policy_cross_acc
         """
         LOGGER.info(
             "STARTED: Test Create Bucket Policy using StringNotLike Condition Operator, key 's3:x-amz-acl'")
@@ -10448,12 +10252,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test Create Bucket Policy using StringNotLike Condition Operator, key 's3:x-amz-acl'")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5134(self):
         """
         Test apply allow PutObjectAcl api on object in policy and READ_ACP ACL on the object.
-        :avocado: tags=bucket_policy_cross_acc
         """
         LOGGER.info(
             "STARTED: Test apply allow PutObjectAcl api on object in policy and READ_ACP ACL on the object."
@@ -10546,12 +10349,11 @@ class TestBucketPolicy(Test):
     # Bug reported EOS-7215: Test is failing, need to revisit after bug is
     # fixed.
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_7053(self):
         """
         Verify Bucket Policy Condition Keys are case insensitive
-        :avocado: tags=bkt_policy_strings
         """
         LOGGER.info(
             "STARTED: Verify Bucket Policy Condition Keys are case insensitive")
@@ -10617,12 +10419,12 @@ class TestBucketPolicy(Test):
             "ENDED: Verify Bucket Policy Condition Keys are case insensitive")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6554(self):
         """
         Test Bucket Policy Single Condition, Multiple Keys having Single Value for each Key
-        :avocado: tags=bkt_policy_multi_keys_values
+
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy Single Condition, "
@@ -10745,12 +10547,11 @@ class TestBucketPolicy(Test):
             "Multiple Keys having Single Value for each Key")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5136(self):
         """
         Test apply allow GetObject api on object in policy and READ_ACP ACL on the object .
-        :avocado: tags=bucket_policy_cross_acc
         """
         LOGGER.info(
             "STARTED: Test apply allow GetObject api on object in policy and READ_ACP ACL on the object ."
@@ -10858,12 +10659,12 @@ class TestBucketPolicy(Test):
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6555(self):
         """
         Test Bucket Policy Multiple Conditions each Condition with Multiple Keys and Multiple Values
-        :avocado: tags=bkt_policy_multi_keys_values
+
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy Multiple Conditions "
@@ -11011,12 +10812,11 @@ class TestBucketPolicy(Test):
             "Condition with Multiple Keys and Multiple Values")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5138(self):
         """
         Test apply allow GetobjectAcl api on object in policy and WRITE_ACP ACL on the object.
-        :avocado: tags=bucket_policy_cross_acc
         """
         LOGGER.info(
             "STARTED: Test apply allow GetobjectAcl api on object in policy and WRITE_ACP ACL on the object."
@@ -11116,12 +10916,11 @@ class TestBucketPolicy(Test):
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5121(self):
         """
         Test apply WRITE_ACP ACL on the object and deny PutobjectAcl on object api in policy .
-        :avocado: tags=bucket_policy_cross_acc
         """
         LOGGER.info(
             "STARTED: Test apply WRITE_ACP ACL on the object and deny PutobjectAcl on object api in policy ."
@@ -11236,12 +11035,12 @@ class TestBucketPolicy(Test):
     #     """
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6557(self):
         """
         Test Bucket Policy Multiple Conditions having one Invalid Condition
-        :avocado: tags=bkt_policy_multi_keys_values
+
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy Multiple Conditions having one Invalid Condition")
@@ -11288,12 +11087,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test Bucket Policy Multiple Conditions having one Invalid Condition")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5118(self):
         """
         Test apply READ ACL on the object and deny GetObject api on object in policy .
-        :avocado: tags=bucket_policy_cross_acc
         """
         LOGGER.info(
             "STARTED: Test apply READ ACL on the object and deny GetObject api on object in policy ."
@@ -11395,12 +11193,11 @@ class TestBucketPolicy(Test):
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5115(self):
         """
         Test apply READ_ACP ACL on the bucket and deny GetBucketAcl on bucket api in policy.
-        :avocado: tags=bkt_policy_cross_account
         """
         LOGGER.info(
             "STARTED: Test apply READ_ACP ACL on the bucket and deny GetBucketAcl on bucket api in policy."
@@ -11480,12 +11277,11 @@ class TestBucketPolicy(Test):
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5114(self):
         """
         Test apply WRITE ACL on the bucket and deny PutObject api on bucket in policy.
-        :avocado: tags=bkt_policy_cross_account
         """
         LOGGER.info(
             "STARTED: Test apply WRITE ACL on the bucket and deny PutObject api on bucket in policy."
@@ -11569,12 +11365,11 @@ class TestBucketPolicy(Test):
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5110(self):
         """
         Test apply READ ACL on the bucket and deny ListBucket api on bucket in policy.
-        :avocado: tags=bkt_policy_cross_account
         """
         LOGGER.info(
             "STARTED: Test apply READ ACL on the bucket and deny ListBucket api on bucket in policy."
@@ -11654,12 +11449,11 @@ class TestBucketPolicy(Test):
     # Commented this test case as it is failing in current build and a bug was
     # already raised for this - EOS-7062
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5116(self):
         """
         Test apply WRITE_ACP ACL on the bucket and deny PutBucketAcl on bucket api in policy .
-        :avocado: tags=bkt_policy_cross_account
         """
         LOGGER.info(
             "STARTED: Test apply WRITE_ACP ACL on the bucket and deny PutBucketAcl on bucket api in policy ."
@@ -11742,12 +11536,11 @@ class TestBucketPolicy(Test):
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5117(self):
         """
         Test apply FULL_CONTROL ACL on the bucket and deny GetBucketAcl on bucket api in policy .
-        :avocado: tags=bkt_policy_cross_account
         """
         LOGGER.info(
             "STARTED: Test apply FULL_CONTROL ACL on the bucket and deny GetBucketAcl on bucket api in policy ."
@@ -11827,12 +11620,11 @@ class TestBucketPolicy(Test):
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5120(self):
         """
         Test apply READ_ACP ACL on the object and deny GetobjectAcl on object api in policy .
-        :avocado: tags=bkt_policy_cross_account
         """
         LOGGER.info(
             "STARTED: Test apply READ_ACP ACL on the object and deny GetobjectAcl on object api in policy ."
@@ -11929,12 +11721,11 @@ class TestBucketPolicy(Test):
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5122(self):
         """
         Test apply FULL_CONTROL ACL on the object and deny GetobjectAcl on object api in policy .
-        :avocado: tags=bkt_policy_cross_account
         """
         LOGGER.info(
             "STARTED: Test apply FULL_CONTROL ACL on the object and deny GetobjectAcl on object api in policy ."
@@ -12031,12 +11822,11 @@ class TestBucketPolicy(Test):
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5123(self):
         """
         Test apply allow ListBucket api on bucket in policy and WRITE ACL on the bucket.
-        :avocado: tags=bkt_policy_cross_account
         """
         LOGGER.info(
             "STARTED: Test apply allow ListBucket api on bucket in policy and WRITE ACL on the bucket."
@@ -12114,12 +11904,11 @@ class TestBucketPolicy(Test):
     # already raised for this - EOS-7062
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5126(self):
         """
         Test apply allow PutBucketAcl api on bucket in policy and READ_ACP ACL on the bucket.
-        :avocado: tags=bkt_policy_cross_account
         """
         LOGGER.info(
             "STARTED: Test apply allow PutBucketAcl api on bucket in policy and READ_ACP ACL on the bucket."
@@ -12191,12 +11980,11 @@ class TestBucketPolicy(Test):
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5124(self):
         """
         Test apply allow PutObject api on bucket in policy and READ ACL on the bucket.
-        :avocado: tags=bkt_policy_cross_account
         """
         LOGGER.info(
             "STARTED: Test apply allow PutObject api on bucket in policy and READ ACL on the bucket."
@@ -12278,12 +12066,11 @@ class TestBucketPolicy(Test):
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5125(self):
         """
         Test apply allow GetBucketAcl api on bucket in policy and WRITE_ACP ACL on the bucket.
-        :avocado: tags=bkt_policy_cross_account
         """
         LOGGER.info(
             "STARTED: Test apply allow GetBucketAcl api on bucket in policy and WRITE_ACP ACL on the bucket."
@@ -12364,12 +12151,11 @@ class TestBucketPolicy(Test):
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_5137(self):
         """
         Test apply allow GetobjectAcl api on object in policy and READ ACL on the object .
-        :avocado: tags=bkt_policy_cross_account
         """
         LOGGER.info(
             "STARTED: Test apply allow GetobjectAcl api on object in policy and READ ACL on the object ."
@@ -12469,12 +12255,11 @@ class TestBucketPolicy(Test):
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6967(self):
         """
         Test bucket policy authorization on bucket with API ListBucket
-        :avocado: tags=bkt_policy_cross_account
         """
         LOGGER.info(
             "STARTED: Test bucket policy authorization on bucket with API ListBucket"
@@ -12530,12 +12315,11 @@ class TestBucketPolicy(Test):
     # Defect raised for this test cases - EOS-7062
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6969(self):
         """
         Test bucket policy authorization on bucket with API PutBucketAcl .
-        :avocado: tags=bkt_policy_cross_account
         """
         LOGGER.info(
             "STARTED: Test bucket policy authorization on bucket with API PutBucketAcl ."
@@ -12598,12 +12382,11 @@ class TestBucketPolicy(Test):
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6991(self):
         """
         Test bucket policy authorization on bucket with API PutBucketPolicy
-        :avocado: tags=bkt_policy_cross_account
         """
         LOGGER.info(
             "STARTED: Test bucket policy authorization on bucket with API PutBucketPolicy"
@@ -12668,12 +12451,11 @@ class TestBucketPolicy(Test):
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6992(self):
         """
         Test bucket policy authorization on bucket with API GetBucketPolicy.
-        :avocado: tags=bkt_policy_cross_account
         """
         LOGGER.info(
             "STARTED: Test bucket policy authorization on bucket with API GetBucketPolicy."
@@ -12737,12 +12519,11 @@ class TestBucketPolicy(Test):
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6999(self):
         """
         Test bucket policy authorization on object with API GetObject .
-        :avocado: tags=bkt_policy_cross_account
         """
         LOGGER.info(
             "STARTED: Test bucket policy authorization on object with API GetObject ."
@@ -12816,12 +12597,11 @@ class TestBucketPolicy(Test):
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_7000(self):
         """
         Test bucket policy authorization on object with API GetObjectAcl .
-        :avocado: tags=bkt_policy_cross_account
         """
         LOGGER.info(
             "STARTED: Test bucket policy authorization on object with API GetObjectAcl ."
@@ -12894,12 +12674,11 @@ class TestBucketPolicy(Test):
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6968(self):
         """
         Test bucket policy authorization on bucket with API ListBucketMultipartUploads.
-        :avocado: tags=bkt_policy_cross_account
         """
         LOGGER.info(
             "STARTED: Test bucket policy authorization on bucket with API ListBucketMultipartUploads."
@@ -12964,12 +12743,11 @@ class TestBucketPolicy(Test):
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6978(self):
         """
         Test bucket policy authorization on bucket with API GetBucketTagging.
-        :avocado: tags=bkt_policy_cross_account
         """
         LOGGER.info(
             "STARTED: Test bucket policy authorization on bucket with API GetBucketTagging."
@@ -13038,12 +12816,11 @@ class TestBucketPolicy(Test):
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6987(self):
         """
         Test bucket policy authorization on bucket with API GetBucketLocation.
-        :avocado: tags=bkt_policy_cross_account
         """
         LOGGER.info(
             "STARTED: Test bucket policy authorization on bucket with API GetBucketLocation."
@@ -13100,12 +12877,11 @@ class TestBucketPolicy(Test):
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6988(self):
         """
         Test bucket policy authorization on bucket with API PutBucketTagging .
-        :avocado: tags=bkt_policy_cross_account
         """
         LOGGER.info(
             "STARTED: Test bucket policy authorization on bucket with API PutBucketTagging ."
@@ -13175,12 +12951,11 @@ class TestBucketPolicy(Test):
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6990(self):
         """
         Test bucket policy authorization on bucket with API DeleteBucketPolicy.
-        :avocado: tags=bkt_policy_cross_account
         """
         LOGGER.info(
             "STARTED: Test bucket policy authorization on bucket with API DeleteBucketPolicy."
@@ -13243,12 +13018,11 @@ class TestBucketPolicy(Test):
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6997(self):
         """
         Test bucket policy authorization on object with API DeleteObject .
-        :avocado: tags=bkt_policy_cross_account
         """
         LOGGER.info(
             "STARTED: Test bucket policy authorization on object with API DeleteObject ."
@@ -13326,12 +13100,11 @@ class TestBucketPolicy(Test):
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_1295(self):
         """
         Test Create Bucket Policy using StringNotEquals Condition Operator and Deny Action
-        :avocado: tags=bucket_policy_string
         """
         LOGGER.info(
             "STARTED: Test Create Bucket Policy using StringNotEquals Condition Operator and Deny Action")
@@ -13385,12 +13158,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test Create Bucket Policy using StringNotEquals Condition Operator and Deny Action")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_1297(self):
         """
         Test Create Bucket Policy using StringEquals Condition Operator and Deny Action
-        :avocado: tags=bucket_policy_string
         """
         LOGGER.info(
             "STARTED: Test Create Bucket Policy using StringEquals Condition Operator and Deny Action")
@@ -13434,12 +13206,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test Create Bucket Policy using StringEquals Condition Operator and Deny Action")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_4598(self):
         """
         Test principal arn combination with account-id and user as root.
-        :avocado: tags=bucket_policy_string
         """
         LOGGER.info(
             "STARTED: Test principal arn combination with account-id and user as root.")
@@ -13475,13 +13246,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test principal arn combination with account-id and user as root.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_7001(self):
         """
-        Test bucket policy authorization on object with API PutObject
-        :avocado: tags=authorize_bucket_policy
-        """
+        Test bucket policy authorization on object with API PutObject"""
         LOGGER.info(
             "STARTED: Test bucket policy authorization on object with API PutObject")
         bkt_policy_cfg= BKT_POLICY_CONF["bucket_policy"]
@@ -13520,13 +13289,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test bucket policy authorization on object with API PutObject")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_7002(self):
         """
-        Test bucket policy authorization on object with API PutObjectAcl
-        :avocado: tags=authorize_bucket_policy
-        """
+        Test bucket policy authorization on object with API PutObjectAcl"""
         LOGGER.info(
             "STARTED: Test bucket policy authorization on object with API PutObjectAcl")
         bkt_policy_cfg= BKT_POLICY_CONF["bucket_policy"]
@@ -13573,13 +13340,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test bucket policy authorization on object with API PutObjectAcl")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_7009(self):
         """
-        Test bucket policy authorization on object with API PutObjectTagging
-        :avocado: tags=authorize_bucket_policy
-        """
+        Test bucket policy authorization on object with API PutObjectTagging"""
         LOGGER.info(
             "STARTED: Test bucket policy authorization on object with API PutObjectTagging")
         bkt_policy_cfg= BKT_POLICY_CONF["bucket_policy"]
@@ -13622,13 +13387,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test bucket policy authorization on object with API PutObjectTagging")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_7014(self):
         """
-        Test bucket policy authorization on object with API GetObjectTagging
-        :avocado: tags=authorize_bucket_policy
-        """
+        Test bucket policy authorization on object with API GetObjectTagging"""
         LOGGER.info(
             "STARTED: Test bucket policy authorization on object with API GetObjectTagging")
         bkt_policy_cfg= BKT_POLICY_CONF["bucket_policy"]
@@ -13674,13 +13437,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test bucket policy authorization on object with API GetObjectTagging")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_7015(self):
         """
-        Test bucket policy authorization on object with API ListMultipartUploadParts
-        :avocado: tags=authorize_bucket_policy
-        """
+        Test bucket policy authorization on object with API ListMultipartUploadParts"""
         LOGGER.info(
             "STARTED: Test bucket policy authorization on object with API ListMultipartUploadParts")
         bkt_policy_cfg= BKT_POLICY_CONF["bucket_policy"]
@@ -13738,13 +13499,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test bucket policy authorization on object with API ListMultipartUploadParts")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_7016(self):
         """
-        Test bucket policy authorization on object with API AbortMultipartUpload
-        :avocado: tags=authorize_bucket_policy
-        """
+        Test bucket policy authorization on object with API AbortMultipartUpload"""
         LOGGER.info(
             "STARTED: Test bucket policy authorization on object with API AbortMultipartUpload")
         bkt_policy_cfg= BKT_POLICY_CONF["bucket_policy"]
@@ -13788,13 +13547,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test bucket policy authorization on object with API AbortMultipartUpload")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_7849(self):
         """
-        Test bucket policy authorization on bucket with API HeadBucket
-        :avocado: tags=authorize_bucket_policy
-        """
+        Test bucket policy authorization on bucket with API HeadBucket"""
         LOGGER.info(
             "STARTED: Test bucket policy authorization on bucket with API HeadBucket")
         bkt_policy_cfg= BKT_POLICY_CONF["bucket_policy"]
@@ -13849,13 +13606,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test bucket policy authorization on bucket with API HeadBucket")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_7850(self):
         """
-        Test bucket policy authorization on object with API HeadObject
-        :avocado: tags=authorize_bucket_policy
-        """
+        Test bucket policy authorization on object with API HeadObject"""
         LOGGER.info(
             "STARTED: Test bucket policy authorization on object with API HeadObject")
         bkt_policy_cfg= BKT_POLICY_CONF["bucket_policy"]
@@ -13908,13 +13663,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test bucket policy authorization on object with API HeadObject`")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_7851(self):
         """
-        Test bucket policy authorization on bucket with API DeleteBucketTagging
-        :avocado: tags=authorize_bucket_policy
-        """
+        Test bucket policy authorization on bucket with API DeleteBucketTagging"""
         LOGGER.info(
             "STARTED: Test bucket policy authorization on bucket with API DeleteBucketTagging")
         bkt_policy_cfg= BKT_POLICY_CONF["bucket_policy"]
@@ -13966,13 +13719,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test bucket policy authorization on bucket with API DeleteBucketTagging")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_7852(self):
         """
-        Test bucket policy authorization on object with API DeleteObjectTagging
-        :avocado: tags=authorize_bucket_policy
-        """
+        Test bucket policy authorization on object with API DeleteObjectTagging"""
         LOGGER.info(
             "STARTED: Test bucket policy authorization on object with API DeleteObjectTagging")
         bkt_policy_cfg= BKT_POLICY_CONF["bucket_policy"]
@@ -14019,12 +13770,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test bucket policy authorization on object with API DeleteObjectTagging")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6966(self):
         """
         Test bucket policy authorization on bucket with API DeleteBucket
-        :avocado: tags=bkt_policy_cross_account
         """
         LOGGER.info(
             "STARTED: Test bucket policy authorization on bucket with API DeleteBucket")
@@ -14069,12 +13819,11 @@ class TestBucketPolicy(Test):
             "ENDED: Test bucket policy authorization on bucket with API DeleteBucket")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags(" ")
+    @ pytest.mark.tags("TEST- ")
     @ CTFailOn(error_handler)
     def test_6923(self):
         """
         Test bucket policy authorization on bucket with API GetBucketAcl
-        :avocado: tags=bkt_policy_cross_account
         """
         LOGGER.info(
             "STARTED: Test bucket policy authorization on bucket with API GetBucketAcl")
