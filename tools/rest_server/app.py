@@ -17,7 +17,8 @@ config.read('config.ini')
 try:
     db_hostname = config["MongoDB"]["db_hostname"]
     db_name = config["MongoDB"]["db_name"]
-    collection = config["MongoDB"]["collection"]
+    collection = config["MongoDB"]["test_result_collection"]
+    system_collection = config["MongoDB"]["system_info_collection"]
 except KeyError:
     print("Could not start REST server. Please verify config.ini file")
     exit(1)
@@ -169,6 +170,133 @@ class Update(Resource):
         del json_data["db_password"]
         update_result = mongodbapi.update_document(json_data["filter"], json_data["update"],
                                                    uri, db_name, collection)
+        if update_result[0]:
+            return flask.Response(status=HTTPStatus.OK,
+                                  response=f"Entry Updated. "
+                                           f"Matched count {update_result[1].matched_count} "
+                                           f"Updated count {update_result[1].modified_count}")
+        else:
+            return flask.Response(status=update_result[1][0],
+                                  response=update_result[1][1])
+
+
+
+@api.route("/systemdb/search", doc={"description": "Search for system entries in MongoDB"})
+@api.response(200, "Success")
+@api.response(400, "Bad Request: Missing parameters. Do not retry.")
+@api.response(401, "Unauthorized: Wrong db_username/db_password.")
+@api.response(403, "Forbidden: User does not have permission for operation.")
+@api.response(404, "Not Found: No entry for that query in MongoDB.")
+@api.response(503, "Service Unavailable: Unable to connect to mongoDB.")
+class Search(Resource):
+    @staticmethod
+    def get():
+        json_data = flask.request.get_json()
+        if not json_data:
+            return flask.Response(status=HTTPStatus.BAD_REQUEST,
+                                  response="Body is empty")
+        if not validations.check_user_pass(json_data):
+            return flask.Response(status=HTTPStatus.BAD_REQUEST,
+                                  response="db_username/db_password missing in request body")
+
+        uri = MONGODB_URI.format(quote_plus(json_data["db_username"]),
+                                 quote_plus(json_data["db_password"]),
+                                 db_hostname)
+
+        # Delete username and password as not needed to add those fields in DB
+        del json_data["db_username"]
+        del json_data["db_password"]
+
+        # Projection can be used to return certain fields from documents
+        projection = None
+        # Received request with projection field and projection is not empty dictionary
+        if "projection" in json_data and bool(json_data["projection"]):
+            projection = json_data["projection"]
+
+        count_results = mongodbapi.count_documents(json_data["query"], uri, db_name, system_collection)
+        if count_results[0] and count_results[1] > 0:
+            query_results = mongodbapi.find_documents(json_data["query"], projection, uri,
+                                                      db_name, system_collection)
+            if query_results[0]:
+                output = []
+                for s in query_results[1]:
+                    del s["_id"]
+                    output.append(s)
+                return flask.jsonify({'result': output})
+            else:
+                return flask.Response(status=query_results[1][0],
+                                      response=query_results[1][1])
+        elif count_results[0] and count_results[1] == 0:
+            return flask.Response(status=HTTPStatus.NOT_FOUND,
+                                  response=f"No results for query {json_data}")
+        elif not count_results[0]:
+            return flask.Response(status=count_results[1][0],
+                                  response=count_results[1][1])
+
+
+@api.route("/systemdb/create", doc={"description": "Add system entry in MongoDB"})
+@api.response(200, "Success")
+@api.response(400, "Bad Request: Missing parameters. Do not retry.")
+@api.response(401, "Unauthorized: Wrong db_username/db_password.")
+@api.response(403, "Forbidden: User does not have permission for operation.")
+@api.response(503, "Service Unavailable: Unable to connect to mongoDB.")
+class Create(Resource):
+    @staticmethod
+    def post():
+        json_data = flask.request.get_json()
+        if not json_data:
+            return flask.Response(status=HTTPStatus.BAD_REQUEST,
+                                  response="Body is empty")
+
+        if not validations.check_user_pass(json_data):
+            return flask.Response(status=HTTPStatus.BAD_REQUEST,
+                                  response="db_username/db_password missing in request body")
+
+        # Build MongoDB URI using username and password
+        uri = MONGODB_URI.format(quote_plus(json_data["db_username"]),
+                                 quote_plus(json_data["db_password"]),
+                                 db_hostname)
+
+        # Delete username and password as not needed to add those fields in DB
+        del json_data["db_username"]
+        del json_data["db_password"]
+
+        add_result = mongodbapi.add_document(json_data, uri, db_name, system_collection)
+        if add_result[0]:
+            return flask.Response(status=HTTPStatus.OK,
+                                  response=f"Entry created. ID {add_result[1].inserted_id}")
+        else:
+            return flask.Response(status=add_result[1][0],
+                                  response=add_result[1][1])
+
+
+@api.route("/systemdb/update", doc={"description": "Update system entries in MongoDB"})
+@api.response(200, "Success")
+@api.response(400, "Bad Request: Missing parameters. Do not retry.")
+@api.response(401, "Unauthorized: Wrong db_username/db_password.")
+@api.response(403, "Forbidden: User does not have permission for operation.")
+@api.response(503, "Service Unavailable: Unable to connect to mongoDB.")
+class Update(Resource):
+    @staticmethod
+    def patch():
+        json_data = flask.request.get_json()
+        if not json_data:
+            return flask.Response(status=HTTPStatus.BAD_REQUEST,
+                                  response="Body is empty")
+        if not validations.check_user_pass(json_data):
+            return flask.Response(status=HTTPStatus.BAD_REQUEST,
+                                  response="db_username/db_password missing in request body")
+
+        # Build MongoDB URI using username and password
+        uri = MONGODB_URI.format(quote_plus(json_data["db_username"]),
+                                 quote_plus(json_data["db_password"]),
+                                 db_hostname)
+
+        # Delete username and password as not needed to add those fields in DB
+        del json_data["db_username"]
+        del json_data["db_password"]
+        update_result = mongodbapi.update_document(json_data["filter"], json_data["update"],
+                                                   uri, db_name, system_collection)
         if update_result[0]:
             return flask.Response(status=HTTPStatus.OK,
                                   response=f"Entry Updated. "

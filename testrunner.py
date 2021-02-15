@@ -2,11 +2,10 @@ import os
 import subprocess
 import argparse
 import csv
-from core import runner
+from core import runner, kafka_consumer
 from commons.utils.jira_utils import JiraTask
 from commons.utils.db_locking_utils import LockingTask
 from config import params
-from core import kafka_consumer
 
 
 def parse_args():
@@ -43,28 +42,31 @@ def run_pytest_cmd(args, parallel_exe, env=None, re_execution=False):
     # tag = '-m ' + te_tag
     run_type = ''
     is_distributed = ''
-    try :
+    try:
         run_type = env['pytest_run']
-    except:
+    except (KeyError, AttributeError):
         is_distributed = "--distributed=" + str(False)
 
-    if run_type == 'distributed' :
+    if run_type == 'distributed':
         is_distributed = "--distributed=" + str(True)
 
     is_parallel = "--is_parallel=" + str(parallel_exe)
     log_level = "--log-cli-level=" + str(args.log_level)
     prc_cnt = str(args.prc_cnt) + "*popen"
-    if re_execution :
+    if re_execution:
         report_name = "--html=log/re_non_parallel_" + args.html_report
-        cmd_line = ["pytest", "--continue-on-collection-errors", is_parallel, is_distributed, log_level, report_name]
+        cmd_line = ["pytest", "--continue-on-collection-errors", is_parallel, is_distributed,
+                    log_level, report_name]
     else :
-        if parallel_exe :
+        if parallel_exe:
             report_name = "--html=log/parallel_" + args.html_report
-            cmd_line = ["pytest", "--continue-on-collection-errors", is_parallel, is_distributed, log_level, report_name, '-d', "--tx", prc_cnt]
+            cmd_line = ["pytest", "--continue-on-collection-errors", is_parallel, is_distributed,
+                        log_level, report_name, '-d', "--tx", prc_cnt]
         else :
             report_name = "--html=log/non_parallel_" + args.html_report
-            cmd_line = ["pytest", "--continue-on-collection-errors", is_parallel, is_distributed, log_level, report_name]
-    if args.te_ticket :
+            cmd_line = ["pytest", "--continue-on-collection-errors", is_parallel, is_distributed,
+                        log_level, report_name]
+    if args.te_ticket:
         cmd_line = cmd_line + ["--te_tkt=" + str(args.te_ticket)]
     prc = subprocess.Popen(cmd_line, env=env)
     # prc = subprocess.Popen(cmd_line)
@@ -108,30 +110,21 @@ def check_test_status(test_name):
     return test_status
 
 
-def read_selected_tests_csv():
-    try :
-        tests = list()
-        with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_SELECTED_TESTS)) as f:
-            reader = csv.reader(f)
-            test_list = list(reader)
-            for test_row in test_list:
-                if not test_row :
-                    continue
-                tests.append(test_row[0])
-        return tests
-    except Exception as e :
-        print(e)
-
-
 def get_tests_from_te(args, test_type='ALL'):
+    '''
+    Get tests from given test execution
+    '''
     jira_id, jira_pwd = runner.get_jira_credential()
     jira_obj = JiraTask(jira_id, jira_pwd)
-    test_list, te_tag = jira_obj.get_test_ids_from_te(args.te_ticket, 'TODO')
+    test_list = jira_obj.get_test_ids_from_te(args.te_ticket, test_type)
     return test_list
 
 
 def trigger_unexecuted_tests(args, kafka_test_list):
-    # Get todo tests from te id
+    '''
+    Check if some tests are not executed in earlier TE
+    Rerun those tests in seqential manner.
+    '''
     test_list = get_tests_from_te(args, 'TODO')
     if len(test_list) != 0:
         unexecuted_test_list = []
@@ -154,7 +147,9 @@ def trigger_unexecuted_tests(args, kafka_test_list):
 
 
 def trigger_tests_from_kafka_msg(args, test_list):
-    print("in trigger_tests_from_kafka_msg")
+    '''
+    Trigger pytest execution for received test list
+    '''
     # writing the data into the file
     with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_TEST_LIST), 'w') as f:
         write = csv.writer(f)
@@ -167,13 +162,18 @@ def trigger_tests_from_kafka_msg(args, test_list):
 
 
 def trigger_tests_from_te(args):
+    '''
+    Get the tests from test execution
+    Trigger those tests using pytest command
+    '''
     test_list = get_tests_from_te(args)
-    if len(test_list) == 0 :
-        assert "Please check TE provided, tests are missing"
+    if len(test_list) == 0:
+        assert False, "Please check TE provided, tests are missing"
     # writing the data into the file
-    with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_TEST_LIST), 'w') as f :
-        write = csv.writer(f)
-        for test in test_list :
+    with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_TEST_LIST), 'w') \
+            as test_file:
+        write = csv.writer(test_file)
+        for test in test_list:
             write.writerow([test])
     _env = os.environ.copy()
 
@@ -184,13 +184,17 @@ def trigger_tests_from_te(args):
 
 
 def check_kafka_msg_trigger_test(args):
+    '''
+    Get message from kafka consumer
+    Trigger tests specified in kafka message
+    '''
     consumer = kafka_consumer.get_consumer(args)
     received_stop_signal = False
     lock_task = LockingTask()
     while not received_stop_signal:
-        try :
-            # SIGINT can't be handled when polling, limit timeout to 1 second.
-            msg = consumer.poll(1.0)  # TODO check if blocking and set timeout 1 min
+        try:
+            # SIGINT can't be handled when polling, limit timeout to 60 seconds.
+            msg = consumer.poll(60)
             if msg is None :
                 continue
             kafka_msg = msg.value()
