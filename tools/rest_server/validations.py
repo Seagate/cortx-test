@@ -15,6 +15,8 @@ extra_db_keys_array = ["issueIDs"]
 extra_db_keys_bool = ["isRegression", "logCollectionDone"]
 extra_db_keys = extra_db_keys_bool + extra_db_keys_array + extra_db_keys_str
 
+mongodb_operators = ["$and", "$nor", "$or"]
+
 
 def check_db_keys(json_data: dict) -> tuple:
     """
@@ -66,7 +68,7 @@ def validate_search_fields(json_data: dict) -> (bool, tuple):
         return False, (HTTPStatus.BAD_REQUEST,
                        f"Please provide projection keys as dictionary")
     for key in json_data["query"]:
-        if key not in db_keys and key not in extra_db_keys:
+        if key not in db_keys and key not in extra_db_keys or key not in mongodb_operators:
             return False, (HTTPStatus.BAD_REQUEST,
                            f"{key} is not correct db field")
     return True, None
