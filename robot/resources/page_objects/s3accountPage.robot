@@ -1,5 +1,7 @@
 *** Settings ***
 Resource  ../../resources/common/common.robot
+Resource  userSettingsLocalPage.robot
+Resource  loginPage.robot
 Library     SeleniumLibrary
 Variables  ../common/element_locators.py
 
@@ -10,6 +12,9 @@ Variables  ../common/element_locators.py
 Check S3 Account Exists
     [Documentation]  This keyword is used to check S3 account exists.
     [Arguments]  ${S3_account_table}    ${expected_s3_account}
+    wait until element is visible  ${SELECT_FROM_PAGINATION_XPATH}  timeout=10
+    click element  ${SELECT_FROM_PAGINATION_XPATH}
+    click element  ${SELECT_ALL_RECORDS_FROM_PAGINATION_XPATH}
     wait until element is visible  ${${S3_account_table}}  timeout=10
     ${s3_account_table_data}=   Read Table Data   ${${S3_account_table}}
     List Should Contain Value      ${s3_account_table_data}     ${expected_s3_account}
@@ -21,6 +26,8 @@ Action on the table
 
 Click on add new s3 account button
     [Documentation]  This keyword is to click on the add new s3 account.
+    wait until element is visible  ${ADD_S3_ACCOUNT_BUTTON_ID}  timeout=10
+    Execute JavaScript    window.scrollTo(200,0)
     click button  ${ADD_S3_ACCOUNT_BUTTON_ID}
 
 Click on create new S3 account button
@@ -46,6 +53,16 @@ Click on update s3 account button
     [Documentation]  This keyword is to click on edit s3 account option.
     wait until element is visible  ${UPDATE_S3_ACCOUNT_BTN_ID}  timeout=10
     click element  ${UPDATE_S3_ACCOUNT_BTN_ID}
+
+Click on add new access key button
+    [Documentation]  This keyword is to click on the add new access key button.
+    wait until element is visible  ${ADD_S3_ACCOUNT_ACCESS_KEY_ID}  timeout=10
+    click button  ${ADD_S3_ACCOUNT_ACCESS_KEY_ID}
+
+Click on download and close button for new access key
+    [Documentation]  This keyword is to click on edit s3 account option.
+    wait until element is visible  ${ACCESS_KEY_DOWNLOAD_AND_CLOSE_BTN_ID}  timeout=10
+    click element  ${ACCESS_KEY_DOWNLOAD_AND_CLOSE_BTN_ID}
 
 
 Add data to create new S3 account
@@ -158,3 +175,128 @@ Verify update s3 account accepts only valid password
     ...  ELSE IF    ${invalid_confirm_password}  Verify message  CONFIRM_PASSWORD_ERROR_MSG_ID  ${INVALID_S3_CONFIRM_PASSWORD_MESSAGE}
     ...  ELSE  Verify message  INVALID_S3_ACCOUNT_PASSWORD_MSG_ID  ${INVALID_S3_PASSWORD_MESSAGE}
     Verify update s3 account button remains disabled
+
+Verify Presence of Stats And Alerts
+    [Documentation]  Verify Presence of Edit And Delete Button on S3account
+    Page Should Contain Element  ${CSM_STATS_CHART_ID}
+    Page Should Contain Element  ${DASHBOARD_ALERT_SECTION_ID}
+
+Verify unique username for csm and s3 account
+    [Documentation]  This keyword verify that s3 account user name is unique and can not be same as csm user.
+    ${user_name}=  Generate New User Name
+    ${email}=  Generate New User Email
+    ${new_password}=  Generate New Password
+    Navigate To Page  MANAGE_MENU_ID
+    Create New CSM User  ${user_name}  ${new_password}  monitor
+    Click On Confirm Button
+    sleep  2s
+    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    sleep  2s
+    Click on add new s3 account button
+    Add data to create new S3 account  ${user_name}  ${email}  ${new_password}  ${new_password}
+    Click on create new S3 account button
+    sleep  2s
+    Verify message  S3_ACCOUNT_NAME_SAME_AS_CSM_USER_ID  ${S3_ACCOUNT_NAME_SAME_AS_CSM_USER_MESSAGE}
+    click element  ${CLOSE_ALERT_BOX_FOR_DUPLICATE_USER_ID}
+    Reload Page
+    Delete CSM User  ${user_name}
+
+verify the table eders for s3 account access key
+    [Documentation]  This keyword verify the table headers for s3 account access key table.
+    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    sleep  2s
+    ${S3_account_name}  ${email}  ${password} =  Create S3 account
+    sleep  3s
+    Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
+    sleep  2s
+    Re-login  ${S3_account_name}  ${password}  MANAGE_MENU_ID
+    wait until element is visible  ${ACCESS_KEY_TABLE_HEADERS_XPATH}  timeout=10
+    ${access_key_table_headers} =  Read Table Data   ${ACCESS_KEY_TABLE_HEADERS_XPATH}
+    log to console and report  ${access_key_table_headers}
+    ${expected_headers} =	Create List  ${S3_TABLE_HEADER_ACCOUNTNAME}  ${S3_TABLE_HEADER_SECRET_KEY}  ${S3_TABLE_HEADER_ACTION}
+    log to console and report  ${expected_headers}
+    Lists Should Be Equal  ${access_key_table_headers}  ${expected_headers}
+    Delete S3 Account  ${S3_account_name}  ${password}  True
+
+generate new access key
+     [Documentation]  This keyword generate new access kay.
+     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+     sleep  2s
+     ${S3_account_name}  ${email}  ${password} =  Create S3 account
+     sleep  3s
+     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
+     sleep  2s
+     Re-login  ${S3_account_name}  ${password}  MANAGE_MENU_ID
+     Click on add new access key button
+     [Return]  ${S3_account_name}  ${password}
+
+verify new access key is getting added
+    [Documentation]  This keyword verify that new access key is getting added.
+    ${S3_account_name}  ${password} =  generate new access key
+    Verify message  ACCESS_KEY_GENERATE_MEG_XPATH  ${ACCESS_KEY_GENERATED_MESSAGE}
+    Click on download and close button for new access key
+    sleep  2s
+    Delete S3 Account  ${S3_account_name}  ${password}  True
+
+get new access key
+     [Documentation]  This keyword get the newly generated access key.
+     wait until element is visible  ${NEW_ACCESS_KEY_TABLE_XPATH}  timeout=10
+     ${new_access_key_data} =  Read Table Data   ${NEW_ACCESS_KEY_TABLE_XPATH}
+     log to console and report  ${new_access_key_data}
+     ${new_access_key} =  Get From List  ${new_access_key_data}  1
+     log to console and report  ${new_access_key}
+     [Return]   ${new_access_key}
+
+get access key table data
+     [Documentation]  This keyword get data from access key table
+     wait until element is visible  ${ACCESS_KEY_TABLE_DATA_XPATH}  timeout=10
+     ${access_key_table_data} =  Read Table Data   ${ACCESS_KEY_TABLE_DATA_XPATH}
+     log to console and report  ${access_key_table_data}
+     [Return]   ${access_key_table_data}
+
+verify delete access key
+     [Documentation]  This keyword deletes and verify access key.
+     ${S3_account_name}  ${password} =  generate new access key
+     ${new_access_key} =  get new access key
+     Click on download and close button for new access key
+     Action On The Table Element  ${DELETE_ACCESS_KEY_ID}  ${new_access_key}
+     click button  ${CONFIRM_DELET_ACCESS_KEY_ID}
+     sleep  2s
+     ${access_key_table_data}=  get access key table data
+     List Should Not Contain Value  ${access_key_table_data}  ${new_access_key}
+     sleep  2s
+     Delete S3 Account  ${S3_account_name}  ${password}  True
+
+verify access key table data
+     [Documentation]  This keyword verify data from access key table.
+     ${S3_account_name}  ${password} =  generate new access key
+     ${new_access_key} =  get new access key
+     Click on download and close button for new access key
+     ${expected_data} =	Create List  ${new_access_key}  XXXX  ${SPACE*0}
+     log to console and report  ${expected_data}
+     ${data_from_access_key_table} =  get access key table data
+     log to console and report  ${data_from_access_key_table}
+     List Should Contain Sub List  ${data_from_access_key_table}  ${expected_data}
+     Delete S3 Account  ${S3_account_name}  ${password}  True
+
+verify that add access key button disables after limit exceeded
+    [Documentation]  This keyword verify that add access key button disables after limit exceeded
+    ${S3_account_name}  ${password} =  generate new access key
+    Click on download and close button for new access key
+    ${state_add_access_key_btn}=  Get Element Attribute  ${ADD_S3_ACCOUNT_ACCESS_KEY_ID}  disabled
+    Run Keyword If  ${${state_add_access_key_btn}} == True  log to console and report  add access key button disables.
+    Delete S3 Account  ${S3_account_name}  ${password}  True
+
+verify update s3 account has only password options
+    [Documentation]  This keyword verify that update s3 account has only password options for update.
+    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    sleep  2s
+    ${S3_account_name}  ${email}  ${password} =  Create S3 account
+    sleep  3s
+    Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
+    sleep  2s
+    Re-login  ${S3_account_name}  ${password}  MANAGE_MENU_ID
+    Click on edit s3 account option
+    ${password_fields} =  Get Element Count  ${EDIT_S3_ACCOUNT_OPTIONS_XPATH}
+    Should Be True  ${password_fields} == 2
+    Delete S3 Account  ${S3_account_name}  ${password}  True

@@ -13,4 +13,5 @@ build
 .coverage
 tmp
 venv/
-.venv/
+.vscode/
+robot/reports/

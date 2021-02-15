@@ -20,42 +20,42 @@
 #
 # Python library contains methods which allows you to perform bucket ACL
 #
-"""operations using boto3."""
+"""ACL operations using boto3."""
 
 import copy
 import logging
 import boto3
+
 from libs.s3.s3_core_lib import Acl
 from commons.exceptions import CTException
 from commons import errorcodes as err
 from commons.utils.config_utils import read_yaml
 from commons.helpers.s3_helper import S3Helper
 
+LOGGER = logging.getLogger(__name__)
+
 try:
-    s3hobj = S3Helper()
-except ImportError as err:
-    s3hobj = S3Helper.get_instance()
+    S3H_OBJ = S3Helper()
+except ImportError as ierr:
+    LOGGER.warning(str(ierr))
+    S3H_OBJ = S3Helper.get_instance()
 
 S3_CONF = read_yaml("config/s3/s3_config.yaml")[1]
-LOGGER = logging.getLogger(__name__)
 
 
 class S3AclTestLib(Acl):
-    """
-    This Class initialising s3 connection and including methods for bucket and object
-    ACL operations.
-    """
+    """Initialising s3 connection and including methods for bucket and object ACL operations."""
 
     def __init__(
             self,
-            access_key: str = s3hobj.get_local_keys()[0],
-            secret_key: str = s3hobj.get_local_keys()[1],
+            access_key: str = S3H_OBJ.get_local_keys()[0],
+            secret_key: str = S3H_OBJ.get_local_keys()[1],
             endpoint_url: str = S3_CONF["s3_url"],
             s3_cert_path: str = S3_CONF["s3_cert_path"],
-            region: str = S3_CONF["region"],
-            aws_session_token: str = None,
-            debug: bool = S3_CONF["debug"]) -> None:
-        """This method initializes members of S3AclTestLib and its parent class
+            **kwargs) -> None:
+        """
+        Method initializes members of S3AclTestLib and its parent class.
+
         :param access_key: access key
         :param secret_key: secret key
         :param endpoint_url: endpoint url
@@ -64,18 +64,20 @@ class S3AclTestLib(Acl):
         :param aws_session_token: aws_session_token
         :param debug: debug mode
         """
+        kwargs["region"] = kwargs.get("region", S3_CONF["region"])
+        kwargs["aws_session_token"] = kwargs.get("aws_session_token", None)
+        kwargs["debug"] = kwargs.get("debug", S3_CONF["debug"])
         super().__init__(
             access_key,
             secret_key,
             endpoint_url,
             s3_cert_path,
-            region,
-            aws_session_token,
-            debug)
+            **kwargs)
 
     def get_object_acl(self, bucket: str, object_key: str) -> tuple:
         """
-        Getting object acl attributes
+        Getting object acl attributes.
+
         :param bucket: Name of the bucket
         :param object_key: Key of object
         :return: (Boolean, response)
@@ -96,7 +98,8 @@ class S3AclTestLib(Acl):
 
     def get_bucket_acl(self, bucket_name: str) -> tuple:
         """
-        Retrieving bucket acl attributes
+        Retrieving bucket acl attributes.
+
         :param bucket_name: Name of the bucket
         :return: (Boolean, response)
         """
@@ -121,6 +124,7 @@ class S3AclTestLib(Acl):
             acl: dict) -> tuple:
         """
         Set the access control list of an Amazon s3 object.
+
         :param bucket_name: Name of the bucket
         :param object_name: Name of the object
         :param acl: Dictionary defining the ACL consisting of grants and permissions
@@ -145,6 +149,7 @@ class S3AclTestLib(Acl):
             acp: dict) -> tuple:
         """
         Set the access control policy of an Amazon s3 object.
+
         :param bucket_name: Name of the bucket
         :param object_name: Name of the object
         :param acp: Dictionary defining the ACP consisting of grants and permissions
@@ -169,7 +174,8 @@ class S3AclTestLib(Acl):
             grantee_id: str,
             permission: str) -> tuple:
         """
-        Add a grantee with given ACL permission to a object present in a bucket
+        Add a grantee with given ACL permission to a object present in a bucket.
+
         :param bucket_name: Name of the bucket
         :param object_name: Name of the object
         :param grantee_id: Canonical id of account
@@ -210,13 +216,10 @@ class S3AclTestLib(Acl):
             key: str,
             acl: str = None,
             access_control_policy: dict = None,
-            grant_full_control: str = None,
-            grant_read: str = None,
-            grant_read_acp: str = None,
-            grant_write: str = None,
-            grant_write_acp: str = None) -> tuple:
+            **kwargs) -> tuple:
         """
-        To set the access control list (ACL) permissions
+        To set the access control list (ACL) permissions.
+
         for an object that already exists in a bucket
         :param bucket_name: Name of the bucket.
         :param key: Name of the existing object.
@@ -236,17 +239,18 @@ class S3AclTestLib(Acl):
         :return: dict
         """
         try:
+            kwargs["grant_full_control"] = kwargs.get("grant_full_control", None)
+            kwargs["grant_read"] = kwargs.get("grant_read", None)
+            kwargs["grant_read_acp"] = kwargs.get("grant_read_acp", None)
+            kwargs["grant_write"] = kwargs.get("grant_write", None)
+            kwargs["grant_write_acp"] = kwargs.get("grant_write_acp", None)
             LOGGER.info("Setting canned acl to existing object")
             response = super().put_object_canned_acl(
                 bucket_name,
                 key,
-                acl,
-                access_control_policy,
-                grant_full_control,
-                grant_read,
-                grant_read_acp,
-                grant_write,
-                grant_write_acp)
+                acl=acl,
+                access_control_policy=access_control_policy,
+                **kwargs)
             LOGGER.info(response)
         except BaseException as error:
             LOGGER.error("Error in %s: %s",
@@ -261,10 +265,10 @@ class S3AclTestLib(Acl):
             bucket_name: str,
             key: str,
             file_path: str,
-            grant_full_control: str,
-            grant_read: str) -> tuple:
+            **kwargs) -> tuple:
         """
         To set both grant_full_control, grant_read acl while adding an object to a bucket.
+
         :param bucket_name: Name of the bucket
         :param key: Name of the object
         :param file_path: Path of the file
@@ -274,9 +278,11 @@ class S3AclTestLib(Acl):
         :return: dict
         """
         try:
+            kwargs["grant_full_control"] = kwargs.get("grant_full_control", None)
+            kwargs["grant_read"] = kwargs.get("grant_read", None)
             LOGGER.info("Setting acl to new object")
             response = super().put_object_with_acl2(
-                bucket_name, key, file_path, grant_full_control, grant_read)
+                bucket_name, key, file_path, **kwargs)
             LOGGER.info(response)
         except BaseException as error:
             LOGGER.error("Error in %s: %s",
@@ -292,12 +298,10 @@ class S3AclTestLib(Acl):
             key: str,
             file_path: str,
             acl: str = None,
-            grant_full_control: str = None,
-            grant_read: str = None,
-            grant_read_acp: str = None,
-            grant_write_acp: str = None) -> tuple:
+            **kwargs) -> tuple:
         """
         To set acl while adding an object to a bucket.
+
         :param bucket_name: Name of the bucket
         :param key: Name of the object
         :param acl: The canned ACL to apply to the object.
@@ -313,15 +317,16 @@ class S3AclTestLib(Acl):
         :return: dict
         """
         try:
+            kwargs["grant_full_control"] = kwargs.get("grant_full_control", None)
+            kwargs["grant_read"] = kwargs.get("grant_read", None)
+            kwargs["grant_read_acp"] = kwargs.get("grant_read_acp", None)
+            kwargs["grant_write_acp"] = kwargs.get("grant_write_acp", None)
             LOGGER.info("Setting acl to new object")
             response = super().put_object_with_acl(bucket_name,
-                                                   key,
-                                                   file_path,
-                                                   acl,
-                                                   grant_full_control,
-                                                   grant_read,
-                                                   grant_read_acp,
-                                                   grant_write_acp)
+                                                   key=key,
+                                                   file_path=file_path,
+                                                   acl=acl,
+                                                   **kwargs)
             LOGGER.info(response)
         except BaseException as error:
             LOGGER.error("Error in %s: %s",
@@ -335,13 +340,10 @@ class S3AclTestLib(Acl):
             self,
             bucket_name: str,
             acl: str = None,
-            grant_full_control: str = None,
-            grant_read: str = None,
-            grant_read_acp: str = None,
-            grant_write: str = None,
-            grant_write_acp: str = None) -> tuple:
+            **kwargs) -> tuple:
         """
         Create bucket with given acl and grant permissions.
+
         :param bucket_name: Name of the bucket
         :param acl: The canned ACL to apply to the bucket.
         e.g.'private'|'public-read'|'public-read-write'|'authenticated-read'
@@ -355,14 +357,15 @@ class S3AclTestLib(Acl):
         :return: dict
         """
         try:
+            kwargs["grant_full_control"] = kwargs.get("grant_full_control", None)
+            kwargs["grant_read"] = kwargs.get("grant_read", None)
+            kwargs["grant_read_acp"] = kwargs.get("grant_read_acp", None)
+            kwargs["grant_write"] = kwargs.get("grant_write", None)
+            kwargs["grant_write_acp"] = kwargs.get("grant_write_acp", None)
             LOGGER.info("Setting acl while creating object")
             response = super().create_bucket_with_acl(bucket_name,
                                                       acl,
-                                                      grant_full_control,
-                                                      grant_read,
-                                                      grant_read_acp,
-                                                      grant_write,
-                                                      grant_write_acp)
+                                                      **kwargs)
             LOGGER.info(response)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
@@ -377,13 +380,10 @@ class S3AclTestLib(Acl):
             bucket_name: str,
             acl: str = None,
             access_control_policy: dict = None,
-            grant_full_control: str = None,
-            grant_read: str = None,
-            grant_read_acp: str = None,
-            grant_write: str = None,
-            grant_write_acp: str = None) -> tuple:
+            **kwargs) -> tuple:
         """
-        Sets the permissions on a bucket using access control lists (ACL).
+        Set the permissions on a bucket using access control lists (ACL).
+
         :param bucket_name: Name of the bucket
         :param acl: The canned ACL to apply to the bucket.
         e.g.'private'|'public-read'|'public-read-write'|'authenticated-read'
@@ -399,16 +399,17 @@ class S3AclTestLib(Acl):
         :return: True or False
         """
         try:
+            kwargs["grant_full_control"] = kwargs.get("grant_full_control", None)
+            kwargs["grant_read"] = kwargs.get("grant_read", None)
+            kwargs["grant_read_acp"] = kwargs.get("grant_read_acp", None)
+            kwargs["grant_write"] = kwargs.get("grant_write", None)
+            kwargs["grant_write_acp"] = kwargs.get("grant_write_acp", None)
             LOGGER.info("Setting acl while creating object")
             response = super().put_bucket_acl(
                 bucket_name,
                 acl,
                 access_control_policy,
-                grant_full_control,
-                grant_read,
-                grant_read_acp,
-                grant_write,
-                grant_write_acp)
+                **kwargs)
             LOGGER.info(response)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
@@ -422,7 +423,8 @@ class S3AclTestLib(Acl):
     def get_bucket_acl_using_iam_credentials(
             access_key: str, secret_key: str, bucket_name: str) -> tuple:
         """
-        Retrieving bucket acl attributes using iam credentials
+        Retrieving bucket acl attributes using iam credentials.
+
         :param access_key: ACCESS_KEY of the iam account
         :param secret_key: SECRET_KEY of the iam account
         :param bucket_name: Name of bucket

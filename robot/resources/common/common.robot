@@ -7,7 +7,6 @@ Library    Collections
 Variables  common_variables.py
 Variables  element_locators.py
 
-
 *** Keywords ***
 Log To Console And Report
     [Documentation]  This Keyword is for logging the same string to console and report.
@@ -30,6 +29,7 @@ Read Table Data
     [Arguments]  ${table_element}
     @{table_data}=    Create List
     @{table_elements}=  Get WebElements  ${table_element}
+    Log To Console And Report  ${table_element}
     sleep  2s
     FOR  ${elements}  IN  @{table_elements}
             ${text}=    Get Text    ${elements}
@@ -83,3 +83,4 @@ Verify message
     ${msg_from_gui}=  get text  ${${element_locator}}
     Log To Console And Report  message from guI is ${msg_from_gui}
     should be equal  ${msg_from_gui}  ${message_to_verify}
+
