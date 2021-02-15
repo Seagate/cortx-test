@@ -1,10 +1,33 @@
+# !/usr/bin/python
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
+"""
+This library contains methods for S3 Bucket operations using CORTX CLI
+"""
+
 import logging
-from libs.csm.cli.cortxcli_test_lib import CortxCliTestLib
+from libs.csm.cli.cortx_cli import CortxCli
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
-class CortxCliS3BucketOperations(CortxCliTestLib):
+class CortxCliS3BucketOperations(CortxCli):
     """
     This class has all s3 bucket operations
     """
@@ -18,11 +41,9 @@ class CortxCliS3BucketOperations(CortxCliTestLib):
         :return: True/False and response returned by CORTX CLI
         """
         create_bucket_cmd = "s3buckets create {}".format(bucket_name)
-
-        logger.info("Creating bucket with name {}".format(bucket_name))
+        LOGGER.info("Creating bucket with name %s", bucket_name)
         response = self.execute_cli_commands(cmd=create_bucket_cmd)[1]
-        logger.info("Response returned: \n{}".format(response))
-
+        LOGGER.info("Response returned: \n%s", response)
         if "Bucket created" in response:
             return True, response
         return False, response
@@ -35,14 +56,11 @@ class CortxCliS3BucketOperations(CortxCliTestLib):
         :return: response returned by CORTX CLI
         """
         show_bkts_cmd = "s3buckets show"
-
         if op_format:
             show_bkts_cmd = "{} -f {}".format(show_bkts_cmd, op_format)
-
-        logger.info("Listing buckets with cmd: {}".format(show_bkts_cmd))
+        LOGGER.info("Listing buckets with cmd: %s", show_bkts_cmd)
         response = self.execute_cli_commands(cmd=show_bkts_cmd)
-        logger.info("Response returned: \n{}".format(response))
-
+        LOGGER.info("Response returned: \n%s", response)
         return response
 
     def delete_bucket_cortx_cli(
@@ -54,11 +72,9 @@ class CortxCliS3BucketOperations(CortxCliTestLib):
         :return: True/False and response returned by CORTX CLI
         """
         delete_bucket_cmd = "s3buckets delete {}".format(bucket_name)
-
-        logger.info("Deleting bucket {}".format(bucket_name))
+        LOGGER.info("Deleting bucket %s", bucket_name)
         response = self.execute_cli_commands(cmd=delete_bucket_cmd)[1]
-        logger.info("Response returned: \n{}".format(response))
-
+        LOGGER.info("Response returned: \n%s", response)
         if "Bucket deleted" in response:
             return True, response
         return False, response

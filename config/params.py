@@ -32,3 +32,5 @@ COMMON_CONFIG = os.path.join(CONFIG_DIR, 'common_config.yaml')
 LOG_DIR_NAME = 'log'
 
 JIRA_TEST_LIST = 'test_lists.csv'
+
+CSM_CONFIG = os.path.join(CONFIG_DIR, 'csm', 'csm_config.yaml')
