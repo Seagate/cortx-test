@@ -94,7 +94,7 @@ class TestSSPLSecondary:
         cmd = common_cmd.REMOVE_UNWANTED_CONSUL
         response = self.node_obj2.execute_cmd(cmd=cmd,
                                               read_nbytes=BYTES_TO_READ)
-        assert response[0] is True, response[1]
+        LOGGER.info("Response is: %s", response)
 
         LOGGER.info("Restarting sspl service")
         self.health_obj2.restart_pcs_resource(CM_CFG["sspl_resource_id"])
@@ -242,7 +242,6 @@ class TestSSPLSecondary:
                                           read_nbytes=buffer_sz)
 
         LOGGER.info("SEL response : %s", resp)
-        assert resp[0] is True, resp[1]
         LOGGER.info(
             "Step 7: Successfully generated fault on fan %s", fan_name)
 
@@ -258,7 +257,6 @@ class TestSSPLSecondary:
         resp = self.node_obj2.execute_cmd(cmd=cmd,
                                           read_nbytes=buffer_sz)
         LOGGER.info("SEL response : %s", resp)
-        assert resp[0] is True, resp[1]
         LOGGER.info("Step 9: Successfully resolved fault on fan %s", fan_name)
 
         if self.start_rmq:
@@ -349,7 +347,6 @@ class TestSSPLSecondary:
         resp = self.node_obj2.execute_cmd(cmd=cmd,
                                           read_nbytes=buffer_sz)
         LOGGER.info("SEL response : %s", resp)
-        assert resp[0] is True, resp[1]
 
         LOGGER.info(
             "Step 7: Successfully generated fault on fan %s", fan_name)
@@ -366,7 +363,6 @@ class TestSSPLSecondary:
         resp = self.node_obj2.execute_cmd(cmd=cmd,
                                           read_nbytes=buffer_sz)
         LOGGER.info("SEL response : %s", resp)
-        assert resp[0] is True, resp[1]
         LOGGER.info("Step 9: Successfully resolved fault on fan %s", fan_name)
 
         if self.start_rmq:
@@ -434,9 +430,8 @@ class TestSSPLSecondary:
             master_node)
         resp = node_obj_master.execute_cmd(cmd=common_cmd.REBOOT_NODE_CMD,
                                            read_nbytes=test_cfg["buffer_sz"])
-        assert resp[0] is True, resp[1]
         LOGGER.info(
-            "Step 3: Rebooted node: %s, Response: %s", master_node, resp[1])
+            "Step 3: Rebooted node: %s, Response: %s", master_node, resp)
 
         LOGGER.info(
             "Step 4: Inducing FAN alert on node %s", slave_node)
@@ -453,7 +448,6 @@ class TestSSPLSecondary:
         resp = node_obj_slave.execute_cmd(cmd=cmd,
                                           read_nbytes=test_cfg["buffer_sz"])
         LOGGER.info("SEL response : %s", resp)
-        assert resp[0] is True, resp[1]
         LOGGER.info(
             "Step 4: Successfully generated fault on fan %s", fan_name)
 
@@ -469,7 +463,6 @@ class TestSSPLSecondary:
         resp = node_obj_slave.execute_cmd(cmd=cmd,
                                           read_nbytes=test_cfg["buffer_sz"])
         LOGGER.info("SEL response : %s", resp)
-        assert resp[0] is True, resp[1]
         LOGGER.info(
             "Step 6: Successfully resolved fault on fan %s", fan_name)
 
