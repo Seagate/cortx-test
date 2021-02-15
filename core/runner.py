@@ -28,21 +28,24 @@ from collections import deque
 from typing import Tuple
 from typing import Optional
 from typing import Any
+import requests
+import json
+
 
 
 def get_jira_credential() -> Tuple[str, Optional[str]]:
     jira_id = ''
-    jira_pwd = ''
+    jira_pd = ''
     try :
         jira_id = os.environ['JIRA_ID']
-        jira_pwd = os.environ['JIRA_PASSWORD']
+        jira_pd = os.environ['JIRA_PASSWORD']
     except KeyError :
         print("JIRA credentials not found in environment")
         jira_id = input("JIRA username: ")
-        jira_pwd = getpass.getpass("JIRA password: ")
+        jira_pd = getpass.getpass("JIRA password: ")
         os.environ['JIRA_ID'] = jira_id
-        os.environ['JIRA_PASSWORD'] = jira_pwd
-    return jira_id, jira_pwd
+        os.environ['JIRA_PASSWORD'] = jira_pd
+    return jira_id, jira_pd
 
 
 def parse_json(json_file) :
@@ -95,7 +98,6 @@ def cleanup():
         os.makedirs(latest)
     else:
         os.makedirs(os.path.join(log_dir,'latest'))
-
 
 class LRUCache:
     """

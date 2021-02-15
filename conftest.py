@@ -155,7 +155,7 @@ def pytest_addoption(parser) :
     :return:
     """
     parser.addoption(
-        "--is_parallel", action="store", default="false", help="option: true or false"
+        "--is_parallel", action="store", default=False, help="option: True or False"
     )
     parser.addoption(
         "--te_tkt", action="store", default="", help="TE ticket's ID"
@@ -165,6 +165,9 @@ def pytest_addoption(parser) :
     )
     parser.addoption(
         "--local", action="store", default=False, help="Decide whether run is dev local"
+    )
+    parser.addoption(
+        "--distributed", action="store", default=False, help="Decide whether run is in distributed env"
     )
 
 
@@ -201,36 +204,59 @@ def pytest_collection(session):
     LOGGER.info(dir(session.config))
     config = session.config
     _local = bool(config.option.local)
+    _distributed = bool(config.option.distributed)
+    print("in pytest collection distributed = {}".format(_distributed))
     required_tests = list()
     global CACHE
     CACHE = LRUCache(1024 * 10)
     Globals.LOCAL_RUN = _local
-    if not _local:
+    if _distributed:
         required_tests = read_test_list_csv()  # e.g. required_tests = ['TEST-17413', 'TEST-17414']
+        print("required tests {}".format(required_tests))
         Globals.TE_TKT = config.option.te_tkt
         selected_items = []
-        for item in items:
-            parallel_found = 'false'
+        for item in items :
             test_found = ''
-            for mark in item.iter_markers():
-                if mark.name == 'parallel':
-                    parallel_found = 'true'
-                    if config.option.is_parallel == 'false':
-                        break
-                elif mark.name == 'tags':
+            for mark in item.iter_markers() :
+                if mark.name == 'tags' :
                     test_found = mark.args[0]
-            if parallel_found == config.option.is_parallel and test_found != '':
-                if test_found in required_tests:
-                    selected_items.append(item)
+                    if test_found in required_tests :
+                        selected_items.append(item)
             CACHE.store(item.nodeid, test_found)
         items[:] = selected_items
-    else:
+    elif _local:
         for item in items:
             test_id = ''
             for mark in item.iter_markers():
                 if mark.name == 'tags':
                     test_id = mark.args[0]
             CACHE.store(item.nodeid, test_id)
+    else:
+        required_tests = read_test_list_csv()  # e.g. required_tests = ['TEST-17413', 'TEST-17414']
+        Globals.TE_TKT = config.option.te_tkt
+        selected_items = []
+        selected_tests = []
+        for item in items :
+            parallel_found = False
+            test_found = ''
+            for mark in item.iter_markers() :
+                if mark.name == 'parallel' :
+                    parallel_found = 'true'
+                    if config.option.is_parallel == False :
+                        break
+                elif mark.name == 'tags' :
+                    test_found = mark.args[0]
+            if parallel_found == config.option.is_parallel and test_found != '' :
+                if test_found in required_tests :
+                    selected_items.append(item)
+                    selected_tests.append(test_found)
+            CACHE.store(item.nodeid, test_found)
+        with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_SELECTED_TESTS), 'w') as f :
+            write = csv.writer(f)
+            for test in selected_tests :
+                write.writerow([test])
+        items[:] = selected_items
+
     cache_path = os.path.join(os.getcwd(), LOG_DIR, CACHE_JSON)
     _path = config_utils.create_content_json(cache_path, _get_items_from_cache())
     if not os.path.exists(_path):
