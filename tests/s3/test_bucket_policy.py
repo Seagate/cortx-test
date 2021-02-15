@@ -197,7 +197,7 @@ class TestBucketPolicy(Test):
             email_id,
             self.ldap_user,
             self.ldap_pwd)
-        self.assertTrue(create_account[0], create_account[1])
+        assert create_account[0], create_account[1]
         access_key = create_account[1]["access_key"]
         secret_key = create_account[1]["secret_key"]
         canonical_id = create_account[1]["canonical_id"]
@@ -282,7 +282,7 @@ class TestBucketPolicy(Test):
         LOGGER.info("Creating a bucket with name %s",bucket_name)
         resp = S3_OBJ.create_bucket(bucket_name)
         assert resp[0], resp[1]
-        self.assertEqual(resp[1], bucket_name, resp[1])
+        ASRTOBJ.assert_equals(resp[1], bucket_name, resp[1])
         LOGGER.info("Bucket is created with name %s",bucket_name)
         LOGGER.info(
             "Uploading an object %s to a bucket %s", obj_name_1, bucket_name)
@@ -322,10 +322,7 @@ class TestBucketPolicy(Test):
         LOGGER.info("Step 1 : Creating a bucket with name %s", bucket_name)
         resp = S3_OBJ.create_bucket(bucket_name)
         assert resp[0], resp[1]
-        self.assertEqual(
-            resp[1],
-            bucket_name,
-            resp[1])
+        ASRTOBJ.assert_equals(resp[1], bucket_name, resp[1])
         LOGGER.info("Step 1 : Bucket is created with name %s", bucket_name)
 
     def put_bucket_policy_with_err(
@@ -345,7 +342,7 @@ class TestBucketPolicy(Test):
         LOGGER.info("Getting the bucket acl")
         resp = ACL_OBJ.get_bucket_acl(bucket_name)
         assert resp[0], resp[1]
-        self.assertEqual(resp[1][1][0]["Permission"],
+        ASRTOBJ.assert_equals(resp[1][1][0]["Permission"],
                          test_bckt_cfg["bucket_permission"], resp[1])
         LOGGER.info("Bucket ACL was verified successfully")
         LOGGER.info(
@@ -382,7 +379,7 @@ class TestBucketPolicy(Test):
         resp = S3_BKT_POLICY_OBJ.get_bucket_policy(bucket_name)
         assert resp[0], resp[1]
         LOGGER.debug(resp[1]["Policy"])
-        self.assertEqual(resp[1]["Policy"], bkt_policy_json, resp[1])
+        ASRTOBJ.assert_equals(resp[1]["Policy"], bkt_policy_json, resp[1])
         LOGGER.info("Retrieved policy of a bucket %s", bucket_name)
 
     def put_invalid_policy(self, bucket_name:str, bucket_policy:str, msg: str) -> None:
@@ -443,9 +440,7 @@ class TestBucketPolicy(Test):
                 BKT_POLICY_CONF["bucket_policy"]["file_path"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_config["error_message"],
-                error.message, error.message)
+            assert test_config["error_message"] in error.message, error.message
             LOGGER.info(
                 "Uploading object to bucket with second account failed with error %s",
                     error.message)
@@ -476,7 +471,7 @@ class TestBucketPolicy(Test):
                     bucket_name, maxkeys=max_keys)
             except CTException as error:
                 LOGGER.error(error.message)
-                assert >> err_message, error.message, error.message)
+                assert  err_message in error.message, error.message
                 LOGGER.info(
                     "Listing objects with %d max keys and specified account is failed with error %s",
                         max_keys, err_message)
@@ -508,7 +503,7 @@ class TestBucketPolicy(Test):
                 S3_OBJ.object_list(bucket_name)
             except CTException as error:
                 LOGGER.error(error.message)
-                assert >> err_message, error.message, error.message)
+                assert  err_message in error.message, error.message
                 LOGGER.info(
                     "Listing an objects of bucket %s failed with %s",
                         bucket_name, err_message)
@@ -571,7 +566,7 @@ class TestBucketPolicy(Test):
                         BKT_POLICY_CONF["bucket_policy"]["file_path_2"])
             except CTException as error:
                 LOGGER.error(error.message)
-                assert >> err_message, error.message, error.message)
+                assert  err_message in error.message, error.message
                 LOGGER.info(
                     "Putting an object into bucket %s failed with %s",
                         bucket_name, err_message)
@@ -616,7 +611,7 @@ class TestBucketPolicy(Test):
                     bucket_name, prefix=obj_name_prefix)
             except CTException as error:
                 LOGGER.error(error.message)
-                assert >> err_message, error.message, error.message)
+                assert  err_message in error.message, error.message
                 LOGGER.info(
                     "Listing objects with %s prefix from another account is failed with error %s",
                         obj_name_prefix, err_message)
@@ -643,9 +638,7 @@ class TestBucketPolicy(Test):
                 BKT_POLICY_CONF["test_254"]["bucket_name"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                BKT_POLICY_CONF["test_254"]["error_message"],
-                error.message, error.message)
+            assert BKT_POLICY_CONF["test_254"]["error_message"] in error.message, error.message
         LOGGER.info(
             "Step 2 : Retrieving policy of a bucket {0} is failed".format(
                 BKT_POLICY_CONF["test_254"]["bucket_name"]))
@@ -666,9 +659,7 @@ class TestBucketPolicy(Test):
                 BKT_POLICY_CONF["test_260"]["bucket_name"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                BKT_POLICY_CONF["test_260"]["error_message"],
-                error.message, error.message)
+            assert BKT_POLICY_CONF["test_260"]["error_message"] in error.message, error.message
         LOGGER.info(
             "Step 1 : Retrieving policy of a bucket {0} is failed".format(
                 BKT_POLICY_CONF["test_254"]["bucket_name"]))
@@ -690,10 +681,9 @@ class TestBucketPolicy(Test):
         resp = S3_OBJ.create_bucket(
             BKT_POLICY_CONF["test_261"]["bucket_name"])
         assert resp[0], resp[1]
-        self.assertEqual(
-            resp[1],
-            BKT_POLICY_CONF["test_261"]["bucket_name"],
-            resp[1])
+        ASRTOBJ.assert_equals(resp[1],
+                              BKT_POLICY_CONF["test_261"]["bucket_name"],
+                              resp[1])
         LOGGER.info(
             "Step 1 : Bucket is created with name {0}".format(
                 BKT_POLICY_CONF["test_261"]["bucket_name"]))
@@ -714,7 +704,7 @@ class TestBucketPolicy(Test):
         resp = S3_BKT_POLICY_OBJ.get_bucket_policy(
             BKT_POLICY_CONF["test_261"]["bucket_name"])
         assert resp[0], resp[1]
-        self.assertEqual(resp[1]["Policy"], bkt_json_policy, resp[1])
+        ASRTOBJ.assert_equals(resp[1]["Policy"], bkt_json_policy, resp[1])
         LOGGER.info(
             "Step 3 : Retrieved policy of a bucket {0}".format(
                 BKT_POLICY_CONF["test_261"]["bucket_name"]))
@@ -736,7 +726,7 @@ class TestBucketPolicy(Test):
                 BKT_POLICY_CONF["test_262"]["bucket_name"]))
         resp = S3_OBJ.create_bucket(
             BKT_POLICY_CONF["test_262"]["bucket_name"])
-        self.assertEqual(
+        ASRTOBJ.assert_equals(
             resp[1],
             BKT_POLICY_CONF["test_262"]["bucket_name"],
             resp[1])
@@ -785,10 +775,7 @@ class TestBucketPolicy(Test):
                 BKT_POLICY_CONF["test_262"]["bucket_name"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                BKT_POLICY_CONF["test_262"]["error_message"],
-                error.message,
-                error.message)
+            assert BKT_POLICY_CONF["test_262"]["error_message"] in error.message, error.message
         LOGGER.info(
             "Step 3 : Get bucket policy with another account is failed")
         # Cleanup activity
@@ -1098,7 +1085,7 @@ class TestBucketPolicy(Test):
         assert resp[0], resp[1]
         bucket_policy = list(eval(resp[1]["Policy"])[
             "Statement"][0]["Condition"].keys())
-        self.assertEqual(
+        ASRTOBJ.assert_equals(
             bucket_policy[0],
             test_1300_cfg["buc_policy_val"],
             resp[1])
@@ -1139,7 +1126,7 @@ class TestBucketPolicy(Test):
         assert resp[0], resp[1]
         bucket_policy = list(eval(resp[1]["Policy"])[
             "Statement"][0]["Condition"].keys())
-        self.assertEqual(
+        ASRTOBJ.assert_equals(
             bucket_policy[0],
             test_1303_cfg["buc_policy_val"],
             resp[1])
@@ -1179,7 +1166,7 @@ class TestBucketPolicy(Test):
         assert resp[0], resp[1]
         bucket_policy = list(eval(resp[1]["Policy"])[
             "Statement"][0]["Condition"].keys())
-        self.assertEqual(bucket_policy[0], test_1307_cfg["buc_policy_val"])
+        ASRTOBJ.assert_equals(bucket_policy[0], test_1307_cfg["buc_policy_val"])
         LOGGER.info("Step 3: Bucket policy was verified successfully")
         LOGGER.info(
             "ENDED: Create Bucket Policy using NumericGreaterThan Condition Operator")
@@ -1209,10 +1196,9 @@ class TestBucketPolicy(Test):
         assert resp[0], resp[1]
         bucket_policy = list(eval(resp[1]["Policy"])[
             "Statement"][0]["Condition"].keys())
-        self.assertEqual(
-            bucket_policy[0],
-            test_1308_cfg["buc_policy_val"],
-            resp[1])
+        ASRTOBJ.assert_equals(bucket_policy[0],
+                              test_1308_cfg["buc_policy_val"],
+                              resp[1])
         LOGGER.info("Step 2: Bucket policy was verified successfully")
         LOGGER.info(
             "ENDED: Create Bucket Policy using NumericGreaterThanEquals Condition Operator")
@@ -1244,7 +1230,7 @@ class TestBucketPolicy(Test):
         assert resp[0], resp[1]
         bucket_policy = list(eval(resp[1]["Policy"])
                              ["Statement"][0]["Condition"].keys())
-        self.assertEqual(
+        ASRTOBJ.assert_equals(
             bucket_policy[0],
             test_1294_cfg["buc_policy_val"],
             resp[1])
@@ -1255,7 +1241,7 @@ class TestBucketPolicy(Test):
             bucket_name, test_1294_cfg["prefix"])
         prefix_obj_lst = list(resp[1])
         assert resp[0], resp[1]
-        self.assertEqual(prefix_obj_lst.sort(), object_lst.sort(), resp[1])
+        ASRTOBJ.assert_equals(prefix_obj_lst.sort(), object_lst.sort(), resp[1])
         LOGGER.info("Step 3: Verified the Bucket Policy with prefix")
         LOGGER.info(
             "ENDED: Create Bucket Policy using StringEquals Condition Operator and Allow Action")
@@ -1287,7 +1273,7 @@ class TestBucketPolicy(Test):
         assert resp[0], resp[1]
         bucket_policy = list(eval(resp[1]["Policy"])
                              ["Statement"][0]["Condition"].keys())
-        self.assertEqual(
+        ASRTOBJ.assert_equals(
             bucket_policy[0],
             test_1296_cfg["buc_policy_val"],
             resp[1])
@@ -1298,14 +1284,14 @@ class TestBucketPolicy(Test):
             bucket_name, test_1296_cfg["prefix"])
         prefix_obj_lst = list(resp[1])
         assert resp[0], resp[1]
-        self.assertEqual(prefix_obj_lst.sort(), object_lst.sort(), resp[1])
+        ASRTOBJ.assert_equals(prefix_obj_lst.sort(), object_lst.sort(), resp[1])
         LOGGER.info("Step 3: Verified the Bucket Policy with prefix")
         LOGGER.info(
             "Step 4: Verify the Bucket Policy without prefix from Bucket owner")
         resp = S3_OBJ.object_list(bucket_name)
         prefix_obj_lst = list(resp[1])
         assert resp[0], resp[1]
-        self.assertEqual(prefix_obj_lst.sort(), object_lst.sort(), resp[1])
+        ASRTOBJ.assert_equals(prefix_obj_lst.sort(), object_lst.sort(), resp[1])
         LOGGER.info("Step 4: Verified the Bucket Policy without prefix")
         LOGGER.info(
             "ENDED: Create Bucket Policy using NumericGreaterThanEquals Condition Operator")
@@ -1336,10 +1322,7 @@ class TestBucketPolicy(Test):
         try:
             S3_BKT_POLICY_OBJ.get_bucket_policy(bucket_name)
         except CTException as error:
-            assert >> 
-                test_558_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_558_cfg["error_message"] in error.message, error.message
         LOGGER.info("ENDED: Apply Delete-bucket-policy on existing bucket")
 
     def test_560(self):
@@ -1356,7 +1339,7 @@ class TestBucketPolicy(Test):
         try:
             S3_BKT_POLICY_OBJ.delete_bucket_policy(bucket_name)
         except CTException as error:
-            assert >> err_msg, error.message, error.message)
+            assert err_msg in error.message, error.message
         LOGGER.info(
             "Step 1: Delete bucket policy should through error message {}".format(err_msg))
         LOGGER.info(
@@ -1388,10 +1371,7 @@ class TestBucketPolicy(Test):
             bucket_name = None
             S3_BKT_POLICY_OBJ.delete_bucket_policy(bucket_name)
         except CTException as error:
-            assert >> 
-                test_562_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_562_cfg["error_message"] in error.message, error.message
         LOGGER.info(
             "Step 4: Deleting the bucket without bucket "
             "name was handled with error message {}".format(
@@ -1416,10 +1396,7 @@ class TestBucketPolicy(Test):
         try:
             S3_BKT_POLICY_OBJ.delete_bucket_policy(bucket_name)
         except CTException as error:
-            assert >> 
-                BKT_POLICY_CONF["test_563"]["error_message"],
-                error.message,
-                error.message)
+            assert bkt_POLICY_CONF["test_563"]["error_message"] in error.message, error.message
         LOGGER.info(
             "Step 3: Delete bucket policy should through error message {}".format(
                 BKT_POLICY_CONF["test_563"]["error_message"]))
@@ -1683,10 +1660,7 @@ class TestBucketPolicy(Test):
         try:
             S3_BKT_POLICY_OBJ_2.delete_bucket_policy(bucket_name)
         except CTException as error:
-            assert >> 
-                test_583_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_583_cfg["error_message"] in error.message, error.message
         S3_OBJ.delete_bucket(bucket_name)
         LOGGER.info(
             "Step 5: Delete bucket policy should through error message")
@@ -1735,10 +1709,7 @@ class TestBucketPolicy(Test):
         try:
             S3_BKT_POLICY_OBJ_2.delete_bucket_policy(bucket_name)
         except CTException as error:
-            assert >> 
-                test_584_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_584_cfg["error_message"] in error.message, error.message
         S3_OBJ.delete_bucket(bucket_name)
         LOGGER.info(
             "Step 5: Delete bucket policy should through error message")
@@ -2331,10 +2302,7 @@ class TestBucketPolicy(Test):
                 BKT_POLICY_CONF["bucket_policy"]["file_path"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                bkt_cnf_1079["error_message"],
-                error.message,
-                error.message)
+            assert bkt_cnf_1079["error_message"] in error.message, error.message
         LOGGER.info(
             "Step 2: Uploading an object from another account is failed")
         LOGGER.info(
@@ -2488,10 +2456,7 @@ class TestBucketPolicy(Test):
                 bucket_name, BKT_POLICY_CONF["bucket_policy"]["obj_name_prefix"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                bkt_cnf_717["error_message"],
-                error.message,
-                error.message)
+            assert bkt_cnf_717["error_message"] in error.message, error.message
         LOGGER.info(
             "Step 5: Retrieved object using user of account 2 is failed with error {0}".format(
                 bkt_cnf_717["error_message"]))
@@ -2513,10 +2478,7 @@ class TestBucketPolicy(Test):
                 bucket_name, BKT_POLICY_CONF["bucket_policy"]["obj_name_prefix"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                bkt_cnf_717["error_message"],
-                error.message,
-                error.message)
+            assert bkt_cnf_717["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 7: Retrieving object using user of account 3 is failed with error {0}".format(
                     error.message))
@@ -2584,10 +2546,7 @@ class TestBucketPolicy(Test):
                 bucket_name, BKT_POLICY_CONF["bucket_policy"]["obj_name_prefix"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                bkt_cnf_692["error_message"],
-                error.message,
-                error.message)
+            assert bkt_cnf_692["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 5: Retrieving object using user of account 2 is failed with error {0}".format(
                     error.message))
@@ -2654,10 +2613,7 @@ class TestBucketPolicy(Test):
                 bucket_name, BKT_POLICY_CONF["bucket_policy"]["obj_name_prefix"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                bkt_cnf_691["error_message"],
-                error.message,
-                error.message)
+            assert bkt_cnf_691["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 5: Retrieving object using user of account 2 is failed with error {0}".format(
                     error.message))
@@ -2703,7 +2659,7 @@ class TestBucketPolicy(Test):
         assert resp[0], resp[1]
         bucket_policy = list(eval(resp[1]["Policy"])[
             "Statement"][0]["Condition"].keys())
-        self.assertEqual(
+        ASRTOBJ.assert_equals(
             bucket_policy[0],
             test_4134_cfg["buc_policy_val"],
             resp[1])
@@ -2758,7 +2714,7 @@ class TestBucketPolicy(Test):
         assert resp[0], resp[1]
         bucket_policy = list(eval(resp[1]["Policy"])[
             "Statement"][0]["Condition"].keys())
-        self.assertEqual(
+        ASRTOBJ.assert_equals(
             bucket_policy[0],
             test_4136_cfg["buc_policy_val"],
             resp[1])
@@ -2770,10 +2726,7 @@ class TestBucketPolicy(Test):
                 bucket_name, maxkeys=test_4136_cfg["maxkeys"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_4136_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_4136_cfg["error_message"] in error.message, error.message
         LOGGER.info(
             "Step 4: Verified that listing of object from second account failing with error: {}".format(
                 test_4136_cfg["error_message"]))
@@ -2821,7 +2774,7 @@ class TestBucketPolicy(Test):
         assert resp[0], resp[1]
         bucket_policy = list(eval(resp[1]["Policy"])[
             "Statement"][0]["Condition"].keys())
-        self.assertEqual(
+        ASRTOBJ.assert_equals(
             bucket_policy[0],
             test_4143_cfg["buc_policy_val"],
             resp[1])
@@ -2876,7 +2829,7 @@ class TestBucketPolicy(Test):
         assert resp[0], resp[1]
         bucket_policy = list(eval(resp[1]["Policy"])[
             "Statement"][0]["Condition"].keys())
-        self.assertEqual(
+        ASRTOBJ.assert_equals(
             bucket_policy[0],
             test_4144_cfg["buc_policy_val"],
             resp[1])
@@ -2888,10 +2841,7 @@ class TestBucketPolicy(Test):
                 bucket_name, maxkeys=test_4144_cfg["maxkeys"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_4144_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_4144_cfg["error_message"] in error.message, error.message
         LOGGER.info(
             "Step 4:Verified that listing of object from second account failing with error: {}".format(
                 test_4144_cfg["error_message"]))
@@ -2939,7 +2889,7 @@ class TestBucketPolicy(Test):
         assert resp[0], resp[1]
         bucket_policy = list(eval(resp[1]["Policy"])[
             "Statement"][0]["Condition"].keys())
-        self.assertEqual(
+        ASRTOBJ.assert_equals(
             bucket_policy[0],
             test_4145_cfg["buc_policy_val"],
             resp[1])
@@ -2994,7 +2944,7 @@ class TestBucketPolicy(Test):
         assert resp[0], resp[1]
         bucket_policy = list(eval(resp[1]["Policy"])[
             "Statement"][0]["Condition"].keys())
-        self.assertEqual(
+        ASRTOBJ.assert_equals(
             bucket_policy[0],
             test_4146_cfg["buc_policy_val"],
             resp[1])
@@ -3006,10 +2956,7 @@ class TestBucketPolicy(Test):
                 bucket_name, maxkeys=test_4146_cfg["maxkeys"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_4146_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_4146_cfg["error_message"] in error.message, error.message
         LOGGER.info(
             "Step 4: Verified that listing of object from second account failing with error: {}".format(
                 test_4146_cfg["error_message"]))
@@ -3057,7 +3004,7 @@ class TestBucketPolicy(Test):
         assert resp[0], resp[1]
         bucket_policy = list(eval(resp[1]["Policy"])[
             "Statement"][0]["Condition"].keys())
-        self.assertEqual(
+        ASRTOBJ.assert_equals(
             bucket_policy[0],
             test_4147_cfg["buc_policy_val"],
             resp[1])
@@ -3113,7 +3060,7 @@ class TestBucketPolicy(Test):
         assert resp[0], resp[1]
         bucket_policy = list(eval(resp[1]["Policy"])[
             "Statement"][0]["Condition"].keys())
-        self.assertEqual(
+        ASRTOBJ.assert_equals(
             bucket_policy[0],
             test_4148_cfg["buc_policy_val"],
             resp[1])
@@ -3125,10 +3072,7 @@ class TestBucketPolicy(Test):
                 bucket_name, maxkeys=test_4148_cfg["maxkeys"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_4148_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_4148_cfg["error_message"] in error.message, error.message
         LOGGER.info(
             "Step 4: Verified that listing of object "
             "from second account failing with error: {}".format(
@@ -3157,7 +3101,7 @@ class TestBucketPolicy(Test):
             "Step 1 : Creating a bucket with name {0}".format(bucket_name))
         resp = S3_OBJ.create_bucket(bucket_name)
         assert resp[0], resp[1]
-        self.assertEqual(resp[1], bucket_name, resp[1])
+        ASRTOBJ.assert_equals(resp[1], bucket_name, resp[1])
         LOGGER.info(
             "Step 1 : Bucket is created with name {0}".format(bucket_name))
         LOGGER.info(
@@ -3173,9 +3117,7 @@ class TestBucketPolicy(Test):
             S3_BKT_POLICY_OBJ.put_bucket_policy(bucket_name, bkt_policy_json)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                bkt_cnf_1190["error_message"],
-                error.message, error.message)
+            assert bkt_cnf_1190["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 2 : Applying policy on a bucket is failed with error {0}".format(
                     error.message))
@@ -3200,7 +3142,7 @@ class TestBucketPolicy(Test):
             "Step 1 : Creating a bucket with name {0}".format(bucket_name))
         resp = S3_OBJ.create_bucket(bucket_name)
         assert resp[0], resp[1]
-        self.assertEqual(resp[1], bucket_name, resp[1])
+        ASRTOBJ.assert_equals(resp[1], bucket_name, resp[1])
         LOGGER.info(
             "Step 1 : Bucket is created with name {0}".format(bucket_name))
         self.put_get_bkt_policy(bucket_name, bkt_cnf_1180["bucket_policy"])
@@ -3221,9 +3163,7 @@ class TestBucketPolicy(Test):
             S3_BKT_POLICY_OBJ.get_bucket_policy(bucket_name)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                bkt_cnf_1180["error_message"],
-                error.message, error.message)
+            assert bkt_cnf_1180["error_message"] in error.message, error.message
         LOGGER.info(
             "Step 3: Verified that policy is deleted from a bucket {0}".format(bucket_name))
         LOGGER.info(
@@ -3243,7 +3183,7 @@ class TestBucketPolicy(Test):
             "Step 1 : Creating a bucket with name {0}".format(bucket_name))
         resp = S3_OBJ.create_bucket(bucket_name)
         assert resp[0], resp[1]
-        self.assertEqual(resp[1], bucket_name, resp[1])
+        ASRTOBJ.assert_equals(resp[1], bucket_name, resp[1])
         LOGGER.info(
             "Step 1 : Bucket is created with name {0}".format(bucket_name))
         LOGGER.info(
@@ -3253,9 +3193,7 @@ class TestBucketPolicy(Test):
             S3_BKT_POLICY_OBJ.put_bucket_policy(bucket_name, bkt_policy_json)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                bkt_cnf_1191["error_message"],
-                error.message, error.message)
+            assert bkt_cnf_1191["error_message"] in error.message, error.message
             LOGGER.info("Step 2: Applying policy on a bucket is "
                         "failed with error {0}".format(error.message))
         LOGGER.info(
@@ -3274,7 +3212,7 @@ class TestBucketPolicy(Test):
             "Step 1 : Creating a bucket with name {0}".format(bucket_name))
         resp = S3_OBJ.create_bucket(bucket_name)
         assert resp[0], resp[1]
-        self.assertEqual(resp[1], bucket_name, resp[1])
+        ASRTOBJ.assert_equals(resp[1], bucket_name, resp[1])
         LOGGER.info(
             "Step 1 : Bucket is created with name {0}".format(bucket_name))
         LOGGER.info(
@@ -3284,9 +3222,7 @@ class TestBucketPolicy(Test):
             S3_BKT_POLICY_OBJ.put_bucket_policy(bucket_name, bkt_policy_json)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                bkt_cnf_1184["error_message"],
-                error.message, error.message)
+            assert bkt_cnf_1184["error_message"] in error.message, error.message
             LOGGER.info("Step 2: Applying policy on a bucket is "
                         "failed with error {0}".format(error.message))
         LOGGER.info(
@@ -3314,7 +3250,7 @@ class TestBucketPolicy(Test):
             "Step 1 : Creating a bucket with name {0}".format(bucket_name))
         resp = S3_OBJ.create_bucket(bucket_name)
         assert resp[0], resp[1]
-        self.assertEqual(resp[1], bucket_name, resp[1])
+        ASRTOBJ.assert_equals(resp[1], bucket_name, resp[1])
         LOGGER.info(
             "Step 1 : Bucket is created with name {0}".format(bucket_name))
         self.put_get_bkt_policy(bucket_name, bkt_cnf_1171["bucket_policy"])
@@ -3326,9 +3262,7 @@ class TestBucketPolicy(Test):
             s3_bkt_policy.get_bucket_policy(bucket_name)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                bkt_cnf_1171["error_message"],
-                error.message, error.message)
+            assert bkt_cnf_1171["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 2: Retrieving policy of a bucket from another account "
                 "is failed with error {0}".format(
@@ -3355,7 +3289,7 @@ class TestBucketPolicy(Test):
             "Step 1 : Creating a bucket with name {0}".format(bucket_name))
         resp = S3_OBJ.create_bucket(bucket_name)
         assert resp[0], resp[1]
-        self.assertEqual(resp[1], bucket_name, resp[1])
+        ASRTOBJ.assert_equals(resp[1], bucket_name, resp[1])
         LOGGER.info(
             "Step 1 : Bucket is created with name {0}".format(bucket_name))
         self.put_get_bkt_policy(bucket_name, bkt_cnf_1182["bucket_policy"])
@@ -3370,9 +3304,7 @@ class TestBucketPolicy(Test):
             s3_policy_usr_obj.delete_bucket_policy(bucket_name)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                bkt_cnf_1182["error_message"],
-                error.message, error.message)
+            assert bkt_cnf_1182["error_message"] in error.message, error.message
             LOGGER.info("Step 2: Deleting policy with users credential is "
                         "failed with error {0}".format(error.message))
         LOGGER.info(
@@ -3395,7 +3327,7 @@ class TestBucketPolicy(Test):
             "Step 1 : Creating a bucket with name {0}".format(bucket_name))
         resp = S3_OBJ.create_bucket(bucket_name)
         assert resp[0], resp[1]
-        self.assertEqual(resp[1], bucket_name, resp[1])
+        ASRTOBJ.assert_equals(resp[1], bucket_name, resp[1])
         LOGGER.info(
             "Step 1 : Bucket is created with name {0}".format(bucket_name))
         self.put_get_bkt_policy(bucket_name, bkt_cnf_1110["bucket_policy_1"])
@@ -3412,9 +3344,7 @@ class TestBucketPolicy(Test):
             s3_policy_usr_obj.put_bucket_policy(bucket_name, bkt_policy_json)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                bkt_cnf_1110["error_message"],
-                error.message, error.message)
+            assert bkt_cnf_1110["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 2: Applying policy on a bucket with users credential is "
                 "failed with error {0}".format(
@@ -3451,7 +3381,7 @@ class TestBucketPolicy(Test):
             "Step 1 : Creating a bucket with name {0}".format(bucket_name))
         resp = s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
-        self.assertEqual(resp[1], bucket_name, resp[1])
+        ASRTOBJ.assert_equals(resp[1], bucket_name, resp[1])
         LOGGER.info(
             "Step 1 : Bucket is created with name {0}".format(bucket_name))
         LOGGER.info(
@@ -3482,14 +3412,14 @@ class TestBucketPolicy(Test):
             "Step 4: Retrieving policy of a bucket {0}".format(bucket_name))
         resp = s3_policy_obj.get_bucket_policy(bucket_name)
         assert resp[0], resp[1]
-        self.assertEqual(resp[1]["Policy"], bkt_policy_json, resp[1])
+        ASRTOBJ.assert_equals(resp[1]["Policy"], bkt_policy_json, resp[1])
         LOGGER.info(
             "Step 4: Retrieved policy of a bucket {0}".format(bucket_name))
         LOGGER.info(
             "Step 5: Retrieving policy of a bucket using users credentials")
         resp = s3_policy_usr_obj.get_bucket_policy(bucket_name)
         assert resp[0], resp[1]
-        self.assertEqual(resp[1]["Policy"], bkt_policy_json, resp[1])
+        ASRTOBJ.assert_equals(resp[1]["Policy"], bkt_policy_json, resp[1])
         LOGGER.info(
             "Step 5: Retrieved policy of a bucket using users credentials")
         LOGGER.info(
@@ -3498,9 +3428,7 @@ class TestBucketPolicy(Test):
             s3_policy_usr_obj.delete_bucket_policy(bucket_name)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                bkt_cnf_1187["error_message"],
-                error.message, error.message)
+            assert bkt_cnf_1187["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 6: Deleting policy of a bucket is failed with error {0}".format(
                     error.message))
@@ -3529,7 +3457,7 @@ class TestBucketPolicy(Test):
             "Step 1 : Creating a bucket with name {0}".format(bucket_name))
         resp = S3_OBJ.create_bucket(bucket_name)
         assert resp[0], resp[1]
-        self.assertEqual(resp[1], bucket_name, resp[1])
+        ASRTOBJ.assert_equals(resp[1], bucket_name, resp[1])
         LOGGER.info(
             "Step 1 : Bucket is created with name {0}".format(bucket_name))
         self.put_get_bkt_policy(bucket_name, bkt_cnf_1166["bucket_policy"])
@@ -3571,7 +3499,7 @@ class TestBucketPolicy(Test):
             "Step 1 : Creating a bucket with name {0}".format(bucket_name))
         resp = S3_OBJ.create_bucket(bucket_name)
         assert resp[0], resp[1]
-        self.assertEqual(resp[1], bucket_name, resp[1])
+        ASRTOBJ.assert_equals(resp[1], bucket_name, resp[1])
         LOGGER.info(
             "Step 1 : Bucket is created with name {0}".format(bucket_name))
         self.put_get_bkt_policy(bucket_name, bkt_cnf_1177["bucket_policy"])
@@ -3581,9 +3509,7 @@ class TestBucketPolicy(Test):
             s3_policy_obj.delete_bucket_policy(bucket_name)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                bkt_cnf_1177["error_message"],
-                error.message, error.message)
+            assert bkt_cnf_1177["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 2: Deleting bucket policy is failed with error {0}".format(
                     error.message))
@@ -3633,10 +3559,7 @@ class TestBucketPolicy(Test):
                 bucket_name, bkt_json_policy)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_362_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_362_cfg["error_message"] in error.message, error.message
         LOGGER.info(
             "Step 2: Put Bucket policy failed with error message : {}".format(
                 test_362_cfg["error_message"]))
@@ -3660,10 +3583,7 @@ class TestBucketPolicy(Test):
                 bucket_name, bkt_json_policy)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_363_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_363_cfg["error_message"] in error.message, error.message
         LOGGER.info(
             "Step 1: Put Bucket policy failed with error message : {}".format(
                 test_363_cfg["error_message"]))
@@ -3693,10 +3613,7 @@ class TestBucketPolicy(Test):
                 bucket_name, json_policy)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_364_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_364_cfg["error_message"] in error.message, error.message
         LOGGER.info(
             "Step 2: Put Bucket policy operation failed with error message : {}".format(
                 test_364_cfg["error_message"]))
@@ -3726,10 +3643,7 @@ class TestBucketPolicy(Test):
                 bucket_name, json.loads(bkt_json_policy))
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_365_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_365_cfg["error_message"] in error.message, error.message
         LOGGER.info(
             "Step 2: Put Bucket policy failed with error message : {}".format(
                 test_365_cfg["error_message"]))
@@ -3901,8 +3815,7 @@ class TestBucketPolicy(Test):
                 bucket_name, bkt_json_policy)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_371_cfg["error_message"], error.message, error.message)
+            assert test_371_cfg["error_message"], error.message, error.message)
         LOGGER.info(
             "Step 2: Put Bucket policy from second account failing with error: {}".format(
                 test_371_cfg["error_message"]))
@@ -3946,8 +3859,7 @@ class TestBucketPolicy(Test):
                 bucket_name, bkt_json_policy)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_372_cfg["error_message"], error.message, error.message)
+            assert test_372_cfg["error_message"], error.message, error.message)
         LOGGER.info(
             "Step 2: Put Bucket policy from second account failing with error: {}".format(
                 test_372_cfg["error_message"]))
@@ -3984,10 +3896,7 @@ class TestBucketPolicy(Test):
             NO_AUTH_OBJ.put_bucket_policy(bucket_name, bkt_policy_json)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_373_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_373_cfg["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 3: Applying policy on a bucket is failed with error {0}".format(
                     error.message))
@@ -4025,10 +3934,7 @@ class TestBucketPolicy(Test):
             NO_AUTH_OBJ.put_bucket_policy(bucket_name, bkt_policy_json)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_374_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_374_cfg["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 3: Applying policy on a bucket is failed with error {0}".format(
                     error.message))
@@ -4069,9 +3975,7 @@ class TestBucketPolicy(Test):
             s3_policy_obj.get_bucket_policy(bucket_name)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                bkt_cnf_1188["error_message_1"],
-                error.message, error.message)
+            assert bkt_cnf_1188["error_message_1"] in error.message, error.message
             LOGGER.info(
                 "Step 2:  Retrieving bucket policy from "
                 "another account is failed with error {0}".format(
@@ -4082,9 +3986,7 @@ class TestBucketPolicy(Test):
             s3_policy_obj.delete_bucket_policy(bucket_name)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                bkt_cnf_1188["error_message_2"],
-                error.message, error.message)
+            assert bkt_cnf_1188["error_message_2"] in error.message, error.message
             LOGGER.info(
                 "Step 3: Deleting policy of a bucket "
                 "with another account is failed with error {0}".format(
@@ -4119,9 +4021,7 @@ class TestBucketPolicy(Test):
             s3_policy_obj.put_bucket_policy(bucket_name, bkt_policy_json)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                bkt_cnf_1174["error_message"],
-                error.message, error.message)
+            assert bkt_cnf_1174["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 2: Applying bucket policy from another "
                 "account is failed with error {0}".format(
@@ -4155,9 +4055,7 @@ class TestBucketPolicy(Test):
             s3_policy_usr_obj.delete_bucket_policy(bucket_name)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                bkt_cnf_1185["error_message"],
-                error.message, error.message)
+            assert bkt_cnf_1185["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 2: Deleting bucket policy with users "
                 "credentials is failed with error {0}".format(
@@ -4196,9 +4094,7 @@ class TestBucketPolicy(Test):
             S3_BKT_POLICY_OBJ.get_bucket_policy(bucket_name)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                bkt_cnf_1186["error_message"],
-                error.message, error.message)
+            assert bkt_cnf_1186["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 3: Verified that policy is deleted from a bucket {0}".format(bucket_name))
         LOGGER.info(
@@ -4237,9 +4133,7 @@ class TestBucketPolicy(Test):
             s3_policy_usr_obj.put_bucket_policy(bucket_name, bkt_policy_json)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                bkt_cnf_1114["error_message"],
-                error.message, error.message)
+            assert bkt_cnf_1114["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 3: Applying bucket policy with users "
                 "credentials is failed with error {0}".format(
@@ -4282,9 +4176,7 @@ class TestBucketPolicy(Test):
             s3_policy_usr_obj.get_bucket_policy(bucket_name)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                bkt_cnf_1169["error_message"],
-                error.message, error.message)
+            assert bkt_cnf_1169["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 3: Retrieving bucket policy with users "
                 "credentials is failed with error {0}".format(
@@ -4321,9 +4213,7 @@ class TestBucketPolicy(Test):
             s3_policy_usr_obj.get_bucket_policy(bucket_name)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                bkt_cnf_1167["error_message"],
-                error.message, error.message)
+            assert bkt_cnf_1167["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 2: Retrieving bucket policy with users "
                 "credentials is failed with error {0}".format(
@@ -4351,9 +4241,7 @@ class TestBucketPolicy(Test):
             S3_BKT_POLICY_OBJ.put_bucket_policy(bucket_name, bkt_policy_json)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                bkt_cnf_1113["error_message"],
-                error.message, error.message)
+            assert bkt_cnf_1113["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 2: Applying policy on a bucket with "
                 "effect none is failed with error {0}".format(
@@ -4380,9 +4268,7 @@ class TestBucketPolicy(Test):
             S3_BKT_POLICY_OBJ.put_bucket_policy(bucket_name, bkt_policy_json)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                bkt_cnf_1116["error_message"],
-                error.message, error.message)
+            assert bkt_cnf_1116["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 2: Applying policy on a bucket is failed with error {0}".format(
                     error.message))
@@ -4424,9 +4310,7 @@ class TestBucketPolicy(Test):
             s3_policy_usr_obj.get_bucket_policy(bucket_name)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                bkt_cnf_1109["error_message"],
-                error.message, error.message)
+            assert bkt_cnf_1109["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 3: Retrieving bucket policy with users "
                 "credentials is failed with error {0}".format(
@@ -4435,7 +4319,7 @@ class TestBucketPolicy(Test):
             "Step 4: Retrieving policy of a bucket with accounts credentials")
         resp = S3_BKT_POLICY_OBJ.get_bucket_policy(bucket_name)
         assert resp[0], resp[1]
-        self.assertEqual(resp[1]["Policy"], bkt_policy_json, resp[1])
+        ASRTOBJ.assert_equals(resp[1]["Policy"], bkt_policy_json, resp[1])
         LOGGER.info(
             "Step 4: Retrieved policy of a bucket with accounts credentials")
         LOGGER.info(
@@ -4508,9 +4392,7 @@ class TestBucketPolicy(Test):
             s3_policy_usr2_obj.get_bucket_policy(test_cfg["bucket_name"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_cfg["error_message"],
-                error.message, error.message)
+            assert test_cfg["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 5: Get bucket policy with account2 login is failed with error {0}".format(
                     error.message))
@@ -4567,9 +4449,7 @@ class TestBucketPolicy(Test):
             s3_policy_usr2_obj.get_bucket_policy(test_cfg["bucket_name"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_cfg["error_message"],
-                error.message, error.message)
+            assert test_cfg["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 3: Get bucket policy with account2 login is failed with error {0}".format(
                     error.message))
@@ -4620,10 +4500,7 @@ class TestBucketPolicy(Test):
                 bkt_policy_cfg["obj_name_prefix"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_4156_cfg["err_message"],
-                error.message,
-                error.message)
+            assert test_4156_cfg["err_message"] in error.message, error.message
         LOGGER.info(
             "Listing object with prefix using another account failed with {0}".format(
                 test_4156_cfg["err_message"]))
@@ -4675,10 +4552,7 @@ class TestBucketPolicy(Test):
                 bkt_policy_cfg["obj_name_prefix"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_4161_cfg["err_message"],
-                error.message,
-                error.message)
+            assert test_4161_cfg["err_message"] in error.message, error.message
         LOGGER.info(
             "Listing object with prefix using another account failed with {0}".format(
                 test_4161_cfg["err_message"]))
@@ -4729,10 +4603,7 @@ class TestBucketPolicy(Test):
                 bkt_policy_cfg["obj_name_prefix"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_4173_cfg["err_message"],
-                error.message,
-                error.message)
+            assert test_4173_cfg["err_message"] in error.message, error.message
         LOGGER.info(
             "Listing object with prefix using another account failed with {0}".format(
                 test_4173_cfg["err_message"]))
@@ -4785,10 +4656,7 @@ class TestBucketPolicy(Test):
                 bkt_policy_cfg["obj_name_prefix"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_4170_cfg["err_message"],
-                error.message,
-                error.message)
+            assert test_4170_cfg["err_message"] in error.message, error.message
         LOGGER.info(
             "Listing object with prefix using another account failed with {0}".format(
                 test_4170_cfg["err_message"]))
@@ -4797,10 +4665,7 @@ class TestBucketPolicy(Test):
             s3_obj.object_list(test_4170_cfg["bucket_name"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_4170_cfg["err_message"],
-                error.message,
-                error.message)
+            assert test_4170_cfg["err_message"] in error.message, error.message
         LOGGER.info(
             "Listing object using another account failed with {0}".format(
                 test_4170_cfg["err_message"]))
@@ -5826,10 +5691,7 @@ class TestBucketPolicy(Test):
                 BKT_POLICY_CONF["bucket_policy"]["file_path"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_cfg["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 1: Uploading object to a bucket failed with error {0}".format(
                     error.message))
@@ -5883,10 +5745,7 @@ class TestBucketPolicy(Test):
                 BKT_POLICY_CONF["bucket_policy"]["file_path"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_cfg["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 1: Uploading object to a bucket failed with error {0}".format(
                     error.message))
@@ -5944,10 +5803,7 @@ class TestBucketPolicy(Test):
                 BKT_POLICY_CONF["bucket_policy"]["file_path"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_cfg["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 1: Uploading object to a bucket failed with error {0}".format(
                     error.message))
@@ -6005,10 +5861,7 @@ class TestBucketPolicy(Test):
                 BKT_POLICY_CONF["bucket_policy"]["file_path"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_cfg["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 1: Uploading object to a bucket failed with error {0}".format(
                     error.message))
@@ -6837,20 +6690,14 @@ class TestBucketPolicy(Test):
                 BKT_POLICY_CONF["bucket_policy"]["file_path"],
                 acl=test_6550_cfg["obj_permission3"])
         except CTException as error:
-            assert >> 
-                err_message,
-                error.message,
-                error.message)
+            assert err_message in error.message, error.message
         try:
             S3_OBJ2.put_object(
                 bucket_name,
                 object_lst[0],
                 BKT_POLICY_CONF["bucket_policy"]["file_path"])
         except CTException as error:
-            assert >> 
-                err_message,
-                error.message,
-                error.message)
+            assert err_message in error.message, error.message
         LOGGER.info(
             "ENDED: Test Bucket Policy having Single Condition"
             " with Single Key and Multiple Values")
@@ -6949,10 +6796,7 @@ class TestBucketPolicy(Test):
                 object_lst[0],
                 BKT_POLICY_CONF["bucket_policy"]["file_path"])
         except CTException as error:
-            assert >> 
-                err_message,
-                error.message,
-                error.message)
+            assert err_message in error.message, error.message
         try:
             S3_OBJ1.put_object_with_acl(
                 bucket_name,
@@ -6960,10 +6804,7 @@ class TestBucketPolicy(Test):
                 BKT_POLICY_CONF["bucket_policy"]["file_path"],
                 grant_full_control="emailaddress={}".format(email2))
         except CTException as error:
-            assert >> 
-                err_message,
-                error.message,
-                error.message)
+            assert err_message in error.message, error.message
         try:
             S3_OBJ1.put_object_with_acl(
                 bucket_name,
@@ -6971,10 +6812,7 @@ class TestBucketPolicy(Test):
                 BKT_POLICY_CONF["bucket_policy"]["file_path"],
                 grant_read="emailaddress={}".format(email3))
         except CTException as error:
-            assert >> 
-                err_message,
-                error.message,
-                error.message)
+            assert err_message in error.message, error.message
         LOGGER.info(
             "ENDED: Test Bucket Policy Single Condition, "
             "Multiple Keys having Single Value for each Key")
@@ -7870,7 +7708,7 @@ class TestBucketPolicy(Test):
             access_key=access_key_2, secret_key=secret_key_2)
         resp = s3_policy_acc2_obj.create_user_using_s3iamcli(
             user_name_2, access_key=access_key_2, secret_key=secret_key_2)
-        self.assertTrue(resp[0])
+        assert resp[0]
         user_id_2 = resp[1]["User Id"]
         LOGGER.info("Step 1: Created user using account 2 credential")
         self.create_bucket_put_obj_with_dir(
@@ -7906,10 +7744,7 @@ class TestBucketPolicy(Test):
             s3_bucket_usr2_obj.get_bucket_policy(bucket_name)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_5210_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_5210_cfg["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 4: Retrieving policy of a bucket using user of account 2 is failed with error {0}".format(
                     test_5210_cfg["error_message"]))
@@ -7980,7 +7815,7 @@ class TestBucketPolicy(Test):
                 time.time()))
         acc_details = IAM_OBJ.create_multiple_accounts(
             test_5212_cfg["acc_count"], bkt_policy_cfg["acc_name_prefix"])
-        self.assertTrue(acc_details[0], acc_details[1])
+        assert acc_details[0], acc_details[1]
         access_key_1 = acc_details[1][0][1]["access_key"]
         secret_key_1 = acc_details[1][0][1]["secret_key"]
         acc_id_1 = acc_details[1][0][1]["Account_Id"]
@@ -8000,7 +7835,7 @@ class TestBucketPolicy(Test):
             access_key=access_key_1, secret_key=secret_key_1)
         resp = s3_obj_acc_1.create_bucket(bucket_name)
         assert resp[0], resp[1]
-        self.assertEqual(resp[1], bucket_name, resp[1])
+        ASRTOBJ.assert_equals(resp[1], bucket_name, resp[1])
         create_file(
             bkt_policy_cfg["file_path"],
             bkt_policy_cfg["file_size"])
@@ -8046,7 +7881,7 @@ class TestBucketPolicy(Test):
             "Step 4: Retrieving policy of a bucket {0}".format(bucket_name))
         resp = s3_bkt_policy_acc1.get_bucket_policy(bucket_name)
         assert resp[0], resp[1]
-        self.assertEqual(resp[1]["Policy"], bkt_policy_json_1, resp[1])
+        ASRTOBJ.assert_equals(resp[1]["Policy"], bkt_policy_json_1, resp[1])
         LOGGER.info(
             "Step 4: Retrieved policy of a bucket {0}".format(bucket_name))
         LOGGER.info("Step 5: Creating a json on a bucket to account 1")
@@ -8068,10 +7903,7 @@ class TestBucketPolicy(Test):
                 bucket_name, bkt_policy_json_2)
         except CTException as error:
             LOGGER.info(error.message)
-            assert >> 
-                test_5212_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_5212_cfg["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 6: Applying the bucket policy using user of account 2 is failed with error {0}".format(
                     test_5212_cfg["error_message"]))
@@ -8081,10 +7913,7 @@ class TestBucketPolicy(Test):
             s3_bkt_policy_usr2.get_bucket_policy(bucket_name)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_5212_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_5212_cfg["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 7: Retrieving policy of a bucket using user of account 2 is failed with error {0}".format(
                     test_5212_cfg["error_message"]))
@@ -8156,10 +7985,7 @@ class TestBucketPolicy(Test):
             s3_bkt_policy_2.put_bucket_policy(bucket_name, bkt_policy_json_1)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_5214_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_5214_cfg["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 4: Applying bucket policy using account 2 credential is failed with error {0}".format(
                     test_5214_cfg["error_message"]))
@@ -8168,10 +7994,7 @@ class TestBucketPolicy(Test):
         try:
             s3_bkt_policy_2.get_bucket_policy(bucket_name)
         except CTException as error:
-            assert >> 
-                test_5214_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_5214_cfg["error_message"] in error.message, error.message
             LOGGER.error(error.message)
             LOGGER.info(
                 "Step 5: Retrieving policy of a bucket using account 2 credential is failed with error {0}".format(
@@ -8223,7 +8046,7 @@ class TestBucketPolicy(Test):
             access_key=access_key_2, secret_key=secret_key_2)
         resp = iam_acc2_obj.create_user_using_s3iamcli(
             user_name_2, access_key=access_key_2, secret_key=secret_key_2)
-        self.assertTrue(resp[0])
+        assert resp[0]
         user_id_2 = resp[1]["User Id"]
         LOGGER.info("Step 1: Created user using account 2 credential")
         self.create_bucket_put_obj_with_dir(
@@ -8270,10 +8093,7 @@ class TestBucketPolicy(Test):
                 bucket_name, bkt_policy_json_1)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_5215_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_5215_cfg["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 5: Applying policy on a bucket using user of account 2  is failed with error {0}".format(
                     test_5215_cfg["error_message"]))
@@ -8283,10 +8103,7 @@ class TestBucketPolicy(Test):
             s3_bkt_policy_usr2.get_bucket_policy(bucket_name)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_5215_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_5215_cfg["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 6: Retrieving policy of a bucket using user of account 2 is failed with error {0}".format(
                     test_5215_cfg["error_message"]))
@@ -8300,10 +8117,7 @@ class TestBucketPolicy(Test):
                 bucket_name, grant_read_acp=test_5215_cfg["id_str"].format(can_id))
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_5215_cfg["error_message_1"],
-                error.message,
-                error.message)
+            assert test_5215_cfg["error_message_1"] in error.message, error.message
             LOGGER.info(
                 "Step 7: Applying read acp permission on a bucket is failed with error {0}".format(
                     test_5215_cfg["error_message_1"]))
@@ -8365,10 +8179,7 @@ class TestBucketPolicy(Test):
                 bkt_policy_cfg["file_path"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_6771_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_6771_cfg["error_message"] in error.message, error.message
             LOGGER.info(
                 "Case 2: Uploading object with account 2 is failed with error {0}".format(
                     test_6771_cfg["error_message"]))
@@ -8527,10 +8338,7 @@ class TestBucketPolicy(Test):
             S3_OBJ_acc2.object_list(bucket_name)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_6774_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_6774_cfg["error_message"] in error.message, error.message
             LOGGER.info(
                 "Case 2: Listing objects from account 2 is failed with error {0}".format(
                     test_6774_cfg["error_message"]))
@@ -8698,10 +8506,7 @@ class TestBucketPolicy(Test):
             S3_OBJ_acc2.object_list(bucket_name)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_6777_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_6777_cfg["error_message"] in error.message, error.message
             LOGGER.info(
                 "Case 2: Listing objects from account 2 is failed with error {0}".format(
                     test_6777_cfg["error_message"]))
@@ -8805,10 +8610,7 @@ class TestBucketPolicy(Test):
                 bkt_policy_cfg["file_path"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_6783_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_6783_cfg["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 2: Uploading object with account 2 is failed with error {0}".format(
                     test_6783_cfg["error_message"]))
@@ -8948,10 +8750,7 @@ class TestBucketPolicy(Test):
                 test_6790_cfg["storage_class"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_6790_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_6790_cfg["error_message"] in error.message, error.message
             LOGGER.info(
                 "Case 1: Uploading an object with storage class "
                 "STANDARD using account 2 is failed with error {0}".format(
@@ -9019,10 +8818,7 @@ class TestBucketPolicy(Test):
                 bkt_policy_cfg["file_path"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_6791_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_6791_cfg["error_message"] in error.message, error.message
         LOGGER.info(
             "Case 2: Uploading an object with account 2 is failed with error {0}".format(
                 test_6791_cfg["error_message"]))
@@ -9151,10 +8947,7 @@ class TestBucketPolicy(Test):
                 grant_write_acp=test_6762_cfg["id_str"].format(canonical_id_user_1))
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_6762_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_6762_cfg["error_message"] in error.message, error.message
         LOGGER.info(
             "Case 1: Uploading an object with account 2 is failed with error {0}".format(
                 test_6762_cfg["error_message"]))
@@ -9168,10 +8961,7 @@ class TestBucketPolicy(Test):
                 bkt_policy_cfg["file_path"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_6762_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_6762_cfg["error_message"] in error.message, error.message
         LOGGER.info(
             "Case 2: Uploading an object with account 2 is failed with error {0}".format(
                 test_6762_cfg["error_message"]))
@@ -9246,10 +9036,7 @@ class TestBucketPolicy(Test):
                 grant_read=test_6707_cfg["id_str"].format(canonical_id_user_1))
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_6707_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_6707_cfg["error_message"] in error.message, error.message
         LOGGER.info(
             "Case 1: Uploading an object with account 2 is failed with error {0}".format(
                 test_6707_cfg["error_message"]))
@@ -9340,10 +9127,7 @@ class TestBucketPolicy(Test):
                 bkt_policy_cfg["file_path"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_6708_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_6708_cfg["error_message"] in error.message, error.message
         LOGGER.info(
             "Case 1: Uploading an object with account 2 is failed with error {0}".format(
                 test_6708_cfg["error_message"]))
@@ -9418,10 +9202,7 @@ class TestBucketPolicy(Test):
                 acl=test_7051_cfg["bucket-owner-read"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_7051_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_7051_cfg["error_message"] in error.message, error.message
         LOGGER.info(
             "Case 1: Uploading an object with --acl bucket-owner-read is failed with error {0}".format(
                 test_7051_cfg["error_message"]))
@@ -9437,10 +9218,7 @@ class TestBucketPolicy(Test):
                 acl=test_7051_cfg["bucket-owner-full-control"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_7051_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_7051_cfg["error_message"] in error.message, error.message
         LOGGER.info(
             "Case 2: Uploading an object with --acl bucket-owner-full-control is failed with error {0}".format(
                 test_7051_cfg["error_message"]))
@@ -9454,10 +9232,7 @@ class TestBucketPolicy(Test):
                 bkt_policy_cfg["file_path"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_7051_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_7051_cfg["error_message"] in error.message, error.message
         LOGGER.info(
             "Case 3: Uploading an object with account 2 is failed with error {0}".format(
                 test_7051_cfg["error_message"]))
@@ -9472,10 +9247,7 @@ class TestBucketPolicy(Test):
                 acl=test_7051_cfg["invalid_value"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_7051_cfg["error_message_2"],
-                error.message,
-                error.message)
+            assert test_7051_cfg["error_message_2"] in error.message, error.message
         LOGGER.info(
             "Case 4: Uploaded an object with invalid value 'xyz' using account 2")
         LOGGER.info("Step 2: Verified the Bucket Policy from cross account")
@@ -9542,10 +9314,7 @@ class TestBucketPolicy(Test):
                 bucket_name, bkt_policy_json)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_7052_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_7052_cfg["error_message"] in error.message, error.message
         LOGGER.info(
             "step 2: Put Bucket Policy is failed with error {0}".format(
                 test_7052_cfg["error_message"]))
@@ -9619,10 +9388,7 @@ class TestBucketPolicy(Test):
                 acl=test_7054_cfg["bucket-owner-read"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_7054_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_7054_cfg["error_message"] in error.message, error.message
         LOGGER.info(
             "Case 1: Uploading an object with --acl bucket-owner-read is failed with error {0}".format(
                 test_7054_cfg["error_message"]))
@@ -9638,10 +9404,7 @@ class TestBucketPolicy(Test):
                 acl=test_7054_cfg["bucket-owner-full-control"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_7054_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_7054_cfg["error_message"] in error.message, error.message
         LOGGER.info(
             "Case 2: Uploading an object with --acl bucket-owner-full-control is failed with error {0}".format(
                 test_7054_cfg["error_message"]))
@@ -9655,10 +9418,7 @@ class TestBucketPolicy(Test):
                 bkt_policy_cfg["file_path"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_7054_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_7054_cfg["error_message"] in error.message, error.message
         LOGGER.info(
             "Case 3: Uploading an object with account 2 is failed with error {0}".format(
                 test_7054_cfg["error_message"]))
@@ -9732,10 +9492,7 @@ class TestBucketPolicy(Test):
                 acl=test_7055_cfg["bucket-owner-read"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_7055_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_7055_cfg["error_message"] in error.message, error.message
         LOGGER.info(
             "Case 1: Uploading an object with --acl bucket-owner-read is failed with error {0}".format(
                 test_7055_cfg["error_message"]))
@@ -9751,10 +9508,7 @@ class TestBucketPolicy(Test):
                 acl=test_7055_cfg["public-read"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_7055_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_7055_cfg["error_message"] in error.message, error.message
         LOGGER.info(
             "Case 2: Uploading an object with --acl bucket-owner-full-control is failed with error {0}".format(
                 test_7055_cfg["error_message"]))
@@ -9768,10 +9522,7 @@ class TestBucketPolicy(Test):
                 bkt_policy_cfg["file_path"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_7055_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_7055_cfg["error_message"] in error.message, error.message
         LOGGER.info(
             "Case 3: Uploading an object with account 2 is failed with error {0}".format(
                 test_7055_cfg["error_message"]))
@@ -9920,10 +9671,7 @@ class TestBucketPolicy(Test):
                 prefix=BKT_POLICY_CONF["bucket_policy"]["obj_name_prefix"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_7057_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_7057_cfg["error_message"] in error.message, error.message
         LOGGER.info(
             "Case 1: List objects with account 2 is failed with error {0}".format(
                 test_7057_cfg["error_message"]))
@@ -9937,10 +9685,7 @@ class TestBucketPolicy(Test):
                 prefix=prefix_upper)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_7057_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_7057_cfg["error_message"] in error.message, error.message
         LOGGER.info(
             "Case 2: List objects with upper prefix is failed with error {0}".format(
                 test_7057_cfg["error_message"]))
@@ -10089,10 +9834,7 @@ class TestBucketPolicy(Test):
                 acl=test_7059_cfg["bucket-owner-full-control"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_7059_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_7059_cfg["error_message"] in error.message, error.message
         LOGGER.info(
             "Case 1: Put objects is failed with error {0}".format(
                 test_7059_cfg["error_message"]))
@@ -10261,20 +10003,14 @@ class TestBucketPolicy(Test):
                 BKT_POLICY_CONF["bucket_policy"]["file_path"],
                 acl=test_7053_cfg["obj_permission2"])
         except CTException as error:
-            assert >> 
-                err_message,
-                error.message,
-                error.message)
+            assert err_message in error.message, error.message
         try:
             S3_OBJ2.put_object(
                 bucket_name,
                 object_lst[0],
                 BKT_POLICY_CONF["bucket_policy"]["file_path"])
         except CTException as error:
-            assert >> 
-                err_message,
-                error.message,
-                error.message)
+            assert err_message in error.message, error.message
         LOGGER.info(
             "ENDED: Verify Bucket Policy Condition Keys are case insensitive")
 
@@ -10361,10 +10097,7 @@ class TestBucketPolicy(Test):
                                          grant_full_control="id={}".format(account5_cid),
                                          grant_read="id={}".format(account3_cid))
         except CTException as error:
-            assert >> 
-                err_message,
-                error.message,
-                error.message)
+            assert err_message in error.message, error.message
         try:
             S3_OBJ1.put_object_with_acl2(bucket_name,
                                          "{}{}".format(object_lst[0], str(time.time())),
@@ -10372,40 +10105,28 @@ class TestBucketPolicy(Test):
                                          grant_full_control="id={}".format(account5_cid),
                                          grant_read="id={}".format(account3_cid))
         except CTException as error:
-            assert >> 
-                err_message,
-                error.message,
-                error.message)
+            assert err_message in error.message, error.message
         try:
             S3_OBJ1.put_object_with_acl(bucket_name,
                                         "{}{}".format(object_lst[0], str(time.time())),
                                         BKT_POLICY_CONF["bucket_policy"]["file_path"],
                                         grant_full_control="id={}".format(account3_cid))
         except CTException as error:
-            assert >> 
-                err_message,
-                error.message,
-                error.message)
+            assert err_message in error.message, error.message
         try:
             S3_OBJ1.put_object_with_acl(bucket_name,
                                         "{}{}".format(object_lst[0], str(time.time())),
                                         BKT_POLICY_CONF["bucket_policy"]["file_path"],
                                         grant_read="id={}".format(account5_cid))
         except CTException as error:
-            assert >> 
-                err_message,
-                error.message,
-                error.message)
+            assert err_message in error.message, error.message
         try:
             S3_OBJ2.put_object(
                 bucket_name,
                 object_lst[0],
                 BKT_POLICY_CONF["bucket_policy"]["file_path"])
         except CTException as error:
-            assert >> 
-                err_message,
-                error.message,
-                error.message)
+            assert err_message in error.message, error.message
         LOGGER.info(
             "ENDED: Test Bucket Policy Single Condition, "
             "Multiple Keys having Single Value for each Key")
@@ -10610,10 +10331,7 @@ class TestBucketPolicy(Test):
                                          grant_full_control="id={}".format(account6_cid),
                                          grant_read="id={}".format(account4_cid))
         except CTException as error:
-            assert >> 
-                err_message,
-                error.message,
-                error.message)
+            assert err_message in error.message, error.message
         try:
             S3_OBJ1.put_object_with_acl2(bucket_name,
                                          "{}{}".format(object_lst[0], str(time.time())),
@@ -10621,60 +10339,42 @@ class TestBucketPolicy(Test):
                                          grant_full_control="id={}".format(account2_cid),
                                          grant_read="id={}".format(account3_cid))
         except CTException as error:
-            assert >> 
-                err_message,
-                error.message,
-                error.message)
+            assert err_message in error.message, error.message
         try:
             S3_OBJ1.put_object_with_acl(bucket_name,
                                         "{}{}".format(object_lst[0], str(time.time())),
                                         BKT_POLICY_CONF["bucket_policy"]["file_path"],
                                         grant_full_control="id={}".format(account3_cid))
         except CTException as error:
-            assert >> 
-                err_message,
-                error.message,
-                error.message)
+            assert err_message in error.message, error.message
         try:
             S3_OBJ1.put_object_with_acl(bucket_name,
                                         "{}{}".format(object_lst[0], str(time.time())),
                                         BKT_POLICY_CONF["bucket_policy"]["file_path"],
                                         grant_read="id={}".format(account5_cid))
         except CTException as error:
-            assert >> 
-                err_message,
-                error.message,
-                error.message)
+            assert err_message in error.message, error.message
         try:
             S3_OBJ1.put_object_with_acl(bucket_name,
                                         "{}{}".format(object_lst[0], str(time.time())),
                                         BKT_POLICY_CONF["bucket_policy"]["file_path"],
                                         grant_full_control="id={}".format(account4_cid))
         except CTException as error:
-            assert >> 
-                err_message,
-                error.message,
-                error.message)
+            assert err_message in error.message, error.message
         try:
             S3_OBJ1.put_object_with_acl(bucket_name,
                                         "{}{}".format(object_lst[0], str(time.time())),
                                         BKT_POLICY_CONF["bucket_policy"]["file_path"],
                                         grant_read="id={}".format(account2_cid))
         except CTException as error:
-            assert >> 
-                err_message,
-                error.message,
-                error.message)
+            assert err_message in error.message, error.message
         try:
             S3_OBJ2.put_object(
                 bucket_name,
                 object_lst[0],
                 BKT_POLICY_CONF["bucket_policy"]["file_path"])
         except CTException as error:
-            assert >> 
-                err_message,
-                error.message,
-                error.message)
+            assert err_message in error.message, error.message
         LOGGER.info(
             "ENDED: Bucket Policy Multiple Conditions each "
             "Condition with Multiple Keys and Multiple Values")
@@ -10872,10 +10572,7 @@ class TestBucketPolicy(Test):
                 grant_write_acp=test_5121_cfg["id_str"].format(canonical_id_user_1))
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_5121_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_5121_cfg["error_message"] in error.message, error.message
         LOGGER.info("Step 10 & 11: Account switch "
                     "put object ACL - run from account1")
         LOGGER.info("set put_bucket_acl to private as part of teardown.")
@@ -10946,10 +10643,7 @@ class TestBucketPolicy(Test):
         try:
             S3_BKT_POLICY_OBJ.put_bucket_policy(bucket_name, bkt_policy_json)
         except CTException as error:
-            assert >> 
-                err_message,
-                error.message,
-                error.message)
+            assert err_message in error.message, error.message
         LOGGER.info(
             "ENDED: Test Bucket Policy Multiple Conditions having one Invalid Condition")
 
@@ -11044,10 +10738,7 @@ class TestBucketPolicy(Test):
                 test_5118_cfg["obj_name_download"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_5118_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_5118_cfg["error_message"] in error.message, error.message
         LOGGER.info("Step 10 & 11: Account switch"
                     "Get object.  - run from account1")
         LOGGER.info("set put_bucket_acl to private as part of teardown.")
@@ -11129,10 +10820,7 @@ class TestBucketPolicy(Test):
             ACL_OBJ_1.get_bucket_acl(bucket_name)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_5115_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_5115_cfg["error_message"] in error.message, error.message
         LOGGER.info(
             "Step 10 & 11: Get ACL of the bucket  -run from account1")
         LOGGER.info("set put_bucket_acl to private as part of teardown.")
@@ -11218,10 +10906,7 @@ class TestBucketPolicy(Test):
                 bucket_name, obj_name, BKT_POLICY_CONF["bucket_policy"]["file_path"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_5114_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_5114_cfg["error_message"] in error.message, error.message
         LOGGER.info(
             "Step 10 & 11: Put object in the bucket  -run from account1")
         LOGGER.info("set put_bucket_acl to private as part of teardown.")
@@ -11301,10 +10986,7 @@ class TestBucketPolicy(Test):
             self.s3test_obj_1.object_list(bucket_name)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_5110_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_5110_cfg["error_message"] in error.message, error.message
         LOGGER.info("Step 10 & 11: Account switch "
                     "List objects from the bucket  -run from account1")
         LOGGER.info("set put_bucket_acl to private as part of teardown.")
@@ -11391,10 +11073,7 @@ class TestBucketPolicy(Test):
                 grant_write_acp=test_5116_cfg["id_str"].format(canonical_id_user_1))
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_5116_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_5116_cfg["error_message"] in error.message, error.message
         LOGGER.info("Step 10 & 11: Account switch"
                     "Put ACL of the bucket  -run from account1")
         LOGGER.info("set put_bucket_acl to private as part of teardown.")
@@ -11476,10 +11155,7 @@ class TestBucketPolicy(Test):
             ACL_OBJ_1.get_bucket_acl(bucket_name)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_5117_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_5117_cfg["error_message"] in error.message, error.message
         LOGGER.info("Step 10 & 11: Account switch "
                     "Get ACL of the bucket  - run from account1")
         LOGGER.info("set put_bucket_acl to private as part of teardown.")
@@ -11578,10 +11254,7 @@ class TestBucketPolicy(Test):
                                      object_key=object_names[0])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_5120_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_5120_cfg["error_message"] in error.message, error.message
         LOGGER.info("Step 10 & 11: Account switch"
                     "Get object ACL - run from account1")
         LOGGER.info("set put_bucket_acl to private as part of teardown.")
@@ -11680,10 +11353,7 @@ class TestBucketPolicy(Test):
                                      object_key=object_names[0])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_5122_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_5122_cfg["error_message"] in error.message, error.message
         LOGGER.info("Step 10 & 11: Account switch "
                     "Get object ACL - run from account1")
         LOGGER.info("set put_bucket_acl to private as part of teardown.")
@@ -12297,10 +11967,7 @@ class TestBucketPolicy(Test):
                 bucket_name, bucket_policy)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_6991_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_6991_cfg["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 6: Applying policy on a bucket using user of account 2 is failed with error {0}".format(
                     test_6991_cfg["error_message"]))
@@ -12366,10 +12033,7 @@ class TestBucketPolicy(Test):
             S3_BKT_POLICY_OBJ_1.get_bucket_policy(bucket_name)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_6992_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_6992_cfg["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 6: Applying policy on a bucket using user of account 2 is failed with error {0}".format(
                     test_6992_cfg["error_message"]))
@@ -12662,10 +12326,10 @@ class TestBucketPolicy(Test):
             "Step 6 & 7: Account switch"
             "Get bucket tagging - run from account1")
         resp = s3_bkt_tag_obj_1.get_bucket_tagging(bucket_name)
-        self.assertTrue(resp[test_6978_cfg["tagset"]][0][
-                        test_6978_cfg["key_val"]] == test_6978_cfg["key1_validate"], resp)
-        self.assertTrue(resp[test_6978_cfg["tagset"]][0][
-                        test_6978_cfg["value_val"]] == test_6978_cfg["key2_validate"], resp)
+        assert resp[test_6978_cfg["tagset"]][0][
+                        test_6978_cfg["key_val"]] == test_6978_cfg["key1_validate"], resp
+        assert resp[test_6978_cfg["tagset"]][0][
+                        test_6978_cfg["value_val"]] == test_6978_cfg["key2_validate"], resp
         LOGGER.info(
             "Step 6 & 7: Account switch"
             "Get bucket tagging - run from account1")
@@ -12725,8 +12389,7 @@ class TestBucketPolicy(Test):
             "Step 5 & 6: Account switch"
             "Get bucket location - run from account1")
         resp = s3_bkt_tag_obj_1.bucket_location(bucket_name)
-        self.assertTrue(resp[test_6987_cfg["loc"]] ==
-                        test_6987_cfg["exp_loc"], resp)
+        assert resp[test_6987_cfg["loc"]] == test_6987_cfg["exp_loc"], resp
         LOGGER.info(
             "Step 5 & 6: Account switch"
             "Get bucket location - run from account1")
@@ -12796,10 +12459,10 @@ class TestBucketPolicy(Test):
             "Step 7 & 8: Account switch"
             "Get bucket tagging - run from default")
         resp = S3_TAG_OBJ.get_bucket_tagging(bucket_name)
-        self.assertTrue(resp[test_6988_cfg["tagset"]][0][
-                        test_6988_cfg["key_val"]] == test_6988_cfg["key1_validate"], resp)
-        self.assertTrue(resp[test_6988_cfg["tagset"]][0][
-                        test_6988_cfg["value_val"]] == test_6988_cfg["key2_validate"], resp)
+        assert resp[test_6988_cfg["tagset"]][0][
+                        test_6988_cfg["key_val"]] == test_6988_cfg["key1_validate"], resp
+        assert resp[test_6988_cfg["tagset"]][0][
+                        test_6988_cfg["value_val"]] == test_6988_cfg["key2_validate"], resp
         LOGGER.info(
             "Step 7 & 8: Account switch"
             "Get bucket tagging - run from default")
@@ -12861,10 +12524,7 @@ class TestBucketPolicy(Test):
             S3_BKT_POLICY_OBJ_1.delete_bucket_policy(bucket_name)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_6990_cfg["error_message"],
-                error.message,
-                error.message)
+            assert test_6990_cfg["error_message"] in error.message, error.message
             LOGGER.info(
                 "Step 6: Delete bucket policy is failed with error {0}".format(
                     test_6990_cfg["error_message"]))
@@ -13001,10 +12661,7 @@ class TestBucketPolicy(Test):
                 S3_OBJ.object_list(bucket_name)
             except CTException as error:
                 LOGGER.error(error.message)
-                assert >> 
-                    test_1295_cfg["err_message"],
-                    error.message,
-                    error.message)
+                assert test_1295_cfg["err_message"] in error.message, error.message
             LOGGER.info(
                 "Step 4: Listing objects of bucket without prefix failed with {0}".format(
                     test_1295_cfg["err_message"]))
@@ -13054,10 +12711,7 @@ class TestBucketPolicy(Test):
                 bucket_name, prefix=bkt_policy_cfg["obj_name_prefix"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_1297_cfg["err_message"],
-                error.message,
-                error.message)
+            assert test_1297_cfg["err_message"] in error.message, error.message
         LOGGER.info(
             "Step 3: Listed objects of bucket with prefix failed with {0}".format(
                 test_1297_cfg["err_message"]))
@@ -13100,10 +12754,7 @@ class TestBucketPolicy(Test):
             S3_BKT_POLICY_OBJ.put_bucket_policy(bucket_name, bkt_policy_json)
         except CTException as error:
             LOGGER.error(error.message)
-            assert >> 
-                test_4598_cfg["err_message"],
-                error.message,
-                error.message)
+            assert test_4598_cfg["err_message"] in error.message, error.message
         LOGGER.info(
             "Step 3: Applying bucket policy on a bucket failed with {0}".format(
                 test_4598_cfg["err_message"]))
@@ -13323,7 +12974,7 @@ class TestBucketPolicy(Test):
         LOGGER.info("Step 1: Initiating multipart upload")
         res = S3_MULTIPART_OBJ.create_multipart_upload(
             bucket_name, test_cfg["object_name"])
-        self.assertTrue(res[0], res[1])
+        assert res[0], res[1]
         mpu_id = res[1]["UploadId"]
         LOGGER.info(
             "Step 1: Multipart Upload initiated with mpu_id {0}".format(mpu_id))
@@ -13336,7 +12987,7 @@ class TestBucketPolicy(Test):
             test_cfg["total_parts"],
             bkt_policy_cfg["file_path"])
         assert resp[0], resp[1]
-        self.assertEqual(len(resp[1]), test_cfg["total_parts"], resp[1])
+        ASRTOBJ.assert_equals(len(resp[1]), test_cfg["total_parts"], resp[1])
         parts = res[1]
         LOGGER.info("Step 2: Uploaded parts into bucket: {0}".format(parts))
         LOGGER.info(
@@ -13355,7 +13006,7 @@ class TestBucketPolicy(Test):
             bucket_name,
             test_cfg["object_name"])
         assert resp[0], resp[1]
-        self.assertEqual(len(resp[1]["Parts"]),
+        ASRTOBJ.assert_equals(len(resp[1]["Parts"]),
                          test_cfg["total_parts"], resp[1])
         LOGGER.info(
             "Step 4: Listed parts of multipart upload: {0} using account 2".format(
@@ -13385,7 +13036,7 @@ class TestBucketPolicy(Test):
         LOGGER.info("Step 1: Initiating multipart upload")
         res = S3_MULTIPART_OBJ.create_multipart_upload(
             bucket_name, test_cfg["object_name"])
-        self.assertTrue(res[0], res[1])
+        assert res[0], res[1]
         mpu_id = res[1]["UploadId"]
         LOGGER.info(
             "Step 1: Multipart Upload initiated with mpu_id {0}".format(mpu_id))
@@ -13401,12 +13052,12 @@ class TestBucketPolicy(Test):
         LOGGER.info("Step 3: Aborting multipart upload using account 2")
         resp = s3_mp_obj_acc2.abort_multipart_upload(
             bucket_name, test_cfg["object_name"], mpu_id)
-        self.assertTrue(res[0], res[1])
+        assert res[0], res[1]
         LOGGER.info("Step 3: Aborted multipart upload using account 2")
         LOGGER.info(
             "Step 4: Verifying multipart got aborted by listing multipart upload using account 1")
         resp = S3_MULTIPART_OBJ.list_multipart_uploads(bucket_name)
-        self.assertNotIn(mpu_id, resp[1], resp[1])
+        assert mpu_id not in resp[1], resp[1]
         LOGGER.info("Step 4: Verified that multipart got aborted")
         LOGGER.info(
             "ENDED: Test bucket policy authorization on object with API AbortMultipartUpload")
@@ -13463,10 +13114,7 @@ class TestBucketPolicy(Test):
             "Step 4: Performing head bucket on a bucket {0} using account 2".format(bucket_name))
         resp = S3_OBJ_acc2.head_bucket(bucket_name)
         assert resp[0], resp[1]
-        self.assertEqual(
-            resp[1]["BucketName"],
-            bucket_name,
-            resp)
+        ASRTOBJ.assert_equals(resp[1]["BucketName"], bucket_name, resp)
         LOGGER.info(
             "Step 4: Performed head bucket on a bucket {0} using account 2".format(bucket_name))
         LOGGER.info(
