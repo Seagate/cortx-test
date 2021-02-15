@@ -1,7 +1,10 @@
+"""
+Utility Class for target locking using DB
+"""
 import os
-import requests
 import json
 from http import HTTPStatus
+import requests
 
 
 class LockingTask:
@@ -14,14 +17,15 @@ class LockingTask:
         self.db_wr_username = os.environ['DB_WR_USERNAME']
         self.db_password = os.environ['DB_PASSWORD']
         self.host = "http://localhost:5000/"
-        self.target_create_endpoint = "systemdb/create"
-        self.target_search_endpoint = "systemdb/search"
-        self.target_update_endpoint = "systemdb/update"
+        self.db_collection = "systemdb/"
         self.headers = {
             'content-type': "application/json",
         }
 
     def check_available_target(self, target_list):
+        """
+            Check which target is available for execution from given target list
+        """
         available_target = ""
         for target_ip in target_list:
             target_found = self.is_target_present_in_db(target_ip)
@@ -32,7 +36,7 @@ class LockingTask:
                     "db_username": self.db_rd_username,
                     "db_password": self.db_password
                 }
-                response = requests.request("GET", self.host + self.target_search_endpoint,
+                response = requests.request("GET", self.host + self.db_collection + "search",
                                             headers=self.headers, data=json.dumps(payload))
                 if response.status_code == HTTPStatus.OK:
                     print("available system found")
@@ -44,6 +48,9 @@ class LockingTask:
         return available_target
 
     def is_target_present_in_db(self, target_ip):
+        """
+            Check if given target is already present in db or not
+        """
         target_found = False
         payload = {
             "query": {"priTargetIp": target_ip},
@@ -51,13 +58,16 @@ class LockingTask:
             "db_username": self.db_rd_username,
             "db_password": self.db_password
         }
-        response = requests.request("GET", self.host + self.target_search_endpoint,
+        response = requests.request("GET", self.host + self.db_collection + "search",
                                     headers=self.headers, data=json.dumps(payload))
         if response.status_code == HTTPStatus.OK :
             target_found = True
         return target_found
 
     def add_target_in_db(self, target_ip):
+        """
+            Add given target in db
+        """
         target_added = False
         payload = {
             "priTargetIp": target_ip,
@@ -67,13 +77,16 @@ class LockingTask:
             "db_username": self.db_wr_username,
             "db_password": self.db_password
         }
-        response = requests.request("POST", self.host + self.target_create_endpoint,
+        response = requests.request("POST", self.host + self.db_collection + "create",
                                     headers=self.headers, data=json.dumps(payload))
         if response.status_code == HTTPStatus.OK :
             target_added = True
         return target_added
 
     def take_target_lock(self, target_ip):
+        """
+            Take lock on given target
+        """
         lock_acquired = False
         payload = {
             "query" : {"isTargetFree": {"$in" : ["Yes", "Y"]},
@@ -84,7 +97,7 @@ class LockingTask:
             "db_username": self.db_rd_username,
             "db_password": self.db_password
         }
-        response = requests.request("GET", self.host + self.target_search_endpoint,
+        response = requests.request("GET", self.host + self.db_collection + "search",
                                     headers=self.headers, data=json.dumps(payload))
         if response.status_code == HTTPStatus.OK :
             payload = {
@@ -93,13 +106,16 @@ class LockingTask:
                 "db_username": self.db_wr_username,
                 "db_password": self.db_password
             }
-            response = requests.request("PATCH", self.host + self.target_update_endpoint,
+            response = requests.request("PATCH", self.host + self.db_collection + "update",
                                         headers=self.headers, data=json.dumps(payload))
             if response.status_code == HTTPStatus.OK :
                 lock_acquired = True
         return lock_acquired
 
     def release_target_lock(self, target_ip, target_use_by):
+        """
+            Release lock on given target
+        """
         lock_released = False
         payload = {
             "filter": {"priTargetIp": target_ip, "targetInUseBy": target_use_by},
@@ -107,7 +123,7 @@ class LockingTask:
             "db_username": self.db_wr_username,
             "db_password": self.db_password
         }
-        response = requests.request("PATCH", self.host + self.target_update_endpoint,
+        response = requests.request("PATCH", self.host + self.db_collection + "update",
                                     headers=self.headers, data=json.dumps(payload))
         if response.status_code == HTTPStatus.OK :
             lock_released = True

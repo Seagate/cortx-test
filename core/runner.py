@@ -28,9 +28,6 @@ from collections import deque
 from typing import Tuple
 from typing import Optional
 from typing import Any
-import requests
-import json
-
 
 
 def get_jira_credential() -> Tuple[str, Optional[str]]:

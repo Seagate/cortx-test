@@ -143,8 +143,9 @@ def trigger_unexecuted_tests(args, kafka_test_list):
             # run those selected todo tests sequential
             args.parallel_exe = False
 
-            with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_TEST_LIST), 'w') as :
-                write = csv.writer(f)
+            with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_TEST_LIST), 'w') \
+                    as test_file:
+                write = csv.writer(test_file)
                 for test in unexecuted_test_list:
                     write.writerow([test])
             _env = os.environ.copy()

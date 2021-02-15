@@ -167,7 +167,8 @@ def pytest_addoption(parser) :
         "--local", action="store", default=False, help="Decide whether run is dev local"
     )
     parser.addoption(
-        "--distributed", action="store", default=False, help="Decide whether run is in distributed env"
+        "--distributed", action="store", default=False,
+        help="Decide whether run is in distributed env"
     )
 
 
@@ -217,10 +218,10 @@ def pytest_collection(session):
         selected_items = []
         for item in items :
             test_found = ''
-            for mark in item.iter_markers() :
+            for mark in item.iter_markers():
                 if mark.name == 'tags' :
                     test_found = mark.args[0]
-                    if test_found in required_tests :
+                    if test_found in required_tests:
                         selected_items.append(item)
             CACHE.store(item.nodeid, test_found)
         items[:] = selected_items
@@ -239,21 +240,22 @@ def pytest_collection(session):
         for item in items :
             parallel_found = False
             test_found = ''
-            for mark in item.iter_markers() :
-                if mark.name == 'parallel' :
+            for mark in item.iter_markers():
+                if mark.name == 'parallel':
                     parallel_found = 'true'
-                    if config.option.is_parallel == False :
+                    if not config.option.is_parallel:
                         break
                 elif mark.name == 'tags' :
                     test_found = mark.args[0]
-            if parallel_found == config.option.is_parallel and test_found != '' :
+            if parallel_found == config.option.is_parallel and test_found != '':
                 if test_found in required_tests :
                     selected_items.append(item)
                     selected_tests.append(test_found)
             CACHE.store(item.nodeid, test_found)
-        with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_SELECTED_TESTS), 'w') as f :
-            write = csv.writer(f)
-            for test in selected_tests :
+        with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_SELECTED_TESTS), 'w')\
+                as test_file:
+            write = csv.writer(test_file)
+            for test in selected_tests:
                 write.writerow([test])
         items[:] = selected_items
 
