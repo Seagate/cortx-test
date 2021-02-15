@@ -34,10 +34,10 @@ def run_pytest_cmd(args, te_tag, parallel_red, env=None):
     prc_cnt = str(args.prc_cnt) + "*popen"
     if parallel_red == "true":
         report_name = "--html=log/parallel_" + args.html_report
-        cmd_line = ["pytest", is_parallel, log_level, report_name, '-d', "--tx", prc_cnt]
+        cmd_line = ["pytest", "--continue-on-collection-errors", is_parallel, log_level, report_name, '-d', "--tx", prc_cnt]
     else:
         report_name = "--html=log/non_parallel_" + args.html_report
-        cmd_line = ["pytest", is_parallel, log_level, report_name]
+        cmd_line = ["pytest", "--continue-on-collection-errors", is_parallel, log_level, report_name]
     if args.te_ticket:
         cmd_line = cmd_line + ["--te_tkt=" + str(args.te_ticket)]
     prc = subprocess.Popen(cmd_line, env=env)
