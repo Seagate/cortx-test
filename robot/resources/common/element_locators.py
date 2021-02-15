@@ -18,6 +18,7 @@ SETTINGS_ID = 'Settings'
 EMAIL_NOTIFICATION_ID = 'goToNotifications'
 IAM_USER_TAB_ID = "s3iamuserstab"
 DASHBOARD_MENU_ID = "Dashboard"
+MAINTENANCE_MENU_ID = 'Maintenance'
 
 # Alerts
 ALERT_IMAGE_ID_1='alert-zoom'  # from Dashbard
@@ -135,7 +136,6 @@ IAM_USER_PASSWORD_LABEL_ID = "iam-passwordlbl"
 IAM_USER_CONFIRM_PASSWORD_LABEL_ID = "iam-confirmpasslbl"
 
 #About Section
-MAINTENANCEM_MENU_ID = 'Maintenance'
 ABOUT_VIEW_ID = 'menu-actionmanagebtn'
 ISSUER_DETAILS_TAB_ID = 'Issuertab'
 SUBJECT_DETAILS_TAB_ID = 'Subjecttab'
