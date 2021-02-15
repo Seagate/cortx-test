@@ -3,11 +3,12 @@ from http import HTTPStatus
 
 db_keys_int = ["noOfNodes", "testExecutionTime"]
 db_keys_array = ["nodesHostname", "testIDLabels", "testTags"]
+db_keys_bool = ["latest"]
 db_keys_str = ["clientHostname", "OSVersion", "testName", "testID", "testPlanID",
                "testExecutionID", "testType", "testExecutionLabel", "testTeam",
-               "testStartTime", "buildType", "buildNo", "logPath",
+               "testStartTime", "buildType", "buildNo", "logPath", "feature",
                "testResult", "healthCheckResult", "executionType", "testPlanLabel"]
-db_keys = db_keys_int + db_keys_array + db_keys_str
+db_keys = db_keys_int + db_keys_array + db_keys_bool + db_keys_str
 
 extra_db_keys_str = ["issueType", "issueID"]
 extra_db_keys_bool = ["isRegression", "logCollectionDone"]
@@ -87,6 +88,9 @@ def validate_mandatory_db_fields(json_data: dict) -> (bool, tuple):
     for key in db_keys_str:
         if type(json_data[key]) != str:
             return False, (HTTPStatus.BAD_REQUEST, f"{key} should be string")
+    for key in db_keys_bool:
+        if isinstance(json_data[key], bool):
+            return False, (HTTPStatus.BAD_REQUEST, f"{key} should be boolean")
     for key in db_keys_array:
         if type(json_data[key]) != list:
             return False, (HTTPStatus.BAD_REQUEST, f"{key} should be list")
