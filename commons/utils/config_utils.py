@@ -385,7 +385,6 @@ def get_config_db(cname="r2_systems"):
 
     :param cname:collection which will be read
     """
-    print(cname)
     # TODO: This will covered in EOS-17026
     return None
 
