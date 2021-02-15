@@ -1,4 +1,3 @@
-# REST-DB & Reporting Framework
 
 <img src="media/rest_server.png" style="width:5.02084in;height:3.96875in" />
 
@@ -112,6 +111,8 @@ Mongo DB Collection for storing test execution details.
     | Yes         | healthCheckResult   | String             |
     | Yes         | executionType       | String             |
     | Yes         | testPlanLabel       | String             |
+    | Yes         | latest              | Boolean            |
+    | Yes         | feature             | String             |
     | No          | issueType           | String             |
     | No          | issueID             | String             |
     | No          | isRegression        | Boolean            |
@@ -158,6 +159,8 @@ curl -L -X POST 'http://127.0.0.1:5000/reportsdb/create' \
     ],
     "testTeam": "CFT",
     "testType": "Pytest",
+    "latest": true,
+    "feature": "Data Recovery",
     "db_username": "db_username",
     "db_password": "db_password"
 }'
@@ -205,6 +208,8 @@ payload = {
     ],
     "testTeam": "CFT",
     "testType": "Pytest",
+    "latest": true,
+    "feature": "Data Recovery",
     "db_username": "db_username",
     "db_password": "db_password"
 }
