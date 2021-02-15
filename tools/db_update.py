@@ -35,8 +35,9 @@ import sys
 from http import HTTPStatus
 
 import requests
+from jira import JIRA
 
-from csv_report import common
+from report import jira_api
 
 headers = {
     'Content-Type': 'application/json'
@@ -50,7 +51,7 @@ try:
     DB_PASSWORD = config["REST"]["db_password"]
 except KeyError:
     print("Could not start REST server. Please verify config.ini file")
-    exit(1)
+    sys.exit(1)
 
 
 def patch_db_request(payload: dict) -> None:
@@ -119,48 +120,60 @@ def search_db_request(payload: dict):
                                 data=json.dumps(payload))
     if response.status_code == HTTPStatus.OK:
         return response.json()["result"]
-    elif response.status_code == HTTPStatus.NOT_FOUND and "No results" in response.text:
+    if response.status_code == HTTPStatus.NOT_FOUND and "No results" in response.text:
         return None
-    else:
-        print(f'{request} on {HOSTNAME + endpoint} failed')
-        print(f'HEADERS={response.request.headers}\n'
-              f'BODY={response.request.body}',
-              f'RESPONSE={response.text}')
-        sys.exit(1)
+    print(f'{request} on {HOSTNAME + endpoint} failed')
+    print(f'HEADERS={response.request.headers}\n'
+          f'BODY={response.request.body}',
+          f'RESPONSE={response.text}')
+    sys.exit(1)
+
+
+def get_feature_from_test_plan(test_plan: str, test: str, username: str, password: str) -> str:
+    """
+    Description: Get feature from test plan board
+
+    Returns:
+        Feature String
+    """
+    jira_url = 'https://jts.seagate.com/'
+    options = {'server': jira_url}
+    jira = JIRA(options, basic_auth=(username, password))
+    for feature in jira_api.FEATURES:
+        tests = jira.search_issues(
+            f'issue in testPlanFolderTests({test_plan},\'{feature}\',\'true\')', maxResults=500)
+        for each_test in tests:
+            if each_test.key == test:
+                return feature
+    return "Orphan"
 
 
 def main():
     """Update test executions from JIRA to MongoDB."""
 
-    # Parse testplan argument
-    parser = argparse.ArgumentParser()
-    parser.add_argument('tp', help='Testplan for current build')
-    test_plans = parser.parse_args()
-    tp = test_plans.tp
-
-    username, password = common.get_username_password()
-    build = common.get_build_from_test_plan(tp, username, password)
-    test_executions = common.get_test_executions_from_test_plan(tp, username, password)
-    test_plan_issue = common.get_issue_details(tp, username, password)
+    username, password = jira_api.get_username_password()
+    build = jira_api.get_build_from_test_plan(tp_key, username, password)
+    test_executions = jira_api.get_test_executions_from_test_plan(tp_key, username, password)
+    test_plan_issue = jira_api.get_issue_details(tp_key, username, password)
     # for each TE:
-    for te in test_executions:
-        test_execution_issue = common.get_issue_details(te["key"], username, password)
-        tests = common.get_test_from_test_execution(te["key"], username, password)
+    for test_execution in test_executions:
+        test_execution_issue = jira_api.get_issue_details(test_execution["key"], username, password)
+        tests = jira_api.get_test_from_test_execution(test_execution["key"], username, password)
         # for each Test in TE:
         for test in tests:
-            payload = {
+            query_payload = {
                 "query": {
                     "buildNo": build,
-                    "testExecutionID": te["key"],
+                    "testExecutionID": test_execution["key"],
                     "testID": test["key"],
-                    "valid": "true"
+                    "latest": True
                 },
             }
-            results = search_db_request(payload)
+            results = search_db_request(query_payload)
 
             if len(results) == 0:
                 # add one entry
-                test_issue = common.get_issue_details(test["key"], username, password)
+                test_issue = jira_api.get_issue_details(test["key"], username, password)
                 payload = {
                     # Unknown data
                     "clientHostname": "",
@@ -173,7 +186,7 @@ def main():
                     "testTags": [""],
                     "testType": "",
                     # Data from JIRA
-                    "testPlanID": tp,
+                    "testPlanID": tp_key,
                     "buildNo": build,
                     "logPath": test["comment"],
                     "testResult": test["status"],
@@ -182,23 +195,25 @@ def main():
                     "testID": test["key"],
                     "testTeam": test_execution_issue["fields"]["components"][0]["name"],
                     "testIDLabels": test_issue["fields"]["labels"],
-                    "testExecutionID": te["key"],
+                    "testExecutionID": test_execution["key"],
                     "testExecutionLabel": test_execution_issue["fields"]["labels"][0],
                     "executionType": test_issue["fields"]["customfield_20981"],
-                    "testPlanLabel": test_plan_issue["fields"]["labels"][0]
+                    "testPlanLabel": test_plan_issue["fields"]["labels"][0],
+                    "feature": get_feature_from_test_plan(tp_key, test, username, password),
+                    "latest": True
                 }
                 create_db_request(payload)
-            elif len(results) == 1:
+            else:
                 # if test status in db != in JIRA or no entry in db
                 if results[0]["testResult"].lower() != test["status"].lower():
                     # Add valid key in entry false
-                    payload = {
-                        "filter": payload["query"],
+                    patch_payload = {
+                        "filter": query_payload["query"],
                         "update": {
-                            "$set": {"valid": False}
+                            "$set": {"latest": False}
                         }
                     }
-                    patch_db_request(payload)
+                    patch_db_request(patch_payload)
                     # Insert new entry with latest data from JIRA
                     payload = {
                         # Unknown data
@@ -224,20 +239,33 @@ def main():
                         "testType": results[0]["testType"],
                         "testExecutionLabel": results[0]["testExecutionLabel"],
                         "executionType": results[0]["executionType"],
-                        "testPlanLabel": results[0]["testPlanLabel"]
+                        "testPlanLabel": results[0]["testPlanLabel"],
+                        "feature": results[0]["feature"],
+                        "latest": True
                     }
                     create_db_request(payload)
-            else:
-                # ToDo: More than 1 valid entries in database
-                print(f"More than one entry in database {results}. Could not update MongoDB data")
-                sys.exit(1)
+
+            if "fail" in test["status"].lower():
+                # Get BUG ID from JIRA
+                if not test["defects"]:
+                    print("WARNING: Failure is not mapped to any issue in JIRA "
+                          "TEST - {0}, Test Execution - {1}, "
+                          "Test Plan = {2}".format(test["key"], test_execution["key"], tp_key))
+                defects = [defect["key"] for defect in test["defects"]]
+                if defects:
+                    # PATCH issue in db entry
+                    patch_payload = {
+                        "filter": query_payload["query"],
+                        "update": {
+                            "$set": {"issueIDs": defects}
+                        }
+                    }
+                    patch_db_request(patch_payload)
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('tp', help='Testplan for current build')
+    test_plans = parser.parse_args()
+    tp_key = test_plans.tp
     main()
-
-# ToDo: Add code to update failed tests Bug IDs into database
-#       Decide if it will be as standalone script or as part of this script only.
-# For each failed or blocked test:
-#    PATCH issue in db entry
-# Search database by ('buildNo', 'testExecutionID', 'testID', 'valid': True)
