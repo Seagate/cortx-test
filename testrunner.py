@@ -57,7 +57,7 @@ def run_pytest_cmd(args, parallel_exe, env=None, re_execution=False):
         report_name = "--html=log/re_non_parallel_" + args.html_report
         cmd_line = ["pytest", "--continue-on-collection-errors", is_parallel, is_distributed,
                     log_level, report_name]
-    else :
+    else:
         if parallel_exe:
             report_name = "--html=log/parallel_" + args.html_report
             cmd_line = ["pytest", "--continue-on-collection-errors", is_parallel, is_distributed,
@@ -120,22 +120,21 @@ def get_tests_from_te(args, test_type='ALL'):
     return test_list
 
 
-def trigger_unexecuted_tests(args, kafka_test_list):
+def trigger_unexecuted_tests(args, test_list):
     '''
     Check if some tests are not executed in earlier TE
     Rerun those tests in seqential manner.
     '''
-    test_list = get_tests_from_te(args, 'TODO')
-    if len(test_list) != 0:
+    te_test_list = get_tests_from_te(args, 'TODO')
+    if len(te_test_list) != 0:
         unexecuted_test_list = []
         # check if there are any selected tests with todo status
-        for test in kafka_test_list:
-            if test in test_list:
+        for test in test_list:
+            if test in te_test_list:
                 unexecuted_test_list.append(test)
         if len(unexecuted_test_list) != 0:
             # run those selected todo tests sequential
             args.parallel_exe = False
-
             with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_TEST_LIST), 'w') \
                     as test_file:
                 write = csv.writer(test_file)
@@ -146,19 +145,38 @@ def trigger_unexecuted_tests(args, kafka_test_list):
             run_pytest_cmd(args, args.parallel_exe, env=_env, re_execution=True)
 
 
-def trigger_tests_from_kafka_msg(args, test_list):
+def trigger_tests_from_kafka_msg(kafka_msg):
     '''
     Trigger pytest execution for received test list
     '''
     # writing the data into the file
     with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_TEST_LIST), 'w') as f:
         write = csv.writer(f)
-        for test in test_list:
+        for test in kafka_msg.test_list:
             write.writerow([test])
     _env = os.environ.copy()
     _env['pytest_run'] = 'distributed'
     # First execute all tests with parallel tag which are mentioned in given tag.
-    run_pytest_cmd(args, args.parallel_exe, env=_env)
+    run_pytest_cmd(args, kafka_msg.parallel, env=_env)
+
+
+def read_selected_tests_csv():
+    '''
+    Read tests which were selected for last execution
+    '''
+    try:
+        tests = list()
+        with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_SELECTED_TESTS)) \
+                as test_file:
+            reader = csv.reader(test_file)
+            test_list = list(reader)
+            for test_row in test_list:
+                if not test_row:
+                    continue
+                tests.append(test_row[0])
+        return tests
+    except Exception as e:
+        print(e)
 
 
 def trigger_tests_from_te(args):
@@ -176,11 +194,32 @@ def trigger_tests_from_te(args):
         for test in test_list:
             write.writerow([test])
     _env = os.environ.copy()
-
     # First execute all tests with parallel tag which are mentioned in given tag.
     run_pytest_cmd(args, True, env=_env)
+
+    # Sequentially executes test which didn't execute during parallel execution
+    test_list = read_selected_tests_csv()
+    trigger_unexecuted_tests(args, test_list)
+
     # Execute all tests having no parallel tag and which are mentioned in given tag.
     run_pytest_cmd(args, False, env=_env)
+
+
+def get_available_target(kafka_msg):
+    '''
+    Check available target from target list
+    Get lock on target if available
+    '''
+    acquired_target = ""
+    while acquired_target == "":
+        target = lock_task.check_available_target(kafka_msg.target_list)
+        if target != "":
+            print("target found {}".format(target))
+            lock_success = lock_task.take_target_lock(target)
+            if lock_success:
+                acquired_target = target
+                print("lock acquired {}".format(target))
+    return acquired_target
 
 
 def check_kafka_msg_trigger_test(args):
@@ -195,52 +234,43 @@ def check_kafka_msg_trigger_test(args):
         try:
             # SIGINT can't be handled when polling, limit timeout to 60 seconds.
             msg = consumer.poll(60)
-            if msg is None :
+            if msg is None:
                 continue
             kafka_msg = msg.value()
-            if kafka_msg is not None:
-                if kafka_msg.te_id == "STOP":
-                    received_stop_signal = True
-                else :
-                    execution_done = False
-                    while not execution_done:
-                        acquired_target = ""
-                        while acquired_target == "":
-                            target = lock_task.check_available_target(kafka_msg.target_list)
-                            if target != "" :
-                                print("target found {}".format(target))
-                                lock_success = lock_task.take_target_lock(target)
-                                if lock_success:
-                                    acquired_target = target
-                                    print("lock acquired {}".format(target))
-                        # execute te id on acquired target
-                        # release lock on acquired target
-                        args.te_ticket = kafka_msg.te_id
-                        args.parallel_exe = False
-                        if kafka_msg.execution_type == 'parallel':
-                            args.parallel_exe = True
-                        trigger_tests_from_kafka_msg(args, kafka_msg.test_list)
-                        # rerun unexecuted tests in case of parallel execution
-                        if kafka_msg.execution_type == 'parallel':
-                            trigger_unexecuted_tests(args, kafka_msg.test_list)
-                        # Release lock on acquired target.
-                        lock_task.release_target_lock(acquired_target, acquired_target)
-                        execution_done = True
+            if kafka_msg is None:
+                continue
+            if kafka_msg.te_id == "STOP":
+                received_stop_signal = True
+            else:
+                execution_done = False
+                while not execution_done:
+                    acquired_target = get_available_target(kafka_msg)
+                    # execute te id on acquired target
+                    # release lock on acquired target
+                    args.te_ticket = kafka_msg.te_tickets
+                    args.parallel_exe = kafka_msg.parallel
+                    trigger_tests_from_kafka_msg(kafka_msg)
+                    # rerun unexecuted tests in case of parallel execution
+                    if kafka_msg.parallel:
+                        trigger_unexecuted_tests(args, kafka_msg.test_list)
+                    # Release lock on acquired target.
+                    lock_task.release_target_lock(acquired_target, acquired_target)
+                    execution_done = True
         except KeyboardInterrupt:
             break
     consumer.close()
 
 
-def main(args) :
+def main(args):
     runner.cleanup()
     if args.json_file:
         json_dict, cmd, run_using = runner.parse_json(args.json_file)
         cmd_line = runner.get_cmd_line(cmd, run_using, args.html_report, args.log_level)
         prc = subprocess.Popen(cmd_line)
         out, err = prc.communicate()
-    elif args.te_ticket :
+    elif args.te_ticket:
         trigger_tests_from_te(args)
-    else :
+    else:
         check_kafka_msg_trigger_test(args)
 
 

@@ -188,7 +188,7 @@ class Update(Resource):
 @api.response(403, "Forbidden: User does not have permission for operation.")
 @api.response(404, "Not Found: No entry for that query in MongoDB.")
 @api.response(503, "Service Unavailable: Unable to connect to mongoDB.")
-class Search(Resource):
+class SearchSystems(Resource):
     @staticmethod
     def get():
         json_data = flask.request.get_json()
@@ -213,7 +213,8 @@ class Search(Resource):
         if "projection" in json_data and bool(json_data["projection"]):
             projection = json_data["projection"]
 
-        count_results = mongodbapi.count_documents(json_data["query"], uri, db_name, system_collection)
+        count_results = mongodbapi.count_documents(json_data["query"], uri, db_name,
+                                                   system_collection)
         if count_results[0] and count_results[1] > 0:
             query_results = mongodbapi.find_documents(json_data["query"], projection, uri,
                                                       db_name, system_collection)
@@ -240,7 +241,7 @@ class Search(Resource):
 @api.response(401, "Unauthorized: Wrong db_username/db_password.")
 @api.response(403, "Forbidden: User does not have permission for operation.")
 @api.response(503, "Service Unavailable: Unable to connect to mongoDB.")
-class Create(Resource):
+class CreateSystems(Resource):
     @staticmethod
     def post():
         json_data = flask.request.get_json()
@@ -276,7 +277,7 @@ class Create(Resource):
 @api.response(401, "Unauthorized: Wrong db_username/db_password.")
 @api.response(403, "Forbidden: User does not have permission for operation.")
 @api.response(503, "Service Unavailable: Unable to connect to mongoDB.")
-class Update(Resource):
+class UpdateSystems(Resource):
     @staticmethod
     def patch():
         json_data = flask.request.get_json()

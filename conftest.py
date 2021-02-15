@@ -216,10 +216,10 @@ def pytest_collection(session):
         print("required tests {}".format(required_tests))
         Globals.TE_TKT = config.option.te_tkt
         selected_items = []
-        for item in items :
+        for item in items:
             test_found = ''
             for mark in item.iter_markers():
-                if mark.name == 'tags' :
+                if mark.name == 'tags':
                     test_found = mark.args[0]
                     if test_found in required_tests:
                         selected_items.append(item)

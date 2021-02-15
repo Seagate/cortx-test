@@ -17,7 +17,7 @@ def dict_to_kafka_msg(obj, ctx):
     if obj is None:
         return None
 
-    return KafkaMsg(te_id=obj['te_id'],
+    return KafkaMsg(te_id=obj['te_tickets'],
                     execution_type=obj['parallel'],
                     target_list=obj['target_list'],
                     test_list=obj['test_list'])
