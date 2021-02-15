@@ -1,6 +1,6 @@
 test_3005:
   alert: True
-  du_val: 3
+  du_val: 8
   alert_type: "fault_resolved"
   resource_type: "node:os:disk_space"
 
@@ -8,10 +8,10 @@ test_3006:
   alert: False
   resource_type: "node:os:disk_space"
   alert_fault:
-    du_val: 1
+    du_val: 8
     alert_type: "fault"
   alert_fault_resolved:
-    du_val: 1
+    du_val: 8
     alert_type: "fault_resolved"
 
 test_3104:

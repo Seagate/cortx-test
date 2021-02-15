@@ -163,13 +163,15 @@ class Host:
             cmd, timeout=timeout)
         exit_status = stdout.channel.recv_exit_status()
         LOGGER.debug(exit_status)
-        if exc and exit_status != 0:
+        if exit_status != 0:
             err = stderr.readlines()
             err = [r.strip().strip("\n").strip() for r in err]
             LOGGER.debug("Error: %s", str(err))
-            if err:
-                raise IOError(err)
-            raise IOError(stdout.readlines())
+            if exc:
+                if err:
+                    raise IOError(err)
+                raise IOError(stdout.readlines())
+            return err
         if inputs:
             stdin.write('\n'.join(inputs))
             stdin.write('\n')

@@ -87,7 +87,7 @@ class TestRAIDOperations:
             ["sspl_trans_intv_key"],
             self.cm_cfg["sspl_config"]
             ["sspl_trans_intv_val"])
-        assert res is True
+        assert res
 
         LOGGER.info("Delete keys with prefix SSPL_")
         cmd = common_cmds.REMOVE_UNWANTED_CONSUL
@@ -96,7 +96,7 @@ class TestRAIDOperations:
                                             password=self.passwd,
                                             read_nbytes=BYTES_TO_READ,
                                             shell=False)
-        assert response[0] is True, response[1]
+        assert response[0], response[1]
 
         LOGGER.info("Restarting sspl service")
         self.hlt_obj.restart_pcs_resource(self.cm_cfg["sspl_resource_id"])
@@ -106,11 +106,11 @@ class TestRAIDOperations:
             "Verifying the status of sspl and rabittmq service is online")
         resp = S3Helper.get_s3server_service_status(
             self.cm_cfg["service"]["sspl_service"])
-        assert resp[0] is True, resp[1]
+        assert resp[0], resp[1]
 
         resp = S3Helper.get_s3server_service_status(
             self.cm_cfg["service"]["rabitmq_service"])
-        assert resp[0] is True, resp[1]
+        assert resp[0], resp[1]
         LOGGER.info(
             "Validated the status of sspl and rabittmq service are online")
 
@@ -118,11 +118,11 @@ class TestRAIDOperations:
             LOGGER.info("Running rabbitmq_reader.py script on node")
             resp = self.ras_obj.start_rabbitmq_reader_cmd(self.cm_cfg["sspl_exch"],
                                                           self.cm_cfg["sspl_key"])
-            assert resp is True
+            assert resp
             LOGGER.info("Successfully started rabbitmq_reader.py script on node")
 
         res = self.ras_obj.sspl_log_collect()
-        assert res[0] is True, res[1]
+        assert res[0], res[1]
         self.starttime = time.time()
         LOGGER.info("ENDED: Setup Operations")
 
@@ -138,7 +138,7 @@ class TestRAIDOperations:
                     "operation": RAS_VAL["raid_param"]["remove_operation"],
                     "md_device": self.md_device,
                     "disk": self.failed_disk})
-            assert resp[0] is True, resp[1]
+            assert resp[0], resp[1]
             self.removed_disk = self.failed_disk
 
         if self.removed_disk:
@@ -148,7 +148,7 @@ class TestRAIDOperations:
                     "operation": RAS_VAL["raid_param"]["add_operation"],
                     "md_device": self.md_device,
                     "disk": self.removed_disk})
-            assert resp[0] is True, resp[1]
+            assert resp[0], resp[1]
 
         LOGGER.info("Updating transmit interval value")
         res = self.ras_obj.update_threshold_values(
@@ -157,7 +157,7 @@ class TestRAIDOperations:
             ["sspl_trans_intv_key"],
             self.cm_cfg["sspl_config"]
             ["sspl_trans_intv_dval"])
-        assert res is True
+        assert res
 
         if self.start_rmq:
             LOGGER.info("Terminating the process rabbitmq_reader.py")
@@ -215,7 +215,7 @@ class TestRAIDOperations:
                 "operation": raid_cmn_cfg["stop_operation"],
                 "md_device": self.md_device,
                 "disk": None})
-        assert resp[0] is True, resp[1]
+        assert resp[0], resp[1]
         self.raid_stopped = True
         LOGGER.info("Step 1: Ran ALERT API for generating RAID fault alert by "
                     "stopping array")
@@ -226,7 +226,7 @@ class TestRAIDOperations:
             alert_list = [test_cfg["resource_type"],
                           test_cfg["alert_fault"]]
             resp = self.ras_obj.list_alert_validation(alert_list)
-            assert resp[0] is True, resp[1]
+            assert resp[0], resp[1]
             LOGGER.info(
                 "Step 2: Verified the RAID fault alert on RMQ channel logs")
 
@@ -237,7 +237,7 @@ class TestRAIDOperations:
             test_cfg["alert_fault"],
             False,
             test_cfg["resource_type"])
-        assert resp is True, csm_error_msg
+        assert resp, csm_error_msg
         LOGGER.info(
             "Step 3: Successfully verified RAID fault alert using CSM REST API")
 
@@ -250,7 +250,7 @@ class TestRAIDOperations:
                 "operation": raid_cmn_cfg["assemble_operation"],
                 "md_device": self.md_device,
                 "disk": None})
-        assert resp[0] is True, resp[1]
+        assert resp[0], resp[1]
         self.raid_stopped = False
         LOGGER.info("Step 4: Ran ALERT API for generating RAID fault_resolved "
                     "alerts by assembling array")
@@ -261,7 +261,7 @@ class TestRAIDOperations:
             alert_list = [test_cfg["resource_type"],
                           test_cfg["alert_fault_resolved"]]
             resp = self.ras_obj.list_alert_validation(alert_list)
-            assert resp[0] is True, resp[1]
+            assert resp[0], resp[1]
             LOGGER.info(
                 "Step 5: Verified the RAID fault alert on RMQ channel logs")
 
@@ -273,7 +273,7 @@ class TestRAIDOperations:
             test_cfg["alert_fault_resolved"],
             True,
             test_cfg["resource_type"])
-        assert resp is True, csm_error_msg
+        assert resp, csm_error_msg
         LOGGER.info("Step 6: Successfully verified RAID fault_resolved alert "
                     "using CSM REST API")
         LOGGER.info(
@@ -300,7 +300,7 @@ class TestRAIDOperations:
                 "operation": raid_cmn_cfg["fail_operation"],
                 "md_device": self.md_device,
                 "disk": self.disk2})
-        assert resp[0] is True, resp[1]
+        assert resp[0], resp[1]
         self.failed_disk = self.disk2
         resource_id = "{}:{}".format(self.md_device, self.disk2)
         LOGGER.info(
@@ -314,7 +314,7 @@ class TestRAIDOperations:
             alert_list = [test_cfg["resource_type"],
                           test_cfg["alert_fault"], resource_id]
             resp = self.ras_obj.list_alert_validation(alert_list)
-            assert resp[0] is True, resp[1]
+            assert resp[0], resp[1]
             LOGGER.info(
                 "Step 2: Verified the RAID fault alert on RMQ channel logs")
 
@@ -325,7 +325,7 @@ class TestRAIDOperations:
             test_cfg["alert_fault"],
             False,
             test_cfg["resource_type"])
-        assert resp is True, csm_error_msg
+        assert resp, csm_error_msg
         LOGGER.info(
             "Step 3: Successfully verified RAID fault alert using CSM REST API")
 
@@ -338,7 +338,7 @@ class TestRAIDOperations:
                 "operation": raid_cmn_cfg["remove_operation"],
                 "md_device": self.md_device,
                 "disk": self.disk2})
-        assert resp[0] is True, resp[1]
+        assert resp[0], resp[1]
         self.removed_disk = self.disk2
         self.failed_disk = False
         LOGGER.info(
@@ -352,7 +352,7 @@ class TestRAIDOperations:
             alert_list = [test_cfg["resource_type"],
                           test_cfg["alert_missing"], resource_id]
             resp = self.ras_obj.list_alert_validation(alert_list)
-            assert resp[0] is True, resp[1]
+            assert resp[0], resp[1]
             LOGGER.info(
                 "Step 5: Verified the RAID missing alert on RMQ channel logs")
 
@@ -363,7 +363,7 @@ class TestRAIDOperations:
             test_cfg["alert_missing"],
             False,
             test_cfg["resource_type"])
-        assert resp is True, csm_error_msg
+        assert resp, csm_error_msg
         LOGGER.info("Step 6: Successfully verified RAID missing alert using CSM"
                     " REST API")
         LOGGER.info(
@@ -390,7 +390,7 @@ class TestRAIDOperations:
                 "operation": raid_cmn_cfg["fail_operation"],
                 "md_device": self.md_device,
                 "disk": self.disk2})
-        assert resp[0] is True, resp[1]
+        assert resp[0], resp[1]
         self.failed_disk = self.disk2
         resource_id = "{}:{}".format(self.md_device, self.disk2)
         LOGGER.info(
@@ -404,7 +404,7 @@ class TestRAIDOperations:
             alert_list = [test_cfg["resource_type"],
                           test_cfg["alert_fault"], resource_id]
             resp = self.ras_obj.list_alert_validation(alert_list)
-            assert resp[0] is True, resp[1]
+            assert resp[0], resp[1]
             LOGGER.info(
                 "Step 2: Verified the RAID fault alert on RMQ channel logs")
 
@@ -415,7 +415,7 @@ class TestRAIDOperations:
             test_cfg["alert_fault"],
             False,
             test_cfg["resource_type"])
-        assert resp is True, csm_error_msg
+        assert resp, csm_error_msg
         LOGGER.info(
             "Step 3: Successfully verified RAID fault alert using CSM REST API")
         LOGGER.info(
@@ -442,7 +442,7 @@ class TestRAIDOperations:
                 "operation": raid_cmn_cfg["fail_operation"],
                 "md_device": self.md_device,
                 "disk": self.disk2})
-        assert resp[0] is True, resp[1]
+        assert resp[0], resp[1]
         self.failed_disk = self.disk2
         resource_id = "{}:{}".format(self.md_device, self.disk2)
         LOGGER.info(
@@ -456,7 +456,7 @@ class TestRAIDOperations:
             alert_list = [test_cfg["resource_type"],
                           test_cfg["alert_fault"], resource_id]
             resp = self.ras_obj.list_alert_validation(alert_list)
-            assert resp[0] is True, resp[1]
+            assert resp[0], resp[1]
             LOGGER.info(
                 "Step 2: Verified the RAID fault alert on RMQ channel logs")
 
@@ -467,7 +467,7 @@ class TestRAIDOperations:
             test_cfg["alert_fault"],
             False,
             test_cfg["resource_type"])
-        assert resp is True, csm_error_msg
+        assert resp, csm_error_msg
         LOGGER.info(
             "Step 3: Successfully verified RAID fault alert using CSM REST API")
 
@@ -480,7 +480,7 @@ class TestRAIDOperations:
                 "operation": raid_cmn_cfg["remove_operation"],
                 "md_device": self.md_device,
                 "disk": self.disk2})
-        assert resp[0] is True, resp[1]
+        assert resp[0], resp[1]
         self.failed_disk = False
         self.removed_disk = self.disk2
         LOGGER.info(
@@ -494,7 +494,7 @@ class TestRAIDOperations:
             alert_list = [test_cfg["resource_type"],
                           test_cfg["alert_missing"], resource_id]
             resp = self.ras_obj.list_alert_validation(alert_list)
-            assert resp[0] is True, resp[1]
+            assert resp[0], resp[1]
             LOGGER.info(
                 "Step 5: Verified the RAID missing alert on RMQ channel logs")
 
@@ -505,7 +505,7 @@ class TestRAIDOperations:
             test_cfg["alert_missing"],
             False,
             test_cfg["resource_type"])
-        assert resp is True, csm_error_msg
+        assert resp, csm_error_msg
         LOGGER.info("Step 6: Successfully verified RAID missing alert using CSM"
                     " REST API")
 
@@ -518,7 +518,7 @@ class TestRAIDOperations:
                 "operation": raid_cmn_cfg["add_operation"],
                 "md_device": self.md_device,
                 "disk": self.disk2})
-        assert resp[0] is True, resp[1]
+        assert resp[0], resp[1]
         LOGGER.info(
             "Step 7: Ran ALERT API for generating RAID fault_resolved alert "
             "by adding removed disk to array")
@@ -530,7 +530,7 @@ class TestRAIDOperations:
             alert_list = [test_cfg["resource_type"],
                           test_cfg["alert_insertion"], resource_id]
             resp = self.ras_obj.list_alert_validation(alert_list)
-            assert resp[0] is True, resp[1]
+            assert resp[0], resp[1]
             LOGGER.info(
                 "Step 8: Verified the RAID insertion alert on RMQ channel logs")
 
@@ -541,7 +541,7 @@ class TestRAIDOperations:
             test_cfg["alert_insertion"],
             True,
             test_cfg["resource_type"])
-        assert resp is True, csm_error_msg
+        assert resp, csm_error_msg
         LOGGER.info("Step 9: Successfully verified RAID insertion alert using "
                     "CSM REST API")
 
@@ -555,7 +555,7 @@ class TestRAIDOperations:
                 alert_list = [test_cfg["resource_type"],
                               test_cfg["alert_fault_resolved"], resource_id]
                 resp = self.ras_obj.list_alert_validation(alert_list)
-                assert resp[0] is True, resp[1]
+                assert resp[0], resp[1]
                 LOGGER.info("Step 10: Verified the RAID fault_resolved alert on"
                             " RMQ channel logs")
 
@@ -567,7 +567,7 @@ class TestRAIDOperations:
                 test_cfg["alert_fault_resolved"],
                 True,
                 test_cfg["resource_type"])
-            assert resp is True, csm_error_msg
+            assert resp, csm_error_msg
         self.removed_disk = False
         LOGGER.info("Step 11: Successfully verified RAID fault_resolved alert "
                     "using CSM REST API")

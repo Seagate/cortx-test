@@ -84,7 +84,7 @@ class RASTestLib(RASCoreLib):
         try:
             LOGGER.info("Check ssp events are generated")
             res = self.node_utils.execute_cmd(
-                cmd=cmd, read_nbytes=BYTES_TO_READ, shell=False)
+                cmd=cmd, read_nbytes=BYTES_TO_READ)
             LOGGER.info(res)
         except BaseException as error:
             LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
@@ -109,7 +109,7 @@ class RASTestLib(RASCoreLib):
                          RASCoreLib.check_status_file.__name__, error)
             raise CTException(err.RAS_ERROR, error.args[0])
 
-        return response
+        return True, response
 
     def put_kv_store(self, username: str, pwd: str, field: str) -> bool:
         """
@@ -299,14 +299,14 @@ class RASTestLib(RASCoreLib):
             resp = self.node_utils.disk_usage_python_interpreter_cmd(
                 dir_path=common_cfg["sspl_config"]["server_du_path"],
                 field_val=0)
-            total_disk_size = int(resp[1][0])
+            total_disk_size = int(resp[1].strip().decode("utf-8"))
             file_name = common_cfg["file"]["disk_usage_temp_file"]
             file_size = int((total_disk_size * du_val) / (1024 * 1024 * 100)) * 2
 
             LOGGER.info("Fetching server disk usage")
             resp = self.node_utils.disk_usage_python_interpreter_cmd(
                 dir_path=common_cfg["sspl_config"]["server_du_path"])
-            current_disk_usage = float(resp[1][0])
+            current_disk_usage = float(resp[1].strip().decode("utf-8"))
             LOGGER.info("Current disk usage of EES server : %s",
                         current_disk_usage)
             new_disk_threshold = current_disk_usage + du_val
@@ -331,7 +331,7 @@ class RASTestLib(RASCoreLib):
                     self.node_utils.remove_file(filename=file_name)
                 LOGGER.info(
                     "Creating file %s on host %s to increase the disk "
-                    "usage", file_name, self.host)
+                    "usage of size %s", file_name, self.host, file_size)
                 resp = self.node_utils.create_file(
                     file_name, file_size)
                 LOGGER.info(resp)
@@ -339,7 +339,7 @@ class RASTestLib(RASCoreLib):
                 LOGGER.info("Fetching server disk usage")
                 resp = self.node_utils.disk_usage_python_interpreter_cmd(
                     dir_path=common_cfg["sspl_config"]["server_du_path"])
-                current_disk_usage = float(resp[1][0])
+                current_disk_usage = float(resp[1].strip().decode("utf-8"))
                 LOGGER.info("Current disk usage of EES server :%s",
                             current_disk_usage)
                 status = current_disk_usage >= new_disk_threshold
@@ -354,7 +354,7 @@ class RASTestLib(RASCoreLib):
                 LOGGER.info("Fetching server disk usage")
                 resp = self.node_utils.disk_usage_python_interpreter_cmd(
                     dir_path=common_cfg["sspl_config"]["server_du_path"])
-                current_disk_usage = float(resp[1][0])
+                current_disk_usage = float(resp[1].strip().decode("utf-8"))
                 LOGGER.info("Current disk usage of EES server :%s",
                             current_disk_usage)
                 status = current_disk_usage < new_disk_threshold
@@ -415,12 +415,7 @@ class RASTestLib(RASCoreLib):
                 "Checking if alerts are generated on rabbitmq channel")
             cmd = common_commands.EXTRACT_LOG_CMD.format(
                 common_cfg["file"]["alert_log_file"], string_list[0])
-            response = self.node_utils.execute_cmd(cmd=cmd,
-                                                   nbytes=BYTES_TO_READ,
-                                                   shell=False)
-            if not response[0]:
-                return response
-
+            self.node_utils.execute_cmd(cmd=cmd, nbytes=BYTES_TO_READ)
             resp = self.validate_alert_msg(
                 common_cfg["file"]["extracted_alert_file"], string_list)
 
@@ -797,7 +792,7 @@ class RASTestLib(RASCoreLib):
                 LOGGER.info("Performing cleanup on disk %s", disk_path)
                 wipe_disk_cmd = common_commands.WIPE_DISK_CMD.format(disk_path)
                 self.node_utils.execute_cmd(
-                    cmd=wipe_disk_cmd, read_nbytes=BYTES_TO_READ, shell=False)
+                    cmd=wipe_disk_cmd, read_nbytes=BYTES_TO_READ)
                 time.sleep(RAS_VAL["ras_sspl_alert"]["disk_clean_time"])
                 self.node_utils.kill_remote_process(common_commands.KILL_WIPE_DISK_PROCESS)
         except Exception as error:
@@ -837,8 +832,7 @@ class RASTestLib(RASCoreLib):
             local_path = status_file
             cmd = common_commands.SELINUX_STATUS_CMD.format(status_file)
             resp = self.node_utils.execute_cmd(cmd=cmd,
-                                               read_nbytes=BYTES_TO_READ,
-                                               shell=False)
+                                               read_nbytes=BYTES_TO_READ)
             LOGGER.info(resp)
             self.node_utils.copy_file_to_local(remote_path=status_file,
                                                local_path=local_path)
@@ -946,7 +940,7 @@ class RASTestLib(RASCoreLib):
         if not resp[0]:
             return resp[0]
         LOGGER.info("Step 1: Fetched server disk usage")
-        original_disk_usage = float(resp[1][0])
+        original_disk_usage = float(resp[1].strip().decode("utf-8"))
         LOGGER.info("Current disk usage of EES server :%f", original_disk_usage)
 
         # Converting value of disk usage to int to update it in sspl.conf
@@ -1006,7 +1000,8 @@ class RASTestLib(RASCoreLib):
         self.node_utils.copy_file_to_local(file_path, local_file_path)
         LOGGER.info("Downloaded remote file %s", local_file_path)
         if not os.path.exists(local_file_path):
-            return False
+            resp_lst.append(False)
+            return any(resp_lst)
         # Read the remote file contents
         with open(local_file_path, "r") as f_pointer:
             for line in f_pointer:

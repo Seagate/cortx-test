@@ -98,7 +98,7 @@ class RASCoreLib:
         return res
 
     def cp_file(self, path: str, backup_path: str) -> \
-            Tuple[Union[List[str], str, bytes]]:
+            Tuple[bool, Union[List[str], str, bytes]]:
         """
         copy file with remote machine cp cmd.
 
@@ -108,7 +108,7 @@ class RASCoreLib:
         """
         cmd = common_commands.COPY_FILE_CMD.format(path, backup_path)
         resp = self.node_utils.execute_cmd(cmd=cmd, read_nbytes=BYTES_TO_READ)
-        return resp
+        return True, resp
 
     def install_screen_on_machine(self) -> Tuple[Union[List[str], str, bytes]]:
         """
@@ -124,7 +124,7 @@ class RASCoreLib:
         return response
 
     def run_cmd_on_screen(self, cmd: str) -> \
-            Tuple[Union[List[str], str, bytes]]:
+            Tuple[bool, Union[List[str], str, bytes]]:
         """
         Start screen on remote machine and run specified command within screen.
 
@@ -139,7 +139,7 @@ class RASCoreLib:
         LOGGER.info("Running command %s", screen_cmd)
         response = self.node_utils.execute_cmd(cmd=screen_cmd,
                                                read_nbytes=BYTES_TO_READ)
-        return response
+        return True, response
 
     def start_rabbitmq_reader_cmd(self, sspl_exchange: str, sspl_key: str,
                                   **kwargs) -> bool:
@@ -172,7 +172,7 @@ class RASCoreLib:
         LOGGER.debug("RabbitMQ command: %s", cmd)
         response = self.run_cmd_on_screen(cmd=cmd)
 
-        return response[0]
+        return response
 
     def check_status_file(self) -> Tuple[Union[List[str], str, bytes]]:
         """
@@ -188,7 +188,7 @@ class RASCoreLib:
         response = self.node_utils.execute_cmd(cmd=stat_cmd,
                                                read_nbytes=BYTES_TO_READ)
 
-        return response
+        return True, response
 
     def change_file_mode(self, path: str) -> \
             Tuple[Union[List[str], str, bytes]]:
@@ -203,7 +203,7 @@ class RASCoreLib:
         res = self.node_utils.execute_cmd(cmd=cmd, read_nbytes=BYTES_TO_READ)
         return res
 
-    def get_cluster_id(self) -> Tuple[Union[List[str], str, bytes]]:
+    def get_cluster_id(self) -> Tuple[bool, Union[List[str], str, bytes]]:
         """
         Function to get cluster ID.
 
@@ -213,10 +213,10 @@ class RASCoreLib:
         LOGGER.debug("Running cmd: %s on host: %s", cmd, self.host)
         cluster_id = self.node_utils.execute_cmd(cmd=cmd,
                                                  read_nbytes=BYTES_TO_READ)
-        return cluster_id
+        return True, cluster_id
 
     def encrypt_pwd(self, password: str, cluster_id: str) -> \
-            Tuple[Union[List[str], str, bytes]]:
+            Tuple[bool, Union[List[str], str, bytes]]:
         """
         Encrypt password for the cluster ID.
 
@@ -227,10 +227,10 @@ class RASCoreLib:
         cmd = common_commands.ENCRYPT_PASSWORD_CMD.format(password, cluster_id)
         LOGGER.debug("Running cmd: %s on host: %s", cmd, self.host)
         res = self.node_utils.execute_cmd(cmd=cmd, read_nbytes=BYTES_TO_READ)
-        return res
+        return True, res
 
     def kv_put(self, field: str, val: str, kv_path: str) -> \
-            Tuple[Union[List[str], str, bytes]]:
+            Tuple[bool, Union[List[str], str, bytes]]:
         """
         Store KV using consul KV put for specified path.
 
@@ -247,7 +247,7 @@ class RASCoreLib:
         LOGGER.info("Running command: %s", put_cmd)
         resp = self.node_utils.execute_cmd(cmd=put_cmd,
                                            read_nbytes=cmn_cons.ONE_BYTE_TO_READ)
-        return resp
+        return True, resp
 
     def kv_get(self, field: str, kv_path: str) -> \
             Tuple[Union[List[str], str, bytes]]:
@@ -264,7 +264,7 @@ class RASCoreLib:
         LOGGER.info("Running command: %s", get_cmd)
         response = self.node_utils.execute_cmd(cmd=get_cmd,
                                                read_nbytes=BYTES_TO_READ)
-        return response
+        return True, response
 
     def put_kv_store(self, username: str, pwd: str, field: str) -> bool:
         """
@@ -296,13 +296,13 @@ class RASCoreLib:
                     self.change_file_mode(path=path)
                 LOGGER.info("Getting cluster id")
                 cluster_id = self.get_cluster_id()
-                cluster_id = cluster_id.decode("utf-8")
+                cluster_id = cluster_id[1].decode("utf-8")
                 cluster_id = " ".join(cluster_id.split())
                 cluster_id = cluster_id.split(' ')[-1]
 
                 LOGGER.info("Encrypting the password")
                 val = self.encrypt_pwd(password, cluster_id)
-                val = val.split()[-1]
+                val = val[1].split()[-1]
                 val = val.decode("utf-8")
                 val = (repr(val)[2:-1]).replace('\'', '')
             else:
@@ -336,7 +336,7 @@ class RASCoreLib:
                                        cmn_cons.KV_STORE_PATH)
             else:
                 response = self.kv_get(field, cmn_cons.KV_STORE_PATH)
-            response = response.decode("utf-8")
+            response = response[1].decode("utf-8")
             response = " ".join(response.split())
             if val == response:
                 LOGGER.debug("Successfully written data for %s", field)
@@ -475,9 +475,7 @@ class RASCoreLib:
         """
         ipmi_tool_lst_cmd = common_commands.IPMI_SDR_LIST_CMD
         componets_lst = self.node_utils.execute_cmd(ipmi_tool_lst_cmd)
-        if not componets_lst[0]:
-            return None
-        fan_list = [i for i in componets_lst[1] if "FAN" in i]
+        fan_list = [i for i in componets_lst if "FAN" in i]
         return fan_list[0].split("|")[0].strip()
 
     @staticmethod
@@ -577,8 +575,6 @@ class RASCoreLib:
 
         response = self.node_utils.execute_cmd(cmd=cmd,
                                                read_nbytes=BYTES_TO_READ)
-        if not response[0]:
-            return response
         LOGGER.info("Successfully fetched the alert response")
 
         LOGGER.debug("Reading the alert log file")
@@ -597,8 +593,6 @@ class RASCoreLib:
             common_cfg["file"]["extracted_alert_file"])
         response = self.node_utils.execute_cmd(cmd=cmd,
                                                read_nbytes=BYTES_TO_READ)
-        if not response[0]:
-            return response
 
         resp = self.validate_alert_msg(
             remote_file_path=common_cfg["file"]["extracted_alert_file"],

@@ -76,7 +76,7 @@ class TestSSPL:
             res = cls.ras_test_obj.put_kv_store(CMN_CFG["enclosure_user"],
                                                 CMN_CFG["enclosure_pwd"],
                                                 field)
-            assert res is True
+            assert res
 
     def setup_method(self):
         """Setup operations per test."""
@@ -93,27 +93,30 @@ class TestSSPL:
         if not res:
             LOGGER.info("SSPL not present updating same on server")
             response = self.ras_test_obj.check_status_file()
-            assert response[0] is True, response[1]
+            assert response[0], response[1]
         LOGGER.info("Done Checking SSPL state file")
 
         LOGGER.info("Delete keys with prefix SSPL_")
         cmd = common_cmd.REMOVE_UNWANTED_CONSUL
-        response = self.node_obj.execute_cmd(cmd=cmd, read_lines=True)
-        assert response, "Failed to remove SSPL_ keys"
+        self.node_obj.execute_cmd(cmd=cmd, read_lines=True)
 
         LOGGER.info("Restarting sspl service")
-        self.health_obj.restart_pcs_resource(CM_CFG["sspl_resource_id"])
+        resp = self.health_obj.restart_pcs_resource(CM_CFG["sspl_resource_id"])
+        assert resp, "Failed to restart sspl-ll"
         time.sleep(CM_CFG["after_service_restart_sleep_val"])
         LOGGER.info(
             "Verifying the status of sspl and rabittmq service is online")
 
         # Getting SSPl and RabbitMQ service status
         services = CM_CFG["service"]
-        for service in services:
-            resp = S3Helper.get_s3server_service_status(
-                service=service, host=self.host, user=self.uname,
-                pwd=self.passwd)
-            assert resp is True
+        resp = S3Helper.get_s3server_service_status(
+            service=services["sspl_service"], host=self.host, user=self.uname,
+            pwd=self.passwd)
+        assert resp[0], resp[1]
+        resp = S3Helper.get_s3server_service_status(
+            service=services["rabitmq_service"], host=self.host, user=self.uname,
+            pwd=self.passwd)
+        assert resp[0], resp[1]
 
         LOGGER.info(
             "Validated the status of sspl and rabittmq service are online")
@@ -122,13 +125,13 @@ class TestSSPL:
             LOGGER.info("Running rabbitmq_reader.py script on node")
             resp = self.ras_test_obj.start_rabbitmq_reader_cmd(
                 CM_CFG["sspl_exch"], CM_CFG["sspl_key"])
-            assert resp is True, "Failed to start RMQ channel"
+            assert resp, "Failed to start RMQ channel"
             LOGGER.info(
                 "Successfully started rabbitmq_reader.py script on node")
 
         LOGGER.info("Starting collection of sspl.log")
         res = self.ras_test_obj.sspl_log_collect()
-        assert res[0] is True, res[1]
+        assert res[0], res[1]
         LOGGER.info("Started collection of sspl logs")
 
         LOGGER.info("Successfully performed Setup operations")
@@ -144,21 +147,21 @@ class TestSSPL:
         res = self.ras_test_obj.update_threshold_values(
             cons.KV_STORE_DISK_USAGE, CM_CFG["sspl_config"]["sspl_du_key"],
             CM_CFG["sspl_config"]["sspl_du_dval"])
-        assert res is True
+        assert res
 
         if not self.default_cpu_usage:
             LOGGER.info("Updating default cpu usage threshold value")
             res = self.ras_test_obj.update_threshold_values(
                 cons.KV_STORE_DISK_USAGE, cons.CPU_USAGE_KEY,
                 CM_CFG["default_cpu_usage"])
-            assert res is True
+            assert res
 
         if not self.default_mem_usage:
             LOGGER.info("Updating default memory usage threshold value")
             res = self.ras_test_obj.update_threshold_values(
                 cons.KV_STORE_DISK_USAGE, cons.MEM_USAGE_KEY,
                 CM_CFG["default_mem_usage"])
-            assert res is True
+            assert res
 
         if self.changed_level:
             kv_store_path = cons.LOG_STORE_PATH
@@ -167,7 +170,7 @@ class TestSSPL:
                 kv_store_path, common_cfg["sspl_log_level_key"],
                 common_cfg["sspl_log_dval"],
                 update=True)
-            assert res is True
+            assert res
 
         if os.path.exists(CM_CFG["file"]["telnet_xml"]):
             LOGGER.info("Remove telnet file")
@@ -218,14 +221,13 @@ class TestSSPL:
             LOGGER.info("Modifying selinux status from %s to %s on node %s",
                         old_value, new_value, self.host)
             resp = self.ras_test_obj.modify_selinux_file()
-            assert resp[0] is True, resp[1]
+            assert resp[0], "Failed to update selinux file"
             LOGGER.info(
                 "Modified selinux status to %s", new_value)
 
             LOGGER.info(
                 "Rebooting node %s after modifying selinux status", self.host)
-            response = self.node_obj.execute_cmd(cmd=common_cmd.REBOOT_NODE_CMD)
-
+            self.node_obj.execute_cmd(cmd=common_cmd.REBOOT_NODE_CMD)
             time.sleep(CM_CFG["reboot_delay"])
             os.remove(local_path)
             LOGGER.info("Rebooted node %s after modifying selinux status",
@@ -248,19 +250,19 @@ class TestSSPL:
 
         LOGGER.info("Step 1: Running ALERT API")
         resp = ALERT_API_OBJ.generate_alert(
-            AlertType.disk_fault_no_alert,
+            AlertType.DISK_FAULT_NO_ALERT,
             input_parameters={
                 "du_val": params["du_val"],
                 "fault": False,
                 "fault_resolved": False})
-        assert resp[0] is True
+        assert resp[0] is False
         LOGGER.info("Step 1: Successfully run ALERT API")
 
         if self.start_rmq:
             LOGGER.info("Step 2: Checking the generated alert logs")
             alert_list = [params["resource_type"], params["alert_type"]]
             resp = self.ras_test_obj.list_alert_validation(alert_list)
-            assert resp[0] is True, resp[1]
+            assert resp[0] is False, resp[1]
             LOGGER.info(
                 "Step 2: No alerts are seen for disk threshold greater "
                 "than disk usage")
@@ -268,10 +270,11 @@ class TestSSPL:
         time.sleep(common_cfg["sleep_val"])
         LOGGER.info("Step 3: Checking CSM REST API for no alerts")
         resp = self.csm_alert_obj.verify_csm_response(self.starttime,
-                                                 params["alert_type"], False,
-                                                 params["resource_type"])
+                                                      params["alert_type"],
+                                                      False,
+                                                      params["resource_type"])
 
-        assert resp is True, "No alert should be seen in CSM REST API"
+        assert resp is False, "No alert should be seen in CSM REST API"
         LOGGER.info(
             "Step 3: Successfully checked CSM REST API for no alerts")
 
@@ -295,12 +298,12 @@ class TestSSPL:
             "Step 1: Running ALERT API for generating and resolving disk "
             "full fault")
         resp = ALERT_API_OBJ.generate_alert(
-            AlertType.disk_fault_resolved_alert,
+            AlertType.DISK_FAULT_RESOLVED_ALERT,
             input_parameters={
                 "du_val": params["alert_fault_resolved"]["du_val"],
                 "fault": True,
                 "fault_resolved": True})
-        assert resp[0] is True
+        assert resp[0]
         LOGGER.info(
             "Step 1: Successfully run ALERT API for generating and resolving "
             "disk full fault")
@@ -311,7 +314,7 @@ class TestSSPL:
                           params["alert_fault"]["alert_type"],
                           params["alert_fault_resolved"]["alert_type"]]
             resp = self.ras_test_obj.list_alert_validation(alert_list)
-            assert resp[0] is True, resp[1]
+            assert resp[0], resp[1]
             LOGGER.info(
                 "Step 2: Verified the generated disk full fault and "
                 "fault_resolved alert")
@@ -324,7 +327,7 @@ class TestSSPL:
             True,
             params["resource_type"])
 
-        assert resp is True, common_cfg["csm_error_msg"]
+        assert resp, common_cfg["csm_error_msg"]
         LOGGER.info("Step 3: Successfully checked CSM REST API for alerts")
 
         LOGGER.info("ENDED:TEST-3006: EES ras SSPL: "
@@ -348,18 +351,16 @@ class TestSSPL:
 
         LOGGER.info("Step 1: Restart the SSPL Service")
         resp = self.ras_test_obj.restart_service(service_name)
-        assert resp[0] is True, resp[1]
+        assert resp[0], resp[1]
         LOGGER.info("Step 1: Successfully Restarted the SSPL Service")
 
         LOGGER.info("Step 2: Check the restart time of SSPL service")
         check_time_cmd = test_cfg["check_time_sppl"].format(service_name)
         resp = self.node_obj.execute_cmd(cmd=check_time_cmd,
                                          read_nbytes=buffer_sz)
-        assert resp[0] is True, resp[1]
-        restart_time = resp[1].strip()
-        resp = self.ras_test_obj.validate_exec_time(restart_time.decode(
-            "utf-8"))
-        assert resp[0] is True, resp[1]
+        restart_time = resp.strip()
+        resp = self.ras_test_obj.validate_exec_time(restart_time.decode("utf-8"))
+        assert resp[0], resp[1]
         LOGGER.info("Step 2: Verified the restart time of SSPL service")
 
         LOGGER.info("ENDED: Validate EES RAS SSPL: Sync with systemd "
@@ -391,8 +392,7 @@ class TestSSPL:
         sel_lst_cmd = common_cmd.SEL_LIST_CMD
         resp = self.node_obj.execute_cmd(cmd=sel_lst_cmd,
                                          read_nbytes=buffer_sz)
-        assert resp[0] is True, resp[1]
-        old_event_lst = resp[1]
+        old_event_lst = resp
         LOGGER.info(
             "Step 2: Successfully listed all the SEL events")
 
@@ -403,7 +403,6 @@ class TestSSPL:
             resp = self.node_obj.execute_cmd(cmd=ipmitool_cmd,
                                              read_nbytes=buffer_sz)
             LOGGER.info("SEL response : %s", resp)
-            assert resp[0] is True, resp[1]
             time.sleep(test_cfg["wait_time"])
         LOGGER.info("Step 3: Generated all the ipmitool FAN events")
 
@@ -411,8 +410,7 @@ class TestSSPL:
             "Step 4: Run below command now to get SEL event list")
         resp = self.node_obj.execute_cmd(cmd=sel_lst_cmd,
                                          read_nbytes=buffer_sz)
-        assert resp[0] is True, resp[1]
-        new_event_lst = resp[1]
+        new_event_lst = resp
         assert len(old_event_lst) <= len(new_event_lst), new_event_lst
         LOGGER.info("Step 4: Successfully generate all the ipmitool FAN events "
                     "and resp is :%s", resp)
@@ -426,7 +424,6 @@ class TestSSPL:
             resp = self.node_obj.execute_cmd(cmd=cmd,
                                              read_nbytes=test_cfg["buffer_sz"])
             LOGGER.info("SEL response : %s", resp)
-            assert resp[0] is True, resp[1]
             LOGGER.info("Step 5: Successfully resolved fault on fan %s",
                         fan_name)
 
@@ -435,18 +432,18 @@ class TestSSPL:
             LOGGER.info("Checking the generated alert logs")
             resp = self.ras_test_obj.alert_validation(
                 test_cfg["alert_type"], test_cfg["resource_type"])
-            assert resp[0] is True, resp[1]
+            assert resp[0], resp[1]
             LOGGER.info("Step 6: Successfully verified the RabbitMQ channel "
                         "for no errors")
 
         LOGGER.info("Step 7: Checking CSM REST API for alerts")
         time.sleep(common_cfg["sleep_val"])
         resp = self.csm_alert_obj.verify_csm_response(self.starttime,
-                                                 test_cfg["alert_type"],
-                                                 False,
-                                                 test_cfg["resource_type"])
+                                                      test_cfg["alert_type"],
+                                                      False,
+                                                      test_cfg["resource_type"])
 
-        assert resp is True, csm_error_msg
+        assert resp, csm_error_msg
         LOGGER.info("Step 7: Successfully checked CSM REST API for alerts")
 
         LOGGER.info(
@@ -484,17 +481,15 @@ class TestSSPL:
         LOGGER.info("Step 4: Check the value of last sel index")
         resp = self.node_obj.execute_cmd(cmd=last_sel_index,
                                          read_nbytes=buffer_sz)
-        assert resp[0] is True, resp[1]
         LOGGER.info("SEL cmd response : %s", resp)
-        prev_sel_index = resp[1].decode("utf-8").strip()
-        LOGGER.info("Step 4: The last sel index value resp : %s", resp[1])
+        prev_sel_index = resp.decode("utf-8").strip()
+        LOGGER.info("Step 4: The last sel index value resp : %s", resp)
 
         LOGGER.info("Step 5: Generate ipmi sel entry for respective "
                     "FAN through below commands")
         ipmitool_cmd = test_cfg["ipmitool_event"].format(fan_name)
         resp = self.node_obj.execute_cmd(cmd=ipmitool_cmd,
                                          read_nbytes=buffer_sz)
-        assert resp[0] is True, resp[1]
         LOGGER.info("SEL cmd response : %s", resp)
         LOGGER.info("Step 5: Successfully generated the ipmitool FAN events")
 
@@ -502,15 +497,13 @@ class TestSSPL:
             "Step 6 and 7: Validate last sel index value which should be same")
         res = self.node_obj.execute_cmd(cmd=last_sel_index,
                                         read_nbytes=buffer_sz)
-        assert res[0] is True, res[1]
-        curr_sel_index = res[1].decode("utf-8").strip()
-        assert str(prev_sel_index) == str(curr_sel_index).strip(), res[1]
+        curr_sel_index = res.decode("utf-8").strip()
+        assert str(prev_sel_index) == str(curr_sel_index).strip(), res
 
         sel_lst_cmd = common_cmd.SEL_LIST_CMD
         resp = self.node_obj.execute_cmd(cmd=sel_lst_cmd,
                                          read_nbytes=buffer_sz)
-        assert resp[0] is True, resp[1]
-        lst = [sel.strip() for sel in resp[1]]
+        lst = [sel.strip() for sel in resp]
         index_val = lst[-1].split("|")[0].strip()
         assert index_val != curr_sel_index, index_val
         LOGGER.info(
@@ -521,7 +514,7 @@ class TestSSPL:
         resp = self.ras_test_obj.enable_disable_service("enable",
                                                         service_cfg[
                                                             "sspl_service"])
-        assert resp[0] is True, resp[1]
+        assert resp[0], resp[1]
         LOGGER.info("Step 8: Successfully started the SSPL service")
 
         if self.start_rmq:
@@ -529,27 +522,26 @@ class TestSSPL:
             alert_list = [test_cfg["resource_type"], test_cfg["alert_type"]]
             LOGGER.debug("RMQ alert check: %s", alert_list)
             resp = self.ras_test_obj.alert_validation(alert_list, False)
-            assert resp[0] is True, resp[1]
+            assert resp[0], resp[1]
             LOGGER.info("Step 9: Successfully verified the RabbitMQ channel "
                         "for no errors")
 
         LOGGER.info("Step 10: Validate the SSL index cache updated or not")
         res = self.node_obj.execute_cmd(cmd=last_sel_index,
                                         read_nbytes=buffer_sz)
-        assert res[0] is True, res[1]
-        curr_sel_index_after_res = res[1].decode("utf-8").strip()
-        assert str(prev_sel_index) != str(curr_sel_index_after_res).strip(), \
-            res[1]
+        curr_sel_index_after_res = res.decode("utf-8").strip()
+        assert str(prev_sel_index) != str(curr_sel_index_after_res).strip(), res
         LOGGER.info("Step 10: Successfully validate the SSL index cache and "
                     "resp is : %s", res)
 
         time.sleep(common_cfg["sleep_val"])
         LOGGER.info("Step 11: Checking CSM REST API for alert")
         resp = self.csm_alert_obj.verify_csm_response(self.starttime,
-                                                 test_cfg["alert_type"], False,
-                                                 test_cfg["resource_type"])
+                                                      test_cfg["alert_type"],
+                                                      False,
+                                                      test_cfg["resource_type"])
 
-        assert resp is True, common_cfg["csm_error_msg"]
+        assert resp, common_cfg["csm_error_msg"]
         LOGGER.info("Step 11: Successfully checked CSM REST API for alerts")
 
         LOGGER.info("Step 12: Resolving fan fault using ipmi tool")
@@ -558,7 +550,6 @@ class TestSSPL:
         resp = self.node_obj.execute_cmd(cmd=cmd,
                                          read_nbytes=test_cfg["buffer_sz"])
         LOGGER.info("SEL response : %s", resp)
-        assert resp[0] is True, resp[1]
         LOGGER.info("Step 12: Successfully resolved fault on fan %s", fan_name)
 
         LOGGER.info(
@@ -595,7 +586,7 @@ class TestSSPL:
                 resp = self.node_obj.execute_cmd(cmd=ipmitool_cmd,
                                                  read_nbytes=buffer_sz)
                 LOGGER.info("SEL cmd response : %s", resp)
-                assert resp[0] is True, resp[1]
+
             cache_per = self.ras_test_obj.cal_sel_space()
             LOGGER.info("Cache percentage usage : %s", cache_per)
             if cache_per >= test_cfg["range_max"]:
@@ -607,7 +598,6 @@ class TestSSPL:
         sel_lst_cmd = common_cmd.SEL_LIST_CMD
         resp = self.node_obj.execute_cmd(cmd=sel_lst_cmd,
                                          read_nbytes=buffer_sz)
-        assert resp[0] is True, resp[1]
         LOGGER.info("Step 4: Verified the sel list entries and resp : %s", resp)
 
         LOGGER.info("ENDED: Validating EOS v1 RAS: Node: IPMI: FAN Failure "
@@ -630,13 +620,13 @@ class TestSSPL:
         csm_error_msg = RAS_VAL["ras_sspl_alert"]["csm_error_msg"]
 
         LOGGER.info("Step 1: Simulating fault psu state on MC debug console")
-        response = ALERT_API_OBJ.generate_alert(AlertType.psu_fault)
+        response = ALERT_API_OBJ.generate_alert(AlertType.PSU_FAULT)
 
-        assert response[0] is True, "{} {}".format(response[1],
-                                                   "Couldn't connect to port "
-                                                   "7900. Please try on other "
-                                                   "controller (Generating "
-                                                   "Fault)")
+        assert response[0], "{} {}".format(response[1],
+                                           "Couldn't connect to port "
+                                           "7900. Please try on other "
+                                           "controller (Generating "
+                                           "Fault)")
 
         LOGGER.info("Step 1: Successfully simulated fault psu state on MC "
                     "debug console")
@@ -645,18 +635,19 @@ class TestSSPL:
 
         LOGGER.info("Step 2: Checking CSM REST API for alert")
         resp_csm = self.csm_alert_obj.verify_csm_response(self.starttime,
-                                                     params["alert_type"],
-                                                     False,
-                                                     params["resource_type"])
+                                                          params["alert_type"],
+                                                          False,
+                                                          params[
+                                                              "resource_type"])
 
         LOGGER.info("Step 3: Putting in fault-resolved state")
-        response = ALERT_API_OBJ.generate_alert(AlertType.psu_fault_resolved)
+        response = ALERT_API_OBJ.generate_alert(AlertType.PSU_FAULT_RESOLVED)
 
-        assert response[0] is True, "{} {}".format(response[1],
-                                                   "Couldn't connect to port "
-                                                   "7900. Please try on other "
-                                                   "controller (Generating "
-                                                   "Fault)")
+        assert response[0], "{} {}".format(response[1],
+                                           "Couldn't connect to port "
+                                           "7900. Please try on other "
+                                           "controller (Generating "
+                                           "Fault-resolved)")
 
         LOGGER.info("Step 3: Successfully simulated fault-resolved "
                     "psu state on MC debug console")
@@ -666,10 +657,10 @@ class TestSSPL:
             alert_list = [params["resource_type"], params["alert_type"]]
             LOGGER.debug("RMQ alert check: %s", alert_list)
             resp = self.ras_test_obj.alert_validation(alert_list, False)
-            assert resp[0] is True, resp[1]
+            assert resp[0], resp[1]
             LOGGER.info("Step 4: Verified the generated alert logs")
 
-        assert resp_csm is True, csm_error_msg
+        assert resp_csm, csm_error_msg
         LOGGER.info("Step 2: Successfully checked CSM REST API for alerts")
 
         LOGGER.info(
@@ -696,13 +687,12 @@ class TestSSPL:
 
         LOGGER.info("Step 1: Simulating fault on controller using"
                     "MC debug console")
-        response = ALERT_API_OBJ.generate_alert(AlertType.controller_fault)
+        response = ALERT_API_OBJ.generate_alert(AlertType.CONTROLLER_FAULT)
 
-        assert response[0] is True, "{} {}".format(response[1],
-                                                   "Couldn't connect to port "
-                                                   "7900. Please try on other "
-                                                   "controller (Generating "
-                                                   "Fault)")
+        assert response[0], "{} {}".format(response[1],
+                                           "Couldn't connect to port "
+                                           "7900. Please try on other "
+                                           "controller (Generating Fault)")
 
         LOGGER.info("Step 1: Successfully simulated fault on controller "
                     "using MC debug console")
@@ -711,13 +701,13 @@ class TestSSPL:
 
         LOGGER.info("Step 2: Putting in fault-resolved state")
         response = ALERT_API_OBJ.generate_alert(
-            AlertType.controller_fault_resolved)
+            AlertType.CONTROLLER_FAULT_RESOLVED)
 
-        assert response[0] is True, "{} {}".format(response[1],
-                                                   "Couldn't connect to port "
-                                                   "7900. Please try on other "
-                                                   "controller (Generating "
-                                                   "Fault)")
+        assert response[0], "{} {}".format(response[1],
+                                           "Couldn't connect to port "
+                                           "7900. Please try on other "
+                                           "controller (Generating "
+                                           "Fault-resolved)")
 
         LOGGER.info("Step 2: Successfully simulated fault-resolved "
                     "on controller using MC debug console")
@@ -727,16 +717,17 @@ class TestSSPL:
             alert_list = [params["resource_type"], params["alert_type"]]
             LOGGER.debug("RMQ alert check: %s", alert_list)
             resp = self.ras_test_obj.alert_validation(alert_list, False)
-            assert resp[0] is True, resp[1]
+            assert resp[0], resp[1]
             LOGGER.info("Step 3: Verified the generated alert logs")
 
         time.sleep(common_cfg["sleep_val"])
         LOGGER.info("Step 4: Checking CSM REST API for alert")
         resp = self.csm_alert_obj.verify_csm_response(self.starttime,
-                                                 params["alert_type"], True,
-                                                 params["resource_type"])
+                                                      params["alert_type"],
+                                                      True,
+                                                      params["resource_type"])
 
-        assert resp is True, csm_error_msg
+        assert resp, csm_error_msg
         LOGGER.info("Step 4: Successfully checked CSM REST API for alerts")
 
         LOGGER.info(
@@ -762,13 +753,12 @@ class TestSSPL:
         csm_error_msg = RAS_VAL["ras_sspl_alert"]["csm_error_msg"]
 
         LOGGER.info("Step 1: Simulating fault psu state on MC debug console")
-        response = ALERT_API_OBJ.generate_alert(AlertType.psu_fault)
+        response = ALERT_API_OBJ.generate_alert(AlertType.PSU_FAULT)
 
-        assert response[0] is True, "{} {}".format(response[1],
-                                                   "Couldn't connect to port "
-                                                   "7900. Please try on other "
-                                                   "controller (Generating "
-                                                   "Fault)")
+        assert response[0], "{} {}".format(response[1],
+                                           "Couldn't connect to port "
+                                           "7900. Please try on other "
+                                           "controller (Generating Fault)")
 
         LOGGER.info("Step 1: Successfully simulated fault psu state on MC "
                     "debug console")
@@ -776,13 +766,13 @@ class TestSSPL:
         time.sleep(RAS_VAL["ras_sspl_alert"]["telnet_sleep_val"])
 
         LOGGER.info("Step 2: Putting in fault-resolved state")
-        response = ALERT_API_OBJ.generate_alert(AlertType.psu_fault_resolved)
+        response = ALERT_API_OBJ.generate_alert(AlertType.PSU_FAULT_RESOLVED)
 
-        assert response[0] is True, "{} {}".format(response[1],
-                                                   "Couldn't connect to port "
-                                                   "7900. Please try on other "
-                                                   "controller (Generating "
-                                                   "Fault)")
+        assert response[0], "{} {}".format(response[1],
+                                           "Couldn't connect to port "
+                                           "7900. Please try on other "
+                                           "controller (Generating "
+                                           "Fault-resolved)")
 
         LOGGER.info("Step 2: Successfully simulated fault-resolved "
                     "psu state on MC debug console")
@@ -792,16 +782,17 @@ class TestSSPL:
             alert_list = [params["resource_type"], params["alert_type"]]
             LOGGER.debug("RMQ alert check: %s", alert_list)
             resp = self.ras_test_obj.alert_validation(alert_list, False)
-            assert resp[0] is True, resp[1]
+            assert resp[0], resp[1]
             LOGGER.info("Step 3: Verified the generated alert logs")
 
         time.sleep(common_cfg["sleep_val"])
         LOGGER.info("Step 4: Checking CSM REST API for alert")
         resp = self.csm_alert_obj.verify_csm_response(self.starttime,
-                                                 params["alert_type"], True,
-                                                 params["resource_type"])
+                                                      params["alert_type"],
+                                                      True,
+                                                      params["resource_type"])
 
-        assert resp is True, csm_error_msg
+        assert resp, csm_error_msg
         LOGGER.info("Step 4: Successfully checked CSM REST API for alerts")
 
         LOGGER.info(
@@ -826,13 +817,12 @@ class TestSSPL:
 
         LOGGER.info("Step 1: Simulating fault on controller using"
                     "MC debug console")
-        response = ALERT_API_OBJ.generate_alert(AlertType.controller_fault)
+        response = ALERT_API_OBJ.generate_alert(AlertType.CONTROLLER_FAULT)
 
-        assert response[0] is True, "{} {}".format(response[1],
-                                                   "Couldn't connect to port "
-                                                   "7900. Please try on other "
-                                                   "controller (Generating "
-                                                   "Fault)")
+        assert response[0], "{} {}".format(response[1],
+                                           "Couldn't connect to port "
+                                           "7900. Please try on other "
+                                           "controller (Generating Fault)")
 
         LOGGER.info("Step 1: Successfully simulated fault on controller "
                     "using MC debug console")
@@ -841,19 +831,20 @@ class TestSSPL:
 
         LOGGER.info("Step 2: Checking CSM REST API for alert")
         resp_csm = self.csm_alert_obj.verify_csm_response(self.starttime,
-                                                     params["alert_type"],
-                                                     False,
-                                                     params["resource_type"])
+                                                          params["alert_type"],
+                                                          False,
+                                                          params[
+                                                              "resource_type"])
 
         LOGGER.info("Step 3: Putting in fault-resolved state")
         response = ALERT_API_OBJ.generate_alert(
-            AlertType.controller_fault_resolved)
+            AlertType.CONTROLLER_FAULT_RESOLVED)
 
-        assert response[0] is True, "{} {}".format(response[1],
-                                                   "Couldn't connect to port "
-                                                   "7900. Please try on other "
-                                                   "controller (Generating "
-                                                   "Fault)")
+        assert response[0], "{} {}".format(response[1],
+                                           "Couldn't connect to port "
+                                           "7900. Please try on other "
+                                           "controller (Generating "
+                                           "Fault-resolved)")
 
         LOGGER.info("Step 3: Successfully simulated fault-resolved "
                     "on controller using MC debug console")
@@ -863,10 +854,10 @@ class TestSSPL:
             alert_list = [params["resource_type"], params["alert_type"]]
             LOGGER.debug("RMQ alert check: %s", alert_list)
             resp = self.ras_test_obj.alert_validation(alert_list, False)
-            assert resp[0] is True, resp[1]
+            assert resp[0], resp[1]
             LOGGER.info("Step 4: Verified the generated alert logs")
 
-        assert resp_csm is True, csm_error_msg
+        assert resp_csm, csm_error_msg
         LOGGER.info("Step 2: Successfully checked CSM REST API for alerts")
 
         LOGGER.info(
@@ -892,21 +883,21 @@ class TestSSPL:
         resp = S3Helper.get_s3server_service_status(
             service=common_cfg["service"]["sspl_service"], host=self.host,
             user=self.uname, pwd=self.passwd)
-        assert resp[0] is True, resp[1]
+        assert resp[0], resp[1]
         LOGGER.info("Step 1: SSPL service is running")
         LOGGER.info("Step 2: Set the log_level from *INFO to WARNING")
         res = self.ras_test_obj.update_threshold_values(kv_store_path,
                                                         test_cfg["key"],
                                                         log_level_val,
                                                         update=True)
-        assert res is True
+        assert res
         self.changed_level = True
         LOGGER.info("Step 2: Successfully set the log_level to WARNING")
         LOGGER.info("Step 3: Restart the SSPL Service")
         resp = self.ras_test_obj.restart_service(
             common_cfg["sspl_resource_id"])
 
-        assert resp[0] is True, resp[1]
+        assert resp[0], resp[1]
         LOGGER.info("Step 3: Successfully Restarted the SSPL Service")
         time.sleep(common_cfg["after_service_restart_sleep_val"])
         LOGGER.info("Step 4: Verify that log_level wont be changed after "
@@ -916,7 +907,7 @@ class TestSSPL:
                                                         test_cfg[
                                                             "log_level_val"],
                                                         update=False)
-        assert res is True
+        assert res
         LOGGER.info("Step 4: Successfully verified the log_level")
 
         LOGGER.info("ENDED: Validating EES RAS: Allow log level setting is not "
@@ -945,7 +936,7 @@ class TestSSPL:
             resp = S3Helper.get_s3server_service_status(
                 service=common_cfg["service"][service], host=self.host,
                 user=self.uname, pwd=self.passwd)
-            assert resp[0] is True, resp[1]
+            assert resp[0], resp[1]
             LOGGER.info("%s service is up and running", service)
 
         LOGGER.info("Step 2: Updating sspl.log log level to WARNING")
@@ -953,7 +944,7 @@ class TestSSPL:
             cons.KV_STORE_LOG_LEVEL,
             common_cfg["sspl_config"]["sspl_log_level_key"],
             common_cfg["sspl_config"]["sspl_log_level_val"])
-        assert res is True
+        assert res
         LOGGER.info("Step 2: Updated sspl.log log level to WARNING")
         self.changed_level = True
 
@@ -961,7 +952,6 @@ class TestSSPL:
         cmd = cons.CHECK_SSPL_LOG_FILE.format(test_cfg["test_sspl_file"])
         response = self.node_obj.execute_cmd(cmd=cmd,
                                              read_nbytes=cons.BYTES_TO_READ)
-        assert response[0] is True, response[1]
         LOGGER.info("Step 3: Started collection of sspl logs")
 
         LOGGER.info("Step 4: Updating the port numbers to 5100")
@@ -969,7 +959,7 @@ class TestSSPL:
         for port in ports:
             res = self.ras_test_obj.update_threshold_values(
                 cons.KV_STORE_PATH, port, test_cfg["port_number"])
-            assert res is True
+            assert res
         LOGGER.info("Step 4: Updated port numbers to 5100")
 
         LOGGER.info("Step 5: Checking status of sspl services")
@@ -977,14 +967,14 @@ class TestSSPL:
             resp = S3Helper.get_s3server_service_status(
                 service=common_cfg["service"], host=self.host,
                 user=self.uname, pwd=self.passwd)
-            assert resp[0] is True, resp[1]
+            assert resp[0], resp[1]
             LOGGER.info("%s service is up and running", service)
 
         params = RAS_TEST_CFG["test_3006"]
         LOGGER.info("Step 6: Fetching server disk usage")
         resp = self.node_obj.disk_usage_python_interpreter_cmd(
             dir_path=common_cfg["sspl_config"]["server_du_path"])
-        assert resp[0] is True, resp[1][0]
+        assert resp[0], resp[1][0]
         LOGGER.info("Step 6: Fetched server disk usage")
         original_disk_usage = float(resp[1][0])
         LOGGER.info("Current disk usage of EES server :%s", original_disk_usage)
@@ -999,12 +989,12 @@ class TestSSPL:
 
         LOGGER.info("Step 8: Running ALERT API for generating fault")
         resp = ALERT_API_OBJ.generate_alert(
-            AlertType.disk_fault_alert,
+            AlertType.DISK_FAULT_ALERT,
             input_parameters={
                 "du_val": params["alert_fault"]["du_val"],
                 "fault": True,
                 "fault_resolved": False})
-        assert resp[0] is True, resp
+        assert resp[0], resp
         LOGGER.info(
             "Step 8: Successfully run ALERT API for generating fault")
 
@@ -1016,7 +1006,7 @@ class TestSSPL:
                           params["alert_fault"]["alert_type"]]
             LOGGER.debug("RMQ alert check: %s", alert_list)
             resp = self.ras_test_obj.alert_validation(alert_list)
-            assert resp[0] is True, resp[1]
+            assert resp[0], resp[1]
             LOGGER.info("Step 9: Verified the generated alert logs")
 
         LOGGER.info("Step 10: Checking logs in sspl.log")
@@ -1033,7 +1023,7 @@ class TestSSPL:
             False,
             params["resource_type"])
 
-        assert resp is True, csm_error_msg
+        assert resp, csm_error_msg
         LOGGER.info("Step 11: Successfully checked CSM REST API for alerts")
 
         LOGGER.info(
@@ -1059,7 +1049,7 @@ class TestSSPL:
         service = test_cfg["rsyslog_service"]
         resp = S3Helper.get_s3server_service_status(
             service=service, host=self.host, user=self.uname, pwd=self.passwd)
-        assert resp[0] is True, resp[1]
+        assert resp[0], resp[1]
         LOGGER.info("Step 1: %s service is up and running", service)
 
         cmd = test_cfg["logger_cmd"]
@@ -1067,7 +1057,6 @@ class TestSSPL:
         response = self.node_obj.execute_cmd(cmd=cmd,
                                              read_nbytes=cons.BYTES_TO_READ)
 
-        assert response[0] is True, response[1]
         LOGGER.info("Step 2: Successfully ran command %s", cmd)
 
         if self.start_rmq:
@@ -1075,7 +1064,7 @@ class TestSSPL:
             alert_list = [test_cfg["resource_type"], test_cfg["alert_type"]]
             LOGGER.debug("RMQ alert check: %s", alert_list)
             resp = self.ras_test_obj.alert_validation(alert_list, False)
-            assert resp[0] is True, resp[1]
+            assert resp[0], resp[1]
             LOGGER.info(
                 "Step 3: Successfully checked the generated alert logs")
 
@@ -1084,17 +1073,18 @@ class TestSSPL:
             resp = self.node_obj.is_string_in_remote_file(
                 string=string, file_path=common_cfg["file"]["alert_log_file"])
 
-            assert resp[0] is True, "{} : {}".format(resp[1], string)
+            assert resp[0], "{} : {}".format(resp[1], string)
             LOGGER.info("Step 4: Description of generated alert is : %s",
                         string)
 
         time.sleep(common_cfg["sleep_val"])
         LOGGER.info("Step 5: Checking CSM REST API for alert")
         resp = self.csm_alert_obj.verify_csm_response(self.starttime,
-                                                 test_cfg["alert_type"], False,
-                                                 test_cfg["resource_type"])
+                                                      test_cfg["alert_type"],
+                                                      False,
+                                                      test_cfg["resource_type"])
 
-        assert resp is True, csm_error_msg
+        assert resp, csm_error_msg
         LOGGER.info("Step 5: Successfully checked CSM REST API for alerts")
 
         LOGGER.info("ENDED: TA RAS Automation : Sensor to read IEM from syslog")
@@ -1119,27 +1109,28 @@ class TestSSPL:
         resp = S3Helper.get_s3server_service_status(
             service=common_cfg["service"]["sspl_service"], host=self.host,
             user=self.uname, pwd=self.passwd)
-        assert resp[0] is True, resp[1]
+        assert resp[0], resp[1]
         LOGGER.info("Step 1: SSPL service is running")
         LOGGER.info("Step 2: set the log_level from *INFO to WARNING")
         res = self.ras_test_obj.update_threshold_values(kv_store_path,
                                                         test_cfg["key"],
                                                         log_level_val,
                                                         update=True)
-        assert res is True
+        assert res
         LOGGER.info("Step 2: Successfully set the log_level to WARNING")
 
         LOGGER.info("Step 3: Collecting logs from sspl.log file")
         cmd = cons.CHECK_SSPL_LOG_FILE.format(test_cfg["test_sspl_file"])
         response = self.node_obj.execute_cmd(cmd=cmd,
                                              read_nbytes=cons.BYTES_TO_READ)
-        assert response[0] is True, response[1]
         LOGGER.info("Step 3: Started collection of sspl logs")
 
         LOGGER.info("Step 4: Verify the warning and error in the log file")
         res = self.ras_test_obj.verify_the_logs(test_cfg["test_sspl_file"],
                                                 log_level_val_lst)
-        assert res is True
+        if False in res:
+            assert False
+
         LOGGER.info("Step 4: Verified the warning log message in the log "
                     "file")
 
@@ -1166,7 +1157,7 @@ class TestSSPL:
         resp = self.controller_obj.get_total_drive_count(
             telnet_file=common_cfg["file"]["telnet_xml"])
 
-        assert resp[0] is True, resp[1]
+        assert resp[0], resp[1]
         LOGGER.info("Step 1: Total number of mapped drives is %s", resp[1])
 
         LOGGER.info("Randomly picking phy to disable")
@@ -1174,14 +1165,14 @@ class TestSSPL:
 
         LOGGER.info("Step 2: Disabling phy number %s", phy_num)
         resp = ALERT_API_OBJ.generate_alert(
-            AlertType.disk_disable,
+            AlertType.DISK_DISABLE,
             input_parameters={"enclid": test_cfg["encl"],
                               "ctrl_name": test_cfg["ctrl"],
                               "phy_num": phy_num,
                               "operation": test_cfg["operation_fault"],
                               "exp_status": test_cfg["degraded_phy_status"],
                               "telnet_file": common_cfg["file"]["telnet_xml"]})
-        assert resp[0] is True, resp[1]
+        assert resp[0], resp[1]
 
         phy_stat = test_cfg["degraded_phy_status"]
         LOGGER.info("Step 2: Successfully put phy in %s state", phy_stat)
@@ -1195,22 +1186,24 @@ class TestSSPL:
         LOGGER.info("Step 3: Checking CSM REST API for alert")
         time.sleep(common_cfg["csm_alert_gen_delay"])
         resp_csm = self.csm_alert_obj.verify_csm_response(self.starttime,
-                                                     test_cfg["alert_type"],
-                                                     False,
-                                                     test_cfg["resource_type"],
-                                                     resource_id)
+                                                          test_cfg[
+                                                              "alert_type"],
+                                                          False,
+                                                          test_cfg[
+                                                              "resource_type"],
+                                                          resource_id)
 
         LOGGER.info("Step 4: Clearing metadata of drive %s", phy_num)
         drive_num = f"0.{phy_num}"
         resp = self.controller_obj.clear_drive_metadata(drive_num=drive_num)
-        assert resp[0] is True, resp[1]
+        assert resp[0], resp[1]
         LOGGER.info("Step 4: Cleared %s drive metadata successfully", drive_num)
 
         LOGGER.info("Step 5: Again enabling phy number %s", phy_num)
         i = 0
         while i < test_cfg["retry"]:
             resp = ALERT_API_OBJ.generate_alert(
-                AlertType.disk_enable,
+                AlertType.DISK_ENABLE,
                 input_parameters={"enclid": test_cfg["encl"],
                                   "ctrl_name": test_cfg["ctrl"],
                                   "phy_num": phy_num,
@@ -1232,10 +1225,10 @@ class TestSSPL:
             alert_list = [test_cfg["resource_type"], test_cfg["alert_type"],
                           resource_id]
             resp = self.ras_test_obj.list_alert_validation(alert_list)
-            assert resp[0] is True, resp[1]
+            assert resp[0], resp[1]
             LOGGER.info("Step 6: Checked generated alert logs")
 
-        assert resp_csm is True, csm_error_msg
+        assert resp_csm, csm_error_msg
         LOGGER.info("Step 3: Successfully checked CSM REST API for alerts")
 
         LOGGER.info(
@@ -1260,7 +1253,7 @@ class TestSSPL:
         resp = self.controller_obj.get_total_drive_count(
             telnet_file=common_cfg["file"]["telnet_xml"])
 
-        assert resp[0] is True, resp[1]
+        assert resp[0], resp[1]
         LOGGER.info("Step 1: Total number of mapped drives is %s", resp[1])
 
         LOGGER.info("Randomly picking phy to disable")
@@ -1268,14 +1261,14 @@ class TestSSPL:
 
         LOGGER.info("Step 2: Disabling phy number %s", phy_num)
         resp = ALERT_API_OBJ.generate_alert(
-            AlertType.disk_disable,
+            AlertType.DISK_DISABLE,
             input_parameters={"enclid": test_cfg["encl"],
                               "ctrl_name": test_cfg["ctrl"],
                               "phy_num": phy_num,
                               "operation": test_cfg["operation_fault"],
                               "exp_status": test_cfg["degraded_phy_status"],
                               "telnet_file": common_cfg["file"]["telnet_xml"]})
-        assert resp[0] is True, resp[1]
+        assert resp[0], resp[1]
 
         phy_stat = test_cfg["degraded_phy_status"]
         LOGGER.info("Step 2: Successfully put phy in %s state", phy_stat)
@@ -1283,14 +1276,14 @@ class TestSSPL:
         LOGGER.info("Step 3: Clearing metadata of drive %s", phy_num)
         drive_num = f"0.{phy_num}"
         resp = self.controller_obj.clear_drive_metadata(drive_num=drive_num)
-        assert resp[0] is True, resp[1]
+        assert resp[0], resp[1]
         LOGGER.info("Step 3: Cleared %s drive metadata successfully", drive_num)
 
         LOGGER.info("Step 4: Again enabling phy number %s", phy_num)
         i = 0
         while i < test_cfg["retry"]:
             resp = ALERT_API_OBJ.generate_alert(
-                AlertType.disk_enable,
+                AlertType.DISK_ENABLE,
                 input_parameters={"enclid": test_cfg["encl"],
                                   "ctrl_name": test_cfg["ctrl"],
                                   "phy_num": phy_num,
@@ -1318,17 +1311,18 @@ class TestSSPL:
             alert_list = [test_cfg["resource_type"], test_cfg["alert_type"],
                           resource_id]
             resp = self.ras_test_obj.list_alert_validation(alert_list)
-            assert resp[0] is True, resp[1]
+            assert resp[0], resp[1]
             LOGGER.info("Step 5: Checked generated alert logs")
 
         LOGGER.info("Step 6: Checking CSM REST API for alert")
         time.sleep(common_cfg["csm_alert_gen_delay"])
         resp = self.csm_alert_obj.verify_csm_response(self.starttime,
-                                                 test_cfg["alert_type"], True,
-                                                 test_cfg["resource_type"],
-                                                 resource_id)
+                                                      test_cfg["alert_type"],
+                                                      True,
+                                                      test_cfg["resource_type"],
+                                                      resource_id)
 
-        assert resp is True, csm_error_msg
+        assert resp, csm_error_msg
         LOGGER.info("Step 6: Successfully checked CSM REST API for alerts")
 
         LOGGER.info(
@@ -1352,9 +1346,8 @@ class TestSSPL:
         LOGGER.info(
             "Step 1 and 2: Check if files related to IEC decode exists")
         resp = self.node_obj.list_dir(cons.IEM_DIRECTORY)
-        assert resp[0] is True, resp[1]
         for file in test_cfg["file_name"]:
-            compare(resp[1], file, sequence_item_check=True)
+            compare(resp, file, sequence_item_check=True)
             # assert file in resp[1]
         LOGGER.info("Step 1: Validated the respective files")
 
@@ -1367,9 +1360,8 @@ class TestSSPL:
             read_file_cmd = test_cfg["cat_cmd"].format(iec_mapping_file)
             resp = self.node_obj.execute_cmd(cmd=read_file_cmd,
                                              read_lines=True)
-            assert resp[0] is True, resp[1]
             LOGGER.info("Alert generation for : %s", file)
-            for line in resp[1]:
+            for line in resp:
                 line = line.strip().split(",")
                 ied_code_str = ied_code_initial.format(line[0], line[2])
                 iem_log_cmd_str = common_cmd.IEM_LOGGER_CMD.format(ied_code_str)
@@ -1385,7 +1377,7 @@ class TestSSPL:
         if self.start_rmq:
             LOGGER.info("Step 4: Checking IEM alert responses on RMQ")
             resp = self.ras_test_obj.list_alert_validation(err_msg_lst)
-            assert resp[0] is True, resp[1]
+            assert resp[0], resp[1]
 
             LOGGER.info(
                 "Step 4: Successfully validated the IEM alert responses "
@@ -1393,10 +1385,11 @@ class TestSSPL:
 
         LOGGER.info("Step 5: Checking CSM REST API for alert")
         resp = self.csm_alert_obj.verify_csm_response(self.starttime,
-                                                 test_cfg["alert_type"], False,
-                                                 test_cfg["resource_type"])
+                                                      test_cfg["alert_type"],
+                                                      False,
+                                                      test_cfg["resource_type"])
 
-        assert resp is True, csm_error_msg
+        assert resp, csm_error_msg
         LOGGER.info("Step 5: Successfully checked CSM REST API for alerts")
 
         LOGGER.info(
@@ -1419,7 +1412,7 @@ class TestSSPL:
             res = self.ras_test_obj.put_kv_store(CMN_CFG["enclosure_user"],
                                                  CMN_CFG["enclosure_pwd"],
                                                  field)
-            assert res is True, f"Failed to update value for {field}"
+            assert res, f"Failed to update value for {field}"
         LOGGER.info(
             "Step 1: Modified and validated enclosure username and password")
         LOGGER.info(
@@ -1444,9 +1437,9 @@ class TestSSPL:
         LOGGER.info(
             "Step 1: Running ALERT API for generating CPU usage fault")
         resp = ALERT_API_OBJ.generate_alert(
-            AlertType.cpu_usage_alert, input_parameters={
+            AlertType.CPU_USAGE_ALERT, input_parameters={
                 "delta_cpu_usage": test_cfg["delta_cpu_usage"]})
-        assert resp[0] is True, resp[1]
+        assert resp[0], resp[1]
         LOGGER.info("Step 1: Ran ALERT API for generating CPU usage fault")
         self.default_cpu_usage = False
 
@@ -1456,7 +1449,7 @@ class TestSSPL:
             self.starttime, test_cfg["alert_type"], False,
             test_cfg["resource_type"])
 
-        assert resp is True, csm_error_msg
+        assert resp, csm_error_msg
         LOGGER.info(
             "Step 2: Successfully verified CPU usage alert using CSM REST API")
         LOGGER.info(
@@ -1482,9 +1475,9 @@ class TestSSPL:
         LOGGER.info(
             "Step 1: Running ALERT API for generating memory usage fault")
         resp = ALERT_API_OBJ.generate_alert(
-            AlertType.mem_usage_alert, input_parameters={
+            AlertType.MEM_USAGE_ALERT, input_parameters={
                 "delta_mem_usage": test_cfg["delta_mem_usage"]})
-        assert resp[0] is True, resp[1]
+        assert resp[0], resp[1]
         LOGGER.info(
             "Step 1: Ran ALERT API for generating memory usage fault")
         self.default_mem_usage = False
@@ -1494,7 +1487,7 @@ class TestSSPL:
         resp = self.csm_alert_obj.verify_csm_response(
             self.starttime, test_cfg["alert_type"], False,
             test_cfg["resource_type"])
-        assert resp is True, csm_error_msg
+        assert resp, csm_error_msg
         LOGGER.info(
             "Step 2: Successfully verified memory usage alert using CSM REST "
             "API")
@@ -1525,7 +1518,7 @@ class TestSSPL:
                 "Step 2: Modifying selinux status from %s to %s on node %s",
                 old_value, new_value, self.host)
             resp = self.ras_test_obj.modify_selinux_file()
-            assert resp[0] is True, resp[1]
+            assert resp[0], "Failed to update selinux file"
             LOGGER.info("Step 2: Modified selinux status to %s", new_value)
 
             LOGGER.info(
@@ -1543,19 +1536,19 @@ class TestSSPL:
             LOGGER.info("Step 4: Again checking selinux status on node"
                         " %s", self.host)
             resp = self.ras_test_obj.get_string_from_file()
-            assert resp[0] is True, resp
+            assert resp[0], resp
             LOGGER.info("Step 4: SELinux Status: %s", resp[1])
 
         LOGGER.info(
             "Step 5: Running ALERT API for generating and resolving disk full "
             "fault")
         resp = ALERT_API_OBJ.generate_alert(
-            AlertType.disk_fault_resolved_alert,
+            AlertType.DISK_FAULT_RESOLVED_ALERT,
             input_parameters={
                 "du_val": params["alert_fault_resolved"]["du_val"],
                 "fault": True,
                 "fault_resolved": True})
-        assert resp[0] is True
+        assert resp[0]
         LOGGER.info(
             "Step 5: Successfully run ALERT API for generating and resolving "
             "disk full fault")
@@ -1568,14 +1561,14 @@ class TestSSPL:
             True,
             params["resource_type"])
 
-        assert resp is True, common_cfg["csm_error_msg"]
+        assert resp, common_cfg["csm_error_msg"]
         LOGGER.info("Step 6: Successfully checked CSM REST API for alerts")
 
         LOGGER.info("Step 7: Checking the status of sspl service")
         resp = S3Helper.get_s3server_service_status(
             service=common_cfg["service"]["sspl_service"], host=self.host,
             user=self.uname, pwd=self.passwd)
-        assert resp[0] is True, resp[1]
+        assert resp[0], resp[1]
         LOGGER.info(
             "Step 7: Validated the status of sspl service is online")
         LOGGER.info(

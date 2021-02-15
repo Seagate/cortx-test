@@ -503,4 +503,4 @@ class Node(Host):
                 Node.disk_usage_python_interpreter_cmd.__name__, error)
             return False, error
 
-        return resp
+        return True, resp
