@@ -20,11 +20,12 @@
 # -*- coding: utf-8 -*-
 import argparse
 import csv
+import math
 from collections import Counter
 
 from jira import JIRA
 
-import common
+import jira_api
 
 
 def prepare_feature_data(total_count, pass_count, fail_count):
@@ -37,8 +38,8 @@ def prepare_feature_data(total_count, pass_count, fail_count):
         f_total = total_count[feature]
         f_fail = fail_count[feature]
         if f_total:
-            pct_pass = f_pass * 100 // f_total
-            pct_fail = f_fail * 100 // f_total
+            pct_pass = math.ceil(f_pass * 100 / f_total)
+            pct_fail = math.floor(f_fail * 100 / f_total)
         else:
             pct_pass = 0
             pct_fail = 0
@@ -55,7 +56,7 @@ def get_feature_breakdown_summary_table_data(test_plan: str, username: str, pass
     jira_url = 'https://jts.seagate.com/'
     options = {'server': jira_url}
     jira = JIRA(options, basic_auth=(username, password))
-    for feature in common.FEATURES:
+    for feature in jira_api.FEATURES:
         fail_count[feature] = jira.search_issues(
             f'issue in testPlanFolderTests({test_plan},\'{feature}\',\'true\',\'FAIL\',\'\')',
             maxResults=500, json_result=True)["total"]
@@ -70,13 +71,13 @@ def get_feature_breakdown_summary_table_data(test_plan: str, username: str, pass
     total_pass_non_orphans = sum(pass_count.values())
     total_fail_non_orphans = sum(fail_count.values())
 
-    total_count["Total"] = len(common.get_test_list_from_test_plan(test_plan, username, password))
+    total_count["Total"] = len(jira_api.get_test_list_from_test_plan(test_plan, username, password))
     pass_count["Total"] = sum(
         x.get('latestStatus') == "PASS" for x in
-        common.get_test_list_from_test_plan(test_plan, username, password))
+        jira_api.get_test_list_from_test_plan(test_plan, username, password))
     fail_count["Total"] = sum(
         x.get('latestStatus') == "FAIL" for x in
-        common.get_test_list_from_test_plan(test_plan, username, password))
+        jira_api.get_test_list_from_test_plan(test_plan, username, password))
 
     total_count["Orphans"] = total_count["Total"] - total_non_orphans
     pass_count["Orphans"] = pass_count["Total"] - total_pass_non_orphans
@@ -92,9 +93,9 @@ def get_code_maturity_data(test_plan: str, test_plan1: str, test_plan2: str,
     builds = []
     for t_plan in [test_plan, test_plan1, test_plan2]:
         if t_plan:
-            tests = common.get_test_list_from_test_plan(test_plan, username, password)
+            tests = jira_api.get_test_list_from_test_plan(test_plan, username, password)
             counters.append(Counter(test['latestStatus'] for test in tests))
-            builds.append(common.get_build_from_test_plan(t_plan, username, password))
+            builds.append(jira_api.get_build_from_test_plan(t_plan, username, password))
         else:
             counters.append(Counter())
             builds.append("NA")
@@ -103,7 +104,7 @@ def get_code_maturity_data(test_plan: str, test_plan1: str, test_plan2: str,
         ["Code Maturity"], ["", builds[0], builds[1], builds[2]],
         ["Total", sum(counters[0].values()), sum(counters[1].values()), sum(counters[2].values())],
     ]
-    for status in common.TEST_STATUS:
+    for status in jira_api.TEST_STATUS:
         data.append(
             [status.capitalize(), counters[0][status], counters[1][status], counters[2][status]]
         )
@@ -132,17 +133,17 @@ def main():
 
     test_plans = parser.parse_args()
 
-    username, password = common.get_username_password()
-    main_table_data, build = common.get_main_table_data(test_plans.tp, username, password)
-    report_bugs_table_data = common.get_reported_bug_table_data(test_plans.tp, username, password)
-    overall_qa_table_data = common.get_overall_qa_report_table_data(test_plans.tp, test_plans.tp1,
-                                                                    build, username, password)
+    username, password = jira_api.get_username_password()
+    main_table_data, build = jira_api.get_main_table_data(test_plans.tp, username, password)
+    report_bugs_table_data = jira_api.get_reported_bug_table_data(test_plans.tp, username, password)
+    overall_qa_table_data = jira_api.get_overall_qa_report_table_data(test_plans.tp, test_plans.tp1,
+                                                                      build, username, password)
     feature_breakdown_summary_table_data = get_feature_breakdown_summary_table_data(
         test_plans.tp, username, password)
     code_maturity_table_data = get_code_maturity_data(test_plans.tp, test_plans.tp1, test_plans.tp2,
                                                       username, password)
     # single_bucket_perf_table_data = get_single_bucket_perf_data(build)
-    timing_summary_table_data = common.get_timing_summary()
+    timing_summary_table_data = jira_api.get_timing_summary()
 
     data = []
     data.extend(main_table_data)
@@ -158,6 +159,7 @@ def main():
     # data.extend(single_bucket_perf_table_data)
     # data.extend([""])
     data.extend(timing_summary_table_data)
+    data.extend([""])
     with open("../exec_report.csv", "a", newline='') as csv_file:
         writer = csv.writer(csv_file)
         writer.writerows(data)
