@@ -1,22 +1,31 @@
-caption, #detailed_report_header, #detailed_report_tab3, #perf_graphs_heading {
-    caption-side: top; 
-    width: auto;
-    text-align: center;
-    color : #0000a5;
-    font-size: 20px;
+caption,#detailed_report_tab3,#perf_graphs_heading
+{
+  caption-side: top;
+  width: auto;
+  text-align: center;
+  color: #0000a5;
+  font-size: 20px;
 }
+
 thead
 {
-    background-color :  #7F8C8D;
+  background-color: #7f8c8d;
 }
-body{
-    background-color: #343a40;
-    line-height: 1.0;
+
+body
+{
+  background-color: #343a40;
+  line-height: 1;
 }
-H4, H6{
-    color : #ECF0F1;
+
+h4,
+h6
+{
+  color: #ecf0f1;
 }
-Td {
-    border: 1px solid black;
-        border-collapse: collapse;
+
+td
+{
+  border: 1px solid black;
+  border-collapse: collapse;
 }
