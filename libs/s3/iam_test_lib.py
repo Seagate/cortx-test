@@ -23,8 +23,8 @@
 """IAM test helper library which contains admin_path operations."""
 
 import time
-import boto3
 import logging
+import boto3
 
 from commons import errorcodes as err
 from commons.exceptions import CTException

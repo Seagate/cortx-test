@@ -76,6 +76,7 @@ class S3Helper:
         :return: True if s3cmd configured else False.
         """
         status, resp = run_local_cmd("s3cmd --version")
+        LOGGER.info(resp)
         if status:
             res1 = config_utils.update_config_ini(
                 path, "default", "access_key", access)
@@ -102,6 +103,7 @@ class S3Helper:
         :return: True if s3fs configured else False.
         """
         status, resp = run_local_cmd("s3fs --version")
+        LOGGER.info(resp)
         if status:
             with open(path, "w+") as f_write:
                 f_write.write(f"{access}:{secret}")

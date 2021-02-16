@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-"""UnitTest for IAM test helper library which contains admin_path operations."""
+"""UnitTest for S3 core, test library which contains S3 operations."""
 
 import os
 import shutil
@@ -24,17 +24,25 @@ class TestS3TestLib:
     def setup_class(cls):
         """test setup class."""
         cls.log = logging.getLogger(__name__)
+        cls.log.info("STARTED: setup class operations.")
         cls.bkt_name_prefix = "ut-bkt"
         cls.acc_name_prefix = "ut-accnt"
         cls.obj_prefix = "ut-obj"
         cls.dummy_bucket = "dummybucket"
         cls.file_size = 5
         cls.obj_name = "ut_obj"
-        cls.test_file_path = "/root/test_folder/hello.txt"
+        cls.test_folder_path = os.path.join(os.getcwd(), "test_folder")
+        cls.test_file_path = os.path.join(cls.test_folder_path, "hello.txt")
+        cls.test_down_path = os.path.join(cls.test_folder_path, "test_outfile.txt")
         cls.obj_size = 1
-        cls.test_folder_path = "/root/test_folder"
         cls.ldap_user = LDAP_USERNAME
         cls.ldap_pwd = LDAP_PASSWD
+        cls.d_user_name = "dummy_user"
+        cls.status = "Inactive"
+        cls.d_status = "dummy_Inactive"
+        cls.d_nw_user_name = "dummy_user"
+        cls.email = "{}@seagate.com"
+        cls.log.info("STARTED: setup class operations completed.")
 
     @classmethod
     def teardown_class(cls):
@@ -51,11 +59,6 @@ class TestS3TestLib:
         Defined var for log, config, creating common dir
         """
         self.log.info("STARTED: Setup operations")
-        self.d_user_name = "dummy_user"
-        self.status = "Inactive"
-        self.d_status = "dummy_Inactive"
-        self.d_nw_user_name = "dummy_user"
-        self.email = "{}@seagate.com"
         self.log.info("deleting Common dir and files...")
         if not os.path.exists(self.test_folder_path):
             os.makedirs(self.test_folder_path)
@@ -148,6 +151,7 @@ class TestS3TestLib:
     def test_01_create_bucket(self):
         """Test create bucket."""
         resp = S3_TEST_OBJ.create_bucket("ut-bkt-01")
+        self.log.info(resp)
         assert resp[0], resp[1]
 
     @pytest.mark.s3unittest
@@ -155,6 +159,7 @@ class TestS3TestLib:
         """Test bucket list."""
         S3_TEST_OBJ.create_bucket("ut-bkt-02")
         resp = S3_TEST_OBJ.bucket_list()
+        self.log.info(resp)
         assert resp[0], resp[1]
 
     @pytest.mark.s3unittest
@@ -175,6 +180,7 @@ class TestS3TestLib:
             self.test_file_path,
             m_key="test_key",
             m_value="test_value")
+        self.log.info(resp)
         assert resp[0], resp[1]
 
     @pytest.mark.s3unittest
@@ -188,6 +194,7 @@ class TestS3TestLib:
             "ut-bkt-04",
             self.obj_name,
             self.test_file_path)
+        self.log.info(resp)
         assert resp[0], resp[1]
 
     @pytest.mark.s3unittest
@@ -203,6 +210,7 @@ class TestS3TestLib:
             self.test_file_path)
         resp = S3_TEST_OBJ.object_list(
             "ut-bkt-05")
+        self.log.info(resp)
         assert resp[0], resp[1]
 
     @pytest.mark.s3unittest
@@ -211,6 +219,7 @@ class TestS3TestLib:
         S3_TEST_OBJ.create_bucket("ut-bkt-06")
         resp = S3_TEST_OBJ.head_bucket(
             "ut-bkt-06")
+        self.log.info(resp)
         assert resp[0], resp[1]
 
     @pytest.mark.s3unittest
@@ -227,6 +236,7 @@ class TestS3TestLib:
         resp = S3_TEST_OBJ.delete_object(
             "ut-bkt-07",
             self.obj_name)
+        self.log.info(resp)
         assert resp[0], resp[1]
 
     @pytest.mark.s3unittest
@@ -234,6 +244,7 @@ class TestS3TestLib:
         """Test bucket location."""
         S3_TEST_OBJ.create_bucket("ut-bkt-08")
         resp = S3_TEST_OBJ.bucket_location("ut-bkt-08")
+        self.log.info(resp)
         assert resp[0], resp[1]
 
     @pytest.mark.s3unittest
@@ -250,6 +261,7 @@ class TestS3TestLib:
         resp = S3_TEST_OBJ.object_info(
             "ut-bkt-09",
             self.obj_name)
+        self.log.info(resp)
         assert resp[0], resp[1]
 
     @pytest.mark.s3unittest
@@ -266,7 +278,8 @@ class TestS3TestLib:
         resp = S3_TEST_OBJ.object_download(
             "ut-bkt-10",
             self.obj_name,
-            "/root/test_folder/test_outfile.txt")
+            self.test_down_path)
+        self.log.info(resp)
         assert resp[0], resp[1]
 
     @pytest.mark.s3unittest
@@ -274,6 +287,7 @@ class TestS3TestLib:
         """Test delete bucket."""
         S3_TEST_OBJ.create_bucket("ut-bkt-11")
         resp = S3_TEST_OBJ.delete_bucket("ut-bkt-11")
+        self.log.info(resp)
         assert resp[0], resp[1]
 
     @pytest.mark.s3unittest
@@ -294,6 +308,7 @@ class TestS3TestLib:
         resp = S3_TEST_OBJ.delete_multiple_objects(
             "ut-bkt-11", [
                 self.obj_name, "ut_obj_1"])
+        self.log.info(resp)
         assert resp[0], resp[1]
 
     @pytest.mark.s3unittest
@@ -303,6 +318,7 @@ class TestS3TestLib:
         S3_TEST_OBJ.create_bucket("ut-bkt-12-1")
         resp = S3_TEST_OBJ.delete_multiple_buckets(
             ["ut-bkt-12", "ut-bkt-12-1"])
+        self.log.info(resp)
         assert resp[0], resp[1]
 
     @pytest.mark.s3unittest
@@ -310,6 +326,7 @@ class TestS3TestLib:
         """Test delete all buckets."""
         S3_TEST_OBJ.create_bucket("ut-bkt-13")
         resp = S3_TEST_OBJ.delete_all_buckets()
+        self.log.info(resp)
         assert resp[0], resp[1]
 
     @pytest.mark.s3unittest
@@ -327,8 +344,10 @@ class TestS3TestLib:
     @pytest.mark.s3unittest
     def test_15_bucket_count(self):
         """Test bucket count."""
-        S3_TEST_OBJ.create_bucket("ut-bkt-15")
+        resp = S3_TEST_OBJ.create_bucket("ut-bkt-15")
+        self.log.info(resp)
         resp = S3_TEST_OBJ.bucket_count()
+        self.log.info(resp)
         assert resp[0], resp[1]
 
     @pytest.mark.s3unittest

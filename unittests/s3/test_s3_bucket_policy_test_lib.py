@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-"""UnitTest for s3 bucket policy test helper library which contains bucket policy operations."""
+"""UnitTest for s3 bucket policy test library which contains bucket policy operations."""
 
 import os
 import json
@@ -19,20 +19,27 @@ S3_TEST_OBJ = s3_test_lib.S3TestLib()
 S3_BKT_POLICY_OBJ = s3_bucket_policy_test_lib.S3BucketPolicyTestLib()
 
 
-class TestS3ACLTestLib:
-    """S3 ACL test lib unittest suite."""
+class TestS3BucketPolicyTestLib:
+    """S3 Bucket policy test lib unittest suite."""
 
     @classmethod
     def setup_class(cls):
         """test setup class."""
         cls.log = logging.getLogger(__name__)
+        cls.log.info("STARTED: setup class operations.")
         cls.bkt_name_prefix = "ut-bkt"
         cls.acc_name_prefix = "ut-accnt"
         cls.dummy_bucket = "dummybucket"
-        cls.test_file_path = "/root/test_folder/hello.txt"
-        cls.test_folder_path = "/root/test_folder"
+        cls.test_folder_path = os.path.join(os.getcwd(), "test_folder")
+        cls.test_file_path = os.path.join(cls.test_folder_path, "hello.txt")
         cls.ldap_user = LDAP_USERNAME
         cls.ldap_pwd = LDAP_PASSWD
+        cls.d_user_name = "dummy_user"
+        cls.status = "Inactive"
+        cls.d_status = "dummy_Inactive"
+        cls.d_nw_user_name = "dummy_user"
+        cls.email = "{}@seagate.com"
+        cls.log.info("STARTED: setup class operations completed.")
 
     @classmethod
     def teardown_class(cls):
@@ -49,11 +56,6 @@ class TestS3ACLTestLib:
         Defined var for log, config, creating common dir
         """
         self.log.info("STARTED: Setup operations")
-        self.d_user_name = "dummy_user"
-        self.status = "Inactive"
-        self.d_status = "dummy_Inactive"
-        self.d_nw_user_name = "dummy_user"
-        self.email = "{}@seagate.com"
         self.log.info("deleting Common dir and files...")
         if not os.path.exists(self.test_folder_path):
             os.makedirs(self.test_folder_path)
@@ -134,6 +136,7 @@ class TestS3ACLTestLib:
         """Test get bucket policy."""
         bkt_name = "ut-bkt-01"
         op_val = S3_TEST_OBJ.create_bucket(bkt_name)
+        self.log.info(op_val)
         assert op_val[0], op_val[1]
         try:
             S3_BKT_POLICY_OBJ.get_bucket_policy(bkt_name)
@@ -185,6 +188,7 @@ class TestS3ACLTestLib:
     def test_03_delete_bucket_policy(self):
         """Test delete bucket policy."""
         create_resp = S3_TEST_OBJ.create_bucket("ut-bkt-03")
+        self.log.info(create_resp)
         assert create_resp[0], create_resp[1]
         resp = S3_BKT_POLICY_OBJ.put_bucket_policy(
             "ut-bkt-03", json.dumps({
@@ -193,12 +197,10 @@ class TestS3ACLTestLib:
                     'Principal': '*',
                     'Action': 's3:GetObject',
                     'Resource': 'arn:aws:s3:::ut-bkt-03/*'
-                },
-                    {'Effect': 'Deny',
-                     'Principal': '*',
-                     'Action': 's3:DeleteObject',
-                     'Resource': 'arn:aws:s3:::ut-bkt-03/*'
-                     }]})
+                }, {'Effect': 'Deny', 'Principal': '*',
+                    'Action': 's3:DeleteObject',
+                    'Resource': 'arn:aws:s3:::ut-bkt-03/*'
+                    }]})
         )
         assert resp[0], resp[1]
         resp = S3_BKT_POLICY_OBJ.delete_bucket_policy("ut-bkt-03")

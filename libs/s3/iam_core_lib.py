@@ -22,8 +22,8 @@
 
 """Python Library using boto3 module to perform account and user operations."""
 
-import boto3
 import logging
+import boto3
 
 from commons import commands
 from commons.utils.system_utils import run_local_cmd

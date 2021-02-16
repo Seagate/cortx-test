@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-"""UnitTest for IAM test helper library which contains admin_path operations."""
+"""UnitTest for IAM core, test library which contains admin_path operations."""
 
 import time
 import logging
@@ -27,6 +27,11 @@ class TestIamLib:
         cls.acc_name_prefix = "ut-accnt"
         cls.ldap_user = LDAP_USERNAME
         cls.ldap_pwd = LDAP_PASSWD
+        cls.d_user_name = "dummy_user"
+        cls.status = "Inactive"
+        cls.d_status = "dummy_Inactive"
+        cls.d_nw_user_name = "dummy_user"
+        cls.email = "{}@seagate.com"
         cls.log.info("Ldap user: %s", cls.ldap_user)
         cls.log.info("ENDED: Setup operations completed.")
 
@@ -45,11 +50,6 @@ class TestIamLib:
         Defined var for log, onfig, creating common dir
         """
         self.log.info("STARTED: Setup operations")
-        self.d_user_name = "dummy_user"
-        self.status = "Inactive"
-        self.d_status = "dummy_Inactive"
-        self.d_nw_user_name = "dummy_user"
-        self.email = "{}@seagate.com"
         # Delete created user with prefix.
         self.log.info(
             "Delete created user with prefix: %s",
@@ -110,6 +110,7 @@ class TestIamLib:
     def test_01_create_user(self):
         """Test create user."""
         resp = IAM_OBJ.create_user("ut-usr-01")
+        self.log.info(resp)
         assert resp[0], resp[1]
         try:
             IAM_OBJ.create_user("ut-usr-01")
@@ -120,6 +121,7 @@ class TestIamLib:
     def test_02_list_users(self):
         """Test list users."""
         resp = IAM_OBJ.list_users()
+        self.log.info(resp)
         assert resp[0], resp[1]
 
     @pytest.mark.s3unittest
@@ -249,6 +251,7 @@ class TestIamLib:
         """Test list accounts s3iamcli."""
         resp = IAM_OBJ.list_accounts_s3iamcli(self.ldap_user,
                                               self.ldap_pwd)
+        self.log.info(resp)
         assert resp[0], resp[1]
 
     @pytest.mark.s3unittest
@@ -256,6 +259,7 @@ class TestIamLib:
         """Test list users s3iamcli."""
         access_key, secret_key = S3H_OBJ.get_local_keys()
         resp = IAM_OBJ.list_users_s3iamcli(access_key, secret_key)
+        self.log.info(resp)
         assert resp[0], resp[1]
 
     @pytest.mark.s3unittest
@@ -276,7 +280,7 @@ class TestIamLib:
         )
         assert resp[0], resp[1]
         op_val1 = IAM_OBJ.create_account_login_profile_s3iamcli(
-            acc_name, "test15pwd", access_key=resp[1]['access_key'],
+            acc_name, "test15pd", access_key=resp[1]['access_key'],
             secret_key=resp[1]['secret_key'])
         assert op_val1[0], op_val1[1]
         op_val = IAM_OBJ.delete_account_s3iamcli(
@@ -300,12 +304,12 @@ class TestIamLib:
         )
         assert resp[0], resp[1]
         op_val1 = IAM_OBJ.create_account_login_profile_s3iamcli(
-            acc_name, "test16pwd", access_key=resp[1]['access_key'],
+            acc_name, "test16pd", access_key=resp[1]['access_key'],
             secret_key=resp[1]['secret_key'])
         assert op_val1[0], op_val1[1]
         op_val1 = IAM_OBJ.update_account_login_profile_s3iamcli(
             acc_name,
-            "test16pwd",
+            "test16pd",
             access_key=resp[1]['access_key'],
             secret_key=resp[1]['secret_key'],
             password_reset=True)
@@ -316,7 +320,7 @@ class TestIamLib:
         try:
             IAM_OBJ.update_account_login_profile_s3iamcli(
                 acc_name,
-                "test16pwd",
+                "test16pd",
                 access_key=resp[1]['access_key'],
                 secret_key=resp[1]['secret_key'],
                 password_reset=True)
@@ -332,9 +336,10 @@ class TestIamLib:
             self.ldap_user,
             self.ldap_pwd
         )
+        self.log.info(resp)
         assert resp[0], resp[1]
         op_val1 = IAM_OBJ.create_account_login_profile_s3iamcli(
-            acc_name, "test17pwd", access_key=resp[1]['access_key'],
+            acc_name, "test17pd", access_key=resp[1]['access_key'],
             secret_key=resp[1]['secret_key'])
         assert op_val1[0], op_val1[1]
         op_val1 = IAM_OBJ.get_account_login_profile_s3iamcli(
@@ -354,6 +359,7 @@ class TestIamLib:
         """"Test create user login profile s3iamcli."""
         user_name = "{}{}".format("ut-usr-18", str(time.time()))
         op_val0 = IAM_OBJ.create_user(user_name)
+        self.log.info(op_val0)
         assert op_val0[0], op_val0[1]
         access_key, secret_key = S3H_OBJ.get_local_keys()
         op_val1 = IAM_OBJ.create_user_login_profile_s3iamcli(
@@ -365,8 +371,10 @@ class TestIamLib:
         """"Test create user login profile."""
         user_name = "{}{}".format("ut-usr-19", str(time.time()))
         op_val0 = IAM_OBJ.create_user(user_name)
+        self.log.info(op_val0)
         assert op_val0[0], op_val0[1]
         op_val1 = IAM_OBJ.create_user_login_profile(user_name, user_name)
+        self.log.info(op_val1)
         assert op_val1[0], op_val1[1]
 
     @pytest.mark.s3unittest
@@ -374,11 +382,14 @@ class TestIamLib:
         """Test update user login profile."""
         user_name = "{}{}".format("ut-usr-20", str(time.time()))
         op_val0 = IAM_OBJ.create_user(user_name)
+        self.log.info(op_val0)
         assert op_val0[0], op_val0[1]
         op_val1 = IAM_OBJ.create_user_login_profile(user_name, user_name)
+        self.log.info(op_val1)
         assert op_val1[0], op_val1[1]
         op_val1 = IAM_OBJ.update_user_login_profile(
             user_name, user_name, False)
+        self.log.info(op_val1)
         assert op_val1[0], op_val1[1]
 
     @pytest.mark.s3unittest
@@ -386,10 +397,13 @@ class TestIamLib:
         """Test get user login profile."""
         user_name = "{}{}".format("ut-usr-21", str(time.time()))
         op_val0 = IAM_OBJ.create_user(user_name)
+        self.log.info(op_val0)
         assert op_val0[0], op_val0[1]
         op_val1 = IAM_OBJ.create_user_login_profile(user_name, user_name)
+        self.log.info(op_val1)
         assert op_val1[0], op_val1[1]
         op_val1 = IAM_OBJ.get_user_login_profile(user_name)
+        self.log.info(op_val1)
         assert op_val1[0], op_val1[1]
 
     @pytest.mark.s3unittest
@@ -397,12 +411,15 @@ class TestIamLib:
         """"Test update user login profile s3iamcli."""
         user_name = "{}{}".format("ut-usr-22", str(time.time()))
         op_val0 = IAM_OBJ.create_user(user_name)
+        self.log.info(op_val0)
         assert op_val0[0], op_val0[1]
         op_val1 = IAM_OBJ.create_user_login_profile(user_name, user_name)
+        self.log.info(op_val1)
         assert op_val1[0], op_val1[1]
         access_key, secret_key = S3H_OBJ.get_local_keys()
         op_val1 = IAM_OBJ.update_user_login_profile_s3iamcli(
             user_name, user_name, False, access_key=access_key, secret_key=secret_key)
+        self.log.info(op_val1)
         assert op_val1[0], op_val1[1]
 
     @pytest.mark.s3unittest
@@ -410,6 +427,7 @@ class TestIamLib:
         """"Test get user login profile s3iamcli."""
         user_name = "{}{}".format("ut-usr-23", str(time.time()))
         op_val0 = IAM_OBJ.create_user(user_name)
+        self.log.info(op_val0)
         assert op_val0[0], op_val0[1]
         op_val1 = IAM_OBJ.create_user_login_profile(user_name, user_name)
         assert op_val1[0], op_val1[1]
@@ -424,11 +442,12 @@ class TestIamLib:
         """"Test create user login profile s3iamcli with both options."""
         user_name = "{}{}".format("ut-usr-24", str(time.time()))
         op_val0 = IAM_OBJ.create_user(user_name)
+        self.log.info(op_val0)
         assert op_val0[0], op_val0[1]
         access_key, secret_key = S3H_OBJ.get_local_keys()
         op_val1 = IAM_OBJ.create_user_login_profile_s3iamcli_with_both_reset_options(
             user_name,
-            "test24pwd",
+            "test24pd",
             access_key=access_key,
             secret_key=secret_key,
             both_reset_options=True)
@@ -439,7 +458,7 @@ class TestIamLib:
         access_key, secret_key = S3H_OBJ.get_local_keys()
         op_val1 = IAM_OBJ.create_user_login_profile_s3iamcli_with_both_reset_options(
             user_name,
-            "test24pwd",
+            "test24pd",
             access_key=access_key,
             secret_key=secret_key,
             both_reset_options=False)
@@ -451,6 +470,7 @@ class TestIamLib:
         """Test update user login profile without password and reset option."""
         user_name = "{}{}".format("ut-usr-25", str(time.time()))
         op_val0 = IAM_OBJ.create_user(user_name)
+        self.log.info(op_val0)
         assert op_val0[0], op_val0[1]
         access_key, secret_key = S3H_OBJ.get_local_keys()
         try:
@@ -468,6 +488,7 @@ class TestIamLib:
             self.ldap_user,
             self.ldap_pwd
         )
+        self.log.info(resp)
         assert resp[0], resp[1]
         op_val = IAM_OBJ.reset_account_access_key_s3iamcli(acc_name,
                                                            self.ldap_user,
@@ -484,6 +505,7 @@ class TestIamLib:
             self.ldap_user,
             self.ldap_pwd
         )
+        self.log.info(resp)
         assert resp[0], resp[1]
         op_val = IAM_OBJ.reset_access_key_and_delete_account_s3iamcli(acc_name)
         assert op_val[0], op_val[1]
@@ -497,6 +519,7 @@ class TestIamLib:
             self.ldap_user,
             self.ldap_pwd
         )
+        self.log.info(resp)
         assert resp[0], resp[1]
         user_name = "{}{}".format("ut-usr-28", str(time.time()))
         op_val1 = IAM_OBJ.create_user_using_s3iamcli(
@@ -512,16 +535,17 @@ class TestIamLib:
             self.ldap_user,
             self.ldap_pwd
         )
+        self.log.info(resp)
         assert resp[0], resp[1]
-        acc_pwd = "test29pwd"
+        acc_pd = "test29pd"
         op_val1 = IAM_OBJ.create_account_login_profile_s3iamcli(
             acc_name,
-            acc_pwd,
+            acc_pd,
             access_key=resp[1]['access_key'],
             secret_key=resp[1]['secret_key'])
         assert op_val1[0], op_val1[1]
         op_val2 = IAM_OBJ.get_temp_auth_credentials_account(
-            acc_name, acc_pwd, duration=1200)
+            acc_name, acc_pd, duration=1200)
         assert op_val2[0], op_val2[1]
 
     @pytest.mark.s3unittest
@@ -533,18 +557,19 @@ class TestIamLib:
             self.ldap_user,
             self.ldap_pwd
         )
+        self.log.info(resp)
         assert resp[0], resp[1]
         user_name = "{}{}".format("ut-usr-30", str(time.time()))
         op_val1 = IAM_OBJ.create_user_using_s3iamcli(
             user_name, resp[1]['access_key'], resp[1]['secret_key'])
         assert op_val1[0], op_val1[1]
-        user_pwd = "test30pwd"
+        user_pd = "test30pd"
         op_val2 = IAM_OBJ.create_user_login_profile_s3iamcli(
-            user_name, user_pwd, False,
+            user_name, user_pd, False,
             access_key=resp[1]['access_key'], secret_key=resp[1]['secret_key'])
         assert op_val2[0], op_val2[0]
         op_val3 = IAM_OBJ.get_temp_auth_credentials_user(
-            acc_name, user_name, user_pwd, duration=1200)
+            acc_name, user_name, user_pd, duration=1200)
         assert op_val3[0], op_val3[1]
 
     @pytest.mark.s3unittest
@@ -556,16 +581,17 @@ class TestIamLib:
             self.ldap_user,
             self.ldap_pwd
         )
+        self.log.info(resp)
         assert resp[0], resp[1]
-        acc_pwd = "test31pwd"
+        acc_pd = "test31pd"
         op_val1 = IAM_OBJ.create_account_login_profile_s3iamcli(
             acc_name,
-            acc_pwd,
+            acc_pd,
             access_key=resp[1]['access_key'],
             secret_key=resp[1]['secret_key'])
         assert op_val1[0], op_val1[1]
         op_val2 = IAM_OBJ.get_temp_auth_credentials_account(
-            acc_name, acc_pwd, duration=1200)
+            acc_name, acc_pd, duration=1200)
         assert op_val2[0], op_val2[1]
         op_val3 = IAM_OBJ.s3_ops_using_temp_auth_creds(
             op_val2[1]['access_key'],
@@ -579,9 +605,10 @@ class TestIamLib:
         """Test change user password."""
         user_name = "{}{}".format("ut-usr-32", str(time.time()))
         op_val = IAM_OBJ.create_user(user_name)
+        self.log.info(op_val)
         assert op_val[0], op_val[1]
         op_val = IAM_OBJ.create_user_login_profile(user_name,
-                                                   "test32pwd",
+                                                   "test32pd",
                                                    True)
         assert op_val[0], op_val[1]
         op_val = IAM_OBJ.create_access_key(user_name)
@@ -589,7 +616,7 @@ class TestIamLib:
         access_key = op_val[1]['AccessKey']['AccessKeyId']
         secret_key = op_val[1]['AccessKey']['SecretAccessKey']
         op_val = IAM_OBJ.change_user_password(
-            "test32pwd", "test32nwpwd",
+            "test32pd", "test32nwpd",
             access_key, secret_key)
         assert op_val[0], op_val[1]
         op_val = IAM_OBJ.delete_access_key(user_name, access_key)
@@ -603,14 +630,15 @@ class TestIamLib:
         """Test update user login profile s3iamcli with both reset options."""
         user_name = "{}{}".format("ut-usr-33", str(time.time()))
         op_val = IAM_OBJ.create_user(user_name)
+        self.log.info(op_val)
         assert op_val[0], op_val[1]
         op_val = IAM_OBJ.create_user_login_profile(user_name,
-                                                   "test33pwd",
+                                                   "test33pd",
                                                    True)
         assert op_val[0], op_val[1]
         access_key, secret_key = S3H_OBJ.get_local_keys()
         op_val = IAM_OBJ.update_user_login_profile_s3iamcli_with_both_reset_options(
-            user_name, "test32pwd", access_key, secret_key)
+            user_name, "test32pd", access_key, secret_key)
         assert op_val[0], op_val[1]
 
     @pytest.mark.s3unittest
@@ -618,13 +646,14 @@ class TestIamLib:
         """Test update user login profile no pwd reset."""
         user_name = "{}{}".format("ut-usr-34", str(time.time()))
         op_val = IAM_OBJ.create_user(user_name)
+        self.log.info(op_val)
         assert op_val[0], op_val[1]
         op_val = IAM_OBJ.create_user_login_profile(user_name,
-                                                   "test34pwd",
+                                                   "test34pd",
                                                    True)
         assert op_val[0], op_val[1]
         op_val = IAM_OBJ.update_user_login_profile_no_pwd_reset(user_name,
-                                                                "test34pwd"
+                                                                "test34pd"
                                                                 )
         assert op_val[0], op_val[1]
 
@@ -638,9 +667,9 @@ class TestIamLib:
             self.ldap_pwd
         )
         assert resp[0], resp[1]
-        acc_pwd = "test35pwd"
+        acc_pd = "test35pd"
         op_val1 = IAM_OBJ.create_account_login_profile_both_reset_options(
-            acc_name, acc_pwd, resp[1]['access_key'], resp[1]['secret_key'])
+            acc_name, acc_pd, resp[1]['access_key'], resp[1]['secret_key'])
         assert op_val1[0], op_val1[1]
 
     @pytest.mark.s3unittest
@@ -652,10 +681,11 @@ class TestIamLib:
             self.ldap_user,
             self.ldap_pwd
         )
+        self.log.info(resp)
         assert resp[0], resp[1]
-        acc_pwd = "test36pwd"
+        acc_pd = "test36pd"
         op_val1 = IAM_OBJ.create_account_login_profile_without_both_reset_options(
-            acc_name, acc_pwd, resp[1]['access_key'], resp[1]['secret_key'])
+            acc_name, acc_pd, resp[1]['access_key'], resp[1]['secret_key'])
         assert op_val1[0], op_val1[1]
 
     @pytest.mark.s3unittest
@@ -667,16 +697,17 @@ class TestIamLib:
             self.ldap_user,
             self.ldap_pwd
         )
+        self.log.info(resp)
         assert resp[0], resp[1]
-        acc_pwd = "test37pwd"
+        acc_pd = "test37pd"
         op_val1 = IAM_OBJ.create_account_login_profile_s3iamcli(
             acc_name,
-            acc_pwd,
+            acc_pd,
             access_key=resp[1]['access_key'],
             secret_key=resp[1]['secret_key'])
         assert op_val1[0], op_val1[1]
         op_val1 = IAM_OBJ.update_account_login_profile_both_reset_options(
-            acc_name, acc_pwd, resp[1]['access_key'], resp[1]['secret_key'])
+            acc_name, acc_pd, resp[1]['access_key'], resp[1]['secret_key'])
         assert op_val1[0], op_val1[1]
 
     @pytest.mark.s3unittest
@@ -685,6 +716,7 @@ class TestIamLib:
         access_key, secret_key = S3H_OBJ.get_local_keys()
         resp = IAM_OBJ.create_multiple_accounts_users(
             access_key, secret_key, 3, 3)
+        self.log.info(resp)
         assert resp[0], resp[1]
 
     @pytest.mark.s3unittest
@@ -701,6 +733,7 @@ class TestIamLib:
                 self.ldap_user,
                 self.ldap_pwd
             )
+            self.log.info(resp)
             assert resp[0], resp[1]
             ac_list.append(acc_name)
         resp2 = IAM_OBJ.delete_multiple_accounts(ac_list)
@@ -711,12 +744,14 @@ class TestIamLib:
         """Test create multiple accounts."""
         resp = IAM_OBJ.create_multiple_accounts(3,
                                                 self.acc_name_prefix)
+        self.log.info(resp)
         assert resp[0], resp[1]
 
     @pytest.mark.s3unittest
     def test_41_create_user_access_key(self):
         """Test create user access key."""
         resp = IAM_OBJ.create_user_access_key("ut-usr-41")
+        self.log.info(resp)
         assert resp[0], resp[1]
 
     @pytest.mark.s3unittest
@@ -728,17 +763,17 @@ class TestIamLib:
             self.ldap_user,
             self.ldap_pwd
         )
-        LOGGER.info(resp)
+        self.log.info(resp)
         assert resp[0], resp[1]
-        acc_pwd = "test42pwd"
+        acc_pd = "test42pd"
         op_val1 = IAM_OBJ.create_account_login_profile_s3iamcli(
             acc_name,
-            acc_pwd,
+            acc_pd,
             access_key=resp[1]['access_key'],
             secret_key=resp[1]['secret_key'])
         assert op_val1[0], op_val1[1]
         op_val2 = IAM_OBJ.get_temp_auth_credentials_account(
-            acc_name, acc_pwd, duration=1200)
+            acc_name, acc_pd, duration=1200)
         assert op_val2[0], op_val2[1]
         op_val3 = IAM_OBJ.delete_account_s3iamcli_using_temp_creds(
             acc_name,

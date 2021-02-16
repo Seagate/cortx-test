@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-"""UnitTest for s3 tagging test helper library which contains s3 tagging operations."""
+"""UnitTest for s3 tagging test library which contains s3 tagging operations."""
 
 import os
 import shutil
@@ -18,23 +18,30 @@ S3_TEST_OBJ = s3_test_lib.S3TestLib()
 S3_TAG_OBJ = s3_tagging_test_lib.S3TaggingTestLib()
 
 
-class TestS3ACLTestLib:
-    """S3 ACL test lib unittest suite."""
+class TestS3TaggingTestLib:
+    """S3 Tagging test lib unittest suite."""
 
     @classmethod
     def setup_class(cls):
         """test setup class."""
         cls.log = logging.getLogger(__name__)
+        cls.log.info("STARTED: setup class operations.")
         cls.bkt_name_prefix = "ut-bkt"
         cls.acc_name_prefix = "ut-accnt"
         cls.dummy_bucket = "dummybucket"
         cls.file_size = 5
         cls.obj_name = "ut_obj"
         cls.obj_size = 1
-        cls.test_file_path = "/root/test_folder/hello.txt"
-        cls.test_folder_path = "/root/test_folder"
+        cls.test_folder_path = os.path.join(os.getcwd(), "test_folder")
+        cls.test_file_path = os.path.join(cls.test_folder_path, "hello.txt")
         cls.ldap_user = LDAP_USERNAME
         cls.ldap_pwd = LDAP_PASSWD
+        cls.d_user_name = "dummy_user"
+        cls.status = "Inactive"
+        cls.d_status = "dummy_Inactive"
+        cls.d_nw_user_name = "dummy_user"
+        cls.email = "{}@seagate.com"
+        cls.log.info("STARTED: setup class operations completed.")
 
     @classmethod
     def teardown_class(cls):
@@ -51,11 +58,6 @@ class TestS3ACLTestLib:
         Defined var for log, config, creating common dir
         """
         self.log.info("STARTED: Setup operations")
-        self.d_user_name = "dummy_user"
-        self.status = "Inactive"
-        self.d_status = "dummy_Inactive"
-        self.d_nw_user_name = "dummy_user"
-        self.email = "{}@seagate.com"
         self.log.info("deleting Common dir and files...")
         if not os.path.exists(self.test_folder_path):
             os.makedirs(self.test_folder_path)
@@ -147,7 +149,9 @@ class TestS3ACLTestLib:
     @pytest.mark.s3unittest
     def test_01_set_bucket_tag(self):
         """Test set bucket tag."""
-        S3_TEST_OBJ.create_bucket("ut-bkt-01")
+        resp = S3_TEST_OBJ.create_bucket("ut-bkt-01")
+        self.log.info(resp)
+        assert resp[0], resp[1]
         resp = S3_TAG_OBJ.set_bucket_tag(
             "ut-bkt-01",
             "test_key",
@@ -158,7 +162,9 @@ class TestS3ACLTestLib:
     @pytest.mark.s3unittest
     def test_02_get_bucket_tags(self):
         """Test get bucket tag."""
-        S3_TEST_OBJ.create_bucket("ut-bkt-02")
+        resp = S3_TEST_OBJ.create_bucket("ut-bkt-02")
+        self.log.info(resp)
+        assert resp[0], resp[1]
         S3_TAG_OBJ.set_bucket_tag(
             "ut-bkt-02",
             "test_key",
@@ -171,7 +177,9 @@ class TestS3ACLTestLib:
     @pytest.mark.s3unittest
     def test_03_delete_bucket_tagging(self):
         """Test delete bucket tagging."""
-        S3_TEST_OBJ.create_bucket("ut-bkt-03")
+        resp = S3_TEST_OBJ.create_bucket("ut-bkt-03")
+        self.log.info(resp)
+        assert resp[0], resp[1]
         S3_TAG_OBJ.set_bucket_tag(
             "ut-bkt-03",
             "test_key",
@@ -246,7 +254,9 @@ class TestS3ACLTestLib:
     @pytest.mark.s3unittest
     def test_07_create_multipart_upload_with_tagging(self):
         """Test create multipart upload with tagging."""
-        S3_TEST_OBJ.create_bucket("ut-bkt-07")
+        resp = S3_TEST_OBJ.create_bucket("ut-bkt-07")
+        self.log.info(resp)
+        assert resp[0], resp[1]
         resp = S3_TAG_OBJ.create_multipart_upload_with_tagging(
             "ut-bkt-07",
             self.obj_name,
@@ -256,7 +266,9 @@ class TestS3ACLTestLib:
     @pytest.mark.s3unittest
     def test_08_set_bucket_tag_duplicate_keys(self):
         """"Test set bucket tag duplicate keys."""
-        S3_TEST_OBJ.create_bucket("ut-bkt-08")
+        resp = S3_TEST_OBJ.create_bucket("ut-bkt-08")
+        self.log.info(resp)
+        assert resp[0], resp[1]
         try:
             S3_TAG_OBJ.set_bucket_tag_duplicate_keys(
                 "ut-bkt-08", "aaa1", "bbb2")

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-"""UnitTest for s3 multipart test helper library which contains multipart operations."""
+"""UnitTest for s3 multipart test library which contains multipart operations."""
 
 import os
 import shutil
@@ -18,23 +18,30 @@ S3_TEST_OBJ = s3_test_lib.S3TestLib()
 S3_MP_OBJ = s3_multipart_test_lib.S3MultipartTestLib()
 
 
-class TestS3ACLTestLib:
-    """S3 ACL test lib unittest suite."""
+class TestS3MultipartTestLib:
+    """S3 Multipart upload test lib unittest suite."""
 
     @classmethod
     def setup_class(cls):
         """test setup class."""
         cls.log = logging.getLogger(__name__)
+        cls.log.info("STARTED: setup class operations.")
         cls.bkt_name_prefix = "ut-bkt"
         cls.acc_name_prefix = "ut-accnt"
         cls.dummy_bucket = "dummybucket"
         cls.obj_name = "ut_obj"
         cls.file_size = 5
         cls.obj_size = 1
-        cls.test_file_path = "/root/test_folder/hello.txt"
-        cls.test_folder_path = "/root/test_folder"
+        cls.test_folder_path = os.path.join(os.getcwd(), "test_folder")
+        cls.test_file_path = os.path.join(cls.test_folder_path, "hello.txt")
         cls.ldap_user = LDAP_USERNAME
         cls.ldap_pwd = LDAP_PASSWD
+        cls.d_user_name = "dummy_user"
+        cls.status = "Inactive"
+        cls.d_status = "dummy_Inactive"
+        cls.d_nw_user_name = "dummy_user"
+        cls.email = "{}@seagate.com"
+        cls.log.info("STARTED: setup class operations completed.")
 
     @classmethod
     def teardown_class(cls):
@@ -51,11 +58,6 @@ class TestS3ACLTestLib:
         Defined var for log, config, creating common dir
         """
         self.log.info("STARTED: Setup operations")
-        self.d_user_name = "dummy_user"
-        self.status = "Inactive"
-        self.d_status = "dummy_Inactive"
-        self.d_nw_user_name = "dummy_user"
-        self.email = "{}@seagate.com"
         self.log.info("deleting Common dir and files...")
         if not os.path.exists(self.test_folder_path):
             os.makedirs(self.test_folder_path)
@@ -248,14 +250,12 @@ class TestS3ACLTestLib:
         obj_name = "ut-obj-06"
         S3_TEST_OBJ.create_bucket(bkt_name)
         op_val = S3_MP_OBJ.create_multipart_upload(bkt_name, obj_name)
-        global MPID
-        MPID = op_val[1]["UploadId"]
+        mpid = op_val[1]["UploadId"]
         op_val = S3_MP_OBJ.upload_parts(
-            MPID, bkt_name, obj_name, 50,
+            mpid, bkt_name, obj_name, 50,
             total_parts=5, multipart_obj_path=self.test_file_path)
-        global parts
         parts = op_val[1]
-        S3_MP_OBJ.complete_multipart_upload(MPID, parts, bkt_name, obj_name)
+        S3_MP_OBJ.complete_multipart_upload(mpid, parts, bkt_name, obj_name)
         op_val_ls = S3_MP_OBJ.list_multipart_uploads(bkt_name)
         assert op_val_ls[0], op_val[1]
         try:
