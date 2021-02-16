@@ -3,9 +3,10 @@ Documentation    This suite verifies the testcases for csm login
 Library     SeleniumLibrary
 Resource    ../../../resources/page_objects/loginPage.robot
 Resource    ../../../resources/page_objects/s3accountPage.robot
-Resource   ../../../resources/common/common.robot
+Resource    ../../../resources/common/common.robot
 Resource    ../../../resources/page_objects/userSettingsLocalPage.robot
-Variables  ../../../resources/common/common_variables.py
+Resource    ../../../resources/page_objects/auditlogPage.robot
+Variables   ../../../resources/common/common_variables.py
 
 
 Test Setup  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
@@ -22,6 +23,7 @@ ${navigate_to_subpage}  False
 ${Sub_tab}  None
 ${username}
 ${password}
+${Download_File_Path}  \root\Downloads\
 
 *** Test Cases ***
 
@@ -67,3 +69,13 @@ TEST-1037
     Verify Absence of Admin User Section
     sleep  2s
     Delete S3 Account  ${S3_account_name}  ${password}  True
+
+TEST-4932
+    [Documentation]  Verify the audit log data for the logs seen/downloaded from audit log UI
+    ...  Reference : https://jts.seagate.com/browse/TEST-4932
+    [Tags]  Priority_High  CFT_test
+    Navigate To Audit Log Section
+    View Audit Log  CSM  One day
+    Verify Audit Log Generated
+    Download Audit Log  CSM  One day
+    Verify Audit Log Downloaded  ${Download_File_Path}
