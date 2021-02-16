@@ -28,7 +28,6 @@ import copy
 import json
 import pytest
 
-from avocadoext.log_formatter import CTPLogformatter
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
@@ -68,7 +67,6 @@ class TestObjectACL:
         cls.ldap_password = const.S3_BUILD_VER[CMN_CONF["BUILD_VER_TYPE"]
                                                ]["ldap_creds"]["ldap_passwd"]
 
-    @CTPLogformatter()
     def setup_method(self):
         """
         Function will be invoked prior to each test case.
