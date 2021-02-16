@@ -17,10 +17,12 @@ def dict_to_kafka_msg(obj, ctx):
     if obj is None:
         return None
 
-    return KafkaMsg(te_id=obj['te_tickets'],
-                    execution_type=obj['parallel'],
+    return KafkaMsg(tag=obj['tag'],
+                    parallel=obj['parallel'],
+                    test_set=obj['test_list'],
+                    te_tickets=obj['te_tickets'],
                     target_list=obj['target_list'],
-                    test_list=obj['test_list'])
+                    build=obj['build'])
 
 
 def get_consumer(args):
@@ -49,7 +51,7 @@ class KafkaMsg:
     Kafka msg format
     """
 
-    def __init__(self, tag, parallel, test_set, te_tickets, targets, build):
+    def __init__(self, **kwargs):
         """
         Constructs the object from message on message bus.
         Args:
@@ -59,13 +61,13 @@ class KafkaMsg:
         te_tickets (list): List of test execution tickets
         build (str): build number or string
         """
-        self.tag = tag
-        self.parallel = parallel
-        self.te_tickets = te_tickets
+        self.tag = kwargs['tag']
+        self.parallel = kwargs['parallel']
+        self.te_tickets = kwargs['te_tickets']
         # test set should not be serialized, see convert_ticket_to_dict()
-        self.test_list = list(test_set)
-        self.target_list = targets
-        self.build = build
+        self.test_list = list(kwargs['test_set'])
+        self.target_list = kwargs['target_list']
+        self.build = kwargs['build']
 
 
 SCHEMA_STR = """
@@ -95,12 +97,12 @@ SCHEMA_STR = """
                   "description": "List of targets available for this execution",
                   "type": "List"
                 },
-                "test_list": {
-                  "description": "List of tests to execute",
+                "test_set": {
+                  "description": "Set of tests to execute",
                   "type": "string"
                 }
 
               },
-              "required": [ "build", "parallel", "target_list", "test_list ]
+              "required": [ "build", "parallel", "target_list", "test_set", "te_tickets" ]
             }
             """

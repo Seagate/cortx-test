@@ -189,6 +189,11 @@ class Update(Resource):
 @api.response(404, "Not Found: No entry for that query in MongoDB.")
 @api.response(503, "Service Unavailable: Unable to connect to mongoDB.")
 class SearchSystems(Resource):
+    """
+       Rest API: search
+       Endpoint: /systemdb/search
+       For performing search operation on r2_systems collection.
+    """
     @staticmethod
     def get():
         json_data = flask.request.get_json()
@@ -242,6 +247,11 @@ class SearchSystems(Resource):
 @api.response(403, "Forbidden: User does not have permission for operation.")
 @api.response(503, "Service Unavailable: Unable to connect to mongoDB.")
 class CreateSystems(Resource):
+    """
+         Rest API: create
+         Endpoint: /systemdb/create
+         For performing create operation on r2_systems collection.
+      """
     @staticmethod
     def post():
         json_data = flask.request.get_json()
@@ -278,6 +288,11 @@ class CreateSystems(Resource):
 @api.response(403, "Forbidden: User does not have permission for operation.")
 @api.response(503, "Service Unavailable: Unable to connect to mongoDB.")
 class UpdateSystems(Resource):
+    """
+         Rest API: update
+         Endpoint: /systemdb/update
+         For performing update operation on r2_systems collection.
+      """
     @staticmethod
     def patch():
         json_data = flask.request.get_json()

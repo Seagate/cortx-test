@@ -145,7 +145,7 @@ def trigger_unexecuted_tests(args, test_list):
             run_pytest_cmd(args, args.parallel_exe, env=_env, re_execution=True)
 
 
-def trigger_tests_from_kafka_msg(kafka_msg):
+def trigger_tests_from_kafka_msg(args, kafka_msg):
     '''
     Trigger pytest execution for received test list
     '''
@@ -164,8 +164,8 @@ def read_selected_tests_csv():
     '''
     Read tests which were selected for last execution
     '''
+    tests = list()
     try:
-        tests = list()
         with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_SELECTED_TESTS)) \
                 as test_file:
             reader = csv.reader(test_file)
@@ -175,8 +175,8 @@ def read_selected_tests_csv():
                     continue
                 tests.append(test_row[0])
         return tests
-    except Exception as e:
-        print(e)
+    except EnvironmentError:
+        return tests
 
 
 def trigger_tests_from_te(args):
@@ -210,6 +210,7 @@ def get_available_target(kafka_msg):
     Check available target from target list
     Get lock on target if available
     '''
+    lock_task = LockingTask()
     acquired_target = ""
     while acquired_target == "":
         target = lock_task.check_available_target(kafka_msg.target_list)
@@ -249,7 +250,7 @@ def check_kafka_msg_trigger_test(args):
                     # release lock on acquired target
                     args.te_ticket = kafka_msg.te_tickets
                     args.parallel_exe = kafka_msg.parallel
-                    trigger_tests_from_kafka_msg(kafka_msg)
+                    trigger_tests_from_kafka_msg(args, kafka_msg)
                     # rerun unexecuted tests in case of parallel execution
                     if kafka_msg.parallel:
                         trigger_unexecuted_tests(args, kafka_msg.test_list)
