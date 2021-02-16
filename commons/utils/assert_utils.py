@@ -199,26 +199,31 @@ def compare(*argv, **kwargs):
             assert_list_equal(argv[0], argv[1])
 
 
-def assert_false(cond1, cond2):
+def assert_false(actual, matcher):
     """AssertEqual Implementation."""
-    assert not cond1, cond2
+    assert not actual, matcher
 
 
-def assert_true(cond1, cond2):
+def assert_true(actual, matcher):
     """AssertTrue Implementation."""
-    assert cond1, cond2
+    assert actual, matcher
 
 
-def assert_in(cond1, cond2, cond3):
+def assert_in(actual, matcher, reason):
     """AssertIn implementation."""
-    assert cond1 in cond2, cond3
+    assert actual in matcher, reason
 
 
-def assert_equal(cond1, cond2, cond3):
+def assert_not_in(actual, matcher, reason):
+    """AssertIn implementation."""
+    assert actual not in matcher, reason
+
+
+def assert_equal(actual, matcher, reason):
     """AssertEqual Implementation."""
-    assert cond1 == cond2, cond3
+    assert actual == matcher, reason
 
 
-def assert_not_equal(cond1, cond2, cond3):
+def assert_not_equal(actual, matcher, reason):
     """AssertNotEqual Implementation."""
-    assert cond1 != cond2, cond3
+    assert actual != matcher, reason
