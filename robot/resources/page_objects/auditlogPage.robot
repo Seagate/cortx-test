@@ -56,8 +56,8 @@ Verify Audit Log Generated
 
 Verify Audit Log Downloaded
     [Documentation]  Test keyword is to verify that audit log details has downloaded
-    [Arguments]  ${path}
+    [Arguments]  ${path}  ${audit_type}
     Sleep  5s  #  Audit log need time to load
-    ${files}=  List Files In Directory  ${path}  *tar.gz
+    ${files}=  List Files In Directory  ${path}  ${audit_type}*.gz
     Log To Console And Report  ${files}
     Should Not Be Empty  ${files}

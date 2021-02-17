@@ -78,4 +78,10 @@ TEST-4932
     View Audit Log  CSM  One day
     Verify Audit Log Generated
     Download Audit Log  CSM  One day
-    Verify Audit Log Downloaded  ${Download_File_Path}
+    Verify Audit Log Downloaded  ${Download_File_Path}  csm
+    View Audit Log  S3  One day
+    Sleep  5s  #S3 Audit takes a while
+    Verify Audit Log Generated
+    Download Audit Log  S3  One day
+    Sleep  5s  #S3 Audit takes a while
+    Verify Audit Log Downloaded  ${Download_File_Path}  s3
