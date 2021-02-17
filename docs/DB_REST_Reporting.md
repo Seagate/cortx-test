@@ -114,7 +114,7 @@ Mongo DB Collection for storing test execution details.
     | Yes         | latest              | Boolean            |
     | Yes         | feature             | String             |
     | No          | issueType           | String             |
-    | No          | issueID             | String             |
+    | No          | issueIDs            | List of String     |
     | No          | isRegression        | Boolean            |
     | No          | logCollectionDone   | Boolean            |
 
@@ -131,7 +131,7 @@ curl -L -X POST 'http://127.0.0.1:5000/reportsdb/create' \
     "executionType": "Automated",
     "healthCheckResult": "Fail",
     "isRegression": False,
-    "issueID": "EOS-000",
+    "issueIDs": ["EOS-000"],
     "issueType": "Dev",
     "logCollectionDone": True,
     "logPath": "DemoPath",
@@ -180,7 +180,7 @@ payload = {
     "executionType": "Automated",
     "healthCheckResult": "Fail",
     "isRegression": False,
-    "issueID": "EOS-000",
+    "issueIDs": ["EOS-000"],
     "issueType": "Dev",
     "logCollectionDone": True,
     "logPath": "DemoPath",
