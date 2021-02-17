@@ -87,7 +87,7 @@ TEST-1219
     Validate CSM Login Success  monitor1219
     sleep  2s  # Took time to load full dashboard
     Verify Presence of Stats And Alerts
-    Click AlertPage Image
+    Click AlertPageDashboard Image
     sleep  3s  # Took time to load all alerts
     Verify Presence of Details Comments
     Verify Absence of Acknowledge

@@ -5,8 +5,6 @@ Resource  loginPage.robot
 Library     SeleniumLibrary
 Variables  ../common/element_locators.py
 
-*** Variables ***
-
 *** Keywords ***
 
 Verify Presence of Stats And Alerts

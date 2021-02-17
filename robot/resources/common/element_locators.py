@@ -21,8 +21,8 @@ DASHBOARD_MENU_ID = "Dashboard"
 MAINTENANCE_MENU_ID = 'Maintenance'
 
 # Alerts
-ALERT_IMAGE_ID_1='alert-zoom'  # from Dashbard
-ALERT_IMAGE_ID_2='alert-dotwhite'  # from All pages
+ALERT_IMAGE_1_ID='alert-zoom'  # from Dashbard
+ALERT_IMAGE_2_ID='alert-dotwhite'  # from All pages
 ALERT_COMMENT_SAVE_BUTTON_ID = 'alert-save-commnetbtn'
 ALERT_COMMENT_CLOSE_BUTTON_ID = 'alert-close-comment-dialogbtn'
 ALERT_COMMENT_CLOSE_IMAGE_ID = 'alert-closeadd-comment-dialog'
@@ -75,7 +75,7 @@ EDIT_S3_ACCOUNT_OPTIONS_XPATH = '//*[@id="app"]//div[@class ="py-0 col-5 col"]//
 # Preboarding 
 WELCOME_START_BUTTON_ID = 'welcome-startbtn'
 ELUA_BUTTON_ID = 'show-license-agreement-dialogbtn'
-LICENSE_BUTTON_ID = 'license-acceptagreement'
+LICENSE_ACCEPT_BUTTON_ID = 'license-acceptagreement'
 LICENSE_CANCLE_BUTTON_ID = 'license-cancelagreementbtn'
 LICENSE_CANCLE_IMAGE_ID = 'license-cancelagreementicon'
 LICENSE_TITLE_ID = 'agreement-title'
