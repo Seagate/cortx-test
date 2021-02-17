@@ -25,16 +25,17 @@ import os
 import re
 import time
 import logging
-import configparser
 
+from configparser import NoSectionError
 from paramiko.ssh_exception import SSHException
 from commons import commands
 from commons.helpers.host import Host
 from commons.utils import config_utils
 from commons.utils.system_utils import run_local_cmd, run_remote_cmd
+from config.params import COMMON_CONFIG
 
-CM_CFG = config_utils.read_yaml("config/common_config.yaml")[1]
 LOGGER = logging.getLogger(__name__)
+CM_CFG = config_utils.read_yaml(COMMON_CONFIG)[1]
 
 
 class S3Helper:
@@ -46,8 +47,8 @@ class S3Helper:
         """Virtually private constructor."""
         if S3Helper.__instance:
             raise ImportError(
-                "This class is a singleton!, "
-                "use S3Helper.get_instance() to access existing object one.")
+                "S3Helper is a singleton!, "
+                "use S3Helper.get_instance() to access existing object.")
         S3Helper.__instance = self
 
     @staticmethod
@@ -63,8 +64,8 @@ class S3Helper:
 
     @staticmethod
     def configure_s3cfg(
-            access: str,
-            secret: str,
+            access: str = None,
+            secret: str = None,
             path: str = CM_CFG["s3cfg_path"]) -> bool:
         """
         Function to configure access and secret keys in s3cfg file.
@@ -74,23 +75,24 @@ class S3Helper:
         :param path: path to s3cfg file.
         :return: True if s3cmd configured else False.
         """
-        res = False
-        if run_local_cmd("s3cmd --version"):
+        status, resp = run_local_cmd("s3cmd --version")
+        LOGGER.info(resp)
+        if status:
             res1 = config_utils.update_config_ini(
                 path, "default", "access_key", access)
             res2 = config_utils.update_config_ini(
                 path, "default", "secret_key", secret)
-            res = res1 and res2
+            status = res1 and res2 and status
         else:
             LOGGER.warning(
                 "S3cmd is not present, please install it and than run the configuration.")
 
-        return res
+        return status
 
     @staticmethod
     def configure_s3fs(
-            access: str,
-            secret: str,
+            access: str = None,
+            secret: str = None,
             path: str = CM_CFG["s3fs_path"]) -> bool:
         """
         Function to configure access and secret keys for s3fs.
@@ -100,16 +102,16 @@ class S3Helper:
         :param path: s3fs config file.
         :return: True if s3fs configured else False.
         """
-        res = False
-        if run_local_cmd("s3fs --version"):
+        status, resp = run_local_cmd("s3fs --version")
+        LOGGER.info(resp)
+        if status:
             with open(path, "w+") as f_write:
                 f_write.write(f"{access}:{secret}")
-            res = True
         else:
             LOGGER.warning(
                 "S3fs is not present, please install it and than run the configuration.")
 
-        return res
+        return status
 
     @staticmethod
     def check_s3services_online(host: str = CM_CFG["host"],
@@ -153,7 +155,7 @@ class S3Helper:
             return False, error
 
     @staticmethod
-    def get_s3server_service_status(service: str,
+    def get_s3server_service_status(service: str = None,
                                     host: str = CM_CFG["host"],
                                     user: str = CM_CFG["username"],
                                     pwd: str = CM_CFG["password"]) -> tuple:
@@ -186,7 +188,7 @@ class S3Helper:
             return False, error
 
     def start_s3server_service(self,
-                               service: str,
+                               service: str = None,
                                host: str = CM_CFG["host"],
                                user: str = CM_CFG["username"],
                                pwd: str = CM_CFG["password"]) -> tuple:
@@ -206,9 +208,10 @@ class S3Helper:
             if not status:
                 return status, result
             time.sleep(10)
-            status = self.get_s3server_service_status(service, host, user, pwd)
+            response = self.get_s3server_service_status(
+                service, host, user, pwd)
 
-            return status
+            return response
         except (SSHException, OSError) as error:
             LOGGER.error(
                 "Error in %s: %s",
@@ -217,7 +220,7 @@ class S3Helper:
             return False, error
 
     def stop_s3server_service(self,
-                              service: str,
+                              service: str = None,
                               host: str = CM_CFG["host"],
                               user: str = CM_CFG["username"],
                               pwd: str = CM_CFG["password"]) -> tuple:
@@ -249,7 +252,7 @@ class S3Helper:
             return False, error
 
     def restart_s3server_service(self,
-                                 service: str,
+                                 service: str = None,
                                  host: str = CM_CFG["host"],
                                  user: str = CM_CFG["username"],
                                  pwd: str = CM_CFG["password"]) -> tuple:
@@ -273,9 +276,10 @@ class S3Helper:
             if not status:
                 return status, result
             time.sleep(10)
-            status = self.get_s3server_service_status(service, host, user, pwd)
+            response = self.get_s3server_service_status(
+                service, host, user, pwd)
 
-            return status
+            return response
         except (SSHException, OSError) as error:
             LOGGER.error(
                 "Error in %s: %s",
@@ -287,7 +291,7 @@ class S3Helper:
                                    host: str = CM_CFG["host"],
                                    user: str = CM_CFG["username"],
                                    pwd: str = CM_CFG["password"],
-                                   wait_time: int = 30) -> tuple:
+                                   wait_time: int = 20) -> tuple:
         """
         Restart all s3server processes using hctl command.
 
@@ -375,7 +379,7 @@ class S3Helper:
                                    host: str = CM_CFG["host"],
                                    user: str = CM_CFG["username"],
                                    pwd: str = CM_CFG["password"],
-                                   wait_time: int = 30) -> tuple:
+                                   wait_time: int = 20) -> tuple:
         """
         Restart all s3server resources using pcs command.
 
@@ -424,7 +428,7 @@ class S3Helper:
             return False, error
 
     @staticmethod
-    def is_s3_server_path_exists(path: str,
+    def is_s3_server_path_exists(path: str = None,
                                  host: str = CM_CFG["host"],
                                  user: str = CM_CFG["username"],
                                  pwd: str = CM_CFG["password"]) -> tuple:
@@ -487,8 +491,8 @@ class S3Helper:
             return False, error
 
     @staticmethod
-    def copy_s3server_file(file_path: str,
-                           local_path: str,
+    def copy_s3server_file(file_path: str = None,
+                           local_path: str = None,
                            host: str = CM_CFG["host"],
                            user: str = CM_CFG["username"],
                            pwd: str = CM_CFG["password"]) -> tuple:
@@ -521,8 +525,8 @@ class S3Helper:
             return False, error
 
     def is_string_in_s3server_file(self,
-                                   string: str,
-                                   file_path: str,
+                                   string: str = None,
+                                   file_path: str = None,
                                    **kwargs) -> tuple:
         """
         find given string in file present on s3 server.
@@ -643,8 +647,8 @@ class S3Helper:
             return False, error
 
     @staticmethod
-    def configure_minio(access: str,
-                        secret: str,
+    def configure_minio(access: str = None,
+                        secret: str = None,
                         path: str = CM_CFG["minio_path"]) -> bool:
         """
         Function to configure minio creds in config.json file.
@@ -679,10 +683,12 @@ class S3Helper:
         """
         try:
             if not os.path.isfile(path):
-                raise "{} file is not present. Please configure aws in the system".format(
-                    path)
-            access_key = config_utils.get_config(path, section, "aws_access_key_id")
-            secret_key = config_utils.get_config(path, section, "aws_secret_access_key")
+                raise FileNotFoundError(
+                    "{} file is not present. Please configure aws in the system".format(path))
+            access_key = config_utils.get_config(
+                path, section, "aws_access_key_id")
+            secret_key = config_utils.get_config(
+                path, section, "aws_secret_access_key")
             LOGGER.info(
                 "Section %s: fetched access key:%s and secret key: %s.",
                 section,
@@ -690,7 +696,7 @@ class S3Helper:
                 secret_key)
 
             return access_key, secret_key
-        except KeyError as error:
+        except (FileNotFoundError, KeyError, NoSectionError) as error:
             LOGGER.error(
                 "An exception occurred in %s: %s",
                 S3Helper.get_local_keys.__name__,
@@ -698,8 +704,8 @@ class S3Helper:
             return None, None
 
     def is_string_in_file(self,
-                          string: str,
-                          file_path: str,
+                          string: str = None,
+                          file_path: str = None,
                           **kwargs) -> tuple:
         """
         find given string in file present on s3 server.

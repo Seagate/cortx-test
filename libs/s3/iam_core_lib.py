@@ -36,7 +36,10 @@ class IamLib:
 
     def __init__(
             self,
-            debug: bool = False,
+            access_key: str = None,
+            secret_key: str = None,
+            endpoint_url: str = None,
+            iam_cert_path: str = None,
             **kwargs) -> None:
         """
         Method initializes members of IamLib.
@@ -47,25 +50,22 @@ class IamLib:
         :param iam_cert_path: iam certificate path.
         :param debug: debug mode.
         """
-        self.access_key = kwargs.get("access_key", None)
-        self.secret_key = kwargs.get("secret_key", None)
-        self.endpoint_url = kwargs.get("endpoint_url", None)
-        self.iam_cert_path = kwargs.get("iam_cert_path", None)
+        debug = kwargs.get("debug", False)
 
         if debug:
             # Uncomment to enable debug
             boto3.set_stream_logger(name="botocore")
 
-        self.iam = boto3.client("iam", verify=self.iam_cert_path,
-                                aws_access_key_id=self.access_key,
-                                aws_secret_access_key=self.secret_key,
-                                endpoint_url=self.endpoint_url)
+        self.iam = boto3.client("iam", verify=iam_cert_path,
+                                aws_access_key_id=access_key,
+                                aws_secret_access_key=secret_key,
+                                endpoint_url=endpoint_url)
         self.iam_resource = boto3.resource(
             "iam",
-            verify=self.iam_cert_path,
-            aws_access_key_id=self.access_key,
-            aws_secret_access_key=self.secret_key,
-            endpoint_url=self.endpoint_url)
+            verify=iam_cert_path,
+            aws_access_key_id=access_key,
+            aws_secret_access_key=secret_key,
+            endpoint_url=endpoint_url)
 
     def create_user(self, user_name: str = None) -> dict:
         """
@@ -193,7 +193,7 @@ class IamLib:
             self,
             user_name: str = None,
             password: str = None,
-            password_reset=False):
+            password_reset: bool = False):
         """
         Create user login profile.
 
@@ -214,7 +214,7 @@ class IamLib:
             self,
             user_name: str = None,
             password: str = None,
-            password_reset=False) -> dict:
+            password_reset: bool = False) -> dict:
         """
         Update user login profile.
 
@@ -252,7 +252,7 @@ class S3IamCli:
     @staticmethod
     def list_accounts_s3iamcli(
             ldap_user_id: str = None,
-            ldap_password: str = None) -> bytes:
+            ldap_password: str = None) -> tuple:
         """
         Listing accounts using aws s3iamcli.
 
@@ -262,7 +262,7 @@ class S3IamCli:
         """
         cmd = commands.CMD_LIST_ACC.format(ldap_user_id, ldap_password)
         LOGGER.info("List accounts s3iamcli = %s", str(cmd))
-        result = run_local_cmd(cmd)
+        result = run_local_cmd(cmd, flg=True)
         LOGGER.debug("output = %s", str(result))
 
         return result
@@ -270,7 +270,7 @@ class S3IamCli:
     @staticmethod
     def list_users_s3iamcli(
             access_key: str = None,
-            secret_key: str = None) -> bytes:
+            secret_key: str = None) -> tuple:
         """
         Listing users using aws s3iamcli.
 
@@ -280,7 +280,7 @@ class S3IamCli:
         """
         cmd = commands.CMD_LST_USR.format(access_key, secret_key)
         LOGGER.info(cmd)
-        result = run_local_cmd(cmd)
+        result = run_local_cmd(cmd, flg=True)
         LOGGER.info("output = %s", str(result))
 
         return result
@@ -290,7 +290,7 @@ class S3IamCli:
             account_name: str = None,
             email_id: str = None,
             ldap_user_id: str = None,
-            ldap_password: str = None) -> bytes:
+            ldap_password: str = None) -> tuple:
         """
         Creating new account using aws s3iamcli.
 
@@ -303,7 +303,7 @@ class S3IamCli:
         cmd = commands.CMD_CREATE_ACC.format(
             account_name, email_id, ldap_user_id, ldap_password)
         LOGGER.info(cmd)
-        response = run_local_cmd(cmd)
+        response = run_local_cmd(cmd, flg=True)
         LOGGER.debug(response)
 
         return response
@@ -313,7 +313,7 @@ class S3IamCli:
             account_name: str = None,
             access_key: str = None,
             secret_key: str = None,
-            force: bool = True) -> bytes:
+            force: bool = True) -> tuple:
         """
         Deleting account using aws s3iamcli.
 
@@ -330,7 +330,7 @@ class S3IamCli:
             cmd = commands.CMD_DEL_ACC.format(
                 account_name, access_key, secret_key)
         LOGGER.info(cmd)
-        result = run_local_cmd(cmd)
+        result = run_local_cmd(cmd, flg=True)
         LOGGER.debug("output = %s", str(result))
 
         return result
@@ -339,9 +339,9 @@ class S3IamCli:
     def create_user_login_profile_s3iamcli(
             user_name: str = None,
             password: str = None,
-            password_reset: str = None,
+            password_reset: bool = False,
             access_key: str = None,
-            secret_key: str = None) -> bytes:
+            secret_key: str = None) -> tuple:
         """
         Create user login profile using aws s3iamcli.
 
@@ -359,7 +359,7 @@ class S3IamCli:
             cmd = commands.CREATE_USR_PROFILE_NO_PWD_RESET.format(
                 user_name, password, access_key, secret_key)
         LOGGER.info(cmd)
-        result = run_local_cmd(cmd)
+        result = run_local_cmd(cmd, flg=True)
         LOGGER.debug("output = %s", str(result))
 
         return result
@@ -370,7 +370,7 @@ class S3IamCli:
             password: str = None,
             access_key: str = None,
             secret_key: str = None,
-            password_reset: bool = False) -> bytes:
+            password_reset: bool = False) -> tuple:
         """
         Create account login profile using s3iamcli.
 
@@ -388,7 +388,7 @@ class S3IamCli:
             cmd = commands.CREATE_ACC_RROFILE_NO_PWD_RESET.format(
                 acc_name, password, access_key, secret_key)
         LOGGER.info(cmd)
-        result = run_local_cmd(cmd)
+        result = run_local_cmd(cmd, flg=True)
         LOGGER.debug("output = %s", str(result))
 
         return result
@@ -399,7 +399,7 @@ class S3IamCli:
             password: str = None,
             access_key: str = None,
             secret_key: str = None,
-            password_reset: bool = False) -> bytes:
+            password_reset: bool = False) -> tuple:
         """
         Update account login profile using s3iamcli.
 
@@ -417,7 +417,7 @@ class S3IamCli:
             cmd = commands.UPDATE_ACC_PROFILE_NO_RESET.format(
                 acc_name, password, access_key, secret_key)
         LOGGER.info(cmd)
-        result = run_local_cmd(cmd)
+        result = run_local_cmd(cmd, flg=True)
         LOGGER.debug("output = %s", str(result))
 
         return result
@@ -426,7 +426,7 @@ class S3IamCli:
     def get_account_login_profile_s3iamcli(
             acc_name: str = None,
             access_key: str = None,
-            secret_key: str = None) -> bytes:
+            secret_key: str = None) -> tuple:
         """
         Get account login profile using s3iamcli.
 
@@ -437,7 +437,7 @@ class S3IamCli:
         """
         cmd = commands.GET_ACC_PROFILE.format(acc_name, access_key, secret_key)
         LOGGER.info(cmd)
-        result = run_local_cmd(cmd)
+        result = run_local_cmd(cmd, flg=True)
         LOGGER.debug("output = %s", str(result))
 
         return result
@@ -446,9 +446,9 @@ class S3IamCli:
     def update_user_login_profile_s3iamcli(
             user_name: str = None,
             password: str = None,
-            password_reset: str = None,
+            password_reset: bool = False,
             access_key: str = None,
-            secret_key: str = None) -> bytes:
+            secret_key: str = None) -> tuple:
         """
         Update user login profile using s3iamcli.
 
@@ -466,7 +466,7 @@ class S3IamCli:
             cmd = commands.UPDATE_ACC_PROFILE.format(
                 user_name, password, access_key, secret_key)
         LOGGER.info(cmd)
-        result = run_local_cmd(cmd)
+        result = run_local_cmd(cmd, flg=True)
         LOGGER.debug("output = %s", str(result))
 
         return result
@@ -475,7 +475,7 @@ class S3IamCli:
     def get_user_login_profile_s3iamcli(
             user_name: str = None,
             access_key: str = None,
-            secret_key: str = None) -> bytes:
+            secret_key: str = None) -> tuple:
         """
         Get user login profile using s3iamcli.
 
@@ -487,7 +487,7 @@ class S3IamCli:
         cmd = commands.GET_USRLOGING_PROFILE.format(
             user_name, access_key, secret_key)
         LOGGER.info(cmd)
-        result = run_local_cmd(cmd)
+        result = run_local_cmd(cmd, flg=True)
         LOGGER.debug("output = %s", str(result))
 
         return result
@@ -498,7 +498,7 @@ class S3IamCli:
             password: str = None,
             access_key: str = None,
             secret_key: str = None,
-            both_reset_options: bool = False) -> bytes:
+            both_reset_options: bool = False) -> tuple:
         """
         Create user login profile using s3iamcli with both reset options.
 
@@ -517,7 +517,7 @@ class S3IamCli:
             cmd = commands.CREATE_USR_LOGIN_PROFILE.format(
                 user_name, password, access_key, secret_key)
         LOGGER.info(cmd)
-        result = run_local_cmd(cmd)
+        result = run_local_cmd(cmd, flg=True)
         LOGGER.debug("output = %s", str(result))
 
         return result
@@ -526,7 +526,7 @@ class S3IamCli:
     def reset_account_access_key_s3iamcli(
             account_name: str = None,
             ldap_user_id: str = None,
-            ldap_password: str = None) -> bytes:
+            ldap_password: str = None) -> tuple:
         """
         Reset account access key using aws s3iamcli.
 
@@ -538,7 +538,7 @@ class S3IamCli:
         cmd = commands.RESET_ACCESS_ACC.format(
             account_name, ldap_user_id, ldap_password)
         LOGGER.info(cmd)
-        result = run_local_cmd(cmd)
+        result = run_local_cmd(cmd, flg=True)
         LOGGER.debug(result)
 
         return result
@@ -547,7 +547,7 @@ class S3IamCli:
     def create_user_using_s3iamcli(
             user_name: str = None,
             access_key: str = None,
-            secret_key: str = None) -> bytes:
+            secret_key: str = None) -> tuple:
         """
         Creating user using s3iamcli.
 
@@ -559,7 +559,7 @@ class S3IamCli:
         cmd = commands.CREATE_ACC_USR_S3IAMCLI.format(
             user_name, access_key, secret_key)
         LOGGER.info(cmd)
-        result = run_local_cmd(cmd)
+        result = run_local_cmd(cmd, flg=True)
         LOGGER.debug("output = %s", str(result))
 
         return result
@@ -567,7 +567,7 @@ class S3IamCli:
     @staticmethod
     def create_account_login_profile_both_reset_options(
             acc_name: str = None, password: str = None, access_key: str = None,
-            secret_key: str = None) -> bytes:
+            secret_key: str = None) -> tuple:
         """
         Create account login profile using s3iamcli.
 
@@ -580,7 +580,7 @@ class S3IamCli:
         cmd = commands.CREATE_ACC_RROFILE_WITH_BOTH_RESET.format(
             acc_name, password, access_key, secret_key)
         LOGGER.info(cmd)
-        result = run_local_cmd(cmd)
+        result = run_local_cmd(cmd, flg=True)
         LOGGER.debug("output = %s", str(result))
 
         return result
@@ -588,7 +588,7 @@ class S3IamCli:
     @staticmethod
     def create_acc_login_profile_without_both_reset_options(
             acc_name: str = None, password: str = None,
-            access_key: str = None, secret_key: str = None) -> bytes:
+            access_key: str = None, secret_key: str = None) -> tuple:
         """
         Create account login profile using s3iamcli.
 
@@ -601,7 +601,7 @@ class S3IamCli:
         cmd = commands.CREATE_ACC_PROFILE_WITHOUT_BOTH_RESET.format(
             acc_name, password, access_key, secret_key)
         LOGGER.info(cmd)
-        result = run_local_cmd(cmd)
+        result = run_local_cmd(cmd, flg=True)
         LOGGER.debug("output = %s", str(result))
 
         return result
@@ -611,7 +611,7 @@ class S3IamCli:
             acc_name: str = None,
             access_key: str = None,
             secret_key: str = None,
-            password: str = None) -> bytes:
+            password: str = None) -> tuple:
         """
         Update account login profile using s3iamcli.
 
@@ -628,14 +628,14 @@ class S3IamCli:
             cmd = commands.UPDATE_ACC_LOGIN_PROFILE.format(
                 acc_name, access_key, secret_key)
         LOGGER.info(cmd)
-        result = run_local_cmd(cmd)
+        result = run_local_cmd(cmd, flg=True)
         LOGGER.debug("output = %s", str(result))
 
         return result
 
     @staticmethod
     def update_user_login_profile_without_password_and_reset_option(
-            user_name: str = None, access_key: str = None, secret_key: str = None) -> bytes:
+            user_name: str = None, access_key: str = None, secret_key: str = None) -> tuple:
         """
         Update user login profile using s3iamcli without password and reset options.
 
@@ -647,7 +647,7 @@ class S3IamCli:
         cmd = commands.UPDATE_USR_LOGIN_PROFILE.format(
             user_name, access_key, secret_key)
         LOGGER.info(cmd)
-        result = run_local_cmd(cmd)
+        result = run_local_cmd(cmd, flg=True)
         LOGGER.debug("output = %s", str(result))
 
         return result
@@ -656,7 +656,7 @@ class S3IamCli:
     def get_temp_auth_credentials_account(
             account_name: str = None,
             account_password: str = None,
-            duration: str = None) -> bytes:
+            duration: int = None) -> tuple:
         """
         Retrieving the temporary auth credentials for the given account.
 
@@ -671,7 +671,7 @@ class S3IamCli:
         else:
             cmd = commands.GET_TEMP_ACC.format(account_name, account_password)
         LOGGER.info(cmd)
-        result = run_local_cmd(cmd)
+        result = run_local_cmd(cmd, flg=True)
         LOGGER.debug("output = %s", str(result))
 
         return result
@@ -681,7 +681,7 @@ class S3IamCli:
             account_name: str = None,
             user_name: str = None,
             password: str = None,
-            duration: str = None) -> bytes:
+            duration: int = None) -> tuple:
         """
         Retrieving the temporary auth credentials for the given user.
 
@@ -698,7 +698,7 @@ class S3IamCli:
             cmd = commands.GET_TEMP_USR.format(
                 account_name, user_name, password)
         LOGGER.info(cmd)
-        result = run_local_cmd(cmd)
+        result = run_local_cmd(cmd, flg=True)
         LOGGER.debug("output = %s", str(result))
 
         return result
@@ -708,7 +708,7 @@ class S3IamCli:
             old_pwd: str = None,
             new_pwd: str = None,
             access_key: str = None,
-            secret_key: str = None) -> bytes:
+            secret_key: str = None) -> tuple:
         """
         Change password for IAM user.
 
@@ -721,7 +721,7 @@ class S3IamCli:
         cmd = commands.CMD_CHANGE_PWD.format(
             old_pwd, new_pwd, access_key, secret_key)
         LOGGER.info(cmd)
-        result = run_local_cmd(cmd)
+        result = run_local_cmd(cmd, flg=True)
         LOGGER.debug("output = %s", str(result))
 
         return result
@@ -729,7 +729,7 @@ class S3IamCli:
     @staticmethod
     def update_user_login_profile_s3iamcli_with_both_reset_options(
             user_name: str = None, password: str = None, access_key: str = None,
-            secret_key: str = None) -> bytes:
+            secret_key: str = None) -> tuple:
         """
         Update user login profile using both password reset options.
 
@@ -742,7 +742,7 @@ class S3IamCli:
         cmd = commands.UPDATE_USR_PROFILE_BOTH_RESET.format(
             user_name, password, access_key, secret_key)
         LOGGER.info(cmd)
-        result = run_local_cmd(cmd)
+        result = run_local_cmd(cmd, flg=True)
         LOGGER.debug("output = %s", str(result))
 
         return result
@@ -752,7 +752,7 @@ class S3IamCli:
                                                  access_key: str = None,
                                                  secret_key: str = None,
                                                  session_token: str = None,
-                                                 force: bool = False) -> bytes:
+                                                 force: bool = False) -> tuple:
         """
         Deleting a specified account using it's temporary credentials.
 
@@ -770,7 +770,7 @@ class S3IamCli:
             cmd = commands.DEL_ACNT_USING_TEMP_CREDS.format(
                 account_name, access_key, secret_key, session_token)
         LOGGER.info(cmd)
-        result = run_local_cmd(cmd)
+        result = run_local_cmd(cmd, flg=True)
         LOGGER.debug("output = %s", str(result))
 
         return result
