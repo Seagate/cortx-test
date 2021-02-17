@@ -53,33 +53,33 @@ class S3Lib:
         :param aws_session_token: aws_session_token.
         :param debug: debug mode.
         """
-        region = kwargs.get("region") if kwargs.get("region", None) else None
-        aws_session_token = kwargs.get("aws_session_token") if kwargs.get(
-            "aws_session_token", None) else None
-        debug = kwargs.get("debug") if kwargs.get("debug", None) else None
-        self.access_key = access_key
-        self.secret_key = secret_key
-        self.endpoint_url = endpoint_url
-        self.s3_cert_path = s3_cert_path
-        self.region = region
-        self.session_token = aws_session_token
+        region = kwargs.get("region", None)
+        aws_session_token = kwargs.get("aws_session_token", None)
+        debug = kwargs.get("debug", False)
+        LOGGER.info(
+            "access_key: %s, secret_key: %s, endpoint_url: %s, s3_cert_path: %s, kwargs: %s",
+            access_key,
+            secret_key,
+            endpoint_url,
+            s3_cert_path,
+            str(kwargs))
         if debug:
             # Uncomment to enable debug
             boto3.set_stream_logger(name="botocore")
         self.s3_resource = boto3.resource(
             "s3",
-            verify=self.s3_cert_path,
-            aws_access_key_id=self.access_key,
-            aws_secret_access_key=self.secret_key,
-            endpoint_url=self.endpoint_url,
-            region_name=self.region,
-            aws_session_token=self.session_token)
-        self.s3_client = boto3.client("s3", verify=self.s3_cert_path,
-                                      aws_access_key_id=self.access_key,
-                                      aws_secret_access_key=self.secret_key,
-                                      endpoint_url=self.endpoint_url,
-                                      region_name=self.region,
-                                      aws_session_token=self.session_token)
+            verify=s3_cert_path,
+            aws_access_key_id=access_key,
+            aws_secret_access_key=secret_key,
+            endpoint_url=endpoint_url,
+            region_name=region,
+            aws_session_token=aws_session_token)
+        self.s3_client = boto3.client("s3", verify=s3_cert_path,
+                                      aws_access_key_id=access_key,
+                                      aws_secret_access_key=secret_key,
+                                      endpoint_url=endpoint_url,
+                                      region_name=region,
+                                      aws_session_token=aws_session_token)
 
     def create_bucket(self, bucket_name: str = None) -> dict:
         """
@@ -121,7 +121,8 @@ class S3Lib:
         """
         m_key = kwargs.get("m_key", None)
         m_value = kwargs.get("m_value", None)
-        LOGGER.debug(bucket_name, object_name, file_path, m_key, m_value)
+        LOGGER.debug("bucket_name: %s, object_name: %s, file_path: %s, m_key: %s, m_value: %s",
+                     bucket_name, object_name, file_path, m_key, m_value)
         with open(file_path, "rb") as data:
             if m_key:
                 response = self.s3_client.put_object(
@@ -171,7 +172,7 @@ class S3Lib:
 
     def list_objects_with_prefix(
             self,
-            bucket_name: str,
+            bucket_name: str = None,
             prefix: str = None,
             maxkeys: int = None) -> list:
         """
@@ -211,7 +212,8 @@ class S3Lib:
 
         return response_bucket
 
-    def delete_object(self, bucket_name: str = None, obj_name: str = None) -> dict:
+    def delete_object(self, bucket_name: str = None,
+                      obj_name: str = None) -> dict:
         """
         Deleting Object.
 
@@ -227,7 +229,7 @@ class S3Lib:
 
         return response
 
-    def bucket_location(self, bucket_name: str) -> dict:
+    def bucket_location(self, bucket_name: str = None) -> dict:
         """
         Getting Bucket Location.
 
@@ -241,7 +243,7 @@ class S3Lib:
 
         return response
 
-    def object_info(self, bucket_name: str, key: str) -> dict:
+    def object_info(self, bucket_name: str = None, key: str = None) -> dict:
         """
         Retrieve metadata from an object without returning the object itself.
 
@@ -257,9 +259,9 @@ class S3Lib:
         return response
 
     def object_download(self,
-                        bucket_name: str,
-                        obj_name: str,
-                        file_path: str) -> str:
+                        bucket_name: str = None,
+                        obj_name: str = None,
+                        file_path: str = None) -> str:
         """
         Downloading Object of the required Bucket.
 
@@ -276,7 +278,10 @@ class S3Lib:
 
         return file_path
 
-    def delete_bucket(self, bucket_name: str, force: bool = False) -> dict:
+    def delete_bucket(
+            self,
+            bucket_name: str = None,
+            force: bool = False) -> dict:
         """
         Deleting the empty bucket or deleting the buckets along with objects stored in it.
 
@@ -298,7 +303,7 @@ class S3Lib:
 
         return response
 
-    def get_bucket_size(self, bucket_name: str) -> dict:
+    def get_bucket_size(self, bucket_name: str = None) -> dict:
         """
         Getting size of bucket.
 
@@ -312,7 +317,11 @@ class S3Lib:
 
         return response
 
-    def get_object(self, bucket: str, key: str, ranges: str = None) -> dict:
+    def get_object(
+            self,
+            bucket: str = None,
+            key: str = None,
+            ranges: str = None) -> dict:
         """
         Getting byte range of the object.
 
@@ -328,10 +337,10 @@ class S3Lib:
         return response
 
     def put_object_with_storage_class(self,
-                                      bucket_name: str,
-                                      object_name: str,
-                                      file_path: str,
-                                      storage_class: str) -> dict:
+                                      bucket_name: str = None,
+                                      object_name: str = None,
+                                      file_path: str = None,
+                                      storage_class: str = None) -> dict:
         """
         Add an object to a bucket with specified storage class.
 
@@ -343,7 +352,12 @@ class S3Lib:
         'GLACIER'|'DEEP_ARCHIVE'
         :return: response.
         """
-        LOGGER.debug(bucket_name, object_name, file_path, storage_class)
+        LOGGER.debug(
+            "bucket_name: %s, object_name: %s, file_path: %s, storage_class: %s",
+            bucket_name,
+            object_name,
+            file_path,
+            storage_class)
         with open(file_path, "rb") as data:
             response = self.s3_client.put_object(
                 Bucket=bucket_name,
@@ -359,8 +373,8 @@ class Multipart(S3Lib):
     """Class containing methods to implement multipart functionality."""
 
     def create_multipart_upload(self,
-                                bucket_name: str,
-                                obj_name: str,
+                                bucket_name: str = None,
+                                obj_name: str = None,
                                 m_key: str = None,
                                 m_value: str = None) -> dict:
         """
@@ -383,9 +397,9 @@ class Multipart(S3Lib):
         return response
 
     def upload_part(self,
-                    body: str,
-                    bucket_name: str,
-                    object_name: str,
+                    body: str = None,
+                    bucket_name: str = None,
+                    object_name: str = None,
                     **kwargs) -> dict:
         """
         Upload parts of a specific multipart upload.
@@ -406,7 +420,11 @@ class Multipart(S3Lib):
 
         return response
 
-    def list_parts(self, mpu_id: str, bucket: str, object_name: str) -> dict:
+    def list_parts(
+            self,
+            mpu_id: str = None,
+            bucket: str = None,
+            object_name: str = None) -> dict:
         """
         list parts of a specific multipart upload.
 
@@ -423,10 +441,10 @@ class Multipart(S3Lib):
 
     def complete_multipart_upload(
             self,
-            mpu_id: str,
-            parts: list,
-            bucket: str,
-            object_name: str) -> dict:
+            mpu_id: str = None,
+            parts: list = None,
+            bucket: str = None,
+            object_name: str = None) -> dict:
         """
         Complete a multipart upload, s3 creates an object by concatenating the parts.
 
@@ -446,7 +464,7 @@ class Multipart(S3Lib):
 
         return result
 
-    def list_multipart_uploads(self, bucket: str) -> dict:
+    def list_multipart_uploads(self, bucket: str = None) -> dict:
         """
         List all initiated multipart uploads.
 
@@ -460,9 +478,9 @@ class Multipart(S3Lib):
 
     def abort_multipart_upload(
             self,
-            bucket: str,
-            object_name: str,
-            upload_id: str) -> dict:
+            bucket: str = None,
+            object_name: str = None,
+            upload_id: str = None) -> dict:
         """
         Abort multipart upload for given upload_id.
 
@@ -478,7 +496,11 @@ class Multipart(S3Lib):
 
         return response
 
-    def get_object(self, bucket: str, key: str, ranges: str = None) -> dict:
+    def get_object(
+            self,
+            bucket: str = None,
+            key: str = None,
+            ranges: str = None) -> dict:
         """
         Getting byte range of the object.
 
@@ -497,7 +519,8 @@ class Multipart(S3Lib):
 class Tagging(S3Lib):
     """Class containing methods to implement bucket and object tagging functionality."""
 
-    def set_bucket_tags(self, bucket_name: str, tag_set: dict) -> dict:
+    def set_bucket_tags(self, bucket_name: str = None,
+                        tag_set: dict = None) -> dict:
         """
         Set one or multiple tags to a bucket.
 
@@ -511,7 +534,7 @@ class Tagging(S3Lib):
 
         return response
 
-    def get_bucket_tagging(self, bucket_name: str) -> dict:
+    def get_bucket_tagging(self, bucket_name: str = None) -> dict:
         """
         Get bucket tagging.
 
@@ -523,7 +546,7 @@ class Tagging(S3Lib):
 
         return response
 
-    def delete_bucket_tagging(self, bucket_name: str) -> dict:
+    def delete_bucket_tagging(self, bucket_name: str = None) -> dict:
         """
         Delete all bucket tags.
 
@@ -536,7 +559,11 @@ class Tagging(S3Lib):
 
         return response
 
-    def put_object_tagging(self, bucket: str, key: str, tags: dict) -> dict:
+    def put_object_tagging(
+            self,
+            bucket: str = None,
+            key: str = None,
+            tags: dict = None) -> dict:
         """
         Set the supplied tag-set to an object that already exists in a bucket.
 
@@ -551,7 +578,10 @@ class Tagging(S3Lib):
 
         return response
 
-    def get_object_tagging(self, bucket: str, obj_name: str) -> dict:
+    def get_object_tagging(
+            self,
+            bucket: str = None,
+            obj_name: str = None) -> dict:
         """
         Return the tag-set of an object.
 
@@ -565,7 +595,10 @@ class Tagging(S3Lib):
 
         return response
 
-    def delete_object_tagging(self, bucket_name: str, obj_name: str) -> dict:
+    def delete_object_tagging(
+            self,
+            bucket_name: str = None,
+            obj_name: str = None) -> dict:
         """
         Remove the tag-set from an existing object.
 
@@ -580,9 +613,9 @@ class Tagging(S3Lib):
         return response
 
     def put_object_with_tagging(self,
-                                bucket_name: str,
-                                object_name: str,
-                                data: str,
+                                bucket_name: str = None,
+                                object_name: str = None,
+                                data: str = None,
                                 **kwargs) -> dict:
         """
         Putting Object to the Bucket (mainly small file) with tagging and metadata.
@@ -610,7 +643,10 @@ class Tagging(S3Lib):
 class Acl(S3Lib):
     """Class containing methods to implement bucket and object ACL functionality."""
 
-    def get_object_acl(self, bucket: str, object_key: str) -> dict:
+    def get_object_acl(
+            self,
+            bucket: str = None,
+            object_key: str = None) -> dict:
         """
         Getting object acl attributes.
 
@@ -623,7 +659,7 @@ class Acl(S3Lib):
 
         return response
 
-    def get_bucket_acl(self, bucket_name: str) -> dict:
+    def get_bucket_acl(self, bucket_name: str = None) -> dict:
         """
         Retrieving bucket acl attributes.
 
@@ -637,9 +673,9 @@ class Acl(S3Lib):
 
     def put_object_acp(
             self,
-            bucket_name: str,
-            object_name: str,
-            acp: dict) -> dict:
+            bucket_name: str = None,
+            object_name: str = None,
+            acp: dict = None) -> dict:
         """
         Set the access control list of an s3 object.
 
@@ -651,13 +687,14 @@ class Acl(S3Lib):
         # Set the ACL
         response = self.s3_client.put_object_acl(
             Bucket=bucket_name, Key=object_name, AccessControlPolicy=acp)
+
         return response
 
     def put_object_acl(
             self,
-            bucket_name: str,
-            object_name: str,
-            acl: dict) -> dict:
+            bucket_name: str = None,
+            object_name: str = None,
+            acl: dict = None) -> dict:
         """
         Set the access control list of an s3 object.
 
@@ -669,12 +706,14 @@ class Acl(S3Lib):
         # Set the ACL
         response = self.s3_client.put_object_acl(
             Bucket=bucket_name, Key=object_name, ACL=acl)
+
         return response
 
     def put_object_canned_acl(self,
-                              bucket_name: str,
-                              key: str,
+                              bucket_name: str = None,
+                              key: str = None,
                               acl: str = None,
+                              access_control_policy: str = None,
                               **kwargs) -> dict:
         """
         set the access control list (ACL) permissions for an object.
@@ -697,19 +736,11 @@ class Acl(S3Lib):
         :param grant_write_acp: Allows grantee to write the ACL for the applicable object.
         :return: dict.
         """
-        access_control_policy = kwargs.get("access_control_policy") if \
-            kwargs.get("access_control_policy", None) else None
-        grant_full_control = kwargs.get("grant_full_control") if \
-            kwargs.get("grant_full_control", None) else None
-        grant_read = kwargs.get("grant_read") if kwargs.get(
-            "grant_read", None) else None
-        grant_read_acp = kwargs.get("grant_read_acp") if \
-            kwargs.get("grant_read_acp", None) else None
-        grant_write = kwargs.get("grant_write") if kwargs.get(
-            "grant_write", None) else None
-        grant_write_acp = kwargs.get("grant_write_acp") if \
-            kwargs.get("grant_write_acp", None) else None
-
+        grant_full_control = kwargs.get("grant_full_control", None)
+        grant_read = kwargs.get("grant_read", None)
+        grant_read_acp = kwargs.get("grant_read_acp", None)
+        grant_write = kwargs.get("grant_write", None)
+        grant_write_acp = kwargs.get("grant_write_acp", None)
         LOGGER.info("Setting acl to existing object.")
         if grant_full_control:
             if acl:
@@ -761,12 +792,13 @@ class Acl(S3Lib):
             response = self.s3_client.put_object_acl(
                 Bucket=bucket_name, Key=key, ACL=acl)
         LOGGER.debug(response)
+
         return response
 
     def put_object_with_acl2(self,
-                             bucket_name: str,
-                             key: str,
-                             file_path: str,
+                             bucket_name: str = None,
+                             key: str = None,
+                             file_path: str = None,
                              **kwargs) -> dict:
         """
         To set both grant_full_control, grant_read acl while adding an object to a bucket.
@@ -779,23 +811,22 @@ class Acl(S3Lib):
         :param grant_read: Allows grantee to read the object data and its metadata.
         :return: dict.
         """
-        grant_full_control = kwargs.get("grant_full_control") if \
-            kwargs.get("grant_full_control", None) else None
-        grant_read = kwargs.get("grant_read") if \
-            kwargs.get("grant_read", None) else None
-
+        grant_full_control = kwargs.get("grant_full_control", None)
+        grant_read = kwargs.get("grant_read", None)
         response = self.s3_client.put_object(
             Bucket=bucket_name,
             Key=key,
             Body=file_path,
             GrantFullControl=grant_full_control,
             GrantRead=grant_read)
+
         return response
 
     def put_object_with_acl(self,
-                            bucket_name: str,
-                            key: str,
-                            file_path: str,
+                            bucket_name: str = None,
+                            key: str = None,
+                            file_path: str = None,
+                            acl: str = None,
                             **kwargs) -> dict:
         """
         To set acl while adding an object to a bucket.
@@ -814,7 +845,6 @@ class Acl(S3Lib):
         :param grant_write_acp: Allows grantee to write the ACL for the applicable object.
         :return: dict
         """
-        acl = kwargs.get("acl", None)
         grant_full_control = kwargs.get("grant_full_control", None)
         grant_read = kwargs.get("grant_read", None)
         grant_read_acp = kwargs.get("grant_read_acp", None)
@@ -879,7 +909,7 @@ class Acl(S3Lib):
         return response
 
     def create_bucket_with_acl(self,
-                               bucket_name: str,
+                               bucket_name: str = None,
                                acl: str = None,
                                **kwargs) -> dict:
         """
@@ -947,10 +977,9 @@ class Acl(S3Lib):
         return response
 
     def put_bucket_acl(self,
-                       bucket_name: str,
+                       bucket_name: str = None,
                        acl: str = None,
                        access_control_policy: dict = None,
-                       grant_full_control: str = None,
                        **kwargs) -> bool:
         """
         Set the permissions on a bucket using access control lists (ACL).
@@ -969,6 +998,7 @@ class Acl(S3Lib):
         :param grant_write_acp: Allows grantee to write the ACL for the applicable bucket.
         :return: True or False
         """
+        grant_full_control = kwargs.get("grant_full_control", None)
         grant_read = kwargs.get("grant_read", None)
         grant_read_acp = kwargs.get("grant_read_acp", None)
         grant_write = kwargs.get("grant_write", None)
@@ -1025,7 +1055,7 @@ class Acl(S3Lib):
 class BucketPolicy(S3Lib):
     """Class containing methods to implement bucket policy functionality."""
 
-    def get_bucket_policy(self, bucket_name: str) -> tuple:
+    def get_bucket_policy(self, bucket_name: str = None) -> tuple:
         """
         Retrieve policy of the specified s3 bucket.
 
@@ -1038,7 +1068,10 @@ class BucketPolicy(S3Lib):
 
         return response
 
-    def put_bucket_policy(self, bucket_name: str, bucket_policy: dict) -> dict:
+    def put_bucket_policy(
+            self,
+            bucket_name: str = None,
+            bucket_policy: dict = None) -> dict:
         """
         Apply s3 bucket policy to specified s3 bucket.
 
@@ -1051,7 +1084,7 @@ class BucketPolicy(S3Lib):
 
         return bucket_policy
 
-    def delete_bucket_policy(self, bucket_name: str) -> dict:
+    def delete_bucket_policy(self, bucket_name: str = None) -> dict:
         """
         Function will delete the policy applied to the specified S3 bucket.
 
@@ -1071,9 +1104,9 @@ class S3LibCmd(S3Lib):
 
     @staticmethod
     def upload_object_cli(
-            bucket_name: str,
-            object_name: str,
-            file_path: str) -> bytes:
+            bucket_name: str = None,
+            object_name: str = None,
+            file_path: str = None) -> tuple:
         """
         Uploading Object to the Bucket using aws cli.
 
@@ -1084,16 +1117,16 @@ class S3LibCmd(S3Lib):
         """
         cmd = commands.S3_UPLOAD_FILE_CMD.format(
             file_path, bucket_name, object_name)
-        response = run_local_cmd(cmd)
+        response = run_local_cmd(cmd, flg=True)
         LOGGER.debug("Response: %s", str(response))
 
         return response
 
     @staticmethod
     def upload_folder_cli(
-            bucket_name: str,
-            folder_path: str,
-            profile_name: str) -> bytes:
+            bucket_name: str = None,
+            folder_path: str = None,
+            profile_name: str = None) -> tuple:
         """
         Uploading folder to the Bucket using aws cli.
 
@@ -1104,16 +1137,16 @@ class S3LibCmd(S3Lib):
         """
         cmd = commands.S3_UPLOAD_FOLDER_CMD.format(
             folder_path, bucket_name, profile_name)
-        response = run_local_cmd(cmd)
+        response = run_local_cmd(cmd, flg=True)
         LOGGER.debug("Response: %s", str(response))
 
         return response
 
     @staticmethod
     def download_bucket_cli(
-            bucket_name: str,
-            folder_path: str,
-            profile_name: str) -> bytes:
+            bucket_name: str = None,
+            folder_path: str = None,
+            profile_name: str = None) -> tuple:
         """
         Downloading s3 objects to a local directory recursively using awscli.
 
@@ -1126,7 +1159,7 @@ class S3LibCmd(S3Lib):
             os.mkdir(folder_path)
         cmd = commands.S3_DOWNLOAD_BUCKET_CMD.format(
             bucket_name, folder_path, profile_name)
-        response = run_local_cmd(cmd)
+        response = run_local_cmd(cmd, flg=True)
         LOGGER.debug("Response: %s", str(response))
 
         return response
