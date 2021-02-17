@@ -683,8 +683,8 @@ class S3Helper:
         """
         try:
             if not os.path.isfile(path):
-                raise FileNotFoundError("{} file is not present. Please configure aws in the system".format(
-                    path))
+                raise FileNotFoundError(
+                    "{} file is not present. Please configure aws in the system".format(path))
             access_key = config_utils.get_config(
                 path, section, "aws_access_key_id")
             secret_key = config_utils.get_config(
