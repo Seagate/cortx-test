@@ -59,7 +59,6 @@ LOG_DIR = 'log'
 CACHE = LRUCache(1024 * 10)
 CACHE_JSON = 'nodes-cache.yaml'
 REPORT_CLIENT = None
-
 LOGGER = logging.getLogger(__name__)
 logging.getLogger('boto3').setLevel(logging.WARNING)
 logging.getLogger('botocore').setLevel(logging.WARNING)
@@ -434,6 +433,8 @@ def pytest_collection(session):
                     if test_found in required_tests:
                         selected_items.append(item)
             CACHE.store(item.nodeid, test_found)
+        import pdb
+        pdb.set_trace()
         items[:] = selected_items
     elif _local:
         meta = list()
