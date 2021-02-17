@@ -2482,7 +2482,7 @@ _string
             "ENDED: Test * wildcard for all apis in action field of statement of the json file")
 
     @pytest.mark.s3
-    @pytest.mark.tags("TEST") # TODO Find Generic ticket -> EOS-7534
+    @pytest.mark.tags("TEST-") # TODO Find Generic ticket -> EOS-7534
     @CTFailOn(error_handler)
     def test_717(self):
         """
@@ -3229,7 +3229,7 @@ _string
             "ENDED: Test bucket policy with Effect Allow and Deny using invalid user id")
 
     @pytest.mark.s3
-    @pytest.mark.tags("TEST")
+    @pytest.mark.tags("TEST-6111")
     @CTFailOn(error_handler)
     def test_1180(self):
         """
@@ -3276,7 +3276,7 @@ _string
             "effect is Allow and verify user can delete-bucket-policy")
 
     @pytest.mark.s3
-    @pytest.mark.tags("TEST")
+    @pytest.mark.tags("TEST-6110")
     @CTFailOn(error_handler)
     def test_1191(self):
         """
@@ -3306,7 +3306,7 @@ _string
             "ENDED: Test bucket policy with Effect Allow and Deny using invalid Account id")
 
     @pytest.mark.s3
-    @pytest.mark.tags("TEST")
+    @pytest.mark.tags("TEST-6112")
     @CTFailOn(error_handler)
     def test_1184(self):
         """
@@ -3336,7 +3336,7 @@ _string
             "ENDED: Test bucket policy with Wildcard ? in action for delete bucket policy")
 
     @pytest.mark.s3
-    @pytest.mark.tags("TEST")
+    @pytest.mark.tags("TEST-6113")
     @CTFailOn(error_handler)
     def test_1171(self):
         """
@@ -3380,7 +3380,7 @@ _string
             "and verify other account can get-bucket-policy")
 
     @pytest.mark.s3
-    @pytest.mark.tags("TEST")
+    @pytest.mark.tags("TEST-6114")
     @CTFailOn(error_handler)
     def test_1182(self):
         """
@@ -3421,7 +3421,7 @@ _string
             "is Deny and verify user can delete-bucket-policy")
 
     @pytest.mark.s3
-    @pytest.mark.tags("TEST")
+    @pytest.mark.tags("TEST-6115")
     @CTFailOn(error_handler)
     def test_1110(self):
         """
@@ -3463,7 +3463,7 @@ _string
             "ENDED: Test bucket policy statement Effect Deny using json")
 
     @pytest.mark.s3
-    @pytest.mark.tags("TEST")
+    @pytest.mark.tags("TEST-6116")
     @CTFailOn(error_handler)
     def test_1187(self):
         """
@@ -3552,7 +3552,7 @@ _string
             "ENDED: Test bucket policy with Effect Allow and Deny using user id")
 
     @pytest.mark.s3
-    @pytest.mark.tags("TEST")
+    @pytest.mark.tags("TEST-6117")
     @CTFailOn(error_handler)
     def test_1166(self):
         """
@@ -3591,7 +3591,7 @@ _string
             "action field of statement of the json file with effect Allow")
 
     @pytest.mark.s3
-    @pytest.mark.tags("TEST")
+    @pytest.mark.tags("TEST-6118")
     @CTFailOn(error_handler)
     def test_1177(self):
         """
@@ -3632,7 +3632,7 @@ _string
             " and verify other account can delete-bucket-policy")
 
     @pytest.mark.s3
-    @pytest.mark.tags("TEST")
+    @pytest.mark.tags("TEST-6119")
     @CTFailOn(error_handler)
     def test_360(self):
         """
@@ -3659,7 +3659,7 @@ _string
         LOGGER.info("ENDED: Apply put-bucket-policy on existing bucket")
 
     @pytest.mark.s3
-    @pytest.mark.tags("TEST")
+    @pytest.mark.tags("TEST-6120")
     @CTFailOn(error_handler)
     def test_362(self):
         """
@@ -3687,7 +3687,7 @@ _string
         LOGGER.info("ENDED: Apply put-bucket-policy on non existing bucket")
 
     @pytest.mark.s3
-    @pytest.mark.tags("TEST")
+    @pytest.mark.tags("TEST-6121")
     @CTFailOn(error_handler)
     def test_363(self):
         """
@@ -3713,7 +3713,7 @@ _string
             "ENDED: Apply put-bucket-policy without specifying bucket name")
 
     @pytest.mark.s3
-    @pytest.mark.tags("TEST")
+    @pytest.mark.tags("TEST-6122")
     @CTFailOn(error_handler)
     def test_364(self):
         """
@@ -3746,7 +3746,7 @@ _string
             "ENDED: Apply put-bucket-policy without specifying policy")
 
     @pytest.mark.s3
-    @pytest.mark.tags("TEST")
+    @pytest.mark.tags("TEST-6123") #TODO need to find/create Generic ticket
     @CTFailOn(error_handler)
     def test_365(self):
         """
@@ -3779,7 +3779,7 @@ _string
             "ENDED: Apply put-bucket-policy with specifying policy in non json format")
 
     @pytest.mark.s3
-    @pytest.mark.tags("TEST")
+    @pytest.mark.tags("TEST-6124")
     @CTFailOn(error_handler)
     def test_366(self):
         """
@@ -3809,7 +3809,7 @@ _string
             "ENDED: Apply put-bucket-policy from another account given read permission on bucket")
 
     @pytest.mark.s3
-    @pytest.mark.tags("TEST")
+    @pytest.mark.tags("TEST-6125")
     @CTFailOn(error_handler)
     def test_367(self):
         """
@@ -3839,7 +3839,7 @@ _string
             "ENDED: Apply put-bucket-policy from another account given write permission on bucket")
 
     @pytest.mark.s3
-    @pytest.mark.tags("TEST")
+    @pytest.mark.tags("TEST-6126")
     @CTFailOn(error_handler)
     def test_368(self):
         """
@@ -3869,7 +3869,7 @@ _string
             "another account given read-acp permission on bucket")
 
     @pytest.mark.s3
-    @pytest.mark.tags("TEST")
+    @pytest.mark.tags("TEST-6127")
     @CTFailOn(error_handler)
     def test_369(self):
         """
@@ -3900,7 +3900,7 @@ _string
             "account given write-acp permission on bucket")
 
     @pytest.mark.s3
-    @pytest.mark.tags("TEST")
+    @pytest.mark.tags("TEST-6128")
     @CTFailOn(error_handler)
     def test_370(self):
         """
@@ -3933,7 +3933,7 @@ _string
             "another account given full-control permission on bucket")
 
     @pytest.mark.s3
-    @pytest.mark.tags("TEST")
+    @pytest.mark.tags("TEST-6129")
     @CTFailOn(error_handler)
     def test_371(self):
         """
@@ -3972,7 +3972,7 @@ _string
             "ENDED: Apply put-bucket-policy from another account with no permissions.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6131")
     @ CTFailOn(error_handler)
     def test_372(self):
         """
@@ -4020,7 +4020,7 @@ _string
             "authenticated-read permission on bucket")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6132")
     @ CTFailOn(error_handler)
     def test_373(self):
         """
@@ -4060,7 +4060,7 @@ _string
             " domain with public-read permission on bucket")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6133")
     @ CTFailOn(error_handler)
     def test_374(self):
         """
@@ -4101,7 +4101,7 @@ _string
             "domain with public-read-write permission on bucket.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6134")
     @ CTFailOn(error_handler)
     def test_1188(self):
         """
@@ -4153,7 +4153,7 @@ _string
             "ENDED: Test bucket policy with Effect Allow and Deny using account id")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6136")
     @ CTFailOn(error_handler)
     def test_1174(self):
         """
@@ -4190,7 +4190,7 @@ _string
             "and verify other account can put-bucket-policy")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6138")
     @ CTFailOn(error_handler)
     def test_1185(self):
         """
@@ -4224,7 +4224,7 @@ _string
             "ENDED: Test Wildcard * in action for delete bucket policy with effect is Deny")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6140")
     @ CTFailOn(error_handler)
     def test_1186(self):
         """
@@ -4262,7 +4262,7 @@ _string
             "ENDED: Test Wildcard * in action where effect is Allow")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6142")
     @ CTFailOn(error_handler)
     def test_1114(self):
         """
@@ -4304,7 +4304,7 @@ _string
             "ENDED: Test bucket policy statement Effect Allow and Deny combinations using json")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6144")
     @ CTFailOn(error_handler)
     def test_1169(self):
         """
@@ -4349,7 +4349,7 @@ _string
             "statement of the json file with combination effect Allow and Deny")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6146")
     @ CTFailOn(error_handler)
     def test_1167(self):
         """
@@ -4389,7 +4389,7 @@ _string
             "of statement of the json file with effect Deny")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6147")
     @ CTFailOn(error_handler)
     def test_1113(self):
         """
@@ -4415,7 +4415,7 @@ _string
             "ENDED: Test bucket policy statement Effect None using json")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6148")
     @ CTFailOn(error_handler)
     def test_1116(self):
         """
@@ -4443,7 +4443,7 @@ _string
             "Deny and None combinations using json")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6012")
     @ CTFailOn(error_handler)
     def test_1109(self):
         """
@@ -4493,7 +4493,7 @@ _string
             "ENDED: Test bucket policy statement Effect Allow using json")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7692")
     @ CTFailOn(error_handler)
     def test_270(self):
         """
@@ -4569,7 +4569,7 @@ _string
             "ENDED: verify get-bucket-policy for the bucket which is having read permissions for account2")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7693")
     @ CTFailOn(error_handler)
     def test_271(self):
         """
@@ -4629,7 +4629,7 @@ _string
             " and verify get-bucket-policy")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-5974")
     @ CTFailOn(error_handler)
     def test_4156(self):
         """
@@ -4683,7 +4683,7 @@ _string
             "Condition Operator, key 's3:prefix' and Effect Allow")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-5972")
     @ CTFailOn(error_handler)
     def test_4161(self):
         """
@@ -4738,7 +4738,7 @@ _string
             "Condition Operator, key 's3:prefix' and Effect Deny")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-5957")
     @ CTFailOn(error_handler)
     def test_4173(self):
         """
@@ -4792,7 +4792,7 @@ _string
             "Condition Operator, key 's3:prefix' and Effect Deny")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-5969")
     @ CTFailOn(error_handler)
     def test_4170(self):
         """
@@ -4856,7 +4856,7 @@ _string
             " key 's3:prefix' and Effect Allow")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-5955")
     @ CTFailOn(error_handler)
     def test_4183(self):
         """
@@ -4908,7 +4908,7 @@ _string
             " key 's3:x-amz-grant-write',Effect Allow and Action 's3:ListBucket'")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6027")
     @ CTFailOn(error_handler)
     def test_1069(self):
         """
@@ -4930,7 +4930,7 @@ _string
             "ENDED: Test invalid Account ID in the bucket policy json")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6025")
     @ CTFailOn(error_handler)
     def test_1075(self):
         """
@@ -4961,13 +4961,12 @@ _string
             "ENDED: Test invalid User name in the bucket policy json")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7694")
     @ CTFailOn(error_handler)
     def test_4502(self):
         """
         Test Bucket Policy using Condition Operator "DateEquals", key "aws:CurrentTime",
-        Effect "Allow", Action "PutObject" and Date format.
-_date
+        Effect "Allow", Action "PutObject" and Date format._date
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateEquals', "
@@ -4992,13 +4991,12 @@ _date
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7695")
     @ CTFailOn(error_handler)
     def test_4504(self):
         """
         Test Bucket Policy using Condition Operator 'DateNotEquals',
-        key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format
-_date
+        key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format_date
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateNotEquals', "
@@ -5023,13 +5021,12 @@ _date
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7696")
     @ CTFailOn(error_handler)
     def test_4505(self):
         """
         Test Bucket Policy using Condition Operator 'DateLessThan',
-        key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format
-_date
+        key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format_date
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateLessThan', "
@@ -5054,13 +5051,12 @@ _date
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7697")
     @ CTFailOn(error_handler)
     def test_4506(self):
         """
         Test Bucket Policy using Condition Operator 'DateLessThanEquals',
-        key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format
-_date
+        key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format_date
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateLessThanEquals', "
@@ -5085,13 +5081,12 @@ _date
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7698")
     @ CTFailOn(error_handler)
     def test_4507(self):
         """
         Test Bucket Policy using Condition Operator 'DateGreaterThan',
-        key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format
-_date
+        key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format_date
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateGreaterThan', "
@@ -5116,13 +5111,12 @@ _date
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7699")
     @ CTFailOn(error_handler)
     def test_4508(self):
         """
         Test Bucket Policy using Condition Operator 'DateGreaterThanEquals', "
-            "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format
-_date
+            "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format_date
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateGreaterThanEquals', "
@@ -5147,13 +5141,12 @@ _date
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7700")
     @ CTFailOn(error_handler)
     def test_4509(self):
         """
         Test Bucket Policy using Condition Operator "DateEquals", key "aws:CurrentTime",
-        Effect "Allow", Action "PutObject" and Date format.
-_date
+        Effect "Allow", Action "PutObject" and Date format._date
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateEquals', "
@@ -5178,13 +5171,12 @@ _date
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7701")
     @ CTFailOn(error_handler)
     def test_4510(self):
         """
         Test Bucket Policy using Condition Operator 'DateNotEquals',
-        key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format
-_date
+        key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format_date
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateNotEquals', "
@@ -5209,13 +5201,12 @@ _date
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7702")
     @ CTFailOn(error_handler)
     def test_4511(self):
         """
         Test Bucket Policy using Condition Operator 'DateLessThan',
-        key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format
-_date
+        key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format_date
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateLessThan', "
@@ -5240,13 +5231,12 @@ _date
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7703")
     @ CTFailOn(error_handler)
     def test_4512(self):
         """
         Test Bucket Policy using Condition Operator 'DateGreaterThan',
-        key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format
-_date
+        key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format_date
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateGreaterThan', "
@@ -5271,13 +5261,12 @@ _date
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7704")
     @ CTFailOn(error_handler)
     def test_4513(self):
         """
         Test Bucket Policy using Condition Operator 'DateNotEquals',
-        key 'aws:EpochTime', Effect 'Deny', Action 'PutObject' and Date format
-_date
+        key 'aws:EpochTime', Effect 'Deny', Action 'PutObject' and Date format_date
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateNotEquals', "
@@ -5301,13 +5290,12 @@ _date
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7705")
     @ CTFailOn(error_handler)
     def test_4514(self):
         """
         Test Bucket Policy using Condition Operator 'DateLessThan',
-        key 'aws:EpochTime', Effect 'Deny', Action 'PutObject' and Date format
-_date
+        key 'aws:EpochTime', Effect 'Deny', Action 'PutObject' and Date format_date
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateLessThan', "
@@ -5331,13 +5319,12 @@ _date
             "key 'aws:EpochTime', Effect 'Deny', Action 'PutObject' and Date format")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7706")
     @ CTFailOn(error_handler)
     def test_4515(self):
         """
         Test Bucket Policy using Condition Operator 'DateLessThanEquals',
-        key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format
-_date
+        key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format_date
         """
         LOGGER.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateLessThanEquals', "
@@ -5362,7 +5349,7 @@ _date
             "key 'aws:EpochTime', Effect 'Allow', Action 'PutObject' and Date format")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7707")
     @ CTFailOn(error_handler)
     def test_4516(self):
         """
@@ -5392,7 +5379,7 @@ _date
             "key 'aws:EpochTime', Effect 'Deny', Action 'PutObject' and Date format")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7708")
     @ CTFailOn(error_handler)
     def test_4517(self):
         """
@@ -5423,7 +5410,7 @@ _date
             "key 'aws:EpochTime', Effect 'Allow', Action 'PutObject' and Date format")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6929")
     @ CTFailOn(error_handler)
     def test_5770(self):
         """
@@ -5481,7 +5468,7 @@ _date
     #         "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6930")
     @ CTFailOn(error_handler)
     def test_5831(self):
         """
@@ -5510,7 +5497,7 @@ _date
             "key 'aws:EpochTime', Effect 'Deny' and Action 'PutObject'.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6931")
     @ CTFailOn(error_handler)
     def test_5832(self):
         """
@@ -5539,7 +5526,7 @@ _date
             "key 'aws:EpochTime', Effect 'Deny' and Action 'PutObject'.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6932")
     @ CTFailOn(error_handler)
     def test_5778(self):
         """
@@ -5568,7 +5555,7 @@ _date
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6933")
     @ CTFailOn(error_handler)
     def test_5740(self):
         """
@@ -5597,7 +5584,7 @@ _date
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6934")
     @ CTFailOn(error_handler)
     def test_5751(self):
         """
@@ -5626,7 +5613,7 @@ _date
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6935")
     @ CTFailOn(error_handler)
     def test_5773(self):
         """
@@ -5684,7 +5671,7 @@ _date
     #         "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6938")
     @ CTFailOn(error_handler)
     def test_5764(self):
         """
@@ -5761,7 +5748,7 @@ _date
     #         "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6939")
     @ CTFailOn(error_handler)
     def test_5758(self):
         """
@@ -5790,7 +5777,7 @@ _date
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6940")
     @ CTFailOn(error_handler)
     def test_5925(self):
         """
@@ -5840,7 +5827,7 @@ _date
             "key 'aws:EpochTime', Effect 'Allow', Action 'PutObject'.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6971")
     @ CTFailOn(error_handler)
     def test_5926(self):
         """
@@ -5869,7 +5856,7 @@ _date
             "key 'aws:EpochTime', Effect 'Deny', Action 'PutObject'.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6972")
     @ CTFailOn(error_handler)
     def test_5937(self):
         """
@@ -5898,7 +5885,7 @@ _date
             "key 'aws:EpochTime', Effect 'Allow', Action 'PutObject'.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7709")
     @ CTFailOn(error_handler)
     def test_1902(self):
         """
@@ -5956,7 +5943,7 @@ _date
             "key 's3:x-amz-acl' and value public-read")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7710")
     @ CTFailOn(error_handler)
     def test_1903(self):
         """
@@ -6013,7 +6000,7 @@ _date
             "key 's3:x-amz-acl' and value bucket-owner-full-control")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7711")
     @ CTFailOn(error_handler)
     def test_1904(self):
         """
@@ -6074,7 +6061,7 @@ _date
             "key 's3:x-amz-grant-full-control'")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7712")
     @ CTFailOn(error_handler)
     def test_1908(self):
         """
@@ -6135,7 +6122,7 @@ _date
             "key 's3:x-amz-grant-write-acp'")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6979")
     @ CTFailOn(error_handler)
     def test_4937(self):
         """
@@ -6197,7 +6184,7 @@ _date
             " Condition, key 's3:max-keys' and Effect Allow")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6980")
     @ CTFailOn(error_handler)
     def test_4939(self):
         """
@@ -6262,7 +6249,7 @@ _date
             " Condition, key 's3:max-keys' and Effect Deny")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6981")
     @ CTFailOn(error_handler)
     def test_4940(self):
         """
@@ -6324,7 +6311,7 @@ _date
             " Condition, key 's3:max-keys' and Effect Allow")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6982")
     @ CTFailOn(error_handler)
     def test_4941(self):
         """
@@ -6387,7 +6374,7 @@ _date
             " Condition, key 's3:max-keys' and Effect Deny")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6983")
     @ CTFailOn(error_handler)
     def test_4942(self):
         """
@@ -6449,7 +6436,7 @@ _date
             " Condition Operator, key 's3:max-keys' and Effect Allow")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6984")
     @ CTFailOn(error_handler)
     def test_4943(self):
         """
@@ -6513,7 +6500,7 @@ _date
             " Condition, key 's3:max-keys' and Effect Deny")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6985")
     @ CTFailOn(error_handler)
     def test_4944(self):
         """
@@ -6576,7 +6563,7 @@ _date
             " Condition, key 's3:max-keys' and Effect Allow")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6986")
     @ CTFailOn(error_handler)
     def test_4945(self):
         """
@@ -6639,7 +6626,7 @@ _date
             " Condition, key 's3:max-keys' and Effect Deny")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6973")
     @ CTFailOn(error_handler)
     def test_5449(self):
         """
@@ -6698,7 +6685,7 @@ _date
             " Condition, key s3:prefix and Effect Allow")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6974")
     @ CTFailOn(error_handler)
     def test_5471(self):
         """
@@ -6762,7 +6749,7 @@ _date
             "Condition Operator, key s3:prefix and Effect Deny")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6975")
     @ CTFailOn(error_handler)
     def test_5473(self):
         """
@@ -6824,7 +6811,7 @@ _date
             "Condition Operator, key s3:prefix and Effect Allow")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6976")
     @ CTFailOn(error_handler)
     def test_5481(self):
         """
@@ -6887,7 +6874,7 @@ _date
             "Condition Operator, key s3:prefix and Effect Deny")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6977")
     @ CTFailOn(error_handler)
     def test_5490(self):
         """
@@ -6934,7 +6921,7 @@ _date
             "Condition Operator, key s3:x-amz-grant-write,Effect Allow and Action s3:ListBucket")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("") # TODO - There is no generic ticket available for this test
     @ CTFailOn(error_handler)
     def test_6550(self):
         """
@@ -7015,7 +7002,7 @@ _date
             " with Single Key and Multiple Values")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("") # TODO No Generic ticket available for this
     @ CTFailOn(error_handler)
     def test_6553(self):
         """
@@ -7136,7 +7123,7 @@ _date
             "Multiple Keys having Single Value for each Key")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7516")
     @ CTFailOn(error_handler)
     def test_6693(self):
         """
@@ -7196,7 +7183,7 @@ _date
             "ENDED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-acl' and Value 'True'")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7517")
     @ CTFailOn(error_handler)
     def test_6703(self):
         """
@@ -7259,7 +7246,7 @@ _date
             "ENDED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-acl' and Value 'False'")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7518")
     @ CTFailOn(error_handler)
     def test_6704(self):
         """
@@ -7321,7 +7308,7 @@ _date
             " and Values ['False', 'True']")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7519")
     @ CTFailOn(error_handler)
     def test_6760(self):
         """
@@ -7384,7 +7371,7 @@ _date
             " and Values ['False', 'True']")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7520")
     @ CTFailOn(error_handler)
     def test_6761(self):
         """
@@ -7437,7 +7424,7 @@ _date
             " and Values 'True'")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6762")
     @ CTFailOn(error_handler)
     def test_6763(self):
         """
@@ -7490,7 +7477,7 @@ _date
             " and Values ['False', 'True']")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7522")
     @ CTFailOn(error_handler)
     def test_6764(self):
         """
@@ -7553,7 +7540,7 @@ _date
             " and Values 'True'")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7523")
     @ CTFailOn(error_handler)
     def test_6765(self):
         """
@@ -7616,7 +7603,7 @@ _date
             " and Values 'False'")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7524")
     @ CTFailOn(error_handler)
     def test_6766(self):
         """
@@ -7678,7 +7665,7 @@ _date
             " and Values ['False', 'True']")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7525")
     @ CTFailOn(error_handler)
     def test_6767(self):
         """
@@ -7741,7 +7728,7 @@ _date
             " and Value 'True'")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7526")
     @ CTFailOn(error_handler)
     def test_6768(self):
         """
@@ -7804,7 +7791,7 @@ _date
             " and Value 'False'")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7527")
     @ CTFailOn(error_handler)
     def test_6769(self):
         """
@@ -7866,7 +7853,7 @@ _date
             " and Values ['False', 'True']")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7528")
     @ CTFailOn(error_handler)
     def test_6770(self):
         """
@@ -7929,7 +7916,7 @@ _date
             " and Value 'True'")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7611")
     @ CTFailOn(error_handler)
     def test_5921(self):
         """
@@ -7948,7 +7935,7 @@ _date
             "ENDED: Test when blank file is provided for put bucket policy")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-5210")
     @ CTFailOn(error_handler)
     def test_5211(self):
         """
@@ -8024,7 +8011,7 @@ _date
             "and from user deny its account for Get/PutBucketPolicy")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-5211")
     @ CTFailOn(error_handler)
     def test_5210(self):
         """
@@ -8104,7 +8091,7 @@ _date
             "specifying userid in principal and allow GetBucketPolicy.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7614")
     @ CTFailOn(error_handler)
     def test_5206(self):
         """
@@ -8149,7 +8136,7 @@ _date
             "ENDED: Test give own user permission specifying user id in principal and allow GetBucketPolicy.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7615")
     @ CTFailOn(error_handler)
     def test_5212(self):
         """
@@ -8276,7 +8263,7 @@ _date
             "Get/PutBucketPolicy and deny the bucket owner account for Get/PutBucketPolicy .")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7616")
     @ CTFailOn(error_handler)
     def test_5214(self):
         """
@@ -8366,7 +8353,7 @@ _date
             "from user allow Get/PutBucketPolicy,GetBucketAcl permission to cross account")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7617")
     @ CTFailOn(error_handler)
     def test_5215(self):
         """
@@ -8484,7 +8471,7 @@ _date
             "from user allow Get/PutBucketPolicy,PutBucketAcl permission to cross account user.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7637")
     @ CTFailOn(error_handler)
     def test_6771(self):
         """
@@ -8549,7 +8536,7 @@ _date
             "s3:x-amz-grant-full-control and Value False")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7638")
     @ CTFailOn(error_handler)
     def test_6772(self):
         """
@@ -8609,7 +8596,7 @@ _date
             "operator Key s3:x-amz-grant-full-control and Values [False, True]")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7639")
     @ CTFailOn(error_handler)
     def test_6773(self):
         """
@@ -8660,7 +8647,7 @@ _date
             "ENDED: Test Bucket Policy having Null Condition operator Key s3:max-keys and Value True")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7640")
     @ CTFailOn(error_handler)
     def test_6774(self):
         """
@@ -8712,7 +8699,7 @@ _date
             "ENDED: Test Bucket Policy having Null Condition operator Key s3:max-keys and Value False")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7641")
     @ CTFailOn(error_handler)
     def test_6775(self):
         """
@@ -8759,7 +8746,7 @@ _date
             "ENDED: Test Bucket Policy having Null Condition operator Key s3:max-keys and Value [False, True]")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7642")
     @ CTFailOn(error_handler)
     def test_6776(self):
         """
@@ -8822,7 +8809,7 @@ _date
             "ENDED: Test Bucket Policy having Null Condition operator Key s3:prefix and Value True")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7643")
     @ CTFailOn(error_handler)
     def test_6777(self):
         """
@@ -8885,7 +8872,7 @@ _date
             "ENDED: Test Bucket Policy having Null Condition operator Key s3:prefix and Value False")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7644")
     @ CTFailOn(error_handler)
     def test_6779(self):
         """
@@ -8943,7 +8930,7 @@ _date
             "ENDED: Test Bucket Policy having Null Condition operator Key s3:prefix and Values [False, True]")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7645")
     @ CTFailOn(error_handler)
     def test_6783(self):
         """
@@ -8991,7 +8978,7 @@ _date
             "ENDED: Test Bucket Policy having Null Condition operator Key s3:x-amz-content-sha256 and Value True")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7646")
     @ CTFailOn(error_handler)
     def test_6787(self):
         """
@@ -9037,7 +9024,7 @@ _date
             "operator Key s3:x-amz-content-sha256 and Value False")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7648")
     @ CTFailOn(error_handler)
     def test_6788(self):
         """
@@ -9083,7 +9070,7 @@ _date
             "operator Key s3:x-amz-content-sha256 and Values False,True")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7650")
     @ CTFailOn(error_handler)
     def test_6790(self):
         """
@@ -9145,7 +9132,7 @@ _date
             "operator Key s3:x-amz-storage-class and Value True")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7651")
     @ CTFailOn(error_handler)
     def test_6791(self):
         """
@@ -9207,7 +9194,7 @@ _date
             "operator Key s3:x-amz-storage-class and Value False")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-8044")
     @ CTFailOn(error_handler)
     def test_6792(self):
         """
@@ -9268,7 +9255,7 @@ _date
             "ENDED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-storage-class' and Values ['True', 'False']")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-6763")
     @ CTFailOn(error_handler)
     def test_6762(self):
         """
@@ -9359,7 +9346,7 @@ _date
             "ENDED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-write' and Value 'False'")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-8041")
     @ CTFailOn(error_handler)
     def test_6707(self):
         """
@@ -9444,7 +9431,7 @@ _date
             "ENDED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-read' and Value 'True'")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-8042")
     @ CTFailOn(error_handler)
     def test_6708(self):
         """
@@ -9529,7 +9516,7 @@ _date
             "ENDED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-read' and Value 'False'")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-8045")
     @ CTFailOn(error_handler)
     def test_7051(self):
         """
@@ -9649,7 +9636,7 @@ _date
             "ENDED: Test Verify Bucket Policy having Valid Condition Key and Invalid Value")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-8046")
     @ CTFailOn(error_handler)
     def test_7052(self):
         """
@@ -9720,7 +9707,7 @@ _date
             "ENDED: Test Verify Bucket Policy having Invalid Condition Key")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-8047")
     @ CTFailOn(error_handler)
     def test_7054(self):
         """
@@ -9826,7 +9813,7 @@ _date
             "ENDED: Test Verify Bucket Policy multiple conflicting Condition types(operators)")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-8048")
     @ CTFailOn(error_handler)
     def test_7055(self):
         """
@@ -9932,7 +9919,7 @@ _date
             "ENDED: Test Verify Bucket Policy Condition Values are case sensitive")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-8049")
     @ CTFailOn(error_handler)
     def test_7056(self):
         """
@@ -10010,7 +9997,7 @@ _date
             "ENDED: Test Create Bucket Policy using StringEqualsIgnoreCase Condition Operator, key 's3:prefix' and Effect Allow")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-8050")
     @ CTFailOn(error_handler)
     def test_7057(self):
         """
@@ -10100,7 +10087,7 @@ _date
             "ENDED: Test Create Bucket Policy using StringNotEqualsIgnoreCase Condition Operator, key 's3:prefix' and Effect Allow")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-8051")
     @ CTFailOn(error_handler)
     def test_7058(self):
         """
@@ -10171,7 +10158,7 @@ _date
             "ENDED: Test Create Bucket Policy using StringLike Condition Operator, key 's3:x-amz-acl'")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-8052")
     @ CTFailOn(error_handler)
     def test_7059(self):
         """
@@ -10252,7 +10239,7 @@ _date
             "ENDED: Test Create Bucket Policy using StringNotLike Condition Operator, key 's3:x-amz-acl'")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-8037")
     @ CTFailOn(error_handler)
     def test_5134(self):
         """
@@ -10349,7 +10336,7 @@ _date
     # Bug reported EOS-7215: Test is failing, need to revisit after bug is
     # fixed.
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-10359")
     @ CTFailOn(error_handler)
     def test_7053(self):
         """
@@ -10419,7 +10406,7 @@ _date
             "ENDED: Verify Bucket Policy Condition Keys are case insensitive")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("") #TODO No generic ticket available for this test
     @ CTFailOn(error_handler)
     def test_6554(self):
         """
@@ -10547,7 +10534,7 @@ _date
             "Multiple Keys having Single Value for each Key")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-8038")
     @ CTFailOn(error_handler)
     def test_5136(self):
         """
@@ -10659,7 +10646,7 @@ _date
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("") # TODO - no generic ticket available for this test
     @ CTFailOn(error_handler)
     def test_6555(self):
         """
@@ -10812,7 +10799,7 @@ _date
             "Condition with Multiple Keys and Multiple Values")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-8040")
     @ CTFailOn(error_handler)
     def test_5138(self):
         """
@@ -10916,7 +10903,7 @@ _date
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-8039")
     @ CTFailOn(error_handler)
     def test_5121(self):
         """
@@ -11035,7 +11022,7 @@ _date
     #     """
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("") # TODO - No generic ticket available for this test
     @ CTFailOn(error_handler)
     def test_6557(self):
         """
@@ -11087,7 +11074,7 @@ _date
             "ENDED: Test Bucket Policy Multiple Conditions having one Invalid Condition")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-8036")
     @ CTFailOn(error_handler)
     def test_5118(self):
         """
@@ -11193,7 +11180,7 @@ _date
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7939")
     @ CTFailOn(error_handler)
     def test_5115(self):
         """
@@ -11277,7 +11264,7 @@ _date
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7938")
     @ CTFailOn(error_handler)
     def test_5114(self):
         """
@@ -11365,7 +11352,7 @@ _date
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7937")
     @ CTFailOn(error_handler)
     def test_5110(self):
         """
@@ -11449,7 +11436,7 @@ _date
     # Commented this test case as it is failing in current build and a bug was
     # already raised for this - EOS-7062
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7940")
     @ CTFailOn(error_handler)
     def test_5116(self):
         """
@@ -11536,7 +11523,7 @@ _date
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7941")
     @ CTFailOn(error_handler)
     def test_5117(self):
         """
@@ -11620,7 +11607,7 @@ _date
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7943")
     @ CTFailOn(error_handler)
     def test_5120(self):
         """
@@ -11721,7 +11708,7 @@ _date
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7945")
     @ CTFailOn(error_handler)
     def test_5122(self):
         """
@@ -11822,7 +11809,7 @@ _date
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7946")
     @ CTFailOn(error_handler)
     def test_5123(self):
         """
@@ -11904,7 +11891,7 @@ _date
     # already raised for this - EOS-7062
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7947")
     @ CTFailOn(error_handler)
     def test_5126(self):
         """
@@ -11980,7 +11967,7 @@ _date
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7936")
     @ CTFailOn(error_handler)
     def test_5124(self):
         """
@@ -12066,7 +12053,7 @@ _date
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7944")
     @ CTFailOn(error_handler)
     def test_5125(self):
         """
@@ -12151,7 +12138,7 @@ _date
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-7942")
     @ CTFailOn(error_handler)
     def test_5137(self):
         """
@@ -12255,7 +12242,7 @@ _date
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-9031")
     @ CTFailOn(error_handler)
     def test_6967(self):
         """
@@ -12315,7 +12302,7 @@ _date
     # Defect raised for this test cases - EOS-7062
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-9033")
     @ CTFailOn(error_handler)
     def test_6969(self):
         """
@@ -12382,7 +12369,7 @@ _date
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-9038")
     @ CTFailOn(error_handler)
     def test_6991(self):
         """
@@ -12451,7 +12438,7 @@ _date
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-9039")
     @ CTFailOn(error_handler)
     def test_6992(self):
         """
@@ -12519,7 +12506,7 @@ _date
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-9041")
     @ CTFailOn(error_handler)
     def test_6999(self):
         """
@@ -12597,7 +12584,7 @@ _date
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-9042")
     @ CTFailOn(error_handler)
     def test_7000(self):
         """
@@ -12674,7 +12661,7 @@ _date
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-9032")
     @ CTFailOn(error_handler)
     def test_6968(self):
         """
@@ -12743,7 +12730,7 @@ _date
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-9034")
     @ CTFailOn(error_handler)
     def test_6978(self):
         """
@@ -12816,7 +12803,7 @@ _date
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-9035")
     @ CTFailOn(error_handler)
     def test_6987(self):
         """
@@ -12877,7 +12864,7 @@ _date
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-9036")
     @ CTFailOn(error_handler)
     def test_6988(self):
         """
@@ -12951,7 +12938,7 @@ _date
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-9037")
     @ CTFailOn(error_handler)
     def test_6990(self):
         """
@@ -13018,7 +13005,7 @@ _date
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-9040")
     @ CTFailOn(error_handler)
     def test_6997(self):
         """
@@ -13100,7 +13087,7 @@ _date
         )
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-8721")
     @ CTFailOn(error_handler)
     def test_1295(self):
         """
@@ -13158,7 +13145,7 @@ _date
             "ENDED: Test Create Bucket Policy using StringNotEquals Condition Operator and Deny Action")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-8722")
     @ CTFailOn(error_handler)
     def test_1297(self):
         """
@@ -13206,7 +13193,7 @@ _date
             "ENDED: Test Create Bucket Policy using StringEquals Condition Operator and Deny Action")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-8720")
     @ CTFailOn(error_handler)
     def test_4598(self):
         """
@@ -13246,7 +13233,7 @@ _date
             "ENDED: Test principal arn combination with account-id and user as root.")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-8702")
     @ CTFailOn(error_handler)
     def test_7001(self):
         """
@@ -13289,7 +13276,7 @@ _date
             "ENDED: Test bucket policy authorization on object with API PutObject")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-8703")
     @ CTFailOn(error_handler)
     def test_7002(self):
         """
@@ -13340,7 +13327,7 @@ _date
             "ENDED: Test bucket policy authorization on object with API PutObjectAcl")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-8704")
     @ CTFailOn(error_handler)
     def test_7009(self):
         """
@@ -13387,7 +13374,7 @@ _date
             "ENDED: Test bucket policy authorization on object with API PutObjectTagging")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-8705")
     @ CTFailOn(error_handler)
     def test_7014(self):
         """
@@ -13437,7 +13424,7 @@ _date
             "ENDED: Test bucket policy authorization on object with API GetObjectTagging")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-8706")
     @ CTFailOn(error_handler)
     def test_7015(self):
         """
@@ -13499,7 +13486,7 @@ _date
             "ENDED: Test bucket policy authorization on object with API ListMultipartUploadParts")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-8707")
     @ CTFailOn(error_handler)
     def test_7016(self):
         """
@@ -13547,7 +13534,7 @@ _date
             "ENDED: Test bucket policy authorization on object with API AbortMultipartUpload")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-8708")
     @ CTFailOn(error_handler)
     def test_7849(self):
         """
@@ -13606,7 +13593,7 @@ _date
             "ENDED: Test bucket policy authorization on bucket with API HeadBucket")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-8709")
     @ CTFailOn(error_handler)
     def test_7850(self):
         """
@@ -13663,7 +13650,7 @@ _date
             "ENDED: Test bucket policy authorization on object with API HeadObject`")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-8710")
     @ CTFailOn(error_handler)
     def test_7851(self):
         """
@@ -13719,7 +13706,7 @@ _date
             "ENDED: Test bucket policy authorization on bucket with API DeleteBucketTagging")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-8711")
     @ CTFailOn(error_handler)
     def test_7852(self):
         """
@@ -13770,7 +13757,7 @@ _date
             "ENDED: Test bucket policy authorization on object with API DeleteObjectTagging")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-9661")
     @ CTFailOn(error_handler)
     def test_6966(self):
         """
@@ -13819,7 +13806,7 @@ _date
             "ENDED: Test bucket policy authorization on bucket with API DeleteBucket")
 
     @ pytest.mark.s3
-    @ pytest.mark.tags("TEST")
+    @ pytest.mark.tags("TEST-9662")
     @ CTFailOn(error_handler)
     def test_6923(self):
         """
