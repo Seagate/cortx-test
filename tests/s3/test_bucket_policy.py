@@ -49,7 +49,7 @@ BKT_POLICY_CONF = read_yaml("config/s3/test_bucket_policy.yaml")[1]
 CMN_CONF = read_yaml("config/common_config.yaml")[1]
 
 
-class TestBucketPolicy(Test):
+class TestBucketPolicy():
     """Bucket Policy Testsuite"""
 
     @CTFailOn(error_handler)
@@ -454,7 +454,7 @@ class TestBucketPolicy(Test):
             bucket_name: str,
             S3_OBJ: object,
             max_keys: int,
-            err_message=None: str) -> None:
+            err_message: str = None) -> None:
         """
         This function will list objects of a specified bucket with specified max keys using
         given s3 test object.
@@ -490,7 +490,7 @@ class TestBucketPolicy(Test):
             self,
             bucket_name: str,
             S3_OBJ: object,
-            err_message=None: str) -> None:
+            err_message : str=None) -> None:
         """
         This function will list objects of specified bucket using specified s3
         test class object
@@ -522,12 +522,12 @@ class TestBucketPolicy(Test):
             bucket_name: str,
             S3_OBJ: object,
             obj_name: str,
-            acl=None: str,
-            grant_full_control=None: str,
-            grant_read=None: str,
-            grant_read_acp=None: str,
-            grant_write_acp=None: str,
-            err_message=None: str) -> None:
+            acl : str =None,
+            grant_full_control : str =None,
+            grant_read : str =None,
+            grant_read_acp : str =None,
+            grant_write_acp : str =None,
+            err_message : str =None) -> None:
         """
         This function will put object to specified bucket using specified s3
         test class object with acl, if given.
@@ -596,7 +596,7 @@ class TestBucketPolicy(Test):
             bucket_name: str,
             S3_OBJ: object,
             obj_name_prefix: str,
-            err_message=None: str) -> None:
+            err_message : str =None) -> None:
         """
         This function will list objects with given prefix, of specified bucket
         It will also handle an exception occurred during list object operation.
@@ -3557,7 +3557,8 @@ _string
     def test_1166(self):
         """
         Test * Wildcard for all s3apis in action
-        field of statement of the json file with effect "Allow""""
+        field of statement of the json file with effect "Allow"
+        """
         LOGGER.info(
             "STARTED: Test * Wildcard for all s3apis in "
             "action field of statement of the json file with effect Allow")
@@ -3961,7 +3962,7 @@ _string
                 bucket_name, bkt_json_policy)
         except CTException as error:
             LOGGER.error(error.message)
-            assert test_371_cfg["error_message"], error.message, error.message)
+            assert test_371_cfg["error_message"] in error.message, error.message
         LOGGER.info(
             "Step 2: Put Bucket policy from second account failing with error: {}".format(
                 test_371_cfg["error_message"]))
@@ -4008,7 +4009,7 @@ _string
                 bucket_name, bkt_json_policy)
         except CTException as error:
             LOGGER.error(error.message)
-            assert test_372_cfg["error_message"], error.message, error.message)
+            assert test_372_cfg["error_message"] in error.message, error.message
         LOGGER.info(
             "Step 2: Put Bucket policy from second account failing with error: {}".format(
                 test_372_cfg["error_message"]))
@@ -4120,10 +4121,10 @@ _string
         s3_policy_obj=resp[3]
         account_id=resp[6]
         self.create_bucket_validate(bucket_name)
-        bkt_cnf_1188["bucket_policy"]["Statement"][0]["Principal"]["AWS"]=
+        bkt_cnf_1188["bucket_policy"]["Statement"][0]["Principal"]["AWS"]= \
             bkt_cnf_1188["bucket_policy"]["Statement"][0]["Principal"]["AWS"].format(
                 account_id)
-        bkt_cnf_1188["bucket_policy"]["Statement"][1]["Principal"]["AWS"]=
+        bkt_cnf_1188["bucket_policy"]["Statement"][1]["Principal"]["AWS"]= \
             bkt_cnf_1188["bucket_policy"]["Statement"][1]["Principal"]["AWS"].format(
                 account_id)
         self.put_get_bkt_policy(bucket_name, bkt_cnf_1188["bucket_policy"])
@@ -4309,7 +4310,8 @@ _string
     def test_1169(self):
         """
         Test * Wildcard for all s3apis in action field of
-        statement of the json file with combination effect "Allow" and "Deny""""
+        statement of the json file with combination effect "Allow" and "Deny"
+        """
         LOGGER.info(
             "STARTED: Test * Wildcard for all s3apis in action field of "
             "statement of the json file with combination effect Allow and Deny")
@@ -4354,7 +4356,8 @@ _string
     def test_1167(self):
         """
         Test * Wildcard for all s3apis in action
-        field of statement of the json file with effect "Deny""""
+        field of statement of the json file with effect "Deny"
+        """
         LOGGER.info(
             "STARTED: Test * Wildcard for all s3apis in action field "
             "of statement of the json file with effect Deny")
@@ -4657,7 +4660,7 @@ _string
         policy_sid=f"Stmt{uuid.uuid4()}"
         test_4156_cfg["bucket_policy"]["Id"]=test_4156_cfg["bucket_policy"]["Id"].format(
             policy_id)
-        test_4156_cfg["bucket_policy"]["Statement"][0]["Sid"]=
+        test_4156_cfg["bucket_policy"]["Statement"][0]["Sid"]= \
             test_4156_cfg["bucket_policy"]["Statement"][0]["Sid"].format(
                 policy_sid)
         test_4156_cfg["bucket_policy"]["Statement"][0]["Principal"]["AWS"]=test_4156_cfg[
@@ -4712,7 +4715,7 @@ _string
         policy_sid=f"Stmt{uuid.uuid4()}"
         test_4161_cfg["bucket_policy"]["Id"]=test_4161_cfg["bucket_policy"]["Id"].format(
             policy_id)
-        test_4161_cfg["bucket_policy"]["Statement"][0]["Sid"]=
+        test_4161_cfg["bucket_policy"]["Statement"][0]["Sid"]= \
             test_4161_cfg["bucket_policy"]["Statement"][0]["Sid"].format(
                 policy_sid)
         test_4161_cfg["bucket_policy"]["Statement"][0]["Principal"]["AWS"]=test_4161_cfg[
@@ -4766,7 +4769,7 @@ _string
         policy_sid=f"Stmt{uuid.uuid4()}"
         test_4173_cfg["bucket_policy"]["Id"]=test_4173_cfg["bucket_policy"]["Id"].format(
             policy_id)
-        test_4173_cfg["bucket_policy"]["Statement"][0]["Sid"]=
+        test_4173_cfg["bucket_policy"]["Statement"][0]["Sid"]= \
             test_4173_cfg["bucket_policy"]["Statement"][0]["Sid"].format(
                 policy_sid)
         test_4173_cfg["bucket_policy"]["Statement"][0]["Principal"]["AWS"]=test_4173_cfg[
@@ -4821,7 +4824,7 @@ _string
         policy_sid=f"Stmt{uuid.uuid4()}"
         test_4170_cfg["bucket_policy"]["Id"]=test_4170_cfg["bucket_policy"]["Id"].format(
             policy_id)
-        test_4170_cfg["bucket_policy"]["Statement"][0]["Sid"]=
+        test_4170_cfg["bucket_policy"]["Statement"][0]["Sid"]= \
             test_4170_cfg["bucket_policy"]["Statement"][0]["Sid"].format(
                 policy_sid)
         test_4170_cfg["bucket_policy"]["Statement"][0]["Principal"]["AWS"]=test_4170_cfg[
@@ -4888,7 +4891,7 @@ _string
         test_4183_cfg["bucket_policy"]["Statement"][0]["Sid"]=test_4183_cfg["bucket_policy"]["Statement"][0][
             "Sid"].format(
             policy_sid)
-        test_4183_cfg["bucket_policy"]["Statement"][0]["Condition"]["StringEquals"]["s3:x-amz-grant-write"]=
+        test_4183_cfg["bucket_policy"]["Statement"][0]["Condition"]["StringEquals"]["s3:x-amz-grant-write"]= \
             test_4183_cfg[
             "bucket_policy"]["Statement"][0]["Condition"]["StringEquals"]["s3:x-amz-grant-write"].format(account_id)
         LOGGER.info(test_4183_cfg["bucket_policy"])
@@ -5972,7 +5975,7 @@ _date
         assert resp[0], resp[1]
         bkt_json_policy=eval(json.dumps(test_cfg["bucket_policy"]))
         bkt_json_policy["Statement"][0]["Principal"]["AWS"]=account_id
-        bkt_json_policy["Statement"][0]["Resource"]=
+        bkt_json_policy["Statement"][0]["Resource"]= \
             bkt_json_policy["Statement"][0]["Resource"].format(bucket_name)
         self.put_get_bkt_policy(bucket_name, bkt_json_policy)
         LOGGER.info(
@@ -6030,9 +6033,9 @@ _date
         assert resp[0], resp[1]
         bkt_json_policy=eval(json.dumps(test_cfg["bucket_policy"]))
         bkt_json_policy["Statement"][0]["Principal"]["AWS"]=account_id_2
-        bkt_json_policy["Statement"][0]["Resource"]=
+        bkt_json_policy["Statement"][0]["Resource"]= \
             bkt_json_policy["Statement"][0]["Resource"].format(bucket_name)
-        bkt_json_policy["Statement"][0]["Condition"]["StringEquals"]["s3:x-amz-grant-full-control"]=
+        bkt_json_policy["Statement"][0]["Condition"]["StringEquals"]["s3:x-amz-grant-full-control"]= \
             bkt_json_policy["Statement"][0]["Condition"]["StringEquals"]["s3:x-amz-grant-full-control"].format(
                 canonical_id_2)
         self.put_get_bkt_policy(bucket_name, bkt_json_policy)
@@ -6091,9 +6094,9 @@ _date
         assert resp[0], resp[1]
         bkt_json_policy=eval(json.dumps(test_cfg["bucket_policy"]))
         bkt_json_policy["Statement"][0]["Principal"]["AWS"]=account_id_2
-        bkt_json_policy["Statement"][0]["Resource"]=
+        bkt_json_policy["Statement"][0]["Resource"]= \
             bkt_json_policy["Statement"][0]["Resource"].format(bucket_name)
-        bkt_json_policy["Statement"][0]["Condition"]["StringEquals"]["s3:x-amz-grant-write-acp"]=
+        bkt_json_policy["Statement"][0]["Condition"]["StringEquals"]["s3:x-amz-grant-write-acp"]= \
             bkt_json_policy["Statement"][0]["Condition"]["StringEquals"]["s3:x-amz-grant-write-acp"].format(
                 canonical_id_2)
         self.put_get_bkt_policy(bucket_name, bkt_json_policy)
@@ -6661,7 +6664,7 @@ _date
         bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
         bucket_policy["Statement"][0]["Sid"]=bucket_policy["Statement"][0][
             "Sid"].format(policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"]=
+        bucket_policy["Statement"][0]["Principal"]["AWS"]= \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(
                 account1_id)
         LOGGER.info(
@@ -6718,10 +6721,10 @@ _date
         policy_id=f"Policy{uuid.uuid4()}"
         policy_sid=f"Stmt{uuid.uuid4()}"
         bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
-        bucket_policy["Statement"][0]["Sid"]=
+        bucket_policy["Statement"][0]["Sid"]= \
             bucket_policy["Statement"][0][
                 "Sid"].format(policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"]=
+        bucket_policy["Statement"][0]["Principal"]["AWS"]= \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(
                 account1_id)
         LOGGER.info(
@@ -6784,7 +6787,7 @@ _date
         bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
         bucket_policy["Statement"][0]["Sid"]=bucket_policy["Statement"][0][
             "Sid"].format(policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"]=
+        bucket_policy["Statement"][0]["Principal"]["AWS"]= \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(
                 account1_id)
         LOGGER.info(
@@ -6846,7 +6849,7 @@ _date
         bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
         bucket_policy["Statement"][0]["Sid"]=bucket_policy["Statement"][0]["Sid"].format(
             policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"]=
+        bucket_policy["Statement"][0]["Principal"]["AWS"]= \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(
                 account1_id)
         LOGGER.info(
@@ -6907,7 +6910,7 @@ _date
         bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
         bucket_policy["Statement"][0]["Sid"]=bucket_policy["Statement"][0][
             "Sid"].format(policy_sid)
-        bucket_policy["Statement"][0]["Condition"]["StringEqualsIfExists"]["s3:x-amz-grant-write"]=
+        bucket_policy["Statement"][0]["Condition"]["StringEqualsIfExists"]["s3:x-amz-grant-write"]= \
             bucket_policy["Statement"][0]["Condition"]["StringEqualsIfExists"][
                 "s3:x-amz-grant-write"].format(account_id)
         LOGGER.info(
@@ -6959,7 +6962,7 @@ _date
         bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
         bucket_policy["Statement"][0]["Sid"]=bucket_policy["Statement"][0]["Sid"].format(
             policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"]=
+        bucket_policy["Statement"][0]["Principal"]["AWS"]= \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(
                 account1_id)
         LOGGER.info(
@@ -7065,14 +7068,14 @@ _date
         bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
         bucket_policy["Statement"][0]["Sid"]=bucket_policy["Statement"][0]["Sid"].format(
             policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"]=
+        bucket_policy["Statement"][0]["Principal"]["AWS"]= \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(
                 account_id2)
 
-        bucket_policy["Statement"][0]["Condition"]["StringEquals"]["s3:x-amz-grant-full-control"]=
+        bucket_policy["Statement"][0]["Condition"]["StringEquals"]["s3:x-amz-grant-full-control"]= \
             bucket_policy["Statement"][0]["Condition"]["StringEquals"]["s3:x-amz-grant-full-control"].format(
                 canonical_id_2)
-        bucket_policy["Statement"][0]["Condition"]["StringEquals"]["s3:x-amz-grant-read"]=
+        bucket_policy["Statement"][0]["Condition"]["StringEquals"]["s3:x-amz-grant-read"]= \
             bucket_policy["Statement"][0]["Condition"]["StringEquals"]["s3:x-amz-grant-read"].format(
                 canonical_id_3)
 
@@ -7157,7 +7160,7 @@ _date
         bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
         bucket_policy["Statement"][0]["Sid"]=bucket_policy["Statement"][0][
             "Sid"].format(policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"]=
+        bucket_policy["Statement"][0]["Principal"]["AWS"]= \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(
                 account_id)
         LOGGER.info(
@@ -7217,7 +7220,7 @@ _date
         bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
         bucket_policy["Statement"][0]["Sid"]=bucket_policy["Statement"][0][
             "Sid"].format(policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"]=
+        bucket_policy["Statement"][0]["Principal"]["AWS"]= \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(
                 account_id)
         LOGGER.info(
@@ -7281,7 +7284,7 @@ _date
         bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
         bucket_policy["Statement"][0]["Sid"]=bucket_policy["Statement"][0][
             "Sid"].format(policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"]=
+        bucket_policy["Statement"][0]["Principal"]["AWS"]= \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(
                 account_id)
         LOGGER.info(
@@ -7344,7 +7347,7 @@ _date
         bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
         bucket_policy["Statement"][0]["Sid"]=bucket_policy["Statement"][0][
             "Sid"].format(policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"]=
+        bucket_policy["Statement"][0]["Principal"]["AWS"]= \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(
                 account_id)
         LOGGER.info(
@@ -7405,7 +7408,7 @@ _date
         bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
         bucket_policy["Statement"][0]["Sid"]=bucket_policy["Statement"][0][
             "Sid"].format(policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"]=
+        bucket_policy["Statement"][0]["Principal"]["AWS"]= \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(
                 account_id)
         LOGGER.info(
@@ -7458,7 +7461,7 @@ _date
         bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
         bucket_policy["Statement"][0]["Sid"]=bucket_policy["Statement"][0][
             "Sid"].format(policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"]=
+        bucket_policy["Statement"][0]["Principal"]["AWS"]= \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(
                 account_id)
         LOGGER.info(
@@ -7512,7 +7515,7 @@ _date
         bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
         bucket_policy["Statement"][0]["Sid"]=bucket_policy["Statement"][0][
             "Sid"].format(policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"]=
+        bucket_policy["Statement"][0]["Principal"]["AWS"]= \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(
                 account_id)
         LOGGER.info(
@@ -7575,7 +7578,7 @@ _date
         bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
         bucket_policy["Statement"][0]["Sid"]=bucket_policy["Statement"][0][
             "Sid"].format(policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"]=
+        bucket_policy["Statement"][0]["Principal"]["AWS"]= \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(
                 account_id)
         LOGGER.info(
@@ -7638,7 +7641,7 @@ _date
         bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
         bucket_policy["Statement"][0]["Sid"]=bucket_policy["Statement"][0][
             "Sid"].format(policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"]=
+        bucket_policy["Statement"][0]["Principal"]["AWS"]= \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(
                 account_id)
         LOGGER.info(
@@ -7700,7 +7703,7 @@ _date
         bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
         bucket_policy["Statement"][0]["Sid"]=bucket_policy["Statement"][0][
             "Sid"].format(policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"]=
+        bucket_policy["Statement"][0]["Principal"]["AWS"]= \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(
                 account_id)
         LOGGER.info(
@@ -7763,7 +7766,7 @@ _date
         bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
         bucket_policy["Statement"][0]["Sid"]=bucket_policy["Statement"][0][
             "Sid"].format(policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"]=
+        bucket_policy["Statement"][0]["Principal"]["AWS"]= \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(
                 account_id)
         LOGGER.info(
@@ -7826,7 +7829,7 @@ _date
         bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
         bucket_policy["Statement"][0]["Sid"]=bucket_policy["Statement"][0][
             "Sid"].format(policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"]=
+        bucket_policy["Statement"][0]["Principal"]["AWS"]= \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(
                 account_id)
         LOGGER.info(
@@ -7888,7 +7891,7 @@ _date
         bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
         bucket_policy["Statement"][0]["Sid"]=bucket_policy["Statement"][0][
             "Sid"].format(policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"]=
+        bucket_policy["Statement"][0]["Principal"]["AWS"]= \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(
                 account_id)
         LOGGER.info(
@@ -7968,7 +7971,7 @@ _date
             bkt_policy_cfg["obj_name_prefix"],
             test_5211_cfg["object_name_2"])
         LOGGER.info("Step 1: Creating bucket policy with user id")
-        bucket_policy_1["Statement"][0]["Principal"]["AWS"]=
+        bucket_policy_1["Statement"][0]["Principal"]["AWS"]= \
             bucket_policy_1["Statement"][0]["Principal"][
                 "AWS"].format(user_id)
         bucket_policy_1["Statement"][0]["Resource"]=bucket_policy_1["Statement"][0]["Resource"].format(
@@ -9963,7 +9966,7 @@ _date
             bucket_name)
         bucket_policy["Statement"][0]["Principal"]["AWS"]=bucket_policy["Statement"][0]["Principal"]["AWS"].format(
             account_id_1)
-        bucket_policy["Statement"][0]["Condition"]["StringEqualsIgnoreCase"]["s3:prefix"]=
+        bucket_policy["Statement"][0]["Condition"]["StringEqualsIgnoreCase"]["s3:prefix"]= \
             bucket_policy["Statement"][0]["Condition"]["StringEqualsIgnoreCase"]["s3:prefix"].format(
                 BKT_POLICY_CONF["bucket_policy"]["obj_name_prefix"])
         LOGGER.info(
@@ -10041,7 +10044,7 @@ _date
             bucket_name)
         bucket_policy["Statement"][0]["Principal"]["AWS"]=bucket_policy["Statement"][0]["Principal"]["AWS"].format(
             account_id_1)
-        bucket_policy["Statement"][0]["Condition"]["StringNotEqualsIgnoreCase"]["s3:prefix"]=
+        bucket_policy["Statement"][0]["Condition"]["StringNotEqualsIgnoreCase"]["s3:prefix"]= \
             bucket_policy["Statement"][0]["Condition"]["StringNotEqualsIgnoreCase"]["s3:prefix"].format(
                 BKT_POLICY_CONF["bucket_policy"]["obj_name_prefix"])
         LOGGER.info(
