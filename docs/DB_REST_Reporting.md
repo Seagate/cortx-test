@@ -130,10 +130,10 @@ curl -L -X POST 'http://127.0.0.1:5000/reportsdb/create' \
     "clientHostname": "iu10-r18.pun.seagate.com",
     "executionType": "Automated",
     "healthCheckResult": "Fail",
-    "isRegression": false,
+    "isRegression": False,
     "issueIDs": ["EOS-000"],
     "issueType": "Dev",
-    "logCollectionDone": true,
+    "logCollectionDone": True,
     "logPath": "DemoPath",
     "noOfNodes": 2,
     "nodesHostname": [
@@ -179,10 +179,10 @@ payload = {
     "clientHostname": "iu10-r18.pun.seagate.com",
     "executionType": "Automated",
     "healthCheckResult": "Fail",
-    "isRegression": false,
+    "isRegression": False,
     "issueIDs": ["EOS-000"],
     "issueType": "Dev",
-    "logCollectionDone": true,
+    "logCollectionDone": True,
     "logPath": "DemoPath",
     "noOfNodes": 2,
     "nodesHostname": [
@@ -249,7 +249,7 @@ curl -L -X GET 'http://127.0.0.1:5000/reportsdb/search' \
 --data-raw '{
     "query": {"testExecutionLabel": { "$in": ["S3", "Motr"]},
               "healthCheckResult": "Fail" },
-    "projection": {"OSVersion": true, "buildNo": true},
+    "projection": {"OSVersion": True, "buildNo": True},
     "db_username": "db_username",
     "db_password": "db_password"
 }'
@@ -264,7 +264,7 @@ host = "http://127.0.0.1:5000/"
 payload = {
     "query": {"testExecutionLabel": { "$in": ["S3", "Motr"]},
               "healthCheckResult": "Fail" },
-    "projection": {"OSVersion": true, "buildNo": true},
+    "projection": {"OSVersion": True, "buildNo": True},
     "db_username": "db_username",
     "db_password": "db_password"
 }
