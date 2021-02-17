@@ -683,8 +683,8 @@ class S3Helper:
         """
         try:
             if not os.path.isfile(path):
-                raise "{} file is not present. Please configure aws in the system".format(
-                    path)
+                raise FileNotFoundError(
+                    "{} file is not present. Please configure aws in the system".format(path))
             access_key = config_utils.get_config(
                 path, section, "aws_access_key_id")
             secret_key = config_utils.get_config(
@@ -696,7 +696,7 @@ class S3Helper:
                 secret_key)
 
             return access_key, secret_key
-        except (KeyError, NoSectionError) as error:
+        except (FileNotFoundError, KeyError, NoSectionError) as error:
             LOGGER.error(
                 "An exception occurred in %s: %s",
                 S3Helper.get_local_keys.__name__,
