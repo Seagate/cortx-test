@@ -20,8 +20,11 @@
 
 import logging
 import os
+import sys
+import platform
 import random
 import shutil
+import socket
 from typing import Tuple
 from subprocess import Popen, PIPE
 from hashlib import md5
@@ -380,6 +383,21 @@ def get_file_checksum(filename: str):
         LOGGER.error("*ERROR* An exception occurred in %s: %s",
                      get_file_checksum.__name__, error)
         return False, error
+
+
+def get_os_version():
+    """Platform independent function to get OS version."""
+    if sys.platform == 'win32':
+        return platform.system() + platform.release()
+    else:
+        plat, ver, core = platform.dist()
+        ver = ver[:3]
+        return plat + ver
+
+
+def get_host_name():
+    """Handle for all OS."""
+    return socket.gethostname()
 
 
 def create_file(fpath: str, count: int, dev="/dev/zero", b_size="1M"):

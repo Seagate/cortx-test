@@ -26,25 +26,28 @@ import logging
 import csv
 from _pytest.nodes import Item
 from _pytest.runner import CallInfo
+from _pytest.main import Session
 from testfixtures import LogCapture
 from strip_ansi import strip_ansi
 from typing import List
 from filelock import FileLock
 from commons.utils import config_utils
+from commons.utils import jira_utils
+from commons.utils import system_utils
 from commons import Globals
 from commons import cortxlogging
-from commons.utils import jira_utils
+from commons import constants
+from commons import report_client
 from core.runner import LRUCache
 from core.runner import get_jira_credential
-from commons import constants
 from config import params
-
+from config import CMN_CFG
 
 FAILURES_FILE = "failures.txt"
 LOG_DIR = 'log'
 CACHE = LRUCache(1024 * 10)
 CACHE_JSON = 'nodes-cache.yaml'
-
+REPORT_CLIENT = None
 logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 LOGGER = logging.getLogger(__name__)
 
@@ -161,10 +164,22 @@ def pytest_addoption(parser) :
         "--te_tkt", action="store", default="", help="TE ticket's ID"
     )
     parser.addoption(
-        "--logpath", action="store", default=None, help="Log root folder path"
+        "--log_path", action="store", default=None, help="Log root folder path"
     )
     parser.addoption(
         "--local", action="store", default=False, help="Decide whether run is dev local"
+    )
+    parser.addoption(
+        "--build", action="store", default=None, help="Build number"
+    )
+    parser.addoption(
+        "--build_type", action="store", default='Release', help="Build Type(Release)"
+    )
+    parser.addoption(
+        "--tp_ticket", action="store", default='', help="Test Plan ticket"
+    )
+    parser.addoption(
+        "--force_serial_run", action="store", default=False, help="Force serial execution"
     )
 
 
@@ -181,6 +196,47 @@ def read_test_list_csv() -> List:
         return tests
     except Exception as e:
         print(e)
+
+
+def create_report_payload(item, call, final_result, d_u, d_pass):
+    """Create Report Payload for POST request to put data in Report DB."""
+    os_ver = system_utils.get_os_version()
+    data_kwargs = dict(os=os_ver,
+                       build=item.config.option.build,
+                       build_type=item.config.option.build_type,
+                       client_hostname=system_utils.get_host_name(),
+                       execution_type=str,
+                       health_chk_res=str,
+                       are_logs_collected=bool,
+                       log_path=str,
+                       nodes=item.config.option.nodes,
+                       nodes_hostnames=item.config.option.targets,  #list of targets hosts
+                       test_exec_id=item.config.option.te_tkt,
+                       test_exec_time=call.duration,
+                       test_name=test_name,
+                       test_plan_id=item.config.option.tp_ticket,
+                       test_result=final_result,
+                       start_time=call.start,
+                       tags=tags,
+                       test_team=test_team,
+                       test_type=test_type,
+                       db_username=d_u,
+                       db_password=d_pass
+                       )
+    return data_kwargs
+
+
+def pytest_sessionstart(session: Session) -> None:
+    """Called after the ``Session`` object has been created and before performing collection
+    and entering the run test loop.
+
+    :param pytest.Session session: The pytest session object.
+    """
+    # db_user, db_passwd = CMN_CFG.db_user, CMN_CFG.db_passwd
+    # init_instance db_user=None, db_passwd=None
+    global REPORT_CLIENT
+    report_client.ReportClient.init_instance()
+    REPORT_CLIENT = report_client.ReportClient.get_instance()
 
 
 @pytest.hookimpl(trylast=True)
@@ -217,24 +273,48 @@ def pytest_collection(session):
                     parallel_found = 'true'
                     if config.option.is_parallel == 'false':
                         break
+                    #elif config.option.is_parallel == 'true' and config.option.force_serial_run:
+                    #    break
                 elif mark.name == 'tags':
                     test_found = mark.args[0]
             if parallel_found == config.option.is_parallel and test_found != '':
                 if test_found in required_tests:
                     selected_items.append(item)
             CACHE.store(item.nodeid, test_found)
+        import pdb
+        pdb.set_trace()
         items[:] = selected_items
     else:
+        meta = list()
         for item in items:
             test_id = ''
+            _marks = list()
             for mark in item.iter_markers():
                 if mark.name == 'tags':
                     test_id = mark.args[0]
+                else:
+                    _marks.append(mark.name)
             CACHE.store(item.nodeid, test_id)
-    cache_path = os.path.join(os.getcwd(), LOG_DIR, CACHE_JSON)
+            meta.append(dict(nodeid=item.nodeid, test_id=test_id,
+                             marks=_marks))
+    cache_home = os.path.join(os.getcwd(), LOG_DIR)
+    cache_path = os.path.join(cache_home, CACHE_JSON)
+    if not os.path.exists(cache_home):
+        try:
+            system_utils.make_dir(cache_home)
+        except OSError as error:
+            LOGGER.error(str(error))
+
+    latest = os.path.join(cache_home,'latest')
+    if not os.path.exists(latest):
+        os.makedirs(latest)
     _path = config_utils.create_content_json(cache_path, _get_items_from_cache())
     if not os.path.exists(_path):
         LOGGER.info("Items Cache file %s not created" % (_path,))
+    if session.config.option.collectonly:
+        te_meta = config_utils.create_content_json(os.path.join(cache_home, 'te_meta.json'), meta)
+        LOGGER.debug("Items meta dict %s created at %s", meta, te_meta)
+
     return items
 
 
@@ -277,38 +357,28 @@ def pytest_runtest_makereport(item, call):
             #ReportClient.init_instance()
             #rsrv = ReportClient.get_instance()
             #rsrv.create_db_entry(**kwargs)
+            payload = create_report_payload(item, call)
+            REPORT_CLIENT.create_db_entry(**payload)
 
     if report.when == 'teardown':
         if item.rep_setup.failed or item.rep_teardown.failed:
             current_file = fail_file
             current_file = os.path.join(os.getcwd(), LOG_DIR, 'latest', current_file)
             mode = "a" if os.path.exists(current_file) else "w"
-            with open(current_file, mode) as f:
-                if "tmpdir" in item.fixturenames:
-                    extra = " ({})".format(item.funcargs["tmpdir"])
-                else:
-                    extra = ""
-                f.write(report.nodeid + extra + "\n")
         elif item.rep_setup.passed and (item.rep_call.failed or item.rep_teardown.failed):
             current_file = fail_file
             current_file = os.path.join(os.getcwd(), LOG_DIR, 'latest', current_file)
             mode = "a" if os.path.exists(current_file) else "w"
-            with open(current_file, mode) as f:
-                if "tmpdir" in item.fixturenames:
-                    extra = " ({})".format(item.funcargs["tmpdir"])
-                else:
-                    extra = ""
-                f.write(report.nodeid + extra + "\n")
         elif item.rep_setup.passed and item.rep_call.passed and item.rep_teardown.passed:
             current_file = pass_file
             current_file = os.path.join(os.getcwd(), LOG_DIR, 'latest', current_file)
             mode = "a" if os.path.exists(current_file) else "w"
-            with open(current_file, mode) as f:
-                if "tmpdir" in item.fixturenames:
-                    extra = " ({})".format(item.funcargs["tmpdir"])
-                else:
-                    extra = ""
-                f.write(report.nodeid + extra + "\n")
+        with open(current_file, mode) as f:
+            if "tmpdir" in item.fixturenames:
+                extra = " ({})".format(item.funcargs["tmpdir"])
+            else:
+                extra = ""
+            f.write(report.nodeid + extra + "\n")
 
 
 def pytest_runtest_logreport(report: "TestReport") -> None:
