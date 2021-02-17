@@ -129,7 +129,7 @@ def search_db_request(payload: dict):
     sys.exit(1)
 
 
-def get_feature_from_test_plan(test_plan: str, test: str, username: str, password: str) -> str:
+def get_features_from_test_plan(test_plan: str, username: str, password: str) -> dict:
     """
     Description: Get feature from test plan board
 
@@ -139,15 +139,23 @@ def get_feature_from_test_plan(test_plan: str, test: str, username: str, passwor
     jira_url = 'https://jts.seagate.com/'
     options = {'server': jira_url}
     jira = JIRA(options, basic_auth=(username, password))
+    features = {}
     for feature in jira_api.FEATURES:
         tests = jira.search_issues(
             f'issue in testPlanFolderTests({test_plan},\'{feature}\',\'true\')', maxResults=500)
-        for each_test in tests:
-            if each_test.key == test:
-                return feature
+        features[feature] = [test.key for test in tests]
+    return features
+
+
+def get_feature(features: dict, test: str) -> str:
+    """Return feature from features dictionary"""
+    for feature, tests in features.items():
+        if test in tests:
+            return feature
     return "Orphan"
 
 
+# pylint: disable-msg=too-many-locals
 def main():
     """Update test executions from JIRA to MongoDB."""
 
@@ -155,6 +163,7 @@ def main():
     build = jira_api.get_build_from_test_plan(tp_key, username, password)
     test_executions = jira_api.get_test_executions_from_test_plan(tp_key, username, password)
     test_plan_issue = jira_api.get_issue_details(tp_key, username, password)
+    features = get_features_from_test_plan(tp_key, username, password)
     # for each TE:
     for test_execution in test_executions:
         test_execution_issue = jira_api.get_issue_details(test_execution["key"], username, password)
@@ -199,7 +208,7 @@ def main():
                     "testExecutionLabel": test_execution_issue["fields"]["labels"][0],
                     "executionType": test_issue["fields"]["customfield_20981"],
                     "testPlanLabel": test_plan_issue["fields"]["labels"][0],
-                    "feature": get_feature_from_test_plan(tp_key, test, username, password),
+                    "feature": get_feature(features, test["key"]),
                     "latest": True
                 }
                 create_db_request(payload)
