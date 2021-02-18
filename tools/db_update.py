@@ -256,7 +256,7 @@ def main():
 
             if "fail" in test["status"].lower():
                 # Get BUG ID from JIRA
-                if not test["defects"]:
+                if "defects" not in test:
                     print("WARNING: Failure is not mapped to any issue in JIRA "
                           "TEST - {0}, Test Execution - {1}, "
                           "Test Plan = {2}".format(test["key"], test_execution["key"], tp_key))
