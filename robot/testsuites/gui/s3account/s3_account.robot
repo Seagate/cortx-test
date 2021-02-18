@@ -338,3 +338,13 @@ test_1529
     [Documentation]  This test case verify that update s3 account has only password options
     [Tags]  Priority_High  test_1529  S3_test
     verify update s3 account has only password options
+
+test_V1
+    [Documentation]  Test a reset password functionality on clicking "edit" button on S3 account page
+    [Tags]  Priority_High  S3_test
+    Validate CSM Login Success  ${username}
+    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    sleep  2s
+    Reset Password S3 Account  Vrish
+    sleep  2s    
+    Close Browser

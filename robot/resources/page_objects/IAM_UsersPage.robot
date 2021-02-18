@@ -126,6 +126,22 @@ Delete IAMuser
     Sleep  5s
     wait until element is visible  ${CONFIRM_DELETE_BOX_BTN_ID}  timeout=60
     Click Button  ${CONFIRM_DELETE_BOX_BTN_ID}
+    
+Reset Password IAMuser
+    [Documentation]  Functionality to Reset IAMuser Password
+    [Arguments]  ${user_name}
+    Log To Console And Report  Resetting password for IAMuser ${user_name}
+    Action On The Table Element  ${IAM_USER_RESET_PASSWORD_XPATH}  ${user_name}
+    Sleep  5s
+    wait until element is visible  ${IAM_USER_RESET_NEW_PASSWORD_ID}  timeout=60
+    ${new_password} =  Generate New Password
+    input text  ${IAM_USER_RESET_NEW_PASSWORD_ID}  ${new_password}
+    input text  ${IAM_USER_RESET_CONFIRM_PASSWORD_ID}  ${new_password}
+    Click Button  ${IAM_USER_RESET_PAWWSORD_BUTTON_ID}
+    Sleep  5s
+    wait until element is visible  ${IAM_USER_SUCCESS_MESSAGE}  timeout=60
+    Sleep  2s
+    Click Button  ${IAM_USER_SUCCESS_MESSAGE_BUTTON_ID}
 
 Is IAMuser Present
     [Documentation]  Check the IAMuser present or not

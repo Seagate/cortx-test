@@ -154,3 +154,11 @@ TEST-961
     Verify ARN Username UserID  ${username}
     Delete IAMuser  ${username}
     Sleep  5s  # Need to reload the uses
+
+TEST-v1
+    [Documentation]  Test a reset password functionality on clicking "edit" button on IAM user page
+    ...  Reference : https://jts.seagate.com/browse/TEST-v1
+    [Tags]  Priority_High
+    sleep  5s
+    Reset Password IAMuser  test-user
+    sleep  5s
