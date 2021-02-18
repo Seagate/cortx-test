@@ -92,7 +92,7 @@ def validate_mandatory_db_fields(json_data: dict) -> (bool, tuple):
         if type(json_data[key]) != str:
             return False, (HTTPStatus.BAD_REQUEST, f"{key} should be string")
     for key in db_keys_bool:
-        if isinstance(json_data[key], bool):
+        if not isinstance(json_data[key], bool):
             return False, (HTTPStatus.BAD_REQUEST, f"{key} should be boolean")
     for key in db_keys_array:
         if type(json_data[key]) != list:
