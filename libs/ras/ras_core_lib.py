@@ -278,7 +278,7 @@ class RASCoreLib:
         :rtype: bool
         """
         local_path = cmn_cons.ENCRYPTOR_FILE_PATH
-        path = "/root/encryptor_updated.py"
+        path = "/root/encryptor.py"
         res = self.node_utils.path_exists(
             path=cmn_cons.STORAGE_ENCLOSURE_PATH)
         if res:
@@ -445,9 +445,7 @@ class RASCoreLib:
         """
         sel_info_cmd = common_commands.SEL_INFO_CMD
         res = self.node_utils.execute_cmd(sel_info_cmd)
-        if not res[0]:
-            return 0
-        alert_cache_data = res[1]
+        alert_cache_data = res.decode("utf-8").split('\n')
         use_percent_lst = [k for k in alert_cache_data if "Percent Used" in k]
         percent_use = use_percent_lst[0].split(":")[-1].strip().rstrip("%")
 
@@ -475,6 +473,7 @@ class RASCoreLib:
         """
         ipmi_tool_lst_cmd = common_commands.IPMI_SDR_LIST_CMD
         componets_lst = self.node_utils.execute_cmd(ipmi_tool_lst_cmd)
+        componets_lst = componets_lst.decode("utf-8").split('\n')
         fan_list = [i for i in componets_lst if "FAN" in i]
         return fan_list[0].split("|")[0].strip()
 
@@ -493,7 +492,6 @@ class RASCoreLib:
         elif int(time_lst[0][0]) < 3:
             return True, time_str
         else:
-
             return False, time_str
 
     def restart_service(self, service_name: str) -> Tuple[bool, str]:
@@ -504,16 +502,12 @@ class RASCoreLib:
         :return: bool
         """
         LOGGER.info("Service to be restarted is: %s", service_name)
-        self.health_obj.restart_pcs_resource(service_name)
+        resp = self.health_obj.restart_pcs_resource(service_name)
         time.sleep(60)
-        status = S3Helper.get_s3server_service_status(service=service_name,
-                                                      host=self.host,
-                                                      user=self.username,
-                                                      pwd=self.pwd)
-        return status
+        return resp
 
-    def enable_disable_service(self, operation: str, service: str) -> \
-            Tuple[bool, str]:
+    def enable_disable_service(self, operation: str = None,
+                               service: str = None) -> Tuple[bool, str]:
         """
         Function start and stop s3services using the pcs resource command.
 
@@ -525,10 +519,7 @@ class RASCoreLib:
             .format(operation, service)
         self.node_utils.execute_cmd(cmd=command, read_lines=True)
         time.sleep(30)
-        resp = S3Helper.get_s3server_service_status(service=service,
-                                                    host=self.host,
-                                                    user=self.username,
-                                                    pwd=self.pwd)
+        resp = self.health_obj.pcs_service_status(service)
         return resp
 
     def alert_validation(self, string_list: list, restart: bool = True) -> \

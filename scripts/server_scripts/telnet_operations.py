@@ -200,7 +200,7 @@ class TelnetOperations:
                                   enclosure_ip, cmd)
 
             resp = subprocess.call(command, stdout=open(telnet_filepath, 'w'),
-                                   shell=False)
+                                   shell=True)
             return True, telnet_filepath
         except Exception as err:
             LOGGER.info("%s occurred", err.__class__)

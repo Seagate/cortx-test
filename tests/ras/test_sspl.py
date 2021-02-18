@@ -43,7 +43,7 @@ class TestSSPL:
         cls.host = CMN_CFG["host"]
         cls.uname = CMN_CFG["username"]
         cls.passwd = CMN_CFG["password"]
-        cls.changed_level = cls.selinux_enabled = False
+        cls.sspl_stop = cls.changed_level = cls.selinux_enabled = False
         cls.default_cpu_usage = cls.default_mem_usage = True
 
         cls.ras_test_obj = RASTestLib(host=cls.host, username=cls.uname,
@@ -65,6 +65,7 @@ class TestSSPL:
 
         cls.csm_alert_obj = SystemAlerts(host=cls.host, username=cls.uname,
                                          password=cls.passwd)
+        # cls.csm_alert_obj = SystemAlerts()
         # Enable this flag for starting RMQ channel
         cls.start_rmq = CM_CFG["start_rmq"]
 
@@ -142,6 +143,12 @@ class TestSSPL:
         self.ras_test_obj.retain_config(CM_CFG["file"]["original_sspl_conf"],
                                         True)
 
+        if self.sspl_stop:
+            LOGGER.info("Enable the SSPL master")
+            resp = self.ras_test_obj.enable_disable_service(
+                "enable", CM_CFG["sspl_resource_id"])
+            assert resp, "Failed to enable sspl-master"
+
         LOGGER.info("Restoring values to default in consul")
         LOGGER.info("Updating disk usage threshold value")
         res = self.ras_test_obj.update_threshold_values(
@@ -172,9 +179,9 @@ class TestSSPL:
                 update=True)
             assert res
 
-        if os.path.exists(CM_CFG["file"]["telnet_xml"]):
-            LOGGER.info("Remove telnet file")
-            os.remove(CM_CFG["file"]["telnet_xml"])
+        # if os.path.exists(CM_CFG["file"]["telnet_xml"]):
+        #     LOGGER.info("Remove telnet file")
+        #     os.remove(CM_CFG["file"]["telnet_xml"])
 
         if self.node_obj.path_exists(
                 RAS_VAL["ras_sspl_alert"]["file"]["disk_usage_temp_file"]):
@@ -355,11 +362,13 @@ class TestSSPL:
         LOGGER.info("Step 1: Successfully Restarted the SSPL Service")
 
         LOGGER.info("Step 2: Check the restart time of SSPL service")
-        check_time_cmd = test_cfg["check_time_sppl"].format(service_name)
+        check_time_cmd = test_cfg["check_time_sspl"].format(service_name.split('-')[0])
         resp = self.node_obj.execute_cmd(cmd=check_time_cmd,
                                          read_nbytes=buffer_sz)
-        restart_time = resp.strip()
-        resp = self.ras_test_obj.validate_exec_time(restart_time.decode("utf-8"))
+        LOGGER.info("RESP: %s", resp)
+        restart_time = resp.strip().decode('utf-8')
+        resp = self.ras_test_obj.validate_exec_time(restart_time)
+        LOGGER.info("RESP: %s", resp)
         assert resp[0], resp[1]
         LOGGER.info("Step 2: Verified the restart time of SSPL service")
 
@@ -392,7 +401,7 @@ class TestSSPL:
         sel_lst_cmd = common_cmd.SEL_LIST_CMD
         resp = self.node_obj.execute_cmd(cmd=sel_lst_cmd,
                                          read_nbytes=buffer_sz)
-        old_event_lst = resp
+        old_event_lst = resp.decode("utf-8").split('\n')
         LOGGER.info(
             "Step 2: Successfully listed all the SEL events")
 
@@ -410,7 +419,7 @@ class TestSSPL:
             "Step 4: Run below command now to get SEL event list")
         resp = self.node_obj.execute_cmd(cmd=sel_lst_cmd,
                                          read_nbytes=buffer_sz)
-        new_event_lst = resp
+        new_event_lst = resp.decode("utf-8").split('\n')
         assert len(old_event_lst) <= len(new_event_lst), new_event_lst
         LOGGER.info("Step 4: Successfully generate all the ipmitool FAN events "
                     "and resp is :%s", resp)
@@ -470,12 +479,13 @@ class TestSSPL:
         fan_name = self.ras_test_obj.get_fan_name()
         LOGGER.info("Step 1: Received the FAN state/details: %s", fan_name)
 
-        LOGGER.info("Step 2 and 3: Stop the SSPL service")
+        LOGGER.info("Step 2 and Step 3: Stop the SSPL service")
         resp = self.ras_test_obj.enable_disable_service(
-            "disable", service_cfg["sspl_service"])
-        assert resp[0] is False, resp[1]
+            "disable", common_cfg["sspl_resource_id"])
+        assert not resp[0], resp[1]
+        self.sspl_stop = True
         LOGGER.info(
-            "Step 2 and 3: SSPL service was successfully stopped and validated")
+            "Step 3: SSPL service was successfully stopped and validated")
         time.sleep(test_cfg["wait_time"])
 
         LOGGER.info("Step 4: Check the value of last sel index")
@@ -503,6 +513,8 @@ class TestSSPL:
         sel_lst_cmd = common_cmd.SEL_LIST_CMD
         resp = self.node_obj.execute_cmd(cmd=sel_lst_cmd,
                                          read_nbytes=buffer_sz)
+        resp = resp.decode("utf-8").split('\n')
+        resp = list(filter(None, resp))
         lst = [sel.strip() for sel in resp]
         index_val = lst[-1].split("|")[0].strip()
         assert index_val != curr_sel_index, index_val
@@ -511,10 +523,10 @@ class TestSSPL:
             "value and resp : %s", resp)
 
         LOGGER.info("Step 8: Restart  the SSPL service")
-        resp = self.ras_test_obj.enable_disable_service("enable",
-                                                        service_cfg[
-                                                            "sspl_service"])
-        assert resp[0], resp[1]
+        resp = self.ras_test_obj.enable_disable_service(
+            "enable", common_cfg["sspl_resource_id"])
+        assert resp, "Failed to enable sspl-master"
+        self.sspl_stop = False
         LOGGER.info("Step 8: Successfully started the SSPL service")
 
         if self.start_rmq:
@@ -963,12 +975,15 @@ class TestSSPL:
         LOGGER.info("Step 4: Updated port numbers to 5100")
 
         LOGGER.info("Step 5: Checking status of sspl services")
-        for service in services:
-            resp = S3Helper.get_s3server_service_status(
-                service=common_cfg["service"], host=self.host,
-                user=self.uname, pwd=self.passwd)
-            assert resp[0], resp[1]
-            LOGGER.info("%s service is up and running", service)
+        resp = S3Helper.get_s3server_service_status(
+            service=services["sspl_service"], host=self.host, user=self.uname,
+            pwd=self.passwd)
+        assert resp[0], resp[1]
+        resp = S3Helper.get_s3server_service_status(
+            service=services["rabitmq_service"], host=self.host,
+            user=self.uname,
+            pwd=self.passwd)
+        assert resp[0], resp[1]
 
         params = RAS_TEST_CFG["test_3006"]
         LOGGER.info("Step 6: Fetching server disk usage")
@@ -1346,9 +1361,7 @@ class TestSSPL:
         LOGGER.info(
             "Step 1 and 2: Check if files related to IEC decode exists")
         resp = self.node_obj.list_dir(cons.IEM_DIRECTORY)
-        for file in test_cfg["file_name"]:
-            compare(resp, file, sequence_item_check=True)
-            # assert file in resp[1]
+        compare(resp, test_cfg["file_name"], sequence_item_check=True)
         LOGGER.info("Step 1: Validated the respective files")
 
         LOGGER.info(
@@ -1525,7 +1538,7 @@ class TestSSPL:
                 "Step 3: Rebooting node %s after modifying selinux "
                 "status", self.host)
             resp = self.node_obj.execute_cmd(cmd=common_cmd.REBOOT_NODE_CMD,
-                                             read_lines=True)
+                                             read_lines=True, exc=False)
 
             time.sleep(common_cfg["reboot_delay"])
             self.selinux_enabled = True

@@ -58,7 +58,7 @@ def assert_list_items(x, y):
 
 def assert_list_item(x, y):
     """Comparison of list single element."""
-    assert_that(x, has_item(*y))
+    assert_that(x, has_item(y))
 
 
 def assert_and(x, y):

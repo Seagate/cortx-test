@@ -16,7 +16,7 @@ test_3006:
 
 test_3104:
   buffer_sz: 100000
-  check_time_sppl: "systemd-analyze blame | grep {}"
+  check_time_sspl: "systemd-analyze blame | grep {}"
   sspl_time: 2
   time_cmd: 3
 

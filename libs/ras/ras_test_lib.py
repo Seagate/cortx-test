@@ -972,7 +972,7 @@ class RASTestLib(RASCoreLib):
 
         return res
 
-    def verify_the_logs(self, file_path: str, pattern_lst: str) -> bool:
+    def verify_the_logs(self, file_path: str, pattern_lst: str) -> list:
         """
         Function generated warning message on server and download the
         remote file and verifies the log
@@ -1001,7 +1001,7 @@ class RASTestLib(RASCoreLib):
         LOGGER.info("Downloaded remote file %s", local_file_path)
         if not os.path.exists(local_file_path):
             resp_lst.append(False)
-            return any(resp_lst)
+            return resp_lst
         # Read the remote file contents
         with open(local_file_path, "r") as f_pointer:
             for line in f_pointer:
@@ -1011,9 +1011,10 @@ class RASTestLib(RASCoreLib):
                     resp_lst.append(False)
         LOGGER.info("Removing sspl log file from the Node")
         self.node_utils.remove_file(filename=file_path)
-        self.node_utils.remove_file(local_file_path)
 
-        return any(resp_lst)
+        os.remove(local_file_path)
+
+        return resp_lst
 
     def sspl_log_collect(self) -> Tuple[bool, str]:
         """

@@ -42,7 +42,7 @@ CHECK_SSPL_LOG_FILE = "tail -f /var/log/cortx/sspl/sspl.log > '{}' 2>&1 &"
 RABBIT_MQ_FILE = "/opt/seagate/sspl/low-level/tests/manual/rabbitmq_reader.py"
 MANUAL_PATH = "/opt/seagate/sspl/low-level/tests/manual/"
 RABBIT_MQ_LOCAL_PATH = "scripts/server_scripts/rabbitmq_reader.py"
-ENCRYPTOR_FILE_PATH = "scripts/server_scripts/encryptor_updated.py"
+ENCRYPTOR_FILE_PATH = "scripts/server_scripts/encryptor.py"
 STORAGE_ENCLOSURE_PATH = "/opt/seagate/cortx/provisioner/pillar/components" \
                         "/storage_enclosure.sls"
 CLUSTER_PATH = "/opt/seagate/cortx/provisioner/pillar/components/cluster.sls"

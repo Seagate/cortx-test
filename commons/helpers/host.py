@@ -158,6 +158,8 @@ class Host:
         """
         timeout = kwargs.get("timeout") if kwargs.get("timeout") else 400
         exc = kwargs.get('exc', True)
+        if 'exc' in kwargs.keys():
+            kwargs.pop('exc')
         self.connect(timeout=timeout, **kwargs)
         stdin, stdout, stderr = self.host_obj.exec_command(
             cmd, timeout=timeout)
