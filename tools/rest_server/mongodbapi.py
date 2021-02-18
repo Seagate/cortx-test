@@ -1,7 +1,8 @@
+from http import HTTPStatus
+
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 from pymongo.errors import ServerSelectionTimeoutError, OperationFailure
-from http import HTTPStatus
 
 
 def pymongo_exception(func):
@@ -108,12 +109,12 @@ def add_document(data: dict,
 
 
 @pymongo_exception
-def update_document(query: dict,
-                    data: dict,
-                    uri: str,
-                    db_name: str,
-                    collection: str
-                    ) -> (bool, str):
+def update_documents(query: dict,
+                     data: dict,
+                     uri: str,
+                     db_name: str,
+                     collection: str
+                     ) -> (bool, str):
     """
     Search and update all documents found in query
 
@@ -132,4 +133,35 @@ def update_document(query: dict,
         db = client[db_name]
         tests = db[collection]
         result = tests.update_many(query, data)
+        return True, result
+
+
+# pylint: disable=too-many-arguments
+@pymongo_exception
+def update_document(query: dict,
+                    data: dict,
+                    uri: str,
+                    db_name: str,
+                    collection: str,
+                    upsert: bool
+                    ) -> (bool, str):
+    """
+    Search and update one document found in query
+
+    Args:
+        query: Query to be searched
+        data: Data for creating document in MongoDB
+        uri: URI of MongoDB database
+        db_name: Database name
+        collection: Collection name in database
+        upsert: Create entry if not present
+
+    Returns:
+        On failure returns http status code and message
+        On success returns created document ID
+    """
+    with MongoClient(uri) as client:
+        database = client[db_name]
+        tests = database[collection]
+        result = tests.find_one_and_update(query, data, upsert=upsert)
         return True, result

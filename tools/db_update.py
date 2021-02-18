@@ -47,6 +47,7 @@ config = configparser.ConfigParser()
 config.read('config.ini')
 try:
     HOSTNAME = config["REST"]["hostname"]
+    HOSTNAME = HOSTNAME + "reportsdb/"
     DB_USERNAME = config["REST"]["db_username"]
     DB_PASSWORD = config["REST"]["db_password"]
 except KeyError:

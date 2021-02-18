@@ -19,11 +19,26 @@
 #
 # -*- coding: utf-8 -*-
 import argparse
+import configparser
+import json
+import sys
 from collections import defaultdict
+from http import HTTPStatus
 
+import requests
 from jira import JIRA
 
 from report import jira_api
+
+config = configparser.ConfigParser()
+config.read('config.ini')
+try:
+    HOSTNAME = config["REST"]["hostname"]
+    DB_USERNAME = config["REST"]["db_username"]
+    DB_PASSWORD = config["REST"]["db_password"]
+except KeyError:
+    print("Could not start REST server. Please verify config.ini file")
+    sys.exit(1)
 
 features_weights = {
     "Cluster Manager Operation (Provision)": 10,
@@ -50,8 +65,8 @@ bug_priority_weights = {
 }
 
 
-def get_selective_tests_from_feature(username: str, password: str, tp_id: str, feature: str,
-                                     status: str = "PASS"):
+def get_selective_tests_for_feature(tp_id: str, feature: str, status: str, username: str,
+                                    password: str):
     """Search tests in given test plan, feature and test status"""
     jira_url = "https://jts.seagate.com/"
     options = {'server': jira_url}
@@ -97,12 +112,12 @@ def calculate_cmi(tp_id: str, username, password) -> float:
     total_failed_tests = get_failed_tests_details(tp_id, username, password)
     features_cmi = 0
     for feature, feature_weight in features_weights.items():
-        total_tests = get_selective_tests_from_feature(tp_id, feature, "", username, password)
-        pass_tests = get_selective_tests_from_feature(tp_id, feature, "PASS", username, password)
-        blocked_tests = get_selective_tests_from_feature(tp_id, feature, "BLOCKED", username,
-                                                         password)
-        aborted_tests = get_selective_tests_from_feature(tp_id, feature, "ABORTED", username,
-                                                         password)
+        total_tests = get_selective_tests_for_feature(tp_id, feature, "", username, password)
+        pass_tests = get_selective_tests_for_feature(tp_id, feature, "PASS", username, password)
+        blocked_tests = get_selective_tests_for_feature(tp_id, feature, "BLOCKED", username,
+                                                        password)
+        aborted_tests = get_selective_tests_for_feature(tp_id, feature, "ABORTED", username,
+                                                        password)
         count = get_bug_priority_count(total_failed_tests, total_tests, username, password)
         scaled_failures = + (
                 count["Blocker"] * bug_priority_weights["Blocker"] +
@@ -113,8 +128,35 @@ def calculate_cmi(tp_id: str, username, password) -> float:
         )
         failed_tests = count["Unmapped"] + scaled_failures
         scaled_tests = len(pass_tests) - failed_tests - len(blocked_tests) - len(aborted_tests)
-        features_cmi += (feature_weight / len(total_tests)) * scaled_tests
+        if total_tests:
+            features_cmi += (feature_weight / len(total_tests)) * scaled_tests
     return features_cmi
+
+
+def save_cmi_in_database(cmi, test_plan_label, build_type, build_no):
+    """Save CMI index into database"""
+    endpoint = "cmi"
+    host = "http://cftic2.pun.seagate.com:5000/"
+    payload = {
+        "cmi": cmi,
+        "testPlanLabel": test_plan_label,
+        "buildType": build_type,
+        "buildNo": build_no,
+        "db_username": DB_USERNAME,
+        "db_password": DB_PASSWORD
+    }
+    headers = {
+        'Content-Type': 'application/json'
+    }
+    response = requests.request("POST", host + endpoint,
+                                headers=headers, data=json.dumps(payload))
+
+    if response.status_code != HTTPStatus.OK:
+        print(f'POST on {host + endpoint} failed')
+        print(f'RESPONSE={response.text}\n'
+              f'HEADERS={response.request.headers}\n'
+              f'BODY={response.request.body}')
+        sys.exit(1)
 
 
 def main():
@@ -124,15 +166,25 @@ def main():
 
     test_plans = parser.parse_args()
     tp_id = test_plans.tp
-
     username, password = jira_api.get_username_password()
-
+    test_plan = jira_api.get_issue_details(tp_id, username, password)
+    test_plan_label = test_plan.fields.labels[0]
+    if "_" in test_plan.fields.environment:
+        build_type = test_plan.fields.environment.split("_")[0]
+        build_no = test_plan.fields.environment.split("_")[1]
+    else:
+        build_no = test_plan.fields.environment
+        build_type = ""
+    if not all((test_plan_label, build_no)):
+        print(f"Test Plan Label: {test_plan_label}, "
+              f"Build Number: {build_no}\n"
+              f"Test Plan Label/Environment is empty for this test plan")
     deploy = 1
     box_index = 1
     raw_cmi = calculate_cmi(tp_id, username, password)
     scaled_cmi = raw_cmi * 100 / sum(features_weights.values())
     cmi = deploy * box_index * scaled_cmi
-    print(cmi)
+    save_cmi_in_database(cmi, test_plan_label, build_type, build_no)
 
 
 if __name__ == '__main__':
