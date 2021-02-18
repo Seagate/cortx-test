@@ -56,7 +56,6 @@ def decrypt(enc_secret :str) ->str:
     enc_secret = base64.b64decode(enc_secret)
     init_vec = enc_secret[:AES.block_size]
     aes = AES.new(digest_key, AES.MODE_CBC, init_vec)
-    aes = AES.new(digest_key, AES.MODE_CBC, init_vec)
     data = aes.decrypt(enc_secret[AES.block_size:])
     padding = data[-1]
     if data[-padding:] != bytes([padding]) * padding:

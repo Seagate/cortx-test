@@ -385,5 +385,5 @@ def get_config_wrapper(**kwargs):
         data.update(get_config_db(cname=kwargs['cname']))
     if not flag:
         print("Invalid keyword argument")
-        raise Exception
+        raise ValueError("Invalid argument")
     return data
