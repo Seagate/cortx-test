@@ -17,8 +17,10 @@
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
+
 """This file contains test related to Bucket ACL (Access Control Lists)."""
 
+import os
 import copy
 import time
 import logging
@@ -29,17 +31,16 @@ from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils.config_utils import read_yaml
 from commons.utils import assert_utils
-from commons.utils.system_utils import create_file
+from commons.utils.system_utils import create_file, make_dirs, cleanup_dir, path_exists
 from libs.s3 import s3_test_lib, iam_test_lib, s3_acl_test_lib
+from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
 
 S3_OBJ = s3_test_lib.S3TestLib()
 IAM_OBJ = iam_test_lib.IamTestLib()
 ACL_OBJ = s3_acl_test_lib.S3AclTestLib()
 
 BKT_ACL_CONFIG = read_yaml("config/s3/test_bucket_acl.yaml")[1]
-CMN_CONF = read_yaml("config/common_config.yaml")[1]
 LOGGER = logging.getLogger(__name__)
-ASRTOBJ = assert_utils
 
 
 class TestBucketACL():
@@ -81,13 +82,23 @@ class TestBucketACL():
         self.email_id = "{}{}".format(
             self.account_name,
             BKT_ACL_CONFIG["bucket_acl"]["email_suffix"])
-        self.ldap_user = CMN_CONF["ldap_username"]
-        self.ldap_pwd = CMN_CONF["ldap_passwd"]
+        self.ldap_user = LDAP_USERNAME
+        self.ldap_pwd = LDAP_PASSWD
+        self.test_file = "testfile"
+        self.test_dir_path = os.path.join(os.getcwd(), "testdata")
+        self.test_file_path = os.path.join(self.test_dir_path, self.test_file)
+        if not path_exists(self.test_dir_path):
+            resp = make_dirs(self.test_dir_path)
+            LOGGER.info("Created path: %s", resp)
         LOGGER.info("ENDED: Setup Operations")
 
     def teardown_method(self):
         """Function to perform the clean up for each test."""
         LOGGER.info("STARTED: Teardown Operations")
+        LOGGER.info("Clean : %s", self.test_dir_path)
+        if path_exists(self.test_dir_path):
+            resp = cleanup_dir(self.test_dir_path)
+            LOGGER.info("cleaned path: %s, resp: %s", self.test_dir_path, resp)
         LOGGER.info("Deleting buckets in default account")
         resp = S3_OBJ.bucket_list()
         pref_list = [
@@ -141,7 +152,7 @@ class TestBucketACL():
         assert resp[0], resp[1]
         resp = ACL_OBJ.get_bucket_acl(bucket_name)
         assert resp[0], resp[1]
-        ASRTOBJ.assert_equals(
+        assert_utils.assert_equals(
             resp[1][1][0]["Permission"],
             bucket_permission,
             resp[1])
@@ -158,7 +169,7 @@ class TestBucketACL():
         try:
             ACL_OBJ.get_bucket_acl(bucket_name)
         except CTException as error:
-            assert BKT_ACL_CONFIG["test_10009"]["err_message"] not in str(
+            assert BKT_ACL_CONFIG["test_10009"]["err_message"] in str(
                 error.message), error.message
         LOGGER.info("verify Get Bucket ACL of non existing Bucket")
 
@@ -177,7 +188,7 @@ class TestBucketACL():
         assert resp[0], resp[1]
         resp = ACL_OBJ.get_bucket_acl(bucket_name)
         assert resp[0], resp[1]
-        ASRTOBJ.assert_equals(
+        assert_utils.assert_equals(
             resp[1][1][0]["Permission"],
             bucket_permission,
             resp[1])
@@ -197,17 +208,17 @@ class TestBucketACL():
         bucket_permission = BKT_ACL_CONFIG["test_10011"]["bucket_permission"]
         resp = S3_OBJ.create_bucket(bucket_name)
         assert resp[0], resp[1]
-        ASRTOBJ.assert_equals(resp[1], bucket_name, resp[1])
-        create_file(BKT_ACL_CONFIG["test_10011"]["file_path"],
+        LOGGER.info(resp)
+        assert_utils.assert_equals(resp[1], bucket_name, resp[1])
+        create_file(self.test_file_path,
                     BKT_ACL_CONFIG["test_10011"]["file_size"])
         resp = S3_OBJ.object_upload(bucket_name,
-                                    BKT_ACL_CONFIG["test_10011"]["obj_name"],
-                                    BKT_ACL_CONFIG["test_10011"]["file_path"])
-        assert resp[0], resp[1]
+                                    self.test_file,
+                                    self.test_file_path)
         assert resp[0], resp[1]
         resp = ACL_OBJ.get_bucket_acl(bucket_name)
         assert resp[0], resp[1]
-        ASRTOBJ.assert_equals(
+        assert_utils.assert_equals(
             resp[1][1][0]["Permission"],
             bucket_permission,
             resp[1])
@@ -283,7 +294,7 @@ class TestBucketACL():
         resp = ACL_OBJ.get_bucket_acl_using_iam_credentials(
             access_key, secret_key, bucket_name)
         assert resp[0], resp[1]
-        ASRTOBJ.assert_equals(
+        assert_utils.assert_equals(
             resp[1][1][0]["Permission"],
             bucket_permission,
             resp[1])
@@ -562,7 +573,7 @@ class TestBucketACL():
             access_key=access_key, secret_key=secret_key)
         resp = s3_test.create_bucket(bucket_name)
         assert resp[0], resp[1]
-        ASRTOBJ.assert_equals(resp[1], bucket_name, resp[1])
+        assert_utils.assert_equals(resp[1], bucket_name, resp[1])
         resp = s3_obj_acl.get_bucket_acl(bucket_name=bucket_name)
         newresp = {"Owner": resp[1][0], "Grants": resp[1][1]}
         LOGGER.info(
@@ -628,7 +639,7 @@ class TestBucketACL():
 
         resp = s3_test.create_bucket(bucket_name)
         assert resp[0], resp[1]
-        ASRTOBJ.assert_equals(resp[1], bucket_name, resp[1])
+        assert_utils.assert_equals(resp[1], bucket_name, resp[1])
 
         resp = s3_obj_acl.get_bucket_acl(bucket_name=bucket_name)
         newresp = {"Owner": resp[1][0], "Grants": resp[1][1]}
@@ -696,7 +707,7 @@ class TestBucketACL():
             access_key=access_key, secret_key=secret_key)
         resp = s3_test.create_bucket(bucket_name=bucket_name)
         assert resp[0], resp[1]
-        ASRTOBJ.assert_equals(resp[1], bucket_name, resp[1])
+        assert_utils.assert_equals(resp[1], bucket_name, resp[1])
         resp = s3_obj_acl.get_bucket_acl(bucket_name=bucket_name)
         newresp = {"Owner": resp[1][0], "Grants": resp[1][1]}
         LOGGER.info(
@@ -779,10 +790,10 @@ class TestBucketACL():
         LOGGER.info("Creating new bucket from first account")
         resp = s3_obj1.create_bucket(bucket_name)
         assert resp[0], resp[1]
-        ASRTOBJ.assert_equals(resp[1], bucket_name, resp[1])
+        assert_utils.assert_equals(resp[1], bucket_name, resp[1])
         LOGGER.info("Performing head bucket with first account credentials")
         resp = s3_obj1.head_bucket(bucket_name)
-        ASRTOBJ.assert_equals(resp[1]["BucketName"], bucket_name, resp[1])
+        assert_utils.assert_equals(resp[1]["BucketName"], bucket_name, resp[1])
         LOGGER.info("Performing authenticated read acl")
         resp = acl_obj1.put_bucket_acl(
             bucket_name, acl=BKT_ACL_CONFIG["test_10837"]["bucket_acl"])
@@ -798,7 +809,7 @@ class TestBucketACL():
             "Performing head bucket with second account credentials")
         resp = s3_obj2.head_bucket(bucket_name)
         assert resp[0], resp[1]
-        ASRTOBJ.assert_equals(resp[1]["BucketName"], bucket_name, resp[1])
+        assert_utils.assert_equals(resp[1]["BucketName"], bucket_name, resp[1])
         LOGGER.info("Deleting bucket")
         s3_obj1.delete_bucket(bucket_name, force=True)
         LOGGER.info("Deleting multiple accounts")
@@ -854,10 +865,10 @@ class TestBucketACL():
         LOGGER.info("Creating new bucket from first account")
         resp = s3_obj1.create_bucket(bucket_name)
         assert resp[0], resp[1]
-        ASRTOBJ.assert_equals(resp[1], bucket_name, resp[1])
+        assert_utils.assert_equals(resp[1], bucket_name, resp[1])
         LOGGER.info("Performing head bucket with first account credentials")
         resp = s3_obj1.head_bucket(bucket_name)
-        ASRTOBJ.assert_equals(resp[1]["BucketName"], bucket_name, resp[1])
+        assert_utils.assert_equals(resp[1]["BucketName"], bucket_name, resp[1])
         LOGGER.info("Performing authenticated read acl")
         resp = acl_obj1.put_bucket_acl(
             bucket_name, acl=BKT_ACL_CONFIG["test_10838"]["bucket_acl"])
@@ -925,10 +936,10 @@ class TestBucketACL():
         LOGGER.info("Creating new bucket from first account")
         resp = s3_obj1.create_bucket(bucket_name)
         assert resp[0], resp[1]
-        ASRTOBJ.assert_equals(resp[1], bucket_name, resp[1])
+        assert_utils.assert_equals(resp[1], bucket_name, resp[1])
         LOGGER.info("Performing head bucket with first account credentials")
         resp = s3_obj1.head_bucket(bucket_name)
-        ASRTOBJ.assert_equals(resp[1]["BucketName"], bucket_name, resp[1])
+        assert_utils.assert_equals(resp[1]["BucketName"], bucket_name, resp[1])
         LOGGER.info("Performing grant read permission to second account")
         resp = acl_obj1.put_bucket_acl(
             bucket_name,
@@ -939,18 +950,18 @@ class TestBucketACL():
         LOGGER.info("Getting bucket acl")
         resp = acl_obj1.get_bucket_acl_using_iam_credentials(
             access_keys[0], secret_keys[0], bucket_name)
-        ASRTOBJ.assert_equals(
+        assert_utils.assert_equals(
             resp[1][1][0]["Grantee"]["DisplayName"],
             account_name[1],
             resp[1])
-        ASRTOBJ.assert_equals(
+        assert_utils.assert_equals(
             BKT_ACL_CONFIG["test_10839"]["grant_permission"],
             resp[1][1][0]["Permission"],
             resp[1])
         LOGGER.info(
             "Performing head bucket with second account credentials")
         resp = s3_obj2.head_bucket(bucket_name)
-        ASRTOBJ.assert_equals(resp[1]["BucketName"], bucket_name, resp[1])
+        assert_utils.assert_equals(resp[1]["BucketName"], bucket_name, resp[1])
         acl_obj1.put_bucket_acl(
             bucket_name,
             acl=BKT_ACL_CONFIG["test_10839"]["default_acl"])
@@ -974,10 +985,10 @@ class TestBucketACL():
             BKT_ACL_CONFIG["test_10840"]["bucket_name"])
         resp = S3_OBJ.create_bucket(bucket_name)
         assert resp[0], resp[1]
-        ASRTOBJ.assert_equals(resp[1], bucket_name, resp[1])
+        assert_utils.assert_equals(resp[1], bucket_name, resp[1])
         resp = S3_OBJ.head_bucket(bucket_name)
         assert resp[0], resp[1]
-        ASRTOBJ.assert_equals(resp[1]["BucketName"], bucket_name, resp[1])
+        assert_utils.assert_equals(resp[1]["BucketName"], bucket_name, resp[1])
         LOGGER.info("Perform a head bucket on a bucket")
 
     @pytest.mark.parallel
@@ -993,10 +1004,10 @@ class TestBucketACL():
         bucket_permission = BKT_ACL_CONFIG["test_10841"]["bucket_permission"]
         resp = S3_OBJ.create_bucket(bucket_name)
         assert resp[0], resp[1]
-        ASRTOBJ.assert_equals(resp[1], bucket_name, resp[1])
+        assert_utils.assert_equals(resp[1], bucket_name, resp[1])
         resp = ACL_OBJ.get_bucket_acl(bucket_name)
         assert resp[0], resp[1]
-        ASRTOBJ.assert_equals(
+        assert_utils.assert_equals(
             resp[1][1][0]["Permission"],
             bucket_permission,
             resp[1])
