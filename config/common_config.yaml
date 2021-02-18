@@ -2,14 +2,14 @@ BUILD_VER_TYPE: "CORTX"
 NodeNamePattern: "eosnode-"
 PrimaryName: "Masters"
 ServerNamePattern: "srvnode-"
-aws_cred_section: "default"
-aws_path: "/root/.aws/credentials"
-cluster_msg: "cluster is not currently running on this node"
+aws_cred_section: "default"  #S3
+aws_path: "/root/.aws/credentials" #S3
+cluster_msg: "cluster is not currently running on this node" #
 
-dataPathServices:
+dataPathServices:    # check Apurwa mahesh
   - "s3authserver"
 
-haproxy_service:
+haproxy_service: # destructive , HA
   - "haproxy-c"
 delay_60sec: 60
 enclosure_pwd: "Seagate123$"
@@ -29,7 +29,9 @@ machine1_hostname: "sm7-r19"
 machine2_hostname: "eosnode-3"
 host_domain: ".pun.seagate.com"
 
-jClientCloud_path:
+
+nfs_path: "10.237.65.201:/EES_LOGS/jclientCloud/"
+jClientCloud_path:  # Vishal will check
   dest: "scripts/tools/"
   source: "/root/jclientCloud/"
 
@@ -44,8 +46,7 @@ meroServices:
   - "-confd-c"
   - "-ios-c"
 
-minio_path: "/root/.mc/config.json"
-nfs_path: "10.237.65.201:/EES_LOGS/jclientCloud/"
+minio_path: "/root/.mc/config.json" #s3
 
 nodes:
   - "eosnode-1"
@@ -53,10 +54,10 @@ nodes:
 
 password: "seagate"
 primary_enclosure_ip: "10.0.0.2"
-s3ServiceCount: 11
-s3ServiceName: "s3server-c"
-s3cfg_path: "/root/.s3cfg"
-s3fs_path: "/etc/passwd-s3fs"
+s3ServiceCount: 11 #s3
+s3ServiceName: "s3server-c" #s3
+s3cfg_path: "/root/.s3cfg" #s3
+s3fs_path: "/etc/passwd-s3fs"  #s3
 secondary_enclosure_ip: "10.0.0.3"
 sshWaitTime: 120
 test_file_name: "test_file"
@@ -68,9 +69,9 @@ audit_service: "auditd.service"
 statsd_service: "statsd"
 aws_locust_cred_section: "locust"
 
-locust_details:
-  user: "locust"
-  email: "locust@seagate.com"
+locust_details: # s3
+  user: "locust" # s3
+  email: "locust@seagate.com" # s3
 
 pdu:
   ip: "10.237.66.137"
@@ -82,7 +83,7 @@ pdu:
 
 
 # Gem controller details.
-gem_controller:
+gem_controller:  # move to common_detructive_config
   host: "10.237.67.16"
   username: "engineer"
   password: "S3ag@teEng"
@@ -92,10 +93,6 @@ gem_controller:
 bmc_details:
   user: "bmcadmin"
   pwd: "adminBMC!"
-
-ldap_username: "sgiamadmin"
-ldap_passwd: "FeFXRQHRSeSH"
-sspl_pass: "FeFXRQHRSeSH"
 
 csm:
   mgmt_vip: "10.237.65.71"
