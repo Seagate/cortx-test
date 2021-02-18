@@ -29,22 +29,23 @@ import boto3
 from commons import errorcodes as err
 from commons.exceptions import CTException
 from commons.utils.system_utils import format_iam_resp
-from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY, LDAP_USERNAME, LDAP_PASSWD
+from libs.s3 import S3_CFG, LDAP_USERNAME, LDAP_PASSWD, S3H_OBJ
 from libs.s3.s3_core_lib import S3Lib
 from libs.s3.iam_core_lib import IamLib, S3IamCli
 from libs.s3.s3_acl_test_lib import S3AclTestLib
 
+
+LOGGER = logging.getLogger(__name__)
 ACC_ACCESS_KEY = list()
 ACC_SECRET_KEY = list()
-LOGGER = logging.getLogger(__name__)
 
 
 class IamTestLib(IamLib, S3IamCli):
     """Test Class for performing IAM related operations."""
 
     def __init__(self,
-                 access_key: str = ACCESS_KEY,
-                 secret_key: str = SECRET_KEY,
+                 access_key: str = S3H_OBJ.get_local_keys()[0],
+                 secret_key: str = S3H_OBJ.get_local_keys()[1],
                  endpoint_url: str = S3_CFG["iam_url"],
                  iam_cert_path: str = S3_CFG["iam_cert_path"],
                  **kwargs) -> None:
