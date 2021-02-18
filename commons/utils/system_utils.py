@@ -346,7 +346,7 @@ def make_dir(dpath: str, mode: int = None):
     return os.path.exists(dpath)
 
 
-def make_dirs(dpath: str, mode: int = None):
+def make_dirs(dpath: str, mode: int = None) -> str:
     """
     Create directory path recursively.
     :param dpath: Directory path.
@@ -712,3 +712,15 @@ def get_disk_usage(path: str) -> str:
     result = format((float(used) / total) * 100, ".1f")
 
     return result
+
+
+def path_exists(path: str) -> bool:
+    """
+    This function will return true if path exists else false.
+
+    :param path: file/directory path.
+    :return: bool
+    """
+    status = os.path.exists(path)
+
+    return status
