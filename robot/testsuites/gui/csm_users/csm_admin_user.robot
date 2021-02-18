@@ -229,18 +229,19 @@ TEST-7406
     ...  Reference : https://jts.seagate.com/browse/TEST-7406
     [Tags]  Priority_High
     ${new_password}=  Generate New Password
+    ${new_user_name}=  Generate New User Name
     ${users_type}=  Create List  manage  monitor
     Navigate To Page  ${page name}
     FOR    ${value}    IN    @{users_type}
-        Create New CSM User  ${value}  ${new_password}  ${value}
+        Create New CSM User  ${new_user_name}  ${new_password}  ${value}
         Log To Console And Report  operation for ${value}
         Click On Confirm Button
-        Verify New User  ${value}
-        Re-login  ${value}  ${new_password}  ${page_name}
-        Validate CSM Login Success  ${value}
-        Verify Change User Type Radio Button Disabled  ${value}
+        Verify New User  ${new_user_name}
+        Re-login  ${new_user_name}  ${new_password}  ${page_name}
+        Validate CSM Login Success  ${new_user_name}
+        Verify Change User Type Radio Button Disabled  ${new_user_name}
         Re-login  ${username}  ${password}  ${page_name}
-        Delete CSM User  ${value}
+        Delete CSM User  ${new_user_name}
     END
 
 TEST-5186
