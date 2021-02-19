@@ -19,6 +19,7 @@ EMAIL_NOTIFICATION_ID = 'goToNotifications'
 IAM_USER_TAB_ID = "s3iamuserstab"
 DASHBOARD_MENU_ID = "Dashboard"
 MAINTENANCE_MENU_ID = 'Maintenance'
+AUDIT_LOG_TAB_ID = "goToAuditLog"
 
 #  S3 Config
 S3_ACCOUNTS_TABLE_XPATH = '//*[@id="s3-datatable"]//table/tbody/tr/td'
@@ -136,3 +137,10 @@ SUBJECT_COMMON_NAME_VALUE_ID = 'subject_common_name_value'
 SUBJECT_COUNTRY_NAME_VALUE_ID = 'subject-country_name_value'
 SUBJECT_LOCALITY_NAME_VALUE_ID = 'subject_locality_name_value'
 SUBJECT_ORGANIZATION_VALUE_ID = 'subject_organization_name_value'
+
+#Audit Log Section
+AUDIT_LOG_VIEW_BUTTON_ID = "auditlog-viewbtn"
+AUDIT_LOG_DOWNLOAD_BUTTON_ID = "auditlog-downlodbtn"
+AUDIT_LOG_COMPONENT_DROP_DOWN_ID = "auditlog-component"
+AUDIT_LOG_TIME_PERIOD_DROP_DOWN_ID = "auditlog-timeperiod"
+AUDIT_LOG_DATA_ID = "auditlog-data"
