@@ -27,6 +27,7 @@ USER_JSON = '_usersdata'
 CONFIG_DIR = 'config'
 
 COMMON_CONFIG = os.path.join(CONFIG_DIR, 'common_config.yaml')
+S3_CONFIG = os.path.join(CONFIG_DIR, 's3', 's3_config.yaml')
 
 LOG_DIR_NAME = 'log'
 
