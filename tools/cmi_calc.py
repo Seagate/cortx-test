@@ -107,7 +107,17 @@ def get_bug_priority_count(total_failed_tests, feature_tests, username, password
 
 
 def calculate_cmi(tp_id: str, username, password) -> float:
-    """Calculate CMI for given test plan ID"""
+    """
+    Summary: Calculate CMI for given test plan ID
+
+    Description:
+        features_cmi = Σ over feature [
+            (feature_weight/total_tests_in_feature) *
+            (pass_tests - failed_tests - blocked_tests - aborted_tests)
+        ]
+        where, failed_tests = fail_tests_without_bugs +
+                             Σ over bug_priority ( bug_priority_weight * fail_test_with_priority)
+    """
     # Total failed test for given build
     total_failed_tests = get_failed_tests_details(tp_id, username, password)
     features_cmi = 0
