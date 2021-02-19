@@ -29,7 +29,6 @@ from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils.config_utils import read_yaml
 from commons.utils.system_utils import remove_file
-
 from libs.s3 import s3_test_lib, iam_test_lib, s3_acl_test_lib
 
 
@@ -38,7 +37,7 @@ ACL_OBJ = s3_acl_test_lib.S3AclTestLib()
 NO_AUTH_OBJ = s3_test_lib.S3LibNoAuth()
 IAM_TEST_OBJ = iam_test_lib.IamTestLib()
 
-ALL_USERS_CONF = read_yaml("config/s3/test_all_users_object_acl.yaml")
+ALL_USERS_CONF = read_yaml("config/s3/test_all_users_object_acl.yaml")[1]
 
 
 class TestAllUsers:

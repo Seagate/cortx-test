@@ -173,9 +173,10 @@ def get_config(path: str, section: str = None, key: str = None) -> list or str:
         config = ConfigParser()
         config.read(path)
         if section and key:
-            LOG.debug(config.get(section, key))
+            # LOG.debug(config.get(section, key))
             return config.get(section, key)
-        LOG.debug(config.items(section))
+        # LOG.debug(config.items(section))
+
         return config.items(section)
     except MissingSectionHeaderError:
         key_str = "{}=".format(key)
