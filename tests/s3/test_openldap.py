@@ -25,23 +25,22 @@ from datetime import datetime
 import paramiko
 import pytest
 
-
 from commons.constants import const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.utils.assert_utils import \
     assert_false, assert_true, assert_in, assert_equal, assert_not_equal
-from commons.utils.config_utils import read_yaml
-from commons.utils.system_utils import run_remote_cmd
+from commons.utils.config_utils import read_yaml, get_config
+from commons.utils.system_utils import run_remote_cmd, remove_file
 from commons.helpers.s3_helper import S3Helper
 
 S3_HELPER = S3Helper()
-LDAP_CFG = read_yaml("config/s3/test_openldap.yaml")
-CM_CFG = read_yaml("config/common_config.yaml")
+LDAP_CFG = read_yaml("config/s3/test_openldap.yaml")[1]
+CM_CFG = read_yaml("config/common_config.yaml")[1]
 CONS_OBJ_DICT = const.S3_BUILD_VER[CM_CFG["BUILD_VER_TYPE"]]
 
 
-class OpenLdap():
+class OpenLdap:
     """Open LDAP Testsuite."""
 
     CM_LDAP_CFG = LDAP_CFG["common_vars"]
@@ -90,7 +89,7 @@ class OpenLdap():
             chk_owner_cmd)
         self.LOGGER.info(chk_owner_cmd)
         resp = list(map(lambda s: s.strip(), resp))
-        dir_data = [dir for dir in resp if ch_owner_dir in dir]
+        dir_data = [_dir for _dir in resp if ch_owner_dir in _dir]
         new_owner = dir_data[0].split()[2]
         assert_equal(
             new_owner,
@@ -113,7 +112,7 @@ class OpenLdap():
             CM_CFG["password"],
             cmd)
         resp = list(map(lambda s: s.strip(), resp))
-        dir_data = [dir for dir in resp if dir_name in dir]
+        dir_data = [_dir for _dir in resp if dir_name in _dir]
         dir_owner = dir_data[0].split()[2]
 
         return dir_owner
@@ -125,7 +124,7 @@ class OpenLdap():
         It will also verify if specified backup directory/file is created under
         given destination directory.
         :param str bkp_cmd: A backup command to be executed.
-        :param str backup_dir: Name of a backup directory/file.
+        :param str backup_data: Name of a backup directory/file.
         :param str ls_cmd: A ls command on destination directory where backup will be created.
         :return: None
         """
@@ -232,7 +231,8 @@ class OpenLdap():
                 time.sleep(self.CM_LDAP_CFG["channel_time_pause"])
                 if channel.recv_ready():
                     channel_data += channel.recv(
-                        self.CM_LDAP_CFG["output_bytes"]).decode(self.CM_LDAP_CFG["decode_format"])
+                        self.CM_LDAP_CFG["output_bytes"]).decode(
+                        self.CM_LDAP_CFG["decode_format"])
                 else:
                     continue
                 if verify_statement in channel_data:
@@ -357,7 +357,7 @@ class OpenLdap():
             CM_CFG["password"],
             self.CM_LDAP_CFG["rm_dir_cmd"].format(self.backup_path))
         self.LOGGER.info("Deleted backup dir %s", self.backup_path)
-        S3_HELPER.remove_file(self.CM_LDAP_CFG["temp_path"])
+        remove_file(self.CM_LDAP_CFG["temp_path"])
         self.LOGGER.info("ENDED: Teardown operations")
 
     @pytest.mark.parallel
@@ -906,7 +906,7 @@ class OpenLdap():
         new_passwd = cfg_5074["new_pwd"]
         self.LOGGER.info("Step 1: Retrieving existing openldap password")
         S3_HELPER.copy_s3server_file(authserver_file, temp_file)
-        old_pwd = S3_HELPER.get_config(
+        old_pwd = get_config(
             temp_file, key=cfg_5074["login_pwd_section"])
         self.LOGGER.info("Password : %s", old_pwd)
         self.LOGGER.info("Step 1: Retrieved existing openldap password")
@@ -932,7 +932,7 @@ class OpenLdap():
         self.LOGGER.info(
             "Step 4: Checking if new password is updated or not")
         S3_HELPER.copy_s3server_file(authserver_file, temp_file)
-        updated_pwd = S3_HELPER.get_config(
+        updated_pwd = get_config(
             temp_file, key=cfg_5074["login_pwd_section"])
         self.LOGGER.info("Password : %s", updated_pwd)
         assert_not_equal(old_pwd, updated_pwd, cfg_5074["err_message"])
@@ -962,7 +962,7 @@ class OpenLdap():
         new_passwd = cfg_5075["new_pwd"]
         self.LOGGER.info("Step 1: Retrieving existing openldap password")
         S3_HELPER.copy_s3server_file(authserver_file, temp_file)
-        old_pwd = S3_HELPER.get_config(
+        old_pwd = get_config(
             temp_file, key=cfg_5075["login_pwd_section"])
         self.LOGGER.info("Step 1: Retrieved existing openldap password")
         self.LOGGER.info("Step 2: Changing openldap password")
@@ -987,7 +987,7 @@ class OpenLdap():
         self.LOGGER.info(
             "Step 4: Checking if new password is updated or not")
         S3_HELPER.copy_s3server_file(authserver_file, temp_file)
-        updated_pwd = S3_HELPER.get_config(
+        updated_pwd = get_config(
             temp_file, key=cfg_5075["login_pwd_section"])
         assert_not_equal(old_pwd, updated_pwd, cfg_5075["err_message"])
         self.LOGGER.info(
