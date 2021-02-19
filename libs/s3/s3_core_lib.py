@@ -56,13 +56,6 @@ class S3Lib:
         region = kwargs.get("region", None)
         aws_session_token = kwargs.get("aws_session_token", None)
         debug = kwargs.get("debug", False)
-        LOGGER.info(
-            "access_key: %s, secret_key: %s, endpoint_url: %s, s3_cert_path: %s, kwargs: %s",
-            access_key,
-            secret_key,
-            endpoint_url,
-            s3_cert_path,
-            str(kwargs))
         if debug:
             # Uncomment to enable debug
             boto3.set_stream_logger(name="botocore")
