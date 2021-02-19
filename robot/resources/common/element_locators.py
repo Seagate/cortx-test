@@ -21,6 +21,17 @@ DASHBOARD_MENU_ID = "Dashboard"
 MAINTENANCE_MENU_ID = 'Maintenance'
 AUDIT_LOG_TAB_ID = "goToAuditLog"
 
+# Alerts
+ALERT_IMAGE_1_ID='alert-zoom'  # from Dashbard
+ALERT_IMAGE_2_ID='alert-dotwhite'  # from All pages
+ALERT_COMMENT_SAVE_BUTTON_ID = 'alert-save-commnetbtn'
+ALERT_COMMENT_CLOSE_BUTTON_ID = 'alert-close-comment-dialogbtn'
+ALERT_COMMENT_CLOSE_IMAGE_ID = 'alert-closeadd-comment-dialog'
+ALERT_COMMENT_TEXT_ID= 'alert-comment-textarea'
+ALERT_DETAILS_PAGE_ICON_XPATH = '//*[@id="tblAlertLarge"]/div/table/tbody/tr[1]/td[5]/img'
+ALERT_COMMENT_ICON_XPATH = '//*[@id="tblAlertLarge"]/div/table/tbody/tr[1]/td[5]/div/div'
+ALERT_ACKNOWLEDGE_ICON_XPATH = '//*[@id="tblAlertLarge"]/div/table/tbody/tr[1]/td[5]/div/span[2]/div'
+
 #  S3 Config
 S3_ACCOUNTS_TABLE_XPATH = '//*[@id="s3-datatable"]//table/tbody/tr/td'
 S3_ACCOUNT_NUMBER_OF_ROWS = '//*[@id="s3-datatable"]//table/tbody/tr'
@@ -65,7 +76,7 @@ EDIT_S3_ACCOUNT_OPTIONS_XPATH = '//*[@id="app"]//div[@class ="py-0 col-5 col"]//
 # Preboarding 
 WELCOME_START_BUTTON_ID = 'welcome-startbtn'
 ELUA_BUTTON_ID = 'show-license-agreement-dialogbtn'
-LICENSE_BUTTON_ID = 'license-acceptagreement'
+LICENSE_ACCEPT_BUTTON_ID = 'license-acceptagreement'
 LICENSE_CANCLE_BUTTON_ID = 'license-cancelagreementbtn'
 LICENSE_CANCLE_IMAGE_ID = 'license-cancelagreementicon'
 LICENSE_TITLE_ID = 'agreement-title'
