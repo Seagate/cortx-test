@@ -18,6 +18,7 @@ SETTINGS_ID = 'Settings'
 EMAIL_NOTIFICATION_ID = 'goToNotifications'
 IAM_USER_TAB_ID = "s3iamuserstab"
 DASHBOARD_MENU_ID = "Dashboard"
+MAINTENANCE_MENU_ID = 'Maintenance'
 
 #  S3 Config
 S3_ACCOUNTS_TABLE_XPATH = '//*[@id="s3-datatable"]//table/tbody/tr/td'
@@ -139,7 +140,6 @@ IAM_USER_SUCCESS_MESSAGE_ID = 'iam-success-dialog'
 IAM_USER_SUCCESS_MESSAGE_BUTTON_ID = 'confirmation-dialogbox-btn'
 
 #About Section
-MAINTENANCEM_MENU_ID = 'Maintenance'
 ABOUT_VIEW_ID = 'menu-actionmanagebtn'
 ISSUER_DETAILS_TAB_ID = 'Issuertab'
 SUBJECT_DETAILS_TAB_ID = 'Subjecttab'
