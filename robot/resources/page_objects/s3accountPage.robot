@@ -192,10 +192,10 @@ Verify update s3 account accepts only valid password
     ...  ELSE  Verify message  INVALID_S3_ACCOUNT_PASSWORD_MSG_ID  ${INVALID_S3_PASSWORD_MESSAGE}
     Verify update s3 account button remains disabled
 
-Verify Presence of Stats And Alerts
+Verify Presence of Edit And Delete
     [Documentation]  Verify Presence of Edit And Delete Button on S3account
-    Page Should Contain Element  ${CSM_STATS_CHART_ID}
-    Page Should Contain Element  ${DASHBOARD_ALERT_SECTION_ID}
+    Page Should Contain Element  ${EDIT_S3_ACCOUNT_OPTION_ID}
+    Page Should Contain Element  ${DELETE_S3_ACCOUNT_ID}
 
 Verify unique username for csm and s3 account
     [Documentation]  This keyword verify that s3 account user name is unique and can not be same as csm user.
