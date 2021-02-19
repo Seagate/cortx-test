@@ -186,6 +186,19 @@ def read_test_list_csv() -> List:
     except Exception as e:
         print(e)
 
+def read_dist_test_list_csv() -> List:
+    try:
+        tests = list()
+        with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_DIST_TEST_LIST)) as f:
+            reader = csv.reader(f)
+            test_list = list(reader)
+            for test_row in test_list:
+                if not test_row:
+                    continue
+                tests.append(test_row[0])
+        return tests
+    except Exception as e:
+        print(e)
 
 @pytest.hookimpl(trylast=True)
 def pytest_sessionfinish(session, exitstatus):
@@ -204,16 +217,15 @@ def pytest_collection(session):
     items = session.perform_collect()
     LOGGER.info(dir(session.config))
     config = session.config
-    _local = bool(config.option.local)
-    _distributed = bool(config.option.distributed)
-    print("in pytest collection distributed = {}".format(_distributed))
+    _local = eval(config.option.local)
+    _distributed = eval(config.option.distributed)
+    is_parallel = eval(config.option.is_parallel)
     required_tests = list()
     global CACHE
     CACHE = LRUCache(1024 * 10)
     Globals.LOCAL_RUN = _local
     if _distributed:
-        required_tests = read_test_list_csv()  # e.g. required_tests = ['TEST-17413', 'TEST-17414']
-        print("required tests {}".format(required_tests))
+        required_tests = read_dist_test_list_csv()  # e.g. required_tests = ['TEST-17413', 'TEST-17414']
         Globals.TE_TKT = config.option.te_tkt
         selected_items = []
         for item in items:
@@ -242,13 +254,13 @@ def pytest_collection(session):
             test_found = ''
             for mark in item.iter_markers():
                 if mark.name == 'parallel':
-                    parallel_found = 'true'
-                    if not config.option.is_parallel:
+                    parallel_found = True
+                    if not is_parallel:
                         break
-                elif mark.name == 'tags' :
+                elif mark.name == 'tags':
                     test_found = mark.args[0]
-            if parallel_found == config.option.is_parallel and test_found != '':
-                if test_found in required_tests :
+            if parallel_found == is_parallel and test_found != '':
+                if test_found in required_tests:
                     selected_items.append(item)
                     selected_tests.append(test_found)
             CACHE.store(item.nodeid, test_found)

@@ -26,9 +26,9 @@ def parse_args():
                         help="log level value")
     parser.add_argument("-p", "--prc_cnt", type=int, default=2,
                         help="number of parallel processes")
-    parser.add_argument('-b', dest="bootstrap_servers", required=True,
+    parser.add_argument('-b', dest="bootstrap_servers",
                         help="Bootstrap broker(s) (host[:port])")
-    parser.add_argument('-s', dest="schema_registry", required=True,
+    parser.add_argument('-s', dest="schema_registry",
                         help="Schema Registry (http(s)://host[:port]")
     parser.add_argument('-t', dest="topic", default="example_serde_json",
                         help="Topic name")
@@ -71,6 +71,7 @@ def run_pytest_cmd(args, parallel_exe, env=None, re_execution=False):
     prc = subprocess.Popen(cmd_line, env=env)
     # prc = subprocess.Popen(cmd_line)
     prc.communicate()
+
 
 
 def delete_status_files():
@@ -135,7 +136,7 @@ def trigger_unexecuted_tests(args, test_list):
         if len(unexecuted_test_list) != 0:
             # run those selected todo tests sequential
             args.parallel_exe = False
-            with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_TEST_LIST), 'w') \
+            with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_DIST_TEST_LIST), 'w') \
                     as test_file:
                 write = csv.writer(test_file)
                 for test in unexecuted_test_list:
