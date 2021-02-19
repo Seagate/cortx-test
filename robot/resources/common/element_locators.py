@@ -59,12 +59,12 @@ DELETE_ACCESS_KEY_ID = 's3-accesskey-datatable-delete-{0}'
 NEW_ACCESS_KEY_TABLE_XPATH = '//*[@id="download-csv-dialog-datatable"]/tr/td'
 CONFIRM_DELET_ACCESS_KEY_ID = 'confirmation-dialogbox-btn'
 EDIT_S3_ACCOUNT_OPTIONS_XPATH = '//*[@id="app"]//div[@class ="py-0 col-5 col"]//input'
-S3_ACCOUNT_RESET_PASSWORD_XPATH = '//tr[@id="s3-datatable"]//*[@id="iam-reset-password"]'
+S3_ACCOUNT_RESET_PASSWORD_XPATH = '//td[contains(text(), "{0}")]//following-sibling::td//img[@id="iam-reset-password"]'
 S3_ACCOUNT_REST_OPTION_ID = 'iam-reset-password'
 S3_ACCOUNT_RESET_NEW_PASSWORD_ID = 'user-password'
 S3_ACCOUNT_RESET_CONFIRM_PASSWORD_ID = 'confirm-password'
 S3_ACCOUNT_RESET_PAWWSORD_BUTTON_ID = 'reset-password-button'
-S3_ACCOUNT_SUCCESS_MESSAGE = 's3-success-dialog'
+S3_ACCOUNT_SUCCESS_MESSAGE_ID = 's3-success-dialog'
 S3_ACCOUNT_SUCCESS_MESSAGE_BUTTON_ID = 'confirmation-dialogbox-btn'
 
 # Preboarding 
@@ -135,7 +135,7 @@ IAM_USER_RESET_PASSWORD_DIALOG_ID = "s3-resetaccount-form"
 IAM_USER_RESET_PAWWSORD_BUTTON_ID = "reset-password-button"
 IAM_USER_RESET_NEW_PASSWORD_ID = "user-password"
 IAM_USER_RESET_CONFIRM_PASSWORD_ID = "confirm-password"
-IAM_USER_SUCCESS_MESSAGE = 'iam-success-dialog'
+IAM_USER_SUCCESS_MESSAGE_ID = 'iam-success-dialog'
 IAM_USER_SUCCESS_MESSAGE_BUTTON_ID = 'confirmation-dialogbox-btn'
 
 #About Section

@@ -155,10 +155,14 @@ TEST-961
     Delete IAMuser  ${username}
     Sleep  5s  # Need to reload the uses
 
-TEST-v1
+TEST-17018
     [Documentation]  Test a reset password functionality on clicking "edit" button on IAM user page
     ...  Reference : https://jts.seagate.com/browse/TEST-v1
     [Tags]  Priority_High
+    ${username}=  Generate New User Name
+    ${password}=  Generate New Password
+    Click Create IAM User Button
+    Create IAMuser  ${username}  ${password}
     sleep  5s
-    Reset Password IAMuser  test-user
+    Reset Password IAMuser  ${username}
     sleep  5s

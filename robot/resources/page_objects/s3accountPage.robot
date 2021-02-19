@@ -165,8 +165,7 @@ Reset Password S3 Account
     [Documentation]  Functionality to Reset S3 accounts Password
     [Arguments]  ${user_name}
     Log To Console And Report  Resetting password for S3 accounts ${user_name}
-    wait until element is visible  ${S3_ACCOUNT_REST_OPTION_ID}  timeout=10
-    click element  ${S3_ACCOUNT_REST_OPTION_ID}
+    Action On The Table Element  ${S3_ACCOUNT_RESET_PASSWORD_XPATH}  ${user_name}
     Sleep  5s
     wait until element is visible  ${S3_ACCOUNT_RESET_NEW_PASSWORD_ID}  timeout=60
     ${new_password} =  Generate New Password
@@ -174,7 +173,7 @@ Reset Password S3 Account
     input text  ${S3_ACCOUNT_RESET_CONFIRM_PASSWORD_ID}  ${new_password}
     Click Button  ${S3_ACCOUNT_RESET_PAWWSORD_BUTTON_ID}
     Sleep  5s
-    wait until element is visible  ${S3_ACCOUNT_SUCCESS_MESSAGE}  timeout=60
+    wait until element is visible  ${S3_ACCOUNT_SUCCESS_MESSAGE_ID}  timeout=60
     Sleep  2s
     Click Button  ${S3_ACCOUNT_SUCCESS_MESSAGE_BUTTON_ID}
 

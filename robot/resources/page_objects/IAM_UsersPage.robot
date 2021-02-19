@@ -139,7 +139,7 @@ Reset Password IAMuser
     input text  ${IAM_USER_RESET_CONFIRM_PASSWORD_ID}  ${new_password}
     Click Button  ${IAM_USER_RESET_PAWWSORD_BUTTON_ID}
     Sleep  5s
-    wait until element is visible  ${IAM_USER_SUCCESS_MESSAGE}  timeout=60
+    wait until element is visible  ${IAM_USER_SUCCESS_MESSAGE_ID}  timeout=60
     Sleep  2s
     Click Button  ${IAM_USER_SUCCESS_MESSAGE_BUTTON_ID}
 
