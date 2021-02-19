@@ -30,6 +30,7 @@ S3H_OBJ = S3Helper.get_instance()
 
 S3_CFG = config_utils.read_yaml(S3_CONFIG)[1]  # Read s3 common config.
 CM_CFG = config_utils.read_yaml(COMMON_CONFIG)[1]  # Read common config.
-# ldap credentials.
+# S3 default access_key, secret key.
+ACCESS_KEY, SECRET_KEY = S3H_OBJ.get_local_keys()
 LDAP_USERNAME = CM_CFG["ldap_username"]  # Ldap username.
 LDAP_PASSWD = CM_CFG["ldap_passwd"]  # Ldap password.

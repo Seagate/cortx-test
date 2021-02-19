@@ -689,11 +689,6 @@ class S3Helper:
                 path, section, "aws_access_key_id")
             secret_key = config_utils.get_config(
                 path, section, "aws_secret_access_key")
-            LOGGER.info(
-                "Section %s: fetched access key:%s and secret key: %s.",
-                section,
-                access_key,
-                secret_key)
 
             return access_key, secret_key
         except (FileNotFoundError, KeyError, NoSectionError) as error:
