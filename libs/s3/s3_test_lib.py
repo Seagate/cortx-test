@@ -84,13 +84,14 @@ class S3TestLib(S3Lib):
             LOGGER.info(
                 "############# BUCKET CREATION TIME : %f #############",
                 (end_time - start_time))
+            status = bool(bucket_name == response.name)  # get response status
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          S3TestLib.create_bucket.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
-        return True, response
+        return status, response.name
 
     def bucket_list(self) -> tuple:
         """
