@@ -24,6 +24,7 @@ import pathlib
 import json
 import logging
 import csv
+import time
 from _pytest.nodes import Item
 from _pytest.runner import CallInfo
 from _pytest.main import Session
@@ -40,6 +41,7 @@ from commons import constants
 from commons import report_client
 from core.runner import LRUCache
 from core.runner import get_jira_credential
+from core.runner import get_db_credential
 from config import params
 from config import CMN_CFG
 
@@ -151,7 +153,7 @@ def log_cutter(request, formatter):
 
 # content of conftest.py
 
-def pytest_addoption(parser) :
+def pytest_addoption(parser):
     """
     Hook to add options at runtime to pytest command
     :param parser:
@@ -181,6 +183,12 @@ def pytest_addoption(parser) :
     parser.addoption(
         "--force_serial_run", action="store", default=False, help="Force serial execution"
     )
+    parser.addoption(
+        "--target", action="store", default="auto_setup", help="Target or setup under test"
+    )
+    parser.addoption(
+        "--nodes", action="store", default=[], help="Nodes of a setup"
+    )
 
 
 def read_test_list_csv() -> List:
@@ -201,29 +209,55 @@ def read_test_list_csv() -> List:
 def create_report_payload(item, call, final_result, d_u, d_pass):
     """Create Report Payload for POST request to put data in Report DB."""
     os_ver = system_utils.get_os_version()
+    if final_result == 'FAIL':
+        health_chk_res = "TODO"
+        are_logs_collected = False
+        log_path = "TODO"
+    elif final_result == 'PASS':
+        health_chk_res = "NA"
+        are_logs_collected = False
+        log_path = "NA"
+    import pdb
+    pdb.set_trace()
     data_kwargs = dict(os=os_ver,
                        build=item.config.option.build,
                        build_type=item.config.option.build_type,
                        client_hostname=system_utils.get_host_name(),
-                       execution_type=str,
-                       health_chk_res=str,
-                       are_logs_collected=bool,
-                       log_path=str,
-                       nodes=item.config.option.nodes,
-                       nodes_hostnames=item.config.option.targets,  #list of targets hosts
+                       execution_type="Automated",
+                       health_chk_res=health_chk_res,
+                       are_logs_collected=are_logs_collected,
+                       log_path=log_path,
+                       testPlanLabel="S3",  # get from TP
+                       testExecutionLabel="CFT",  # get from TE
+                       nodes=len(item.config.option.nodes),  # number of target hosts
+                       nodes_hostnames=item.config.option.nodes,
                        test_exec_id=item.config.option.te_tkt,
                        test_exec_time=call.duration,
-                       test_name=test_name,
+                       test_name='test_name',  # test
+                       test_id='TEST-0000',  # test
+                       test_id_labels=["Demo", "Labels"],
                        test_plan_id=item.config.option.tp_ticket,
                        test_result=final_result,
-                       start_time=call.start,
-                       tags=tags,
-                       test_team=test_team,
-                       test_type=test_type,
+                       start_time=time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(call.start)),
+                       tags=['tags'],  # in mem te_meta
+                       test_team='test_team',  # TE
+                       test_type='Pytest',
+                       latest=True,
+                       feature='Test',  # feature
                        db_username=d_u,
                        db_password=d_pass
                        )
     return data_kwargs
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_configure(config):
+    if not config.option.nodes:
+        config.option.nodes = []  # CMN_CFG.nodes
+
+    # TODO Handle parallel execution.
+    if not hasattr(config, 'slaveinput'):
+        pass
 
 
 def pytest_sessionstart(session: Session) -> None:
@@ -237,17 +271,18 @@ def pytest_sessionstart(session: Session) -> None:
     global REPORT_CLIENT
     report_client.ReportClient.init_instance()
     REPORT_CLIENT = report_client.ReportClient.get_instance()
-
-
-@pytest.hookimpl(trylast=True)
-def pytest_sessionfinish(session, exitstatus):
-    """Remove handlers from all loggers."""
-    # todo add html hook file = session.config._htmlfile
     loggers = [logging.getLogger()] + list(logging.Logger.manager.loggerDict.values())
-    for _logger in loggers:
-        handlers = getattr(_logger, 'handlers', [])
-        for handler in handlers:
-            _logger.removeHandler(handler)
+
+
+# @pytest.hookimpl(trylast=True)
+# def pytest_sessionfinish(session, exitstatus):
+#     """Remove handlers from all loggers."""
+#     # todo add html hook file = session.config._htmlfile
+#     loggers = [logging.getLogger()] + list(logging.Logger.manager.loggerDict.values())
+#     for _logger in loggers:
+#         handlers = getattr(_logger, 'handlers', [])
+#         for handler in handlers:
+#             _logger.removeHandler(handler)
 
 
 @pytest.hookimpl(tryfirst=True)
@@ -273,7 +308,7 @@ def pytest_collection(session):
                     parallel_found = 'true'
                     if config.option.is_parallel == 'false':
                         break
-                    #elif config.option.is_parallel == 'true' and config.option.force_serial_run:
+                    # elif config.option.is_parallel == 'true' and config.option.force_serial_run:
                     #    break
                 elif mark.name == 'tags':
                     test_found = mark.args[0]
@@ -281,8 +316,6 @@ def pytest_collection(session):
                 if test_found in required_tests:
                     selected_items.append(item)
             CACHE.store(item.nodeid, test_found)
-        import pdb
-        pdb.set_trace()
         items[:] = selected_items
     else:
         meta = list()
@@ -305,7 +338,7 @@ def pytest_collection(session):
         except OSError as error:
             LOGGER.error(str(error))
 
-    latest = os.path.join(cache_home,'latest')
+    latest = os.path.join(cache_home, 'latest')
     if not os.path.exists(latest):
         os.makedirs(latest)
     _path = config_utils.create_content_json(cache_path, _get_items_from_cache())
@@ -340,7 +373,7 @@ def pytest_runtest_makereport(item, call):
     fail_file = 'failed_tests.log'
     pass_file = 'passed_tests.log'
     current_file = 'other_test_calls.log'
-
+    db_user, db_pass = get_db_credential()
     if not _local:
         jira_id, jira_pwd = get_jira_credential()
         task = jira_utils.JiraTask(jira_id, jira_pwd)
@@ -348,17 +381,16 @@ def pytest_runtest_makereport(item, call):
         if report.when == 'teardown':
             if item.rep_setup.failed or item.rep_teardown.failed:
                 task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
+                payload = create_report_payload(item, call, 'FAIL', db_user, db_pass)
+                REPORT_CLIENT.create_db_entry(**payload)
             elif item.rep_setup.passed and (item.rep_call.failed or item.rep_teardown.failed):
                 task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
+                payload = create_report_payload(item, call, 'FAIL', db_user, db_pass)
+                REPORT_CLIENT.create_db_entry(**payload)
             elif item.rep_setup.passed and item.rep_call.passed and item.rep_teardown.passed:
                 task.update_test_jira_status(item.config.option.te_tkt, test_id, 'PASS')
-            # TODO report server hook test and data collection
-            # TODO Remove sample usage after completion
-            #ReportClient.init_instance()
-            #rsrv = ReportClient.get_instance()
-            #rsrv.create_db_entry(**kwargs)
-            payload = create_report_payload(item, call)
-            REPORT_CLIENT.create_db_entry(**payload)
+                payload = create_report_payload(item, call, 'PASS', db_user, db_pass)
+                REPORT_CLIENT.create_db_entry(**payload)
 
     if report.when == 'teardown':
         if item.rep_setup.failed or item.rep_teardown.failed:
