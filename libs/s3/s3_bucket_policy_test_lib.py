@@ -22,21 +22,12 @@
 
 import logging
 
-from libs.s3.s3_core_lib import BucketPolicy
-from commons.exceptions import CTException
 from commons import errorcodes as err
-from commons.utils.config_utils import read_yaml
-from commons.helpers.s3_helper import S3Helper
+from commons.exceptions import CTException
+from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
+from libs.s3.s3_core_lib import BucketPolicy
 
 LOGGER = logging.getLogger(__name__)
-
-try:
-    S3H_OBJ = S3Helper()
-except ImportError as ierr:
-    LOGGER.warning(str(ierr))
-    S3H_OBJ = S3Helper.get_instance()
-
-S3_CONF = read_yaml("config/s3/s3_config.yaml")[1]
 
 
 class S3BucketPolicyTestLib(BucketPolicy):
@@ -44,10 +35,10 @@ class S3BucketPolicyTestLib(BucketPolicy):
 
     def __init__(
             self,
-            access_key: str = S3H_OBJ.get_local_keys()[0],
-            secret_key: str = S3H_OBJ.get_local_keys()[1],
-            endpoint_url: str = S3_CONF["s3_url"],
-            s3_cert_path: str = S3_CONF["s3_cert_path"],
+            access_key: str = ACCESS_KEY,
+            secret_key: str = SECRET_KEY,
+            endpoint_url: str = S3_CFG["s3_url"],
+            s3_cert_path: str = S3_CFG["s3_cert_path"],
             **kwargs) -> None:
         """
         Method to initializes members of S3BucketPolicyTestLib and its parent class.
@@ -60,9 +51,9 @@ class S3BucketPolicyTestLib(BucketPolicy):
         :param aws_session_token: aws_session_token
         :param debug: debug mode
         """
-        kwargs["region"] = kwargs.get("region", S3_CONF["region"])
+        kwargs["region"] = kwargs.get("region", S3_CFG["region"])
         kwargs["aws_session_token"] = kwargs.get("aws_session_token", None)
-        kwargs["debug"] = kwargs.get("debug", S3_CONF["debug"])
+        kwargs["debug"] = kwargs.get("debug", S3_CFG["debug"])
         super().__init__(
             access_key,
             secret_key,
@@ -70,7 +61,7 @@ class S3BucketPolicyTestLib(BucketPolicy):
             s3_cert_path,
             **kwargs)
 
-    def get_bucket_policy(self, bucket_name: str) -> tuple:
+    def get_bucket_policy(self, bucket_name: str = None) -> tuple:
         """
         Retrieve policy of the specified s3 bucket.
 
@@ -92,8 +83,8 @@ class S3BucketPolicyTestLib(BucketPolicy):
 
     def put_bucket_policy(
             self,
-            bucket_name: str,
-            bucket_policy: dict) -> tuple:
+            bucket_name: str = None,
+            bucket_policy: dict = None) -> tuple:
         """
         Apply s3 bucket policy to specified s3 bucket.
 
@@ -113,7 +104,7 @@ class S3BucketPolicyTestLib(BucketPolicy):
 
         return True, response
 
-    def delete_bucket_policy(self, bucket_name: str) -> tuple:
+    def delete_bucket_policy(self, bucket_name: str = None) -> tuple:
         """
         Function will delete the policy applied to the specified S3 bucket.
 

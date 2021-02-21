@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -39,20 +41,24 @@ def run_remote_cmd(
         hostname: str,
         username: str,
         password: str,
-        **kwargs) -> str:
+        **kwargs) -> tuple:
     """
     Execute command on remote machine.
     :return: stdout
     """
-    read_lines = kwargs.get("read_lines") if kwargs.get("read_lines", None) else False
-    read_nbytes = kwargs.get("read_nbytes") if kwargs.get("read_nbytes", None) else -1
-    timeout_sec = kwargs.get("timeout_sec") if kwargs.get("timeout_sec", None) else 30
-
+    LOGGER.info(
+        "Host: %s, User: %s, Password: %s",
+        hostname,
+        username,
+        password)
+    read_lines = kwargs.get("read_lines", False)
+    read_nbytes = kwargs.get("read_nbytes", -1)
+    timeout_sec = kwargs.get("timeout_sec", 30)
     client = SSHClient()
     client.set_missing_host_key_policy(AutoAddPolicy())
     LOGGER.debug("Command: %s", str(cmd))
     client.connect(hostname, username=username,
-                   password=password, timeout=timeout_sec, **kwargs)
+                   password=password, timeout=timeout_sec)
     _, stdout, stderr = client.exec_command(cmd)
     exit_status = stdout.channel.recv_exit_status()
     if read_lines:
@@ -64,23 +70,27 @@ def run_remote_cmd(
         LOGGER.debug("Error: %s", str(error))
     else:
         output = stdout.read(read_nbytes)
+        LOGGER.debug("Result: %s", str(output))
         error = stderr.read()
+        LOGGER.debug("Error: %s", str(error))
     LOGGER.debug(exit_status)
     if exit_status != 0:
         if error:
-            raise IOError(error)
-        raise IOError(output)
+            return False, error
+        return False, output
     client.close()
     if error:
-        raise IOError(error)
-    return output
+        return False, error
+
+    return True, output
 
 
-def run_local_cmd(cmd: str) -> bytes:
+def run_local_cmd(cmd: str = None, flg: bool = False) -> tuple:
     """
     Execute any given command on local machine(Windows, Linux).
     :param cmd: command to be executed.
-    :return: stdout
+    :param flg: To get str(proc.communicate())
+    :return: bool, response.
     """
     if not cmd:
         raise ValueError("Missing required parameter: {}".format(cmd))
@@ -89,16 +99,20 @@ def run_local_cmd(cmd: str) -> bytes:
     output, error = proc.communicate()
     LOGGER.debug("output = %s", str(output))
     LOGGER.debug("error = %s", str(error))
+    if flg:
+        return True, str((output, error))
+    if proc.returncode != 0:
+        return False, str(error)
     if b"Number of key(s) added: 1" in output:
-        return output
+        return True, str(output)
     if b"command not found" in error or \
             b"not recognized as an internal or external command" in error or error:
-        raise IOError(error)
+        return False, str(error)
 
-    return output
+    return True, str(output)
 
 
-def execute_cmd(cmd: str, remote: bool, *remoteargs, **remoteKwargs) -> str:
+def execute_cmd(cmd: str, remote: bool, *remoteargs, **remoteKwargs) -> tuple:
     """Execute command on local / remote machine based on remote flag
     :param cmd: cmd to be executed
     :param remote: if True executes on remote machine
@@ -162,7 +176,7 @@ def command_formatter(cmd_options: dict, utility_path: str = None) -> str:
 def calculate_checksum(
         file_path: str,
         binary_bz64: bool = True,
-        options="") -> str:
+        options: str = "") -> tuple:
     """
     Calculate MD5 checksum with/without binary coversion for a file.
     :param filename: Name of the file with path
@@ -400,7 +414,11 @@ def get_host_name():
     return socket.gethostname()
 
 
-def create_file(fpath: str, count: int, dev="/dev/zero", b_size="1M"):
+def create_file(
+        fpath: str,
+        count: int,
+        dev: str = "/dev/zero",
+        b_size: str = "1M") -> tuple:
     """
     Create file using dd command.
     :param fpath: File path.
@@ -570,9 +588,9 @@ def is_dir_exists(path: str, dir_name: str) -> bool:
     """
     Check directory path exists.
     """
-    directories = run_local_cmd(commands.LS_CMD.format(path))
+    status, directories = run_local_cmd(commands.LS_CMD.format(path))
     directories = (directory.split("\n")[0] for directory in directories)
-    if dir_name in directories:
+    if dir_name in directories and status:
         return True
 
     return False
@@ -658,7 +676,7 @@ def install_new_cli_rpm(
 
 
 def list_rpms(*remoteargs, filter_str="", remote=False,
-              **remoteKwargs) -> Tuple[bool, list]:
+              **remoteKwargs) -> tuple:
     """
     This function lists the rpms installed on a given host and filters by given string.
     :param str filter_str: string to search in rpm names for filtering results,
@@ -688,7 +706,7 @@ def check_ping(host: str) -> bool:
     return response == 0
 
 
-def pgrep(process: str):
+def pgrep(process: str) -> tuple:
     """
     Function to get process ID using pgrep cmd.
     :param process: Name of the process
