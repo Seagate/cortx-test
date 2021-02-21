@@ -433,8 +433,6 @@ def pytest_collection(session):
                     if test_found in required_tests:
                         selected_items.append(item)
             CACHE.store(item.nodeid, test_found)
-        import pdb
-        pdb.set_trace()
         items[:] = selected_items
     elif _local:
         meta = list()
