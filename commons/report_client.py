@@ -74,7 +74,7 @@ class SingletonMixin:
 
 
 class ReportClient(SingletonMixin):
-    """Singleton Report client"""
+    """Singleton Report client."""
 
     def __init__(self, db_user=None, db_passwd=None):
         self.session = requests.session()
@@ -97,7 +97,7 @@ class ReportClient(SingletonMixin):
             "executionType": "Automated",
             "healthCheckResult": "Fail",
             "isRegression": false,
-            "issueID": "EOS-000",
+            "issueIDs": ["EOS-000"],
             "issueType": "Dev",
             "logCollectionDone": true,
             "logPath": "DemoPath",
@@ -125,11 +125,10 @@ class ReportClient(SingletonMixin):
             ],
             "testTeam": "CFT",
             "testType": "Pytest",
+            "latest": true,
+            "feature": "Test",
             "db_username": "datawrite",
             "db_password": "seagate@123"
-
-            feature: (Scalability, )
-            valid:
         }
         """
         payload = {"OSVersion": data_kwargs.get('os', "CentOS"),
@@ -143,16 +142,18 @@ class ReportClient(SingletonMixin):
                    #"issueType": data_kwargs.get('issue_type', "Dev"),
                    "logCollectionDone": data_kwargs.get('are_logs_collected', True),
                    "logPath": data_kwargs.get('log_path', "DemoPath"),
-                   "noOfNodes": data_kwargs.get('nodes', 4), #todo CMN_CFG
+                   "noOfNodes": data_kwargs.get('nodes', 4),  #todo CMN_CFG
                    "nodesHostname": data_kwargs.get('nodes_hostnames', [
                        "sm7-r18.pun.seagate.com",
                        "sm8-r18.pun.seagate.com"
                    ]),  #todo CMN_CFG
                    #"testComponent": data_kwargs.get('test_component', "S3"),
+                   "testPlanLabel": data_kwargs.get('testPlanLabel', "S3"),  # get from TP
+                   "testExecutionLabel": data_kwargs.get('testExecutionLabel', "CFT"),  # get from TE
                    "testExecutionID": data_kwargs.get('test_exec_id'),
-                   "testExecutionTime": data_kwargs.get('test_exec_time', 0),
-                   "testID": data_kwargs.get('test_exec_time', "TEST-0000"),
-                   "testIDLabels": data_kwargs.get('test_exec_time', [
+                   "testExecutionTime": int(data_kwargs.get('test_exec_time', 0)),
+                   "testID": data_kwargs.get('test_id', "TEST-0000"),
+                   "testIDLabels": data_kwargs.get('test_id_labels', [
                        "Demo",
                        "Labels"
                    ]),
@@ -164,8 +165,10 @@ class ReportClient(SingletonMixin):
                        "Demo",
                        "Tags"
                    ]),
-                   "testTeam": data_kwargs.get('test_team', "CFT"), # te component first element
-                   "testType": data_kwargs.get('test_type', "Pytest"), #
+                   "testTeam": data_kwargs.get('test_team', "Automation"), # te component first element
+                   "testType": data_kwargs.get('test_type', "Pytest"),  # use pytest
+                   "feature": data_kwargs.get('feature', "Test"),
+                   "latest": data_kwargs.get('latest'),
                    "db_username": data_kwargs.get("db_username"),
                    "db_password": data_kwargs.get("db_password")
                    }
@@ -173,6 +176,8 @@ class ReportClient(SingletonMixin):
         headers = {
             'Content-Type': 'application/json'
         }
+        import pdb
+        pdb.set_trace()
         response = web_utils.http_post_request(REPORT_SRV_CREATE, payload, headers, verify=False)
         print(response.text.encode('utf8'))
         return response.status_code
@@ -197,6 +202,39 @@ class ReportClient(SingletonMixin):
         headers = {
             'Content-Type': 'application/json'
         }
+        response = web_utils.http_patch_request(REPORT_SRV_UPDATE, payload, headers, verify=False)
+        print(response.text.encode('utf8'))
+        return response.status_code
+
+    def lookup_and_invalidate(self, **data_kwargs):
+        """
+        Lookup and set latest field on old failing entries.
+        :param data_kwargs:
+        :return:
+        """
+        #build, tp, te , tid
+
+        query_payload = {
+            "query": {
+                "buildNo": data_kwargs.get('build'),
+                "testExecutionID": data_kwargs.get('test_exec_id'),
+                "testID": data_kwargs.get('test_id'),
+                "latest": True
+            },
+        }
+
+        # Update latest key in entry as false
+        patch_payload = {
+            "filter": query_payload["query"],
+            "update": {
+                "$set": {"latest": False}
+            }
+        }
+
+        payload = patch_payload.update({"db_username": self.db_user,
+                                        "db_password": self.db_pass
+                                        })
+        headers = {'Content-Type': 'application/json'}
         response = web_utils.http_patch_request(REPORT_SRV_UPDATE, payload, headers, verify=False)
         print(response.text.encode('utf8'))
         return response.status_code

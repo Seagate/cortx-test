@@ -28,6 +28,7 @@ from collections import deque
 from typing import Tuple
 from typing import Optional
 from typing import Any
+from config import CMN_CFG
 
 
 def get_jira_credential() -> Tuple[str, Optional[str]]:
@@ -43,6 +44,25 @@ def get_jira_credential() -> Tuple[str, Optional[str]]:
         os.environ['JIRA_ID'] = jira_id
         os.environ['JIRA_PASSWORD'] = jira_pwd
     return jira_id, jira_pwd
+
+
+def get_db_credential() -> Tuple[str, Optional[str]]:
+    db_user = None
+    db_pwd = None
+    try:
+        db_user = os.environ['DB_USER']
+        db_pwd = os.environ['DB_PASSWORD']
+    except KeyError:
+        print("DB credentials not found in environment")
+        try:
+            getattr(CMN_CFG, 'db_user') and getattr(CMN_CFG, 'db_user')
+            db_user, db_pwd = CMN_CFG.db_user, CMN_CFG.db_password
+        except AttributeError as ae:
+            db_user = input("DB username: ")
+            db_pwd = getpass.getpass("DB password: ")
+        os.environ['DB_USER'] = db_user
+        os.environ['DB_PASSWORD'] = db_pwd
+    return db_user, db_pwd
 
 
 def parse_json(json_file) :

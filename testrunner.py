@@ -23,6 +23,8 @@ def parse_args():
                         help="Build number")
     parser.add_argument("-t", "--build_type", type=str, default='Release',
                         help="Build type (Release/Dev)")
+    parser.add_argument("-tg", "--target", type=str,
+                        default='', help="Target setup details")
     parser.add_argument("-ll", "--log_level", type=int, default=10,
                         help="log level value")
     parser.add_argument("-p", "--prc_cnt", type=int, default=2,
@@ -54,10 +56,16 @@ def run_pytest_cmd(args, te_tag, parallel_red, env=None):
     serial_run = "True" if args.force_serial_run else "False"
     force_serial_run = force_serial_run + serial_run
     prc_cnt = str(args.prc_cnt) + "*popen"
-    if parallel_red == "true" and not args.force_sequential_run:
+    if parallel_red == "true" and not args.force_serial_run:
         report_name = "--html=log/parallel_" + args.html_report
+
         cmd_line = ["pytest", is_parallel, log_level, report_name,
                     '-d', "--tx", prc_cnt, force_serial_run]
+    elif parallel_red == "true" and args.force_serial_run:
+        report_name = "--html=log/parallel_" + args.html_report
+
+        cmd_line = ["pytest", is_parallel, log_level, report_name,
+                    force_serial_run]
     else:
         report_name = "--html=log/non_parallel_" + args.html_report
         cmd_line = ["pytest", is_parallel, log_level, report_name,
@@ -65,10 +73,12 @@ def run_pytest_cmd(args, te_tag, parallel_red, env=None):
     if args.te_ticket:
         cmd_line = cmd_line + ["--te_tkt=" + str(args.te_ticket)]
 
+    if args.target:
+        cmd_line = cmd_line + ["--target=" + args.target]
+
     cmd_line = cmd_line + ['--build=' + build, '--build_type=' + build_type,
                            '--tp_ticket=' + args.test_plan]
-    import pdb
-    pdb.set_trace()
+
     prc = subprocess.Popen(cmd_line, env=env)
     prc.communicate()
 
@@ -139,9 +149,9 @@ def main(args):
             run_pytest_cmd(args, te_tag, 'false', env=_env)
         else:
             # Sequentially execute all tests with parallel tag which are mentioned in given tag.
-            run_pytest_cmd(args, te_tag, 'false', env=_env)
+            run_pytest_cmd(args, te_tag, 'true', env=_env)
             # Execute all other tests not having parallel tag with given component tag.
-            run_pytest_cmd(args, te_tag, 'false', env=_env)
+            #run_pytest_cmd(args, te_tag, 'false', env=_env)
     else:
         print("Json or test execution id is expected")
 
