@@ -18,6 +18,12 @@ extra_db_keys = extra_db_keys_bool + extra_db_keys_array + extra_db_keys_str
 mongodb_operators = ["$and", "$nor", "$or"]
 
 
+cmi_keys_float = ["cmi"]
+cmi_keys_string = ["testPlanLabel", "buildType", "buildNo"]
+
+cmi_keys = cmi_keys_float + cmi_keys_string
+
+
 def check_db_keys(json_data: dict) -> tuple:
     """
     Check if all fields present in request
@@ -158,4 +164,40 @@ def validate_update_request(json_data: dict) -> (bool, tuple):
         if key not in db_keys and key not in extra_db_keys:
             return False, (HTTPStatus.BAD_REQUEST,
                            f"{key} is not correct db field")
+    return True, None
+
+
+def check_add_cmi_request_fields(json_data: dict):
+    """
+    Check if all fields present in request
+    Check if unknown fields are not present
+
+    Args:
+        json_data: Data from request
+
+    Returns:
+        bool, fields
+    """
+    # Check if mandatory fields are present
+    for key in cmi_keys:
+        if key not in json_data:
+            return False, key
+
+    # Check if unknown fields are present
+    master_set = set(cmi_keys).union({"db_username", "db_password"})
+    unknown_fields = set(json_data) - master_set
+    if unknown_fields:
+        return False, unknown_fields
+
+    return True, None
+
+
+def validate_add_cmi_request_fields(json_data: dict):
+    """Validate fields in Add CMI request"""
+    for key in cmi_keys_float:
+        if not isinstance(json_data[key], float):
+            return False, (HTTPStatus.BAD_REQUEST, f"{key} should be float")
+    for key in cmi_keys_string:
+        if not isinstance(json_data[key], str):
+            return False, (HTTPStatus.BAD_REQUEST, f"{key} should be string")
     return True, None

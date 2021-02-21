@@ -36,7 +36,8 @@ LOGGER = logging.getLogger(__name__)
 class S3MultipartTestLib(Multipart):
     """Class initialising s3 connection and including methods for multipart operations."""
 
-    def __init__(self, access_key: str = ACCESS_KEY,
+    def __init__(self,
+                 access_key: str = ACCESS_KEY,
                  secret_key: str = SECRET_KEY,
                  endpoint_url: str = S3_CFG["s3_url"],
                  s3_cert_path: str = S3_CFG["s3_cert_path"],
