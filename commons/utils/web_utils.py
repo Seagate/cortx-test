@@ -86,7 +86,6 @@ def http_post_request(
         log.debug("response content - %s", str(response.text))
     else:
         log.debug("response object is empty")
-
     return response
 
 
@@ -114,5 +113,4 @@ def http_patch_request(
         log.debug("response content - %s", str(response.text))
     else:
         log.debug("response object is empty")
-
     return response
