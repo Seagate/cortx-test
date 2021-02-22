@@ -52,12 +52,15 @@ from commons.utils import config_utils
 from commons import worker
 from config import params
 
-
 sys.path.insert(0, os.getcwd())  # Has to be placed before core.
 
 LCK_FILE = 'lockfile-%s'
 INT_IP = '0.0.0.0'
 INT_PORT = 9092
+
+
+class RunnerException(RuntimeError):
+    pass
 
 
 def parse_args(argv):
@@ -315,12 +318,13 @@ def main(argv=None):
     try:
         opts = parse_args(argv)
         run(opts)
-    except Exception as fault:
+    except RunnerException as fault:
         indent = len(program_name) * " "
         sys.stderr.write(program_name + ": " + "\n")
         sys.stderr.write(program_desc + ": " + repr(fault) + "\n")
         sys.stderr.write(indent + "  for help use --help")
         return 2
+    return 0
 
 
 if __name__ == "__main__":
