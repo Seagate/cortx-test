@@ -738,32 +738,13 @@ def path_exists(path: str) -> bool:
     return status
 
 
-def file_lock(lock_file, nb=False):
+def file_lock(lock_file, non_blocking=False):
     """
     Uses the :func:`msvcrt.locking` function to hard lock the lock file on
-    windows systems. Or a
+    windows systems.
     """
 
     if sys.platform == 'win32':
-        # try:
-        #     sa = w32s.SECURITY_ATTRIBUTES()
-        #     sa.SetSecurityDescriptorDacl(True, None, False)
-        #     fmutex = win32event.CreateMutex(sa, False, fname)
-        # except pywintypes.error, fault:
-        #     if fault.winerror == 5:
-        #         fmutex = win32event.OpenMutex(win32event.SYNCHRONIZE, False, fname)
-        #     else:
-        #         raise
-        #
-        # if nb:
-        #     wtime = 0
-        # else:
-        #     wtime = win32event.INFINITE
-        #
-        # rc = win32event.WaitForSingleObject(fmutex, wtime)
-        # if rc == win32event.WAIT_TIMEOUT or rc == win32event.WAIT_FAILED:
-        #     win32api.CloseHandle(fmutex)
-        #     return None, False
         open_mode = os.O_RDWR | os.O_CREAT | os.O_TRUNC
         lock_file_fd = None
         try:
@@ -795,7 +776,7 @@ def file_lock(lock_file, nb=False):
             fmutex = open(fname, "wb+")
         try:
             flags = fcntl.LOCK_EX
-            if nb:
+            if non_blocking:
                 flags |= fcntl.LOCK_NB
             fcntl.flock(fmutex.fileno(), flags)
         except IOError:
@@ -805,6 +786,11 @@ def file_lock(lock_file, nb=False):
 
 
 def file_unlock(fmutex):
+    """
+    Unlock the file lock.
+    :param fmutex:
+    :return:
+    """
     if sys.platform == 'win32':
         msvcrt.locking(fmutex, msvcrt.LK_UNLCK, 1)
         os.close(fmutex)
@@ -814,8 +800,6 @@ def file_unlock(fmutex):
         # that acquired the file lock.
         except OSError:
             pass
-        return None
-
     else:
         fcntl.flock(fmutex.fileno(), fcntl.LOCK_UN)
         fmutex.close()

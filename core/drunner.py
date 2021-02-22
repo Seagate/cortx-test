@@ -49,8 +49,9 @@ from core import producer
 from commons.utils import system_utils
 from commons.utils import jira_utils
 from commons.utils import config_utils
-from config import params
 from commons import worker
+from config import params
+
 
 sys.path.insert(0, os.getcwd())  # Has to be placed before core.
 
@@ -323,8 +324,8 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
-    lk_file = LCK_FILE % os.getpid()
-    emutex, flag = system_utils.FileLock(lk_file)
+    lock_file = LCK_FILE % os.getpid()
+    emutex, flag = system_utils.FileLock(lock_file)
     name = multiprocessing.current_process().name
     print("Starting %s \n" % name)
     main()

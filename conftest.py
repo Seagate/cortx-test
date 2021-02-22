@@ -31,14 +31,15 @@ from strip_ansi import strip_ansi
 from typing import List
 from filelock import FileLock
 from commons.utils import config_utils
+from commons.utils import system_utils
+from commons.utils import jira_utils
 from commons import Globals
 from commons import cortxlogging
-from commons.utils import jira_utils
 from core.runner import LRUCache
 from core.runner import get_jira_credential
 from commons import constants
 from config import params
-from commons.utils import system_utils
+
 
 FAILURES_FILE = "failures.txt"
 LOG_DIR = 'log'
