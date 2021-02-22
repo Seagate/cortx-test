@@ -18,6 +18,7 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
+"""Threaded RPC Server implementation."""
 import sys
 import threading
 import traceback
@@ -75,10 +76,9 @@ class Server(threading.Thread):
     def run(self):
         """Register the RPC methods and start the RPC server."""
         try:
-            self.registercb(self.server)
+            self.register_cb(self.server)
             self.server.serve_forever()
         except Exception as error:
             print(str(error))
             traceback.print_exception(*sys.exc_info())
             sys.exit(0)  # used in child process and exits rpc process
-

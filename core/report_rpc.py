@@ -31,6 +31,9 @@ class ReportClientImpl:
     def __init__(self):
         """Init Jira and MongoDB Clients."""
 
+    def async_update_db(self):
+        """Async update db with test result."""
+
 
 def register(srv):
     """

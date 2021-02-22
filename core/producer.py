@@ -56,6 +56,10 @@ class Ticket:
         self.targets = targets
         self.build = build
 
+    def __str__(self):
+        print(' '.join(self.tag, self.parallel, self.targets, self.build,
+                       self.te_tickets, self.test_set))
+
 
 def convert_ticket_to_dict(ticket, ctx):
     """
@@ -97,7 +101,7 @@ def delivery_report(err, msg):
         msg.key(), msg.topic(), msg.partition(), msg.offset()))
 
 
-def produce(producer, topic, uuid, value=None, on_delivery=delivery_report):
+def produce(producer, topic, uuid=None, value=None, on_delivery=delivery_report):
     """
     Produce the ticket message i.e. value to topic.
     :param producer:
@@ -119,7 +123,7 @@ def server(*args: Any) -> None:
     :param args:
     :return:
     """
-    topic, work_queue, finish = args
+    topic, work_queue = args
     schema_str = """
     {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -178,13 +182,11 @@ def server(*args: Any) -> None:
                 work_item.task_done()
                 break
             test_set = list(work_item.get())
-            tag = work_item.tag
-            is_parallel = work_item.parallel
-            targets = work_item.targets
             te_tickets = work_item.tickets
-            build = work_item.build
-            ticket = Ticket(tag, is_parallel, test_set, te_tickets, targets, build)
-            produce(producer, topic=topic, key=str(uuid4()), value=ticket,
+            ticket = Ticket(work_item.tag, work_item.parallel,
+                            test_set, te_tickets, work_item.targets,
+                            work_item.build)
+            produce(producer, topic=topic, uuid=str(uuid4()), value=ticket,
                     on_delivery=delivery_report)
         except ValueError:
             print("Invalid input ticket, discarding record...")
