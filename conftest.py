@@ -20,6 +20,7 @@
 # !/usr/bin/python
 import pytest
 import os
+import ast
 import pathlib
 import json
 import logging
@@ -156,7 +157,7 @@ def pytest_addoption(parser) :
     :return:
     """
     parser.addoption(
-        "--is_parallel", action="store", default="false", help="option: true or false"
+        "--is_parallel", action="store", default=False, help="option: True or False"
     )
     parser.addoption(
         "--te_tkt", action="store", default="", help="TE ticket's ID"
@@ -166,6 +167,10 @@ def pytest_addoption(parser) :
     )
     parser.addoption(
         "--local", action="store", default=False, help="Decide whether run is dev local"
+    )
+    parser.addoption(
+        "--distributed", action="store", default=False,
+        help="Decide whether run is in distributed env"
     )
 
 
@@ -183,6 +188,19 @@ def read_test_list_csv() -> List:
     except Exception as e:
         print(e)
 
+def read_dist_test_list_csv() -> List:
+    try:
+        tests = list()
+        with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_DIST_TEST_LIST)) as f:
+            reader = csv.reader(f)
+            test_list = list(reader)
+            for test_row in test_list:
+                if not test_row:
+                    continue
+                tests.append(test_row[0])
+        return tests
+    except EnvironmentError as e:
+        print(e)
 
 @pytest.hookimpl(trylast=True)
 def pytest_sessionfinish(session, exitstatus):
@@ -201,31 +219,27 @@ def pytest_collection(session):
     items = session.perform_collect()
     LOGGER.info(dir(session.config))
     config = session.config
-    _local = bool(config.option.local)
+    _local = ast.literal_eval(config.option.local)
+    _distributed = ast.literal_eval(config.option.distributed)
+    is_parallel = ast.literal_eval(config.option.is_parallel)
     required_tests = list()
     global CACHE
     CACHE = LRUCache(1024 * 10)
     Globals.LOCAL_RUN = _local
-    if not _local:
-        required_tests = read_test_list_csv()  # e.g. required_tests = ['TEST-17413', 'TEST-17414']
+    if _distributed:
+        required_tests = read_dist_test_list_csv()  # e.g. required_tests = ['TEST-17413', 'TEST-17414']
         Globals.TE_TKT = config.option.te_tkt
         selected_items = []
         for item in items:
-            parallel_found = 'false'
             test_found = ''
             for mark in item.iter_markers():
-                if mark.name == 'parallel':
-                    parallel_found = 'true'
-                    if config.option.is_parallel == 'false':
-                        break
-                elif mark.name == 'tags':
+                if mark.name == 'tags':
                     test_found = mark.args[0]
-            if parallel_found == config.option.is_parallel and test_found != '':
-                if test_found in required_tests:
-                    selected_items.append(item)
+                    if test_found in required_tests:
+                        selected_items.append(item)
             CACHE.store(item.nodeid, test_found)
         items[:] = selected_items
-    else:
+    elif _local:
         meta = list()
         for item in items:
             test_id = ''
@@ -235,9 +249,35 @@ def pytest_collection(session):
                     test_id = mark.args[0]
                 else:
                     _marks.append(mark.name)
-            CACHE.store(item.nodeid, test_id)
-            meta.append(dict(nodeid=item.nodeid, test_id=test_id,
-                             marks=_marks))
+                    CACHE.store(item.nodeid, test_id)
+                    meta.append(dict(nodeid=item.nodeid, test_id=test_id,
+                                     marks=_marks))
+    else:
+        required_tests = read_test_list_csv()  # e.g. required_tests = ['TEST-17413', 'TEST-17414']
+        Globals.TE_TKT = config.option.te_tkt
+        selected_items = []
+        selected_tests = []
+        for item in items :
+            parallel_found = False
+            test_found = ''
+            for mark in item.iter_markers():
+                if mark.name == 'parallel':
+                    parallel_found = True
+                    if not is_parallel:
+                        break
+                elif mark.name == 'tags':
+                    test_found = mark.args[0]
+            if parallel_found == is_parallel and test_found != '':
+                if test_found in required_tests:
+                    selected_items.append(item)
+                    selected_tests.append(test_found)
+            CACHE.store(item.nodeid, test_found)
+        with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_SELECTED_TESTS), 'w')\
+                as test_file:
+            write = csv.writer(test_file)
+            for test in selected_tests:
+                write.writerow([test])
+        items[:] = selected_items
     cache_home = os.path.join(os.getcwd(), LOG_DIR)
     cache_path = os.path.join(cache_home, CACHE_JSON)
     if not os.path.exists(cache_home):
@@ -255,7 +295,6 @@ def pytest_collection(session):
     if session.config.option.collectonly:
         te_meta = config_utils.create_content_json(os.path.join(cache_home, 'te_meta.json'), meta)
         LOGGER.debug("Items meta dict %s created at %s", meta, te_meta)
-
     return items
 
 
