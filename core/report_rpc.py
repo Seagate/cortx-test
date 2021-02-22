@@ -33,4 +33,8 @@ class ReportClientImpl:
 
 
 def register(srv):
+    """
+    Registers RPC API.
+    :param srv:
+    """
     srv.register_instance(ReportClientImpl())

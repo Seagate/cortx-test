@@ -23,6 +23,7 @@ import threading
 import traceback
 import socketserver
 from typing import Callable
+from typing import Tuple
 from xmlrpc.server import SimpleXMLRPCServer
 
 
@@ -62,10 +63,11 @@ class XMLRPCServer(socketserver.ThreadingMixIn, SimpleXMLRPCServer):
 
 class Server(threading.Thread):
     """Server Thread to bootstrap XMLRPcServer"""
-    def __init__(self, addr: str, register_cb: Callable):
+    def __init__(self, addr: Tuple, register_cb: Callable):
         self.port = addr[1]
+        self.bind_int = addr[0]
         self.register_cb = register_cb
-        self.server = XMLRPCServer(("0.0.0.0", int(self.port)),
+        self.server = XMLRPCServer((self.bind_int, int(self.port)),
                                    allow_none=True,
                                    logRequests=False)
         threading.Thread.__init__(self)

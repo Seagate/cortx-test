@@ -59,6 +59,8 @@ from config import params
 from commons import worker
 
 LCK_FILE = 'lockfile-%s'
+INT_IP = '0.0.0.0'
+INT_PORT = 9092
 
 
 def parse_args(argv):
@@ -87,21 +89,24 @@ def parse_args(argv):
 
 
 class Runner:
-    def __init__(self, queue):
-        self.work_queue = queue
+    """Runs the RPC server for aysnc reporting."""
+
+    def __init__(self, wqueue):
+        self.work_queue = wqueue
 
     def wait_for_parent(self):
         """Process using this function will exit if parent exited/killed."""
         lk_file = LCK_FILE % self.ppid
         e_mutex, _ = system_utils.FileLock(lk_file)
         system_utils.file_unlock(e_mutex)
-        os._exit(0)
+        sys.exit(0)  # os._exit(0)
 
     def run(self):
+        """Run method to bootstrap RPC server."""
         main_th = threading.Thread(target=self.wait_for_parent)
         main_th.start()
         # Start the report client rpc server
-        srv = rpcserver.Server(('0.0.0.0', report_rpc.register))
+        srv = rpcserver.Server((INT_IP, INT_PORT, report_rpc.register))
         srv.start()
         print("Report Client started...")
         sys.exit(0)
@@ -113,6 +118,10 @@ def get_pid():
 
 
 def start_rpc_server(_queue: Any) -> None:
+    """
+    Starts RPC Server.
+    :param _queue:
+    """
     w = Runner(_queue)
     w.run()
 
@@ -121,19 +130,18 @@ def run(opts: dict) -> None:
     """Main entry point of distributed test executor."""
     _queue = Queue
     if opts.enable_async_report:
-        start_rpc_server(_queue)  # stats an rpc server for async reporting task management
+        start_rpc_server(_queue)  # starts an rpc server for async reporting task management
     # tags = opts.tags
     tickets = opts.tickets
     targets = opts.targets
     build = opts.build
     topic = params.TEST_EXEC_TOPIC
-    collect_only = True
     # collect the test universe
     run_pytest_collect_only_cmd()
 
     log_home = create_log_dir_if_not_exists()
 
-    # Create a reverse map of test id as key and values as nodeid, tags
+    # Create a reverse map of test id as key and values as node_id, tags
     meta_data = dict()
     test_map = dict()
     rev_tag_map = dict()
@@ -250,6 +258,10 @@ def create_test_map(base_components_marks: Tuple,
 
 
 def create_log_dir_if_not_exists():
+    """
+    Create log dir if not exists in main entry.
+    :return:
+    """
     log_home = os.path.join(os.getcwd(), params.LOG_DIR_NAME)
     if not os.path.exists(log_home):
         print("log dir does not exists... creating")
@@ -271,6 +283,11 @@ def run_pytest_collect_only_cmd(te_tag=None):
 
 
 def get_te_tickets_data(ticket: str) -> Tuple[list, str]:
+    """
+    Gets TE test list and te tag.
+    :param ticket:
+    :return:
+    """
     jira_id, jira_pwd = runner.get_jira_credential()
     jira_obj = jira_utils.JiraTask(jira_id, jira_pwd)
     test_list, te_tag = jira_obj.get_test_ids_from_te(ticket)
@@ -288,6 +305,11 @@ def save_to_logdir(test_list: List) -> None:
 
 
 def main(argv=None):
+    """
+    Handles argument parser.
+    :param argv:
+    :return:
+    """
     program_name = os.path.basename(sys.argv[0])
     program_desc = '''Distributed Test runner'''
     if argv is None:

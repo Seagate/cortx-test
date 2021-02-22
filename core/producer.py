@@ -98,6 +98,14 @@ def delivery_report(err, msg):
 
 
 def produce(producer, topic, uuid, value=None, on_delivery=delivery_report):
+    """
+    Produce the ticket message i.e. value to topic.
+    :param producer:
+    :param topic:
+    :param uuid:
+    :param value:
+    :param on_delivery:
+    """
     # Serve on_delivery callbacks from previous calls to produce()
     producer.poll(0.0)
     producer.produce(topic=topic, key=uuid, value=value,
