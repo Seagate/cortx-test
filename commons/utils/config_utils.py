@@ -28,11 +28,12 @@ import os
 import json
 import shutil
 import re
-from configparser import ConfigParser, MissingSectionHeaderError
+from configparser import ConfigParser, MissingSectionHeaderError, NoSectionError
 from defusedxml.cElementTree import parse
 import yaml
 import commons.errorcodes as cterr
 from commons.exceptions import CTException
+from commons import pswdmanager
 
 LOG = logging.getLogger(__name__)
 MAIN_CONFIG_PATH = "config/main_config.yaml"
@@ -173,9 +174,10 @@ def get_config(path: str, section: str = None, key: str = None) -> list or str:
         config = ConfigParser()
         config.read(path)
         if section and key:
-            LOG.debug(config.get(section, key))
+            # LOG.debug(config.get(section, key))
             return config.get(section, key)
-        LOG.debug(config.items(section))
+        # LOG.debug(config.items(section))
+
         return config.items(section)
     except MissingSectionHeaderError:
         key_str = "{}=".format(key)
@@ -198,7 +200,12 @@ def update_config_ini(path: str, section: str, key: str, value: str) -> bool:
     config = ConfigParser()
     config.read(path)
     try:
-        config.set(section, key, value)
+        try:
+            config.set(section, key, value)
+        except NoSectionError as error:
+            LOG.warning(error)
+            config.add_section(section)
+            config.set(section, key, value)
         with open(path, "w") as configfile:
             config.write(configfile)
     except TypeError as error:
@@ -346,3 +353,43 @@ def update_configs(all_configs: dict) -> None:
     """
     for conf in all_configs.keys():
         read_write_config(conf, all_configs[conf])
+
+def get_config_from_yaml(fpath: str = 'config.yaml') -> dict:
+    """Reads the config and decrypts the passwords
+
+    :param fpath: configuration file path
+    :return [type]: dictionary containing config data
+    """
+    with open(fpath) as fin:
+        data = yaml.safe_load(fin)
+        data['end'] = 'end'
+        pswdmanager.decrypt_all_passwd(data)
+    return data
+
+
+def get_config_db(cname="r2_systems"):
+    """Reads the configuration from the database
+
+    :param cname:collection which will be read
+    """
+    print(cname)
+    # TODO: This will covered in EOS-17026
+    return None
+
+
+def get_config_wrapper(**kwargs):
+    """Get the configuration from the database as well as yaml and merge.
+    It is expected that duplicate data should not be present between DB and yaml
+    """
+    flag = False
+    data = {}
+    if "fpath" in kwargs:
+        flag = True
+        data.update(get_config_from_yaml(fpath=kwargs['fpath']))
+    if "cname" in kwargs:
+        flag = True
+        data.update(get_config_db(cname=kwargs['cname']))
+    if not flag:
+        print("Invalid keyword argument")
+        raise ValueError("Invalid argument")
+    return data

@@ -407,5 +407,87 @@ class UpdateSystems(Resource):
                                   response=update_result[1][1])
 
 
+@api.route("/cmi", doc={"description": "Create new entry of CMI in db"})
+@api.response(200, "Success")
+@api.response(400, "Bad Request: Missing parameters. Do not retry.")
+@api.response(401, "Unauthorized: Wrong db_username/db_password.")
+@api.response(403, "Forbidden: User does not have permission for operation.")
+@api.response(503, "Service Unavailable: Unable to connect to mongoDB.")
+class CMI(Resource):
+    """Methods fro cmi endpoint, to set and get CMI data"""
+    @staticmethod
+    def post():
+        """POST method on /cmi endpoint"""
+        json_data = flask.request.get_json()
+        if not json_data:
+            return flask.Response(status=HTTPStatus.BAD_REQUEST,
+                                  response="Body is empty")
+        if not validations.check_user_pass(json_data):
+            return flask.Response(status=HTTPStatus.BAD_REQUEST,
+                                  response="db_username/db_password missing in request body")
+
+        response = validations.check_add_cmi_request_fields(json_data)
+
+        # Validate correct fields are present
+        if not response[0]:
+            return flask.Response(status=HTTPStatus.BAD_REQUEST,
+                                  response=f"Unknown fields given or mandatory fields missing  "
+                                           f"{response[1]}")
+
+        # Validate formats of mandatory fields
+        validate_result = validations.validate_add_cmi_request_fields(json_data)
+        if not validate_result[0]:
+            return flask.Response(status=validate_result[1][0],
+                                  response=validate_result[1][1])
+
+        # Build MongoDB URI using username and password
+        uri = MONGODB_URI.format(quote_plus(json_data["db_username"]),
+                                 quote_plus(json_data["db_password"]),
+                                 db_hostname)
+
+        del json_data["db_username"]
+        del json_data["db_password"]
+
+        query = deepcopy(json_data)
+        del query["cmi"]
+
+        # Query and update the document if present else create new
+        result = mongodbapi.update_document(query, {"$set": {"cmi": json_data["cmi"]}},
+                                            uri, db_name, cmi_collection, upsert=True)
+        if result[0]:
+            return flask.Response(status=HTTPStatus.OK,
+                                  response="Entry Updated/Created.")
+        return flask.Response(status=result[1][0], response=result[1][1])
+
+    @staticmethod
+    def get():
+        """Get method on cmi endpoint"""
+        json_data = flask.request.get_json()
+        if not json_data:
+            return flask.Response(status=HTTPStatus.BAD_REQUEST,
+                                  response="Body is empty")
+        if not validations.check_user_pass(json_data):
+            return flask.Response(status=HTTPStatus.BAD_REQUEST,
+                                  response="db_username/db_password missing in request body")
+
+        # Build MongoDB URI using username and password
+        uri = MONGODB_URI.format(quote_plus(json_data["db_username"]),
+                                 quote_plus(json_data["db_password"]),
+                                 db_hostname)
+
+        del json_data["db_username"]
+        del json_data["db_password"]
+
+        # Search and return document
+        query_results = mongodbapi.find_documents(json_data, None, uri, db_name, cmi_collection)
+        if query_results[0]:
+            output = []
+            for result in query_results[1]:
+                del result["_id"]
+                output.append(result)
+            return flask.jsonify({'result': output})
+        return flask.Response(status=query_results[1][0], response=query_results[1][1])
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, threaded=True, debug=True)
