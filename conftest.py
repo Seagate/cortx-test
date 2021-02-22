@@ -18,9 +18,9 @@
 #
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
+import ast
 import pytest
 import os
-import ast
 import pathlib
 import json
 import logging
@@ -189,18 +189,22 @@ def read_test_list_csv() -> List:
         print(e)
 
 def read_dist_test_list_csv() -> List:
+    """
+    Read distributed test csv file
+    """
     try:
         tests = list()
-        with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_DIST_TEST_LIST)) as f:
-            reader = csv.reader(f)
+        with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_DIST_TEST_LIST))\
+                as test_file:
+            reader = csv.reader(test_file)
             test_list = list(reader)
             for test_row in test_list:
                 if not test_row:
                     continue
                 tests.append(test_row[0])
         return tests
-    except EnvironmentError as e:
-        print(e)
+    except Exception as err:
+        print(err)
 
 @pytest.hookimpl(trylast=True)
 def pytest_sessionfinish(session, exitstatus):
@@ -227,7 +231,7 @@ def pytest_collection(session):
     CACHE = LRUCache(1024 * 10)
     Globals.LOCAL_RUN = _local
     if _distributed:
-        required_tests = read_dist_test_list_csv()  # e.g. required_tests = ['TEST-17413', 'TEST-17414']
+        required_tests = read_dist_test_list_csv()  
         Globals.TE_TKT = config.option.te_tkt
         selected_items = []
         for item in items:
