@@ -57,8 +57,8 @@ class Ticket:
         self.build = build
 
     def __str__(self):
-        print(' '.join(self.tag, self.parallel, self.targets, self.build,
-                       self.te_tickets, self.test_set))
+        print(' '.join([self.tag, self.parallel, self.targets, self.build,
+                       self.te_tickets, self.test_set]))
 
 
 def convert_ticket_to_dict(ticket, ctx):
