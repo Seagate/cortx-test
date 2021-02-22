@@ -22,8 +22,6 @@
 
 import time
 import logging
-import random
-import string
 import pytest
 from commons.utils import assert_utils
 from commons.utils import config_utils as conf_util
@@ -43,14 +41,8 @@ CLI_CONF = conf_util.read_yaml("config/csm/csm_config.yaml")
 class TestCliIAMUser:
     """IAM user Testsuite for CLI"""
 
-    @pytest.fixture(scope='function')
-    def generate_random_string(self):
-        """
-        This fixture will return random string with lowercase
-        :return: random string
-        :rtype: str
-        """
-        return ''.join(random.choice(string.ascii_lowercase) for i in range(5))
+    def __init__(self):
+        self.user_name = None
 
     @classmethod
     def setup_class(cls):
@@ -257,13 +249,13 @@ class TestCliIAMUser:
          case providing mismatch password while creating IAM user
         """
         self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        mismatch_password = "Seagate@123"
+        mismatch_pwd = "Seagate@123"
         self.LOGGER.info(
             "Verifying that user is not created in case of mismatch password")
         resp = IAM_OBJ.create_iam_user(
             user_name=self.user_name,
             password=self.iam_password,
-            confirm_password=mismatch_password)
+            confirm_password=mismatch_pwd)
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(resp[1], "password do not match")
         self.LOGGER.info(

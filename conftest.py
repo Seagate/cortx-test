@@ -19,6 +19,8 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 import pytest
+import random
+import string
 import os
 import pathlib
 import json
@@ -348,3 +350,12 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
         with open(test_log, 'w') as fp:
             for rec in logs:
                 fp.write(rec + '\n')
+
+    @pytest.fixture(scope='function')
+    def generate_random_string(self):
+        """
+        This fixture will return random string with lowercase
+        :return: random string
+        :rtype: str
+        """
+        return ''.join(random.choice(string.ascii_lowercase) for i in range(5))
