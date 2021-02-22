@@ -71,7 +71,7 @@ class TestSSPLSecondary:
             res = cls.ras_test_obj.put_kv_store(CMN_CFG["enclosure_user"],
                                                 CMN_CFG["enclosure_pwd"],
                                                 field)
-            assert res is True
+            assert res
 
     def setup_method(self):
         """Setup operations."""
@@ -184,6 +184,7 @@ class TestSSPLSecondary:
         """
         EOS-10619: Pacemaker Resource Agents for SSPL service(Stop sspl service
         on Node)
+
         pacemaker_sspl
         """
         LOGGER.info(
@@ -276,7 +277,7 @@ class TestSSPLSecondary:
                 "Step 10: Successfully verified the RabbitMQ channel for alert "
                 "responses")
 
-        assert csm_resp is True, "No alert should be seen in CSM REST API"
+        assert csm_resp, "No alert should be seen in CSM REST API"
         LOGGER.info(
             "Step 8: Successfully checked CSM REST API for no alerts")
 
@@ -284,13 +285,13 @@ class TestSSPLSecondary:
             "ENDED: Pacemaker Resource Agents for SSPL service(Stop sspl "
             "service on Node)")
 
-    @pytest.mark.skip
     @pytest.mark.ras
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-14035")
     def test_1783(self):
         """
         EOS-10620: Run SSPL in degraded mode (Fail  SSPL service)
+
         pacemaker_sspl
         """
         LOGGER.info(
@@ -382,7 +383,7 @@ class TestSSPLSecondary:
                 "Step 10: Successfully verified the RabbitMQ channel for alert "
                 "responses")
 
-        assert csm_resp is True, "No alert should be seen in CSM REST API"
+        assert csm_resp, "No alert should be seen in CSM REST API"
         LOGGER.info(
             "Step 8: Successfully checked CSM REST API for no alerts")
 
@@ -390,6 +391,7 @@ class TestSSPLSecondary:
             "ENDED: Pacemaker Resource Agents for SSPL service(Stop sspl "
             "service on Node)")
 
+    @pytest.mark.skip
     @pytest.mark.ras
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-14794")
@@ -397,6 +399,7 @@ class TestSSPLSecondary:
         """
         EOS-10618: Pacemaker Resource Agents for SSPL service (Reboot the Node
         server)
+
         pacemaker_sspl
         """
         LOGGER.info(
@@ -409,14 +412,14 @@ class TestSSPLSecondary:
         resp = S3Helper.get_s3server_service_status(
             service=CM_CFG["service"]["sspl_service"], host=self.host,
             user=self.uname, pwd=self.passwd)
-        assert resp is True
+        assert resp[0], resp[1]
         LOGGER.info("Step 1: Sspl-ll is up and running on primary node")
 
         LOGGER.info("Step 2: Checking sspl-ll service status on secondary node")
         resp = S3Helper.get_s3server_service_status(
             service=CM_CFG["service"]["sspl_service"], host=self.host2,
             user=self.uname, pwd=self.passwd)
-        assert resp is True
+        assert resp[0], resp[1]
         LOGGER.info("Step 2: Sspl-ll is up and running on secondary node")
 
         LOGGER.info("Checking sspl state on node %s", self.host2)
@@ -436,7 +439,8 @@ class TestSSPLSecondary:
             "Step 3: Rebooting node %s having sspl service status as active",
             master_node)
         resp = node_obj_master.execute_cmd(cmd=common_cmd.REBOOT_NODE_CMD,
-                                           read_nbytes=test_cfg["buffer_sz"])
+                                           read_nbytes=test_cfg["buffer_sz"],
+                                           exc=False)
         LOGGER.info(
             "Step 3: Rebooted node: %s, Response: %s", master_node, resp)
 
@@ -480,7 +484,7 @@ class TestSSPLSecondary:
             alert_list = [test_cfg["resource_type"], test_cfg["alert_type"]]
             LOGGER.debug("RMQ alert check: %s", alert_list)
             resp = ras_obj_slave.alert_validation(alert_list, restart=False)
-            assert resp[0] is True, resp[1]
+            assert resp[0], resp[1]
             LOGGER.info(
                 "Step 6: Successfully verified the RabbitMQ channel for fan "
                 "alert responses")
@@ -495,14 +499,14 @@ class TestSSPLSecondary:
         resp = S3Helper.get_s3server_service_status(
             service=CM_CFG["service"]["sspl_service"], host=self.host,
             user=self.uname, pwd=self.passwd)
-        assert resp is True
+        assert resp[0], resp[1]
         LOGGER.info("Step 7: Sspl-ll is up and running on primary node")
 
         LOGGER.info("Step 8: Checking sspl-ll service status on secondary node")
         resp = S3Helper.get_s3server_service_status(
             service=CM_CFG["service"]["sspl_service"], host=self.host2,
             user=self.uname, pwd=self.passwd)
-        assert resp is True
+        assert resp[0], resp[1]
         LOGGER.info("Step 8: Sspl-ll is up and running on secondary node")
 
         LOGGER.info("Checking sspl state on node %s", self.host2)
@@ -515,7 +519,7 @@ class TestSSPLSecondary:
         compare(slave_node, res["masters"].replace("srv", "eos"))
         compare(master_node, res["slaves"].replace("srv", "eos"))
 
-        assert csm_resp is True, "No alert should be seen in CSM REST API"
+        assert csm_resp, "No alert should be seen in CSM REST API"
         LOGGER.info(
             "Step 8: Successfully checked CSM REST API for no alerts")
 

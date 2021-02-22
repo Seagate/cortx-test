@@ -132,8 +132,7 @@ class RASCoreLib:
         :param cmd: command to be executed on screen
         :return: screen response
         """
-        if not self.node_utils.execute_cmd("rpm  -qa | grep screen")[0]:
-            self.install_screen_on_machine()
+        self.install_screen_on_machine()
         time.sleep(5)
         LOGGER.debug("RabbitMQ command: %s", cmd)
         screen_cmd = common_commands.SCREEN_CMD.format(cmd)
@@ -677,14 +676,13 @@ class RASCoreLib:
         :return: pid
         :rtype: int
         """
-        global pid
-        pid = self.get_service_pid(service_name)
-        LOGGER.info("Service PID %s", pid)
-        resp = self.kill_pid(pid)
+        p_id = self.get_service_pid(service_name)
+        LOGGER.info("Service PID %s", p_id)
+        resp = self.kill_pid(p_id)
         if not resp:
             LOGGER.error("Failure while killing Service:%s - PID:%s",
-                         service_name, pid)
-        return pid
+                         service_name, p_id)
+        return p_id
 
     def get_service_pid(self, service):
         """
@@ -693,30 +691,30 @@ class RASCoreLib:
         :return: PID
         :rtype: str
         """
-        pid = None
+        p_id = None
         service_pid_cmd = common_commands.GET_PID_CMD.format(service)
         LOGGER.info("Get process id, command is : %s", service_pid_cmd)
         resp = self.node_utils.execute_cmd(cmd=service_pid_cmd, read_lines=True)
         for res_str in resp:
             if "Main PID" in resp[0].strip():
-                pid = resp[0].split()[2]
-        if pid is None:
+                p_id = resp[0].split()[2]
+        if p_id is None:
             LOGGER.info("Error : Could not find PID for the service %s",
                         service)
-            return pid
+            return p_id
         else:
-            LOGGER.info("For Service : %s  PID is :%s", service, pid)
-            return pid
+            LOGGER.info("For Service : %s  PID is :%s", service, p_id)
+            return p_id
 
-    def kill_pid(self, pid):
+    def kill_pid(self, p_id):
         """
         This function kills the service for given PID
         :param pid: PID if service
         :return True/False: True if operation is successful
         :rtype: Boolean
         """
-        if pid is not None:
-            kill_cmd = common_commands.KILL_CMD.format(pid)
+        if p_id is not None:
+            kill_cmd = common_commands.KILL_CMD.format(p_id)
             LOGGER.info("Kill command using process id, command is : %s",
                         kill_cmd)
             resp = self.node_utils.execute_cmd(cmd=kill_cmd, read_lines=True)
@@ -736,6 +734,7 @@ class RASCoreLib:
             result = run_remote_cmd(hostname=host_name, username=self.username,
                                     password=self.pwd,
                                     cmd=common_commands.PCS_STATUS_CMD)
+            result = result[1].decode('utf-8').strip().split('\n')
             for value in result[1]:
                 LOGGER.info(value)
                 if cluster_msg in value:

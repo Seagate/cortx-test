@@ -247,6 +247,7 @@ class TestSSPL:
     def test_3005(self):
         """
         EES ras SSPL: Node: Disk Space-Full Alerts #1
+
         sspl_disk_space_alert
         """
         LOGGER.info("STARTED: TEST-3005: EES ras SSPL: "
@@ -293,6 +294,7 @@ class TestSSPL:
     def test_3006(self):
         """
         EES ras SSPL: Node: Disk Space-Full Alerts #2
+
         sspl_disk_space_alert
         """
         LOGGER.info("STARTED:TEST-3006: EES ras SSPL: "
@@ -346,6 +348,7 @@ class TestSSPL:
         """
         EOS-8135 : Validate EES RAS SSPL: Sync with systemd (to bring down
         startup within SLA
+
         sspl_startup_time
         """
         LOGGER.info(
@@ -380,6 +383,7 @@ class TestSSPL:
     def test_3161(self):
         """
         EOS-8135 : Validating EOS v1 RAS: Node: IPMI: FAN Failure Alerts
+
         sspl_fan_alert
         """
         LOGGER.info(
@@ -463,6 +467,7 @@ class TestSSPL:
     def test_3280(self):
         """
         EOS-8135 : RAS: Node: IPMI: FAN Failure Alerts Persistent Cache
+
         sspl_fan_alert
         """
         LOGGER.info("STARTED: RAS: Node: IPMI: FAN Failure Alerts Persistent"
@@ -573,6 +578,7 @@ class TestSSPL:
     def test_1299(self):
         """
         EOS-8135 : Validating EOS v1 RAS: Node: IPMI: FAN Failure Alerts
+
         sspl_fan_alert
         """
         LOGGER.info(
@@ -621,6 +627,7 @@ class TestSSPL:
         """
         EOS-9075: TA RAS Automation: Validate alert for PSU Module Fault/
         cable missing from 5U84 Enclosure.
+
         sspl_fan_alert
         """
         LOGGER.info(
@@ -686,6 +693,7 @@ class TestSSPL:
         EOS-9074: TEST: From user perspective validate if alerts are displayed
         with right message alerts - controller fault resolved
         Fault-Resolved from 5U84 Enclosure
+
         sspl_ctrl_alert
         """
         LOGGER.info(
@@ -753,6 +761,7 @@ class TestSSPL:
         """
         EOS-9082 : TA RAS Automation: Validate alerts for PSU Module
         Fault-Resolved from 5U84 Enclosure
+
         sspl_psu_alert
         """
         LOGGER.info(
@@ -817,6 +826,7 @@ class TestSSPL:
         """
         EOS-9078 : TA RAS Automation: Validate if alerts are displayed with
         right message - controller faulted
+
         sspl_ctrl_alert
         """
         LOGGER.info(
@@ -882,6 +892,7 @@ class TestSSPL:
         """
         EOS-9865 : Validating EES RAS: Allow log level setting is not changed
         when after restarting the SSPL service
+
         sspl_log_level
         """
         LOGGER.info("STARTED: Validating EES RAS: Allow log level setting is "
@@ -931,6 +942,7 @@ class TestSSPL:
         """
         EOS-9877 : TA RAS Automation: Test scenarios for validating EES RAS:
         Run SSPL on port 5100
+
         sspl_disk_space_alert
         """
         LOGGER.info(
@@ -1050,6 +1062,7 @@ class TestSSPL:
     def test_3424(self):
         """
         EOS-9879 : TA RAS Automation : Sensor to read IEM from syslog
+
         sspl_iem_alert
         """
         LOGGER.info(
@@ -1109,6 +1122,7 @@ class TestSSPL:
     def test_6592(self):
         """
         EOS-9870: Validating EES RAS: Allow log level setting dynamically
+
         sspl_log_level
         """
         LOGGER.info(
@@ -1158,6 +1172,7 @@ class TestSSPL:
     def test_157(self):
         """
         EOS-9962: TA RAS Automation: Test Disabling a drive from disk group
+
         sspl_disk_alert
         """
         LOGGER.info("STARTED: TA RAS Automation: Test Disabling a drive from "
@@ -1254,6 +1269,7 @@ class TestSSPL:
     def test_158(self):
         """
         EOS-9963: TA RAS Automation: Test Enabling a drive from disk group
+
         sspl_disk_alert
         """
         LOGGER.info(
@@ -1348,6 +1364,7 @@ class TestSSPL:
     def test_6335(self):
         """
         EOS-9873: Test Enhanced IEM response through decoded IEC
+
         sspl_iem_alert
         """
         LOGGER.info(
@@ -1412,6 +1429,7 @@ class TestSSPL:
     def test_5924(self):
         """
         EOS-9875: Test Username/Password Security coverage on consul
+
         consul_security
         """
         LOGGER.info(
@@ -1437,6 +1455,7 @@ class TestSSPL:
         """
         EOS-12920: User can view / query EES Nodes (1U Servers) OS health view
         (CPU Usage)
+
         health_view
         """
         LOGGER.info(
@@ -1475,6 +1494,7 @@ class TestSSPL:
         """
         EOS-12921: User can view / query EES Nodes (1U Servers) OS health view
         (Main Memory Usage)
+
         health_view
         """
         LOGGER.info(
@@ -1513,6 +1533,7 @@ class TestSSPL:
     def test_4584(self):
         """
         EOS-9876: Test SSPL with SELinux enabled
+
         health_view
         """
         LOGGER.info(

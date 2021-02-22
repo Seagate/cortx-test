@@ -186,9 +186,9 @@ class TestRAIDOperations:
                 filename=self.cm_cfg["file"]["alert_log_file"])
             self.nd_obj.remove_file(
                 filename=self.cm_cfg["file"]["extracted_alert_file"])
+            LOGGER.info("Removing screen log file")
+            self.nd_obj.remove_file(filename=self.cm_cfg["file"]["screen_log"])
 
-        LOGGER.info("Removing screen log file")
-        self.nd_obj.remove_file(filename=self.cm_cfg["file"]["screen_log"])
         self.hlt_obj.restart_pcs_resource(self.cm_cfg["sspl_resource_id"])
         time.sleep(self.cm_cfg["sleep_val"])
 
@@ -226,7 +226,8 @@ class TestRAIDOperations:
                         " channel logs")
             alert_list = [test_cfg["resource_type"],
                           test_cfg["alert_fault"]]
-            resp = self.ras_obj.list_alert_validation(alert_list)
+            resp = self.ras_obj.alert_validation(string_list=alert_list,
+                                                 restart=False)
             assert resp[0], resp[1]
             LOGGER.info(
                 "Step 2: Verified the RAID fault alert on RMQ channel logs")
@@ -261,7 +262,8 @@ class TestRAIDOperations:
                         " channel logs")
             alert_list = [test_cfg["resource_type"],
                           test_cfg["alert_fault_resolved"]]
-            resp = self.ras_obj.list_alert_validation(alert_list)
+            resp = self.ras_obj.alert_validation(string_list=alert_list,
+                                                 restart=False)
             assert resp[0], resp[1]
             LOGGER.info(
                 "Step 5: Verified the RAID fault alert on RMQ channel logs")
@@ -314,7 +316,8 @@ class TestRAIDOperations:
                 " logs")
             alert_list = [test_cfg["resource_type"],
                           test_cfg["alert_fault"], resource_id]
-            resp = self.ras_obj.list_alert_validation(alert_list)
+            resp = self.ras_obj.alert_validation(string_list=alert_list,
+                                                 restart=False)
             assert resp[0], resp[1]
             LOGGER.info(
                 "Step 2: Verified the RAID fault alert on RMQ channel logs")
@@ -352,7 +355,8 @@ class TestRAIDOperations:
                 "channel logs")
             alert_list = [test_cfg["resource_type"],
                           test_cfg["alert_missing"], resource_id]
-            resp = self.ras_obj.list_alert_validation(alert_list)
+            resp = self.ras_obj.alert_validation(string_list=alert_list,
+                                                 restart=False)
             assert resp[0], resp[1]
             LOGGER.info(
                 "Step 5: Verified the RAID missing alert on RMQ channel logs")
@@ -404,7 +408,8 @@ class TestRAIDOperations:
                 " logs")
             alert_list = [test_cfg["resource_type"],
                           test_cfg["alert_fault"], resource_id]
-            resp = self.ras_obj.list_alert_validation(alert_list)
+            resp = self.ras_obj.alert_validation(string_list=alert_list,
+                                                 restart=False)
             assert resp[0], resp[1]
             LOGGER.info(
                 "Step 2: Verified the RAID fault alert on RMQ channel logs")
@@ -456,7 +461,8 @@ class TestRAIDOperations:
                 " logs")
             alert_list = [test_cfg["resource_type"],
                           test_cfg["alert_fault"], resource_id]
-            resp = self.ras_obj.list_alert_validation(alert_list)
+            resp = self.ras_obj.alert_validation(string_list=alert_list,
+                                                 restart=False)
             assert resp[0], resp[1]
             LOGGER.info(
                 "Step 2: Verified the RAID fault alert on RMQ channel logs")
@@ -494,7 +500,8 @@ class TestRAIDOperations:
                 "channel logs")
             alert_list = [test_cfg["resource_type"],
                           test_cfg["alert_missing"], resource_id]
-            resp = self.ras_obj.list_alert_validation(alert_list)
+            resp = self.ras_obj.alert_validation(string_list=alert_list,
+                                                 restart=False)
             assert resp[0], resp[1]
             LOGGER.info(
                 "Step 5: Verified the RAID missing alert on RMQ channel logs")
@@ -530,7 +537,8 @@ class TestRAIDOperations:
                         " RMQ channel logs")
             alert_list = [test_cfg["resource_type"],
                           test_cfg["alert_insertion"], resource_id]
-            resp = self.ras_obj.list_alert_validation(alert_list)
+            resp = self.ras_obj.alert_validation(string_list=alert_list,
+                                                 restart=False)
             assert resp[0], resp[1]
             LOGGER.info(
                 "Step 8: Verified the RAID insertion alert on RMQ channel logs")
@@ -555,7 +563,8 @@ class TestRAIDOperations:
                             "fault_resolved alert on RMQ channel logs")
                 alert_list = [test_cfg["resource_type"],
                               test_cfg["alert_fault_resolved"], resource_id]
-                resp = self.ras_obj.list_alert_validation(alert_list)
+                resp = self.ras_obj.alert_validation(string_list=alert_list,
+                                                     restart=False)
                 assert resp[0], resp[1]
                 LOGGER.info("Step 10: Verified the RAID fault_resolved alert on"
                             " RMQ channel logs")

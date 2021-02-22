@@ -415,7 +415,7 @@ class RASTestLib(RASCoreLib):
                 "Checking if alerts are generated on rabbitmq channel")
             cmd = common_commands.EXTRACT_LOG_CMD.format(
                 common_cfg["file"]["alert_log_file"], string_list[0])
-            self.node_utils.execute_cmd(cmd=cmd, nbytes=BYTES_TO_READ)
+            self.node_utils.execute_cmd(cmd=cmd, read_nbytes=BYTES_TO_READ)
             resp = self.validate_alert_msg(
                 common_cfg["file"]["extracted_alert_file"], string_list)
 
@@ -425,14 +425,6 @@ class RASTestLib(RASCoreLib):
             LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
                          RASTestLib.list_alert_validation.__name__, error)
             raise CTException(err.RAS_ERROR, error.args[0])
-        finally:
-            LOGGER.info("Removing alert log file from the Node")
-            self.node_utils.remove_file(
-                filename=common_cfg["file"]["alert_log_file"])
-            self.node_utils.remove_file(
-                filename=common_cfg["file"]["extracted_alert_file"])
-            self.node_utils.remove_file(
-                filename=common_cfg["file"]["screen_log"])
 
     def generate_cpu_usage_alert(self, delta_cpu_usage: str, ) -> bool:
         """
