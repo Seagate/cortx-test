@@ -15,10 +15,10 @@ from commons import constants as cons
 from commons import commands as common_cmd
 from commons.utils import config_utils as conf_util
 from commons.utils.assert_utils import *
-from libs.csm.rest.csm_rest_alert import SystemAlerts
+#from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 
-CSM_ALERT_OBJ = SystemAlerts()
+#CSM_ALERT_OBJ = SystemAlerts()
 CSM_USER_OBJ = RestCsmUser()
 
 RAS_TEST_CFG = conf_util.read_yaml(cons.SSPL_TEST_CONFIG_PATH)[1]
@@ -33,7 +33,7 @@ LOGGER = logging.getLogger(__name__)
 TEST_DATA = [COMMON_CONF["host2"]]
 
 
-class SSPLTest:
+class TestSSPLSecondary:
     """SSPL Test Suite"""
 
     @pytest.mark.parametrize("host", TEST_DATA)
@@ -283,7 +283,6 @@ class SSPLTest:
             "ENDED: Pacemaker Resource Agents for SSPL service(Stop sspl "
             "service on Node)")
 
-    @pytest.skip
     @pytest.mark.ras
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-14035")

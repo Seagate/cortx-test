@@ -31,9 +31,10 @@ from strip_ansi import strip_ansi
 from typing import List
 from filelock import FileLock
 from commons.utils import config_utils
+from commons.utils import system_utils
+from commons.utils import jira_utils
 from commons import Globals
 from commons import cortxlogging
-from commons.utils import jira_utils
 from core.runner import LRUCache
 from core.runner import get_jira_credential
 from commons import constants
@@ -225,16 +226,36 @@ def pytest_collection(session):
             CACHE.store(item.nodeid, test_found)
         items[:] = selected_items
     else:
+        meta = list()
         for item in items:
             test_id = ''
+            _marks = list()
             for mark in item.iter_markers():
                 if mark.name == 'tags':
                     test_id = mark.args[0]
+                else:
+                    _marks.append(mark.name)
             CACHE.store(item.nodeid, test_id)
-    cache_path = os.path.join(os.getcwd(), LOG_DIR, CACHE_JSON)
+            meta.append(dict(nodeid=item.nodeid, test_id=test_id,
+                             marks=_marks))
+    cache_home = os.path.join(os.getcwd(), LOG_DIR)
+    cache_path = os.path.join(cache_home, CACHE_JSON)
+    if not os.path.exists(cache_home):
+        try:
+            system_utils.make_dir(cache_home)
+        except OSError as error:
+            LOGGER.error(str(error))
+
+    latest = os.path.join(cache_home,'latest')
+    if not os.path.exists(latest):
+        os.makedirs(latest)
     _path = config_utils.create_content_json(cache_path, _get_items_from_cache())
     if not os.path.exists(_path):
         LOGGER.info("Items Cache file %s not created" % (_path,))
+    if session.config.option.collectonly:
+        te_meta = config_utils.create_content_json(os.path.join(cache_home, 'te_meta.json'), meta)
+        LOGGER.debug("Items meta dict %s created at %s", meta, te_meta)
+
     return items
 
 
