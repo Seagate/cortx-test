@@ -252,12 +252,12 @@ class Node(Host):
         mdstat_remote_path = "/proc/mdstat"
         mdstat_local_path = "mdstat"
         log.debug(
-            "Fetching /proc/mdstat file from the host %s", (self.hostname))
+            "Fetching /proc/mdstat file from the host %s", self.hostname)
         self.write_remote_file_to_local_file(
             mdstat_remote_path, mdstat_local_path)
         log.debug("Parsing mdstat file")
         output = mdstat.parse(mdstat_local_path)
-        self.remove_file(mdstat_local_path)
+        os.remove(mdstat_local_path)
         return output
 
     def is_string_in_remote_file(

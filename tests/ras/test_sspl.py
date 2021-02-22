@@ -65,7 +65,6 @@ class TestSSPL:
 
         cls.csm_alert_obj = SystemAlerts(host=cls.host, username=cls.uname,
                                          password=cls.passwd)
-        # cls.csm_alert_obj = SystemAlerts()
         # Enable this flag for starting RMQ channel
         cls.start_rmq = CM_CFG["start_rmq"]
 

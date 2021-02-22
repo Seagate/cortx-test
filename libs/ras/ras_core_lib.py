@@ -30,6 +30,7 @@ from commons import commands as common_commands
 from commons.helpers.health_helper import Health
 from commons.helpers.s3_helper import S3Helper
 from config import RAS_VAL
+from commons.utils.system_utils import run_remote_cmd
 
 BYTES_TO_READ = cmn_cons.BYTES_TO_READ
 
@@ -625,3 +626,120 @@ class RASCoreLib:
 
         os.remove(local_path)
         return True, response
+
+    def check_service_recovery(self, service, delay=40):
+        """
+        This function kills the service and checks if its recovered
+        :param service: Service to kill and recovery to be checked for
+        :param node: Server/Node on which to be killed
+        :param delay: wait time after killing for recovery
+        :return: True/False
+        :rtype: Boolean
+        """
+        cluster_msg = cmn_cons.CLUSTER_STATUS_MSG
+        LOGGER.info("Killing %s service on %s", service, self.host)
+        old_pid = self.kill_services(service)
+        resp = self.get_pcs_status(cluster_msg)
+        LOGGER.info("Successfully killed %s service on %s host", service,
+                    self.host)
+        LOGGER.info("Verify if the services stops")
+        time.sleep(10)
+        resp = S3Helper.get_s3server_service_status(service, host=self.host,
+                                                    user=self.username,
+                                                    pwd=self.pwd)
+        if not resp[0]:
+            LOGGER.debug("Verified %s services stops", service)
+        else:
+            LOGGER.debug("Error: %s services did not stop", service)
+
+        # wait for some time for the service to come back
+        time.sleep(delay)
+        # verify service is restarted, we expect new PID for restarted service
+        new_pid = self.get_service_pid(service)
+
+        if old_pid != new_pid:
+            LOGGER.info("Service %s recovery successful:Old PID:%s, "
+                        "New PID:%s", service, old_pid, new_pid)
+
+            return True
+        else:
+            LOGGER.error(
+                "ERROR : Service %s recovery failed: Old PID:%s, New PID: "
+                "%s", service, old_pid, new_pid)
+
+            return False
+
+    def kill_services(self, service_name):
+        """
+        This function find the process id and kill the services on the remote
+        machine without generating dump of the process
+        :param str service_name: name of the service
+        :return: pid
+        :rtype: int
+        """
+        global pid
+        pid = self.get_service_pid(service_name)
+        LOGGER.info("Service PID %s", pid)
+        resp = self.kill_pid(pid)
+        if not resp:
+            LOGGER.error("Failure while killing Service:%s - PID:%s",
+                         service_name, pid)
+        return pid
+
+    def get_service_pid(self, service):
+        """
+        This functions fetches PID for the service from given Node
+        :param service: Service name for which service PID to be fetched
+        :return: PID
+        :rtype: str
+        """
+        pid = None
+        service_pid_cmd = common_commands.GET_PID_CMD.format(service)
+        LOGGER.info("Get process id, command is : %s", service_pid_cmd)
+        resp = self.node_utils.execute_cmd(cmd=service_pid_cmd, read_lines=True)
+        for res_str in resp:
+            if "Main PID" in resp[0].strip():
+                pid = resp[0].split()[2]
+        if pid is None:
+            LOGGER.info("Error : Could not find PID for the service %s",
+                        service)
+            return pid
+        else:
+            LOGGER.info("For Service : %s  PID is :%s", service, pid)
+            return pid
+
+    def kill_pid(self, pid):
+        """
+        This function kills the service for given PID
+        :param pid: PID if service
+        :return True/False: True if operation is successful
+        :rtype: Boolean
+        """
+        if pid is not None:
+            kill_cmd = common_commands.KILL_CMD.format(pid)
+            LOGGER.info("Kill command using process id, command is : %s",
+                        kill_cmd)
+            resp = self.node_utils.execute_cmd(cmd=kill_cmd, read_lines=True)
+            return True
+        else:
+            return False
+
+    def get_pcs_status(self, cluster_msg):
+        """
+        This will Check Node status and returns the response for given cluster message
+        :param str cluster_msg: string message for validation
+        :return: True/False, hostname and result
+        :rtype: tupple
+        """
+        for node in range(cmn_cons.NODE_RANGE_START, cmn_cons.NODE_RANGE_END):
+            host_name = "{}{}".format(cmn_cons.NODE_PREFIX, node)
+            result = run_remote_cmd(hostname=host_name, username=self.username,
+                                    password=self.pwd,
+                                    cmd=common_commands.PCS_STATUS_CMD)
+            for value in result[1]:
+                LOGGER.info(value)
+                if cluster_msg in value:
+                    LOGGER.info("Failure Seen for Node : %s", host_name)
+                    return False, f"{host_name} : {result[1]}"
+
+        return True, f"{host_name} : {result[1]}"

@@ -31,9 +31,9 @@ class TestSSPLSecondary:
 
     @classmethod
     @pytest.mark.parametrize("host", TEST_DATA)
-    def setup_class(cls, host):
+    def setup_class(cls):
         """Setup for module."""
-        cls.host2 = host
+        cls.host2 = CMN_CFG["host2"]
         cls.host = CMN_CFG["host"]
         cls.uname = CMN_CFG["username"]
         cls.passwd = CMN_CFG["password"]
@@ -76,6 +76,7 @@ class TestSSPLSecondary:
     def setup_method(self):
         """Setup operations."""
         self.starttime = time.time()
+        self.sspl_disable = False
         LOGGER.info("Retaining the original/default config")
         self.ras_test_obj2.retain_config(
             CM_CFG["file"]["original_sspl_conf"], False)
@@ -87,7 +88,7 @@ class TestSSPLSecondary:
         if not res:
             LOGGER.info("SSPL not present updating same on server")
             response = self.ras_test_obj2.check_status_file()
-            assert response[0] is True, response[1]
+            assert response[0], response[1]
         LOGGER.info("Done Checking SSPL state file")
 
         LOGGER.info("Delete keys with prefix SSPL_")
@@ -104,11 +105,15 @@ class TestSSPLSecondary:
 
         # Getting SSPl and RabbitMQ service status
         services = CM_CFG["service"]
-        for service in services:
-            resp = S3Helper.get_s3server_service_status(
-                service=service, host=self.host, user=self.uname,
-                pwd=self.passwd)
-            assert resp is True
+        resp = S3Helper.get_s3server_service_status(
+            service=services["sspl_service"], host=self.host, user=self.uname,
+            pwd=self.passwd)
+        assert resp[0], resp[1]
+        resp = S3Helper.get_s3server_service_status(
+            service=services["rabitmq_service"], host=self.host,
+            user=self.uname,
+            pwd=self.passwd)
+        assert resp[0], resp[1]
 
         LOGGER.info(
             "Validated the status of sspl and rabittmq service are online")
@@ -117,13 +122,13 @@ class TestSSPLSecondary:
             LOGGER.info("Running rabbitmq_reader.py script on node")
             resp = self.ras_test_obj2.start_rabbitmq_reader_cmd(
                 CM_CFG["sspl_exch"], CM_CFG["sspl_key"])
-            assert resp is True, "Failed to start RMQ channel"
+            assert resp, "Failed to start RMQ channel"
             LOGGER.info(
                 "Successfully started rabbitmq_reader.py script on node")
 
         LOGGER.info("Starting collection of sspl.log")
         res = self.ras_test_obj2.sspl_log_collect()
-        assert res[0] is True, res[1]
+        assert res[0], res[1]
         LOGGER.info("Started collection of sspl logs")
 
         LOGGER.info("Successfully performed Setup operations")
@@ -174,6 +179,7 @@ class TestSSPLSecondary:
     @pytest.mark.ras
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-14034")
+    @pytest.mark.skip
     def test_1648(self):
         """
         EOS-10619: Pacemaker Resource Agents for SSPL service(Stop sspl service
@@ -191,7 +197,7 @@ class TestSSPLSecondary:
         resp = S3Helper.get_s3server_service_status(
             service=CM_CFG["service"]["sspl_service"], host=self.host,
             user=self.uname, pwd=self.passwd)
-        assert resp is True
+        assert resp[0], resp[1]
         LOGGER.info("Step 1: Sspl-ll is up and running on primary node")
 
         LOGGER.info("Step 2: Checking sspl-ll service status on secondary "
@@ -199,7 +205,7 @@ class TestSSPLSecondary:
         resp = S3Helper.get_s3server_service_status(
             service=CM_CFG["service"]["sspl_service"], host=self.host2,
             user=self.uname, pwd=self.passwd)
-        assert resp is True
+        assert resp[0], resp[1]
         LOGGER.info("Step 2: Sspl-ll is up and running on secondary node")
 
         LOGGER.info("Step 3: Checking sspl state on both the nodes")
@@ -211,8 +217,9 @@ class TestSSPLSecondary:
 
         LOGGER.info("Step 4: Stopping sspl-ll service on node %s", NODES[1])
         resp = self.ras_test_obj2.enable_disable_service(
-            "disable", service_cfg["sspl_service"])
-        assert resp[0] is False, resp[1]
+            "disable", CM_CFG["sspl_resource_id"])
+        assert not resp[0], resp[1]
+        self.sspl_disable = True
         LOGGER.info("Step 4: SSPL service was successfully stopped and "
                     "validated on node %s", NODES[1])
 
@@ -223,7 +230,7 @@ class TestSSPLSecondary:
         resp = S3Helper.get_s3server_service_status(
             service=CM_CFG["service"]["sspl_service"], host=self.host2,
             user=self.uname, pwd=self.passwd)
-        assert resp is True
+        assert resp[0], resp[1]
         LOGGER.info("Step 5: Sspl-ll is up and running on node %s", NODES[1])
 
         LOGGER.info("Inducing FAN alert")
@@ -296,14 +303,14 @@ class TestSSPLSecondary:
         resp = S3Helper.get_s3server_service_status(
             service=CM_CFG["service"]["sspl_service"], host=self.host,
             user=self.uname, pwd=self.passwd)
-        assert resp is True
+        assert resp[0], resp[1]
         LOGGER.info("Step 1: Sspl-ll is up and running on primary node")
 
         LOGGER.info("Step 2: Checking sspl-ll service status on secondary node")
         resp = S3Helper.get_s3server_service_status(
             service=CM_CFG["service"]["sspl_service"], host=self.host2,
             user=self.uname, pwd=self.passwd)
-        assert resp is True
+        assert resp[0], resp[1]
         LOGGER.info("Step 2: Sspl-ll is up and running on secondary node")
 
         LOGGER.info("Step 3: Checking sspl state on %s", NODES[0])
@@ -315,10 +322,10 @@ class TestSSPLSecondary:
         LOGGER.info("State of sspl on %s is %s", NODES[1], res[1])
 
         LOGGER.info("Step 4: Killing sspl-ll service on node %s", NODES[1])
-        resp = HA_TEST_OBJ.check_service_recovery(service_cfg["sspl_service"],
-                                                  NODES[1])
+        resp = self.ras_test_obj2.check_service_recovery(
+            service_cfg["sspl_service"])
 
-        assert resp is True
+        assert resp
         LOGGER.info("Step 4: SSPL service was successfully killed and "
                     "validated on node %s", NODES[1])
 
@@ -329,7 +336,7 @@ class TestSSPLSecondary:
         resp = S3Helper.get_s3server_service_status(
             service=CM_CFG["service"]["sspl_service"], host=self.host2,
             user=self.uname, pwd=self.passwd)
-        assert resp is True
+        assert resp[0], resp[1]
         LOGGER.info("Step 5: Sspl-ll is up and running on node %s", NODES[1])
 
         LOGGER.info("Inducing FAN alert")

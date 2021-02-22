@@ -74,6 +74,10 @@ URL_STREAM_UTILITIES = "http://utils-stream.sw.lcd.colo.seagate.com/utility" \
 NO_CMD_RECEIVED_MSG = "No command response received !!!"
 PCS_SSPL_SECTION = " Master/Slave Set: sspl-master [sspl]\n"
 RAS_CFG = "config/ras_config.yaml"
+CLUSTER_STATUS_MSG = "cluster is not currently running on this node"
+NODE_RANGE_START = 1
+NODE_RANGE_END = 3
+NODE_PREFIX = "eosnode-"
 
 """ S3 constants """
 const.S3_CONFIG = "/opt/seagate/cortx/s3/conf/s3config.yaml"

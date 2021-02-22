@@ -57,7 +57,7 @@ class TestRAIDOperations:
         cls.cm_cfg = RAS_VAL["ras_sspl_alert"]
         LOGGER.info("Done: Setup module operations")
 
-    def setup_function(self):
+    def setup_method(self):
         """
         Setup operations for each test.
         """
@@ -126,14 +126,14 @@ class TestRAIDOperations:
         self.starttime = time.time()
         LOGGER.info("ENDED: Setup Operations")
 
-    def teardown_function(self):
+    def teardown_method(self):
         """
         Teardown operations after each test.
         """
         LOGGER.info("STARTED: Teardown Operations")
         if self.failed_disk:
             resp = self.alert_api_obj.generate_alert(
-                AlertType.raid_remove_disk_alert,
+                AlertType.RAID_REMOVE_DISK_ALERT,
                 input_parameters={
                     "operation": RAS_VAL["raid_param"]["remove_operation"],
                     "md_device": self.md_device,
@@ -143,7 +143,7 @@ class TestRAIDOperations:
 
         if self.removed_disk:
             resp = self.alert_api_obj.generate_alert(
-                AlertType.raid_add_disk_alert,
+                AlertType.RAID_ADD_DISK_ALERT,
                 input_parameters={
                     "operation": RAS_VAL["raid_param"]["add_operation"],
                     "md_device": self.md_device,
@@ -196,6 +196,7 @@ class TestRAIDOperations:
 
     @pytest.mark.ras
     @pytest.mark.tags("TEST-15733")
+    @pytest.mark.skip
     def test_5345(self):
         """
         EOS-10613 RAID: Assemble a array
@@ -210,7 +211,7 @@ class TestRAIDOperations:
             "Step 1: Running ALERT API for generating RAID fault alert by "
             "stopping array")
         resp = self.alert_api_obj.generate_alert(
-            AlertType.raid_stop_device_alert,
+            AlertType.RAID_STOP_DEVICE_ALERT,
             input_parameters={
                 "operation": raid_cmn_cfg["stop_operation"],
                 "md_device": self.md_device,
@@ -245,7 +246,7 @@ class TestRAIDOperations:
             "Step 4: Running ALERT API for generating RAID fault_resolved "
             "alert by assembling array")
         resp = self.alert_api_obj.generate_alert(
-            AlertType.raid_assemble_device_alert,
+            AlertType.RAID_ASSEMBLE_DEVICE_ALERT,
             input_parameters={
                 "operation": raid_cmn_cfg["assemble_operation"],
                 "md_device": self.md_device,
@@ -295,7 +296,7 @@ class TestRAIDOperations:
             "Step 1: Running ALERT API for generating RAID fault alert by "
             "failing disk %s from array %s", self.disk2, self.md_device)
         resp = self.alert_api_obj.generate_alert(
-            AlertType.raid_fail_disk_alert,
+            AlertType.RAID_FAIL_DISK_ALERT,
             input_parameters={
                 "operation": raid_cmn_cfg["fail_operation"],
                 "md_device": self.md_device,
@@ -333,7 +334,7 @@ class TestRAIDOperations:
             "Step 4: Running ALERT API for generating RAID missing alert by "
             "removing faulty disk %s from array %s", self.disk2, self.md_device)
         resp = self.alert_api_obj.generate_alert(
-            AlertType.raid_remove_disk_alert,
+            AlertType.RAID_REMOVE_DISK_ALERT,
             input_parameters={
                 "operation": raid_cmn_cfg["remove_operation"],
                 "md_device": self.md_device,
@@ -385,7 +386,7 @@ class TestRAIDOperations:
             "Step 1: Running ALERT API for generating RAID fault alert by "
             "failing disk %s from array %s", self.disk2, self.md_device)
         resp = self.alert_api_obj.generate_alert(
-            AlertType.raid_fail_disk_alert,
+            AlertType.RAID_FAIL_DISK_ALERT,
             input_parameters={
                 "operation": raid_cmn_cfg["fail_operation"],
                 "md_device": self.md_device,
@@ -437,7 +438,7 @@ class TestRAIDOperations:
             "Step 1: Running ALERT API for generating RAID fault alert by "
             "failing disk %s from array %s", self.disk2, self.md_device)
         resp = self.alert_api_obj.generate_alert(
-            AlertType.raid_fail_disk_alert,
+            AlertType.RAID_FAIL_DISK_ALERT,
             input_parameters={
                 "operation": raid_cmn_cfg["fail_operation"],
                 "md_device": self.md_device,
@@ -475,7 +476,7 @@ class TestRAIDOperations:
             "Step 4: Running ALERT API for generating RAID missing alert by "
             "removing faulty disk %s from array %s", self.disk2, self.md_device)
         resp = self.alert_api_obj.generate_alert(
-            AlertType.raid_remove_disk_alert,
+            AlertType.RAID_REMOVE_DISK_ALERT,
             input_parameters={
                 "operation": raid_cmn_cfg["remove_operation"],
                 "md_device": self.md_device,
@@ -513,7 +514,7 @@ class TestRAIDOperations:
             "Step 7: Running ALERT API for generating RAID fault_resolved alert"
             "by adding removed disk %s to array %s", self.disk2, self.md_device)
         resp = self.alert_api_obj.generate_alert(
-            AlertType.raid_add_disk_alert,
+            AlertType.RAID_ADD_DISK_ALERT,
             input_parameters={
                 "operation": raid_cmn_cfg["add_operation"],
                 "md_device": self.md_device,
