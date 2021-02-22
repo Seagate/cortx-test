@@ -69,11 +69,12 @@ def decrypt_all_passwd(data :dict) -> dict:
     :param data: dictionary of configuration which contains encryted passwords
     :return [type]: return the decrypted passwords
     """
+    decrypt_list = ["password"]
     for key, value in data.items():
         if isinstance(value, dict):
             decrypt_all_passwd(value)
         else:
-            if key.lower() == "password":
+            if key.lower() in decrypt_list:
                 data[key] = decrypt(value)
             if key == 'end' and value == 'end':
                 data.pop('end')
