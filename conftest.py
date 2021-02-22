@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# !/usr/bin/python
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -16,8 +18,7 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-# -*- coding: utf-8 -*-
-# !/usr/bin/python
+
 import pytest
 import os
 import pathlib
@@ -206,6 +207,17 @@ def read_test_list_csv() -> List:
         print(e)
 
 
+@pytest.hookimpl(trylast=True)
+def pytest_sessionfinish(session, exitstatus):
+    """Remove handlers from all loggers."""
+    # todo add html hook file = session.config._htmlfile
+    loggers = [logging.getLogger()] + list(logging.Logger.manager.loggerDict.values())
+    for _logger in loggers:
+        handlers = getattr(_logger, 'handlers', [])
+        for handler in handlers:
+            _logger.removeHandler(handler)
+
+
 def create_report_payload(item, call, final_result, d_u, d_pass):
     """Create Report Payload for POST request to put data in Report DB."""
     os_ver = system_utils.get_os_version()
@@ -217,8 +229,6 @@ def create_report_payload(item, call, final_result, d_u, d_pass):
         health_chk_res = "NA"
         are_logs_collected = False
         log_path = "NA"
-    import pdb
-    pdb.set_trace()
     data_kwargs = dict(os=os_ver,
                        build=item.config.option.build,
                        build_type=item.config.option.build_type,
@@ -278,17 +288,6 @@ def reset_imported_module_log_level():
     loggers = [logging.getLogger()] + list(logging.Logger.manager.loggerDict.values())
     for _logger in loggers:
         _logger.setLevel(logging.WARNING)
-
-
-# @pytest.hookimpl(trylast=True)
-# def pytest_sessionfinish(session, exitstatus):
-#     """Remove handlers from all loggers."""
-#     # todo add html hook file = session.config._htmlfile
-#     loggers = [logging.getLogger()] + list(logging.Logger.manager.loggerDict.values())
-#     for _logger in loggers:
-#         handlers = getattr(_logger, 'handlers', [])
-#         for handler in handlers:
-#             _logger.removeHandler(handler)
 
 
 @pytest.hookimpl(tryfirst=True)

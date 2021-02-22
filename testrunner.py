@@ -159,8 +159,6 @@ def main(args):
             test_meta = list()
             # test plan meta
             tp_meta = dict()
-            import pdb
-            pdb.set_trace()
             tp_resp = jira_obj.get_issue_details(args.test_plan)  # test plan id
             tp_meta['test_plan_label'] = tp_resp.fields.labels
             te_resp = jira_obj.get_issue_details(args.te_ticket)  # test execution id
