@@ -227,8 +227,8 @@ def create_report_payload(item, call, final_result, d_u, d_pass):
                        health_chk_res=health_chk_res,
                        are_logs_collected=are_logs_collected,
                        log_path=log_path,
-                       testPlanLabel="S3",  # get from TP
-                       testExecutionLabel="CFT",  # get from TE
+                       testPlanLabel="S3",  # get from TP    tp.fields.labels
+                       testExecutionLabel="CFT",  # get from TE  te.fields.labels
                        nodes=len(item.config.option.nodes),  # number of target hosts
                        nodes_hostnames=item.config.option.nodes,
                        test_exec_id=item.config.option.te_tkt,
@@ -240,10 +240,10 @@ def create_report_payload(item, call, final_result, d_u, d_pass):
                        test_result=final_result,
                        start_time=time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(call.start)),
                        tags=['tags'],  # in mem te_meta
-                       test_team='test_team',  # TE
-                       test_type='Pytest',
+                       test_team='test_team',  # TE te.fields.components[0].name
+                       test_type='Pytest',   # TE Avocado/CFT/Locust/S3bench/ Pytest
                        latest=True,
-                       feature='Test',  # feature
+                       feature='Test',  # feature Should be read from master test plan board.
                        db_username=d_u,
                        db_password=d_pass
                        )
@@ -271,7 +271,13 @@ def pytest_sessionstart(session: Session) -> None:
     global REPORT_CLIENT
     report_client.ReportClient.init_instance()
     REPORT_CLIENT = report_client.ReportClient.get_instance()
+    reset_imported_module_log_level()
+
+
+def reset_imported_module_log_level():
     loggers = [logging.getLogger()] + list(logging.Logger.manager.loggerDict.values())
+    for _logger in loggers:
+        _logger.setLevel(logging.WARNING)
 
 
 # @pytest.hookimpl(trylast=True)
@@ -347,7 +353,13 @@ def pytest_collection(session):
     if session.config.option.collectonly:
         te_meta = config_utils.create_content_json(os.path.join(cache_home, 'te_meta.json'), meta)
         LOGGER.debug("Items meta dict %s created at %s", meta, te_meta)
-
+    if session.config.option.readmetadata:
+        tp_meta_file = os.path.join(os.getcwd(),
+                                    params.LOG_DIR_NAME,
+                                    params.JIRA_TEST_META_JSON)
+        tp_meta = config_utils.read_content_json(tp_meta_file)
+        system_utils.insert_into_builtins('tp_meta', tp_meta)
+        LOGGER.debug("Reading test plan meta dict %s", tp_meta)
     return items
 
 

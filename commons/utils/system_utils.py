@@ -27,6 +27,7 @@ import platform
 import random
 import shutil
 import socket
+import builtins
 from typing import Tuple
 from subprocess import Popen, PIPE
 from hashlib import md5
@@ -742,3 +743,10 @@ def path_exists(path: str) -> bool:
     status = os.path.exists(path)
 
     return status
+
+
+def insert_into_builtins(name, obj):
+    if isinstance(builtins, dict):
+        builtins[name] = obj
+    else:
+        builtins.obj = obj

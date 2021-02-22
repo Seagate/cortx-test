@@ -20,7 +20,6 @@
 # !/usr/bin/python
 import os
 
-
 LOG_FILE = 'cortx-test.log'
 
 USER_JSON = '_usersdata'
@@ -33,3 +32,5 @@ S3_CONFIG = os.path.join(CONFIG_DIR, 's3', 's3_config.yaml')
 LOG_DIR_NAME = 'log'
 
 JIRA_TEST_LIST = 'test_lists.csv'
+
+JIRA_TEST_META_JSON = 'test_meta_data.json'

@@ -2,6 +2,7 @@ import os
 import subprocess
 import argparse
 import csv
+import json
 from core import runner
 from commons.utils.jira_utils import JiraTask
 from config import params
@@ -120,6 +121,14 @@ def check_test_status(test_name):
     return test_status
 
 
+def get_ticket_meta_from_test_list(file_path):
+    """Creates a json file which can be used by cache for data that is static to test.
+    This file saves test metadata once in test runner cycle.
+
+    """
+    pass
+
+
 def main(args):
     """Main Entry function using argument parser to parse options and forming pyttest command.
     It renames up the latest folder and parses TE ticket to create detailed test details csv.
@@ -135,12 +144,38 @@ def main(args):
         jira_obj = JiraTask(jira_id, jira_pwd)
         test_list, te_tag = jira_obj.get_test_ids_from_te(args.te_ticket)
         if len(test_list) == 0 or te_tag == "":
-            assert "Please check TE provided, tests or tag is missing"
+            assert False, "Please check TE provided, tests or tag is missing"
         # writing the data into the file
         with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_TEST_LIST), 'w') as f:
             write = csv.writer(f)
             for test in test_list:
                 write.writerow([test])
+        # Create test meta file for reporting TR.
+        tp_meta_file = os.path.join(os.getcwd(),
+                                    params.LOG_DIR_NAME,
+                                    params.JIRA_TEST_META_JSON)
+        with open(tp_meta_file, 'w') as t_meta:
+
+            test_meta = list()
+            # test plan meta
+            tp_meta = dict()
+            import pdb
+            pdb.set_trace()
+            tp_resp = jira_obj.get_issue_details(args.test_plan)  # test plan id
+            tp_meta['test_plan_label'] = tp_resp.fields.labels
+            te_resp = jira_obj.get_issue_details(args.te_ticket)  # test execution id
+            tp_meta['te_meta'] = dict(te_id=args.te_ticket, te_label=te_resp.fields.labels)
+            # test_name, test_id, test_id_labels, test_team, test_type
+            for test in test_list:
+                item = dict()
+                item['test_id'] = test
+                resp = jira_obj.get_issue_details(test)
+                item['test_name'] = resp['fields']['labels']
+                item['components'] = resp['fields']['components']
+                test_meta.append(item)
+            tp_meta['test_meta'] = test_meta
+            json.dump(tp_meta, t_meta, ensure_ascii=False)
+
         _env = os.environ.copy()
         if not args.force_serial_run:
             # First execute all tests with parallel tag which are mentioned in given tag.
