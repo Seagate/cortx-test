@@ -19,6 +19,18 @@ EMAIL_NOTIFICATION_ID = 'goToNotifications'
 IAM_USER_TAB_ID = "s3iamuserstab"
 DASHBOARD_MENU_ID = "Dashboard"
 MAINTENANCE_MENU_ID = 'Maintenance'
+AUDIT_LOG_TAB_ID = "goToAuditLog"
+
+# Alerts
+ALERT_IMAGE_1_ID='alert-zoom'  # from Dashbard
+ALERT_IMAGE_2_ID='alert-dotwhite'  # from All pages
+ALERT_COMMENT_SAVE_BUTTON_ID = 'alert-save-commnetbtn'
+ALERT_COMMENT_CLOSE_BUTTON_ID = 'alert-close-comment-dialogbtn'
+ALERT_COMMENT_CLOSE_IMAGE_ID = 'alert-closeadd-comment-dialog'
+ALERT_COMMENT_TEXT_ID= 'alert-comment-textarea'
+ALERT_DETAILS_PAGE_ICON_XPATH = '//*[@id="tblAlertLarge"]/div/table/tbody/tr[1]/td[5]/img'
+ALERT_COMMENT_ICON_XPATH = '//*[@id="tblAlertLarge"]/div/table/tbody/tr[1]/td[5]/div/div'
+ALERT_ACKNOWLEDGE_ICON_XPATH = '//*[@id="tblAlertLarge"]/div/table/tbody/tr[1]/td[5]/div/span[2]/div'
 
 #  S3 Config
 S3_ACCOUNTS_TABLE_XPATH = '//*[@id="s3-datatable"]//table/tbody/tr/td'
@@ -60,11 +72,18 @@ DELETE_ACCESS_KEY_ID = 's3-accesskey-datatable-delete-{0}'
 NEW_ACCESS_KEY_TABLE_XPATH = '//*[@id="download-csv-dialog-datatable"]/tr/td'
 CONFIRM_DELET_ACCESS_KEY_ID = 'confirmation-dialogbox-btn'
 EDIT_S3_ACCOUNT_OPTIONS_XPATH = '//*[@id="app"]//div[@class ="py-0 col-5 col"]//input'
+S3_ACCOUNT_RESET_PASSWORD_XPATH = '//td[contains(text(), "{0}")]//following-sibling::td//img[@id="iam-reset-password"]'
+S3_ACCOUNT_REST_OPTION_ID = 'iam-reset-password'
+S3_ACCOUNT_RESET_NEW_PASSWORD_ID = 'user-password'
+S3_ACCOUNT_RESET_CONFIRM_PASSWORD_ID = 'confirm-password'
+S3_ACCOUNT_RESET_PAWWSORD_BUTTON_ID = 'reset-password-button'
+S3_ACCOUNT_SUCCESS_MESSAGE_ID = 's3-success-dialog'
+S3_ACCOUNT_SUCCESS_MESSAGE_BUTTON_ID = 'confirmation-dialogbox-btn'
 
 # Preboarding 
 WELCOME_START_BUTTON_ID = 'welcome-startbtn'
 ELUA_BUTTON_ID = 'show-license-agreement-dialogbtn'
-LICENSE_BUTTON_ID = 'license-acceptagreement'
+LICENSE_ACCEPT_BUTTON_ID = 'license-acceptagreement'
 LICENSE_CANCLE_BUTTON_ID = 'license-cancelagreementbtn'
 LICENSE_CANCLE_IMAGE_ID = 'license-cancelagreementicon'
 LICENSE_TITLE_ID = 'agreement-title'
@@ -123,6 +142,14 @@ DUPLICATE_USER_MSG_ID = "dialog-message-label"
 IAM_USER_USERNAME_LABEL_ID = "iam-userlbl"
 IAM_USER_PASSWORD_LABEL_ID = "iam-passwordlbl"
 IAM_USER_CONFIRM_PASSWORD_LABEL_ID = "iam-confirmpasslbl"
+IAM_USER_RESET_PASSWORD_ID = "iam-reset-password"
+IAM_USER_RESET_PASSWORD_XPATH = '//tr[@id="{0}"]//*[@id="iam-reset-password"]'
+IAM_USER_RESET_PASSWORD_DIALOG_ID = "s3-resetaccount-form"
+IAM_USER_RESET_PAWWSORD_BUTTON_ID = "reset-password-button"
+IAM_USER_RESET_NEW_PASSWORD_ID = "user-password"
+IAM_USER_RESET_CONFIRM_PASSWORD_ID = "confirm-password"
+IAM_USER_SUCCESS_MESSAGE_ID = 'iam-success-dialog'
+IAM_USER_SUCCESS_MESSAGE_BUTTON_ID = 'confirmation-dialogbox-btn'
 
 #About Section
 ABOUT_VIEW_ID = 'menu-actionmanagebtn'
@@ -136,3 +163,10 @@ SUBJECT_COMMON_NAME_VALUE_ID = 'subject_common_name_value'
 SUBJECT_COUNTRY_NAME_VALUE_ID = 'subject-country_name_value'
 SUBJECT_LOCALITY_NAME_VALUE_ID = 'subject_locality_name_value'
 SUBJECT_ORGANIZATION_VALUE_ID = 'subject_organization_name_value'
+
+#Audit Log Section
+AUDIT_LOG_VIEW_BUTTON_ID = "auditlog-viewbtn"
+AUDIT_LOG_DOWNLOAD_BUTTON_ID = "auditlog-downlodbtn"
+AUDIT_LOG_COMPONENT_DROP_DOWN_ID = "auditlog-component"
+AUDIT_LOG_TIME_PERIOD_DROP_DOWN_ID = "auditlog-timeperiod"
+AUDIT_LOG_DATA_ID = "auditlog-data"
