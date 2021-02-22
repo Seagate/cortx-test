@@ -1,9 +1,10 @@
-aenum==2.2.4
 boto3==1.9.202
 botocore==1.12.202
 certifi==2019.6.16
 chardet==3.0.4
 Click==7.0
+dataclasses
+defusedxml
 docutils==0.14
 fabric~=2.5.0
 filelock==3.0.12
@@ -25,6 +26,7 @@ mypy==0.782
 pandas==0.25.1
 paramiko==2.6.0
 pika==1.1.0
+pycryptodome==3.10.1
 PyHamcrest==2.0.2
 pymongo
 pysftp==0.2.9
