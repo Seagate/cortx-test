@@ -772,7 +772,7 @@ def file_lock(lock_file, non_blocking=False):
 
         try:
             fmutex = open(fname, "rb+")
-        except (OSError, IOError) as fault:
+        except (OSError, IOError):
             fmutex = open(fname, "wb+")
         try:
             flags = fcntl.LOCK_EX
