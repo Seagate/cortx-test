@@ -16,6 +16,9 @@ from commons import commands as common_cmd
 from commons.utils.assert_utils import *
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
+from libs.csm.rest.csm_rest_csmuser import RestCsmUser
+
+CSM_USER_OBJ = RestCsmUser()
 
 BYTES_TO_READ = cons.BYTES_TO_READ
 CM_CFG = RAS_VAL["ras_sspl_alert"]
