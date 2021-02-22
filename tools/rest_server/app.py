@@ -402,7 +402,7 @@ class UpdateSystems(Resource):
         del json_data["db_username"]
         del json_data["db_password"]
         update_result = mongodbapi.update_document(json_data["filter"], json_data["update"],
-                                                   uri, db_name, system_collection)
+                                                   uri, db_name, system_collection, upsert=False)
         if update_result[0]:
             return flask.Response(status=HTTPStatus.OK,
                                   response=f"Entry Updated. "
