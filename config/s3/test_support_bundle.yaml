@@ -1,0 +1,131 @@
+support_bundle:
+  create_dir: "mkdir"
+  success_msg: "S3 support bundle generated successfully"
+  m0postfix: "m0trace"
+  s3server_pre: "s3server"
+  md5cmd: "md5sum {}"
+  hctl_stop: "hctl shutdown"
+  hctl_status: "hctl status"
+  clsuter_msg_1: "Cluster is not running"
+  cluster_msg_2: "cluster is not currently running on this node"
+  cluster_start_cmd: "pcs cluster start --all"
+  cluster_stop_cmd: "pcs cluster stop --all"
+  cluster_status_cmd: "pcs cluster status"
+  rm_tmp_bundle_cmd: "rm -rf /tmp/s3_support_bundle*"
+
+test_5274:
+  remote_dest_dir: "/boot"
+  bundle_prefix: "auto_bundle_5274"
+  common_dir: "s3"
+  count: 10
+
+test_5280:
+  bundle_prefix: "auto_bundle_5280"
+  common_dir: "s3"
+  count: 3
+
+test_5282:
+  bundle_prefix: "auto_bundle_5282"
+  common_dir: "s3"
+  count: 1
+  tar_cmd: "tar -xvf {} -C {}"
+  tar_postfix: "tar.xz"
+  mkdir_cmd: "mkdir -p {}"
+  tmp_dir: "tmp"
+  extracted_m0trace_path: "s3_m0trace_files"
+
+test_5272:
+  bundle_prefix: "auto_bundle_5272"
+  tar_postfix: "tar.xz"
+  common_dir: "s3"
+  netwrk_serv_name: "network"
+  cluster_up_delay: 300
+
+test_5273:
+  bundle_prefix: "auto_bundle_5273"
+  tar_postfix: "tar.xz"
+  common_dir: "s3"
+
+test_5275:
+  bundle_prefix: "auto_bundle_5275"
+  tar_postfix: "tar.xz"
+  common_dir: "s3"
+  resource_disable: True
+  resource_enable: False
+
+test_5276:
+  bundle_prefix: "auto_bundle_5276"
+  tar_postfix: "tar.xz"
+  common_dir: "s3"
+  service_name: "s3authserver"
+
+test_5277:
+  bundle_prefix: "auto_bundle_5277"
+  tar_postfix: "tar.xz"
+  common_dir: "s3"
+  service_name: "haproxy"
+
+test_5278:
+  bundle_prefix: "auto_bundle_5278"
+  tar_postfix: "tar.xz"
+  common_dir: "s3"
+  hctl_stop: "hctl shutdown"
+  hctl_status: "hctl status"
+
+test_5279:
+  tar_postfix: "tar.xz"
+  bundle_prefix: "auto_bundle_5279"
+  common_dir: "s3"
+  count: 3
+
+test_5281:
+  bundle_prefix: "auto_bundle_5281"
+  common_dir: "s3"
+  tar_cmd: "tar -xvf {} -C {}"
+  tar_postfix: "tar.xz"
+  var_path: "/var/log/seagate/s3"
+  s3server_pre: "s3server"
+
+test_5283:
+  bundle_prefix: "auto_bundle_5283"
+  common_dir: "s3"
+  tar_cmd: "tar -xvf {} -C {}"
+  tar_postfix: "tar.xz"
+  var_path: "/var/log/seagate/auth/server/app.log"
+  s3server_pre: "s3server"
+
+test_5284:
+  bundle_prefix: "auto_bundle_5284"
+  common_dir: "s3"
+  tar_cmd: "tar -xvf {} -C {}"
+  tar_postfix: "tar.xz"
+  var_path: "/var/log/haproxy.log"
+  s3server_pre: "s3server"
+
+test_5270:
+  bundle_prefix: "auto_bundle_5270"
+  common_dir: "s3"
+  tar_postfix: "tar.xz"
+
+test_5285:
+  bundle_prefix: "auto_bundle_5285"
+  common_dir: "s3"
+  count: 1
+  tar_cmd: "tar -xvf {} -C {}"
+  tar_postfix: "tar.xz"
+
+test_5286:
+  bundle_prefix: "auto_bundle_5286"
+  common_dir: "s3"
+  count: 1
+  tar_cmd: "tar -xvf {} -C {}"
+  tar_postfix: "tar.xz"
+  stat_files_dir: "tmp"
+  stat_dir_name: "s3_support_bundle_"
+  stat_files:
+    - "disk_usage.txt"
+    - "cpuinfo.txt"
+    - "ram_usage.txt"
+    - "s3server_pids.txt"
+    - "haproxy_pids.txt"
+    - "m0d_pids.txt"

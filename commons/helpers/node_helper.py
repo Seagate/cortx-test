@@ -328,16 +328,15 @@ class Node(Host):
 
     def make_dir(self, dpath: str) -> bool:
         """
-        Make directory
+        Make multiple directories with hierarchy
         """
-        mkdir_cmd = "mkdir {}"
         if dpath is None:
             raise TypeError("path or dir_name incorrect")
         if not self.path_exists(dpath):
             log.debug(
                 "Directory '%s' not exists, creating directory...",
                 dpath)
-            self.execute_cmd(mkdir_cmd.format(dpath))
+            self.execute_cmd(commands.CMD_MKDIR.format(dpath))
         return self.path_exists(dpath)
 
     def remove_dir(self, dpath: str):
