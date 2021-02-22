@@ -7,6 +7,8 @@ Click==7.0
 dataclasses
 defusedxml
 docutils==0.14
+dataclasses
+defusedxml
 fabric~=2.5.0
 filelock==3.0.12
 Flask==1.1.1
