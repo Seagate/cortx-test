@@ -27,6 +27,7 @@ from multiprocessing import Process, Manager
 import logging
 import pytest
 
+from commons.exceptions import CTException
 from commons.constants import const
 from commons.ct_fail_on import CTFailOn
 from commons.utils.system_utils import run_remote_cmd
@@ -127,7 +128,7 @@ class SupportBundle():
                 if not any(m0_flag):
                     return False, var_mero_dict
             return True, var_mero_dict
-        except Exception as error:
+        except CTException as error:
             self.LOGGER.error(error)
             return False, error
 
@@ -282,7 +283,7 @@ class SupportBundle():
             resp = self.pysftp.stat(path)
             resp_val = resp.st_size
             flag = bool(resp.st_size > 0)
-        except BaseException as error:
+        except CTException as error:
             self.LOGGER.error(
                 "%s %s: %s", const.EXCEPTION_ERROR,
                 self.is_file_size.__name__, error)
@@ -383,7 +384,7 @@ class SupportBundle():
             process.start()
         for process in process_lst:
             process.join()
-        true_flag = all([t[0] for t in resp_lst])
+        true_flag = all([temp[0] for temp in resp_lst])
         assert_true(true_flag, resp_lst)
         self.LOGGER.info(
             "Step 1: validated all support bundle created parallely %s.tar.gz",
@@ -486,7 +487,7 @@ class SupportBundle():
         assert_true(resp[0], resp[1])
         self.LOGGER.info(
             "Step 2: Restarted %s service successfully", network_service)
-        true_flag = all([t[0] for t in resp_lst])
+        true_flag = all([temp[0] for temp in resp_lst])
         assert_true(true_flag, resp_lst)
         resp = S3_HELPER.is_s3_server_path_exists(tar_file_path)
         assert_false(resp[0], resp[1])
