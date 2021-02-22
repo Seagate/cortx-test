@@ -40,13 +40,11 @@ S3_ACL_OBJ = s3_acl_test_lib.S3AclTestLib()
 CMN_CFG = read_yaml("config/common_config.yaml")[1]
 
 
-class BucketLocation:
+class TestBucketLocation:
     """Bucket Location Test suite"""
-
-    def __init__(self):
-        self.s3_obj_1 = None
-        self.bucket_name = None
-        self.account_name = None
+    s3_obj_1 = None
+    bucket_name = None
+    account_name = None
 
     @classmethod
     def setup_class(cls):
@@ -62,7 +60,6 @@ class BucketLocation:
         cls.account_prefix = "location-acc"
         cls.email_id = "@seagate.com"
         cls.id_str = "id={}"
-
         LOGGER.info("ENDED: setup test suite operations.")
 
     @classmethod
@@ -166,8 +163,8 @@ class BucketLocation:
             S3_OBJ.bucket_location(
                 self.bucket_name)
         except CTException as error:
-            assert_utils.assert_exact_string(
-                "NoSuchBucket", str(error.message), error.message)
+            assert "NoSuchBucket" in str(
+                error.message), error.message
         LOGGER.info(
             "Step 1 : Get bucket location on non existing bucket failed with error %s",
             "NoSuchBucket")
@@ -281,9 +278,8 @@ class BucketLocation:
             s3_obj_2.bucket_location(
                 self.bucket_name)
         except CTException as error:
-            assert_utils.assert_exact_string(
-                "AccessDenied", str(
-                    error.message), error.message)
+            assert "AccessDenied" in str(
+                error.message), error.message
         LOGGER.info(
             "Step 3 : Get bucket location with another account is failed"
             " with error %s", "AccessDenied")
