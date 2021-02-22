@@ -21,7 +21,6 @@
 
 """Global constant module."""
 
-import sys
 import logging
 from typing import Any
 
@@ -81,7 +80,8 @@ class _Final:
             if name not in self.__dict__:
                 raise AttributeError
         except AttributeError:
-            LOGGER.error("Error: const %s not present/binded", str(name))
+            if name not in ["_pytestfixturefunction", "__bases__", "__test__"]:
+                LOGGER.error("Error: const %s not present/binded", str(name))
 
     def __delattr__(self, name: Any) -> None:
         """
