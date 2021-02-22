@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# !/usr/bin/python
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -16,33 +18,26 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-# -*- coding: utf-8 -*-
-# !/usr/bin/python
-import os
 
-LOG_FILE = 'cortx-test.log'
-
-USER_JSON = '_usersdata'
-
-CONFIG_DIR = 'config'
-
-COMMON_CONFIG = os.path.join(CONFIG_DIR, 'common_config.yaml')
-S3_CONFIG = os.path.join(CONFIG_DIR, 's3', 's3_config.yaml')
-
-LOG_DIR_NAME = 'log'
-
-JIRA_TEST_LIST = 'test_lists.csv'
+"""
+Report RPC module handle initiating a report client and update Jira and MongoDB.
+These are async rpc calls and intended to be called from pytest reporting hooks.
+"""
 
 
-JIRA_SELECTED_TESTS = 'selected_test_lists.csv'
+class ReportClientImpl:
+    """Reports test status to Jira and MongoDB"""
 
-JIRA_DIST_TEST_LIST = 'dist_test_lists.csv'
+    def __init__(self):
+        """Init Jira and MongoDB Clients."""
 
-JIRA_TEST_COLLECTION = 'test_collection.csv'
+    def async_update_db(self):
+        """Async update db with test result."""
 
-# Kafka Config Params
 
-SCHEMA_REGISTRY = "cft2:8090"  # Bootstrap broker(s) (host[:port])
-BOOTSTRAP_SERVERS = "https://cft2:8091"  # Schema Registry (http(s)://host[:port]
-TEST_EXEC_TOPIC = 'cortx-test-exec-topic'
-TEST_ABORT_TOPIC = 'cortx-test-abort-topic'  # Read by all semantics
+def register(srv):
+    """
+    Registers RPC API.
+    :param srv:
+    """
+    srv.register_instance(ReportClientImpl())

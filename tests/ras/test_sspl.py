@@ -17,12 +17,12 @@ from commons import constants as cons
 from commons import commands as common_cmd
 from commons.utils import config_utils as conf_util
 from commons.utils.assert_utils import *
-from libs.csm.rest.csm_rest_alert import SystemAlerts
+#from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 from commons.alerts_simulator.generate_alert_lib import \
      GenerateAlertLib, AlertType
 
-CSM_ALERT_OBJ = SystemAlerts()
+#CSM_ALERT_OBJ = SystemAlerts()
 CSM_USER_OBJ = RestCsmUser()
 ALERT_API_OBJ = GenerateAlertLib()
 
@@ -36,7 +36,7 @@ LOGGER = logging.getLogger(__name__)
 TEST_DATA = [COMMON_CONF["host"]]
 
 
-class SSPLTest:
+class TestSSPL:
     """SSPL Test Suite."""
 
     @pytest.mark.parametrize("host", TEST_DATA)
