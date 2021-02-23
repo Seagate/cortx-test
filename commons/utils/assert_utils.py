@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+"""Function for comparison."""
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -95,7 +96,8 @@ def assert_or(actual, matcher):
 
 def assert_compare_text(actual, matcher, context):
     """
-    Function to compare multi-lined test having different datatypes.
+    Function to compare multi-lined test having different data types.
+
     :param actual: First object to be compared
     :param matcher: Second object to be compared
     :param context: Dict having the flag values
@@ -138,6 +140,7 @@ def assert_compare_text(actual, matcher, context):
 def compare(*argv, **kwargs):
     """
     Function to compare objects of any data type.
+
     Optional parameters:
     case_check: Case check for str comparison (True: Check case, False:
     Ignore case)

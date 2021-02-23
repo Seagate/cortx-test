@@ -1,5 +1,23 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+
 """Controller helper lib implements the base functions for controller operations."""
 import os
 import logging
@@ -11,24 +29,19 @@ from commons import commands as common_cmd
 from commons import errorcodes as cterr
 from commons.exceptions import CTException
 from commons.utils import config_utils as conf_util
+from config import CMN_CFG, RAS_VAL, CMN_DESTRUCTIVE_CFG
 
 LOGGER = logging.getLogger(__name__)
-
-COMMON_CONF = conf_util.read_yaml(cons.COMMON_CONFIG_PATH)[1]
-COMMON_DESTRUCTIVE_VAL = conf_util.read_yaml(cons.COMMON_CONFIG_PATH)[1]
-RAS_VAL = conf_util.read_yaml(cons.RAS_CONFIG_PATH)[1]
-
-BYTES_TO_READ = cons.BYTES_TO_READ
 
 
 class ControllerLib:
     """Controller helper functions."""
 
-    def __init__(self, host=COMMON_CONF["host"], h_user=COMMON_CONF["username"],
-                 h_pwd=COMMON_CONF["password"],
-                 enclosure_ip=COMMON_CONF["primary_enclosure_ip"],
-                 enclosure_user=COMMON_CONF["enclosure_user"],
-                 enclosure_pwd=COMMON_CONF["enclosure_pwd"]):
+    def __init__(self, host=CMN_CFG["host"], h_user=CMN_CFG["username"],
+                 h_pwd=CMN_CFG["password"],
+                 enclosure_ip=CMN_CFG["primary_enclosure_ip"],
+                 enclosure_user=CMN_CFG["enclosure_user"],
+                 enclosure_pwd=CMN_CFG["enclosure_pwd"]):
         """
         Method to initialize members of ControllerLib class.
 
@@ -57,7 +70,7 @@ class ControllerLib:
         self.copy = True
         runner_path = cons.REMOTE_TELNET_PATH
         local_path = cons.TELNET_OP_PATH
-        LOGGER.info(f"Copying file {local_path} to {runner_path}")
+        LOGGER.info("Copying file %s to %s", local_path, runner_path)
         self.node_obj.copy_file_to_remote(local_path=local_path,
                                           remote_path=runner_path)
 
@@ -81,7 +94,7 @@ class ControllerLib:
                           f"enclosure_pwd=\"{self.enclosure_pwd}\", " \
                           f"cmd=\"{cmd}\")'"
 
-                LOGGER.info(f"Running command {command}")
+                LOGGER.info("Running command %s", command)
                 response = self.node_obj.execute_cmd(cmd=command,
                                                      read_lines=True)
                 response = response[0].split()
@@ -96,8 +109,8 @@ class ControllerLib:
                     (common_cmd.STRING_MANIPULATION.format(response[2])).
                     replace('\n', ' ').replace('\\n', ' ')).read()
             except BaseException as error:
-                LOGGER.error(f"Error in {ControllerLib.get_mc_ver_sr.__name__}:"
-                             f" {error}")
+                LOGGER.error("Error in %s: %s",
+                             ControllerLib.get_mc_ver_sr.__name__, error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return status, mc_ver, mc_sr
@@ -124,11 +137,11 @@ class ControllerLib:
             mc_password = str(response.text)
             mc_password = (mc_password.split(',')[1]).split('=')[1]
         except BaseException as error:
-            LOGGER.error(f"Error in {ControllerLib.get_mc_debug_pswd.__name__}:"
-                         f" {error}")
+            LOGGER.error("Error in %s: %s",
+                         ControllerLib.get_mc_debug_pswd.__name__, error)
             raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
-        LOGGER.info(f"MC debug password: {mc_password}")
+        LOGGER.info("MC debug password: %s", mc_password)
         return mc_password
 
     def simulate_fault_ctrl(self, mc_deb_password: str, enclid: str, pos: str,
@@ -167,7 +180,7 @@ class ControllerLib:
                           f"telnet_port=\"{telnet_port}\", " \
                           f"timeout=\"{timeout}\", cmd=\"{cmd}\")'"
 
-                LOGGER.info(f"Running command {command}")
+                LOGGER.info("Running command %s", command)
                 response = self.node_obj.execute_cmd(cmd=command,
                                                      read_lines=True)
                 response = response[0].split()
@@ -179,9 +192,8 @@ class ControllerLib:
                     (common_cmd.STRING_MANIPULATION.format(response[1]))
                     .replace('\n', ' ').replace('\\n', ' ')).read()
             except BaseException as error:
-                LOGGER.error(f"Error in "
-                             f"{ControllerLib.simulate_fault_ctrl.__name__}:"
-                             f" {error}")
+                LOGGER.error("Error in %s: %s",
+                             ControllerLib.simulate_fault_ctrl.__name__, error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return status, password_str
@@ -199,7 +211,7 @@ class ControllerLib:
         """
         if self.copy:
             try:
-                LOGGER.info(f"Show disks for {self.enclosure_ip} enclosure.")
+                LOGGER.info("Show disks for %s enclosure.", self.enclosure_ip)
                 cmd = common_cmd.SHOW_DISKS_CMD
 
                 command = f"python3 /root/telnet_operations.py " \
@@ -210,7 +222,7 @@ class ControllerLib:
                           f"telnet_filepath=\"{telnet_file}\", " \
                           f"cmd=\"{cmd}\")'"
 
-                LOGGER.info(f"Running command : {command}")
+                LOGGER.info("Running command : %s", command)
                 response = self.node_obj.execute_cmd(cmd=command,
                                                      read_lines=True)
 
@@ -224,8 +236,8 @@ class ControllerLib:
                     (common_cmd.STRING_MANIPULATION.format(response[1])).
                     replace('\n', ' ').replace('\\n', ' ')).read()
             except BaseException as error:
-                LOGGER.error(
-                    f"Error in {ControllerLib.show_disks.__name__}: {error}")
+                LOGGER.error("Error in %s: %s",
+                             ControllerLib.show_disks.__name__, error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
             return status, path
 
@@ -246,7 +258,7 @@ class ControllerLib:
                 resp = self.show_disks(telnet_file=telnet_file)
 
                 LOGGER.info("Copying telnet file from node to client")
-                resp = self.node_obj.write_remote_file_to_local_file(
+                self.node_obj.write_remote_file_to_local_file(
                     file_path=telnet_file, local_path=telnet_file)
 
                 LOGGER.info("Copy completed")
@@ -262,9 +274,9 @@ class ControllerLib:
 
                 drive_dict = resp[1]
             except BaseException as error:
-                LOGGER.error(
-                    f"Error on {ControllerLib.get_total_drive_count.__name__}:"
-                    f" {error}")
+                LOGGER.error("Error in %s: %s",
+                             ControllerLib.get_total_drive_count.__name__,
+                             error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return resp[0], len(drive_dict)
@@ -289,7 +301,7 @@ class ControllerLib:
                 resp = self.show_disks(telnet_file=telnet_file)
 
                 LOGGER.info("Copying telnet file from node to client")
-                resp = self.node_obj.write_remote_file_to_local_file(
+                self.node_obj.write_remote_file_to_local_file(
                     file_path=telnet_file, local_path=telnet_file)
 
                 LOGGER.info("Copy completed")
@@ -310,9 +322,8 @@ class ControllerLib:
                         status = v['health']
                         break
             except BaseException as error:
-                LOGGER.error(
-                    f"Error in {ControllerLib.check_phy_health.__name__}: "
-                    f"{error}")
+                LOGGER.error("Error in %s: %s",
+                             ControllerLib.check_phy_health.__name__, error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return resp[0], status
@@ -347,7 +358,7 @@ class ControllerLib:
                           f"pwd=\"{self.enclosure_pwd}\", " \
                           f"status=\"{status}\", cmd=\"{cmd}\")'"
 
-                LOGGER.info(f"Running command {command}")
+                LOGGER.info("Running command %s", command)
                 response = self.node_obj.execute_cmd(cmd=command,
                                                      read_lines=True)
 
@@ -360,9 +371,9 @@ class ControllerLib:
                     (common_cmd.STRING_MANIPULATION.format(response[1]))
                     .replace('\n', ' ').replace('\\n', ' ')).read()
             except BaseException as error:
-                LOGGER.error(f"Error in"
-                             f" {ControllerLib.set_drive_status_telnet.__name__}:"
-                             f" {error}")
+                LOGGER.error("Error in %s: %s",
+                             ControllerLib.set_drive_status_telnet.__name__,
+                             error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return status, drive_status
@@ -390,7 +401,7 @@ class ControllerLib:
             try:
                 cmd = common_cmd.CMD_SHOW_VOLUMES
                 LOGGER.debug(cmd)
-                volumes_param = COMMON_DESTRUCTIVE_VAL.get("show_volumes")
+                volumes_param = CMN_DESTRUCTIVE_CFG.get("show_volumes")
                 LOGGER.debug(volumes_param)
                 if not isinstance(volumes_param, dict):
                     raise Exception(f"Failed to get show_volumes: "
@@ -398,7 +409,7 @@ class ControllerLib:
                 # Check telnet_operations.py present on primary node.
                 runner_path = cons.REMOTE_TELNET_PATH
                 res = self.node_obj.path_exists(path=runner_path)
-                if not res[0]:
+                if not res:
                     raise Exception(f"telnet_operations.py path '{runner_path}'"
                                     f" not exists on primary node.")
                 # Run show volumes command on primary controller.
@@ -409,18 +420,15 @@ class ControllerLib:
                           f"enclosure_user=\"{self.enclosure_user}\", " \
                           f"enclosure_pwd=\"{self.enclosure_pwd}\", " \
                           f"file_path=\"{output_file_path}\", cmd=\"{cmd}\")'"
-                LOGGER.info(f"Running command : {command}")
+                LOGGER.info("Running command : %s", command)
                 resp = self.node_obj.execute_cmd(cmd=command,
                                                  read_lines=True)
-                LOGGER.info(f"Show volumes response log: {resp}")
+                LOGGER.info("Show volumes response log: %s", resp)
                 # Copy remote log file to local path.
                 LOGGER.info("Copying log file from node to client")
-                status, res_path = self.node_obj.write_remote_file_to_local_file(
+                self.node_obj.write_remote_file_to_local_file(
                     file_path=output_file_path, local_path=output_file_path)
-                LOGGER.info(f"copy file log: {status, resp}")
-                if not status:
-                    raise Exception(f"Failed to copy file: {output_file_path}. "
-                                    f"response: {res_path}")
+                LOGGER.info("copy file log: %s", output_file_path)
                 # Parse output xml.
                 if not os.path.exists(output_file_path):
                     raise Exception(f"Local copy for {output_file_path} "
@@ -428,7 +436,7 @@ class ControllerLib:
                 status, disk_volumes_dict = conf_util.parse_xml_controller(
                     filepath=output_file_path,
                     field_list=list(volumes_param.values()))
-                LOGGER.debug(f'Show volumes dict: {disk_volumes_dict}')
+                LOGGER.debug("Show volumes dict: %s", disk_volumes_dict)
                 if not status:
                     raise Exception(f"failed to parse output file: "
                                     f"{disk_volumes_dict}")
@@ -461,9 +469,9 @@ class ControllerLib:
                 if not disk_volumes_dict:
                     return False, disk_volumes_dict
             except BaseException as error:
-                LOGGER.error(
-                    f"Error in {ControllerLib.get_show_volumes.__name__}: "
-                    f"{error}")
+                LOGGER.error("Error in %s: %s",
+                             ControllerLib.get_show_volumes.__name__,
+                             error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return True, disk_volumes_dict
@@ -490,7 +498,7 @@ class ControllerLib:
             try:
                 cmd = common_cmd.CMD_SHOW_XP_STATUS
                 LOGGER.debug(cmd)
-                expander_param = COMMON_DESTRUCTIVE_VAL.get("show_expander_"
+                expander_param = CMN_DESTRUCTIVE_CFG.get("show_expander_"
                                                             "status")
                 LOGGER.debug(expander_param)
                 if not isinstance(expander_param, dict):
@@ -499,7 +507,7 @@ class ControllerLib:
                 # Check telnet_operations.py present on primary node.
                 runner_path = cons.REMOTE_TELNET_PATH
                 res = self.node_obj.path_exists(path=runner_path)
-                if not res[0]:
+                if not res:
                     raise Exception(f"telnet_operations.py path '{runner_path}'"
                                     f" not exists on primary node.")
                 # Run 'show expander-status' command on primary controller.
@@ -510,16 +518,14 @@ class ControllerLib:
                           f"{self.enclosure_user}\", enclosure_pwd=\"" \
                           f"{self.enclosure_pwd}\", " \
                           f"file_path=\"{output_file_path}\", cmd=\"{cmd}\")'"
-                LOGGER.info(f"Running command : {command}")
+                LOGGER.info("Running command : %s", command)
                 resp = self.node_obj.execute_cmd(cmd=command,
                                                  read_lines=True)
-                LOGGER.info(f"Show show expander-status response log: {resp}")
+                LOGGER.info("Show show expander-status response log: %s", resp)
                 LOGGER.info("Copying log file from node to client")
-                status, res_path = self.node_obj.write_remote_file_to_local_file(
+                self.node_obj.write_remote_file_to_local_file(
                     file_path=output_file_path, local_path=output_file_path)
-                LOGGER.info(f"copy file log: {status, resp}")
-                if not status:
-                    raise Exception(f"Failed to copy log. response: {res_path}")
+                LOGGER.info("copy file log: %s", output_file_path)
                 # Parse output xml.
                 if not os.path.exists(output_file_path):
                     raise Exception(f"Local copy for {output_file_path} "
@@ -527,8 +533,8 @@ class ControllerLib:
                 status, expander_status_dict = conf_util.parse_xml_controller(
                     filepath=output_file_path,
                     field_list=list(expander_param.values()))
-                LOGGER.debug(f'Show expander-status dict: '
-                             f'{expander_status_dict}')
+                LOGGER.debug("Show expander-status dict: %s",
+                             expander_status_dict)
                 if not status:
                     raise Exception(f"failed to parse output file: "
                                     f"{expander_status_dict}")
@@ -567,10 +573,9 @@ class ControllerLib:
                 if not expander_status_dict:
                     return False, expander_status_dict
             except BaseException as error:
-                LOGGER.error(
-                    f"Error in "
-                    f"{ControllerLib.get_show_expander_status.__name__}:"
-                    f" {error}")
+                LOGGER.error("Error in %s: %s",
+                             ControllerLib.get_show_expander_status.__name__,
+                             error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return True, expander_status_dict
@@ -595,7 +600,7 @@ class ControllerLib:
             try:
                 cmd = common_cmd.CMD_SHOW_DISK_GROUP
                 LOGGER.debug(cmd)
-                diskgroup_param = COMMON_DESTRUCTIVE_VAL.get("show_disk_groups")
+                diskgroup_param = CMN_DESTRUCTIVE_CFG.get("show_disk_groups")
                 LOGGER.debug(diskgroup_param)
                 if not isinstance(diskgroup_param, dict):
                     raise Exception(f"Failed to get show_disk_group: "
@@ -603,7 +608,7 @@ class ControllerLib:
                 # Check telnet_operations.py present on primary node.
                 runner_path = cons.REMOTE_TELNET_PATH
                 res = self.node_obj.path_exists(path=runner_path)
-                if not res[0]:
+                if not res:
                     raise Exception(f"telnet_operations.py path '{runner_path}'"
                                     f" does not exist on primary node.")
                 # Run 'show disk-group' command on primary controller.
@@ -614,18 +619,15 @@ class ControllerLib:
                           f"enclosure_user=\"{self.enclosure_user}\", " \
                           f"enclosure_pwd=\"{self.enclosure_pwd}\", " \
                           f"file_path=\"{output_file_path}\", cmd=\"{cmd}\")'"
-                LOGGER.info(f"Running command : {command}")
+                LOGGER.info("Running command : %s", command)
                 resp = self.node_obj.execute_cmd(cmd=command,
                                                  read_lines=True)
-                LOGGER.info(f"Show disk group response log: {resp}")
+                LOGGER.info("Show disk group response log: %s", resp)
                 # Copy remote log file to local path.
                 LOGGER.info("Copying log file from node to client")
-                status, res_path = self.node_obj.write_remote_file_to_local_file(
+                self.node_obj.write_remote_file_to_local_file(
                     file_path=output_file_path, local_path=output_file_path)
-                LOGGER.info(f"copy file log: {status, resp}")
-                if not status:
-                    raise Exception(f"Failed to copy file: {output_file_path}. "
-                                    f"response: {res_path}")
+                LOGGER.info("copy file log: %s", output_file_path)
                 # Parse output xml.
                 if not os.path.exists(output_file_path):
                     raise Exception(f"Local copy for {output_file_path} "
@@ -633,7 +635,7 @@ class ControllerLib:
                 status, disk_group_dict = conf_util.parse_xml_controller(
                     filepath=output_file_path,
                     field_list=list(diskgroup_param.values()))
-                LOGGER.debug(f'Show disk-group dict: {disk_group_dict}')
+                LOGGER.debug("Show disk-group dict: %s", disk_group_dict)
                 if not status:
                     raise Exception(f"failed to parse output file: "
                                     f"{disk_group_dict}")
@@ -652,9 +654,9 @@ class ControllerLib:
                 if not disk_group_dict:
                     return False, disk_group_dict
             except BaseException as error:
-                LOGGER.error(
-                    f"Error in {ControllerLib.get_show_disk_group.__name__}: "
-                    f"{error}")
+                LOGGER.error("Error in %s: %s",
+                             ControllerLib.get_show_disk_group.__name__,
+                             error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return True, disk_group_dict
@@ -682,14 +684,14 @@ class ControllerLib:
             try:
                 cmd = common_cmd.SHOW_DISKS_CMD
                 LOGGER.debug(cmd)
-                disks_param = COMMON_DESTRUCTIVE_VAL.get("show_disks")
+                disks_param = CMN_DESTRUCTIVE_CFG.get("show_disks")
                 LOGGER.debug(disks_param)
                 if not isinstance(disks_param, dict):
                     raise Exception(f"Failed to get shows_disks: {disks_param}")
                 # Check telnet_operations.py present on primary node.
                 runner_path = cons.REMOTE_TELNET_PATH
                 res = self.node_obj.path_exists(path=runner_path)
-                if not res[0]:
+                if not res:
                     raise Exception(f"telnet_operations.py path '{runner_path}'"
                                     f" does not exist on primary node.")
                 # Run 'show disks' command on primary controller.
@@ -700,18 +702,15 @@ class ControllerLib:
                           f"{self.enclosure_user}\", enclosure_pwd=\"" \
                           f"{self.enclosure_pwd}\", " \
                           f"file_path=\"{output_file_path}\", cmd=\"{cmd}\")'"
-                LOGGER.info(f"Running command : {command}")
+                LOGGER.info("Running command : %s", command)
                 resp = self.node_obj.execute_cmd(cmd=command,
                                                  read_lines=True)
-                LOGGER.info(f"Show disk group response log: {resp}")
+                LOGGER.info("Show disk group response log: %s", resp)
                 # Copy remote log file to local path.
                 LOGGER.info("Copying log file from node to client")
-                status, res_path = self.node_obj.write_remote_file_to_local_file(
+                self.node_obj.write_remote_file_to_local_file(
                     file_path=output_file_path, local_path=output_file_path)
-                LOGGER.info(f"copy file log: {status, resp}")
-                if not status:
-                    raise Exception(f"Failed to copy file: {output_file_path}. "
-                                    f"response: {res_path}")
+                LOGGER.info("copy file log: %s", output_file_path)
                 # Parse output xml.
                 if not os.path.exists(output_file_path):
                     raise Exception(f"Local copy for {output_file_path} "
@@ -719,7 +718,7 @@ class ControllerLib:
                 status, disks_dict = conf_util.parse_xml_controller(
                     filepath=output_file_path,
                     field_list=list(disks_param.values()))
-                LOGGER.debug(f'Show disks dict: {disks_dict}')
+                LOGGER.debug("Show disks dict: %s", disks_dict)
                 if not status:
                     raise Exception(f"failed to parse output file: "
                                     f"{disks_dict}")
@@ -736,9 +735,9 @@ class ControllerLib:
                 if not disks_dict:
                     return False, disks_dict
             except BaseException as error:
-                LOGGER.error(
-                    f"Error in {ControllerLib.get_show_disks.__name__}: "
-                    f"{error}")
+                LOGGER.error("Error in %s: %s",
+                             ControllerLib.get_show_disks.__name__,
+                             error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return True, disks_dict
@@ -757,11 +756,11 @@ class ControllerLib:
         if self.copy:
             try:
                 cmd = common_cmd.CMD_CLEAR_METADATA.format(drive_num)
-                LOGGER.debug(f"Running command: {cmd}")
+                LOGGER.debug("Running command: %s", cmd)
                 # Check telnet_operations.py present on primary node.
                 runner_path = cons.REMOTE_TELNET_PATH
                 res = self.node_obj.path_exists(path=runner_path)
-                if not res[0]:
+                if not res:
                     raise Exception(f"telnet_operations.py path '{runner_path}'"
                                     f" does not exist on primary node.")
                 # Run 'show disks' command on primary controller.
@@ -771,7 +770,7 @@ class ControllerLib:
                           f"{self.enclosure_ip}\", enclosure_user=\"" \
                           f"{self.enclosure_user}\", enclosure_pwd=\"" \
                           f"{self.enclosure_pwd}\", cmd=\"{cmd}\")'"
-                LOGGER.info(f"Running command : {command}")
+                LOGGER.info("Running command : %s", command)
                 resp = self.node_obj.execute_cmd(cmd=command,
                                                  read_lines=True)
 
@@ -782,8 +781,9 @@ class ControllerLib:
                     (common_cmd.STRING_MANIPULATION.format(response[0])).
                     replace('\n', ' ').replace('\\n', ' ')).read()
             except Exception as error:
-                LOGGER.error("Error in {0}: {1}".format(
-                    ControllerLib.clear_drive_metadata.__name__, error))
+                LOGGER.error("Error in %s: %s",
+                             ControllerLib.clear_drive_metadata.__name__,
+                             error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return status
