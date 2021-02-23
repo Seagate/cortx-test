@@ -36,15 +36,14 @@ from commons.utils.assert_utils import assert_false, assert_true
 from commons.utils.config_utils import read_yaml
 from commons.helpers.node_helper import Node
 
-from libs.s3 import S3H_OBJ
+from libs.s3 import S3H_OBJ as S3_HELPER
 
 manager = Manager()
-S3_HELPER = S3H_OBJ
 support_bundle_conf = read_yaml("config/s3/test_support_bundle.yaml")[1]
 CM_CFG = read_yaml("config/common_config.yaml")[1]
 
 
-class SupportBundle():
+class TestSupportBundle:
     """Support Bundle Testsuite."""
 
     @classmethod
@@ -73,7 +72,7 @@ class SupportBundle():
 
     def remote_execution(self, hostname, username, password, cmd):
         """running remote cmd."""
-        self.LOGGER("Remote Execution")
+        self.LOGGER.info("Remote Execution")
         return run_remote_cmd(cmd, hostname, username, password)
 
     def create_support_bundle(
@@ -160,8 +159,6 @@ class SupportBundle():
         files with the actual s3server instances m0traces files
         :param list org_m0trace_lst: Actual m0traces of s3server instances files
         :param list x_m0trace_lst: Bundle support m0traces files
-        :param str rpath: Remote of the s3server
-        :param str xtrdirpath: Extracted path of the support bundle file
         :return: Boolean
         """
         md5cmd = support_bundle_conf["support_bundle"]["md5cmd"]
@@ -191,7 +188,7 @@ class SupportBundle():
         """
         Function compares two remote files on the remote s3server.
 
-        :param str remote path: A system remote path
+        :param remotepath:
         :param dict ext_path_dict: dictionary contains bundled remote server
          path and list of m0traces files
         :return: (Boolean, m0traces_list)
@@ -321,9 +318,9 @@ class SupportBundle():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-8024 ")
     @CTFailOn(error_handler)
-    def test_5274(self):
+    def test_dest_has_less_space_5274(self):
         """Support bundle collection when destination has less space than required."""
         self.LOGGER.info(
             "STARTED: Support bundle collection when destination has less space than required")
@@ -331,7 +328,7 @@ class SupportBundle():
         common_dir = test_cfg["common_dir"]
         sys_bundle_dir = test_cfg["remote_dest_dir"]
         dir_path = os.path.join(common_dir, sys_bundle_dir)
-        remote_path = self.HOST_OBJ.create_dir(dir_path)
+        remote_path = self.HOST_OBJ.make_dir(dir_path)
         assert_true(remote_path[0], remote_path[1])
         self.file_lst.append(os.path.join(remote_path[1]))
         for i in range(test_cfg["count"]):
@@ -354,9 +351,9 @@ class SupportBundle():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-8025")
     @CTFailOn(error_handler)
-    def test_5280(self):
+    def test_collect_triggered_simultaneously_5280(self):
         """Test multiple Support bundle collection triggered simultaneously."""
         self.LOGGER.info(
             "STARTED: Test multiple Support bundle collection triggered simultaneously")
@@ -394,9 +391,9 @@ class SupportBundle():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-8026")
     @CTFailOn(error_handler)
-    def test_5282(self):
+    def test_core_m0traces_all_instances_5282(self):
         """Validate Support bundle contains cores and m0traces for all instances."""
         self.LOGGER.info(
             "STARTED: Validate Support bundle contains cores and m0traces for all instances")
@@ -455,7 +452,10 @@ class SupportBundle():
 
     # As this test cases requires destructive operations to be performed on the node
     # causing cluster failure so disabling this test-case
-    def test_5272(self):
+    @pytest.mark.parallel
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-8691 ")
+    def test_collection_with_network_fluctuation_5272(self):
         """Support bundle collection with network fluctuation."""
         self.LOGGER.info(
             "STARTED: Test Support bundle collection with network fluctuation")
@@ -497,9 +497,9 @@ class SupportBundle():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-8692 ")
     @CTFailOn(error_handler)
-    def test_5273(self):
+    def test_collecion_primary_secondary_nodes_5273(self):
         """Test Support bundle collection from Primary and Secondary nodes of cluster."""
         self.LOGGER.info(
             "STARTED: Test Support bundle collection from Primary and Secondary nodes of cluster")
@@ -545,9 +545,9 @@ class SupportBundle():
     # causing cluster failure so disabling this test-case
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-8694")
     @CTFailOn(error_handler)
-    def test_5276(self):
+    def test_collet_authservice_down_5276(self):
         """Test Support bundle collection when authserver service is down."""
         self.LOGGER.info(
             "STARTED: Test Support bundle collection when authserver service is down")
@@ -590,9 +590,9 @@ class SupportBundle():
     # causing cluster failure so disabling this test-case
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-8695")
     @CTFailOn(error_handler)
-    def test_5277(self):
+    def test_collection_haproxy_down_5277(self):
         """Test Support bundle collection when haproxy service is down."""
         self.LOGGER.info(
             "STARTED: Test Support bundle collection when haproxy service is down")
@@ -635,9 +635,9 @@ class SupportBundle():
     # causing cluster failure so disabling this test-case
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-8696")
     @CTFailOn(error_handler)
-    def test_5278(self):
+    def test_collection_cluster_down_5278(self):
         """Test Support bundle collection when Cluster is shut down."""
         self.LOGGER.info(
             "STARTED: Test Support bundle collection when Cluster is shut down")
@@ -670,9 +670,9 @@ class SupportBundle():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-8697")
     @CTFailOn(error_handler)
-    def test_5279(self):
+    def test_collection_one_after_other_5279(self):
         """Test multiple Support bundle collections one after the other."""
         self.LOGGER.info(
             "STARTED: Test multiple Support bundle collections one after the other")
@@ -709,9 +709,9 @@ class SupportBundle():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-8698 ")
     @CTFailOn(error_handler)
-    def test_5281(self):
+    def test_s3server_logs_all_instances_5281(self):
         """Validate Support bundle contains s3server logs for all instances."""
         self.LOGGER.info(
             "STARTED: Validate Support bundle contains s3server logs for all instances")
@@ -754,9 +754,9 @@ class SupportBundle():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-8699")
     @CTFailOn(error_handler)
-    def test_5283(self):
+    def test_authserver_logs_5283(self):
         """Validate Support bundle contains authserver logs."""
         self.LOGGER.info(
             "STARTED: Validate Support bundle contains authserver logs")
@@ -794,9 +794,9 @@ class SupportBundle():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-8700")
     @CTFailOn(error_handler)
-    def test_5284(self):
+    def test_haproxy_logs_5284(self):
         """Validate Support bundle contains haproxy logs."""
         self.LOGGER.info(
             "STARTED: Validate Support bundle contains haproxy logs")
@@ -836,9 +836,9 @@ class SupportBundle():
     # causing cluster failure so disabling this test-case
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-8693")
     @CTFailOn(error_handler)
-    def test_5275(self):
+    def test_collection_s3server_down_5275(self):
         """Test Support bundle collection when s3server services are down."""
         self.LOGGER.info(
             "STARTED: Test Support bundle collection when s3server services are down")
@@ -880,9 +880,9 @@ class SupportBundle():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-8701")
     @CTFailOn(error_handler)
-    def test_5270(self):
+    def test_collection_script_5270(self):
         """Test Support bundle collection through command/script."""
         self.LOGGER.info(
             "STARTED: Test Support bundle collection through command/script")
@@ -914,9 +914,9 @@ class SupportBundle():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-8689")
     @CTFailOn(error_handler)
-    def test_5285(self):
+    def test_system_configs_5285(self):
         """Validate Support bundle contains system related configs."""
         self.LOGGER.info(
             "STARTED: Validate Support bundle contains system related configs")
@@ -974,9 +974,9 @@ class SupportBundle():
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-8690")
     @CTFailOn(error_handler)
-    def test_5286(self):
+    def test_collect_system_info_stats_5286(self):
         """Validate Support bundle collects system information and stats."""
         self.LOGGER.info(
             "STARTED: Validate Support bundle collects system information and stats")

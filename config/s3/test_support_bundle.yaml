@@ -30,7 +30,6 @@ test_5282:
   count: 1
   tar_cmd: "tar -xvf {} -C {}"
   tar_postfix: "tar.xz"
-  mkdir_cmd: "mkdir -p {}"
   tmp_dir: "tmp"
   extracted_m0trace_path: "s3_m0trace_files"
 

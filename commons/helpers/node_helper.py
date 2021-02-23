@@ -41,7 +41,7 @@ class Node(Host):
 
     """Class to maintain all common functions across component."""
 
-    def get_authserver_log(self, path: str, option: str = "-n 3") -> str:
+    def get_authserver_log(self, path: str, option: str = "-n 3") -> Tuple:
         """
         Get authserver log from node.
         """
@@ -68,6 +68,7 @@ class Node(Host):
                 "Performing %s on service %s...", command, service)
             cmd = commands.SYSTEM_CTL_CMD.format(command, service)
             out.append(self.execute_cmd(cmd, timeout=timeout))
+
         return out
 
     def status_service(
@@ -105,6 +106,7 @@ class Node(Host):
             nfs_path: str) -> bool:
         """
         Function to configure jclient and cloud jar files
+        :param nfs_path:
         :param source: path to the source dir where .jar are present.
         :param destination: destination path where .jar need to be copied
         """
@@ -139,6 +141,7 @@ class Node(Host):
         except BaseException:
             return False
         self.disconnect()
+
         return True
 
     def create_file(
@@ -146,9 +149,11 @@ class Node(Host):
             filename: str,
             mb_count: int,
             dev="/dev/zero",
-            b_size="1M") -> str:
+            b_size="1M") -> Tuple:
         """
         Creates a new file, size(count) in MB
+        :param b_size:
+        :param dev:
         :param filename: Name of the file with path
         :param mb_count: size of the file in MB
         :return: output of remote execution cmd
@@ -157,6 +162,7 @@ class Node(Host):
         log.debug(cmd)
         result = self.execute_cmd(cmd)
         log.debug("output = %s", str(result))
+
         return self.path_exists(filename), result
 
     def rename_file(self, old_filename: str, new_filename: str):
@@ -178,9 +184,6 @@ class Node(Host):
         """
         This function removes the unwanted file from the remote host.
         :param filename: Absolute path of the file to be removed
-        :param host: IP of the host
-        :param user: Username of the host
-        :param pwd: Password for the user
         """
         self.connect_pysftp()
         log.debug("Connected to %s", self.hostname)
@@ -190,11 +193,13 @@ class Node(Host):
             if error.args[0] == 2:
                 raise error
         self.disconnect()
+
         return not self.path_exists(filename)
 
     def read_file(self, filename: str, local_path: str):
         """
         This function reads the given file and returns the file content
+        :param local_path:
         :param filename: Absolute path of the file to be read
         """
         if os.path.exists(local_path):
@@ -204,13 +209,14 @@ class Node(Host):
         response = file.read()
         if os.path.exists(local_path):
             os.remove(local_path)
+
         return response
 
     def copy_file_to_remote(self, local_path: str, remote_path: str) -> None:
         """
         copy file from local to local remote
         :param str local_path: local path
-        :param str remote_file_path: remote path
+        :param str remote_path: remote path
         """
         self.connect_pysftp()
         log.debug("sftp connected")
@@ -222,7 +228,7 @@ class Node(Host):
         """
         copy file from local to local remote
         :param str local_path: local path
-        :param str remote_file_path: remote path
+        :param str remote_path: remote path
         """
         self.connect_pysftp()
         log.debug("sftp connected")
@@ -252,12 +258,13 @@ class Node(Host):
         mdstat_remote_path = "/proc/mdstat"
         mdstat_local_path = "mdstat"
         log.debug(
-            "Fetching /proc/mdstat file from the host %s", (self.hostname))
+            "Fetching /proc/mdstat file from the host %s", self.hostname)
         self.write_remote_file_to_local_file(
             mdstat_remote_path, mdstat_local_path)
         log.debug("Parsing mdstat file")
         output = mdstat.parse(mdstat_local_path)
         self.remove_file(mdstat_local_path)
+
         return output
 
     def is_string_in_remote_file(
@@ -313,17 +320,16 @@ class Node(Host):
         This function list the files of the remote server
         :param str remote_path: absolute path on the remote server
         :return: response: list of files
-        :param host: IP of the host
-        :param user: Username of the host
-        :param pwd: Password for the user
         :rtype: list
         """
+        dir_lst = list()
         self.connect_pysftp()
         try:
             dir_lst = self.pysftp_obj.listdir(remote_path)
         except IOError as error:
             if error.args[0] == 2:
                 raise error
+
         return dir_lst
 
     def make_dir(self, dpath: str) -> bool:
@@ -337,6 +343,7 @@ class Node(Host):
                 "Directory '%s' not exists, creating directory...",
                 dpath)
             self.execute_cmd(commands.CMD_MKDIR.format(dpath))
+
         return self.path_exists(dpath)
 
     def remove_dir(self, dpath: str):
@@ -351,14 +358,14 @@ class Node(Host):
         ret_val = self.execute_cmd(cmd)
         if ret_val:
             log.debug("Successfully delete directory")
+
         return not self.path_exists(dpath)
 
     def create_dir_sftp(self, dpath: str) -> bool:
         """
         This function creates directory on the remote server and returns the
         absolute path of the remote server
-        :param str dir_name: Name of the directory to be created
-        :param str dest_dir: Remote destination path on remote server
+        :param str dpath: Remote destination path on remote server
         :return: (Boolean, Remotepath)
         """
         self.connect_pysftp()
@@ -373,6 +380,7 @@ class Node(Host):
             except IOError:
                 self.pysftp_obj.mkdir(dir_path)
         self.disconnect()
+
         return self.path_exists(dpath)
 
     def delete_dir_sftp(self, dpath: str, level: int = 0) -> bool:
@@ -394,6 +402,7 @@ class Node(Host):
                 self.pysftp_obj.remove(rpath)
         self.pysftp_obj.rmdir(dpath)
         self.disconnect()
+
         return not self.path_exists(dpath)
 
     def kill_remote_process(self, process_name: str):
@@ -425,8 +434,6 @@ class Node(Host):
         :param string pdu_user: PDU login user
         :param string pdu_pwd: PDU logn user password
         :param string node_slot: Node blank sort or port
-        :param int timeout: In case reboot node with time interval in sec
-        :param string status: In case user want to up or down specific node on/off
         :return: [bool, response]
         """
         timeout = kwargs.get("timeout") if kwargs.get("timeout", None) else 120
@@ -457,6 +464,7 @@ class Node(Host):
             return False, error
 
         log.debug("Successfully executed cmd %s", cmd)
+
         return resp
 
     def shutdown_node(self, options=None):
@@ -475,6 +483,7 @@ class Node(Host):
             log.error("*ERROR* An exception occurred in %s: %s",
                       Node.shutdown_node.__name__, error)
             return False, error
+
         return True, "Node shutdown successfully"
 
     def disk_usage_python_interpreter_cmd(self,
