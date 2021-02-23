@@ -16,7 +16,7 @@
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
-#
+
 """Module to maintain all common functions across component."""
 
 import logging
@@ -263,7 +263,7 @@ class Node(Host):
             mdstat_remote_path, mdstat_local_path)
         log.debug("Parsing mdstat file")
         output = mdstat.parse(mdstat_local_path)
-        self.remove_file(mdstat_local_path)
+        os.remove(mdstat_local_path)
 
         return output
 
@@ -511,4 +511,4 @@ class Node(Host):
                 Node.disk_usage_python_interpreter_cmd.__name__, error)
             return False, error
 
-        return resp
+        return True, resp
