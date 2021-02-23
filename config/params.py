@@ -52,3 +52,6 @@ SCHEMA_REGISTRY = "cft2:8090"  # Bootstrap broker(s) (host[:port])
 BOOTSTRAP_SERVERS = "https://cft2:8091"  # Schema Registry (http(s)://host[:port]
 TEST_EXEC_TOPIC = 'cortx-test-exec-topic'
 TEST_ABORT_TOPIC = 'cortx-test-abort-topic'  # Read by all semantics
+
+CSM_DIR = os.path.join(CONFIG_DIR, 'csm')
+CSM_CONFIG = os.path.join(CSM_DIR, 'csm_config.yaml')

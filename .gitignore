@@ -15,3 +15,5 @@ tmp
 venv/
 .vscode/
 robot/reports/
+secrets.json
+

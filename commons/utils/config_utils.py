@@ -29,15 +29,10 @@ import json
 import shutil
 import re
 import yaml
-from pymongo import MongoClient
 from configparser import ConfigParser, MissingSectionHeaderError
 from defusedxml.cElementTree import parse
-from urllib.parse import quote_plus
 import commons.errorcodes as cterr
 from commons.exceptions import CTException
-from commons import pswdmanager
-from tools.rest_server import mongodbapi
-
 
 LOG = logging.getLogger(__name__)
 MAIN_CONFIG_PATH = "config/main_config.yaml"
@@ -383,7 +378,7 @@ def get_config_yaml(fpath: str = 'config.yaml') -> dict:
     return data
 
 
-def get_config_db(setup_query={"setupname":"automation"},fields = {}):
+def get_config_db(setup_query={"setupname":"automation"}):
     """Reads the configuration from the database
 
     :param cname:collection which will be read
@@ -405,14 +400,14 @@ def _get_collection_obj(cpath = "tools\\rest_server\\config.ini",
     collection_obj = db[collection]
     return collection_obj
 
-def update_config_db(setup_query={"setupname":"automation"}):
+def update_config_db(setup_query):
     """[summary]
 
     :param setup_query:
     :return [type]:
-    """    
+    """
     sys_coll = _get_collection_obj()
-    data = read_content_json("common_config.json") 
+    data = read_content_json("common_config.json")
     data = sys_coll.update_document(setup_query, data)
     return data
 
@@ -433,5 +428,3 @@ def get_config_wrapper(**kwargs):
         raise ValueError("Invalid argument")
     return data
 
-
-    
