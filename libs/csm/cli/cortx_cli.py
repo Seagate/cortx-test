@@ -72,14 +72,22 @@ class CortxCli(CortxCliClient):
     def login_cortx_cli(
             self,
             username: str = CMN_CFG["csm"]["admin_user"],
-            password: str = CMN_CFG["csm"]["admin_pass"]) -> tuple:
+            password: str = CMN_CFG["csm"]["admin_pass"],
+            **kwargs) -> tuple:
         """
         This function will be used to login to CORTX CLI with given credentials
         :param str username: User name to login
         :param str password: User password
+        :keyword username_param: username to pass as argument
         :return: True/False and output
         """
         login_cmd = "cortxcli"
+
+        username_param = kwargs.get("username_param", None)
+
+        if username_param:
+            login_cmd = " ".join([login_cmd, "--username", username_param])
+
         self.log.info("Opening interactive CORTX CLI session....")
         output = self.execute_cli_commands(login_cmd)[1]
 

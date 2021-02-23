@@ -92,3 +92,27 @@ class CortxCliS3AccountOperations(CortxCli):
                 return True, response
 
         return False, response
+
+    def reset_s3account_password(
+            self,
+            account_name: str,
+            new_password: str) -> tuple:
+        """
+        This function will update password for specified s3 account to new_password using CORTX CLI.
+        :param account_name: Name of the s3 account whose password is to be update
+        :param new_password: New password for s3 account
+        :return: True/False and Response returned by CORTX CLI
+        """
+        reset_pwd_cmd = "s3accounts reset_password {}".format(account_name)
+        LOGGER.info("Resetting s3 account password to %s", new_password)
+        response = self.execute_cli_commands(cmd=reset_pwd_cmd)[1]
+        if "Password:" in response:
+            response = self.execute_cli_commands(cmd=new_password)[1]
+            if "Confirm Password:" in response:
+                response = self.execute_cli_commands(cmd=new_password)[1]
+                if "[Y/n]" in response:
+                    response = self.execute_cli_commands(cmd="Y")[1]
+                    if account_name in response:
+                        return True, response
+
+        return False, response
