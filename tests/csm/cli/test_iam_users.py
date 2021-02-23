@@ -41,9 +41,6 @@ CLI_CONF = conf_util.read_yaml("config/csm/csm_config.yaml")
 class TestCliIAMUser:
     """IAM user Testsuite for CLI"""
 
-    def __init__(self):
-        self.user_name = None
-
     @classmethod
     def setup_class(cls):
         """
@@ -54,6 +51,7 @@ class TestCliIAMUser:
         cls.LOGGER.info("STARTED : Setup operations for test suit")
         cls.iam_password = CLI_CONF[1]["CliConfig"]["iam_password"]
         cls.acc_password = CLI_CONF[1]["CliConfig"]["acc_password"]
+        cls.user_name = None
         cls.START_LOG_FORMAT = "##### Test started -  "
         cls.END_LOG_FORMAT = "##### Test Ended -  "
 
