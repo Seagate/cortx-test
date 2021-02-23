@@ -87,7 +87,6 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
     """Form a pytest command for execution."""
     env['TARGET'] = args.target
     build, build_type = args.build, args.build_type
-
     run_type = ''
     is_distributed = ''
     try:
