@@ -61,11 +61,8 @@ class CortxCliCsmUser(CortxCli):
         help_param = kwargs.get("help_param", False)
         confirm = kwargs.get("confirm", "Y")
         role = kwargs.get("role", "manage")
-        if help_param:
-            cmd = " ".join([CMD_CREATE_CSM_USER, "-h"])
-        else:
-            cmd = " ".join(
-                [CMD_CREATE_CSM_USER, csm_user_name, email_id, role])
+        cmd = " ".join([CMD_CREATE_CSM_USER, "-h"]) if help_param else " ".join(
+            [CMD_CREATE_CSM_USER, csm_user_name, email_id, role])
         output = self.execute_cli_commands(cmd=cmd)[1]
         if help_param:
             LOG.info("Displaying usage for create csm users")
@@ -95,10 +92,8 @@ class CortxCliCsmUser(CortxCli):
         :return: (Boolean/Response)
         """
         LOG.info("Deleting csm user")
-        if help_param:
-            cmd = " ".join([CMD_DELETE_CSM_USER, "-h"])
-        else:
-            cmd = " ".join([CMD_DELETE_CSM_USER, user_name])
+        cmd = " ".join([CMD_DELETE_CSM_USER, "-h"]) if help_param else " ".join(
+            [CMD_DELETE_CSM_USER, user_name])
         output = self.execute_cli_commands(cmd=cmd)[1]
         if help_param:
             LOG.info("Displaying usage for delete csm user")
@@ -129,11 +124,8 @@ class CortxCliCsmUser(CortxCli):
         """
         LOG.info("Updating role of CSM user")
         help_param = kwargs.get("help_param", False)
-        if help_param:
-            cmd = "{0} -h".format(CMD_UPDATE_ROLE)
-        else:
-            cmd = "{0} {1} -r {2}".format(
-                CMD_UPDATE_ROLE, user_name, role)
+        cmd = " ".join([CMD_UPDATE_ROLE, "-h"]) if help_param else "{0} {1} -r {2}".format(
+            CMD_UPDATE_ROLE, user_name, role)
         output = self.execute_cli_commands(cmd=cmd)[1]
         if help_param:
             LOG.info("Displaying usage for update role")
@@ -167,11 +159,8 @@ class CortxCliCsmUser(CortxCli):
         LOG.info("Resetting root user password")
         help_param = kwargs.get("help_param", False)
         confirm = kwargs.get("confirm", "Y")
-        if help_param:
-            cmd = "{0} -h".format(CMD_RESET_PWD)
-        else:
-            cmd = "{0} {1}".format(
-                CMD_RESET_PWD, user_name)
+        cmd = " ".join([CMD_RESET_PWD, "-h"]) if help_param else " ".join(
+            [CMD_RESET_PWD, user_name])
         output = self.execute_cli_commands(cmd=cmd)[1]
         if help_param:
             LOG.info("Displaying usage for reset password")
@@ -199,7 +188,6 @@ class CortxCliCsmUser(CortxCli):
         :return: (Boolean/response)
         """
         LOG.info("Login to csmcli using %s", username)
-
         cmd = "cortxcli --username {0}".format(username)
         output = self.execute_cli_commands(cmd=cmd)[1]
         if "Username" in output:
@@ -255,7 +243,7 @@ class CortxCliCsmUser(CortxCli):
         if other_param:
             cmd = "{0} {1}".format(cmd, other_param)
         if help_param:
-            cmd = "{0} -h".format(cmd)
+            cmd = "{0} -h".format(CMD_LIST_CSM_USERS)
         output = self.execute_cli_commands(cmd=cmd)[1]
         if "error" in output.lower() or "exception" in output.lower():
 
