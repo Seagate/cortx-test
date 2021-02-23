@@ -48,8 +48,7 @@ def teardown_function():
     IAM_OBJ.logout_cortx_cli()
 
 
-@pytest.mark.csm
-@pytest.mark.csm.iamuser
+@pytest.mark.csm_cli
 @pytest.mark.tags("TEST-10858")
 def test_867():
     """
@@ -69,8 +68,7 @@ def test_867():
     LOGGER.info("##### Test Ended -  %s #####", test_case_name)
 
 
-@pytest.mark.csm
-@pytest.mark.csm.iamuser
+@pytest.mark.csm_cli
 @pytest.mark.tags("TEST-10861")
 def test_875():
     """
