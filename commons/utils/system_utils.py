@@ -418,6 +418,7 @@ def get_os_version():
     else:
         plat, ver, core = platform.dist()
         ver = ver[:3]
+        LOGGER.debug("Tests are running on plat %s with ver %s and core %s ", plat, ver, core)
         return plat + ver
 
 
@@ -824,6 +825,7 @@ def file_unlock(fmutex):
 
 
 def insert_into_builtins(name, obj):
+    """May be required in worst case."""
     if isinstance(builtins, dict):
         builtins[name] = obj
     else:

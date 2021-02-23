@@ -18,14 +18,15 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
+"""This file is core of the framework and it contains Pytest fixtures and hooks."""
 import ast
-import pytest
 import os
 import pathlib
 import json
 import logging
 import csv
 import time
+import pytest
 from _pytest.nodes import Item
 from _pytest.runner import CallInfo
 from _pytest.main import Session
@@ -44,7 +45,8 @@ from core.runner import LRUCache
 from core.runner import get_jira_credential
 from core.runner import get_db_credential
 from config import params
-from config import CMN_CFG
+
+# commenting this until db_user code is integrated from config import CMN_CFG
 
 FAILURES_FILE = "failures.txt"
 LOG_DIR = 'log'
@@ -210,13 +212,14 @@ def read_test_list_csv() -> List:
     except Exception as e:
         print(e)
 
+
 def read_dist_test_list_csv() -> List:
     """
     Read distributed test csv file
     """
     tests = list()
     try:
-        with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_DIST_TEST_LIST))\
+        with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_DIST_TEST_LIST)) \
                 as test_file:
             reader = csv.reader(test_file)
             test_list = list(reader)
@@ -227,6 +230,7 @@ def read_dist_test_list_csv() -> List:
     except EnvironmentError as err:
         print(err)
     return tests
+
 
 @pytest.hookimpl(trylast=True)
 def pytest_sessionfinish(session, exitstatus):
@@ -272,7 +276,7 @@ def create_report_payload(item, call, final_result, d_u, d_pass):
                        start_time=time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(call.start)),
                        tags=['tags'],  # in mem te_meta
                        test_team='test_team',  # TE te.fields.components[0].name
-                       test_type='Pytest',   # TE Avocado/CFT/Locust/S3bench/ Pytest
+                       test_type='Pytest',  # TE Avocado/CFT/Locust/S3bench/ Pytest
                        latest=True,
                        feature='Test',  # feature Should be read from master test plan board.
                        db_username=d_u,
@@ -283,10 +287,11 @@ def create_report_payload(item, call, final_result, d_u, d_pass):
 
 @pytest.hookimpl(tryfirst=True)
 def pytest_configure(config):
+    """pytest configure hook runs before collection."""
     if not config.option.nodes:
         config.option.nodes = []  # CMN_CFG.nodes
 
-    # TODO Handle parallel execution.
+    # Handle parallel execution.
     if not hasattr(config, 'slaveinput'):
         pass
 
@@ -306,6 +311,9 @@ def pytest_sessionstart(session: Session) -> None:
 
 
 def reset_imported_module_log_level():
+    """Reset logging level of imported modules.
+    Add check for imported module logger.
+    """
     loggers = [logging.getLogger()] + list(logging.Logger.manager.loggerDict.values())
     for _logger in loggers:
         _logger.setLevel(logging.WARNING)
@@ -354,7 +362,7 @@ def pytest_collection(session):
         Globals.TE_TKT = config.option.te_tkt
         selected_items = []
         selected_tests = []
-        for item in items :
+        for item in items:
             parallel_found = False
             test_found = ''
             for mark in item.iter_markers():
@@ -369,7 +377,7 @@ def pytest_collection(session):
                     selected_items.append(item)
                     selected_tests.append(test_found)
             CACHE.store(item.nodeid, test_found)
-        with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_SELECTED_TESTS), 'w')\
+        with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_SELECTED_TESTS), 'w') \
                 as test_file:
             write = csv.writer(test_file)
             for test in selected_tests:

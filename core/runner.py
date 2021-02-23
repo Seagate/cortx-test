@@ -25,15 +25,14 @@ import json
 import os
 import pathlib
 import threading
-import getpass
-import pathlib
-import datetime
+import logging
 from collections import deque
 from typing import Tuple
 from typing import Optional
 from typing import Any
 from config import CMN_CFG
 
+LOGGER = logging.getLogger(__name__)
 
 def get_jira_credential() -> Tuple[str, Optional[str]]:
     """
@@ -53,6 +52,7 @@ def get_jira_credential() -> Tuple[str, Optional[str]]:
 
 
 def get_db_credential() -> Tuple[str, Optional[str]]:
+    """ Function to get DB credentials from env or common config or secret.json."""
     db_user = None
     db_pwd = None
     try:
@@ -63,7 +63,8 @@ def get_db_credential() -> Tuple[str, Optional[str]]:
         try:
             getattr(CMN_CFG, 'db_user') and getattr(CMN_CFG, 'db_user')
             db_user, db_pwd = CMN_CFG.db_user, CMN_CFG.db_password
-        except AttributeError as ae:
+        except AttributeError as attr_err:
+            LOGGER.exception(str(attr_err))
             db_user = input("DB username: ")
             db_pwd = getpass.getpass("DB password: ")
         os.environ['DB_USER'] = db_user

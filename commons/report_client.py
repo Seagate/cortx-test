@@ -31,7 +31,6 @@ REPORT_SRV_UPDATE = REPORT_SRV + "reportsdb/update"
 
 
 class SingletonMixin:
-
     """ Singleton helper """
     __instance_lock = threading.Lock()
     __instance = None
@@ -133,23 +132,20 @@ class ReportClient(SingletonMixin):
         """
         payload = {"OSVersion": data_kwargs.get('os', "CentOS"),
                    "buildNo": data_kwargs.get('build'),
-                   "buildType": data_kwargs.get('build_type', "Release"),  #todo
+                   "buildType": data_kwargs.get('build_type', "Release"),  # Revisit
                    "clientHostname": data_kwargs.get('client_hostname', "autoclient"),
-                   "executionType": data_kwargs.get('execution_type', "Automated"),  #todo check test jira
-                   "healthCheckResult": data_kwargs.get('health_chk_res', "Pass"), #todo setup ot teardown
-                   #"isRegression": data_kwargs.get('is_regression', False),
-                   #"issueID": data_kwargs.get('issue_id', "EOS-000"),
-                   #"issueType": data_kwargs.get('issue_type', "Dev"),
+                   "executionType": data_kwargs.get('execution_type', "Automated"),  # Revisit
+                   "healthCheckResult": data_kwargs.get('health_chk_res', "Pass"),  # setup
                    "logCollectionDone": data_kwargs.get('are_logs_collected', True),
                    "logPath": data_kwargs.get('log_path', "DemoPath"),
-                   "noOfNodes": data_kwargs.get('nodes', 4),  #todo CMN_CFG
+                   "noOfNodes": data_kwargs.get('nodes', 4),  # CMN_CFG
                    "nodesHostname": data_kwargs.get('nodes_hostnames', [
                        "sm7-r18.pun.seagate.com",
                        "sm8-r18.pun.seagate.com"
-                   ]),  #todo CMN_CFG
-                   #"testComponent": data_kwargs.get('test_component', "S3"),
+                   ]),  # CMN_CFG
                    "testPlanLabel": data_kwargs.get('testPlanLabel', "S3"),  # get from TP
-                   "testExecutionLabel": data_kwargs.get('testExecutionLabel', "CFT"),  # get from TE
+                   # get from TE
+                   "testExecutionLabel": data_kwargs.get('testExecutionLabel', "CFT"),
                    "testExecutionID": data_kwargs.get('test_exec_id'),
                    "testExecutionTime": int(data_kwargs.get('test_exec_time', 0)),
                    "testID": data_kwargs.get('test_id', "TEST-0000"),
@@ -159,13 +155,11 @@ class ReportClient(SingletonMixin):
                    ]),
                    "testName": data_kwargs.get('test_name', "Demo test"),
                    "testPlanID": data_kwargs.get('test_plan_id'),
-                   "testResult": data_kwargs.get('test_result'),  #known issue
+                   "testResult": data_kwargs.get('test_result'),
                    "testStartTime": data_kwargs.get('start_time'),
-                   "testTags": data_kwargs.get('tags', [
-                       "Demo",
-                       "Tags"
-                   ]),
-                   "testTeam": data_kwargs.get('test_team', "Automation"), # te component first element
+                   "testTags": data_kwargs.get('tags', []),
+                   # te component first element
+                   "testTeam": data_kwargs.get('test_team', "Automation"),
                    "testType": data_kwargs.get('test_type', "Pytest"),  # use pytest
                    "feature": data_kwargs.get('feature', "Test"),
                    "latest": data_kwargs.get('latest'),
@@ -189,7 +183,7 @@ class ReportClient(SingletonMixin):
         :param data_kwargs:
         :return:
         """
-        #build, tp, te , tid
+        # build, tp, te , tid
         new_build_type = data_kwargs.get('update_build_type')
         payload = {"filter": {"buildType": data_kwargs.get('build_type', "Release")},
                    "update": {"$set": {"buildType": new_build_type,
@@ -210,7 +204,7 @@ class ReportClient(SingletonMixin):
         :param data_kwargs:
         :return:
         """
-        #build, tp, te , tid
+        # build, tp, te , tid
 
         query_payload = {
             "query": {

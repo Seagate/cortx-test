@@ -23,7 +23,7 @@ def parse_args():
     parser.add_argument("-tp", "--test_plan", type=str, default='None',
                         help="jira xray test plan id")
     parser.add_argument("-pe", "--parallel_exe", type=str, default=False,
-                        help="parallel_exe: True for parallel, False for sequential")  # todo remove
+                        help="parallel_exe: True for parallel, False for sequential")
     parser.add_argument("-tp", "--test_plan", type=str,
                         help="jira xray test plan id")
     parser.add_argument("-b", "--build", type=str, default='000',
@@ -51,6 +51,7 @@ def parse_args():
 
 
 def str_to_bool(val):
+    """To convert a string value to bool."""
     if isinstance(val, bool):
         return val
     if val.lower() in ('yes', 'true', 'y', '1'):
@@ -153,10 +154,10 @@ def check_test_status(test_name):
     return test_status
 
 
-def get_ticket_meta_from_test_list(file_path):
+def get_ticket_meta_from_test_list():
     """Creates a json file which can be used by cache for data that is static to test.
     This file saves test metadata once in test runner cycle.
-
+    :argument file_path  Fix codacy issue.
     """
     pass
 
