@@ -183,3 +183,12 @@ DEL_ACNT_USING_TEMP_CREDS_FORCE = "s3iamcli deleteaccount -n {} " \
 S3_UPLOAD_FILE_CMD = "aws s3 cp {0} s3://{1}/{2}"
 S3_UPLOAD_FOLDER_CMD = "aws s3 cp {0} s3://{1}/ --recursive --profile {2}"
 S3_DOWNLOAD_BUCKET_CMD = "aws s3 cp --recursive s3://{} {} --profile {}"
+
+
+#CORTXCLI Commands
+CREATE_CSM_USER = "users create"
+DELETE_CSM_USER = "users delete"
+UPDATE_ROLE = "users update"
+RESET_PWD = "users reset_password"
+LIST_CSM_USERS = "users show"
+HELP_OPTION = "-h"
