@@ -23,7 +23,7 @@ def parse_args():
     parser.add_argument("-tp", "--test_plan", type=str, default='None',
                         help="jira xray test plan id")
     parser.add_argument("-pe", "--parallel_exe", type=str, default=False,
-                        help="parallel_exe: True for parallel, False for sequential") #todo remove
+                        help="parallel_exe: True for parallel, False for sequential")  # todo remove
     parser.add_argument("-tp", "--test_plan", type=str,
                         help="jira xray test plan id")
     parser.add_argument("-b", "--build", type=str, default='000',
@@ -61,10 +61,10 @@ def str_to_bool(val):
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
-def run_pytest_cmd(args, parallel_exe, env=None, re_execution=False):
+def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution=False):
     """Form a pytest command for execution."""
     build, build_type = args.build, args.build_type
-    #tag = '-m ' + te_tag
+    tag = '-m ' + te_tag
     run_type = ''
     is_distributed = ''
     try:
@@ -105,6 +105,9 @@ def run_pytest_cmd(args, parallel_exe, env=None, re_execution=False):
 
     if args.target:
         cmd_line = cmd_line + ["--target=" + args.target]
+
+    if te_tag:
+        cmd_line = cmd_line + [tag]
 
     cmd_line = cmd_line + ['--build=' + build, '--build_type=' + build_type,
                            '--tp_ticket=' + args.test_plan]
@@ -189,13 +192,14 @@ def trigger_unexecuted_tests(args, test_list):
                     write.writerow([test])
             _env = os.environ.copy()
             _env['pytest_run'] = 'distributed'
-            run_pytest_cmd(args, args.parallel_exe, env=_env, re_execution=True)
+            run_pytest_cmd(args, te_tag=None, parallel_exe=args.parallel_exe,
+                           env=_env, re_execution=True)
 
 
 def trigger_tests_from_kafka_msg(args, kafka_msg):
-    '''
+    """
     Trigger pytest execution for received test list
-    '''
+    """
     # writing the data into the file
     with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_TEST_LIST), 'w') as f:
         write = csv.writer(f)
@@ -204,13 +208,13 @@ def trigger_tests_from_kafka_msg(args, kafka_msg):
     _env = os.environ.copy()
     _env['pytest_run'] = 'distributed'
     # First execute all tests with parallel tag which are mentioned in given tag.
-    run_pytest_cmd(args, kafka_msg.parallel, env=_env)
+    run_pytest_cmd(args, te_tag=None, parallel_exe=kafka_msg.parallel, env=_env)
 
 
 def read_selected_tests_csv():
-    '''
+    """
     Read tests which were selected for last execution
-    '''
+    """
     tests = list()
     try:
         with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_SELECTED_TESTS)) \
@@ -289,10 +293,10 @@ def trigger_tests_from_te(args):
 
 
 def get_available_target(kafka_msg):
-    '''
+    """
     Check available target from target list
     Get lock on target if available
-    '''
+    """
     lock_task = LockingServer()
     acquired_target = ""
     while acquired_target == "":
@@ -307,10 +311,10 @@ def get_available_target(kafka_msg):
 
 
 def check_kafka_msg_trigger_test(args):
-    '''
+    """
     Get message from kafka consumer
     Trigger tests specified in kafka message
-    '''
+    """
     consumer = kafka_consumer.get_consumer(args)
     received_stop_signal = False
     lock_task = LockingServer()
