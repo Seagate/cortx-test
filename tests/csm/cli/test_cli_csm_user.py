@@ -70,8 +70,7 @@ def teardown_function():
     LOGGER.info("Ended : Teardown operations for test function")
 
 
-@pytest.mark.csm
-@pytest.mark.csm.csmuser
+@pytest.mark.csm_cli
 @pytest.mark.tags("TEST-11229")
 def test_1143():
     """
@@ -106,8 +105,7 @@ def test_1143():
     LOGGER.info("##### Test Ended -  %s #####", test_case_name)
 
 
-@pytest.mark.csm
-@pytest.mark.csm.csmuser
+@pytest.mark.csm_cli
 @pytest.mark.tags("TEST-13138")
 def test_1849():
     """
