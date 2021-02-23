@@ -18,6 +18,7 @@
 #
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
+import ast
 import random
 import string
 import pytest
@@ -33,9 +34,10 @@ from strip_ansi import strip_ansi
 from typing import List
 from filelock import FileLock
 from commons.utils import config_utils
+from commons.utils import system_utils
+from commons.utils import jira_utils
 from commons import Globals
 from commons import cortxlogging
-from commons.utils import jira_utils
 from core.runner import LRUCache
 from core.runner import get_jira_credential
 from commons import constants
@@ -47,9 +49,7 @@ LOG_DIR = 'log'
 CACHE = LRUCache(1024 * 10)
 CACHE_JSON = 'nodes-cache.yaml'
 
-logging.basicConfig(
-    format='%(asctime)s - %(message)s',
-    datefmt='%d-%b-%y %H:%M:%S')
+logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 LOGGER = logging.getLogger(__name__)
 
 
@@ -76,9 +76,7 @@ def capture():
 def formatter():
     format_log_message = '%(asctime)s\t%(levelname)s\t%(filename)s\t%(funcName)s' \
                          '\t%(processName)s\t%(message)s'
-    formatter = logging.Formatter(
-        fmt=format_log_message,
-        datefmt='%Y-%m-%d %H:%M:%S')
+    formatter = logging.Formatter(fmt=format_log_message, datefmt='%Y-%m-%d %H:%M:%S')
     return formatter
 
 
@@ -88,9 +86,7 @@ def logger():
     Gets session scoped logger which can be used in test methods or functions.
     :return: logger instance
     """
-    logging.basicConfig(
-        format='%(asctime)s - %(message)s',
-        datefmt='%d-%b-%y %H:%M:%S')
+    logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
     cortxlogging.init_loghandler(logger)
@@ -138,7 +134,6 @@ def log_cutter(request, formatter):
     Fixture to create test log for each test case. Developer need to use this
     fixture in the test method argument as shown below
     test_demo(requests, log_cutter)
-
     :param request:
     :param formatter:
     :return:
@@ -156,17 +151,15 @@ def log_cutter(request, formatter):
 
 # content of conftest.py
 
-def pytest_addoption(parser):
+def pytest_addoption(parser) :
     """
     Hook to add options at runtime to pytest command
     :param parser:
     :return:
     """
     parser.addoption(
-        "--is_parallel",
-        action="store",
-        default="false",
-        help="option: true or false")
+        "--is_parallel", action="store", default=False, help="option: True or False"
+    )
     parser.addoption(
         "--te_tkt", action="store", default="", help="TE ticket's ID"
     )
@@ -174,10 +167,12 @@ def pytest_addoption(parser):
         "--logpath", action="store", default=None, help="Log root folder path"
     )
     parser.addoption(
-        "--local",
-        action="store",
-        default=False,
-        help="Decide whether run is dev local")
+        "--local", action="store", default=False, help="Decide whether run is dev local"
+    )
+    parser.addoption(
+        "--distributed", action="store", default=False,
+        help="Decide whether run is in distributed env"
+    )
 
 
 def read_test_list_csv() -> List:
@@ -194,13 +189,29 @@ def read_test_list_csv() -> List:
     except Exception as e:
         print(e)
 
+def read_dist_test_list_csv() -> List:
+    """
+    Read distributed test csv file
+    """
+    tests = list()
+    try:
+        with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_DIST_TEST_LIST))\
+                as test_file:
+            reader = csv.reader(test_file)
+            test_list = list(reader)
+            for test_row in test_list:
+                if not test_row:
+                    continue
+                tests.append(test_row[0])
+    except EnvironmentError as err:
+        print(err)
+    return tests
 
 @pytest.hookimpl(trylast=True)
 def pytest_sessionfinish(session, exitstatus):
     """Remove handlers from all loggers."""
     # todo add html hook file = session.config._htmlfile
-    loggers = [logging.getLogger()] + \
-        list(logging.Logger.manager.loggerDict.values())
+    loggers = [logging.getLogger()] + list(logging.Logger.manager.loggerDict.values())
     for _logger in loggers:
         handlers = getattr(_logger, 'handlers', [])
         for handler in handlers:
@@ -213,43 +224,81 @@ def pytest_collection(session):
     items = session.perform_collect()
     LOGGER.info(dir(session.config))
     config = session.config
-    _local = bool(config.option.local)
+    _local = ast.literal_eval(config.option.local)
+    _distributed = ast.literal_eval(config.option.distributed)
+    is_parallel = ast.literal_eval(config.option.is_parallel)
     required_tests = list()
     global CACHE
     CACHE = LRUCache(1024 * 10)
     Globals.LOCAL_RUN = _local
-    if not _local:
-        # e.g. required_tests = ['TEST-17413', 'TEST-17414']
-        required_tests = read_test_list_csv()
+    if _distributed:
+        required_tests = read_dist_test_list_csv()
         Globals.TE_TKT = config.option.te_tkt
         selected_items = []
         for item in items:
-            parallel_found = 'false'
             test_found = ''
             for mark in item.iter_markers():
-                if mark.name == 'parallel':
-                    parallel_found = 'true'
-                    if config.option.is_parallel == 'false':
-                        break
-                elif mark.name == 'tags':
+                if mark.name == 'tags':
                     test_found = mark.args[0]
-            if parallel_found == config.option.is_parallel and test_found != '':
-                if test_found in required_tests:
-                    selected_items.append(item)
+                    if test_found in required_tests:
+                        selected_items.append(item)
             CACHE.store(item.nodeid, test_found)
         items[:] = selected_items
-    else:
+    elif _local:
+        meta = list()
         for item in items:
             test_id = ''
+            _marks = list()
             for mark in item.iter_markers():
                 if mark.name == 'tags':
                     test_id = mark.args[0]
+                else:
+                    _marks.append(mark.name)
             CACHE.store(item.nodeid, test_id)
-    cache_path = os.path.join(os.getcwd(), LOG_DIR, CACHE_JSON)
-    _path = config_utils.create_content_json(
-        cache_path, _get_items_from_cache())
+            meta.append(dict(nodeid=item.nodeid, test_id=test_id, marks=_marks))
+    else:
+        required_tests = read_test_list_csv()  # e.g. required_tests = ['TEST-17413', 'TEST-17414']
+        Globals.TE_TKT = config.option.te_tkt
+        selected_items = []
+        selected_tests = []
+        for item in items :
+            parallel_found = False
+            test_found = ''
+            for mark in item.iter_markers():
+                if mark.name == 'parallel':
+                    parallel_found = True
+                    if not is_parallel:
+                        break
+                elif mark.name == 'tags':
+                    test_found = mark.args[0]
+            if parallel_found == is_parallel and test_found != '':
+                if test_found in required_tests:
+                    selected_items.append(item)
+                    selected_tests.append(test_found)
+            CACHE.store(item.nodeid, test_found)
+        with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_SELECTED_TESTS), 'w')\
+                as test_file:
+            write = csv.writer(test_file)
+            for test in selected_tests:
+                write.writerow([test])
+        items[:] = selected_items
+    cache_home = os.path.join(os.getcwd(), LOG_DIR)
+    cache_path = os.path.join(cache_home, CACHE_JSON)
+    if not os.path.exists(cache_home):
+        try:
+            system_utils.make_dir(cache_home)
+        except OSError as error:
+            LOGGER.error(str(error))
+
+    latest = os.path.join(cache_home,'latest')
+    if not os.path.exists(latest):
+        os.makedirs(latest)
+    _path = config_utils.create_content_json(cache_path, _get_items_from_cache())
     if not os.path.exists(_path):
         LOGGER.info("Items Cache file %s not created" % (_path,))
+    if session.config.option.collectonly:
+        te_meta = config_utils.create_content_json(os.path.join(cache_home, 'te_meta.json'), meta)
+        LOGGER.debug("Items meta dict %s created at %s", meta, te_meta)
     return items
 
 
@@ -282,25 +331,21 @@ def pytest_runtest_makereport(item, call):
         test_id = CACHE.lookup(report.nodeid)
         if report.when == 'teardown':
             if item.rep_setup.failed or item.rep_teardown.failed:
-                task.update_test_jira_status(
-                    item.config.option.te_tkt, test_id, 'FAIL')
+                task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
             elif item.rep_setup.passed and (item.rep_call.failed or item.rep_teardown.failed):
-                task.update_test_jira_status(
-                    item.config.option.te_tkt, test_id, 'FAIL')
+                task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
             elif item.rep_setup.passed and item.rep_call.passed and item.rep_teardown.passed:
-                task.update_test_jira_status(
-                    item.config.option.te_tkt, test_id, 'PASS')
+                task.update_test_jira_status(item.config.option.te_tkt, test_id, 'PASS')
             # TODO report server hook test and data collection
             # TODO Remove sample usage after completion
-            # ReportClient.init_instance()
+            #ReportClient.init_instance()
             #rsrv = ReportClient.get_instance()
-            # rsrv.create_db_entry(**kwargs)
+            #rsrv.create_db_entry(**kwargs)
 
     if report.when == 'teardown':
         if item.rep_setup.failed or item.rep_teardown.failed:
             current_file = fail_file
-            current_file = os.path.join(
-                os.getcwd(), LOG_DIR, 'latest', current_file)
+            current_file = os.path.join(os.getcwd(), LOG_DIR, 'latest', current_file)
             mode = "a" if os.path.exists(current_file) else "w"
             with open(current_file, mode) as f:
                 if "tmpdir" in item.fixturenames:
@@ -310,8 +355,7 @@ def pytest_runtest_makereport(item, call):
                 f.write(report.nodeid + extra + "\n")
         elif item.rep_setup.passed and (item.rep_call.failed or item.rep_teardown.failed):
             current_file = fail_file
-            current_file = os.path.join(
-                os.getcwd(), LOG_DIR, 'latest', current_file)
+            current_file = os.path.join(os.getcwd(), LOG_DIR, 'latest', current_file)
             mode = "a" if os.path.exists(current_file) else "w"
             with open(current_file, mode) as f:
                 if "tmpdir" in item.fixturenames:
@@ -321,8 +365,7 @@ def pytest_runtest_makereport(item, call):
                 f.write(report.nodeid + extra + "\n")
         elif item.rep_setup.passed and item.rep_call.passed and item.rep_teardown.passed:
             current_file = pass_file
-            current_file = os.path.join(
-                os.getcwd(), LOG_DIR, 'latest', current_file)
+            current_file = os.path.join(os.getcwd(), LOG_DIR, 'latest', current_file)
             mode = "a" if os.path.exists(current_file) else "w"
             with open(current_file, mode) as f:
                 if "tmpdir" in item.fixturenames:
@@ -369,7 +412,6 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
         with open(test_log, 'w') as fp:
             for rec in logs:
                 fp.write(rec + '\n')
-
 
 @pytest.fixture(scope='function')
 def generate_random_string():
