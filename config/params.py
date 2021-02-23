@@ -32,14 +32,13 @@ S3_CONFIG = os.path.join(CONFIG_DIR, 's3', 's3_config.yaml')
 LOG_DIR_NAME = 'log'
 
 JIRA_TEST_LIST = 'test_lists.csv'
-<<<<<<< HEAD
 
 RAS_CONFIG_PATH = "config/ras_config.yaml"
 
 SSPL_TEST_CONFIG_PATH = "config/ras_test.yaml"
 
 COMMON_DESTRUCTIVE_CONFIG_PATH = "config/common_destructive.yaml"
-=======
+
 JIRA_TEST_COLLECTION = 'test_collection.csv'
 
 # Kafka Config Params
@@ -48,4 +47,3 @@ SCHEMA_REGISTRY = "cft2:8090"  # Bootstrap broker(s) (host[:port])
 BOOTSTRAP_SERVERS = "https://cft2:8091"  # Schema Registry (http(s)://host[:port]
 TEST_EXEC_TOPIC = 'cortx-test-exec-topic'
 TEST_ABORT_TOPIC = 'cortx-test-abort-topic'  # Read by all semantics
->>>>>>> 5df21e8a74e205c5281f96de021618742ffdfb65
