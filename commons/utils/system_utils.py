@@ -22,6 +22,7 @@
 
 import logging
 import os
+import sys
 import random
 import shutil
 from typing import Tuple
@@ -29,6 +30,17 @@ from subprocess import Popen, PIPE
 from hashlib import md5
 from paramiko import SSHClient, AutoAddPolicy
 from commons import commands
+
+if sys.platform == 'win32':
+    try:
+        import msvcrt
+    except ImportError:
+        MSVCRT = None
+if sys.platform in ['linux', 'linux2']:
+    try:
+        import fcntl
+    except ImportError:
+        FCNTL = None
 
 LOGGER = logging.getLogger(__name__)
 
@@ -346,7 +358,7 @@ def make_dir(dpath: str, mode: int = None):
     return os.path.exists(dpath)
 
 
-def make_dirs(dpath: str, mode: int = None):
+def make_dirs(dpath: str, mode: int = None) -> str:
     """
     Create directory path recursively.
     :param dpath: Directory path.
@@ -658,7 +670,7 @@ def install_new_cli_rpm(
 
 
 def list_rpms(*remoteargs, filter_str="", remote=False,
-              **remoteKwargs) -> tuple:
+              **remoteKwargs) -> Tuple[bool, list]:
     """
     This function lists the rpms installed on a given host and filters by given string.
     :param str filter_str: string to search in rpm names for filtering results,
@@ -688,7 +700,7 @@ def check_ping(host: str) -> bool:
     return response == 0
 
 
-def pgrep(process: str) -> tuple:
+def pgrep(process: str):
     """
     Function to get process ID using pgrep cmd.
     :param process: Name of the process
@@ -712,3 +724,82 @@ def get_disk_usage(path: str) -> str:
     result = format((float(used) / total) * 100, ".1f")
 
     return result
+
+
+def path_exists(path: str) -> bool:
+    """
+    This function will return true if path exists else false.
+
+    :param path: file/directory path.
+    :return: bool
+    """
+    status = os.path.exists(path)
+
+    return status
+
+
+def file_lock(lock_file, non_blocking=False):
+    """
+    Uses the :func:`msvcrt.locking` function to hard lock the lock file on
+    windows systems.
+    """
+
+    if sys.platform == 'win32':
+        open_mode = os.O_RDWR | os.O_CREAT | os.O_TRUNC
+        lock_file_fd = None
+        try:
+            lock_file_fd = os.open(lock_file, open_mode)
+        except OSError:
+            pass
+        else:
+            try:
+                msvcrt.locking(lock_file_fd, msvcrt.LK_LOCK, 1)
+            except (IOError, OSError):
+                os.close(lock_file_fd)
+                return None, False
+            else:
+                LOGGER.debug("Lock file created.")
+        return lock_file_fd, True
+
+    else:
+        if not lock_file.startswith('/'):
+            # If Not an absolute path name, prefix in $HOME/.runner
+            fname = os.path.join(os.getenv('HOME'), '.runner', lock_file)
+
+        fdir = os.path.dirname(fname)
+        if not os.path.exists(fdir):
+            os.makedirs(fdir)
+
+        try:
+            fmutex = open(fname, "rb+")
+        except (OSError, IOError):
+            fmutex = open(fname, "wb+")
+        try:
+            flags = fcntl.LOCK_EX
+            if non_blocking:
+                flags |= fcntl.LOCK_NB
+            fcntl.flock(fmutex.fileno(), flags)
+        except IOError:
+            return None, False
+
+    return fmutex, True
+
+
+def file_unlock(fmutex):
+    """
+    Unlock the file lock.
+    :param fmutex:
+    :return:
+    """
+    if sys.platform == 'win32':
+        msvcrt.locking(fmutex, msvcrt.LK_UNLCK, 1)
+        os.close(fmutex)
+        try:
+            os.remove(fmutex.name)
+        # Probably another instance of the application
+        # that acquired the file lock.
+        except OSError:
+            pass
+    else:
+        fcntl.flock(fmutex.fileno(), fcntl.LOCK_UN)
+        fmutex.close()
