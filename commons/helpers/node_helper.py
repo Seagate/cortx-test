@@ -16,7 +16,7 @@
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
-#
+
 """Module to maintain all common functions across component."""
 
 import logging
