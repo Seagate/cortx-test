@@ -17,7 +17,7 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-"""Test suite for S3 bucket operations"""
+"""Test suite for S3 account operations"""
 
 import logging
 import time
@@ -64,6 +64,8 @@ class TestCliS3ACC:
         """
         LOGGER.info("STARTED : Teardown operations at test function level")
         S3ACC_OBJ.logout_cortx_cli()
+        S3ACC_OBJ.login_cortx_cli(username=self.s3acc_name, password=self.s3acc_password)
+        S3ACC_OBJ.delete_s3account_cortx_cli(account_name=self.s3acc_name)
 
     @pytest.mark.csm
     @pytest.mark.tags("TEST-10872")
@@ -128,7 +130,7 @@ class TestCliS3ACC:
         Test that appropriate error should be returned when CSM user/admin enters invalid password
         while creating S3 account
         """
-        dummy_pwd = "seagate123"
+        dummy_pwd = "seagate"
         error_msg = "Password Policy Not Met"
         resp = S3ACC_OBJ.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
@@ -171,6 +173,12 @@ class TestCliS3ACC:
         incorrect/invalid format
         """
         output_format = "text"
+        resp = S3ACC_OBJ.create_s3account_cortx_cli(
+            account_name=self.s3acc_name,
+            account_email=self.s3acc_email,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        LOGGER.info("Created s3 account %s", self.s3acc_name)
         error_msg = " invalid choice: '{}'".format(output_format)
         resp = S3ACC_OBJ.show_s3account_cortx_cli(output_format=output_format)
         assert_utils.assert_equals(False, resp[0], resp[1])
@@ -186,7 +194,6 @@ class TestCliS3ACC:
         Verify that s3 account is not deleted when user selects "no" on confirmation
         :avocado: tags=s3_account_user_cli
         """
-
         delete_s3acc_cmd = "s3accounts delete {}".format(self.s3acc_name)
         resp = S3ACC_OBJ.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
@@ -316,7 +323,7 @@ class TestCliS3ACC:
         """
         csm_user_name = "{0}{1}".format("auto_csm_user", str(int(time.time())))
         csm_user_email = "{0}{1}".format(csm_user_name, "@seagate.com")
-        csm_user_pwd = "Seagate@1"
+        csm_user_pwd = CSM_CFG["CliConfig"]["csm_user_pwd"]
         LOGGER.info("Creating csm user with name %s", csm_user_name)
         resp = CSM_USER_OBJ.create_csm_user_cli(
             csm_user_name=csm_user_name,
@@ -361,7 +368,7 @@ class TestCliS3ACC:
         """
         Test s3 account user can update his password through csmcli
         """
-        new_password = "Seagate@123"
+        new_password = CSM_CFG["CliConfig"]["csm_user_pwd"]
         resp = S3ACC_OBJ.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
             account_email=self.s3acc_email,
