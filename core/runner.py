@@ -42,14 +42,14 @@ def get_jira_credential() -> Tuple[str, Optional[str]]:
     """
     try:
         jira_id = os.environ['JIRA_ID']
-        jira_pwd = os.environ['JIRA_PASSWORD']
+        jira_pd = os.environ['JIRA_PASSWORD']
     except KeyError:
         print("JIRA credentials not found in environment")
         jira_id = input("JIRA username: ")
-        jira_pwd = getpass.getpass("JIRA password: ")
+        jira_pd = getpass.getpass("JIRA password: ")
         os.environ['JIRA_ID'] = jira_id
-        os.environ['JIRA_PASSWORD'] = jira_pwd
-    return jira_id, jira_pwd
+        os.environ['JIRA_PASSWORD'] = jira_pd
+    return jira_id, jira_pd
 
 
 def get_db_credential() -> Tuple[str, Optional[str]]:

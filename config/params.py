@@ -37,6 +37,9 @@ JIRA_TEST_META_JSON = 'test_meta_data.json'
 
 JIRA_TEST_COLLECTION = 'test_collection.csv'
 
+JIRA_SELECTED_TESTS = 'selected_test_lists.csv'
+
+JIRA_DIST_TEST_LIST = 'dist_test_lists.csv'
 # Kafka Config Params
 
 SCHEMA_REGISTRY = "cft2:8090"  # Bootstrap broker(s) (host[:port])
