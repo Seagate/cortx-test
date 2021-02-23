@@ -27,8 +27,8 @@ import pytest
 from commons.utils import assert_utils
 from commons.utils import config_utils as conf_util
 from commons import cortxlogging as log
-#from commons.alerts_simulator.generate_alert_lib import \
-#    GenerateAlertLib, AlertType
+from commons.alerts_simulator.generate_alert_lib import \
+    GenerateAlertLib, AlertType
 from config import CMN_CFG
 from libs.csm.cli.cli_csm_user import CortxCliCsmUser
 from libs.csm.cli.cli_alerts_lib import CortxCliAlerts
@@ -42,20 +42,11 @@ IAM_USER = CortxCliIamUser()
 BKT_OPS = CortxCliS3BucketOperations()
 S3_ACC = CortxCliS3AccountOperations()
 CLI_CONF = conf_util.read_yaml("config/csm/csm_config.yaml")
-#GENERATE_ALERT_OBJ = GenerateAlertLib()
+GENERATE_ALERT_OBJ = GenerateAlertLib()
 
 
 class TestCliCSMUser:
     """CSM user Testsuite for CLI"""
-
-    update_password = None
-    new_pwd = None
-    user_name = None
-    email_id = None
-    s3acc_name = None
-    s3acc_email = None
-    iam_user_name = None
-    bucket_name = None
 
     @classmethod
     def setup_class(cls):
@@ -68,6 +59,15 @@ class TestCliCSMUser:
         cls.csm_user_pwd = CLI_CONF[1]["CliConfig"]["csm_user_pwd"]
         cls.acc_password = CLI_CONF[1]["CliConfig"]["acc_password"]
         cls.iam_password = CLI_CONF[1]["CliConfig"]["iam_password"]
+        cls.update_password = None
+        cls.new_pwd = None
+        cls.user_name = None
+        cls.email_id = None
+        cls.s3acc_name = None
+        cls.s3acc_email = None
+        cls.iam_user_name = None
+        cls.bucket_name = None
+
         cls.START_LOG_FORMAT = "##### Test started -  "
         cls.END_LOG_FORMAT = "##### Test Ended -  "
 
@@ -860,54 +860,54 @@ class TestCliCSMUser:
             resp[1])
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
-    # @pytest.mark.csm_cli
-    # def test_1850(self):
-    #     """
-    #     Test that csm user with monitor role cannot update alert using CLI
-    #     :avocado: tags=csm_user
-    #     """
-    #     self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-    #     self.LOGGER.info("Creating csm user with name %s", self.user_name)
-    #     resp = CSM_USER.create_csm_user_cli(
-    #         csm_user_name=self.user_name,
-    #         email_id=self.email_id,
-    #         role="monitor",
-    #         password=self.csm_user_pwd,
-    #         confirm_password=self.csm_user_pwd)
-    #     assert_utils.assert_equals(
-    #         resp[0], True, resp)
-    #     assert_utils.assert_exact_string(resp[1], "User created")
-    #     self.LOGGER.info("Created csm user with name %s", self.user_name)
-    #     start_time = time.time()
-    #     self.LOGGER.info("Generating disk fault alert")
-    #     resp = GENERATE_ALERT_OBJ.generate_alert(
-    #         AlertType.disk_fault_alert,
-    #         input_parameters={
-    #             "du_val": -3,
-    #             "fault": True,
-    #             "fault_resolved": False})
-    #     assert_utils.assert_equals(resp[0], True, resp)
-    #     self.LOGGER.info("Generated disk fault alert")
-    #     self.LOGGER.info("Verifying alerts are generated")
-    #     resp = CSM_ALERT.wait_for_alert(start_time=start_time)
-    #     assert_utils.assert_equals(resp[0], True, resp)
-    #     alert_id = resp[1]["alerts"][0]["alert_uuid"]
-    #     self.LOGGER.info("Verified alerts are generated")
-    #     self.LOGGER.info(
-    #         "Verifying csm user with monitor role cannot update alert")
-    #     resp = CSM_ALERT.login_cortx_cli(
-    #         username=self.user_name,
-    #         password=self.csm_user_pwd)
-    #     assert_utils.assert_equals(resp[0], True, resp)
-    #     resp = CSM_ALERT.add_comment_alert(alert_id, "demo_comment")
-    #     self.LOGGER.info(resp)
-    #     assert_utils.assert_equals(resp[0], False, resp)
-    #     assert_utils.assert_exact_string(resp[1], "Invalid choice")
-    #     CSM_ALERT.logout_cortx_cli()
-    #     CSM_USER.login_cortx_cli()
-    #     self.LOGGER.info(
-    #         "Verified that csm user with monitor role cannot update alert")
-    #     self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+    @pytest.mark.csm_cli
+    def test_1850(self):
+        """
+        Test that csm user with monitor role cannot update alert using CLI
+        :avocado: tags=csm_user
+        """
+        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.LOGGER.info("Creating csm user with name %s", self.user_name)
+        resp = CSM_USER.create_csm_user_cli(
+            csm_user_name=self.user_name,
+            email_id=self.email_id,
+            role="monitor",
+            password=self.csm_user_pwd,
+            confirm_password=self.csm_user_pwd)
+        assert_utils.assert_equals(
+            resp[0], True, resp)
+        assert_utils.assert_exact_string(resp[1], "User created")
+        self.LOGGER.info("Created csm user with name %s", self.user_name)
+        start_time = time.time()
+        self.LOGGER.info("Generating disk fault alert")
+        resp = GENERATE_ALERT_OBJ.generate_alert(
+            AlertType.disk_fault_alert,
+            input_parameters={
+                "du_val": -3,
+                "fault": True,
+                "fault_resolved": False})
+        assert_utils.assert_equals(resp[0], True, resp)
+        self.LOGGER.info("Generated disk fault alert")
+        self.LOGGER.info("Verifying alerts are generated")
+        resp = CSM_ALERT.wait_for_alert(start_time=start_time)
+        assert_utils.assert_equals(resp[0], True, resp)
+        alert_id = resp[1]["alerts"][0]["alert_uuid"]
+        self.LOGGER.info("Verified alerts are generated")
+        self.LOGGER.info(
+            "Verifying csm user with monitor role cannot update alert")
+        resp = CSM_ALERT.login_cortx_cli(
+            username=self.user_name,
+            password=self.csm_user_pwd)
+        assert_utils.assert_equals(resp[0], True, resp)
+        resp = CSM_ALERT.add_comment_alert(alert_id, "demo_comment")
+        self.LOGGER.info(resp)
+        assert_utils.assert_equals(resp[0], False, resp)
+        assert_utils.assert_exact_string(resp[1], "Invalid choice")
+        CSM_ALERT.logout_cortx_cli()
+        CSM_USER.login_cortx_cli()
+        self.LOGGER.info(
+            "Verified that csm user with monitor role cannot update alert")
+        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-14697")
