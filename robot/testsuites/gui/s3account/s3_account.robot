@@ -338,3 +338,16 @@ test_1529
     [Documentation]  This test case verify that update s3 account has only password options
     [Tags]  Priority_High  test_1529  S3_test
     verify update s3 account has only password options
+
+test_17018
+    [Documentation]  Test a reset password functionality on clicking "edit" button on S3 account page
+    [Tags]  Priority_High  S3_test
+    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    sleep  2s
+    ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
+    sleep  5s
+    Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
+    sleep  2s
+    Reset Password S3 Account  ${S3_account_name}
+    sleep  2s
+    Close Browser
