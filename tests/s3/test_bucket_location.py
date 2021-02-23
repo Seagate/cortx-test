@@ -27,8 +27,8 @@ import pytest
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
-from commons.utils.config_utils import read_yaml
 from commons.utils import assert_utils
+from config import CMN_CFG
 from libs.s3 import s3_test_lib, iam_test_lib, s3_acl_test_lib
 
 LOGGER = logging.getLogger(__name__)
@@ -36,8 +36,6 @@ LOGGER = logging.getLogger(__name__)
 IAM_OBJ = iam_test_lib.IamTestLib()
 S3_OBJ = s3_test_lib.S3TestLib()
 S3_ACL_OBJ = s3_acl_test_lib.S3AclTestLib()
-
-CMN_CFG = read_yaml("config/common_config.yaml")[1]
 
 
 class TestBucketLocation:
