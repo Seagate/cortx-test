@@ -47,6 +47,8 @@ class TestCliCSMUser:
         cls.LOGGER.info("STARTED : Setup operations for test suit")
         cls.csm_user_pwd = CLI_CONF[1]["CliConfig"]["csm_user_pwd"]
         cls.acc_password = CLI_CONF[1]["CliConfig"]["acc_password"]
+        cls.user_name = None
+        cls.email_id = None
         cls.START_LOG_FORMAT = "##### Test started -  "
         cls.END_LOG_FORMAT = "##### Test Ended -  "
 
@@ -159,7 +161,6 @@ class TestCliCSMUser:
     def test_1266(self):
         """
         Initiating the test case to verify create CSM User
-        :avocado: tags=create_csm_user
         """
         self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
         self.LOGGER.info("Creating csm user with name %s", self.user_name)
@@ -180,7 +181,6 @@ class TestCliCSMUser:
     def test_1267(self):
         """
         Initiating the test case to verify create CSM User with monitor role
-        :avocado: tags=create_csm_user
         """
         self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
         self.LOGGER.info("Creating csm user with name %s", self.user_name)
@@ -222,7 +222,6 @@ class TestCliCSMUser:
     def test_1268(self):
         """
         Initiating the test case to verify create CSM User with duplicate user name
-        :avocado: tags=create_csm_user
         """
         self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
         self.LOGGER.info("Creating csm user with name %s", self.user_name)
