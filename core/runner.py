@@ -25,10 +25,14 @@ import json
 import os
 import pathlib
 import threading
+import logging
 from collections import deque
-from typing import Optional
 from typing import Tuple
+from typing import Optional
+from typing import Any
+from config import CMN_CFG
 
+LOGGER = logging.getLogger(__name__)
 
 def get_jira_credential() -> Tuple[str, Optional[str]]:
     """
@@ -47,7 +51,28 @@ def get_jira_credential() -> Tuple[str, Optional[str]]:
     return jira_id, jira_pd
 
 
-def parse_json(json_file):
+def get_db_credential() -> Tuple[str, Optional[str]]:
+    """ Function to get DB credentials from env or common config or secret.json."""
+    db_user = None
+    db_pwd = None
+    try:
+        db_user = os.environ['DB_USER']
+        db_pwd = os.environ['DB_PASSWORD']
+    except KeyError:
+        print("DB credentials not found in environment")
+        try:
+            getattr(CMN_CFG, 'db_user') and getattr(CMN_CFG, 'db_user')
+            db_user, db_pwd = CMN_CFG.db_user, CMN_CFG.db_password
+        except AttributeError as attr_err:
+            LOGGER.exception(str(attr_err))
+            db_user = input("DB username: ")
+            db_pwd = getpass.getpass("DB password: ")
+        os.environ['DB_USER'] = db_user
+        os.environ['DB_PASSWORD'] = db_pwd
+    return db_user, db_pwd
+
+
+def parse_json(json_file) :
     """
     Parse given json file.
     """
