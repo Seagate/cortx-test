@@ -1,5 +1,22 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
 
 """
 RAS test file for all the RAS tests related to RAID operations.
@@ -20,9 +37,11 @@ from libs.csm.rest.csm_rest_alert import SystemAlerts
 from commons.alerts_simulator.generate_alert_lib import GenerateAlertLib, \
     AlertType
 from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
+from commons.ct_fail_on import CTFailOn
+from commons.errorcodes import error_handler
+
 
 # Global Constants
-BYTES_TO_READ = common_cons.BYTES_TO_READ
 LOGGER = logging.getLogger(__name__)
 
 
@@ -44,11 +63,6 @@ class TestRAIDOperations:
                           password=cls.passwd)
         cls.hlt_obj = Health(hostname=cls.host, username=cls.uname,
                              password=cls.passwd)
-        try:
-            cls.s3_obj = S3Helper()
-        except ImportError as err:
-            LOGGER.info(str(err))
-            cls.s3_obj = S3Helper.get_instance()
         cls.ras_obj = RASTestLib(host=cls.host, username=cls.uname,
                                  password=cls.passwd)
         cls.csm_alert_obj = SystemAlerts(host=cls.host, username=cls.uname,
@@ -94,7 +108,7 @@ class TestRAIDOperations:
         response = sys_utils.run_remote_cmd(cmd=cmd, hostname=self.host,
                                             username=self.uname,
                                             password=self.passwd,
-                                            read_nbytes=BYTES_TO_READ,
+                                            read_nbytes=common_cons.BYTES_TO_READ,
                                             shell=False)
         assert response[0], response[1]
 
@@ -194,8 +208,10 @@ class TestRAIDOperations:
 
         LOGGER.info("ENDED: Teardown Operations")
 
+    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.tags("TEST-15733")
+    @pytest.mark.sw_alert
     @pytest.mark.skip
     def test_5345(self):
         """
@@ -282,8 +298,10 @@ class TestRAIDOperations:
         LOGGER.info(
             "ENDED: TEST-5345 RAID: Assemble a array")
 
+    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.tags("TEST-15732")
+    @pytest.mark.sw_alert
     def test_5342(self):
         """
         EOS-10615 RAID: Remove a drive from array
@@ -374,8 +392,10 @@ class TestRAIDOperations:
         LOGGER.info(
             "ENDED: TEST-5342 RAID: Remove a drive from array")
 
+    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.tags("TEST-15868")
+    @pytest.mark.sw_alert
     def test_4785(self):
         """
         EOS-10617 RAID: Fail a drive of array
@@ -427,8 +447,10 @@ class TestRAIDOperations:
         LOGGER.info(
             "ENDED: TEST-4785 RAID: Fail a drive of array")
 
+    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.tags("TEST-16214")
+    @pytest.mark.sw_alert
     def test_5343(self):
         """
         EOS-10614 RAID: Add drive to array

@@ -1,5 +1,22 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
 
 """SSPL test cases: Primary Node."""
 
@@ -13,19 +30,18 @@ from commons.helpers.node_helper import Node
 from commons.helpers.health_helper import Health
 from commons.helpers.controller_helper import ControllerLib
 from commons.helpers.s3_helper import S3Helper
+from commons.ct_fail_on import CTFailOn
+from commons.errorcodes import error_handler
 from commons import constants as cons
 from commons import commands as common_cmd
 from commons.utils.assert_utils import *
 from libs.csm.rest.csm_rest_alert import SystemAlerts
-from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 from commons.alerts_simulator.generate_alert_lib import \
      GenerateAlertLib, AlertType
 from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
 
-CSM_USER_OBJ = RestCsmUser()
 ALERT_API_OBJ = GenerateAlertLib()
 
-BYTES_TO_READ = cons.BYTES_TO_READ
 CM_CFG = RAS_VAL["ras_sspl_alert"]
 LOGGER = logging.getLogger(__name__)
 
@@ -57,11 +73,6 @@ class TestSSPL:
             enclosure_ip=CMN_CFG["primary_enclosure_ip"],
             enclosure_user=CMN_CFG["enclosure_user"],
             enclosure_pwd=CMN_CFG["enclosure_pwd"])
-        try:
-            cls.s3obj = S3Helper()
-        except ImportError as err:
-            LOGGER.info(str(err))
-            cls.s3obj = S3Helper.get_instance()
 
         cls.csm_alert_obj = SystemAlerts(host=cls.host, username=cls.uname,
                                          password=cls.passwd)
@@ -241,6 +252,7 @@ class TestSSPL:
 
         LOGGER.info("Successfully performed Teardown operation")
 
+    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-9956")
@@ -288,6 +300,7 @@ class TestSSPL:
         LOGGER.info("ENDED: TEST-3005: EES ras SSPL: "
                     "Node: Disk Space-Full Alerts #1")
 
+    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-9957")
@@ -341,6 +354,7 @@ class TestSSPL:
         LOGGER.info("ENDED:TEST-3006: EES ras SSPL: "
                     "Node: Disk Space-Full Alerts #2")
 
+    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-9958")
@@ -377,6 +391,7 @@ class TestSSPL:
         LOGGER.info("ENDED: Validate EES RAS SSPL: Sync with systemd "
                     "(to bring down startup within SLA)")
 
+    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-9959")
@@ -461,6 +476,7 @@ class TestSSPL:
         LOGGER.info(
             "ENDED: Validating EOS v1 RAS: Node: IPMI: FAN Failure Alerts")
 
+    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-9960")
@@ -572,6 +588,7 @@ class TestSSPL:
             "ENDED: RAS: Node: IPMI: FAN Failure Alerts Persistent "
             "Cache")
 
+    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-9961")
@@ -620,6 +637,7 @@ class TestSSPL:
         LOGGER.info("ENDED: Validating EOS v1 RAS: Node: IPMI: FAN Failure "
                     "Alerts")
 
+    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-10622")
@@ -685,6 +703,7 @@ class TestSSPL:
             "ENDED: EOS-9075: TA RAS Automation: Validate alert for PSU Module "
             "Fault/cable missing from 5U84 Enclosure.")
 
+    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-10900")
@@ -754,6 +773,7 @@ class TestSSPL:
             "are displayed with right message controller fault resolved from "
             "5U84 Enclosure")
 
+    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-10623")
@@ -819,6 +839,7 @@ class TestSSPL:
             "ENDED: EOS-9082: TA RAS Automation: Validate alerts for PSU "
             "Module Fault-Resolved from 5U84 Enclosure ")
 
+    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-10624")
@@ -885,6 +906,7 @@ class TestSSPL:
             "ENDED: EOS-9078: TA RAS Automation: Validate if alerts are "
             "displayed with right message - controller faulted")
 
+    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-11225")
@@ -935,6 +957,7 @@ class TestSSPL:
         LOGGER.info("ENDED: Validating EES RAS: Allow log level setting is not "
                     "changed when after restarting the SSPL service")
 
+    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-11224")
@@ -1056,6 +1079,7 @@ class TestSSPL:
             "ENDED: TA RAS Automation: Test scenarios for validating EES RAS:"
             " Run SSPL on port 5100")
 
+    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-12014")
@@ -1116,6 +1140,7 @@ class TestSSPL:
 
         LOGGER.info("ENDED: TA RAS Automation : Sensor to read IEM from syslog")
 
+    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-11760")
@@ -1166,6 +1191,7 @@ class TestSSPL:
             "ENDED: Validating EES RAS: Allow log level setting "
             "dynamically")
 
+    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-11762")
@@ -1263,6 +1289,7 @@ class TestSSPL:
         LOGGER.info(
             "ENDED: TA RAS Automation: Test Disabling a drive from disk group")
 
+    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-11763")
@@ -1358,6 +1385,7 @@ class TestSSPL:
         LOGGER.info(
             "ENDED: TA RAS Automation: Test Enabling a drive from disk group")
 
+    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-11761")
@@ -1424,6 +1452,7 @@ class TestSSPL:
         LOGGER.info(
             "ENDED: Test Enhanced IEM response through decoded IEC")
 
+    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.tags("TEST-14036")
     def test_5924(self):
@@ -1448,6 +1477,7 @@ class TestSSPL:
         LOGGER.info(
             "ENDED: Test Username/Password Security coverage on consul")
 
+    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-14795")
@@ -1487,6 +1517,7 @@ class TestSSPL:
             "ENDED: TEST-4354 User can view / query EES Nodes (1U Servers) OS "
             "health view (CPU Usage)")
 
+    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-15198")
@@ -1527,6 +1558,7 @@ class TestSSPL:
             "ENDED: TEST-4355 User can view / query EES Nodes (1U Servers) OS "
             "health view (Main Memory Usage)")
 
+    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-4584")

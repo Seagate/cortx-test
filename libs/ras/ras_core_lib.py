@@ -32,8 +32,6 @@ from commons.helpers.s3_helper import S3Helper
 from config import RAS_VAL
 from commons.utils.system_utils import run_remote_cmd
 
-BYTES_TO_READ = cmn_cons.BYTES_TO_READ
-
 LOGGER = logging.getLogger(__name__)
 
 
@@ -55,11 +53,6 @@ class RASCoreLib:
             hostname=self.host, username=self.username, password=self.pwd)
         self.health_obj = Health(hostname=self.host, username=self.username,
                                  password=self.pwd)
-        try:
-            self.s3obj = S3Helper()
-        except ImportError as err:
-            LOGGER.info(str(err))
-            self.s3obj = S3Helper.get_instance()
 
     def create_remote_dir_recursive(self, file_path: str) -> bool:
         """
@@ -95,7 +88,7 @@ class RASCoreLib:
         """
         reset_file_cmd = common_commands.EMPTY_FILE_CMD.format(file_path)
         res = self.node_utils.execute_cmd(
-            cmd=reset_file_cmd, read_nbytes=BYTES_TO_READ)
+            cmd=reset_file_cmd, read_nbytes=cmn_cons.BYTES_TO_READ)
         return res
 
     def cp_file(self, path: str, backup_path: str) -> \
@@ -108,7 +101,8 @@ class RASCoreLib:
         :return: response in tuple
         """
         cmd = common_commands.COPY_FILE_CMD.format(path, backup_path)
-        resp = self.node_utils.execute_cmd(cmd=cmd, read_nbytes=BYTES_TO_READ)
+        resp = self.node_utils.execute_cmd(cmd=cmd,
+                                           read_nbytes=cmn_cons.BYTES_TO_READ)
         return True, resp
 
     def install_screen_on_machine(self) -> Tuple[Union[List[str], str, bytes]]:
@@ -121,7 +115,7 @@ class RASCoreLib:
         cmd = common_commands.INSTALL_SCREEN_CMD
         LOGGER.info("Running command %s", cmd)
         response = self.node_utils.execute_cmd(cmd=cmd,
-                                               read_nbytes=BYTES_TO_READ)
+                                               read_nbytes=cmn_cons.BYTES_TO_READ)
         return response
 
     def run_cmd_on_screen(self, cmd: str) -> \
@@ -138,7 +132,7 @@ class RASCoreLib:
         screen_cmd = common_commands.SCREEN_CMD.format(cmd)
         LOGGER.info("Running command %s", screen_cmd)
         response = self.node_utils.execute_cmd(cmd=screen_cmd,
-                                               read_nbytes=BYTES_TO_READ)
+                                               read_nbytes=cmn_cons.BYTES_TO_READ)
         return True, response
 
     def start_rabbitmq_reader_cmd(self, sspl_exchange: str, sspl_key: str,
@@ -186,7 +180,7 @@ class RASCoreLib:
             cmn_cons.SERVICE_STATUS_PATH)
         LOGGER.debug("Running cmd: %s on host: %s", stat_cmd, self.host)
         response = self.node_utils.execute_cmd(cmd=stat_cmd,
-                                               read_nbytes=BYTES_TO_READ)
+                                               read_nbytes=cmn_cons.BYTES_TO_READ)
 
         return True, response
 
@@ -200,7 +194,8 @@ class RASCoreLib:
         """
         cmd = common_commands.FILE_MODE_CHANGE_CMD.format(path)
         LOGGER.debug("Executing cmd : %s on %s node.", cmd, self.host)
-        res = self.node_utils.execute_cmd(cmd=cmd, read_nbytes=BYTES_TO_READ)
+        res = self.node_utils.execute_cmd(cmd=cmd,
+                                          read_nbytes=cmn_cons.BYTES_TO_READ)
         return res
 
     def get_cluster_id(self) -> Tuple[bool, Union[List[str], str, bytes]]:
@@ -212,7 +207,7 @@ class RASCoreLib:
         cmd = common_commands.GET_CLUSTER_ID_CMD
         LOGGER.debug("Running cmd: %s on host: %s", cmd, self.host)
         cluster_id = self.node_utils.execute_cmd(cmd=cmd,
-                                                 read_nbytes=BYTES_TO_READ)
+                                                 read_nbytes=cmn_cons.BYTES_TO_READ)
         return True, cluster_id
 
     def encrypt_pwd(self, password: str, cluster_id: str) -> \
@@ -226,7 +221,8 @@ class RASCoreLib:
         """
         cmd = common_commands.ENCRYPT_PASSWORD_CMD.format(password, cluster_id)
         LOGGER.debug("Running cmd: %s on host: %s", cmd, self.host)
-        res = self.node_utils.execute_cmd(cmd=cmd, read_nbytes=BYTES_TO_READ)
+        res = self.node_utils.execute_cmd(cmd=cmd,
+                                          read_nbytes=cmn_cons.BYTES_TO_READ)
         return True, res
 
     def kv_put(self, field: str, val: str, kv_path: str) -> \
@@ -263,7 +259,7 @@ class RASCoreLib:
                     kv_path, field)
         LOGGER.info("Running command: %s", get_cmd)
         response = self.node_utils.execute_cmd(cmd=get_cmd,
-                                               read_nbytes=BYTES_TO_READ)
+                                               read_nbytes=cmn_cons.BYTES_TO_READ)
         return True, response
 
     def put_kv_store(self, username: str, pwd: str, field: str) -> bool:
@@ -320,7 +316,7 @@ class RASCoreLib:
                 cmd = "sed '/{}:/!d' {} | sed '{}d' | awk '{{print $2}}'".format(
                     str_f, cmn_cons.STORAGE_ENCLOSURE_PATH, lin)
                 val = self.node_utils.execute_cmd(cmd=cmd,
-                                                  read_nbytes=BYTES_TO_READ)
+                                                  read_nbytes=cmn_cons.BYTES_TO_READ)
                 val = val.decode("utf-8")
                 val = " ".join(val.split())
 
@@ -397,7 +393,7 @@ class RASCoreLib:
         mdadm_cmd = common_commands.MDADM_CMD.format(arguments)
         LOGGER.info("Executing %s cmd on host %s", mdadm_cmd, self.host)
         output = self.node_utils.execute_cmd(cmd=mdadm_cmd,
-                                             read_nbytes=BYTES_TO_READ)
+                                             read_nbytes=cmn_cons.BYTES_TO_READ)
         return output
 
     def get_sspl_state(self) -> Tuple[bool, str]:
@@ -410,7 +406,7 @@ class RASCoreLib:
         flag = False
         sspl_state_cmd = cmn_cons.SSPL_STATE_CMD
         response = self.node_utils.execute_cmd(cmd=sspl_state_cmd,
-                                               read_nbytes=BYTES_TO_READ)
+                                               read_nbytes=cmn_cons.BYTES_TO_READ)
         response = response.decode("utf-8")
         response = response.strip().split("=")[-1]
         LOGGER.debug("SSPL state resp : %s", response)
@@ -565,7 +561,7 @@ class RASCoreLib:
             common_cfg["file"]["alert_log_file"])
 
         response = self.node_utils.execute_cmd(cmd=cmd,
-                                               read_nbytes=BYTES_TO_READ)
+                                               read_nbytes=cmn_cons.BYTES_TO_READ)
         LOGGER.info("Successfully fetched the alert response")
 
         LOGGER.debug("Reading the alert log file")
@@ -583,7 +579,7 @@ class RASCoreLib:
             common_cfg["file"]["alert_log_file"], string_list[0],
             common_cfg["file"]["extracted_alert_file"])
         response = self.node_utils.execute_cmd(cmd=cmd,
-                                               read_nbytes=BYTES_TO_READ)
+                                               read_nbytes=cmn_cons.BYTES_TO_READ)
 
         resp = self.validate_alert_msg(
             remote_file_path=common_cfg["file"]["extracted_alert_file"],

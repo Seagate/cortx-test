@@ -1,5 +1,23 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+
 """
 File test helper lib implements the base functions of ras_lib by inheriting the
 class
@@ -19,7 +37,6 @@ from commons.exceptions import CTException
 from config import CMN_CFG, RAS_VAL
 
 # Global Constants
-BYTES_TO_READ = cmn_cons.BYTES_TO_READ
 LOGGER = logging.getLogger(__name__)
 
 
@@ -84,7 +101,7 @@ class RASTestLib(RASCoreLib):
         try:
             LOGGER.info("Check ssp events are generated")
             res = self.node_utils.execute_cmd(
-                cmd=cmd, read_nbytes=BYTES_TO_READ)
+                cmd=cmd, read_nbytes=cmn_cons.BYTES_TO_READ)
             LOGGER.info(res)
         except BaseException as error:
             LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
@@ -196,7 +213,8 @@ class RASTestLib(RASCoreLib):
         :returns: Response in tuple
         """
         cmd = common_commands.KILL_PROCESS_CMD.format(process_name)
-        return self.node_utils.execute_cmd(cmd=cmd, read_nbytes=BYTES_TO_READ)
+        return self.node_utils.execute_cmd(cmd=cmd,
+                                           read_nbytes=cmn_cons.BYTES_TO_READ)
 
     def update_threshold_values(self, kv_store_path: str, field: str, value,
                                 update: bool = True) -> bool:
@@ -415,7 +433,8 @@ class RASTestLib(RASCoreLib):
                 "Checking if alerts are generated on rabbitmq channel")
             cmd = common_commands.EXTRACT_LOG_CMD.format(
                 common_cfg["file"]["alert_log_file"], string_list[0])
-            self.node_utils.execute_cmd(cmd=cmd, read_nbytes=BYTES_TO_READ)
+            self.node_utils.execute_cmd(cmd=cmd,
+                                        read_nbytes=cmn_cons.BYTES_TO_READ)
             resp = self.validate_alert_msg(
                 common_cfg["file"]["extracted_alert_file"], string_list)
 
@@ -784,7 +803,7 @@ class RASTestLib(RASCoreLib):
                 LOGGER.info("Performing cleanup on disk %s", disk_path)
                 wipe_disk_cmd = common_commands.WIPE_DISK_CMD.format(disk_path)
                 self.node_utils.execute_cmd(
-                    cmd=wipe_disk_cmd, read_nbytes=BYTES_TO_READ)
+                    cmd=wipe_disk_cmd, read_nbytes=cmn_cons.BYTES_TO_READ)
                 time.sleep(RAS_VAL["ras_sspl_alert"]["disk_clean_time"])
                 self.node_utils.kill_remote_process(common_commands.KILL_WIPE_DISK_PROCESS)
         except Exception as error:
@@ -824,7 +843,7 @@ class RASTestLib(RASCoreLib):
             local_path = status_file
             cmd = common_commands.SELINUX_STATUS_CMD.format(status_file)
             resp = self.node_utils.execute_cmd(cmd=cmd,
-                                               read_nbytes=BYTES_TO_READ)
+                                               read_nbytes=cmn_cons.BYTES_TO_READ)
             LOGGER.info(resp)
             self.node_utils.copy_file_to_local(remote_path=status_file,
                                                local_path=local_path)

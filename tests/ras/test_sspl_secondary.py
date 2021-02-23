@@ -1,5 +1,22 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
 
 """SSPL test cases: Secondary Node."""
 
@@ -16,11 +33,9 @@ from commons import commands as common_cmd
 from commons.utils.assert_utils import *
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
-from libs.csm.rest.csm_rest_csmuser import RestCsmUser
+from commons.ct_fail_on import CTFailOn
+from commons.errorcodes import error_handler
 
-CSM_USER_OBJ = RestCsmUser()
-
-BYTES_TO_READ = cons.BYTES_TO_READ
 CM_CFG = RAS_VAL["ras_sspl_alert"]
 NODES = CMN_CFG["nodes"]
 
@@ -47,11 +62,6 @@ class TestSSPLSecondary:
                             password=cls.passwd)
         cls.health_obj = Health(hostname=cls.host, username=cls.uname,
                                 password=cls.passwd)
-        try:
-            cls.s3obj = S3Helper()
-        except ImportError as err:
-            LOGGER.info(str(err))
-            cls.s3obj = S3Helper.get_instance()
 
         cls.ras_test_obj2 = RASTestLib(host=cls.host2, username=cls.uname,
                                        password=cls.passwd)
@@ -97,7 +107,7 @@ class TestSSPLSecondary:
         LOGGER.info("Delete keys with prefix SSPL_")
         cmd = common_cmd.REMOVE_UNWANTED_CONSUL
         response = self.node_obj2.execute_cmd(cmd=cmd,
-                                              read_nbytes=BYTES_TO_READ)
+                                              read_nbytes=cons.BYTES_TO_READ)
         LOGGER.info("Response is: %s", response)
 
         LOGGER.info("Restarting sspl service")
@@ -179,6 +189,7 @@ class TestSSPLSecondary:
 
         LOGGER.info("Successfully performed Teardown operation")
 
+    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-14034")
@@ -288,6 +299,7 @@ class TestSSPLSecondary:
             "ENDED: Pacemaker Resource Agents for SSPL service(Stop sspl "
             "service on Node)")
 
+    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-14035")
@@ -394,6 +406,7 @@ class TestSSPLSecondary:
             "ENDED: Pacemaker Resource Agents for SSPL service(Stop sspl "
             "service on Node)")
 
+    @CTFailOn(error_handler)
     @pytest.mark.skip
     @pytest.mark.ras
     @pytest.mark.sw_alert

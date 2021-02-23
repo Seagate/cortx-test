@@ -156,7 +156,7 @@ class Host:
         :param read_nbytes: maximum number of bytes to read.
         :return: stdout/strerr.
         """
-        timeout = kwargs.get("timeout") if kwargs.get("timeout") else 400
+        timeout = kwargs.get('timeout', 400)
         exc = kwargs.get('exc', True)
         if 'exc' in kwargs.keys():
             kwargs.pop('exc')
