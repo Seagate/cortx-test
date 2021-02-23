@@ -33,7 +33,7 @@ S3_TEST_OBJ = s3_test_lib.S3TestLib()
 TAG_OBJ = s3_tagging_test_lib.S3TaggingTestLib()
 S3_MP_OBJ = s3_multipart_test_lib.S3MultipartTestLib()
 
-OBJ_TAG_CONFIG = read_yaml("config/s3/test_object_tagging.yaml")
+OBJ_TAG_CONFIG = read_yaml("config/s3/test_object_tagging.yaml")[1]
 
 
 class TestObjectTagging:
@@ -76,8 +76,6 @@ class TestObjectTagging:
         :param obj_name: Name of an object
         :param file_path: Path of the file
         :mb_count: Size of file in MB
-        :param key: Key for object tagging
-        :param value: Value for object tagging
         :param tag_count: Number of tags to be set
         """
         mb_count = args[0]
