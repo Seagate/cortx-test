@@ -1,0 +1,51 @@
+{
+"setupname":"",
+"nodes":[
+    {
+        "host": "",
+        "hostname": "",
+        "ip": "",
+        "username": "",
+        "password": ""
+    },
+    {
+        "host": "",
+        "hostname": "",
+        "ip": "",
+        "username": "",
+        "password": ""
+    }
+],
+"enclosure":
+{
+    "primary_enclosure_ip": "10.0.0.2",
+    "secondary_enclosure_ip": "10.0.0.3",
+    "enclosure_user": "",
+    "enclosure_pwd": ""
+},
+"pdu":{
+    "ip": "",
+    "username": "",
+    "password": "",
+    "power_on": "",
+    "power_off": "",
+    "sleep_time": 
+},
+"bmc":
+{
+    "username": "",
+    "password": ""
+},
+"csm":
+{
+  "mgmt_vip": "",
+  "admin_user": "", 
+  "admin_pass": ""
+},
+"s3":
+{
+    "s3_server_ip": "",
+    "s3_server_user": "",
+    "s3_server_pwd": ""
+}
+}
