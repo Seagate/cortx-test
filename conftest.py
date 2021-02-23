@@ -192,8 +192,8 @@ def read_dist_test_list_csv() -> List:
     """
     Read distributed test csv file
     """
+    tests = list()
     try:
-        tests = list()
         with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_DIST_TEST_LIST))\
                 as test_file:
             reader = csv.reader(test_file)
@@ -202,9 +202,9 @@ def read_dist_test_list_csv() -> List:
                 if not test_row:
                     continue
                 tests.append(test_row[0])
-        return tests
-    except Exception as err:
+    except EnvironmentError as err:
         print(err)
+    return tests
 
 @pytest.hookimpl(trylast=True)
 def pytest_sessionfinish(session, exitstatus):
@@ -231,7 +231,7 @@ def pytest_collection(session):
     CACHE = LRUCache(1024 * 10)
     Globals.LOCAL_RUN = _local
     if _distributed:
-        required_tests = read_dist_test_list_csv()  
+        required_tests = read_dist_test_list_csv()
         Globals.TE_TKT = config.option.te_tkt
         selected_items = []
         for item in items:
