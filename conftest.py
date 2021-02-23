@@ -253,9 +253,8 @@ def pytest_collection(session):
                     test_id = mark.args[0]
                 else:
                     _marks.append(mark.name)
-                    CACHE.store(item.nodeid, test_id)
-                    meta.append(dict(nodeid=item.nodeid, test_id=test_id,
-                                     marks=_marks))
+            CACHE.store(item.nodeid, test_id)
+            meta.append(dict(nodeid=item.nodeid, test_id=test_id, marks=_marks))
     else:
         required_tests = read_test_list_csv()  # e.g. required_tests = ['TEST-17413', 'TEST-17414']
         Globals.TE_TKT = config.option.te_tkt
