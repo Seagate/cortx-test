@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# !/usr/bin/python
+# Seagate license
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #

@@ -3,8 +3,8 @@ Utility Class for target locking using DB
 """
 import os
 import json
-import requests
 from http import HTTPStatus
+import requests
 
 
 class LockingServer:

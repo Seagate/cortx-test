@@ -116,7 +116,7 @@ def get_tests_from_te(args, test_type='ALL'):
     jira_id, jira_pwd = runner.get_jira_credential()
     jira_obj = JiraTask(jira_id, jira_pwd)
     test_list, tag = jira_obj.get_test_ids_from_te(args.te_ticket, test_type)
-    if len(test_list) == 0 or te_tag == "":
+    if len(test_list) == 0 or tag == "":
         raise EnvironmentError("Please check TE provided, tests or tag is missing")
     return test_list
 
