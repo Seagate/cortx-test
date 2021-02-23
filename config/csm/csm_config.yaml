@@ -1,12 +1,3 @@
-# CSM configurations for Wbdriver, Rest API and CLI
-Paths:
-  firefox:
-    - web_drivers
-    - geckodriver.exe
-  chrome:
-    - web_drivers
-    - chromedriver
-
 # Configurations for Rest API
 Restcall:
   ip : "10.237.65.71"
@@ -14,29 +5,29 @@ Restcall:
   jsonfile : 'rest_call.json'
   csm_admin_user :
     username: "admin"
-    password: "Seagate@1"
+    password: "NB65bqHSoEzEc8M/sSpxso4FdDKRGdoK0UGWqQPqwkA="
   csm_user_manage:
     username: "csm_user_manage"
-    password: "Testuser@123"
+    password: "TS7Q7rlo43PyD8kmGEHiL54dekr+XXCgMPQRgH6gWyQ="
   csm_user_monitor:
     username: "csm_user_monitor"
-    password: "Testuser@123"
+    password: "TS7Q7rlo43PyD8kmGEHiL54dekr+XXCgMPQRgH6gWyQ="
   s3account_user:
     username: "s3user3"
-    password: "Seagate@123"
+    password: "yqI7PYuCer0alJlTPJtaOJLejOIrg4ymC+Y8gUxMJAU="
     email: "accounts323.admin@seagate.com"
   Login_headers:
     Content-Type: 'application/json'
+  test_s3account_password : "TS7Q7rlo43PyD8kmGEHiL54dekr+XXCgMPQRgH6gWyQ="
+  test_csmuser_password : "TS7Q7rlo43PyD8kmGEHiL54dekr+XXCgMPQRgH6gWyQ="
   rest_login_endpoint : "/api/v1/login"
   alerts_endpoint : "/api/v1/alerts"
   alerts_history_endpoint: "/api/v1/alerts_history"
   s3accounts_endpoint : "/api/v1/s3_accounts"
   s3_bucket_endpoint : "/api/v1/s3/bucket"
   IAM_users_endpoint : "/api/v1/iam_users"
-  test_s3account_password : "Testuser@123"
   csmuser_endpoint : "/api/v1/csm/users"
   csmuser_permission_endpoint: "/api/v1/permissions"
-  test_csmuser_password : "Testuser@123"
   bucket_policy_endpoint : "/api/v1/s3/bucket_policy/{}"
   audit_logs_download_endpoint: "/api/v1/auditlogs/download/{}"
   audit_logs_show_endpoint: "/api/v1/auditlogs/show/{}"
@@ -46,47 +37,17 @@ Restcall:
   stats_endpoint: "/api/v1/stats"
   capacity_endpoint: "/api/v1/capacity"
   health_component_endpoint: "/api/v1/system/health/components"
-# Possible Browser Values are  "chrome" and "firefox"
-config:
-  browser: "chrome"
-  host_url: "https://10.237.65.73:28100/#/"
-
-# CSM Users
-UserConfig:
-  adminuser: "admin"
-  adminpass: "Seagate@1"
-  csm_username: "csmuser3"
-  csm_password: "User@123"
-  monitor_user: "csm_user_monitor"
-  monitor_password: "Testuser@123"
-  manage_user: "csm_user_manage"
-  manage_password: "Testuser@123"
-  s3account_username: "s3user3"
-  s3account_password: "Seagate@123"
-  test_csm_user_password: "Testuser@123"
-  test_iam_user_password: "TestIamuser@123"
-  udx_registration_url: "http://udxdev.sw.lcd.colo.seagate.com"
-
-
-# Selenium Gird configuration, possible browserName values are  "chrome" and "firefox"
-GridConfig:
-  command_executor: '10.230.243.251'
-  port: "4445"
-  desired_capabilities:
-    browserName: "chrome"
-    javascriptEnabled: True
-
 
 CliConfig:
   host: "10.237.65.73"
   port: "22"
   username: "admin"
-  password: "Seagate@1"
+  password: "cARSYungsWpwHvqqjLajLof1slLANtt76lOv9foSbJA="
 
 
 node2_csm_confg:
   host: "eosnode-2"
   port: "22"
   username: "admin"
-  password: "Seagate@1"
+  password: "cARSYungsWpwHvqqjLajLof1slLANtt76lOv9foSbJA="
 
