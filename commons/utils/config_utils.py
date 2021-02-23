@@ -58,7 +58,6 @@ def read_yaml(fpath: str) -> tuple:
                 err_msg = "Failed to parse: {}\n{}".format(fpath, str(exc))
                 LOG.error(err_msg)
                 return False, exc
-
     else:
         err_msg = "Specified file doesn't exist: {}".format(fpath)
         LOG.error(err_msg)
