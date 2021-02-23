@@ -492,7 +492,6 @@ class TestSSPL:
         common_cfg = RAS_VAL["ras_sspl_alert"]
         buffer_sz = test_cfg["buffer_sz"]
         last_sel_index = cons.LAST_SEL_INDEX
-        service_cfg = RAS_VAL["ras_sspl_alert"]["service"]
 
         LOGGER.info("Step 1: run 'ipmitool sdr list' to inquire about FAN "
                     "state/details")

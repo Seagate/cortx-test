@@ -204,7 +204,6 @@ class TestSSPLSecondary:
         LOGGER.info(
             "STARTED: Pacemaker Resource Agents for SSPL service(Stop sspl "
             "service on Node)")
-        service_cfg = CM_CFG["service"]
         test_cfg = RAS_TEST_CFG["test_1648"]
 
         LOGGER.info(
