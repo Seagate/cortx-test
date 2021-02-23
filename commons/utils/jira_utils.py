@@ -31,8 +31,12 @@ class JiraTask:
         except requests.exceptions.RequestException:
             print(traceback.print_exc())
         test_list = []
+        te_tag = ""
         if response.status_code == HTTPStatus.OK:
             data = response.json()
+            if len(data[0]['testEnvironments']) > 0:
+                te_tag = data[0]['testEnvironments'][0]
+                te_tag = te_tag.lower()
             page_not_zero = 1
             page_cnt = 1
             while page_not_zero:
@@ -65,7 +69,7 @@ class JiraTask:
                             elif status == 'ABORTED':
                                 if str(test['status']) == 'ABORTED':
                                     test_list.append(test['key'])
-            return test_list
+            return test_list, te_tag
 
     def get_test_list_from_te(self, test_exe_id, status='ALL'):
         """

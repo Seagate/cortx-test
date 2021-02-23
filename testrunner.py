@@ -3,8 +3,8 @@ import subprocess
 import argparse
 import csv
 from core import runner, kafka_consumer
+from core.locking_server import LockingServer
 from commons.utils.jira_utils import JiraTask
-from commons.utils.db_locking_utils import LockingTask
 from config import params
 
 
@@ -115,7 +115,9 @@ def get_tests_from_te(args, test_type='ALL'):
     '''
     jira_id, jira_pwd = runner.get_jira_credential()
     jira_obj = JiraTask(jira_id, jira_pwd)
-    test_list = jira_obj.get_test_ids_from_te(args.te_ticket, test_type)
+    test_list, tag = jira_obj.get_test_ids_from_te(args.te_ticket, test_type)
+    if len(test_list) == 0 or te_tag == "":
+        raise EnvironmentError("Please check TE provided, tests or tag is missing")
     return test_list
 
 
@@ -126,11 +128,8 @@ def trigger_unexecuted_tests(args, test_list):
     '''
     te_test_list = get_tests_from_te(args, 'TODO')
     if len(te_test_list) != 0:
-        unexecuted_test_list = []
         # check if there are any selected tests with todo status
-        for test in test_list:
-            if test in te_test_list:
-                unexecuted_test_list.append(test)
+        unexecuted_test_list = [test for test in test_list if test in te_test_list]
         if len(unexecuted_test_list) != 0:
             # run those selected todo tests sequential
             args.parallel_exe = False
@@ -209,7 +208,7 @@ def get_available_target(kafka_msg):
     Check available target from target list
     Get lock on target if available
     '''
-    lock_task = LockingTask()
+    lock_task = LockingServer()
     acquired_target = ""
     while acquired_target == "":
         target = lock_task.check_available_target(kafka_msg.target_list)
@@ -229,7 +228,7 @@ def check_kafka_msg_trigger_test(args):
     '''
     consumer = kafka_consumer.get_consumer(args)
     received_stop_signal = False
-    lock_task = LockingTask()
+    lock_task = LockingServer()
     while not received_stop_signal:
         try:
             # SIGINT can't be handled when polling, limit timeout to 60 seconds.
