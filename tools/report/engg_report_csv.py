@@ -22,7 +22,16 @@ import argparse
 import csv
 from collections import defaultdict
 
+import common
 import jira_api
+import mongodb_api
+
+OPERATIONS = ["write", "read"]
+STATS = ["Throughput", "Latency", "IOPS"]
+COSBENCH_CONFIG = [[1, 1000, 100], [10, 100, 100], [50, 100, 100]]
+CB_OBJECTS_SIZES = ["4 KB", "100 KB", "1 MB", "5 MB", "36 MB", "64 MB", "128 MB", "256 MB"]
+HSBENCH_CONFIG = [[1, 1000, 100], [10, 1000, 100], [50, 5000, 100]]
+HB_OBJECTS_SIZES = ["4Kb", "100Kb", "1Mb", "5Mb", "36Mb", "64Mb", "128Mb", "256Mb"]
 
 
 def get_component_breakup_from_testplan(test_plan: str, username: str, password: str):
@@ -88,19 +97,143 @@ def get_component_level_summary(test_plans: list, username: str, password: str):
     return data
 
 
-def get_single_bucket_perf_stats():
-    """ToDo: Need to complete by taking help from performance team."""
-    return [[]]
+def get_single_bucket_perf_stats(build, uri, db_name, db_collection):
+    """Get single bucket performance data for engineering report"""
+    data = [["Single Bucket Performance Statistics (Average) using S3Bench"],
+            ["Statistics", "4 KB", "100 KB", "1 MB", "5 MB", "36 MB", "64 MB", "128 MB",
+             "256 MB"]]
+    operations = ["Write", "Read"]
+    stats = ["Throughput", "Latency", "IOPS", "TTFB"]
+    objects_sizes = ["4Kb", "100Kb", "1Mb", "5Mb", "36Mb", "64Mb", "128Mb", "256Mb"]
+    for operation in operations:
+        for stat in stats:
+            if stat in ["Latency", "TTFB"]:
+                temp_data = [f"{operation} {stat} (ms)"]
+            elif stat in ["Throughput"]:
+                temp_data = [f"{operation} {stat} (MBps)"]
+            else:
+                temp_data = [f"{operation} {stat}"]
+            for obj_size in objects_sizes:
+                query = {'Build': build, 'Operation': operation, 'Object_Size': obj_size}
+                count = mongodb_api.count_documents(query=query, uri=uri, db_name=db_name,
+                                                    collection=db_collection)
+                db_data = mongodb_api.find_documents(query=query, uri=uri, db_name=db_name,
+                                                     collection=db_collection)
+                if stat in ["Latency", "TTFB"]:
+                    if count > 0 and common.keys_exists(db_data[0], stat, "Avg"):
+                        temp_data.append(common.round_off(db_data[0][stat]["Avg"] * 1000))
+                    else:
+                        temp_data.append("-")
+                else:
+                    if count > 0 and common.keys_exists(db_data[0], stat):
+                        temp_data.append(common.round_off(db_data[0][stat]))
+                    else:
+                        temp_data.append("-")
+            data.extend([temp_data])
+    return data
 
 
-def get_multiple_bucket_perf_stats():
-    """ToDo: Need to complete by taking help from performance team."""
-    return [[]]
+def get_cosbench_data(build, uri, db_name, db_collection):
+    """Read Cosbench data from DB"""
+    data = []
+    for configs in COSBENCH_CONFIG:
+        row_num = 0
+        for operation in OPERATIONS:
+            for stat in STATS:
+                row_num += 1
+                head = ""
+                if row_num == 2:
+                    head = "Cosbench"
+                elif row_num == 3:
+                    head = f"{configs[0]} Buckets"
+                elif row_num == 4:
+                    head = f"{configs[1]} Objects"
+                elif row_num == 5:
+                    head = f"{configs[2]} Sessions"
+                temp_data = [head, f"{operation.capitalize()} {stat}"]
+                for obj_size in CB_OBJECTS_SIZES:
+                    query = {'Build': build, 'Name': "Cosbench", 'Operation': operation,
+                             'Object_Size': obj_size, 'Buckets': configs[0], 'Objects': configs[1],
+                             'Sessions': configs[2]}
+                    count = mongodb_api.count_documents(query=query, uri=uri, db_name=db_name,
+                                                        collection=db_collection)
+                    db_data = mongodb_api.find_documents(query=query, uri=uri, db_name=db_name,
+                                                         collection=db_collection)
+
+                    if count > 0 and stat == "Latency" \
+                            and common.keys_exists(db_data[0], stat, "Avg"):
+                        temp_data.append(common.round_off(db_data[0][stat]["Avg"]))
+                    elif count > 0 and common.keys_exists(db_data[0], stat):
+                        temp_data.append(common.round_off(db_data[0][stat]))
+                    else:
+                        temp_data.append("-")
+                data.append(temp_data)
+    return data
 
 
-def get_metadata_latencies():
-    """ToDo: Need to complete by taking help from performance team."""
-    return [[]]
+def get_hsbench_data(build, uri, db_name, db_collection):
+    """Read Hsbench data from DB"""
+    data = []
+    for configs in HSBENCH_CONFIG:
+        row_num = 0
+        for operation in OPERATIONS:
+            for stat in STATS:
+                row_num += 1
+                head = ""
+                if row_num == 2:
+                    head = "Hsbench"
+                elif row_num == 3:
+                    head = f"{configs[0]} Buckets"
+                elif row_num == 4:
+                    head = f"{configs[1]} Objects"
+                elif row_num == 5:
+                    head = f"{configs[2]} Sessions"
+                temp_data = [head, f"{operation.capitalize()} {stat}"]
+                for obj_size in HB_OBJECTS_SIZES:
+                    query = {'Build': build, 'Name': "Hsbench", 'Operation': operation,
+                             'Object_Size': obj_size, 'Buckets': configs[0], 'Objects': configs[1],
+                             'Sessions': configs[2]}
+                    count = mongodb_api.count_documents(query=query, uri=uri, db_name=db_name,
+                                                        collection=db_collection)
+                    db_data = mongodb_api.find_documents(query=query, uri=uri, db_name=db_name,
+                                                         collection=db_collection)
+
+                    if count > 0 and common.keys_exists(db_data[0], stat):
+                        temp_data.append(common.round_off(db_data[0][stat]))
+                    else:
+                        temp_data.append("-")
+                data.append(temp_data)
+    return data
+
+
+def get_multiple_bucket_perf_stats(build, uri, db_name, db_collection):
+    """Get multiple bucket performance data"""
+    data = [["Multiple Buckets Performance Statistics (Average) using HSBench and COSBench"],
+            ["Bench", "Statistics", "4 KB", "100 KB", "1 MB", "5 MB", "36 MB", "64 MB", "128 MB",
+             "256 MB"]]
+
+    data.extend(get_cosbench_data(build, uri, db_name, db_collection))
+    data.extend(get_hsbench_data(build, uri, db_name, db_collection))
+    return data
+
+
+def get_metadata_latencies(build, uri, db_name, db_collection):
+    """Get metadata latency table data."""
+    operations = ["PutObjTag", "GetObjTag", "HeadObj"]
+    heading = ["Add / Edit Object Tags", "Read Object Tags", "Read Object Metadata"]
+    data = [["Metadata Latencies (captured with 1KB object)"],
+            ["Operation Latency (ms)", "Response Time"]]
+    for ops, head in zip(operations, heading):
+        query = {'Name': 'S3bench', 'Build': build, 'Object_Size': '1Kb', 'Operation': ops}
+        count = mongodb_api.count_documents(query=query, uri=uri, db_name=db_name,
+                                            collection=db_collection)
+        db_data = mongodb_api.find_documents(query=query, uri=uri, db_name=db_name,
+                                             collection=db_collection)
+        if count > 0 and common.keys_exists(db_data[0], "Latency", "Avg"):
+            data.append([head, db_data[0]['Latency']['Avg'] * 1000])
+        else:
+            data.append([head, "-"])
+    return data
 
 
 def get_test_ids_from_linked_issues(linked_issues):
@@ -152,8 +285,8 @@ def get_detailed_reported_bugs(test_plan: str, username: str, password: str):
     return data
 
 
-def main():
-    """Generate csv engineering report from test plan JIRA."""
+def get_args():
+    """Parse arguments and collect database information"""
     parser = argparse.ArgumentParser()
     parser.add_argument('tp', help='Testplan for current build')
     parser.add_argument('--tp1', help='Testplan for current-1 build', default=None)
@@ -161,6 +294,14 @@ def main():
     parser.add_argument('--tp3', help='Testplan for current-3 build', default=None)
 
     test_plans = parser.parse_args()
+
+    uri, db_name, db_collection = common.get_db_details()
+    return test_plans, uri, db_name, db_collection
+
+
+def main():
+    """Generate csv engineering report from test plan JIRA."""
+    test_plans, uri, db_name, db_collection = get_args()
 
     username, password = jira_api.get_username_password()
     main_table_data, build = jira_api.get_main_table_data(test_plans.tp, username, password)
@@ -171,11 +312,6 @@ def main():
     component_level_summary_data = get_component_level_summary(
         [test_plans.tp, test_plans.tp1, test_plans.tp2, test_plans.tp3], username, password
     )
-    # single_bucket_perf_stats = get_single_bucket_perf_stats(build)
-    # get_multiple_bucket_perf = get_multiple_bucket_perf_stats(build)
-    # metadata_latencies = get_metadata_latencies(build)
-    # timing_summary_table_data = jira_api.get_timing_summary(build)
-    detailed_reported_bugs = get_detailed_reported_bugs(test_plans.tp, username, password)
 
     data = []
     data.extend(main_table_data)
@@ -186,7 +322,15 @@ def main():
     data.extend([""])
     data.extend(component_level_summary_data)
     data.extend([""])
-    data.extend(detailed_reported_bugs)
+    data.extend(get_single_bucket_perf_stats(build, uri, db_name, db_collection))
+    data.extend([""])
+    data.extend(get_multiple_bucket_perf_stats(build, uri, db_name, db_collection))
+    data.extend([""])
+    data.extend(get_metadata_latencies(build, uri, db_name, db_collection))
+    data.extend([""])
+    data.extend(jira_api.get_timing_summary())
+    data.extend([""])
+    data.extend(get_detailed_reported_bugs(test_plans.tp, username, password))
     data.extend([""])
     with open("../engg_report.csv", "a", newline='') as csv_file:
         writer = csv.writer(csv_file)
