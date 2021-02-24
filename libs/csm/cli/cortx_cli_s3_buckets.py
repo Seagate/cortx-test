@@ -22,6 +22,7 @@ This library contains methods for S3 Bucket operations using CORTX CLI
 """
 
 import logging
+from commons import commands
 from libs.csm.cli.cortx_cli import CortxCli
 
 LOGGER = logging.getLogger(__name__)
@@ -40,7 +41,7 @@ class CortxCliS3BucketOperations(CortxCli):
         :param bucket_name: New bucket's name
         :return: True/False and response returned by CORTX CLI
         """
-        create_bucket_cmd = "s3buckets create {}".format(bucket_name)
+        create_bucket_cmd = commands.CMD_CREATE_BUCKET.format(bucket_name)
         LOGGER.info("Creating bucket with name %s", bucket_name)
         response = self.execute_cli_commands(cmd=create_bucket_cmd)[1]
         LOGGER.info("Response returned: \n%s", response)
@@ -55,7 +56,7 @@ class CortxCliS3BucketOperations(CortxCli):
                        (possible values: table/xml/json)
         :return: response returned by CORTX CLI
         """
-        show_bkts_cmd = "s3buckets show"
+        show_bkts_cmd = commands.CMD_SHOW_BUCKETS
         if op_format:
             show_bkts_cmd = "{} -f {}".format(show_bkts_cmd, op_format)
         LOGGER.info("Listing buckets with cmd: %s", show_bkts_cmd)
@@ -71,7 +72,7 @@ class CortxCliS3BucketOperations(CortxCli):
         :param bucket_name: name of the bucket to be deleted
         :return: True/False and response returned by CORTX CLI
         """
-        delete_bucket_cmd = "s3buckets delete {}".format(bucket_name)
+        delete_bucket_cmd = commands.CMD_DELETE_BUCKET.format(bucket_name)
         LOGGER.info("Deleting bucket %s", bucket_name)
         response = self.execute_cli_commands(cmd=delete_bucket_cmd)[1]
         LOGGER.info("Response returned: \n%s", response)

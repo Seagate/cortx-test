@@ -22,6 +22,8 @@
 import logging
 import time
 import pytest
+from commons.ct_fail_on import CTFailOn
+from commons.errorcodes import error_handler
 from commons.utils import assert_utils
 from config import CSM_CFG
 from libs.csm.cli.cortx_cli_s3_buckets import CortxCliS3BucketOperations
@@ -35,14 +37,13 @@ LOGGER = logging.getLogger(__name__)
 class TestCliS3BKT:
     """CORTX CLI Test suite for S3 bucket operations"""
 
-    bucket_name = "clis3bkt"
-
     @classmethod
     def setup_class(cls):
         """
         Setup all the states required for execution of this test suit.
         """
         LOGGER.info("STARTED : Setup operations at test suit level")
+        cls.bucket_name = "clis3bkt"
         cls.s3acc_name = "clis3bkt_acc_{}".format(int(time.time()))
         cls.s3acc_email = "{}@seagate.com".format(cls.s3acc_name)
         cls.s3acc_password = CSM_CFG["CliConfig"]["acc_password"]
@@ -84,8 +85,8 @@ class TestCliS3BKT:
         LOGGER.info("ENDED : Setup operations at test suit level")
 
     @pytest.mark.csm
-    @pytest.mark.s3bucket
     @pytest.mark.tags("TEST-10805")
+    @CTFailOn(error_handler)
     def test_971_verify_delete_bucket(self):
         """
         Test that S3 account user able to delete the bucket using CORTX CLI

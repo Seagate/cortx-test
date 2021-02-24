@@ -22,6 +22,8 @@
 import logging
 import time
 import pytest
+from commons.ct_fail_on import CTFailOn
+from commons.errorcodes import error_handler
 from commons.utils import assert_utils
 from config import CSM_CFG
 from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
@@ -35,11 +37,18 @@ LOGGER = logging.getLogger(__name__)
 
 
 class TestCliS3ACC:
-    """CORTX CLI Test suite for S3 bucket operations"""
+    """CORTX CLI Test suite for S3 account operations"""
 
-    s3acc_name = "cli_s3acc"
-    s3acc_email = "{}@seagate.com"
-    s3acc_password = CSM_CFG["CliConfig"]["acc_password"]
+    @classmethod
+    def setup_class(cls):
+        """
+        Setup all the states required for execution of this test suit.
+        """
+        LOGGER.info("STARTED : Setup operations at test suit level")
+        cls.s3acc_name = "cli_s3acc"
+        cls.s3acc_email = "{}@seagate.com"
+        cls.s3acc_password = CSM_CFG["CliConfig"]["acc_password"]
+        LOGGER.info("ENDED : Setup operations at test suit level")
 
     def setup_method(self):
         """
@@ -69,7 +78,8 @@ class TestCliS3ACC:
 
     @pytest.mark.csm
     @pytest.mark.tags("TEST-10872")
-    def test_1008(self):
+    @CTFailOn(error_handler)
+    def test_1008_delete_s3_account(self):
         """
         Verify that S3 account should be deleted successfully on executing delete command
         """
@@ -92,7 +102,8 @@ class TestCliS3ACC:
 
     @pytest.mark.csm
     @pytest.mark.tags("TEST-10877")
-    def test_1012(self):
+    @CTFailOn(error_handler)
+    def test_1012_delete_diff_acc(self):
         """
         Verify that appropriate error msg should be returned when s3 account tries to
         delete different s3 account
@@ -125,7 +136,8 @@ class TestCliS3ACC:
 
     @pytest.mark.csm
     @pytest.mark.tags("TEST-10869")
-    def test_1003(self):
+    @CTFailOn(error_handler)
+    def test_1003_create_acc_invalid_passwd(self):
         """
         Test that appropriate error should be returned when CSM user/admin enters invalid password
         while creating S3 account
@@ -144,7 +156,8 @@ class TestCliS3ACC:
 
     @pytest.mark.csm
     @pytest.mark.tags("TEST-10870")
-    def test_1005(self):
+    @CTFailOn(error_handler)
+    def test_1005_create_duplicate_acc(self):
         """
         Test that appropriate error should be thrown when CSM user/admin tries to
         create duplicate S3 user
@@ -167,7 +180,8 @@ class TestCliS3ACC:
 
     @pytest.mark.csm
     @pytest.mark.tags("TEST-10871")
-    def test_1007(self):
+    @CTFailOn(error_handler)
+    def test_1007_list_acc_invalid_format(self):
         """
         Verify that error msg is returned when command to list s3 users contains
         incorrect/invalid format
@@ -189,7 +203,8 @@ class TestCliS3ACC:
 
     @pytest.mark.csm
     @pytest.mark.tags("TEST-10873")
-    def test_1009(self):
+    @CTFailOn(error_handler)
+    def test_1009_no_on_deletion(self):
         """
         Verify that s3 account is not deleted when user selects "no" on confirmation
         :avocado: tags=s3_account_user_cli
@@ -220,7 +235,8 @@ class TestCliS3ACC:
 
     @pytest.mark.csm
     @pytest.mark.tags("TEST-10874")
-    def test_1010(self):
+    @CTFailOn(error_handler)
+    def test_1010_delete_multiple_acc(self):
         """
         verify that appropriate error should be returned when S3 account user try to
         delete different multiple s3 accounts simultaneously
@@ -261,7 +277,8 @@ class TestCliS3ACC:
 
     @pytest.mark.csm
     @pytest.mark.tags("TEST-10875")
-    def test_1011(self):
+    @CTFailOn(error_handler)
+    def test_1011_delete_invalid_acc(self):
         """
         Verify that appropriate error msg should be returned when command to delete s3 user contains
         incorrect/invalid account_name
@@ -291,7 +308,8 @@ class TestCliS3ACC:
 
     @pytest.mark.csm
     @pytest.mark.tags("TEST-10881")
-    def test_1144(self):
+    @CTFailOn(error_handler)
+    def test_1144_acc_login_with_param(self):
         """
         Test that S3 account is able to login to csmcli passing username as parameter
         """
@@ -316,7 +334,8 @@ class TestCliS3ACC:
 
     @pytest.mark.csm
     @pytest.mark.tags("TEST-10883")
-    def test_1147(self):
+    @CTFailOn(error_handler)
+    def test_1147_s3_acc_login(self):
         """
         Test that s3 account, csm admin and csm user can login to csm interactive session
         without passing username as direct parameter in command
@@ -364,7 +383,8 @@ class TestCliS3ACC:
 
     @pytest.mark.csm
     @pytest.mark.tags("TEST-10885")
-    def test_1916(self):
+    @CTFailOn(error_handler)
+    def test_1916_update_acc_passwd(self):
         """
         Test s3 account user can update his password through csmcli
         """
@@ -397,7 +417,8 @@ class TestCliS3ACC:
 
     @pytest.mark.csm
     @pytest.mark.tags("TEST-10887")
-    def test_4428(self):
+    @CTFailOn(error_handler)
+    def test_4428_delete_acc_with_buckets(self):
         """
         Test that appropriate error should be returned when s3 account user try to delete
         s3 account containing buckets
@@ -424,7 +445,8 @@ class TestCliS3ACC:
 
     @pytest.mark.csm
     @pytest.mark.tags("TEST-10888")
-    def test_6219(self):
+    @CTFailOn(error_handler)
+    def test_6219_create_duplicate_acc_name(self):
         """
         Test that duplicate users should not be created between csm users
         and s3 account users in CSM CLI
