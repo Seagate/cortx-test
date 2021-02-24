@@ -97,12 +97,12 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
     if args.target:
         cmd_line = cmd_line + ["--target=" + args.target]
 
-    if te_tag:
-        cmd_line = cmd_line + [tag]
-
+    # if te_tag:
+    #    cmd_line = cmd_line + [tag]
+    read_metadata = "--readmetadata=" + str(True)
+    cmd_line = cmd_line + [read_metadata]
     cmd_line = cmd_line + ['--build=' + build, '--build_type=' + build_type,
                            '--tp_ticket=' + args.test_plan]
-
     prc = subprocess.Popen(cmd_line, env=env)
     prc.communicate()
 
@@ -249,18 +249,26 @@ def trigger_tests_from_te(args):
         tp_resp = jira_obj.get_issue_details(args.test_plan)  # test plan id
         tp_meta['test_plan_label'] = tp_resp.fields.labels
         te_resp = jira_obj.get_issue_details(args.te_ticket)  # test execution id
-        tp_meta['te_meta'] = dict(te_id=args.te_ticket, te_label=te_resp.fields.labels)
+        if te_resp.fields.components:
+            te_components = te_resp.fields.components[0].name
+        tp_meta['te_meta'] = dict(te_id=args.te_ticket,
+                                  te_label=te_resp.fields.labels,
+                                  te_components=te_components)
         # test_name, test_id, test_id_labels, test_team, test_type
         for test in test_list:
             item = dict()
             item['test_id'] = test
             resp = jira_obj.get_issue_details(test)
-            item['test_name'] = resp['fields']['labels']
-            item['components'] = resp['fields']['components']
+            item['test_name'] = resp.fields.summary
+            item['labels'] = resp.fields.labels
+            if resp.fields.components:
+                component = resp.fields.components[0].name  # First items is of interest
+            else:
+                component = list()
+            item['component'] = component
             test_meta.append(item)
         tp_meta['test_meta'] = test_meta
         json.dump(tp_meta, t_meta, ensure_ascii=False)
-
     _env = os.environ.copy()
 
     if not args.force_serial_run:
