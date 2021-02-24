@@ -9,8 +9,6 @@ from commons.exceptions import CTException
 from libs.csm.rest.csm_rest_core_lib import RestClient
 
 
-
-
 class RestTestLib:
     """
         This is the class for common test library

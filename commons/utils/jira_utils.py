@@ -13,6 +13,7 @@ class JiraTask:
     def __init__(self, jira_id, jira_password):
         self.jira_id = jira_id
         self.jira_password = jira_password
+        self.auth = (self.jira_id, self.jira_password)
         self.headers = {
             'content-type': "application/json",
             'accept': "application/json",
@@ -109,9 +110,64 @@ class JiraTask:
             print("Returned code from xray jira request: {}".format(response.status_code))
         return test_details, te_tag
 
+    def get_test_plan_details(self, test_plan_id: str) -> [dict]:
+        """
+        Summary: Get test executions from test plan.
+
+        Description: Returns dictionary of test executions from test plan.
+
+        Args:
+            test_plan_id:  (str): Test plan number in JIRA
+
+        Returns:
+            List of dictionaries
+            Each dict will have id, key, summary, self, testEnvironments
+            [{"id": 311993, "key": "TEST-16653", "summary": "TE:Auto-Stability-Release 515",
+             "self": "https://jts.seagate.com/rest/api/2/issue/311993",
+             "testEnvironments": ["515_full"]},
+            ]
+        """
+        jira_url = f'https://jts.seagate.com/rest/raven/1.0/api/testplan/' \
+                   f'{test_plan_id}/testexecution'
+        response = requests.get(jira_url, auth=(self.jira_id, self.jira_password))
+        if response.status_code == HTTPStatus.OK:
+            return response.json()
+        return response.text
+
+    def get_issue_details(self, issue_id: str):
+        """
+        Get issue details from Jira.
+        Args:
+            issue_id (str): Bug ID or TEST ID string
+        Returns:
+            {
+                "fields":{
+                    "labels":["Integration","QA"],
+                    "environment":"515",
+                    "components":[
+                        {
+                            "name": "CSM"
+                        },
+                        {
+                            "name": "CFT"
+                        }
+                    ],
+                    "priority":{"name": "Critical"},
+                    "summary": "JIRA Title",
+                    "status": {"name": "In Progress"},
+                    "issuelinks": [{"inwardIssue": {"key": "TEST-5342"}},
+                                   {"inwardIssue": {"key": "TEST-1034"}}]
+                    },
+            }
+        """
+        jira_url = "https://jts.seagate.com/"
+        options = {'server': jira_url}
+        auth_jira = JIRA(options, basic_auth=self.auth)
+        return auth_jira.issue(issue_id)
+
     def update_test_jira_status(self, test_exe_id, test_id, test_status, log_path=''):
         """
-        Update test jira status in xray jira
+        Update test jira status in xray jira.
         """
         state = {}
         status = {}
