@@ -185,7 +185,7 @@ def get_hsbench_data(build, uri, db_name, db_collection):
                 elif row_num == 3:
                     head = f"{configs[0]} Buckets"
                 elif row_num == 4:
-                    head = f"{configs[1]} Objects"
+                    head = f"{int(configs[1]/configs[0])} Objects"
                 elif row_num == 5:
                     head = f"{configs[2]} Sessions"
                 temp_data = [head, f"{operation.capitalize()} {stat}"]

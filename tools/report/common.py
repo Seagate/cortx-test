@@ -37,6 +37,10 @@ def get_db_details():
         print("Could not get performance DB information. Please verify config.ini file")
         sys.exit(1)
 
+    if not db_username or not db_password:
+        print("Please set username and password for performance DB in config.ini file")
+        sys.exit(1)
+
     uri = "mongodb://{0}:{1}@{2}".format(quote_plus(db_username),
                                          quote_plus(db_password),
                                          db_hostname)
@@ -59,14 +63,16 @@ def keys_exists(element, *keys):
     return True
 
 
-def round_off(value, base=25):
+def round_off(value, base=1):
     """
-    Summary: Round off to nearest 25
+    Summary: Round off to nearest int
 
     Input : (number) - number
             (base) - round off to nearest base
     Returns: (int) - rounded off number
     """
+    if value < 1:
+        return round(value, 2)
     if value < 26:
         return int(value)
     return base * round(value / base)
