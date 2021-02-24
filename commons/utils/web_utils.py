@@ -39,8 +39,11 @@ def http_post_request(url: str, data: Any, headers: dict = {}, verify: bool = Fa
     log.info("Execute post request, url - [%s], data - [%s]" % (url, data))
     response = requests.post(url, json=data, headers=headers, verify=verify)
     log.info("Post request {} executed successfully.".format(url))
-    log.debug("response headers - {}" % response.headers)
-    log.debug("response content - {}" % response.json())
+    if response:
+        log.debug("response headers - %s", response.headers)
+        log.debug("response content - %s", str(response.text))
+    else:
+        log.debug("response object is empty")
     return response
 
 
@@ -48,6 +51,9 @@ def http_patch_request(url: str, data: Any, headers: dict = {}, verify: bool = F
     log.info("Execute patch request, url - [%s], data - [%s]" % (url, data))
     response = requests.patch(url, json=data, headers=headers, verify=verify)
     log.info("Patch request {} executed successfully.".format(url))
-    log.debug("response headers - {}" % response.headers)
-    log.debug("response content - {}" % response.json())
+    if response:
+        log.debug("response headers - %s", response.headers)
+        log.debug("response content - %s", str(response.text))
+    else:
+        log.debug("response object is empty")
     return response
