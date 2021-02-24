@@ -54,7 +54,7 @@ ras_sspl_alert:
   csm_error_msg: "Failed to get alerts using CSM REST API"
   csm_alert_gen_delay: 60
   default_mem_usage: 80
-  start_rmq: False
+  start_rmq: True
   selinux_key: "selinux"
   selinux_disabled: "disabled"
   selinux_enforced: "enforced"

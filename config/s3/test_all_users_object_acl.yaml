@@ -1,0 +1,65 @@
+all_users_obj_acl:
+  group_uri: "uri=http://acs.amazonaws.com/groups/global/AllUsers"
+  file_path: "/home/all_users_obj_acl.txt"
+  mb_count: 5
+  bucket_name: "allusersobjacl-bkt"
+  obj_name: "allusersobj"
+test_695:
+  permission: "READ"
+test_757:
+  permission: "READ"
+test_697:
+  permission: "READ"
+test_698:
+  permission: "READ"
+  err_message: "Access Denied"
+test_699:
+  permission: "READ"
+  acl: "private"
+  err_message: "Access Denied"
+test_700:
+  permission: "WRITE"
+test_701:
+  permission: "WRITE"
+test_702:
+  permission: "WRITE"
+  err_message: "AccessDenied"
+test_703:
+  permission: "WRITE"
+  acl: "private"
+  err_message: "AccessDenied"
+test_704:
+  permission: "READ_ACP"
+test_758:
+  permission: "WRITE"
+  err_message: "AccessDenied"
+test_705:
+  permission: "READ_ACP"
+  err_message: "AccessDenied"
+test_706:
+  permission: "READ_ACP"
+test_707:
+  permission: "READ_ACP"
+  acl: "private"
+  err_message: "AccessDenied"
+test_708:
+  permission: "WRITE_ACP"
+test_709:
+  permission: "WRITE_ACP"
+  err_message: "AccessDenied"
+test_710:
+  permission: "WRITE_ACP"
+  err_message: "AccessDenied"
+test_711:
+  permission: "WRITE_ACP"
+test_712:
+  permission: "FULL_CONTROL"
+test_713:
+  permission: "FULL_CONTROL"
+test_714:
+  permission: "FULL_CONTROL"
+test_715:
+  permission: "FULL_CONTROL"
+  new_permission: "WRITE_ACP"
+
+

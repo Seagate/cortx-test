@@ -98,8 +98,7 @@ SHOW_DISKS_CMD = "show disks"
 # RAS Commands
 PCS_RESOURCE_DISABLE_ENABLE = "pcs resource {} {}"
 SYSTEMCTL_STATUS = "systemctl status {}"
-START_RABBITMQ_READER_CMD = "python3 /opt/seagate/sspl/low-level/tests/" \
-                            "manual/rabbitmq_reader.py {} {} {}"
+START_RABBITMQ_READER_CMD = "python3 /root/rabbitmq_reader.py {} {} {}"
 REMOVE_UNWANTED_CONSUL = "/usr/bin/consul kv delete --recurse SSPL_"
 SHOW_DISKS_CMD = "show disks"
 CMD_SHOW_DISK_GROUP = "show disk-groups"
@@ -110,7 +109,7 @@ CHECK_SSPL_LOG_FILE = "tail -f /var/log/cortx/sspl/sspl.log > '{}' 2>&1 &"
 SSPL_SERVICE_CMD = "journalctl -xefu sspl-ll.service"
 SET_DRIVE_STATUS_CMD = "set expander-phy encl {} controller {} type drive phy" \
                        " {} {}"
-ENCRYPT_PASSWORD_CMD = "./encryptor_updated.py encrypt {} {} storage_enclosure"
+ENCRYPT_PASSWORD_CMD = "python3 encryptor.py encrypt {} {} storage_enclosure"
 GET_CLUSTER_ID_CMD = "salt-call grains.get cluster_id"
 COPY_FILE_CMD = "cp -rfv {} {}"
 KILL_PROCESS_CMD = "pkill -f {}"
@@ -184,6 +183,7 @@ PCS_RESOURCE_SHOW_CMD = "pcs resource show"
 PCS_RESOURCE_RESTART_CMD = "pcs resource restart {}"
 PCS_RESOURCE_ENABLE_CMD = "pcs resource enable {}"
 PCS_RESOURCE_DISABLE_CMD = "pcs resource disable {}"
+PCS_RESOURCE_STATUS_CMD = "pcs resource show {}"
 PGREP_CMD = "sudo pgrep {}"
 PKIL_CMD = "pkill {}"
 RPM_GREP_CMD = "rpm -qa | grep {}"
@@ -193,6 +193,8 @@ SYSTEM_CTL_STATUS_CMD = "systemctl status {}"
 SYSTEM_CTL_RESTART_CMD = "systemctl restart {}"
 SYSTEM_CTL_START_CMD = "systemctl start {}"
 SYSTEM_CTL_STOP_CMD = "systemctl stop {}"
+GET_PID_CMD = "systemctl status {}.service | grep PID"
+KILL_CMD = "kill -9 {}"
 
 # S3IAMCLI Commands
 BUNDLE_CMD = "sh /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh"
@@ -279,3 +281,6 @@ DEL_ACNT_USING_TEMP_CREDS_FORCE = "s3iamcli deleteaccount -n {} " \
 S3_UPLOAD_FILE_CMD = "aws s3 cp {0} s3://{1}/{2}"
 S3_UPLOAD_FOLDER_CMD = "aws s3 cp {0} s3://{1}/ --recursive --profile {2}"
 S3_DOWNLOAD_BUCKET_CMD = "aws s3 cp --recursive s3://{} {} --profile {}"
+
+#Linux System Commands
+CMD_MKDIR = "mkdir -p {}"

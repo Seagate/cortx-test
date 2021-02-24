@@ -14,7 +14,7 @@ Click On Cancel Button
 Click On Confirm Button
     [Documentation]  Perform click operation on confirm pop up button
     Sleep  5s
-    Wait Until Element Is Visible  ${NEW_USER_CONFIRM_OK_BUTTON_ID}  timeout=10
+    Wait Until Element Is Visible  ${NEW_USER_CONFIRM_OK_BUTTON_ID}  timeout=60
     Click button    ${NEW_USER_CONFIRM_OK_BUTTON_ID}
 
 Verify A Form Got Open To Create CSM Users
@@ -242,3 +242,4 @@ Verify IAM User Section Not Present
     Navigate To Page  MANAGE_MENU_ID
     Sleep  1s
     Page Should Not Contain Element  ${IAM_USER_TAB_ID}
+
