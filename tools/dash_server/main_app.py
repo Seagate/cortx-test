@@ -27,8 +27,8 @@ import dash_core_components as dcc
 import dash_html_components as html
 import flask
 from common import app, versions, server
-from callbacks import defect_list_tab_callbacks, exe_report_callbacks
-from callbacks import exe_report_callbacks
+from callbacks import defect_list_tab_callbacks, exe_report_callbacks, \
+    engg_report_callbacks, main_page_callbacks  # pylint: disable=unused-import
 
 
 @server.route('/favicon.ico')

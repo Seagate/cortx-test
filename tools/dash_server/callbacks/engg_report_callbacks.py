@@ -1,4 +1,4 @@
-""" Tab 2: Engineers Report Callbacks."""
+""" Engineers Report Callbacks."""
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -89,12 +89,11 @@ def gen_table_comp_summary(n_clicks, version, build_no, test_system, test_team):
                 build_dict[comp] = issue_df[issue_df.issue_comp == comp].shape[0]
             builds_details.insert(build_dict)
 
-    data_comp_summary = {
+    df_comp_summary = pd.DataFrame({
         "Component": component_list,
         "Current Build": builds_details[0].values(),
-        "Previous Build ": builds_details[1].values(),
-    }
-    df_comp_summary = pd.DataFrame(data_comp_summary)
+        "Previous Build ": builds_details[1].values()
+    })
     comp_summary = dash_table.DataTable(
         id="comp_summary",
         columns=[{"name": i, "id": i} for i in df_comp_summary.columns],

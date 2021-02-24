@@ -1,4 +1,4 @@
-"""Tab 1 : Executive Report Callbacks."""
+"""Executive Report Callbacks."""
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -195,7 +195,7 @@ def gen_table_overall_qa_report(n_clicks, version, build_no, test_system, test_t
         print("Error current build received : {}".format(response))
         current_build = ["-", "-", "-", "-", "-", "-"]
 
-    # TODO Query and change build no to previous build
+    # Query and change build no to previous build
     query_input = {
         "query": {"buildType": version, "buildNo": build_no, "testPlanLabel": test_system,
                   "testTeam": test_team},
@@ -374,23 +374,22 @@ def gen_table_s3_bucket_perf(n_clicks):
     """
     if n_clicks is None:
         raise PreventUpdate
-    else:
-        data_s3_bucket_perf = {
-            "Statistics": ["Write Throughput(MBps)", "Read Throughput(MBps)", "Write Latency(ms)",
-                           "Read Latency(ms)"],
-            "4KB Object": ["1", "2", "3", "4"],
-            "256MB Object": ["1", "2", "3", "4"],
-        }
-        df_s3_bucket_perf = pd.DataFrame(data_s3_bucket_perf)
-        s3_bucket_perf = dash_table.DataTable(
-            id="code_maturity",
-            columns=[{"name": i, "id": i} for i in df_s3_bucket_perf.columns],
-            data=df_s3_bucket_perf.to_dict('records'),
-            style_header=common.dict_style_header,
-            style_data_conditional=[{'if': {'row_index': 'odd'}, 'backgroundColor': '#F8F8F8'},
-                                    {'if': {'column_id': "Statistics"},
-                                     'backgroundColor': "#b9b9bd"}
-                                    ],
-            style_cell=common.dict_style_cell
-        )
-        return s3_bucket_perf
+    data_s3_bucket_perf = {
+        "Statistics": ["Write Throughput(MBps)", "Read Throughput(MBps)", "Write Latency(ms)",
+                       "Read Latency(ms)"],
+        "4KB Object": ["1", "2", "3", "4"],
+        "256MB Object": ["1", "2", "3", "4"],
+    }
+    df_s3_bucket_perf = pd.DataFrame(data_s3_bucket_perf)
+    s3_bucket_perf = dash_table.DataTable(
+        id="code_maturity",
+        columns=[{"name": i, "id": i} for i in df_s3_bucket_perf.columns],
+        data=df_s3_bucket_perf.to_dict('records'),
+        style_header=common.dict_style_header,
+        style_data_conditional=[{'if': {'row_index': 'odd'}, 'backgroundColor': '#F8F8F8'},
+                                {'if': {'column_id': "Statistics"},
+                                 'backgroundColor': "#b9b9bd"}
+                                ],
+        style_cell=common.dict_style_cell
+    )
+    return s3_bucket_perf

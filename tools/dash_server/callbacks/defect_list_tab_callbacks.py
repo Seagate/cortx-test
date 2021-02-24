@@ -1,4 +1,4 @@
-"""Tab 3 : Defect list for Test Execution Callbacks."""
+"""Defect list for Test Execution Callbacks."""
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #

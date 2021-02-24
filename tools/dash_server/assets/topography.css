@@ -1,7 +1,4 @@
-caption,
-detailed_report_tab3,
-perf_graphs_heading
- {
+caption, #detailed_report_tab3, #perf_graphs_heading {
   caption-side: top;
   width: auto;
   text-align: center;
