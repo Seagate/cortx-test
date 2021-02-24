@@ -20,8 +20,6 @@ def parse_args():
                         help="db update required: y/n")
     parser.add_argument("-te", "--te_ticket", type=str,
                         help="jira xray test execution id")
-    parser.add_argument("-tp", "--test_plan", type=str, default='None',
-                        help="jira xray test plan id")
     parser.add_argument("-pe", "--parallel_exe", type=str, default=False,
                         help="parallel_exe: True for parallel, False for sequential")
     parser.add_argument("-tp", "--test_plan", type=str,
@@ -39,14 +37,6 @@ def parse_args():
     parser.add_argument("-f", "--force_serial_run", type=str_to_bool,
                         default=False, nargs='?', const=True,
                         help="Force sequential run if you face problems with parallel run")
-    parser.add_argument('-b', dest="bootstrap_servers",
-                        help="Bootstrap broker(s) (host[:port])")
-    parser.add_argument('-s', dest="schema_registry",
-                        help="Schema Registry (http(s)://host[:port]")
-    parser.add_argument('-t', dest="topic", default="example_serde_json",
-                        help="Topic name")
-    parser.add_argument('-g', dest="group", default="example_serde_json",
-                        help="Consumer group")
     return parser.parse_args()
 
 
@@ -162,16 +152,14 @@ def get_ticket_meta_from_test_list():
     pass
 
 
-def get_tests_from_te(args, test_type='ALL'):
+def get_tests_from_te(jira_obj, args, test_type='ALL'):
     """
     Get tests from given test execution
     """
-    jira_id, jira_pwd = runner.get_jira_credential()
-    jira_obj = JiraTask(jira_id, jira_pwd)
     test_list, tag = jira_obj.get_test_ids_from_te(args.te_ticket, test_type)
     if len(test_list) == 0 or tag == "":
         raise EnvironmentError("Please check TE provided, tests or tag is missing")
-    return test_list
+    return test_list, tag
 
 
 def trigger_unexecuted_tests(args, test_list):
@@ -238,11 +226,10 @@ def trigger_tests_from_te(args):
     """
     jira_id, jira_pwd = runner.get_jira_credential()
     jira_obj = JiraTask(jira_id, jira_pwd)
-    test_list, te_tag = jira_obj.get_test_ids_from_te(args.te_ticket)
-    #  test_list = get_tests_from_te(args)
-    if len(test_list) == 0 or te_tag == "":
-        assert False, "Please check TE provided, tests or tag is missing"
-
+    # test_list, te_tag = jira_obj.get_test_ids_from_te(args.te_ticket)
+    # if len(test_list) == 0 or te_tag == "":
+    #     assert False, "Please check TE provided, tests or tag is missing"
+    test_list, te_tag = get_tests_from_te(jira_obj, args)
     # writing the data into the file
     with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_TEST_LIST), 'w') \
             as test_file:

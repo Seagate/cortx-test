@@ -23,6 +23,8 @@ class JiraTask:
         """
         Get test jira ids available in test execution jira
         """
+        import pdb
+        pdb.set_trace()
         try:
             jira_url = 'https://jts.seagate.com/rest/raven/1.0/testruns?testExecKey=' + test_exe_id
             response = requests.get(jira_url, auth=(self.jira_id, self.jira_password))
@@ -71,6 +73,11 @@ class JiraTask:
                                 if str(test['status']) == 'ABORTED':
                                     test_list.append(test['key'])
             return test_list, te_tag
+        elif response.status_code == HTTPStatus.UNAUTHORIZED:
+            print('Unauthorized access')
+        elif response.status_code == HTTPStatus.SERVICE_UNAVAILABLE:
+            print('Service Unavailable')
+        return test_list, te_tag
 
     def get_test_list_from_te(self, test_exe_id, status='ALL'):
         """
