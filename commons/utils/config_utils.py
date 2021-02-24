@@ -29,10 +29,11 @@ import json
 import shutil
 import re
 import yaml
-from configparser import ConfigParser, MissingSectionHeaderError
+from configparser import ConfigParser, MissingSectionHeaderError, NoSectionError
 from defusedxml.cElementTree import parse
 import commons.errorcodes as cterr
 from commons.exceptions import CTException
+from commons import pswdmanager
 
 LOG = logging.getLogger(__name__)
 MAIN_CONFIG_PATH = "config/main_config.yaml"
@@ -40,7 +41,8 @@ MAIN_CONFIG_PATH = "config/main_config.yaml"
 
 def read_yaml(fpath: str) -> tuple:
     """
-    Read yaml file and return dictionary/list of the content
+    Read yaml file and return dictionary/list of the content.
+
     :param str fpath: Path of yaml file to be read
     :return: Boolean, Data
     """
@@ -65,7 +67,8 @@ def write_yaml(
         write_data: dict or list,
         backup: bool = True) -> tuple:
     """
-    This functions overwrites the content of given yaml file with given data
+    Function overwrites the content of given yaml file with given data.
+
     :param str fpath: yaml file path to be overwritten
     :param dict/list write_data: data to be written in yaml file
     :param bool backup: if set False, backup will not be taken before
@@ -90,6 +93,8 @@ def write_yaml(
 
 def create_content_json(path: str, data: object) -> str:
     """
+    Function to create json file.
+
     :param path: json file path is to be created.
     :param data: Data to write in json file
     :return: path of the file.
@@ -102,6 +107,8 @@ def create_content_json(path: str, data: object) -> str:
 
 def read_content_json(fpath: str) -> dict:
     """
+    Function to read json file.
+
     :param fpath: Path of the json file
     :return: Data of the json file
     """
@@ -114,7 +121,8 @@ def read_content_json(fpath: str) -> dict:
 def parse_xml_controller(filepath: str, field_list: list, xml_tag: str =
                          "PROPERTY") -> tuple:
     """
-    This function parses xml file and converts it into nested dictionary.
+    Function parses xml file and converts it into nested dictionary.
+
     :param filepath: File path of the xml file to be parsed
     :type: str
     :param field_list: List of the required fields
@@ -162,7 +170,8 @@ def parse_xml_controller(filepath: str, field_list: list, xml_tag: str =
 
 def get_config(path: str, section: str = None, key: str = None) -> list or str:
     """
-    Get config file value as per the section and key
+    Get config file value as per the section and key.
+
     :param path: File path
     :param section: Section name
     :param key: Section key name
@@ -172,9 +181,10 @@ def get_config(path: str, section: str = None, key: str = None) -> list or str:
         config = ConfigParser()
         config.read(path)
         if section and key:
-            LOG.debug(config.get(section, key))
+            # LOG.debug(config.get(section, key))
             return config.get(section, key)
-        LOG.debug(config.items(section))
+        # LOG.debug(config.items(section))
+
         return config.items(section)
     except MissingSectionHeaderError:
         key_str = "{}=".format(key)
@@ -187,7 +197,8 @@ def get_config(path: str, section: str = None, key: str = None) -> list or str:
 
 def update_config_ini(path: str, section: str, key: str, value: str) -> bool:
     """
-    Update config file value as per the section and key
+    Update config file value as per the section and key.
+
     :param path: File path
     :param section: Section name
     :param key: Section key name
@@ -197,7 +208,12 @@ def update_config_ini(path: str, section: str, key: str, value: str) -> bool:
     config = ConfigParser()
     config.read(path)
     try:
-        config.set(section, key, value)
+        try:
+            config.set(section, key, value)
+        except NoSectionError as error:
+            LOG.warning(error)
+            config.add_section(section)
+            config.set(section, key, value)
         with open(path, "w") as configfile:
             config.write(configfile)
     except TypeError as error:
@@ -209,7 +225,8 @@ def update_config_ini(path: str, section: str, key: str, value: str) -> bool:
 def update_config_helper(filename: str, key: str, old_value: str,
                          new_value: str, delimiter: str) -> tuple:
     """
-    helper method for update_cfg_based_on_separator
+    helper method for update_cfg_based_on_separator.
+
     :param filename: file to update
     :param key: key in file
     :param old_value: old value of key
@@ -264,7 +281,8 @@ def update_config_helper(filename: str, key: str, old_value: str,
 def update_cfg_based_on_separator(filename: str, key: str, old_value: str,
                                   new_value: str) -> tuple:
     """
-    Editing a file provided with : or = separator
+    Editing a file provided with : or = separator.
+
     :param filename: file to update
     :param key: key in file
     :param old_value: old value of key
@@ -300,7 +318,8 @@ def update_cfg_based_on_separator(filename: str, key: str, old_value: str,
 
 def read_write_config(config: str or int, path: str) -> None:
     """
-    read and update values from source_file to destination config
+    read and update values from source_file to destination config.
+
     :param config: key from source_file
     :param path: path of destination config
     :type path: str
@@ -339,73 +358,10 @@ def read_write_config(config: str or int, path: str) -> None:
 
 def update_configs(all_configs: dict) -> None:
     """
-    Update all configs mentioned in ALL_CONFIGS with values of MAIN_CONFIG_PATH
+    Update all configs mentioned in ALL_CONFIGS with values of MAIN_CONFIG_PATH.
+
     :param all_configs: Dictionary of paths of all config files
     :type all_configs: dict
     """
     for conf in all_configs.keys():
         read_write_config(conf, all_configs[conf])
-
-def get_config_yaml(fpath: str = 'config.yaml') -> dict:
-    """Reads the config and decrypts the passwords
-
-    :param fpath: configuration file path
-    :return [type]: dictionary containing config data
-    """
-    with open(fpath) as fin:
-        data = yaml.safe_load(fin)
-        data['end'] = 'end'
-        pswdmanager.decrypt_all_passwd(data)
-    return data
-
-
-def get_config_db(setup_query={"setupname":"automation"}):
-    """Reads the configuration from the database
-
-    :param cname:collection which will be read
-    """
-    sys_coll = _get_collection_obj()
-    data = sys_coll.find_one(setup_query)
-    data.pop('_id')
-    return data
-
-def _get_collection_obj(cpath = "tools\\rest_server\\config.ini",
-                        db_name="cft_test_results",
-                        collection = "r2_systems"):
-    db_hostname = get_config(cpath,"MongoDB","db_hostname")
-    db_creds = pswdmanager.get_secrets(secret_ids=['DBUSER', 'DBPSWD'])
-    MONGODB_URI = "mongodb://{0}:{1}@{2}"
-    uri = MONGODB_URI.format(quote_plus(db_creds['DBUSER']),quote_plus(db_creds['DBPSWD']), db_hostname)
-    client = MongoClient(uri)
-    db = client[db_name]
-    collection_obj = db[collection]
-    return collection_obj
-
-def update_config_db(setup_query):
-    """[summary]
-
-    :param setup_query:
-    :return [type]:
-    """
-    sys_coll = _get_collection_obj()
-    data = read_content_json("common_config.json")
-    data = sys_coll.update_document(setup_query, data)
-    return data
-
-def get_config_wrapper(**kwargs):
-    """Get the configuration from the database as well as yaml and merge.
-    It is expected that duplicate data should not be present between DB and yaml
-    """
-    flag = False
-    data = {}
-    if "fpath" in kwargs:
-        flag = True
-        data.update(get_config_yaml(fpath=kwargs['fpath']))
-    if "setup_query" in kwargs:
-        flag = True
-        data.update(get_config_db(setup_query=kwargs['setup_query']))
-    if not flag:
-        print("Invalid keyword argument")
-        raise ValueError("Invalid argument")
-    return data
-

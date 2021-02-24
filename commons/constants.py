@@ -39,10 +39,10 @@ MEM_USAGE_KEY = "host_memory_usage_threshold"
 DISK_ALERT_KEY = "diskUsedPercentage"
 LAST_SEL_INDEX = "cd /var/cortx/sspl/data/server && cat last_sel_index"
 CHECK_SSPL_LOG_FILE = "tail -f /var/log/cortx/sspl/sspl.log > '{}' 2>&1 &"
-RABBIT_MQ_FILE = "/opt/seagate/sspl/low-level/tests/manual/rabbitmq_reader.py"
+RABBIT_MQ_FILE = "/root/rabbitmq_reader.py"
 MANUAL_PATH = "/opt/seagate/sspl/low-level/tests/manual/"
 RABBIT_MQ_LOCAL_PATH = "scripts/server_scripts/rabbitmq_reader.py"
-ENCRYPTOR_FILE_PATH = "scripts/server_scripts/encryptor_updated.py"
+ENCRYPTOR_FILE_PATH = "scripts/server_scripts/encryptor.py"
 STORAGE_ENCLOSURE_PATH = "/opt/seagate/cortx/provisioner/pillar/components" \
                         "/storage_enclosure.sls"
 CLUSTER_PATH = "/opt/seagate/cortx/provisioner/pillar/components/cluster.sls"
@@ -58,7 +58,7 @@ LOG_STORE_PATH = "sspl/config/SYSTEM_INFORMATION"
 KV_STORE_DISK_USAGE = "sspl/config/NODEDATAMSGHANDLER"
 SSPL_STATE_CMD = "cat /var/cortx/sspl/data/state.txt"
 KV_STORE_LOG_LEVEL = "sspl/config/SYSTEM_INFORMATION"
-SECRET_KEY = "/controller/secret"
+SECRET_KEY = "controller/secret"
 IEM_DIRECTORY = "/opt/seagate/cortx/iem/iec_mapping"
 SSPL_LOG_FILE_PATH = "/var/log/cortx/sspl/sspl.log"
 COMMON_CONFIG_PATH = "config/common_config.yaml"
@@ -74,6 +74,10 @@ URL_STREAM_UTILITIES = "http://utils-stream.sw.lcd.colo.seagate.com/utility" \
 NO_CMD_RECEIVED_MSG = "No command response received !!!"
 PCS_SSPL_SECTION = " Master/Slave Set: sspl-master [sspl]\n"
 RAS_CFG = "config/ras_config.yaml"
+CLUSTER_STATUS_MSG = "cluster is not currently running on this node"
+NODE_RANGE_START = 1
+NODE_RANGE_END = 3
+NODE_PREFIX = "eosnode-"
 
 """ S3 constants """
 const.S3_CONFIG = "/opt/seagate/cortx/s3/conf/s3config.yaml"
@@ -86,7 +90,6 @@ const.CFG_FILES = ["/etc/haproxy/haproxy.cfg",
                    "/opt/seagate/cortx/s3/s3startsystem.sh"]
 const.AUTHSERVER_FILE = "/opt/seagate/cortx/auth/resources/authserver.properties"
 const.SCRIPT_PATH = "cd /opt/seagate/cortx/auth/scripts"
-
 
 
 class Rest:
@@ -105,7 +108,7 @@ class Rest:
     USER_NAME = "user_name"
     USER_ID = "user_id"
     IAM_USER = "test_iam_user"
-    IAM_PASSWORD = ""
+    IAM_PASSWORD = "Seagate@123"
     ARN = "arn"
     BAD_REQUEST = 400
     UNAUTHORIZED = 401

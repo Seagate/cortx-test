@@ -16,8 +16,6 @@ test_10010:
 test_10011:
   bucket_name: "bucket-10011"
   bucket_permission: "FULL_CONTROL"
-  obj_name: "testobj"
-  file_path: "/home/testfile"
   file_size: 1
 test_10012:
   err_message: "Required parameter bucket_name not set"

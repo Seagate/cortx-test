@@ -21,7 +21,9 @@
 #
 
 import logging
+import json
 import time
+import re
 from typing import Tuple, List, Any
 from commons.helpers.host import Host
 from commons import commands
@@ -255,6 +257,40 @@ class Health(Host):
                 return True, "Server is Online"
         return True, "Server is Online"
 
+    def hctl_status_json(self):
+        """
+        This will Check Node status, Logs the output in debug.log file and
+        returns the response in json format.
+        :param str node: Node on which status to be checked
+        :return: Json response of stdout
+        :rtype: dict
+        """
+        hctl_command = commands.HCTL_STATUS_CMD_JSON
+        LOG.info("Executing Command %s on node %s",
+            hctl_command, self.hostname)
+        result = self.execute_cmd(hctl_command,read_lines=False)
+        result = result.decode("utf-8")
+        LOG.info("Response of the command %s:\n %s ",
+            hctl_command, result)
+        result = json.loads(result)
+
+        return result
+
+    def get_sys_capacity(self):
+        """Parse the hctl response to extract used, available and total capacity
+
+        :return [tuple]: total_cap,avail_cap,used_cap
+        """
+        response = self.hctl_status_json()
+        LOG.info("HCTL response : \n%s", response)
+        avail_cap = response['filesystem']['stats']['fs_avail_disk']
+        LOG.info("Available Capacity : %s",avail_cap)
+        total_cap = response['filesystem']['stats']['fs_total_disk']
+        LOG.info("Total Capacity : %s",total_cap)
+        used_cap = total_cap - avail_cap
+        LOG.info("Used Capacity : %s", used_cap)
+        return total_cap, avail_cap, used_cap
+
     def restart_pcs_resource(self, resource: str, wait_time: int = 30) \
             -> Tuple[bool, str]:
         """
@@ -269,9 +305,31 @@ class Health(Host):
         cmd = commands.PCS_RESOURCE_RESTART_CMD.format(resource)
 
         resp = self.execute_cmd(cmd, read_lines=True)
+        resp = re.sub(r'[^\w-]', ' ', resp[0]).strip()
         time.sleep(wait_time)
         success_msg = "{} successfully restarted".format(resource)
-        if success_msg in resp:
+        if success_msg == resp:
+            LOG.info("Successfully restarted service %s", format(resource))
             return True, resp
 
         return False, resp
+
+    def pcs_service_status(self, resource: str = None) -> Tuple[bool, str]:
+        """
+        Get status of given resource using pcs resource command
+
+        :param resource: resource name from pcs resource
+        :return: tuple with boolean and response/error
+        :rtype: tuple
+        """
+        cmd = commands.PCS_RESOURCE_STATUS_CMD.format(resource)
+        LOG.info("Running command : %s", cmd)
+
+        resp = self.execute_cmd(cmd, read_lines=True)
+        resp = ''.join(resp)
+        check_msg = "Stopped"
+        if check_msg in resp:
+            LOG.info("%s is in stopped state", format(resource))
+            return False, resp
+
+        return True, resp

@@ -24,7 +24,8 @@ class RestIamUser(Base):
                         password=const.IAM_PASSWORD,
                         require_reset_val="true"):
         """
-        This function will create payload according to the required type for creating Iam user.
+        This function will create payload according to the required type for
+        creating Iam user.
         :param user: type of user to create payload.
         :param password: password of new user
         :param require_reset_val: set reset value to true or false
@@ -32,33 +33,35 @@ class RestIamUser(Base):
         """
         try:
             self._log.debug("iam user")
-            payload = self.template_payload.substitute(iamuser=user,
-                                                       iampassword=password,
-                                                       requireresetval=require_reset_val
-                                                       )
+            payload = self.template_payload.substitute(
+                iamuser=user,
+                iampassword=password,
+                requireresetval=require_reset_val)
             iam_user_payload = payload
             endpoint = self.config["IAM_users_endpoint"]
-            self._log.debug("Endpoint for iam user is {}".format(endpoint))
+            self._log.debug("Endpoint for iam user is %s", endpoint)
 
             self.headers.update(self.config["Login_headers"])
 
             # Fetching api response
             return self.restapi.rest_call(
-                "post", endpoint=endpoint, data=iam_user_payload, headers=self.headers)
+                "post", endpoint=endpoint, data=iam_user_payload,
+                headers=self.headers)
 
         except BaseException as error:
-            self._log.error("{0} {1}: {2}".format(
-                self.exception_error,
-                RestIamUser.create_iam_user.__name__,
-                error))
+            self._log.error("%s %s: %s",
+                            self.exception_error,
+                            RestIamUser.create_iam_user.__name__,
+                            error)
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR,
-                error.args[0])
+                error.args[0]) from error
 
     @Base.authenticate_and_login
     def delete_iam_user(self, user=None):
         """
-        This function will delete payload according to the required type for deleting Iam user.
+        This function will delete payload according to the required type for
+        deleting Iam user.
         :param user: type of user to create payload.
         :return: payload
         """
@@ -68,7 +71,7 @@ class RestIamUser(Base):
             self._log.debug("iam user")
             endpoint = '/'.join((self.config["IAM_users_endpoint"], user))
             self._log.debug(
-                "Endpoint for delete iam user is {}".format(endpoint))
+                "Endpoint for delete iam user is %s", endpoint)
 
             self.headers.update(self.config["Login_headers"])
 
@@ -77,15 +80,17 @@ class RestIamUser(Base):
                 "delete", endpoint=endpoint, headers=self.headers)
 
         except BaseException as error:
-            self._log.error("{0} {1}: {2}".format(
-                self.exception_error,
-                RestIamUser.delete_iam_user.__name__,
-                error))
+            self._log.error("%s %s: %s",
+                            self.exception_error,
+                            RestIamUser.delete_iam_user.__name__,
+                            error)
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR,
-                error.args[0])
+                error.args[0]) from error
 
-    def create_and_verify_iam_user_response_code(self, user=const.IAM_USER + str(int(time.time())),
+    def create_and_verify_iam_user_response_code(self,
+                                                 user=const.IAM_USER +
+                                                 str(int(time.time())),
                                                  password=const.IAM_PASSWORD,
                                                  expected_status_code=200):
         """
@@ -100,16 +105,17 @@ class RestIamUser(Base):
                 user=user, password=password, login_as="s3account_user")
             if response.status_code != expected_status_code:
                 self._log.error(
-                    "Response is not 200, Response={}".format(
-                        response.status_code))
+                    "Response is not 200, Response=%s",
+                    response.status_code)
                 return False, response.json()
             return True, response.json()
         except Exception as error:
-            self._log.error("{0} {1}: {2}".format(
-                self.exception_error,
-                RestIamUser.create_and_verify_iam_user_response_code.__name__,
-                error))
-            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
+            self._log.error("%s %s: %s",
+                            self.exception_error,
+                            RestIamUser.create_and_verify_iam_user_response_code.__name__,
+                            error)
+            raise CTException(
+                err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
 
     @Base.authenticate_and_login
     def iam_user_login(self, user=None,
@@ -127,22 +133,24 @@ class RestIamUser(Base):
             endpoint = self.config["rest_login_endpoint"]
             headers = self.config["Login_headers"]
             self._log.debug(f"endpoint  {endpoint}")
-            payload = Template(const.IAM_USER_LOGIN_PAYLOAD).substitute(username=user,
-                                                                             password=password)
+            payload = Template(const.IAM_USER_LOGIN_PAYLOAD).substitute(
+                username=user,
+                password=password)
 
             # Fetch and verify response
             response = self.restapi.rest_call(
-                "post", endpoint, headers=headers, data=payload, save_json=False)
-            self._log.debug(f"response :  {response}")
+                "post", endpoint, headers=headers,
+                data=payload, save_json=False)
+            self._log.debug("response :  %s", response)
 
             return response.status_code
         except BaseException as error:
-            self._log.error("{0} {1}: {2}".format(
-                self.exception_error,
-                RestIamUser.iam_user_login.__name__,
-                error))
+            self._log.error("%s %s: %s",
+                            self.exception_error,
+                            RestIamUser.iam_user_login.__name__,
+                            error)
             raise CTException(
-                err.CSM_REST_AUTHENTICATION_ERROR, error.args[0])
+                err.CSM_REST_AUTHENTICATION_ERROR, error.args[0]) from error
 
     @Base.authenticate_and_login
     def list_iam_users(self):
@@ -154,7 +162,7 @@ class RestIamUser(Base):
         try:
             self._log.debug("Listing of iam users")
             endpoint = self.config["IAM_users_endpoint"]
-            self._log.debug("Endpoint for iam user is {}".format(endpoint))
+            self._log.debug("Endpoint for iam user is %s", endpoint)
 
             self.headers.update(self.config["Login_headers"])
 
@@ -163,17 +171,18 @@ class RestIamUser(Base):
                 "get", endpoint=endpoint, headers=self.headers)
 
         except BaseException as error:
-            self._log.error("{0} {1}: {2}".format(
-                self.exception_error,
-                RestIamUser.list_iam_users.__name__,
-                error))
+            self._log.error("%s %s: %s",
+                            self.exception_error,
+                            RestIamUser.list_iam_users.__name__,
+                            error)
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR,
-                error.args[0])
+                error.args[0]) from error
 
     def verify_unauthorized_access_to_csm_user_api(self):
         """
-        Verifying that IAM login to CSM fails and unauthorised access to CSM REST API fails.
+        Verifying that IAM login to CSM fails and unauthorised access to CSM
+        REST API fails.
         :return: True/False
         :rtype: bool
         """
@@ -195,18 +204,20 @@ class RestIamUser(Base):
 
             self._log.debug("Verifying IAM login to CSM fails")
             headers = {}
-            self._log.debug("Logging in as iam user {}".format(user))
+            self._log.debug("Logging in as iam user %s", user)
             payload_login = {"username": user, "password": const.IAM_PASSWORD}
-            response = self.restapi.rest_call(request_type="post",
-                                              endpoint=self.config["rest_login_endpoint"],
-                                              data=json.dumps(payload_login), headers=self.config["Login_headers"])
+            response = self.restapi.rest_call(
+                request_type="post",
+                endpoint=self.config["rest_login_endpoint"],
+                data=json.dumps(payload_login),
+                headers=self.config["Login_headers"])
             if response.status_code != const.UNAUTHORIZED:
                 self._log.error(
-                    "IAM user log in to CSM should fail!But got response {}".format(response))
+                    "IAM user log in to CSM should fail!But got response %s", response)
                 return False
             else:
                 self._log.debug(
-                    "IAM user log in to CSM failed with expected response {}".format(response))
+                    "IAM user log in to CSM failed with expected response %s", response)
 
             endpoint = self.config["csmuser_endpoint"]
 
@@ -216,14 +227,15 @@ class RestIamUser(Base):
             response = self.restapi.rest_call(
                 request_type="get", endpoint=endpoint, headers=headers)
             self._log.debug(
-                "response returned is:\n {}".format(response))
+                "response returned is:\n %s", response)
             if response.status_code != const.UNAUTHORIZED:
                 self._log.error(
-                    "GET CSM users request should fail without valid authorization token!But got response {}".format(response))
+                    "GET CSM users request should fail without valid "
+                    "authorization token!But got response %s", response)
                 return False
             else:
                 self._log.debug(
-                    "Unauthorised GET CSM users request failed with expected response {}".format(response))
+                    "Unauthorised GET CSM users request failed with expected response %s", response)
 
             self._log.debug(
                 "Verifying unauthorised access to CREATE CSM user API request")
@@ -233,16 +245,18 @@ class RestIamUser(Base):
             user_data = const.USER_DATA
             user_data = user_data.replace("testusername", data["username"]).replace(
                 "user_role", data["roles"][0])
-            self._log.debug("Payload for CSM user is {}".format(user_data))
+            self._log.debug("Payload for CSM user is %s", user_data)
             response = self.restapi.rest_call(
                 "post", endpoint=endpoint, data=user_data, headers=headers)
             if response.status_code != const.UNAUTHORIZED:
                 self._log.error(
-                    "POST CSM user request should fail without valid authorization token!But got response {}".format(response))
+                    "POST CSM user request should fail without valid "
+                    "authorization token!But got response %s", response)
                 return False
             else:
                 self._log.debug(
-                    "Unauthorised POST CSM user request failed with expected response {}".format(response))
+                    "Unauthorised POST CSM user request failed with expected "
+                    "response %s", response)
 
             self._log.debug(
                 "Verifying unauthorised access to GET CSM user API request")
@@ -251,11 +265,13 @@ class RestIamUser(Base):
                 request_type="get", endpoint=endpoint_single_user, headers=headers)
             if response.status_code != const.UNAUTHORIZED:
                 self._log.error(
-                    "GET CSM user request should fail without valid authorization token!But got response {}".format(response))
+                    "GET CSM user request should fail without valid "
+                    "authorization token!But got response %s", response)
                 return False
             else:
                 self._log.debug(
-                    "Unauthorised GET CSM user request failed with expected response {}".format(response))
+                    "Unauthorised GET CSM user request failed with expected "
+                    "response %s", response)
 
             self._log.debug(
                 "Verifying unauthorised access to update(PATCH) CSM user API request")
@@ -267,46 +283,55 @@ class RestIamUser(Base):
                 request_type="patch", endpoint=endpoint_single_user, data=payload, headers=headers)
             if response.status_code != const.UNAUTHORIZED:
                 self._log.error(
-                    "PATCH CSM user request should fail without valid authorization token!But got response {}".format(response))
+                    "PATCH CSM user request should fail without valid "
+                    "authorization token!But got response %s", response)
                 return False
             else:
                 self._log.debug(
-                    "Unauthorised PATCH CSM users request failed with expected response {}".format(response))
+                    "Unauthorised PATCH CSM users request failed with expected "
+                    "response %s", response)
 
             self._log.debug(
                 "Verifying unauthorised access to DELETE CSM user API request")
             response = self.restapi.rest_call(
-                request_type="delete", endpoint=endpoint_single_user, headers=headers)
+                request_type="delete", endpoint=endpoint_single_user,
+                headers=headers)
             if response.status_code != const.UNAUTHORIZED:
                 self._log.error(
-                    "DELETE CSM user request should fail without valid authorization token!But got response {}".format(response))
+                    "DELETE CSM user request should fail without valid "
+                    "authorization token!But got response %s", response)
                 return False
             else:
                 self._log.debug(
-                    "Unauthorised DELETE CSM users request failed with expected response {}".format(response))
+                    "Unauthorised DELETE CSM users request failed with expected"
+                    " response %s", response)
 
             self._log.debug(
                 "Verifying unauthorised access to GET permission API request")
 
             endpoint_permission = self.config["csmuser_permission_endpoint"]
             self._log.debug(
-                "Permission endpoint is : {}".format(endpoint_permission))
+                "Permission endpoint is : %s", endpoint_permission)
             response = self.restapi.rest_call(
-                request_type="get", endpoint=endpoint_permission, headers=headers)
+                request_type="get", endpoint=endpoint_permission,
+                headers=headers)
             if response.status_code != const.UNAUTHORIZED:
                 self._log.error(
-                    "GET Permission request should fail without valid authorization token!But got response {}".format(response))
+                    "GET Permission request should fail without valid "
+                    "authorization token!But got response %s", response)
                 return False
             else:
                 self._log.debug(
-                    "Unauthorised GET permission request failed with expected response {}".format(response))
+                    "Unauthorised GET permission request failed with expected"
+                    "response %s", response)
 
             return True
         except BaseException as error:
-            self._log.error("{0} {1}: {2}".format(
+            self._log.error(
+                "%s %s: %s",
                 self.exception_error,
                 RestIamUser.verify_unauthorized_access_to_csm_user_api.__name__,
-                error))
+                error)
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR,
-                error.args[0])
+                error.args[0]) from error
