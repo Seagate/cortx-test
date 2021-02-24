@@ -62,7 +62,7 @@ def update_config_db(setup_query:dict, data:dict)->dict:
     :return [type]:
     """
     sys_coll = _get_collection_obj()
-    rdata = sys_coll.update_document(setup_query, data)
+    rdata = sys_coll.update_many(setup_query, data)
     return rdata
 
 def get_config_wrapper(**kwargs):

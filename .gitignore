@@ -16,4 +16,4 @@ venv/
 .vscode/
 robot/reports/
 secrets.json
-
+setups.json
