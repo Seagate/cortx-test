@@ -31,9 +31,17 @@ S3_CONFIG = os.path.join(CONFIG_DIR, 's3', 's3_config.yaml')
 
 LOG_DIR_NAME = 'log'
 
+RAS_CONFIG_PATH = "config/ras_config.yaml"
+
+SSPL_TEST_CONFIG_PATH = "config/ras_test.yaml"
+
+COMMON_DESTRUCTIVE_CONFIG_PATH = "config/common_destructive.yaml"
+
 JIRA_TEST_LIST = 'test_lists.csv'
 
 CSM_CONFIG = os.path.join(CONFIG_DIR, 'csm', 'csm_config.yaml')
+
+JIRA_TEST_META_JSON = 'test_meta_data.json'
 
 JIRA_TEST_COLLECTION = 'test_collection.csv'
 
