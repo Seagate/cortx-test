@@ -29,7 +29,7 @@ import json
 import shutil
 import re
 import yaml
-from configparser import ConfigParser, MissingSectionHeaderError
+from configparser import ConfigParser, MissingSectionHeaderError, NoSectionError
 from defusedxml.cElementTree import parse
 import commons.errorcodes as cterr
 from commons.exceptions import CTException
@@ -364,67 +364,3 @@ def update_configs(all_configs: dict) -> None:
     """
     for conf in all_configs.keys():
         read_write_config(conf, all_configs[conf])
-
-def get_config_yaml(fpath: str = 'config.yaml') -> dict:
-    """Reads the config and decrypts the passwords
-
-    :param fpath: configuration file path
-    :return [type]: dictionary containing config data
-    """
-    with open(fpath) as fin:
-        data = yaml.safe_load(fin)
-        data['end'] = 'end'
-        pswdmanager.decrypt_all_passwd(data)
-    return data
-
-
-def get_config_db(setup_query={"setupname":"automation"}):
-    """Reads the configuration from the database
-
-    :param cname:collection which will be read
-    """
-    sys_coll = _get_collection_obj()
-    data = sys_coll.find_one(setup_query)
-    data.pop('_id')
-    return data
-
-def _get_collection_obj(cpath = "tools\\rest_server\\config.ini",
-                        db_name="cft_test_results",
-                        collection = "r2_systems"):
-    db_hostname = get_config(cpath,"MongoDB","db_hostname")
-    db_creds = pswdmanager.get_secrets(secret_ids=['DBUSER', 'DBPSWD'])
-    MONGODB_URI = "mongodb://{0}:{1}@{2}"
-    uri = MONGODB_URI.format(quote_plus(db_creds['DBUSER']),quote_plus(db_creds['DBPSWD']), db_hostname)
-    client = MongoClient(uri)
-    db = client[db_name]
-    collection_obj = db[collection]
-    return collection_obj
-
-def update_config_db(setup_query):
-    """[summary]
-
-    :param setup_query:
-    :return [type]:
-    """
-    sys_coll = _get_collection_obj()
-    data = read_content_json("common_config.json")
-    data = sys_coll.update_document(setup_query, data)
-    return data
-
-def get_config_wrapper(**kwargs):
-    """Get the configuration from the database as well as yaml and merge.
-    It is expected that duplicate data should not be present between DB and yaml
-    """
-    flag = False
-    data = {}
-    if "fpath" in kwargs:
-        flag = True
-        data.update(get_config_yaml(fpath=kwargs['fpath']))
-    if "setup_query" in kwargs:
-        flag = True
-        data.update(get_config_db(setup_query=kwargs['setup_query']))
-    if not flag:
-        print("Invalid keyword argument")
-        raise ValueError("Invalid argument")
-    return data
-

@@ -31,6 +31,8 @@ S3_CONFIG = os.path.join(CONFIG_DIR, 's3', 's3_config.yaml')
 
 LOG_DIR_NAME = 'log'
 
+CSM_DIR = os.path.join(CONFIG_DIR, 'csm')
+CSM_CONFIG = os.path.join(CSM_DIR, 'csm_config.yaml')
 RAS_CONFIG_PATH = "config/ras_config.yaml"
 
 SSPL_TEST_CONFIG_PATH = "config/ras_test.yaml"
