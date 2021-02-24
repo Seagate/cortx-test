@@ -1,3 +1,4 @@
+"""Tab 1 : Executive Report Callbacks."""
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -27,8 +28,6 @@ from dash.dependencies import Output, Input
 from dash.exceptions import PreventUpdate
 import common
 from common import app
-
-"""Tab 1 : Executive Report Callbacks"""
 
 
 @app.callback(
@@ -104,9 +103,8 @@ def gen_table_reported_bugs(n_clicks, version, build_no, test_system, test_team)
     response = requests.request("GET", common.search_endpoint, headers=common.headers,
                                 data=json.dumps(query_input))
     if response.status_code == HTTPStatus.OK:
-        json_response = json.loads(response.text)
         issue_list = []
-        for each in json_response["result"]:
+        for each in json.loads(response.text)["result"]:
             issue_list.extend(each["issueIDs"])
 
         df_issue_details = common.get_issue_details(issue_list)
@@ -114,35 +112,28 @@ def gen_table_reported_bugs(n_clicks, version, build_no, test_system, test_team)
         # test issues
         df_test_infra_issue = df_issue_details.loc[
             df_issue_details["issue_comp"].isin(["CFT", "Automation"])]
-        if common.debug_prints:
+        if common.DEBUG_PRINTS:
             print("test_infra issue {}".format(df_test_infra_issue))
         test_infra_issue_dict["Total"] = df_test_infra_issue.shape[0]
 
         # cortx issues
         df_cortx_issue = df_issue_details.loc[
             ~df_issue_details["issue_comp"].isin(["CFT", "Automation"])]
-        if common.debug_prints:
+        if common.DEBUG_PRINTS:
             print("cortx issue {}".format(df_cortx_issue))
         df_cortx_issue["Total"] = df_cortx_issue.shape[0]
 
         for i_type in issue_type[1:]:
             test_infra_issue_dict[i_type] = \
-            df_test_infra_issue[df_issue_details["issue_priority"] == i_type].shape[0]
+                df_test_infra_issue[df_issue_details["issue_priority"] == i_type].shape[0]
             cortx_issue_dict[i_type] = \
-            df_cortx_issue[df_cortx_issue["issue_priority"] == i_type].shape[0]
-
-        test_infra_issue = test_infra_issue_dict.values()
-        cortx_issue = cortx_issue_dict.values()
+                df_cortx_issue[df_cortx_issue["issue_priority"] == i_type].shape[0]
     else:
         print("Error in gen table reported bugs : {}".format(response))
-        test_infra_issue = ["-", "-", "-", "-", "-", "-"]
-        cortx_issue = ["-", "-", "-", "-", "-", "-"]
 
-    data_reported_bugs = {"Priority": issue_type,
-                          "Test Infra Issues": test_infra_issue,
-                          "Cortx SW Issues": cortx_issue}
-
-    df_reported_bugs = pd.DataFrame(data_reported_bugs)
+    df_reported_bugs = pd.DataFrame({"Priority": issue_type,
+                                     "Test Infra Issues": test_infra_issue_dict.values(),
+                                     "Cortx SW Issues": cortx_issue_dict.values()})
     reported_bugs = dash_table.DataTable(
         id="reported_bugs",
         columns=[{"name": i, "id": i} for i in df_reported_bugs.columns],
@@ -307,7 +298,7 @@ def gen_table_feature_breakdown_summary(n_clicks, version, build_no, test_system
         fail_count_list.append(sum(fail_count_list))
         total_count_list.append(sum(total_count_list))
 
-        if common.debug_prints:
+        if common.DEBUG_PRINTS:
             print("Feature_list {}".format(feature_list))
             print("Pass list {}".format(pass_count_list))
             print("Fail list {}".format(fail_count_list))
@@ -338,7 +329,9 @@ def gen_table_feature_breakdown_summary(n_clicks, version, build_no, test_system
                                     ],
             style_cell=common.dict_style_cell
         )
-        return feature_breakdown_summary
+    else:
+        feature_breakdown_summary = None
+    return feature_breakdown_summary
 
 
 @app.callback(
@@ -349,7 +342,6 @@ def gen_table_code_maturity(n_clicks):
     """
     Code Maturity with reference to the previous builds
     """
-    # TODO query database as per the input
     if n_clicks is None:
         raise PreventUpdate
     data_code_maturity = {"Category": ["Total", "Pass", "Fail", "Aborted", "Blocked"],
@@ -380,7 +372,6 @@ def gen_table_s3_bucket_perf(n_clicks):
     """
     Single Bucket Performance Statistics using S3bench
     """
-    # TODO query database as per the input
     if n_clicks is None:
         raise PreventUpdate
     else:

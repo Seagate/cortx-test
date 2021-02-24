@@ -1,3 +1,4 @@
+""" Layouts for each of the tab."""
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -19,7 +20,6 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 
-""" Layouts for each of the tab """
 
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc

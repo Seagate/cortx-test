@@ -1,3 +1,4 @@
+""" Tab 2: Engineers Report Callbacks."""
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -19,8 +20,6 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 
-""" Tab 2: Engineers Report Callbacks """
-
 import json
 from http import HTTPStatus
 
@@ -33,6 +32,7 @@ from dash.dependencies import Output, Input
 from dash.exceptions import PreventUpdate
 import common
 from common import app
+
 
 # Table : Reported Bugs : gen_table_reported_bugs --> Callback same as tab 1
 # Table : Overall QA Report : gen_table_overall_qa_report --> Callback same as tab 1
@@ -57,17 +57,20 @@ def gen_table_comp_summary(n_clicks, version, build_no, test_system, test_team):
     :param test_team: Testing team
     :return:
     """
-
     if n_clicks is None or version is None or build_no is None or \
             test_system is None or test_team is None:
         raise PreventUpdate
-    else:
-        component_list = ["S3", "Provisioner", "CSM", "RAS", "Motr", "HA"]
-        cur_build_dict = {"S3": 0, "Provisioner": 0, "CSM": 0, "RAS": 0, "Motr": 0, "HA": 0}
-        prev_build_dict = {"S3": 0, "Provisioner": 0, "CSM": 0, "RAS": 0, "Motr": 0, "HA": 0}
 
+    component_list = ["S3", "Provisioner", "CSM", "RAS", "Motr", "HA"]
+    # **Query for previous build
+    # current build, previous build
+    build_no_list = [build_no, build_no]
+    # list of dictionary
+    builds_details = []
+
+    for build in build_no_list:
         query_input = {
-            "query": {"buildType": version, "buildNo": build_no, "testPlanLabel": test_system,
+            "query": {"buildType": version, "buildNo": build, "testPlanLabel": test_system,
                       "testTeam": test_team},
             "projection": {"issueIDs": True}}
 
@@ -79,50 +82,30 @@ def gen_table_comp_summary(n_clicks, version, build_no, test_system, test_team):
             issue_list = []
             for each in json_response["result"]:
                 issue_list.extend(each["issueIDs"])
-            print("Issue list (table comp summary) :", issue_list)
+
             issue_df = common.get_issue_details(issue_list)
+            build_dict = {}
+            for comp in component_list:
+                build_dict[comp] = issue_df[issue_df.issue_comp == comp].shape[0]
+            builds_details.insert(build_dict)
 
-            for comp in cur_build_dict:
-                cur_build_dict[comp] = issue_df[issue_df.issue_comp == comp].shape[0]
-
-        # TODO: Query for previous build
-        # get issue for the previous build
-        query_input = {
-            "query": {"buildType": version, "buildNo": build_no, "testPlanLabel": test_system,
-                      "testTeam": test_team},
-            "projection": {"issueIDs": True}}
-
-        query_input.update(common.credentials)
-        response = requests.request("GET", common.search_endpoint, headers=common.headers,
-                                    data=json.dumps(query_input))
-        if response.status_code == HTTPStatus.OK:
-            json_response = json.loads(response.text)
-            issue_list = []
-            for each in json_response["result"]:
-                issue_list.extend(each["issueIDs"])
-            print("Issue list (table comp summary) :", issue_list)
-            issue_df = common.get_issue_details(issue_list)
-
-            for comp in cur_build_dict:
-                prev_build_dict[comp] = issue_df[issue_df.issue_comp == comp].shape[0]
-
-        data_comp_summary = {
-            "Component": component_list,
-            "Current Build": cur_build_dict.values(),
-            "Previous Build ": prev_build_dict.values(),
-        }
-        df_comp_summary = pd.DataFrame(data_comp_summary)
-        comp_summary = dash_table.DataTable(
-            id="comp_summary",
-            columns=[{"name": i, "id": i} for i in df_comp_summary.columns],
-            data=df_comp_summary.to_dict('records'),
-            merge_duplicate_headers=True,
-            style_header=common.dict_style_header,
-            style_data_conditional=[{'if': {'row_index': 'odd'}, 'backgroundColor': '#F8F8F8'}
-                                    ],
-            style_cell=common.dict_style_cell
-        )
-        return comp_summary
+    data_comp_summary = {
+        "Component": component_list,
+        "Current Build": builds_details[0].values(),
+        "Previous Build ": builds_details[1].values(),
+    }
+    df_comp_summary = pd.DataFrame(data_comp_summary)
+    comp_summary = dash_table.DataTable(
+        id="comp_summary",
+        columns=[{"name": i, "id": i} for i in df_comp_summary.columns],
+        data=df_comp_summary.to_dict('records'),
+        merge_duplicate_headers=True,
+        style_header=common.dict_style_header,
+        style_data_conditional=[{'if': {'row_index': 'odd'}, 'backgroundColor': '#F8F8F8'}
+                                ],
+        style_cell=common.dict_style_cell
+    )
+    return comp_summary
 
 
 @app.callback(
@@ -270,20 +253,20 @@ def gen_table_multi_bucket_perf_stats(n_clicks):
 
     # HS bench 1 bucket 1000 Objects 100 Sessions
     data = {"Statistics": ["Write Throughput(MBps)", "Read Throughput(MBps)", "Write Latency(ms)",
-                             "Read Latency(ms)",
-                             "Write IOPS", "Read IOPS"],
-              "4KB": ["1", "2", "3", "4", "5", "6"],
-              "100KB": ["1", "2", "3", "4", "5", "6"],
-              "1MB": ["1", "2", "3", "4", "5", "6"],
-              "5MB": ["1", "2", "3", "4", "5", "6"],
-              "36MB": ["1", "2", "3", "4", "5", "6"],
-              "64MB": ["1", "2", "3", "4", "5", "6"],
-              "128MB": ["1", "2", "3", "4", "5", "6"],
-              "256MB": ["1", "2", "3", "4", "5", "6"],
-              }
-    df = pd.DataFrame(data)
+                           "Read Latency(ms)",
+                           "Write IOPS", "Read IOPS"],
+            "4KB": ["1", "2", "3", "4", "5", "6"],
+            "100KB": ["1", "2", "3", "4", "5", "6"],
+            "1MB": ["1", "2", "3", "4", "5", "6"],
+            "5MB": ["1", "2", "3", "4", "5", "6"],
+            "36MB": ["1", "2", "3", "4", "5", "6"],
+            "64MB": ["1", "2", "3", "4", "5", "6"],
+            "128MB": ["1", "2", "3", "4", "5", "6"],
+            "256MB": ["1", "2", "3", "4", "5", "6"],
+            }
+    temp_df = pd.DataFrame(data)
     text = ["Hsbench", html.Br(), "1 Buckets", html.Br(), "100 Objects", html.Br(), "100 Sessions"]
-    final_rows.extend(get_df_to_rows(df, text, 6))
+    final_rows.extend(get_df_to_rows(temp_df, text, 6))
 
     # HS bench 10 bucket 100 Objects 100 Sessions
     data = {
@@ -299,9 +282,9 @@ def gen_table_multi_bucket_perf_stats(n_clicks):
         "128MB": ["1", "2", "3", "4", "5", "6"],
         "256MB": ["1", "2", "3", "4", "5", "6"],
     }
-    df = pd.DataFrame(data)
+    temp_df = pd.DataFrame(data)
     text = ["Hsbench", html.Br(), "10 Buckets", html.Br(), "100 Objects", html.Br(), "100 Sessions"]
-    final_rows.extend(get_df_to_rows(df, text, 6))
+    final_rows.extend(get_df_to_rows(temp_df, text, 6))
 
     # HS bench 50 bucket 100 Objects 100 Sessions
     data = {
@@ -317,9 +300,9 @@ def gen_table_multi_bucket_perf_stats(n_clicks):
         "128MB": ["1", "2", "3", "4", "5", "6"],
         "256MB": ["1", "2", "3", "4", "5", "6"],
     }
-    df = pd.DataFrame(data)
+    temp_df = pd.DataFrame(data)
     text = ["Hsbench", html.Br(), "50 Buckets", html.Br(), "100 Objects", html.Br(), "100 Sessions"]
-    final_rows.extend(get_df_to_rows(df, text, 6))
+    final_rows.extend(get_df_to_rows(temp_df, text, 6))
 
     # Cosbench 1 bucket 100 Objects 100 Sessions
     data = {
@@ -335,9 +318,9 @@ def gen_table_multi_bucket_perf_stats(n_clicks):
         "128MB": ["1", "2", "3", "4", "5", "6"],
         "256MB": ["1", "2", "3", "4", "5", "6"],
     }
-    df = pd.DataFrame(data)
+    temp_df = pd.DataFrame(data)
     text = ["Cosbench", html.Br(), "1 Buckets", html.Br(), "100 Objects", html.Br(), "100 Sessions"]
-    final_rows.extend(get_df_to_rows(df, text, 6))
+    final_rows.extend(get_df_to_rows(temp_df, text, 6))
 
     # Cosbench 10 bucket 100 Objects 100 Sessions
     data = {
@@ -353,10 +336,10 @@ def gen_table_multi_bucket_perf_stats(n_clicks):
         "128MB": ["1", "2", "3", "4", "5", "6"],
         "256MB": ["1", "2", "3", "4", "5", "6"],
     }
-    df = pd.DataFrame(data)
+    temp_df = pd.DataFrame(data)
     text = ["Cosbench", html.Br(), "10 Buckets", html.Br(), "100 Objects", html.Br(),
             "100 Sessions"]
-    final_rows.extend(get_df_to_rows(df, text, 6))
+    final_rows.extend(get_df_to_rows(temp_df, text, 6))
 
     # Cosbench 50 bucket 100 Objects 100 Sessions
     data = {
@@ -372,13 +355,13 @@ def gen_table_multi_bucket_perf_stats(n_clicks):
         "128MB": ["1", "2", "3", "4", "5", "6"],
         "256MB": ["1", "2", "3", "4", "5", "6"],
     }
-    df = pd.DataFrame(data)
+    temp_df = pd.DataFrame(data)
     text = ["Cosbench", html.Br(), "50 Buckets", html.Br(), "100 Objects", html.Br(),
             "100 Sessions"]
-    final_rows.extend(get_df_to_rows(df, text, 6))
+    final_rows.extend(get_df_to_rows(temp_df, text, 6))
 
     columns = ["Bench"]
-    columns.extend(df.columns)
+    columns.extend(temp_df.columns)
     table_headers = [html.Thead(html.Tr([html.Th(col) for col in columns]))]
     table_body = [html.Tbody(final_rows)]
     table = dbc.Table(table_headers + table_body, bordered=True,
@@ -438,7 +421,7 @@ def gen_table_detail_reported_bugs(n_clicks, version, build_no, test_system, tes
                                     ],
             style_cell=common.dict_style_cell
         )
-
-        return detail_reported_bugs
     else:
-        return None
+        detail_reported_bugs = None
+
+    return detail_reported_bugs

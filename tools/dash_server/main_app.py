@@ -1,3 +1,4 @@
+""" Main file for the Dashboard server."""
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -19,8 +20,6 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 
-""" Main file for the Dashboard server """
-
 import os
 import tab_layouts as tl
 import dash_bootstrap_components as dbc
@@ -28,8 +27,8 @@ import dash_core_components as dcc
 import dash_html_components as html
 import flask
 from common import app, versions, server
-
-from callbacks import *  # pylint: disable=unused-import
+from callbacks import defect_list_tab_callbacks, exe_report_callbacks
+from callbacks import exe_report_callbacks
 
 
 @server.route('/favicon.ico')
@@ -68,7 +67,7 @@ search_bar = dbc.Row(
                             "ve1224/Shared%20Documents/CFT_IntegrationTeam?csf=1&web=1&e=9Wgzsx",
                        target="_blank")],
             width="auto",
-            ),
+        ),
     ],
     no_gutters=True,
     className="ml-auto flex-nowrap mt-3 mt-md-0",

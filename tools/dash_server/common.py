@@ -1,3 +1,4 @@
+"""Common file for dash callbacks."""
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -32,7 +33,7 @@ app.title = "CORTX Test Status"
 server = app.server
 __version__ = "5.27"
 
-debug_prints = True
+DEBUG_PRINTS = True
 
 # database Details
 config = configparser.ConfigParser()
@@ -49,7 +50,7 @@ try:
     jira_password = config["JIRA"]["jira_password"]
 except KeyError:
     print("Not able to read the details from config.ini file")
-    exit(1)
+    sys.exit(1)
 
 # build versions
 versions = [

@@ -1,7 +1,8 @@
+""" Main page callbacks."""
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the Apache License, Version 2.0 (the "License")
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
@@ -26,14 +27,17 @@ from dash.exceptions import PreventUpdate
 import common
 from common import app
 
-""" Main page callbacks """
-
 
 @app.callback(
     [Output('build_no_dropdown', 'options')],
     [Input('version_dropdown', 'value')],
 )
 def fetch_build_for_dropdown(value):
+    """
+    Fetch the build no based on the branch/version
+    :param value:
+    :return:
+    """
     if not value:
         raise PreventUpdate
     if value in ["Beta", "Release"]:
@@ -50,7 +54,7 @@ def fetch_build_for_dropdown(value):
             output = [
                 {'label': build_no, 'value': build_no} for build_no in all_builds
             ]
-            if common.debug_prints:
+            if common.DEBUG_PRINTS:
                 print("Fetch build for dropdown : result : {}".format(output))
             return [output]
     return None
@@ -62,6 +66,12 @@ def fetch_build_for_dropdown(value):
     [Input('build_no_dropdown', 'value')]
 )
 def fetch_test_system_for_dropdown(version, build_no):
+    """
+    Fetch system type for the required branch/version and build no
+    :param version:
+    :param build_no:
+    :return:
+    """
     if not (version and build_no):
         raise PreventUpdate
     if version in ["Beta", "Release"]:
@@ -92,6 +102,13 @@ def fetch_test_system_for_dropdown(version, build_no):
     [Input('test_system_dropdown', 'value')]
 )
 def fetch_team_for_dropdown(version, build_no, system_type):
+    """
+    Fetch the testing teams for version, build_no and testing system type
+    :param version:
+    :param build_no:
+    :param system_type:
+    :return:
+    """
     if not (version and build_no and system_type):
         raise PreventUpdate
     if version in ["Beta", "Release"]:

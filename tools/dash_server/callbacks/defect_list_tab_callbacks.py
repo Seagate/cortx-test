@@ -1,3 +1,4 @@
+"""Tab 3 : Defect list for Test Execution Callbacks."""
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -19,7 +20,6 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 
-"""Tab 3 : Defect list for Test Execution Callbacks"""
 
 import json
 from http import HTTPStatus
@@ -66,11 +66,12 @@ def gen_table_execution_wise_defect(n_clicks, te_ids):
                 issue_list.extend(each["issueIDs"])
 
         te_df = common.get_issue_details(issue_list)
-        for i in te_df:
+
+        for _ in te_df:
             te_df["test_execution"] = te_id
         df_execution_wise_defect = df_execution_wise_defect.append(te_df)
 
-    if common.debug_prints:
+    if common.DEBUG_PRINTS:
         print("gen_table_execution_wise_defect : Dataframe returned ")
         print(df_execution_wise_defect)
 
