@@ -32,9 +32,9 @@ from commons.utils.assert_utils import \
     assert_false, assert_true, assert_in, assert_equal, assert_not_equal
 from commons.utils.config_utils import read_yaml, get_config
 from commons.utils.system_utils import run_remote_cmd, remove_file
-from commons.helpers.s3_helper import S3Helper
 
-S3_HELPER = S3Helper()
+from libs.s3 import S3H_OBJ as S3_HELPER
+
 LDAP_CFG = read_yaml("config/s3/test_openldap.yaml")[1]
 CM_CFG = read_yaml("config/common_config.yaml")[1]
 CONS_OBJ_DICT = const.S3_BUILD_VER[CM_CFG["BUILD_VER_TYPE"]]
