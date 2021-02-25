@@ -4,6 +4,7 @@ botocore==1.12.202
 certifi==2019.6.16
 chardet==3.0.4
 Click==7.0
+confluent_kafka
 dataclasses
 defusedxml
 docutils==0.14
