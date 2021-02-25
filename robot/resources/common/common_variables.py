@@ -5,6 +5,7 @@
 # Common variables required for GUI access
 # URL's required to connect to the CSM GUI
 CSM_URL = "https://10.230.246.58:28100/#/"
+SW_UPDATE_URL = "http://cortx-storage.colo.seagate.com/releases/eos/github/main/centos-7.8.2003/{0}/prod/iso/cortx-2.0.0-{0}-single.iso"
 
 #  Login page msg.
 LOGIN_FAILED_MESSAGE = 'Login failed !'

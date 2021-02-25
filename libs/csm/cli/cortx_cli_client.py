@@ -30,25 +30,36 @@ class CortxCliClient:
     and execute commands on interactive cortxcli
     """
 
-    def __init__(self, host, username, password, port=22):
+    def __init__(
+            self,
+            host: str,
+            username: str,
+            password: str,
+            **kwargs):
         """
         Initialize credentials of CSM server
         :param str host: host/ip of CSM server
         :param str username: username of CSM server
         :param str password: password of CSM server
-        :param int port: port number
+        :keyword object session_obj: session object of host connection if already established
+        :keyword int port: port number
         """
         self.log = logging.getLogger(__name__)
         self.host = host
         self.username = username
         self.password = password
-        self.port = port
-        self.host_obj = Host(
-            hostname=self.host,
-            username=self.username,
-            password=self.password)
-        self.host_obj.connect(True, port=self.port)
-        self.session_obj = self.host_obj.shell_obj
+        session_obj = kwargs.get("session_obj", None)
+        self.port = kwargs.get("port", 22)
+
+        if not session_obj:
+            self.host_obj = Host(
+                hostname=self.host,
+                username=self.username,
+                password=self.password)
+            self.host_obj.connect(True, port=self.port)
+            self.session_obj = self.host_obj.shell_obj
+        else:
+            self.session_obj = session_obj
 
     def execute_cli_commands(self, cmd: str, time_out: int = 300) -> str:
         """

@@ -3,7 +3,8 @@ Documentation  This is the common resources file containing common keywords
 Library  SeleniumLibrary    screenshot_root_directory=reports/screenshots
 Library  String
 Library  DateTime
-Library    Collections
+Library  Collections
+Library  ../../utils/Download.py
 Variables  common_variables.py
 Variables  element_locators.py
 
@@ -83,4 +84,11 @@ Verify message
     ${msg_from_gui}=  get text  ${${element_locator}}
     Log To Console And Report  message from guI is ${msg_from_gui}
     should be equal  ${msg_from_gui}  ${message_to_verify}
+
+Upload File
+    [Documentation]  This keyword upload files to required webelement
+    [Arguments]  ${element_locator}  ${file_path}
+    Sleep  5s
+    wait until element is visible  ${${element_locator}}  timeout=60
+    Choose File  id=${${element_locator}}  ${file_path}
 

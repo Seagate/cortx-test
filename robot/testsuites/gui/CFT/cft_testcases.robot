@@ -8,6 +8,7 @@ Resource    ../../../resources/page_objects/s3accountPage.robot
 Resource    ../../../resources/common/common.robot
 Resource    ../../../resources/page_objects/userSettingsLocalPage.robot
 Resource    ../../../resources/page_objects/auditlogPage.robot
+Resource    ../../../resources/page_objects/softwareUpdatepage.robot
 Variables   ../../../resources/common/common_variables.py
 
 
@@ -26,6 +27,7 @@ ${Sub_tab}  None
 ${username}
 ${password}
 ${Download_File_Path}  \root\Downloads\
+${sw_version}  683
 
 *** Test Cases ***
 
@@ -135,3 +137,15 @@ TEST-4932
     Download Audit Log  S3  One day
     Sleep  5s  #S3 Audit takes a while
     Verify Audit Log Downloaded  ${Download_File_Path}  s3
+
+TEST-7820
+    [Documentation]  Test that after software update is done, appropriate last update status, last update version
+    ...  and last update description is displayed
+    ...  Reference : https://jts.seagate.com/browse/TEST-7820
+    Navigate To Page  MAINTENANCE_MENU_ID  SW_UPDATE_TAB_ID
+    Click On Upload New Software File Button
+    ${path}=  Download SW ISO File  ${sw_version}  ${Download_File_Path}
+    Upload File  CHOOSE_SW_UPDATE_FILE_BTN_ID  ${path}
+    # These following lines should be executed in case you have the proper machine
+    #Click On Upload New Software File Button
+    #Click On Start Software Update Button

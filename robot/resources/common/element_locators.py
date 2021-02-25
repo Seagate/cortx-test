@@ -20,6 +20,8 @@ IAM_USER_TAB_ID = "s3iamuserstab"
 DASHBOARD_MENU_ID = "Dashboard"
 MAINTENANCE_MENU_ID = 'Maintenance'
 AUDIT_LOG_TAB_ID = "goToAuditLog"
+SW_UPDATE_TAB_ID = "goToSoftware"
+FW_UPDATE_TAB_ID = "goToFirmware"
 
 # Alerts
 ALERT_IMAGE_1_ID='alert-zoom'  # from Dashbard
@@ -170,3 +172,10 @@ AUDIT_LOG_DOWNLOAD_BUTTON_ID = "auditlog-downlodbtn"
 AUDIT_LOG_COMPONENT_DROP_DOWN_ID = "auditlog-component"
 AUDIT_LOG_TIME_PERIOD_DROP_DOWN_ID = "auditlog-timeperiod"
 AUDIT_LOG_DATA_ID = "auditlog-data"
+
+#Software Update Page
+UPLOAD_SW_FILE_BTN_ID = "btnInstallHotfix"
+CHOOSE_SW_UPDATE_FILE_BTN_ID = "file"
+CANCEL_SW_UPDATE_UPLOAD_BTN_ID = "btnCancelInstallHotfix"
+START_SW_UPDATE_BUTTON_ID = "btnStartUpgrade"
+PAGE_LOADING_MSG_ID = "lblLoaderMessage"
