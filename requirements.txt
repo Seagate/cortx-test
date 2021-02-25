@@ -4,11 +4,13 @@ botocore==1.12.202
 certifi==2019.6.16
 chardet==3.0.4
 Click==7.0
+confluent_kafka
 dataclasses
 defusedxml
 docutils==0.14
 dataclasses
 defusedxml
+fastavro
 fabric~=2.5.0
 filelock==3.0.12
 Flask==1.1.1
