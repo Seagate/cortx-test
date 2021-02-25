@@ -186,5 +186,22 @@ S3_UPLOAD_FILE_CMD = "aws s3 cp {0} s3://{1}/{2}"
 S3_UPLOAD_FOLDER_CMD = "aws s3 cp {0} s3://{1}/ --recursive --profile {2}"
 S3_DOWNLOAD_BUCKET_CMD = "aws s3 cp --recursive s3://{} {} --profile {}"
 
+# CORTXCLI Commands
+CMD_LOGIN_CORTXCLI = "cortxcli"
+CMD_LOGOUT_CORTXCLI = "exit"
+CMD_CREATE_CSM_USER = "users create"
+CMD_DELETE_CSM_USER = "users delete"
+CMD_UPDATE_ROLE = "users update"
+CMD_RESET_PWD = "users reset_password"
+CMD_LIST_CSM_USERS = "users show"
+CMD_HELP_OPTION = "-h"
+CMD_CREATE_S3ACC = "s3accounts create"
+CMD_SHOW_S3ACC = "s3accounts show"
+CMD_DELETE_S3ACC = "s3accounts delete {}"
+CMD_RESET_S3ACC_PWD = "s3accounts reset_password {}"
+CMD_CREATE_BUCKET = "s3buckets create {}"
+CMD_SHOW_BUCKETS = "s3buckets show"
+CMD_DELETE_BUCKET = "s3buckets delete {}"
+
 #Linux System Commands
 CMD_MKDIR = "mkdir -p {}"
