@@ -23,9 +23,9 @@ DISK_DISABLE = {"enclid": 0, "ctrl_name": "A", "phy_num": 5,
 DISK_ENABLE = {"enclid": 0, "ctrl_name": "A", "phy_num": 5,
                "operation": "Enabled", "exp_status": "OK",
                "telnet_file": "/root/telnet.xml"}
-DISK_FAULT_NO_ALERT = {"du_val": 1, "fault": False, "fault_resolved": False}
-DISK_FAULT_ALERT = {"du_val": 1, "fault": True, "fault_resolved": False}
-DISK_FAULT_RESOLVED_ALERT = {"du_val": 1, "fault": True, "fault_resolved": True}
+DISK_FAULT_NO_ALERT = {"du_val": 8, "fault": False, "fault_resolved": False}
+DISK_FAULT_ALERT = {"du_val": 8, "fault": True, "fault_resolved": False}
+DISK_FAULT_RESOLVED_ALERT = {"du_val": 8, "fault": True, "fault_resolved": True}
 CPU_USAGE_NO_ALERT = {"delta_cpu_usage": 0.3}
 CPU_USAGE_ALERT = {"delta_cpu_usage": -0.3}
 CPU_USAGE_RESOLVED_ALERT = {"delta_cpu_usage": 0}
