@@ -31,8 +31,8 @@ from libs.csm.cli.cortx_cli_s3_buckets import CortxCliS3BucketOperations
 from libs.csm.cli.cli_csm_user import CortxCliCsmUser
 
 S3ACC_OBJ = CortxCliS3AccountOperations()
-S3BKT_OBJ = CortxCliS3BucketOperations()
-CSM_USER_OBJ = CortxCliCsmUser()
+S3BKT_OBJ = CortxCliS3BucketOperations(session_obj=S3ACC_OBJ.session_obj)
+CSM_USER_OBJ = CortxCliCsmUser(session_obj=S3ACC_OBJ.session_obj)
 LOGGER = logging.getLogger(__name__)
 
 
@@ -45,7 +45,8 @@ class TestCliS3ACC:
         Setup all the states required for execution of this test suit.
         """
         LOGGER.info("STARTED : Setup operations at test suit level")
-        cls.s3acc_name = "cli_s3acc"
+        cls.s3acc_prefix = "cli_s3acc"
+        cls.s3acc_name = cls.s3acc_prefix
         cls.s3acc_email = "{}@seagate.com"
         cls.s3acc_password = CSM_CFG["CliConfig"]["acc_password"]
         LOGGER.info("ENDED : Setup operations at test suit level")
@@ -73,10 +74,23 @@ class TestCliS3ACC:
         """
         LOGGER.info("STARTED : Teardown operations at test function level")
         S3ACC_OBJ.logout_cortx_cli()
-        S3ACC_OBJ.login_cortx_cli(username=self.s3acc_name, password=self.s3acc_password)
-        S3ACC_OBJ.delete_s3account_cortx_cli(account_name=self.s3acc_name)
+        login = S3ACC_OBJ.login_cortx_cli()
+        assert_utils.assert_equals(True, login[0], login[1])
+        accounts = S3ACC_OBJ.show_s3account_cortx_cli(output_format="json")[1]
+        accounts = S3ACC_OBJ.format_str_to_dict(
+            input_str=accounts)["s3_accounts"]
+        accounts = [acc["account_name"]
+                    for acc in accounts if self.s3acc_prefix in acc["account_name"]]
+        S3ACC_OBJ.logout_cortx_cli()
+        for acc in accounts:
+            S3ACC_OBJ.login_cortx_cli(
+                username=acc, password=self.s3acc_password)
+            S3ACC_OBJ.delete_s3account_cortx_cli(account_name=acc)
+            S3ACC_OBJ.logout_cortx_cli()
 
-    @pytest.mark.csm
+        LOGGER.info("ENDED : Teardown operations at test function level")
+
+    @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10872")
     @CTFailOn(error_handler)
     def test_1008_delete_s3_account(self):
@@ -100,7 +114,7 @@ class TestCliS3ACC:
         assert_utils.assert_equals(True, resp[0], resp[1])
         LOGGER.info("Deleted s3 account %s", self.s3acc_name)
 
-    @pytest.mark.csm
+    @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10877")
     @CTFailOn(error_handler)
     def test_1012_delete_diff_acc(self):
@@ -134,7 +148,7 @@ class TestCliS3ACC:
         LOGGER.info(
             "Deleting different account failed with error %s", resp[1])
 
-    @pytest.mark.csm
+    @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10869")
     @CTFailOn(error_handler)
     def test_1003_create_acc_invalid_passwd(self):
@@ -154,7 +168,7 @@ class TestCliS3ACC:
             "Creating S3 account with invalid password failed with error %s",
             resp[1])
 
-    @pytest.mark.csm
+    @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10870")
     @CTFailOn(error_handler)
     def test_1005_create_duplicate_acc(self):
@@ -178,7 +192,7 @@ class TestCliS3ACC:
         LOGGER.info(
             "Creating duplicate S3 account failed with error %s", resp[1])
 
-    @pytest.mark.csm
+    @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10871")
     @CTFailOn(error_handler)
     def test_1007_list_acc_invalid_format(self):
@@ -201,7 +215,7 @@ class TestCliS3ACC:
             "Listing S3 accounts with invalid format failed with error %s",
             resp[1])
 
-    @pytest.mark.csm
+    @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10873")
     @CTFailOn(error_handler)
     def test_1009_no_on_deletion(self):
@@ -226,14 +240,14 @@ class TestCliS3ACC:
         LOGGER.info("Deleting s3 account %s", self.s3acc_name)
         response = S3ACC_OBJ.execute_cli_commands(cmd=delete_s3acc_cmd)[1]
         if "[Y/n]" in response:
-            response = S3ACC_OBJ.execute_cli_commands(cmd="n")[1]
+            response = S3ACC_OBJ.execute_cli_commands(cmd="n")
         assert_utils.assert_equals(True, response[0], response[1])
         resp = S3ACC_OBJ.show_s3account_cortx_cli()
-        assert_utils.assert_exact_string(resp, self.s3acc_name)
+        assert_utils.assert_exact_string(resp[1], self.s3acc_name)
         LOGGER.info(
             "Verified that account is not deleted with 'no' on confirmation")
 
-    @pytest.mark.csm
+    @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10874")
     @CTFailOn(error_handler)
     def test_1010_delete_multiple_acc(self):
@@ -260,7 +274,7 @@ class TestCliS3ACC:
         LOGGER.info(
             "Performing simultaneous delete operation without mentioning currently \
             logged in s3account")
-        acc_names = "{} {}".format(dummy_acc1, dummy_acc2)
+        acc_names = " ".join([dummy_acc1, dummy_acc2])
         resp = S3ACC_OBJ.delete_s3account_cortx_cli(account_name=acc_names)
         assert_utils.assert_equals(False, resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], error_msg)
@@ -269,13 +283,13 @@ class TestCliS3ACC:
             in s3 account user failed with error %s", resp[1])
         LOGGER.info(
             "Performing simultaneous delete operation with currently logged in s3 account")
-        acc_names = "{} {} {}".format(self.s3acc_name, dummy_acc1, dummy_acc2)
+        acc_names = " ".join([self.s3acc_name, dummy_acc1])
         resp = S3ACC_OBJ.delete_s3account_cortx_cli(
             account_name=acc_names)
         assert_utils.assert_equals(True, resp[0], resp[1])
         LOGGER.info("Deleted s3 account %s", self.s3acc_name)
 
-    @pytest.mark.csm
+    @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10875")
     @CTFailOn(error_handler)
     def test_1011_delete_invalid_acc(self):
@@ -306,7 +320,7 @@ class TestCliS3ACC:
             "Performing delete operation with invalid s3 account name is failed with error %s",
             resp[1])
 
-    @pytest.mark.csm
+    @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10881")
     @CTFailOn(error_handler)
     def test_1144_acc_login_with_param(self):
@@ -332,7 +346,7 @@ class TestCliS3ACC:
         LOGGER.info(
             "Successfully logged into CORTX CLI by passing username as parameter")
 
-    @pytest.mark.csm
+    @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10883")
     @CTFailOn(error_handler)
     def test_1147_s3_acc_login(self):
@@ -381,7 +395,7 @@ class TestCliS3ACC:
             "Successfully logged in to CORTX CLI as csm user %s",
             csm_user_name)
 
-    @pytest.mark.csm
+    @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10885")
     @CTFailOn(error_handler)
     def test_1916_update_acc_passwd(self):
@@ -395,6 +409,12 @@ class TestCliS3ACC:
             password=self.s3acc_password)
         assert_utils.assert_equals(True, resp[0], resp[1])
         LOGGER.info("Created s3 account %s", self.s3acc_name)
+        logout = S3ACC_OBJ.logout_cortx_cli()
+        assert_utils.assert_equals(True, logout[0], logout[1])
+        login = S3ACC_OBJ.login_cortx_cli(
+            username=self.s3acc_name,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, login[0], login[1])
         resp = S3ACC_OBJ.reset_s3account_password(
             account_name=self.s3acc_name, new_password=new_password)
         assert_utils.assert_equals(True, resp[0], resp[1])
@@ -415,7 +435,7 @@ class TestCliS3ACC:
         assert_utils.assert_equals(True, resp[0], resp[1])
         LOGGER.info("Deleted s3 account %s", self.s3acc_name)
 
-    @pytest.mark.csm
+    @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10887")
     @CTFailOn(error_handler)
     def test_4428_delete_acc_with_buckets(self):
@@ -431,6 +451,12 @@ class TestCliS3ACC:
             password=self.s3acc_password)
         assert_utils.assert_equals(True, resp[0], resp[1])
         LOGGER.info("Created s3 account %s", self.s3acc_name)
+        logout = S3ACC_OBJ.logout_cortx_cli()
+        assert_utils.assert_equals(True, logout[0], logout[1])
+        login = S3ACC_OBJ.login_cortx_cli(
+            username=self.s3acc_name,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, login[0], login[1])
         resp = S3BKT_OBJ.create_bucket_cortx_cli(bucket_name)
         assert_utils.assert_equals(True, resp[0], resp[1])
         LOGGER.info("Created bucket %s", bucket_name)
@@ -443,7 +469,7 @@ class TestCliS3ACC:
         assert_utils.assert_equals(True, resp[0], resp[1])
         LOGGER.info("Deleted bucket %s", bucket_name)
 
-    @pytest.mark.csm
+    @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10888")
     @CTFailOn(error_handler)
     def test_6219_create_duplicate_acc_name(self):

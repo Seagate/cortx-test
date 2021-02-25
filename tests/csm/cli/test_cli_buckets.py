@@ -30,7 +30,7 @@ from libs.csm.cli.cortx_cli_s3_buckets import CortxCliS3BucketOperations
 from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
 
 S3BKT_OBJ = CortxCliS3BucketOperations()
-S3ACC_OBJ = CortxCliS3AccountOperations()
+S3ACC_OBJ = CortxCliS3AccountOperations(session_obj=S3BKT_OBJ.session_obj)
 LOGGER = logging.getLogger(__name__)
 
 
@@ -47,11 +47,14 @@ class TestCliS3BKT:
         cls.s3acc_name = "clis3bkt_acc_{}".format(int(time.time()))
         cls.s3acc_email = "{}@seagate.com".format(cls.s3acc_name)
         cls.s3acc_password = CSM_CFG["CliConfig"]["acc_password"]
+        login = S3ACC_OBJ.login_cortx_cli()
+        assert_utils.assert_equals(True, login[0], login[1])
         response = S3ACC_OBJ.create_s3account_cortx_cli(
             account_name=cls.s3acc_name,
             account_email=cls.s3acc_email,
             password=cls.s3acc_password)
         assert_utils.assert_equals(True, response[0], response[1])
+        S3ACC_OBJ.logout_cortx_cli()
         login = S3BKT_OBJ.login_cortx_cli(
             username=cls.s3acc_name,
             password=cls.s3acc_password)
@@ -65,7 +68,7 @@ class TestCliS3BKT:
             - Initializes common variables
         """
         LOGGER.info("STARTED : Setup operations at test function level")
-        self.bucket_name = "{}_{}".format(self.bucket_name, int(time.time()))
+        self.bucket_name = "{}-{}".format(self.bucket_name, int(time.time()))
         LOGGER.info("ENDED : Setup operations at test function level")
 
     @classmethod
@@ -84,7 +87,7 @@ class TestCliS3BKT:
         assert_utils.assert_equals(True, response[0], response[1])
         LOGGER.info("ENDED : Setup operations at test suit level")
 
-    @pytest.mark.csm
+    @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10805")
     @CTFailOn(error_handler)
     def test_971_verify_delete_bucket(self):

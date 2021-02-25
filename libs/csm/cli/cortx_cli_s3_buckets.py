@@ -33,6 +33,13 @@ class CortxCliS3BucketOperations(CortxCli):
     This class has all s3 bucket operations
     """
 
+    def __init__(self, session_obj: object = None):
+        """
+        This method initializes members of CortxCliS3BucketOperations
+        :param object session_obj: session object of host connection if already established
+        """
+        super().__init__(session_obj=session_obj)
+
     def create_bucket_cortx_cli(
             self,
             bucket_name: str) -> tuple:
@@ -47,6 +54,7 @@ class CortxCliS3BucketOperations(CortxCli):
         LOGGER.info("Response returned: \n%s", response)
         if "Bucket created" in response:
             return True, response
+
         return False, response
 
     def list_buckets_cortx_cli(self, op_format: str = None) -> tuple:
@@ -62,6 +70,7 @@ class CortxCliS3BucketOperations(CortxCli):
         LOGGER.info("Listing buckets with cmd: %s", show_bkts_cmd)
         response = self.execute_cli_commands(cmd=show_bkts_cmd)
         LOGGER.info("Response returned: \n%s", response)
+
         return response
 
     def delete_bucket_cortx_cli(
@@ -78,4 +87,5 @@ class CortxCliS3BucketOperations(CortxCli):
         LOGGER.info("Response returned: \n%s", response)
         if "Bucket deleted" in response:
             return True, response
+
         return False, response

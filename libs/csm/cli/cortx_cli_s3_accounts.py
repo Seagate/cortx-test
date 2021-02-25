@@ -33,6 +33,13 @@ class CortxCliS3AccountOperations(CortxCli):
     This class has all s3 account operations
     """
 
+    def __init__(self, session_obj: object = None):
+        """
+        This method initializes members of CortxCliS3AccountOperations
+        :param object session_obj: session object of host connection if already established
+        """
+        super().__init__(session_obj=session_obj)
+
     def create_s3account_cortx_cli(
             self,
             account_name: str,
@@ -45,8 +52,8 @@ class CortxCliS3AccountOperations(CortxCli):
         :param str password: Password to create s3 account user.
         :return: True/False and Response returned by CORTX CLI
         """
-        create_s3acc_cmd = commands.CMD_CREATE_S3ACC
-        command = " ".join([create_s3acc_cmd, account_name, account_email])
+        command = " ".join(
+            [commands.CMD_CREATE_S3ACC, account_name, account_email])
         LOGGER.info("Creating S3 account with name %s", account_name)
         response = self.execute_cli_commands(cmd=command)[1]
 
@@ -57,6 +64,7 @@ class CortxCliS3AccountOperations(CortxCli):
                 if "[Y/n]" in response:
                     response = self.execute_cli_commands(cmd="Y")[1]
                     if account_name in response:
+                        LOGGER.info("Response returned: \n%s", response)
                         return True, response
 
         return False, response
@@ -91,6 +99,7 @@ class CortxCliS3AccountOperations(CortxCli):
         if "[Y/n]" in response:
             response = self.execute_cli_commands(cmd="Y")[1]
             if "Account Deleted" in response:
+                LOGGER.info("Response returned: \n%s", response)
                 return True, response
 
         return False, response
@@ -115,6 +124,7 @@ class CortxCliS3AccountOperations(CortxCli):
                 if "[Y/n]" in response:
                     response = self.execute_cli_commands(cmd="Y")[1]
                     if account_name in response:
+                        LOGGER.info("Response returned: \n%s", response)
                         return True, response
 
         return False, response

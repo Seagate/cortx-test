@@ -187,6 +187,8 @@ S3_UPLOAD_FOLDER_CMD = "aws s3 cp {0} s3://{1}/ --recursive --profile {2}"
 S3_DOWNLOAD_BUCKET_CMD = "aws s3 cp --recursive s3://{} {} --profile {}"
 
 # CORTXCLI Commands
+CMD_LOGIN_CORTXCLI = "cortxcli"
+CMD_LOGOUT_CORTXCLI = "exit"
 CMD_CREATE_CSM_USER = "users create"
 CMD_DELETE_CSM_USER = "users delete"
 CMD_UPDATE_ROLE = "users update"
