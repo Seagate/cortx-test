@@ -56,6 +56,12 @@ REPORT_CLIENT = None
 logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 LOGGER = logging.getLogger(__name__)
 
+SKIP_MARKS = ("dataprovider", "test", "run", "skip", "usefixtures",
+              "filterwarnings", "skipif", "xfail", "parametrize",
+              "tags")
+
+BASE_COMPONENTS_MARKS = ('csm', 's3', 'ha', 'ras', 'di', 'stress', 'combinational')
+
 
 def _get_items_from_cache():
     """Intended for internal use after modifying collected items."""
@@ -196,6 +202,10 @@ def pytest_addoption(parser):
         "--distributed", action="store", default=False,
         help="Decide whether run is in distributed env"
     )
+    parser.addoption(
+        "--readmetadata", action="store", default=False,
+        help="Read test metadata"
+    )
 
 
 def read_test_list_csv() -> List:
@@ -243,9 +253,35 @@ def pytest_sessionfinish(session, exitstatus):
             _logger.removeHandler(handler)
 
 
+def get_test_metadata_from_tp_meta(item):
+    tests_meta = Globals.tp_meta['test_meta']
+    tp_label = Globals.tp_meta['test_plan_label'][0]  # first is significant
+    te_meta = Globals.tp_meta['te_meta']
+    te_label = te_meta['te_label'][0]
+    te_component = Globals.tp_meta['te_meta']['te_components']
+    test_id = CACHE.lookup(item.nodeid)
+    for it in tests_meta:
+        if it['test_id'] == test_id:
+            it['tp_label'] = tp_label
+            it['te_label'] = te_label
+            it['te_component'] = te_component
+            return it
+
+
+def get_marks_for_test_item(item):
+    marks = list()
+    for mark in item.iter_markers():
+        if mark.name in SKIP_MARKS:
+            continue
+        marks.append(mark.name)
+    return marks
+
+
 def create_report_payload(item, call, final_result, d_u, d_pass):
     """Create Report Payload for POST request to put data in Report DB."""
     os_ver = system_utils.get_os_version()
+    _item_dict = get_test_metadata_from_tp_meta(item)
+    marks = get_marks_for_test_item(item)
     if final_result == 'FAIL':
         health_chk_res = "TODO"
         are_logs_collected = False
@@ -262,20 +298,20 @@ def create_report_payload(item, call, final_result, d_u, d_pass):
                        health_chk_res=health_chk_res,
                        are_logs_collected=are_logs_collected,
                        log_path=log_path,
-                       testPlanLabel="S3",  # get from TP    tp.fields.labels
-                       testExecutionLabel="CFT",  # get from TE  te.fields.labels
+                       testPlanLabel=_item_dict['tp_label'],  # get from TP    tp.fields.labels
+                       testExecutionLabel=_item_dict['te_label'],  # get from TE  te.fields.labels
                        nodes=len(item.config.option.nodes),  # number of target hosts
                        nodes_hostnames=item.config.option.nodes,
                        test_exec_id=item.config.option.te_tkt,
                        test_exec_time=call.duration,
-                       test_name='test_name',  # test
-                       test_id='TEST-0000',  # test
-                       test_id_labels=["Demo", "Labels"],
+                       test_name= _item_dict['test_name'],
+                       test_id=_item_dict['test_id'],
+                       test_id_labels=_item_dict['labels'],
                        test_plan_id=item.config.option.tp_ticket,
                        test_result=final_result,
                        start_time=time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(call.start)),
-                       tags=['tags'],  # in mem te_meta
-                       test_team='test_team',  # TE te.fields.components[0].name
+                       tags=marks,  # in mem te_meta
+                       test_team=_item_dict['te_component'],  # TE te.fields.components[0].name
                        test_type='Pytest',  # TE Avocado/CFT/Locust/S3bench/ Pytest
                        latest=True,
                        feature='Test',  # feature Should be read from master test plan board.
@@ -307,7 +343,7 @@ def pytest_sessionstart(session: Session) -> None:
     global REPORT_CLIENT
     report_client.ReportClient.init_instance()
     REPORT_CLIENT = report_client.ReportClient.get_instance()
-    reset_imported_module_log_level()
+    #reset_imported_module_log_level()
 
 
 def reset_imported_module_log_level():
@@ -316,6 +352,9 @@ def reset_imported_module_log_level():
     """
     loggers = [logging.getLogger()] + list(logging.Logger.manager.loggerDict.values())
     for _logger in loggers:
+        if isinstance(_logger, logging.PlaceHolder):
+            LOGGER.info("Skipping placeholder to reset logging level")
+            continue
         _logger.setLevel(logging.WARNING)
 
 
@@ -325,9 +364,9 @@ def pytest_collection(session):
     items = session.perform_collect()
     LOGGER.info(dir(session.config))
     config = session.config
-    _local = ast.literal_eval(config.option.local)
-    _distributed = ast.literal_eval(config.option.distributed)
-    is_parallel = ast.literal_eval(config.option.is_parallel)
+    _local = ast.literal_eval(str(config.option.local))
+    _distributed = ast.literal_eval(str(config.option.distributed))
+    is_parallel = ast.literal_eval(str(config.option.is_parallel))
     required_tests = list()
     global CACHE
     CACHE = LRUCache(1024 * 10)
@@ -400,12 +439,13 @@ def pytest_collection(session):
     if session.config.option.collectonly:
         te_meta = config_utils.create_content_json(os.path.join(cache_home, 'te_meta.json'), meta)
         LOGGER.debug("Items meta dict %s created at %s", meta, te_meta)
-    if session.config.option.readmetadata:
+    if not _local and session.config.option.readmetadata:
         tp_meta_file = os.path.join(os.getcwd(),
                                     params.LOG_DIR_NAME,
                                     params.JIRA_TEST_META_JSON)
         tp_meta = config_utils.read_content_json(tp_meta_file)
-        system_utils.insert_into_builtins('tp_meta', tp_meta)
+        Globals.tp_meta = tp_meta
+        #system_utils.insert_into_builtins('tp_meta', tp_meta)
         LOGGER.debug("Reading test plan meta dict %s", tp_meta)
     return items
 
@@ -432,8 +472,8 @@ def pytest_runtest_makereport(item, call):
     fail_file = 'failed_tests.log'
     pass_file = 'passed_tests.log'
     current_file = 'other_test_calls.log'
-    db_user, db_pass = get_db_credential()
     if not _local:
+        db_user, db_pass = get_db_credential()
         jira_id, jira_pwd = get_jira_credential()
         task = jira_utils.JiraTask(jira_id, jira_pwd)
         test_id = CACHE.lookup(report.nodeid)

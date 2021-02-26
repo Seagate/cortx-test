@@ -20,8 +20,6 @@ def parse_args():
                         help="db update required: y/n")
     parser.add_argument("-te", "--te_ticket", type=str,
                         help="jira xray test execution id")
-    parser.add_argument("-tp", "--test_plan", type=str, default='None',
-                        help="jira xray test plan id")
     parser.add_argument("-pe", "--parallel_exe", type=str, default=False,
                         help="parallel_exe: True for parallel, False for sequential")
     parser.add_argument("-tp", "--test_plan", type=str,
@@ -39,14 +37,6 @@ def parse_args():
     parser.add_argument("-f", "--force_serial_run", type=str_to_bool,
                         default=False, nargs='?', const=True,
                         help="Force sequential run if you face problems with parallel run")
-    parser.add_argument('-b', dest="bootstrap_servers",
-                        help="Bootstrap broker(s) (host[:port])")
-    parser.add_argument('-s', dest="schema_registry",
-                        help="Schema Registry (http(s)://host[:port]")
-    parser.add_argument('-t', dest="topic", default="example_serde_json",
-                        help="Topic name")
-    parser.add_argument('-g', dest="group", default="example_serde_json",
-                        help="Consumer group")
     return parser.parse_args()
 
 
@@ -107,12 +97,12 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
     if args.target:
         cmd_line = cmd_line + ["--target=" + args.target]
 
-    if te_tag:
-        cmd_line = cmd_line + [tag]
-
+    # if te_tag:
+    #    cmd_line = cmd_line + [tag]
+    read_metadata = "--readmetadata=" + str(True)
+    cmd_line = cmd_line + [read_metadata]
     cmd_line = cmd_line + ['--build=' + build, '--build_type=' + build_type,
                            '--tp_ticket=' + args.test_plan]
-
     prc = subprocess.Popen(cmd_line, env=env)
     prc.communicate()
 
@@ -162,16 +152,14 @@ def get_ticket_meta_from_test_list():
     pass
 
 
-def get_tests_from_te(args, test_type='ALL'):
+def get_tests_from_te(jira_obj, args, test_type='ALL'):
     """
     Get tests from given test execution
     """
-    jira_id, jira_pwd = runner.get_jira_credential()
-    jira_obj = JiraTask(jira_id, jira_pwd)
     test_list, tag = jira_obj.get_test_ids_from_te(args.te_ticket, test_type)
     if len(test_list) == 0 or tag == "":
         raise EnvironmentError("Please check TE provided, tests or tag is missing")
-    return test_list
+    return test_list, tag
 
 
 def trigger_unexecuted_tests(args, test_list):
@@ -238,11 +226,10 @@ def trigger_tests_from_te(args):
     """
     jira_id, jira_pwd = runner.get_jira_credential()
     jira_obj = JiraTask(jira_id, jira_pwd)
-    test_list, te_tag = jira_obj.get_test_ids_from_te(args.te_ticket)
-    #  test_list = get_tests_from_te(args)
-    if len(test_list) == 0 or te_tag == "":
-        assert False, "Please check TE provided, tests or tag is missing"
-
+    # test_list, te_tag = jira_obj.get_test_ids_from_te(args.te_ticket)
+    # if len(test_list) == 0 or te_tag == "":
+    #     assert False, "Please check TE provided, tests or tag is missing"
+    test_list, te_tag = get_tests_from_te(jira_obj, args)
     # writing the data into the file
     with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_TEST_LIST), 'w') \
             as test_file:
@@ -262,18 +249,26 @@ def trigger_tests_from_te(args):
         tp_resp = jira_obj.get_issue_details(args.test_plan)  # test plan id
         tp_meta['test_plan_label'] = tp_resp.fields.labels
         te_resp = jira_obj.get_issue_details(args.te_ticket)  # test execution id
-        tp_meta['te_meta'] = dict(te_id=args.te_ticket, te_label=te_resp.fields.labels)
+        if te_resp.fields.components:
+            te_components = te_resp.fields.components[0].name
+        tp_meta['te_meta'] = dict(te_id=args.te_ticket,
+                                  te_label=te_resp.fields.labels,
+                                  te_components=te_components)
         # test_name, test_id, test_id_labels, test_team, test_type
         for test in test_list:
             item = dict()
             item['test_id'] = test
             resp = jira_obj.get_issue_details(test)
-            item['test_name'] = resp['fields']['labels']
-            item['components'] = resp['fields']['components']
+            item['test_name'] = resp.fields.summary
+            item['labels'] = resp.fields.labels
+            if resp.fields.components:
+                component = resp.fields.components[0].name  # First items is of interest
+            else:
+                component = list()
+            item['component'] = component
             test_meta.append(item)
         tp_meta['test_meta'] = test_meta
         json.dump(tp_meta, t_meta, ensure_ascii=False)
-
     _env = os.environ.copy()
 
     if not args.force_serial_run:
@@ -316,7 +311,7 @@ def check_kafka_msg_trigger_test(args):
     Get message from kafka consumer
     Trigger tests specified in kafka message
     """
-    consumer = kafka_consumer.get_consumer(args)
+    consumer = kafka_consumer.get_consumer()
     received_stop_signal = False
     lock_task = LockingServer()
     while not received_stop_signal:
