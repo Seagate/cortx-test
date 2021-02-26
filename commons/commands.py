@@ -206,5 +206,5 @@ CREATE_IAM_USER = "s3iamusers create"
 LIST_IAM_USER = "s3iamusers show"
 DELETE_IAM_USER = "s3iamusers delete"
 
-#Linux System Commands
+# Linux System Commands
 CMD_MKDIR = "mkdir -p {}"
