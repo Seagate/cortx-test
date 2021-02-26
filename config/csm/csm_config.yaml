@@ -78,15 +78,6 @@ GridConfig:
 
 
 CliConfig:
-  host: "10.237.65.73"
-  port: "22"
-  username: "admin"
-  password: "Seagate@1"
-
-
-node2_csm_confg:
-  host: "eosnode-2"
-  port: "22"
-  username: "admin"
-  password: "Seagate@1"
-
+  iam_password: "Iamuser@123"
+  acc_password: "S3acc@123"
+  csm_user_pwd: "Csmuser@123"
