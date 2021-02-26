@@ -330,7 +330,7 @@ def check_kafka_msg_trigger_test(args):
     Get message from kafka consumer
     Trigger tests specified in kafka message
     """
-    consumer = kafka_consumer.get_consumer(args)
+    consumer = kafka_consumer.get_consumer()
     received_stop_signal = False
     lock_task = LockingServer()
     while not received_stop_signal:
