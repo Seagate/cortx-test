@@ -4,7 +4,7 @@ import argparse
 import csv
 import json
 from core import runner
-#from core import kafka_consumer
+from core import kafka_consumer
 from core.locking_server import LockingServer
 from commons.utils.jira_utils import JiraTask
 from commons import configmanager
@@ -330,7 +330,7 @@ def check_kafka_msg_trigger_test(args):
     Get message from kafka consumer
     Trigger tests specified in kafka message
     """
-    consumer = kafka_consumer.get_consumer()
+    consumer = kafka_consumer.get_consumer(args)
     received_stop_signal = False
     lock_task = LockingServer()
     while not received_stop_signal:
@@ -366,6 +366,9 @@ def check_kafka_msg_trigger_test(args):
             break
     consumer.close()
 
+def get_setup_details():
+    setups = configmanager.get_config_db(setup_query = {})
+    config_utils.create_content_json("setups.json", setups)
 
 def main(args):
     """Main Entry function using argument parser to parse options and forming pyttest command.
