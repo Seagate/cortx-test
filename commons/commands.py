@@ -202,6 +202,9 @@ CMD_RESET_S3ACC_PWD = "s3accounts reset_password {}"
 CMD_CREATE_BUCKET = "s3buckets create {}"
 CMD_SHOW_BUCKETS = "s3buckets show"
 CMD_DELETE_BUCKET = "s3buckets delete {}"
+CREATE_IAM_USER = "s3iamusers create"
+LIST_IAM_USER = "s3iamusers show"
+DELETE_IAM_USER = "s3iamusers delete"
 
-#Linux System Commands
+# Linux System Commands
 CMD_MKDIR = "mkdir -p {}"
