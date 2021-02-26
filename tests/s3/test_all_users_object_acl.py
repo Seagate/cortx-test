@@ -28,7 +28,7 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils.config_utils import read_yaml
-from commons.utils.system_utils import remove_file
+from commons.utils.system_utils import make_dirs, cleanup_dir, path_exists
 from libs.s3 import s3_test_lib, iam_test_lib, s3_acl_test_lib
 
 
@@ -57,6 +57,9 @@ class TestAllUsers:
             cls.all_user_cfg["bucket_name"], str(int(time.time())))
         cls.obj_name = "{0}{1}".format(
             cls.all_user_cfg["obj_name"], str(int(time.time())))
+        cls.test_file = "all_users_obj_acl.txt"
+        cls.test_dir_path = os.path.join(os.getcwd(), "testdata")
+        cls.test_file_path = os.path.join(cls.test_dir_path, cls.test_file)
 
     def put_object_acl(self, acl):
         """helper method to put object acl and verify it."""
@@ -107,15 +110,19 @@ class TestAllUsers:
         It will create a bucket and upload an object to that bucket.
         """
         self.LOGGER.info("STARTED: Setup operations")
+        if not path_exists(self.test_dir_path):
+            resp = make_dirs(self.test_dir_path)
+            self.LOGGER.info("Created path: %s", resp)
         self.bucket_name = "{0}{1}".format(
             self.all_user_cfg["bucket_name"], str(int(time.time())))
         self.obj_name = "{0}{1}".format(
             self.all_user_cfg["obj_name"], str(int(time.time())))
         self.LOGGER.info("Creating a bucket and putting an object into bucket")
+        S3_TEST_OBJ.delete_bucket(bucket_name=self.bucket_name, force=True)
         resp = S3_TEST_OBJ.create_bucket_put_object(
             self.bucket_name,
             self.obj_name,
-            self.all_user_cfg["file_path"],
+            self.test_file_path,
             self.all_user_cfg["mb_count"])
         assert resp[0], resp[1]
         self.LOGGER.info(
@@ -136,6 +143,13 @@ class TestAllUsers:
         test execution such as S3 buckets and the objects present into that bucket.
         """
         self.LOGGER.info("STARTED: Teardown operations")
+        self.LOGGER.info("Clean : %s", self.test_dir_path)
+        if path_exists(self.test_dir_path):
+            resp = cleanup_dir(self.test_dir_path)
+            self.LOGGER.info(
+                "cleaned path: %s, resp: %s",
+                self.test_dir_path,
+                resp)
         bucket_list = S3_TEST_OBJ.bucket_list()[1]
         all_users_buckets = [
             bucket for bucket in bucket_list if ALL_USERS_CONF["all_users_obj_acl"]["bucket_name"]
@@ -145,9 +159,7 @@ class TestAllUsers:
             ACL_OBJ.put_bucket_acl(
                 bucket, grant_full_control=ALL_USERS_CONF["all_users_obj_acl"]["group_uri"])
         S3_TEST_OBJ.delete_multiple_buckets(all_users_buckets)
-        self.LOGGER.info("Deleted buckets")
-        if os.path.exists(ALL_USERS_CONF["all_users_obj_acl"]["file_path"]):
-            remove_file(ALL_USERS_CONF["all_users_obj_acl"]["file_path"])
+        self.LOGGER.info("Deleted buckets.")
         self.LOGGER.info("ENDED: Teardown operations")
 
     @pytest.mark.parallel
@@ -173,7 +185,7 @@ class TestAllUsers:
         resp = NO_AUTH_OBJ.put_object(
             self.bucket_name,
             self.obj_name,
-            self.all_user_cfg["file_path"])
+            self.test_file_path)
         assert resp[0], resp[1]
         self.LOGGER.info(
             "Step 3: Uploaded same object into bucket successfully")
@@ -296,7 +308,7 @@ class TestAllUsers:
         resp = NO_AUTH_OBJ.put_object(
             self.bucket_name,
             self.obj_name,
-            self.all_user_cfg["file_path"])
+            self.test_file_path)
         assert resp[0], resp[1]
         self.LOGGER.info(
             "Step 3: Put an object with same name to bucket using unsigned account successfully")
@@ -417,7 +429,7 @@ class TestAllUsers:
         resp = NO_AUTH_OBJ.put_object(
             self.bucket_name,
             self.obj_name,
-            self.all_user_cfg["file_path"])
+            self.test_file_path)
         assert resp[0], resp[1]
         self.LOGGER.info(
             "Step 3: Put an object with same name in bucket using unsigned account successfully")
@@ -612,7 +624,7 @@ class TestAllUsers:
         resp = NO_AUTH_OBJ.put_object(
             self.bucket_name,
             self.obj_name,
-            self.all_user_cfg["file_path"])
+            self.test_file_path)
         assert resp[0], resp[1]
         self.LOGGER.info(
             "ENDED: Put an object with same name in bucket without Autentication "
@@ -736,7 +748,7 @@ class TestAllUsers:
         resp = NO_AUTH_OBJ.put_object(
             self.bucket_name,
             self.obj_name,
-            self.all_user_cfg["file_path"])
+            self.test_file_path)
         assert resp[0], resp[1]
         self.LOGGER.info(
             "ENDED:Put an object with same name in bucket without Autentication "

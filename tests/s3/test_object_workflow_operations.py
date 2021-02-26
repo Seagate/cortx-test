@@ -26,20 +26,19 @@ import logging
 import shutil
 import pytest
 
-from libs.s3 import s3_test_lib, s3_cmd_test_lib, s3_multipart_test_lib
-
-from commons.utils.system_utils import create_file, remove_file
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils.config_utils import read_yaml
+from libs.s3 import s3_test_lib, s3_cmd_test_lib, s3_multipart_test_lib
+from commons.utils.system_utils import create_file, remove_file, path_exists, make_dirs, cleanup_dir
 
 S3_TEST_OBJ = s3_test_lib.S3TestLib()
 S3_CMD_OBJ = s3_cmd_test_lib.S3CmdTestLib()
 S3_MP_OBJ = s3_multipart_test_lib.S3MultipartTestLib()
 
 OBJ_OPS_CONF = read_yaml(
-    "config/s3/test_object_workflow_operations.yaml")
+    "config/s3/test_object_workflow_operations.yaml")[1]
 
 
 class TestObjectWorkflowOperations:
@@ -53,24 +52,36 @@ class TestObjectWorkflowOperations:
         It will perform all prerequisite test suite steps if any.
         """
         cls.LOGGER = logging.getLogger(__name__)
+        cls.folder_path = os.path.join(os.getcwd(), "objworkflow")
+        cls.file_path =  os.path.join(os.getcwd(), "obj_workflow.txt")
 
     def setup_method(self):
         """Setup method."""
         self.LOGGER.info("STARTED: setup method")
+        if not path_exists(self.folder_path):
+            resp = make_dirs(self.folder_path)
+            self.LOGGER.info("Created path: %s", resp)
         self.LOGGER.info("ENDED: setup method")
 
     def teardown_method(self):
         """Teardown method."""
         self.LOGGER.info("STARTED: teardown method")
+        self.LOGGER.info("Clean : %s", self.folder_path)
+        if path_exists(self.folder_path):
+            resp = cleanup_dir(self.folder_path)
+            self.LOGGER.info(
+                "cleaned path: %s, resp: %s",
+                self.folder_path,
+                resp)
         bucket_list = S3_TEST_OBJ.bucket_list()
         pref_list = [
             each_bucket for each_bucket in bucket_list[1] if each_bucket.startswith(
                 OBJ_OPS_CONF["object_workflow"]["bkt_name_prefix"])]
         S3_TEST_OBJ.delete_multiple_buckets(pref_list)
-        if os.path.exists(OBJ_OPS_CONF["object_workflow"]["file_path"]):
-            remove_file(OBJ_OPS_CONF["object_workflow"]["file_path"])
-        if os.path.exists(OBJ_OPS_CONF["object_workflow"]["folder_path"]):
-            shutil.rmtree(OBJ_OPS_CONF["object_workflow"]["folder_path"])
+        if os.path.exists(self.file_path):
+            remove_file(self.file_path)
+        if os.path.exists(self.folder_path):
+            shutil.rmtree(self.folder_path)
         self.LOGGER.info("ENDED: teardown method")
 
     def create_bucket_put_objects(self, bucket_name, object_count):
@@ -97,12 +108,12 @@ class TestObjectWorkflowOperations:
         for cnt in range(object_count):
             obj_name = f"{OBJ_OPS_CONF['object_workflow']['obj_name_prefix']}{cnt}"
             create_file(
-                OBJ_OPS_CONF["object_workflow"]["file_path"],
+                self.file_path,
                 OBJ_OPS_CONF["object_workflow"]["mb_count"])
             resp = S3_TEST_OBJ.put_object(
                 bucket_name,
                 obj_name,
-                OBJ_OPS_CONF["object_workflow"]["file_path"])
+                self.file_path)
             assert resp[0], resp[1]
             obj_list.append(obj_name)
         self.LOGGER.info(
@@ -128,7 +139,7 @@ class TestObjectWorkflowOperations:
             "Created a bucket with name %s",
             OBJ_OPS_CONF["test_2208"]["bucket_name"])
         create_file(
-            OBJ_OPS_CONF["object_workflow"]["file_path"],
+            self.file_path,
             OBJ_OPS_CONF["object_workflow"]["mb_count"])
         self.LOGGER.info(
             "Uploading an object %s to a bucket %s",
@@ -137,7 +148,7 @@ class TestObjectWorkflowOperations:
         resp = S3_TEST_OBJ.put_object(
             OBJ_OPS_CONF["test_2208"]["bucket_name"],
             OBJ_OPS_CONF["test_2208"]["obj_name"],
-            OBJ_OPS_CONF["object_workflow"]["file_path"])
+            self.file_path)
         assert resp[0], resp[1]
         self.LOGGER.info("Uploaded an object to a bucket")
         self.LOGGER.info("Verifying object is successfully uploaded")
@@ -174,8 +185,8 @@ class TestObjectWorkflowOperations:
             OBJ_OPS_CONF["test_2209"]["obj_name"],
             OBJ_OPS_CONF["test_2209"]["start_range"],
             OBJ_OPS_CONF["test_2209"]["stop_range"],
-            OBJ_OPS_CONF["test_2209"]["file_count"],
-            OBJ_OPS_CONF["object_workflow"]["file_path"])
+            object_count=OBJ_OPS_CONF["test_2209"]["file_count"],
+            file_path=self.file_path)
         assert put_object[0], put_object[1]
         self.LOGGER.info("Uploaded different size of objects")
         self.LOGGER.info("Validating objects are uploaded or not")
@@ -208,7 +219,7 @@ class TestObjectWorkflowOperations:
             OBJ_OPS_CONF["test_2210"]["bucket_name"])
         resp = S3_CMD_OBJ.upload_folder_cli(
             OBJ_OPS_CONF["test_2210"]["bucket_name"],
-            OBJ_OPS_CONF["object_workflow"]["folder_path"],
+            self.folder_path,
             OBJ_OPS_CONF["test_2210"]["file_count"])
         assert resp[0], resp[1]
         self.LOGGER.info("Copied local files to a bucket")
@@ -222,13 +233,13 @@ class TestObjectWorkflowOperations:
         self.LOGGER.info("STARTED: Add Object to non existing bucket")
         self.LOGGER.info("Uploading an object to non existing bucket")
         create_file(
-            OBJ_OPS_CONF["object_workflow"]["file_path"],
+            self.file_path,
             OBJ_OPS_CONF["object_workflow"]["mb_count"])
         try:
             S3_TEST_OBJ.object_upload(
                 OBJ_OPS_CONF["test_2211"]["bucket_name"],
                 OBJ_OPS_CONF["test_2211"]["obj_name"],
-                OBJ_OPS_CONF["object_workflow"]["file_path"])
+                self.file_path)
         except CTException as error:
             assert OBJ_OPS_CONF["test_2211"]["error_message"] in str(
                 error.message), error.message
@@ -253,7 +264,7 @@ class TestObjectWorkflowOperations:
             "Created a bucket with name %s",
             OBJ_OPS_CONF["test_2213"]["bucket_name"])
         create_file(
-            OBJ_OPS_CONF["object_workflow"]["file_path"],
+            self.file_path,
             OBJ_OPS_CONF["object_workflow"]["mb_count"])
         self.LOGGER.info(
             "Uploading an object %s to a bucket %s",
@@ -262,9 +273,9 @@ class TestObjectWorkflowOperations:
         resp = S3_TEST_OBJ.object_upload(
             OBJ_OPS_CONF["test_2213"]["bucket_name"],
             OBJ_OPS_CONF["test_2213"]["obj_name"],
-            OBJ_OPS_CONF["object_workflow"]["file_path"])
+            self.file_path)
         assert resp[0], resp[1]
-        assert resp[1] == OBJ_OPS_CONF["object_workflow"]["file_path"], resp[1]
+        assert resp[1] == self.file_path, resp[1]
         self.LOGGER.info("Uploaded an object to a bucket")
         self.LOGGER.info(
             "Listing an object from a bucket %s",
@@ -312,7 +323,7 @@ class TestObjectWorkflowOperations:
             OBJ_OPS_CONF["test_2214"]["bucket_name"])
         resp = S3_CMD_OBJ.upload_folder_cli(
             OBJ_OPS_CONF["test_2214"]["bucket_name"],
-            OBJ_OPS_CONF["object_workflow"]["folder_path"],
+            self.folder_path,
             OBJ_OPS_CONF["test_2214"]["file_count"])
         assert resp[0], resp[1]
         self.LOGGER.info("Copied local files to a bucket")
@@ -321,7 +332,7 @@ class TestObjectWorkflowOperations:
             OBJ_OPS_CONF["test_2214"]["bucket_name"])
         resp = S3_CMD_OBJ.download_bucket_cli(
             OBJ_OPS_CONF["test_2214"]["bucket_name"],
-            OBJ_OPS_CONF["object_workflow"]["folder_path"])
+            self.folder_path)
         assert resp[0], resp[1]
         self.LOGGER.info("Downloaded an object rom a bucket")
         self.LOGGER.info(
@@ -345,7 +356,7 @@ class TestObjectWorkflowOperations:
             "Created a bucket with name %s",
             OBJ_OPS_CONF["test_2215"]["bucket_name"])
         create_file(
-            OBJ_OPS_CONF["object_workflow"]["file_path"],
+            self.file_path,
             OBJ_OPS_CONF["test_2215"]["file_size"])
         self.LOGGER.info(
             "Uploading an object to a bucket %s",
@@ -353,7 +364,7 @@ class TestObjectWorkflowOperations:
         resp = S3_TEST_OBJ.object_upload(
             OBJ_OPS_CONF["test_2215"]["bucket_name"],
             OBJ_OPS_CONF["test_2215"]["obj_name"],
-            OBJ_OPS_CONF["object_workflow"]["file_path"])
+            self.file_path)
         assert resp[0], resp[1]
         self.LOGGER.info("Object is uploaded to a bucket")
         self.LOGGER.info("Getting object within byte range")
@@ -384,7 +395,7 @@ class TestObjectWorkflowOperations:
             "Created a bucket with name %s",
             OBJ_OPS_CONF["test_2217"]["bucket_name"])
         create_file(
-            OBJ_OPS_CONF["object_workflow"]["file_path"],
+            self.file_path,
             OBJ_OPS_CONF["object_workflow"]["mb_count"])
         self.LOGGER.info(
             "Uploading an object to a bucket %s",
@@ -392,7 +403,7 @@ class TestObjectWorkflowOperations:
         resp = S3_TEST_OBJ.object_upload(
             OBJ_OPS_CONF["test_2217"]["bucket_name"],
             OBJ_OPS_CONF["test_2217"]["obj_name"],
-            OBJ_OPS_CONF["object_workflow"]["file_path"])
+            self.file_path)
         assert resp[0], resp[1]
         self.LOGGER.info("Object is uploaded to a bucket")
         self.LOGGER.info("Verifying object is successfully uploaded")
@@ -429,7 +440,7 @@ class TestObjectWorkflowOperations:
             "Created a bucket with name %s",
             OBJ_OPS_CONF["test_2218"]["bucket_name"])
         create_file(
-            OBJ_OPS_CONF["object_workflow"]["file_path"],
+            self.file_path,
             OBJ_OPS_CONF["object_workflow"]["mb_count"])
         self.LOGGER.info(
             "Uploading an object to a bucket %s",
@@ -437,7 +448,7 @@ class TestObjectWorkflowOperations:
         resp = S3_TEST_OBJ.object_upload(
             OBJ_OPS_CONF["test_2218"]["bucket_name"],
             OBJ_OPS_CONF["test_2218"]["obj_name"],
-            OBJ_OPS_CONF["object_workflow"]["file_path"])
+            self.file_path)
         assert resp[0], resp[1]
         self.LOGGER.info("Object is uploaded to a bucket")
         self.LOGGER.info("Verifying object is successfully uploaded")
@@ -458,9 +469,9 @@ class TestObjectWorkflowOperations:
         resp = S3_TEST_OBJ.put_object(
             OBJ_OPS_CONF["test_2218"]["bucket_name"],
             OBJ_OPS_CONF["test_2218"]["obj_name"],
-            OBJ_OPS_CONF["object_workflow"]["file_path"],
-            OBJ_OPS_CONF["test_2218"]["key"],
-            OBJ_OPS_CONF["test_2218"]["value"])
+            self.file_path,
+            m_key=OBJ_OPS_CONF["test_2218"]["key"],
+            m_value=OBJ_OPS_CONF["test_2218"]["value"])
         assert resp[0], resp[1]
         self.LOGGER.info("Added new metadata to an object")
         self.LOGGER.info(
@@ -494,15 +505,15 @@ class TestObjectWorkflowOperations:
             "Created a bucket with name %s",
             OBJ_OPS_CONF["test_2219"]["bucket_name"])
         create_file(
-            OBJ_OPS_CONF["object_workflow"]["file_path"],
+            self.file_path,
             OBJ_OPS_CONF["object_workflow"]["mb_count"])
         self.LOGGER.info("Uploading an object with metadata")
         resp = S3_TEST_OBJ.put_object(
             OBJ_OPS_CONF["test_2219"]["bucket_name"],
             OBJ_OPS_CONF["test_2219"]["obj_name"],
-            OBJ_OPS_CONF["object_workflow"]["file_path"],
-            OBJ_OPS_CONF["test_2219"]["key"],
-            OBJ_OPS_CONF["test_2219"]["value"])
+            self.file_path,
+            m_key=OBJ_OPS_CONF["test_2219"]["key"],
+            m_value=OBJ_OPS_CONF["test_2219"]["value"])
         assert resp[0], resp[1]
         self.LOGGER.info("Uploaded an object with metadata")
         self.LOGGER.info("Retrieving metadata of an object")
@@ -548,7 +559,7 @@ class TestObjectWorkflowOperations:
             "Created a bucket with name %s",
             OBJ_OPS_CONF["test_2220"]["bucket_name"])
         create_file(
-            OBJ_OPS_CONF["object_workflow"]["file_path"],
+            self.file_path,
             OBJ_OPS_CONF["object_workflow"]["mb_count"])
         self.LOGGER.info(
             "Uploading an object %s to a bucket %s",
@@ -557,7 +568,7 @@ class TestObjectWorkflowOperations:
         resp = S3_TEST_OBJ.put_object(
             OBJ_OPS_CONF["test_2220"]["bucket_name"],
             OBJ_OPS_CONF["test_2220"]["obj_name"],
-            OBJ_OPS_CONF["object_workflow"]["file_path"])
+            self.file_path)
         assert resp[0], resp[1]
         self.LOGGER.info("Uploaded an object to a bucket")
         self.LOGGER.info("Verifying object is successfully uploaded")
@@ -654,8 +665,7 @@ class TestObjectWorkflowOperations:
             bucket_name, cfg_7655["no_of_objects"])
         # Adding a dummy object to the object list which isn't uploaded to
         # bucket
-        obj_list.append(OBJ_OPS_CONF['object_workflow']['obj_name_prefix'],
-                        str(int(time.time())))
+        obj_list.append(OBJ_OPS_CONF['object_workflow']['obj_name_prefix'] + str(int(time.time())))
         self.LOGGER.info(
             "Step 3: Deleting all existing objects along with one non existing object from bucket "
             "with quiet mode")

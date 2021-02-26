@@ -18,20 +18,21 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-"""Bukcet Workflow Operations Test Module."""
+"""Bucket Workflow Operations Test Module."""
+
 import random
 import os
 import time
 import logging
 import pytest
 
-from libs.s3 import s3_test_lib, iam_test_lib, s3_acl_test_lib
-
-from commons.utils.system_utils import create_file, remove_file
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils.config_utils import read_yaml
+from commons.utils.system_utils import create_file, remove_file
+from libs.s3 import s3_test_lib, iam_test_lib, s3_acl_test_lib
+from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
 
 
 S3_TEST_OBJ = s3_test_lib.S3TestLib()
@@ -39,8 +40,7 @@ IAM_OBJ = iam_test_lib.IamTestLib()
 ACL_OBJ = s3_acl_test_lib.S3AclTestLib()
 
 BKT_OPS_CONF = read_yaml(
-    "config/s3/test_bucket_workflow_operations.yaml")
-CMN_CFG = read_yaml("config/common_config.yaml")[1]
+    "config/s3/test_bucket_workflow_operations.yaml")[1]
 
 
 class TestBucketWorkflowOperations:
@@ -55,8 +55,8 @@ class TestBucketWorkflowOperations:
         """
         cls.LOGGER = logging.getLogger(__name__)
         cls.random_id = str(time.time())
-        cls.ldap_user = CMN_CFG["ldap_username"]
-        cls.ldap_pwd = CMN_CFG["ldap_passwd"]
+        cls.ldap_user = LDAP_USERNAME
+        cls.ldap_pwd = LDAP_PASSWD
         cls.account_name = BKT_OPS_CONF["bucket_workflow"]["acc_name_prefix"]
 
     def setup_method(self):

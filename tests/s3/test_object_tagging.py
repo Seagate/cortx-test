@@ -22,12 +22,13 @@
 import os
 import logging
 import pytest
-from libs.s3 import s3_test_lib, s3_tagging_test_lib, s3_multipart_test_lib
-from commons.utils.system_utils import create_file, remove_file
+
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils.config_utils import read_yaml
+from libs.s3 import s3_test_lib, s3_tagging_test_lib, s3_multipart_test_lib
+from commons.utils.system_utils import create_file, remove_file, path_exists, make_dirs
 
 S3_TEST_OBJ = s3_test_lib.S3TestLib()
 TAG_OBJ = s3_tagging_test_lib.S3TaggingTestLib()
@@ -47,6 +48,19 @@ class TestObjectTagging:
         It will perform all prerequisite test suite steps if any.
         """
         cls.LOGGER = logging.getLogger(__name__)
+        cls.bkt_name_prefix = "objtag"
+        cls.folder_path = os.path.join(os.getcwd(), "tagging")
+        cls.file_path = os.path.join(cls.folder_path, "obj_tag.txt")
+
+    def setup_method(self):
+        """
+        Function will be invoked prior to each test case.
+
+        It will perform all prerequisite test steps if any.
+        """
+        if not path_exists(self.folder_path):
+            resp = make_dirs(self.folder_path)
+            self.LOGGER.info("Created path: %s", resp)
 
     @CTFailOn(error_handler)
     def teardown_method(self):
@@ -55,10 +69,10 @@ class TestObjectTagging:
         bucket_list = S3_TEST_OBJ.bucket_list()
         pref_list = [
             each_bucket for each_bucket in bucket_list[1] if each_bucket.startswith(
-                OBJ_TAG_CONFIG["object_tagging"]["bkt_name_prefix"])]
+                self.bkt_name_prefix)]
         S3_TEST_OBJ.delete_multiple_buckets(pref_list)
-        if os.path.exists(OBJ_TAG_CONFIG["object_tagging"]["file_path"]):
-            remove_file(OBJ_TAG_CONFIG["object_tagging"]["file_path"])
+        if os.path.exists(self.file_path):
+            remove_file(self.file_path)
         self.LOGGER.info("ENDED: Teardown Method")
 
     def create_put_set_object_tag(
@@ -93,7 +107,7 @@ class TestObjectTagging:
         assert resp[0], resp[1]
         self.LOGGER.info("Setting tag to an object %s", obj_name)
         resp = TAG_OBJ.set_object_tag(
-            bucket_name, obj_name, key, value, tag_count)
+            bucket_name, obj_name, key, value, tag_count=tag_count)
         assert resp[0], resp[1]
 
     @pytest.mark.parallel
@@ -108,7 +122,7 @@ class TestObjectTagging:
         self.create_put_set_object_tag(
             OBJ_TAG_CONFIG["test_9413"]["bucket_name"],
             OBJ_TAG_CONFIG["test_9413"]["object_name"],
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"],
+            self.file_path,
             OBJ_TAG_CONFIG["object_tagging"]["mb_count"],
             OBJ_TAG_CONFIG["test_9413"]["key"],
             OBJ_TAG_CONFIG["test_9413"]["value"])
@@ -135,7 +149,7 @@ class TestObjectTagging:
         self.create_put_set_object_tag(
             OBJ_TAG_CONFIG["test_9414"]["bucket_name"],
             OBJ_TAG_CONFIG["test_9414"]["object_name"],
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"],
+            self.file_path,
             OBJ_TAG_CONFIG["object_tagging"]["mb_count"],
             OBJ_TAG_CONFIG["test_9414"]["key"],
             OBJ_TAG_CONFIG["test_9414"]["value"])
@@ -162,7 +176,7 @@ class TestObjectTagging:
         self.create_put_set_object_tag(
             OBJ_TAG_CONFIG["test_9415"]["bucket_name"],
             OBJ_TAG_CONFIG["test_9415"]["object_name"],
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"],
+            self.file_path,
             OBJ_TAG_CONFIG["object_tagging"]["mb_count"],
             OBJ_TAG_CONFIG["test_9415"]["key"],
             OBJ_TAG_CONFIG["test_9415"]["value"])
@@ -207,7 +221,7 @@ class TestObjectTagging:
             "Bucket is created with name %s",
             OBJ_TAG_CONFIG["test_9416"]["bucket_name"])
         create_file(
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"],
+            self.file_path,
             OBJ_TAG_CONFIG["object_tagging"]["mb_count"])
         self.LOGGER.info(
             "Uploading an object %s to a bucket %s with tagging support",
@@ -216,7 +230,7 @@ class TestObjectTagging:
         resp = TAG_OBJ.put_object_with_tagging(
             OBJ_TAG_CONFIG["test_9416"]["bucket_name"],
             OBJ_TAG_CONFIG["test_9416"]["object_name"],
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"],
+            self.file_path,
             OBJ_TAG_CONFIG["test_9416"]["object_tag"])
         assert resp[0], resp[1]
         assert OBJ_TAG_CONFIG["test_9416"]["object_name"] == resp[1].key, resp[1]
@@ -241,7 +255,7 @@ class TestObjectTagging:
             "Bucket is created with name %s",
             OBJ_TAG_CONFIG["test_9417"]["bucket_name"])
         create_file(
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"],
+            self.file_path,
             OBJ_TAG_CONFIG["object_tagging"]["mb_count"])
         self.LOGGER.info(
             "Uploading an object %s to a bucket %s with tagging support",
@@ -250,7 +264,7 @@ class TestObjectTagging:
         resp = TAG_OBJ.put_object_with_tagging(
             OBJ_TAG_CONFIG["test_9417"]["bucket_name"],
             OBJ_TAG_CONFIG["test_9417"]["object_name"],
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"],
+            self.file_path,
             OBJ_TAG_CONFIG["test_9417"]["object_tag"])
         assert resp[0], resp[1]
         assert OBJ_TAG_CONFIG["test_9417"]["object_name"] == resp[1].key, resp[1]
@@ -302,8 +316,8 @@ class TestObjectTagging:
             OBJ_TAG_CONFIG["test_9418"]["bucket_name"],
             OBJ_TAG_CONFIG["test_9418"]["object_name"],
             OBJ_TAG_CONFIG["test_9418"]["single_part_size"],
-            OBJ_TAG_CONFIG["test_9418"]["total_parts"],
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"])
+            total_parts=OBJ_TAG_CONFIG["test_9418"]["total_parts"],
+            multipart_obj_path=self.file_path)
         assert resp[0], resp[1]
         upload_parts_list = resp[1]
         self.LOGGER.info(
@@ -344,7 +358,7 @@ class TestObjectTagging:
         self.create_put_set_object_tag(
             OBJ_TAG_CONFIG["test_9419"]["bucket_name"],
             OBJ_TAG_CONFIG["test_9419"]["object_name"],
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"],
+            self.file_path,
             OBJ_TAG_CONFIG["object_tagging"]["mb_count"],
             OBJ_TAG_CONFIG["test_9419"]["key"],
             OBJ_TAG_CONFIG["test_9419"]["value"],
@@ -380,14 +394,14 @@ class TestObjectTagging:
             "Bucket is created with name %s",
             OBJ_TAG_CONFIG["test_9420"]["bucket_name"])
         create_file(
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"],
+            self.file_path,
             OBJ_TAG_CONFIG["object_tagging"]["mb_count"])
         self.LOGGER.info("Uploading an object %s",
                          OBJ_TAG_CONFIG["test_9420"]["object_name"])
         resp = S3_TEST_OBJ.put_object(
             OBJ_TAG_CONFIG["test_9420"]["bucket_name"],
             OBJ_TAG_CONFIG["test_9420"]["object_name"],
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"])
+            self.file_path)
         assert resp[0], resp[1]
         self.LOGGER.info("Object is uploaded to a bucket")
         self.LOGGER.info("Adding more than 10 tags to an existing object")
@@ -397,7 +411,7 @@ class TestObjectTagging:
                 OBJ_TAG_CONFIG["test_9420"]["object_name"],
                 OBJ_TAG_CONFIG["test_9420"]["key"],
                 OBJ_TAG_CONFIG["test_9420"]["value"],
-                OBJ_TAG_CONFIG["test_9420"]["tag_count"])
+                tag_count=OBJ_TAG_CONFIG["test_9420"]["tag_count"])
         except CTException as error:
             assert OBJ_TAG_CONFIG["test_9420"]["error_message"] in str(
                 error.message), error.message
@@ -420,14 +434,14 @@ class TestObjectTagging:
             "Bucket is created with name %s",
             OBJ_TAG_CONFIG["test_9421"]["bucket_name"])
         create_file(
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"],
+            self.file_path,
             OBJ_TAG_CONFIG["object_tagging"]["mb_count"])
         self.LOGGER.info("Uploading an object %s",
                          OBJ_TAG_CONFIG["test_9421"]["object_name"])
         resp = S3_TEST_OBJ.put_object(
             OBJ_TAG_CONFIG["test_9421"]["bucket_name"],
             OBJ_TAG_CONFIG["test_9421"]["object_name"],
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"])
+            self.file_path)
         assert resp[0], resp[1]
         self.LOGGER.info("Object is uploaded to a bucket")
         self.LOGGER.info("Adding tags to an existing object with unique keys")
@@ -461,14 +475,14 @@ class TestObjectTagging:
             "Bucket is created with name %s",
             OBJ_TAG_CONFIG["test_9422"]["bucket_name"])
         create_file(
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"],
+            self.file_path,
             OBJ_TAG_CONFIG["object_tagging"]["mb_count"])
         self.LOGGER.info("Uploading an object %s",
                          OBJ_TAG_CONFIG["test_9422"]["object_name"])
         resp = S3_TEST_OBJ.put_object(
             OBJ_TAG_CONFIG["test_9422"]["bucket_name"],
             OBJ_TAG_CONFIG["test_9422"]["object_name"],
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"])
+            self.file_path)
         assert resp[0], resp[1]
         self.LOGGER.info("Object is uploaded to a bucket")
         self.LOGGER.info(
@@ -478,7 +492,7 @@ class TestObjectTagging:
             OBJ_TAG_CONFIG["test_9422"]["object_name"],
             OBJ_TAG_CONFIG["test_9422"]["key"],
             OBJ_TAG_CONFIG["test_9422"]["value"],
-            OBJ_TAG_CONFIG["test_9422"]["duplicate_key"])
+            duplicate_key=OBJ_TAG_CONFIG["test_9422"]["duplicate_key"])
         assert resp[0], resp[1]
         self.LOGGER.info(
             "Tags are added to an existing object with duplicate values")
@@ -504,7 +518,7 @@ class TestObjectTagging:
         self.create_put_set_object_tag(
             OBJ_TAG_CONFIG["test_9423"]["bucket_name"],
             OBJ_TAG_CONFIG["test_9423"]["object_name"],
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"],
+            self.file_path,
             OBJ_TAG_CONFIG["object_tagging"]["mb_count"],
             OBJ_TAG_CONFIG["test_9423"]["key"],
             OBJ_TAG_CONFIG["test_9423"]["value"])
@@ -537,14 +551,14 @@ class TestObjectTagging:
             "Bucket is created with name %s",
             OBJ_TAG_CONFIG["test_9424"]["bucket_name"])
         create_file(
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"],
+            self.file_path,
             OBJ_TAG_CONFIG["object_tagging"]["mb_count"])
         self.LOGGER.info("Uploading an object %s",
                          OBJ_TAG_CONFIG["test_9424"]["object_name"])
         resp = S3_TEST_OBJ.put_object(
             OBJ_TAG_CONFIG["test_9424"]["bucket_name"],
             OBJ_TAG_CONFIG["test_9424"]["object_name"],
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"])
+            self.file_path)
         assert resp[0], resp[1]
         self.LOGGER.info("Object is uploaded to a bucket")
         self.LOGGER.info(
@@ -574,7 +588,7 @@ class TestObjectTagging:
         self.create_put_set_object_tag(
             OBJ_TAG_CONFIG["test_9425"]["bucket_name"],
             OBJ_TAG_CONFIG["test_9425"]["object_name"],
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"],
+            self.file_path,
             OBJ_TAG_CONFIG["object_tagging"]["mb_count"],
             OBJ_TAG_CONFIG["test_9425"]["key"],
             OBJ_TAG_CONFIG["test_9425"]["value"])
@@ -607,14 +621,14 @@ class TestObjectTagging:
             "Bucket is created with name %s",
             OBJ_TAG_CONFIG["test_9426"]["bucket_name"])
         create_file(
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"],
+            self.file_path,
             OBJ_TAG_CONFIG["object_tagging"]["mb_count"])
         self.LOGGER.info("Uploading an object %s",
                          OBJ_TAG_CONFIG["test_9426"]["object_name"])
         resp = S3_TEST_OBJ.put_object(
             OBJ_TAG_CONFIG["test_9426"]["bucket_name"],
             OBJ_TAG_CONFIG["test_9426"]["object_name"],
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"])
+            self.file_path)
         assert resp[0], resp[1]
         self.LOGGER.info("Object is uploaded to a bucket")
         self.LOGGER.info(
@@ -643,7 +657,7 @@ class TestObjectTagging:
         self.create_put_set_object_tag(
             OBJ_TAG_CONFIG["test_9427"]["bucket_name"],
             OBJ_TAG_CONFIG["test_9427"]["object_name"],
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"],
+            self.file_path,
             OBJ_TAG_CONFIG["object_tagging"]["mb_count"],
             OBJ_TAG_CONFIG["test_9427"]["key1"],
             OBJ_TAG_CONFIG["test_9427"]["value"])
@@ -684,7 +698,7 @@ class TestObjectTagging:
         self.create_put_set_object_tag(
             OBJ_TAG_CONFIG["test_9428"]["bucket_name"],
             OBJ_TAG_CONFIG["test_9428"]["object_name"],
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"],
+            self.file_path,
             OBJ_TAG_CONFIG["object_tagging"]["mb_count"],
             OBJ_TAG_CONFIG["test_9428"]["key"],
             OBJ_TAG_CONFIG["test_9428"]["value1"])
@@ -726,7 +740,7 @@ class TestObjectTagging:
         self.create_put_set_object_tag(
             OBJ_TAG_CONFIG["test_9429"]["bucket_name"],
             OBJ_TAG_CONFIG["test_9429"]["object_name"],
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"],
+            self.file_path,
             OBJ_TAG_CONFIG["object_tagging"]["mb_count"],
             OBJ_TAG_CONFIG["test_9429"]["key"],
             OBJ_TAG_CONFIG["test_9429"]["value"])
@@ -759,7 +773,7 @@ class TestObjectTagging:
             "Bucket is created with name %s",
             OBJ_TAG_CONFIG["test_9430"]["bucket_name"])
         create_file(
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"],
+            self.file_path,
             OBJ_TAG_CONFIG["object_tagging"]["mb_count"])
         self.LOGGER.info(
             "Uploading an object %s to a bucket %s",
@@ -768,7 +782,7 @@ class TestObjectTagging:
         resp = S3_TEST_OBJ.put_object(
             OBJ_TAG_CONFIG["test_9430"]["bucket_name"],
             OBJ_TAG_CONFIG["test_9430"]["object_name"],
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"])
+            self.file_path)
         assert resp[0], resp[1]
         self.LOGGER.info("Object is uploaded to a bucket")
         for each_char in invalid_chars_list:
@@ -808,7 +822,7 @@ class TestObjectTagging:
             "Bucket is created with name %s",
             OBJ_TAG_CONFIG["test_9431"]["bucket_name"])
         create_file(
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"],
+            self.file_path,
             OBJ_TAG_CONFIG["object_tagging"]["mb_count"])
         self.LOGGER.info(
             "Uploading an object %s to a bucket %s",
@@ -817,7 +831,7 @@ class TestObjectTagging:
         resp = S3_TEST_OBJ.put_object(
             OBJ_TAG_CONFIG["test_9431"]["bucket_name"],
             OBJ_TAG_CONFIG["test_9431"]["object_name"],
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"])
+            self.file_path)
         assert resp[0], resp[1]
         self.LOGGER.info("Object is uploaded to a bucket")
         for each_char in invalid_chars_list:
@@ -858,7 +872,7 @@ class TestObjectTagging:
             "Bucket is created with name %s",
             OBJ_TAG_CONFIG["test_9432"]["bucket_name"])
         create_file(
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"],
+            self.file_path,
             OBJ_TAG_CONFIG["object_tagging"]["mb_count"])
         self.LOGGER.info(
             "Uplading an object %s to a bucket %s",
@@ -867,7 +881,7 @@ class TestObjectTagging:
         resp = S3_TEST_OBJ.put_object(
             OBJ_TAG_CONFIG["test_9432"]["bucket_name"],
             OBJ_TAG_CONFIG["test_9432"]["object_name"],
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"])
+            self.file_path)
         assert resp[0], resp[1]
         self.LOGGER.info("Object is uploaded to a bucket")
         self.LOGGER.info("Setting object tag with invalid character")
@@ -907,14 +921,14 @@ class TestObjectTagging:
             "Bucket is created with name %s",
             OBJ_TAG_CONFIG["test_9433"]["bucket_name"])
         create_file(
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"],
+            self.file_path,
             OBJ_TAG_CONFIG["object_tagging"]["mb_count"])
         self.LOGGER.info(
             "Uploading an object with tagging suport to an existing bucket")
         resp = TAG_OBJ.put_object_with_tagging(
             OBJ_TAG_CONFIG["test_9433"]["bucket_name"],
             OBJ_TAG_CONFIG["test_9433"]["object_name"],
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"],
+            self.file_path,
             OBJ_TAG_CONFIG["test_9433"]["object_tag"])
         assert resp[0], resp[1]
         assert OBJ_TAG_CONFIG["test_9433"]["object_name"] == resp[1].key, resp[1]
@@ -930,7 +944,7 @@ class TestObjectTagging:
         resp = TAG_OBJ.put_object_with_tagging(
             OBJ_TAG_CONFIG["test_9433"]["bucket_name"],
             OBJ_TAG_CONFIG["test_9433"]["object_name"],
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"],
+            self.file_path,
             OBJ_TAG_CONFIG["test_9433"]["object_tag"])
         assert resp[0], resp[1]
         assert OBJ_TAG_CONFIG["test_9433"]["object_name"] == resp[1].key, resp[1]
@@ -963,7 +977,7 @@ class TestObjectTagging:
             "Bucket is created with name %s",
             OBJ_TAG_CONFIG["test_9434"]["bucket_name"])
         create_file(
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"],
+            self.file_path,
             OBJ_TAG_CONFIG["object_tagging"]["mb_count"])
         self.LOGGER.info("Uploading objects to an existing bucket")
         for each_obj in range(OBJ_TAG_CONFIG["test_9434"]["object_count"]):
@@ -973,7 +987,7 @@ class TestObjectTagging:
             resp = S3_TEST_OBJ.put_object(
                 OBJ_TAG_CONFIG["test_9434"]["bucket_name"],
                 obj,
-                OBJ_TAG_CONFIG["object_tagging"]["file_path"])
+                self.file_path)
             assert resp[0], resp[1]
         self.LOGGER.info("Objects are uploaded to an existing bucket")
         self.LOGGER.info("Performing list object operations")
@@ -988,7 +1002,7 @@ class TestObjectTagging:
                 each_obj,
                 OBJ_TAG_CONFIG["test_9434"]["key"],
                 OBJ_TAG_CONFIG["test_9434"]["value"],
-                OBJ_TAG_CONFIG["test_9434"]["tag_count"])
+                tag_count=OBJ_TAG_CONFIG["test_9434"]["tag_count"])
             assert resp[0], resp[1]
             self.LOGGER.info("Tag is set to an object %s", each_obj)
             self.LOGGER.info("Retrieving tags of an object")
@@ -1020,17 +1034,17 @@ class TestObjectTagging:
             "Bucket is created with name %s",
             OBJ_TAG_CONFIG["test_9435"]["bucket_name"])
         create_file(
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"],
+            self.file_path,
             OBJ_TAG_CONFIG["object_tagging"]["mb_count"])
         self.LOGGER.info(
             "Uploading an object with user defined metadata and tags")
         resp = TAG_OBJ.put_object_with_tagging(
             OBJ_TAG_CONFIG["test_9435"]["bucket_name"],
             OBJ_TAG_CONFIG["test_9435"]["object_name"],
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"],
+            self.file_path,
             OBJ_TAG_CONFIG["test_9435"]["object_tag"],
-            OBJ_TAG_CONFIG["test_9435"]["key"],
-            OBJ_TAG_CONFIG["test_9435"]["value"])
+            key=OBJ_TAG_CONFIG["test_9435"]["key"],
+            value=OBJ_TAG_CONFIG["test_9435"]["value"])
         assert resp[0], resp[1]
         assert resp[1].key == OBJ_TAG_CONFIG["test_9435"]["object_name"], resp[1]
         self.LOGGER.info("Object is uploaded to a bucket")
@@ -1062,17 +1076,17 @@ class TestObjectTagging:
             "Bucket is created with name %s",
             OBJ_TAG_CONFIG["test_9436"]["bucket_name"])
         create_file(
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"],
+            self.file_path,
             OBJ_TAG_CONFIG["object_tagging"]["mb_count"])
         self.LOGGER.info(
             "Uploading an object with user defined metadata and tags")
         resp = TAG_OBJ.put_object_with_tagging(
             OBJ_TAG_CONFIG["test_9436"]["bucket_name"],
             OBJ_TAG_CONFIG["test_9436"]["object_name"],
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"],
+            self.file_path,
             OBJ_TAG_CONFIG["test_9436"]["object_tag"],
-            OBJ_TAG_CONFIG["test_9436"]["key1"],
-            OBJ_TAG_CONFIG["test_9436"]["value1"])
+            key=OBJ_TAG_CONFIG["test_9436"]["key1"],
+            value=OBJ_TAG_CONFIG["test_9436"]["value1"])
         assert resp[0], resp[1]
         assert resp[1].key == OBJ_TAG_CONFIG["test_9436"]["object_name"], resp[1]
         self.LOGGER.info(
@@ -1094,9 +1108,9 @@ class TestObjectTagging:
         resp = S3_TEST_OBJ.put_object(
             OBJ_TAG_CONFIG["test_9436"]["bucket_name"],
             OBJ_TAG_CONFIG["test_9436"]["object_name"],
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"],
-            OBJ_TAG_CONFIG["test_9436"]["key2"],
-            OBJ_TAG_CONFIG["test_9436"]["value2"])
+            self.file_path,
+            m_key=OBJ_TAG_CONFIG["test_9436"]["key2"],
+            m_value=OBJ_TAG_CONFIG["test_9436"]["value2"])
         assert resp[0], resp[1]
         self.LOGGER.info("Updated user defined metadata of an existing object")
         self.LOGGER.info("Retrieving object info after updating metadata")
@@ -1135,17 +1149,17 @@ class TestObjectTagging:
             "Bucket is created with name %s",
             OBJ_TAG_CONFIG["test_9437"]["bucket_name"])
         create_file(
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"],
+            self.file_path,
             OBJ_TAG_CONFIG["object_tagging"]["mb_count"])
         self.LOGGER.info(
             "Uploading an object with user defined metadata and tags")
         resp = TAG_OBJ.put_object_with_tagging(
             OBJ_TAG_CONFIG["test_9437"]["bucket_name"],
             OBJ_TAG_CONFIG["test_9437"]["object_name"],
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"],
+            self.file_path,
             OBJ_TAG_CONFIG["test_9437"]["object_tag"],
-            OBJ_TAG_CONFIG["test_9437"]["key"],
-            OBJ_TAG_CONFIG["test_9437"]["value"])
+            key=OBJ_TAG_CONFIG["test_9437"]["key"],
+            value=OBJ_TAG_CONFIG["test_9437"]["value"])
         assert resp[0], resp[1]
         assert resp[1].key == OBJ_TAG_CONFIG["test_9437"]["object_name"], resp[1]
         self.LOGGER.info(
@@ -1179,7 +1193,7 @@ class TestObjectTagging:
             "Bucket is created with name %s",
             OBJ_TAG_CONFIG["test_9438"]["bucket_name"])
         create_file(
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"],
+            self.file_path,
             OBJ_TAG_CONFIG["object_tagging"]["mb_count"])
         self.LOGGER.info(
             "Uploading an object %s to a bucket %s",
@@ -1188,7 +1202,7 @@ class TestObjectTagging:
         resp = S3_TEST_OBJ.put_object(
             OBJ_TAG_CONFIG["test_9438"]["bucket_name"],
             OBJ_TAG_CONFIG["test_9438"]["object_name"],
-            OBJ_TAG_CONFIG["object_tagging"]["file_path"])
+            self.file_path)
         assert resp[0], resp[1]
         self.LOGGER.info("Object is uploaded to a bucket")
         self.LOGGER.info("Adding tags to an existing object")
@@ -1198,7 +1212,7 @@ class TestObjectTagging:
                 OBJ_TAG_CONFIG["test_9438"]["object_name"],
                 OBJ_TAG_CONFIG["test_9438"]["key"],
                 OBJ_TAG_CONFIG["test_9438"]["value"],
-                OBJ_TAG_CONFIG["test_9438"]["tag_count"])
+                tag_count=OBJ_TAG_CONFIG["test_9438"]["tag_count"])
         except CTException as error:
             assert OBJ_TAG_CONFIG["test_9438"]["error_message"] in str(
                 error.message), error.message

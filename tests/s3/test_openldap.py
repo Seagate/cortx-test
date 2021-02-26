@@ -32,8 +32,8 @@ from commons.utils.assert_utils import \
     assert_false, assert_true, assert_in, assert_equal, assert_not_equal
 from commons.utils.config_utils import read_yaml, get_config
 from commons.utils.system_utils import run_remote_cmd, remove_file
+from libs.s3 import S3H_OBJ
 
-from libs.s3 import S3H_OBJ as S3_HELPER
 
 LDAP_CFG = read_yaml("config/s3/test_openldap.yaml")[1]
 CM_CFG = read_yaml("config/common_config.yaml")[1]
@@ -340,14 +340,14 @@ class OpenLdap:
             self.LOGGER.info(
                 "Restarting %s service",
                 self.slapd_service)
-            S3_HELPER.restart_s3server_service(self.slapd_service)
+            S3H_OBJ.restart_s3server_service(self.slapd_service)
             self.LOGGER.info("Step 2: Restored openldap password")
-        if not S3_HELPER.get_s3server_service_status(self.slapd_service)[0]:
+        if not S3H_OBJ.get_s3server_service_status(self.slapd_service)[0]:
             self.LOGGER.info(
                 "Starting %s service...",
                 self.slapd_service)
-            S3_HELPER.start_s3server_service(self.slapd_service)
-            resp = S3_HELPER.get_s3server_service_status(self.slapd_service)
+            S3H_OBJ.start_s3server_service(self.slapd_service)
+            resp = S3H_OBJ.get_s3server_service_status(self.slapd_service)
             assert_true(resp[0], resp[1])
             self.LOGGER.info("Started %s service", self.slapd_service)
         self.LOGGER.info("Deleting backup dir %s...", self.backup_path)
@@ -491,8 +491,8 @@ class OpenLdap:
         self.LOGGER.info(
             "Step 3: Stopping %s service",
             self.slapd_service)
-        S3_HELPER.stop_s3server_service(self.slapd_service)
-        resp = S3_HELPER.get_s3server_service_status(self.slapd_service)
+        S3H_OBJ.stop_s3server_service(self.slapd_service)
+        resp = S3H_OBJ.get_s3server_service_status(self.slapd_service)
         assert_false(resp[0], resp[1])
         self.LOGGER.info(
             "Step 3: Stopped %s service",
@@ -593,8 +593,8 @@ class OpenLdap:
         self.LOGGER.info(
             "Step 3: Stopping %s service",
             self.slapd_service)
-        S3_HELPER.stop_s3server_service(self.slapd_service)
-        resp = S3_HELPER.get_s3server_service_status(self.slapd_service)
+        S3H_OBJ.stop_s3server_service(self.slapd_service)
+        resp = S3H_OBJ.get_s3server_service_status(self.slapd_service)
         assert_false(resp[0], resp[1])
         self.LOGGER.info(
             "Step 3: Stopped %s service",
@@ -698,8 +698,8 @@ class OpenLdap:
         self.LOGGER.info(
             "Step 3: Stopping %s service",
             self.slapd_service)
-        S3_HELPER.stop_s3server_service(self.slapd_service)
-        resp = S3_HELPER.get_s3server_service_status(self.slapd_service)
+        S3H_OBJ.stop_s3server_service(self.slapd_service)
+        resp = S3H_OBJ.get_s3server_service_status(self.slapd_service)
         assert_false(resp[0], resp[1])
         self.LOGGER.info(
             "Step 3: Stopped %s service",
@@ -797,8 +797,8 @@ class OpenLdap:
         self.LOGGER.info(
             "Step 3: Stopping %s service",
             self.slapd_service)
-        S3_HELPER.stop_s3server_service(self.slapd_service)
-        resp = S3_HELPER.get_s3server_service_status(self.slapd_service)
+        S3H_OBJ.stop_s3server_service(self.slapd_service)
+        resp = S3H_OBJ.get_s3server_service_status(self.slapd_service)
         assert_false(resp[0], resp[1])
         self.LOGGER.info(
             "Step 3: Stopped %s service",
@@ -880,9 +880,9 @@ class OpenLdap:
         self.LOGGER.info(
             "Step 2: Restarting %s service",
             self.slapd_service)
-        S3_HELPER.restart_s3server_service(self.slapd_service)
+        S3H_OBJ.restart_s3server_service(self.slapd_service)
         time.sleep(self.CM_LDAP_CFG["restart_serv_pause"])
-        resp = S3_HELPER.get_s3server_service_status(self.slapd_service)
+        resp = S3H_OBJ.get_s3server_service_status(self.slapd_service)
         assert_true(resp[0], resp[1])
         self.LOGGER.info(
             "Step 2: Restarted %s service",
@@ -905,7 +905,7 @@ class OpenLdap:
         temp_file = cfg_5074["temp_path"]
         new_passwd = cfg_5074["new_pwd"]
         self.LOGGER.info("Step 1: Retrieving existing openldap password")
-        S3_HELPER.copy_s3server_file(authserver_file, temp_file)
+        S3H_OBJ.copy_s3server_file(authserver_file, temp_file)
         old_pwd = get_config(
             temp_file, key=cfg_5074["login_pwd_section"])
         self.LOGGER.info("Password : %s", old_pwd)
@@ -922,16 +922,16 @@ class OpenLdap:
         self.LOGGER.info(
             "Step 3: Restarting %s service",
             self.slapd_service)
-        S3_HELPER.restart_s3server_service(self.slapd_service)
+        S3H_OBJ.restart_s3server_service(self.slapd_service)
         time.sleep(self.CM_LDAP_CFG["restart_serv_pause"])
-        resp = S3_HELPER.get_s3server_service_status(self.slapd_service)
+        resp = S3H_OBJ.get_s3server_service_status(self.slapd_service)
         assert_true(resp[0], resp[1])
         self.LOGGER.info(
             "Step 3: Restarted %s service",
             self.slapd_service)
         self.LOGGER.info(
             "Step 4: Checking if new password is updated or not")
-        S3_HELPER.copy_s3server_file(authserver_file, temp_file)
+        S3H_OBJ.copy_s3server_file(authserver_file, temp_file)
         updated_pwd = get_config(
             temp_file, key=cfg_5074["login_pwd_section"])
         self.LOGGER.info("Password : %s", updated_pwd)
@@ -961,7 +961,7 @@ class OpenLdap:
         temp_file = cfg_5075["temp_path"]
         new_passwd = cfg_5075["new_pwd"]
         self.LOGGER.info("Step 1: Retrieving existing openldap password")
-        S3_HELPER.copy_s3server_file(authserver_file, temp_file)
+        S3H_OBJ.copy_s3server_file(authserver_file, temp_file)
         old_pwd = get_config(
             temp_file, key=cfg_5075["login_pwd_section"])
         self.LOGGER.info("Step 1: Retrieved existing openldap password")
@@ -977,16 +977,16 @@ class OpenLdap:
         self.LOGGER.info(
             "Step 3: Restarting %s service",
             self.slapd_service)
-        S3_HELPER.restart_s3server_service(self.slapd_service)
+        S3H_OBJ.restart_s3server_service(self.slapd_service)
         time.sleep(self.CM_LDAP_CFG["restart_serv_pause"])
-        resp = S3_HELPER.get_s3server_service_status(self.slapd_service)
+        resp = S3H_OBJ.get_s3server_service_status(self.slapd_service)
         assert_true(resp[0], resp[1])
         self.LOGGER.info(
             "Step 3: Restarted %s service",
             self.slapd_service)
         self.LOGGER.info(
             "Step 4: Checking if new password is updated or not")
-        S3_HELPER.copy_s3server_file(authserver_file, temp_file)
+        S3H_OBJ.copy_s3server_file(authserver_file, temp_file)
         updated_pwd = get_config(
             temp_file, key=cfg_5075["login_pwd_section"])
         assert_not_equal(old_pwd, updated_pwd, cfg_5075["err_message"])

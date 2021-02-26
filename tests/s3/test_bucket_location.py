@@ -40,9 +40,6 @@ S3_ACL_OBJ = s3_acl_test_lib.S3AclTestLib()
 
 class TestBucketLocation:
     """Bucket Location Test suite"""
-    s3_obj_1 = None
-    bucket_name = None
-    account_name = None
 
     @classmethod
     def setup_class(cls):
@@ -58,6 +55,9 @@ class TestBucketLocation:
         cls.account_prefix = "location-acc"
         cls.email_id = "@seagate.com"
         cls.id_str = "id={}"
+        cls.s3_obj_1 = None
+        cls.bucket_name = None
+        cls.account_name = None
         LOGGER.info("ENDED: setup test suite operations.")
 
     @classmethod
@@ -68,7 +68,7 @@ class TestBucketLocation:
         It will clean up resources which are getting created during test suite setup.
         """
         LOGGER.info("STARTED: teardown test suite operations.")
-
+        LOGGER.info("Teardown completed.")
         LOGGER.info("ENDED: teardown test suite operations.")
 
     def setup_method(self):
@@ -81,6 +81,16 @@ class TestBucketLocation:
         LOGGER.info("STARTED: Setup operations.")
         self.bucket_name = f"{self.bucket_prefix}{str(time.time())}"
         self.account_name = self.account_prefix
+        if self.s3_obj_1:
+            res_bkt = self.s3_obj_1.bucket_list()
+            for bkt in res_bkt[1]:
+                self.s3_obj_1.delete_bucket(bkt)
+        resp = S3_OBJ.bucket_list()
+        if resp:
+            pref_list = [each_bucket for each_bucket in resp[1]
+                         if each_bucket.startswith(self.bucket_prefix)]
+            if pref_list:
+                S3_OBJ.delete_multiple_buckets(pref_list)
         LOGGER.info("ENDED: Setup operations.")
 
     def teardown_method(self):
@@ -215,7 +225,7 @@ class TestBucketLocation:
         assert_utils.assert_equals(
             "us-west-2",
             resp[1]["LocationConstraint"],
-            resp)
+            resp[1])
         LOGGER.info(
             "Step 2: Verified get bucket location with account1")
         LOGGER.info(
@@ -224,7 +234,7 @@ class TestBucketLocation:
         assert_utils.assert_equals(
             "us-west-2",
             resp[1]["LocationConstraint"],
-            resp)
+            resp[1])
         LOGGER.info(
             "Step 3 : Verified get bucket location with account2 login")
         # # Performing cleanup using account1
