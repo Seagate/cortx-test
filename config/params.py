@@ -54,3 +54,4 @@ TEST_EXEC_TOPIC = 'cortx-test-exec-topic'
 TEST_ABORT_TOPIC = 'cortx-test-abort-topic'  # Read by all semantics
 CSM_DIR = os.path.join(CONFIG_DIR, 'csm')
 CSM_CONFIG = os.path.join(CSM_DIR, 'csm_config.yaml')
+SETUPS_FPATH = "setups.json"

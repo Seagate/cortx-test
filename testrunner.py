@@ -4,9 +4,11 @@ import argparse
 import csv
 import json
 from core import runner
-from core import kafka_consumer
+#from core import kafka_consumer
 from core.locking_server import LockingServer
 from commons.utils.jira_utils import JiraTask
+from commons import configmanager
+from commons.utils import config_utils
 from config import params
 
 
@@ -181,6 +183,7 @@ def trigger_unexecuted_tests(args, test_list):
                     write.writerow([test])
             _env = os.environ.copy()
             _env['pytest_run'] = 'distributed'
+            _env['TARGET'] = args.target
             run_pytest_cmd(args, te_tag=None, parallel_exe=args.parallel_exe,
                            env=_env, re_execution=True)
 
@@ -305,45 +308,48 @@ def get_available_target(kafka_msg):
                 print("lock acquired {}".format(target))
     return acquired_target
 
+#
+#def check_kafka_msg_trigger_test(args):
+#    """
+#    Get message from kafka consumer
+#    Trigger tests specified in kafka message
+#    """
+#    consumer = kafka_consumer.get_consumer(args)
+#    received_stop_signal = False
+#    lock_task = LockingServer()
+#    while not received_stop_signal:
+#        try:
+#            # SIGINT can't be handled when polling, limit timeout to 60 seconds.
+#            msg = consumer.poll(60)
+#            if msg is None:
+#                continue
+#            kafka_msg = msg.value()
+#            if kafka_msg is None:
+#                continue
+#            if kafka_msg.te_id == "STOP":
+#                received_stop_signal = True
+#            else:
+#                execution_done = False
+#                while not execution_done:
+#                    acquired_target = get_available_target(kafka_msg)
+#                    # execute te id on acquired target
+#                    # release lock on acquired target
+#                    args.te_ticket = kafka_msg.te_tickets
+#                    args.parallel_exe = kafka_msg.parallel
+#                    trigger_tests_from_kafka_msg(args, kafka_msg)
+#                    # rerun unexecuted tests in case of parallel execution
+#                    if kafka_msg.parallel:
+#                        trigger_unexecuted_tests(args, kafka_msg.test_list)
+#                    # Release lock on acquired target.
+#                    lock_task.release_target_lock(acquired_target, acquired_target)
+#                    execution_done = True
+#        except KeyboardInterrupt:
+#            break
+#    consumer.close()
 
-def check_kafka_msg_trigger_test(args):
-    """
-    Get message from kafka consumer
-    Trigger tests specified in kafka message
-    """
-    consumer = kafka_consumer.get_consumer(args)
-    received_stop_signal = False
-    lock_task = LockingServer()
-    while not received_stop_signal:
-        try:
-            # SIGINT can't be handled when polling, limit timeout to 60 seconds.
-            msg = consumer.poll(60)
-            if msg is None:
-                continue
-            kafka_msg = msg.value()
-            if kafka_msg is None:
-                continue
-            if kafka_msg.te_id == "STOP":
-                received_stop_signal = True
-            else:
-                execution_done = False
-                while not execution_done:
-                    acquired_target = get_available_target(kafka_msg)
-                    # execute te id on acquired target
-                    # release lock on acquired target
-                    args.te_ticket = kafka_msg.te_tickets
-                    args.parallel_exe = kafka_msg.parallel
-                    trigger_tests_from_kafka_msg(args, kafka_msg)
-                    # rerun unexecuted tests in case of parallel execution
-                    if kafka_msg.parallel:
-                        trigger_unexecuted_tests(args, kafka_msg.test_list)
-                    # Release lock on acquired target.
-                    lock_task.release_target_lock(acquired_target, acquired_target)
-                    execution_done = True
-        except KeyboardInterrupt:
-            break
-    consumer.close()
-
+def get_setup_details():
+    setups = configmanager.get_config_db(setup_query = {})
+    config_utils.create_content_json("setups.json", setups)
 
 def main(args):
     """Main Entry function using argument parser to parse options and forming pyttest command.

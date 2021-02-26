@@ -32,11 +32,14 @@ def get_config_db(setup_query:dict, drop_id = True):
     sys_coll = _get_collection_obj()
     LOG.debug("Finding the setup details: %s",setup_query)
     cursor = sys_coll.find(setup_query)
-    docs=[]
+    docs={}
     for doc in cursor:
         if drop_id:
+            LOG.debug("IDs fields from MongoDB will be dropped")
             doc.pop('_id')
-        docs.append(doc)
+        if "setupname" in doc.keys():
+            LOG.debug("Reading the -- %s --setup details",doc['setupname'])
+            docs.update({doc['setupname']:doc})
     return docs
 
 def _get_collection_obj():
@@ -47,12 +50,12 @@ def _get_collection_obj():
     collection = config_utils.get_config(DB_CONFIG,"MongoDB","system_info_collection")
     LOG.debug("Collection name: %s", collection)
     db_creds = pswdmanager.get_secrets(secret_ids=['DBUSER', 'DBPSWD'])
-    MONGODB_URI = "mongodb://{0}:{1}@{2}"
-    uri = MONGODB_URI.format(quote_plus(db_creds['DBUSER']),quote_plus(db_creds['DBPSWD']), db_hostname)
-    LOG.debug("Mongo DB URL: %s", uri)
+    mongodburi = "mongodb://{0}:{1}@{2}"
+    uri = mongodburi.format(quote_plus(db_creds['DBUSER']),quote_plus(db_creds['DBPSWD']), db_hostname)
     client = MongoClient(uri)
     setup_db = client[db_name]
     collection_obj = setup_db[collection]
+    LOG.debug("Collection obj for DB interaction %s",collection_obj)
     return collection_obj
 
 def update_config_db(setup_query:dict, data:dict)->dict:
@@ -62,7 +65,10 @@ def update_config_db(setup_query:dict, data:dict)->dict:
     :return [type]:
     """
     sys_coll = _get_collection_obj()
+    LOG.debug("Setup query : %s",setup_query)
+    LOG.debug("Data to be updated : %s",data)
     rdata = sys_coll.update_many(setup_query, data)
+    LOG.debug("Data is updated successfully")
     return rdata
 
 def get_config_wrapper(**kwargs):
@@ -73,11 +79,13 @@ def get_config_wrapper(**kwargs):
     data = {}
     if "fpath" in kwargs:
         flag = True
+        LOG.debug("Reading config from yaml file: %s", kwargs['fpath'])
         data.update(get_config_yaml(fpath=kwargs['fpath']))
     if "setup_query" in kwargs:
         flag = True
+        LOG.debug("Reading config from DB for setup: %s", kwargs['setup_query'])
         data.update(get_config_db(setup_query=kwargs['setup_query']))
     if not flag:
-        print("Invalid keyword argument")
+        LOG.error("Invalid keyword argument")
         raise ValueError("Invalid argument")
     return data
