@@ -4,9 +4,11 @@ import argparse
 import csv
 import json
 from core import runner
-from core import kafka_consumer
+#from core import kafka_consumer
 from core.locking_server import LockingServer
 from commons.utils.jira_utils import JiraTask
+from commons import configmanager
+from commons.utils import config_utils
 from config import params
 
 
@@ -183,6 +185,7 @@ def trigger_unexecuted_tests(args, test_list):
                     write.writerow([test])
             _env = os.environ.copy()
             _env['pytest_run'] = 'distributed'
+            _env['TARGET'] = args.target
             run_pytest_cmd(args, te_tag=None, parallel_exe=args.parallel_exe,
                            env=_env, re_execution=True)
 
