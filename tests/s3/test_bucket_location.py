@@ -158,6 +158,7 @@ class TestBucketLocation:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5311")
+    @CTFailOn(error_handler)
     def test_get_bkt_loc_bkt_not_present_273(self):
         """
         verify get bucket location for the bucket which is not present
@@ -182,6 +183,7 @@ class TestBucketLocation:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-7419")
+    @CTFailOn(error_handler)
     def test_cross_account_get_bkt_loc_with_permission_274(self):
         """
         Verify for the bucket which is present in account1 and give read permissions
@@ -246,6 +248,7 @@ class TestBucketLocation:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5312")
+    @CTFailOn(error_handler)
     def test_cross_account_get_bkt_loc_275(self):
         """
         Verify for the bucket which is present in account1 and get bucket location in account2
