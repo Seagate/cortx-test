@@ -118,7 +118,10 @@ class TestAllUsers:
         self.obj_name = "{0}{1}".format(
             self.all_user_cfg["obj_name"], str(int(time.time())))
         self.LOGGER.info("Creating a bucket and putting an object into bucket")
-        S3_TEST_OBJ.delete_bucket(bucket_name=self.bucket_name, force=True)
+        try:
+            S3_TEST_OBJ.delete_bucket(bucket_name=self.bucket_name, force=True)
+        except Exception:
+            pass
         resp = S3_TEST_OBJ.create_bucket_put_object(
             self.bucket_name,
             self.obj_name,
@@ -158,7 +161,8 @@ class TestAllUsers:
         for bucket in all_users_buckets:
             ACL_OBJ.put_bucket_acl(
                 bucket, grant_full_control=ALL_USERS_CONF["all_users_obj_acl"]["group_uri"])
-        S3_TEST_OBJ.delete_multiple_buckets(all_users_buckets)
+        if all_users_buckets:
+            S3_TEST_OBJ.delete_multiple_buckets(all_users_buckets)
         self.LOGGER.info("Deleted buckets.")
         self.LOGGER.info("ENDED: Teardown operations")
 
@@ -224,6 +228,7 @@ class TestAllUsers:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-6014")
+    @CTFailOn(error_handler)
     def test_read_object_acl_without_auth_698(self):
         """
         Read an object ACL from bucket without Authentication.
@@ -255,6 +260,7 @@ class TestAllUsers:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-6011")
+    @CTFailOn(error_handler)
     def test_update_object_acl_without_auth_699(self):
         """
         Update an object ACL in bucket without Authentication.
@@ -348,6 +354,7 @@ class TestAllUsers:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-6004")
+    @CTFailOn(error_handler)
     def test_read_obj_acl_without_auth_702(self):
         """
         Read an object ACL from bucket without Authentication.
@@ -377,6 +384,7 @@ class TestAllUsers:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-6002")
+    @CTFailOn(error_handler)
     def test_update_obj_write_permission_without_auth_703(self):
         """
         Update an object ACL in bucket without Authentication.
@@ -470,6 +478,7 @@ class TestAllUsers:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5968")
+    @CTFailOn(error_handler)
     def test_get_allusers_object_without_auth_758(self):
         """
         GET an object from bucket without Authentication.
