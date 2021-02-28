@@ -20,9 +20,10 @@
 
 """Bucket Workflow Operations Test Module."""
 
-import random
 import os
 import time
+import shutil
+import random
 import logging
 import pytest
 
@@ -58,6 +59,8 @@ class TestBucketWorkflowOperations:
         cls.ldap_user = LDAP_USERNAME
         cls.ldap_pwd = LDAP_PASSWD
         cls.account_name = BKT_OPS_CONF["bucket_workflow"]["acc_name_prefix"]
+        cls.folder_path = os.path.join(os.getcwd(), "testdata")
+        cls.file_path = os.path.join(cls.folder_path, "bkt_workflow.txt")
 
     def setup_method(self):
         """
@@ -66,7 +69,8 @@ class TestBucketWorkflowOperations:
         It will perform prerequisite test steps if any
         """
         self.LOGGER.info("STARTED: Setup operations")
-
+        if not os.path.exists(self.folder_path):
+            os.makedirs(self.folder_path)
         self.LOGGER.info("ENDED: Setup operations")
 
     def teardown_method(self):
@@ -77,6 +81,8 @@ class TestBucketWorkflowOperations:
         test execution such as S3 buckets and the objects present into that bucket.
         """
         self.LOGGER.info("STARTED: Teardown operations")
+        if os.path.exists(self.folder_path):
+            shutil.rmtree(self.folder_path)
         bucket_list = S3_TEST_OBJ.bucket_list()[1]
         pref_list = [
             each_bucket for each_bucket in bucket_list if each_bucket.startswith(
@@ -85,9 +91,9 @@ class TestBucketWorkflowOperations:
             ACL_OBJ.put_bucket_acl(
                 bktname, acl=BKT_OPS_CONF["bucket_workflow"]["bkt_permission"])
         S3_TEST_OBJ.delete_multiple_buckets(pref_list)
-        if os.path.exists(BKT_OPS_CONF["bucket_workflow"]["file_path"]):
+        if os.path.exists(self.file_path):
             remove_file(
-                BKT_OPS_CONF["bucket_workflow"]["file_path"])
+                self.file_path)
         self.LOGGER.info("Deleting IAM accounts")
         self.account_name = BKT_OPS_CONF["bucket_workflow"]["acc_name_prefix"]
         acc_list = IAM_OBJ.list_accounts_s3iamcli(
@@ -411,7 +417,7 @@ class TestBucketWorkflowOperations:
             "Bucket is created with name %s",
             BKT_OPS_CONF["test_8644"]["bucket_name"])
         create_file(
-            BKT_OPS_CONF["bucket_workflow"]["file_path"],
+            self.file_path,
             BKT_OPS_CONF["bucket_workflow"]["file_size"])
         self.LOGGER.info("Uploading an objects to a bucket")
         for i in range(BKT_OPS_CONF["test_8644"]["object_count"]):
@@ -420,7 +426,7 @@ class TestBucketWorkflowOperations:
             resp = S3_TEST_OBJ.object_upload(
                 BKT_OPS_CONF["test_8644"]["bucket_name"],
                 objname,
-                BKT_OPS_CONF["bucket_workflow"]["file_path"])
+                self.file_path)
             assert resp[0], resp[1]
         self.LOGGER.info("Objects are uploaded to a bucket")
         self.LOGGER.info("Deleting a bucket having objects")
@@ -446,7 +452,7 @@ class TestBucketWorkflowOperations:
         assert resp[0], resp[1]
         assert resp[1] == BKT_OPS_CONF["test_8645"]["bucket_name"], resp[1]
         create_file(
-            BKT_OPS_CONF["bucket_workflow"]["file_path"],
+            self.file_path,
             BKT_OPS_CONF["bucket_workflow"]["file_size"])
         self.LOGGER.info("Uploading multiple objects to a bucket")
         for obj_cnt in range(BKT_OPS_CONF["test_8645"]["range"]):
@@ -455,7 +461,7 @@ class TestBucketWorkflowOperations:
             resp = S3_TEST_OBJ.object_upload(
                 BKT_OPS_CONF["test_8645"]["bucket_name"],
                 objname,
-                BKT_OPS_CONF["bucket_workflow"]["file_path"])
+                self.file_path)
             assert resp[0], resp[1]
         self.LOGGER.info("Multiple objects are uploaded to a bucket")
         self.LOGGER.info("Forcefully deleting bucket having object")
@@ -548,7 +554,7 @@ class TestBucketWorkflowOperations:
             "Bucket is created with name %s",
             BKT_OPS_CONF["test_8649"]["bucket_name"])
         create_file(
-            BKT_OPS_CONF["bucket_workflow"]["file_path"],
+            self.file_path,
             BKT_OPS_CONF["bucket_workflow"]["file_size"])
         self.LOGGER.info("Uploading multiple objects to a bucket")
         object_list = []
@@ -558,7 +564,7 @@ class TestBucketWorkflowOperations:
             resp = S3_TEST_OBJ.object_upload(
                 BKT_OPS_CONF["test_8649"]["bucket_name"],
                 objname,
-                BKT_OPS_CONF["bucket_workflow"]["file_path"])
+                self.file_path)
             assert resp[0], resp[1]
             object_list.append(objname)
         self.LOGGER.info("Multiple objects are uploaded")
@@ -589,7 +595,7 @@ class TestBucketWorkflowOperations:
             "Bucket is created with name %s",
             BKT_OPS_CONF["test_8650"]["bucket_name"])
         create_file(
-            BKT_OPS_CONF["bucket_workflow"]["file_path"],
+            self.file_path,
             BKT_OPS_CONF["bucket_workflow"]["file_size"])
         self.LOGGER.info("Uploading multiple objects to a bucket")
         for count in range(BKT_OPS_CONF["test_8650"]["object_count"]):
@@ -598,7 +604,7 @@ class TestBucketWorkflowOperations:
             retv = S3_TEST_OBJ.object_upload(
                 BKT_OPS_CONF["test_8650"]["bucket_name"],
                 objname,
-                BKT_OPS_CONF["bucket_workflow"]["file_path"])
+                self.file_path)
             assert retv[0], retv[1]
         self.LOGGER.info("Multiple objects are uploaded")
         self.LOGGER.info("Retrieving bucket size")
@@ -712,13 +718,13 @@ class TestBucketWorkflowOperations:
         self.LOGGER.info("Step 1: Creating a bucket and putting object")
         res = S3_TEST_OBJ.create_bucket(bktname)
         assert res[1] == bktname, res[1]
-        create_file(BKT_OPS_CONF["bucket_workflow"]["file_path"],
+        create_file(self.file_path,
                     BKT_OPS_CONF["bucket_workflow"]["file_size"])
         obj_lst = []
         for i in range(obj_cnt):
             obj = "{}{}".format(test_cfg["obj_pre"], str(i))
             res = S3_TEST_OBJ.put_object(
-                bktname, obj, BKT_OPS_CONF["bucket_workflow"]["file_path"])
+                bktname, obj, self.file_path)
             assert res[0], res[1]
             obj_lst.append(obj)
         self.LOGGER.info("Step 1: Created bucket and object uploaded")
@@ -810,13 +816,13 @@ class TestBucketWorkflowOperations:
             "Step 1: Creating a bucket and putting object using acccount 1")
         res = S3_TEST_OBJ.create_bucket(bktname)
         assert res[1] == bktname, res[1]
-        create_file(BKT_OPS_CONF["bucket_workflow"]["file_path"],
+        create_file(self.file_path,
                     BKT_OPS_CONF["bucket_workflow"]["file_size"])
         obj_lst = []
         for i in range(test_cfg["range"]):
             obj = "{}{}".format(test_cfg["obj_pre"], str(i))
             res = S3_TEST_OBJ.put_object(
-                bktname, obj, BKT_OPS_CONF["bucket_workflow"]["file_path"])
+                bktname, obj, self.file_path)
             assert res[0], res[1]
             obj_lst.append(obj)
         self.LOGGER.info(
@@ -878,13 +884,13 @@ class TestBucketWorkflowOperations:
             "Step 1: Creating a bucket and putting object using acccount 1")
         res = S3_TEST_OBJ.create_bucket(bktname)
         assert res[1] == bktname, res[1]
-        create_file(BKT_OPS_CONF["bucket_workflow"]["file_path"],
+        create_file(self.file_path,
                     BKT_OPS_CONF["bucket_workflow"]["file_size"])
         obj_lst = []
         for i in range(test_cfg["range"]):
             obj = "{}{}".format(test_cfg["obj_pre"], str(i))
             res = S3_TEST_OBJ.put_object(
-                bktname, obj, BKT_OPS_CONF["bucket_workflow"]["file_path"])
+                bktname, obj, self.file_path)
             assert res[0], res[1]
             obj_lst.append(obj)
         self.LOGGER.info(
