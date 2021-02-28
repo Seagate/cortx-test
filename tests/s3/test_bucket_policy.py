@@ -7898,7 +7898,7 @@ _date
             "Step 2: Created a json with Null Condition operator: %s",
             bucket_policy)
         self.log.info(
-            "Step 3: Put and get bucket policy from %S bucket", bucket_name)
+            "Step 3: Put and get bucket policy from %s bucket", bucket_name)
         self.put_get_bkt_policy(bucket_name, bucket_policy)
         self.log.info(
             "Step 3: Put and get bucket policy from %s bucket successful", bucket_name)
@@ -9888,7 +9888,7 @@ _date
             self.log.error(error.message)
             assert test_7055_cfg["error_message"] in error.message, error.message
         self.log.info(
-            "Case 2: Uploading an object with --acl bucket-owner-full-control is failed with error %S",
+            "Case 2: Uploading an object with --acl bucket-owner-full-control is failed with error %s",
             test_7055_cfg["error_message"])
         self.log.info(
             "Case 2: Uploaded an object with --acl bucket-owner-full-control using account 2")
@@ -13408,8 +13408,8 @@ _date
             bucket_name,
             test_cfg["object_name"],
             test_cfg["file_size"],
-            test_cfg["total_parts"],
-            self.file_path)
+            total_parts=test_cfg["total_parts"],
+            multipart_obj_path=self.file_path)
         assert resp[0], resp[1]
         ASRTOBJ.assert_equals(len(resp[1]), test_cfg["total_parts"], resp[1])
         parts = res[1]
