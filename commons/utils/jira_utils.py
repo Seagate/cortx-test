@@ -71,6 +71,11 @@ class JiraTask:
                                 if str(test['status']) == 'ABORTED':
                                     test_list.append(test['key'])
             return test_list, te_tag
+        elif response.status_code == HTTPStatus.UNAUTHORIZED:
+            print('JIRA Unauthorized access')
+        elif response.status_code == HTTPStatus.SERVICE_UNAVAILABLE:
+            print('JIRA Service Unavailable')
+        return test_list, te_tag
 
     def get_test_list_from_te(self, test_exe_id, status='ALL'):
         """

@@ -486,4 +486,39 @@ class TestCliIAMUser:
             resp[1], "CORTX Interactive Shell")
         self.LOGGER.info(
             "Verified that appropriate message should be returned when user enters valid username")
+        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-10858")
+    def test_867(self):
+        """
+        Test that ` s3iamuser create <user_name>` with
+        correct username and password should create new IAM user
+        """
         self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.LOGGER.info("Creating iam user with name %s", self.user_name)
+        resp = IAM_OBJ.create_iam_user(user_name=self.user_name,
+                                       password=self.iam_password,
+                                       confirm_password=self.iam_password)
+        assert_utils.assert_exact_string(resp[1], self.user_name)
+        self.LOGGER.info("Created iam user with name %s", self.user_name)
+        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-10861")
+    def test_875(self):
+        """
+        Test that ` s3iamuser delete <iam_user_name>` must delete the given IAM user
+        """
+        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.LOGGER.info("Creating iam user with name %s", self.user_name)
+        resp = IAM_OBJ.create_iam_user(user_name=self.user_name,
+                                       password="Seagate@1",
+                                       confirm_password="Seagate@1")
+        assert_utils.assert_exact_string(resp[1], self.user_name)
+        self.LOGGER.info("Created iam user with name %s", self.user_name)
+        self.LOGGER.info("Deleting iam user with name %s", self.user_name)
+        resp = IAM_OBJ.delete_iam_user(self.user_name)
+        assert_utils.assert_exact_string(resp[1], "IAM User Deleted")
+        self.LOGGER.info("Deleted iam user with name %s", self.user_name)
+        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())

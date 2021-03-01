@@ -23,6 +23,7 @@
 import logging
 from typing import Tuple
 from libs.csm.cli.cortx_cli import CortxCli
+from commons.commands import CREATE_IAM_USER, DELETE_IAM_USER, LIST_IAM_USER
 
 LOG = logging.getLogger(__name__)
 
@@ -35,29 +36,27 @@ class CortxCliIamUser(CortxCli):
             user_name: str = None,
             password: str = None,
             confirm_password: str = None,
-            confirm: str = "Y",
             **kwargs) -> Tuple[bool, str]:
         """
         This function will create new IAM user
         :param user_name: Name of IAM user to be created
         :param password: Password to create s3 IAM user.
         :param confirm_password: Confirm password to create s3 IAM user.
-        :param confirm: Confirm option for creating a IAM user
+        :keyword confirm: Confirm option for creating a IAM user
         :keyword help_param: True for displaying help/usage
         :return: (Boolean/Response)
         """
-        create_iam_user = "s3iamusers create"
         help_param = kwargs.get("help_param", False)
+        confirm = kwargs.get("confirm", "Y")
         if help_param:
-            cmd = " ".join([create_iam_user, "-h"])
+            cmd = " ".join([CREATE_IAM_USER, "-h"])
         else:
             cmd = " ".join(
-                [create_iam_user, user_name])
+                [CREATE_IAM_USER, user_name])
         output = self.execute_cli_commands(cmd=cmd)[1]
         if help_param:
             LOG.info("Displaying usage for create iam users")
             return True, output
-
         if "Password" in output:
             output = self.execute_cli_commands(cmd=password)[1]
             if "Confirm Password" in output:
@@ -74,13 +73,13 @@ class CortxCliIamUser(CortxCli):
     def list_iam_user(self, output_format: str = None,
                       help_param: bool = False) -> Tuple[bool, str]:
         """
-        This function will list IAM users with given format
+        This function lists IAM users with given format
         (CLI will list IAM users in table format if format is set to None)
         :param output_format: Format of Output(table,xml,json)
         :param help_param: True for displaying help/usage
         :return: List of IAM users in given format
         """
-        list_iam_user = "s3iamusers show"
+        list_iam_user = LIST_IAM_USER
         if help_param:
             list_iam_user = " ".join([list_iam_user, "-h"])
         if output_format:
@@ -114,16 +113,14 @@ class CortxCliIamUser(CortxCli):
         :param confirm: Confirm option for deleting a IAM user
         :param help_param: True for displaying help/usage
         """
-        delete_iam_user = "s3iamusers delete"
         if help_param:
-            cmd = " ".join([delete_iam_user, "-h"])
+            cmd = " ".join([DELETE_IAM_USER, "-h"])
         else:
-            cmd = " ".join([delete_iam_user, user_name])
+            cmd = " ".join([DELETE_IAM_USER, user_name])
         output = self.execute_cli_commands(cmd=cmd)[1]
         if help_param:
             LOG.info("Displaying usage for delete iam user")
             return True, output
-
         if "[Y/n]" in output:
             output = self.execute_cli_commands(cmd=confirm)[1]
 

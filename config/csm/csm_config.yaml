@@ -80,4 +80,4 @@ GridConfig:
 CliConfig:
   iam_password: "Iamuser@123"
   acc_password: "S3acc@123"
-
+  csm_user_pwd: "Csmuser@123"
