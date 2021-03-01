@@ -24,7 +24,7 @@ import os
 import time
 import logging
 from time import perf_counter
-from random import SystemRandom
+from random import randint
 from botocore import UNSIGNED
 from botocore.client import Config
 
@@ -494,9 +494,12 @@ class S3TestLib(S3Lib):
                     os.remove(file_path)
                 with open(file_path, 'wb') as fout:
                     fout.write(
-                        SystemRandom().randint(
-                            1024000 * int(min_size),
-                            1024000 * int(max_size)))
+                        os.urandom(
+                            randint(
+                                1024000 *
+                                int(min_size),
+                                1024000 *
+                                int(max_size))))
                 LOGGER.info(
                     "Uploading object of size %d", os.path.getsize(file_path))
                 self.s3_resource.meta.client.upload_file(
