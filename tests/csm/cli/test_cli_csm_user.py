@@ -772,6 +772,7 @@ class TestCliCSMUser:
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-18713")
     def test_1251(self):
         """
         Test that csmcli returns appropriate list of csm
@@ -799,6 +800,7 @@ class TestCliCSMUser:
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-18712")
     def test_1252(self):
         """
         Test that csmcli returns appropriate error msg for
@@ -817,6 +819,7 @@ class TestCliCSMUser:
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-18711")
     def test_1253(self):
         """
         Test that csmcli returns appropriate error msg
@@ -835,6 +838,7 @@ class TestCliCSMUser:
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-18710")
     def test_1254(self):
         """
         Test that csmcli returns appropriate list of csm users
@@ -862,6 +866,7 @@ class TestCliCSMUser:
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-12789")
     def test_1257(self):
         """
         Test that csmcli returns appropriate list of users for
@@ -1457,6 +1462,7 @@ class TestCliCSMUser:
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-18709")
     def test_1850(self):
         """
         Test that csm user with monitor role cannot update alert using CLI
