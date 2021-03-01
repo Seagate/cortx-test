@@ -27,6 +27,7 @@ import logging
 import csv
 import time
 import pytest
+from datetime import date
 from _pytest.nodes import Item
 from _pytest.runner import CallInfo
 from _pytest.main import Session
@@ -53,8 +54,12 @@ LOG_DIR = 'log'
 CACHE = LRUCache(1024 * 10)
 CACHE_JSON = 'nodes-cache.yaml'
 REPORT_CLIENT = None
-logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
+
 LOGGER = logging.getLogger(__name__)
+logging.getLogger('boto3').setLevel(logging.WARNING)
+logging.getLogger('botocore').setLevel(logging.WARNING)
+logging.getLogger('nose').setLevel(logging.WARNING)
+logging.getLogger("paramiko").setLevel(logging.WARNING)
 
 SKIP_MARKS = ("dataprovider", "test", "run", "skip", "usefixtures",
               "filterwarnings", "skipif", "xfail", "parametrize",
@@ -252,6 +257,10 @@ def pytest_sessionfinish(session, exitstatus):
         for handler in handlers:
             _logger.removeHandler(handler)
 
+    resp = system_utils.umount_dir(mnt_dir=params.MOUNT_DIR)
+    if resp[0]:
+        LOGGER.info("Successfully unmounted directory")
+
 
 def get_test_metadata_from_tp_meta(item):
     tests_meta = Globals.tp_meta['test_meta']
@@ -284,11 +293,11 @@ def create_report_payload(item, call, final_result, d_u, d_pass):
     marks = get_marks_for_test_item(item)
     if final_result == 'FAIL':
         health_chk_res = "TODO"
-        are_logs_collected = False
+        are_logs_collected = True
         log_path = "TODO"
     elif final_result == 'PASS':
         health_chk_res = "NA"
-        are_logs_collected = False
+        are_logs_collected = True
         log_path = "NA"
     data_kwargs = dict(os=os_ver,
                        build=item.config.option.build,
@@ -549,3 +558,12 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
         with open(test_log, 'w') as fp:
             for rec in logs:
                 fp.write(rec + '\n')
+        LOGGER.info("Uploading test log file to NFS server")
+        remote_path = os.path.join(params.NFS_BASE_DIR, Globals.TE_TKT,
+                                   date.today().strftime("%b-%d-%Y"))
+        resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
+                                                   mnt_dir=params.MOUNT_DIR,
+                                                   remote_path=remote_path,
+                                                   local_path=test_log)
+        if resp[0]:
+            LOGGER.info("Log file is uploaded at location : %s", resp[1])
