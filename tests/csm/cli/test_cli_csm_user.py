@@ -35,6 +35,7 @@ from libs.csm.cli.cli_alerts_lib import CortxCliAlerts
 from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
 from libs.csm.cli.cortxcli_iam_user import CortxCliIamUser
 from libs.csm.cli.cortx_cli_s3_buckets import CortxCliS3BucketOperations
+from libs.csm.csm_setup import CSMConfigsCheck
 
 CSM_USER = CortxCliCsmUser()
 CSM_ALERT = CortxCliAlerts()
@@ -708,7 +709,6 @@ class TestCliCSMUser:
         self.LOGGER.info("Updated user's password with root user")
         self.LOGGER.info("Verifying password is updated for csm user")
         CSM_USER.logout_cortx_cli()
-        CSM_USER.login_cortx_cli()
         resp = CSM_USER.login_cortx_cli(
             username=self.user_name, password=new_password)
         assert_utils.assert_equals(
@@ -1035,7 +1035,7 @@ class TestCliCSMUser:
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(resp[1], "invalid choice")
         BKT_OPS.logout_cortx_cli()
-        BKT_OPS.login_cortx_cli()
+        CSM_USER.login_cortx_cli()
         self.LOGGER.info(
             "Performing bucket operations with csm manage role is failed with error %s",
             resp[1])
