@@ -33,7 +33,6 @@ from subprocess import Popen, PIPE
 from hashlib import md5
 from paramiko import SSHClient, AutoAddPolicy
 from commons import commands
-from commons import constants
 
 if sys.platform == 'win32':
     try:
