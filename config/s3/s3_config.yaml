@@ -1,0 +1,17 @@
+# s3 common parameters.
+region: "US"
+s3_url: "https://s3.seagate.com"
+iam_url: "https://iam.seagate.com:9443"
+s3_cert_path: "/etc/ssl/stx-s3-clients/s3/ca.crt"
+iam_cert_path: "/etc/ssl/stx-s3-clients/s3/ca.crt"
+s3_server_ip: "10.237.66.38"
+s3_server_user: "root"
+s3_server_pwd: "seagate"
+debug: False
+email_suffix: "@seagate.com"
+create_user_delay: 5
+list_account_delay: 5
+create_account_delay: 5
+create_user_access_key_delay: 5
+delete_account_delay: 5
+reset_account_access_key_delay: 5

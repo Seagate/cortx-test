@@ -83,5 +83,10 @@ bmc_details:
   pwd: "adminBMC!"
 
 ldap_username: "sgiamadmin"
-ldap_passwd: "cNvVpk11hLJv"
-sspl_pass: "cNvVpk11hLJv"
+ldap_passwd: "FeFXRQHRSeSH"
+sspl_pass: "FeFXRQHRSeSH"
+
+csm:
+  mgmt_vip: "10.237.65.71"
+  admin_user: "admin"
+  admin_pass: "Seagate@1"

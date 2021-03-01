@@ -18,32 +18,39 @@
 #
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
+import os
 
-# parameter needed for test framework and tests
-# These can be formed at runtime based on basic/common configuration files
+LOG_FILE = 'cortx-test.log'
 
-NUSERS = 10
+USER_JSON = '_usersdata'
 
-UPLOADED_FILES = "uploadInfo.csv"
+CONFIG_DIR = 'config'
 
-DATAGEN_HOME = '/var/log/datagen/'
+COMMON_CONFIG = os.path.join(CONFIG_DIR, 'common_config.yaml')
+S3_CONFIG = os.path.join(CONFIG_DIR, 's3', 's3_config.yaml')
 
-DATASET_FILES = "/var/log/datagen/createdfile.txt"
+LOG_DIR_NAME = 'log'
 
-deleteOpFileName = "deleteInfo.csv"
+RAS_CONFIG_PATH = "config/ras_config.yaml"
 
-comDeleteOpFileName = "combinedDeleteInfo.csv"
+SSPL_TEST_CONFIG_PATH = "config/ras_test.yaml"
 
-uploadDoneFile = UPLOADED_FILES
+COMMON_DESTRUCTIVE_CONFIG_PATH = "config/common_destructive.yaml"
 
-uploadFinishedFileName = "upload_done.txt"
+JIRA_TEST_LIST = 'test_lists.csv'
 
-FailedFiles = "FailedFiles.csv"
+CSM_CONFIG = os.path.join(CONFIG_DIR, 'csm', 'csm_config.yaml')
 
-FailedFilesServerError = "FailedFilesServerError.csv"
+JIRA_TEST_META_JSON = 'test_meta_data.json'
 
-destructiveTestResult = "/root/result_summary.csv"
+JIRA_TEST_COLLECTION = 'test_collection.csv'
 
-deletePercentage = 10
+JIRA_SELECTED_TESTS = 'selected_test_lists.csv'
 
-DOWNLOAD_HOME = '/var/log/'
+JIRA_DIST_TEST_LIST = 'dist_test_lists.csv'
+# Kafka Config Params
+
+SCHEMA_REGISTRY = "cft2:8090"  # Bootstrap broker(s) (host[:port])
+BOOTSTRAP_SERVERS = "https://cft2:8091"  # Schema Registry (http(s)://host[:port]
+TEST_EXEC_TOPIC = 'cortx-test-exec-topic'
+TEST_ABORT_TOPIC = 'cortx-test-abort-topic'  # Read by all semantics

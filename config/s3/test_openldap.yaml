@@ -1,0 +1,119 @@
+common_vars:
+  date_format: "%Y-%m-%d"
+  openldap_path: "/etc/openldap"
+  ldap_data_path: "/var/lib"
+  ls_cmd: "ls /etc/openldap/"
+  ch_owner_cmd: "chown -R ldap:ldap {}"
+  chk_owner_cmd: "ls -l {}"
+  slapd_dir: "slapd.d"
+  ldap_data_dir: "ldap"
+  ldap_owner: "ldap"
+  slapd_service: "slapd"
+  slapd_err: "slapd.d directory is not present under {}"
+  backup_path: "/root/backup"
+  ls_backup_path: "ls /root/backup"
+  backup_dir_err: "Backup directory {} is not created under {}"
+  cr_dir_err: "{} directory is not created under {}"
+  restore_dir_err: "Directory is not restored under {}"
+  ch_owner_err: "Failed to change owner of {}"
+  slapcat_cmd: "slapcat -n {} -l {}/{}"
+  cfg_backup_file: "config.ldif"
+  data_backup_file: "data.ldif"
+  rm_dir_cmd: "rm -rf {}"
+  mk_dir_cmd: "mkdir {}"
+  press_enter: "\n"
+  pwd_prompt_msg: "Enter RootDnPasword: "
+  root_pwd: "seagate"
+  decode_format: "utf-8"
+  time_out: 300
+  default_wait_time: 1
+  output_bytes: 9999
+  root_prmpt: "~]# "
+  scr_dir_prmpt: " scripts]# "
+  channel_time_pause: 4
+  restart_serv_pause: 30
+  ch_pwd_cmd: "sh enc_ldap_passwd_in_cfg.sh -p {} -c {}"
+  output_str: "You need to Restart Slapd"
+  temp_path: "authserver.properties"
+
+test_5066:
+  db_no: 0
+  slapd_err: "slapd.d directory is not present under {}"
+
+test_5067:
+  ls_ldap_data_dir_cmd: "ls /var/lib/"
+  db_no: 2
+  ldap_data_dir_err: "Ldap data directory was not present under {}"
+
+test_5068:
+  backup_dir_cmd: "mv /etc/openldap/slapd.d /root/backup/{}"
+  cr_dir_cmd: "mkdir /etc/openldap/slapd.d"
+  restore_cmd: "slapadd -n 0 -F /etc/openldap/slapd.d -l {}/config.ldif"
+  ls_slapd_dir: "ls /etc/openldap/slapd.d"
+  ldap_config_files:
+    - "cn=config"
+    - "cn=config.ldif"
+  db_no: 0
+
+test_5069:
+  backup_dir_cmd: "mv /etc/openldap/slapd.d /root/backup/{}"
+  cr_dir_cmd: "mkdir /etc/openldap/slapd.d"
+  restore_cmd: "slapadd -n 0 -F /etc/openldap/slapd.d -l {}/config.ldif"
+  ls_slapd_dir: "ls /etc/openldap/slapd.d"
+  ldap_config_files:
+    - "cn=config"
+    - "cn=config.ldif"
+  db_no: 0
+
+test_5070:
+  ls_ldap_data_cmd: "ls /var/lib/"
+  ldap_data_err: "Ldap data directory is not present under {}"
+  backup_dir_cmd: "mv /var/lib/ldap /root/backup/{}"
+  cr_dir_cmd: "mkdir /var/lib/ldap"
+  restore_cmd: "slapadd -n 2 -F /etc/openldap/slapd.d -l {}/data.ldif"
+  ls_slapd_dir: "ls /etc/openldap/slapd.d"
+  ldap_config_files:
+    - "cn=config"
+    - "cn=config.ldif"
+  db_no: 2
+
+test_5071:
+  ls_ldap_data_cmd: "ls /var/lib/"
+  ldap_data_err: "Ldap data directory is not present under {}"
+  backup_dir_cmd: "mv /var/lib/ldap /root/backup/{}"
+  cr_dir_cmd: "mkdir /var/lib/ldap"
+  restore_cmd: "slapadd -n 2 -F /etc/openldap/slapd.d -l {}/data.ldif"
+  ls_slapd_dir: "ls /etc/openldap/slapd.d"
+  ldap_config_files:
+    - "cn=config"
+    - "cn=config.ldif"
+  db_no: 2
+
+test_5073:
+  ch_pwd_cmd: "sh enc_ldap_passwd_in_cfg.sh -p {} -c {}"
+  output_msg: "OpenLdap password Updated Successfully"
+  new_pwd: 'ABCD##$%184329GDk5073sjfsckjf'
+  output_str: "You need to Restart Slapd"
+
+test_5074:
+  ch_pwd_cmd: "sh enc_ldap_passwd_in_cfg.sh -p {} -c {}"
+  temp_path: "authserver.properties"
+  new_pwd: "ABCD##$%184329GDksj5074fsckjf"
+  output_str: "You need to Restart Slapd"
+  output_msg: "OpenLdap password Updated Successfully"
+  login_pwd_section: "ldapLoginPW"
+  err_message: "Failed to change openldap password"
+
+test_5075:
+  ch_pwd_cmd: "sh enc_ldap_passwd_in_cfg.sh -p {} -c {}"
+  temp_path: "authserver.properties"
+  new_pwd: "DEGASD$%1##84329GDksj5074nyczera"
+  output_str: "You need to Restart Slapd"
+  output_msg: "OpenLdap password Updated Successfully"
+  login_pwd_section: "ldapLoginPW"
+  err_message: "Failed to change openldap password"
+
+test_5076:
+  ch_pwd_cmd: "sh enc_ldap_passwd_in_cfg.sh -p {} -c {}"
+  new_pwd: '""'
+  err_message: "Ldap password not specified"

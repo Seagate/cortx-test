@@ -1,0 +1,185 @@
+bucket_acl:
+  bkt_name_prefix: "acl"
+  acc_name_prefix: "acl"
+  acc_name: "acltestaccn"
+  bkt_permission: "private"
+  email_suffix: "@seagate.com"
+test_10008:
+  bucket_name: "bucket-10008"
+  bucket_permission: "FULL_CONTROL"
+test_10009:
+  bucket_name: "bucket-10009"
+  err_message: "NoSuchBucket"
+test_10010:
+  bucket_name: "bucket-10010"
+  bucket_permission: "FULL_CONTROL"
+test_10011:
+  bucket_name: "bucket-10011"
+  bucket_permission: "FULL_CONTROL"
+  file_size: 1
+test_10012:
+  err_message: "Required parameter bucket_name not set"
+test_10013:
+  bucket_name: "bucket-10013"
+  err_message: "NoSuchBucket"
+test_10014:
+  bucket_name: "bucket-10014"
+  bucket_permission: "FULL_CONTROL"
+test_10015:
+  accounts:
+    - "acltestaccnt100151"
+    - "acltestaccnt100152"
+  emails:
+    - "acltestaccnt100151@seagate.com"
+    - "acltestaccnt100152@seagate.com"
+  bucket_name: "aclbucket10015"
+  err_message: "AccessDenied"
+test_10016:
+  accounts:
+    - "acltestaccnt100161"
+    - "acltestaccnt100162"
+  emails:
+    - "acltestaccnt100161@seagate.com"
+    - "acltestaccnt100162@seagate.com"
+  user_name: "user10016"
+  bucket_name: "aclbucket10016"
+  err_message: "AccessDenied"
+test_10766:
+  account_name: "acltestaccnt10766"
+  email_id: "acltestaccnt10766@seagate.com"
+  bucket_name: "aclbucket10766"
+  acl: "bucket-owner-full-control"
+  error: "Specifying both Canned ACLs and Header Grants is not allowed"
+test_10767:
+  account_name: "acltestaccnt10767"
+  email_id: "acltestaccnt10767@seagate.com"
+  bucket_name: "aclbucket10767"
+  acl: "bucket-owner-read"
+  error: "Specifying both Canned ACLs and Header Grants is not allowed"
+test_10768:
+  account_name: "acltestaccnt10768"
+  email_id: "acltestaccnt10768@seagate.com"
+  bucket_name: "aclbucket10768"
+  acl: "private"
+  error: "Specifying both Canned ACLs and Header Grants is not allowed"
+test_10769:
+  account_name: "acltestaccnt10769"
+  email_id: "acltestaccnt10769@seagate.com"
+  bucket_name: "aclbucket10769"
+  acl: "private"
+  error: "Specifying both Canned ACLs and Header Grants is not allowed"
+test_10770:
+  account_name: "acltestaccnt10770"
+  email_id: "acltestaccnt10770@seagate.com"
+  bucket_name: "aclbucket10770"
+  acl: "public-read"
+  error: "Specifying both Canned ACLs and Header Grants is not allowed"
+test_10771:
+  account_name: "acltestaccnt10771"
+  email_id: "acltestaccnt10771@seagate.com"
+  bucket_name: "aclbucket10771"
+  acl: "public-read"
+  error: "Specifying both Canned ACLs and Header Grants is not allowed"
+test_10772:
+  account_name: "acltestaccnt10772"
+  email_id: "acltestaccnt10772@seagate.com"
+  bucket_name: "aclbucket10772"
+  acl: "public-read-write"
+  error: "Specifying both Canned ACLs and Header Grants is not allowed"
+test_10773:
+  account_name: "acltestaccnt10773"
+  email_id: "acltestaccnt10773@seagate.com"
+  bucket_name: "aclbucket10773"
+  acl: "public-read-write"
+  error: "Specifying both Canned ACLs and Header Grants is not allowed"
+test_10774:
+  account_name: "acltestaccnt10774"
+  email_id: "acltestaccnt10774@seagate.com"
+  bucket_name: "aclbucket10774"
+  acl: "authenticated-read"
+  error: "Specifying both Canned ACLs and Header Grants is not allowed"
+test_10775:
+  account_name: "acltestaccnt10775"
+  email_id: "acltestaccnt10775@seagate.com"
+  bucket_name: "aclbucket10775"
+  acl: "authenticated-read"
+  error: "Specifying both Canned ACLs and Header Grants is not allowed"
+test_10776:
+  account_name: "acltestaccnt10776"
+  email_id: "acltestaccnt10776@seagate.com"
+  bucket_name: "aclbucket10776"
+  acl: "FULL_CONTROL"
+  canned_acl: "private"
+  error_message: "UnexpectedContent"
+test_10777:
+  account_name: "acltestaccnt10777"
+  email_id: "acltestaccnt10777@seagate.com"
+  bucket_name: "aclbucket10777"
+  acl: "FULL_CONTROL"
+  canned_acl: "private"
+  error_message: "BadRequest"
+test_10778:
+  account_name: "acltestaccnt10778"
+  email_id: "acltestaccnt10778@seagate.com"
+  bucket_name: "aclbucket10778"
+  acl: "FULL_CONTROL"
+  canned_acl: "private"
+  error_message: "InvalidACL"
+test_10837:
+  accounts:
+    - "acltestaccnt1"
+    - "acltestaccnt2"
+  emails:
+    - "acltestaccnt1@seagate.com"
+    - "acltestaccnt2@seagate.com"
+  bucket_name: "aclbucket-10837"
+  bucket_acl: "authenticated-read"
+  grant_permission: "READ"
+test_10838:
+  accounts:
+    - "acltestaccnt1"
+    - "acltestaccnt2"
+  emails:
+    - "acltestaccnt1@seagate.com"
+    - "acltestaccnt2@seagate.com"
+  bucket_name: "aclbucket-10838"
+  bucket_acl: "private"
+  error_message: "Forbidden"
+test_10839:
+  accounts:
+    - "acltestaccnt1"
+    - "acltestaccnt2"
+  emails:
+    - "acltestaccnt1@seagate.com"
+    - "acltestaccnt2@seagate.com"
+  bucket_name: "aclbucket-10839"
+  id_str: "id="
+  grant_permission: "READ"
+  default_acl: "private"
+test_10840:
+  bucket_name: "aclbucket-10840"
+test_10841:
+  bucket_name: "aclbucket-10841"
+  bucket_permission: "FULL_CONTROL"
+
+test_312:
+  bucket_name: "bucket-312-{}"
+
+test_313:
+  bucket_name: "bucket-313-{}"
+  account_name: "acltestaccnt313_{}"
+  email_id: "acltestaccnt313_{}@seagate.com"
+  err_message: "AccessDenied"
+
+test_431:
+  bucket_name: "bucket-431-{}"
+  account_name: "acltestaccnt431_{}"
+  email_id: "acltestaccnt431_{}@seagate.com"
+  id_str: "id={}"
+  err_message: "AccessDenied"
+
+test_6423:
+  bucket_name: "bucket-6423-{}"
+  account_name: "acltestaccnt6423_{}"
+  email_id: "acltestaccnt6423_{}@seagate.com"
+  id_str: "id={}"

@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -16,40 +18,57 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
+"""Module to maintain system utils."""
 
 import logging
 import os
+import sys
+import platform
 import random
-from typing import Union, Tuple, List
-from paramiko import SSHClient, AutoAddPolicy
-from paramiko.ssh_exception import AuthenticationException, SSHException
-from subprocess import Popen, PIPE, CalledProcessError
-from hashlib import md5
 import shutil
+import socket
+import builtins
+from typing import Tuple
+from subprocess import Popen, PIPE
+from hashlib import md5
+from paramiko import SSHClient, AutoAddPolicy
 from commons import commands
 
-log = logging.getLogger(__name__)
-EXCEPTION_MSG = "*ERROR* An exception occurred in {}: {}"
+if sys.platform == 'win32':
+    try:
+        import msvcrt
+    except ImportError:
+        MSVCRT = None
+if sys.platform in ['linux', 'linux2']:
+    try:
+        import fcntl
+    except ImportError:
+        FCNTL = None
+
+LOGGER = logging.getLogger(__name__)
 
 
-def run_remote_cmd(cmd: str, hostname: str, username: str, password: str, read_lines: bool = False,
-                   read_nbytes: int = -1, timeout_sec: int = 30, **kwargs) -> str:
+def run_remote_cmd(
+        cmd: str,
+        hostname: str,
+        username: str,
+        password: str,
+        **kwargs) -> tuple:
     """
-    Execute command on remote machine
+    Execute command on remote machine.
     :return: stdout
     """
-    if not hostname:
-        raise ValueError("Missing required parameter: {}".format(hostname))
-    if not username:
-        raise ValueError("Missing required parameter: {}".format(username))
-    if not password:
-        raise ValueError("Missing required parameter: {}".format(password))
-    if not cmd:
-        raise ValueError("Missing required parameter: {}".format(cmd))
-
+    LOGGER.info(
+        "Host: %s, User: %s, Password: %s",
+        hostname,
+        username,
+        password)
+    read_lines = kwargs.get("read_lines", False)
+    read_nbytes = kwargs.get("read_nbytes", -1)
+    timeout_sec = kwargs.get("timeout_sec", 30)
     client = SSHClient()
     client.set_missing_host_key_policy(AutoAddPolicy())
-    log.debug("Command: %s" % str(cmd))
+    LOGGER.debug("Command: %s", str(cmd))
     client.connect(hostname, username=username,
                    password=password, timeout=timeout_sec)
     _, stdout, stderr = client.exec_command(cmd)
@@ -57,46 +76,55 @@ def run_remote_cmd(cmd: str, hostname: str, username: str, password: str, read_l
     if read_lines:
         output = stdout.readlines()
         output = [r.strip().strip("\n").strip() for r in output]
-        log.debug("Result: %s" % str(output))
+        LOGGER.debug("Result: %s", str(output))
         error = stderr.readlines()
         error = [r.strip().strip("\n").strip() for r in error]
-        log.debug("Error: %s" % str(error))
+        LOGGER.debug("Error: %s", str(error))
     else:
         output = stdout.read(read_nbytes)
+        LOGGER.debug("Result: %s", str(output))
         error = stderr.read()
-    log.debug(exit_status)
+        LOGGER.debug("Error: %s", str(error))
+    LOGGER.debug(exit_status)
     if exit_status != 0:
         if error:
-            raise IOError(error)
-        raise IOError(output)
+            return False, error
+        return False, output
     client.close()
     if error:
-        raise IOError(error)
-    return output
+        return False, error
+
+    return True, output
 
 
-def run_local_cmd(cmd: str) -> str:
+def run_local_cmd(cmd: str = None, flg: bool = False) -> tuple:
     """
-    Execute any given command on local machine.
+    Execute any given command on local machine(Windows, Linux).
     :param cmd: command to be executed.
-    :return: stdout 
+    :param flg: To get str(proc.communicate())
+    :return: bool, response.
     """
-    msg_rsa_key_added = b"Number of key(s) added: 1"
-    lcmd_not_found = b"command not found"
     if not cmd:
         raise ValueError("Missing required parameter: {}".format(cmd))
-    log.debug("Command: %s", cmd)
+    LOGGER.debug("Command: %s", cmd)
     proc = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
     output, error = proc.communicate()
-    log.debug("output = %s", str(output))
-    if msg_rsa_key_added in output:
-        return True, output
-    if lcmd_not_found in error or error:
-        raise IOError(error)
-    return output
+    LOGGER.debug("output = %s", str(output))
+    LOGGER.debug("error = %s", str(error))
+    if flg:
+        return True, str((output, error))
+    if proc.returncode != 0:
+        return False, str(error)
+    if b"Number of key(s) added: 1" in output:
+        return True, str(output)
+    if b"command not found" in error or \
+            b"not recognized as an internal or external command" in error or error:
+        return False, str(error)
+
+    return True, str(output)
 
 
-def execute_cmd(cmd: str, remote: bool, *remoteargs, **remoteKwargs) -> str:
+def execute_cmd(cmd: str, remote: bool, *remoteargs, **remoteKwargs) -> tuple:
     """Execute command on local / remote machine based on remote flag
     :param cmd: cmd to be executed
     :param remote: if True executes on remote machine
@@ -105,6 +133,7 @@ def execute_cmd(cmd: str, remote: bool, *remoteargs, **remoteKwargs) -> str:
         result = run_remote_cmd(cmd, *remoteargs, **remoteKwargs)
     else:
         result = run_local_cmd(cmd)
+
     return result
 
 
@@ -156,7 +185,10 @@ def command_formatter(cmd_options: dict, utility_path: str = None) -> str:
     return cmd
 
 
-def calculate_checksum(file_path: str, binary_bz64: bool = True, options="") -> str:
+def calculate_checksum(
+        file_path: str,
+        binary_bz64: bool = True,
+        options: str = "") -> tuple:
     """
     Calculate MD5 checksum with/without binary coversion for a file.
     :param filename: Name of the file with path
@@ -171,9 +203,9 @@ def calculate_checksum(file_path: str, binary_bz64: bool = True, options="") -> 
     else:
         cmd = "md5sum {} {}".format(options, file_path)
 
-    log.debug(f"Executing cmd: {cmd}")
+    LOGGER.debug("Executing cmd: %s", cmd)
     result = run_local_cmd(cmd)
-    log.debug("Output: {}".format(result))
+    LOGGER.debug("Output: %s", str(result))
     return result
 
 
@@ -187,22 +219,23 @@ def cal_percent(num1: float, num2: float) -> float:
     return float(num1) / float(num2) * 100.0
 
 
-def _format_dict(el: list) -> dict:
+def _format_dict(elist: list) -> dict:
     """
     TODO remove later as IAM is not supported
     Format the data in dict format
-    :param el: list of string element
+    :param elist: list of string element
     """
-    resp_dict = {}
-    list_tup = []
-    for i in el:
+    resp_dict = dict()
+    list_tup = list()
+    for i in elist:
         list_tup.append(i.split(" = "))
     for i in list_tup:
         resp_dict[i[0]] = i[1]
+
     return resp_dict
 
 
-def format_iam_resp(res_msg: str) -> list:
+def format_iam_resp(res_msg: bytes) -> list:
     """
     #TODO remove later as IAM is not supported
     Function to format IAM response which comes in string format.
@@ -219,9 +252,12 @@ def format_iam_resp(res_msg: str) -> list:
 
 
 def validate_output(output: str, expected_keywords: str):
-    log.debug(f"actual output {output}")
+    """
+    Validate output for expected keywords.
+    """
+    LOGGER.debug("actual output %s", output)
     output = [i.strip() for i in output]
-    log.debug("output after strip %s", output)
+    LOGGER.debug("output after strip %s", output)
     validation_steps = dict()
     for ele in expected_keywords:
         validation_steps[ele] = False
@@ -244,8 +280,9 @@ def open_empty_file(fpath: str) -> bool:
     :param fpath: Non-existing file path.
     :return: True/False
     """
-    with open(fpath, "w") as f_write:
+    with open(fpath, "w") as _:
         pass
+
     return os.path.exists(fpath)
 
 
@@ -259,8 +296,12 @@ def create_symlink(fpath: str, spath: str) -> bool:
     try:
         os.symlink(fpath, spath)
     except OSError as error:
-        log.error(EXCEPTION_MSG.format(create_symlink.__name__, error))
+        LOGGER.error(
+            "*ERROR* An exception occurred in %s: %s",
+            create_symlink.__name__,
+            error)
         return False
+
     return True
 
 
@@ -278,8 +319,12 @@ def cleanup_dir(dpath: str) -> bool:
             elif os.path.isdir(file_path):
                 shutil.rmtree(file_path)
         except OSError as error:
-            log.error(EXCEPTION_MSG.format(cleanup_dir.__name__, error))
+            LOGGER.error(
+                "*ERROR* An exception occurred in %s: %s",
+                cleanup_dir.__name__,
+                error)
             return False
+
     return True
 
 
@@ -290,10 +335,14 @@ def list_dir(dpath: str) -> list:
     """
     try:
         flist = os.listdir(dpath)
-        logging.debug("List: {}".format(flist))
+        LOGGER.debug("List: %s", str(flist))
     except IOError as error:
-        log.error(EXCEPTION_MSG.format(list_dir.__name__, error))
+        LOGGER.error(
+            "*ERROR* An exception occurred in %s: %s",
+            list_dir.__name__,
+            error)
         return []
+
     return flist
 
 
@@ -312,7 +361,7 @@ def make_dir(dpath: str, mode: int = None):
     return os.path.exists(dpath)
 
 
-def make_dirs(dpath: str, mode: int = None):
+def make_dirs(dpath: str, mode: int = None) -> str:
     """
     Create directory path recursively.
     :param dpath: Directory path.
@@ -324,18 +373,23 @@ def make_dirs(dpath: str, mode: int = None):
         else:
             os.makedirs(dpath)
     except IOError as error:
-        log.error(EXCEPTION_MSG.format(make_dirs.__name__, error))
+        LOGGER.error(
+            "*ERROR* An exception occurred in %s: %s",
+            make_dirs.__name__,
+            error)
         return str(error)
+
     return dpath
 
 
-def remove_dir(dpath: str) -> str:
+def remove_dir(dpath: str) -> bool:
     """
     remove empty directory.
     :param dpath: Directory path.
     :return: dpath
     """
     os.rmdir(dpath)
+
     return os.path.exists(dpath)
 
 
@@ -346,24 +400,60 @@ def get_file_checksum(filename: str):
     :param  filename: Name of the file
     :return: (Boolean, response)
     """
-    log.debug("Calculating checksum of file content")
+    LOGGER.debug("Calculating checksum of file content")
     try:
         result = md5(open(filename, "rb").read()).hexdigest()
+
         return True, result
     except BaseException as error:
-        log.error(EXCEPTION_MSG.format(get_file_checksum.__name__, error))
+        LOGGER.error("*ERROR* An exception occurred in %s: %s",
+                     get_file_checksum.__name__, error)
         return False, error
 
 
-def create_file(filename: str, count: int):
-    cmd = commands.CREATE_FILE.format(filename, count)
-    log.debug(cmd)
+def get_os_version():
+    """Platform independent function to get OS version."""
+    if sys.platform == 'win32':
+        return platform.system() + platform.release()
+    else:
+        plat, ver, core = platform.dist()
+        ver = ver[:3]
+        LOGGER.debug("Tests are running on plat %s with ver %s and core %s ", plat, ver, core)
+        return plat + ver
+
+
+def get_host_name():
+    """Handle for all OS."""
+    return socket.gethostname()
+
+
+def create_file(
+        fpath: str,
+        count: int,
+        dev: str = "/dev/zero",
+        b_size: str = "1M") -> tuple:
+    """
+    Create file using dd command.
+    :param fpath: File path.
+    :param count: size of the file in MB.
+    :param dev: Input file used.
+    :param b_size: block size.
+    :return:
+    """
+    cmd = commands.CREATE_FILE.format(dev, fpath, b_size, count)
+    LOGGER.debug(cmd)
     result = run_local_cmd(cmd)
-    log.debug("output = {}".format(result))
+    LOGGER.debug("output = %s", str(result))
+
     return result
 
 
-def create_multiple_size_files(start_range, stop_range, file_count, folder_path, test_filename):
+def create_multiple_size_files(
+        start_range,
+        stop_range,
+        file_count,
+        folder_path,
+        test_filename):
     """
     Creating multiple random size files in a folder
     :param start_range: Start range of the file
@@ -373,20 +463,22 @@ def create_multiple_size_files(start_range, stop_range, file_count, folder_path,
     :return: folder list
     """
     if not os.path.exists(folder_path):
-        log.warning(f"{folder_path} doesnt exist creating new one")
+        LOGGER.warning("%s doesnt exist creating new one", folder_path)
         os.mkdir(folder_path)
     try:
         os.chdir(folder_path)
-        log.debug(f"Creating {file_count} file at path {os.getcwd()}")
+        LOGGER.debug("Creating %d file at path %s",
+                     file_count, str(os.getcwd()))
         for i in range(file_count):
             filename = "{}{}".format(
                 os.path.join(folder_path, test_filename), i)
             create_file(filename, random.randint(start_range, stop_range))
-        list_dir = os.listdir(folder_path)
-        return True, list_dir
+        dir_list = os.listdir(folder_path)
+
+        return True, dir_list
     except BaseException as error:
-        log.error(EXCEPTION_MSG.format(
-            create_multiple_size_files.__name__, error))
+        LOGGER.error("*ERROR* An exception occurred in %s: %s",
+                     create_multiple_size_files.__name__, error)
         return False, error
 
 
@@ -398,9 +490,13 @@ def remove_file(file_path: str = None):
     """
     try:
         os.remove(file_path)
+
         return True, "Success"
     except Exception as error:
-        log.error(EXCEPTION_MSG.format(remove_file.__name__, error))
+        LOGGER.error(
+            "*ERROR* An exception occurred in %s: %s",
+            remove_file.__name__,
+            error)
         return False, error
 
 
@@ -415,19 +511,19 @@ def split_file(filename, size, split_count, random_part_size=False):
     """
 
     if os.path.exists(filename):
-        log.debug("Deleting existing file: {}".format(filename))
+        LOGGER.debug("Deleting existing file: %s", str(filename))
         remove_file(filename)
     create_file(filename, size)
-    log.debug(
-        "Created new file {} with size {} MB".format(
-            filename, size))
+    LOGGER.debug(
+        "Created new file %s with size %d MB",
+        filename, size)
     dir_path = os.path.dirname(filename)
     random.seed(1048576)
-    res_d = []
+    res_d = list()
     with open(filename, "rb") as fin:
-        for el in range(split_count):
+        for ele in range(split_count):
             fop = "{}/{}_out{}".format(dir_path,
-                                       os.path.basename(filename), str(el))
+                                       os.path.basename(filename), str(ele))
             if random_part_size:
                 read_bytes = random.randint(
                     1048576 * size // 10, 1048576 * size)
@@ -436,7 +532,8 @@ def split_file(filename, size, split_count, random_part_size=False):
             with open(fop, 'wb') as split_fin:
                 split_fin.write(fin.read(read_bytes))
                 res_d.append({"Output": fop, "Size": os.stat(fop).st_size})
-    log.debug(res_d)
+    LOGGER.debug(res_d)
+
     return res_d
 
 
@@ -449,61 +546,67 @@ def is_utility_present(utility_name: str, filepath: str) -> bool:
     cmd = f"ls {filepath}"
     try:
         values = run_local_cmd(cmd)
-        log.debug(values)
+        LOGGER.debug(values)
         if values[0]:
             for val in values[1]:
                 if utility_name == val.split("\n")[0]:
                     return True
+
         return False
     except BaseException as error:
-        log.error(EXCEPTION_MSG.format(is_utility_present.__name__, error))
+        LOGGER.error("*ERROR* An exception occurred in %s: %s",
+                     is_utility_present.__name__, error)
         return False
 
 
 def backup_or_restore_files(action,
                             backup_path,
                             backup_list):
-    """Used to take backup or restore mentioned files at the required path
+    """
+    Used to take backup or restore mentioned files at the required path
     """
     try:
         if action == "backup":
-            log.debug('Starting the backup')
+            LOGGER.debug('Starting the backup')
             if not os.path.exists(backup_path):
                 os.mkdir(backup_path)
             for files in backup_list:
                 shutil.copy(files, backup_path)
-                log.debug(
-                    "Files :{} copied successfully at path {}".format(
-                        files, backup_path))
+                LOGGER.debug(
+                    "Files :%s copied successfully at path %s",
+                    files, backup_path)
             return True, backup_list
-        elif action == "restore":
-            log.debug('Starting the restore')
+        if action == "restore":
+            LOGGER.debug('Starting the restore')
             if not os.path.exists(backup_path):
-                log.debug(
-                    "Backup path :{}, does not exist".format(backup_path))
+                LOGGER.debug(
+                    "Backup path :%s, does not exist", str(backup_path))
             else:
                 os.chdir(backup_path)
                 for files in backup_list:
                     file = os.path.basename(files)
                     file_path = os.path.dirname(files)
                     shutil.copy(file, file_path)
-                    log.debug(
-                        "File :{} got copied successfully at path {}".format(
-                            file, file_path))
+                    LOGGER.debug(
+                        "File :%s got copied successfully at path %s",
+                        file, file_path)
                 return True, backup_path
     except BaseException as error:
-        log.error(EXCEPTION_MSG.format(
-            backup_or_restore_files.__name__, error))
+        LOGGER.error("*ERROR* An exception occurred in %s: %s",
+                     backup_or_restore_files.__name__, error)
         return False, error
 
 
 def is_dir_exists(path: str, dir_name: str) -> bool:
-    directories = run_local_cmd(commands.LS_CMD.format(path))
+    """
+    Check directory path exists.
+    """
+    status, directories = run_local_cmd(commands.LS_CMD.format(path))
     directories = (directory.split("\n")[0] for directory in directories)
-    if dir_name in directories:
+    if dir_name in directories and status:
         return True
-    else:
-        return False
+
+    return False
 
 
 def is_machine_clean() -> Tuple[bool, bool]:
@@ -521,71 +624,88 @@ def is_machine_clean() -> Tuple[bool, bool]:
     # Check any RPM is being installed on machine
     rpm_cmd = commands.LST_RPM_CMD
     prvsn_dir = commands.LST_PRVSN_DIR
-    log.debug(f"command : {rpm_cmd}")
+    LOGGER.debug("command : %s", rpm_cmd)
     cmd_output = run_local_cmd(rpm_cmd)
-    if cmd_output[1] != []:
+    if cmd_output[1]:
         rpm_installed = True
 
     # Now check eos-prvsn binaries present at path
-    log.debug(f"command : {prvsn_dir}")
+    LOGGER.debug("command : %s", prvsn_dir)
     cmd_output_1 = run_local_cmd(prvsn_dir)
-    if cmd_output_1[1] != []:
+    if cmd_output_1[1]:
         eos_prvsnr_present = True
+
     return rpm_installed, eos_prvsnr_present
 
 
-def is_rpm_installed(expected_rpm: str, remote: bool = False, *remoteargs, **remoteKwargs) -> bool:
+def is_rpm_installed(
+        *remoteargs,
+        expected_rpm: str,
+        remote: bool = False,
+        **remoteKwargs) -> tuple:
     """
-    This function checks that expected rpm is currenty installed or not
-    :param expected_rpm: rpm to check
-    :return: True if rpm is installed, false otherwise    """
+    This function checks that expected rpm is currently installed or not.
+    :param expected_rpm: rpm to check.
+    :return: True if rpm is installed, false otherwise.
+    """
     rpm_installed = False
     cmd = commands.LST_RPM_CMD
-    log.debug(f"command : {cmd}")
+    LOGGER.debug("command : %s", cmd)
     cmd_output = execute_cmd(cmd, remote, *remoteargs, **remoteKwargs)
-    if cmd_output[1] == []:
-        log.debug("RPM not found")
+    if cmd_output[1]:
+        LOGGER.debug("RPM not found")
         rpm_installed = False
         return rpm_installed, "RPM not found"
-    else:
-        log.debug(cmd_output[1])
-        rpm_list = [rpm.split("\n")[0] for rpm in cmd_output[1]]
-        log.debug(f"Installed RPM: {rpm_list}")
-        for rpm in rpm_list:
-            if rpm in expected_rpm:
-                rpm_installed = True
-                log.debug(f"RPM {expected_rpm} already installed")
-                break
-        return rpm_installed, "Expected RPM installed"
+
+    LOGGER.debug(cmd_output[1])
+    rpm_list = [rpm.split("\n")[0] for rpm in cmd_output[1]]
+    LOGGER.debug("Installed RPM: %s", str(rpm_list))
+    for rpm in rpm_list:
+        if rpm in expected_rpm:
+            rpm_installed = True
+            LOGGER.debug("RPM %s already installed", expected_rpm)
+            break
+
+    return rpm_installed, "Expected RPM installed"
 
 
-def install_new_cli_rpm(rpm_link=None, remote=False, *remoteargs, **remoteKwargs):
-    cmd_output = []
+def install_new_cli_rpm(
+        *remoteargs,
+        rpm_link=None,
+        remote=False,
+        **remoteKwargs):
+    """
+    Install rmps.
+    """
+    cmd_output = list()
     # cmd = f"yum install -y {rpm_link}"
     cmd = commands.RPM_INSTALL_CMD.format(rpm_link)
-    log.debug(f"command : {cmd}")
+    LOGGER.debug("command : %s", cmd)
     cmd_output = execute_cmd(cmd, remote, *remoteargs, **remoteKwargs)
-    if cmd_output != []:
-        log.debug("Successfully installed RPM")
+    if cmd_output:
+        LOGGER.debug("Successfully installed RPM")
+
     return cmd_output
 
 
-def list_rpms(filter_str="", remote=False, *remoteargs, **remoteKwargs) -> Tuple[bool, list]:
+def list_rpms(*remoteargs, filter_str="", remote=False,
+              **remoteKwargs) -> Tuple[bool, list]:
     """
-    This function lists the rpms installed on a given host and filters by given string
-    :param str filter_str: string to search in rpm names for filtering results, default lists all the rpms
+    This function lists the rpms installed on a given host and filters by given string.
+    :param str filter_str: string to search in rpm names for filtering results,
+    default lists all the rpms.
     :return: True/False, list of rpms
     """
     cmd = commands.RPM_GREP_CMD.format(filter_str)
-    log.debug(f"command : {cmd}")
+    LOGGER.debug("command : %s", cmd)
     resp = execute_cmd(cmd, remote, *remoteargs, **remoteKwargs)
     if isinstance(resp, list):
         rpm_list = [rpm.strip("\n") for rpm in resp]
         if not rpm_list:
             return False, rpm_list
         return True, rpm_list
-    else:
-        return False, resp
+
+    return False, resp
 
 
 def check_ping(host: str) -> bool:
@@ -595,7 +715,8 @@ def check_ping(host: str) -> bool:
     :return: True/ False
     """
     response = os.system("ping -c 1 {}".format(host))
-    return (response == 0)
+
+    return response == 0
 
 
 def pgrep(process: str):
@@ -614,10 +735,98 @@ def get_disk_usage(path: str) -> str:
     :param path: Path to retrieve disk usage
     :return: Disk usage of given path
     """
-    log.debug("Running local disk usage cmd.")
+    LOGGER.debug("Running local disk usage cmd.")
     stats = os.statvfs(path)
     f_blocks, f_frsize, f_bfree = stats.f_blocks, stats.f_frsize, stats.f_bfree
     total = (f_blocks * f_frsize)
     used = (f_blocks - f_bfree) * f_frsize
     result = format((float(used) / total) * 100, ".1f")
+
     return result
+
+
+def path_exists(path: str) -> bool:
+    """
+    This function will return true if path exists else false.
+
+    :param path: file/directory path.
+    :return: bool
+    """
+    status = os.path.exists(path)
+
+    return status
+
+
+def file_lock(lock_file, non_blocking=False):
+    """
+    Uses the :func:`msvcrt.locking` function to hard lock the lock file on
+    windows systems.
+    """
+
+    if sys.platform == 'win32':
+        open_mode = os.O_RDWR | os.O_CREAT | os.O_TRUNC
+        lock_file_fd = None
+        try:
+            lock_file_fd = os.open(lock_file, open_mode)
+        except OSError:
+            pass
+        else:
+            try:
+                msvcrt.locking(lock_file_fd, msvcrt.LK_LOCK, 1)
+            except (IOError, OSError):
+                os.close(lock_file_fd)
+                return None, False
+            else:
+                LOGGER.debug("Lock file created.")
+        return lock_file_fd, True
+
+    else:
+        if not lock_file.startswith('/'):
+            # If Not an absolute path name, prefix in $HOME/.runner
+            fname = os.path.join(os.getenv('HOME'), '.runner', lock_file)
+
+        fdir = os.path.dirname(fname)
+        if not os.path.exists(fdir):
+            os.makedirs(fdir)
+
+        try:
+            fmutex = open(fname, "rb+")
+        except (OSError, IOError):
+            fmutex = open(fname, "wb+")
+        try:
+            flags = fcntl.LOCK_EX
+            if non_blocking:
+                flags |= fcntl.LOCK_NB
+            fcntl.flock(fmutex.fileno(), flags)
+        except IOError:
+            return None, False
+
+    return fmutex, True
+
+
+def file_unlock(fmutex):
+    """
+    Unlock the file lock.
+    :param fmutex:
+    :return:
+    """
+    if sys.platform == 'win32':
+        msvcrt.locking(fmutex, msvcrt.LK_UNLCK, 1)
+        os.close(fmutex)
+        try:
+            os.remove(fmutex.name)
+        # Probably another instance of the application
+        # that acquired the file lock.
+        except OSError:
+            pass
+    else:
+        fcntl.flock(fmutex.fileno(), fcntl.LOCK_UN)
+        fmutex.close()
+
+
+def insert_into_builtins(name, obj):
+    """May be required in worst case."""
+    if isinstance(builtins, dict):
+        builtins[name] = obj
+    else:
+        builtins.obj = obj

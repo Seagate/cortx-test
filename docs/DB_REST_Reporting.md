@@ -1,4 +1,3 @@
-# REST-DB & Reporting Framework
 
 <img src="media/rest_server.png" style="width:5.02084in;height:3.96875in" />
 
@@ -101,7 +100,7 @@ Mongo DB Collection for storing test execution details.
     | Yes         | testPlanID          | String             |
     | Yes         | testExecutionID     | String             |
     | Yes         | testType            | String             |
-    | Yes         | testComponent       | String             |
+    | Yes         | testExecutionLabel  | String             |
     | Yes         | testTeam            | String             |
     | Yes         | testStartTime       | String in ISO 8601 |
     | Yes         | testExecutionTime   | Integer            |
@@ -111,8 +110,11 @@ Mongo DB Collection for storing test execution details.
     | Yes         | testResult          | String             |
     | Yes         | healthCheckResult   | String             |
     | Yes         | executionType       | String             |
+    | Yes         | testPlanLabel       | String             |
+    | Yes         | latest              | Boolean            |
+    | Yes         | feature             | String             |
     | No          | issueType           | String             |
-    | No          | issueID             | String             |
+    | No          | issueIDs            | List of String     |
     | No          | isRegression        | Boolean            |
     | No          | logCollectionDone   | Boolean            |
 
@@ -128,17 +130,17 @@ curl -L -X POST 'http://127.0.0.1:5000/reportsdb/create' \
     "clientHostname": "iu10-r18.pun.seagate.com",
     "executionType": "Automated",
     "healthCheckResult": "Fail",
-    "isRegression": false,
-    "issueID": "EOS-000",
+    "isRegression": False,
+    "issueIDs": ["EOS-000"],
     "issueType": "Dev",
-    "logCollectionDone": true,
+    "logCollectionDone": True,
     "logPath": "DemoPath",
     "noOfNodes": 2,
     "nodesHostname": [
         "sm7-r18.pun.seagate.com",
         "sm8-r18.pun.seagate.com"
     ],
-    "testComponent": "S3",
+    "testExecutionLabel": "S3",
     "testExecutionID": "TEST-0000",
     "testExecutionTime": 0,
     "testID": "TEST-0000",
@@ -146,6 +148,7 @@ curl -L -X POST 'http://127.0.0.1:5000/reportsdb/create' \
         "Demo",
         "Labels"
     ],
+    "testPlanLabel": "Regular",
     "testName": "Demo test",
     "testPlanID": "TEST-0000",
     "testResult": "Pass",
@@ -156,6 +159,8 @@ curl -L -X POST 'http://127.0.0.1:5000/reportsdb/create' \
     ],
     "testTeam": "CFT",
     "testType": "Pytest",
+    "latest": true,
+    "feature": "Data Recovery",
     "db_username": "db_username",
     "db_password": "db_password"
 }'
@@ -174,17 +179,18 @@ payload = {
     "clientHostname": "iu10-r18.pun.seagate.com",
     "executionType": "Automated",
     "healthCheckResult": "Fail",
-    "isRegression": false,
-    "issueID": "EOS-000",
+    "isRegression": False,
+    "issueIDs": ["EOS-000"],
     "issueType": "Dev",
-    "logCollectionDone": true,
+    "logCollectionDone": True,
     "logPath": "DemoPath",
     "noOfNodes": 2,
     "nodesHostname": [
         "sm7-r18.pun.seagate.com",
         "sm8-r18.pun.seagate.com"
     ],
-    "testComponent": "S3",
+    "testPlanLabel": "Regular",
+    "testExecutionLabel": "S3",
     "testExecutionID": "TEST-0000",
     "testExecutionTime": 0,
     "testID": "TEST-1111",
@@ -202,6 +208,8 @@ payload = {
     ],
     "testTeam": "CFT",
     "testType": "Pytest",
+    "latest": true,
+    "feature": "Data Recovery",
     "db_username": "db_username",
     "db_password": "db_password"
 }
@@ -239,9 +247,9 @@ This allows to execute complex queries using operators.
 curl -L -X GET 'http://127.0.0.1:5000/reportsdb/search' \
 -H 'Content-Type: application/json' \
 --data-raw '{
-    "query": {"testComponent": { "$in": ["S3", "Motr"]},
+    "query": {"testExecutionLabel": { "$in": ["S3", "Motr"]},
               "healthCheckResult": "Fail" },
-    "projection": {"OSVersion": true, "buildNo": true},
+    "projection": {"OSVersion": True, "buildNo": True},
     "db_username": "db_username",
     "db_password": "db_password"
 }'
@@ -254,9 +262,9 @@ endpoint = "reportsdb/search"
 host = "http://127.0.0.1:5000/"
 
 payload = {
-    "query": {"testComponent": { "$in": ["S3", "Motr"]},
+    "query": {"testExecutionLabel": { "$in": ["S3", "Motr"]},
               "healthCheckResult": "Fail" },
-    "projection": {"OSVersion": true, "buildNo": true},
+    "projection": {"OSVersion": True, "buildNo": True},
     "db_username": "db_username",
     "db_password": "db_password"
 }
