@@ -352,6 +352,9 @@ def reset_imported_module_log_level():
     """
     loggers = [logging.getLogger()] + list(logging.Logger.manager.loggerDict.values())
     for _logger in loggers:
+        if isinstance(_logger, logging.PlaceHolder):
+            LOGGER.info("Skipping placeholder to reset logging level")
+            continue
         _logger.setLevel(logging.WARNING)
 
 
@@ -469,8 +472,8 @@ def pytest_runtest_makereport(item, call):
     fail_file = 'failed_tests.log'
     pass_file = 'passed_tests.log'
     current_file = 'other_test_calls.log'
-    db_user, db_pass = get_db_credential()
     if not _local:
+        db_user, db_pass = get_db_credential()
         jira_id, jira_pwd = get_jira_credential()
         task = jira_utils.JiraTask(jira_id, jira_pwd)
         test_id = CACHE.lookup(report.nodeid)
