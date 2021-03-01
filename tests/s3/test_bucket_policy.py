@@ -78,6 +78,7 @@ class TestBucketPolicy:
         self.file_path_2 = os.path.join(self.folder_path, self.test_file1)
         if not os.path.exists(self.folder_path):
             os.makedirs(self.folder_path)
+        self.log.info(f"Test data path: %s", self.folder_path)
         self.log.info("ENDED: Setup operations.")
 
     def teardown_method(self):
