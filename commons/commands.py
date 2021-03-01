@@ -208,3 +208,13 @@ DELETE_IAM_USER = "s3iamusers delete"
 
 # Linux System Commands
 CMD_MKDIR = "mkdir -p {}"
+
+# S3 awscli  Commands
+AWSCLI_CREATE_BUCKET = "aws s3 mb s3://{0}"
+AWSCLI_DELETE_BUCKET = "aws s3 rb s3://{0}"
+AWSCLI_LIST_BUCKETS = "aws s3 ls"
+AWSCLI_PUT_OBJECT = "aws s3 cp {0} s3://{1}/{2}"
+AWSCLI_HEAD_BUCKET = "aws s3api head-bucket --bucket {0}"
+AWSCLI_GET_BUCKET_LOCATION =  "aws s3api get-bucket-location --bucket {0}"
+AWSCLI_LIST_OBJECTS = "aws s3 ls s3://{0}"
+
