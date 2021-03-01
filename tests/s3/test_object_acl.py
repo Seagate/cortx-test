@@ -247,6 +247,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5855")
+    @CTFailOn(error_handler)
     def test_get_nonexising_obj_acl_2875(self):
         """verify that user able to get object ACL details for non existing object."""
         self.log.info(
@@ -274,6 +275,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5854")
+    @CTFailOn(error_handler)
     def test_download_with_empty_key_2876(self):
         """Verify that user able to download with empty key or not."""
         self.log.info(
@@ -323,6 +325,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5858")
+    @CTFailOn(error_handler)
     def test_verify_del_obj_acl_2878(self):
         """User should not get object acl when object was deleted."""
         self.log.info(
@@ -559,6 +562,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5804")
+    @CTFailOn(error_handler)
     def test_upload_abort_multipart_upload_2912(self):
         """Perform Multipart Object upload & abort Multipart upload & verify Get Object ACL."""
         self.log.info(
@@ -678,6 +682,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5779")
+    @CTFailOn(error_handler)
     def test_invalid_canonical_id_3212(self):
         """put object acl with a invalid canonical ID."""
         self.log.info("put object acl with a invalid canonical ID")
@@ -843,6 +848,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5763")
+    @CTFailOn(error_handler)
     def test_invalid_permission_3217(self):
         """Put object acl with invalid permission."""
         self.log.info("put object acl with invalid permission")
@@ -871,6 +877,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5762")
+    @CTFailOn(error_handler)
     def test_invalid_xml_structure_3218(self):
         """Put object acl with invalid XML structure."""
         self.log.info("put object acl with invalid XML structure")
@@ -959,6 +966,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5765")
+    @CTFailOn(error_handler)
     def test_put_objacl_invalid_obj_3227(self):
         """put object acl with invalid object [i.e object is not present]."""
         self.log.info(
@@ -1034,6 +1042,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5761")
+    @CTFailOn(error_handler)
     def test_put_objacl_morethan_100grants_3230(self):
         """Put object acl with more than 100 grants."""
         self.log.info("put object acl with more than 100 grants")
@@ -1074,6 +1083,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5767")
+    @CTFailOn(error_handler)
     def test_put_obj_invalid_partid_display_3231(self):
         """put object acl with invalid <owner> part id and Display name."""
         self.log.info(
@@ -1102,6 +1112,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5793")
+    @CTFailOn(error_handler)
     def test_canned_acl_3682(self):
         """Add canned acl private for put object acl in account1 and get object from account2."""
         self.log.info(
@@ -1167,6 +1178,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5791")
+    @CTFailOn(error_handler)
     def test_put_get_canned_acl_3683(self):
         """Add canned acl private for put object in account1 and get object from account2."""
         self.log.info(
@@ -1294,6 +1306,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5794")
+    @CTFailOn(error_handler)
     def test_canned_acl_authenticated_read_3685(self):
         """
         Add canned acl authenticated-read for put object in account1.
@@ -1363,6 +1376,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5797")
+    @CTFailOn(error_handler)
     def test_put_get_canned_acl_authread_3686(self):
         """
         Add canned acl authenticated-read for put object acl in account1.
@@ -1440,6 +1454,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5749")
+    @CTFailOn(error_handler)
     def test_authenticated_read_canned_acl_3687(self):
         """
         put object in account1 and give write-acp to account2.
@@ -1618,6 +1633,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5795")
+    @CTFailOn(error_handler)
     def test_authenticated_read_acp_permissions_3689(self):
         """
         Add canned acl authenticated-read for put object in account1.
@@ -1711,6 +1727,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5789")
+    @CTFailOn(error_handler)
     def test_overwrite_private_canned_acl_3693(self):
         """
         First add authenticated-read canned ACL to object.
@@ -1791,6 +1808,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5788")
+    @CTFailOn(error_handler)
     def test_overwrite_authenticated_read_canned_acl_3692(self):
         """
         First add private canned ACL to object.
@@ -1982,6 +2000,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5746")
+    @CTFailOn(error_handler)
     def test_bucket_owner_full_control_3695(self):
         """
         put-object from account2 with the canned acl bucket-owner-full-control.
@@ -2095,6 +2114,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5820")
+    @CTFailOn(error_handler)
     def test_read_acl_permission_3504(self):
         """Add canned ACL bucket-owner-full-control along with READ ACL grant permission."""
         self.log.info(
@@ -2143,6 +2163,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5813")
+    @CTFailOn(error_handler)
     def test_canned_read_acl_permission_3509(self):
         """Add canned ACL bucket-owner-read along with READ ACL grant permission."""
         self.log.info(
@@ -2189,7 +2210,8 @@ class TestObjectACL:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-5850")
+    @CTFailOn(error_handler)
     def test_canned_private_read_acl_3543(self):
         """Add canned ACL "private" along with "READ" ACL grant permission."""
         self.log.info(
@@ -2238,7 +2260,8 @@ class TestObjectACL:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags(" ")
+    @pytest.mark.tags("TEST-5851")
+    @CTFailOn(error_handler)
     def test_private_full_control_3544(self):
         """Add canned ACL "private" along with "FULL_CONTROL" ACL grant permission."""
         self.log.info(
@@ -2288,6 +2311,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5847")
+    @CTFailOn(error_handler)
     def test_public_read_acp_permission_3546(self):
         """Add canned ACL "public_read" along with "READ_ACP" ACL grant permission."""
         self.log.info(
@@ -2337,6 +2361,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5845")
+    @CTFailOn(error_handler)
     def test_public_read_write_acp_3547(self):
         """Add canned ACL "public_read" along with "WRITE_ACP" ACL grant permission."""
         self.log.info(
@@ -2386,6 +2411,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5843")
+    @CTFailOn(error_handler)
     def test_public_read_write_acp_acl_3548(self):
         """Add canned ACL "public_read-write" along with "WRITE_ACP" ACL grant permission."""
         self.log.info(
@@ -2433,6 +2459,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5844")
+    @CTFailOn(error_handler)
     def test_public_read_write_full_control_3549(self):
         """Add canned ACL "public_read-write" along with "FULL_CONTROL" ACL grant permission."""
         self.log.info(
@@ -2480,6 +2507,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5853")
+    @CTFailOn(error_handler)
     def test_authenticate_read_acl_3550(self):
         """Add canned ACL "authenticate_read" along with "READ" ACL grant permission."""
         self.log.info(
@@ -2528,6 +2556,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5852")
+    @CTFailOn(error_handler)
     def test_authenticate_read_acp_acl_3551(self):
         """Add canned ACL "authenticate_read" along with "READ_ACP" ACL grant permission."""
         self.log.info(
@@ -2656,6 +2685,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5799")
+    @CTFailOn(error_handler)
     def test_bucket_owner_read_canned_3498(self):
         """Verify bucket-owner-read canned ACL when object does not belong to the bucket owner."""
         self.log.info(
@@ -2745,6 +2775,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5801")
+    @CTFailOn(error_handler)
     def test_bucket_owner_full_control_3499(self):
         """
         Verify bucket-owner-full-control canned ACL.
@@ -2966,6 +2997,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5817")
+    @CTFailOn(error_handler)
     def test_full_control_write_acl_3505(self):
         """Add canned ACL bucket-owner-full-control along with WRITE ACL grant permission."""
         self.log.info(
@@ -3017,6 +3049,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5818")
+    @CTFailOn(error_handler)
     def test_full_control_read_acp_acl_3506(self):
         """Add canned ACL bucket-owner-full-control along with READ_ACP ACL grant permission."""
         self.log.info(
@@ -3068,6 +3101,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5816")
+    @CTFailOn(error_handler)
     def test_bucket_owner_full_control_write_acp_3507(self):
         """
         Add canned ACL bucket-owner-full-control along with WRITE_ACP ACL grant permission."""
@@ -3118,6 +3152,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5822")
+    @CTFailOn(error_handler)
     def test_bucket_owner_full_control_acl_3508(self):
         """Add canned ACL bucket-owner-full-control along with FULL_CONTROL ACL grant permission."""
         self.log.info(
@@ -3168,6 +3203,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5809")
+    @CTFailOn(error_handler)
     def test_bucket_owner_read_write_acl_permission_3510(self):
         """Add canned ACL bucket-owner-read along with WRITE ACL grant permission."""
         self.log.info(
@@ -3219,6 +3255,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5811")
+    @CTFailOn(error_handler)
     def test_bucket_owner_read_acp_acl_3511(self):
         """Add canned ACL bucket-owner-read along with READ_ACP ACL grant permission."""
         self.log.info(
@@ -3270,6 +3307,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5808")
+    @CTFailOn(error_handler)
     def test_bucket_owner_read_write_acp_acl_3512(self):
         """Add canned ACL bucket-owner-read along with WRITE_ACP ACL grant permission."""
         self.log.info(
@@ -3321,6 +3359,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5815")
+    @CTFailOn(error_handler)
     def test_bucket_owner_read_full_control_acl_3513(self):
         """
         Add canned ACL bucket-owner-read along with FULL_CONTROL ACL grant permission.
@@ -3375,6 +3414,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5861")
+    @CTFailOn(error_handler)
     def test_private_acl_full_control_3552(self):
         """
         Add canned ACL "private" as a request header along with "FULL_CONTROL" ACL grant permission.
@@ -3437,6 +3477,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5848")
+    @CTFailOn(error_handler)
     def test_private_request_body_full_contorl_header_3553(self):
         """
         Add canned ACL "private" in request body.
@@ -3497,6 +3538,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5848")
+    @CTFailOn(error_handler)
     def test_private_full_contorl_acl_permission_3554(self):
         """
         Add canned ACL "private" in request body along with "FULL_CONTROL" ACL grant permission.
@@ -3560,6 +3602,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("")
+    @CTFailOn(error_handler)
     def test_put_object_private_canned_acl_159(self):
         """Put-object-acl from cross account on the object with private canned-acl permission."""
         self.log.info(
@@ -3628,6 +3671,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("")
+    @CTFailOn(error_handler)
     def test_put_object_private_canned_acl_170(self):
         """Put-object-acl from cross account on the object with private canned-acl permission."""
         self.log.info(
@@ -3694,6 +3738,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("")
+    @CTFailOn(error_handler)
     def test_put_object_owner_read_acl_172(self):
         """Test put-object-acl cross account on the object with bucket-owner-read canned-acl."""
         self.log.info(
@@ -3790,6 +3835,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("")
+    @CTFailOn(error_handler)
     def test_full_contorl_canned_acl_permission_175(self):
         """
         Test put-object-acl from cross account on the object with bucket-owner-full-control.
@@ -4097,6 +4143,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-7568")
+    @CTFailOn(error_handler)
     def test_write_execute_get_object_tagging_421(self):
         """
         Grant WRITE permission to account2.
@@ -4410,6 +4457,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-7573")
+    @CTFailOn(error_handler)
     def test_public_read_canned_acl_167(self):
         """put-object-acl from cross account on the obj with public-read canned-acl permission."""
         self.log.info(
@@ -4476,6 +4524,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-7574")
+    @CTFailOn(error_handler)
     def test_put_get_obj_acl_311(self):
         """
         put object in account1 Do not give any permissions or canned acl for account2.
@@ -5551,6 +5600,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5766")
+    @CTFailOn(error_handler)
     def test_invalid_custom_acl_xml_json_3228(self):
         """put object acl with invalid custom acl xml using json file."""
         self.log.info(
@@ -5639,6 +5689,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5790")
+    @CTFailOn(error_handler)
     def test_get_object_by_changed_account_3250(self):
         """change account (to account2) and get object which is created by account1."""
         self.log.info(
@@ -5670,6 +5721,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5775")
+    @CTFailOn(error_handler)
     def test_put_obj_write_access_get_obj_3254(self):
         """Put object ACL with Account1, grant WRITE access to Account2 & Get obj with Account2."""
         self.log.info(
@@ -5754,6 +5806,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5771")
+    @CTFailOn(error_handler)
     def test_put_obj_write_acp_get_obj_3257(self):
         """Put obj ACL with Account1, grant write-acp access to Account2 get obj with Account2."""
         self.log.info(
@@ -5783,6 +5836,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5744")
+    @CTFailOn(error_handler)
     def test_put_get_object_acl_xml_3451(self):
         """Put object acl in account1 and get object from account2 by using acl xml."""
         self.log.info(
