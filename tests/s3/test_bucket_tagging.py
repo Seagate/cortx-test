@@ -17,7 +17,7 @@
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
-"""This file contains test related to Bucket Policy."""
+"""This file contains test related to Bucket Tagging."""
 import time
 import logging
 import pytest
