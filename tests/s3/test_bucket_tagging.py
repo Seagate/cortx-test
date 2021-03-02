@@ -19,28 +19,24 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 """This file contains test related to Bucket Policy."""
 import time
+import logging
 import pytest
 from libs.s3 import s3_test_lib, s3_tagging_test_lib
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils.config_utils import read_yaml
-from commons.utils import assert_utils
 from commons.utils.assert_utils import \
     assert_true, assert_in, assert_equal, assert_is_not_none
 
-ASRTOBJ = assert_utils
 S3_OBJ = s3_test_lib.S3TestLib()
-IAM_OBJ = iam_test_lib.IamTestLib()
-ACL_OBJ = s3_acl_test_lib.S3AclTestLib()
 LOGGER = logging.getLogger(__name__)
-
 TAG_OBJ = s3_tagging_test_lib.S3TaggingTestLib()
 CMN_CONF = read_yaml("config/s3/test_bucket_tagging.yaml")[1]
 
 
 class TestBucketTagging():
-    """Bucket Tagging Testsuite"""
+    """Bucket Tagging Testsuite."""
 
     @CTFailOn(error_handler)
     def setup_method(self):
@@ -59,10 +55,7 @@ class TestBucketTagging():
     @pytest.mark.tags("TEST-5514")
     @CTFailOn(error_handler)
     def test_2432(self):
-        """
-        Verify PUT Bucket tagging
-        :avocado: tags=bucket_tagging
-        """
+        """Verify PUT Bucket tagging."""
         LOGGER.info("STARTED: Verify PUT Bucket tagging")
         bucket_name = "{}{}".format(CMN_CONF["test_2432"]["bucket_name"],
                                     str(int(time.time())))
@@ -96,10 +89,7 @@ class TestBucketTagging():
     @pytest.mark.tags("TEST-5517")
     @CTFailOn(error_handler)
     def test_2433(self):
-        """
-        Verify GET Bucket tagging
-        :avocado: tags=bucket_tagging
-        """
+        """Verify GET Bucket tagging."""
         LOGGER.info("STARTED: Verify GET Bucket tagging")
         bucket_name = "{}{}".format(CMN_CONF["test_2433"]["bucket_name"],
                                     str(int(time.time())))
@@ -132,10 +122,7 @@ class TestBucketTagging():
     @pytest.mark.tags("TEST-5519")
     @CTFailOn(error_handler)
     def test_2434(self):
-        """
-        Verify DELETE Bucket tagging
-        :avocado: tags=bucket_tagging
-        """
+        """Verify DELETE Bucket tagging."""
         LOGGER.info("STARTED: Verify DELETE Bucket tagging")
         bucket_name = "{}{}".format(CMN_CONF["test_2434"]["bucket_name"],
                                     str(int(time.time())))
@@ -175,10 +162,7 @@ class TestBucketTagging():
     @pytest.mark.tags("TEST-5533")
     @CTFailOn(error_handler)
     def test_2435(self):
-        """
-        Create a tag whose key is up to 128 Unicode characters in length
-        :avocado: tags=bucket_tagging
-        """
+        """Create a tag whose key is up to 128 Unicode characters in length."""
         LOGGER.info(
             "STARTED: Create a tag whose key is up to 128 Unicode characters in length")
         bucket_name = "{}{}".format(CMN_CONF["test_2435"]["bucket_name"],
@@ -214,10 +198,7 @@ class TestBucketTagging():
     @pytest.mark.tags("TEST-5534")
     @CTFailOn(error_handler)
     def test_2436(self):
-        """
-        Create a tag whose key is more than 128 Unicode characters in length
-        :avocado: tags=bucket_tagging
-        """
+        """Create a tag whose key is more than 128 Unicode characters in length."""
         LOGGER.info(
             "STARTED: Create a tag whose key is more than 128 Unicode characters in length")
         bucket_name = "{}{}".format(CMN_CONF["test_2436"]["bucket_name"],
@@ -250,10 +231,7 @@ class TestBucketTagging():
     @pytest.mark.tags("TEST-5535")
     @CTFailOn(error_handler)
     def test_2437(self):
-        """
-        Create a tag having values up to 256 Unicode characters in length
-        :avocado: tags=bucket_tagging
-        """
+        """Create a tag having values up to 256 Unicode characters in length."""
         LOGGER.info(
             "STARTED: Create a tag having values up to 256 Unicode characters in length")
         bucket_name = "{}{}".format(CMN_CONF["test_2437"]["bucket_name"],
@@ -288,10 +266,7 @@ class TestBucketTagging():
     @pytest.mark.tags("TEST-5536")
     @CTFailOn(error_handler)
     def test_2438(self):
-        """
-        Create a tag having values more than 512 Unicode characters in length
-        :avocado: tags=bucket_tagging
-        """
+        """Create a tag having values more than 512 Unicode characters in length."""
         LOGGER.info(
             "STARTED: Create a tag having values more than 512 Unicode characters in length")
         bucket_name = "{}{}".format(CMN_CONF["test_2438"]["bucket_name"],
@@ -323,10 +298,7 @@ class TestBucketTagging():
     @pytest.mark.tags("TEST-5528")
     @CTFailOn(error_handler)
     def test_2439(self):
-        """
-        Create Bucket tags, up to 50
-        :avocado: tags=bucket_tagging
-        """
+        """Create Bucket tags, up to 50."""
         LOGGER.info("STARTED: Create Bucket tags, up to 50")
         bucket_name = "{}{}".format(CMN_CONF["test_2439"]["bucket_name"],
                                     str(int(time.time())))
@@ -346,8 +318,8 @@ class TestBucketTagging():
             CMN_CONF["test_2439"]["tag_count"])
         assert_true(resp[0], resp[1])
         LOGGER.info(
-            "Step 2: {0} tags are set for a bucket".format(
-                CMN_CONF["test_2439"]["tag_count"]))
+            "Step 2: %d tags are set for a bucket",
+            CMN_CONF["test_2439"]["tag_count"])
         LOGGER.info("Step 3: Retrieving tags of a bucket")
         resp = TAG_OBJ.get_bucket_tags(bucket_name)
         sorted_tags = sorted(resp[1], key=lambda x: int(
@@ -366,10 +338,7 @@ class TestBucketTagging():
     @pytest.mark.tags("TEST-5529")
     @CTFailOn(error_handler)
     def test_2440(self):
-        """
-        Create Bucket tags, more than 50
-        :avocado: tags=bucket_tagging
-        """
+        """Create Bucket tags, more than 50."""
         LOGGER.info("STARTED: Create Bucket tags, more than 50")
         bucket_name = "{}{}".format(CMN_CONF["test_2440"]["bucket_name"],
                                     str(int(time.time())))
@@ -404,10 +373,7 @@ class TestBucketTagging():
     @pytest.mark.tags("TEST-5521")
     @CTFailOn(error_handler)
     def test_2441(self):
-        """
-        Verify bucket Tag Keys with case sensitive labels
-        :avocado: tags=bucket_tagging
-        """
+        """Verify bucket Tag Keys with case sensitive labels."""
         LOGGER.info(
             "STARTED: Verify bucket Tag Keys with case sensitive labels")
         bucket_name = "{}{}".format(CMN_CONF["test_2441"]["bucket_name"],
@@ -445,10 +411,7 @@ class TestBucketTagging():
     @pytest.mark.tags("TEST-5520")
     @CTFailOn(error_handler)
     def test_2442(self):
-        """
-        Verify bucket tag Values with case sensitive labels
-        :avocado: tags=bucket_tagging
-        """
+        """Verify bucket tag Values with case sensitive labels."""
         LOGGER.info(
             "STARTED: Verify bucket tag Values with case sensitive labels")
         bucket_name = "{}{}".format(CMN_CONF["test_2442"]["bucket_name"],
@@ -485,10 +448,7 @@ class TestBucketTagging():
     @pytest.mark.tags("TEST-5526")
     @CTFailOn(error_handler)
     def test_2443(self):
-        """
-        Create multiple tags with tag keys having special characters
-        :avocado: tags=bucket_tagging
-        """
+        """Create multiple tags with tag keys having special characters."""
         LOGGER.info(
             "STARTED: Create multiple tags with tag keys having special characters")
         bucket_name = "{}{}".format(CMN_CONF["test_2443"]["bucket_name"],
@@ -526,10 +486,7 @@ class TestBucketTagging():
     @pytest.mark.tags("TEST-5527")
     @CTFailOn(error_handler)
     def test_2444(self):
-        """
-        Create multiple tags with tag keys having invalid special characters
-        :avocado: tags=bucket_tagging
-        """
+        """Create multiple tags with tag keys having invalid special characters."""
         LOGGER.info(
             "STARTED: Create multiple tags with tag keys having invalid special characters")
         bucket_name = "{}{}".format(CMN_CONF["test_2444"]["bucket_name"],
@@ -564,10 +521,7 @@ class TestBucketTagging():
     @pytest.mark.tags("TEST-5524")
     @CTFailOn(error_handler)
     def test_2445(self):
-        """
-        Create multiple tags with tag values having invalid special character
-        :avocado: tags=bucket_tagging
-        """
+        """Create multiple tags with tag values having invalid special character."""
         LOGGER.info("STARTED: Create multiple tags with tag values having "
                     "invalid special character")
         bucket_name = "{}{}".format(CMN_CONF["test_2445"]["bucket_name"],
@@ -603,10 +557,7 @@ class TestBucketTagging():
     @pytest.mark.tags("TEST-5531")
     @CTFailOn(error_handler)
     def test_2446(self):
-        """
-        Create bucket tags with duplicate keys
-        :avocado: tags=bucket_tagging
-        """
+        """Create bucket tags with duplicate keys."""
         LOGGER.info("STARTED: Create bucket tags with duplicate keys")
         bucket_name = "{}{}".format(CMN_CONF["test_2446"]["bucket_name"],
                                     str(int(time.time())))
@@ -637,10 +588,7 @@ class TestBucketTagging():
     @pytest.mark.tags("TEST-5512")
     @CTFailOn(error_handler)
     def test_2447(self):
-        """
-        verify values in a tag set should be unique
-        :avocado: tags=bucket_tagging
-        """
+        """verify values in a tag set should be unique."""
         LOGGER.info("STARTED: verify values in a tag set should be unique")
         bucket_name = "{}{}".format(CMN_CONF["test_2447"]["bucket_name"],
                                     str(int(time.time())))
@@ -681,10 +629,7 @@ class TestBucketTagging():
     @pytest.mark.tags("TEST-5530")
     @CTFailOn(error_handler)
     def test_2448(self):
-        """
-        Create bucket tags with invalid (characters outside the allowed set) special characters
-        :avocado: tags=bucket_tagging
-        """
+        """Create bucket tags with invalid special characters."""
         LOGGER.info("STARTED: Create bucket tags with invalid "
                     "(characters outside the allowed set) special characters")
         bucket_name = "{}{}".format(CMN_CONF["test_2448"]["bucket_name"],
@@ -716,10 +661,7 @@ class TestBucketTagging():
     @pytest.mark.tags("TEST-8719")
     @CTFailOn(error_handler)
     def test_2449(self):
-        """
-        Delete Bucket having tags associated with Bucket and its Objects
-        :avocado: tags=bucket_tagging
-        """
+        """Delete Bucket having tags associated with Bucket and its Objects."""
         LOGGER.info(
             "STARTED: Delete Bucket having tags associated with Bucket and its Objects")
         bucket_name = "{}{}".format(CMN_CONF["test_2449"]["bucket_name"],
@@ -806,10 +748,7 @@ class TestBucketTagging():
     @pytest.mark.tags("TEST-5522")
     @CTFailOn(error_handler)
     def test_2450(self):
-        """
-        Verification of max. no. of Buckets user can create with max no. of tags per Bucket
-        :avocado: tags=bucket_tagging
-        """
+        """Verify user can create max no of buckets with max no of tags per bucket."""
         LOGGER.info("STARTED: Verification of max. no. of Buckets user"
                     " can create with max no. of tags per Bucket")
         for i in range(CMN_CONF["test_2450"]["bucket_count"]):
@@ -828,7 +767,7 @@ class TestBucketTagging():
             resp = TAG_OBJ.get_bucket_tags(bucket)
             assert_is_not_none(resp[0], resp[1])
         LOGGER.debug(buckets)
-        LOGGER.debug("Total buckets : {}".format(len(buckets)))
+        LOGGER.debug("Total buckets : %d", len(buckets))
         LOGGER.info("ENDED: Verification of max. no. of Buckets user can "
                     "create with max no. of tags per Bucket")
 
@@ -836,10 +775,7 @@ class TestBucketTagging():
     @pytest.mark.tags("TEST-5513")
     @CTFailOn(error_handler)
     def test_2451(self):
-        """
-        Verify PUT bucket tagging to non-existing bucket
-        :avocado: tags=bucket_tagging
-        """
+        """Verify PUT bucket tagging to non-existing bucket."""
         LOGGER.info(
             "STARTED: Verify PUT bucket tagging to non-existing bucket")
         LOGGER.info(
@@ -864,10 +800,7 @@ class TestBucketTagging():
     @pytest.mark.tags("TEST-5516")
     @CTFailOn(error_handler)
     def test_2452(self):
-        """
-        verify GET bucket tagging to non-existing bucket
-        :avocado: tags=bucket_tagging
-        """
+        """verify GET bucket tagging to non-existing bucket."""
         LOGGER.info(
             "STARTED: Verify GET bucket tagging to non-existing bucket")
         LOGGER.info("Step 1: Setting a tag for non existing bucket")
@@ -901,10 +834,7 @@ class TestBucketTagging():
     @pytest.mark.tags("TEST-5518")
     @CTFailOn(error_handler)
     def test_2453(self):
-        """
-        verify DELETE bucket tagging to non-existing bucket
-        :avocado: tags=bucket_tagging
-        """
+        """verify DELETE bucket tagging to non-existing bucket."""
         LOGGER.info(
             "STARTED: Verify DELETE bucket tagging to non-existing bucket")
         LOGGER.info("Step 1: Setting tag for non existing bucket")
