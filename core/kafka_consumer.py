@@ -22,6 +22,7 @@
 from confluent_kafka import DeserializingConsumer
 from confluent_kafka.schema_registry.json_schema import JSONDeserializer
 from confluent_kafka.serialization import StringDeserializer
+from config.params import BOOTSTRAP_SERVERS,TEST_EXEC_TOPIC
 
 
 def dict_to_kafka_msg(obj, ctx):
@@ -43,7 +44,7 @@ def dict_to_kafka_msg(obj, ctx):
                     build=obj['build'])
 
 
-def get_consumer(args):
+def get_consumer():
     """
       Form a consumer configuration
       Subscribe to a given topic
@@ -53,14 +54,14 @@ def get_consumer(args):
                                          from_dict=dict_to_kafka_msg)
     string_deserializer = StringDeserializer('utf_8')
 
-    consumer_conf = {'bootstrap.servers' : args.bootstrap_servers,
-                     'key.deserializer' : string_deserializer,
-                     'value.deserializer' : json_deserializer,
-                     'group.id' : args.group,
-                     'auto.offset.reset' : "earliest"}
+    consumer_conf = {'bootstrap.servers': BOOTSTRAP_SERVERS,
+                     'key.deserializer': string_deserializer,
+                     'value.deserializer': json_deserializer,
+                     'group.id': TEST_EXEC_TOPIC,
+                     'auto.offset.reset': "earliest"}
 
     consumer = DeserializingConsumer(consumer_conf)
-    consumer.subscribe([args.topic])
+    consumer.subscribe([TEST_EXEC_TOPIC])
     return consumer
 
 

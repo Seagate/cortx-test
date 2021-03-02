@@ -56,16 +56,20 @@ class IamLib:
             # Uncomment to enable debug
             boto3.set_stream_logger(name="botocore")
 
-        self.iam = boto3.client("iam", verify=iam_cert_path,
-                                aws_access_key_id=access_key,
-                                aws_secret_access_key=secret_key,
-                                endpoint_url=endpoint_url)
-        self.iam_resource = boto3.resource(
-            "iam",
-            verify=iam_cert_path,
-            aws_access_key_id=access_key,
-            aws_secret_access_key=secret_key,
-            endpoint_url=endpoint_url)
+        try:
+            self.iam = boto3.client("iam", verify=iam_cert_path,
+                                    aws_access_key_id=access_key,
+                                    aws_secret_access_key=secret_key,
+                                    endpoint_url=endpoint_url)
+            self.iam_resource = boto3.resource(
+                "iam",
+                verify=iam_cert_path,
+                aws_access_key_id=access_key,
+                aws_secret_access_key=secret_key,
+                endpoint_url=endpoint_url)
+        except Exception as err:
+            if "unreachable network" not in str(err):
+                LOGGER.critical(err)
 
     def create_user(self, user_name: str = None) -> dict:
         """
