@@ -54,3 +54,7 @@ SCHEMA_REGISTRY = "cft2:8090"  # Bootstrap broker(s) (host[:port])
 BOOTSTRAP_SERVERS = "https://cft2:8091"  # Schema Registry (http(s)://host[:port]
 TEST_EXEC_TOPIC = 'cortx-test-exec-topic'
 TEST_ABORT_TOPIC = 'cortx-test-abort-topic'  # Read by all semantics
+
+NFS_SERVER_DIR = "cftic2.pun.seagate.com:/cftshare"
+NFS_BASE_DIR = "automation"
+MOUNT_DIR = os.path.join(os.getcwd(), "nfs_share")
