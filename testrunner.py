@@ -56,6 +56,7 @@ def str_to_bool(val):
 
 def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution=False):
     """Form a pytest command for execution."""
+    env['TARGET'] = args.target
     build, build_type = args.build, args.build_type
     tag = '-m ' + te_tag
     run_type = ''
@@ -183,7 +184,6 @@ def trigger_unexecuted_tests(args, test_list):
                     write.writerow([test])
             _env = os.environ.copy()
             _env['pytest_run'] = 'distributed'
-            _env['TARGET'] = args.target
             run_pytest_cmd(args, te_tag=None, parallel_exe=args.parallel_exe,
                            env=_env, re_execution=True)
 

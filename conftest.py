@@ -364,6 +364,9 @@ def pytest_collection(session):
     items = session.perform_collect()
     LOGGER.info(dir(session.config))
     config = session.config
+    import pdb
+    pdb.set_trace()
+    #os.environ["TARGET"]=str(config.option.target)    
     _local = ast.literal_eval(str(config.option.local))
     _distributed = ast.literal_eval(str(config.option.distributed))
     is_parallel = ast.literal_eval(str(config.option.is_parallel))
