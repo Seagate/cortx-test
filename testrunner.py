@@ -348,6 +348,8 @@ def check_kafka_msg_trigger_test(args):
     consumer.close()
 
 def get_setup_details():
+    if os.path.exists(params.SETUPS_FPATH):
+        os.remove(params.SETUPS_FPATH)
     setups = configmanager.get_config_db(setup_query = {})
     config_utils.create_content_json("setups.json", setups)
 
