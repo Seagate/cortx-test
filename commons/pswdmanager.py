@@ -69,7 +69,7 @@ def decrypt_all_passwd(data :dict) -> dict:
     :param data: dictionary of configuration which contains encryted passwords
     :return [type]: return the decrypted passwords
     """
-    decrypt_list = ["password"]
+    decrypt_list = ["password",'test_s3account_password','test_csmuser_password']
     for key, value in data.items():
         if isinstance(value, dict):
             decrypt_all_passwd(value)

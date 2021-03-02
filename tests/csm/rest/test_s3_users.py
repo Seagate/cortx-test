@@ -15,10 +15,6 @@ class TestS3user():
     @classmethod
     def setup_class(self):
         """ This is method is for test suite set-up """
-        import pdb
-        pdb.set_trace()
-        print(CSM_CFG['Restcall'])
-        print(SETUP_DETAILS)
         self.log = logging.getLogger(__name__)
         self.log.info("Initializing test setups ......")
         self.config =  CSMConfigsCheck()
