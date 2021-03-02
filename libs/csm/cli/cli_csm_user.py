@@ -104,8 +104,10 @@ class CortxCliCsmUser(CortxCli):
         if "[Y/n]" in output:
             output = self.execute_cli_commands(cmd=confirm)[1]
 
-            return True, output
-        return False, output
+        if "error" in output.lower() or "exception" in output.lower():
+            return False, output
+
+        return True, output
 
     def update_role(
             self,
@@ -265,5 +267,12 @@ class CortxCliCsmUser(CortxCli):
 
         if "error" in output.lower() or "exception" in output.lower():
             return False, output
+
+        if op_format == "json":
+            output = self.format_str_to_dict(output)
+        if op_format == "xml":
+            output = self.xml_data_parsing(output)
+        if op_format == "table":
+            output = self.split_table_response(output)
 
         return True, output
