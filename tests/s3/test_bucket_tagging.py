@@ -1,7 +1,25 @@
-# -*- coding: utf-8 -*-
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+"""This file contains test related to Bucket Policy."""
 import time
-
+import pytest
 from libs.s3 import s3_test_lib, s3_tagging_test_lib
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
@@ -9,7 +27,7 @@ from commons.exceptions import CTException
 from commons.utils.config_utils import read_yaml
 from commons.utils import assert_utils
 from commons.utils.assert_utils import \
-    assert_true, assert_in, assert_equal,assert_is_not_none
+    assert_true, assert_in, assert_equal, assert_is_not_none
 
 ASRTOBJ = assert_utils
 S3_OBJ = s3_test_lib.S3TestLib()
@@ -18,8 +36,8 @@ ACL_OBJ = s3_acl_test_lib.S3AclTestLib()
 LOGGER = logging.getLogger(__name__)
 
 TAG_OBJ = s3_tagging_test_lib.S3TaggingTestLib()
+CMN_CONF = read_yaml("config/s3/test_bucket_tagging.yaml")[1]
 
-CMN_CONF = read_yaml"config/s3/test_bucket_tagging.yaml")[1]
 
 class TestBucketTagging():
     """Bucket Tagging Testsuite"""
@@ -37,6 +55,8 @@ class TestBucketTagging():
                 CMN_CONF["bucket_tag"]["bkt_name_prefix"])]
         S3_OBJ.delete_multiple_buckets(pref_list)
 
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5514")
     @CTFailOn(error_handler)
     def test_2432(self):
         """
@@ -46,16 +66,14 @@ class TestBucketTagging():
         LOGGER.info("STARTED: Verify PUT Bucket tagging")
         bucket_name = "{}{}".format(CMN_CONF["test_2432"]["bucket_name"],
                                     str(int(time.time())))
-        LOGGER.info("Step 1: Creating a bucket: {0}".format(
-            bucket_name))
+        LOGGER.info("Step 1: Creating a bucket: %s", bucket_name)
         resp = S3_OBJ.create_bucket(bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1],
             bucket_name,
             resp[1])
-        LOGGER.info("Step 1: Created a bucket: {0}".format(
-            bucket_name))
+        LOGGER.info("Step 1: Created a bucket: %s ", bucket_name)
         LOGGER.info("Step 2: Setting tag for bucket")
         resp = TAG_OBJ.set_bucket_tag(
             bucket_name,
@@ -74,6 +92,8 @@ class TestBucketTagging():
         LOGGER.info("Step 3: Retrieved tag of a bucket")
         LOGGER.info("ENDED: Verify PUT Bucket tagging")
 
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5517")
     @CTFailOn(error_handler)
     def test_2433(self):
         """
@@ -83,15 +103,14 @@ class TestBucketTagging():
         LOGGER.info("STARTED: Verify GET Bucket tagging")
         bucket_name = "{}{}".format(CMN_CONF["test_2433"]["bucket_name"],
                                     str(int(time.time())))
-        LOGGER.info("Step 1: Creating a bucket: {0}".format(
-            bucket_name))
+        LOGGER.info("Step 1: Creating a bucket: %s ", bucket_name)
         resp = S3_OBJ.create_bucket(bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1],
             bucket_name,
             resp[1])
-        LOGGER.info("Step 1: Created a bucket: {0}".format(bucket_name))
+        LOGGER.info("Step 1: Created a bucket: %s", bucket_name)
         LOGGER.info("Step 2: Setting tag for a bucket")
         resp = TAG_OBJ.set_bucket_tag(
             bucket_name,
@@ -109,6 +128,8 @@ class TestBucketTagging():
         LOGGER.info("Step 3: Retrieved tag of a bucket")
         LOGGER.info("ENDED: Verify GET Bucket tagging")
 
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5519")
     @CTFailOn(error_handler)
     def test_2434(self):
         """
@@ -118,15 +139,14 @@ class TestBucketTagging():
         LOGGER.info("STARTED: Verify DELETE Bucket tagging")
         bucket_name = "{}{}".format(CMN_CONF["test_2434"]["bucket_name"],
                                     str(int(time.time())))
-        LOGGER.info("Step 1: Creating a bucket: {0}".format(bucket_name))
+        LOGGER.info("Step 1: Creating a bucket: %s", bucket_name)
         resp = S3_OBJ.create_bucket(bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1],
             bucket_name,
             resp[1])
-        LOGGER.info("Step 1: Created a bucket: {0}".format(
-            bucket_name))
+        LOGGER.info("Step 1: Created a bucket: %s ", bucket_name)
         LOGGER.info("Step 2: Setting tag for a bucket")
         resp = TAG_OBJ.set_bucket_tag(
             bucket_name,
@@ -147,10 +167,12 @@ class TestBucketTagging():
                 CMN_CONF["test_2434"]["err_message"], str(
                     error.message), error.message)
         LOGGER.info(
-            "Step 4: Retrieving bucket tag failed with {0}".format(
-                CMN_CONF["test_2434"]["err_message"]))
+            "Step 4: Retrieving bucket tag failed with %s",
+            CMN_CONF["test_2434"]["err_message"])
         LOGGER.info("ENDED: Verify DELETE Bucket tagging")
 
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5533")
     @CTFailOn(error_handler)
     def test_2435(self):
         """
@@ -161,15 +183,14 @@ class TestBucketTagging():
             "STARTED: Create a tag whose key is up to 128 Unicode characters in length")
         bucket_name = "{}{}".format(CMN_CONF["test_2435"]["bucket_name"],
                                     str(int(time.time())))
-        LOGGER.info("Step 1: Creating a bucket: {0}".format(bucket_name))
+        LOGGER.info("Step 1: Creating a bucket: %s", bucket_name)
         resp = S3_OBJ.create_bucket(bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1],
             bucket_name,
             resp[1])
-        LOGGER.info("Step 1: Created a bucket: {0}".format(
-            bucket_name))
+        LOGGER.info("Step 1: Created a bucket: %s ", bucket_name)
         LOGGER.info("Step 2: Setting tag for a bucket")
         resp = TAG_OBJ.set_bucket_tag(
             bucket_name,
@@ -189,6 +210,9 @@ class TestBucketTagging():
         LOGGER.info(
             "ENDED: Create a tag whose key is up to 128 Unicode characters in length")
 
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5534")
+    @CTFailOn(error_handler)
     def test_2436(self):
         """
         Create a tag whose key is more than 128 Unicode characters in length
@@ -198,14 +222,14 @@ class TestBucketTagging():
             "STARTED: Create a tag whose key is more than 128 Unicode characters in length")
         bucket_name = "{}{}".format(CMN_CONF["test_2436"]["bucket_name"],
                                     str(int(time.time())))
-        LOGGER.info("Step 1: Creating a bucket: {0}".format(bucket_name))
+        LOGGER.info("Step 1: Creating a bucket: %s", bucket_name)
         resp = S3_OBJ.create_bucket(bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1],
             bucket_name,
             resp[1])
-        LOGGER.info("Step 1: Created a bucket: {0}".format(bucket_name))
+        LOGGER.info("Step 1: Created a bucket: %s", bucket_name)
         LOGGER.info("Step 2: Setting tag for a bucket")
         try:
             TAG_OBJ.set_bucket_tag(
@@ -217,11 +241,13 @@ class TestBucketTagging():
                 CMN_CONF["test_2436"]["err_message"], str(
                     error.message), error.message)
         LOGGER.info(
-            "Step 2: Setting tag for a bucket failed with {0}".format(
-                CMN_CONF["test_2436"]["err_message"]))
+            "Step 2: Setting tag for a bucket failed with %s",
+            CMN_CONF["test_2436"]["err_message"])
         LOGGER.info(
             "ENDED: Create a tag whose key is more than 128 Unicode characters in length")
 
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5535")
     @CTFailOn(error_handler)
     def test_2437(self):
         """
@@ -232,14 +258,14 @@ class TestBucketTagging():
             "STARTED: Create a tag having values up to 256 Unicode characters in length")
         bucket_name = "{}{}".format(CMN_CONF["test_2437"]["bucket_name"],
                                     str(int(time.time())))
-        LOGGER.info("Step 1: Creating a bucket: {0}".format(bucket_name))
+        LOGGER.info("Step 1: Creating a bucket: %s", bucket_name)
         resp = S3_OBJ.create_bucket(bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1],
             bucket_name,
             resp[1])
-        LOGGER.info("Step 1: Created a bucket: {0}".format(bucket_name))
+        LOGGER.info("Step 1: Created a bucket: %s", bucket_name)
         LOGGER.info("Step 2: Setting tag for a bucket")
         resp = TAG_OBJ.set_bucket_tag(
             bucket_name,
@@ -258,6 +284,9 @@ class TestBucketTagging():
         LOGGER.info(
             "ENDED: Create a tag having values up to 256 Unicode characters in length")
 
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5536")
+    @CTFailOn(error_handler)
     def test_2438(self):
         """
         Create a tag having values more than 512 Unicode characters in length
@@ -267,14 +296,14 @@ class TestBucketTagging():
             "STARTED: Create a tag having values more than 512 Unicode characters in length")
         bucket_name = "{}{}".format(CMN_CONF["test_2438"]["bucket_name"],
                                     str(int(time.time())))
-        LOGGER.info("Step 1: Creating a bucket: {0}".format(bucket_name))
+        LOGGER.info("Step 1: Creating a bucket: %s", bucket_name)
         resp = S3_OBJ.create_bucket(bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1],
             bucket_name,
             resp[1])
-        LOGGER.info("Step 1: Created a bucket: {0}".format(bucket_name))
+        LOGGER.info("Step 1: Created a bucket: %s", bucket_name)
         LOGGER.info("Step 2: Setting tag for a bucket")
         try:
             TAG_OBJ.set_bucket_tag(
@@ -286,10 +315,12 @@ class TestBucketTagging():
                 CMN_CONF["test_2438"]["err_message"], str(
                     error.message), error.message)
         LOGGER.info(
-            "Step 2: Setting tag for a bucket failed with {0}".format(bucket_name))
+            "Step 2: Setting tag for a bucket failed with %s", bucket_name)
         LOGGER.info(
             "ENDED: Create a tag having values more than 512 Unicode characters in length")
 
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5528")
     @CTFailOn(error_handler)
     def test_2439(self):
         """
@@ -299,16 +330,15 @@ class TestBucketTagging():
         LOGGER.info("STARTED: Create Bucket tags, up to 50")
         bucket_name = "{}{}".format(CMN_CONF["test_2439"]["bucket_name"],
                                     str(int(time.time())))
-        LOGGER.info("Step 1: Creating a bucket: {0}".format(bucket_name))
+        LOGGER.info("Step 1: Creating a bucket: %s", bucket_name)
         resp = S3_OBJ.create_bucket(bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1],
             bucket_name,
             resp[1])
-        LOGGER.info("Step 1: Created a bucket: {0}".format(bucket_name))
-        LOGGER.info(
-            "Step 2: Setting {0} tags for a bucket".format(bucket_name))
+        LOGGER.info("Step 1: Created a bucket: %s", bucket_name)
+        LOGGER.info("Step 2: Setting %s tags for a bucket", bucket_name)
         resp = TAG_OBJ.set_bucket_tag(
             bucket_name,
             CMN_CONF["test_2439"]["key"],
@@ -332,6 +362,9 @@ class TestBucketTagging():
         LOGGER.info("Step 3: Retrieved tags of a bucket")
         LOGGER.info("ENDED: Create Bucket tags, up to 50")
 
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5529")
+    @CTFailOn(error_handler)
     def test_2440(self):
         """
         Create Bucket tags, more than 50
@@ -340,17 +373,17 @@ class TestBucketTagging():
         LOGGER.info("STARTED: Create Bucket tags, more than 50")
         bucket_name = "{}{}".format(CMN_CONF["test_2440"]["bucket_name"],
                                     str(int(time.time())))
-        LOGGER.info("Step 1: Creating a bucket: {0}".format(bucket_name))
+        LOGGER.info("Step 1: Creating a bucket: %s", bucket_name)
         resp = S3_OBJ.create_bucket(bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1],
             bucket_name,
             resp[1])
-        LOGGER.info("Step 1: Created a bucket: {0}".format(bucket_name))
+        LOGGER.info("Step 1: Created a bucket: %s", bucket_name)
         LOGGER.info(
-            "Step 2: Setting {0} tags for a bucket".format(
-                CMN_CONF["test_2440"]["tag_count"]))
+            "Step 2: Setting %d tags for a bucket",
+            CMN_CONF["test_2440"]["tag_count"])
         try:
             TAG_OBJ.set_bucket_tag(
                 bucket_name,
@@ -362,11 +395,13 @@ class TestBucketTagging():
                 CMN_CONF["test_2440"]["err_message"], str(
                     error.message), error.message)
         LOGGER.info(
-            "Setting {0} tags for a bucket failed with {0}".format(
-                CMN_CONF["test_2440"]["tag_count"],
-                CMN_CONF["test_2440"]["err_message"]))
+            "Setting %d tags for a bucket failed with %s",
+            CMN_CONF["test_2440"]["tag_count"],
+            CMN_CONF["test_2440"]["err_message"])
         LOGGER.info("ENDED: Create Bucket tags, more than 50")
 
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5521")
     @CTFailOn(error_handler)
     def test_2441(self):
         """
@@ -377,14 +412,14 @@ class TestBucketTagging():
             "STARTED: Verify bucket Tag Keys with case sensitive labels")
         bucket_name = "{}{}".format(CMN_CONF["test_2441"]["bucket_name"],
                                     str(int(time.time())))
-        LOGGER.info("Step 1: Creating a bucket: {0}".format(bucket_name))
+        LOGGER.info("Step 1: Creating a bucket: %s", bucket_name)
         resp = S3_OBJ.create_bucket(bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1],
             bucket_name,
             resp[1])
-        LOGGER.info("Step 1: Created a bucket: {0}".format(bucket_name))
+        LOGGER.info("Step 1: Created a bucket: %s", bucket_name)
         LOGGER.info(
             "Step 2 : Setting tag for a bucket with case sensitive tag keys")
         resp = TAG_OBJ.set_bucket_tag(
@@ -406,6 +441,8 @@ class TestBucketTagging():
         LOGGER.info(
             "ENDED: Verify bucket Tag Keys with case sensitive labels")
 
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5520")
     @CTFailOn(error_handler)
     def test_2442(self):
         """
@@ -416,14 +453,14 @@ class TestBucketTagging():
             "STARTED: Verify bucket tag Values with case sensitive labels")
         bucket_name = "{}{}".format(CMN_CONF["test_2442"]["bucket_name"],
                                     str(int(time.time())))
-        LOGGER.info("Step 1: Creating a bucket: {0}".format(bucket_name))
+        LOGGER.info("Step 1: Creating a bucket: %s", bucket_name)
         resp = S3_OBJ.create_bucket(bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1],
             bucket_name,
             resp[1])
-        LOGGER.info("Step 1: Created a bucket: {0}".format(bucket_name))
+        LOGGER.info("Step 1: Created a bucket: %s", bucket_name)
         LOGGER.info(
             "Step 2: Setting tag for a bucket with case sensitive tag values")
         resp = TAG_OBJ.set_bucket_tag(
@@ -444,6 +481,8 @@ class TestBucketTagging():
         LOGGER.info(
             "ENDED: Verify bucket tag Values with case sensitive labels")
 
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5526")
     @CTFailOn(error_handler)
     def test_2443(self):
         """
@@ -454,14 +493,14 @@ class TestBucketTagging():
             "STARTED: Create multiple tags with tag keys having special characters")
         bucket_name = "{}{}".format(CMN_CONF["test_2443"]["bucket_name"],
                                     str(int(time.time())))
-        LOGGER.info("Step 1: Creating a bucket: {0}".format(bucket_name))
+        LOGGER.info("Step 1: Creating a bucket: %s", bucket_name)
         resp = S3_OBJ.create_bucket(bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1],
             bucket_name,
             resp[1])
-        LOGGER.info("Step 1: Created a bucket: {0}".format(bucket_name))
+        LOGGER.info("Step 1: Created a bucket: %s", bucket_name)
         LOGGER.info(
             "Step 2: Setting multiple tags with tag keys having special characters")
         for char in CMN_CONF["test_2443"]["spl_chars_list"]:
@@ -483,6 +522,9 @@ class TestBucketTagging():
         LOGGER.info(
             "ENDED: Create multiple tags with tag keys having special characters")
 
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5527")
+    @CTFailOn(error_handler)
     def test_2444(self):
         """
         Create multiple tags with tag keys having invalid special characters
@@ -492,13 +534,13 @@ class TestBucketTagging():
             "STARTED: Create multiple tags with tag keys having invalid special characters")
         bucket_name = "{}{}".format(CMN_CONF["test_2444"]["bucket_name"],
                                     str(int(time.time())))
-        LOGGER.info("Step 1: Creating a bucket {0}".format(bucket_name))
+        LOGGER.info("Step 1: Creating a bucket %s", bucket_name)
         resp = S3_OBJ.create_bucket(bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(resp[1],
-                         bucket_name,
-                         resp[1])
-        LOGGER.info("Step 1: Created a bucket {0}".format(bucket_name))
+                     bucket_name,
+                     resp[1])
+        LOGGER.info("Step 1: Created a bucket %s", bucket_name)
         LOGGER.info(
             "Step 2: Setting tags for a bucket with tag keys having invalid special characters")
         for char in CMN_CONF["test_2444"]["spl_chars_list"]:
@@ -513,30 +555,33 @@ class TestBucketTagging():
                 assert_in(
                     CMN_CONF["test_2444"]["err_message"], str(
                         error.message), error.message)
-        LOGGER.info(
-            "Step 2: Could not set tags for a bucket with tag keys having invalid special characters")
-        LOGGER.info(
-            "ENDED: Create multiple tags with tag keys having invalid special characters")
+        LOGGER.info("Step 2: Could not set tags for a bucket with tag keys "
+                    "having invalid special characters")
+        LOGGER.info("ENDED: Create multiple tags with tag keys having"
+                    " invalid special characters")
 
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5524")
+    @CTFailOn(error_handler)
     def test_2445(self):
         """
         Create multiple tags with tag values having invalid special character
         :avocado: tags=bucket_tagging
         """
-        LOGGER.info(
-            "STARTED: Create multiple tags with tag values having invalid special character")
+        LOGGER.info("STARTED: Create multiple tags with tag values having "
+                    "invalid special character")
         bucket_name = "{}{}".format(CMN_CONF["test_2445"]["bucket_name"],
                                     str(int(time.time())))
-        LOGGER.info("Step 1: Creating a bucket {0}".format(bucket_name))
+        LOGGER.info("Step 1: Creating a bucket %s", bucket_name)
         resp = S3_OBJ.create_bucket(bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1],
             bucket_name,
             resp[1])
-        LOGGER.info("Step 1: Created a bucket {0}".format(bucket_name))
-        LOGGER.info(
-            "Step 2: Setting multiple tags with tag values having invalid special character")
+        LOGGER.info("Step 1: Created a bucket %s", bucket_name)
+        LOGGER.info("Step 2: Setting multiple tags with tag values having "
+                    "invalid special character")
         for char in CMN_CONF["test_2445"]["spl_chars_list"]:
             value = "{0}{1}{2}".format(
                 char, CMN_CONF["test_2445"]["value"], char)
@@ -549,11 +594,14 @@ class TestBucketTagging():
                 assert_in(
                     CMN_CONF["test_2445"]["err_message"], str(
                         error.message), error.message)
-        LOGGER.info(
-            "Step 2: Could not set multiple tags with tag values having invalid special character")
-        LOGGER.info(
-            "ENDED: Create multiple tags with tag values having invalid special character")
+        LOGGER.info("Step 2: Could not set multiple tags with tag values"
+                    " having invalid special character")
+        LOGGER.info("ENDED: Create multiple tags with tag values having "
+                    "invalid special character")
 
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5531")
+    @CTFailOn(error_handler)
     def test_2446(self):
         """
         Create bucket tags with duplicate keys
@@ -562,14 +610,14 @@ class TestBucketTagging():
         LOGGER.info("STARTED: Create bucket tags with duplicate keys")
         bucket_name = "{}{}".format(CMN_CONF["test_2446"]["bucket_name"],
                                     str(int(time.time())))
-        LOGGER.info("Step 1: Creating a bucket: {0}".format(bucket_name))
+        LOGGER.info("Step 1: Creating a bucket: %s", bucket_name)
         resp = S3_OBJ.create_bucket(bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1],
             bucket_name,
             resp[1])
-        LOGGER.info("Step 1: Created a bucket: {0}".format(bucket_name))
+        LOGGER.info("Step 1: Created a bucket: %s", bucket_name)
         LOGGER.info("Step 2: Setting bucket tags with duplicate keys")
         try:
             TAG_OBJ.set_bucket_tag_duplicate_keys(
@@ -581,10 +629,12 @@ class TestBucketTagging():
                 CMN_CONF["test_2446"]["err_message"], str(
                     error.message), error.message)
         LOGGER.info(
-            "Step 2: Setting bucket tags with duplicate keys failed with {0}".format(
-                CMN_CONF["test_2446"]["err_message"]))
+            "Step 2: Setting bucket tags with duplicate keys failed with %s",
+            CMN_CONF["test_2446"]["err_message"])
         LOGGER.info("ENDED: Create bucket tags with duplicate keys")
 
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5512")
     @CTFailOn(error_handler)
     def test_2447(self):
         """
@@ -594,14 +644,14 @@ class TestBucketTagging():
         LOGGER.info("STARTED: verify values in a tag set should be unique")
         bucket_name = "{}{}".format(CMN_CONF["test_2447"]["bucket_name"],
                                     str(int(time.time())))
-        LOGGER.info("Step 1: Creating a bucket {0}".format(bucket_name))
+        LOGGER.info("Step 1: Creating a bucket %s", bucket_name)
         resp = S3_OBJ.create_bucket(bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1],
             bucket_name,
             resp[1])
-        LOGGER.info("Step 1: Created a bucket {0}".format(bucket_name))
+        LOGGER.info("Step 1: Created a bucket %s", bucket_name)
         LOGGER.info("Step 2: Setting bucket tags with unique tag values")
         resp = TAG_OBJ.set_bucket_tag(
             bucket_name,
@@ -627,23 +677,25 @@ class TestBucketTagging():
         LOGGER.info("Step 3: Retrieved tag of a bucket")
         LOGGER.info("ENDED: verify values in a tag set should be unique")
 
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5530")
     @CTFailOn(error_handler)
     def test_2448(self):
         """
         Create bucket tags with invalid (characters outside the allowed set) special characters
         :avocado: tags=bucket_tagging
         """
-        LOGGER.info(
-            "STARTED: Create bucket tags with invalid (characters outside the allowed set) special characters")
+        LOGGER.info("STARTED: Create bucket tags with invalid "
+                    "(characters outside the allowed set) special characters")
         bucket_name = "{}{}".format(CMN_CONF["test_2448"]["bucket_name"],
                                     str(int(time.time())))
-        LOGGER.info("Step 1: Creating a bucket {0}".format(bucket_name))
+        LOGGER.info("Step 1: Creating a bucket %s", bucket_name)
         resp = S3_OBJ.create_bucket(bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             bucket_name,
             resp[1])
-        LOGGER.info("Step 1: Created a bucket {0}".format(bucket_name))
+        LOGGER.info("Step 1: Created a bucket %s", bucket_name)
         LOGGER.info(
             "Step 2: Setting a bucket tag with invalid special characters")
         resp = TAG_OBJ.set_bucket_tag_invalid_char(
@@ -657,9 +709,11 @@ class TestBucketTagging():
         resp = TAG_OBJ.get_bucket_tags(bucket_name)
         assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Retrieved tag of a bucket")
-        LOGGER.info(
-            "ENDED: Create bucket tags with invalid (characters outside the allowed set) special characters")
+        LOGGER.info("ENDED: Create bucket tags with invalid "
+                    "(characters outside the allowed set) special characters")
 
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-8719")
     @CTFailOn(error_handler)
     def test_2449(self):
         """
@@ -673,8 +727,8 @@ class TestBucketTagging():
         obj_name = "{}{}".format(CMN_CONF["test_2449"]["obj_name"],
                                  str(int(time.time())))
         LOGGER.info(
-            "Step 1: Creating a bucket {0} and uploading an object {1}".format(
-                bucket_name, obj_name))
+            "Step 1: Creating a bucket %s and uploading an object %s",
+            bucket_name, obj_name)
         resp = S3_OBJ.create_bucket_put_object(
             bucket_name,
             obj_name,
@@ -682,18 +736,18 @@ class TestBucketTagging():
             CMN_CONF["test_2449"]["mb_count"])
         assert_true(resp[0], resp[1])
         LOGGER.info(
-            "Step 1:  Created a bucket {0} and uploaded an object {1}".format(
-                bucket_name, obj_name))
+            "Step 1:  Created a bucket %s and uploaded an object %s",
+            bucket_name, obj_name)
         LOGGER.info(
-            "Step 2: Setting tag for a bucket {0}".format(bucket_name))
+            "Step 2: Setting tag for a bucket %s", bucket_name)
         resp = TAG_OBJ.set_bucket_tag(
             bucket_name,
             CMN_CONF["test_2449"]["bkt_key"],
             CMN_CONF["test_2449"]["bkt_value"])
         assert_true(resp[0], resp[1])
         LOGGER.info(
-            "Step 2: Tag is set for a bucket {0}".format(bucket_name))
-        LOGGER.info("Step 3: Setting tag for an object {0}".format(obj_name))
+            "Step 2: Tag is set for a bucket %s", bucket_name)
+        LOGGER.info("Step 3: Setting tag for an object %s", obj_name)
         resp = TAG_OBJ.set_object_tag(
             bucket_name,
             obj_name,
@@ -701,7 +755,7 @@ class TestBucketTagging():
             CMN_CONF["test_2449"]["obj_value"],
             CMN_CONF["test_2449"]["obj_tags"])
         assert_true(resp[0], resp[1])
-        LOGGER.info("Step 3: Set tag for an object {0}".format(obj_name))
+        LOGGER.info("Step 3: Set tag for an object %s", obj_name)
         LOGGER.info("Step 4: Verifying tag is set for a bucket")
         resp = TAG_OBJ.get_bucket_tags(bucket_name)
         assert_true(resp[0], resp[1])
@@ -732,8 +786,8 @@ class TestBucketTagging():
                 CMN_CONF["test_2449"]["err_message"], str(
                     error.message), error.message)
         LOGGER.info(
-            "Step 7: Retrieving tag of a bucket failed with {0}".format(
-                CMN_CONF["test_2449"]["err_message"]))
+            "Step 7: Retrieving tag of a bucket failed with %s",
+            CMN_CONF["test_2449"]["err_message"])
         LOGGER.info("Step 8: Retrieving tag of an object")
         try:
             TAG_OBJ.get_object_tags(bucket_name, obj_name)
@@ -742,20 +796,22 @@ class TestBucketTagging():
                 CMN_CONF["test_2449"]["err_message"], str(
                     error.message), error.message)
         LOGGER.info(
-            "Step 8: Retrieving tag of an object failed with {0}".format(
-                CMN_CONF["test_2449"]["err_message"]))
+            "Step 8: Retrieving tag of an object failed with %s",
+            CMN_CONF["test_2449"]["err_message"])
         LOGGER.info(
             "ENDED: Delete Bucket having tags associated with Bucket and its Objects")
 
     # Raised bug EOS-2528, Uncomment when fixed
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5522")
     @CTFailOn(error_handler)
     def test_2450(self):
         """
         Verification of max. no. of Buckets user can create with max no. of tags per Bucket
         :avocado: tags=bucket_tagging
         """
-        LOGGER.info(
-            "STARTED: Verification of max. no. of Buckets user can create with max no. of tags per Bucket")
+        LOGGER.info("STARTED: Verification of max. no. of Buckets user"
+                    " can create with max no. of tags per Bucket")
         for i in range(CMN_CONF["test_2450"]["bucket_count"]):
             bucket_name = "{}{}{}".format(CMN_CONF["test_2450"]["bucket_name"],
                                           str(i), str(int(time.time())))
@@ -773,9 +829,12 @@ class TestBucketTagging():
             assert_is_not_none(resp[0], resp[1])
         LOGGER.debug(buckets)
         LOGGER.debug("Total buckets : {}".format(len(buckets)))
-        LOGGER.info(
-            "ENDED: Verification of max. no. of Buckets user can create with max no. of tags per Bucket")
+        LOGGER.info("ENDED: Verification of max. no. of Buckets user can "
+                    "create with max no. of tags per Bucket")
 
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5513")
+    @CTFailOn(error_handler)
     def test_2451(self):
         """
         Verify PUT bucket tagging to non-existing bucket
@@ -784,8 +843,8 @@ class TestBucketTagging():
         LOGGER.info(
             "STARTED: Verify PUT bucket tagging to non-existing bucket")
         LOGGER.info(
-            "Step 1: Setting a tag for non existing bucket: {0}".format(
-                CMN_CONF["test_2451"]["bucket_name"]))
+            "Step 1: Setting a tag for non existing bucket: %s",
+            CMN_CONF["test_2451"]["bucket_name"])
         try:
             TAG_OBJ.set_bucket_tag(
                 CMN_CONF["test_2451"]["bucket_name"],
@@ -796,11 +855,14 @@ class TestBucketTagging():
                 CMN_CONF["test_2451"]["err_message"], str(
                     error.message), error.message)
         LOGGER.info(
-            "Step 1: Setting a tag for non existing bucket failed with: {0}".format(
-                CMN_CONF["test_2451"]["err_message"]))
+            "Step 1: Setting a tag for non existing bucket failed with: %s",
+            CMN_CONF["test_2451"]["err_message"])
         LOGGER.info(
             "ENDED: Verify PUT bucket tagging to non-existing bucket")
 
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5516")
+    @CTFailOn(error_handler)
     def test_2452(self):
         """
         verify GET bucket tagging to non-existing bucket
@@ -819,8 +881,8 @@ class TestBucketTagging():
                 CMN_CONF["test_2452"]["err_message"], str(
                     error.message), error.message)
         LOGGER.info(
-            "Step 1: Setting a tag for non existing bucket failed with {0}".format(
-                CMN_CONF["test_2452"]["err_message"]))
+            "Step 1: Setting a tag for non existing bucket failed with %s",
+            CMN_CONF["test_2452"]["err_message"])
         LOGGER.info("Step 2: Retrieving tag of non existing bucket")
         try:
             TAG_OBJ.get_bucket_tags(
@@ -830,11 +892,14 @@ class TestBucketTagging():
                 CMN_CONF["test_2452"]["err_message"], str(
                     error.message), error.message)
         LOGGER.info(
-            "Step 2: Retrieved tag of non existing bucket failed with {0}".format(
-                CMN_CONF["test_2452"]["err_message"]))
+            "Step 2: Retrieved tag of non existing bucket failed with %s",
+            CMN_CONF["test_2452"]["err_message"])
         LOGGER.info(
             "ENDED: Verify GET bucket tagging to non-existing bucket")
 
+    @pytest.mark.s3
+    @pytest.mark.tags("TEST-5518")
+    @CTFailOn(error_handler)
     def test_2453(self):
         """
         verify DELETE bucket tagging to non-existing bucket
@@ -862,7 +927,7 @@ class TestBucketTagging():
                 CMN_CONF["test_2453"]["err_message"], str(
                     error.message), error.message)
         LOGGER.info(
-            "Step 2: Deleting tag of a non existing bucket failed with {0}".format(
-                CMN_CONF["test_2453"]["err_message"]))
+            "Step 2: Deleting tag of a non existing bucket failed with %s",
+            CMN_CONF["test_2453"]["err_message"])
         LOGGER.info(
             "ENDED: Verify DELETE bucket tagging to non-existing bucket")
