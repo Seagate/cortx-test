@@ -388,4 +388,5 @@ def main(args):
 
 if __name__ == '__main__':
     opts = parse_args()
+    get_setup_details()
     main(opts)
