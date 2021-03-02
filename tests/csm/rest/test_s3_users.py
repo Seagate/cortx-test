@@ -8,24 +8,26 @@ from commons.utils import config_utils
 from commons.constants import Rest as const
 from libs.csm.csm_setup import CSMConfigsCheck
 from config import CSM_CFG, SETUP_DETAILS
+import os
+from commons import configmanager
 
 class TestS3user():
     @classmethod
     def setup_class(self):
         """ This is method is for test suite set-up """
+        import pdb
+        pdb.set_trace()
+        print(CSM_CFG['Restcall'])
+        print(SETUP_DETAILS)
         self.log = logging.getLogger(__name__)
         self.log.info("Initializing test setups ......")
-        self.config = CSM_CFG['Restcall'] #CSMConfigsCheck()
-        print(CSM_CFG)
-        print("-"*20)
-        print(SETUP_DETAILS)
+        self.config =  CSMConfigsCheck()
         user_already_present = self.config.check_predefined_s3account_present()
         if not user_already_present:
             user_already_present = self.config.setup_csm_s3
         assert user_already_present
         self.s3user = RestS3user()
-        self.csm_conf = config_utils.read_yaml(
-            "config/csm/test_rest_s3_user.yaml")[1]
+        self.csm_conf = config_utils.read_yaml("config/csm/test_rest_s3_user.yaml")[1]
         self.log.info("Initiating Rest Client for Alert ...")
 
     @pytest.mark.parallel
