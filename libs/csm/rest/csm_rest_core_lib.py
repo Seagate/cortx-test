@@ -5,6 +5,7 @@ import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from commons.constants import Rest as const
 
+
 class RestClient:
     """
         This is the class for rest calls

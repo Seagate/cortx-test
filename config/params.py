@@ -50,7 +50,7 @@ JIRA_SELECTED_TESTS = 'selected_test_lists.csv'
 JIRA_DIST_TEST_LIST = 'dist_test_lists.csv'
 # Kafka Config Params
 
-SCHEMA_REGISTRY = "cft2:8090"  # Bootstrap broker(s) (host[:port])
-BOOTSTRAP_SERVERS = "https://cft2:8091"  # Schema Registry (http(s)://host[:port]
-TEST_EXEC_TOPIC = 'cortx-test-exec-topic'
+SCHEMA_REGISTRY = "http://cftic2.pun.seagate.com:9092"  # Schema Registry (http(s)://host[:port]
+BOOTSTRAP_SERVERS = "10.237.64.248:9092"  # cftic2.pun.seagate.com Bootstrap broker(s) (host[:port])
+TEST_EXEC_TOPIC = 'TutorialTopic'  # 'cortx-test-exec-topic'
 TEST_ABORT_TOPIC = 'cortx-test-abort-topic'  # Read by all semantics
