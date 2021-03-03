@@ -22,17 +22,25 @@
 import logging
 import time
 import pytest
+from commons import commands
+from commons import constants
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.utils import assert_utils
 from config import CSM_CFG
-from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
-from libs.csm.cli.cortx_cli_s3_buckets import CortxCliS3BucketOperations
+from libs.csm.cli.cli_alerts_lib import CortxCliAlerts
 from libs.csm.cli.cli_csm_user import CortxCliCsmUser
+from libs.csm.cli.cortxcli_iam_user import CortxCliIamUser
+from libs.csm.cli.cortx_cli_s3_buckets import CortxCliS3BucketOperations
+from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
 
 S3ACC_OBJ = CortxCliS3AccountOperations()
+S3ACC_OBJ.open_connection()
 S3BKT_OBJ = CortxCliS3BucketOperations(session_obj=S3ACC_OBJ.session_obj)
 CSM_USER_OBJ = CortxCliCsmUser(session_obj=S3ACC_OBJ.session_obj)
+IAM_USER_OBJ = CortxCliIamUser(session_obj=S3ACC_OBJ.session_obj)
+ALERT_OBJ = CortxCliAlerts(session_obj=S3ACC_OBJ.session_obj)
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -297,7 +305,6 @@ class TestCliS3ACC:
         Verify that appropriate error msg should be returned when command to delete s3 user contains
         incorrect/invalid account_name
         """
-        error_msg = "Access denied. Verify account name."
         dummy_acc = "cli_s3acc_{}".format(int(time.time()))
         error_msg = "Access denied. Verify account name."
         resp = S3ACC_OBJ.create_s3account_cortx_cli(
@@ -495,3 +502,554 @@ class TestCliS3ACC:
         assert_utils.assert_equals(False, resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], error_msg)
         LOGGER.info("Creating s3 account failed with error %s", resp[1])
+
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-10889")
+    @CTFailOn(error_handler)
+    def test_1006_list_account_with_format(self):
+        """
+        Verify that list of all existing S3 accounts should be returned in given <format>
+        """
+        resp = S3ACC_OBJ.create_s3account_cortx_cli(
+            account_name=self.s3acc_name,
+            account_email=self.s3acc_email,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        LOGGER.info("Created s3 account %s", self.s3acc_name)
+        resp = S3ACC_OBJ.show_s3account_cortx_cli(output_format="table")
+        assert_utils.assert_exact_string(resp[1], self.s3acc_name)
+        LOGGER.info("Successfully listed S3 accounts in table format")
+        resp = S3ACC_OBJ.show_s3account_cortx_cli(output_format="json")
+        assert_utils.assert_exact_string(resp[1], self.s3acc_name)
+        LOGGER.info("Successfully listed S3 accounts in json format")
+        resp = S3ACC_OBJ.show_s3account_cortx_cli(output_format="xml")
+        assert_utils.assert_exact_string(resp[1], self.s3acc_name)
+        LOGGER.info("Successfully listed S3 accounts in xml format")
+
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-10890")
+    @CTFailOn(error_handler)
+    def test_1918_different_confirm_password(self):
+        """
+        Test that error should be returned when s3 user enters different passwords in
+        both password and confirm password
+        """
+        error_msg = "password do not match"
+        resp = S3ACC_OBJ.create_s3account_cortx_cli(
+            account_name=self.s3acc_name,
+            account_email=self.s3acc_email,
+            password=self.s3acc_password,
+            confirm_password=CSM_CFG["CliConfig"]["csm_user_pwd"])
+        assert_utils.assert_equals(False, resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], error_msg)
+        LOGGER.info("Creating s3 account failed with error %s", resp[1])
+
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-10891")
+    @CTFailOn(error_handler)
+    def test_1919_reset_password_incorrect_name(self):
+        """
+        Test that error should be returned when s3 user enters incorrect account name
+        while resetting account password
+        """
+        dummy_acc = "cli_s3acc_{}".format(int(time.time()))
+        error_msg = "Verify account name"
+        resp = S3ACC_OBJ.create_s3account_cortx_cli(
+            account_name=self.s3acc_name,
+            account_email=self.s3acc_email,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        LOGGER.info("Created s3 account %s", self.s3acc_name)
+        logout = S3ACC_OBJ.logout_cortx_cli()
+        assert_utils.assert_equals(True, logout[0], logout[1])
+        login = S3ACC_OBJ.login_cortx_cli(
+            username=self.s3acc_name,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, login[0], login[1])
+        resp = S3ACC_OBJ.reset_s3account_password(
+            account_name=dummy_acc, new_password=self.s3acc_password)
+        assert_utils.assert_equals(False, resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], error_msg)
+        LOGGER.info("Update s3 account password failed with error %s", resp[1])
+
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-10892")
+    @CTFailOn(error_handler)
+    def test_1920(self):
+        """
+        Test that password is not updated when user selects "NO" on update password confirmation
+        """
+        new_password = CSM_CFG["CliConfig"]["csm_user_pwd"]
+        resp = S3ACC_OBJ.create_s3account_cortx_cli(
+            account_name=self.s3acc_name,
+            account_email=self.s3acc_email,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        LOGGER.info("Created s3 account %s", self.s3acc_name)
+        logout = S3ACC_OBJ.logout_cortx_cli()
+        assert_utils.assert_equals(True, logout[0], logout[1])
+        login = S3ACC_OBJ.login_cortx_cli(
+            username=self.s3acc_name,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, login[0], login[1])
+        resp = S3ACC_OBJ.reset_s3account_password(
+            account_name=self.s3acc_name,
+            new_password=new_password,
+            reset_password="n")
+        assert_utils.assert_equals(False, resp[0], resp[1])
+        logout = S3ACC_OBJ.logout_cortx_cli()
+        assert_utils.assert_equals(True, logout[0], logout[1])
+        login = S3ACC_OBJ.login_cortx_cli(
+            username=self.s3acc_name,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, login[0], login[1])
+        LOGGER.info(
+            "Verified s3account password not updated when user selects 'No' on confirmation")
+
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-10893")
+    @CTFailOn(error_handler)
+    def test_1921_reset_invalid_password(self):
+        """
+        Test that new password should be of 8 characters long which consist
+        atleast one lowercase, one uppercase, one nemeric and one special character
+        """
+        dummy_pwds = [
+            "Sea@123",
+            "seagate@123",
+            "SEAGATE@123",
+            "Seagate@",
+            "Seagate123"]
+        error_msg = "Password Policy Not Met"
+        resp = S3ACC_OBJ.create_s3account_cortx_cli(
+            account_name=self.s3acc_name,
+            account_email=self.s3acc_email,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        LOGGER.info("Created s3 account %s", self.s3acc_name)
+        logout = S3ACC_OBJ.logout_cortx_cli()
+        assert_utils.assert_equals(True, logout[0], logout[1])
+        login = S3ACC_OBJ.login_cortx_cli(
+            username=self.s3acc_name,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, login[0], login[1])
+        for pwd in dummy_pwds:
+            resp = S3ACC_OBJ.reset_s3account_password(
+                account_name=self.s3acc_name, new_password=pwd)
+            assert_utils.assert_equals(False, resp[0], resp[1])
+            assert_utils.assert_exact_string(resp[1], error_msg)
+        LOGGER.info("Update s3 account password failed with error %s", resp[1])
+
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-11230")
+    @CTFailOn(error_handler)
+    def test_949_create_account_with_admin(self):
+        """
+        Verify that CSM Admin can create S3 account
+        """
+        resp = S3ACC_OBJ.create_s3account_cortx_cli(
+            account_name=self.s3acc_name,
+            account_email=self.s3acc_email,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        LOGGER.info("Created s3 account %s", self.s3acc_name)
+        resp = S3ACC_OBJ.show_s3account_cortx_cli()
+        assert_utils.assert_exact_string(resp[1], self.s3acc_name)
+        LOGGER.info(
+            "Successfully verified that admin user can create S3 account")
+
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-11231")
+    @CTFailOn(error_handler)
+    def test_882_perform_iam_operations(self):
+        """
+        Verify that only S3 account user must able
+        to perform s3iamuser create/delete/show operations
+        """
+        iam_user_name = "{0}{1}".format("cli_iam_user", str(int(time.time())))
+        iam_user_pwd = CSM_CFG["CliConfig"]["iam_password"]
+        resp = S3ACC_OBJ.create_s3account_cortx_cli(
+            account_name=self.s3acc_name,
+            account_email=self.s3acc_email,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        LOGGER.info("Created s3 account %s", self.s3acc_name)
+        logout = S3ACC_OBJ.logout_cortx_cli()
+        assert_utils.assert_equals(True, logout[0], logout[1])
+        login = S3ACC_OBJ.login_cortx_cli(
+            username=self.s3acc_name,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, login[0], login[1])
+        resp = IAM_USER_OBJ.create_iam_user(user_name=iam_user_name,
+                                            password=iam_user_pwd,
+                                            confirm_password=iam_user_pwd)
+        assert_utils.assert_exact_string(resp[1], iam_user_name)
+        LOGGER.info("Created IAM user %s", iam_user_name)
+        resp = IAM_USER_OBJ.list_iam_user()
+        assert_utils.assert_exact_string(resp[1], iam_user_name)
+        LOGGER.info("Listed IAM user %s", resp[1])
+        resp = IAM_USER_OBJ.delete_iam_user(iam_user_name)
+        assert_utils.assert_exact_string(resp[1], "IAM User Deleted")
+        LOGGER.info("Deleted IAM user %s", resp[1])
+
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-11748")
+    @CTFailOn(error_handler)
+    def test_1870_perform_bucket_operations(self):
+        """
+        Test that s3_account user can perform list, create, delete operation on buckets
+        created by S3_account owner using CLI
+        """
+        bucket_name = "{0}{1}".format("clis3bkt", int(time.time()))
+        resp = S3ACC_OBJ.create_s3account_cortx_cli(
+            account_name=self.s3acc_name,
+            account_email=self.s3acc_email,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        LOGGER.info("Created s3 account %s", self.s3acc_name)
+        logout = S3ACC_OBJ.logout_cortx_cli()
+        assert_utils.assert_equals(True, logout[0], logout[1])
+        login = S3ACC_OBJ.login_cortx_cli(
+            username=self.s3acc_name,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, login[0], login[1])
+        resp = S3BKT_OBJ.create_bucket_cortx_cli(bucket_name)
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        LOGGER.info("Created bucket %s", bucket_name)
+        resp = S3BKT_OBJ.list_buckets_cortx_cli()
+        assert_utils.assert_exact_string(resp[1], bucket_name)
+        LOGGER.info("Listed buckets %s", resp[1])
+        resp = S3BKT_OBJ.delete_bucket_cortx_cli(bucket_name)
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        LOGGER.info("Deleted buckets %s", resp[1])
+
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-11233")
+    @CTFailOn(error_handler)
+    def test_4030_access_secret_key_on_login(self):
+        """
+        Verify that Secret key and access key should not be visible on login
+        using s3 credentials on CSM Cli
+        """
+        key_var = ["Access Key", "Secret Key"]
+        resp = S3ACC_OBJ.create_s3account_cortx_cli(
+            account_name=self.s3acc_name,
+            account_email=self.s3acc_email,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        LOGGER.info("Created s3 account %s", self.s3acc_name)
+        logout = S3ACC_OBJ.logout_cortx_cli()
+        assert_utils.assert_equals(True, logout[0], logout[1])
+        login = S3ACC_OBJ.login_cortx_cli(
+            username=self.s3acc_name,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, login[0], login[1])
+        result = all(key not in login[1] for key in key_var)
+        assert_utils.assert_equals(True, result, login[1])
+
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-11741")
+    @CTFailOn(error_handler)
+    def test_1871_s3_account_help(self):
+        """
+        Test that s3_account user can only list commands using help (-h)
+        to which the user has access to.
+        """
+        resp = S3ACC_OBJ.create_s3account_cortx_cli(
+            account_name=self.s3acc_name,
+            account_email=self.s3acc_email,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        LOGGER.info("Created s3 account %s", self.s3acc_name)
+        logout = S3ACC_OBJ.logout_cortx_cli()
+        assert_utils.assert_equals(True, logout[0], logout[1])
+        login = S3ACC_OBJ.login_cortx_cli(
+            username=self.s3acc_name,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, login[0], login[1])
+        resp = S3ACC_OBJ.execute_cli_commands(cmd=commands.CMD_HELP_OPTION)
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        for cmd in constants.S3ACCOUNT_HELP_CMDS:
+            assert_utils.assert_exact_string(resp[1], cmd)
+        LOGGER.info("Successfully verified help response for s3 account")
+
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-11747")
+    @CTFailOn(error_handler)
+    def test_4031_perform_s3_operations(self):
+        """
+        Test User should able to perform s3 operations after login using s3 credentials on CSM Cli
+        """
+        bucket_name = "{0}{1}".format("clis3bkt", int(time.time()))
+        iam_user_name = "{0}{1}".format("cli_iam_user", str(int(time.time())))
+        iam_user_pwd = CSM_CFG["CliConfig"]["iam_password"]
+        resp = S3ACC_OBJ.create_s3account_cortx_cli(
+            account_name=self.s3acc_name,
+            account_email=self.s3acc_email,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        LOGGER.info("Created s3 account %s", self.s3acc_name)
+        logout = S3ACC_OBJ.logout_cortx_cli()
+        assert_utils.assert_equals(True, logout[0], logout[1])
+        login = S3ACC_OBJ.login_cortx_cli(
+            username=self.s3acc_name,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, login[0], login[1])
+
+        LOGGER.info("Performing s3 bucket operations using s3 account")
+        resp = S3BKT_OBJ.create_bucket_cortx_cli(bucket_name)
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        LOGGER.info("Created bucket %s", bucket_name)
+        resp = S3BKT_OBJ.list_buckets_cortx_cli()
+        assert_utils.assert_exact_string(resp[1], bucket_name)
+        LOGGER.info("Listed buckets %s", resp[1])
+        resp = S3BKT_OBJ.delete_bucket_cortx_cli(bucket_name)
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        LOGGER.info("Deleted buckets %s", resp[1])
+
+        LOGGER.info("Performing IAM user operations using s3 account")
+        resp = IAM_USER_OBJ.create_iam_user(user_name=iam_user_name,
+                                            password=iam_user_pwd,
+                                            confirm_password=iam_user_pwd)
+        assert_utils.assert_exact_string(resp[1], iam_user_name)
+        LOGGER.info("Created IAM user %s", iam_user_name)
+        resp = IAM_USER_OBJ.list_iam_user()
+        assert_utils.assert_exact_string(resp[1], iam_user_name)
+        LOGGER.info("Listed IAM user %s", resp[1])
+        resp = IAM_USER_OBJ.delete_iam_user(iam_user_name)
+        assert_utils.assert_exact_string(resp[1], "IAM User Deleted")
+        LOGGER.info("Deleted IAM user %s", resp[1])
+
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-11746")
+    @CTFailOn(error_handler)
+    def test_1866_csm_user_operations_with_account(self):
+        """
+        Test that s3_account user cannot perform list, update, create, delete
+        operation on csm_users using CLI.
+        """
+        csm_user_opt = "users"
+        resp = S3ACC_OBJ.create_s3account_cortx_cli(
+            account_name=self.s3acc_name,
+            account_email=self.s3acc_email,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        LOGGER.info("Created s3 account %s", self.s3acc_name)
+        logout = S3ACC_OBJ.logout_cortx_cli()
+        assert_utils.assert_equals(True, logout[0], logout[1])
+        login = S3ACC_OBJ.login_cortx_cli(
+            username=self.s3acc_name,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, login[0], login[1])
+        resp = S3ACC_OBJ.execute_cli_commands(cmd=commands.CMD_HELP_OPTION)
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        result = csm_user_opt in resp[1]
+        assert_utils.assert_equals(False, result, resp[1])
+        LOGGER.info(
+            "Verified csm user option is not available in s3 account help")
+
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-12844")
+    @CTFailOn(error_handler)
+    def test_1869_perform_iam_operations(self):
+        """
+        Test that s3_account user can perform list, create, delete operation on
+        iam_users using CLI created by owner S3_account
+        """
+        iam_user_name = "{0}{1}".format("cli_iam_user", str(int(time.time())))
+        iam_user_pwd = CSM_CFG["CliConfig"]["iam_password"]
+        resp = S3ACC_OBJ.create_s3account_cortx_cli(
+            account_name=self.s3acc_name,
+            account_email=self.s3acc_email,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        LOGGER.info("Created s3 account %s", self.s3acc_name)
+        logout = S3ACC_OBJ.logout_cortx_cli()
+        assert_utils.assert_equals(True, logout[0], logout[1])
+        login = S3ACC_OBJ.login_cortx_cli(
+            username=self.s3acc_name,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, login[0], login[1])
+        resp = IAM_USER_OBJ.create_iam_user(user_name=iam_user_name,
+                                            password=iam_user_pwd,
+                                            confirm_password=iam_user_pwd)
+        assert_utils.assert_exact_string(resp[1], iam_user_name)
+        LOGGER.info("Created IAM user %s", iam_user_name)
+        resp = IAM_USER_OBJ.list_iam_user()
+        assert_utils.assert_exact_string(resp[1], iam_user_name)
+        LOGGER.info("Listed IAM user %s", resp[1])
+        resp = IAM_USER_OBJ.delete_iam_user(iam_user_name)
+        assert_utils.assert_exact_string(resp[1], "IAM User Deleted")
+        LOGGER.info("Deleted IAM user %s", resp[1])
+
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-13136")
+    @CTFailOn(error_handler)
+    def test_1868_non_supported_s3account_operations(self):
+        """
+        Test that s3_account user cannot perform delete (except owner)
+        create operation on s3_accounts using CLI
+        """
+        resp = S3ACC_OBJ.create_s3account_cortx_cli(
+            account_name=self.s3acc_name,
+            account_email=self.s3acc_email,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        LOGGER.info("Created s3 account %s", self.s3acc_name)
+        s3acc_name2 = "cli_s3acc_{}".format(int(time.time()))
+        s3acc_email2 = "{}@seagate.com".format(s3acc_name2)
+        resp = S3ACC_OBJ.create_s3account_cortx_cli(
+            account_name=s3acc_name2,
+            account_email=s3acc_email2,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        LOGGER.info("Created another s3 account %s", s3acc_name2)
+        logout = S3ACC_OBJ.logout_cortx_cli()
+        assert_utils.assert_equals(True, logout[0], logout[1])
+        login = S3ACC_OBJ.login_cortx_cli(
+            username=self.s3acc_name,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, login[0], login[1])
+        resp = S3ACC_OBJ.delete_s3account_cortx_cli(account_name=s3acc_name2)
+        assert_utils.assert_equals(False, resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], "Access denied")
+        LOGGER.info(
+            "Deleting different account failed with error %s", resp[1])
+        s3acc_name3 = "cli_s3acc_{}".format(int(time.time()))
+        s3acc_email3 = "{}@seagate.com".format(s3acc_name3)
+        resp = S3ACC_OBJ.create_s3account_cortx_cli(
+            account_name=s3acc_name3,
+            account_email=s3acc_email3,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(False, resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], "invalid choice")
+        LOGGER.info(
+            "Creating s3 account failed with error %s", resp[1])
+
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-13139")
+    @CTFailOn(error_handler)
+    def test_1867_s3account_operations(self):
+        """
+        Test that s3_account user can perform list, update, delete operation on
+        owner s3_accounts using CLI
+        """
+        new_password = CSM_CFG["CliConfig"]["csm_user_pwd"]
+        resp = S3ACC_OBJ.create_s3account_cortx_cli(
+            account_name=self.s3acc_name,
+            account_email=self.s3acc_email,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        LOGGER.info("Created s3 account %s", self.s3acc_name)
+        logout = S3ACC_OBJ.logout_cortx_cli()
+        assert_utils.assert_equals(True, logout[0], logout[1])
+        login = S3ACC_OBJ.login_cortx_cli(
+            username=self.s3acc_name,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, login[0], login[1])
+        LOGGER.info("Created s3 account %s", self.s3acc_name)
+        resp = S3ACC_OBJ.show_s3account_cortx_cli()
+        assert_utils.assert_exact_string(resp[1], self.s3acc_name)
+        LOGGER.info("Successfully listed S3 accounts %s", resp[1])
+        resp = S3ACC_OBJ.reset_s3account_password(
+            account_name=self.s3acc_name, new_password=new_password)
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        LOGGER.info(
+            "Successfully updated S3 accounts password to: %s",
+            new_password)
+        resp = S3ACC_OBJ.delete_s3account_cortx_cli(
+            account_name=self.s3acc_name)
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        LOGGER.info("Deleted s3 account %s", self.s3acc_name)
+
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-14033")
+    @CTFailOn(error_handler)
+    def test_1862_alert_operations_with_s3account(self):
+        """
+        Test that s3_account user cannot list, update alert using CLI
+        """
+        resp = S3ACC_OBJ.create_s3account_cortx_cli(
+            account_name=self.s3acc_name,
+            account_email=self.s3acc_email,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        LOGGER.info("Created s3 account %s", self.s3acc_name)
+        logout = S3ACC_OBJ.logout_cortx_cli()
+        assert_utils.assert_equals(True, logout[0], logout[1])
+        login = S3ACC_OBJ.login_cortx_cli(
+            username=self.s3acc_name,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, login[0], login[1])
+        LOGGER.info("Created s3 account %s", self.s3acc_name)
+        resp = ALERT_OBJ.show_alerts_cli(duration="5m")
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], "invalid choice")
+        LOGGER.info(
+            "List alert with s3 account failed with error %s", resp[1])
+
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-14033")
+    @CTFailOn(error_handler)
+    def test_1001_create_s3account_with_s3account(self):
+        """
+        Test that S3 user is not permitted to create S3 account
+        """
+        resp = S3ACC_OBJ.create_s3account_cortx_cli(
+            account_name=self.s3acc_name,
+            account_email=self.s3acc_email,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        LOGGER.info("Created s3 account %s", self.s3acc_name)
+        login = S3ACC_OBJ.login_cortx_cli(
+            username=self.s3acc_name,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, login[0], login[1])
+        s3acc_name2 = "cli_s3acc_{}".format(int(time.time()))
+        s3acc_email2 = "{}@seagate.com".format(s3acc_name2)
+        resp = S3ACC_OBJ.create_s3account_cortx_cli(
+            account_name=s3acc_name2,
+            account_email=s3acc_email2,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(False, resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], "invalid choice")
+        LOGGER.info(
+            "Creating s3 account failed with error %s", resp[1])
+
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-10879")
+    @CTFailOn(error_handler)
+    def test_1013_help_options(self):
+        """
+        Test that help opens on executing "-h" option with commands
+        """
+        resp = S3ACC_OBJ.create_s3account_cortx_cli(
+            account_name=self.s3acc_name,
+            account_email=self.s3acc_email,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        LOGGER.info("Created s3 account %s", self.s3acc_name)
+        logout = S3ACC_OBJ.logout_cortx_cli()
+        assert_utils.assert_equals(True, logout[0], logout[1])
+        login = S3ACC_OBJ.login_cortx_cli(
+            username=self.s3acc_name,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, login[0], login[1])
+        command_list = [
+            commands.CMD_S3ACC,
+            commands.CMD_CREATE_S3ACC,
+            commands.CMD_SHOW_BUCKETS,
+            commands.CMD_DELETE_S3ACC]
+        help_option_list = [
+            constants.S3ACCOUNT_HELP,
+            constants.S3ACC_CREATE_HELP,
+            constants.S3ACC_SHOW_HELP,
+            constants.S3ACC_DELETE_HELP]
+        for command, help_options in zip(command_list, help_option_list):
+            command = " ".join([command, commands.CMD_HELP_OPTION])
+            resp = S3ACC_OBJ.execute_cli_commands(cmd=command)
+            assert_utils.assert_equals(True, resp[0], resp[1])
+            for option in help_options:
+                assert_utils.assert_exact_string(resp[1], option)
+        LOGGER.info(
+            "Successfully verified help responses for all s3 account commands")

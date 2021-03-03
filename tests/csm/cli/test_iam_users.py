@@ -32,6 +32,7 @@ from libs.csm.cli.cortxcli_iam_user import CortxCliIamUser
 
 
 IAM_OBJ = CortxCliIamUser()
+IAM_OBJ.open_connection()
 NODE_HELPER_OBJ = node_helper.Node(hostname=CMN_CFG[1]["csm"]["mgmt_vip"],
                                    username=CMN_CFG[1]["username"],
                                    password=CMN_CFG[1]["password"])

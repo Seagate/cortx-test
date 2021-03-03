@@ -30,7 +30,8 @@ from libs.csm.cli.cli_csm_user import CortxCliCsmUser
 from libs.csm.cli.cli_alerts_lib import CortxCliAlerts
 
 CSM_USER = CortxCliCsmUser()
-CSM_ALERT = CortxCliAlerts()
+CSM_USER.open_connection()
+CSM_ALERT = CortxCliAlerts(session_obj=CSM_USER.session_obj)
 CLI_CONF = conf_util.read_yaml("config/csm/csm_config.yaml")
 
 
