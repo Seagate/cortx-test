@@ -208,3 +208,8 @@ DELETE_IAM_USER = "s3iamusers delete"
 
 # Linux System Commands
 CMD_MKDIR = "mkdir -p {}"
+
+# Provisioner commands
+CMD_LSBLK = "lsblk -S | grep disk | wc -l"
+OS_REL_CMD = "cat /etc/redhat-release"
+KRNL_VER_CMD = "uname -r"

@@ -35,6 +35,8 @@ RAS_CONFIG_PATH = "config/ras_config.yaml"
 
 SSPL_TEST_CONFIG_PATH = "config/ras_test.yaml"
 
+PROV_TEST_CONFIG_PATH = "config/prov_test.yaml"
+
 COMMON_DESTRUCTIVE_CONFIG_PATH = "config/common_destructive.yaml"
 
 JIRA_TEST_LIST = 'test_lists.csv'
