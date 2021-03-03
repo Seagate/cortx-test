@@ -124,7 +124,7 @@ def run_local_cmd(cmd: str = None, flg: bool = False) -> tuple:
     return True, str(output)
 
 
-def execute_cmd(cmd: str, remote: bool, *remoteargs, **remoteKwargs) -> tuple:
+def execute_cmd(cmd: str, remote: bool = False, *remoteargs, **remoteKwargs) -> tuple:
     """Execute command on local / remote machine based on remote flag
     :param cmd: cmd to be executed
     :param remote: if True executes on remote machine
