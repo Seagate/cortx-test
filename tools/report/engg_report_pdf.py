@@ -26,7 +26,7 @@ from reportlab.lib.pagesizes import letter, inch
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Spacer, PageBreak, Paragraph
 
-import common
+import common_pdf
 
 
 def build_component_table(data: List[list]):
@@ -34,7 +34,7 @@ def build_component_table(data: List[list]):
     col_width = 10 * [0.71 * inch]
     col_width[0] = 1.25 * inch
     component_table = Table(data, col_width, len(data) * [0.25 * inch],
-                            style=common.common_table_style)
+                            style=common_pdf.common_table_style)
     component_table.setStyle(TableStyle([
         ('SPAN', (0, 1), (0, 2)),  # Merge Cells for Component
         ('SPAN', (1, 1), (1, 2)),  # Merge Cells for Total
@@ -65,7 +65,7 @@ def build_single_bucket_perf_stats(data: List[list]):
     col_width = 9 * [0.71 * inch]
     col_width[0] = 2 * inch
     single_bucket_perf_stats = Table(data, col_width, 10 * [0.24 * inch],
-                                     style=common.common_table_style)
+                                     style=common_pdf.common_table_style)
     return single_bucket_perf_stats
 
 
@@ -76,7 +76,7 @@ def build_multi_bucket_perf_stats(data: List[list]):
     col_width[1] = 1.25 * inch
 
     multi_bucket_perf_stats = Table(data, col_width, 38 * [0.24 * inch],
-                                    style=common.common_table_style)
+                                    style=common_pdf.common_table_style)
     multi_bucket_perf_stats.setStyle(TableStyle([
         ('LINEABOVE', (0, 3), (0, 7), 1, colors.HexColor(0xededed)),
         ('LINEABOVE', (0, 9), (0, 13), 1, colors.HexColor(0xededed)),
@@ -91,7 +91,7 @@ def build_multi_bucket_perf_stats(data: List[list]):
 def build_metadata_latencies_table(data: List[list]):
     """Build metadata latencies table."""
     single_bucket_perf_stats = Table(data, 2 * [3.8 * inch], 5 * [0.25 * inch],
-                                     style=common.common_table_style)
+                                     style=common_pdf.common_table_style)
     return single_bucket_perf_stats
 
 
@@ -111,7 +111,7 @@ def build_defect_table(data: List[list]):
     col_width[1] = 1 * inch
 
     defect_table = Table(data, col_width, None,
-                         style=common.common_table_style)
+                         style=common_pdf.common_table_style)
     defect_table.setStyle(TableStyle([
         ('FONTNAME', (0, 2), (-1, -1), 'Helvetica'),  # Font for complete table
         ('FONTSIZE', (0, 2), (-1, -1), 9),  # Font size for table heading
@@ -125,23 +125,23 @@ def build_defect_table(data: List[list]):
 
 def main():
     """Generate PDF engineering report from csv executive report."""
-    all_data = common.get_data_from_csv('../engg_report.csv')
+    all_data = common_pdf.get_data_from_csv('../engg_report.csv')
 
-    main_table_data, table2_start = common.get_table_data(all_data, 0)
-    reported_bugs_table_data, table3_start = common.get_table_data(all_data, table2_start)
-    qa_report_table_data, table4_start = common.get_table_data(all_data, table3_start)
-    component_table_data, table5_start = common.get_table_data(all_data, table4_start)
-    single_bucket_perf_stats_data, table6_start = common.get_table_data(all_data, table5_start)
-    multi_bucket_perf_stats_data, table7_start = common.get_table_data(all_data, table6_start)
-    metadata_latencies_data, table8_start = common.get_table_data(all_data, table7_start)
-    timing_summary_table_data, table9_start = common.get_table_data(all_data, table8_start)
-    defect_table_data, _ = common.get_table_data(all_data, table9_start)
+    main_table_data, table2_start = common_pdf.get_table_data(all_data, 0)
+    reported_bugs_table_data, table3_start = common_pdf.get_table_data(all_data, table2_start)
+    qa_report_table_data, table4_start = common_pdf.get_table_data(all_data, table3_start)
+    component_table_data, table5_start = common_pdf.get_table_data(all_data, table4_start)
+    single_bucket_perf_stats_data, table6_start = common_pdf.get_table_data(all_data, table5_start)
+    multi_bucket_perf_stats_data, table7_start = common_pdf.get_table_data(all_data, table6_start)
+    metadata_latencies_data, table8_start = common_pdf.get_table_data(all_data, table7_start)
+    timing_summary_table_data, table9_start = common_pdf.get_table_data(all_data, table8_start)
+    defect_table_data, _ = common_pdf.get_table_data(all_data, table9_start)
 
-    main_table = common.build_main_table(main_table_data)
+    main_table = common_pdf.build_main_table(main_table_data)
 
     build = main_table_data[2][1]
 
-    two_tables = common.build_two_tables(reported_bugs_table_data, qa_report_table_data)
+    two_tables = common_pdf.build_two_tables(reported_bugs_table_data, qa_report_table_data)
 
     component_table = build_component_table(component_table_data)
 
@@ -151,12 +151,12 @@ def main():
 
     metadata_latencies_table = build_metadata_latencies_table(metadata_latencies_data)
 
-    timing_summary_table = common.build_timing_summary_table(timing_summary_table_data)
+    timing_summary_table = common_pdf.build_timing_summary_table(timing_summary_table_data)
 
     defect_table = build_defect_table(defect_table_data)
 
     elements = [main_table, Spacer(15, 15), two_tables, Spacer(15, 15),
-                component_table, Spacer(15, 15), single_bucket_perf_stats, Spacer(15, 15),
+                component_table, Spacer(15, 15), single_bucket_perf_stats, PageBreak(),
                 multi_bucket_perf_stats, PageBreak(), metadata_latencies_table,
                 Spacer(15, 15), timing_summary_table,
                 Paragraph("<em>NA signifies the data is Not Available.</em>"),

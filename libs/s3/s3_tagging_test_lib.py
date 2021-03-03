@@ -28,30 +28,21 @@ import logging
 
 from commons import errorcodes as err
 from commons.exceptions import CTException
-from commons.utils.config_utils import read_yaml
-from commons.helpers.s3_helper import S3Helper
 from commons.utils.system_utils import create_file
+from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_core_lib import Tagging
 
 LOGGER = logging.getLogger(__name__)
-
-try:
-    S3H_OBJ = S3Helper()
-except ImportError as ierr:
-    LOGGER.warning(ierr)
-    S3H_OBJ = S3Helper.get_instance()
-
-S3_CONF = read_yaml("config/s3/s3_config.yaml")[1]
 
 
 class S3TaggingTestLib(Tagging):
     """Initialising s3 connection and including methods for bucket, object tagging operations."""
 
     def __init__(self,
-                 access_key: str = S3H_OBJ.get_local_keys()[0],
-                 secret_key: str = S3H_OBJ.get_local_keys()[1],
-                 endpoint_url: str = S3_CONF["s3_url"],
-                 s3_cert_path: str = S3_CONF["s3_cert_path"],
+                 access_key: str = ACCESS_KEY,
+                 secret_key: str = SECRET_KEY,
+                 endpoint_url: str = S3_CFG["s3_url"],
+                 s3_cert_path: str = S3_CFG["s3_cert_path"],
                  **kwargs) -> None:
         """
         The method initializes members of S3TaggingTestLib and its parent class.
@@ -64,9 +55,9 @@ class S3TaggingTestLib(Tagging):
         :param aws_session_token: aws_session_token.
         :param debug: debug mode.
         """
-        kwargs["region"] = kwargs.get("region", S3_CONF["region"])
+        kwargs["region"] = kwargs.get("region", S3_CFG["region"])
         kwargs["aws_session_token"] = kwargs.get("aws_session_token", None)
-        kwargs["debug"] = kwargs.get("debug", S3_CONF["debug"])
+        kwargs["debug"] = kwargs.get("debug", S3_CFG["debug"])
         super().__init__(
             access_key,
             secret_key,
@@ -76,9 +67,9 @@ class S3TaggingTestLib(Tagging):
 
     def set_bucket_tag(
             self,
-            bucket_name: str,
-            key: str,
-            value: str,
+            bucket_name: str = None,
+            key: str = None,
+            value: str = None,
             tag_count: int = 1) -> tuple:
         """
         Set one or multiple tags to a bucket.
@@ -109,7 +100,7 @@ class S3TaggingTestLib(Tagging):
 
         return True, response
 
-    def get_bucket_tags(self, bucket_name: str) -> tuple:
+    def get_bucket_tags(self, bucket_name: str = None) -> tuple:
         """
         List all bucket tags if any.
 
@@ -131,7 +122,7 @@ class S3TaggingTestLib(Tagging):
 
         return True, tag_set
 
-    def delete_bucket_tagging(self, bucket_name: str) -> tuple:
+    def delete_bucket_tagging(self, bucket_name: str = None) -> tuple:
         """
         Delete all bucket tags.
 
@@ -152,10 +143,10 @@ class S3TaggingTestLib(Tagging):
 
     def set_object_tag(
             self,
-            bucket_name: str,
-            obj_name: str,
-            key: str,
-            value: str,
+            bucket_name: str = None,
+            obj_name: str = None,
+            key: str = None,
+            value: str = None,
             **kwargs) -> tuple:
         """
         Set the supplied tag-set to an object that already exists in a bucket.
@@ -164,7 +155,6 @@ class S3TaggingTestLib(Tagging):
         :param obj_name: Name of the object.
         :param key: Key for object tagging.
         :param value: Value for object tagging.
-        :param tag_count: Tag count.
         :return: (Boolean, response)
         """
         tag_count = kwargs.get("tag_count", 1)
@@ -188,7 +178,8 @@ class S3TaggingTestLib(Tagging):
 
         return True, response
 
-    def get_object_tags(self, bucket_name: str, obj_name: str) -> tuple:
+    def get_object_tags(self, bucket_name: str = None,
+                        obj_name: str = None) -> tuple:
         """
         Return the tag-set of an object.
 
@@ -211,7 +202,10 @@ class S3TaggingTestLib(Tagging):
 
         return True, tag_set
 
-    def delete_object_tagging(self, bucket_name: str, obj_name: str) -> tuple:
+    def delete_object_tagging(
+            self,
+            bucket_name: str = None,
+            obj_name: str = None) -> tuple:
         """
         Remove the tag-set from an existing object.
 
@@ -234,9 +228,9 @@ class S3TaggingTestLib(Tagging):
 
     def create_multipart_upload_with_tagging(
             self,
-            bucket_name: str,
-            obj_name: str,
-            tag: str) -> tuple:
+            bucket_name: str = None,
+            obj_name: str = None,
+            tag: str = None) -> tuple:
         """
         request to initiate a multipart upload.
 
@@ -261,9 +255,9 @@ class S3TaggingTestLib(Tagging):
         return True, response
 
     def put_object_with_tagging(self,
-                                bucket_name: str,
-                                object_name: str,
-                                file_path: str,
+                                bucket_name: str = None,
+                                object_name: str = None,
+                                file_path: str = None,
                                 tag: str = None,
                                 **kwargs) -> tuple:
         """
@@ -273,8 +267,6 @@ class S3TaggingTestLib(Tagging):
         :param object_name: Name of the object.
         :param file_path: Path of the file.
         :param tag: Tag value(eg: "aaa=bbb").
-        :param key: Key for metadata.
-        :param value: Value for metadata.
         :return: (Boolean, response)
         """
         key = kwargs.get("key", None)
@@ -293,8 +285,8 @@ class S3TaggingTestLib(Tagging):
                     response = super().put_object_with_tagging(
                         bucket_name, object_name, data=data, tag=tag, meta=meta)
                 else:
-                    response = super().put_object_with_tagging(bucket_name, object_name,
-                                                               data=data, tag=tag)
+                    response = super().put_object_with_tagging(
+                        bucket_name, object_name, data=data, tag=tag)
             LOGGER.info(response)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
@@ -306,9 +298,9 @@ class S3TaggingTestLib(Tagging):
 
     def set_bucket_tag_duplicate_keys(
             self,
-            bucket_name: str,
-            key: str,
-            value: str) -> tuple:
+            bucket_name: str = None,
+            key: str = None,
+            value: str = None) -> tuple:
         """
         Set tags to a bucket with duplicate keys.
 
@@ -340,9 +332,9 @@ class S3TaggingTestLib(Tagging):
 
     def set_bucket_tag_invalid_char(
             self,
-            bucket_name: str,
-            key: str,
-            value: str) -> tuple:
+            bucket_name: str = None,
+            key: str = None,
+            value: str = None) -> tuple:
         """
         Set tag to a bucket with invalid special characters(convert tag to encode base64).
 
@@ -373,10 +365,10 @@ class S3TaggingTestLib(Tagging):
         return True, response
 
     def set_duplicate_object_tags(self,
-                                  bucket_name: str,
-                                  obj_name: str,
-                                  key: str,
-                                  value: str,
+                                  bucket_name: str = None,
+                                  obj_name: str = None,
+                                  key: str = None,
+                                  value: str = None,
                                   **kwargs) -> tuple:
         """
         Set the duplicate tag-set to an object that already exists in a bucket.
@@ -385,7 +377,6 @@ class S3TaggingTestLib(Tagging):
         :param obj_name: Name of object.
         :param key: Key for object tagging.
         :param value: Value for object tagging.
-        :param duplicate_key: Set True for duplicate keys, False for duplicate values, default True.
         :return: True or False and response.
         """
         LOGGER.info("Set duplicate tag set to an object.")
@@ -416,10 +407,10 @@ class S3TaggingTestLib(Tagging):
 
     def set_object_tag_invalid_char(
             self,
-            bucket_name: str,
-            obj_name: str,
-            key: str,
-            value: str) -> tuple:
+            bucket_name: str = None,
+            obj_name: str = None,
+            key: str = None,
+            value: str = None) -> tuple:
         """
         Set tag to a object with invalid special characters(convert tag to encode base64).
 
@@ -451,7 +442,10 @@ class S3TaggingTestLib(Tagging):
 
         return True, response
 
-    def get_object_with_tagging(self, bucket_name: str, key: str) -> tuple:
+    def get_object_with_tagging(
+            self,
+            bucket_name: str = None,
+            key: str = None) -> tuple:
         """
         Get object using tag key.
 

@@ -25,13 +25,13 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter, inch
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Spacer, Paragraph, PageBreak
 
-import common
+import common_pdf
 
 
 def build_feature_breakdown_table(data: List[list]):
     """Build feature breakdown table."""
-    component_table = Table(data, 6 * [1.26 * inch], 11 * [0.225 * inch],
-                            style=common.common_table_style)
+    component_table = Table(data, 6 * [1.26 * inch], len(data) * [0.225 * inch],
+                            style=common_pdf.common_table_style)
     component_table.setStyle(TableStyle([
         ('TEXTCOLOR', (1, 2), (1, -1), colors.HexColor(0x0070c0)),  # Blue for 2nd (Total) column
         ('TEXTCOLOR', (2, 2), (2, -1), colors.HexColor(0x00b050)),  # Green for 3nd (Pass) column
@@ -42,35 +42,35 @@ def build_feature_breakdown_table(data: List[list]):
 
 def build_code_maturity_table(data: List[list]):
     """Build code maturity table."""
-    code_maturity_table = Table(data, 4 * [1.89 * inch], 7 * [0.225 * inch],
-                                style=common.common_table_style)
+    code_maturity_table = Table(data, 4 * [1.89 * inch], len(data) * [0.225 * inch],
+                                style=common_pdf.common_table_style)
     return code_maturity_table
 
 
 def build_bucket_perf_stats_table(data: List[list]):
     """Build bucket performance statistics table."""
-    bucket_perf_stats = Table(data, 3 * [2.52 * inch], 6 * [0.25 * inch],
-                              style=common.common_table_style)
+    bucket_perf_stats = Table(data, 3 * [2.52 * inch], len(data) * [0.25 * inch],
+                              style=common_pdf.common_table_style)
     return bucket_perf_stats
 
 
 def main():
     """Generate PDF executive report from csv executive report."""
-    all_data = common.get_data_from_csv('../exec_report.csv')
+    all_data = common_pdf.get_data_from_csv('../exec_report.csv')
 
-    main_table_data, table2_start = common.get_table_data(all_data, 0)
-    reported_bugs_table_data, table3_start = common.get_table_data(all_data, table2_start)
-    qa_report_table_data, table4_start = common.get_table_data(all_data, table3_start)
-    feature_breakdown_table_data, table5_start = common.get_table_data(all_data, table4_start)
-    code_maturity_table_data, table6_start = common.get_table_data(all_data, table5_start)
-    bucket_perf_stats_table_data, table7_start = common.get_table_data(all_data, table6_start)
-    timing_summary_table_data, _ = common.get_table_data(all_data, table7_start)
+    main_table_data, table2_start = common_pdf.get_table_data(all_data, 0)
+    reported_bugs_table_data, table3_start = common_pdf.get_table_data(all_data, table2_start)
+    qa_report_table_data, table4_start = common_pdf.get_table_data(all_data, table3_start)
+    feature_breakdown_table_data, table5_start = common_pdf.get_table_data(all_data, table4_start)
+    code_maturity_table_data, table6_start = common_pdf.get_table_data(all_data, table5_start)
+    bucket_perf_stats_table_data, table7_start = common_pdf.get_table_data(all_data, table6_start)
+    timing_summary_table_data, _ = common_pdf.get_table_data(all_data, table7_start)
 
     build = main_table_data[2][1]
 
-    main_table = common.build_main_table(main_table_data)
+    main_table = common_pdf.build_main_table(main_table_data)
 
-    two_tables = common.build_two_tables(reported_bugs_table_data, qa_report_table_data)
+    two_tables = common_pdf.build_two_tables(reported_bugs_table_data, qa_report_table_data)
 
     feature_breakdown_table = build_feature_breakdown_table(feature_breakdown_table_data)
 
@@ -78,7 +78,7 @@ def main():
 
     bucket_perf_stats = build_bucket_perf_stats_table(bucket_perf_stats_table_data)
 
-    timing_summary_table = common.build_timing_summary_table(timing_summary_table_data)
+    timing_summary_table = common_pdf.build_timing_summary_table(timing_summary_table_data)
 
     elements = [main_table, Spacer(15, 15), two_tables, Spacer(15, 15),
                 feature_breakdown_table, Spacer(15, 15), code_maturity_table, Spacer(15, 15),
