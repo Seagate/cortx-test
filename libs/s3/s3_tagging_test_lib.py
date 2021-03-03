@@ -155,7 +155,6 @@ class S3TaggingTestLib(Tagging):
         :param obj_name: Name of the object.
         :param key: Key for object tagging.
         :param value: Value for object tagging.
-        :param tag_count: Tag count.
         :return: (Boolean, response)
         """
         tag_count = kwargs.get("tag_count", 1)
@@ -268,8 +267,6 @@ class S3TaggingTestLib(Tagging):
         :param object_name: Name of the object.
         :param file_path: Path of the file.
         :param tag: Tag value(eg: "aaa=bbb").
-        :param key: Key for metadata.
-        :param value: Value for metadata.
         :return: (Boolean, response)
         """
         key = kwargs.get("key", None)
@@ -380,7 +377,6 @@ class S3TaggingTestLib(Tagging):
         :param obj_name: Name of object.
         :param key: Key for object tagging.
         :param value: Value for object tagging.
-        :param duplicate_key: Set True for duplicate keys, False for duplicate values, default True.
         :return: True or False and response.
         """
         LOGGER.info("Set duplicate tag set to an object.")
