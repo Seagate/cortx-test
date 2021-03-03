@@ -6,7 +6,7 @@ Library     SeleniumLibrary
 Variables  ../common/element_locators.py
 
 *** Variables ***
-${user_test_comment}  "Test Comment"
+
 
 *** Keywords ***
 
@@ -24,11 +24,13 @@ Click Details Button
 
 Click Comments Button
     [Documentation]  On Alert Page, click on Comment icon
+    wait until element is visible  ${ALERT_COMMENT_ICON_XPATH}  timeout=10
     Click Element    ${ALERT_COMMENT_ICON_XPATH}
 
 Add CommentInCommentBox Text
     [Documentation]  Verify Presence of Details and Comments Buttons on Alert Action for monitor user
-    input text  ${ALERT_COMMENT_TEXT_ID}  ${user_test_comment}
+    wait until element is visible  ${ALERT_COMMENT_TEXT_ID}  timeout=10
+    input text  ${ALERT_COMMENT_TEXT_ID}  ${TEST_COMMENT}
     Click Element    ${ALERT_COMMENT_SAVE_BUTTON_ID}
 
 Click CommentsClose Button
@@ -52,3 +54,26 @@ Verify Presence of Details Comments Acknowledge
     [Documentation]  Verify Presence of Details, Comments and Acknowledge Buttons on Alert Action
     Page Should Contain Element  ${ALERT_DETAILS_PAGE_ICON_XPATH}
     Page Should Contain Element  ${ALERT_COMMENT_ICON_XPATH}
+
+Verify Absence of comment textbox
+    [Documentation]  this keyword Verify that comment textbox is not present for monitor user.
+    Page Should Not Contain Element  ${ALERT_COMMENT_TEXT_ID}
+
+Verify comment on alert
+     [Documentation]  this keyword adds comments and verifys it
+     Click AlertPageDashboard Image
+     Click Comments Button
+     Add CommentInCommentBox Text
+     Click CommentsClose Image
+     Click Comments Button
+     sleep  5s
+     wait until element is visible  ${ALERT_COMMENT_TEXT_ID}  timeout=10
+     ${comment_text}=    Create List
+     @{comment_text_elements}=  Get WebElements  ${ALERTS_COMMENT_TEXT_XPATH}
+     FOR  ${elements}  IN  @{comment_text_elements}
+            ${text}=    Get Text    ${elements}
+            Append To List  ${comment_text}  ${text}
+     END
+     Log To Console And Report   ${comment_text}
+     List Should Contain Value  ${comment_text}  ${TEST_COMMENT}
+     Click CommentsClose Image
