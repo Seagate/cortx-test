@@ -51,7 +51,7 @@ try:
     DB_USERNAME = config["REST"]["db_username"]
     DB_PASSWORD = config["REST"]["db_password"]
 except KeyError:
-    print("Could not start REST server. Please verify config.ini file")
+    print("Could not start DB Update script. Please verify config.ini file")
     sys.exit(1)
 
 
