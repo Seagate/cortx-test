@@ -44,7 +44,7 @@ class TestSystemHealth():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        expected_response = self.system_health.success_response
+        expected_response = const.SUCCESS_STATUS
         result = self.system_health.verify_health_summary(expected_response)
         assert result
         self.log.info("##### Test ended -  %s #####", test_case_name)
@@ -60,7 +60,7 @@ class TestSystemHealth():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         for node in ["storage", "node-1", "node-2"]:
-            expected_response = self.system_health.success_response
+            expected_response = const.SUCCESS_STATUS
             result = self.system_health.verify_health_node(
                 expected_response, node=node)
             assert result
@@ -77,7 +77,7 @@ class TestSystemHealth():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        expected_response = self.system_health.success_response
+        expected_response = const.SUCCESS_STATUS
         result = self.system_health.verify_health_node(
             expected_response, node="")
         assert result
@@ -95,7 +95,7 @@ class TestSystemHealth():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         for node in ["storage", "node-1", "node-2"]:
-            expected_response = self.system_health.success_response
+            expected_response = const.SUCCESS_STATUS
             result = self.system_health.verify_health_view(
                 expected_response, node=node)
             assert result
@@ -111,7 +111,7 @@ class TestSystemHealth():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        expected_response = self.system_health.success_response
+        expected_response = const.SUCCESS_STATUS
         result = self.system_health.verify_health_view(
             expected_response, node="")
         assert result

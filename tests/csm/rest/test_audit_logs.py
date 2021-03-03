@@ -273,7 +273,7 @@ class TestAuditLogs():
             response = self.audit_logs.audit_logs_csm_show(
                 params, login_as=data["user_list"][i])
             assert_utils.assert_equals(response.status_code,
-                                       self.audit_logs.success_response)
+                                       const.SUCCESS_STATUS)
         self.log.info(
             "Step 1: Verified that GET api returns audit logs for date range specified")
 
@@ -288,7 +288,7 @@ class TestAuditLogs():
             for i in range(len(response.json()), data["max_record_count"]):
                 resp = self.csm_user.list_csm_single_user(
                     request_type="get",
-                    expect_status_code=self.csm_user.success_response,
+                    expect_status_code=const.SUCCESS_STATUS,
                     user=self.audit_logs.config["csm_admin_user"]["username"],
                     return_actual_response=True)
                 assert resp

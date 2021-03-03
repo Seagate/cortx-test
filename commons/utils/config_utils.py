@@ -31,6 +31,7 @@ import re
 from configparser import ConfigParser, MissingSectionHeaderError, NoSectionError
 from defusedxml.cElementTree import parse
 import yaml
+from jsonschema import validate
 import commons.errorcodes as cterr
 from commons.exceptions import CTException
 from commons import pswdmanager
@@ -406,3 +407,44 @@ def get_config_wrapper(**kwargs):
         print("Invalid keyword argument")
         raise ValueError("Invalid argument")
     return data
+
+def verify_json_schema(instance, *schemas):
+    """
+    Verify the schema for the given instance of the response
+    exception is raised if the schema doesn't match
+    which can be handled by calling function
+    :param instance: json log instance which needs to be verified.
+    :param schemas: json schema for verification
+    """
+
+    for schema in schemas:
+        validate(instance=instance, schema=schema)
+
+def verify_json_response(actual_result, expect_result, match_exact=False):
+    """
+    This function will verify the json response with actual response
+    :param actual_result: actual json response from REST call
+    :param expect_result: the json response to be matched
+    :param match_exact: to match actual and expect result to be exact
+    :return: Success(True)/Failure(False)
+    """
+    try:
+        # Matching exact values
+        if match_exact:
+            LOG.debug("Matching exact values")
+            return actual_result == expect_result
+
+        # Check for common keys between actual value and expect value
+        if actual_result.keys().isdisjoint(expect_result):
+            LOG.debug(
+                "No common keys between actual value and expect value")
+            return False
+
+        return all(actual_result[key] == value for key, value in expect_result.items())
+    except Exception as error:
+        LOG.error("%s %s: %s",
+                        const.EXCEPTION_ERROR,
+                        RestTestLib.verify_json_response.__name__,
+                        error)
+        raise CTException(
+            err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error

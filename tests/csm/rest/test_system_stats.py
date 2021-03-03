@@ -53,7 +53,7 @@ class TestSystemStats():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started - %s #####" , test_case_name)
-        expected_response = self.system_stats.success_response
+        expected_response = const.SUCCESS_STATUS
         response = self.system_stats.get_stats()
         assert_utils.assert_equals(response.status_code, expected_response,
                                    "Status code check failed.")
@@ -80,7 +80,7 @@ class TestSystemStats():
         self.log.info("##### Test started -  %s #####", test_case_name)
         interval = self.test_conf["test_4958"]["interval_secs"]
         epoc_time_diff = self.test_conf["test_4958"]["epoc_time_diff"]
-        expected_response = self.system_stats.success_response
+        expected_response = const.SUCCESS_STATUS
         metrics = self.system_stats.get_metrics()
         for metric in metrics:
             self.log.info(
@@ -117,7 +117,7 @@ class TestSystemStats():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        expected_response = self.system_stats.success_response
+        expected_response = const.SUCCESS_STATUS
         interval = int(self.test_conf["test_4959"]["interval_secs"])
         total_sample = int(self.test_conf["test_4959"]["total_sample"])
         epoc_time_diff = self.test_conf["test_4959"]["epoc_time_diff"]
@@ -284,7 +284,7 @@ class TestSystemStats():
         assert_utils.assert_in(response.status_code, expected_response,
                                "Status code check failed with missing TO param.")
 
-        expected_response = self.system_stats.success_response
+        expected_response = const.SUCCESS_STATUS
         metric = random.choice(metrics)
         self.log.info(
             "##### Testing with missing TOTAL SAMPLE AND INTERVAL param for "
@@ -389,7 +389,7 @@ class TestSystemStats():
         total_sample = self.test_conf["test_4957"]["total_sample"]
         epoc_time_diff = self.test_conf["test_4957"]["epoc_time_diff"]
         value = self.test_conf["test_4957"]["value"]
-        expected_response = self.system_stats.success_response
+        expected_response = const.SUCCESS_STATUS
         metrics = self.system_stats.get_metrics()
         for metric in metrics:
             self.log.info(
@@ -436,7 +436,7 @@ class TestSystemStats():
         epoc_time_diff = self.test_conf["test_4960"]["epoc_time_diff"]
         default_interval = self.test_conf["test_4960"]["default_interval"]
         value = self.test_conf["test_4960"]["value"]
-        expected_response = self.system_stats.success_response
+        expected_response = const.SUCCESS_STATUS
         metrics = self.system_stats.get_metrics()
         for metric in metrics:
             self.log.info(

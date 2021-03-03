@@ -30,28 +30,28 @@ class SystemStats(RestTestLib):
         """
         try:
             # Building request url
-            self._log.info("Reading stats...")
+            self.log.info("Reading stats...")
             endpoint = self.config["stats_endpoint"]
             # Adding parameters
             endpoint = self._add_parameters(endpoint, stats_id, panel,
                                             metrics, from_time, to_time,
                                             interval, total_sample, op_format)
-            self._log.info("Endpoint for reading stats is %s", endpoint)
+            self.log.info("Endpoint for reading stats is %s", endpoint)
             # Fetching api response
             response = self.restapi.rest_call(request_type="get",
                                               endpoint=endpoint,
                                               headers=self.headers)
             try:
-                self._log.info(
+                self.log.info(
                     "Response returned is:\n %s", response.json())
             except:
-                self._log.info(
+                self.log.info(
                     "Response returned is:\n %s", response.text)
             return response
 
         except BaseException as error:
-            self._log.error("%s %s: %s",
-                            self.exception_error,
+            self.log.error("%s %s: %s",
+                            const.EXCEPTION_ERROR,
                             SystemStats.get_stats.__name__,
                             error)
             raise CTException(
@@ -64,8 +64,8 @@ class SystemStats(RestTestLib):
         :param list actual_list: actual list - main list
         :return [bool]: True if it is subset else False
         """
-        self._log.info("Expected List : %s", expected_list)
-        self._log.info("Actual List : %s", actual_list)
+        self.log.info("Expected List : %s", expected_list)
+        self.log.info("Actual List : %s", actual_list)
         return all(x in actual_list for x in expected_list)
 
     def get_time_diff(self, to_time, from_time):
@@ -98,18 +98,18 @@ class SystemStats(RestTestLib):
         """
         rdd = self.get_time_diff(to_time, from_time)
         diff_sec = rdd.seconds
-        self._log.info("Time difference in seconds : %s", total_sample)
+        self.log.info("Time difference in seconds : %s", total_sample)
         if total_sample is not None:
             samples = total_sample
-            self._log.info("Expected total samples : %s", total_sample)
+            self.log.info("Expected total samples : %s", total_sample)
         else:
             if interval is not None:
                 samples = math.ceil(diff_sec/interval)
-                self._log.info(
+                self.log.info(
                     "Requires Interval or total Sample : %s", samples)
             else:
                 samples = None
-                self._log.error("Interval and total sample both were None")
+                self.log.error("Interval and total sample both were None")
         return samples
 
     def _add_parameters(self, endpoint, stats_id=None, panel=None,
@@ -167,16 +167,16 @@ class SystemStats(RestTestLib):
         :return [list]: metric list
         """
         try:
-            self._log.info("Reading the stats...")
+            self.log.info("Reading the stats...")
             response = self.get_stats()
             response_json = response.json()
             metric_list = response_json["metric_list"]
-            self._log.info("Metric list read is : %s", metric_list)
+            self.log.info("Metric list read is : %s", metric_list)
             return metric_list
 
         except BaseException as error:
-            self._log.error("%s %s: %s",
-                            self.exception_error,
+            self.log.error("%s %s: %s",
+                            const.EXCEPTION_ERROR,
                             SystemStats.get_metrics.__name__,
                             error)
             raise CTException(

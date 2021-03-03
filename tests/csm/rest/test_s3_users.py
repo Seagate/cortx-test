@@ -72,7 +72,7 @@ class TestS3user():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         assert self.s3user.create_and_verify_s3account(
-            user="valid", expect_status_code=self.s3user.success_response)
+            user="valid", expect_status_code=const.SUCCESS_STATUS)
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
@@ -86,7 +86,7 @@ class TestS3user():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         assert self.s3user.create_and_verify_s3account(
-            user="invalid", expect_status_code=self.s3user.bad_request_response)
+            user="invalid", expect_status_code=const.BAD_REQUEST)
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
@@ -101,7 +101,7 @@ class TestS3user():
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.s3user.create_s3_account()
         assert self.s3user.create_and_verify_s3account(
-            user="duplicate", expect_status_code=self.s3user.conflict_response)
+            user="duplicate", expect_status_code=const.CONFLICT)
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
@@ -115,7 +115,7 @@ class TestS3user():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         assert self.s3user.create_and_verify_s3account(
-            user="missing", expect_status_code=self.s3user.bad_request_response)
+            user="missing", expect_status_code=const.BAD_REQUEST)
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 

@@ -34,7 +34,7 @@ from libs.csm.rest.csm_rest_iamuser import RestIamUser
 from libs.csm.rest.csm_rest_bucket import RestS3Bucket
 from libs.csm.rest.csm_rest_bucket import RestS3BucketPolicy
 from libs.csm.csm_setup import CSMConfigsCheck
-
+from commons.utils import config_utils
 
 class TestCsmUser():
     """REST API Test cases for CSM users
@@ -190,7 +190,7 @@ class TestCsmUser():
         invalid_sortby = self.csm_conf["test_5001"]["invalid_sortby"]
         resp_msg = self.csm_conf["test_5001"]["response_msg"]
         response = self.csm_user.list_csm_users(
-            expect_status_code=self.csm_user.bad_request_response,
+            expect_status_code=const.BAD_REQUEST,
             sort_by=invalid_sortby,
             return_actual_response=True)
 
@@ -215,7 +215,7 @@ class TestCsmUser():
 
         self.log.info("Fetching csm user with empty sort by string...")
         response = self.csm_user.list_csm_users(
-            expect_status_code=self.csm_user.bad_request_response,
+            expect_status_code=const.BAD_REQUEST,
             sort_by="",
             return_actual_response=True)
 
@@ -240,7 +240,7 @@ class TestCsmUser():
         for sortdir in valid_sortdir:
             self.log.info("Sorting dir by :%s", sortdir)
             response_text = self.csm_user.list_csm_users(
-                expect_status_code=self.csm_user.success_response,
+                expect_status_code=const.SUCCESS_STATUS,
                 sort_dir=sortdir,
                 return_actual_response=True)
             self.log.info("Verifying the actual response...")
@@ -262,7 +262,7 @@ class TestCsmUser():
         assert (self.csm_user.create_and_verify_csm_user_creation(
             user_type="valid",
             user_role="manage",
-            expect_status_code=self.csm_user.success_response_post))
+            expect_status_code=const.SUCCESS_STATUS_FOR_POST))
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
@@ -277,7 +277,7 @@ class TestCsmUser():
         self.log.info("##### Test started -  %s #####", test_case_name)
         assert self.csm_user.create_and_verify_csm_user_creation(
             user_type="invalid", user_role="manage",
-            expect_status_code=self.csm_user.bad_request_response)
+            expect_status_code=const.BAD_REQUEST)
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
@@ -294,7 +294,7 @@ class TestCsmUser():
         assert self.csm_user.create_and_verify_csm_user_creation(
             user_type="missing",
             user_role="manage",
-            expect_status_code=self.csm_user.bad_request_response)
+            expect_status_code=const.BAD_REQUEST)
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
@@ -342,7 +342,7 @@ class TestCsmUser():
         for sortby in valid_sortby:
             self.log.info("Sorting by :%s", sortby)
             response = self.csm_user.list_csm_users(
-                expect_status_code=self.csm_user.success_response,
+                expect_status_code=const.SUCCESS_STATUS,
                 sort_by=sortby, return_actual_response=True)
             self.log.info("Verifying the actual response...")
             message_check = self.csm_user.verify_list_csm_users(
@@ -365,7 +365,7 @@ class TestCsmUser():
         invalid_sortdir = self.csm_conf["test_5004"]["invalid_sortdir"]
         self.log.info("Checking the sort dir option...")
         response = self.csm_user.list_csm_users(
-            expect_status_code=self.csm_user.bad_request_response,
+            expect_status_code=const.BAD_REQUEST,
             sort_dir=invalid_sortdir, return_actual_response=True)
         self.log.info("Checking the error message text...")
         message_check = const.SORT_DIR_ERROR in response.json()[
@@ -421,7 +421,7 @@ class TestCsmUser():
         self.log.info(
             "Fetching the response for empty sort_by parameter with the expected status code")
         response = self.csm_user.list_csm_users_empty_param(
-            expect_status_code=self.csm_user.bad_request_response,
+            expect_status_code=const.BAD_REQUEST,
             csm_list_user_param="sort_dir",
             return_actual_response=True)
 
@@ -449,7 +449,7 @@ class TestCsmUser():
         response = self.csm_user.create_csm_user(
             user_type="valid", user_role="manage")
         self.log.info("Verifying that user was successfully created")
-        assert response.status_code == self.csm_user.success_response_post
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
 
         self.log.info("Reading the username")
         username = response.json()["username"]
@@ -458,20 +458,20 @@ class TestCsmUser():
             "Step 2: Sending the request to user %s", username)
         response = self.csm_user.list_csm_single_user(
             request_type="get",
-            expect_status_code=self.csm_user.success_response,
+            expect_status_code=const.SUCCESS_STATUS,
             user=username,
             return_actual_response=True)
         self.log.info("Verifying the status code returned")
-        assert self.csm_user.success_response == response.status_code
+        assert const.SUCCESS_STATUS == response.status_code
         actual_response = response.json()
 
         self.log.info(
             "Step 3: Fetching list of all users")
         response = self.csm_user.list_csm_users(
-            expect_status_code=self.csm_user.success_response, return_actual_response=True)
+            expect_status_code=const.SUCCESS_STATUS, return_actual_response=True)
         self.log.info(
             "Verifying that response to fetch all users was successful")
-        assert response.status_code == self.csm_user.success_response
+        assert response.status_code == const.SUCCESS_STATUS
         self.log.info(
             "Step 4: Fetching the user %s information from the list", username)
         expected_response = []
@@ -481,7 +481,7 @@ class TestCsmUser():
                 break
         self.log.info("Verifying the actual response %s is matching the expected response %s",
                       actual_response, expected_response)
-        assert self.csm_user.verify_json_response(
+        assert config_utils.verify_json_response(
             actual_result=actual_response,
             expect_result=expected_response,
             match_exact=True)
@@ -515,7 +515,7 @@ class TestCsmUser():
             user_type=user[0], user_role=user[1])
         self.log.info(
             "Verifying if user was created successfully")
-        assert response.status_code == self.csm_user.success_response_post
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         username = response.json()["username"]
         userid = response.json()["id"]
         self.log.info("User %s got created successfully", username)
@@ -527,13 +527,13 @@ class TestCsmUser():
         payload = {"roles": [data["role"]], "password": data["password"]}
         response = self.csm_user.list_csm_single_user(
             request_type="patch",
-            expect_status_code=self.csm_user.success_response,
+            expect_status_code=const.SUCCESS_STATUS,
             user=userid,
             data=True,
             payload=json.dumps(payload),
             return_actual_response=True)
         self.log.info("Verifying response code 200 was returned")
-        assert response.status_code == self.csm_user.success_response
+        assert response.status_code == const.SUCCESS_STATUS
 
         self.log.info("Verifying if the password %s and role %s was updated "
                       "successfully for csm user %s",
@@ -543,9 +543,9 @@ class TestCsmUser():
         response = self.csm_user.verify_modify_csm_user(
             user=username,
             payload_login=json.dumps(payload_login),
-            expect_status_code=self.csm_user.success_response,
+            expect_status_code=const.SUCCESS_STATUS,
             return_actual_response=True)
-        assert response.status_code == self.csm_user.success_response
+        assert response.status_code == const.SUCCESS_STATUS
         assert response.json()["roles"][0] == user[2]
 
         self.log.info("Test Purpose 1: Verified status code %s was returned "
@@ -564,7 +564,7 @@ class TestCsmUser():
             user_type=user[0], user_role=user[2])
         self.log.info(
             "Verifying if user was created successfully")
-        assert response.status_code == self.csm_user.success_response_post
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         username = response.json()["username"]
         userid = response.json()["id"]
         self.log.info("User %s got created successfully", username)
@@ -576,13 +576,13 @@ class TestCsmUser():
         payload = {"roles": [data["role"]], "password": data["password"]}
         response = self.csm_user.list_csm_single_user(
             request_type="patch",
-            expect_status_code=self.csm_user.success_response,
+            expect_status_code=const.SUCCESS_STATUS,
             user=userid,
             data=True,
             payload=json.dumps(payload),
             return_actual_response=True)
         self.log.info("Verifying response code 200 was returned")
-        assert response.status_code == self.csm_user.success_response
+        assert response.status_code == const.SUCCESS_STATUS
 
         self.log.info("Verifying if the password %s and role %s was updated "
                       "successfully for csm user %s",
@@ -591,9 +591,9 @@ class TestCsmUser():
         payload_login = {"username": username, "password": payload["password"]}
         response = self.csm_user.verify_modify_csm_user(
             user=username, payload_login=json.dumps(payload_login),
-            expect_status_code=self.csm_user.success_response,
+            expect_status_code=const.SUCCESS_STATUS,
             return_actual_response=True)
-        assert response.status_code == self.csm_user.success_response
+        assert response.status_code == const.SUCCESS_STATUS
         assert response.json()["roles"][0] == user[1]
 
         self.log.info("Test Purpose 2: Verified status code %s was returned "
@@ -680,7 +680,7 @@ class TestCsmUser():
         response = self.csm_user.create_csm_user()
         self.log.info(
             "Verifying if user was created successfully")
-        assert response.status_code == self.csm_user.success_response_post
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         username = response.json()["username"]
         userid = response.json()["id"]
         self.log.info(
@@ -691,12 +691,12 @@ class TestCsmUser():
             "request on csm user %s", username)
         response = self.csm_user.list_csm_single_user(
             request_type="get",
-            expect_status_code=self.csm_user.success_response,
+            expect_status_code=const.SUCCESS_STATUS,
             user=userid,
             return_actual_response=True,
             login_as="csm_user_monitor")
         self.log.info("Verifying response code 200 was returned")
-        assert response.status_code == self.csm_user.success_response
+        assert response.status_code == const.SUCCESS_STATUS
         self.log.info(
             "Verifying that get request was successful for csm user %s", username)
         assert username in response.json()["username"]
@@ -782,13 +782,13 @@ class TestCsmUser():
         payload_user = {"current_password": old_password, "password": data[0]}
         response = self.csm_user.list_csm_single_user(
             request_type="patch",
-            expect_status_code=self.csm_user.success_response,
+            expect_status_code=const.SUCCESS_STATUS,
             user=username, data=True, payload=json.dumps(payload_user),
             return_actual_response=True, login_as="csm_user_manage")
 
         self.log.info("Verifying response code %s and response %s  returned",
                       response.status_code, response.json())
-        assert response.status_code == self.csm_user.success_response
+        assert response.status_code == const.SUCCESS_STATUS
 
         self.log.info("Verifying if the password %s was updated successfully for csm user %s",
                       data[0], username)
@@ -798,9 +798,9 @@ class TestCsmUser():
         response = self.csm_user.verify_modify_csm_user(
             user=username,
             payload_login=json.dumps(payload_login),
-            expect_status_code=self.csm_user.success_response,
+            expect_status_code=const.SUCCESS_STATUS,
             return_actual_response=True)
-        assert response.status_code == self.csm_user.success_response
+        assert response.status_code == const.SUCCESS_STATUS
 
         self.log.info("Verified login with new password was successful with "
                       "status code %s and response %s",
@@ -813,7 +813,7 @@ class TestCsmUser():
         payload_user = {"password": old_password}
         response = self.csm_user.list_csm_single_user(
             request_type="patch",
-            expect_status_code=self.csm_user.success_response,
+            expect_status_code=const.SUCCESS_STATUS,
             user=username,
             data=True,
             payload=json.dumps(payload_user),
@@ -821,7 +821,7 @@ class TestCsmUser():
 
         self.log.info("Verifying response code %s and response returned %s",
                       response.status_code, response.json())
-        assert response.status_code == self.csm_user.success_response
+        assert response.status_code == const.SUCCESS_STATUS
 
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
@@ -851,7 +851,7 @@ class TestCsmUser():
         payload_user = {"current_password": old_password, "password": data[0]}
         response = self.csm_user.list_csm_single_user(
             request_type="patch",
-            expect_status_code=self.csm_user.success_response,
+            expect_status_code=const.SUCCESS_STATUS,
             user=username,
             data=True,
             payload=json.dumps(payload_user),
@@ -859,7 +859,7 @@ class TestCsmUser():
             login_as="csm_admin_user")
         self.log.info("Verifying response code 200 was returned")
         assert_utils.assert_equals(
-            response.status_code, self.csm_user.success_response)
+            response.status_code, const.SUCCESS_STATUS)
         self.log.info("Verifying if the password %s was updated "
                       "successfully for csm user %s",
                       data[0], username)
@@ -871,10 +871,10 @@ class TestCsmUser():
         response = self.csm_user.verify_modify_csm_user(
             user=username,
             payload_login=json.dumps(payload_login),
-            expect_status_code=self.csm_user.success_response,
+            expect_status_code=const.SUCCESS_STATUS,
             return_actual_response=True)
         assert_utils.assert_equals(
-            response.status_code, self.csm_user.success_response)
+            response.status_code, const.SUCCESS_STATUS)
 
         self.log.info("Verified login with new password was successful with "
                       "status code %s and response %s",
@@ -889,7 +889,7 @@ class TestCsmUser():
         self.log.info(
             "Verifying password was reverted and response code 200 was returned")
         assert_utils.assert_equals(
-            response.status_code, self.csm_user.success_response)
+            response.status_code, const.SUCCESS_STATUS)
 
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
@@ -915,7 +915,7 @@ class TestCsmUser():
         self.log.info(
             "Verifying if user was created successfully")
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_user.success_response_post)
+                                   const.SUCCESS_STATUS_FOR_POST)
 
         username = response.json()["username"]
         userid = response.json()["id"]
@@ -923,10 +923,10 @@ class TestCsmUser():
         self.log.info(
             "Fetching list of all users")
         response1 = self.csm_user.list_csm_users(
-            expect_status_code=self.csm_user.success_response,
+            expect_status_code=const.SUCCESS_STATUS,
             return_actual_response=True)
         assert_utils.assert_equals(response1.status_code,
-                                   self.csm_user.success_response)
+                                   const.SUCCESS_STATUS)
         self.log.info(
             "Fetching the user %s information from the list", username)
         expected_response = []
@@ -936,7 +936,7 @@ class TestCsmUser():
                 break
         self.log.info("Verifying the actual response %s is matching the "
                       "expected response %s", actual_response, expected_response)
-        assert (self.csm_user.verify_json_response(
+        assert (config_utils.verify_json_response(
             actual_result=actual_response,
             expect_result=expected_response,
             match_exact=True))
@@ -956,13 +956,13 @@ class TestCsmUser():
             "Test Purpose 2: Step 1: CSM manage user performing GET request")
         response = self.csm_user.list_csm_single_user(
             request_type="get",
-            expect_status_code=self.csm_user.success_response,
+            expect_status_code=const.SUCCESS_STATUS,
             user=userid,
             return_actual_response=True,
             login_as="csm_user_manage")
         self.log.info("Verifying response code 200 was returned")
         assert_utils.assert_equals(
-            response.status_code, self.csm_user.success_response)
+            response.status_code, const.SUCCESS_STATUS)
         self.log.info(
             "Verifying that get request was successful for csm user %s", username)
         assert username in response.json()["username"]
@@ -976,13 +976,13 @@ class TestCsmUser():
                       " role can perform DELETE itself")
         response = self.csm_user.list_csm_single_user(
             request_type="delete",
-            expect_status_code=self.csm_user.success_response,
+            expect_status_code=const.SUCCESS_STATUS,
             user="csm_user_manage",
             return_actual_response=True,
             login_as="csm_user_manage")
         self.log.info("Verifying response code 200 was returned")
         assert_utils.assert_equals(
-            response.status_code, self.csm_user.success_response)
+            response.status_code, const.SUCCESS_STATUS)
         self.log.info("Status code %s was returned along with response %s for "
                       "Delete request", response.status_code, response.json())
         self.log.info("Test Purpose 3: Verified that CSM user with manage role can "
@@ -998,7 +998,7 @@ class TestCsmUser():
         self.log.info(
             "Verifying if user was created successfully")
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_user.success_response_post)
+                                   const.SUCCESS_STATUS_FOR_POST)
         self.log.info("User %s got created successfully", username)
         username = response.json()["username"]
         userid = response.json()["id"]
@@ -1011,7 +1011,7 @@ class TestCsmUser():
 
         response = self.csm_user.list_csm_single_user(
             request_type="patch",
-            expect_status_code=self.csm_user.success_response,
+            expect_status_code=const.SUCCESS_STATUS,
             user="csm_user_manage",
             data=True,
             payload=json.dumps(payload),
@@ -1019,7 +1019,7 @@ class TestCsmUser():
             login_as="csm_user_manage")
         self.log.info("Verifying response code 200 was returned")
         assert_utils.assert_equals(
-            response.status_code, self.csm_user.success_response)
+            response.status_code, const.SUCCESS_STATUS)
 
         self.log.info("Verifying if the password %s was updated successfully for csm user %s",
                       data[3], username)
@@ -1028,10 +1028,10 @@ class TestCsmUser():
         response = self.csm_user.verify_modify_csm_user(
             user=username,
             payload_login=json.dumps(payload_login),
-            expect_status_code=self.csm_user.success_response,
+            expect_status_code=const.SUCCESS_STATUS,
             return_actual_response=True)
         assert_utils.assert_equals(
-            response.status_code, self.csm_user.success_response)
+            response.status_code, const.SUCCESS_STATUS)
 
         self.log.info("Status code %s was returned along with response %s for "
                       "Patch request", response.status_code, response.json())
@@ -1044,7 +1044,7 @@ class TestCsmUser():
         payload = {"current_password": data[3], "password": old_password}
         response = self.csm_user.list_csm_single_user(
             request_type="patch",
-            expect_status_code=self.csm_user.success_response,
+            expect_status_code=const.SUCCESS_STATUS,
             user="csm_user_manage",
             data=True,
             payload=json.dumps(payload),
@@ -1052,7 +1052,7 @@ class TestCsmUser():
             login_as="csm_admin_user")
         self.log.info("Verifying response code 200 was returned")
         assert_utils.assert_equals(
-            response.status_code, self.csm_user.success_response)
+            response.status_code, const.SUCCESS_STATUS)
         self.log.info(
             "Verified that CSM user with manage role can perform GET, POST, "
             "PATCH and DELETE API request for CSM user")
@@ -1082,7 +1082,7 @@ class TestCsmUser():
         self.log.info(
             "Verifying if user was created successfully")
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_user.success_response_post)
+                                   const.SUCCESS_STATUS_FOR_POST)
         username = response.json()["username"]
         userid = response.json()["id"]
         self.log.info("User %s got created successfully", username)
@@ -1094,7 +1094,7 @@ class TestCsmUser():
 
         response = self.csm_user.list_csm_single_user(
             request_type="patch",
-            expect_status_code=self.csm_user.success_response,
+            expect_status_code=const.SUCCESS_STATUS,
             user=userid,
             data=True,
             payload=json.dumps(payload),
@@ -1102,7 +1102,7 @@ class TestCsmUser():
 
         self.log.info("Verifying response code 200 was returned")
         assert_utils.assert_equals(
-            response.status_code, self.csm_user.success_response)
+            response.status_code, const.SUCCESS_STATUS)
 
         self.log.info("Verifying if the role %s was updated successfully for csm user %s",
                       user[2], username)
@@ -1116,10 +1116,10 @@ class TestCsmUser():
         response = self.csm_user.verify_modify_csm_user(
             user=username,
             payload_login=json.dumps(payload_login),
-            expect_status_code=self.csm_user.success_response,
+            expect_status_code=const.SUCCESS_STATUS,
             return_actual_response=True)
         assert_utils.assert_equals(
-            response.status_code, self.csm_user.success_response)
+            response.status_code, const.SUCCESS_STATUS)
         assert_utils.assert_equals(response.json()["roles"][0], user[2])
 
         self.log.info("Test Purpose 1: Verified status code %s was returned "
@@ -1141,7 +1141,7 @@ class TestCsmUser():
 
         response = self.csm_user.list_csm_single_user(
             request_type="patch",
-            expect_status_code=self.csm_user.success_response,
+            expect_status_code=const.SUCCESS_STATUS,
             user=userid,
             data=True,
             payload=json.dumps(payload),
@@ -1149,7 +1149,7 @@ class TestCsmUser():
 
         self.log.info("Verifying response code 200 was returned")
         assert_utils.assert_equals(
-            response.status_code, self.csm_user.success_response)
+            response.status_code, const.SUCCESS_STATUS)
 
         self.log.info("Verifying if the password %s was updated successfully "
                       "for csm user %s", user[3], username)
@@ -1162,10 +1162,10 @@ class TestCsmUser():
         response = self.csm_user.verify_modify_csm_user(
             user=username,
             payload_login=json.dumps(payload_login),
-            expect_status_code=self.csm_user.success_response,
+            expect_status_code=const.SUCCESS_STATUS,
             return_actual_response=True)
         assert_utils.assert_equals(
-            response.status_code, self.csm_user.success_response)
+            response.status_code, const.SUCCESS_STATUS)
 
         self.log.info("Test Purpose 2: Verified status code %s was returned along "
                       "with response %s", response.status_code, response.json())
@@ -1184,7 +1184,7 @@ class TestCsmUser():
         self.log.info(
             "Verifying if user was created successfully")
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_user.success_response_post)
+                                   const.SUCCESS_STATUS_FOR_POST)
         username = response.json()["username"]
         userid = response.json()["id"]
         self.log.info("User %s got created successfully", username)
@@ -1197,7 +1197,7 @@ class TestCsmUser():
 
         response = self.csm_user.list_csm_single_user(
             request_type="patch",
-            expect_status_code=self.csm_user.success_response,
+            expect_status_code=const.SUCCESS_STATUS,
             user=userid,
             data=True,
             payload=json.dumps(payload),
@@ -1205,7 +1205,7 @@ class TestCsmUser():
 
         self.log.info("Verifying response code 200 was returned")
         assert_utils.assert_equals(
-            response.status_code, self.csm_user.success_response)
+            response.status_code, const.SUCCESS_STATUS)
 
         self.log.info("Verifying if the role %s was updated successfully for csm user %s",
                       user[2], username)
@@ -1217,10 +1217,10 @@ class TestCsmUser():
         response = self.csm_user.verify_modify_csm_user(
             user=username,
             payload_login=json.dumps(payload_login),
-            expect_status_code=self.csm_user.success_response,
+            expect_status_code=const.SUCCESS_STATUS,
             return_actual_response=True)
         assert_utils.assert_equals(
-            response.status_code, self.csm_user.success_response)
+            response.status_code, const.SUCCESS_STATUS)
         assert_utils.assert_equals(response.json()["roles"][0], user[1])
 
         self.log.info("Test Purpose 3: Verified status code %s was returned along "
@@ -1241,7 +1241,7 @@ class TestCsmUser():
 
         response = self.csm_user.list_csm_single_user(
             request_type="patch",
-            expect_status_code=self.csm_user.success_response,
+            expect_status_code=const.SUCCESS_STATUS,
             user=userid,
             data=True,
             payload=json.dumps(payload),
@@ -1249,7 +1249,7 @@ class TestCsmUser():
 
         self.log.info("Verifying response code 200 was returned")
         assert_utils.assert_equals(
-            response.status_code, self.csm_user.success_response)
+            response.status_code, const.SUCCESS_STATUS)
 
         self.log.info("Verifying if the password %s was updated successfully "
                       "for csm user %s", user[3], username)
@@ -1263,10 +1263,10 @@ class TestCsmUser():
         response = self.csm_user.verify_modify_csm_user(
             user=username,
             payload_login=json.dumps(payload_login),
-            expect_status_code=self.csm_user.success_response,
+            expect_status_code=const.SUCCESS_STATUS,
             return_actual_response=True)
         assert_utils.assert_equals(
-            response.status_code, self.csm_user.success_response)
+            response.status_code, const.SUCCESS_STATUS)
 
         self.log.info("Test Purpose 4: Verified status code %s was returned "
                       "along with response %s", response.status_code, response.json())
@@ -1475,7 +1475,7 @@ class TestCsmUser():
         self.log.info("Sending the patch request for csm monitor user...")
         response = self.csm_user.list_csm_single_user(
             request_type="patch",
-            expect_status_code=self.csm_user.bad_request_response,
+            expect_status_code=const.BAD_REQUEST,
             user=username,
             data=True,
             payload=json.dumps(payload),
@@ -1484,7 +1484,7 @@ class TestCsmUser():
         self.log.info(
             "Verifying response returned for user %s", username)
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_user.bad_request_response)
+                                   const.BAD_REQUEST)
         assert_utils.assert_equals(response.json(),
                                    resp_msg)
 
@@ -1505,7 +1505,7 @@ class TestCsmUser():
         self.log.info("Sending the patch request for csm manage user...")
         response = self.csm_user.list_csm_single_user(
             request_type="patch",
-            expect_status_code=self.csm_user.bad_request_response,
+            expect_status_code=const.BAD_REQUEST,
             user=username,
             data=True,
             payload=json.dumps(payload),
@@ -1514,7 +1514,7 @@ class TestCsmUser():
         self.log.info(
             "Verifying response returned for user %s", username)
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_user.bad_request_response)
+                                   const.BAD_REQUEST)
         assert_utils.assert_equals(response.json(), resp_msg)
         self.log.info(
             "Step 2: Verified that csm manage user %s is not be able to modify "
@@ -1533,7 +1533,7 @@ class TestCsmUser():
         self.log.info("Sending the patch request for csm admin user...")
         response = self.csm_user.list_csm_single_user(
             request_type="patch",
-            expect_status_code=self.csm_user.bad_request_response,
+            expect_status_code=const.BAD_REQUEST,
             user=username,
             data=True,
             payload=json.dumps(payload),
@@ -1542,7 +1542,7 @@ class TestCsmUser():
         self.log.info(
             "Verifying response returned for user %s", username)
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_user.bad_request_response)
+                                   const.BAD_REQUEST)
         assert_utils.assert_equals(response.json(), resp_msg)
 
         self.log.info(
@@ -1689,7 +1689,7 @@ class TestCsmUser():
 
         self.log.info("Verifying that user was successfully created")
         assert (response.status_code ==
-                self.csm_user.success_response_post)
+                const.SUCCESS_STATUS_FOR_POST)
 
         self.log.info("Reading the username")
         username = response.json()["username"]
@@ -1698,12 +1698,12 @@ class TestCsmUser():
             "Sending request to delete csm user %s", username)
         response = self.csm_user.list_csm_single_user(
             request_type="delete",
-            expect_status_code=self.csm_user.success_response,
+            expect_status_code=const.SUCCESS_STATUS,
             user=username, return_actual_response=True)
 
         self.log.info("Verifying response returned")
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_user.success_response)
+                                   const.SUCCESS_STATUS)
         self.log.info("Verified success status %s is returned",
                       response.status_code)
 
@@ -1777,7 +1777,7 @@ class TestCsmUser():
 
         response = self.csm_user.list_csm_single_user(
             request_type="patch",
-            expect_status_code=self.csm_user.bad_request_response,
+            expect_status_code=const.BAD_REQUEST,
             user="csm_user_manage",
             data=True,
             payload=json.dumps(payload),
@@ -1786,7 +1786,7 @@ class TestCsmUser():
         self.log.info("Verifying the status code returned : %s",
                       response.status_code)
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_user.bad_request_response)
+                                   const.BAD_REQUEST)
         self.log.info("Verified the status code returned")
 
         self.log.info(
@@ -1922,7 +1922,7 @@ class TestCsmUser():
                           data[f'payload_invalid_password_{str(i)}'])
             response = self.csm_user.list_csm_single_user(
                 request_type="patch",
-                expect_status_code=self.csm_user.bad_request_response,
+                expect_status_code=const.BAD_REQUEST,
                 user="csm_user_manage",
                 data=True,
                 payload=json.dumps(data[f'payload_invalid_password_{str(i)}']),
@@ -1931,7 +1931,7 @@ class TestCsmUser():
             self.log.info("Verifying the returned status code: %s and response:"
                           " %s ", response.status_code, response.json())
             assert_utils.assert_equals(response.status_code,
-                                       self.csm_user.bad_request_response)
+                                       const.BAD_REQUEST)
             assert_utils.assert_equals(
                 response.json(), data[f'invalid_password_resp_{str(i)}'])
 
@@ -1947,7 +1947,7 @@ class TestCsmUser():
                       data["invalid_role_resp"])
         response = self.csm_user.list_csm_single_user(
             request_type="patch",
-            expect_status_code=self.csm_user.bad_request_response,
+            expect_status_code=const.BAD_REQUEST,
             user="csm_user_manage", data=True,
             payload=json.dumps(data["payload_invalid_role"]),
             return_actual_response=True)
@@ -1955,7 +1955,7 @@ class TestCsmUser():
         self.log.info("Verifying the returned status code: %s and response: %s ",
                       response.status_code, response.json())
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_user.bad_request_response)
+                                   const.BAD_REQUEST)
         assert_utils.assert_equals(response.json(), data["invalid_role_resp"])
 
         self.log.info(
@@ -1970,7 +1970,7 @@ class TestCsmUser():
                       data["payload_invalid_password_role"])
         response = self.csm_user.list_csm_single_user(
             request_type="patch",
-            expect_status_code=self.csm_user.bad_request_response,
+            expect_status_code=const.BAD_REQUEST,
             user="csm_user_manage",
             data=True,
             payload=json.dumps(data["payload_invalid_password_role"]),
@@ -1979,7 +1979,7 @@ class TestCsmUser():
         self.log.info("Verifying the returned status code: %s and response: %s",
                       response.status_code, response.json())
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_user.bad_request_response)
+                                   const.BAD_REQUEST)
 
         data_new1 = response.json()["message"].split(':')
         data_new2 = data_new1[1].split('{')
@@ -2029,13 +2029,13 @@ class TestCsmUser():
 
         response = self.csm_user.list_csm_single_user(
             request_type="patch",
-            expect_status_code=self.csm_user.success_response,
+            expect_status_code=const.SUCCESS_STATUS,
             user=username, data=True, payload=json.dumps(payload_user),
             return_actual_response=True, login_as="csm_admin_user")
 
         self.log.info("Verifying response code 200 was returned")
         assert_utils.assert_equals(
-            response.status_code, self.csm_user.success_response)
+            response.status_code, const.SUCCESS_STATUS)
         self.log.info("Verified response code 200 was returned")
 
         self.log.info("Verifying if the password %s was updated successfully "
@@ -2066,7 +2066,7 @@ class TestCsmUser():
             username, data[0], old_password, return_actual_response=True)
         self.log.info("Verifying response code 200 was returned")
         assert_utils.assert_equals(
-            response.status_code, self.csm_user.success_response)
+            response.status_code, const.SUCCESS_STATUS)
 
         self.log.info(
             "Step 1: Verified that CSM admin user should not be able to login"
@@ -2090,7 +2090,7 @@ class TestCsmUser():
 
         response = self.csm_user.list_csm_single_user(
             request_type="patch",
-            expect_status_code=self.csm_user.success_response,
+            expect_status_code=const.SUCCESS_STATUS,
             user=username,
             data=True,
             payload=json.dumps(payload_user),
@@ -2099,7 +2099,7 @@ class TestCsmUser():
 
         self.log.info("Verifying response code 200 was returned")
         assert_utils.assert_equals(
-            response.status_code, self.csm_user.success_response)
+            response.status_code, const.SUCCESS_STATUS)
         self.log.info("Verifying response code 200 was returned")
 
         self.log.info("Verifying if the password %s was updated successfully "
@@ -2111,10 +2111,10 @@ class TestCsmUser():
         response = self.csm_user.verify_modify_csm_user(
             user=username,
             payload_login=json.dumps(payload_login),
-            expect_status_code=self.csm_user.success_response,
+            expect_status_code=const.SUCCESS_STATUS,
             return_actual_response=True)
         assert_utils.assert_equals(
-            response.status_code, self.csm_user.success_response)
+            response.status_code, const.SUCCESS_STATUS)
 
         self.log.info("Verified login with new password was successful with "
                       "status code %s and response %s", response.status_code, response.json())
@@ -2143,7 +2143,7 @@ class TestCsmUser():
             username, data[0], old_password, return_actual_response=True)
         self.log.info("Verifying response code 200 was returned")
         assert_utils.assert_equals(
-            response.status_code, self.csm_user.success_response)
+            response.status_code, const.SUCCESS_STATUS)
         self.log.info("Verified response code 200 was returned")
 
         self.log.info(
@@ -2168,7 +2168,7 @@ class TestCsmUser():
 
         response = self.csm_user.list_csm_single_user(
             request_type="patch",
-            expect_status_code=self.csm_user.success_response,
+            expect_status_code=const.SUCCESS_STATUS,
             user=username,
             data=True,
             payload=json.dumps(payload_user),
@@ -2177,7 +2177,7 @@ class TestCsmUser():
 
         self.log.info("Verifying response code 200 was returned")
         assert_utils.assert_equals(
-            response.status_code, self.csm_user.success_response)
+            response.status_code, const.SUCCESS_STATUS)
         self.log.info("Verified response code 200 was returned")
 
         self.log.info("Verifying if the password %s was updated successfully "
@@ -2189,10 +2189,10 @@ class TestCsmUser():
         response = self.csm_user.verify_modify_csm_user(
             user=username,
             payload_login=json.dumps(payload_login),
-            expect_status_code=self.csm_user.success_response,
+            expect_status_code=const.SUCCESS_STATUS,
             return_actual_response=True)
         assert_utils.assert_equals(
-            response.status_code, self.csm_user.success_response)
+            response.status_code, const.SUCCESS_STATUS)
 
         self.log.info("Verified login with new password was successful with "
                       "status code %s and response %s",
@@ -2221,7 +2221,7 @@ class TestCsmUser():
             username, data[0], old_password, return_actual_response=True)
         self.log.info("Verifying response code 200 was returned")
         assert_utils.assert_equals(
-            response.status_code, self.csm_user.success_response)
+            response.status_code, const.SUCCESS_STATUS)
         self.log.info("Verified response code 200 was returned")
 
         self.log.info(
@@ -2256,7 +2256,7 @@ class TestCsmUser():
         self.log.info(
             "Verifying IAM user %s creation was successful", new_iam_user)
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_user.success_response)
+                                   const.SUCCESS_STATUS)
         self.log.info(
             "Verified IAM user %s creation was successful", new_iam_user)
 
@@ -2437,7 +2437,7 @@ class TestCsmUser():
         self.log.info(
             "Verifying if user was created successfully")
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_user.success_response_post)
+                                   const.SUCCESS_STATUS_FOR_POST)
         self.log.info(
             "Verified user was created successfully")
         userid = response.json()["id"]
@@ -2600,7 +2600,7 @@ class TestCsmUser():
 
         self.log.debug("Verifying S3 bucket was created successfully")
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_user.success_response)
+                                   const.SUCCESS_STATUS)
         self.log.debug("Verified S3 bucket %s was created successfully",
                        response.json()['bucket_name'])
         bucket_name = response.json()['bucket_name']
@@ -2734,7 +2734,7 @@ class TestCsmUser():
 
         self.log.info(
             "Verifying if user was created successfully")
-        assert response.status_code == self.csm_user.success_response_post
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         username = response.json()["username"]
         userid = response.json()["id"]
         self.log.info(
@@ -2747,13 +2747,13 @@ class TestCsmUser():
         payload_user = {"roles": [data[2]], "password": data[3]}
         response = self.csm_user.list_csm_single_user(
             request_type="patch",
-            expect_status_code=self.csm_user.success_response,
+            expect_status_code=const.SUCCESS_STATUS,
             user=userid,
             data=True,
             payload=json.dumps(payload_user),
             return_actual_response=True)
         self.log.info("Verifying response code 200 was returned")
-        assert response.status_code == self.csm_user.success_response
+        assert response.status_code == const.SUCCESS_STATUS
 
         self.log.info("Verifying if the password %s and role %s was updated "
                       "successfully for csm user %s", data[3], data[2], username)
@@ -2762,9 +2762,9 @@ class TestCsmUser():
         payload_login = {"username": username, "password": data[3]}
         response = self.csm_user.verify_modify_csm_user(
             user=username, payload_login=json.dumps(payload_login),
-            expect_status_code=self.csm_user.success_response,
+            expect_status_code=const.SUCCESS_STATUS,
             return_actual_response=True)
-        assert response.status_code == self.csm_user.success_response
+        assert response.status_code == const.SUCCESS_STATUS
         assert response.json()["roles"][0] == data[2]
 
         self.log.info("Verified login with new password was successful with "

@@ -30,14 +30,14 @@ class RestAuditLogs(Base):
         """
         try:
             # Building request url
-            self._log.info("Show audit logs for csm")
+            self.log.info("Show audit logs for csm")
             if not invalid_component:
                 endpoint = self.config["audit_logs_show_endpoint"].format(
                     self.component_csm)
             else:
                 endpoint = self.config["audit_logs_show_endpoint"].format(
                     self.invalid_component)
-            self._log.info(
+            self.log.info(
                 "Endpoint for csm show audit logs is %s", endpoint)
 
             self.headers.update(self.config["Login_headers"])
@@ -46,8 +46,8 @@ class RestAuditLogs(Base):
                 headers=self.headers,
                 params=params)
         except BaseException as error:
-            self._log.error("%s %s: %s",
-                self.exception_error,
+            self.log.error("%s %s: %s",
+                const.EXCEPTION_ERROR,
                 RestAuditLogs.audit_logs_csm_show.__name__,
                 error)
             raise CTException(
@@ -76,7 +76,7 @@ class RestAuditLogs(Base):
             response = self.audit_logs_csm_show(
                 login_as=login_as, params=params, invalid_component=invalid_component)
             if response.status_code != expected_status_code:
-                self._log.error(
+                self.log.error(
                     "Response is not 200, Response=%s",
                         response.status_code)
                 return False
@@ -99,7 +99,7 @@ class RestAuditLogs(Base):
                         retval = True
                         for i in pattern1:
                             if i not in element:
-                                self._log.error(
+                                self.log.error(
                                     "Values does not match for get %s", element)
                                 retval = False
                                 break
@@ -107,21 +107,21 @@ class RestAuditLogs(Base):
                         if not retval:
                             for i in pattern3:
                                 if i not in element:
-                                    self._log.error(
+                                    self.log.error(
                                         "Values does not match for get %s", element)
                                     return False
 
                     elif 'Method:POST' in element:
                         for i in pattern2:
                             if i not in element:
-                                self._log.error(
+                                self.log.error(
                                     "Values does not match for post %s", element)
                                 return False
             return True
 
         except BaseException as error:
-            self._log.error("%s %s: %s",
-                self.exception_error,
+            self.log.error("%s %s: %s",
+                const.EXCEPTION_ERROR,
                 RestAuditLogs.verify_audit_logs_csm_show.__name__,
                 error)
             raise CTException(
@@ -139,14 +139,14 @@ class RestAuditLogs(Base):
         """
         try:
             # Building request url
-            self._log.info("Download audit logs for csm")
+            self.log.info("Download audit logs for csm")
             if not invalid_component:
                 endpoint = self.config["audit_logs_download_endpoint"].format(
                     self.component_csm)
             else:
                 endpoint = self.config["audit_logs_download_endpoint"].format(
                     self.invalid_component)
-            self._log.info(
+            self.log.info(
                 "Endpoint for csm download audit logs is %s", endpoint)
 
             self.headers.update(self.config["Login_headers"])
@@ -155,8 +155,8 @@ class RestAuditLogs(Base):
                                             headers=self.headers,
                                             params=params)
         except BaseException as error:
-            self._log.error("%s %s: %s",
-                self.exception_error,
+            self.log.error("%s %s: %s",
+                const.EXCEPTION_ERROR,
                 RestAuditLogs.audit_logs_csm_download.__name__,
                 error)
             raise CTException(
@@ -188,7 +188,7 @@ class RestAuditLogs(Base):
             response = self.audit_logs_csm_download(
                 login_as=login_as, params=params, invalid_component=invalid_component)
             if response.status_code != expected_status_code:
-                self._log.error(
+                self.log.error(
                     "Response is not 200, Response=%s",
                         response.status_code)
                 return False
@@ -201,13 +201,13 @@ class RestAuditLogs(Base):
                 exp_response = {
                     "Message": "Audit logs for csm downloaded Successfully."}
                 if response != exp_response:
-                    self._log.error("Values does not match ")
+                    self.log.error("Values does not match ")
                     return False
             return True
 
         except BaseException as error:
-            self._log.error("%s %s: %s",
-                self.exception_error,
+            self.log.error("%s %s: %s",
+                const.EXCEPTION_ERROR,
                 RestAuditLogs.verify_audit_logs_csm_download.__name__,
                 error)
             raise CTException(
@@ -223,10 +223,10 @@ class RestAuditLogs(Base):
         """
         try:
             # Building request url
-            self._log.info("Show audit logs for s3")
+            self.log.info("Show audit logs for s3")
             endpoint = self.config["audit_logs_show_endpoint"].format(
                 self.component_s3)
-            self._log.info(
+            self.log.info(
                 "Endpoint for s3 show audit logs is %s", endpoint)
 
             self.headers.update(self.config["Login_headers"])
@@ -235,8 +235,8 @@ class RestAuditLogs(Base):
                                             headers=self.headers,
                                             params=params)
         except BaseException as error:
-            self._log.error("%s %s: %s",
-                self.exception_error,
+            self.log.error("%s %s: %s",
+                const.EXCEPTION_ERROR,
                 RestAuditLogs.audit_logs_s3_show.__name__,
                 error)
             raise CTException(
@@ -264,224 +264,224 @@ class RestAuditLogs(Base):
             response = self.audit_logs_s3_show(
                 login_as=login_as, params=params)
             if response.status_code != expected_status_code:
-                self._log.error(
+                self.log.error(
                     "Response is not 200, Response=%s",
                         response.status_code)
                 return False
 
             # Validating response value
             if validate_expected_response:
-                self._log.info("Reading Audit log show API response...")
+                self.log.info("Reading Audit log show API response...")
                 response = response.json()
                 for element in response:
                     if "SigV4" in element:
                         item = element.split(" ")
                         if bucket:
                             if item[1] == bucket:
-                                self._log.info(
+                                self.log.info(
                                     "Verifying bucket specific parameters for"
                                     "bucket %s in the audit log", bucket)
                                 verification_status = True
                                 if item[6] != "REST.PUT.BUCKET":
-                                    self._log.debug(
+                                    self.log.debug(
                                         "Operation parameter value returned is:"
                                         " %s", item[6])
-                                    self._log.error(
+                                    self.log.error(
                                         "Operation parameter value does not "
                                         "match with the expected Operation")
                                     verification_status = False
                                 else:
-                                    self._log.info(
+                                    self.log.info(
                                         "Operation parameter value matched with"
                                         " the expected Operation")
                                 if item[7] != f"{bucket}/":
-                                    self._log.debug(
+                                    self.log.debug(
                                         "Key parameter value returned is: %s", item[7])
-                                    self._log.error(
+                                    self.log.error(
                                         "Key parameter value does not match with"
                                         " the expected Key")
                                     verification_status = False
                                 else:
-                                    self._log.info(
+                                    self.log.info(
                                         "Key parameter value matched with the expected Key")
                                 if item[8] != "PUT" and item[9] != f"/{bucket}":
-                                    self._log.debug("Request URI parameter value"
+                                    self.log.debug("Request URI parameter value"
                                     " returned is: %s %s", item[8], item[9])
-                                    self._log.error(
+                                    self.log.error(
                                         "Request URI parameter value does not "
                                         "match with the expected Request URI")
                                     verification_status = False
                                 else:
-                                    self._log.info(
+                                    self.log.info(
                                         "Request URI parameter value matched "
                                         "with the expected Request URI")
                                 if not verification_status:
-                                    self._log.error("Values does not match ")
+                                    self.log.error("Values does not match ")
                                     return False
 
                         #------# Commenting below code till EOS-14998 is resolved #----------------#
                                 # if item[10] != 200:
-                                #     self._log.debug(
+                                #     self.log.debug(
                                 #         "HTTP status parameter value returned"
                                 # " is: %s", item[10])
-                                #     self._log.error(
+                                #     self.log.error(
                                 #         "HTTP status parameter value does not"
                                 # " match with the expected HTTP Status")
                                 #     verification_status = False
                                 # else:
-                                #     self._log.info(
+                                #     self.log.info(
                                 #         "HTTP status parameter value matched "
                                 # "with the expected HTTP Status")
                                 # if item[11] != "-":
-                                #     self._log.debug(
+                                #     self.log.debug(
                                 #         "Error Code parameter value returned"
                                 # " is: %s", item[11])
-                                #     self._log.error(
+                                #     self.log.error(
                                 #         "Error Code parameter value does not "
                                 # "match with the expected Error Code")
                                 #     verification_status = False
                                 # else:
-                                #     self._log.info(
+                                #     self.log.info(
                                 #         "Error Code parameter value matched "
                                 # "with the expected Error Code")
                                 # if not verification_status:
-                                #     self._log.error("Values does not match ")
+                                #     self.log.error("Values does not match ")
                                 #     return False
 
-                        # self._log.info(
+                        # self.log.info(
                         #     "Verifying parameters for all the logs in the S3 "
                         # "audit log")
 
                         # verification_status = True
 
                         # if not item[0]:
-                        #     self._log.error(
+                        #     self.log.error(
                         #         "Bucket owner parameter value is not present")
-                        #         self._log.debug(
+                        #         self.log.debug(
                         #                 "Bucket owner parameter value "
                         # "returned is: %s", item[0])
                         #     verification_status = False
                         # else:
-                        #     self._log.info(
+                        #     self.log.info(
                         #         "Bucket owner parameter value is present")
 
                         # if "REST" not in item[6]:
-                        #     self._log.debug(
+                        #     self.log.debug(
                         #                 "Operation parameter value returned "
                         # "is: %s", item[6])
-                        #     self._log.error(
+                        #     self.log.error(
                         #         "Operation parameter value does not match "
                         # "with the expected Operation")
                         #     verification_status = False
                         # else:
-                        #     self._log.info(
+                        #     self.log.info(
                         #         "Operation parameter value matched with the "
                         # "expected Operation")
                         # if item[16] != "-":
-                        #     self._log.debug(
+                        #     self.log.debug(
                         #         "Referrer parameter value returned is: %s",
                         # item[16])
-                        #     self._log.error(
+                        #     self.log.error(
                         #         "Referrer parameter value does not match with"
                         # " the expected Referrer")
                         #     verification_status = False
                         # else:
-                        #     self._log.info(
+                        #     self.log.info(
                         #         "Referrer parameter value matched with the "
                         # "expected Referrer")
                         # if not item[17]:
-                        #     self._log.debug(
+                        #     self.log.debug(
                         #                 "User agent parameter value returned "
                         # "is: %s", item[17])
-                        #     self._log.error(
+                        #     self.log.error(
                         #         "User agent parameter value nto present")
                         #     verification_status = False
                         # else:
-                        #     self._log.info(
+                        #     self.log.info(
                         #         "User agent parameter value is present")
 
                         # if item[-6] != "":
-                        #     self._log.debug(
+                        #     self.log.debug(
                         #                 "Version id parameter value returned "
                         # "is: %s", item[-6])
-                        #     self._log.error(
+                        #     self.log.error(
                         #         "Version Id parameter value does not match "
                         # "with the expected Version Id")
                         #     verification_status = False
                         # else:
-                        #     self._log.info(
+                        #     self.log.info(
                         #         "Version Id parameter value matched with the "
                         # "expected Version Id")
 
                         # if item[-5] != "-":
-                        #     self._log.debug(
+                        #     self.log.debug(
                         #                 "Host Id parameter value returned is:"
                         # " %s", item[-5])
-                        #     self._log.error(
+                        #     self.log.error(
                         #         "Host Id parameter value does not match with"
                         # " the expected Host Id")
                         #     verification_status = False
                         # else:
-                        #     self._log.info(
+                        #     self.log.info(
                         #         "Host Id parameter value matched with the "
                         # "expected Host Id")
                         # if item[-4] != "SigV4":
-                        #     self._log.debug(
+                        #     self.log.debug(
                         #                 "Signature Version parameter value "
                         # "returned is: %s", item[-4])
-                        #     self._log.error(
+                        #     self.log.error(
                         #         "Signature Version parameter value does not "
                         # "match with the expected Signature Version")
                         #     verification_status = False
                         # else:
-                        #     self._log.info(
+                        #     self.log.info(
                         #         "Signature Version parameter value matched "
                         # "with the expected Signature Version")
                         # if item[-3] != "-":
-                        #     self._log.debug(
+                        #     self.log.debug(
                         #                 "Cipher Suite parameter value "
                         # "returned is: %s", item[-3])
-                        #     self._log.error(
+                        #     self.log.error(
                         #         "Cipher Suite parameter value does not match "
                         # "with the expected Cipher Suite")
                         #     verification_status = False
                         # else:
-                        #     self._log.info(
+                        #     self.log.info(
                         #         "Cipher Suite parameter value matched with "
                         # "the expected Cipher Suite")
                         # if item[-2] != "AuthHeader":
-                        #     self._log.debug(
+                        #     self.log.debug(
                         #                 "Authentication type parameter value"
                         # " returned is: %s", item[-2])
-                        #     self._log.info(
+                        #     self.log.info(
                         #         "Authentication type parameter value does not"
                         # " match with the expected Authentication Type")
                         #     verification_status = False
                         # else:
-                        #     self._log.info(
+                        #     self.log.info(
                         #         "Authentication type parameter value matched "
                         # "with the expected Authentication Type")
                         # if not verification_status:
-                        #     self._log.error("Values does not match ")
+                        #     self.log.error("Values does not match ")
                         #     return False
                         # if not item[-1]:
-                        #     self._log.debug(
+                        #     self.log.debug(
                         #                 "Host Header parameter value returned"
                         # " is: %s", item[-1])
-                        #     self._log.error(
+                        #     self.log.error(
                         #         "Host Header parameter value is not present")
                         #     verification_status = False
                         # else:
-                        #     self._log.info(
+                        #     self.log.info(
                         #         "Host Header parameter value is present")
                         # if not verification_status:
-                        #     self._log.error("Values does not match ")
+                        #     self.log.error("Values does not match ")
                         #     return False
             return True
 
         except BaseException as error:
-            self._log.error("%s %s: %s",
-                self.exception_error,
+            self.log.error("%s %s: %s",
+                const.EXCEPTION_ERROR,
                 RestAuditLogs.verify_audit_logs_s3_show.__name__,
                 error)
             raise CTException(
@@ -497,10 +497,10 @@ class RestAuditLogs(Base):
         """
         try:
             # Building request url
-            self._log.info("Download audit logs for s3")
+            self.log.info("Download audit logs for s3")
             endpoint = self.config["audit_logs_download_endpoint"].format(
                 self.component_s3)
-            self._log.info(
+            self.log.info(
                 "Endpoint for s3 download audit logs is %s", endpoint)
 
             self.headers.update(self.config["Login_headers"])
@@ -509,8 +509,8 @@ class RestAuditLogs(Base):
                 headers=self.headers,
                 params=params)
         except BaseException as error:
-            self._log.error("%s %s: %s",
-                self.exception_error,
+            self.log.error("%s %s: %s",
+                const.EXCEPTION_ERROR,
                 RestAuditLogs.audit_logs_s3_download.__name__,
                 error)
             raise CTException(
@@ -539,7 +539,7 @@ class RestAuditLogs(Base):
             response = self.audit_logs_s3_download(
                 login_as=login_as, params=params)
             if response.status_code != expected_status_code:
-                self._log.error(
+                self.log.error(
                     "Response is not 200, Response=%s",
                         response.status_code)
                 return False
@@ -552,13 +552,13 @@ class RestAuditLogs(Base):
                 exp_response = {
                     "Message": "Audit logs for s3 downloaded Successfully."}
                 if response != exp_response:
-                    self._log.error("Values does not match ")
+                    self.log.error("Values does not match ")
                     return False
             return True
 
         except BaseException as error:
-            self._log.error("%s %s: %s",
-                self.exception_error,
+            self.log.error("%s %s: %s",
+                const.EXCEPTION_ERROR,
                 RestAuditLogs.verify_audit_logs_s3_download.__name__,
                 error)
             raise CTException(
@@ -576,23 +576,23 @@ class RestAuditLogs(Base):
         :rtype: bool
         """
         try:
-            self._log.info(
+            self.log.info(
                 "Reading the file name from the audit log download api response")
             filename = []
             cndp = audit_log_download_response.headers.get('content-disposition')
             if not cndp:
-                self._log.info("No file to download")
+                self.log.info("No file to download")
                 return False
             else:
                 filename = re.findall('filename=(.+)', cndp)
             if len(filename) == 0:
-                self._log.info("No file to download")
+                self.log.info("No file to download")
                 return False
 
             filename[0] = filename[0].strip('\"')
-            self._log.info("The filename is : %s", filename[0])
+            self.log.info("The filename is : %s", filename[0])
 
-            self._log.info("Downloading the tar file to tempdownload folder")
+            self.log.info("Downloading the tar file to tempdownload folder")
             download_folder_path = f"{Path.home()}/tempdownload"
             if not os.path.exists(download_folder_path):
                 os.mkdir(download_folder_path)
@@ -601,73 +601,73 @@ class RestAuditLogs(Base):
             file_obj.write(audit_log_download_response.content)
             file_obj.close()
 
-            self._log.info(
+            self.log.info(
                 "Path to the downloaded file is: %s", file_path)
 
-            self._log.info("File that will be extracted will be txt file")
+            self.log.info("File that will be extracted will be txt file")
             base = os.path.basename(file_path)
             file_name = os.path.splitext(base)[0]
             file_name = os.path.splitext(file_name)[0]
-            self._log.info(file_name)
+            self.log.info(file_name)
 
             extract_file = f"{file_name}.txt"
-            self._log.info("File to be extracted is :%s", extract_file)
+            self.log.info("File to be extracted is :%s", extract_file)
 
-            self._log.info("Extracting the file")
+            self.log.info("Extracting the file")
             downloaded_tar_file = tarfile.open(file_path)
             downloaded_tar_file.extract(extract_file, download_folder_path)
             downloaded_tar_file.close()
 
-            self._log.info("Reading the txt file content into a list")
+            self.log.info("Reading the txt file content into a list")
             text_file_path = f"{download_folder_path}/{extract_file}"
             text_file = open(text_file_path, "r")
             extracted_file_content = text_file.read().splitlines()
             text_file.close()
 
-            self._log.info("audit_log_show_response.json() length is: %s",
+            self.log.info("audit_log_show_response.json() length is: %s",
                 len(audit_log_show_response.json()))
-            self._log.info("extracted_file_content length is: %s",
+            self.log.info("extracted_file_content length is: %s",
                 len(extracted_file_content))
 
-            self._log.info(
+            self.log.info(
                 "Comparing the contents of audit log show api and audit log download api response")
             if len(audit_log_show_response.json()) == len(extracted_file_content):
                 if audit_log_show_response.json() == extracted_file_content:
-                    self._log.info(
+                    self.log.info(
                         "The audit log show api content and audit log download"
                         " api content content match exactly! ")
-                    self._log.info(
+                    self.log.info(
                         "Deleting the files and the temporary directory...")
                     shutil.rmtree(download_folder_path)
                     return True
                 else:
-                    self._log.info(
+                    self.log.info(
                         "Ignoring the first 2 and that last 2 records from show"
                         " api response and verifying if the remaining ones match")
                     log_content = audit_log_show_response.json(
                     )[2:len(audit_log_show_response.json())-3]
                     if all(x in extracted_file_content for x in log_content):
-                        self._log.info(
+                        self.log.info(
                             "The audit log show api content and audit log"
                             " download api content content match exactly! ")
-                        self._log.info(
+                        self.log.info(
                             "Deleting the files and the temporary directory...")
                         shutil.rmtree(download_folder_path)
                         return True
                     else:
-                        self._log.debug("Audit log show API response is: %s",
+                        self.log.debug("Audit log show API response is: %s",
                             audit_log_show_response.json())
-                        self._log.debug("Audit log download API response is: %s",
+                        self.log.debug("Audit log download API response is: %s",
                             extracted_file_content)
-                        self._log.error("Error: Logs did not match!!")
-                        self._log.info(
+                        self.log.error("Error: Logs did not match!!")
+                        self.log.info(
                             "Deleting the files and the temporary directory...")
                         shutil.rmtree(download_folder_path)
                         return False
             val = 0
             if len(audit_log_show_response.json()) != len(extracted_file_content):
                 if len(audit_log_show_response.json()) > len(extracted_file_content):
-                    self._log.info(
+                    self.log.info(
                         "The audit log show response content count is greater "
                         "than audit log download content count. Comparing the "
                         "content of audit log download with audit log show "
@@ -679,25 +679,25 @@ class RestAuditLogs(Base):
                                 break
                     if (val == len(extracted_file_content) or
                         val == len(audit_log_show_response.json())):
-                        self._log.info(
+                        self.log.info(
                             "The audit log download content match with the "
                             "audit log show api content")
-                        self._log.info(
+                        self.log.info(
                             "Deleting the files and the temporary directory...")
                         shutil.rmtree(download_folder_path)
                         return True
                     else:
-                        self._log.debug("Audit log show API response is: %s",
+                        self.log.debug("Audit log show API response is: %s",
                             audit_log_show_response.json())
-                        self._log.debug("Audit log download API response is: %s",
+                        self.log.debug("Audit log download API response is: %s",
                             extracted_file_content)
-                        self._log.error("Error: Logs did not match!!")
-                        self._log.info(
+                        self.log.error("Error: Logs did not match!!")
+                        self.log.info(
                             "Deleting the files and the temporary directory...")
                         shutil.rmtree(download_folder_path)
                         return False
                 if len(extracted_file_content) > len(audit_log_show_response.json()):
-                    self._log.info(
+                    self.log.info(
                         "The audit log download response content count is "
                         "greater than audit log show content count. Comparing "
                         "the content of audit log show with audit log download "
@@ -709,26 +709,26 @@ class RestAuditLogs(Base):
                                 break
                     if (val == len(extracted_file_content) or
                         val == len(audit_log_show_response.json())):
-                        self._log.info(
+                        self.log.info(
                             "The audit log show api content match with the "
                             "audit log download api content")
-                        self._log.info(
+                        self.log.info(
                             "Deleting the files and the temporary directory...")
                         shutil.rmtree(download_folder_path)
                         return True
                     else:
-                        self._log.debug("Audit log show API response is: %s",
+                        self.log.debug("Audit log show API response is: %s",
                             audit_log_show_response.json())
-                        self._log.debug("Audit log download API response is: %s",
+                        self.log.debug("Audit log download API response is: %s",
                             extracted_file_content)
-                        self._log.error("Error: Logs did not match!!")
-                        self._log.info(
+                        self.log.error("Error: Logs did not match!!")
+                        self.log.info(
                             "Deleting the files and the temporary directory...")
                         shutil.rmtree(download_folder_path)
                         return False
         except BaseException as error:
-            self._log.error("%s %s: %s",
-                self.exception_error,
+            self.log.error("%s %s: %s",
+                const.EXCEPTION_ERROR,
                 RestAuditLogs.verify_audit_logs_show_download.__name__,
                 error)
             raise CTException(

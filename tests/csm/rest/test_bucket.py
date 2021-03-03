@@ -28,7 +28,7 @@ from libs.csm.csm_setup import CSMConfigsCheck
 from commons.utils import config_utils
 from commons.utils import assert_utils
 from commons import cortxlogging
-
+from commons.constants import Rest as const
 class TestS3Bucket():
     """ S3 bucket test cases"""
     @classmethod
@@ -56,7 +56,7 @@ class TestS3Bucket():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         assert self.s3_buckets.create_and_verify_new_bucket(
-            self.s3_buckets.success_response)
+            const.SUCCESS_STATUS)
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
@@ -68,7 +68,7 @@ class TestS3Bucket():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         assert self.s3_buckets.create_and_verify_new_bucket(
-            self.s3_buckets.bad_request_response, bucket_type="bucket_name_less_than_three_char")
+            const.BAD_REQUEST, bucket_type="bucket_name_less_than_three_char")
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
@@ -80,7 +80,7 @@ class TestS3Bucket():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         assert self.s3_buckets.create_and_verify_new_bucket(
-            self.s3_buckets.bad_request_response, bucket_type="bucket_name_more_than_63_char")
+            const.BAD_REQUEST, bucket_type="bucket_name_more_than_63_char")
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
@@ -93,11 +93,11 @@ class TestS3Bucket():
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("checking for bucket name start_with_underscore")
         start_with_underscore = self.s3_buckets.create_and_verify_new_bucket(
-            self.s3_buckets.bad_request_response, bucket_type="start_with_underscore")
+            const.BAD_REQUEST, bucket_type="start_with_underscore")
         self.log.info("The status for bucket name start_with_underscore is %s",
             start_with_underscore)
         start_with_uppercase = self.s3_buckets.create_and_verify_new_bucket(
-            self.s3_buckets.bad_request_response, bucket_type="start_with_uppercase")
+            const.BAD_REQUEST, bucket_type="start_with_uppercase")
         self.log.info("The status for bucket name start_with_uppercase is %s",
             start_with_uppercase)
         assert start_with_uppercase and start_with_underscore
@@ -125,7 +125,7 @@ class TestS3Bucket():
         self.log.info("Verifying the status code %s and response returned %s",
             response.status_code, response.json())
         assert_utils.assert_equals(response.status_code,
-                                   self.s3_buckets.bad_request_response)
+                                   const.BAD_REQUEST)
         assert_utils.assert_equals(response.json(),
                                    resp_msg)
 
@@ -140,7 +140,7 @@ class TestS3Bucket():
         self.log.info("Verifying the status code %s and response returned %s",
             response.status_code, response.json())
         assert_utils.assert_equals(response.status_code,
-                                   self.s3_buckets.bad_request_response)
+                                   const.BAD_REQUEST)
         assert_utils.assert_equals(response.json(),
                                    resp_msg)
 
@@ -160,7 +160,7 @@ class TestS3Bucket():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         assert self.s3_buckets.create_and_verify_new_bucket(
-            self.s3_buckets.bad_request_response, bucket_type="ip_address")
+            const.BAD_REQUEST, bucket_type="ip_address")
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
@@ -185,7 +185,7 @@ class TestS3Bucket():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         assert self.s3_buckets.create_and_verify_new_bucket(
-            self.s3_buckets.conflict_response, bucket_type="duplicate")
+            const.CONFLICT, bucket_type="duplicate")
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
@@ -197,7 +197,7 @@ class TestS3Bucket():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         assert self.s3_buckets.create_and_verify_new_bucket(
-            self.s3_buckets.bad_request_response, bucket_type="invalid")
+            const.BAD_REQUEST, bucket_type="invalid")
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
@@ -246,7 +246,7 @@ class TestS3Bucket():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         assert self.s3_buckets.delete_and_verify_new_bucket(
-            self.s3_buckets.success_response)
+            const.SUCCESS_STATUS)
 
     @pytest.mark.parallel
     @pytest.mark.csmrest

@@ -19,22 +19,22 @@ class SystemCapacity(RestTestLib):
         """
         try:
             # Building request url
-            self._log.info("Reading System Capacity...")
+            self.log.info("Reading System Capacity...")
             endpoint = self.config["capacity_endpoint"]
-            self._log.info(
+            self.log.info(
                 "Endpoint for reading capacity is {}".format(endpoint))
 
             # Fetching api response
             response = self.restapi.rest_call(request_type="get",
                                               endpoint=endpoint,
                                               headers=self.headers)
-            self._log.info(
+            self.log.info(
                 "CSM REST response returned is:\n %s", response.json())
             return response
 
         except BaseException as error:
-            self._log.error("%s %s: %s",
-                self.exception_error,
+            self.log.error("%s %s: %s",
+                const.EXCEPTION_ERROR,
                 SystemCapacity.get_capacity_usage.__name__,
                 error)
             raise CTException(
@@ -48,9 +48,9 @@ class SystemCapacity(RestTestLib):
         """
         response = self.get_capacity_usage()
         if response.status_code == expected_response:
-            self._log.info("Expected response check Passed.")
+            self.log.info("Expected response check Passed.")
         else:
-            self._log.error("Expected response check Failed.")
+            self.log.error("Expected response check Failed.")
             return False
 
         response_json = response.json()
