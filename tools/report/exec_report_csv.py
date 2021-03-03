@@ -25,7 +25,9 @@ from collections import Counter
 
 from jira import JIRA
 
+import common
 import jira_api
+import mongodb_api
 
 
 def prepare_feature_data(total_count, pass_count, fail_count):
@@ -111,27 +113,58 @@ def get_code_maturity_data(test_plan: str, test_plan1: str, test_plan2: str,
     return data
 
 
-def get_single_bucket_perf_data():
-    """ToDo: Need to complete this by taking help from performance team."""
-    data = [
-        ["Single Bucket Performance Statistics (Average) using S3Bench - in a Nutshell"],
-        ["Statistics", "4 KB Object", "256 MB Object"],
-        ["Write Throughput(MBps)", "92", "9"],
-        ["Read Throughput(MBps)", "92", "9"],
-        ["Write Latency(ms)", "92", "9"],
-        ["Read Latency(ms)", "92", "9"]
-    ]
+def get_single_bucket_perf_data(build, uri, db_name, db_collection):
+    """Get Single Bucket performance data for executive report"""
+    data = [["Single Bucket Performance Statistics (Average) using S3Bench - in a Nutshell"],
+            ["Statistics", "4 KB Object", "256 MB Object"]]
+    operations = ["Write", "Read"]
+    stats = ["Throughput", "Latency"]
+    objects_sizes = ["4Kb", "256Mb"]
+    for operation in operations:
+        for stat in stats:
+            if stat == "Latency":
+                temp_data = [f"{operation} {stat} (MBps)"]
+            else:
+                temp_data = [f"{operation} {stat} (ms)"]
+            for objects_size in objects_sizes:
+                query = {'Build': build, 'Name': 'S3bench', 'Object_Size': objects_size,
+                         'Operation': operation}
+                count = mongodb_api.count_documents(query=query, uri=uri, db_name=db_name,
+                                                    collection=db_collection)
+                db_data = mongodb_api.find_documents(query=query, uri=uri, db_name=db_name,
+                                                     collection=db_collection)
+                if stat == "Latency":
+                    if count > 0 and common.keys_exists(db_data[0], stat, "Avg"):
+                        temp_data.append(common.round_off(db_data[0][stat]["Avg"] * 1000))
+                    else:
+                        temp_data.append("-")
+                elif stat == "Throughput":
+                    if count > 0 and common.keys_exists(db_data[0], stat):
+                        temp_data.append(common.round_off(db_data[0][stat]))
+                    else:
+                        temp_data.append("-")
+                else:
+                    temp_data.append("-")
+            data.extend([temp_data])
     return data
 
 
-def main():
-    """Generate csv executive report from test plan JIRA."""
+def get_args():
+    """Parse arguments and collect database information"""
     parser = argparse.ArgumentParser()
     parser.add_argument('tp', help='Testplan for current build')
     parser.add_argument('--tp1', help='Testplan for current-1 build', default=None)
     parser.add_argument('--tp2', help='Testplan for current-2 build', default=None)
 
     test_plans = parser.parse_args()
+
+    uri, db_name, db_collection = common.get_db_details()
+    return test_plans, uri, db_name, db_collection
+
+
+def main():
+    """Generate csv executive report from test plan JIRA."""
+    test_plans, uri, db_name, db_collection = get_args()
 
     username, password = jira_api.get_username_password()
     main_table_data, build = jira_api.get_main_table_data(test_plans.tp, username, password)
@@ -142,8 +175,6 @@ def main():
         test_plans.tp, username, password)
     code_maturity_table_data = get_code_maturity_data(test_plans.tp, test_plans.tp1, test_plans.tp2,
                                                       username, password)
-    # single_bucket_perf_table_data = get_single_bucket_perf_data(build)
-    timing_summary_table_data = jira_api.get_timing_summary()
 
     data = []
     data.extend(main_table_data)
@@ -156,9 +187,9 @@ def main():
     data.extend([""])
     data.extend(code_maturity_table_data)
     data.extend([""])
-    # data.extend(single_bucket_perf_table_data)
-    # data.extend([""])
-    data.extend(timing_summary_table_data)
+    data.extend(get_single_bucket_perf_data(build, uri, db_name, db_collection))
+    data.extend([""])
+    data.extend(jira_api.get_timing_summary())
     data.extend([""])
     with open("../exec_report.csv", "a", newline='') as csv_file:
         writer = csv.writer(csv_file)
