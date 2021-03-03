@@ -106,17 +106,6 @@ test_1224
     Re-login  ${username}  ${password}  ${page_name}
     Delete CSM User  ${new_user_name}
 
-test_1219
-    [Documentation]  Test that monitor user has access to dashboard and can view alerts and stats.
-    [Tags]  Priority_High  user_role  test_1219
-    ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
-    Navigate To Page  DASHBOARD_MENU_ID
-    sleep  2s
-    Verify Presence of Stats And Alerts
-    sleep  2s
-    Re-login  ${username}  ${password}  ${page_name}
-    Delete CSM User  ${new_user_name}
-
 test_1223
     [Documentation]  Test that CSM user with role monitor can view CSM users.
     [Tags]  Priority_High  user_role  test_1223

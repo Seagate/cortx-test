@@ -36,16 +36,6 @@ Create and login with CSM manage user
 
 
 *** Test Cases ***
-test_1213
-    [Documentation]  Test manager user has access to dashboard and perform actions on alerts
-    [Tags]  Priority_High  user_role  test_1213
-    ${new_user_name}  ${new_password}=  Create and login with CSM manage user
-    Navigate To Page  DASHBOARD_MENU_ID
-    Verify Presence of Stats And Alerts
-    Verify comment on alert
-    Re-login  ${username}  ${password}  ${page_name}
-    Delete CSM User  ${new_user_name}
-
 test_1220
     [Documentation]  Test manager user don't have access to setting menu.
     [Tags]  Priority_High  user_role  test_1220
