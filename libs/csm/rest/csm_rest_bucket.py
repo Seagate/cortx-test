@@ -5,8 +5,8 @@ from string import Template
 from commons.constants import Rest as const
 import commons.errorcodes as err
 from commons.exceptions import CTException
-from libs.csm.rest.csm_rest_test_lib import RestTestLib as Base
 from commons.utils import config_utils
+from libs.csm.rest.csm_rest_test_lib import RestTestLib as Base
 class RestS3Bucket(Base):
     """RestS3Bucket contains all the Rest Api calls for s3 account operations"""
 
@@ -24,6 +24,7 @@ class RestS3Bucket(Base):
             "duplicate": "{\"bucket_name\":\"duplicate\"}",
             "invalid": "{\"bucket_name\":\"\"}",
         }
+        self.user_data = None
 
     @Base.authenticate_and_login
     def create_s3_bucket(self, bucket_type):

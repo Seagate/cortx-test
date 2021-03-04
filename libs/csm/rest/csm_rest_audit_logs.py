@@ -6,8 +6,8 @@ import os
 import shutil
 import commons.errorcodes as err
 from commons.exceptions import CTException
+from commons.constants import Rest as const
 from libs.csm.rest.csm_rest_test_lib import RestTestLib as Base
-
 
 
 class RestAuditLogs(Base):

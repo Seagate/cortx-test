@@ -5,9 +5,8 @@ import random
 from commons.constants import Rest as const
 import commons.errorcodes as err
 from commons.exceptions import CTException
-from libs.csm.rest.csm_rest_test_lib import RestTestLib as Base
 from commons.utils import config_utils
-
+from libs.csm.rest.csm_rest_test_lib import RestTestLib as Base
 
 class RestCsmUser(Base):
     """RestCsmUser contains all the Rest API calls for csm user operations"""

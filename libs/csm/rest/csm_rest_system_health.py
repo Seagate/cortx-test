@@ -327,8 +327,8 @@ class SystemHealth(RestTestLib):
                 self.log.info(
                     "Health schema verification passed for node : %s", node_id)
                 return True
-            except:
-                self.log.info(
+            except BaseException:
+                self.log.error(
                     "Health schema verification failed for node : %s", node_id)
                 return False
 

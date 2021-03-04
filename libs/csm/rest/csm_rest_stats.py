@@ -6,6 +6,7 @@ import datetime
 import dateutil.relativedelta
 import commons.errorcodes as err
 from commons.exceptions import CTException
+from commons.constants import Rest as const
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
 
 
@@ -44,7 +45,7 @@ class SystemStats(RestTestLib):
             try:
                 self.log.info(
                     "Response returned is:\n %s", response.json())
-            except:
+            except AttributeError:
                 self.log.info(
                     "Response returned is:\n %s", response.text)
             return response
@@ -75,6 +76,8 @@ class SystemStats(RestTestLib):
         :param int from_time: from time for stats
         :return obj: datetime diff object
         """
+        self.log.info("To Time : %s", to_time)
+        self.log.info("From Time : %s", from_time)
         to_time = datetime.datetime.fromtimestamp(to_time)
         from_time = datetime.datetime.fromtimestamp(from_time)
         rdd = dateutil.relativedelta.relativedelta(to_time, from_time)
@@ -157,7 +160,7 @@ class SystemStats(RestTestLib):
                 else:
                     endpoint = "{}&".format(endpoint)
                 endpoint = "{}{}".format(endpoint, param)
-
+        self.log.info("Endpoint : %s", endpoint)
         return endpoint
 
     @RestTestLib.authenticate_and_login

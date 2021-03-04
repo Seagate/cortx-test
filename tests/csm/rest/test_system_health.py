@@ -24,6 +24,7 @@ import logging
 import pytest
 from libs.csm.rest.csm_rest_system_health import SystemHealth
 from commons import cortxlogging
+from commons.constants import Rest as const
 
 class TestSystemHealth():
     """System Health Testsuite"""

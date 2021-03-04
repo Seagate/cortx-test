@@ -3,9 +3,8 @@ import time
 import commons.errorcodes as err
 from commons.exceptions import CTException
 from commons.constants import Rest as const
-from libs.csm.rest.csm_rest_test_lib import RestTestLib as Base
 from commons.utils import config_utils
-
+from libs.csm.rest.csm_rest_test_lib import RestTestLib as Base
 
 class RestS3user(Base):
     """RestS3user contains all the Rest Api calls for s3 account operations"""

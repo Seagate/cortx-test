@@ -376,8 +376,9 @@ class TestSystemStats():
         self.log.info("Actual response : %s",response.status_code)
         assert_utils.assert_in(response.status_code, expected_response,
                                "Status code check failed.")
-
-    @pytest.mark.tags('EOS-12359')
+    
+    @pytest.mark.csmrest
+    @pytest.mark.tags('TEST-16217')
     def test_4957(self):
         """TA CSM REST Automation: TEST-4957: Test that GET API returns 200
         as response code and appropriate json response with valid values
