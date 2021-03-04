@@ -40,7 +40,7 @@ class TestS3user():
         cls.config = CSMConfigsCheck()
         user_already_present = cls.config.check_predefined_s3account_present()
         if not user_already_present:
-            user_already_present = cls.config.setup_csm_s3
+            user_already_present = cls.config.setup_csm_s3()
         assert user_already_present
         cls.s3user = RestS3user()
         cls.csm_conf = config_utils.read_yaml(

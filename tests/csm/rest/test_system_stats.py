@@ -28,7 +28,7 @@ from libs.csm.rest.csm_rest_stats import SystemStats
 from commons.utils import config_utils
 from commons.utils import assert_utils
 from commons import cortxlogging
-
+from commons.constants import Rest as const
 
 class TestSystemStats():
 
@@ -376,7 +376,7 @@ class TestSystemStats():
         self.log.info("Actual response : %s",response.status_code)
         assert_utils.assert_in(response.status_code, expected_response,
                                "Status code check failed.")
-    
+
     @pytest.mark.csmrest
     @pytest.mark.tags('TEST-16217')
     def test_4957(self):

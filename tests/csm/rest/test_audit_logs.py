@@ -54,13 +54,13 @@ class TestAuditLogs():
         user_already_present = cls.config.check_predefined_csm_user_present()
         cls.log.info("Creating pre-defined CSM users if not present...")
         if not user_already_present:
-            cls.config.setup_csm_users
+            cls.config.setup_csm_users()
 
         cls.log.info("Verifying if pre-defined S3 account is present...")
         setup_ready = cls.config.check_predefined_s3account_present()
         cls.log.info("Creating pre-defined S3 account if not present...")
         if not setup_ready:
-            setup_ready = cls.config.setup_csm_s3
+            setup_ready = cls.config.setup_csm_s3()
         assert setup_ready
         cls.s3_buckets = RestS3Bucket()
         cls.s3_account = RestS3user()
@@ -75,10 +75,6 @@ class TestAuditLogs():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####",test_case_name)
         params = {"start_date": self.start_time, "end_date": self.end_time}
-        setup_ready = self.config.check_predefined_s3account_present()
-        if not setup_ready:
-            setup_ready = self.config.setup_csm_s3
-        assert setup_ready
         assert self.audit_logs.verify_audit_logs_csm_show(
             params=params,
             expected_status_code=403,
@@ -185,10 +181,6 @@ class TestAuditLogs():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####",test_case_name)
-        config = CSMConfigsCheck()
-        user_already_present = config.check_predefined_csm_user_present()
-        if not user_already_present:
-            config.setup_csm_users
         params = {"start_date": self.start_time, "end_date": self.end_time}
         assert self.audit_logs.verify_audit_logs_csm_show(params=params,
                                                           login_as="csm_user_manage",

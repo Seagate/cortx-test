@@ -42,7 +42,7 @@ class TestBucketPolicy():
         cls.config = CSMConfigsCheck()
         setup_ready = cls.config.check_predefined_s3account_present()
         if not setup_ready:
-            setup_ready = cls.config.setup_csm_s3
+            setup_ready = cls.config.setup_csm_s3()
         assert setup_ready
 
     def setup_method(self):

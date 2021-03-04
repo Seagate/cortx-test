@@ -34,7 +34,6 @@ from libs.csm.rest.csm_rest_iamuser import RestIamUser
 from libs.csm.rest.csm_rest_bucket import RestS3Bucket
 from libs.csm.rest.csm_rest_bucket import RestS3BucketPolicy
 from libs.csm.csm_setup import CSMConfigsCheck
-from commons.utils import config_utils
 
 class TestCsmUser():
     """REST API Test cases for CSM users
@@ -49,11 +48,11 @@ class TestCsmUser():
         cls.config = CSMConfigsCheck()
         user_already_present = cls.config.check_predefined_csm_user_present()
         if not user_already_present:
-            user_already_present = cls.config.setup_csm_users
+            user_already_present = cls.config.setup_csm_users()
             assert user_already_present
         s3acc_already_present = cls.config.check_predefined_s3account_present()
         if not s3acc_already_present:
-            s3acc_already_present = cls.config.setup_csm_s3
+            s3acc_already_present = cls.config.setup_csm_s3()
         assert s3acc_already_present
         cls.csm_user = RestCsmUser()
         cls.s3_accounts = RestS3user()
@@ -329,6 +328,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.tags('TEST-18802')
     @pytest.mark.csmrest
     def test_5000(self):
         """
@@ -2604,7 +2604,7 @@ class TestCsmUser():
         self.log.debug("Verified S3 bucket %s was created successfully",
                        response.json()['bucket_name'])
         bucket_name = response.json()['bucket_name']
-        self.bucket_policy = RestS3BucketPolicy(bucket_name)
+        bucket_policy_obj = RestS3BucketPolicy(bucket_name)
 
         self.log.info(
             "Step 1: Verifying that CSM user with role manager cannot perform "
@@ -2661,7 +2661,7 @@ class TestCsmUser():
             "PATCH bucket policy request for a S3 bucket")
         operation = "default"
         custom_policy_params = {}
-        response = self.bucket_policy.create_bucket_policy(
+        response = bucket_policy_obj.create_bucket_policy(
             operation=operation, custom_policy_params=custom_policy_params,
             login_as="csm_user_manage")
 
@@ -2674,7 +2674,7 @@ class TestCsmUser():
         self.log.info(
             "Step 5: Verifying that CSM user with role manager cannot perform "
             "GET bucket policy request for S3 Buckets")
-        response = self.bucket_policy.get_bucket_policy(
+        response = bucket_policy_obj.get_bucket_policy(
             bucket_name=bucket_name, login_as="csm_user_manage")
 
         self.log.debug("Verifying the response returned: %s ", response)
@@ -2691,7 +2691,7 @@ class TestCsmUser():
         self.log.info(
             "Step 6: Verifying that CSM user with role manager cannot perform "
             "DELETE bucket policy request for S3 Buckets")
-        response = self.bucket_policy.delete_bucket_policy(
+        response = bucket_policy_obj.delete_bucket_policy(
             login_as="csm_user_manage")
 
         self.log.debug("Verifying the response returned: %s ", response)

@@ -12,7 +12,7 @@ class CSMConfigsCheck:
         self._s3account = RestS3user()
         self._csm_user = RestCsmUser()
 
-    @property
+#    @property
     def setup_csm_s3(self):
         """
         This function will create predefined s3 account user
@@ -30,7 +30,7 @@ class CSMConfigsCheck:
             self._log.error("Error occurred during setup : %s", error)
         return result
 
-    @property
+#    @property
     def setup_csm_users(self):
         """
         This function will create predefined s3 csm users account

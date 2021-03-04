@@ -24,6 +24,7 @@ import logging
 import pytest
 from commons.utils import config_utils
 from commons import cortxlogging
+from commons.constants import Rest as const
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_iamuser import RestIamUser
 
@@ -44,7 +45,7 @@ class TestIamUser():
         cls.config = CSMConfigsCheck()
         setup_ready = cls.config.check_predefined_s3account_present()
         if not setup_ready:
-            setup_ready = cls.config.setup_csm_s3
+            setup_ready = cls.config.setup_csm_s3()
         assert setup_ready
         cls.created_iam_users = set()
         cls.rest_iam_user = RestIamUser()
