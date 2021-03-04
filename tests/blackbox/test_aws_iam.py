@@ -36,7 +36,7 @@ from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
 IAM_OBJ = iam_test_lib.IamTestLib()
 
 IAM_CFG = read_yaml("config/blackbox/test_aws_iam.yaml")[1]
-cmn_conf = read_yaml("config/common_config.yaml")
+cmn_conf = read_yaml("config/common_config.yaml")[1]
 
 
 def create_account():
@@ -119,28 +119,29 @@ class TestBlackBox:
             self,
             user_name,
             password,
+            iam_obj,
             pwd_reset=False):
         """
         Function will create a specified user and login profile for the same user.
 
         Also it will create an access key for the specified user.
+        :param iam_obj:
         :param str user_name: Name of user to be created
         :param str password: User password to create login profile
-        :param str iam_obj: iam object for desired account
         :param bool pwd_reset: Password reset option(True/False)
         :return: Tuple containing access and secret keys of user
         """
         self.log.info("Creating a user with name %s", user_name)
-        resp = IAM_OBJ.create_user(user_name)
+        resp = iam_obj.create_user(user_name)
         assert_true(resp[0], resp[1])
         self.log.info("Created a user with name %s", user_name)
         self.log.info("Creating login profile for user %s", user_name)
-        resp = IAM_OBJ.create_user_login_profile(
+        resp = iam_obj.create_user_login_profile(
             user_name, password, pwd_reset)
         assert_true(resp[0], resp[1])
         self.log.info("Created login profile for user %s", user_name)
         self.log.info("Creating access key for user %s", user_name)
-        resp = IAM_OBJ.create_access_key(user_name)
+        resp = iam_obj.create_access_key(user_name)
         assert_true(resp[0], resp[1])
         self.log.info("Created access key for user %s", user_name)
         access_key = resp[1]["AccessKey"]["AccessKeyId"]
@@ -343,7 +344,7 @@ class TestBlackBox:
         resp = new_iam_obj.delete_access_key(
             test_2426_cfg["user_name"], user_access_key)
         assert_true(user_access_key, user_secret_key)
-        self.log.info("ENDED: Delete Accesskey of a user using aws iam")
+        self.log.info("ENDED: Delete Accesskey of a user using aws iam %s", resp)
 
     @pytest.mark.s3
     @pytest.mark.tags("TEST-7172")
