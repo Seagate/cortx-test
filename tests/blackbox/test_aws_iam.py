@@ -36,7 +36,6 @@ from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
 IAM_OBJ = iam_test_lib.IamTestLib()
 
 IAM_CFG = read_yaml("config/blackbox/test_aws_iam.yaml")[1]
-cmn_conf = read_yaml("config/common_config.yaml")[1]
 
 
 def create_account():
