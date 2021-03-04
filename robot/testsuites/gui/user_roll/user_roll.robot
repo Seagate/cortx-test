@@ -51,7 +51,7 @@ TEST-1042
     Check Setting Option Not Exists
     Delete S3 Account  ${S3_account_name}  ${password}  True
 
-EST-6454
+TEST-6454
     [Documentation]  Test Alert icon should not be visible to s3 account user Verify Alert icon should not be visible to s3 account user
     [Tags]  Priority_High  Smoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
@@ -61,7 +61,7 @@ EST-6454
     Check Alert Icon Not Exists
     Delete S3 Account  ${S3_account_name}  ${password}  True       
 
-EST-1037
+TEST-1037
     [Documentation]  Test that maintenance option not available for s3 user
     [Tags]  Priority_High  Smoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
@@ -71,7 +71,7 @@ EST-1037
     Check Create CSM User Option Not Exists
     Delete S3 Account  ${S3_account_name}  ${password}  True     
 
-EST-1035
+TEST-1035
     [Documentation]  Test that maintenance option not available for s3 user
     [Tags]  Priority_High  Smoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
@@ -81,7 +81,7 @@ EST-1035
     Check Maintenance Option Not Exists
     Delete S3 Account  ${S3_account_name}  ${password}  True   
 
-EST-1034
+TEST-1034
     [Documentation]  Test that s3 user should only have access to IAM user and Bucket section in provisoning section
     [Tags]  Priority_High  Smoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
@@ -94,7 +94,7 @@ EST-1034
     Check Maintenance Option Not Exists
     Delete S3 Account  ${S3_account_name}  ${password}  True    
  
-EST-1033
+TEST-1033
     [Documentation]  Test that alerts should not get visible to the s3 user
     [Tags]  Priority_High  Smoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
@@ -136,3 +136,4 @@ TEST-1036
     sleep  5s
     ${status}=  Is Bucket Present   ${testname}
     Should be equal  ${status}  ${False}
+    

@@ -3,8 +3,6 @@ Resource  ../common/common.robot
 Library     SeleniumLibrary
 Variables  ../common/element_locators.py
 
-*** Variables ***
-
 *** Keywords ***
 Create Bucket
     [Documentation]  Test keyword is for create bucket
@@ -30,7 +28,7 @@ Delete Bucket
     wait until element is visible  ${CONFIRM_DELETE_BOX_BTN_ID}  timeout=60
     Click Button  ${CONFIRM_DELETE_BOX_BTN_ID}
 
- Is Bucket Present
+Is Bucket Present
     [Documentation]  Check the Bucket present or not
     [Arguments]  ${bucketname}
     ${element}=  Format String  ${BUCKET_ROW_ELEMENT_XPATH}  ${bucketname}

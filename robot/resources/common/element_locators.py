@@ -21,7 +21,7 @@ BUCKET_TAB_ID = "s3bucketstab"
 DASHBOARD_MENU_ID = "Dashboard"
 MAINTENANCE_MENU_ID = 'Maintenance'
 AUDIT_LOG_TAB_ID = "goToAuditLog"
-HEALTH = "Health"
+HEALTH_TAB_ID = "Health"
 
 # Alerts
 ALERT_IMAGE_1_ID='alert-zoom'  # from Dashbard

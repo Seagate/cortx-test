@@ -19,7 +19,7 @@ Check Dashboard Option Not Exists
 
 Check Health Option Not Exists
     [Documentation]  Test keyword is for health  Section
-    Page Should Not Contain Element  ${HEALTH}
+    Page Should Not Contain Element  ${HEALTH_TAB_ID}
 
 Check Create CSM User Option Not Exists
     [Documentation]  Test that S3 account user must not have access to create CSM user
