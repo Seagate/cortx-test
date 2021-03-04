@@ -30,7 +30,6 @@ import logging
 import csv
 import time
 import pytest
-from datetime import date
 from _pytest.nodes import Item
 from _pytest.runner import CallInfo
 from _pytest.main import Session
