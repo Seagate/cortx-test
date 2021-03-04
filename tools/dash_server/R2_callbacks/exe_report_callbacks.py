@@ -35,7 +35,7 @@ from common import app
      Output('build_heading_exe', 'children'), Output('build_heading_eng', 'children'),
      Output('date_heading_exe', 'children'), Output('date_heading_eng', 'children')],
     [Input('submit_button', 'n_clicks'),
-     Input('version_dropdown', 'value'),
+     Input('branch_dropdown', 'value'),
      Input('build_no_dropdown', 'value'),
      Input('test_system_dropdown', 'value'),
      Input('test_team_dropdown', 'value'),
@@ -49,7 +49,7 @@ def gen_tab_headers(n_clicks, version, build_no, test_system, test_team):
             or test_system is None or test_team is None:
         raise PreventUpdate
 
-    product_heading = "Product : Lyve Rack"
+    product_heading = "Product : Lyve Rack 2"
     build_heading = "Build : " + str(build_no)
     date = "Date : "
     start_of_execution = "-"
@@ -74,7 +74,7 @@ def gen_tab_headers(n_clicks, version, build_no, test_system, test_team):
     [Output('table_reported_bugs_engg', 'children'),
      Output('table_reported_bugs_exe', 'children')],
     [Input('submit_button', 'n_clicks'),
-     Input('version_dropdown', 'value'),
+     Input('branch_dropdown', 'value'),
      Input('build_no_dropdown', 'value'),
      Input('test_system_dropdown', 'value'),
      Input('test_team_dropdown', 'value'),
@@ -125,7 +125,7 @@ def gen_table_reported_bugs(n_clicks, version, build_no, test_system, test_team)
 
         for i_type in issue_type[1:]:
             test_infra_issue_dict[i_type] = \
-                df_test_infra_issue[df_issue_details["issue_priority"] == i_type].shape[0]
+                df_test_infra_issue[df_test_infra_issue["issue_priority"] == i_type].shape[0]
             cortx_issue_dict[i_type] = \
                 df_cortx_issue[df_cortx_issue["issue_priority"] == i_type].shape[0]
     else:
@@ -156,7 +156,7 @@ def gen_table_reported_bugs(n_clicks, version, build_no, test_system, test_team)
     [Output('table_overall_qa_report_engg', 'children'),
      Output('table_overall_qa_report_exe', 'children')],
     [Input('submit_button', 'n_clicks'),
-     Input('version_dropdown', 'value'),
+     Input('branch_dropdown', 'value'),
      Input('build_no_dropdown', 'value'),
      Input('test_system_dropdown', 'value'),
      Input('test_team_dropdown', 'value'),
@@ -244,7 +244,7 @@ def gen_table_overall_qa_report(n_clicks, version, build_no, test_system, test_t
 @app.callback(
     Output('table_feature_breakdown_summary', 'children'),
     [Input('submit_button', 'n_clicks'),
-     Input('version_dropdown', 'value'),
+     Input('branch_dropdown', 'value'),
      Input('build_no_dropdown', 'value'),
      Input('test_system_dropdown', 'value'),
      Input('test_team_dropdown', 'value'),

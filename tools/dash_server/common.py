@@ -29,7 +29,8 @@ import pandas as pd
 
 external_stylesheets = [dbc.themes.COSMO]
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP],
-                prevent_initial_callbacks=True)
+                prevent_initial_callbacks=True, suppress_callback_exceptions=True)
+
 app.title = "CORTX Test Status"
 server = app.server
 __version__ = "5.27"
@@ -41,6 +42,8 @@ config = configparser.ConfigParser()
 config.read('config.ini')
 try:
     search_endpoint = config["REST"]["search_endpoint"]
+    distinct_endpoint = config["REST"]["distinct_endpoint"]
+
     headers = {
         'Content-Type': 'application/json'
     }
@@ -53,10 +56,9 @@ except KeyError:
     print("Not able to read the details from config.ini file")
     sys.exit(1)
 
-# build versions
 versions = [
-    {'label': 'Release', 'value': 'Release'},
-    {'label': 'Beta', 'value': 'Beta'}
+    {'label': 'LR1', 'value': 'LR1'},
+    {'label': 'LR2', 'value': 'LR2'}
 ]
 
 # common style
