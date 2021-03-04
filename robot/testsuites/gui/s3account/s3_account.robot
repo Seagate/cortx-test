@@ -28,9 +28,24 @@ ${invalid_S3_account_name}  xyz$#%1
 ${invalid_S3_email_id}  xyz@test
 ${invalid_S3_account_password}  TestPass
 
-
-
 *** Test Cases ***
+
+Check S3 Account Exists
+    [Documentation]  This test is to verify that S3 account existes
+    [Tags]  Priority_High  S3_test
+    Validate CSM Login Success  ${username}
+    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    sleep  2s
+    Check S3 Account Exists     S3_ACCOUNTS_TABLE_XPATH  ${S3_ACCOUNT}
+
+Test action on table
+    [Documentation]  This test case is to verify that user can perform the actions on the table elements.
+    [Tags]  Priority_High  S3_test
+    Validate CSM Login Success  ${username}
+    Navigate To Page    MANAGE_MENU_ID
+    sleep  2s
+    Action on the table     ${CSM_USER}  CSM_USER_EDIT_XPATH
+
 TEST-1033
     [Documentation]  Test that alerts should not get visible to the s3 user
     [Tags]  Priority_High  Smoke_test  user_role
@@ -137,23 +152,7 @@ TEST-1036
     sleep  5s
     ${status}=  Is Bucket Present   ${testname}
     Should be equal  ${status}  ${False}
-
-Check S3 Account Exists
-    [Documentation]  This test is to verify that S3 account existes
-    [Tags]  Priority_High  S3_test
-    Validate CSM Login Success  ${username}
-    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    sleep  2s
-    Check S3 Account Exists     S3_ACCOUNTS_TABLE_XPATH  ${S3_ACCOUNT}
-
-Test action on table
-    [Documentation]  This test case is to verify that user can perform the actions on the table elements.
-    [Tags]  Priority_High  S3_test
-    Validate CSM Login Success  ${username}
-    Navigate To Page    MANAGE_MENU_ID
-    sleep  2s
-    Action on the table     ${CSM_USER}  CSM_USER_EDIT_XPATH
-
+    
 test_99
     [Documentation]  This test case is to verify that create user button remain disabled till required
     ...  fields got filled on s3 configure.
