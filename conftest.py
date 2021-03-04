@@ -20,6 +20,9 @@
 #
 """This file is core of the framework and it contains Pytest fixtures and hooks."""
 import ast
+import random
+import string
+import pytest
 import os
 import pathlib
 import json
@@ -149,7 +152,6 @@ def log_cutter(request, formatter):
     Fixture to create test log for each test case. Developer need to use this
     fixture in the test method argument as shown below
     test_demo(requests, log_cutter)
-
     :param request:
     :param formatter:
     :return:
@@ -256,10 +258,6 @@ def pytest_sessionfinish(session, exitstatus):
         handlers = getattr(_logger, 'handlers', [])
         for handler in handlers:
             _logger.removeHandler(handler)
-
-    resp = system_utils.umount_dir(mnt_dir=params.MOUNT_DIR)
-    if resp[0]:
-        LOGGER.info("Successfully unmounted directory")
 
 
 def get_test_metadata_from_tp_meta(item):
@@ -558,12 +556,12 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
         with open(test_log, 'w') as fp:
             for rec in logs:
                 fp.write(rec + '\n')
-        LOGGER.info("Uploading test log file to NFS server")
-        remote_path = os.path.join(params.NFS_BASE_DIR, Globals.TE_TKT,
-                                   date.today().strftime("%b-%d-%Y"))
-        resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
-                                                   mnt_dir=params.MOUNT_DIR,
-                                                   remote_path=remote_path,
-                                                   local_path=test_log)
-        if resp[0]:
-            LOGGER.info("Log file is uploaded at location : %s", resp[1])
+
+@pytest.fixture(scope='function')
+def generate_random_string():
+    """
+    This fixture will return random string with lowercase
+    :return: random string
+    :rtype: str
+    """
+    return ''.join(random.choice(string.ascii_lowercase) for i in range(5))
