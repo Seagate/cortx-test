@@ -26,31 +26,81 @@ from dash.dependencies import Output, Input
 from dash.exceptions import PreventUpdate
 import common
 from common import app
+import mongodbAPIs as r1Api
 
 
 @app.callback(
-    [Output('build_no_dropdown', 'options')],
-    [Input('version_dropdown', 'value')],
+    [Output('branch_dropdown', 'options')],
+    [Input('version_dropdown', 'value')]
 )
-def fetch_build_for_dropdown(value):
+def fetch_branch_for_dropdown(value):
     """
-    Fetch the build no based on the branch/version
+    Fetch branch based on the version(R1/R2)
     :param value:
     :return:
     """
     if not value:
         raise PreventUpdate
-    if value in ["Beta", "Release"]:
-        query_input = {"query": {"buildType": value}, "projection": {"buildNo": "true"}}
+
+    if value == "LR1":
+        # Hardcoded values used for R1
+        output = [
+            {'label': 'Cortx-1.0-Beta', 'value': 'beta'},
+            {'label': 'Release', 'value': 'release'},
+            {'label': 'Cortx-1.0', 'value': 'cortx1'},
+        ]
+        if common.DEBUG_PRINTS:
+            print("Fetch branch for dropdown : {}".format(output))
+        return [output]
+    else:
+        # fetch for R2
+        query_input = {"field": "buildType", "query": {}}
         query_input.update(common.credentials)
-        response = requests.request("GET", common.search_endpoint, headers=common.headers,
+        response = requests.request("GET", common.distinct_endpoint, headers=common.headers,
                                     data=json.dumps(query_input))
         if response.status_code == HTTPStatus.OK:
             json_response = json.loads(response.text)
-            all_builds = []
-            for each in json_response["result"]:
-                all_builds.append(each["buildNo"])
-            all_builds = list(set(all_builds))
+            branches = json_response["result"]
+            output = [
+                {'label': branch, 'value': branch} for branch in branches
+            ]
+            if common.DEBUG_PRINTS:
+                print("Fetch branch for dropdown : {}".format(output))
+            return [output]
+    return None
+
+
+@app.callback(
+    [Output('build_no_dropdown', 'options')],
+    [Input('version_dropdown', 'value')],
+    [Input('branch_dropdown', 'value')],
+)
+def fetch_build_for_dropdown(version, branch):
+    """
+    Fetch the build no based on the branch/version
+    :param version: R1/R2
+    :param branch : Branch name ex: Beta/Release
+    :return:
+    """
+    if not version or not branch:
+        raise PreventUpdate
+
+    if version == "LR1":
+        cursor = r1Api.find({'info': 'build sequence'})
+        list1 = cursor[0][branch]
+        result = [ele for ele in reversed(list1)]
+        output = [
+            {'label': build, 'value': build} for build in result
+        ]
+        return [output]
+    else:
+        query_input = {"query": {"buildType": branch}, "field": "buildNo"}
+        query_input.update(common.credentials)
+        response = requests.request("GET", common.distinct_endpoint, headers=common.headers,
+                                    data=json.dumps(query_input))
+        if response.status_code == HTTPStatus.OK:
+            json_response = json.loads(response.text)
+            all_builds = json_response["result"]
             output = [
                 {'label': build_no, 'value': build_no} for build_no in all_builds
             ]
@@ -63,31 +113,33 @@ def fetch_build_for_dropdown(value):
 @app.callback(
     [Output('test_system_dropdown', 'options')],
     [Input('version_dropdown', 'value')],
+    [Input('branch_dropdown', 'value')],
     [Input('build_no_dropdown', 'value')]
 )
-def fetch_test_system_for_dropdown(version, build_no):
+def fetch_test_system_for_dropdown(version, branch, build_no):
     """
-    Fetch system type for the required branch/version and build no
-    :param version:
+    Fetch system type for the required version(r1/r2),branch and build no
+    :param version:R1/R2
+    :param branch: Branch name ex: Release/Beta
     :param build_no:
     :return:
     """
-    if not (version and build_no):
+    if not (version and build_no and branch):
         raise PreventUpdate
-    if version in ["Beta", "Release"]:
+
+    if version == "LR1":
+        # test system not applicable for R1
+        raise PreventUpdate
+    else:
         # testPlanLabel corresponds to the system type: for ex: isolated, near full system
-        query_input = {"query": {"buildType": version, "buildNo": build_no},
-                       "projection": {"testPlanLabel": "true"}}
+        query_input = {"query": {"buildType": branch, "buildNo": build_no},
+                       "field": "testPlanLabel"}
         query_input.update(common.credentials)
-        response = requests.request("GET", common.search_endpoint, headers=common.headers,
+        response = requests.request("GET", common.distinct_endpoint, headers=common.headers,
                                     data=json.dumps(query_input))
         if response.status_code == HTTPStatus.OK:
             json_response = json.loads(response.text)
-            label = []
-            for each in json_response["result"]:
-                if each["testPlanLabel"]:
-                    label.append(each["testPlanLabel"])
-            label = list(set(label))
+            label = json_response["result"]
             output = [
                 {'label': sys_type, 'value': sys_type} for sys_type in label
             ]
@@ -98,35 +150,56 @@ def fetch_test_system_for_dropdown(version, build_no):
 @app.callback(
     [Output('test_team_dropdown', 'options')],
     [Input('version_dropdown', 'value')],
+    [Input('branch_dropdown', 'value')],
     [Input('build_no_dropdown', 'value')],
     [Input('test_system_dropdown', 'value')]
 )
-def fetch_team_for_dropdown(version, build_no, system_type):
+def fetch_team_for_dropdown(version, branch, build_no, system_type):
     """
     Fetch the testing teams for version, build_no and testing system type
-    :param version:
-    :param build_no:
-    :param system_type:
+    :param version:Product version R1/R2
+    :param branch: Branch name Release/Beta etc
+    :param build_no: Build no
+    :param system_type: System type : Isolated/Regular etc
     :return:
     """
-    if not (version and build_no and system_type):
+    if not (version and branch and build_no and system_type):
         raise PreventUpdate
-    if version in ["Beta", "Release"]:
+
+    if version == "LR1":
+        # test team not applicable for R1
+        raise PreventUpdate
+    else:
         # testPlanLabel corresponds to the system type: for ex: isolated, near full system
         query_input = {
-            "query": {"buildType": version, "buildNo": build_no, "testPlanLabel": system_type},
-            "projection": {"testTeam": "true"}}
+            "query": {"buildType": branch, "buildNo": build_no, "testPlanLabel": system_type},
+            "field": "testTeam"}
         query_input.update(common.credentials)
-        response = requests.request("GET", common.search_endpoint, headers=common.headers,
+        response = requests.request("GET", common.distinct_endpoint, headers=common.headers,
                                     data=json.dumps(query_input))
         if response.status_code == HTTPStatus.OK:
             json_response = json.loads(response.text)
-            teams = []
-            for each in json_response["result"]:
-                teams.append(each["testTeam"])
-            teams = list(set(teams))
+            teams = json_response["result"]
             output = [
                 {'label': team, 'value': team} for team in teams
             ]
             return [output]
     return None
+
+
+@app.callback(
+    Output('toggle_visibility', 'style'),
+    [Input('version_dropdown', 'value')]
+)
+def toggle_dropdown_visibility(version):
+    """
+    Hide system type and test team drop down for R1
+    :param version:
+    :return:
+    """
+    if not version:
+        raise PreventUpdate
+    if version == "LR1":
+        return {'display': 'none'}
+    else:
+        return None

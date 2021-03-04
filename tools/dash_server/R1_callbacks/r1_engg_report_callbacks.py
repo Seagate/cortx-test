@@ -20,10 +20,8 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 
-import json
 import dash_table
 import pandas as pd
-import requests
 from dash.dependencies import Output, Input
 from dash.exceptions import PreventUpdate
 import common
@@ -44,8 +42,6 @@ def gen_table_comp_summary(n_clicks, branch, build_no):
     :param n_clicks: Input event
     :param branch: Build branch
     :param build_no: Build Number
-    :param test_system: System type
-    :param test_team: Testing team
     :return:
     """
     if n_clicks is None or branch is None or build_no is None:
@@ -55,9 +51,7 @@ def gen_table_comp_summary(n_clicks, branch, build_no):
                       "Data Recovery", "Node Recovery"]
     cursor = r1Api.find({'info': 'build sequence'})
     build_list = cursor[0][branch]
-    if build_no in build_list:
-        prev_build_no = build_list[build_list.index(build_no) - 1]
-
+    prev_build_no = build_list[build_list.index(build_no) - 1]
     build_no_list = [build_no, prev_build_no]
     # list of dictionary
     builds_details = []

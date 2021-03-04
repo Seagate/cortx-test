@@ -21,11 +21,8 @@
 # !/usr/bin/python
 
 
-import json
-from http import HTTPStatus
 import dash_table
 import pandas as pd
-import requests
 from dash.dependencies import Output, Input
 from dash.exceptions import PreventUpdate
 import common
@@ -51,17 +48,11 @@ def gen_tab_headers(n_clicks, branch, build_no):
 
     product_heading = "Product : Lyve Rack 1"
     build_heading = "Build : " + str(build_no)
-    date = "Date : "
-
-    try:
-        date_output = r1Api.find({'build': build_no, 'deleted': False}).sort(
-            [("dateOfExecution", 1)]).limit(1)
-        date_str = date_output[0]['dateOfExecution'].split("T")[0] + date_output[0][
-                                                                         'dateOfExecution'][19::]
-    except:
-        date_str = ""
-
-    date = date + str(date_str)
+    date_output = r1Api.find({'build': build_no, 'deleted': False}).sort(
+                            [("dateOfExecution", 1)]).limit(1)
+    date_str = date_output[0]['dateOfExecution'].split("T")[0] + date_output[0][
+                                                                     'dateOfExecution'][19::]
+    date = "Date : " + str(date_str)
     return product_heading, product_heading, build_heading, build_heading, date, date
 
 
@@ -318,12 +309,12 @@ def gen_table_code_maturity(n_clicks, branch, build_no):
         output_list.append(build_list[build_list.index(build_no) - 2])
     final_list = []  # list of lists
     for build in output_list:
-        list = []
+        temp_list = []
         for each in category[1:]:
-            list.append(
+            temp_list.append(
                 r1Api.count_documents({'build': build, 'deleted': False, 'testResult': each}))
-        list.insert(0, sum(list))
-        final_list.append(list)
+        temp_list.insert(0, sum(temp_list))
+        final_list.append(temp_list)
 
     data_code_maturity = {"Category": category,
                           output_list[0]: final_list[0],
