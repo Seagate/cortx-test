@@ -208,5 +208,3 @@ DELETE_IAM_USER = "s3iamusers delete"
 
 # Linux System Commands
 CMD_MKDIR = "mkdir -p {}"
-CMD_MOUNT = "mount -t nfs {} {}"
-CMD_UMOUNT = "umount {}"
