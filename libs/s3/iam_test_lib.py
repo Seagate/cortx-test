@@ -662,6 +662,8 @@ class IamTestLib(IamLib, S3IamCli):
         :param user_name: Account user name.
         :param password: User password.
         :param password_reset: Password reset value True/False.
+        :param access_key: User access key.
+        :param secret_key: User secret key.
         :return: (Boolean, response)
         """
         access_key = kwargs.get("access_key", None)
@@ -696,6 +698,7 @@ class IamTestLib(IamLib, S3IamCli):
         :param password: Account password.
         :param access_key: Account access key.
         :param secret_key: Account secret key.
+        :param password_reset: Password reset value True/False.
         :return: (Boolean, response).
         """
         password_reset = kwargs.get("password_reset", False)
@@ -726,6 +729,7 @@ class IamTestLib(IamLib, S3IamCli):
         :param password: Account password.
         :param access_key: Account access key.
         :param secret_key: Account secret key.
+        :param password_reset: Password reset value True/False.
         :return: (Boolean, response)
         """
         password_reset = kwargs.get("password_reset", False)
@@ -780,6 +784,8 @@ class IamTestLib(IamLib, S3IamCli):
         :param user_name: Account user name.
         :param password: User password.
         :param password_reset: Password reset value True/False.
+        :param access_key: User access key.
+        :param secret_key: User secret key.
         :return: (Boolean, response)
         """
         access_key = kwargs.get("access_key", None)
@@ -840,6 +846,7 @@ class IamTestLib(IamLib, S3IamCli):
         :param password: Password for the user login.
         :param access_key: Access key of the user.
         :param secret_key: Secret key of the user.
+        :param both_reset_options: both password reset option.
         :return: (Boolean, response)
         """
         both_reset_options = kwargs.get("both_reset_options", False)
@@ -1224,6 +1231,8 @@ class IamTestLib(IamLib, S3IamCli):
 
         :param account_name: Name of the account.
         :param email_id: Email IF for the account.
+        :param secret_key: Secret key.
+        :param access_key: Access key.
         :return: (Boolean, response)
         """
         try:
@@ -1369,6 +1378,7 @@ class IamTestLib(IamLib, S3IamCli):
         :param str access_key: Temporary access key of an account.
         :param str secret_key: Temporary secret key of an account.
         :param str session_token: Temporary session token of an account.
+        :param bool force: --force option used while deleting an account.
         :return: Boolean and delete account response.
         """
         force = kwargs.get("force", False)
