@@ -17,9 +17,11 @@ S3_ACCOUNTS_TAB_ID = 's3accountstab'
 SETTINGS_ID = 'Settings'
 EMAIL_NOTIFICATION_ID = 'goToNotifications'
 IAM_USER_TAB_ID = "s3iamuserstab"
+BUCKET_TAB_ID = "s3bucketstab"
 DASHBOARD_MENU_ID = "Dashboard"
 MAINTENANCE_MENU_ID = 'Maintenance'
 AUDIT_LOG_TAB_ID = "goToAuditLog"
+HEALTH = "Health"
 
 # Alerts
 ALERT_IMAGE_1_ID='alert-zoom'  # from Dashbard
@@ -170,3 +172,11 @@ AUDIT_LOG_DOWNLOAD_BUTTON_ID = "auditlog-downlodbtn"
 AUDIT_LOG_COMPONENT_DROP_DOWN_ID = "auditlog-component"
 AUDIT_LOG_TIME_PERIOD_DROP_DOWN_ID = "auditlog-timeperiod"
 AUDIT_LOG_DATA_ID = "auditlog-data"
+
+#Bucket 
+ADD_BUCKET_FORM_ID = "bucket-addbucket-formbtn"
+BUCKET_NAME_ID = "bucketName"
+BUCKET_CREATE_BUTTON_ID = "bucket-create-btn"
+DELETE_BUCKET_XPATH = '//tr[@id="{0}"]//*[@id="bucket-delete-icon"]'
+CONFIRM_CREATE_BUTTON_ID = "bucket-closedialodbox"
+BUCKET_ROW_ELEMENT_XPATH = '//tr[@id="{0}"]'
