@@ -144,7 +144,7 @@ def get_previous_build(current_build, version):
             if current_index < 7:
                 return 'release_' + prev
             return prev
-        except:
+        except Exception as ex:
             return prev
     else:
         return None
