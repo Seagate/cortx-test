@@ -28,7 +28,7 @@ from commons.helpers import node_helper
 from commons import constants as cmn_cons
 from commons import commands as common_commands
 from commons.helpers.health_helper import Health
-from commons.helpers.s3_helper import S3Helper
+from libs.s3 import S3H_OBJ
 from config import RAS_VAL
 from commons.utils.system_utils import run_remote_cmd
 
@@ -53,6 +53,7 @@ class RASCoreLib:
             hostname=self.host, username=self.username, password=self.pwd)
         self.health_obj = Health(hostname=self.host, username=self.username,
                                  password=self.pwd)
+        self.s3obj = S3H_OBJ
 
     def create_remote_dir_recursive(self, file_path: str) -> bool:
         """
@@ -541,12 +542,12 @@ class RASCoreLib:
             time.sleep(common_cfg["sleep_val"])
 
         LOGGER.info("Checking status of sspl and rabbitmq services")
-        resp = S3Helper.get_s3server_service_status(
+        resp = self.s3obj.get_s3server_service_status(
             service=common_cfg["service"]["sspl_service"],
             host=self.host, user=self.username, pwd=self.pwd)
         if not resp[0]:
             return resp
-        resp = S3Helper.get_s3server_service_status(
+        resp = self.s3obj.get_s3server_service_status(
             service=common_cfg["service"]["rabitmq_service"],
             host=self.host, user=self.username, pwd=self.pwd)
         if not resp[0]:
@@ -606,7 +607,7 @@ class RASCoreLib:
 
         if os.path.exists(local_path):
             os.remove(local_path)
-        _ = S3Helper.copy_s3server_file(file_path=remote_file_path,
+        _ = self.s3obj.copy_s3server_file(file_path=remote_file_path,
                                         local_path=local_path,
                                         host=self.host,
                                         user=self.username, pwd=self.pwd)
@@ -639,7 +640,7 @@ class RASCoreLib:
                     self.host)
         LOGGER.info("Verify if the services stops")
         time.sleep(10)
-        resp = S3Helper.get_s3server_service_status(service, host=self.host,
+        resp = self.s3obj.get_s3server_service_status(service, host=self.host,
                                                     user=self.username,
                                                     pwd=self.pwd)
         if not resp[0]:

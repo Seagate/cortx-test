@@ -37,11 +37,11 @@ import threading
 import csv
 import subprocess
 import logging
-from multiprocessing import Queue
 from typing import List
 from typing import Tuple
 from typing import Any
 from typing import Dict
+from queue import Queue
 from threading import Thread
 from core import rpcserver
 from core import report_rpc
@@ -227,7 +227,9 @@ def run(opts: dict) -> None:
             w_item.tickets = tickets
             w_item.build = build
             work_queue.put(w_item)
+    work_queue.put(None)  # poison
     work_queue.join()
+
 
 def create_test_map(base_components_marks: Tuple,
                     meta_data: Dict,

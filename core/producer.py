@@ -60,7 +60,7 @@ class Ticket:
 
     def __str__(self):
         print(' '.join([self.tag, str(self.parallel), str(self.targets), str(self.build),
-                       str(self.te_tickets), str(self.test_set)]))
+                        str(self.te_tickets), str(self.test_set)]))
 
 
 def convert_ticket_to_dict(ticket, ctx):
@@ -74,7 +74,7 @@ def convert_ticket_to_dict(ticket, ctx):
     Returns:
         dict: Dict populated with tickets attributes to be serialized.
     """
-    return dict(tag=ticket.name,
+    return dict(tag=ticket.tag,
                 test_set=ticket.test_set,
                 te_tickets=ticket.te_tickets,
                 targets=ticket.targets,
@@ -126,41 +126,49 @@ def server(*args: Any) -> None:
     :return:
     """
     topic, work_queue = args
-    schema_str = {
+    schema_str = """
+    {
+      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Ticket",
-      "description": "A Test Set or single test to be executed by test runner",
+      "description": "A Test Set or single test TBE by test runner",
       "type": "object",
       "properties": {
-        "tag": {
-          "description": "Test cases tag",
-          "type": "string"
-        },
-        "test_set": {
-          "description": "A set of test cases to be executed",
-          "type": "list",
-          "exclusiveMinimum": 0
-        },
-        "te_tickets": {
-          "description": "Test execution tickets",
-          "type": "string"
-        },
-        "targets": {
-          "description": "Test execution tickets",
-          "type": "string"
-        },
-        "build": {
-          "description": "Build string or number",
-          "type": "string"
-        },
-        "parallel": {
-          "description": "Test execution can happen in parallel or not",
-          "type": "bool"
-        },
+            "tag": {
+                "description": "Test cases tag",
+                "type": "string"
+            },
+            "test_set": {
+                "description": "A set of test cases to be executed",
+                "type": "array",
+                "items": { "type": "string" }
+            },
+            "te_tickets": {
+                "description": "Test execution tickets",
+                "type": "array",
+                "items": { "type": "string" }
+            },
+            "targets": {
+                "description": "Test execution tickets",
+                "type": "string",
+                "default": "automation"
+            },
+            "build": {
+                "description": "Build string or number",
+                "type": "string",
+                "default": "000"
+            },
+            "parallel": {
+                "description": "Test execution can happen in parallel or not",
+                "type": "boolean"
+            }
 
-      },
-      "required": [ "tag", "test_set", "te_tickets", "targets", "build", "parallel" ]
+        },
+        "required": ["tag", "test_set", "te_tickets", "targets", "build", "parallel"]
     }
-    schema_str = json.dumps(schema_str)
+    """
+
+
+    #schema_str = json.dumps(schema_str)
     schema_registry_conf = {"url": SCHEMA_REGISTRY}
     schema_registry_client = SchemaRegistryClient(schema_registry_conf)
 
@@ -169,27 +177,23 @@ def server(*args: Any) -> None:
     producer_conf = {"bootstrap.servers": BOOTSTRAP_SERVERS,
                      "key.serializer": StringSerializer("utf_8"),
                      "value.serializer": json_serializer}
-
     producer = SerializingProducer(producer_conf)
-
     print("Producing user records to topic {}. ^C to exit.".format(topic))
 
     while True:
         try:
             work_item = work_queue.get()
-            import pdb
-            pdb.set_trace()
             if work_item is None:
-                work_item.task_done()
                 work_queue.task_done()
                 break
             test_set = list(work_item.get())
             te_tickets = work_item.tickets
             ticket = Ticket(work_item.tag, work_item.parallel,
-                            test_set, te_tickets, work_item.targets,
-                            work_item.build)
+                            test_set, te_tickets, str(work_item.targets),
+                            str(work_item.build))
             produce(producer, topic=topic, uuid=str(uuid4()), value=ticket,
                     on_delivery=delivery_report)
+            work_item.task_done()
         except ValueError:
             print("Invalid input ticket, discarding record...")
             LOGGER.info("Invalid input ticket, skipping record %s", ticket)

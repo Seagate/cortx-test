@@ -50,10 +50,15 @@ JIRA_SELECTED_TESTS = 'selected_test_lists.csv'
 JIRA_DIST_TEST_LIST = 'dist_test_lists.csv'
 # Kafka Config Params
 
-SCHEMA_REGISTRY = "http://cftic2.pun.seagate.com:9092"  # Schema Registry (http(s)://host[:port]
-BOOTSTRAP_SERVERS = "10.237.64.248:9092"  # cftic2.pun.seagate.com Bootstrap broker(s) (host[:port])
-TEST_EXEC_TOPIC = 'TutorialTopic'  # 'cortx-test-exec-topic'
+SCHEMA_REGISTRY = "http://cftic2.pun.seagate.com:8081"  # Schema Registry (http(s)://host[:port]
+BOOTSTRAP_SERVERS = "cftic2.pun.seagate.com:9092"  # cftic2.pun.seagate.com:9092 Bootstrap broker(s) (host[:port])
+TEST_EXEC_TOPIC = 'TutorialTopic3'  # 'cortx-test-exec-topic'
 TEST_ABORT_TOPIC = 'cortx-test-abort-topic'  # Read by all semantics
+
 CSM_DIR = os.path.join(CONFIG_DIR, 'csm')
 CSM_CONFIG = os.path.join(CSM_DIR, 'csm_config.yaml')
 SETUPS_FPATH = os.path.join(LOG_DIR_NAME, "setups.json")
+
+NFS_SERVER_DIR = "cftic2.pun.seagate.com:/cftshare"
+NFS_BASE_DIR = "automation"
+MOUNT_DIR = os.path.join(os.getcwd(), "nfs_share")
