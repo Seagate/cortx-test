@@ -2218,13 +2218,6 @@ class TestBucketPolicy:
         self.log.info(
             "ENDED: Test arn specifying component/value as per arn format at inchanged position")
 
-    # Cannot be automated as unstructured JSON creation fails during YAML config parsing.
-    # def test_552(self):
-    #     """
-    #     Test extra spaces in key fields and values in bucket policy json
-    #     :avocado: tags=get_bucket_policy
-    #     """
-
     @pytest.mark.s3
     @pytest.mark.tags("TEST-6103")
     @CTFailOn(error_handler)
@@ -2241,13 +2234,6 @@ class TestBucketPolicy:
                                 BKT_POLICY_CONF["test_551"]["error_message"])
         self.log.info(
             "ENDED: Test missing key fields in bucket policy json")
-
-    # Cannot be automated as unstructured JSON creation fails during YAML config parsing.
-    # def test_550(self):
-    #     """
-    #     Test one of the key field out of the structure in bucket policy json
-    #     :avocado: tags=get_bucket_policy
-    #     """
 
     @pytest.mark.s3
     @pytest.mark.tags("TEST-6104")
@@ -2300,24 +2286,6 @@ class TestBucketPolicy:
                                 BKT_POLICY_CONF["test_555"]["error_message"])
         self.log.info(
             "ENDED: Test invalid values in the key fields in bucket policy json")
-
-    # This is invalid scenario as the JSON value contains two keys with same name
-    # as JSON is a dictionary it cannot have two keys with same value. So marking this test-case
-    # Cannot be automated
-    # def test_554(self):
-    #     """
-    #     Test specifying duplicate key in same statement in bucket policy json
-    #     :avocado: tags=get_bucket_policy
-    #     """
-    #     self.log.info(
-    #         "STARTED: Test specifying duplicate key in same statement in bucket policy json")
-    #     self.create_bucket_validate(BKT_POLICY_CONF["test_554"]["bucket_name"])
-    #     self.log.info("Step 2,3 : Put Bucket policy with duplicate keys")
-    #     self.put_invalid_policy(BKT_POLICY_CONF["test_554"]["bucket_name"],
-    #                             BKT_POLICY_CONF["test_554"]["bucket_policy"],
-    #                             BKT_POLICY_CONF["test_554"]["error_message"])
-    #     self.log.info(
-    #         "ENDED: Test specifying duplicate key in same statement in bucket policy json")
 
     @pytest.mark.s3
     @pytest.mark.tags("TEST-6108")
@@ -5461,35 +5429,6 @@ _date
             "ENDED: Test Bucket Policy using Condition Operator 'DateGreaterThanIfExists', "
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format.")
 
-    # Commented as test is invalid in x-ray
-    # def test_5781(self):
-    #     """
-    #     Test Bucket Policy using Condition Operator 'DateEqualsIfExists',
-    #     key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format.
-    #     :avocado: tags=bucket_policy_date_if_exists
-    #     """
-    #     self.log.info(
-    #         "STARTED: Test Bucket Policy using Condition Operator 'DateEqualsIfExists', "
-    #         "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format.")
-    #     random_id = str(time.time())
-    #     test_cfg = BKT_POLICY_CONF["test_5781"]
-    #     date_time = date.today().strftime(test_cfg["date_format"])
-    #     result = self.create_s3iamcli_acc(
-    #         test_cfg["account_name"].format(random_id),
-    #         test_cfg["email_id"].format(random_id))
-    #     s3_obj_2 = result[1]
-    #     account_id = result[6]
-    #     resp = create_file(
-    #         self.file_path,
-    #         BKT_POLICY_CONF["bucket_policy"]["file_size"])
-    #     assert resp[0], resp[1]
-    #     for effect in test_cfg["effect_lst"]:
-    #         self.put_bkt_policy_with_date_format(
-    #             account_id, date_time, effect, s3_obj_2, test_cfg)
-    #     self.log.info(
-    #         "ENDED: Test Bucket Policy using Condition Operator 'DateEqualsIfExists', "
-    #         "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format.")
-
     @pytest.mark.s3
     @pytest.mark.tags("TEST-6930")
     @CTFailOn(error_handler)
@@ -5664,35 +5603,6 @@ _date
             "ENDED: Test Bucket Policy using Condition Operator 'DateLessThanIfExist', "
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format.")
 
-    # Commented as test is marked invalid in x-ray
-    # def test_5796(self):
-    #     """
-    #     Test Bucket Policy using Condition Operator 'DateNotEqualsIfExists',
-    #     key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format.
-    #     :avocado: tags=bucket_policy_date_if_exists
-    #     """
-    #     self.log.info(
-    #         "STARTED: Test Bucket Policy using Condition Operator 'DateNotEqualsIfExists', "
-    #         "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format.")
-    #     random_id = str(time.time())
-    #     test_cfg = BKT_POLICY_CONF["test_5796"]
-    #     date_time = date.today().strftime(test_cfg["date_format"])
-    #     result = self.create_s3iamcli_acc(
-    #         test_cfg["account_name"].format(random_id),
-    #         test_cfg["email_id"].format(random_id))
-    #     s3_obj_2 = result[1]
-    #     account_id = result[6]
-    #     resp = create_file(
-    #         self.file_path,
-    #         BKT_POLICY_CONF["bucket_policy"]["file_size"])
-    #     assert resp[0], resp[1]
-    #     for effect in test_cfg["effect_lst"]:
-    #         self.put_bkt_policy_with_date_format(
-    #             account_id, date_time, effect, s3_obj_2, test_cfg)
-    #     self.log.info(
-    #         "ENDED: Test Bucket Policy using Condition Operator 'DateNotEqualsIfExists', "
-    #         "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format.")
-
     @pytest.mark.s3
     @pytest.mark.tags("TEST-6938")
     @CTFailOn(error_handler)
@@ -5740,35 +5650,6 @@ _date
             "ENDED: Test Bucket Policy using Condition Operator 'DateLessThanEqualsIfExists', "
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format.")
 
-    # Commented as test is marked invalid in x-ray
-    #
-    # def test_5830(self):
-    #     """
-    #     Test Bucket Policy using Condition Operator 'DateGreaterThanIfExists',
-    #     key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format.
-    #     :avocado: tags=bucket_policy_date_if_exists
-    #     """
-    #     self.log.info(
-    #         "STARTED: Test Bucket Policy using Condition Operator 'DateGreaterThanIfExists', "
-    #         "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format.")
-    #     random_id = str(time.time())
-    #     test_cfg = BKT_POLICY_CONF["test_5830"]
-    #     date_time = date.today().strftime(test_cfg["date_format"])
-    #     result = self.create_s3iamcli_acc(
-    #         test_cfg["account_name"].format(random_id),
-    #         test_cfg["email_id"].format(random_id))
-    #     s3_obj_2 = result[1]
-    #     account_id = result[6]
-    #     resp = create_file(
-    #         self.file_path,
-    #         BKT_POLICY_CONF["bucket_policy"]["file_size"])
-    #     assert resp[0], resp[1]
-    #     for effect in test_cfg["effect_lst"]:
-    #         self.put_bkt_policy_with_date_format(
-    #             account_id, date_time, effect, s3_obj_2, test_cfg)
-    #     self.log.info(
-    #         "ENDED: Test Bucket Policy using Condition Operator 'DateGreaterThanIfExists', "
-    #         "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format.")
 
     @pytest.mark.s3
     @pytest.mark.tags("TEST-6939")
@@ -11837,7 +11718,6 @@ _date
 
     # Commented this test case as it is failing in current build and a bug was
     # already raised for this - EOS-7062
-
     @pytest.mark.s3
     @pytest.mark.tags("TEST-7947")
     @CTFailOn(error_handler)
@@ -12248,7 +12128,6 @@ _date
         )
 
     # Defect raised for this test cases - EOS-7062
-
     @pytest.mark.s3
     @pytest.mark.tags("TEST-9033")
     @CTFailOn(error_handler)
