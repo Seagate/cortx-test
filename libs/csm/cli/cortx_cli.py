@@ -37,9 +37,9 @@ class CortxCli(CortxCliClient):
 
     def __init__(
             self,
-            host: str = CMN_CFG["csm"]["mgmt_vip"],
-            username: str = CMN_CFG["csm"]["admin_user"],
-            password: str = CMN_CFG["csm"]["admin_pass"],
+            host: str = CMN_CFG[1]["csm"]["mgmt_vip"],
+            username: str = CMN_CFG[1]["csm"]["admin_user"],
+            password: str = CMN_CFG[1]["csm"]["admin_pass"],
             **kwargs):
         """
         This method initializes members of CortxCli and its parent class
@@ -80,8 +80,8 @@ class CortxCli(CortxCliClient):
 
     def login_cortx_cli(
             self,
-            username: str = CMN_CFG["csm"]["admin_user"],
-            password: str = CMN_CFG["csm"]["admin_pass"],
+            username: str = CMN_CFG[1]["csm"]["admin_user"],
+            password: str = CMN_CFG[1]["csm"]["admin_pass"],
             **kwargs) -> tuple:
         """
         This function will be used to login to CORTX CLI with given credentials
