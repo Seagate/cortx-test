@@ -41,5 +41,6 @@ if '--local' in pytest_args and pytest_args['--local']:
     target = pytest_args['--target']
 elif os.getenv('TARGET') is not None:
     target = os.environ["TARGET"]
-
+else:
+    target = None
 CMN_CFG = configmanager.get_config_wrapper(fpath=COMMON_CONFIG, target=target)

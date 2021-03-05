@@ -111,7 +111,7 @@ def get_config_wrapper(**kwargs):
         flag = True
         LOG.debug("Reading config from yaml file: %s", kwargs['fpath'])
         data.update(get_config_yaml(fpath=kwargs['fpath']))
-    if "target" in kwargs:
+    if "target" in kwargs and kwargs['target'] is not None:
         target = kwargs['target']
         flag = True
         if os.path.exists(SETUPS_FPATH):
