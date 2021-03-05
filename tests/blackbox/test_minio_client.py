@@ -29,13 +29,13 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.utils.config_utils import read_yaml, read_content_json
 from commons.utils.system_utils import execute_cmd, create_file, remove_file
-from commons.utils.assert_utils import \
-    assert_true, assert_false, assert_in, assert_not_in, assert_equal
+from commons.utils.assert_utils import assert_true, assert_false
+from commons.utils.assert_utils import assert_in, assert_not_in, assert_equal
 from libs.s3 import s3_test_lib
 from libs.s3 import S3H_OBJ, ACCESS_KEY, SECRET_KEY
+from config import CMN_CFG
 s3_test_obj = s3_test_lib.S3TestLib()
 blackbox_cnf = read_yaml("config/blackbox/test_minio_client.yaml")[1]
-CM_CFG = read_yaml("config/common_config.yaml")[1]
 
 
 class TestMinioClient:
@@ -65,7 +65,7 @@ class TestMinioClient:
         """
         self.log.info("STARTED: Setup operations")
         access, secret = ACCESS_KEY, SECRET_KEY
-        path = CM_CFG["minio_path"]
+        path = CMN_CFG["minio_path"]
         if access != read_content_json(path)["hosts"]["s3"]["accessKey"]:
             S3H_OBJ.configure_minio(access, secret)
         self.log.info("ENDED: Setup operations")
