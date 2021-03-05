@@ -51,6 +51,7 @@ class TestProvSingleNode:
         """
         LOGGER.info("STARTED: Setup Module operations")
         cls.host = input('Specify hostname fqdn:\n')
+        #cls.host = hostname
         cls.uname = CMN_CFG["username"]
         cls.passwd = CMN_CFG["password"]
         cls.nd_obj = Node(hostname=cls.host, username=cls.uname,
@@ -88,16 +89,21 @@ class TestProvSingleNode:
         LOGGER.info("Checking number of volumes present")
         cmd = common_cmds.CMD_LSBLK
         count = self.nd_obj.execute_cmd(cmd, read_lines=True)
-        assert count >= test_cfg["count"], "Need at least 2 disks for deployment"
+        LOGGER.info("count : {}".format(int(count[0])))
+        assert int(count[0]) >= test_cfg["count"], "Need at least 2 disks for deployment"
 
-        LOGGER.info("Checking kernel and release version")
+        LOGGER.info("Checking OS release version")
         cmd = common_cmds.OS_REL_CMD
         resp = self.nd_obj.execute_cmd(cmd, read_lines=True)
+        resp = resp[0].strip()
+        LOGGER.info("os rel: {}".format(resp))
         assert resp == test_cfg["os_release"], "OS release is different than expected."
 
         LOGGER.info("Checking kernel version")
         cmd = common_cmds.KRNL_VER_CMD
         resp = self.nd_obj.execute_cmd(cmd, read_lines=True)
+        resp = resp[0].strip()
+        LOGGER.info("kernel: {}".format(resp))
         assert resp == test_cfg["kernel"], "Kernel version differs than expected."
 
         LOGGER.info("Starting the deployment steps.")
@@ -120,9 +126,8 @@ class TestProvSingleNode:
         for line in resp:
             assert test_cfg["stopped"] not in line, "Some services are not up."
 
-
-
-
+        LOGGER.info("Successfully deployed the build after prereq checks and done post "
+                    "deploy checks as well.")
 
 
 
