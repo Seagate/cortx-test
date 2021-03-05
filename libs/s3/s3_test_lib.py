@@ -138,8 +138,6 @@ class S3TestLib(S3Lib):
         :param bucket_name: Name of the bucket
         :param object_name: Name of the object
         :param file_path: Path of the file
-        :param m_key: Key for metadata
-        :param m_value: Value for metadata
         :return: (Boolean, object of put object method)
         """
         kwargs["m_key"] = kwargs.get("m_key", None)
@@ -484,8 +482,6 @@ class S3TestLib(S3Lib):
         :param object_name: Name of object.
         :param min_size: Minimum size of object in MB.
         :param max_size: Maximum size of object in MB.
-        :param object_count: No. of objects to be uploaded.
-        :param file_path: Object file path.
         :return: True or False and list of objects or error.
         """
         object_count = kwargs.get("object_count", None)
@@ -571,8 +567,6 @@ class S3TestLib(S3Lib):
         :param key: Key of the object to get.
         :param bucket: The bucket name containing the object.
         :param ranges:
-        :param str bucket_name: The bucket name containing the object.
-        :param str object_name: Key of the object to get.
         :return: (Boolean, Response)
         """
         try:
