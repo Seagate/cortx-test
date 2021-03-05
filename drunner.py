@@ -203,7 +203,7 @@ def run(opts: dict) -> None:
     finish = False  # Use finish to exit loop
     # start kafka producer
     _producer = Thread(target=producer.server, args=(topic, work_queue))  # Use finish in server
-    _producer.setDaemon(True)
+    #_producer.setDaemon(True)
     _producer.start()
 
     # for parallel group create a kafka entry
@@ -229,6 +229,7 @@ def run(opts: dict) -> None:
             work_queue.put(w_item)
     work_queue.put(None)  # poison
     work_queue.join()
+    _producer.join()
 
 
 def create_test_map(base_components_marks: Tuple,
