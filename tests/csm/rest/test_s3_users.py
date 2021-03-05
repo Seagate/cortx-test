@@ -3,13 +3,11 @@ import time
 import json
 import pytest
 import logging
-from libs.csm.rest.csm_rest_s3user import RestS3user
 from commons.utils import config_utils
 from commons.constants import Rest as const
 from libs.csm.csm_setup import CSMConfigsCheck
-from config import CSM_CFG, SETUP_DETAILS
-import os
-from commons import configmanager
+from libs.csm.rest.csm_rest_s3user import RestS3user
+
 
 class TestS3user():
     @classmethod
@@ -17,7 +15,7 @@ class TestS3user():
         """ This is method is for test suite set-up """
         self.log = logging.getLogger(__name__)
         self.log.info("Initializing test setups ......")
-        self.config =  CSMConfigsCheck()
+        self.config = CSMConfigsCheck()
         user_already_present = self.config.check_predefined_s3account_present()
         if not user_already_present:
             user_already_present = self.config.setup_csm_s3
