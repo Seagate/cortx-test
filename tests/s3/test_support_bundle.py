@@ -54,15 +54,15 @@ class TestSupportBundle:
         Initializing common variable which will be used in test and
         teardown for cleanup
         """
-        cls.LOGGER = logging.getLogger(__name__)
-        cls.LOGGER.info("STARTED: Setup operations")
+        cls.log = logging.getLogger(__name__)
+        cls.log.info("STARTED: Setup operations")
         cls.file_lst = []
         cls.pcs_start = True
         cls.host_ip = CM_CFG["host"]
         cls.uname = CM_CFG["username"]
         cls.passwd = CM_CFG["password"]
         cls.sys_bundle_dir = const.REMOTE_DEFAULT_DIR
-        cls.LOGGER.info("ENDED: Setup operations")
+        cls.log.info("ENDED: Setup operations")
 
     def setup_method(self):
         """
@@ -76,7 +76,7 @@ class TestSupportBundle:
 
     def remote_execution(self, hostname, username, password, cmd):
         """running remote cmd."""
-        self.LOGGER.info("Remote Execution")
+        self.log.info("Remote Execution")
         return run_remote_cmd(cmd, hostname, username, password)
 
     def create_support_bundle(
@@ -96,7 +96,7 @@ class TestSupportBundle:
         """
         success_msg = support_bundle_conf["support_bundle"]["success_msg"]
         final_cmd = "{} {} {}".format(cmd.BUNDLE_CMD, bundle_name, dest_dir)
-        self.LOGGER.info("Command to execute : %s", final_cmd)
+        self.log.info("Command to execute : %s", final_cmd)
         resp = self.remote_execution(
             host_ip, self.uname, self.passwd, final_cmd)
         if resp[0]:
@@ -131,7 +131,7 @@ class TestSupportBundle:
                     return False, var_mero_dict
             return True, var_mero_dict
         except CTException as error:
-            self.LOGGER.error(error)
+            self.log.error(error)
             return False, error
 
     def validate_time_stamp(self, org_file_path, ext_file_path):
@@ -143,7 +143,7 @@ class TestSupportBundle:
         :param str ext_file_path: Support bundle path of the file
         :return: Boolean
         """
-        self.LOGGER.info(
+        self.log.info(
             "Validating the time stamp of : %s with %s",
             org_file_path, ext_file_path)
         tmpstamp1 = self.pysftp_obj.stat(org_file_path)
@@ -178,7 +178,7 @@ class TestSupportBundle:
                         cheksum_res_1 = cheksum_res_1[0].split()[0].strip()
                         cheksum_res_2 = cheksum_res_2[0].split()[0].strip()
                         if cheksum_res_1 != cheksum_res_2:
-                            self.LOGGER.info(
+                            self.log.info(
                                 "Failed Checksum: %s:%s and %s:%s",
                                 md5cmd_1,
                                 cheksum_res_1,
@@ -263,7 +263,7 @@ class TestSupportBundle:
         status_cmd = support_bundle_conf["support_bundle"]["hctl_status"]
         resp = self.remote_execution(
             self.host_ip, self.uname, self.passwd, stop_cmd)
-        self.LOGGER.info("hctl Stop resp : %s", resp)
+        self.log.info("hctl Stop resp : %s", resp)
         time.sleep(30)
         _, stdout, stderr = self.host_obj.exec_command(status_cmd)
         result = stdout.readlines() if stdout.readlines() else stderr.readlines()
@@ -284,7 +284,7 @@ class TestSupportBundle:
             resp_val = resp.st_size
             flag = bool(resp.st_size > 0)
         except CTException as error:
-            self.LOGGER.error(
+            self.log.error(
                 "%s %s: %s", const.EXCEPTION_ERROR,
                 self.is_file_size.__name__, error)
             resp_val = error
@@ -296,18 +296,18 @@ class TestSupportBundle:
 
         It will perform all cleanup operations.
         """
-        self.LOGGER.info("STARTED: Teardown operations")
+        self.log.info("STARTED: Teardown operations")
         if not self.pcs_start:
-            self.LOGGER.info("Step : Starting cluster")
+            self.log.info("Step : Starting cluster")
             S3H_OBJ.enable_disable_s3server_instances(resource_disable=False)
             resp = self.pcs_start_stop_cluster(
                 support_bundle_conf["support_bundle"]["cluster_start_cmd"],
                 support_bundle_conf["support_bundle"]["cluster_status_cmd"])
             self.pcs_start = resp[0]
-        self.LOGGER.info("Step: Deleting all the remote files")
+        self.log.info("Step: Deleting all the remote files")
         if self.file_lst:
             for path in self.file_lst:
-                self.LOGGER.info("Deleting %s", path)
+                self.log.info("Deleting %s", path)
                 S3H_OBJ.delete_remote_dir(self.pysftp_obj, path)
         self.node_obj.disconnect()
         self.remote_execution(
@@ -315,8 +315,8 @@ class TestSupportBundle:
             self.uname,
             self.passwd,
             support_bundle_conf["support_bundle"]["rm_tmp_bundle_cmd"])
-        self.LOGGER.info("Step : Deleted all the files")
-        self.LOGGER.info("ENDED: Teardown operations")
+        self.log.info("Step : Deleted all the files")
+        self.log.info("ENDED: Teardown operations")
 
     @pytest.mark.parallel
     @pytest.mark.s3
@@ -324,7 +324,7 @@ class TestSupportBundle:
     @CTFailOn(error_handler)
     def test_dest_has_less_space_5274(self):
         """Support bundle collection when destination has less space than required."""
-        self.LOGGER.info(
+        self.log.info(
             "STARTED: Support bundle collection when destination has less space than required")
         test_cfg = support_bundle_conf["test_5274"]
         common_dir = test_cfg["common_dir"]
@@ -335,20 +335,20 @@ class TestSupportBundle:
         self.file_lst.append(os.path.join(dir_path))
         for i in range(test_cfg["count"]):
             bundle_name = "{}_{}".format(test_cfg["bundle_prefix"], str(i))
-            self.LOGGER.info(
+            self.log.info(
                 "Step 1: Creating support bundle %s.tar.gz", bundle_name)
             resp = self.create_support_bundle(
                 bundle_name, dir_path, self.host_ip)
             if not resp[0]:
-                self.LOGGER.info(
+                self.log.info(
                     "Step 1: Failed to create support bundle %s.tar.gz message : %s",
                     bundle_name, resp)
                 break
-            self.LOGGER.info(
+            self.log.info(
                 "Step 1: Successfully created support bundle message : %s, %s",
                 bundle_name, resp)
             assert_false(resp[0], resp[1])
-        self.LOGGER.info(
+        self.log.info(
             "ENDED: Support bundle collection when destination has less space than required")
 
     @pytest.mark.parallel
@@ -357,7 +357,7 @@ class TestSupportBundle:
     @CTFailOn(error_handler)
     def test_collect_triggered_simultaneously_5280(self):
         """Test multiple Support bundle collection triggered simultaneously."""
-        self.LOGGER.info(
+        self.log.info(
             "STARTED: Test multiple Support bundle collection triggered simultaneously")
         test_cfg = support_bundle_conf["test_5280"]
         common_dir = test_cfg["common_dir"]
@@ -367,7 +367,7 @@ class TestSupportBundle:
         self.file_lst.append(os.path.join(remote_path))
         resp_lst = manager.list()
         process_lst = []
-        self.LOGGER.info(
+        self.log.info(
             "Step 1: Creating support bundle parallely %s.tar.gz",
             test_cfg["bundle_prefix"])
         for i in range(test_cfg["count"]):
@@ -385,10 +385,10 @@ class TestSupportBundle:
             process.join()
         true_flag = all([temp[0] for temp in resp_lst])
         assert_true(true_flag, resp_lst)
-        self.LOGGER.info(
+        self.log.info(
             "Step 1: validated all support bundle created parallely %s.tar.gz",
             test_cfg["bundle_prefix"])
-        self.LOGGER.info(
+        self.log.info(
             "ENDED: Test multiple Support bundle collection triggered simultaneously")
 
     @pytest.mark.parallel
@@ -397,7 +397,7 @@ class TestSupportBundle:
     @CTFailOn(error_handler)
     def test_core_m0traces_all_instances_5282(self):
         """Validate Support bundle contains cores and m0traces for all instances."""
-        self.LOGGER.info(
+        self.log.info(
             "STARTED: Validate Support bundle contains cores and m0traces for all instances")
         test_cfg = support_bundle_conf["test_5282"]
         common_dir = test_cfg["common_dir"]
@@ -410,12 +410,12 @@ class TestSupportBundle:
             bundle_name = "{}_{}".format(test_cfg["bundle_prefix"], str(i))
             bundle_tar_name = "s3_{}.{}".format(
                 bundle_name, test_cfg["tar_postfix"])
-            self.LOGGER.info(
+            self.log.info(
                 "Step 1: Creating support bundle %s", bundle_tar_name)
             resp = self.create_support_bundle(
                 bundle_name, remote_path, self.host_ip)
             assert_true(resp[0], resp[1])
-            self.LOGGER.info(
+            self.log.info(
                 "Step 1: Successfully created support bundle: %s, %s",
                 bundle_name, resp)
             tar_file_path = os.path.join(
@@ -425,7 +425,7 @@ class TestSupportBundle:
             self.remote_execution(
                 self.host_ip, self.uname, self.passwd, mkdir_cmd)
             tar_cmd = test_cfg["tar_cmd"].format(tar_file_path, extracted_dir)
-            self.LOGGER.info(
+            self.log.info(
                 "Step 2 and 3: Extracting the tar file and "
                 "validating the tar extraction: %s", tar_cmd)
             self.remote_execution(
@@ -439,7 +439,7 @@ class TestSupportBundle:
                 test_cfg["tmp_dir"],
                 dir_list[0],
                 test_cfg["extracted_m0trace_path"])
-            self.LOGGER.info(abs_m0trace_path)
+            self.log.info(abs_m0trace_path)
             file_prefix = support_bundle_conf["support_bundle"]["m0postfix"]
             resp = self.get_s3_instaces_and_ism0exists(
                 abs_m0trace_path, file_prefix)
@@ -447,9 +447,9 @@ class TestSupportBundle:
             var_path = self.sys_bundle_dir
             res = self.compare_files(var_path, resp[1])
             assert_true(res[0], res[1])
-            self.LOGGER.info(
+            self.log.info(
                 "Step 2 and 3: Extracted the tar file and validated tar file")
-        self.LOGGER.info(
+        self.log.info(
             "ENDED: Validate Support bundle contains cores and m0traces for all instances")
 
     # As this test cases requires destructive operations to be performed on the node
@@ -459,7 +459,7 @@ class TestSupportBundle:
     @pytest.mark.tags("TEST-8691 ")
     def test_collection_with_network_fluctuation_5272(self):
         """Support bundle collection with network fluctuation."""
-        self.LOGGER.info(
+        self.log.info(
             "STARTED: Test Support bundle collection with network fluctuation")
         test_cfg = support_bundle_conf["test_5272"]
         bundle_name = test_cfg["bundle_prefix"]
@@ -475,26 +475,26 @@ class TestSupportBundle:
             bundle_name, test_cfg["tar_postfix"])
         tar_file_path = os.path.join(
             remote_path, tar_dest_dir, bundle_tar_name)
-        self.LOGGER.info(
+        self.log.info(
             "Step 1: Creating support bundle %s.tar.gz", bundle_name)
         process = Process(target=self.create_support_bundle, args=(
             bundle_name, remote_path, self.host_ip, resp_lst))
         process.start()
-        self.LOGGER.info(
+        self.log.info(
             "Step 2: Restart network service when collection is progress")
         S3H_OBJ.restart_s3server_service(network_service)
-        self.LOGGER.info("Waiting till cluster is up")
+        self.log.info("Waiting till cluster is up")
         time.sleep(test_cfg["cluster_up_delay"])
         resp = S3H_OBJ.get_s3server_service_status(network_service)
         assert_true(resp[0], resp[1])
-        self.LOGGER.info(
+        self.log.info(
             "Step 2: Restarted %s service successfully", network_service)
         true_flag = all([temp[0] for temp in resp_lst])
         assert_true(true_flag, resp_lst)
         resp = S3H_OBJ.is_s3_server_path_exists(tar_file_path)
         assert_false(resp[0], resp[1])
-        self.LOGGER.info("Step 1: Support bundle did not created")
-        self.LOGGER.info(
+        self.log.info("Step 1: Support bundle did not created")
+        self.log.info(
             "ENDED: Test Support bundle collection with network fluctuation")
 
     @pytest.mark.parallel
@@ -503,7 +503,7 @@ class TestSupportBundle:
     @CTFailOn(error_handler)
     def test_collecion_primary_secondary_nodes_5273(self):
         """Test Support bundle collection from Primary and Secondary nodes of cluster."""
-        self.LOGGER.info(
+        self.log.info(
             "STARTED: Test Support bundle collection from Primary and Secondary nodes of cluster")
         test_cfg = support_bundle_conf["test_5273"]
         common_dir = test_cfg["common_dir"]
@@ -513,7 +513,7 @@ class TestSupportBundle:
         self.file_lst.append(os.path.join(remote_path))
         tar_dest_dir = os.path.join(remote_path, test_cfg["common_dir"])
         node_list = [self.host_ip, CM_CFG["host2"]]
-        self.LOGGER.info(
+        self.log.info(
             "Step 1 Creating support bundle on primary and secondary nodes")
         for node in node_list:
             bundle_name = "{}_{}".format(test_cfg["bundle_prefix"], str(node))
@@ -521,7 +521,7 @@ class TestSupportBundle:
                 bundle_name, test_cfg["tar_postfix"])
             tar_file_path = os.path.join(
                 remote_path, tar_dest_dir, bundle_tar_name)
-            self.LOGGER.info(
+            self.log.info(
                 "Step : Creating support bundle %s on node %s",
                 bundle_tar_name, node)
             resp = self.create_support_bundle(
@@ -529,16 +529,16 @@ class TestSupportBundle:
             assert_true(resp[0], resp[1])
             resp = S3H_OBJ.is_s3_server_path_exists(tar_file_path, host=node)
             assert_true(resp[0], resp[1])
-            self.LOGGER.info(
+            self.log.info(
                 "Step : Created support bundle %s on node %s",
                 bundle_tar_name, node)
             self.node_obj.connect(node, username=self.uname, password=self.passwd)
             sftp = self.host_obj.open_sftp()
             S3H_OBJ.delete_remote_dir(sftp, remote_path)
             sftp.close()
-        self.LOGGER.info(
+        self.log.info(
             "Step 1:Support Bundle was created on primary and secondary nodes")
-        self.LOGGER.info(
+        self.log.info(
             "ENDED: Test Support bundle collection from Primary and Secondary nodes of cluster")
 
     # As this test cases requires destructive operations on the node
@@ -549,7 +549,7 @@ class TestSupportBundle:
     @CTFailOn(error_handler)
     def test_collet_authservice_down_5276(self):
         """Test Support bundle collection when authserver service is down."""
-        self.LOGGER.info(
+        self.log.info(
             "STARTED: Test Support bundle collection when authserver service is down")
         test_cfg = support_bundle_conf["test_5276"]
         bundle_name = test_cfg["bundle_prefix"]
@@ -560,30 +560,30 @@ class TestSupportBundle:
         self.file_lst.append(os.path.join(remote_path))
         tar_dest_dir = os.path.join(remote_path, test_cfg["common_dir"])
         stop_cmd = const.SYSTEM_CTL_STOP_CMD.format(test_cfg["service_name"])
-        self.LOGGER.info("Step 1: Stopping the service : %s", stop_cmd)
+        self.log.info("Step 1: Stopping the service : %s", stop_cmd)
         resp = self.start_stop_service(stop_cmd, self.host_ip)
         assert_false(resp[0], resp[1])
-        self.LOGGER.info(
+        self.log.info(
             "Step 1: Service %s was stopped successfully",
             test_cfg["service_name"])
         bundle_tar_name = "s3_{}.{}".format(
             bundle_name, test_cfg["tar_postfix"])
         tar_file_path = os.path.join(
             remote_path, tar_dest_dir, bundle_tar_name)
-        self.LOGGER.info(
+        self.log.info(
             "Step 2: Creating support bundle %s.tar.gz", bundle_name)
         resp = self.create_support_bundle(
             bundle_name, remote_path, self.host_ip)
         assert_true(resp[0], resp[1])
         resp = S3H_OBJ.is_s3_server_path_exists(tar_file_path)
         assert_true(resp[0], resp[1])
-        self.LOGGER.info("Step 2: Support bundle created successfully")
+        self.log.info("Step 2: Support bundle created successfully")
         start_cmd = const.SYSTEM_CTL_START_CMD.format(test_cfg["service_name"])
-        self.LOGGER.info("Step 3: Starting the service : %s", start_cmd)
+        self.log.info("Step 3: Starting the service : %s", start_cmd)
         resp = self.start_stop_service(start_cmd, self.host_ip)
         assert_true(resp[0], resp[1])
-        self.LOGGER.info("Step 3: Started the service : %s", start_cmd)
-        self.LOGGER.info(
+        self.log.info("Step 3: Started the service : %s", start_cmd)
+        self.log.info(
             "ENDED: Test Support bundle collection when authserver service is down")
 
     # As this test cases requires destructive operations on the node
@@ -594,7 +594,7 @@ class TestSupportBundle:
     @CTFailOn(error_handler)
     def test_collection_haproxy_down_5277(self):
         """Test Support bundle collection when haproxy service is down."""
-        self.LOGGER.info(
+        self.log.info(
             "STARTED: Test Support bundle collection when haproxy service is down")
         test_cfg = support_bundle_conf["test_5277"]
         bundle_name = test_cfg["bundle_prefix"]
@@ -605,30 +605,30 @@ class TestSupportBundle:
         self.file_lst.append(os.path.join(remote_path))
         tar_dest_dir = os.path.join(remote_path, test_cfg["common_dir"])
         stop_cmd = const.SYSTEM_CTL_STOP_CMD.format(test_cfg["service_name"])
-        self.LOGGER.info("Step 1: Stopping the service : %s", stop_cmd)
+        self.log.info("Step 1: Stopping the service : %s", stop_cmd)
         resp = self.start_stop_service(stop_cmd, self.host_ip)
         assert_false(resp[0], resp[1])
-        self.LOGGER.info(
+        self.log.info(
             "Step 1: Service %s was stopped successfully",
             test_cfg["service_name"])
         bundle_tar_name = "s3_{}.{}".format(
             bundle_name, test_cfg["tar_postfix"])
         tar_file_path = os.path.join(
             remote_path, tar_dest_dir, bundle_tar_name)
-        self.LOGGER.info(
+        self.log.info(
             "Step 2: Creating support bundle %s.tar.gz", bundle_name)
         resp = self.create_support_bundle(
             bundle_name, remote_path, self.host_ip)
         assert_true(resp[0], resp[1])
         resp = S3H_OBJ.is_s3_server_path_exists(tar_file_path)
         assert_true(resp[0], resp[1])
-        self.LOGGER.info("Step 2: Support bundle created successfully")
+        self.log.info("Step 2: Support bundle created successfully")
         start_cmd = const.SYSTEM_CTL_START_CMD.format(test_cfg["service_name"])
-        self.LOGGER.info("Step 3: Starting the service : %s", start_cmd)
+        self.log.info("Step 3: Starting the service : %s", start_cmd)
         resp = self.start_stop_service(start_cmd, self.host_ip)
         assert_true(resp[0], resp[1])
-        self.LOGGER.info("Step 3: Started the service : %s", start_cmd)
-        self.LOGGER.info(
+        self.log.info("Step 3: Started the service : %s", start_cmd)
+        self.log.info(
             "ENDED: Test Support bundle collection when haproxy service is down")
 
     # As this test cases requires destructive operations on the node
@@ -639,7 +639,7 @@ class TestSupportBundle:
     @CTFailOn(error_handler)
     def test_collection_cluster_down_5278(self):
         """Test Support bundle collection when Cluster is shut down."""
-        self.LOGGER.info(
+        self.log.info(
             "STARTED: Test Support bundle collection when Cluster is shut down")
         test_cfg = support_bundle_conf["test_5278"]
         bundle_name = test_cfg["bundle_prefix"]
@@ -649,23 +649,23 @@ class TestSupportBundle:
         assert_true(resp, remote_path)
         self.file_lst.append(os.path.join(remote_path))
         tar_dest_dir = os.path.join(remote_path, test_cfg["common_dir"])
-        self.LOGGER.info("Step 1: Stopping the cluster")
+        self.log.info("Step 1: Stopping the cluster")
         self.pcs_start = False
         resp = self.hctl_stop_cmd()
         assert_true(resp[0], resp[1])
-        self.LOGGER.info("Step 1: Cluster is stopped")
+        self.log.info("Step 1: Cluster is stopped")
         bundle_tar_name = "s3_{}.{}".format(
             bundle_name, test_cfg["tar_postfix"])
         tar_file_path = os.path.join(
             remote_path, tar_dest_dir, bundle_tar_name)
-        self.LOGGER.info(
+        self.log.info(
             "Step 2: Creating support bundle %s.tar.gz", bundle_name)
         resp = self.create_support_bundle(
             bundle_name, remote_path, self.host_ip)
         assert_true(resp[0], resp[1])
         resp = S3H_OBJ.is_s3_server_path_exists(tar_file_path)
         assert_true(resp[0], resp[1])
-        self.LOGGER.info(
+        self.log.info(
             "ENDED: Test Support bundle collection when Cluster is shut down")
 
     @pytest.mark.parallel
@@ -674,7 +674,7 @@ class TestSupportBundle:
     @CTFailOn(error_handler)
     def test_collection_one_after_other_5279(self):
         """Test multiple Support bundle collections one after the other."""
-        self.LOGGER.info(
+        self.log.info(
             "STARTED: Test multiple Support bundle collections one after the other")
         test_cfg = support_bundle_conf["test_5279"]
         common_dir = test_cfg["common_dir"]
@@ -683,7 +683,7 @@ class TestSupportBundle:
         assert_true(resp, remote_path)
         self.file_lst.append(os.path.join(remote_path))
         tar_dest_dir = os.path.join(remote_path, test_cfg["common_dir"])
-        self.LOGGER.info(
+        self.log.info(
             "Step 1: Creating multiple support bundle")
         for i in range(test_cfg["count"]):
             bundle_name = "{}_{}".format(test_cfg["bundle_prefix"], str(i))
@@ -691,19 +691,19 @@ class TestSupportBundle:
                 bundle_name, test_cfg["tar_postfix"])
             tar_file_path = os.path.join(
                 remote_path, tar_dest_dir, bundle_tar_name)
-            self.LOGGER.info(
+            self.log.info(
                 "Step : Creating support bundle %s.tar.gz", bundle_name)
             resp = self.create_support_bundle(
                 bundle_name, remote_path, self.host_ip)
             assert_true(resp[0], resp[1])
             resp = S3H_OBJ.is_s3_server_path_exists(tar_file_path)
             assert_true(resp[0], resp[1])
-            self.LOGGER.info(
+            self.log.info(
                 "Step : Created support bundle %s.tar.gz", bundle_name)
-            self.LOGGER.info(
+            self.log.info(
                 "Step 1: Successfully created support bundle message : %s, %s",
                 bundle_name, resp)
-        self.LOGGER.info(
+        self.log.info(
             "ENDED: Test multiple Support bundle collections one after the other")
 
     @pytest.mark.parallel
@@ -712,7 +712,7 @@ class TestSupportBundle:
     @CTFailOn(error_handler)
     def test_s3server_logs_all_instances_5281(self):
         """Validate Support bundle contains s3server logs for all instances."""
-        self.LOGGER.info(
+        self.log.info(
             "STARTED: Validate Support bundle contains s3server logs for all instances")
         test_cfg = support_bundle_conf["test_5281"]
         bundle_name = test_cfg["bundle_prefix"]
@@ -726,15 +726,15 @@ class TestSupportBundle:
             bundle_name, test_cfg["tar_postfix"])
         tar_file_path = os.path.join(
             remote_path, tar_dest_dir, bundle_tar_name)
-        self.LOGGER.info(
+        self.log.info(
             "Step 1: Creating support bundle %s.tar.gz", bundle_name)
         resp = self.create_support_bundle(
             bundle_name, remote_path, self.host_ip)
         assert_true(resp[0], resp[1])
         resp = S3H_OBJ.is_s3_server_path_exists(tar_file_path)
         assert_true(resp[0], resp[1])
-        self.LOGGER.info("Step 1: Support bundle tar created successfully")
-        self.LOGGER.info(
+        self.log.info("Step 1: Support bundle tar created successfully")
+        self.log.info(
             "Step 2: Validating the s3server logs in the support bundle tar")
         tar_cmd = test_cfg["tar_cmd"].format(tar_file_path, tar_dest_dir)
         self.remote_execution(
@@ -746,9 +746,9 @@ class TestSupportBundle:
         resp = self.get_s3_instaces_and_ism0exists(
             extracted_file_path, test_cfg["s3server_pre"])
         assert_true(resp[0], resp[1])
-        self.LOGGER.info(
+        self.log.info(
             "Step 2: Validated the s3server logs of the support bundle tar")
-        self.LOGGER.info(
+        self.log.info(
             "ENDED: Validate Support bundle contains s3server logs for all instances")
 
     @pytest.mark.parallel
@@ -757,7 +757,7 @@ class TestSupportBundle:
     @CTFailOn(error_handler)
     def test_authserver_logs_5283(self):
         """Validate Support bundle contains authserver logs."""
-        self.LOGGER.info(
+        self.log.info(
             "STARTED: Validate Support bundle contains authserver logs")
         test_cfg = support_bundle_conf["test_5283"]
         bundle_name = test_cfg["bundle_prefix"]
@@ -771,15 +771,15 @@ class TestSupportBundle:
             bundle_name, test_cfg["tar_postfix"])
         tar_file_path = os.path.join(
             remote_path, tar_dest_dir, bundle_tar_name)
-        self.LOGGER.info(
+        self.log.info(
             "Step 1: Creating support bundle %s.tar.gz", bundle_name)
         resp = self.create_support_bundle(
             bundle_name, remote_path, self.host_ip)
         assert_true(resp[0], resp[1])
         resp = S3H_OBJ.is_s3_server_path_exists(tar_file_path)
         assert_true(resp[0], resp[1])
-        self.LOGGER.info("Step 1: Support bundle tar created successfully")
-        self.LOGGER.info("Step 2: Validating the authserver logs in the tar")
+        self.log.info("Step 1: Support bundle tar created successfully")
+        self.log.info("Step 2: Validating the authserver logs in the tar")
         tar_cmd = test_cfg["tar_cmd"].format(tar_file_path, tar_dest_dir)
         self.remote_execution(
             self.host_ip, self.uname, self.passwd, tar_cmd)
@@ -787,8 +787,8 @@ class TestSupportBundle:
             tar_dest_dir, test_cfg["var_path"])
         resp = self.is_file_size(auth_server_path)
         assert_true(resp[0], resp[1])
-        self.LOGGER.info("Step 2: Validated the authserver logs of the tar")
-        self.LOGGER.info(
+        self.log.info("Step 2: Validated the authserver logs of the tar")
+        self.log.info(
             "ENDED: Validate Support bundle contains authserver logs")
 
     @pytest.mark.parallel
@@ -797,7 +797,7 @@ class TestSupportBundle:
     @CTFailOn(error_handler)
     def test_haproxy_logs_5284(self):
         """Validate Support bundle contains haproxy logs."""
-        self.LOGGER.info(
+        self.log.info(
             "STARTED: Validate Support bundle contains haproxy logs")
         test_cfg = support_bundle_conf["test_5284"]
         bundle_name = test_cfg["bundle_prefix"]
@@ -811,15 +811,15 @@ class TestSupportBundle:
             bundle_name, test_cfg["tar_postfix"])
         tar_file_path = os.path.join(
             remote_path, tar_dest_dir, bundle_tar_name)
-        self.LOGGER.info(
+        self.log.info(
             "Step 1: Creating support bundle %s.tar.gz", bundle_name)
         resp = self.create_support_bundle(
             bundle_name, remote_path, self.host_ip)
         assert_true(resp[0], resp[1])
         resp = S3H_OBJ.is_s3_server_path_exists(tar_file_path)
         assert_true(resp[0], resp[1])
-        self.LOGGER.info("Step 1: Support bundle tar created successfully")
-        self.LOGGER.info("Step 2: Validating the haproxy logs in the tar")
+        self.log.info("Step 1: Support bundle tar created successfully")
+        self.log.info("Step 2: Validating the haproxy logs in the tar")
         tar_cmd = test_cfg["tar_cmd"].format(tar_file_path, tar_dest_dir)
         self.remote_execution(
             self.host_ip, self.uname, self.passwd, tar_cmd)
@@ -827,8 +827,8 @@ class TestSupportBundle:
             tar_dest_dir, test_cfg["var_path"])
         resp = self.is_file_size(auth_server_path)
         assert_true(resp[0], resp[1])
-        self.LOGGER.info("Step 2: Validated the haproxy logs of the tar")
-        self.LOGGER.info(
+        self.log.info("Step 2: Validated the haproxy logs of the tar")
+        self.log.info(
             "ENDED: Validate Support bundle contains haproxy logs")
 
     # As this test cases requires destructive operations on the node
@@ -839,7 +839,7 @@ class TestSupportBundle:
     @CTFailOn(error_handler)
     def test_collection_s3server_down_5275(self):
         """Test Support bundle collection when s3server services are down."""
-        self.LOGGER.info(
+        self.log.info(
             "STARTED: Test Support bundle collection when s3server services are down")
         test_cfg = support_bundle_conf["test_5275"]
         bundle_name = test_cfg["bundle_prefix"]
@@ -849,31 +849,31 @@ class TestSupportBundle:
         assert_true(resp, remote_path)
         self.file_lst.append(os.path.join(remote_path))
         tar_dest_dir = os.path.join(remote_path, test_cfg["common_dir"])
-        self.LOGGER.info("Step 1: Stopping the s3server services")
+        self.log.info("Step 1: Stopping the s3server services")
         self.pcs_start = False
         resp = S3H_OBJ.enable_disable_s3server_instances(
             resource_disable=test_cfg["resource_disable"])
         assert_true(resp[0], resp[1])
         resp = S3H_OBJ.check_s3services_online()
         assert_false(resp[0], resp[1])
-        self.LOGGER.info("Step 1: s3server services was stopped successfully")
+        self.log.info("Step 1: s3server services was stopped successfully")
         bundle_tar_name = "s3_{}.{}".format(
             bundle_name, test_cfg["tar_postfix"])
         tar_file_path = os.path.join(
             remote_path, tar_dest_dir, bundle_tar_name)
-        self.LOGGER.info(
+        self.log.info(
             "Step 2: Creating support bundle %s.tar.gz", bundle_name)
         resp = self.create_support_bundle(
             bundle_name, remote_path, self.host_ip)
         assert_true(resp[0], resp[1])
         resp = S3H_OBJ.is_s3_server_path_exists(tar_file_path)
         assert_true(resp[0], resp[1])
-        self.LOGGER.info("Step 2: Support bundle created successfully")
+        self.log.info("Step 2: Support bundle created successfully")
         resp = S3H_OBJ.enable_disable_s3server_instances(
             resource_disable=test_cfg["resource_enable"])
         assert_true(resp[0], resp[1])
         self.pcs_start = True
-        self.LOGGER.info(
+        self.log.info(
             "ENDED: Test Support bundle collection when s3server services are down")
 
     @pytest.mark.parallel
@@ -882,7 +882,7 @@ class TestSupportBundle:
     @CTFailOn(error_handler)
     def test_collection_script_5270(self):
         """Test Support bundle collection through command/script."""
-        self.LOGGER.info(
+        self.log.info(
             "STARTED: Test Support bundle collection through command/script")
         test_cfg = support_bundle_conf["test_5270"]
         bundle_name = test_cfg["bundle_prefix"]
@@ -895,18 +895,18 @@ class TestSupportBundle:
         bundle_tar_name = "s3_{}.{}".format(
             bundle_name, test_cfg["tar_postfix"])
         tar_file_path = os.path.join(tar_dest_dir, bundle_tar_name)
-        self.LOGGER.info(
+        self.log.info(
             "Step 1: Creating support bundle %s.tar.gz", bundle_name)
         resp = self.create_support_bundle(
             bundle_name, dir_path, self.host_ip)
         assert_true(resp[0], resp[1])
-        self.LOGGER.info(
+        self.log.info(
             "Step 1: Created support bundle %s.tar.gz", bundle_name)
-        self.LOGGER.info("Step 2: Verifying that support bundle is created")
+        self.log.info("Step 2: Verifying that support bundle is created")
         resp = S3H_OBJ.is_s3_server_path_exists(tar_file_path)
         assert_true(resp[0], resp[1])
-        self.LOGGER.info("Step 2: Verified that support bundle is created")
-        self.LOGGER.info(
+        self.log.info("Step 2: Verified that support bundle is created")
+        self.log.info(
             "ENDED: Test Support bundle collection through command/script")
 
     @pytest.mark.parallel
@@ -915,7 +915,7 @@ class TestSupportBundle:
     @CTFailOn(error_handler)
     def test_system_configs_5285(self):
         """Validate Support bundle contains system related configs."""
-        self.LOGGER.info(
+        self.log.info(
             "STARTED: Validate Support bundle contains system related configs")
         cfg_5285 = support_bundle_conf["test_5285"]
         bundle_name = cfg_5285["bundle_prefix"]
@@ -929,24 +929,24 @@ class TestSupportBundle:
         bundle_name = "{0}_{1}".format(bundle_name, str(cfg_5285["count"]))
         bundle_tar_name = "s3_{0}.{1}".format(
             bundle_name, cfg_5285["tar_postfix"])
-        self.LOGGER.info(
+        self.log.info(
             "Step 1: Creating support bundle %s", bundle_tar_name)
         resp = self.create_support_bundle(
             bundle_name, dir_path, self.host_ip)
         assert_true(resp[0], resp[1])
-        self.LOGGER.info(
+        self.log.info(
             "Step 1: Created support bundle successfully: %s %s",
             bundle_name, resp)
         tar_file_path = os.path.join(
             dir_path, tar_dest_dir, bundle_tar_name)
-        self.LOGGER.info(
+        self.log.info(
             "Step 2: Extracting the support bundle %s", bundle_tar_name)
         tar_cmd = cfg_5285["tar_cmd"].format(tar_file_path, tar_dest_dir)
         self.remote_execution(
             self.host_ip, self.uname, self.passwd, tar_cmd)
-        self.LOGGER.info(
+        self.log.info(
             "Step 2: Extracted the support bundle %s", bundle_tar_name)
-        self.LOGGER.info(
+        self.log.info(
             "Step 3: Checking config files are present under %s after "
             "extracting a support bundle", tar_dest_dir)
         cfg_5285 = const.CFG_FILES
@@ -955,17 +955,17 @@ class TestSupportBundle:
             resp = S3H_OBJ.is_s3_server_path_exists(file_path)
             assert_true(resp[0], resp[1])
             ex_cfg_files.append(file_path)
-        self.LOGGER.info(
+        self.log.info(
             "Step 3: Checked for config files are present under %s after "
             "extracting a support bundle", tar_dest_dir)
-        self.LOGGER.info(
+        self.log.info(
             "Step 4: Verifying contents of extracted config files with system config files")
         resp = self.validate_file_checksum(cfg_5285, ex_cfg_files)
         assert_true(resp, f"validate file checksum failed.")
-        self.LOGGER.info(
+        self.log.info(
             "Step 4: Verified that contents of extracted config files are "
             "same as system config files")
-        self.LOGGER.info(
+        self.log.info(
             "ENDED: Validate Support bundle contains system related configs")
 
     @pytest.mark.parallel
@@ -974,7 +974,7 @@ class TestSupportBundle:
     @CTFailOn(error_handler)
     def test_collect_system_info_stats_5286(self):
         """Validate Support bundle collects system information and stats."""
-        self.LOGGER.info(
+        self.log.info(
             "STARTED: Validate Support bundle collects system information and stats")
         cfg_5286 = support_bundle_conf["test_5286"]
         bundle_name = cfg_5286["bundle_prefix"]
@@ -988,24 +988,24 @@ class TestSupportBundle:
         bundle_name = "{0}_{1}".format(bundle_name, str(cfg_5286["count"]))
         bundle_tar_name = "s3_{0}.{1}".format(
             bundle_name, cfg_5286["tar_postfix"])
-        self.LOGGER.info(
+        self.log.info(
             "Step 1: Creating support bundle %s", bundle_tar_name)
         resp = self.create_support_bundle(
             bundle_name, remote_path, self.host_ip)
         assert_true(resp[0], resp[1])
-        self.LOGGER.info(
+        self.log.info(
             "Step 1: Created support bundle successfully: %s, %s",
             bundle_name, resp)
         tar_file_path = os.path.join(
             remote_path, tar_dest_dir, bundle_tar_name)
-        self.LOGGER.info(
+        self.log.info(
             "Step 2: Extracting the support bundle %s", bundle_tar_name)
         tar_cmd = cfg_5286["tar_cmd"].format(tar_file_path, tar_dest_dir)
         self.remote_execution(
             self.host_ip, self.uname, self.passwd, tar_cmd)
-        self.LOGGER.info(
+        self.log.info(
             "Step 2: Extracted the support bundle %s", bundle_tar_name)
-        self.LOGGER.info(
+        self.log.info(
             "Step 3: Checking if system level stat files are collected")
         stat_files_dir = self.pysftp_obj.listdir(os.path.join(
             tar_dest_dir, cfg_5286["stat_files_dir"]))
@@ -1020,14 +1020,14 @@ class TestSupportBundle:
             resp = S3H_OBJ.is_s3_server_path_exists(stat_file_path)
             assert_true(resp[0], resp[1])
             stat_files.append(stat_file_path)
-        self.LOGGER.info(
+        self.log.info(
             "Step 3: Checked that system level stat files are collected")
-        self.LOGGER.info(
+        self.log.info(
             "Step 4 : Verifying that system level stat files are not empty")
         for file in stat_files:
             resp = self.is_file_size(file)
             assert_true(resp[0], resp[1])
-        self.LOGGER.info(
+        self.log.info(
             "Step 4 : Verified that system level stat files are not empty")
-        self.LOGGER.info(
+        self.log.info(
             "ENDED: Validate Support bundle collects system information and stats")
