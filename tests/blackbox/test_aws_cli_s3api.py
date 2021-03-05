@@ -23,8 +23,8 @@ import json
 import hashlib
 import logging
 import time
-import pytest
 import os
+import pytest
 from commons import commands
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
@@ -48,6 +48,7 @@ class TestAwsCliS3Api:
         cls.s3test_obj = S3TestLib()
         cls.bucket_prefix = "blackboxs3bkt"
         cls.object_name = "blackboxs3obj"
+        cls.bucket_name = None
         LOGGER.info("ENDED : Setup operations at test suit level")
 
     def setup_method(self):
@@ -61,43 +62,6 @@ class TestAwsCliS3Api:
                                      str(int(time.time()))])
         LOGGER.info("ENDED : Setup operations at test function level")
 
-    @staticmethod
-    def create_bucket_awscli(bucket_name: str):
-        """
-        Method to create a bucket using awscli
-        :param bucket_name: Name of the bucket
-        :return: True/False and output of command execution
-        """
-        LOGGER.info("Creating a bucket with name: %s", bucket_name)
-        success_msg = "make_bucket: {}".format(bucket_name)
-        response = run_local_cmd(
-            cmd=commands.AWSCLI_CREATE_BUCKET.format(bucket_name))[1]
-        LOGGER.info("Response returned: %s", response)
-        if success_msg in response:
-            return True, response
-
-        return False, response
-
-    @staticmethod
-    def delete_bucket_awscli(bucket_name: str, force: bool = False):
-        """
-        Method to delete a bucket using awscli
-        :param bucket_name: Name of the bucket
-        :param force: True for forcefully deleting bucket containing objects
-        :return: True/False and output of command execution
-        """
-        LOGGER.info("Deleting bucket: %s", bucket_name)
-        success_msg = "remove_bucket: {}".format(bucket_name)
-        delete_bkt_cmd = commands.AWSCLI_DELETE_BUCKET
-        if force:
-            delete_bkt_cmd = " ".join([delete_bkt_cmd, "--force"])
-        response = run_local_cmd(cmd=delete_bkt_cmd.format(bucket_name))[1]
-        LOGGER.info("Response returned: %s", response)
-        if success_msg in response:
-            return True, response
-
-        return False, response
-
     def teardown_method(self):
         """
         Teardown any state that was previously setup with a setup_method
@@ -108,7 +72,7 @@ class TestAwsCliS3Api:
         LOGGER.info("STARTED : Teardown operations at test function level")
         buckets = self.s3test_obj.bucket_list()[1]
         if self.bucket_name in buckets:
-            self.delete_bucket_awscli(self.bucket_name, force=True)
+            self.s3test_obj.delete_bucket_awscli(self.bucket_name, force=True)
         if os.path.exists(self.object_name):
             remove_file(self.object_name)
         LOGGER.info("ENDED : Teardown operations at test function level")
@@ -133,8 +97,9 @@ class TestAwsCliS3Api:
         """
         create single bucket using aws cli
         """
-        resp = self.create_bucket_awscli(bucket_name=self.bucket_name)
-        assert_utils.assert_equals(True, resp[0], resp[1])
+        resp = self.s3test_obj.create_bucket_awscli(
+            bucket_name=self.bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Successfully create single bucket using awscli")
 
     @pytest.mark.parallel
@@ -148,8 +113,9 @@ class TestAwsCliS3Api:
         buckets = []
         for i in range(2):
             buckets.append("-".join([self.bucket_name, str(i)]))
-        resp = self.create_bucket_awscli(bucket_name=" ".join(buckets))
-        assert_utils.assert_equals(False, resp[0], resp[1])
+        resp = self.s3test_obj.create_bucket_awscli(
+            bucket_name=" ".join(buckets))
+        assert_utils.assert_false(resp[0], resp[1])
         LOGGER.info("Failed to create multiple buckets at a time using awscli")
 
     @pytest.mark.parallel
@@ -160,10 +126,11 @@ class TestAwsCliS3Api:
         """
         list buckets using aws cli
         """
-        resp = self.create_bucket_awscli(bucket_name=self.bucket_name)
-        assert_utils.assert_equals(True, resp[0], resp[1])
+        resp = self.s3test_obj.create_bucket_awscli(
+            bucket_name=self.bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
         resp = run_local_cmd(cmd=commands.AWSCLI_LIST_BUCKETS)
-        assert_utils.assert_equals(True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], self.bucket_name)
         LOGGER.info("Successfully listed buckets using awscli")
 
@@ -175,11 +142,12 @@ class TestAwsCliS3Api:
         """
         max no of buckets supported using aws cli
         """
-        max_buckets = 100
+        max_buckets = 1000
         for i in range(max_buckets):
             bucket_name = f"{self.bucket_name}{i}"
-            resp = self.create_bucket_awscli(bucket_name=bucket_name)
-            assert_utils.assert_equals(True, resp[0], resp[1])
+            resp = self.s3test_obj.create_bucket_awscli(
+                bucket_name=bucket_name)
+            assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Successfully created max no. of buckets using awscli")
 
     @pytest.mark.parallel
@@ -190,10 +158,12 @@ class TestAwsCliS3Api:
         """
         delete empty bucket using aws cli
         """
-        resp = self.create_bucket_awscli(bucket_name=self.bucket_name)
-        assert_utils.assert_equals(True, resp[0], resp[1])
-        resp = self.delete_bucket_awscli(bucket_name=self.bucket_name)
-        assert_utils.assert_equals(True, resp[0], resp[1])
+        resp = self.s3test_obj.create_bucket_awscli(
+            bucket_name=self.bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = self.s3test_obj.delete_bucket_awscli(
+            bucket_name=self.bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Successfully deleted empty bucket using awscli")
 
     @pytest.mark.parallel
@@ -205,17 +175,19 @@ class TestAwsCliS3Api:
         delete bucket which has objects using aws cli
         """
         error_msg = "BucketNotEmpty"
-        resp = self.create_bucket_awscli(bucket_name=self.bucket_name)
-        assert_utils.assert_equals(True, resp[0], resp[1])
+        resp = self.s3test_obj.create_bucket_awscli(
+            bucket_name=self.bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
         resp = create_file(fpath=self.object_name, count=1)
         resp = run_local_cmd(
             cmd=commands.AWSCLI_PUT_OBJECT.format(
                 self.object_name,
                 self.bucket_name,
                 self.object_name))
-        assert_utils.assert_equals(True, resp[0], resp[1])
-        resp = self.delete_bucket_awscli(bucket_name=self.bucket_name)
-        assert_utils.assert_equals(False, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = self.s3test_obj.delete_bucket_awscli(
+            bucket_name=self.bucket_name)
+        assert_utils.assert_false(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], error_msg)
         LOGGER.info("Failed to delete bucket having objects in it")
 
@@ -227,12 +199,13 @@ class TestAwsCliS3Api:
         """
         Verify HEAD bucket using aws client
         """
-        resp = self.create_bucket_awscli(bucket_name=self.bucket_name)
-        assert_utils.assert_equals(True, resp[0], resp[1])
+        resp = self.s3test_obj.create_bucket_awscli(
+            bucket_name=self.bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
         resp = run_local_cmd(
             cmd=commands.AWSCLI_HEAD_BUCKET.format(
                 self.bucket_name))
-        assert_utils.assert_equals(True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Successfully verified head bucket using awscli")
 
     @pytest.mark.parallel
@@ -244,12 +217,13 @@ class TestAwsCliS3Api:
         Verification of bucket location using aws
         """
         location = '"LocationConstraint": "US"'
-        resp = self.create_bucket_awscli(bucket_name=self.bucket_name)
-        assert_utils.assert_equals(True, resp[0], resp[1])
+        resp = self.s3test_obj.create_bucket_awscli(
+            bucket_name=self.bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
         resp = run_local_cmd(
             cmd=commands.AWSCLI_GET_BUCKET_LOCATION.format(
                 self.bucket_name))
-        assert_utils.assert_equals(True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], location)
         LOGGER.info("Successfully verified bucket location using awscli")
 
@@ -262,10 +236,12 @@ class TestAwsCliS3Api:
         create bucket using existing bucket name using aws cli
         """
         error_msg = "BucketAlreadyOwnedByYou"
-        resp = self.create_bucket_awscli(bucket_name=self.bucket_name)
-        assert_utils.assert_equals(True, resp[0], resp[1])
-        resp = self.create_bucket_awscli(bucket_name=self.bucket_name)
-        assert_utils.assert_equals(False, resp[0], resp[1])
+        resp = self.s3test_obj.create_bucket_awscli(
+            bucket_name=self.bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = self.s3test_obj.create_bucket_awscli(
+            bucket_name=self.bucket_name)
+        assert_utils.assert_false(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], error_msg)
         LOGGER.info("Failed to create bucket using existing bucket name")
 
@@ -277,18 +253,19 @@ class TestAwsCliS3Api:
         """
         Delete bucket forcefully which has objects using aws cli
         """
-        resp = self.create_bucket_awscli(bucket_name=self.bucket_name)
-        assert_utils.assert_equals(True, resp[0], resp[1])
+        resp = self.s3test_obj.create_bucket_awscli(
+            bucket_name=self.bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
         resp = create_file(fpath=self.object_name, count=1)
         resp = run_local_cmd(
             cmd=commands.AWSCLI_PUT_OBJECT.format(
                 self.object_name,
                 self.bucket_name,
                 self.object_name))
-        assert_utils.assert_equals(True, resp[0], resp[1])
-        resp = self.delete_bucket_awscli(
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = self.s3test_obj.delete_bucket_awscli(
             bucket_name=self.bucket_name, force=True)
-        assert_utils.assert_equals(True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Successfully deleted bucket having objects in it")
 
     @pytest.mark.parallel
@@ -299,18 +276,19 @@ class TestAwsCliS3Api:
         """
         list objects in bucket using AWS
         """
-        resp = self.create_bucket_awscli(bucket_name=self.bucket_name)
-        assert_utils.assert_equals(True, resp[0], resp[1])
+        resp = self.s3test_obj.create_bucket_awscli(
+            bucket_name=self.bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
         resp = create_file(fpath=self.object_name, count=1)
         resp = run_local_cmd(
             cmd=commands.AWSCLI_PUT_OBJECT.format(
                 self.object_name,
                 self.bucket_name,
                 self.object_name))
-        assert_utils.assert_equals(True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         resp = run_local_cmd(
             cmd=commands.AWSCLI_LIST_OBJECTS.format(self.bucket_name))
-        assert_utils.assert_equals(True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], self.object_name)
         LOGGER.info("Successfully listed objects from bucket using awscli")
 
@@ -322,15 +300,16 @@ class TestAwsCliS3Api:
         """
         delete single object using aws cli
         """
-        resp = self.create_bucket_awscli(bucket_name=self.bucket_name)
-        assert_utils.assert_equals(True, resp[0], resp[1])
+        resp = self.s3test_obj.create_bucket_awscli(
+            bucket_name=self.bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
         create_file(fpath=self.object_name, count=1)
         resp = run_local_cmd(
             cmd=commands.AWSCLI_PUT_OBJECT.format(
                 self.object_name,
                 self.bucket_name,
                 self.object_name))
-        assert_utils.assert_equals(True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         resp = run_local_cmd(
             cmd=commands.AWSCLI_LIST_OBJECTS.format(self.bucket_name))
         assert_utils.assert_exact_string(resp[1], self.object_name)
@@ -338,7 +317,7 @@ class TestAwsCliS3Api:
             cmd=commands.AWSCLI_REMOVE_OBJECTS.format(
                 self.bucket_name,
                 self.object_name))
-        assert_utils.assert_equals(True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], self.object_name)
         LOGGER.info("Successfully deleted object from bucket using awscli")
 
@@ -354,8 +333,9 @@ class TestAwsCliS3Api:
         object_count = 3
         filename = "blackboxs3obj"
         create_file(fpath=filename, count=1)
-        resp = self.create_bucket_awscli(bucket_name=self.bucket_name)
-        assert_utils.assert_equals(True, resp[0], resp[1])
+        resp = self.s3test_obj.create_bucket_awscli(
+            bucket_name=self.bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
         for i in range(object_count):
             self.object_name = "".join([filename, str(i)])
             resp = run_local_cmd(
@@ -363,7 +343,7 @@ class TestAwsCliS3Api:
                     filename,
                     self.bucket_name,
                     self.object_name))
-            assert_utils.assert_equals(True, resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
             resp = run_local_cmd(
                 cmd=commands.AWSCLI_LIST_OBJECTS.format(self.bucket_name))
             assert_utils.assert_exact_string(resp[1], self.object_name)
@@ -377,7 +357,7 @@ class TestAwsCliS3Api:
                                     commands.AWSCLI_INCLUDE_FLAG.format(object_list[1]),
                                     ])
         resp = run_local_cmd(cmd=delete_objs_cmd)
-        assert_utils.assert_equals(True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], object_list[0])
         assert_utils.assert_exact_string(resp[1], object_list[1])
         LOGGER.info(
@@ -395,8 +375,9 @@ class TestAwsCliS3Api:
         object_count = 3
         filename = "blackboxs3obj"
         create_file(fpath=filename, count=1)
-        resp = self.create_bucket_awscli(bucket_name=self.bucket_name)
-        assert_utils.assert_equals(True, resp[0], resp[1])
+        resp = self.s3test_obj.create_bucket_awscli(
+            bucket_name=self.bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
         for i in range(object_count):
             self.object_name = "".join([filename, str(i)])
             resp = run_local_cmd(
@@ -404,7 +385,7 @@ class TestAwsCliS3Api:
                     filename,
                     self.bucket_name,
                     self.object_name))
-            assert_utils.assert_equals(True, resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
             resp = run_local_cmd(
                 cmd=commands.AWSCLI_LIST_OBJECTS.format(self.bucket_name))
             assert_utils.assert_exact_string(resp[1], self.object_name)
@@ -412,9 +393,9 @@ class TestAwsCliS3Api:
         delete_objs_cmd = " ".join([commands.AWSCLI_REMOVE_OBJECTS.format(
             self.bucket_name, ""), commands.AWSCLI_RECURSIVE_FLAG])
         resp = run_local_cmd(cmd=delete_objs_cmd)
-        assert_utils.assert_equals(True, resp[0], resp[1])
-        for object in object_list:
-            assert_utils.assert_exact_string(resp[1], object)
+        assert_utils.assert_true(resp[0], resp[1])
+        for obj in object_list:
+            assert_utils.assert_exact_string(resp[1], obj)
         LOGGER.info(
             "Successfully deleted all objects from bucket using awscli")
 
@@ -426,48 +407,54 @@ class TestAwsCliS3Api:
         """
         update object of large size of(10gb) using aws cli
         """
-        filename = "blackboxs3obj"
         file_size = 10000
         no_of_parts = 10
-        split_parts = split_file(filename, file_size, no_of_parts)
+        split_parts = split_file(self.object_name, file_size, no_of_parts)
         mpu_parts_list = [part["Output"] for part in split_parts]
-        resp = self.create_bucket_awscli(bucket_name=self.bucket_name)
-        assert_utils.assert_equals(True, resp[0], resp[1])
+        resp = self.s3test_obj.create_bucket_awscli(
+            bucket_name=self.bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
 
         LOGGER.info("Creating Multipart upload")
-        create_mpu = run_local_cmd(
+        resp = run_local_cmd(
             cmd=commands.AWSCLI_CREATE_MULTIPART_UPLOAD.format(
-                self.bucket_name, filename))
-        assert_utils.assert_equals(True, create_mpu[0], create_mpu[1])
-        mpu = create_mpu[1][create_mpu[1].find("{"):create_mpu[1].rfind("}")+1]
-        mpu_upload_id = json.loads(mpu.replace("\\n", ""))["UploadId"]
+                self.bucket_name, self.object_name))
+        assert_utils.assert_true(resp[0], resp[1])
+        mpu_upload_id = resp[1][resp[1].find(
+            "{"):resp[1].rfind("}") + 1]
+        mpu_upload_id = json.loads(mpu_upload_id.replace("\\n", ""))["UploadId"]
 
         LOGGER.info("Listing Multipart uploads")
-        list_mpu = run_local_cmd(
+        resp = run_local_cmd(
             cmd=commands.AWSCLI_LIST_MULTIPART_UPLOADS.format(
                 self.bucket_name))
-        assert_utils.assert_equals(True, list_mpu[0], list_mpu[1])
-        assert_utils.assert_exact_string(list_mpu[1], mpu_upload_id)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], mpu_upload_id)
 
         LOGGER.info("Uploading parts to bucket")
         for i in range(no_of_parts):
             upload_parts = run_local_cmd(
                 commands.AWSCLI_UPLOAD_PARTS.format(
                     self.bucket_name,
-                    filename,
+                    self.object_name,
                     i + 1,
                     mpu_parts_list[i],
                     mpu_upload_id))
-            assert_utils.assert_equals(True, upload_parts[0], upload_parts[1])
+            assert_utils.assert_true(upload_parts[0], upload_parts[1])
 
         LOGGER.info("Listing uploaded parts")
         resp = run_local_cmd(
             cmd=commands.AWSCLI_LIST_PARTS.format(
-                self.bucket_name, filename, mpu_upload_id))
-        assert_utils.assert_equals(True, resp[0], resp[1])
+                self.bucket_name, self.object_name, mpu_upload_id))
+        assert_utils.assert_true(resp[0], resp[1])
         parts_str = resp[1][resp[1].find("{"):resp[1].rfind("}") + 1]
         LOGGER.info(parts_str.replace("\\n", "").replace("\\\\", "\\"))
-        list_parts = json.loads(parts_str.replace("\\n", "").replace("\\\\", "\\"))["Parts"]
+        list_parts = json.loads(
+            parts_str.replace(
+                "\\n",
+                "").replace(
+                "\\\\",
+                "\\"))["Parts"]
         part_data = dict()
         part_data["Parts"] = list()
         for i in range(no_of_parts):
@@ -484,12 +471,12 @@ class TestAwsCliS3Api:
             cmd=commands.AWSCLI_COMPLETE_MULTIPART.format(
                 json_file,
                 self.bucket_name,
-                filename,
+                self.object_name,
                 mpu_upload_id))
-        assert_utils.assert_equals(True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         resp = run_local_cmd(
             cmd=commands.AWSCLI_LIST_OBJECTS.format(self.bucket_name))
-        assert_utils.assert_exact_string(resp[1], filename)
+        assert_utils.assert_exact_string(resp[1], self.object_name)
         remove_file(json_file)
         for part in mpu_parts_list:
             remove_file(part)
@@ -503,18 +490,19 @@ class TestAwsCliS3Api:
         """
         copy object from bucket using aws cli
         """
-        resp = self.create_bucket_awscli(bucket_name=self.bucket_name)
-        assert_utils.assert_equals(True, resp[0], resp[1])
+        resp = self.s3test_obj.create_bucket_awscli(
+            bucket_name=self.bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
         resp = create_file(fpath=self.object_name, count=1)
         resp = run_local_cmd(
             cmd=commands.AWSCLI_PUT_OBJECT.format(
                 self.object_name,
                 self.bucket_name,
                 self.object_name))
-        assert_utils.assert_equals(True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         resp = run_local_cmd(
             cmd=commands.AWSCLI_LIST_OBJECTS.format(self.bucket_name))
-        assert_utils.assert_equals(True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], self.object_name)
         LOGGER.info("Successfully copied objects to bucket using awscli")
 
@@ -527,8 +515,9 @@ class TestAwsCliS3Api:
         download an object using aws cli
         """
         downloaded_file = "get_blackboxs3obj"
-        resp = self.create_bucket_awscli(bucket_name=self.bucket_name)
-        assert_utils.assert_equals(True, resp[0], resp[1])
+        resp = self.s3test_obj.create_bucket_awscli(
+            bucket_name=self.bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
         resp = create_file(fpath=self.object_name, count=1)
         before_md5 = hashlib.md5(
             open(
@@ -540,10 +529,10 @@ class TestAwsCliS3Api:
                 self.object_name,
                 self.bucket_name,
                 self.object_name))
-        assert_utils.assert_equals(True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         resp = run_local_cmd(
             cmd=commands.AWSCLI_LIST_OBJECTS.format(self.bucket_name))
-        assert_utils.assert_equals(True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], self.object_name)
 
         LOGGER.info("Downloading object from bucket using awscli")
@@ -552,7 +541,7 @@ class TestAwsCliS3Api:
                 self.bucket_name,
                 self.object_name,
                 downloaded_file))
-        assert_utils.assert_equals(True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         after_md5 = hashlib.md5(open(downloaded_file, "rb").read()).hexdigest()
         assert_utils.assert_equals(
             before_md5,
