@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,7 +19,8 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 """
-Note: The pre-requisite of this testfile require two jar files
+Note: The pre-requisite of this testfile require two jar files.
+
 'jclient.jar' and 'jcloudclient.jar' to be placed the specific location
 These files has to be placed to the following directory of this repository
 'eos-test/scripts/tools'
@@ -75,7 +76,7 @@ class TestJcloudAndJclient:
         self.log.info("STARTED: Setup operations.")
         res_ls = execute_cmd(
             blackbox_cnf["common_cfg"]["ls_script_path_cmd"])[1]
-        res = True if ".jar" in res_ls else False
+        res = ".jar" in res_ls
         if not res:
             res = S3H_OBJ.configure_jclient_cloud()
             if not res:
@@ -87,7 +88,8 @@ class TestJcloudAndJclient:
 
     def teardown_method(self):
         """
-        This function will be invoked after each test case.
+        Function will be invoked after each test case.
+
         It will perform all cleanup operations.
         This function will delete buckets and objects uploaded to that bucket.
         It will also delete the local files.
@@ -139,9 +141,9 @@ class TestJcloudAndJclient:
         return cmd
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7094")
     @CTFailOn(error_handler)
-    def test_2368(self):
+    def test_create_bucket_2368(self):
         """create bucket using Jcloudclient."""
         self.log.info("STARTED: create bucket using Jcloudclient")
         test_cfg = blackbox_cnf["test_2368"]
@@ -158,9 +160,9 @@ class TestJcloudAndJclient:
         self.log.info("ENDED: create bucket using Jcloudclient")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7095")
     @CTFailOn(error_handler)
-    def test_2370(self):
+    def test_delete_bucket_2370(self):
         """Delete bucket using jcloudclient."""
         self.log.info("STARTED: delete bucket using jcloudclient")
         test_cfg = blackbox_cnf["test_2370"]
@@ -187,9 +189,9 @@ class TestJcloudAndJclient:
         self.log.info("ENDED: delete bucket using jcloudclient")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7096")
     @CTFailOn(error_handler)
-    def test_2373(self):
+    def test_put_object_2373(self):
         """Put object using jcloudclient."""
         self.log.info("STARTED: put object using jcloudclient")
         test_cfg = blackbox_cnf["test_2373"]
@@ -221,13 +223,10 @@ class TestJcloudAndJclient:
         self.log.info("ENDED: get object using jcloudclient")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7097")
     @CTFailOn(error_handler)
-    def test_2374(self):
-        """
-        get object using jcloudclient
-        :avocado: tags=jcloud_jclient_blackbox
-        """
+    def test_get_object_2374(self):
+        """Get object using jcloudclient."""
         self.log.info("STARTED: get object using jcloudclient")
         test_cfg = blackbox_cnf["test_2374"]
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
@@ -272,13 +271,10 @@ class TestJcloudAndJclient:
         self.log.info("ENDED: put object using jcloudclient")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7098")
     @CTFailOn(error_handler)
-    def test_2375(self):
-        """
-        delete object using jcloudclient
-        :avocado: tags=jcloud_jclient_blackbox
-        """
+    def test_delete_object_2375(self):
+        """Delete object using jcloudclient."""
         self.log.info("STARTED: delete object using jcloudclient")
         test_cfg = blackbox_cnf["test_2375"]
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
@@ -320,13 +316,10 @@ class TestJcloudAndJclient:
         self.log.info("ENDED: delete object using jcloudclient")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7099")
     @CTFailOn(error_handler)
-    def test_2376(self):
-        """
-        delete multiple objects using jcloudclient
-        :avocado: tags=jcloud_jclient_blackbox
-        """
+    def test_del_multiple_objects_2376(self):
+        """Delete multiple objects using jcloudclient."""
         self.log.info("STARTED: delete multiple objects using jcloudclient")
         test_cfg = blackbox_cnf["test_2376"]
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
@@ -358,13 +351,10 @@ class TestJcloudAndJclient:
         self.log.info("ENDED: delete multiple objects using jcloudclient")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7100")
     @CTFailOn(error_handler)
-    def test_2377(self):
-        """
-        head object using jcloudclient
-        :avocado: tags=jcloud_jclient_blackbox
-        """
+    def test_head_object_2377(self):
+        """Head object using jcloudclient."""
         self.log.info("STARTED: head object using jcloudclient")
         test_cfg = blackbox_cnf["test_2377"]
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
@@ -396,13 +386,10 @@ class TestJcloudAndJclient:
         self.log.info("ENDED: head object using jcloudclient")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7101")
     @CTFailOn(error_handler)
-    def test_2379(self):
-        """
-        object exists using jcloudclient
-        :avocado: tags=jcloud_jclient_blackbox
-        """
+    def test_check_obj_exists_2379(self):
+        """object exists using jcloudclient."""
         self.log.info("STARTED: object exists using jcloudclient")
         test_cfg = blackbox_cnf["test_2379"]
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
@@ -434,13 +421,10 @@ class TestJcloudAndJclient:
         self.log.info("ENDED: object exists using jcloudclient")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7102")
     @CTFailOn(error_handler)
-    def test_2380(self):
-        """
-        Remove bucket if empty
-        :avocado: tags=jcloud_jclient_blackbox
-        """
+    def test_remove_empty_bucket_2380(self):
+        """Remove bucket if empty."""
         self.log.info("STARTED: Remove bucket if empty")
         test_cfg = blackbox_cnf["test_2380"]
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
@@ -461,13 +445,10 @@ class TestJcloudAndJclient:
         self.log.info("ENDED: Remove bucket if empty")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7103")
     @CTFailOn(error_handler)
-    def test_2381(self):
-        """
-        create bucket using jclient
-        :avocado: tags=jcloud_jclient_blackbox
-        """
+    def test_create_bucket_2381(self):
+        """create bucket using jclient."""
         self.log.info("STARTED: create bucket using jclient")
         test_cfg = blackbox_cnf["test_2381"]
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
@@ -483,13 +464,10 @@ class TestJcloudAndJclient:
         self.log.info("ENDED: create bucket using jclient")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7104")
     @CTFailOn(error_handler)
-    def test_2382(self):
-        """
-        list bucket using jclient
-        :avocado: tags=jcloud_jclient_blackbox
-        """
+    def test_list_bucket_2382(self):
+        """list bucket using jclient."""
         self.log.info("STARTED: list bucket using jclient")
         test_cfg = blackbox_cnf["test_2382"]
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
@@ -512,13 +490,10 @@ class TestJcloudAndJclient:
         self.log.info("ENDED: list bucket using jclient")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7105")
     @CTFailOn(error_handler)
-    def test_2384(self):
-        """
-        delete bucket using jclient
-        :avocado: tags=jcloud_jclient_blackbox
-        """
+    def test_delete_bucket_2384(self):
+        """delete bucket using jclient."""
         self.log.info("STARTED: delete bucket using jclient")
         test_cfg = blackbox_cnf["test_2384"]
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
@@ -539,13 +514,10 @@ class TestJcloudAndJclient:
         self.log.info("ENDED: delete bucket using jclient")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7106")
     @CTFailOn(error_handler)
-    def test_2385(self):
-        """
-        list object using jclient
-        :avocado: tags=jcloud_jclient_blackbox
-        """
+    def test_list_object_2385(self):
+        """list object using jclient."""
         self.log.info("STARTED: list object using jclient")
         test_cfg = blackbox_cnf["test_2385"]
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
@@ -575,13 +547,10 @@ class TestJcloudAndJclient:
         self.log.info("ENDED: list object using jclient")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7107")
     @CTFailOn(error_handler)
-    def test_2386(self):
-        """
-        delete object using jclient
-        :avocado: tags=jcloud_jclient_blackbox
-        """
+    def test_delete_object_2386(self):
+        """delete object using jclient."""
         self.log.info("STARTED: delete object using jclient")
         test_cfg = blackbox_cnf["test_2386"]
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
@@ -611,13 +580,10 @@ class TestJcloudAndJclient:
         self.log.info("ENDED: delete object using jclient")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7108")
     @CTFailOn(error_handler)
-    def test_2388(self):
-        """
-        head object using jclient
-        :avocado: tags=jcloud_jclient_blackbox
-        """
+    def test_head_object_2388(self):
+        """head object using jclient."""
         self.log.info("STARTED: head object using jclient")
         test_cfg = blackbox_cnf["test_2388"]
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
@@ -647,13 +613,10 @@ class TestJcloudAndJclient:
         self.log.info("ENDED: head object using jclient")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7109")
     @CTFailOn(error_handler)
-    def test_2389(self):
-        """
-        put object using jclient
-        :avocado: tags=jcloud_jclient_blackbox
-        """
+    def test_put_obj_2389(self):
+        """put object using jclient."""
         self.log.info("STARTED: put object using jclient")
         test_cfg = blackbox_cnf["test_2389"]
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
@@ -680,13 +643,10 @@ class TestJcloudAndJclient:
         self.log.info("ENDED: put object using jclient")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7110")
     @CTFailOn(error_handler)
-    def test_2390(self):
-        """
-        get object using jclient
-        :avocado: tags=jcloud_jclient_blackbox
-        """
+    def test_get_object_2390(self):
+        """get object using jclient."""
         self.log.info("STARTED: get object using jclient")
         test_cfg = blackbox_cnf["test_2390"]
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
@@ -716,13 +676,10 @@ class TestJcloudAndJclient:
         self.log.info("ENDED: put object using jclient")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7111")
     @CTFailOn(error_handler)
-    def test_2391(self):
-        """
-        Bucket exists using Jclient
-        :avocado: tags=jcloud_jclient_blackbox
-        """
+    def test_bucket_exists_2391(self):
+        """Bucket exists using Jclient."""
         self.log.info("STARTED: Bucket exists using Jclient")
         test_cfg = blackbox_cnf["test_2391"]
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
@@ -745,13 +702,10 @@ class TestJcloudAndJclient:
         self.log.info("ENDED: Bucket exists using Jclient")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7112")
     @CTFailOn(error_handler)
-    def test_2392(self):
-        """
-        object exists using jclient
-        :avocado: tags=jcloud_jclient_blackbox
-        """
+    def test_check_obj_exists_2392(self):
+        """object exists using jclient."""
         self.log.info("STARTED: object exists using jclient")
         test_cfg = blackbox_cnf["test_2392"]
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
@@ -782,13 +736,10 @@ class TestJcloudAndJclient:
         self.log.info("ENDED: object exists using jclient")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7529")
     @CTFailOn(error_handler)
-    def test_2369(self):
-        """
-        list buckets using jcloudclient
-        :avocado: tags=jcloud_jclient_blackbox
-        """
+    def test_list_buckets_2369(self):
+        """list buckets using jcloudclient."""
         self.log.info("STARTED: list buckets using jcloudclient")
         test_cfg = blackbox_cnf["test_2369"]
         common_cfg = blackbox_cnf["common_cfg"]
@@ -810,13 +761,10 @@ class TestJcloudAndJclient:
         self.log.info("ENDED: list buckets using jcloudclient")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7531")
     @CTFailOn(error_handler)
-    def test_2371(self):
-        """
-        max no of buckets supported using jcloudclient
-        :avocado: tags=jcloud_jclient_blackbox
-        """
+    def test_max_bucket_2371(self):
+        """max no of buckets supported using jcloudclient."""
         self.log.info(
             "STARTED: max no of buckets supported using jcloudclient")
         test_cfg = blackbox_cnf["test_2371"]
@@ -848,13 +796,10 @@ class TestJcloudAndJclient:
         self.log.info("ENDED: max no of buckets supported using jcloudclient")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7532")
     @CTFailOn(error_handler)
-    def test_2372(self):
-        """
-        list objects using jcloudclient
-        :avocado: tags=jcloud_jclient_blackbox
-        """
+    def test_list_objects_2372(self):
+        """list objects using jcloudclient."""
         self.log.info("STARTED: list objects using jcloudclient")
         test_cfg = blackbox_cnf["test_2372"]
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
@@ -885,13 +830,10 @@ class TestJcloudAndJclient:
         self.log.info("ENDED: list objects using jcloudclient")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7533")
     @CTFailOn(error_handler)
-    def test_2378(self):
-        """
-        Bucket exists using jcloudclient
-        :avocado: tags=jcloud_jclient_blackbox
-        """
+    def test_check_bucket_exist_2378(self):
+        """Bucket exists using jcloudclient."""
         self.log.info("STARTED: Bucket exists using jcloudclient")
         test_cfg = blackbox_cnf["test_2378"]
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
@@ -914,13 +856,10 @@ class TestJcloudAndJclient:
         self.log.info("ENDED: Bucket exists using jcloudclient")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7534")
     @CTFailOn(error_handler)
-    def test_2383(self):
-        """
-        max no of buckets supported using Jclient
-        :avocado: tags=jcloud_jclient_blackbox
-        """
+    def test_max_bucket_support_2383(self):
+        """max no of buckets supported using Jclient."""
         self.log.info("STARTED: max no of buckets supported using Jclient")
         test_cfg = blackbox_cnf["test_2383"]
         common_cfg = blackbox_cnf["common_cfg"]
@@ -950,13 +889,10 @@ class TestJcloudAndJclient:
         self.log.info("ENDED: max no of buckets supported using Jclient")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7535")
     @CTFailOn(error_handler)
-    def test_2387(self):
-        """
-        delete multiple objects using jclient
-        :avocado: tags=jcloud_jclient_blackbox
-        """
+    def test_del_multiple_object_2387(self):
+        """delete multiple objects using jclient."""
         self.log.info("STARTED: delete multiple objects using jclient")
         test_cfg = blackbox_cnf["test_2387"]
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
