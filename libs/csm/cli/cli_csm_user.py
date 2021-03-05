@@ -24,12 +24,12 @@
 import logging
 from typing import Tuple
 from libs.csm.cli.cortx_cli import CortxCli
-from commons.commands import CMD_CREATE_CSM_USER, \
-    CMD_DELETE_CSM_USER, \
-    CMD_UPDATE_ROLE, \
-    CMD_RESET_PWD, \
-    CMD_LIST_CSM_USERS, \
-    CMD_HELP_OPTION
+from commons.commands import CMD_CREATE_CSM_USER
+from commons.commands import CMD_DELETE_CSM_USER
+from commons.commands import CMD_UPDATE_ROLE
+from commons.commands import CMD_RESET_PWD
+from commons.commands import CMD_LIST_CSM_USERS
+from commons.commands import CMD_HELP_OPTION
 
 LOG = logging.getLogger(__name__)
 
@@ -61,8 +61,11 @@ class CortxCliCsmUser(CortxCli):
         help_param = kwargs.get("help_param", False)
         confirm = kwargs.get("confirm", "Y")
         role = kwargs.get("role", "manage")
-        cmd = " ".join([CMD_CREATE_CSM_USER, "-h"]) if help_param else " ".join(
-            [CMD_CREATE_CSM_USER, csm_user_name, email_id, role])
+        cmd = " ".join([CMD_CREATE_CSM_USER,
+                        "-h"]) if help_param else " ".join([CMD_CREATE_CSM_USER,
+                                                            csm_user_name,
+                                                            email_id,
+                                                            role])
         output = self.execute_cli_commands(cmd=cmd)[1]
         if help_param:
             LOG.info("Displaying usage for create csm users")
@@ -92,8 +95,9 @@ class CortxCliCsmUser(CortxCli):
         :return: (Boolean/Response)
         """
         LOG.info("Deleting csm user")
-        cmd = " ".join([CMD_DELETE_CSM_USER, "-h"]) if help_param else " ".join(
-            [CMD_DELETE_CSM_USER, user_name])
+        cmd = " ".join([CMD_DELETE_CSM_USER,
+                        "-h"]) if help_param else " ".join([CMD_DELETE_CSM_USER,
+                                                            user_name])
         output = self.execute_cli_commands(cmd=cmd)[1]
         if help_param:
             LOG.info("Displaying usage for delete csm user")
@@ -124,8 +128,10 @@ class CortxCliCsmUser(CortxCli):
         """
         LOG.info("Updating role of CSM user")
         help_param = kwargs.get("help_param", False)
-        cmd = " ".join([CMD_UPDATE_ROLE, "-h"]) if help_param else "{0} {1} -r {2}".format(
-            CMD_UPDATE_ROLE, user_name, role)
+        cmd = " ".join([CMD_UPDATE_ROLE,
+                        "-h"]) if help_param else "{0} {1} -r {2}".format(CMD_UPDATE_ROLE,
+                                                                          user_name,
+                                                                          role)
         output = self.execute_cli_commands(cmd=cmd)[1]
         if help_param:
             LOG.info("Displaying usage for update role")
@@ -135,9 +141,10 @@ class CortxCliCsmUser(CortxCli):
             if "[Y/n]" in output:
                 output = self.execute_cli_commands(cmd=confirm)[1]
 
-                return True, output
+            if "error" in output.lower() or "exception" in output.lower():
+                return False, output
 
-        return False, output
+        return True, output
 
     def reset_root_user_password(
             self,

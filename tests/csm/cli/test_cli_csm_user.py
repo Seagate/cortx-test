@@ -25,11 +25,12 @@ import random
 import time
 import pytest
 from commons.utils import assert_utils
-from commons.utils import config_utils as conf_util
 from commons import cortxlogging as log
 from commons.alerts_simulator.generate_alert_lib import \
     GenerateAlertLib, AlertType
+from commons import constants
 from config import CMN_CFG
+from config import CSM_CFG
 from libs.csm.cli.cli_csm_user import CortxCliCsmUser
 from libs.csm.cli.cli_alerts_lib import CortxCliAlerts
 from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
@@ -52,12 +53,11 @@ class TestCliCSMUser:
         cls.CSM_ALERT = CortxCliAlerts()
         cls.IAM_USER = CortxCliIamUser()
         cls.BKT_OPS = CortxCliS3BucketOperations()
-        cls.S3_ACC = CortxCliS3AccountOperations()
-        cls.CLI_CONF = conf_util.read_yaml("config/csm/csm_config.yaml")
+        cls.S3_ACC = CortxCliS3AccountOperations(session_obj=cls.CSM_USER.session_obj)
         cls.GENERATE_ALERT_OBJ = GenerateAlertLib()
-        cls.csm_user_pwd = cls.CLI_CONF[1]["CliConfig"]["csm_user_pwd"]
-        cls.acc_password = cls.CLI_CONF[1]["CliConfig"]["acc_password"]
-        cls.iam_password = cls.CLI_CONF[1]["CliConfig"]["iam_password"]
+        cls.csm_user_pwd = CSM_CFG["CliConfig"]["csm_user_pwd"]
+        cls.acc_password = CSM_CFG["CliConfig"]["acc_password"]
+        cls.iam_password = CSM_CFG["CliConfig"]["iam_password"]
         cls.update_password = None
         cls.new_pwd = None
         cls.user_name = None
@@ -301,11 +301,17 @@ class TestCliCSMUser:
         Initiating the test case to verify create CSM User through unauthorized user
         """
         self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        resp = self.S3_ACC.create_s3account_cortx_cli(
+            account_name=self.s3acc_name,
+            account_email=self.s3acc_email,
+            password=self.acc_password)
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        self.LOGGER.info("Created s3 account %s", self.s3acc_name)
         self.CSM_USER.logout_cortx_cli()
         self.LOGGER.info(
             "Login through s3 account to verify create CSM User using unauthorized user")
         login = self.CSM_USER.login_cortx_cli(
-            username="cli_s3acc", password=self.acc_password)
+            username=self.s3acc_name, password=self.acc_password)
         assert_utils.assert_equals(
             login[0], True, "Server authentication check failed")
         self.LOGGER.info("Logged in to s3 account")
@@ -924,6 +930,8 @@ class TestCliCSMUser:
         self.LOGGER.info(resp)
         assert_utils.assert_equals(
             resp[0], True, resp)
+        for msg in constants.CSM_USER_HELP:
+            assert_utils.assert_exact_string(resp[1], msg)
         self.CSM_USER.logout_cortx_cli()
         self.CSM_USER.login_cortx_cli()
         self.LOGGER.info(
@@ -1268,6 +1276,8 @@ class TestCliCSMUser:
         self.LOGGER.info(resp)
         assert_utils.assert_equals(
             resp[0], True, resp)
+        for msg in constants.CSM_USER_HELP:
+            assert_utils.assert_exact_string(resp[1], msg)
         self.CSM_USER.logout_cortx_cli()
         self.CSM_USER.login_cortx_cli()
         self.LOGGER.info(
@@ -1440,11 +1450,12 @@ class TestCliCSMUser:
             resp[0], True, resp)
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
+            email_id=self.email_id,
             password=self.csm_user_pwd,
             confirm_password=self.csm_user_pwd)
         assert_utils.assert_equals(
             resp[0], False, resp)
-        assert_utils.assert_exact_string(resp[1], "invalid choice")
+        assert_utils.assert_exact_string(resp[1], "Invalid choice")
         self.LOGGER.info(
             "Monitor user is failed to create csm user with error %s",
             resp[1])
@@ -1452,10 +1463,12 @@ class TestCliCSMUser:
         resp = self.CSM_USER.delete_csm_user(user_name=self.user_name)
         assert_utils.assert_equals(
             resp[0], False, resp)
-        assert_utils.assert_exact_string(resp[1], "invalid choice")
+        assert_utils.assert_exact_string(resp[1], "Invalid choice")
         self.LOGGER.info(
             "Monitor user is failed to delete csm user with error %s",
             resp[1])
+        self.CSM_USER.logout_cortx_cli()
+        self.CSM_USER.login_cortx_cli()
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.csm_cli
@@ -1480,24 +1493,25 @@ class TestCliCSMUser:
         start_time = time.time()
         self.LOGGER.info("Generating disk fault alert")
         resp = self.GENERATE_ALERT_OBJ.generate_alert(
-            AlertType.disk_fault_alert,
+            AlertType.DISK_FAULT_ALERT,
             input_parameters={
-                "du_val": -3,
+                "du_val": 8,
                 "fault": True,
                 "fault_resolved": False})
         assert_utils.assert_equals(resp[0], True, resp)
         self.LOGGER.info("Generated disk fault alert")
         self.LOGGER.info("Verifying alerts are generated")
+        self.CSM_USER.logout_cortx_cli()
+        resp = self.CSM_ALERT.login_cortx_cli(
+            username=self.user_name,
+            password=self.csm_user_pwd)
+        assert_utils.assert_equals(resp[0], True, resp)
         resp = self.CSM_ALERT.wait_for_alert(start_time=start_time)
         assert_utils.assert_equals(resp[0], True, resp)
         alert_id = resp[1]["alerts"][0]["alert_uuid"]
         self.LOGGER.info("Verified alerts are generated")
         self.LOGGER.info(
             "Verifying csm user with monitor role cannot update alert")
-        resp = self.CSM_ALERT.login_cortx_cli(
-            username=self.user_name,
-            password=self.csm_user_pwd)
-        assert_utils.assert_equals(resp[0], True, resp)
         resp = self.CSM_ALERT.add_comment_alert(alert_id, "demo_comment")
         self.LOGGER.info(resp)
         assert_utils.assert_equals(resp[0], False, resp)
