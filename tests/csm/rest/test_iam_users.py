@@ -24,7 +24,6 @@ import logging
 import pytest
 from commons.utils import config_utils
 from commons import cortxlogging
-from commons.constants import Rest as const
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_iamuser import RestIamUser
 
