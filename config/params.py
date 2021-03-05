@@ -18,6 +18,8 @@
 #
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
+"""Constants
+"""
 import os
 
 LOG_FILE = 'cortx-test.log'
@@ -49,11 +51,14 @@ JIRA_SELECTED_TESTS = 'selected_test_lists.csv'
 
 JIRA_DIST_TEST_LIST = 'dist_test_lists.csv'
 # Kafka Config Params
-
-SCHEMA_REGISTRY = "http://cftic2.pun.seagate.com:8081"  # Schema Registry (http(s)://host[:port]
-BOOTSTRAP_SERVERS = "cftic2.pun.seagate.com:9092"  # cftic2.pun.seagate.com:9092 Bootstrap broker(s) (host[:port])
-TEST_EXEC_TOPIC = 'TutorialTopic3'  # 'cortx-test-exec-topic'
-TEST_ABORT_TOPIC = 'cortx-test-abort-topic'  # Read by all semantics
+# Schema Registry (http(s)://host[:port]
+SCHEMA_REGISTRY = "http://cftic2.pun.seagate.com:8081"
+# cftic2.pun.seagate.com:9092 Bootstrap broker(s) (host[:port])
+BOOTSTRAP_SERVERS = "cftic2.pun.seagate.com:9092"
+# 'cortx-test-exec-topic'
+TEST_EXEC_TOPIC = 'TutorialTopic3'
+# Read by all semantics
+TEST_ABORT_TOPIC = 'cortx-test-abort-topic'
 
 CSM_DIR = os.path.join(CONFIG_DIR, 'csm')
 CSM_CONFIG = os.path.join(CSM_DIR, 'csm_config.yaml')
