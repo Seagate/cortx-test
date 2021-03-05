@@ -564,15 +564,15 @@ class TestBlackBox:
         self.log.info(
             "Step 6: Verified that access key of user is updated successfully")
         self.log.info(
-            "ENDED: update accesskey of a user with inactive mode using aws iam")
+            "ENDED: update access key of a user with inactive mode using aws iam")
 
     @pytest.mark.s3
     @pytest.mark.tags("TEST-7176")
     @CTFailOn(error_handler)
     def test_create_accesskey_existinguser_2429(self):
-        """Create accesskey key with existing user name using aws iam."""
+        """Create access key key with existing user name using aws iam."""
         self.log.info(
-            "STARTED: create accesskey key with existing user name using aws iam")
+            "STARTED: create access key key with existing user name using aws iam")
         self.log.info(
             "Step 1: Create new account and new user and new profile in it")
         resp = create_account()
@@ -604,4 +604,4 @@ class TestBlackBox:
             resp = new_iam_obj.list_access_keys(test_2429_cfg["user_name"])
             assert_true(resp[0], resp[1])
         self.log.info(
-            "ENDED: create accesskey key with existing user name using aws iam")
+            "ENDED: create access key with existing user name using aws iam")
