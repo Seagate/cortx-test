@@ -39,7 +39,7 @@ CM_CFG = read_yaml("config/common_config.yaml")[1]
 
 
 class TestMinioClient:
-    """Blaclbox minio client Testsuite."""
+    """Black box minio client Testsuite."""
 
     @classmethod
     def setup_class(cls):
@@ -113,7 +113,7 @@ class TestMinioClient:
     @pytest.mark.s3
     @pytest.mark.tags("")
     @CTFailOn(error_handler)
-    def test_2345(self):
+    def test_create_single_bucket_2345(self):
         """Create single bucket using Minio Client."""
         self.log.info("STARTED: Create single bucket using Minio Client")
         test_cfg = blackbox_cnf["test_2345"]
@@ -131,9 +131,9 @@ class TestMinioClient:
         self.log.info("ENDED: Create single bucket using Minio Client")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7537 ")
     @CTFailOn(error_handler)
-    def test_2346(self):
+    def test_create_multiple_bucket_2346(self):
         """Create multiple buckets using Minion client."""
         self.log.info("STARTED: Create multiple buckets using Minion client")
         test_cfg = blackbox_cnf["test_2346"]
@@ -154,9 +154,9 @@ class TestMinioClient:
         self.log.info("ENDED: Create multiple buckets using Minion client")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7545 ")
     @CTFailOn(error_handler)
-    def test_2347(self):
+    def test_list_bucket_2347(self):
         """List buckets using Minion client."""
         self.log.info("Started: List buckets using Minion client")
         test_cfg = blackbox_cnf["test_2347"]
@@ -170,9 +170,9 @@ class TestMinioClient:
         self.log.info("Ended: List buckets using Minion client")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7544")
     @CTFailOn(error_handler)
-    def test_2348(self):
+    def test_max_bucket_2348(self):
         """Max no of buckets supported using Minion Client."""
         self.log.info(
             "STARTED: Max no of buckets supported using Minion Client")
@@ -200,9 +200,9 @@ class TestMinioClient:
         self.log.info("ENDED: Max no of buckets supported using Minion Client")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7548")
     @CTFailOn(error_handler)
-    def test_2349(self):
+    def test_delete_empty_bucket_2349(self):
         """Delete empty bucket using Minion client."""
         self.log.info("STARTED: Delete empty bucket using Minion client")
         test_cfg = blackbox_cnf["test_2349"]
@@ -229,9 +229,9 @@ class TestMinioClient:
         self.log.info("ENDED: Delete empty bucket using Minion client")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7547")
     @CTFailOn(error_handler)
-    def test_2350(self):
+    def test_delete_bucket_has_obj_2350(self):
         """Delete bucket which has objects using Minion Client."""
         self.log.info(
             "STARTED: delete bucket which has objects using Minion Client")
@@ -268,9 +268,9 @@ class TestMinioClient:
             "ENDED: delete bucket which has objects using Minion Client")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7546")
     @CTFailOn(error_handler)
-    def test_2351(self):
+    def test_create_bucket_existing_name_2351(self):
         """Create bucket using existing bucket name using Minion client."""
         self.log.info(
             "STARTED: Create bucket using existing bucket name using Minion client")
@@ -291,7 +291,7 @@ class TestMinioClient:
     @pytest.mark.s3
     @pytest.mark.tags("")
     @CTFailOn(error_handler)
-    def test_2352(self):
+    def test_list_obj_inside_bucket_2352(self):
         """To list objects inside bucket using Minion client."""
         self.log.info(
             "STARTED: To list objects inside bucket using Minion client")
@@ -320,9 +320,9 @@ class TestMinioClient:
             "ENDED: To list objects inside bucket using Minion client")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7541")
     @CTFailOn(error_handler)
-    def test_2353(self):
+    def test_del_obj_from_bucket_2353(self):
         """Delete an object from bucket using Minion client."""
         self.log.info(
             "STARTED: Delete an object from bucket using Minion client")
@@ -354,9 +354,9 @@ class TestMinioClient:
             "ENDED: Delete an object from bucket using Minion client")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7542")
     @CTFailOn(error_handler)
-    def test_2354(self):
+    def test_copy_obj_from_bucket_2354(self):
         """Copy object from bucket using Minion client."""
         self.log.info("STARTED: copy object from bucket using Minion client")
         test_cfg = blackbox_cnf["test_2354"]
@@ -381,9 +381,9 @@ class TestMinioClient:
         self.log.info("ENDED: copy object from bucket using Minion client")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7538")
     @CTFailOn(error_handler)
-    def test_2355(self):
+    def test_upload_large_obj_2355(self):
         """Upload object of large size of(5gb) using Minion Client."""
         self.log.info(
             "STARTED: upload object of large size of(5gb) using Minion Client")
@@ -413,9 +413,9 @@ class TestMinioClient:
             "ENDED: upload object of large size of(5gb) using Minion Client")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7540")
     @CTFailOn(error_handler)
-    def test_2357(self):
+    def test_display_file_content_2357(self):
         """Display the contents of a text file using Minion client."""
         self.log.info(
             "STARTED: Display the contents of a text file using Minion client")
@@ -449,9 +449,9 @@ class TestMinioClient:
             "ENDED: Display the contents of a text file using Minion client")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7539")
     @CTFailOn(error_handler)
-    def test_2358(self):
+    def test_display_few_lines_2358(self):
         """Display the first few lines of a text file using Minion Client."""
         self.log.info(
             "STARTED: Display the first few lines of a text file using Minion Client")
