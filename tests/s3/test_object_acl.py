@@ -36,7 +36,7 @@ from commons.utils.config_utils import read_yaml
 from commons.utils.system_utils import create_file, remove_file
 from libs.s3 import s3_test_lib, s3_acl_test_lib, s3_tagging_test_lib
 from libs.s3 import iam_test_lib, s3_multipart_test_lib
-from libs.s3 import LDAP_USERNAME,LDAP_PASSWD
+from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
 
 
 S3_OBJ = s3_test_lib.S3TestLib()
@@ -63,13 +63,6 @@ class TestObjectACL:
             os.makedirs(cls.test_dir_path)
             cls.log.info("Created path: %s", cls.test_dir_path)
         cls.log.info("Test file path: %s", cls.test_file_path)
-        cls.start_range = OBJ_ACL_CONFIG["common_var"]["start_range"]
-        cls.end_range = OBJ_ACL_CONFIG["common_var"]["end_range"]
-        cls.random_num = str(
-            random.choice(
-                range(
-                    cls.start_range,
-                    cls.end_range)))
         cls.ldap_user = LDAP_USERNAME
         cls.ldap_password = LDAP_PASSWD
 
@@ -80,7 +73,15 @@ class TestObjectACL:
         It will perform all prerequisite test steps if any.
         """
         self.log.info("STARTED: SetUp Operations")
-        
+        if os.path.exists(self.test_file_path):
+            remove_file(self.test_file_path)
+        self.start_range = OBJ_ACL_CONFIG["common_var"]["start_range"]
+        self.end_range = OBJ_ACL_CONFIG["common_var"]["end_range"]
+        self.random_num = str(
+            random.choice(
+                range(
+                    self.start_range,
+                    self.end_range)))
         self.log.info("ENDED: SetUp Operations")
 
     def teardown_method(self):
@@ -93,13 +94,14 @@ class TestObjectACL:
         self.log.info("STARTED: TearDown Operations")
         bucket_init = OBJ_ACL_CONFIG["common_var"]["bucket_name"][:-2]
         bucket_list = S3_OBJ.bucket_list()[1]
+        if os.path.exists(self.test_file_path):
+            remove_file(self.test_file_path)
         all_users_buckets = [
             bucket for bucket in bucket_list if bucket_init in bucket]
         self.log.debug(
             "All the buckets for deletion are : %s", all_users_buckets)
-        S3_OBJ.delete_multiple_buckets(all_users_buckets)
-        if os.path.exists(self.test_file_path):
-            remove_file(self.test_file_path)
+        if all_users_buckets:
+            S3_OBJ.delete_multiple_buckets(all_users_buckets)
         all_accounts = IAM_TEST_OBJ.list_accounts_s3iamcli(
             self.ldap_user,
             self.ldap_password)[1]
@@ -123,8 +125,10 @@ class TestObjectACL:
                     access_key, secret_key)
                 for bucket in bucket_list:
                     s3_obj_acl.put_bucket_acl(bucket, acl="private")
-                s3_obj_temp.delete_all_buckets()
-                IAM_TEST_OBJ.reset_access_key_and_delete_account_s3iamcli(acc)
+                if bucket_list:
+                    s3_obj_temp.delete_all_buckets()
+                if acc:
+                    IAM_TEST_OBJ.reset_access_key_and_delete_account_s3iamcli(acc)
                 self.log.info("Deleted IAM accounts successfully")
         self.log.info("ENDED: TearDown Operations")
 
@@ -205,7 +209,7 @@ class TestObjectACL:
         account_name_2 = test_cfg["account_name"].format(self.random_num)
         emailid_2 = test_cfg["emailid"].format(self.random_num)
         self.log.info("Creating account with name %s and email_id %s",
-                         account_name_2, emailid_2)
+                      account_name_2, emailid_2)
         result = self.create_s3iamcli_acc(account_name_2, emailid_2)
         json_policy = test_cfg["grantee_json"]
         json_policy["Grantee"]["ID"] = result[0]
@@ -375,7 +379,8 @@ class TestObjectACL:
         res = S3_MUPART_OBJ.list_multipart_uploads(bucket)
         assert res[0], res[1]
         self.log.info(
-            "Step 2: Listing of multipart object resp after multipart create: %s", res)
+            "Step 2: Listing of multipart object resp after multipart create: %s",
+            res)
         self.log.info("Step 3: Uploading multi parts for object")
         upload_id = res[1]["Uploads"][0]["UploadId"]
         res = S3_MUPART_OBJ.upload_parts(
@@ -436,7 +441,8 @@ class TestObjectACL:
         assert res[0], res[1]
         res = S3_MUPART_OBJ.list_multipart_uploads(bucket)
         self.log.info(
-            "Step 2: Listing of multipart object resp after multipart create: %s", res)
+            "Step 2: Listing of multipart object resp after multipart create: %s",
+            res)
         self.log.info("Step 3: Uploading multi parts for object")
         assert res[0], res[1]
         upload_id = res[1]["Uploads"][0]["UploadId"]
@@ -464,7 +470,6 @@ class TestObjectACL:
         self.log.info("Step 5: Object ACL resp is : %s", res)
         assert object_acl == res[1]["Grants"][0]["Permission"], res[1]
         self.log.info("Clean Up Stage: Deleting all files created locally")
-        remove_file(OBJ_ACL_CONFIG["common_var"]["del_file"])
         self.log.info(
             "Perform Manual Multipart Object upload using create-multipart-upload and "
             "complete-multipart-upload and verify Get object ACL")
@@ -483,18 +488,17 @@ class TestObjectACL:
         obj = OBJ_ACL_CONFIG["common_var"]["object_name"].format(
             self.random_num)
         object_acl = OBJ_ACL_CONFIG["test_9897"]["obj_acl"]
-        file_path = OBJ_ACL_CONFIG["test_9897"]["file_path"]
         self.log.info("Step 1: Creating a bucket: %s", bucket)
         res = S3_OBJ.create_bucket(bucket)
         assert res[0], res[1]
         self.log.info("Step 1: Bucket is created: %s", bucket)
         self.log.info("Step 2: Creating file locally for upload")
         res = create_file(
-            file_path, OBJ_ACL_CONFIG["test_9897"]["f_size"])
+            self.test_file_path, OBJ_ACL_CONFIG["test_9897"]["f_size"])
         assert res[0], res[1]
         self.log.info("Step 2: Completed creating files locally")
         self.log.info("Step 3: Uploading Object : %s", obj)
-        res = S3_OBJ.object_upload(bucket, obj, file_path)
+        res = S3_OBJ.object_upload(bucket, obj, self.test_file_path)
         assert res[0], res[1]
         self.log.info("Step 3: Completed Uploading for Object")
         res = S3_OBJ.object_list(bucket)
@@ -529,7 +533,6 @@ class TestObjectACL:
         obj = OBJ_ACL_CONFIG["common_var"]["object_name"].format(
             self.random_num)
         object_acl = OBJ_ACL_CONFIG["test_9898"]["obj_acl"]
-        file_path = OBJ_ACL_CONFIG["test_9898"]["file_path"]
         remove_file(OBJ_ACL_CONFIG["test_9898"]["run_cmd"])
         self.log.info("Step 1: Creating a bucket: %s", bucket)
         res = S3_OBJ.create_bucket(bucket)
@@ -537,11 +540,11 @@ class TestObjectACL:
         self.log.info("Step 1: Bucket is created: %s", bucket)
         self.log.info("Step 2: Creating file locally for upload")
         res = create_file(
-            file_path, OBJ_ACL_CONFIG["test_9898"]["f_size"])
+            self.test_file_path, OBJ_ACL_CONFIG["test_9898"]["f_size"])
         assert res[0], res[1]
         self.log.info("Step 2: Completed creating files locally")
         self.log.info("Step 3: Uploading Object : %s", obj)
-        res = S3_OBJ.object_upload(bucket, obj, file_path)
+        res = S3_OBJ.object_upload(bucket, obj, self.test_file_path)
         assert res[0], res[1]
         self.log.info("Step 3: Completed uploading for Object")
         res = S3_OBJ.object_list(bucket)
@@ -553,7 +556,7 @@ class TestObjectACL:
         self.log.info("Step 4: Object ACL resp is : %s", res)
         assert object_acl == res[1]["Grants"][0]["Permission"], res[1]
         self.log.info("Clean Up Stage: Deleting all files created locally")
-        remove_file(file_path)
+        remove_file(self.test_file_path)
         self.log.info("Clean Up Stage: Done cleaning")
         self.log.info(
             "Perform Multipart Object upload using default upload by specifically providing "
@@ -609,7 +612,6 @@ class TestObjectACL:
             assert OBJ_ACL_CONFIG["test_9899"]["error_msg"] in error.message, error.message
         self.log.info("Step 5: Object ACL resp is : %s", res)
         self.log.info("Clean Up Stage: Deleting all files created locally")
-        remove_file(OBJ_ACL_CONFIG["common_var"]["del_file"])
         self.log.info("Clean Up Stage: Done cleaning")
         self.log.info(
             "Perform Manual Multipart Object upload and abort "
@@ -703,7 +705,8 @@ class TestObjectACL:
         except CTException as error:
             assert assert_msg in error.message, error.message
         self.log.info(
-            "Step 3: Grantee with Invalid canonical ID added for the object %s", obj)
+            "Step 3: Grantee with Invalid canonical ID added for the object %s",
+            obj)
         self.log.info("Put object acl with a invalid canonical ID")
 
     @pytest.mark.parallel
@@ -942,7 +945,8 @@ class TestObjectACL:
         res = S3_ACL_OBJ.add_grantee(bucket, obj, canonical_id_1, permission)
         assert res[0], res[1]
         self.log.info(
-            "Step 4: Completed Setting permission to object acl by account 1 %s", obj)
+            "Step 4: Completed Setting permission to object acl by account 1 %s",
+            obj)
         self.log.info(
             "Step 5: Put object acl of object %s with canonical id for account 2%s",
             obj,
@@ -950,7 +954,7 @@ class TestObjectACL:
         res = S3_ACL_OBJ.add_grantee(bucket, obj, canonical_id_2, permission)
         assert res[0], res[1]
         self.log.info("Step 5: Completed setting permission to "
-                         "object with canonical id using account 2%s", obj)
+                      "object with canonical id using account 2%s", obj)
         self.log.info(
             "Step 5: Get object acl of object %s after put object acl", obj)
         res = S3_ACL_OBJ.get_object_acl(bucket, obj)
@@ -1004,7 +1008,8 @@ class TestObjectACL:
         except CTException as error:
             assert OBJ_ACL_CONFIG["test_10225"]["error_msg"] in error.message, error.message
         self.log.info(
-            "Step 3: Put object acl with invalid object operation completed: %s", res)
+            "Step 3: Put object acl with invalid object operation completed: %s",
+            res)
         self.log.info(
             "Put object acl with invalid object [i.e object is not present]")
 
@@ -1583,7 +1588,7 @@ class TestObjectACL:
         res = s3_obj_1.create_bucket(bucket_name)
         assert res[0], res[1]
         self.log.info("Putting object %s to existing bucket %s",
-                         s3obj_name, bucket_name)
+                      s3obj_name, bucket_name)
         res = s3_acl_obj_1.put_object_with_acl(
             bucket_name, s3obj_name, test_file_path, acl=private_acl)
         assert res[0], res[1]
@@ -1600,7 +1605,7 @@ class TestObjectACL:
         email_id_2 = OBJ_ACL_CONFIG["test_10968"]["emailid_2"].format(
             self.random_num)
         self.log.info("Creating account name %s and email_id %s",
-                         account_name_2, email_id_2)
+                      account_name_2, email_id_2)
         result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         # Creating the 2nd user s3 Object
         self.log.info("Getting object from user 2")
@@ -1691,7 +1696,7 @@ class TestObjectACL:
         email_id_2 = OBJ_ACL_CONFIG["test_10969"]["emailid_2"].format(
             self.random_num)
         self.log.info("Creating account with name %s and email_id %s",
-                         account_name_2, email_id_2)
+                      account_name_2, email_id_2)
         result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         canonical_id_2 = result[0]
         # Creating the 2nd user s3 Object
@@ -1790,7 +1795,7 @@ class TestObjectACL:
         email_id_2 = OBJ_ACL_CONFIG["test_10972"]["emailid_2"].format(
             self.random_num)
         self.log.info("Creating account name %s and email_id %s",
-                         account_name_2, email_id_2)
+                      account_name_2, email_id_2)
         result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         # Creating the 2nd user s3 Object
         self.log.info("Getting object from user 2")
@@ -1873,7 +1878,7 @@ class TestObjectACL:
         email_id_2 = OBJ_ACL_CONFIG["test_10973"]["emailid_2"].format(
             self.random_num)
         self.log.info("Creating account name %s and email_id %s",
-                         account_name_2, email_id_2)
+                      account_name_2, email_id_2)
         result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         # Creating the 2nd user s3 Object
         s3_acl_obj_2 = result[2]
@@ -1947,7 +1952,7 @@ class TestObjectACL:
         self.log.info("Step 3: Successfully Created bucket")
         self.log.info("Step 4: Set the Permission for the existing bucket")
         resp = s3_acl_obj_1.put_bucket_acl(
-            bucket_name, grant_full_control="%s, %s".format(
+            bucket_name, grant_full_control="{}{}".format(
                 OBJ_ACL_CONFIG["test_10974"]["id_str"], can_id_usr_1))
         assert resp[0]
         resp = s3_acl_obj_1.put_bucket_acl(
@@ -3533,7 +3538,7 @@ class TestObjectACL:
             "Step 2: Put ACL with private was handled with error message : %s",
             OBJ_ACL_CONFIG["test_10793"]["error_msg"])
         self.log.info("Add canned ACL private in request body along with"
-                         "FULL_CONTROL ACL grant permission in request heade")
+                      "FULL_CONTROL ACL grant permission in request heade")
 
     @pytest.mark.parallel
     @pytest.mark.s3
@@ -3597,7 +3602,7 @@ class TestObjectACL:
             "Step 4: Put full control and private ACL to object was handled with error message: %s",
             OBJ_ACL_CONFIG["test_10794"]["error_msg"])
         self.log.info("Add canned ACL private in request body along with "
-                         "FULL_CONTROL ACL grant permission in request body")
+                      "FULL_CONTROL ACL grant permission in request body")
 
     @pytest.mark.parallel
     @pytest.mark.s3
@@ -3821,7 +3826,7 @@ class TestObjectACL:
         assert put_acl_res[0]
         self.log.info("Step 6: ACL property was updated successfully")
         self.log.info("Step 7: Verifying the object acl using Account 1 "
-                         "created by the 2nd Account from account 1")
+                      "created by the 2nd Account from account 1")
         try:
             acl_obj.get_object_acl(bucket_name, s3obj_name)
         except CTException as error:
@@ -3830,7 +3835,7 @@ class TestObjectACL:
             "Step 7: Get object ACL was handled with error message : %s",
             OBJ_ACL_CONFIG["test_172"]["error_msg"])
         self.log.info("Test put-object-acl from cross account on the object"
-                         "with bucket-owner-read canned-acl permission")
+                      "with bucket-owner-read canned-acl permission")
 
     @pytest.mark.parallel
     @pytest.mark.s3
@@ -5702,7 +5707,7 @@ class TestObjectACL:
         account_name = test_cfg["account_name"].format(self.random_num)
         emild_id = test_cfg["emailid"].format(self.random_num)
         self.log.info("Creating account with name %s and email_id %s",
-                         account_name, emild_id)
+                      account_name, emild_id)
         result = self.create_s3iamcli_acc(account_name, emild_id)
         s3_obj_2 = result[1]
         self.create_bucket_obj(bkt_name, obj_name, S3_OBJ)
