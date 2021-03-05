@@ -19,29 +19,27 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 """Account User Management Test Module."""
+
 import time
 import logging
 from datetime import datetime
+
 import paramiko
 import pytest
-
 from commons.constants import const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
-from commons.utils.assert_utils import \
-    assert_false, assert_true, assert_in, assert_equal, assert_not_equal
 from commons.utils.config_utils import read_yaml, get_config
 from commons.utils.system_utils import run_remote_cmd, remove_file
-from libs.s3 import S3H_OBJ
+from commons.utils.assert_utils import assert_false, assert_true, assert_in, assert_equal, assert_not_equal
+from libs.s3 import S3H_OBJ, CM_CFG, LDAP_PASSWD
 
 
 LDAP_CFG = read_yaml("config/s3/test_openldap.yaml")[1]
-CM_CFG = read_yaml("config/common_config.yaml")[1]
-CONS_OBJ_DICT = const.S3_BUILD_VER[CM_CFG["BUILD_VER_TYPE"]]
 
 
-class OpenLdap:
-    """Open LDAP Testsuite."""
+class TestOpenLdap:
+    """Open LDAP Test Suite."""
 
     CM_LDAP_CFG = LDAP_CFG["common_vars"]
 
@@ -52,7 +50,7 @@ class OpenLdap:
 
         It will perform all prerequisite test suite steps if any.
         """
-        cls.LOGGER = logging.getLogger(__name__)
+        cls.log = logging.getLogger(__name__)
         cls.openldap_path = cls.CM_LDAP_CFG["openldap_path"]
         cls.slapd_dir = cls.CM_LDAP_CFG["slapd_dir"]
         cls.slapd_service = cls.CM_LDAP_CFG["slapd_service"]
@@ -63,8 +61,13 @@ class OpenLdap:
 
     def remote_execution(self, hostname, username, password, cmd):
         """running remote cmd."""
-        self.LOGGER("Remote Execution")
-        return run_remote_cmd(cmd, hostname, username, password)
+        self.log.info("Remote Execution")
+        return run_remote_cmd(
+            cmd,
+            hostname,
+            username,
+            password,
+            read_lines=True)
 
     def chown_dir(self, ch_owner_cmd, owner, chk_owner_cmd, ch_owner_dir):
         """
@@ -81,13 +84,14 @@ class OpenLdap:
             CM_CFG["username"],
             CM_CFG["password"],
             ch_owner_cmd)
-        self.LOGGER.info(ch_owner_cmd)
-        resp = self.remote_execution(
+        self.log.info(ch_owner_cmd)
+        status, resp = self.remote_execution(
             CM_CFG["host"],
             CM_CFG["username"],
             CM_CFG["password"],
             chk_owner_cmd)
-        self.LOGGER.info(chk_owner_cmd)
+        self.log.info(chk_owner_cmd)
+        assert status, resp
         resp = list(map(lambda s: s.strip(), resp))
         dir_data = [_dir for _dir in resp if ch_owner_dir in _dir]
         new_owner = dir_data[0].split()[2]
@@ -106,11 +110,12 @@ class OpenLdap:
         :rtype: str
         """
         cmd = self.CM_LDAP_CFG["chk_owner_cmd"].format(dir_path)
-        resp = self.remote_execution(
+        status, resp = self.remote_execution(
             CM_CFG["host"],
             CM_CFG["username"],
             CM_CFG["password"],
             cmd)
+        assert status, resp
         resp = list(map(lambda s: s.strip(), resp))
         dir_data = [_dir for _dir in resp if dir_name in _dir]
         dir_owner = dir_data[0].split()[2]
@@ -133,12 +138,13 @@ class OpenLdap:
             CM_CFG["username"],
             CM_CFG["password"],
             bkp_cmd)
-        self.LOGGER.info(bkp_cmd)
-        resp = self.remote_execution(
+        self.log.info(bkp_cmd)
+        status, resp = self.remote_execution(
             CM_CFG["host"],
             CM_CFG["username"],
             CM_CFG["password"],
             ls_cmd)
+        assert status, resp
         resp = list(map(lambda s: s.strip(), resp))
         assert_in(
             backup_data,
@@ -162,12 +168,13 @@ class OpenLdap:
             CM_CFG["username"],
             CM_CFG["password"],
             cr_cmd)
-        self.LOGGER.info(cr_cmd)
-        resp = self.remote_execution(
+        self.log.info(cr_cmd)
+        status, resp = self.remote_execution(
             CM_CFG["host"],
             CM_CFG["username"],
             CM_CFG["password"],
             ls_cmd)
+        assert status, resp
         resp = list(map(lambda s: s.strip(), resp))
         assert_in(
             new_dir_name,
@@ -190,12 +197,13 @@ class OpenLdap:
             CM_CFG["username"],
             CM_CFG["password"],
             re_cmd)
-        self.LOGGER.info(re_cmd)
-        resp = self.remote_execution(
+        self.log.info(re_cmd)
+        status, resp = self.remote_execution(
             CM_CFG["host"],
             CM_CFG["username"],
             CM_CFG["password"],
             ls_cmd)
+        assert status, resp
         resp = list(map(lambda s: s.strip(), resp))
         for file in files_lst:
             assert_in(
@@ -217,7 +225,7 @@ class OpenLdap:
         hosts = list()
         hosts.append(CM_CFG["host"])
         hosts.append(CM_CFG["host2"])
-        self.LOGGER.info("Creating a shell session on channel...")
+        self.log.info("Creating a shell session on channel...")
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         for host in hosts:
@@ -226,7 +234,7 @@ class OpenLdap:
                 username=CM_CFG["username"],
                 password=CM_CFG["password"])
             channel = ssh.invoke_shell()
-            self.LOGGER.info("Created a shell session on channel")
+            self.log.info("Created a shell session on channel")
             while True:
                 time.sleep(self.CM_LDAP_CFG["channel_time_pause"])
                 if channel.recv_ready():
@@ -236,7 +244,7 @@ class OpenLdap:
                 else:
                     continue
                 if verify_statement in channel_data:
-                    self.LOGGER.info("Command executed successfully")
+                    self.log.info("Command executed successfully")
                     break
                 if channel_data.endswith(self.CM_LDAP_CFG["root_prmpt"]):
                     time.sleep(self.CM_LDAP_CFG["channel_time_pause"])
@@ -244,7 +252,7 @@ class OpenLdap:
                         "".join([cd_cmd, self.CM_LDAP_CFG["press_enter"]]))
                 elif channel_data.endswith(self.CM_LDAP_CFG["scr_dir_prmpt"]):
                     time.sleep(self.CM_LDAP_CFG["channel_time_pause"])
-                    self.LOGGER.info(
+                    self.log.info(
                         "Executing command: %s", ch_pwd_cmd)
                     time.sleep(self.CM_LDAP_CFG["channel_time_pause"])
                     channel.send(
@@ -259,7 +267,6 @@ class OpenLdap:
 
         return channel_data
 
-    @CTFailOn(error_handler)
     def setup_method(self):
         """
         Function will be invoked prior each test case.
@@ -268,9 +275,9 @@ class OpenLdap:
             - Initialize few common variables.
             - Create backup directory named "backup" under "/root".
         """
-        self.LOGGER.info("STARTED: Setup operations")
+        self.log.info("STARTED: Setup operations")
 
-        self.LOGGER.info(
+        self.log.info(
             "Creating a backup directory %s...",
             self.backup_path)
         self.remote_execution(
@@ -278,10 +285,10 @@ class OpenLdap:
             CM_CFG["username"],
             CM_CFG["password"],
             self.CM_LDAP_CFG["mk_dir_cmd"].format(self.backup_path))
-        self.LOGGER.info(
+        self.log.info(
             "Created a backup directory %s",
             self.backup_path)
-        self.LOGGER.info("ENDED: Setup operations")
+        self.log.info("ENDED: Setup operations")
 
     def teardown_method(self):
         """
@@ -292,12 +299,12 @@ class OpenLdap:
             - Delete the backup directory created under "/root".
             - Change the owner of ldap config and data directory to "ldap".
         """
-        self.LOGGER.info("STARTED: Teardown operations")
+        self.log.info("STARTED: Teardown operations")
         ldap_cfg_path = f"{self.openldap_path}/{self.slapd_dir}"
         if self.get_owner(
                 self.openldap_path,
                 self.slapd_dir) != self.CM_LDAP_CFG["ldap_owner"]:
-            self.LOGGER.info(
+            self.log.info(
                 "Changing owner of openldap configuration directory to ldap...")
             ch_owner_cmd = self.CM_LDAP_CFG["ch_owner_cmd"].format(
                 ldap_cfg_path)
@@ -308,13 +315,13 @@ class OpenLdap:
                 self.CM_LDAP_CFG["ldap_owner"],
                 chk_owner_cmd,
                 self.slapd_dir)
-            self.LOGGER.info(
+            self.log.info(
                 "Changed owner of openldap configuration directory to ldap")
         data_path = f"{self.CM_LDAP_CFG['ldap_data_path']}/{self.CM_LDAP_CFG['ldap_data_dir']}"
         if self.get_owner(
                 self.CM_LDAP_CFG['ldap_data_path'],
                 self.CM_LDAP_CFG['ldap_data_dir']) != self.CM_LDAP_CFG["ldap_owner"]:
-            self.LOGGER.info(
+            self.log.info(
                 "Changing owner of openldap data directory to ldap...")
             ch_owner_cmd = self.CM_LDAP_CFG["ch_owner_cmd"].format(data_path)
             chk_owner_cmd = self.CM_LDAP_CFG["chk_owner_cmd"].format(
@@ -324,41 +331,40 @@ class OpenLdap:
                 self.CM_LDAP_CFG["ldap_owner"],
                 chk_owner_cmd,
                 self.CM_LDAP_CFG['ldap_data_dir'])
-            self.LOGGER.info(
+            self.log.info(
                 "Changed owner of openldap data directory to ldap")
         if not self.default_ldap_pw:
-            self.LOGGER.info("Step 2: Restoring openldap password")
-            authserver_file = CONS_OBJ_DICT["authserver_file"]
-            default_pw = CONS_OBJ_DICT["ldap_creds"]["ldap_passwd"]
+            self.log.info("Step 2: Restoring openldap password")
+            default_pw = LDAP_PASSWD
             ch_pwd_cmd = self.CM_LDAP_CFG["ch_pwd_cmd"].format(
-                authserver_file, default_pw)
+                const.AUTHSERVER_FILE, default_pw)
             resp = self.execute_shell_cmd(
                 ch_pwd_cmd,
-                CONS_OBJ_DICT["script_path"],
+                const.SCRIPT_PATH,
                 self.CM_LDAP_CFG["output_str"])
-            self.LOGGER.info("Response is : %s", resp)
-            self.LOGGER.info(
+            self.log.info("Response is : %s", resp)
+            self.log.info(
                 "Restarting %s service",
                 self.slapd_service)
             S3H_OBJ.restart_s3server_service(self.slapd_service)
-            self.LOGGER.info("Step 2: Restored openldap password")
+            self.log.info("Step 2: Restored openldap password")
         if not S3H_OBJ.get_s3server_service_status(self.slapd_service)[0]:
-            self.LOGGER.info(
+            self.log.info(
                 "Starting %s service...",
                 self.slapd_service)
             S3H_OBJ.start_s3server_service(self.slapd_service)
             resp = S3H_OBJ.get_s3server_service_status(self.slapd_service)
             assert_true(resp[0], resp[1])
-            self.LOGGER.info("Started %s service", self.slapd_service)
-        self.LOGGER.info("Deleting backup dir %s...", self.backup_path)
+            self.log.info("Started %s service", self.slapd_service)
+        self.log.info("Deleting backup dir %s...", self.backup_path)
         self.remote_execution(
             CM_CFG["host"],
             CM_CFG["username"],
             CM_CFG["password"],
             self.CM_LDAP_CFG["rm_dir_cmd"].format(self.backup_path))
-        self.LOGGER.info("Deleted backup dir %s", self.backup_path)
+        self.log.info("Deleted backup dir %s", self.backup_path)
         remove_file(self.CM_LDAP_CFG["temp_path"])
-        self.LOGGER.info("ENDED: Teardown operations")
+        self.log.info("ENDED: Teardown operations")
 
     @pytest.mark.parallel
     @pytest.mark.s3
@@ -366,30 +372,31 @@ class OpenLdap:
     @CTFailOn(error_handler)
     def test_5066(self):
         """Test to verify & check backup of openldap config directory is done successfully."""
-        self.LOGGER.info(
+        self.log.info(
             "STARTED: Test to verify and check backup of openldap "
             "configuration directory is done successfully")
         cfg_5066 = LDAP_CFG["test_5066"]
         backup_cfg_file = self.CM_LDAP_CFG["cfg_backup_file"]
         slapd_err = cfg_5066["slapd_err"]
-        self.LOGGER.info(
+        self.log.info(
             "Step 1: Verifying if %s is present under %s",
             self.slapd_dir, self.openldap_path)
-        resp = self.remote_execution(
+        status, resp = self.remote_execution(
             CM_CFG["host"],
             CM_CFG["username"],
             CM_CFG["password"],
             self.CM_LDAP_CFG["ls_cmd"])
+        assert status, resp
         resp = list(map(lambda s: s.strip(), resp))
         assert_in(
             self.slapd_dir,
             resp,
             slapd_err.format(
                 self.openldap_path))
-        self.LOGGER.info(
+        self.log.info(
             "Step 1: Verified %s is present under %s",
             self.slapd_dir, self.openldap_path)
-        self.LOGGER.info(
+        self.log.info(
             "Step 2: Taking a backup of %s directory", self.slapd_dir)
         slapcat_cmd = self.CM_LDAP_CFG["slapcat_cmd"].format(
             cfg_5066["db_no"], self.backup_path, backup_cfg_file)
@@ -397,10 +404,10 @@ class OpenLdap:
             slapcat_cmd,
             backup_cfg_file,
             self.CM_LDAP_CFG["ls_backup_path"])
-        self.LOGGER.info(
+        self.log.info(
             "Step 2: Taken a backup of %s directory successfully",
             self.slapd_dir)
-        self.LOGGER.info(
+        self.log.info(
             "ENDED: Test to verify and check backup of openldap "
             "configuration directory is done successfully")
 
@@ -410,7 +417,7 @@ class OpenLdap:
     @CTFailOn(error_handler)
     def test_5067(self):
         """Test to verify and check backup of openldap Data Directories is done successfully."""
-        self.LOGGER.info(
+        self.log.info(
             "STARTED: Test to verify & check backup of "
             "openldap Data Directories is done successfully")
         cfg_5067 = LDAP_CFG["test_5067"]
@@ -418,33 +425,34 @@ class OpenLdap:
         ldap_data_dir = self.CM_LDAP_CFG["ldap_data_dir"]
         backup_data_file = self.CM_LDAP_CFG["data_backup_file"]
         ldap_data_dir_err = cfg_5067["ldap_data_dir_err"]
-        self.LOGGER.info(
+        self.log.info(
             "Step 1: Verifying if ldap data directory named as %s is present under %s",
             ldap_data_dir,
             ldap_data_path)
-        resp = self.remote_execution(
+        status, resp = self.remote_execution(
             CM_CFG["host"],
             CM_CFG["username"],
             CM_CFG["password"],
             cfg_5067["ls_ldap_data_dir_cmd"])
+        assert status, resp
         resp = list(map(lambda s: s.strip(), resp))
         assert_in(
             ldap_data_dir,
             resp,
             ldap_data_dir_err.format(ldap_data_path))
-        self.LOGGER.info(
+        self.log.info(
             "Step 1: Verified ldap data directory %s is present under %s",
             ldap_data_dir, ldap_data_path)
-        self.LOGGER.info("Step 2: Taking a backup of ldap data directory")
+        self.log.info("Step 2: Taking a backup of ldap data directory")
         slapcat_cmd = self.CM_LDAP_CFG["slapcat_cmd"].format(
             cfg_5067["db_no"], self.backup_path, backup_data_file)
         self.backup_dir(
             slapcat_cmd,
             backup_data_file,
             self.CM_LDAP_CFG["ls_backup_path"])
-        self.LOGGER.info(
+        self.log.info(
             "Step 2: Taken a backup of ldap data directory successfully")
-        self.LOGGER.info(
+        self.log.info(
             "ENDED: Test to verify & check backup of openldap Data Directory is done successfully")
 
     @pytest.mark.parallel
@@ -453,30 +461,31 @@ class OpenLdap:
     @CTFailOn(error_handler)
     def test_5068(self):
         """Test to verify & check restore of openldap config directory is done successfully."""
-        self.LOGGER.info(
+        self.log.info(
             "STARTED: Test to verify and check restore of openldap configuration "
             "directory is done successfully")
         cfg_5068 = LDAP_CFG["test_5068"]
         slapd_err = self.CM_LDAP_CFG["slapd_err"]
         bkp_config_dir = f"{self.slapd_dir}.{self.datestamp}"
-        self.LOGGER.info(
+        self.log.info(
             "Step 1: Verifying if openldap configuration directory is present under %s",
             self.openldap_path)
-        resp = self.remote_execution(
+        status, resp = self.remote_execution(
             CM_CFG["host"],
             CM_CFG["username"],
             CM_CFG["password"],
             self.CM_LDAP_CFG["ls_cmd"])
+        assert status, resp
         resp = list(map(lambda s: s.strip(), resp))
         assert_in(
             self.slapd_dir,
             resp,
             slapd_err.format(
                 self.openldap_path))
-        self.LOGGER.info(
+        self.log.info(
             "Step 1: Verified openldap configuration directory is present under %s",
             self.openldap_path)
-        self.LOGGER.info(
+        self.log.info(
             "Step 2: Taking a backup of %s file ",
             self.CM_LDAP_CFG["cfg_backup_file"])
         slapcat_cmd = self.CM_LDAP_CFG["slapcat_cmd"].format(
@@ -485,46 +494,46 @@ class OpenLdap:
             slapcat_cmd,
             self.CM_LDAP_CFG["cfg_backup_file"],
             self.CM_LDAP_CFG["ls_backup_path"])
-        self.LOGGER.info(
+        self.log.info(
             "Step 2: Taken a backup of %s file ",
             self.CM_LDAP_CFG["cfg_backup_file"])
-        self.LOGGER.info(
+        self.log.info(
             "Step 3: Stopping %s service",
             self.slapd_service)
         S3H_OBJ.stop_s3server_service(self.slapd_service)
         resp = S3H_OBJ.get_s3server_service_status(self.slapd_service)
         assert_false(resp[0], resp[1])
-        self.LOGGER.info(
+        self.log.info(
             "Step 3: Stopped %s service",
             self.slapd_service)
-        self.LOGGER.info(
+        self.log.info(
             "Step 4: Taking a backup of openldap configuration directory")
         backup_cmd = cfg_5068["backup_dir_cmd"].format(bkp_config_dir)
         self.backup_dir(
             backup_cmd,
             bkp_config_dir,
             self.CM_LDAP_CFG["ls_backup_path"])
-        self.LOGGER.info(
+        self.log.info(
             "Step 4: Taken a backup of openldap configuration directory successfully")
-        self.LOGGER.info(
+        self.log.info(
             "Step 5: Creating a new %s directory under %s",
             self.slapd_dir, self.openldap_path)
         self.create_dir(
             cfg_5068["cr_dir_cmd"],
             self.slapd_dir,
             self.CM_LDAP_CFG["ls_cmd"])
-        self.LOGGER.info(
+        self.log.info(
             "Step 5: Created a new %s directory under %s",
             self.slapd_dir, self.openldap_path)
-        self.LOGGER.info("Step 6: Restoring openldap configuration directory")
+        self.log.info("Step 6: Restoring openldap configuration directory")
         restore_cmd = cfg_5068["restore_cmd"].format(self.backup_path)
         self.restore_dir(
             restore_cmd,
             cfg_5068["ldap_config_files"],
             cfg_5068["ls_slapd_dir"])
-        self.LOGGER.info(
+        self.log.info(
             "Step 6: Restored openldap configuration directory successfully")
-        self.LOGGER.info(
+        self.log.info(
             "Step 7: Changing owner of ldap configuration directory to %s",
             self.CM_LDAP_CFG["ldap_owner"])
         ldap_cfg_path = f"{self.openldap_path}/{self.slapd_dir}"
@@ -536,10 +545,10 @@ class OpenLdap:
             self.CM_LDAP_CFG["ldap_owner"],
             chk_owner_cmd,
             self.slapd_dir)
-        self.LOGGER.info(
+        self.log.info(
             "Step 7: Changed owner of ldap configuration directory to %s successfully",
             self.CM_LDAP_CFG["ldap_owner"])
-        self.LOGGER.info(
+        self.log.info(
             "ENDED: Test to verify and check restore of openldap "
             "configuration directory is done successfully")
 
@@ -554,31 +563,32 @@ class OpenLdap:
         if ownership and permissions of the configuration directory
         is changed to what it was previously before restore.
         """
-        self.LOGGER.info(
+        self.log.info(
             "STARTED: Test to verify and check if ownership and "
             "permissions of the configuration directory "
             "is changed to what it was previously before restore.")
         cfg_5069 = LDAP_CFG["test_5069"]
         slapd_err = self.CM_LDAP_CFG["slapd_err"]
         bkp_config_dir = f"{self.slapd_dir}.{self.datestamp}"
-        self.LOGGER.info(
+        self.log.info(
             "Step 1: Verifying if openldap configuration directory is present under %s",
             self.openldap_path)
-        resp = self.remote_execution(
+        status, resp = self.remote_execution(
             CM_CFG["host"],
             CM_CFG["username"],
             CM_CFG["password"],
             self.CM_LDAP_CFG["ls_cmd"])
+        assert status, resp
         resp = list(map(lambda s: s.strip(), resp))
         assert_in(
             self.slapd_dir,
             resp,
             slapd_err.format(
                 self.openldap_path))
-        self.LOGGER.info(
+        self.log.info(
             "Step 1: Verified openldap configuration directory is present under %s",
             self.openldap_path)
-        self.LOGGER.info(
+        self.log.info(
             "Step 2: Taking a backup of %s file ",
             self.CM_LDAP_CFG["cfg_backup_file"])
         slapcat_cmd = self.CM_LDAP_CFG["slapcat_cmd"].format(
@@ -587,53 +597,53 @@ class OpenLdap:
             slapcat_cmd,
             self.CM_LDAP_CFG["cfg_backup_file"],
             self.CM_LDAP_CFG["ls_backup_path"])
-        self.LOGGER.info(
+        self.log.info(
             "Step 2: Taken a backup of %s file ",
             self.CM_LDAP_CFG["cfg_backup_file"])
-        self.LOGGER.info(
+        self.log.info(
             "Step 3: Stopping %s service",
             self.slapd_service)
         S3H_OBJ.stop_s3server_service(self.slapd_service)
         resp = S3H_OBJ.get_s3server_service_status(self.slapd_service)
         assert_false(resp[0], resp[1])
-        self.LOGGER.info(
+        self.log.info(
             "Step 3: Stopped %s service",
             self.slapd_service)
-        self.LOGGER.info(
+        self.log.info(
             "Step 4: Taking a backup of openldap configuration directory")
         backup_cmd = cfg_5069["backup_dir_cmd"].format(bkp_config_dir)
         self.backup_dir(
             backup_cmd,
             bkp_config_dir,
             self.CM_LDAP_CFG["ls_backup_path"])
-        self.LOGGER.info(
+        self.log.info(
             "Step 4: Taken a backup of openldap configuration directory successfully")
-        self.LOGGER.info(
+        self.log.info(
             "Step 5: Checking ownership of backup configuration directory")
         dir_owner = self.get_owner(self.backup_path, bkp_config_dir)
         assert_equal(dir_owner, self.CM_LDAP_CFG["ldap_owner"], dir_owner)
-        self.LOGGER.info(
+        self.log.info(
             "Step 5: Checked owner of backup configuration directory is %s",
             self.CM_LDAP_CFG["ldap_owner"])
-        self.LOGGER.info(
+        self.log.info(
             "Step 6: Creating a new %s directory under %s",
             self.slapd_dir, self.openldap_path)
         self.create_dir(
             cfg_5069["cr_dir_cmd"],
             self.slapd_dir,
             self.CM_LDAP_CFG["ls_cmd"])
-        self.LOGGER.info(
+        self.log.info(
             "Step 6: Created a new %s directory under %s",
             self.slapd_dir, self.openldap_path)
-        self.LOGGER.info("Step 7: Restoring openldap configuration directory")
+        self.log.info("Step 7: Restoring openldap configuration directory")
         restore_cmd = cfg_5069["restore_cmd"].format(self.backup_path)
         self.restore_dir(
             restore_cmd,
             cfg_5069["ldap_config_files"],
             cfg_5069["ls_slapd_dir"])
-        self.LOGGER.info(
+        self.log.info(
             "Step 7: Restored openldap configuration directory successfully")
-        self.LOGGER.info(
+        self.log.info(
             "Step 8: Changing owner of ldap configuration directory to %s",
             self.CM_LDAP_CFG["ldap_owner"])
         ldap_cfg_path = f"{self.openldap_path}/{self.slapd_dir}"
@@ -645,10 +655,10 @@ class OpenLdap:
             self.CM_LDAP_CFG["ldap_owner"],
             chk_owner_cmd,
             self.slapd_dir)
-        self.LOGGER.info(
+        self.log.info(
             "Step 8: Changed owner of ldap configuration directory to %s successfully",
             self.CM_LDAP_CFG["ldap_owner"])
-        self.LOGGER.info(
+        self.log.info(
             "ENDED: Test to verify and check if ownership and "
             "permissions of the configuration directory is changed "
             "to what it was previously before restore.")
@@ -659,7 +669,7 @@ class OpenLdap:
     @CTFailOn(error_handler)
     def test_5070(self):
         """Test to verify and check restore of openldap data directories is done successfully."""
-        self.LOGGER.info(
+        self.log.info(
             "STARTED: Test to verify and check restore of "
             "openldap data directories is done successfully")
         cfg_5070 = LDAP_CFG["test_5070"]
@@ -667,23 +677,24 @@ class OpenLdap:
         ldap_data_dir = self.CM_LDAP_CFG["ldap_data_dir"]
         ldap_data_err = cfg_5070["ldap_data_err"]
         bkp_ldap_data_dir = f"{ldap_data_dir}{self.datestamp}"
-        self.LOGGER.info(
+        self.log.info(
             "Step 1: Verifying that ldap data directory is present under %s",
             ldap_data_path)
-        resp = self.remote_execution(
+        status, resp = self.remote_execution(
             CM_CFG["host"],
             CM_CFG["username"],
             CM_CFG["password"],
             cfg_5070["ls_ldap_data_cmd"])
+        assert status, resp
         resp = list(map(lambda s: s.strip(), resp))
         assert_in(
             ldap_data_dir,
             resp,
             ldap_data_err.format(ldap_data_path))
-        self.LOGGER.info(
+        self.log.info(
             "Step 1: Verified that ldap data directory is present under %s",
             ldap_data_path)
-        self.LOGGER.info(
+        self.log.info(
             "Step 2: Taking a backup of %s file ",
             self.CM_LDAP_CFG["data_backup_file"])
         slapcat_cmd = self.CM_LDAP_CFG["slapcat_cmd"].format(
@@ -692,44 +703,44 @@ class OpenLdap:
             slapcat_cmd,
             self.CM_LDAP_CFG["data_backup_file"],
             self.CM_LDAP_CFG["ls_backup_path"])
-        self.LOGGER.info(
+        self.log.info(
             "Step 2: Taken a backup of %s file ",
             self.CM_LDAP_CFG["data_backup_file"])
-        self.LOGGER.info(
+        self.log.info(
             "Step 3: Stopping %s service",
             self.slapd_service)
         S3H_OBJ.stop_s3server_service(self.slapd_service)
         resp = S3H_OBJ.get_s3server_service_status(self.slapd_service)
         assert_false(resp[0], resp[1])
-        self.LOGGER.info(
+        self.log.info(
             "Step 3: Stopped %s service",
             self.slapd_service)
-        self.LOGGER.info("Step 4: Taking a backup of ldap data directory")
+        self.log.info("Step 4: Taking a backup of ldap data directory")
         backup_cmd = cfg_5070["backup_dir_cmd"].format(bkp_ldap_data_dir)
         self.backup_dir(
             backup_cmd,
             bkp_ldap_data_dir,
             self.CM_LDAP_CFG["ls_backup_path"])
-        self.LOGGER.info(
+        self.log.info(
             "Step 4: Taken a backup of ldap data directory successfully")
-        self.LOGGER.info(
+        self.log.info(
             "Step 5: Creating openldap data directory under %s",
             ldap_data_path)
         self.create_dir(
             cfg_5070["cr_dir_cmd"],
             ldap_data_dir,
             cfg_5070["ls_ldap_data_cmd"])
-        self.LOGGER.info(
+        self.log.info(
             "Step 5: Created openldap data directory under %s", ldap_data_path)
-        self.LOGGER.info("Step 6: Restoring openldap data directory")
+        self.log.info("Step 6: Restoring openldap data directory")
         restore_cmd = cfg_5070["restore_cmd"].format(self.backup_path)
         self.restore_dir(
             restore_cmd,
             cfg_5070["ldap_config_files"],
             cfg_5070["ls_slapd_dir"])
-        self.LOGGER.info(
+        self.log.info(
             "Step 6: Restored openldap data directory successfully")
-        self.LOGGER.info(
+        self.log.info(
             "Step 7: Changing owner of ldap configuration directory to %s",
             self.CM_LDAP_CFG["ldap_owner"])
         data_path = f"{ldap_data_path}/{ldap_data_dir}"
@@ -741,10 +752,10 @@ class OpenLdap:
             self.CM_LDAP_CFG["ldap_owner"],
             chk_owner_cmd,
             ldap_data_dir)
-        self.LOGGER.info(
+        self.log.info(
             "Step 7: Changed owner of ldap configuration directory to %s successfully",
             self.CM_LDAP_CFG["ldap_owner"])
-        self.LOGGER.info(
+        self.log.info(
             "ENDED: Test to verify and check restore of "
             "openldap data directories is done successfully")
 
@@ -758,7 +769,7 @@ class OpenLdap:
 
         Change if ownership and permissions of the data directory to what it was previously.
         """
-        self.LOGGER.info(
+        self.log.info(
             "STARTED: Test to verify and check change if ownership "
             "and permissions of the data directory to what it was previously")
         cfg_5071 = LDAP_CFG["test_5071"]
@@ -766,23 +777,24 @@ class OpenLdap:
         ldap_data_dir = self.CM_LDAP_CFG["ldap_data_dir"]
         ldap_data_err = cfg_5071["ldap_data_err"]
         bkp_ldap_data_dir = f"{ldap_data_dir}{self.datestamp}"
-        self.LOGGER.info(
+        self.log.info(
             "Step 1: Verifying that ldap data directory is present under %s",
             ldap_data_path)
-        resp = self.remote_execution(
+        status, resp = self.remote_execution(
             CM_CFG["host"],
             CM_CFG["username"],
             CM_CFG["password"],
             cfg_5071["ls_ldap_data_cmd"])
+        assert status, resp
         resp = list(map(lambda s: s.strip(), resp))
         assert_in(
             ldap_data_dir,
             resp,
             ldap_data_err.format(ldap_data_path))
-        self.LOGGER.info(
+        self.log.info(
             "Step 1: Verified that ldap data directory is present under %s",
             ldap_data_path)
-        self.LOGGER.info(
+        self.log.info(
             "Step 2: Taking a backup of %s file ",
             self.CM_LDAP_CFG["data_backup_file"])
         slapcat_cmd = self.CM_LDAP_CFG["slapcat_cmd"].format(
@@ -791,50 +803,50 @@ class OpenLdap:
             slapcat_cmd,
             self.CM_LDAP_CFG["data_backup_file"],
             self.CM_LDAP_CFG["ls_backup_path"])
-        self.LOGGER.info(
+        self.log.info(
             "Step 2: Taken a backup of %s file ",
             self.CM_LDAP_CFG["data_backup_file"])
-        self.LOGGER.info(
+        self.log.info(
             "Step 3: Stopping %s service",
             self.slapd_service)
         S3H_OBJ.stop_s3server_service(self.slapd_service)
         resp = S3H_OBJ.get_s3server_service_status(self.slapd_service)
         assert_false(resp[0], resp[1])
-        self.LOGGER.info(
+        self.log.info(
             "Step 3: Stopped %s service",
             self.slapd_service)
-        self.LOGGER.info("Step 4: Taking a backup of ldap data directory")
+        self.log.info("Step 4: Taking a backup of ldap data directory")
         backup_cmd = cfg_5071["backup_dir_cmd"].format(bkp_ldap_data_dir)
         self.backup_dir(
             backup_cmd,
             bkp_ldap_data_dir,
             self.CM_LDAP_CFG["ls_backup_path"])
-        self.LOGGER.info(
+        self.log.info(
             "Step 4: Taken a backup of ldap data directory successfully")
-        self.LOGGER.info("Step 5: Checking ownership of backup data directory")
+        self.log.info("Step 5: Checking ownership of backup data directory")
         dir_owner = self.get_owner(self.backup_path, bkp_ldap_data_dir)
         assert_equal(dir_owner, self.CM_LDAP_CFG["ldap_owner"], dir_owner)
-        self.LOGGER.info(
+        self.log.info(
             "Step 5: Checked owner of backup configuration directory is %s",
             self.CM_LDAP_CFG["ldap_owner"])
-        self.LOGGER.info(
+        self.log.info(
             "Step 6: Creating openldap data directory under %s",
             ldap_data_path)
         self.create_dir(
             cfg_5071["cr_dir_cmd"],
             ldap_data_dir,
             cfg_5071["ls_ldap_data_cmd"])
-        self.LOGGER.info(
+        self.log.info(
             "Step 6: Created openldap data directory under %s", ldap_data_path)
-        self.LOGGER.info("Step 7: Restoring openldap data directory")
+        self.log.info("Step 7: Restoring openldap data directory")
         restore_cmd = cfg_5071["restore_cmd"].format(self.backup_path)
         self.restore_dir(
             restore_cmd,
             cfg_5071["ldap_config_files"],
             cfg_5071["ls_slapd_dir"])
-        self.LOGGER.info(
+        self.log.info(
             "Step 7: Restored openldap data directory successfully")
-        self.LOGGER.info(
+        self.log.info(
             "Step 8: Changing owner of ldap configuration directory to %s",
             self.CM_LDAP_CFG["ldap_owner"])
         data_path = f"{ldap_data_path}/{ldap_data_dir}"
@@ -846,10 +858,10 @@ class OpenLdap:
             self.CM_LDAP_CFG["ldap_owner"],
             chk_owner_cmd,
             ldap_data_dir)
-        self.LOGGER.info(
+        self.log.info(
             "Step 8: Changed owner of ldap configuration directory to %s successfully",
             self.CM_LDAP_CFG["ldap_owner"])
-        self.LOGGER.info(
+        self.log.info(
             "ENDED: Test to verify and check change if ownership and "
             "permissions of the data directory to what it was previously")
 
@@ -863,31 +875,31 @@ class OpenLdap:
 
         if password reset is done successfully using enc_ldap_passwd_in_cfg.sh script.
         """
-        self.LOGGER.info(
+        self.log.info(
             "STARTED: Test to verify and check if password reset is done successfully using "
             "enc_ldap_passwd_in_cfg.sh script.")
         cfg_5073 = LDAP_CFG["test_5073"]
-        authserver_file = CONS_OBJ_DICT["authserver_file"]
         new_passwd = cfg_5073["new_pwd"]
-        self.LOGGER.info("Step 1: Changing openldap password")
-        ch_pwd_cmd = cfg_5073["ch_pwd_cmd"].format(authserver_file, new_passwd)
+        self.log.info("Step 1: Changing openldap password")
+        ch_pwd_cmd = cfg_5073["ch_pwd_cmd"].format(
+            const.AUTHSERVER_FILE, new_passwd)
         resp = self.execute_shell_cmd(
             ch_pwd_cmd,
-            CONS_OBJ_DICT["script_path"],
+            const.SCRIPT_PATH,
             cfg_5073["output_str"])
         assert_in(cfg_5073["output_msg"], resp, resp)
-        self.LOGGER.info("Step 1: Changed openldap password successfully")
-        self.LOGGER.info(
+        self.log.info("Step 1: Changed openldap password successfully")
+        self.log.info(
             "Step 2: Restarting %s service",
             self.slapd_service)
         S3H_OBJ.restart_s3server_service(self.slapd_service)
         time.sleep(self.CM_LDAP_CFG["restart_serv_pause"])
         resp = S3H_OBJ.get_s3server_service_status(self.slapd_service)
         assert_true(resp[0], resp[1])
-        self.LOGGER.info(
+        self.log.info(
             "Step 2: Restarted %s service",
             self.slapd_service)
-        self.LOGGER.info(
+        self.log.info(
             "ENDED: Test to verify and check if password reset is done successfully using "
             "enc_ldap_passwd_in_cfg.sh script.")
 
@@ -897,49 +909,49 @@ class OpenLdap:
     @CTFailOn(error_handler)
     def test_5074(self):
         """Test to verify & check if authserver properties file is updated post pwd change/reset."""
-        self.LOGGER.info(
+        self.log.info(
             "STARTED: Test to verify and check if authserver.properties"
             "file is updated post password change/reset")
         cfg_5074 = LDAP_CFG["test_5074"]
-        authserver_file = CONS_OBJ_DICT["authserver_file"]
         temp_file = cfg_5074["temp_path"]
         new_passwd = cfg_5074["new_pwd"]
-        self.LOGGER.info("Step 1: Retrieving existing openldap password")
-        S3H_OBJ.copy_s3server_file(authserver_file, temp_file)
+        self.log.info("Step 1: Retrieving existing openldap password")
+        S3H_OBJ.copy_s3server_file(const.AUTHSERVER_FILE, temp_file)
         old_pwd = get_config(
             temp_file, key=cfg_5074["login_pwd_section"])
-        self.LOGGER.info("Password : %s", old_pwd)
-        self.LOGGER.info("Step 1: Retrieved existing openldap password")
-        self.LOGGER.info("Step 2: Changing openldap password")
-        ch_pwd_cmd = cfg_5074["ch_pwd_cmd"].format(authserver_file, new_passwd)
+        self.log.info("Password : %s", old_pwd)
+        self.log.info("Step 1: Retrieved existing openldap password")
+        self.log.info("Step 2: Changing openldap password")
+        ch_pwd_cmd = cfg_5074["ch_pwd_cmd"].format(
+            const.AUTHSERVER_FILE, new_passwd)
         resp = self.execute_shell_cmd(
             ch_pwd_cmd,
-            CONS_OBJ_DICT["script_path"],
+            const.SCRIPT_PATH,
             cfg_5074["output_str"])
-        self.LOGGER.info("Response is : %s", resp)
+        self.log.info("Response is : %s", resp)
         assert_in(cfg_5074["output_msg"], resp, resp)
-        self.LOGGER.info("Step 2: Changed openldap password successfully")
-        self.LOGGER.info(
+        self.log.info("Step 2: Changed openldap password successfully")
+        self.log.info(
             "Step 3: Restarting %s service",
             self.slapd_service)
         S3H_OBJ.restart_s3server_service(self.slapd_service)
         time.sleep(self.CM_LDAP_CFG["restart_serv_pause"])
         resp = S3H_OBJ.get_s3server_service_status(self.slapd_service)
         assert_true(resp[0], resp[1])
-        self.LOGGER.info(
+        self.log.info(
             "Step 3: Restarted %s service",
             self.slapd_service)
-        self.LOGGER.info(
+        self.log.info(
             "Step 4: Checking if new password is updated or not")
-        S3H_OBJ.copy_s3server_file(authserver_file, temp_file)
+        S3H_OBJ.copy_s3server_file(const.AUTHSERVER_FILE, temp_file)
         updated_pwd = get_config(
             temp_file, key=cfg_5074["login_pwd_section"])
-        self.LOGGER.info("Password : %s", updated_pwd)
+        self.log.info("Password : %s", updated_pwd)
         assert_not_equal(old_pwd, updated_pwd, cfg_5074["err_message"])
-        self.LOGGER.info(
+        self.log.info(
             "Step 4: New password is updated successfully")
         self.default_ldap_pw = False
-        self.LOGGER.info(
+        self.log.info(
             "ENDED: Test to verify and check if authserver.properties "
             "file is updated post password change/reset")
 
@@ -953,47 +965,47 @@ class OpenLdap:
 
         if password allows special characters with uppercase/lowercase characters.
         """
-        self.LOGGER.info(
+        self.log.info(
             "STARTED: Test to verify and check if password allows special characters"
             "with uppercase/lowercase characters")
         cfg_5075 = LDAP_CFG["test_5075"]
-        authserver_file = CONS_OBJ_DICT["authserver_file"]
         temp_file = cfg_5075["temp_path"]
         new_passwd = cfg_5075["new_pwd"]
-        self.LOGGER.info("Step 1: Retrieving existing openldap password")
-        S3H_OBJ.copy_s3server_file(authserver_file, temp_file)
+        self.log.info("Step 1: Retrieving existing openldap password")
+        S3H_OBJ.copy_s3server_file(const.AUTHSERVER_FILE, temp_file)
         old_pwd = get_config(
             temp_file, key=cfg_5075["login_pwd_section"])
-        self.LOGGER.info("Step 1: Retrieved existing openldap password")
-        self.LOGGER.info("Step 2: Changing openldap password")
-        ch_pwd_cmd = cfg_5075["ch_pwd_cmd"].format(authserver_file, new_passwd)
+        self.log.info("Step 1: Retrieved existing openldap password")
+        self.log.info("Step 2: Changing openldap password")
+        ch_pwd_cmd = cfg_5075["ch_pwd_cmd"].format(
+            const.AUTHSERVER_FILE, new_passwd)
         resp = self.execute_shell_cmd(
             ch_pwd_cmd,
-            CONS_OBJ_DICT["script_path"],
+            const.SCRIPT_PATH,
             cfg_5075["output_str"])
-        self.LOGGER.info("Response is : %s", resp)
+        self.log.info("Response is : %s", resp)
         assert_in(cfg_5075["output_msg"], resp, resp)
-        self.LOGGER.info("Step 2: Changed openldap password successfully")
-        self.LOGGER.info(
+        self.log.info("Step 2: Changed openldap password successfully")
+        self.log.info(
             "Step 3: Restarting %s service",
             self.slapd_service)
         S3H_OBJ.restart_s3server_service(self.slapd_service)
         time.sleep(self.CM_LDAP_CFG["restart_serv_pause"])
         resp = S3H_OBJ.get_s3server_service_status(self.slapd_service)
         assert_true(resp[0], resp[1])
-        self.LOGGER.info(
+        self.log.info(
             "Step 3: Restarted %s service",
             self.slapd_service)
-        self.LOGGER.info(
+        self.log.info(
             "Step 4: Checking if new password is updated or not")
-        S3H_OBJ.copy_s3server_file(authserver_file, temp_file)
+        S3H_OBJ.copy_s3server_file(const.AUTHSERVER_FILE, temp_file)
         updated_pwd = get_config(
             temp_file, key=cfg_5075["login_pwd_section"])
         assert_not_equal(old_pwd, updated_pwd, cfg_5075["err_message"])
-        self.LOGGER.info(
+        self.log.info(
             "Step 4: New password is updated successfully")
         self.default_ldap_pw = False
-        self.LOGGER.info(
+        self.log.info(
             "ENDED: Test to verify and check if password allows special characters"
             " with uppercase/lowercase characters")
 
@@ -1003,24 +1015,24 @@ class OpenLdap:
     @CTFailOn(error_handler)
     def test_5076(self):
         """Test to verify & check if blank ldap password is accepted during passwd reset/change."""
-        self.LOGGER.info(
+        self.log.info(
             "STARTED: Test to verify and check if blank ldap password is "
             "accepted during password reset/change.")
         cfg_5076 = LDAP_CFG["test_5076"]
-        authserver_file = CONS_OBJ_DICT["authserver_file"]
         new_passwd = cfg_5076["new_pwd"]
-        self.LOGGER.info(
+        self.log.info(
             "Step 1: Changing openldap password with blank password")
-        ch_pwd_cmd = cfg_5076["ch_pwd_cmd"].format(authserver_file, new_passwd)
+        ch_pwd_cmd = cfg_5076["ch_pwd_cmd"].format(
+            const.AUTHSERVER_FILE, new_passwd)
         resp = self.execute_shell_cmd(
             ch_pwd_cmd,
-            CONS_OBJ_DICT["script_path"],
+            const.SCRIPT_PATH,
             cfg_5076["err_message"])
-        assert_in(cfg_5076["err_message"], resp)
-        self.LOGGER.info(
+        assert_in(cfg_5076["err_message"], resp, resp)
+        self.log.info(
             "Step 1: Changing openldap password with blank "
             "password failed with %s",
             cfg_5076["err_message"])
-        self.LOGGER.info(
+        self.log.info(
             "ENDED: Test to verify and check if blank ldap password is "
             "accepted during password reset/change.")
