@@ -20,7 +20,8 @@ INVALID_LOCAL_USER = ["abc", "account@123", "!@#$%^&*()~", "user"*15]
 HIDDEN_TYPE_ELEMENT = "password"
 INVALID_USER_TYPE_MSG = "Invalid username."
 MISSMATCH_PASSWORD_MSG = "Passwords do not match."
-INVALID_PASSWORDS_LIST = ["abc", "QWERTYUIIOP", "qwertyuiop", "1234567890", "abcDFG1234", "!@#$%^&*()~"]
+INVALID_PASSWORDS_LIST = ["abc", "QWERTYUIIOP",
+                          "qwertyuiop", "1234567890", "abcDFG1234", "!@#$%^&*()~"]
 INVALID_PASSWORD_MSG = "Invalid password."
 INVALID_USER_TYPE_MESSAGE = "Invalid username."
 MISSMATCH_PASSWORD_MESSAGE = "Passwords do not match."
