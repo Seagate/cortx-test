@@ -20,14 +20,14 @@
 #
 """Module for handling the yaml config and DB config and combine them"""
 
-
+import os
 import logging
 from urllib.parse import quote_plus
 import yaml
 from pymongo import MongoClient
 from commons.utils import config_utils
 from commons import pswdmanager
-
+from config.params import SETUPS_FPATH
 
 LOG = logging.getLogger(__name__)
 DB_CONFIG = "tools\\rest_server\\config.ini"
@@ -111,10 +111,17 @@ def get_config_wrapper(**kwargs):
         flag = True
         LOG.debug("Reading config from yaml file: %s", kwargs['fpath'])
         data.update(get_config_yaml(fpath=kwargs['fpath']))
-    if "setup_query" in kwargs:
+    if "target" in kwargs:
+        target = kwargs['target']
         flag = True
-        LOG.debug("Reading config from DB for setup: %s", kwargs['setup_query'])
-        data.update(get_config_db(setup_query=kwargs['setup_query']))
+        if os.path.exists(SETUPS_FPATH):
+            LOG.debug("Reading config from setups.json for setup: %s", target)
+            setup_details = config_utils.read_content_json(SETUPS_FPATH)[target]
+        else:
+            setup_query = {"setupname": kwargs['target']}
+            LOG.debug("Reading config from DB for setup: %s", target)
+            setup_details = get_config_db(setup_query=setup_query)[target]
+            data.update(setup_details)
     if not flag:
         LOG.error("Invalid keyword argument")
         raise ValueError("Invalid argument")

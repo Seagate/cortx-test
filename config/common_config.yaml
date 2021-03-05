@@ -18,59 +18,6 @@ haproxy_service:
 audit_service: "auditd.service"
 statsd_service: "statsd"
 
-nodes: # Access from DB
-  - "eosnode-1"
-  - "eosnode-2"
-host: "eosnode-1" # Access from DB
-host2: "eosnode-2" # Access from DB
-host_domain: ".pun.seagate.com" # Access from DB
-password: "seagate" # Access from DB
-primary_enclosure_ip: "10.0.0.2" # Access from DB
-secondary_enclosure_ip: "10.0.0.3" # Access from DB
-enclosure_pwd: "Seagate123$" # Access from DB
-enclosure_user: "manage" # Access from DB
-username: "root" # Access from DB
-primary_node_ip: "10.237.66.55" # Access from DB
-secondary_node_ip: "10.237.65.157" # Access from DB
-pdu:
-  ip: "10.237.66.137"  # Access from DB
-  user: "device"   # Access from DB
-  pwd: "seagate1"  # Access from DB
-  power_on: "on"  # Access from DB
-  power_off: "off"   # Access from DB
-  sleep_time: 120 # in case we are dong reboot off then on n same call
-bmc_details: # Access from DB
-  user: "bmcadmin"
-  pwd: "adminBMC!"
 
-aws_locust_cred_section: "locust"
-minio_path: "/root/.mc/config.json" # Move to s3
-aws_cred_section: "default"  #Move to S3
-aws_path: "/root/.aws/credentials" # Move to S3
-s3ServiceCount: 11 # Move to s3
-s3ServiceName: "s3server-c" # Move to s3
-s3cfg_path: "/root/.s3cfg" # Move to s3
-s3fs_path: "/etc/passwd-s3fs"  # Move to s3
-locust_details: # Move to s3
-  user: "locust" # Move to s3
-  email: "locust@seagate.com" # Move to s3
-nfs_path: "10.237.65.201:/EES_LOGS/jclientCloud/"
-jClientCloud_path:
-  dest: "scripts/tools/"
-  source: "/root/jclientCloud/"
 
-# Gem controller details.
-gem_controller:  # move to common_detructive_config
-  host: "10.237.67.16"
-  username: "engineer"
-  password: "S3ag@teEng"
-  port1: "9012"
-  port2: "9014"
 
-BUILD_VER_TYPE: "CORTX"   # Remove
-NodeNamePattern: "eosnode-" # Remove
-PrimaryName: "Masters" # Remove
-ServerNamePattern: "srvnode-" # Remove
-cluster_msg: "cluster is not currently running on this node"  # Remove
-test_file_name: "test_file" # Remove
-test_folder_path: "/root/test_folder" # Remove
