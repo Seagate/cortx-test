@@ -649,7 +649,7 @@ class S3Helper:
     @staticmethod
     def configure_minio(access: str = None,
                         secret: str = None,
-                        path: str = CM_CFG["minio_path"]) -> bool:
+                        path: str = S3_CFG["minio_path"]) -> bool:
         """
         Function to configure minio creds in config.json file.
 
@@ -672,8 +672,8 @@ class S3Helper:
 
     @staticmethod
     def get_local_keys(
-            path: str = CM_CFG["aws_path"],
-            section: str = CM_CFG["aws_cred_section"]) -> tuple:
+            path: str = S3_CFG["aws_path"],
+            section: str = S3_CFG["aws_cred_section"]) -> tuple:
         """
         Get local s3 access and secret keys.
 

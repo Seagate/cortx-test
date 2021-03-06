@@ -27,8 +27,7 @@ from commons.params import COMMON_CONFIG, CSM_CONFIG, S3_CONFIG
 from commons.params import RAS_CONFIG_PATH
 from commons.params import SSPL_TEST_CONFIG_PATH
 from commons.params import COMMON_DESTRUCTIVE_CONFIG_PATH
-import pdb
-pdb.set_trace()
+
 pytest_args = sys.argv
 if '--local' in pytest_args and '--target' in pytest_args:
     if pytest_args[pytest_args.index("--local") + 1]:
