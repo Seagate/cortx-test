@@ -370,7 +370,7 @@ def get_setup_details():
     if os.path.exists(params.SETUPS_FPATH):
         os.remove(params.SETUPS_FPATH)
     setups = configmanager.get_config_db(setup_query = {})
-    config_utils.create_content_json("setups.json", setups)
+    config_utils.create_content_json(params.SETUPS_FPATH, setups)
 
 def main(args):
     """Main Entry function using argument parser to parse options and forming pyttest command.
@@ -389,6 +389,6 @@ def main(args):
 
 
 if __name__ == '__main__':
-    opts = parse_args()
     get_setup_details()
+    opts = parse_args()
     main(opts)

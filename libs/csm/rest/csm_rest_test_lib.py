@@ -7,7 +7,7 @@ from commons.constants import Rest as const
 from commons.utils import config_utils
 from commons.exceptions import CTException
 from libs.csm.rest.csm_rest_core_lib import RestClient
-from config import CSM_CFG
+from config import CSM_REST_CFG
 
 class RestTestLib:
     """
@@ -16,9 +16,9 @@ class RestTestLib:
 
     def __init__(self):
         #self.csm_conf = config_utils.read_yaml("config/csm/csm_config.yaml")[1]
-        self.config = CSM_CFG['Restcall'] #self.csm_conf["Restcall"]
+        self.config = CSM_REST_CFG #self.csm_conf["Restcall"]
         self._log = logging.getLogger(__name__)
-        self.restapi = RestClient(CSM_CFG['Restcall']) #RestClient(self.csm_conf["Restcall"])
+        self.restapi = RestClient(CSM_REST_CFG) #RestClient(self.csm_conf["Restcall"])
         self.user_type = ("valid", "duplicate", "invalid", "missing")
         self.success_response = const.SUCCESS_STATUS
         self.bad_request_response = const.BAD_REQUEST
