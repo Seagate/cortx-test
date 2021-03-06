@@ -27,11 +27,9 @@ import yaml
 from pymongo import MongoClient
 from commons.utils import config_utils
 from commons import pswdmanager
-from config.params import SETUPS_FPATH
+from commons.params import SETUPS_FPATH, DB_HOSTNAME, DB_NAME, SYS_INFO_COLLECTION
 
 LOG = logging.getLogger(__name__)
-DB_CONFIG = "tools\\rest_server\\config.ini"
-
 
 def get_config_yaml(fpath: str) -> dict:
     """Reads the config and decrypts the passwords
@@ -68,21 +66,17 @@ def get_config_db(setup_query: dict, drop_id: bool=True):
 
 
 def _get_collection_obj():
-    db_hostname = config_utils.get_config(DB_CONFIG, "MongoDB", "db_hostname")
-    LOG.debug("Database hostname: %s", db_hostname)
-    db_name = config_utils.get_config(DB_CONFIG, "MongoDB", "db_name")
-    LOG.debug("Database name: %s", db_name)
-    collection = config_utils.get_config(DB_CONFIG, "MongoDB", "system_info_collection")
-    LOG.debug("Collection name: %s", collection)
+    LOG.debug("Database hostname: %s", DB_HOSTNAME)
+    LOG.debug("Database name: %s", DB_NAME)
+    LOG.debug("Collection name: %s", SYS_INFO_COLLECTION)
     db_creds = pswdmanager.get_secrets(secret_ids=['DBUSER', 'DBPSWD'])
     mongodburi = "mongodb://{0}:{1}@{2}"
     uri = mongodburi.format(
-        quote_plus(
-            db_creds['DBUSER']), quote_plus(
-            db_creds['DBPSWD']), db_hostname)
+        quote_plus(db_creds['DBUSER']), quote_plus(db_creds['DBPSWD']), DB_HOSTNAME)
+    LOG.debug("URI : %s", uri)
     client = MongoClient(uri)
-    setup_db = client[db_name]
-    collection_obj = setup_db[collection]
+    setup_db = client[DB_NAME]
+    collection_obj = setup_db[SYS_INFO_COLLECTION]
     LOG.debug("Collection obj for DB interaction %s", collection_obj)
     return collection_obj
 
@@ -104,13 +98,21 @@ def update_config_db(setup_query: dict, data: dict) -> dict:
 def get_config_wrapper(**kwargs):
     """Get the configuration from the database as well as yaml and merge.
     It is expected that duplicate data should not be present between DB and yaml
+    :param target: if targetis given than it will append the target details to the config.
+    :param fpath: if fpath is given than it will fetch the details from yaml file
+    :param target_key : allows us to fetch smaller portion of the complete yaml file
+    :param config_key : allows us to fetch smaller portion of the complete target details
     """
     flag = False
     data = {}
     if "fpath" in kwargs:
         flag = True
         LOG.debug("Reading config from yaml file: %s", kwargs['fpath'])
-        data.update(get_config_yaml(fpath=kwargs['fpath']))
+        config_details = get_config_yaml(fpath=kwargs['fpath'])
+        if "config_key" in kwargs:
+            config_details = config_details[kwargs["config_key"]]
+        data.update(config_details)
+
     if "target" in kwargs and kwargs['target'] is not None:
         target = kwargs['target']
         flag = True
@@ -121,7 +123,9 @@ def get_config_wrapper(**kwargs):
             setup_query = {"setupname": kwargs['target']}
             LOG.debug("Reading config from DB for setup: %s", target)
             setup_details = get_config_db(setup_query=setup_query)[target]
-            data.update(setup_details)
+        if "target_key" in kwargs:
+            setup_details = setup_details[kwargs["target_key"]]
+        data.update(setup_details)
     if not flag:
         LOG.error("Invalid keyword argument")
         raise ValueError("Invalid argument")

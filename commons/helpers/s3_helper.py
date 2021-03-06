@@ -32,7 +32,7 @@ from commons import commands
 from commons.helpers.host import Host
 from commons.utils import config_utils
 from commons.utils.system_utils import run_local_cmd, run_remote_cmd
-from config.params import COMMON_CONFIG
+from commons.params import COMMON_CONFIG
 
 LOGGER = logging.getLogger(__name__)
 CM_CFG = config_utils.read_yaml(COMMON_CONFIG)[1]

@@ -1,11 +1,7 @@
 # Configurations for Rest API
 Restcall:
-  ip : "10.237.65.71"
   port : 28100
   jsonfile : 'rest_call.json'
-  csm_admin_user :
-    username: "admin"
-    password: "NB65bqHSoEzEc8M/sSpxso4FdDKRGdoK0UGWqQPqwkA="
   csm_user_manage:
     username: "csm_user_manage"
     password: "TS7Q7rlo43PyD8kmGEHiL54dekr+XXCgMPQRgH6gWyQ="
@@ -43,7 +39,6 @@ CliConfig:
   port: "22"
   username: "admin"
   password: "cARSYungsWpwHvqqjLajLof1slLANtt76lOv9foSbJA="
-
 
 node2_csm_confg:
   host: "eosnode-2"

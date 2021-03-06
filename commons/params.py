@@ -67,3 +67,9 @@ SETUPS_FPATH = os.path.join(LOG_DIR_NAME, "setups.json")
 NFS_SERVER_DIR = "cftic2.pun.seagate.com:/cftshare"
 NFS_BASE_DIR = "automation"
 MOUNT_DIR = os.path.join(os.getcwd(), "nfs_share")
+DB_HOSTNAME = """cftic1.pun.seagate.com:27017,
+cftic2.pun.seagate.com:27017,
+apollojenkins.pun.seagate.com:27017/
+?authSource=cft_test_results&replicaSet=rs0"""
+DB_NAME = "cft_test_results"
+SYS_INFO_COLLECTION = "r2_systems"

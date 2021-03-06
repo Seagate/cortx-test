@@ -24,7 +24,7 @@
 
 from commons.helpers.s3_helper import S3Helper
 from commons.utils import config_utils
-from config.params import S3_CONFIG, COMMON_CONFIG
+from commons.params import S3_CONFIG, COMMON_CONFIG
 
 S3H_OBJ = S3Helper.get_instance()
 

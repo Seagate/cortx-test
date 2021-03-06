@@ -23,20 +23,13 @@ import os
 import sys
 from commons.utils import config_utils
 from commons import configmanager
-from config.params import COMMON_CONFIG, CSM_CONFIG
-from config.params import RAS_CONFIG_PATH
-from config.params import SSPL_TEST_CONFIG_PATH
-from config.params import COMMON_DESTRUCTIVE_CONFIG_PATH
-
-
-RAS_VAL = config_utils.read_yaml(RAS_CONFIG_PATH)[1]
-RAS_TEST_CFG = config_utils.read_yaml(SSPL_TEST_CONFIG_PATH)[1]
-CMN_DESTRUCTIVE_CFG = config_utils.read_yaml(COMMON_DESTRUCTIVE_CONFIG_PATH)[1]
-CSM_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG)
+from commons.params import COMMON_CONFIG, CSM_CONFIG, S3_CONFIG
+from commons.params import RAS_CONFIG_PATH
+from commons.params import SSPL_TEST_CONFIG_PATH
+from commons.params import COMMON_DESTRUCTIVE_CONFIG_PATH
 
 pytest_args = sys.argv
 pytest_args = dict(zip(pytest_args[::2],pytest_args[1::2]))
-
 if '--local' in pytest_args and pytest_args['--local']:
     target = pytest_args['--target']
 elif os.getenv('TARGET') is not None:
@@ -44,3 +37,10 @@ elif os.getenv('TARGET') is not None:
 else:
     target = None
 CMN_CFG = configmanager.get_config_wrapper(fpath=COMMON_CONFIG, target=target)
+CSM_REST_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG, config_key="Restcall",
+                                                target=target, target_key="csm")
+CSM_CLI_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG, config_key="CliConfig")
+S3_CFG = configmanager.get_config_wrapper(fpath=S3_CONFIG, target=target,target_key="s3")
+RAS_VAL = configmanager.get_config_wrapper(fpath=RAS_CONFIG_PATH)
+CMN_DESTRUCTIVE_CFG = configmanager.get_config_wrapper(fpath=COMMON_DESTRUCTIVE_CONFIG_PATH)
+RAS_TEST_CFG = config_utils.read_yaml(SSPL_TEST_CONFIG_PATH)[1]

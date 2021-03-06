@@ -59,8 +59,11 @@
 "csm":
 {
   "mgmt_vip": "",
-  "admin_user": "",
-  "admin_pass": ""
+  "csm_admin_user":{
+    "username": "",
+    "password": ""
+  }
+
 },
 "s3":
 {

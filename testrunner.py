@@ -9,7 +9,7 @@ from core.locking_server import LockingServer
 from commons.utils.jira_utils import JiraTask
 from commons import configmanager
 from commons.utils import config_utils
-from config import params
+from commons import params
 
 
 def parse_args():
