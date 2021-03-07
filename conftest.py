@@ -366,7 +366,7 @@ def reset_imported_module_log_level():
         if isinstance(_logger, logging.PlaceHolder):
             LOGGER.info("Skipping placeholder to reset logging level")
             continue
-        if _logger.name in ('boto3', 'botocore', 'nose', 'paramiko')
+        if _logger.name in ('boto3', 'botocore', 'nose', 'paramiko'):
             _logger.setLevel(logging.WARNING)
 
 
