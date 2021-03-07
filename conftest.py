@@ -354,7 +354,7 @@ def pytest_sessionstart(session: Session) -> None:
     global REPORT_CLIENT
     report_client.ReportClient.init_instance()
     REPORT_CLIENT = report_client.ReportClient.get_instance()
-    #reset_imported_module_log_level()
+    reset_imported_module_log_level()
 
 
 def reset_imported_module_log_level():
@@ -366,7 +366,8 @@ def reset_imported_module_log_level():
         if isinstance(_logger, logging.PlaceHolder):
             LOGGER.info("Skipping placeholder to reset logging level")
             continue
-        _logger.setLevel(logging.WARNING)
+        if _logger.name in ('boto3', 'botocore', 'nose', 'paramiko')
+            _logger.setLevel(logging.WARNING)
 
 
 @pytest.hookimpl(tryfirst=True)
