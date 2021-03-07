@@ -161,6 +161,43 @@ def run(opts: dict) -> None:
                     rev_tag_map, skip_marks, skip_test,
                     test_map)
 
+    develop_execution_plan(rev_tag_map, selected_tag_map, skip_test, test_map, tickets)
+
+    work_queue = worker.WorkQ(producer.produce, 1024)
+    finish = False  # Use finish to exit loop
+    # start kafka producer
+    _producer = Thread(target=producer.server, args=(topic, work_queue))  # Use finish in server
+    _producer.setDaemon(True)
+    _producer.start()
+
+    # for parallel group create a kafka entry
+    # for each non parallel group item create a kafka entry
+    for tg in selected_tag_map:
+        parallel_set, sequential_set = selected_tag_map[tg]
+        witem = Queue()
+        witem.put(parallel_set)
+        witem.tag = tg
+        witem.parallel = True
+        witem.targets = targets
+        witem.tickets = tickets
+        witem.build = build
+        work_queue.put(witem)
+        for set_item in sequential_set:
+            w_item = Queue()
+            w_item.put(set_item)
+            w_item.tag = tg
+            w_item.parallel = False
+            w_item.targets = targets
+            w_item.tickets = tickets
+            w_item.build = build
+            work_queue.put(w_item)
+    work_queue.put(None)  # poison
+    work_queue.join()
+    _producer.join()
+
+
+def develop_execution_plan(rev_tag_map, selected_tag_map, skip_test, test_map, tickets):
+    """Develop Test execution plan to be followed by test runners."""
     for ticket in tickets:
         # get the te meta and create an execution plan
         test_list, ignore = get_te_tickets_data(ticket)
@@ -198,38 +235,6 @@ def run(opts: dict) -> None:
                     t_l[0].add(test)
                 else:
                     t_l[1].add(test)
-
-    work_queue = worker.WorkQ(producer.produce, 1024)
-    finish = False  # Use finish to exit loop
-    # start kafka producer
-    _producer = Thread(target=producer.server, args=(topic, work_queue))  # Use finish in server
-    #_producer.setDaemon(True)
-    _producer.start()
-
-    # for parallel group create a kafka entry
-    # for each non parallel group item create a kafka entry
-    for tg in selected_tag_map:
-        parallel_set, sequential_set = selected_tag_map[tg]
-        witem = Queue()
-        witem.put(parallel_set)
-        witem.tag = tg
-        witem.parallel = True
-        witem.targets = targets
-        witem.tickets = tickets
-        witem.build = build
-        work_queue.put(witem)
-        for set_item in sequential_set:
-            w_item = Queue()
-            w_item.put(set_item)
-            w_item.tag = tg
-            w_item.parallel = False
-            w_item.targets = targets
-            w_item.tickets = tickets
-            w_item.build = build
-            work_queue.put(w_item)
-    work_queue.put(None)  # poison
-    work_queue.join()
-    _producer.join()
 
 
 def create_test_map(base_components_marks: Tuple,
