@@ -55,7 +55,7 @@ def str_to_bool(val):
 def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution=False):
     """Form a pytest command for execution."""
     build, build_type = args.build, args.build_type
-    #tag = '-m ' + te_tag
+    tag = '-m ' + te_tag
     run_type = ''
     is_distributed = ''
     try:
@@ -97,8 +97,8 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
     if args.target:
         cmd_line = cmd_line + ["--target=" + args.target]
 
-    # if te_tag:
-    #    cmd_line = cmd_line + [tag]
+    if te_tag:
+       cmd_line = cmd_line + [tag]
     read_metadata = "--readmetadata=" + str(True)
     cmd_line = cmd_line + [read_metadata]
     cmd_line = cmd_line + ['--build=' + build, '--build_type=' + build_type,
@@ -186,6 +186,7 @@ def trigger_unexecuted_tests(args, test_list):
             run_pytest_cmd(args, te_tag=None, parallel_exe=args.parallel_exe,
                            env=_env, re_execution=True)
 
+
 def create_test_meta_data_file(args, test_list):
     """
     Create test meta data file
@@ -241,7 +242,6 @@ def trigger_tests_from_kafka_msg(args, kafka_msg):
 
     _env = os.environ.copy()
     _env['pytest_run'] = 'distributed'
-
 
     # First execute all tests with parallel tag which are mentioned in given tag.
     run_pytest_cmd(args, te_tag=None, parallel_exe=kafka_msg.parallel, env=_env)
