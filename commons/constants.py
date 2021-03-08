@@ -167,7 +167,6 @@ class Rest:
         "required": ["total", "good"]
     }
 
-
 # CORTXCLI Constants
 SUPPORT_BUNDLE_PATH = "/var/log/seagate/support_bundle/"
 TAR_POSTFIX = "tar.gz"
@@ -181,3 +180,10 @@ JSON_LIST_FORMAT = "json"
 TABLE_LIST_FORMAT = "table"
 XML_LIST_FORMAT = "xml"
 SUPPORT_BUNDLE_MSG = "Support bundle generation completed"
+CSM_USER_HELP =[
+    "support_bundle",
+    "alerts",
+    "s3accounts",
+    "system",
+    "users"]
+

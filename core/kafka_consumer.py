@@ -41,7 +41,9 @@ def dict_to_kafka_msg(obj, ctx):
                     test_set=obj['test_list'],
                     te_tickets=obj['te_tickets'],
                     target_list=obj['target_list'],
-                    build=obj['build'])
+                    build=obj['build'],
+                    build_type=obj['build_type'],
+                    test_plan=obj['test_plan'])
 
 
 def get_consumer():
@@ -87,6 +89,8 @@ class KafkaMsg:
         self.test_list = list(kwargs.get('test_set'))
         self.target_list = kwargs.get('target_list')
         self.build = kwargs.get('build')
+        self.build_type = kwargs.get('build_type')
+        self.test_plan = kwargs.get('test_plan')
 
     def get_build_number(self):
         """
@@ -132,8 +136,17 @@ SCHEMA_STR = """
                   "description": "Set of tests to execute",
                   "type": "string"
                 }
+                 "build_type": {
+                  "description": "type of build: release/stable",
+                  "type": "string"
+                }
+                 "test_plan": {
+                  "description": "test plan number",
+                  "type": "string"
+                }
 
               },
-              "required": [ "build", "parallel", "target_list", "test_set", "te_tickets" ]
+              "required": [ "build", "parallel", "target_list", "test_set", 
+              "te_tickets", "build_type", "test_plan" ]
             }
             """

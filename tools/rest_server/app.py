@@ -405,9 +405,7 @@ class UpdateSystems(Resource):
                                                    uri, db_name, system_collection, upsert=False)
         if update_result[0]:
             return flask.Response(status=HTTPStatus.OK,
-                                  response=f"Entry Updated. "
-                                           f"Matched count {update_result[1].matched_count} "
-                                           f"Updated count {update_result[1].modified_count}")
+                                  response="Entry Updated.")
         else:
             return flask.Response(status=update_result[1][0],
                                   response=update_result[1][1])
