@@ -108,7 +108,7 @@ class TestAccountLoginProfile():
             "Step 2: Creating login profile for an account %s", acc_name)
         login_res = IAM_OBJ.create_account_login_profile_s3iamcli(
             acc_name, pwd, acc_res[1]["access_key"],
-            acc_res[1]["secret_key"], pwd_reset)
+            acc_res[1]["secret_key"], password_reset=pwd_reset)
         assert_true(login_res[0], login_res[1])
         LOGGER.info(
             "Step 2: Created login profile for an account %s", acc_name)
