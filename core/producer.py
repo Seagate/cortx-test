@@ -22,12 +22,14 @@
 """SerializingProducer using JSON. A ticket is serialized using JSONSerializer"""
 import argparse
 import logging
+import json
 from typing import Any
 from uuid import uuid4
 from confluent_kafka import SerializingProducer
 from confluent_kafka.serialization import StringSerializer
 from confluent_kafka.schema_registry import SchemaRegistryClient
 from confluent_kafka.schema_registry.json_schema import JSONSerializer
+from confluent_kafka.error import ValueSerializationError
 from config.params import SCHEMA_REGISTRY, BOOTSTRAP_SERVERS
 
 LOGGER = logging.getLogger(__name__)
@@ -57,8 +59,8 @@ class Ticket:
         self.build = build
 
     def __str__(self):
-        print(' '.join([self.tag, self.parallel, self.targets, self.build,
-                       self.te_tickets, self.test_set]))
+        print(' '.join([self.tag, str(self.parallel), str(self.targets), str(self.build),
+                        str(self.te_tickets), str(self.test_set)]))
 
 
 def convert_ticket_to_dict(ticket, ctx):
@@ -72,7 +74,7 @@ def convert_ticket_to_dict(ticket, ctx):
     Returns:
         dict: Dict populated with tickets attributes to be serialized.
     """
-    return dict(tag=ticket.name,
+    return dict(tag=ticket.tag,
                 test_set=ticket.test_set,
                 te_tickets=ticket.te_tickets,
                 targets=ticket.targets,
@@ -128,70 +130,78 @@ def server(*args: Any) -> None:
     {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Ticket",
-      "description": "A Test Set or single test to be executed by test runner",
+      "description": "A Test Set or single test TBE by test runner",
       "type": "object",
       "properties": {
-        "tag": {
-          "description": "Test cases tag",
-          "type": "string"
+            "tag": {
+                "description": "Test cases tag",
+                "type": "string"
+            },
+            "test_set": {
+                "description": "A set of test cases to be executed",
+                "type": "array",
+                "items": { "type": "string" }
+            },
+            "te_tickets": {
+                "description": "Test execution tickets",
+                "type": "array",
+                "items": { "type": "string" }
+            },
+            "targets": {
+                "description": "Test execution tickets",
+                "type": "string",
+                "default": "automation"
+            },
+            "build": {
+                "description": "Build string or number",
+                "type": "string",
+                "default": "000"
+            },
+            "parallel": {
+                "description": "Test execution can happen in parallel or not",
+                "type": "boolean"
+            }
+
         },
-        "test_set": {
-          "description": "A set of test cases to be executed",
-          "type": "list",
-          "exclusiveMinimum": 0
-        },
-        "te_tickets": {
-          "description": "Test execution tickets",
-          "type": "string"
-        },
-        "targets": {
-          "description": "Test execution tickets",
-          "type": "string"
-        },
-        "build": {
-          "description": "Build string or number",
-          "type": "string"
-        },
-        "parallel": {
-          "description": "Test execution can happen in parallel or not",
-          "type": "bool"
-        },
-        
-      },
-      "required": [ "tag", "test_set", "te_tickets", "targets", "build", "parallel" ]
+        "required": ["tag", "test_set", "te_tickets", "targets", "build", "parallel"]
     }
     """
 
-    schema_registry_conf = {'url': SCHEMA_REGISTRY}
+
+    #schema_str = json.dumps(schema_str)
+    schema_registry_conf = {"url": SCHEMA_REGISTRY}
     schema_registry_client = SchemaRegistryClient(schema_registry_conf)
 
     json_serializer = JSONSerializer(schema_str, schema_registry_client, convert_ticket_to_dict)
 
-    producer_conf = {'bootstrap.servers': BOOTSTRAP_SERVERS,
-                     'key.serializer': StringSerializer('utf_8'),
-                     'value.serializer': json_serializer}
-
+    producer_conf = {"bootstrap.servers": BOOTSTRAP_SERVERS,
+                     "key.serializer": StringSerializer("utf_8"),
+                     "value.serializer": json_serializer}
     producer = SerializingProducer(producer_conf)
-
     print("Producing user records to topic {}. ^C to exit.".format(topic))
 
     while True:
         try:
             work_item = work_queue.get()
             if work_item is None:
-                work_item.task_done()
+                work_queue.task_done()
                 break
             test_set = list(work_item.get())
             te_tickets = work_item.tickets
             ticket = Ticket(work_item.tag, work_item.parallel,
-                            test_set, te_tickets, work_item.targets,
-                            work_item.build)
+                            test_set, te_tickets, str(work_item.targets),
+                            str(work_item.build))
             produce(producer, topic=topic, uuid=str(uuid4()), value=ticket,
                     on_delivery=delivery_report)
+            work_item.task_done()
         except ValueError:
             print("Invalid input ticket, discarding record...")
             LOGGER.info("Invalid input ticket, skipping record %s", ticket)
             continue
+        except ValueSerializationError as fault:
+            print("Invalid input ticket, discarding record...")
+            LOGGER.exception("Serialization error %s for ticket %s", fault, ticket)
+
     producer.flush()
 
 
