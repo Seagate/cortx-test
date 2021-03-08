@@ -181,7 +181,6 @@ AUDIT_LOG_COMPONENT_DROP_DOWN_ID = "auditlog-component"
 AUDIT_LOG_TIME_PERIOD_DROP_DOWN_ID = "auditlog-timeperiod"
 AUDIT_LOG_DATA_ID = "auditlog-data"
 
-<<<<<<< HEAD
 #Bucket 
 ADD_BUCKET_FORM_ID = "bucket-addbucket-formbtn"
 BUCKET_NAME_ID = "bucketName"
@@ -189,7 +188,6 @@ BUCKET_CREATE_BUTTON_ID = "bucket-create-btn"
 DELETE_BUCKET_XPATH = '//tr[@id="{0}"]//*[@id="bucket-delete-icon"]'
 CONFIRM_CREATE_BUTTON_ID = "bucket-closedialodbox"
 BUCKET_ROW_ELEMENT_XPATH = '//tr[@id="{0}"]'
-=======
 # Software Update Page
 UPLOAD_SW_FILE_BTN_ID = "btnInstallHotfix"
 CHOOSE_SW_UPDATE_FILE_BTN_ID = "file"
@@ -199,4 +197,3 @@ PAGE_LOADING_MSG_ID = "lblLoaderMessage"
 
 #Buckets Tab
 BUCKETS_TAB_ID = "s3bucketstab"
->>>>>>> a8e1a4450ecfbbb556ad045a266d9d5a3904b10a
