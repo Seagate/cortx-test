@@ -442,8 +442,9 @@ def create_file(
     """
     cmd = commands.CREATE_FILE.format(dev, fpath, b_size, count)
     LOGGER.debug(cmd)
-    result = run_local_cmd(cmd)
+    result = run_local_cmd(cmd, flg=True)
     LOGGER.debug("output = %s", str(result))
+    result = (os.path.exists(fpath), result[1])
 
     return result
 

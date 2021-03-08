@@ -11,6 +11,7 @@ CSM_LOGIN_FAIL_MSG_ID = 'login-failsmsg'
 LOGGED_IN_USER_NAME_ID = 'header-username'
 LOG_OUT_ID = 'logout-icon'
 
+
 # Menus
 MANAGE_MENU_ID = 'Manage'
 S3_ACCOUNTS_TAB_ID = 's3accountstab'
@@ -22,6 +23,7 @@ MAINTENANCE_MENU_ID = 'Maintenance'
 AUDIT_LOG_TAB_ID = "goToAuditLog"
 SW_UPDATE_TAB_ID = "goToSoftware"
 FW_UPDATE_TAB_ID = "goToFirmware"
+LYVE_PILOT_ID= "Lyve Pilot"
 
 # Alerts
 ALERT_IMAGE_1_ID = 'alert-zoom'  # from Dashbard
@@ -33,6 +35,7 @@ ALERT_COMMENT_TEXT_ID = 'alert-comment-textarea'
 ALERT_DETAILS_PAGE_ICON_XPATH = '//*[@id="tblAlertLarge"]/div/table/tbody/tr[1]/td[5]/img'
 ALERT_COMMENT_ICON_XPATH = '//*[@id="tblAlertLarge"]/div/table/tbody/tr[1]/td[5]/div/div'
 ALERT_ACKNOWLEDGE_ICON_XPATH = '//*[@id="tblAlertLarge"]/div/table/tbody/tr[1]/td[5]/div/span[2]/div'
+ALERTS_COMMENT_TEXT_XPATH = '//*[@class="cortx-comment"]//span[@class="cortx-text-md"]'
 
 #  S3 Config
 S3_ACCOUNTS_TABLE_XPATH = '//*[@id="s3-datatable"]//table/tbody/tr/td'
@@ -112,6 +115,9 @@ NEW_USER_CONFIRM_OK_BUTTON_ID = "user-dialog-close-btn"
 INVALID_LOCAL_USER_MSG_ID = "localuser-invalid"
 PASSWORD_MISS_MATCH_MSG_ID = "localuser-confirmpassword-notmatch"
 CONFIRM_DELETE_BOX_BTN_ID = "confirmation-dialogbox-btn"
+UPDATE_USER_EMAIL_ID_INPUT_ID = "email"
+UPDATE_USER_CONFIRM_PASSWORD_INPUT_ID = "txtLocalConfirmNewPass"
+DELETE_ICON_MANAGE_USER_ID = "localuser-deleteadmin"
 # CFT
 CSM_STATS_CHART_ID = 'line_chart'
 DASHBOARD_ALERT_SECTION_ID = 'alertMediumContainer'
@@ -179,3 +185,6 @@ CHOOSE_SW_UPDATE_FILE_BTN_ID = "file"
 CANCEL_SW_UPDATE_UPLOAD_BTN_ID = "btnCancelInstallHotfix"
 START_SW_UPDATE_BUTTON_ID = "btnStartUpgrade"
 PAGE_LOADING_MSG_ID = "lblLoaderMessage"
+
+#Buckets Tab
+BUCKETS_TAB_ID = "s3bucketstab"

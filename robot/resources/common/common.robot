@@ -85,10 +85,36 @@ Verify message
     Log To Console And Report  message from guI is ${msg_from_gui}
     should be equal  ${msg_from_gui}  ${message_to_verify}
 
+
 Upload File
     [Documentation]  This keyword upload files to required webelement
     [Arguments]  ${element_locator}  ${file_path}
     Sleep  5s
     wait until element is visible  ${${element_locator}}  timeout=60
     Choose File  id=${${element_locator}}  ${file_path}
+
+Get element list
+    [Documentation]  This kaeyword returs the list of elements.
+    [Arguments]  ${locator}
+    wait until element is visible  ${locator}  timeout=10
+    @{element_list}=  Get WebElements  ${locator}
+    Log To Console And Report  ${locator}
+    [Return]  @{element_list}
+
+Get text of elements from elements list
+    [Documentation]  This kaeyword returs the list of element text from the element list.
+    [Arguments]  ${locator}
+    ${text_list}=    Create List
+    @{text_elements}=  Get element list  ${locator}
+    FOR  ${elements}  IN  @{text_elements}
+            ${text}=    Get Text    ${elements}
+            Append To List  ${text_list}  ${text}
+    END
+    Log To Console And Report  ${text_list}
+    [Return]  ${text_list}
+
+wait for page or element to load
+    [Documentation]  This kaeyword is to wait for page or element to wait for provided time.
+    [Arguments]  ${time}=5s
+    sleep  ${time}
 
