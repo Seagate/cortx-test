@@ -817,10 +817,11 @@ class TestBucketTagging():
             "Step 1: Setting a tag for non existing bucket: %s",
             TEST_CONF["test_2451"]["bucket_name"])
         try:
-            TAG_OBJ.set_bucket_tag(
+            resp = TAG_OBJ.set_bucket_tag(
                 TEST_CONF["test_2451"]["bucket_name"],
                 TEST_CONF["test_2451"]["key"],
                 TEST_CONF["test_2451"]["value"])
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 TEST_CONF["test_2451"]["err_message"], str(
