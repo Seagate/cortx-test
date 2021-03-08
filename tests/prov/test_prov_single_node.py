@@ -141,7 +141,7 @@ class TestProvSingleNode:
         LOGGER.info("Start the deployment.")
         cmd = common_cmds.SET_PASS.format(self.passwd)
         self.nd_obj.execute_cmd(cmd)
-        cmd = common_cmds.DEPLOY_SINGLE_NODE.format(self.host, test_cfg["file_name"], self.build_path)
+        cmd = common_cmds.DEPLOY_SINGLE_NODE.format(self.passwd, self.host, test_cfg["file_name"], self.build_path)
         resp = self.nd_obj.execute_cmd(cmd, read_lines=True)
         for line in resp:
             assert test_cfg["deploy_done"] not in line, "Deployment is not successful."
