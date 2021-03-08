@@ -18,18 +18,22 @@ S3_ACCOUNTS_TAB_ID = 's3accountstab'
 SETTINGS_ID = 'Settings'
 EMAIL_NOTIFICATION_ID = 'goToNotifications'
 IAM_USER_TAB_ID = "s3iamuserstab"
+BUCKET_TAB_ID = "s3bucketstab"
 DASHBOARD_MENU_ID = "Dashboard"
 MAINTENANCE_MENU_ID = 'Maintenance'
 AUDIT_LOG_TAB_ID = "goToAuditLog"
+HEALTH_TAB_ID = "Health"
+SW_UPDATE_TAB_ID = "goToSoftware"
+FW_UPDATE_TAB_ID = "goToFirmware"
 LYVE_PILOT_ID= "Lyve Pilot"
 
 # Alerts
-ALERT_IMAGE_1_ID='alert-zoom'  # from Dashbard
-ALERT_IMAGE_2_ID='alert-dotwhite'  # from All pages
+ALERT_IMAGE_1_ID = 'alert-zoom'  # from Dashbard
+ALERT_IMAGE_2_ID = 'alert-dotwhite'  # from All pages
 ALERT_COMMENT_SAVE_BUTTON_ID = 'alert-save-commnetbtn'
 ALERT_COMMENT_CLOSE_BUTTON_ID = 'alert-close-comment-dialogbtn'
 ALERT_COMMENT_CLOSE_IMAGE_ID = 'alert-closeadd-comment-dialog'
-ALERT_COMMENT_TEXT_ID= 'alert-comment-textarea'
+ALERT_COMMENT_TEXT_ID = 'alert-comment-textarea'
 ALERT_DETAILS_PAGE_ICON_XPATH = '//*[@id="tblAlertLarge"]/div/table/tbody/tr[1]/td[5]/img'
 ALERT_COMMENT_ICON_XPATH = '//*[@id="tblAlertLarge"]/div/table/tbody/tr[1]/td[5]/div/div'
 ALERT_ACKNOWLEDGE_ICON_XPATH = '//*[@id="tblAlertLarge"]/div/table/tbody/tr[1]/td[5]/div/span[2]/div'
@@ -83,7 +87,7 @@ S3_ACCOUNT_RESET_PAWWSORD_BUTTON_ID = 'reset-password-button'
 S3_ACCOUNT_SUCCESS_MESSAGE_ID = 's3-success-dialog'
 S3_ACCOUNT_SUCCESS_MESSAGE_BUTTON_ID = 'confirmation-dialogbox-btn'
 
-# Preboarding 
+# Preboarding
 WELCOME_START_BUTTON_ID = 'welcome-startbtn'
 ELUA_BUTTON_ID = 'show-license-agreement-dialogbtn'
 LICENSE_ACCEPT_BUTTON_ID = 'license-acceptagreement'
@@ -157,7 +161,7 @@ IAM_USER_RESET_CONFIRM_PASSWORD_ID = "confirm-password"
 IAM_USER_SUCCESS_MESSAGE_ID = 'iam-success-dialog'
 IAM_USER_SUCCESS_MESSAGE_BUTTON_ID = 'confirmation-dialogbox-btn'
 
-#About Section
+# About Section
 ABOUT_VIEW_ID = 'menu-actionmanagebtn'
 ISSUER_DETAILS_TAB_ID = 'Issuertab'
 SUBJECT_DETAILS_TAB_ID = 'Subjecttab'
@@ -170,12 +174,26 @@ SUBJECT_COUNTRY_NAME_VALUE_ID = 'subject-country_name_value'
 SUBJECT_LOCALITY_NAME_VALUE_ID = 'subject_locality_name_value'
 SUBJECT_ORGANIZATION_VALUE_ID = 'subject_organization_name_value'
 
-#Audit Log Section
+# Audit Log Section
 AUDIT_LOG_VIEW_BUTTON_ID = "auditlog-viewbtn"
 AUDIT_LOG_DOWNLOAD_BUTTON_ID = "auditlog-downlodbtn"
 AUDIT_LOG_COMPONENT_DROP_DOWN_ID = "auditlog-component"
 AUDIT_LOG_TIME_PERIOD_DROP_DOWN_ID = "auditlog-timeperiod"
 AUDIT_LOG_DATA_ID = "auditlog-data"
+
+#Bucket 
+ADD_BUCKET_FORM_ID = "bucket-addbucket-formbtn"
+BUCKET_NAME_ID = "bucketName"
+BUCKET_CREATE_BUTTON_ID = "bucket-create-btn"
+DELETE_BUCKET_XPATH = '//tr[@id="{0}"]//*[@id="bucket-delete-icon"]'
+CONFIRM_CREATE_BUTTON_ID = "bucket-closedialodbox"
+BUCKET_ROW_ELEMENT_XPATH = '//tr[@id="{0}"]'
+# Software Update Page
+UPLOAD_SW_FILE_BTN_ID = "btnInstallHotfix"
+CHOOSE_SW_UPDATE_FILE_BTN_ID = "file"
+CANCEL_SW_UPDATE_UPLOAD_BTN_ID = "btnCancelInstallHotfix"
+START_SW_UPDATE_BUTTON_ID = "btnStartUpgrade"
+PAGE_LOADING_MSG_ID = "lblLoaderMessage"
 
 #Buckets Tab
 BUCKETS_TAB_ID = "s3bucketstab"
