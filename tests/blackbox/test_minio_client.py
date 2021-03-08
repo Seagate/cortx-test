@@ -289,7 +289,7 @@ class TestMinioClient:
             "ENDED: Create bucket using existing bucket name using Minion client")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7543")
     @CTFailOn(error_handler)
     def test_list_obj_inside_bucket_2352(self):
         """To list objects inside bucket using Minion client."""
