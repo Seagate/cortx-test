@@ -1728,8 +1728,8 @@ class TestAccountLoginProfile():
             user_name,
             test_cfg["user_password"],
             password_reset=test_cfg["password_reset"],
-            access_key,
-            secret_key)
+            access_key=access_key,
+            secret_key=secret_key)
         assert_true(res[0], res[1])
         LOGGER.info(
             "Step 4: Created user login profile for user %s", user_name)
@@ -1813,8 +1813,8 @@ class TestAccountLoginProfile():
             user_name,
             test_cfg["user_password"],
             password_reset=test_cfg["password_reset"],
-            access_key,
-            secret_key)
+            access_key=access_key,
+            secret_key=secret_key)
         assert_true(res[0], res[1])
         LOGGER.info(
             "Step 4: Created user login profile for user %s", user_name)
@@ -1862,9 +1862,11 @@ class TestAccountLoginProfile():
         LOGGER.info("Step 4: Creating user login profile for user %s",
                       user_name)
         res = IAM_OBJ.create_user_login_profile_s3iamcli(
-            user_name, test_cfg["user_passwo"
-                                "rd"], password_reset=test_cfg["password_reset"],
-            access_key, secret_key)
+            user_name,
+            test_cfg["user_password"],
+            password_reset=test_cfg["password_reset"],
+            access_key=access_key,
+            secret_key=secret_key)
         assert_true(res[0], res[1])
         LOGGER.info(
             "Step 4: Created user login profile for user %s", user_name)

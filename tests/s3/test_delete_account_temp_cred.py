@@ -32,7 +32,6 @@ from commons.utils.assert_utils import \
 
 LOGGER = logging.getLogger(__name__)
 IAM_TEST_OBJ = iam_test_lib.IamTestLib()
-CMN_CONF = read_yaml("config/common_config.yaml")[1]
 TEST_CONFIG = read_yaml("config/s3/test_delete_account_temp_cred.yaml")[1]
 from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
 
