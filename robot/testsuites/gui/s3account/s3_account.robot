@@ -46,17 +46,6 @@ Test action on table
     sleep  2s
     Action on the table     ${CSM_USER}  CSM_USER_EDIT_XPATH
 
-TEST-1033
-    [Documentation]  Test that alerts should not get visible to the s3 user
-    [Tags]  Priority_High  Smoke_test  user_role
-    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    sleep  2s
-    ${S3_account_name}  ${email}  ${password} =  Create S3 account
-    sleep  2s
-    Re-login   ${S3_account_name}  ${password}  MANAGE_MENU_ID
-    Check Dashboard Option Not Exists
-    Delete S3 Account  ${S3_account_name}  ${password}  True  
-
 TEST-5268
     [Documentation]  Test S3 account user should only be able to see S3 account details of the accounts which are associated with its account
     [Tags]  Priority_High  Smoke_test  user_role
@@ -67,6 +56,17 @@ TEST-5268
     sleep  5s
     Check Associated S3 Account Exists  ${S3_account_name}  ${email} 
     Delete S3 Account  ${S3_account_name}  ${password}  True
+    
+TEST-1033
+    [Documentation]  Test that alerts should not get visible to the s3 user
+    [Tags]  Priority_High  Smoke_test  user_role
+    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    sleep  2s
+    ${S3_account_name}  ${email}  ${password} =  Create S3 account
+    sleep  2s
+    Re-login   ${S3_account_name}  ${password}  MANAGE_MENU_ID
+    Check Dashboard Option Not Exists
+    Delete S3 Account  ${S3_account_name}  ${password}  True  
 
 TEST-1042
     [Documentation]  Test that setting option not available for s3 user
@@ -152,7 +152,7 @@ TEST-1036
     sleep  5s
     ${status}=  Is Bucket Present   ${testname}
     Should be equal  ${status}  ${False}
-    
+
 test_99
     [Documentation]  This test case is to verify that create user button remain disabled till required
     ...  fields got filled on s3 configure.

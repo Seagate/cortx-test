@@ -48,7 +48,7 @@ Delete S3 Account And Close Browser
     Close Browser
 
 *** Test Cases ***
-TEST_123
+TEST-939
    [Documentation]  Test that buckets is created
    [Tags]  Priority_High  Smoke_test
    Click On Create Bucket Form

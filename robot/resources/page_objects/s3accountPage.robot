@@ -346,5 +346,8 @@ Check Associated S3 Account Exists
     [Arguments]  ${expected_s3_account}  ${email}
     wait until element is visible  ${S3_ACCOUNTS_TABLE_XPATH}  timeout=60
     ${s3_account_table_data}=   Read Table Data  ${S3_ACCOUNTS_TABLE_XPATH}
-    List Should Contain Value  ${s3_account_table_data}  ${expected_s3_account}
-	List Should Contain Value  ${s3_account_table_data}  ${email}      
+    ${expected_list}=  Create List  ${expected_s3_account}  ${email}
+    Remove From List  ${s3_account_table_data}  2
+    Log To Console And Report  ${s3_account_table_data}
+    Log To Console And Report  ${expected_list}
+    Lists Should Be Equal  ${s3_account_table_data}  ${expected_list}
