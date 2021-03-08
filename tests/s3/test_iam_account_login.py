@@ -39,7 +39,7 @@ class TestAccountLoginProfile():
     """Account Login Profile Test Suite."""
 
     def setup_method(self):
-        LOGGER.info("STARTED: Setup and Teardown Operations")
+        LOGGER.info("STARTED: Setup Operation")
         self.account_name = IAM_CFG["iam_account_login"]["acc_name_prefix"]
         self.email_id = "{}{}".format(
             self.account_name,
@@ -56,13 +56,30 @@ class TestAccountLoginProfile():
         LOGGER.info(all_acc)
         for acc_name in all_acc:
             IAM_OBJ.reset_access_key_and_delete_account_s3iamcli(acc_name)
-        LOGGER.info("ENDED: Setup and Teardown Operations")
+        LOGGER.info("ENDED: Setup Operation")
 
     def teardown_method(self):
         """
         Function to perform the clean up for each test.
         """
-        self.setUp()
+        LOGGER.info("STARTED: Teardown Operations")
+        self.account_name = IAM_CFG["iam_account_login"]["acc_name_prefix"]
+        self.email_id = "{}{}".format(
+            self.account_name,
+            IAM_CFG["iam_account_login"]["email_suffix"])
+        self.ldap_user = LDAP_USERNAME
+        self.ldap_pwd = LDAP_PASSWD
+        LOGGER.info("Deleting account starts with: {}".format(
+            self.account_name))
+        acc_list = IAM_OBJ.list_accounts_s3iamcli(
+            self.ldap_user, self.ldap_pwd)[1]
+        LOGGER.info(acc_list)
+        all_acc = [acc["AccountName"]
+                   for acc in acc_list if self.account_name in acc["AccountName"]]
+        LOGGER.info(all_acc)
+        for acc_name in all_acc:
+            IAM_OBJ.reset_access_key_and_delete_account_s3iamcli(acc_name)
+        LOGGER.info("ENDED: Teardown Operations")
 
     def create_account_n_login_profile(
             self,
@@ -121,7 +138,7 @@ class TestAccountLoginProfile():
                 self.account_name)
         res = IAM_OBJ.create_account_login_profile_s3iamcli(
             self.account_name, test_cfg["password"], res[1]["access_key"],
-            res[1]["secret_key"], test_cfg["password_reset"])
+            res[1]["secret_key"], password_reset=test_cfg["password_reset"])
         assert_true(res[0], res[1])
         assert_in(test_cfg["msg"], res[1], res[1])
         LOGGER.info("Step 3: Created login profile for an account %s "
@@ -148,7 +165,7 @@ class TestAccountLoginProfile():
             IAM_OBJ.create_account_login_profile_s3iamcli(
                 test_cfg["account"], test_cfg["password"],
                 test_cfg["access_key"], test_cfg["secret_key"],
-                test_cfg["password_reset"])
+                password_reset=test_cfg["password_reset"])
             LOGGER.info("after try")
         except CTException as error:
             LOGGER.error("Expected failure: %s", error.message)
@@ -200,7 +217,7 @@ class TestAccountLoginProfile():
         try:
             IAM_OBJ.create_account_login_profile_s3iamcli(
                 self.account_name, test_cfg["password"], access_key,
-                secret_key, test_cfg["password_reset"])
+                secret_key, password_reset=test_cfg["password_reset"])
         except CTException as error:
             LOGGER.error("Expected failure: %s", error.message)
             assert_in(test_cfg["err_msg"],
@@ -241,7 +258,7 @@ class TestAccountLoginProfile():
         try:
             IAM_OBJ.create_account_login_profile_s3iamcli(
                 self.account_name, test_cfg["password"], access_key,
-                secret_key, test_cfg["password_reset"])
+                secret_key, password_reset=test_cfg["password_reset"])
         except CTException as error:
             LOGGER.error("Expected failure: %s", error.message)
             assert_in(test_cfg["err_msg"],
@@ -280,7 +297,7 @@ class TestAccountLoginProfile():
         try:
             IAM_OBJ.create_account_login_profile_s3iamcli(
                 self.account_name, test_cfg["password"], access_key,
-                secret_key, test_cfg["password_reset"])
+                secret_key, password_reset=test_cfg["password_reset"])
         except CTException as error:
             LOGGER.error("Expected failure: %s", error.message)
             assert_in(test_cfg["err_msg"],
@@ -307,7 +324,7 @@ class TestAccountLoginProfile():
                 acc_name,
                 email,
                 test_cfg["list_of_passwords"][each_pwd],
-                test_cfg["password_reset"],
+                password_reset=test_cfg["password_reset"],
                 self.ldap_user,
                 self.ldap_pwd)
             LOGGER.debug(res)
@@ -331,7 +348,7 @@ class TestAccountLoginProfile():
                 acc_name,
                 email,
                 pwd,
-                test_cfg["password_reset"],
+                password_reset=test_cfg["password_reset"],
                 self.ldap_user,
                 self.ldap_pwd)
             LOGGER.debug(res)
@@ -350,7 +367,7 @@ class TestAccountLoginProfile():
             self.account_name,
             self.email_id,
             test_cfg["password"],
-            test_cfg["password_reset"],
+            password_reset=test_cfg["password_reset"],
             self.ldap_user,
             self.ldap_pwd)
         LOGGER.debug(res)
@@ -369,7 +386,7 @@ class TestAccountLoginProfile():
             self.account_name,
             self.email_id,
             test_cfg["password"],
-            test_cfg["password_reset"],
+            password_reset=test_cfg["password_reset"],
             self.ldap_user,
             self.ldap_pwd)
         LOGGER.debug(res)
@@ -498,7 +515,7 @@ class TestAccountLoginProfile():
                 test_cfg["password"],
                 user_access_key,
                 user_secret_key,
-                test_cfg["password_reset"])
+                password_reset=test_cfg["password_reset"])
         except CTException as error:
             LOGGER.error("Expected failure: %s", error.message)
             assert_in(test_cfg["err_msg"],
@@ -527,7 +544,7 @@ class TestAccountLoginProfile():
             self.account_name,
             self.email_id,
             test_cfg["password"],
-            test_cfg["password_reset"],
+            password_reset=test_cfg["password_reset"],
             self.ldap_user,
             self.ldap_pwd)
         LOGGER.debug(res)
@@ -611,7 +628,7 @@ class TestAccountLoginProfile():
             self.account_name,
             self.email_id,
             test_cfg["password"],
-            test_cfg["password_reset"],
+            password_reset=test_cfg["password_reset"],
             self.ldap_user,
             self.ldap_pwd)
         access_key = res[0][1]["access_key"]
@@ -680,7 +697,7 @@ class TestAccountLoginProfile():
             test_cfg["password"],
             access_key,
             secret_key,
-            test_cfg["password_reset"])
+            password_reset=test_cfg["password_reset"])
         LOGGER.info(
             "Step 4: Created account login profile for account %s with "
             "keys of its user", self.account_name)
@@ -718,7 +735,7 @@ class TestAccountLoginProfile():
             self.account_name,
             self.email_id,
             test_cfg["password"],
-            test_cfg["password_reset"],
+            password_reset=test_cfg["password_reset"],
             self.ldap_user,
             self.ldap_pwd)
         LOGGER.debug(res)
@@ -740,7 +757,7 @@ class TestAccountLoginProfile():
                 self.account_name)
         resp = IAM_OBJ.update_account_login_profile_s3iamcli(
             self.account_name, test_cfg["new_password"], access_key, secret_key,
-            test_cfg["password_reset"])
+            password_reset=test_cfg["password_reset"])
         assert_true(resp[0], resp[1])
         LOGGER.info(
             "Step 4: Updated account login profile for account %s",
@@ -773,7 +790,7 @@ class TestAccountLoginProfile():
             self.account_name,
             self.email_id,
             test_cfg["password"],
-            test_cfg["password_reset"],
+            password_reset=test_cfg["password_reset"],
             self.ldap_user,
             self.ldap_pwd)
         LOGGER.debug(res)
@@ -826,7 +843,7 @@ class TestAccountLoginProfile():
             self.account_name,
             self.email_id,
             test_cfg["password"],
-            test_cfg["password_reset"],
+            password_reset=test_cfg["password_reset"],
             self.ldap_user,
             self.ldap_pwd)
         LOGGER.debug(res)
@@ -886,7 +903,7 @@ class TestAccountLoginProfile():
             self.account_name,
             self.email_id,
             test_cfg["password"],
-            test_cfg["password_reset"],
+            password_reset=test_cfg["password_reset"],
             self.ldap_user,
             self.ldap_pwd)
         LOGGER.debug(res)
@@ -940,7 +957,7 @@ class TestAccountLoginProfile():
             self.account_name,
             self.email_id,
             test_cfg["password"],
-            test_cfg["password_reset"],
+            password_reset=test_cfg["password_reset"],
             self.ldap_user,
             self.ldap_pwd)
         LOGGER.debug(res)
@@ -991,7 +1008,7 @@ class TestAccountLoginProfile():
             self.account_name,
             self.email_id,
             test_cfg["password"],
-            test_cfg["password_reset"],
+            password_reset=test_cfg["password_reset"],
             self.ldap_user,
             self.ldap_pwd)
         LOGGER.debug(res)
@@ -1049,7 +1066,7 @@ class TestAccountLoginProfile():
         try:
             IAM_OBJ.update_account_login_profile_s3iamcli(
                 self.account_name, test_cfg["password"], access_key, secret_key,
-                test_cfg["password_reset"])
+                password_reset=test_cfg["password_reset"])
         except CTException as error:
             LOGGER.error("Expected failure: %s", error.message)
             assert_in(test_cfg["err_msg"],
@@ -1083,7 +1100,7 @@ class TestAccountLoginProfile():
         try:
             IAM_OBJ.update_account_login_profile_s3iamcli(
                 acc_name, test_cfg["password"], test_cfg["access_key"],
-                test_cfg["secret_key"], test_cfg["password_reset"])
+                test_cfg["secret_key"], password_reset=test_cfg["password_reset"])
         except CTException as error:
             LOGGER.error("Expected failure: %s",error.message)
             assert_in(test_cfg["err_msg"],
@@ -1109,7 +1126,7 @@ class TestAccountLoginProfile():
             self.account_name,
             self.email_id,
             test_cfg["password"],
-            test_cfg["password_reset"],
+            password_reset=test_cfg["password_reset"],
             self.ldap_user,
             self.ldap_pwd)
         LOGGER.debug(res)
@@ -1131,7 +1148,7 @@ class TestAccountLoginProfile():
                 test_cfg["new_password"],
                 access_key,
                 secret_key,
-                test_cfg["password_reset"])
+                password_reset=test_cfg["password_reset"])
         except CTException as error:
             LOGGER.error("Expected failure: %s", error.message)
             assert_in(test_cfg["err_msg"],
@@ -1158,7 +1175,7 @@ class TestAccountLoginProfile():
             self.account_name,
             self.email_id,
             test_cfg["password"],
-            test_cfg["password_reset"],
+            password_reset=test_cfg["password_reset"],
             self.ldap_user,
             self.ldap_pwd)
         LOGGER.debug(res)
@@ -1177,7 +1194,7 @@ class TestAccountLoginProfile():
             self.account_name)
         resp = IAM_OBJ.update_account_login_profile_s3iamcli(
             self.account_name, test_cfg["password"], access_key, secret_key,
-            test_cfg["password_reset"])
+            password_reset=test_cfg["password_reset"])
         assert_true(resp[0], resp[1])
         LOGGER.info(
             "Step 4: Updated account login profile for account %s",
@@ -1215,7 +1232,7 @@ class TestAccountLoginProfile():
             self.account_name,
             self.email_id,
             test_cfg["password"],
-            test_cfg["password_reset"],
+            password_reset=test_cfg["password_reset"],
             self.ldap_user,
             self.ldap_pwd)
         LOGGER.debug(res)
@@ -1234,7 +1251,7 @@ class TestAccountLoginProfile():
                 self.account_name)
         resp = IAM_OBJ.update_account_login_profile_s3iamcli(
             self.account_name, test_cfg["new_password"], access_key, secret_key,
-            test_cfg["password_reset"])
+            password_reset=test_cfg["password_reset"])
         assert_true(resp[0], resp[1])
         LOGGER.info(
             "Step 4: Updated account login profile for account %s",
@@ -1294,7 +1311,7 @@ class TestAccountLoginProfile():
             test_cfg["password"],
             access_key,
             secret_key,
-            test_cfg["password_reset"])
+            password_reset=test_cfg["password_reset"])
 
         LOGGER.info("Step 5: Get account login profile using s3iamcli")
         res = IAM_OBJ.get_account_login_profile_s3iamcli(
@@ -1331,7 +1348,7 @@ class TestAccountLoginProfile():
             self.account_name,
             self.email_id,
             test_cfg["password"],
-            test_cfg["password_reset"],
+            password_reset=test_cfg["password_reset"],
             self.ldap_user,
             self.ldap_pwd)
         LOGGER.debug(res)
@@ -1418,7 +1435,7 @@ class TestAccountLoginProfile():
             self.account_name,
             self.email_id,
             test_cfg["password"],
-            test_cfg["password_reset"],
+            password_reset=test_cfg["password_reset"],
             self.ldap_user,
             self.ldap_pwd)
         LOGGER.debug(res)
@@ -1461,7 +1478,7 @@ class TestAccountLoginProfile():
             self.account_name,
             self.email_id,
             test_cfg["password"],
-            test_cfg["password_reset"],
+            password_reset=test_cfg["password_reset"],
             self.ldap_user,
             self.ldap_pwd)
         LOGGER.debug(res)
@@ -1536,7 +1553,7 @@ class TestAccountLoginProfile():
             self.account_name,
             self.email_id,
             test_cfg["password"],
-            test_cfg["password_reset"],
+            password_reset=test_cfg["password_reset"],
             self.ldap_user,
             self.ldap_pwd)
         LOGGER.debug(res)
@@ -1566,7 +1583,7 @@ class TestAccountLoginProfile():
             self.account_name,
             self.email_id,
             test_cfg["password"],
-            test_cfg["password_reset"],
+            password_reset=test_cfg["password_reset"],
             self.ldap_user,
             self.ldap_pwd)
         LOGGER.debug(res)
@@ -1623,7 +1640,7 @@ class TestAccountLoginProfile():
             self.account_name,
             self.email_id,
             test_cfg["password"],
-            test_cfg["password_reset"],
+            password_reset=test_cfg["password_reset"],
             self.ldap_user,
             self.ldap_pwd)
         LOGGER.debug(res)
@@ -1658,7 +1675,7 @@ class TestAccountLoginProfile():
             self.account_name,
             self.email_id,
             test_cfg["password"],
-            test_cfg["password_reset"],
+            password_reset=test_cfg["password_reset"],
             self.ldap_user,
             self.ldap_pwd)
         LOGGER.debug(res)
@@ -1692,7 +1709,7 @@ class TestAccountLoginProfile():
             self.account_name,
             self.email_id,
             test_cfg["password"],
-            test_cfg["password_reset"],
+            password_reset=test_cfg["password_reset"],
             self.ldap_user,
             self.ldap_pwd)
         LOGGER.debug(res)
@@ -1710,7 +1727,7 @@ class TestAccountLoginProfile():
         res = IAM_OBJ.create_user_login_profile_s3iamcli(
             user_name,
             test_cfg["user_password"],
-            test_cfg["password_reset"],
+            password_reset=test_cfg["password_reset"],
             access_key,
             secret_key)
         assert_true(res[0], res[1])
@@ -1742,7 +1759,7 @@ class TestAccountLoginProfile():
             self.account_name,
             self.email_id,
             test_cfg["password"],
-            test_cfg["password_reset"],
+            password_reset=test_cfg["password_reset"],
             self.ldap_user,
             self.ldap_pwd)
         LOGGER.debug(res)
@@ -1777,7 +1794,7 @@ class TestAccountLoginProfile():
             self.account_name,
             self.email_id,
             test_cfg["password"],
-            test_cfg["password_reset"],
+            password_reset=test_cfg["password_reset"],
             self.ldap_user,
             self.ldap_pwd)
         LOGGER.debug(res)
@@ -1795,7 +1812,7 @@ class TestAccountLoginProfile():
         res = IAM_OBJ.create_user_login_profile_s3iamcli(
             user_name,
             test_cfg["user_password"],
-            test_cfg["password_reset"],
+            password_reset=test_cfg["password_reset"],
             access_key,
             secret_key)
         assert_true(res[0], res[1])
@@ -1845,7 +1862,8 @@ class TestAccountLoginProfile():
         LOGGER.info("Step 4: Creating user login profile for user %s",
                       user_name)
         res = IAM_OBJ.create_user_login_profile_s3iamcli(
-            user_name, test_cfg["user_password"], test_cfg["password_reset"],
+            user_name, test_cfg["user_passwo"
+                                "rd"], password_reset=test_cfg["password_reset"],
             access_key, secret_key)
         assert_true(res[0], res[1])
         LOGGER.info(

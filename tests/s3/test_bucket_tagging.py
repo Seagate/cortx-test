@@ -18,6 +18,8 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 """This file contains test related to Bucket Tagging."""
+import os
+import shutil
 import time
 import logging
 import pytest
@@ -38,10 +40,34 @@ TEST_CONF = read_yaml("config/s3/test_bucket_tagging.yaml")[1]
 class TestBucketTagging():
     """Bucket Tagging Testsuite."""
 
-    @CTFailOn(error_handler)
-    def setup_method(self):
-        """Function to perform the set up before each test."""
-        pass
+    @classmethod
+    def setup_class(cls):
+        """
+        Function will be invoked prior to each test case.
+        It will perform all prerequisite test suite steps if any.
+        """
+        LOGGER.info("STARTED: setup test suite operations.")
+        cls.test_file = "obj_tag.txt"
+        cls.test_dir_path = os.path.join(os.getcwd(), "testdata")
+        cls.test_file_path = os.path.join(cls.test_dir_path, cls.test_file)
+        if not os.path.exists(cls.test_dir_path):
+            os.makedirs(cls.test_dir_path)
+            cls.log.info("Created path: %s", cls.test_dir_path)
+        cls.log.info("Test file path: %s", cls.test_file_path)
+        cls.log.info("STARTED: Test setup operations.")
+        cls.log.info("ENDED: setup test suite operations.")
+
+    @classmethod
+    def teardown_class(cls):
+        """
+        Function will be invoked after completion of all test case.
+        It will clean up resources which are getting created during test suite setup.
+        """
+        cls.log.info("STARTED: teardown test suite operations.")
+        if os.path.exists(cls.test_dir_path):
+            shutil.rmtree(cls.test_dir_path)
+        cls.log.info("Cleanup test directory: %s", cls.test_dir_path)
+        cls.log.info("ENDED: teardown test suite operations.")
 
     def teardown_method(self):
         """Function to perform the clean up after each test."""
@@ -49,7 +75,8 @@ class TestBucketTagging():
         pref_list = [
             each_bucket for each_bucket in resp[1] if each_bucket.startswith(
                 TEST_CONF["bucket_tag"]["bkt_name_prefix"])]
-        S3_OBJ.delete_multiple_buckets(pref_list)
+        if pref_list:
+            S3_OBJ.delete_multiple_buckets(pref_list)
 
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5514")
@@ -198,7 +225,11 @@ class TestBucketTagging():
     @pytest.mark.tags("TEST-5534")
     @CTFailOn(error_handler)
     def test_2436(self):
-        """Create a tag whose key is more than 128 Unicode characters in length."""
+        """
+        Create a tag whose key is more than 128 Unicode characters in length.
+
+        This is negative testing
+        """
         LOGGER.info(
             "STARTED: Create a tag whose key is more than 128 Unicode characters in length")
         bucket_name = "{}{}".format(TEST_CONF["test_2436"]["bucket_name"],
@@ -266,7 +297,11 @@ class TestBucketTagging():
     @pytest.mark.tags("TEST-5536")
     @CTFailOn(error_handler)
     def test_2438(self):
-        """Create a tag having values more than 512 Unicode characters in length."""
+        """
+        Create a tag having values more than 512 Unicode characters in length.
+
+        info - This is negative testing
+        """
         LOGGER.info(
             "STARTED: Create a tag having values more than 512 Unicode characters in length")
         bucket_name = "{}{}".format(TEST_CONF["test_2438"]["bucket_name"],
@@ -674,7 +709,7 @@ class TestBucketTagging():
         resp = S3_OBJ.create_bucket_put_object(
             bucket_name,
             obj_name,
-            TEST_CONF["test_2449"]["file_path"],
+            self.test_file_path,
             TEST_CONF["test_2449"]["mb_count"])
         assert_true(resp[0], resp[1])
         LOGGER.info(
@@ -695,7 +730,7 @@ class TestBucketTagging():
             obj_name,
             TEST_CONF["test_2449"]["obj_key"],
             TEST_CONF["test_2449"]["obj_value"],
-            TEST_CONF["test_2449"]["obj_tags"])
+            tag_count=TEST_CONF["test_2449"]["obj_tags"])
         assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Set tag for an object %s", obj_name)
         LOGGER.info("Step 4: Verifying tag is set for a bucket")

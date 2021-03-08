@@ -34,10 +34,7 @@ LOGGER = logging.getLogger(__name__)
 IAM_TEST_OBJ = iam_test_lib.IamTestLib()
 CMN_CONF = read_yaml("config/common_config.yaml")[1]
 TEST_CONFIG = read_yaml("config/s3/test_delete_account_temp_cred.yaml")[1]
-
-ldap_user = CMN_CONF["ldap_username"]
-ldap_pwd = CMN_CONF["ldap_passwd"]
-
+from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
 
 class TestDeleteAccountTempCred():
     """Delete Account Temp Cred Testsuite."""
@@ -55,13 +52,13 @@ class TestDeleteAccountTempCred():
         LOGGER.info(
             "Step 1: Creating an account with name %s", account_name)
         acc_create = IAM_TEST_OBJ.create_account_s3iamcli(
-            account_name, email_id, ldap_user, ldap_pwd)
+            account_name, email_id, self.ldap_user, self.ldap_pwd)
         assert_true(acc_create[0], acc_create[1])
         LOGGER.info(
             "Step 1: Created an account with name %s", account_name)
         LOGGER.info("Step 2: Listing accounts to verify account is created")
         acc_list = IAM_TEST_OBJ.list_accounts_s3iamcli(
-            ldap_user, ldap_pwd)
+            self.ldap_user, self.ldap_pwd)
         assert_true(acc_list[0], acc_list[1])
         all_accounts = [acc["AccountName"] for acc in acc_list[1]]
         assert_in(
@@ -76,7 +73,7 @@ class TestDeleteAccountTempCred():
             self.cfg["password"],
             acc_create[1]["access_key"],
             acc_create[1]["secret_key"],
-            self.cfg["password_reset"])
+            password_reset=self.cfg["password_reset"])
         assert_true(acc_profile[0], acc_profile[1])
         LOGGER.info(
             "Step 3: Created a login profile for an account %s", account_name)
@@ -115,6 +112,8 @@ class TestDeleteAccountTempCred():
         account.
         """
         LOGGER.info("STARTED: Setup operations")
+        self.ldap_user = LDAP_USERNAME
+        self.ldap_pwd = LDAP_PASSWD
         self.account_name = "{0}{1}".format(
             self.cfg["account_name"], str(int(time.time())))
         self.email_id = self.cfg["email_id"].format(self.account_name)
@@ -129,13 +128,13 @@ class TestDeleteAccountTempCred():
         """
         LOGGER.info("STARTED: Teardown operations")
         all_accounts = IAM_TEST_OBJ.list_accounts_s3iamcli(
-            ldap_user, ldap_pwd)[1]
+            self.ldap_user, self.ldap_pwd)[1]
         my_accounts = [acc["AccountName"]
                        for acc in all_accounts if self.cfg["account_name"] in acc["AccountName"]]
         LOGGER.info(my_accounts)
         if my_accounts:
             resp = IAM_TEST_OBJ.reset_account_access_key_s3iamcli(
-                self.account_name, ldap_user, ldap_pwd)
+                self.account_name, self.ldap_user, self.ldap_pwd)
             assert_true(resp[0], resp[1])
             access_key = resp[1]["AccessKeyId"]
             secret_key = resp[1]["SecretKey"]
@@ -176,7 +175,7 @@ class TestDeleteAccountTempCred():
         LOGGER.info(
             "Step 6: Listing accounts to check if account is deleted")
         resp = IAM_TEST_OBJ.list_accounts_s3iamcli(
-            ldap_user, ldap_pwd)
+            self.ldap_user, self.ldap_pwd)
         assert_true(resp[0], resp[1])
         all_accounts = [acc["AccountName"] for acc in resp[1]]
         assert_not_in(self.account_name, all_accounts, resp[1])
@@ -297,7 +296,7 @@ class TestDeleteAccountTempCred():
         LOGGER.info(
             "Step 6: Verifying that account is deleted using temporary credentials")
         resp = IAM_TEST_OBJ.list_accounts_s3iamcli(
-            ldap_user, ldap_pwd)
+            self.ldap_user, self.ldap_pwd)
         assert_true(resp[0], resp[1])
         all_accounts = [acc["AccountName"] for acc in resp[1]]
         assert_not_in(self.account_name, all_accounts, resp[1])
@@ -347,7 +346,7 @@ class TestDeleteAccountTempCred():
         LOGGER.info(
             "Step 6: Verifying that account is deleted by listing accounts")
         resp = IAM_TEST_OBJ.list_accounts_s3iamcli(
-            ldap_user, ldap_pwd)
+            self.ldap_user, self.ldap_pwd)
         assert_true(resp[0], resp[1])
         all_accounts = [acc["AccountName"] for acc in resp[1]]
         assert_not_in(self.account_name, all_accounts, resp[1])
