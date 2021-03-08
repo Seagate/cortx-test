@@ -51,7 +51,7 @@ from commons.utils import system_utils
 from commons.utils import jira_utils
 from commons.utils import config_utils
 from commons import worker
-from config import params
+from commons import params
 
 
 LCK_FILE = 'lockfile-%s'
@@ -163,48 +163,14 @@ def run(opts: dict) -> None:
                     rev_tag_map, skip_marks, skip_test,
                     test_map)
 
-    # get the te meta and create an execution plan
-    test_list, ignore = get_te_tickets_data(tickets)
-    print(f"Ignoring TE tag field {ignore}")
-    # group test_list into narrow feature groups
-    # with each feature group create parallel and non parallel groups
-    for test in test_list:
-        if test in skip_test:
-            continue
-        if test in test_map:
-            tmark, nid, _tags = test_map.get(test)
-            if not tmark:
-                LOGGER.error("Test %s found with no marker. Skipping it in execution.", test)
-                continue
-        else:
-            LOGGER.error("Unknown Test %s found Continue...", test)
-            continue
-        tdict = rev_tag_map.get(tmark)
-        if not tdict:
-            LOGGER.error("Reverse test map entry %s is empty for %s", tmark, test)
-            continue
-        p_set, s_set = tdict['parallel'], tdict['sequential']
-
-        if tmark not in selected_tag_map:
-            p_s = set()
-            s_s = set()
-            if test in p_set:
-                p_s.add(test)
-            else:
-                s_s.add(test)
-            selected_tag_map.update({tmark: [p_s, s_s]})
-        else:
-            t_l = selected_tag_map.get(tmark)
-            if test in p_set:
-                t_l[0].add(test)
-            else:
-                t_l[1].add(test)
+    develop_execution_plan(rev_tag_map, selected_tag_map, skip_test, test_map, tickets)
 
     work_queue = worker.WorkQ(producer.produce, 1024)
     finish = False  # Use finish to exit loop
     # start kafka producer
-    _producer = Thread(target=producer.server, args=(topic, work_queue))  # Use finish in server
-    #_producer.setDaemon(True)
+    _producer = Thread(target=producer.server,
+                       args=(topic, work_queue))  # Use finish in server
+    # _producer.setDaemon(True)
     _producer.start()
 
     # for parallel group create a kafka entry
@@ -235,6 +201,48 @@ def run(opts: dict) -> None:
     work_queue.put(None)  # poison
     work_queue.join()
     _producer.join()
+
+
+def develop_execution_plan(rev_tag_map, selected_tag_map, skip_test, test_map, tickets):
+    """Develop Test execution plan to be followed by test runners."""
+    # get the te meta and create an execution plan
+    test_list, ignore = get_te_tickets_data(tickets)
+    print(f"Ignoring TE tag field {ignore}")
+    # group test_list into narrow feature groups
+    # with each feature group create parallel and non parallel groups
+    for test in test_list:
+        if test in skip_test:
+            continue
+        if test in test_map:
+            tmark, nid, _tags = test_map.get(test)
+            if not tmark:
+                LOGGER.error("Test %s having %s found with no marker."
+                             " Skipping it in execution.", test, nid)
+                continue
+        else:
+            LOGGER.error("Unknown Test %s found Continue...", test)
+            continue
+        tdict = rev_tag_map.get(tmark)
+        if not tdict:
+            LOGGER.error("Reverse test map entry %s is empty for %s", tmark,
+                         test)
+            continue
+        p_set, s_set = tdict['parallel'], tdict['sequential']
+
+        if tmark not in selected_tag_map:
+            p_s = set()
+            s_s = set()
+            if test in p_set:
+                p_s.add(test)
+            else:
+                s_s.add(test)
+            selected_tag_map.update({tmark: [p_s, s_s]})
+        else:
+            t_l = selected_tag_map.get(tmark)
+            if test in p_set:
+                t_l[0].add(test)
+            else:
+                t_l[1].add(test)
 
 
 def create_test_map(base_components_marks: Tuple,
@@ -294,7 +302,7 @@ def update_rev_tag_map(mark, parallel, rev_tag_map, tid):
 def create_log_dir_if_not_exists():
     """
     Create log dir if not exists in main entry.
-    :return:
+    :return: Path created dir
     """
     log_home = os.path.join(os.getcwd(), params.LOG_DIR_NAME)
     if not os.path.exists(log_home):

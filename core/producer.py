@@ -22,7 +22,6 @@
 """SerializingProducer using JSON. A ticket is serialized using JSONSerializer"""
 import argparse
 import logging
-import json
 from typing import Any
 from uuid import uuid4
 from confluent_kafka import SerializingProducer
@@ -30,7 +29,7 @@ from confluent_kafka.serialization import StringSerializer
 from confluent_kafka.schema_registry import SchemaRegistryClient
 from confluent_kafka.schema_registry.json_schema import JSONSerializer
 from confluent_kafka.error import ValueSerializationError
-from config.params import SCHEMA_REGISTRY, BOOTSTRAP_SERVERS
+from commons.params import SCHEMA_REGISTRY, BOOTSTRAP_SERVERS
 
 LOGGER = logging.getLogger(__name__)
 

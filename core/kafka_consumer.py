@@ -22,7 +22,7 @@
 from confluent_kafka import DeserializingConsumer
 from confluent_kafka.schema_registry.json_schema import JSONDeserializer
 from confluent_kafka.serialization import StringDeserializer
-from config.params import BOOTSTRAP_SERVERS,TEST_EXEC_TOPIC
+from commons.params import BOOTSTRAP_SERVERS,TEST_EXEC_TOPIC
 
 
 def dict_to_kafka_msg(obj, ctx):
