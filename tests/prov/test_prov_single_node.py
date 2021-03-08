@@ -52,6 +52,7 @@ class TestProvSingleNode:
         LOGGER.info("STARTED: Setup Module operations")
         cls.host = input('Specify hostname fqdn:\n')
         #cls.host = hostname
+        cls.build_path = input('Specify the build url:\n')
         cls.uname = CMN_CFG["username"]
         cls.passwd = CMN_CFG["password"]
         cls.nd_obj = Node(hostname=cls.host, username=cls.uname,
@@ -108,6 +109,41 @@ class TestProvSingleNode:
 
         LOGGER.info("Starting the deployment steps.")
         test_cfg = PROV_CFG["deploy"]
+
+        LOGGER.info("Setting up the environment:")
+        cmd = common_cmds.YUM_UTILS
+        self.nd_obj.execute_cmd(cmd)
+        cmd = common_cmds.CONFIG_MGR.format(self.build_path)
+        self.nd_obj.execute_cmd(cmd)
+        cmd = common_cmds.INSTALL_SALT
+        self.nd_obj.execute_cmd(cmd)
+        cmd = common_cmds.RM_REPO
+        self.nd_obj.execute_cmd(cmd)
+        cmd = common_cmds.CONFIG_MGR1.format(self.build_path)
+        self.nd_obj.execute_cmd(cmd)
+        cmd = common_cmds.PRVSNR
+        self.nd_obj.execute_cmd(cmd)
+        cmd = common_cmds.RM_REPO1
+        self.nd_obj.execute_cmd(cmd)
+        cmd = common_cmds.YUM_CLEAN
+        self.nd_obj.execute_cmd(cmd)
+        cmd = common_cmds.RM_YUM
+        self.nd_obj.execute_cmd(cmd)
+        LOGGER.info("All the prerequisites installed.")
+
+        LOGGER.info("Create config.ini file.")
+        file = open(test_cfg["file_name"], "w")
+        file.writelines(test_cfg["file_lines"].format(self.host))
+        file.close()
+        self.nd_obj.copy_file_to_remote(test_cfg["file_name"], test_cfg["file_name"])
+        LOGGER.info("Created config.ini file.")
+
+        LOGGER.info("Start the deployment.")
+        cmd = common_cmds.DEPLOY_SINGLE_NODE.format(self.host, self.build_path)
+        resp = self.nd_obj.execute_cmd(cmd, read_lines=True)
+        for line in resp:
+            assert test_cfg["deploy_done"] not in line, "Deployment is not successful."
+        LOGGER.info("Deployment done.")
 
         LOGGER.info("Starting the post deployment checks.")
         test_cfg = PROV_CFG["system"]

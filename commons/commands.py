@@ -213,3 +213,18 @@ CMD_MKDIR = "mkdir -p {}"
 CMD_LSBLK = "lsblk -S | grep disk | wc -l"
 OS_REL_CMD = "cat /etc/redhat-release"
 KRNL_VER_CMD = "uname -r"
+
+# Deployment commands
+YUM_UTILS = "yum install -y yum-utils"
+CONFIG_MGR = "yum-config-manager --add-repo \"{0}/3rd_party/\""
+INSTALL_SALT = "yum install --nogpgcheck -y python3 python36-m2crypto salt salt-master salt-minion"
+RM_REPO = "rm -rf /etc/yum.repos.d/*3rd_party*.repo"
+CONFIG_MGR1 = "yum-config-manager --add-repo \"{0}/cortx_iso/\""
+PRVSNR = "yum install --nogpgcheck -y python36-cortx-prvsnr"
+RM_REPO1 = "rm -rf /etc/yum.repos.d/*cortx_iso*.repo"
+YUM_CLEAN = "yum clean all"
+RM_YUM = "rm -rf /var/cache/yum/"
+DEPLOY_SINGLE_NODE = "provisioner auto_deploy_vm srvnode-1:{0} " \
+                     "--logfile --logfile-filename /var/log/seagate/provisioner/setup.log " \
+                     "--source rpm --config-path ~/config.ini --dist-type bundle " \
+                     "--target-build {1}"
