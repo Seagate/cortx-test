@@ -9,6 +9,7 @@ deploy:
                "network.data.private_interfaces=eth3,eth4\n", "network.mgmt.interfaces=eth0\n",
                "bmc.user=None\n", "bmc.secret=None\n"]
   deploy_done: "Deploy VM - Done"
+  sleep_time: 60
 system:
   offline: "offline"
-  stopped: "STOPPED"
+  stopped: "Stopped"

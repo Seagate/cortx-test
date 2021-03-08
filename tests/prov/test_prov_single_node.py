@@ -147,6 +147,11 @@ class TestProvSingleNode:
             assert test_cfg["deploy_done"] not in line, "Deployment is not successful."
         LOGGER.info("Deployment done.")
 
+        LOGGER.info("Start the cluster.")
+        cmd = common_cmds.START_CLSTR
+        self.nd_obj.execute_cmd(cmd)
+        time.sleep(test_cfg["sleep_time"])
+
         LOGGER.info("Starting the post deployment checks.")
         test_cfg = PROV_CFG["system"]
 

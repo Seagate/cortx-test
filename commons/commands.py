@@ -229,3 +229,4 @@ DEPLOY_SINGLE_NODE = "sshpass -p \"{0}\" provisioner auto_deploy_vm srvnode-1:{1
                      "--source rpm --config-path {2} --dist-type bundle " \
                      "--target-build {3}"
 SET_PASS = "export SSHPASS=\"{}\""
+START_CLSTR = "cortx cluster start"
