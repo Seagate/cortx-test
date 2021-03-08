@@ -58,7 +58,7 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
     """Form a pytest command for execution."""
     env['TARGET'] = args.target
     build, build_type = args.build, args.build_type
-    tag = '-m ' + te_tag
+    #tag = '-m ' + te_tag
     run_type = ''
     is_distributed = ''
     try:
@@ -101,7 +101,7 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
         cmd_line = cmd_line + ["--target=" + args.target]
 
     if te_tag:
-       cmd_line = cmd_line + [tag]
+       cmd_line = cmd_line + [te_tag]
     read_metadata = "--readmetadata=" + str(True)
     cmd_line = cmd_line + [read_metadata]
     cmd_line = cmd_line + ['--build=' + build, '--build_type=' + build_type,
@@ -188,6 +188,45 @@ def trigger_unexecuted_tests(args, test_list):
             _env['pytest_run'] = 'distributed'
             run_pytest_cmd(args, te_tag=None, parallel_exe=args.parallel_exe,
                            env=_env, re_execution=True)
+
+def create_test_meta_data_file(args, test_list):
+    """
+    Create test meta data file
+    """
+    jira_id, jira_pwd = runner.get_jira_credential()
+    jira_obj = JiraTask(jira_id, jira_pwd)
+    # Create test meta file for reporting TR.
+    tp_meta_file = os.path.join(os.getcwd(),
+                                params.LOG_DIR_NAME,
+                                params.JIRA_TEST_META_JSON)
+    with open(tp_meta_file, 'w') as t_meta:
+
+        test_meta = list()
+        # test plan meta
+        tp_meta = dict()
+        tp_resp = jira_obj.get_issue_details(args.test_plan)  # test plan id
+        tp_meta['test_plan_label'] = tp_resp.fields.labels
+        te_resp = jira_obj.get_issue_details(args.te_ticket)  # test execution id
+        if te_resp.fields.components:
+            te_components = te_resp.fields.components[0].name
+        tp_meta['te_meta'] = dict(te_id=args.te_ticket,
+                                  te_label=te_resp.fields.labels,
+                                  te_components=te_components)
+        # test_name, test_id, test_id_labels, test_team, test_type
+        for test in test_list:
+            item = dict()
+            item['test_id'] = test
+            resp = jira_obj.get_issue_details(test)
+            item['test_name'] = resp.fields.summary
+            item['labels'] = resp.fields.labels
+            if resp.fields.components:
+                component = resp.fields.components[0].name  # First items is of interest
+            else:
+                component = list()
+            item['component'] = component
+            test_meta.append(item)
+        tp_meta['test_meta'] = test_meta
+        json.dump(tp_meta, t_meta, ensure_ascii=False)
 
 
 def create_test_meta_data_file(args, test_list):
