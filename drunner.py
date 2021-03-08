@@ -51,7 +51,7 @@ from commons.utils import system_utils
 from commons.utils import jira_utils
 from commons.utils import config_utils
 from commons import worker
-from config import params
+from commons import params
 
 
 LCK_FILE = 'lockfile-%s'
