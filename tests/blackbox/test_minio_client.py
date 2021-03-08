@@ -111,7 +111,7 @@ class TestMinioClient:
             "Step 1: Bucket is created with name %s", bucket_name)
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7536")
     @CTFailOn(error_handler)
     def test_create_single_bucket_2345(self):
         """Create single bucket using Minio Client."""
@@ -131,7 +131,7 @@ class TestMinioClient:
         self.log.info("ENDED: Create single bucket using Minio Client")
 
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-7537 ")
+    @pytest.mark.tags("TEST-7537")
     @CTFailOn(error_handler)
     def test_create_multiple_bucket_2346(self):
         """Create multiple buckets using Minion client."""
@@ -154,7 +154,7 @@ class TestMinioClient:
         self.log.info("ENDED: Create multiple buckets using Minion client")
 
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-7545 ")
+    @pytest.mark.tags("TEST-7545")
     @CTFailOn(error_handler)
     def test_list_bucket_2347(self):
         """List buckets using Minion client."""
