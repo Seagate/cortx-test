@@ -24,11 +24,11 @@ import os
 import time
 import logging
 from time import perf_counter
-from random import SystemRandom
-
-import boto3
+from random import randint
 from botocore import UNSIGNED
 from botocore.client import Config
+
+import boto3
 from commons import errorcodes as err
 from commons.exceptions import CTException
 from commons.utils.system_utils import create_file
@@ -137,8 +137,6 @@ class S3TestLib(S3Lib):
         :param bucket_name: Name of the bucket
         :param object_name: Name of the object
         :param file_path: Path of the file
-        :param m_key: Key for metadata
-        :param m_value: Value for metadata
         :return: (Boolean, object of put object method)
         """
         kwargs["m_key"] = kwargs.get("m_key", None)
@@ -483,8 +481,6 @@ class S3TestLib(S3Lib):
         :param object_name: Name of object.
         :param min_size: Minimum size of object in MB.
         :param max_size: Maximum size of object in MB.
-        :param object_count: No. of objects to be uploaded.
-        :param file_path: Object file path.
         :return: True or False and list of objects or error.
         """
         object_count = kwargs.get("object_count", None)
@@ -498,9 +494,12 @@ class S3TestLib(S3Lib):
                     os.remove(file_path)
                 with open(file_path, 'wb') as fout:
                     fout.write(
-                        SystemRandom().randint(
-                            1024000 * int(min_size),
-                            1024000 * int(max_size)))
+                        os.urandom(
+                            randint(
+                                1024000 *
+                                int(min_size),
+                                1024000 *
+                                int(max_size))))
                 LOGGER.info(
                     "Uploading object of size %d", os.path.getsize(file_path))
                 self.s3_resource.meta.client.upload_file(
@@ -562,21 +561,18 @@ class S3TestLib(S3Lib):
     def get_object(
             self,
             bucket: str = None,
-            key: str = None,
-            ranges: str = None,) -> tuple:
+            key: str = None) -> tuple:
         """
         Retrieve object from specified S3 bucket.
 
         :param key: Key of the object to get.
         :param bucket: The bucket name containing the object.
         :param ranges:
-        :param str bucket_name: The bucket name containing the object.
-        :param str object_name: Key of the object to get.
         :return: (Boolean, Response)
         """
         try:
             LOGGER.info("Retrieving object from a bucket")
-            response = super().get_object(bucket, key, ranges)
+            response = super().get_object(bucket, key)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          S3TestLib.get_object.__name__,

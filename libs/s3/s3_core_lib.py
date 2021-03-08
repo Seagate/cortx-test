@@ -59,20 +59,24 @@ class S3Lib:
         if debug:
             # Uncomment to enable debug
             boto3.set_stream_logger(name="botocore")
-        self.s3_resource = boto3.resource(
-            "s3",
-            verify=s3_cert_path,
-            aws_access_key_id=access_key,
-            aws_secret_access_key=secret_key,
-            endpoint_url=endpoint_url,
-            region_name=region,
-            aws_session_token=aws_session_token)
-        self.s3_client = boto3.client("s3", verify=s3_cert_path,
-                                      aws_access_key_id=access_key,
-                                      aws_secret_access_key=secret_key,
-                                      endpoint_url=endpoint_url,
-                                      region_name=region,
-                                      aws_session_token=aws_session_token)
+        try:
+            self.s3_resource = boto3.resource(
+                "s3",
+                verify=s3_cert_path,
+                aws_access_key_id=access_key,
+                aws_secret_access_key=secret_key,
+                endpoint_url=endpoint_url,
+                region_name=region,
+                aws_session_token=aws_session_token)
+            self.s3_client = boto3.client("s3", verify=s3_cert_path,
+                                          aws_access_key_id=access_key,
+                                          aws_secret_access_key=secret_key,
+                                          endpoint_url=endpoint_url,
+                                          region_name=region,
+                                          aws_session_token=aws_session_token)
+        except Exception as Err:
+            if "unreachable network" not in str(Err):
+                LOGGER.critical(Err)
 
     def create_bucket(self, bucket_name: str = None) -> dict:
         """
@@ -108,8 +112,6 @@ class S3Lib:
         :param bucket_name: Name of the bucket
         :param object_name: Name of the object
         :param file_path: Path of the file
-        :param m_key: Key for metadata
-        :param m_value: Value for metadata
         :return: response.
         """
         m_key = kwargs.get("m_key", None)
@@ -313,8 +315,7 @@ class S3Lib:
     def get_object(
             self,
             bucket: str = None,
-            key: str = None,
-            ranges: str = None) -> dict:
+            key: str = None) -> dict:
         """
         Getting byte range of the object.
 
@@ -324,7 +325,7 @@ class S3Lib:
         :return: response.
         """
         response = self.s3_client.get_object(
-            Bucket=bucket, Key=key, ranges=ranges)
+            Bucket=bucket, Key=key)
         logging.debug(response)
 
         return response
@@ -400,8 +401,6 @@ class Multipart(S3Lib):
         :param body: content of the object.
         :param bucket_name: Name of the bucket.
         :param object_name: Name of the object.
-        :param upload_id: Multipart upload ID.
-        :param part_number: upload part no.
         :return:
         """
         upload_id = kwargs.get("upload_id", None)
@@ -616,8 +615,6 @@ class Tagging(S3Lib):
         :param data:  handle of file path.
         :param bucket_name: Name of the bucket.
         :param object_name: Name of the object.
-        :param tag: Tag value(eg: "aaa=bbb").
-        :param meta: metadata for the object. {key: value}.
         :return: response.
         """
         tag = kwargs.get("tag", None)

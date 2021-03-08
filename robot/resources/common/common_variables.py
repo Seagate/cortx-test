@@ -5,6 +5,7 @@
 # Common variables required for GUI access
 # URL's required to connect to the CSM GUI
 CSM_URL = "https://10.230.246.58:28100/#/"
+SW_UPDATE_URL = "http://cortx-storage.colo.seagate.com/releases/eos/github/main/centos-7.8.2003/{0}/prod/iso/cortx-2.0.0-{0}-single.iso"
 
 #  Login page msg.
 LOGIN_FAILED_MESSAGE = 'Login failed !'
@@ -19,7 +20,8 @@ INVALID_LOCAL_USER = ["abc", "account@123", "!@#$%^&*()~", "user"*15]
 HIDDEN_TYPE_ELEMENT = "password"
 INVALID_USER_TYPE_MSG = "Invalid username."
 MISSMATCH_PASSWORD_MSG = "Passwords do not match."
-INVALID_PASSWORDS_LIST = ["abc", "QWERTYUIIOP", "qwertyuiop", "1234567890", "abcDFG1234", "!@#$%^&*()~"]
+INVALID_PASSWORDS_LIST = ["abc", "QWERTYUIIOP",
+                          "qwertyuiop", "1234567890", "abcDFG1234", "!@#$%^&*()~"]
 INVALID_PASSWORD_MSG = "Invalid password."
 INVALID_USER_TYPE_MESSAGE = "Invalid username."
 MISSMATCH_PASSWORD_MESSAGE = "Passwords do not match."
@@ -49,3 +51,6 @@ IAM_USER_USERNAME_TOOLTIP_MSG = "The username must be of minimum 4 characters an
 IAM_USER_PASSWD_TOOLTIP_MSG = "Password must contain: Minimum 8 characters"
 IAM_USER_PASSWD_MISSMATCH_MSG = "Passwords do not match"
 DUPLICATE_IAM_USER_ERROR_MSG = "The request was rejected because it attempted to create or update a resource that already exists."
+
+# Alerts
+TEST_COMMENT = "Test Comment"

@@ -189,9 +189,9 @@ class TestSSPL:
                 update=True)
             assert res
 
-        # if os.path.exists(CM_CFG["file"]["telnet_xml"]):
-        #     LOGGER.info("Remove telnet file")
-        #     os.remove(CM_CFG["file"]["telnet_xml"])
+        if os.path.exists(CM_CFG["file"]["telnet_xml"]):
+            LOGGER.info("Remove telnet file")
+            os.remove(CM_CFG["file"]["telnet_xml"])
 
         if self.node_obj.path_exists(
                 RAS_VAL["ras_sspl_alert"]["file"]["disk_usage_temp_file"]):
