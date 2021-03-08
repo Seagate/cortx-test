@@ -65,15 +65,9 @@ Verify comment on alert
      Click Comments Button
      Add CommentInCommentBox Text
      Click CommentsClose Image
+     wait for page or element to load  2s
      Click Comments Button
-     sleep  5s
-     wait until element is visible  ${ALERT_COMMENT_TEXT_ID}  timeout=10
-     ${comment_text}=    Create List
-     @{comment_text_elements}=  Get WebElements  ${ALERTS_COMMENT_TEXT_XPATH}
-     FOR  ${elements}  IN  @{comment_text_elements}
-            ${text}=    Get Text    ${elements}
-            Append To List  ${comment_text}  ${text}
-     END
-     Log To Console And Report   ${comment_text}
+     wait for page or element to load
+     ${comment_text}=  Get text of elements from elements list  ${ALERTS_COMMENT_TEXT_XPATH}
      List Should Contain Value  ${comment_text}  ${TEST_COMMENT}
      Click CommentsClose Image

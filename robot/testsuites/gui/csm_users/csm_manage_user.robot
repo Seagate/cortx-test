@@ -1,10 +1,10 @@
 *** Settings ***
 Documentation    This suite verifies the testcases for csm user creation
-Resource    ../../../resources/page_objects/loginPage.robot
-Resource    ../../../resources/page_objects/userSettingsLocalPage.robot
-Resource    ../../../resources/page_objects/alertPage.robot
-Resource    ../../../resources/page_objects/dashboard.robot
-Resource    ../../../resources/page_objects/s3accountPage.robot
+Resource    ${EXECDIR}/resources/page_objects/loginPage.robot
+Resource    ${EXECDIR}/resources/page_objects/userSettingsLocalPage.robot
+Resource    ${EXECDIR}/resources/page_objects/alertPage.robot
+Resource    ${EXECDIR}/resources/page_objects/dashboard.robot
+Resource    ${EXECDIR}/resources/page_objects/s3accountPage.robot
 
 Test Setup  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
 Test Teardown  Close Browser
@@ -56,7 +56,7 @@ test_1218
     [Documentation]  Test manager user don't have access to Lyve Pilot menu
     [Tags]  Priority_High  user_role  test_1218
     ${new_user_name}  ${new_password}=  Create and login with CSM manage user
-    sleep  2s
+    wait for page or element to load  2s
     Verify that user can not access Lyve Pilot menu
     Re-login  ${username}  ${password}  ${page_name}
     Delete CSM User  ${new_user_name}
@@ -65,10 +65,10 @@ test_1216
     [Documentation]  Test manager user can not access IAM user and buckets tab.
     [Tags]  Priority_High  user_role  test_1216
     ${new_user_name}  ${new_password}=  Create and login with CSM manage user
-    sleep  2s
+    wait for page or element to load  2s
     Verify IAM User Section Not Present
     Verify bucket Section Not Present
-    sleep  2s
+    wait for page or element to load  2s
     Re-login  ${username}  ${password}  ${page_name}
     Delete CSM User  ${new_user_name}
 
@@ -76,16 +76,16 @@ test_1215
     [Documentation]  Test that CSM user with role manager can view and create s3 accounts.
     [Tags]  Priority_High  user_role  test_1215
     ${new_user_name}  ${new_password}=  Create and login with CSM manage user
-    sleep  2s
+    wait for page or element to load  2s
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    sleep  2s
+    wait for page or element to load  2s
     ${S3_account_name}  ${email}  ${s3_password} =  Create S3 account
-    sleep  3s
+    wait for page or element to load  3s
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
     CSM GUI Logout
-    sleep  2s
+    wait for page or element to load  2s
     Delete S3 Account  ${S3_account_name}  ${s3_password}
-    sleep  2s
+    wait for page or element to load  2s
     Enter Username And Password  ${username}  ${password}
     Click Sigin Button
     Navigate To Page    MANAGE_MENU_ID
@@ -95,18 +95,18 @@ test_1217
     [Documentation]  Test that manager user can view and create CSM users.
     [Tags]  Priority_High  user_role  test_1217
     ${new_user_name}  ${new_password}=  Create and login with CSM manage user
-    sleep  2s
+    wait for page or element to load  2s
     ${new_csm_user_password}=  Generate New Password
     ${new_csm_user_name}=  Generate New User Name
     Create New CSM User  ${new_csm_user_name}  ${new_csm_user_password}  manage
     Click On Confirm Button
-    sleep  2s
+    wait for page or element to load  2s
     Click Element  ${DELETE_ICON_MANAGE_USER_ID}
-    sleep  2s
+    wait for page or element to load  2s
     Click button    ${IAM_USER_SUCCESS_MESSAGE_BUTTON_ID }
-    sleep  2s
+    wait for page or element to load  2s
     Enter Username And Password  ${username}  ${password}
     Click Sigin Button
-    sleep  2s
+    wait for page or element to load  2s
     Navigate To Page    MANAGE_MENU_ID
     Delete CSM User  ${new_csm_user_name}
