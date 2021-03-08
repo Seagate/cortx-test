@@ -47,7 +47,7 @@ TEST-1226
 TEST-1213
     [Documentation]  Test that CSM user with role manager has access to dashboard and perform actions on alerts
     ...  Reference : https://jts.seagate.com/browse/TEST-1213
-    [Tags]  Priority_High  CFT_test
+    [Tags]  Priority_High  CFT_test  user_role
     ${new_password}=  Generate New Password
     Navigate To Page  MANAGE_MENU_ID
     Create New CSM User  manage1213  ${new_password}  manage
@@ -79,7 +79,7 @@ TEST-1213
 TEST-1219
     [Documentation]  Test that monitor user can view alerts and stats.
     ...  Reference : https://jts.seagate.com/browse/TEST-1219
-    [Tags]  Priority_High  CFT_test
+    [Tags]  Priority_High  CFT_test  user_role
     ${new_password}=  Generate New Password
     Navigate To Page  MANAGE_MENU_ID
     Create New CSM User  monitor1219  ${new_password}  monitor

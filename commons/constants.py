@@ -165,3 +165,11 @@ class Rest:
         },
         "required": ["total", "good"]
     }
+
+# cortxcli constants
+CSM_USER_HELP =[
+    "support_bundle",
+    "alerts",
+    "s3accounts",
+    "system",
+    "users"]
