@@ -74,8 +74,7 @@ class TestSSPL:
             enclosure_user=CMN_CFG["enclosure_user"],
             enclosure_pwd=CMN_CFG["enclosure_pwd"])
 
-        cls.csm_alert_obj = SystemAlerts(host=cls.host, username=cls.uname,
-                                         password=cls.passwd)
+        cls.csm_alert_obj = SystemAlerts(cls.node_obj)
         # Enable this flag for starting RMQ channel
         cls.start_rmq = CM_CFG["start_rmq"]
 

@@ -16,17 +16,13 @@ from libs.csm.rest.csm_rest_test_lib import RestTestLib
 class SystemAlerts(RestTestLib):
     """SystemAlerts contains all the Rest API calls for system health related operations"""
 
-    def __init__(self, host: str, username: str, password: str) -> None:
+    def __init__(self, node_obj:object=None) -> None:
         """
         Initialize the rest api
+        node_obj is required if create_alert and resolve_alert functions are used.
         """
         super().__init__()
-        self.conf = CMN_CFG
-        self.host = host
-        self.username = username
-        self.pwd = password
-        self.node_utils = Node(hostname=self.host, username=self.username,
-                               password=self.pwd)
+        self.node_obj = node_obj
 
     @RestTestLib.authenticate_and_login
     def get_alerts(self, alert_id=None, acknowledged=None, resolved=None,
@@ -380,7 +376,7 @@ class SystemAlerts(RestTestLib):
         local_path = ras_cons.TELNET_OP_PATH
         remote_path = ras_cons.REMOTE_TELNET_PATH
         self.log.info("Copying file %s to %s", local_path, remote_path)
-        self.node_utils.copy_file_to_remote(local_path=local_path,
+        self.node_obj.copy_file_to_remote(local_path=local_path,
                                             remote_path=remote_path)
         resp = alert_api_obj.generate_alert(
             eval('AlertType.{}'.format(alert_type)))
@@ -447,7 +443,7 @@ class SystemAlerts(RestTestLib):
         local_path = ras_cons.TELNET_OP_PATH
         remote_path = ras_cons.REMOTE_TELNET_PATH
         self.log.info("Copying file %s to %s", local_path, remote_path)
-        self.node_utils.copy_file_to_remote(local_path=local_path,
+        self.node_obj.copy_file_to_remote(local_path=local_path,
                                             remote_path=remote_path)
 
         response = self.get_alerts(resolved=False)
