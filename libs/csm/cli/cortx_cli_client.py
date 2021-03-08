@@ -61,7 +61,7 @@ class CortxCliClient:
         else:
             self.session_obj = session_obj
 
-    def execute_cli_commands(self, cmd: str, time_out: int = 300) -> str:
+    def execute_cli_commands(self, cmd: str, time_out: int = 500) -> str:
         """
         This function executes command on interactive shell on csm server and returns output
         :param str cmd: command to execute on shell
@@ -74,7 +74,7 @@ class CortxCliClient:
         self.session_obj.send(cmd)
         poll = time.time() + time_out  # max timeout
         while poll > time.time():
-            time.sleep(2)
+            time.sleep(6)
             if self.session_obj.recv_ready():
                 output = output + \
                     self.session_obj.recv(9999).decode("utf-8")

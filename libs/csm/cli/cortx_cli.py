@@ -59,7 +59,7 @@ class CortxCli(CortxCliClient):
             session_obj=session_obj,
             port=port)
 
-    def execute_cli_commands(self, cmd: str, time_out: int = 300) -> tuple:
+    def execute_cli_commands(self, cmd: str, time_out: int = 800) -> tuple:
         """
         This function executes command on interactive shell on csm server and returns output
         :param str cmd: command to execute on shell
@@ -88,10 +88,12 @@ class CortxCli(CortxCliClient):
         :param str username: User name to login
         :param str password: User password
         :keyword username_param: username to pass as argument
+        :keyword login_cortxcli: command for login to CLI
         :return: True/False and output
         """
         login_cortxcli = commands.CMD_LOGIN_CORTXCLI
         username_param = kwargs.get("username_param", None)
+        login_cortxcli = kwargs.get("cmd", login_cortxcli)
         if username_param:
             login_cortxcli = " ".join(
                 [login_cortxcli, "--username", username_param])
