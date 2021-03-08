@@ -24,18 +24,12 @@ import time
 import logging
 import pytest
 from commons.utils import assert_utils
-from commons.utils import config_utils as conf_util
 from commons.helpers import node_helper
 from commons import cortxlogging as log
 from config import CMN_CFG
+from config import CSM_CFG
 from libs.csm.cli.cortxcli_iam_user import CortxCliIamUser
-
-
-IAM_OBJ = CortxCliIamUser()
-NODE_HELPER_OBJ = node_helper.Node(hostname=CMN_CFG[1]["csm"]["mgmt_vip"],
-                                   username=CMN_CFG[1]["username"],
-                                   password=CMN_CFG[1]["password"])
-CLI_CONF = conf_util.read_yaml("config/csm/csm_config.yaml")
+from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
 
 
 class TestCliIAMUser:
@@ -46,12 +40,30 @@ class TestCliIAMUser:
         """
         It will perform all prerequisite test suite steps if any.
             - Initialize few common variables
+            - Creating s3 account to perform IAM test cases
         """
         cls.LOGGER = logging.getLogger(__name__)
         cls.LOGGER.info("STARTED : Setup operations for test suit")
-        cls.iam_password = CLI_CONF[1]["CliConfig"]["iam_password"]
-        cls.acc_password = CLI_CONF[1]["CliConfig"]["acc_password"]
+        cls.iam_password = CSM_CFG["CliConfig"]["iam_password"]
+        cls.acc_password = CSM_CFG["CliConfig"]["acc_password"]
         cls.user_name = None
+        cls.iam_obj = CortxCliIamUser()
+        cls.node_helper_obj = node_helper.Node(hostname=CMN_CFG["csm"]["mgmt_vip"],
+                                   username=CMN_CFG["csm"]["admin_user"],
+                                   password=CMN_CFG["csm"]["admin_pass"])
+        cls.s3acc_obj = CortxCliS3AccountOperations()
+        cls.s3acc_name = "{}_{}".format("cli_s3acc", int(time.time()))
+        cls.s3acc_email = "{}@seagate.com".format(cls.s3acc_name)
+        cls.LOGGER.info("Creating s3 account with name %s", cls.s3acc_name)
+        resp = cls.s3acc_obj.login_cortx_cli()
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        resp = cls.s3acc_obj.create_s3account_cortx_cli(
+            account_name=cls.s3acc_name,
+            account_email=cls.s3acc_email,
+            password=cls.acc_password)
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        cls.s3acc_obj.logout_cortx_cli()
+        cls.LOGGER.info("Created s3 account")
         cls.START_LOG_FORMAT = "##### Test started -  "
         cls.END_LOG_FORMAT = "##### Test Ended -  "
 
@@ -63,8 +75,8 @@ class TestCliIAMUser:
         """
         self.LOGGER.info("STARTED : Setup operations for test function")
         self.LOGGER.info("Login to CORTX CLI using s3 account")
-        login = IAM_OBJ.login_cortx_cli(
-            username="cli_s3acc", password=self.acc_password)
+        login = self.iam_obj.login_cortx_cli(
+            username=self.s3acc_name, password=self.acc_password)
         assert_utils.assert_equals(
             login[0], True, "Server authentication check failed")
         self.user_name = "{0}{1}".format("iam_user", str(int(time.time())))
@@ -78,7 +90,7 @@ class TestCliIAMUser:
             - Log out from CORTX CLI console.
         """
         self.LOGGER.info("STARTED : Teardown operations for test function")
-        resp = IAM_OBJ.list_iam_user(output_format="json")
+        resp = self.iam_obj.list_iam_user(output_format="json")
         if resp[0]:
             resp = resp[1]["iam_users"]
             user_del_list = [user["user_name"]
@@ -86,15 +98,31 @@ class TestCliIAMUser:
             for each_user in user_del_list:
                 self.LOGGER.info(
                     "Deleting IAM user %s", each_user)
-                resp = IAM_OBJ.delete_iam_user(each_user)
+                resp = self.iam_obj.delete_iam_user(each_user)
                 assert_utils.assert_exact_string(resp[1], "IAM User Deleted")
                 self.LOGGER.info(
                     "Deleted IAM user %s", each_user)
-        IAM_OBJ.logout_cortx_cli()
+        self.iam_obj.logout_cortx_cli()
         self.LOGGER.info("ENDED : Teardown operations for test function")
 
-    @pytest.mark.csm
-    @pytest.mark.csm_iamuser
+    def teardown_class(cls):
+        """
+        This function will be invoked after test suit.
+        It is performing below operations as pre-requisites.
+            - Deleting S3 account
+            - Logout from cortxcli
+        """
+        cls.LOGGER.info("Deleting s3 account %s", cls.s3acc_name)
+        resp = cls.s3acc_obj.login_cortx_cli(username=cls.s3acc_name, password=cls.acc_password)
+        assert_utils.assert_equals(
+            resp[0], True, "Server authentication check failed")
+        resp = cls.s3acc_obj.delete_s3account_cortx_cli(account_name=cls.s3acc_name)
+        assert_utils.assert_equals(resp[0], True, resp[1])
+        cls.s3acc_obj.logout_cortx_cli()
+        cls.LOGGER.info("Deleted s3 account %s", cls.s3acc_name)
+
+
+    @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10858")
     def test_867(self):
         """
@@ -103,15 +131,14 @@ class TestCliIAMUser:
         """
         self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
         self.LOGGER.info("Creating iam user with name %s", self.user_name)
-        resp = IAM_OBJ.create_iam_user(user_name=self.user_name,
+        resp = self.iam_obj.create_iam_user(user_name=self.user_name,
                                        password=self.iam_password,
                                        confirm_password=self.iam_password)
         assert_utils.assert_exact_string(resp[1], self.user_name)
         self.LOGGER.info("Created iam user with name %s", self.iam_password)
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
-    @pytest.mark.csm
-    @pytest.mark.csm_iamuser
+    @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10861")
     def test_875(self):
         """
@@ -119,19 +146,18 @@ class TestCliIAMUser:
         """
         self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
         self.LOGGER.info("Creating iam user with name %s", self.user_name)
-        resp = IAM_OBJ.create_iam_user(user_name=self.user_name,
+        resp = self.iam_obj.create_iam_user(user_name=self.user_name,
                                        password=self.iam_password,
                                        confirm_password=self.iam_password)
         assert_utils.assert_exact_string(resp[1], self.user_name)
         self.LOGGER.info("Created iam user with name %s", self.user_name)
         self.LOGGER.info("Deleting iam user with name %s", self.user_name)
-        resp = IAM_OBJ.delete_iam_user(self.user_name)
+        resp = self.iam_obj.delete_iam_user(self.user_name)
         assert_utils.assert_exact_string(resp[1], "IAM User Deleted")
         self.LOGGER.info("Deleted iam user with name %s", self.user_name)
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
-    @pytest.mark.csm
-    @pytest.mark.csm_iamuser
+    @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10852")
     def test_873(self):
         """
@@ -139,14 +165,14 @@ class TestCliIAMUser:
         """
         self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
         self.LOGGER.info("Creating iam user with name %s", self.user_name)
-        resp = IAM_OBJ.create_iam_user(
+        resp = self.iam_obj.create_iam_user(
             user_name=self.user_name,
             password=self.iam_password,
             confirm_password=self.iam_password)
         assert_utils.assert_equals(resp[0], True, resp)
         self.LOGGER.info("Created iam user with name %s", self.user_name)
         self.LOGGER.info("Verifying duplicate user will not get created")
-        resp = IAM_OBJ.create_iam_user(
+        resp = self.iam_obj.create_iam_user(
             user_name=self.user_name,
             password=self.iam_password,
             confirm_password=self.iam_password)
@@ -158,8 +184,7 @@ class TestCliIAMUser:
         self.LOGGER.info("Verified that duplicate user was not created")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
-    @pytest.mark.csm
-    @pytest.mark.csm_iamuser
+    @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10851")
     def test_870(self):
         """
@@ -167,14 +192,13 @@ class TestCliIAMUser:
         """
         self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
         self.LOGGER.info("Displaying help information for s3iamusers create")
-        resp = IAM_OBJ.create_iam_user(help_param=True)
+        resp = self.iam_obj.create_iam_user(help_param=True)
         self.LOGGER.info(resp)
         assert_utils.assert_equals(resp[0], True, resp)
         self.LOGGER.info("Displayed help information for s3iamusers create")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
-    @pytest.mark.csm
-    @pytest.mark.csm_iamuser
+    @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10854")
     def test_871(self):
         """
@@ -184,7 +208,7 @@ class TestCliIAMUser:
         invalid_username = "Inv@lid-User"
         self.LOGGER.info(
             "Verifying iam user will not get created with invalid name")
-        resp = IAM_OBJ.create_iam_user(
+        resp = self.iam_obj.create_iam_user(
             user_name=invalid_username,
             password=self.iam_password,
             confirm_password=self.iam_password)
@@ -195,8 +219,7 @@ class TestCliIAMUser:
             "Verified that iam user was not created with invalid name")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
-    @pytest.mark.csm
-    @pytest.mark.csm_iamuser
+    @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10855")
     def test_872(self):
         """
@@ -205,7 +228,7 @@ class TestCliIAMUser:
         self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
         self.LOGGER.info(
             "Verifying that error will through with missing user name parameter")
-        resp = IAM_OBJ.create_iam_user(
+        resp = self.iam_obj.create_iam_user(
             user_name="",
             password=self.iam_password,
             confirm_password=self.iam_password)
@@ -216,9 +239,9 @@ class TestCliIAMUser:
             "Verified that error was displayed with missing user name parameter")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
-    @pytest.mark.csm
-    @pytest.mark.csm_iamuser
+    @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10856")
+
     def test_874(self, generate_random_string):
         """
         Initiating the test case to verify invalid IAM user password
@@ -227,7 +250,7 @@ class TestCliIAMUser:
         invalid_password = generate_random_string
         self.LOGGER.info(
             "Verifying that iam user will not create with invalid password")
-        resp = IAM_OBJ.create_iam_user(
+        resp = self.iam_obj.create_iam_user(
             user_name=self.user_name,
             password=invalid_password,
             confirm_password=invalid_password)
@@ -238,8 +261,7 @@ class TestCliIAMUser:
             "Verified that iam user is not created with invalid password")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
-    @pytest.mark.csm
-    @pytest.mark.csm_iamuser
+    @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10859")
     def test_6453(self):
         """
@@ -250,7 +272,7 @@ class TestCliIAMUser:
         mismatch_pwd = "Seagate@123"
         self.LOGGER.info(
             "Verifying that user is not created in case of mismatch password")
-        resp = IAM_OBJ.create_iam_user(
+        resp = self.iam_obj.create_iam_user(
             user_name=self.user_name,
             password=self.iam_password,
             confirm_password=mismatch_pwd)
@@ -260,8 +282,7 @@ class TestCliIAMUser:
             "Verified that user is not created in case of mismatch password")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
-    @pytest.mark.csm
-    @pytest.mark.csm_iamuser
+    @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10860")
     def test_876(self):
         """
@@ -270,7 +291,7 @@ class TestCliIAMUser:
         self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
         user_name = "invalid_user"
         self.LOGGER.info("Verifying delete non existing IAM user")
-        resp = IAM_OBJ.delete_iam_user(user_name=user_name)
+        resp = self.iam_obj.delete_iam_user(user_name=user_name)
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(
             resp[1],
@@ -279,8 +300,7 @@ class TestCliIAMUser:
             "Verified that delete non existing IAM user is failed")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
-    @pytest.mark.csm
-    @pytest.mark.csm_iamuser
+    @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10862")
     def test_1145(self):
         """
@@ -289,34 +309,33 @@ class TestCliIAMUser:
         self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
         user_name = "{0}{1}".format("iam_user", str(int(time.time())))
         self.LOGGER.info("Creating iam user with name %s", self.user_name)
-        resp = IAM_OBJ.create_iam_user(
+        resp = self.iam_obj.create_iam_user(
             user_name=self.user_name,
             password=self.iam_password,
             confirm_password=self.iam_password)
         assert_utils.assert_equals(resp[0], True, resp)
         self.LOGGER.info("Created iam user with name %s", self.user_name)
         self.LOGGER.info("Verifying iam user is created")
-        resp = IAM_OBJ.list_iam_user(output_format="json")[1]["iam_users"]
+        resp = self.iam_obj.list_iam_user(output_format="json")[1]["iam_users"]
         user_list = [user["user_name"]
                      for user in resp if "iam_user" in user["user_name"]]
         assert_utils.assert_list_item(user_list, user_name)
         self.LOGGER.info("Verified that iam user is created")
         self.LOGGER.info("Verifying iam user is not able to login cortxcli")
-        logout = IAM_OBJ.logout_cortx_cli()
+        logout = self.iam_obj.logout_cortx_cli()
         assert_utils.assert_equals(logout[0], True, logout)
-        login = IAM_OBJ.login_cortx_cli(
+        login = self.iam_obj.login_cortx_cli(
             username=self.user_name,
             password=self.iam_password)
         assert_utils.assert_equals(login[0], False, resp)
-        IAM_OBJ.login_cortx_cli(
-            username="cli_s3acc",
+        self.iam_obj.login_cortx_cli(
+            username=self.s3acc_name,
             password=self.acc_password)
         self.LOGGER.info(
             "Verified that iam user is not able to login cortxcli")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
-    @pytest.mark.csm
-    @pytest.mark.csm_iamuser
+    @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10863")
     def test_878(self):
         """
@@ -324,7 +343,7 @@ class TestCliIAMUser:
         """
         self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
         self.LOGGER.info("Creating iam user with name %s", self.user_name)
-        resp = IAM_OBJ.create_iam_user(
+        resp = self.iam_obj.create_iam_user(
             user_name=self.user_name,
             password=self.iam_password,
             confirm_password=self.iam_password)
@@ -333,28 +352,22 @@ class TestCliIAMUser:
         self.LOGGER.info(
             "Verifying show command is able to list user in all format(json,xml,table)")
         # show command with json format
-        resp = IAM_OBJ.list_iam_user(output_format="json")[1]["iam_users"]
+        resp = self.iam_obj.list_iam_user(output_format="json")[1]["iam_users"]
 
         user_list = [user["user_name"]
                      for user in resp if "iam_user" in user["user_name"]]
         assert_utils.assert_list_item(user_list, self.user_name)
 
         # show command with xml format
-        resp = IAM_OBJ.list_iam_user(output_format="xml")[1]
+        resp = self.iam_obj.list_iam_user(output_format="xml")[1]
         user_list = [each["iam_users"]["user_name"]
                      for each in resp if each.get("iam_users")]
-        assert_utils.assert_list_item(user_list, self.user_name)
-
-        # show command with table format
-        resp = IAM_OBJ.list_iam_user(output_format="table")
-        user_list = [each_user[1] for each_user in resp[1]]
         assert_utils.assert_list_item(user_list, self.user_name)
         self.LOGGER.info(
             "Verified show command is able to list user in all format(json,xml,table)")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
-    @pytest.mark.csm
-    @pytest.mark.csm_iamuser
+    @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10864")
     def test_1152(self):
         """
@@ -364,17 +377,16 @@ class TestCliIAMUser:
         self.LOGGER.info("Creating iam user with name %s", self.user_name)
         self.LOGGER.info(
             "Verifying user is logged out from cortxcli when he enters exit")
-        resp = IAM_OBJ.logout_cortx_cli()
+        resp = self.iam_obj.logout_cortx_cli()
         assert_utils.assert_equals(resp[0], True, resp)
         self.LOGGER.info(
             "Verified that user is logged out from csmcli when he enters exit")
-        IAM_OBJ.login_cortx_cli(
-            username="cli_s3acc",
+        self.iam_obj.login_cortx_cli(
+            username=self.s3acc_name,
             password=self.acc_password)
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
-    @pytest.mark.csm
-    @pytest.mark.csm_iamuser
+    @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10865")
     def test_1149(self, generate_random_string):
         """
@@ -384,14 +396,14 @@ class TestCliIAMUser:
         self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
         invalid_password = generate_random_string
         self.LOGGER.info("Creating iam user with name %s", self.user_name)
-        resp = IAM_OBJ.create_iam_user(
+        resp = self.iam_obj.create_iam_user(
             user_name=self.user_name,
             password=self.iam_password,
             confirm_password=self.iam_password)
         assert_utils.assert_equals(resp[0], True, resp)
         self.LOGGER.info("Created iam user with name %s", self.user_name)
         self.LOGGER.info("Verifying iam user is created")
-        resp = IAM_OBJ.list_iam_user(output_format="json")
+        resp = self.iam_obj.list_iam_user(output_format="json")
         assert_utils.assert_equals(resp[0], True, resp)
         resp = resp[1]["iam_users"]
         user_list = [user["user_name"]
@@ -400,23 +412,22 @@ class TestCliIAMUser:
         self.LOGGER.info("Verified that iam user is created")
         self.LOGGER.info(
             "Verifying that appropriate error should be returned when user enters invalid password")
-        resp = IAM_OBJ.logout_cortx_cli()
+        resp = self.iam_obj.logout_cortx_cli()
         assert_utils.assert_equals(resp[0], True, resp)
-        resp = IAM_OBJ.login_cortx_cli(
+        resp = self.iam_obj.login_cortx_cli(
             username=self.user_name,
             password=invalid_password)
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(
             resp[1], "Server authentication check failed")
-        IAM_OBJ.login_cortx_cli(
-            username="cli_s3acc",
+        self.iam_obj.login_cortx_cli(
+            username=self.s3acc_name,
             password=self.acc_password)
         self.LOGGER.info(
             "Verified that appropriate error should be returned when user enters invalid password")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
-    @pytest.mark.csm
-    @pytest.mark.csm_iamuser
+    @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10866")
     def test_1148(self):
         """
@@ -427,23 +438,22 @@ class TestCliIAMUser:
         invalid_user = "Invalid_user"
         self.LOGGER.info(
             "Verifying that appropriate error should be returned when user enters invalid username")
-        resp = IAM_OBJ.logout_cortx_cli()
-        assert_utils.assert_equals(resp[0], False, resp)
-        resp = IAM_OBJ.login_cortx_cli(
+        resp = self.iam_obj.logout_cortx_cli()
+        assert_utils.assert_equals(resp[0], True, resp)
+        resp = self.iam_obj.login_cortx_cli(
             username=invalid_user,
             password=self.iam_password)
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(
             resp[1], "Server authentication check failed")
-        IAM_OBJ.login_cortx_cli(
-            username="cli_s3acc",
+        self.iam_obj.login_cortx_cli(
+            username=self.s3acc_name,
             password=self.acc_password)
         self.LOGGER.info(
             "Verified that appropriate error should be returned when user enters invalid username")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
-    @pytest.mark.csm
-    @pytest.mark.csm_iamuser
+    @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10868")
     def test_1154(self):
         """
@@ -452,21 +462,20 @@ class TestCliIAMUser:
         """
         self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
         self.LOGGER.info("Sending keyboard interrupt signal to cli process ")
-        resp = NODE_HELPER_OBJ.pgrep(process="cortxcli")
+        resp = self.node_helper_obj.pgrep(process="cortxcli")
         assert_utils.assert_equals(resp[0], True, resp)
         cmd = "python3 -c 'import os; os.kill({0}, signal.SIGINT))'".format(
             int(resp[1][0].split()[0]))
-        resp = NODE_HELPER_OBJ.execute_cmd(cmd=cmd)
+        resp = self.node_helper_obj.execute_cmd(cmd=cmd)
         time.sleep(3)
-        resp = IAM_OBJ.login_cortx_cli(
-            username="cli_s3acc",
+        resp = self.iam_obj.login_cortx_cli(
+            username=self.s3acc_name,
             password=self.acc_password)
         self.LOGGER.info(
             "Keyboard interrupt signal has been sent to running process ")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
-    @pytest.mark.csm
-    @pytest.mark.csm_iamuser
+    @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10867")
     def test_1150(self):
         """
@@ -476,10 +485,10 @@ class TestCliIAMUser:
         self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
         self.LOGGER.info(
             "Verifying that appropriate message should be returned when user enters valid username")
-        resp = IAM_OBJ.logout_cortx_cli()
+        resp = self.iam_obj.logout_cortx_cli()
         assert_utils.assert_equals(resp[0], True, resp)
-        resp = IAM_OBJ.login_cortx_cli(
-            username="cli_s3acc",
+        resp = self.iam_obj.login_cortx_cli(
+            username=self.s3acc_name,
             password=self.acc_password)
         assert_utils.assert_equals(resp[0], True, resp)
         assert_utils.assert_exact_string(

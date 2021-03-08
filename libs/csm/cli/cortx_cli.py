@@ -59,15 +59,16 @@ class CortxCli(CortxCliClient):
             session_obj=session_obj,
             port=port)
 
-    def execute_cli_commands(self, cmd: str, time_out: int = 800) -> tuple:
+    def execute_cli_commands(self, cmd: str, time_out: int = 800, sleep_time: int = 6) -> tuple:
         """
         This function executes command on interactive shell on csm server and returns output
         :param str cmd: command to execute on shell
         :param int time_out: max time to wait for command execution output
+        :param int sleep_time: wait time for receiving data
         :return: output of executed command
         """
         try:
-            output = super().execute_cli_commands(cmd=cmd, time_out=time_out)
+            output = super().execute_cli_commands(cmd=cmd, time_out=time_out, sleep_time=sleep_time)
             if "error" in output.lower() or "exception" in output.lower():
                 return False, output
             return True, output

@@ -212,3 +212,4 @@ SUPPORT_BUNDLE_STATUS = "support_bundle status"
 # Linux System Commands
 CMD_MKDIR = "mkdir -p {}"
 CMD_TAR = "tar -zxvf {} -C {}"
+CMD_REMOVE_DIR = "rm -rf {}"

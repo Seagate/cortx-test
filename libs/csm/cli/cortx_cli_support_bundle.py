@@ -58,7 +58,7 @@ class CortxCliSupportBundle(CortxCli):
         LOGGER.info("Generating support bundle using cortxcli command")
         command = " ".join(
             [CMD_GENERATE_SUPPORT_BUNDLE, comment])
-        output = self.execute_cli_commands(cmd=command)[1]
+        output = self.execute_cli_commands(cmd=command, time_out=900, sleep_time=9)[1]
 
         if "error" in output.lower() or "exception" in output.lower():
             return False, output
@@ -134,7 +134,7 @@ class CortxCliSupportBundle(CortxCli):
         """
         LOGGER.info("Generating support bundle using cortxcli command")
         cmd = CMD_GENERATE_SUPPORT_BUNDLE_OS.format(comment)
-        output = self.execute_cli_commands(cmd=cmd)[1]
+        output = self.execute_cli_commands(cmd=cmd, time_out=900, sleep_time=9)[1]
 
         if "error" in output.lower() or "exception" in output.lower():
             return False, output
