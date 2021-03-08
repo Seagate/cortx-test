@@ -123,8 +123,8 @@ class TestAllUsers:
         self.log.info("Creating a bucket and putting an object into bucket")
         try:
             S3_TEST_OBJ.delete_bucket(bucket_name=self.bucket_name, force=True)
-        except Exception:
-            pass
+        except Exception as berr:
+            self.log.warning(berr)
         resp = S3_TEST_OBJ.create_bucket_put_object(
             self.bucket_name,
             self.obj_name,
