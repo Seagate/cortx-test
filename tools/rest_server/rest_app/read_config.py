@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Main file for REST API application."""
+# !/usr/bin/python
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -17,15 +17,23 @@
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
+#
+"""Read config file for database."""
 
-from flask import Flask
-from werkzeug.middleware.proxy_fix import ProxyFix
+import configparser
+import sys
 
-from rest_app import api
+config = configparser.ConfigParser()
+config.read('config.ini')
+try:
+    db_hostname = config["MongoDB"]["db_hostname"]
+    db_name = config["MongoDB"]["db_name"]
+    results_collection = config["MongoDB"]["results_collection"]
+    cmi_collection = config["MongoDB"]["cmi_collection"]
+    system_collection = config["MongoDB"]["system_info_collection"]
+    timing_collection = config["MongoDB"]["timing_collection"]
+except KeyError:
+    print("Could not start REST server. Please verify config.ini file")
+    sys.exit(1)
 
-app = Flask(__name__)
-app.wsgi_app = ProxyFix(app.wsgi_app)
-
-api.init_app(app)
-
-app.run(debug=False)
+mongodb_uri = "mongodb://{0}:{1}@{2}"
