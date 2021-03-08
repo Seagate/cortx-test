@@ -58,7 +58,7 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
     """Form a pytest command for execution."""
     env['TARGET'] = args.target
     build, build_type = args.build, args.build_type
-    tag = '-m ' + te_tag
+    #tag = '-m ' + te_tag
     run_type = ''
     is_distributed = ''
     try:
@@ -101,7 +101,7 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
         cmd_line = cmd_line + ["--target=" + args.target]
 
     if te_tag:
-       cmd_line = cmd_line + [tag]
+       cmd_line = cmd_line + [te_tag]
     read_metadata = "--readmetadata=" + str(True)
     cmd_line = cmd_line + [read_metadata]
     cmd_line = cmd_line + ['--build=' + build, '--build_type=' + build_type,
@@ -188,7 +188,6 @@ def trigger_unexecuted_tests(args, test_list):
             _env['pytest_run'] = 'distributed'
             run_pytest_cmd(args, te_tag=None, parallel_exe=args.parallel_exe,
                            env=_env, re_execution=True)
-
 
 def create_test_meta_data_file(args, test_list):
     """
@@ -331,6 +330,7 @@ def check_kafka_msg_trigger_test(args):
     Trigger tests specified in kafka message
     """
     consumer = kafka_consumer.get_consumer()
+    print(consumer)
     received_stop_signal = False
     lock_task = LockingServer()
     while not received_stop_signal:
@@ -340,17 +340,18 @@ def check_kafka_msg_trigger_test(args):
             if msg is None:
                 continue
             kafka_msg = msg.value()
+            print(kafka_msg)
             if kafka_msg is None:
                 continue
-            if kafka_msg.te_tickets == "STOP":
+            if kafka_msg.te_ticket == "STOP":
                 received_stop_signal = True
             else:
                 execution_done = False
                 while not execution_done:
-                    acquired_target = get_available_target(kafka_msg)
+                    #acquired_target = get_available_target(kafka_msg)
                     # execute te id on acquired target
                     # release lock on acquired target
-                    args.te_ticket = kafka_msg.te_tickets
+                    args.te_ticket = kafka_msg.te_ticket
                     args.parallel_exe = kafka_msg.parallel
                     args.build = kafka_msg.build
                     args.build_type = kafka_msg.build_type
@@ -360,7 +361,7 @@ def check_kafka_msg_trigger_test(args):
                     if kafka_msg.parallel:
                         trigger_unexecuted_tests(args, kafka_msg.test_list)
                     # Release lock on acquired target.
-                    lock_task.release_target_lock(acquired_target, acquired_target)
+                    #lock_task.release_target_lock(acquired_target, acquired_target)
                     execution_done = True
         except KeyboardInterrupt:
             break

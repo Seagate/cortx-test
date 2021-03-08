@@ -39,7 +39,8 @@ class Ticket:
     Ticket to be executed by test runner.
     """
 
-    def __init__(self, tag, parallel, test_set, te_tickets, targets, build):
+    def __init__(self, tag, parallel, test_set, te_ticket, targets, build,
+                 build_type, test_plan):
         """
         Constructs the object to be fed into Message bus.
         Args:
@@ -53,13 +54,16 @@ class Ticket:
         self.parallel = parallel
         # test set should not be serialized, see convert_ticket_to_dict()
         self.test_set = test_set
-        self.te_tickets = te_tickets
+        self.te_ticket = te_ticket
         self.targets = targets
         self.build = build
+        self.build_type = build_type
+        self.test_plan = test_plan
 
     def __str__(self):
         print(' '.join([self.tag, str(self.parallel), str(self.targets), str(self.build),
-                        str(self.te_tickets), str(self.test_set)]))
+                        str(self.te_ticket), str(self.test_set),
+                        str(self.build_type), str(self.test_plan)]))
 
 
 def convert_ticket_to_dict(ticket, ctx):
@@ -75,10 +79,12 @@ def convert_ticket_to_dict(ticket, ctx):
     """
     return dict(tag=ticket.tag,
                 test_set=ticket.test_set,
-                te_tickets=ticket.te_tickets,
+                te_ticket=ticket.te_ticket,
                 targets=ticket.targets,
                 build=ticket.build,
-                parallel=ticket.parallel)
+                parallel=ticket.parallel,
+                build_type=ticket.build_type,
+                test_plan=ticket.test_plan)
 
 
 def delivery_report(err, msg):
@@ -141,10 +147,9 @@ def server(*args: Any) -> None:
                 "type": "array",
                 "items": { "type": "string" }
             },
-            "te_tickets": {
+            "te_ticket": {
                 "description": "Test execution tickets",
-                "type": "array",
-                "items": { "type": "string" }
+                "type": "string"
             },
             "targets": {
                 "description": "Test execution tickets",
@@ -156,13 +161,22 @@ def server(*args: Any) -> None:
                 "type": "string",
                 "default": "000"
             },
+            "build_type": {
+                "description": "Build type string",
+                "type": "string"
+            },
+            "test_plan": {
+                "description": "Test plan ticket",
+                "type": "string"
+            },
             "parallel": {
                 "description": "Test execution can happen in parallel or not",
                 "type": "boolean"
             }
 
         },
-        "required": ["tag", "test_set", "te_tickets", "targets", "build", "parallel"]
+        "required": ["tag", "test_set", "te_ticket", "targets", "build", 
+        "build_type", "test_plan", "parallel"]
     }
     """
 
@@ -186,10 +200,11 @@ def server(*args: Any) -> None:
                 work_queue.task_done()
                 break
             test_set = list(work_item.get())
-            te_tickets = work_item.tickets
+            te_ticket = work_item.tickets
             ticket = Ticket(work_item.tag, work_item.parallel,
-                            test_set, te_tickets, str(work_item.targets),
-                            str(work_item.build))
+                            test_set, str(te_ticket), str(work_item.targets),
+                            str(work_item.build), work_item.build_type,
+                            work_item.test_plan)
             produce(producer, topic=topic, uuid=str(uuid4()), value=ticket,
                     on_delivery=delivery_report)
             work_item.task_done()
