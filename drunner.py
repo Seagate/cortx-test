@@ -68,7 +68,7 @@ def parse_args(argv):
     """Argument parser for Jenkins supplied args."""
 
     parser = argparse.ArgumentParser(description='DTR')
-    parser.add_argument("-te", "--tickets", nargs='+', type=str,
+    parser.add_argument("-te", "--tickets", type=str,
                         help="Jira xray test execution ticket ids")
     parser.add_argument("-tp", "--test_plan", type=str,
                         help="jira xray test plan id")
@@ -139,6 +139,8 @@ def run(opts: dict) -> None:
     tickets = opts.tickets
     targets = opts.targets
     build = opts.build
+    build_type = opts.build_type
+    test_plan = opts.test_plan
     topic = params.TEST_EXEC_TOPIC
     # collect the test universe
     run_pytest_collect_only_cmd()
@@ -161,43 +163,42 @@ def run(opts: dict) -> None:
                     rev_tag_map, skip_marks, skip_test,
                     test_map)
 
-    for ticket in tickets:
-        # get the te meta and create an execution plan
-        test_list, ignore = get_te_tickets_data(ticket)
-        print(f"Ignoring TE tag field {ignore}")
-        # group test_list into narrow feature groups
-        # with each feature group create parallel and non parallel groups
-        for test in test_list:
-            if test in skip_test:
+    # get the te meta and create an execution plan
+    test_list, ignore = get_te_tickets_data(tickets)
+    print(f"Ignoring TE tag field {ignore}")
+    # group test_list into narrow feature groups
+    # with each feature group create parallel and non parallel groups
+    for test in test_list:
+        if test in skip_test:
+            continue
+        if test in test_map:
+            tmark, nid, _tags = test_map.get(test)
+            if not tmark:
+                LOGGER.error("Test %s found with no marker. Skipping it in execution.", test)
                 continue
-            if test in test_map:
-                tmark, nid, _tags = test_map.get(test)
-                if not tmark:
-                    LOGGER.error("Test %s found with no marker. Skipping it in execution.", test)
-                    continue
-            else:
-                LOGGER.error("Unknown Test %s found Continue...", test)
-                continue
-            tdict = rev_tag_map.get(tmark)
-            if not tdict:
-                LOGGER.error("Reverse test map entry %s is empty for %s", tmark, test)
-                continue
-            p_set, s_set = tdict['parallel'], tdict['sequential']
+        else:
+            LOGGER.error("Unknown Test %s found Continue...", test)
+            continue
+        tdict = rev_tag_map.get(tmark)
+        if not tdict:
+            LOGGER.error("Reverse test map entry %s is empty for %s", tmark, test)
+            continue
+        p_set, s_set = tdict['parallel'], tdict['sequential']
 
-            if tmark not in selected_tag_map:
-                p_s = set()
-                s_s = set()
-                if test in p_set:
-                    p_s.add(test)
-                else:
-                    s_s.add(test)
-                selected_tag_map.update({tmark: [p_s, s_s]})
+        if tmark not in selected_tag_map:
+            p_s = set()
+            s_s = set()
+            if test in p_set:
+                p_s.add(test)
             else:
-                t_l = selected_tag_map.get(tmark)
-                if test in p_set:
-                    t_l[0].add(test)
-                else:
-                    t_l[1].add(test)
+                s_s.add(test)
+            selected_tag_map.update({tmark: [p_s, s_s]})
+        else:
+            t_l = selected_tag_map.get(tmark)
+            if test in p_set:
+                t_l[0].add(test)
+            else:
+                t_l[1].add(test)
 
     work_queue = worker.WorkQ(producer.produce, 1024)
     finish = False  # Use finish to exit loop
@@ -217,15 +218,19 @@ def run(opts: dict) -> None:
         witem.targets = targets
         witem.tickets = tickets
         witem.build = build
+        witem.build_type = build_type
+        witem.test_plan = test_plan
         work_queue.put(witem)
         for set_item in sequential_set:
             w_item = Queue()
-            w_item.put(set_item)
+            w_item.put([set_item])
             w_item.tag = tg
             w_item.parallel = False
             w_item.targets = targets
             w_item.tickets = tickets
             w_item.build = build
+            w_item.build_type = build_type
+            w_item.test_plan = test_plan
             work_queue.put(w_item)
     work_queue.put(None)  # poison
     work_queue.join()

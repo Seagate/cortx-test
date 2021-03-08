@@ -52,7 +52,7 @@ JIRA_DIST_TEST_LIST = 'dist_test_lists.csv'
 
 SCHEMA_REGISTRY = "http://cftic2.pun.seagate.com:8081"  # Schema Registry (http(s)://host[:port]
 BOOTSTRAP_SERVERS = "cftic2.pun.seagate.com:9092"  # cftic2.pun.seagate.com:9092 Bootstrap broker(s) (host[:port])
-TEST_EXEC_TOPIC = 'TutorialTopic3'  # 'cortx-test-exec-topic'
+TEST_EXEC_TOPIC = 'TutorialTopic7'  # 'cortx-test-exec-topic'
 TEST_ABORT_TOPIC = 'cortx-test-abort-topic'  # Read by all semantics
 
 NFS_SERVER_DIR = "cftic2.pun.seagate.com:/cftshare"
