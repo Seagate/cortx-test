@@ -1,0 +1,52 @@
+acc_user_mng:
+  account_name: "seagateaccount"
+  email_id: "@seagate.com"
+  ldap_user: "sgiamadmin"
+  ldap_password: "ldapadmin"
+  password: "seagate"
+  password_reset: False
+  user_name: "seagate_user"
+  test_file_path: "/home/testfile"
+iam_user_login:
+  user_name_prefix: "iamuser"
+test_2420:
+  user_name: "iamuser2420"
+test_2421:
+  user_name: "iamuser2421"
+test_2422:
+  user_name: "iamuser2422"
+  user_name_suffix: "_{}"
+  password: "seagate"
+  password_reset: True
+  no_of_users: 100
+test_2419:
+  user_name: "iamuser2419{}"
+  password: "seagate"
+  password_reset: True
+  new_password: "calsoft"
+  new_user_name: "testuser2419"
+test_2425:
+  user_name: "iamuser2425"
+  password: "seagate"
+  password_reset: True
+test_2426:
+  user_name: "iamuser2426"
+  password: "seagate"
+  password_reset: True
+test_2424:
+  user_name: "iamuser2424"
+  password: "seagate"
+  password_reset: True
+test_2418:
+  user_name: "iamuser2418{}"
+test_2423:
+  err_message: "EntityAlreadyExists"
+test_2427:
+  status: "Active"
+test_2428:
+  status: "Inactive"
+test_2429:
+  user_name: "iamuser2429"
+  password: "seagate"
+  password_reset: True
+  accesskey_count: 2
