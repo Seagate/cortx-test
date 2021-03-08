@@ -37,7 +37,7 @@ from commons.errorcodes import error_handler, S3_CLIENT_ERROR
 from commons.utils.config_utils import read_yaml
 from commons.utils.system_utils import execute_cmd, create_file, remove_file
 from commons.utils.assert_utils import assert_true, assert_in, assert_equal
-from libs.s3 import s3_test_lib, iam_test_lib
+from libs.s3 import s3_test_lib
 from libs.s3 import S3H_OBJ, ACCESS_KEY, SECRET_KEY
 
 S3_TEST_OBJ = s3_test_lib.S3TestLib()
