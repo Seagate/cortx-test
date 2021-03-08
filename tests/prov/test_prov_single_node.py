@@ -26,11 +26,9 @@ import os
 import time
 import logging
 import pytest
-from commons.utils import system_utils as sys_utils
-from commons.helpers.s3_helper import S3Helper
+from commons.utils import  config_utils as conf_utils
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
-from commons import constants as common_cons
 from commons import commands as common_cmds
 from config import CMN_CFG, PROV_CFG
 from commons.ct_fail_on import CTFailOn
@@ -133,13 +131,17 @@ class TestProvSingleNode:
 
         LOGGER.info("Create config.ini file.")
         file = open(test_cfg["file_name"], "w")
-        file.writelines(test_cfg["file_lines"].format(self.host))
+        file.writelines(test_cfg["file_lines"])
         file.close()
+        conf_utils.update_config_ini(path=test_cfg["file_name"], section="srvnode-1",
+                                     key="hostname", value=self.host)
         self.nd_obj.copy_file_to_remote(test_cfg["file_name"], test_cfg["file_name"])
         LOGGER.info("Created config.ini file.")
 
         LOGGER.info("Start the deployment.")
-        cmd = common_cmds.DEPLOY_SINGLE_NODE.format(self.host, self.build_path)
+        cmd = common_cmds.SET_PASS.format(self.passwd)
+        self.nd_obj.execute_cmd(cmd)
+        cmd = common_cmds.DEPLOY_SINGLE_NODE.format(self.host, test_cfg["file_name"], self.build_path)
         resp = self.nd_obj.execute_cmd(cmd, read_lines=True)
         for line in resp:
             assert test_cfg["deploy_done"] not in line, "Deployment is not successful."

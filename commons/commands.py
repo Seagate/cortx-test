@@ -226,5 +226,6 @@ YUM_CLEAN = "yum clean all"
 RM_YUM = "rm -rf /var/cache/yum/"
 DEPLOY_SINGLE_NODE = "provisioner auto_deploy_vm srvnode-1:{0} " \
                      "--logfile --logfile-filename /var/log/seagate/provisioner/setup.log " \
-                     "--source rpm --config-path ~/config.ini --dist-type bundle " \
-                     "--target-build {1}"
+                     "--source rpm --config-path {1} --dist-type bundle " \
+                     "--target-build {2}"
+SET_PASS = "export SSHPASS=\"{}\""

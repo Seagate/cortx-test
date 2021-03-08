@@ -4,7 +4,7 @@ prereq:
   kernel: "3.10.0-1127.el7.x86_64"
 deploy:
   file_name: "/root/config.ini"
-  file_lines: ["[storage]\n", "type=other\n\n", "[srvnode-1]\n", "hostname={}\n",
+  file_lines: ["[storage]\n", "type=other\n\n", "[srvnode-1]\n", "hostname=host1.localdomain\n",
                "network.data.private_ip=None\n", "network.data.public_interfaces=eth1,eth2\n",
                "network.data.private_interfaces=eth3,eth4\n", "network.mgmt.interfaces=eth0\n",
                "bmc.user=None\n", "bmc.secret=None\n"]
