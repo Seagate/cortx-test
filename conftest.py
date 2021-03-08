@@ -48,7 +48,7 @@ from commons import report_client
 from core.runner import LRUCache
 from core.runner import get_jira_credential
 from core.runner import get_db_credential
-from config import params
+from commons import params
 
 # commenting this until db_user code is integrated from config import CMN_CFG
 

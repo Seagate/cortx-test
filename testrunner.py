@@ -7,7 +7,9 @@ from core import runner
 from core import kafka_consumer
 from core.locking_server import LockingServer
 from commons.utils.jira_utils import JiraTask
-from config import params
+from commons import configmanager
+from commons.utils import config_utils
+from commons import params
 
 
 def parse_args():
@@ -54,6 +56,7 @@ def str_to_bool(val):
 
 def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution=False):
     """Form a pytest command for execution."""
+    env['TARGET'] = args.target
     build, build_type = args.build, args.build_type
     tag = '-m ' + te_tag
     run_type = ''
@@ -363,6 +366,11 @@ def check_kafka_msg_trigger_test(args):
             break
     consumer.close()
 
+def get_setup_details():
+    if os.path.exists(params.SETUPS_FPATH):
+        os.remove(params.SETUPS_FPATH)
+    setups = configmanager.get_config_db(setup_query = {})
+    config_utils.create_content_json(params.SETUPS_FPATH, setups)
 
 def main(args):
     """Main Entry function using argument parser to parse options and forming pyttest command.
@@ -381,5 +389,6 @@ def main(args):
 
 
 if __name__ == '__main__':
+    get_setup_details()
     opts = parse_args()
     main(opts)

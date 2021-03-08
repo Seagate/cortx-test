@@ -23,7 +23,7 @@ class RestClient:
                          "patch": requests.patch, "delete": requests.delete,
                          "put": requests.put}
         self._base_url = "{}:{}".format(
-            self._config["ip"], str(self._config["port"]))
+            self._config["mgmt_vip"], str(self._config["port"]))
         self._json_file_path = self._config[
             "jsonfile"] if 'jsonfile' in self._config else const.JOSN_FILE
 
