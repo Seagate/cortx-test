@@ -210,7 +210,8 @@ def develop_execution_plan(rev_tag_map, selected_tag_map, skip_test, test_map, t
             if test in test_map:
                 tmark, nid, _tags = test_map.get(test)
                 if not tmark:
-                    LOGGER.error("Test %s found with no marker. Skipping it in execution.", test)
+                    LOGGER.error("Test %s having %s found with no marker."
+                                 " Skipping it in execution.", test, nid)
                     continue
             else:
                 LOGGER.error("Unknown Test %s found Continue...", test)
@@ -294,7 +295,7 @@ def update_rev_tag_map(mark, parallel, rev_tag_map, tid):
 def create_log_dir_if_not_exists():
     """
     Create log dir if not exists in main entry.
-    :return:
+    :return: Path created dir
     """
     log_home = os.path.join(os.getcwd(), params.LOG_DIR_NAME)
     if not os.path.exists(log_home):

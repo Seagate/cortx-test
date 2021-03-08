@@ -22,7 +22,6 @@
 """SerializingProducer using JSON. A ticket is serialized using JSONSerializer"""
 import argparse
 import logging
-import json
 from typing import Any
 from uuid import uuid4
 from confluent_kafka import SerializingProducer
