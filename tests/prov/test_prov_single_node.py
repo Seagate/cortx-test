@@ -22,7 +22,6 @@
 Prov test file for all the Prov tests scenarios for single node VM.
 """
 
-import os
 import time
 import logging
 import pytest
@@ -63,13 +62,11 @@ class TestProvSingleNode:
         """
         Setup operations for each test.
         """
-        pass
 
     def teardown_method(self):
         """
         Teardown operations after each test.
         """
-        pass
 
     @CTFailOn(error_handler)
     @pytest.mark.prov
@@ -139,8 +136,6 @@ class TestProvSingleNode:
         LOGGER.info("Created config.ini file.")
 
         LOGGER.info("Start the deployment.")
-        cmd = common_cmds.SET_PASS.format(self.passwd)
-        self.nd_obj.execute_cmd(cmd)
         cmd = common_cmds.DEPLOY_SINGLE_NODE.format(self.passwd, self.host, test_cfg["file_name"], self.build_path)
         resp = self.nd_obj.execute_cmd(cmd, read_lines=True)
         for line in resp:
