@@ -1,3 +1,23 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
 """Test library for audit logs."""
 import re
 import tarfile
@@ -7,10 +27,10 @@ import shutil
 import commons.errorcodes as err
 from commons.exceptions import CTException
 from commons.constants import Rest as const
-from libs.csm.rest.csm_rest_test_lib import RestTestLib as Base
+from libs.csm.rest.csm_rest_test_lib import RestTestLib
 
 
-class RestAuditLogs(Base):
+class RestAuditLogs(RestTestLib):
     """RestAuditLogs contains all the Rest Api calls for audit logs operations"""
 
     def __init__(self, component_csm= "csm", component_s3= "s3"):
@@ -19,7 +39,7 @@ class RestAuditLogs(Base):
         self.component_s3 = component_s3
         self.invalid_component = "invalid"
 
-    @Base.authenticate_and_login
+    @RestTestLib.authenticate_and_login
     def audit_logs_csm_show(self, params, invalid_component=False):
         """
         This method will show csm audit logs
@@ -128,7 +148,7 @@ class RestAuditLogs(Base):
                 err.CSM_REST_VERIFICATION_FAILED,
                 error.args[0]) from error
 
-    @Base.authenticate_and_login
+    @RestTestLib.authenticate_and_login
     def audit_logs_csm_download(self, params, invalid_component=False):
         """
         This method will download csm audit logs
@@ -214,7 +234,7 @@ class RestAuditLogs(Base):
                 err.CSM_REST_VERIFICATION_FAILED,
                 error.args[0]) from error
 
-    @Base.authenticate_and_login
+    @RestTestLib.authenticate_and_login
     def audit_logs_s3_show(self, params):
         """
         This method will show s3 audit logs
@@ -488,7 +508,7 @@ class RestAuditLogs(Base):
                 err.CSM_REST_VERIFICATION_FAILED,
                 error.args[0]) from error
 
-    @Base.authenticate_and_login
+    @RestTestLib.authenticate_and_login
     def audit_logs_s3_download(self, params):
         """
         This method will download s3 audit logs
