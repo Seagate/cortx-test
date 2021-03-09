@@ -10,7 +10,7 @@ import pytest
 
 from libs.s3 import S3H_OBJ, CM_CFG
 from commons.helpers.s3_helper import S3Helper
-
+from config import S3_CFG
 
 class TestS3helper:
     """Test S3 helper class."""
@@ -28,17 +28,17 @@ class TestS3helper:
         cls.log.info("Secret key: %s", cls.secret_access_key)
         cls.slapd_service = "slapd"
         cls.log.info("slapd_service: %s", cls.slapd_service)
-        cls.s3cfg_path = CM_CFG["s3cfg_path"]
+        cls.s3cfg_path = S3_CFG["s3cfg_path"]
         cls.s3cfg_path_bk = f"{cls.s3cfg_path}.bk"
         cls.log.info("s3cfg_path: %s", cls.s3cfg_path)
         if os.path.isfile(cls.s3cfg_path):
             os.rename(cls.s3cfg_path, cls.s3cfg_path_bk)
-        cls.s3fs_path = CM_CFG["s3fs_path"]
+        cls.s3fs_path = S3_CFG["s3fs_path"]
         cls.s3fs_path_bk = f"{cls.s3fs_path}.bk"
         cls.log.info("s3fs_path: %s", cls.s3fs_path)
         if os.path.isfile(cls.s3fs_path):
             os.rename(cls.s3fs_path, cls.s3cfg_path_bk)
-        cls.minio_path = CM_CFG["minio_path"]
+        cls.minio_path = S3_CFG["minio_path"]
         cls.minio_path_bk = f"{cls.minio_path}.bk"
         cls.log.info("minio_path: %s", cls.minio_path)
         if os.path.exists(cls.minio_path):
