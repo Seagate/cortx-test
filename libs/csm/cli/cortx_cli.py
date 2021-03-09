@@ -37,9 +37,9 @@ class CortxCli(CortxCliClient):
 
     def __init__(
             self,
-            host: str = CMN_CFG[1]["csm"]["mgmt_vip"],
-            username: str = CMN_CFG[1]["csm"]["admin_user"],
-            password: str = CMN_CFG[1]["csm"]["admin_pass"],
+            host: str = CMN_CFG["csm"]["mgmt_vip"],
+            username: str = CMN_CFG["csm"]["admin_user"],
+            password: str = CMN_CFG["csm"]["admin_pass"],
             **kwargs):
         """
         This method initializes members of CortxCli and its parent class
@@ -59,15 +59,16 @@ class CortxCli(CortxCliClient):
             session_obj=session_obj,
             port=port)
 
-    def execute_cli_commands(self, cmd: str, time_out: int = 300) -> tuple:
+    def execute_cli_commands(self, cmd: str, time_out: int = 800, sleep_time: int = 6) -> tuple:
         """
         This function executes command on interactive shell on csm server and returns output
         :param str cmd: command to execute on shell
         :param int time_out: max time to wait for command execution output
+        :param int sleep_time: wait time for receiving data
         :return: output of executed command
         """
         try:
-            output = super().execute_cli_commands(cmd=cmd, time_out=time_out)
+            output = super().execute_cli_commands(cmd=cmd, time_out=time_out, sleep_time=sleep_time)
             if "error" in output.lower() or "exception" in output.lower():
                 return False, output
             return True, output
@@ -80,18 +81,19 @@ class CortxCli(CortxCliClient):
 
     def login_cortx_cli(
             self,
-            username: str = CMN_CFG[1]["csm"]["admin_user"],
-            password: str = CMN_CFG[1]["csm"]["admin_pass"],
+            username: str = CMN_CFG["csm"]["admin_user"],
+            password: str = CMN_CFG["csm"]["admin_pass"],
             **kwargs) -> tuple:
         """
         This function will be used to login to CORTX CLI with given credentials
         :param str username: User name to login
         :param str password: User password
         :keyword username_param: username to pass as argument
+        :keyword login_cortxcli: command for login to CLI
         :return: True/False and output
         """
-        login_cortxcli = commands.CMD_LOGIN_CORTXCLI
         username_param = kwargs.get("username_param", None)
+        login_cortxcli = kwargs.get("cmd", commands.CMD_LOGIN_CORTXCLI)
         if username_param:
             login_cortxcli = " ".join(
                 [login_cortxcli, "--username", username_param])

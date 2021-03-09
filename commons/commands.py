@@ -205,9 +205,14 @@ CMD_DELETE_BUCKET = "s3buckets delete {}"
 CREATE_IAM_USER = "s3iamusers create"
 LIST_IAM_USER = "s3iamusers show"
 DELETE_IAM_USER = "s3iamusers delete"
+CMD_GENERATE_SUPPORT_BUNDLE = "support_bundle generate"
+CMD_GENERATE_SUPPORT_BUNDLE_OS = "support_bundle generate {0} --os"
+CMD_SUPPORT_BUNDLE_STATUS = "support_bundle status"
 
 # Linux System Commands
 CMD_MKDIR = "mkdir -p {}"
+CMD_TAR = "tar -zxvf {} -C {}"
+CMD_REMOVE_DIR = "rm -rf {}"
 
 # S3 awscli  Commands
 CMD_AWSCLI_CREATE_BUCKET = "aws s3 mb s3://{0}"
@@ -229,3 +234,4 @@ CMD_AWSCLI_LIST_PARTS = "aws s3api list-parts --bucket {0} --key {1} --upload-id
 CMD_AWSCLI_COMPLETE_MULTIPART = "aws s3api complete-multipart-upload --multipart-upload file://{0} " \
                                 "--bucket {1} --key {2} --upload-id {3}"
 CMD_AWSCLI_DOWNLOAD_OBJECT = "aws s3 cp s3://{0}/{1} {2}"
+
