@@ -81,7 +81,7 @@ def assert_list_items(actual, matcher):
 
 def assert_list_item(actual, matcher):
     """assert_list_item."""
-    assert_that(actual, has_item(*matcher))
+    assert_that(actual, has_item(matcher))
 
 
 def assert_and(actual, matcher):
@@ -230,3 +230,7 @@ def assert_equal(actual, matcher, reason):
 def assert_not_equal(actual, matcher, reason):
     """AssertNotEqual Implementation."""
     assert actual != matcher, reason
+
+def assert_is_not_none(actual,reason=""):
+    """ AssertIsNotNone Implementation."""
+    assert actual != None, reason
