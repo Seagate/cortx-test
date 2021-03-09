@@ -29,7 +29,10 @@ Click LicenseCancle Image
 Validate ELUA Success
     [Documentation]  This keyword is used to validate that Preboarding page is accessable.
     sleep   1s
+    Capture Page Screenshot  preboarding.png
     Click Accept Button
+    sleep   1s
+    Capture Page Screenshot  eula.png
     Page Should Contain Button  ${license_cancle_button_id}
     Page Should Contain Image  ${license_cancle_image_id}
     Page Should Contain Button  ${license_accept_button_id}
@@ -44,7 +47,10 @@ Validate ELUA Success
     Page Should Contain Element  ${license_data_id}
     Click LicenseCancle Image
     Click Accept Button
+    sleep   1s
     Click License Button
+    sleep   1s
+    Capture Page Screenshot  admin_config.png
 
 Preboarding
     [Documentation]  This keyword is used to login to CSM GUI.
