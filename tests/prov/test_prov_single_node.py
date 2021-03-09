@@ -48,7 +48,6 @@ class TestProvSingleNode:
         """
         LOGGER.info("STARTED: Setup Module operations")
         cls.host = input('Specify hostname fqdn:\n')
-        #cls.host = hostname
         cls.build_path = input('Specify the build url:\n')
         cls.uname = CMN_CFG["username"]
         cls.passwd = CMN_CFG["password"]
@@ -89,14 +88,14 @@ class TestProvSingleNode:
         assert int(count[0]) >= test_cfg["count"], "Need at least 2 disks for deployment"
 
         LOGGER.info("Checking OS release version")
-        cmd = common_cmds.OS_REL_CMD
+        cmd = common_cmds.CMD_OS_REL
         resp = self.nd_obj.execute_cmd(cmd, read_lines=True)
         resp = resp[0].strip()
         LOGGER.info("os rel: {}".format(resp))
         assert resp == test_cfg["os_release"], "OS release is different than expected."
 
         LOGGER.info("Checking kernel version")
-        cmd = common_cmds.KRNL_VER_CMD
+        cmd = common_cmds.CMD_KRNL_VER
         resp = self.nd_obj.execute_cmd(cmd, read_lines=True)
         resp = resp[0].strip()
         LOGGER.info("kernel: {}".format(resp))
@@ -106,23 +105,23 @@ class TestProvSingleNode:
         test_cfg = PROV_CFG["deploy"]
 
         LOGGER.info("Setting up the environment:")
-        cmd = common_cmds.YUM_UTILS
+        cmd = common_cmds.CMD_YUM_UTILS
         self.nd_obj.execute_cmd(cmd)
-        cmd = common_cmds.CONFIG_MGR.format(self.build_path)
+        cmd = common_cmds.CMD_CONFIG_MGR.format(self.build_path)
         self.nd_obj.execute_cmd(cmd)
-        cmd = common_cmds.INSTALL_SALT
+        cmd = common_cmds.CMD_INSTALL_SALT
         self.nd_obj.execute_cmd(cmd)
-        cmd = common_cmds.RM_REPO
+        cmd = common_cmds.CMD_RM_REPO
         self.nd_obj.execute_cmd(cmd)
-        cmd = common_cmds.CONFIG_MGR1.format(self.build_path)
+        cmd = common_cmds.CMD_CONFIG_MGR1.format(self.build_path)
         self.nd_obj.execute_cmd(cmd)
-        cmd = common_cmds.PRVSNR
+        cmd = common_cmds.CMD_PRVSNR
         self.nd_obj.execute_cmd(cmd)
-        cmd = common_cmds.RM_REPO1
+        cmd = common_cmds.CMD_RM_REPO1
         self.nd_obj.execute_cmd(cmd)
-        cmd = common_cmds.YUM_CLEAN
+        cmd = common_cmds.CMD_YUM_CLEAN
         self.nd_obj.execute_cmd(cmd)
-        cmd = common_cmds.RM_YUM
+        cmd = common_cmds.CMD_RM_YUM
         self.nd_obj.execute_cmd(cmd)
         LOGGER.info("All the prerequisites installed.")
 
@@ -136,11 +135,11 @@ class TestProvSingleNode:
         LOGGER.info("Created config.ini file.")
 
         LOGGER.info("Start the deployment.")
-        cmd = common_cmds.DEPLOY_SINGLE_NODE.format(self.passwd, self.host, test_cfg["file_name"], self.build_path)
+        cmd = common_cmds.CMD_DEPLOY_SINGLE_NODE.format(self.passwd, self.host, test_cfg["file_name"], self.build_path)
         resp = self.nd_obj.execute_cmd(cmd, read_lines=True)
         LOGGER.info("Deployment process output: {}".format(resp))
         value = False
-        cmd = common_cmds.RD_LOG.format(test_cfg["setup_path"])
+        cmd = common_cmds.CMD_RD_LOG.format(test_cfg["setup_path"])
         resp = self.nd_obj.execute_cmd(cmd, read_lines=True)
         for line in resp:
             if test_cfg["done"] in line or test_cfg["deploy_done"] in line:
@@ -150,7 +149,7 @@ class TestProvSingleNode:
 
         LOGGER.info("Start the cluster.")
         time.sleep(test_cfg["sleep_time"])
-        cmd = common_cmds.START_CLSTR
+        cmd = common_cmds.CMD_START_CLSTR
         self.nd_obj.execute_cmd(cmd)
         time.sleep(test_cfg["sleep_time"])
 
