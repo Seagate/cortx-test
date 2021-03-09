@@ -49,7 +49,7 @@ def gen_tab_headers(n_clicks, branch, build_no):
     product_heading = "Product : Lyve Rack 1"
     build_heading = "Build : " + str(build_no)
     date_output = r1Api.find({'build': build_no, 'deleted': False}).sort(
-                            [("dateOfExecution", 1)]).limit(1)
+        [("dateOfExecution", 1)]).limit(1)
     date_str = date_output[0]['dateOfExecution'].split("T")[0] + date_output[0][
                                                                      'dateOfExecution'][19::]
     date = "Date : " + str(date_str)
