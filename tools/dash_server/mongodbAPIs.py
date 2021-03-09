@@ -1,16 +1,14 @@
 from pymongo import MongoClient
+from pymongo.errors import PyMongoError
+import configparser
 
 # A MongoDb instance can have multiple databases in it.
 # Each database can have multiple collections(tables) in it.
 # Each collection can have multiple documents(row) in it.
-
-readHostURI = "mongodb://dataread:seagate%40123@cftic1.pun.seagate.com:27017," \
-              "cftic2.pun.seagate.com:27017,apollojenkins.pun.seagate.com:27017" \
-              "/?authSource=cft_test_results&replicaSet=rs0"
-
-writeHostURI = "mongodb://datawrite:seagate%40123@cftic1.pun.seagate.com:27017," \
-               "cftic2.pun.seagate.com:27017,apollojenkins.pun.seagate.com:27017" \
-               "/?authSource=cft_test_results&replicaSet=rs0"
+config = configparser.ConfigParser()
+config.read('config.ini')
+writeHostURI = config["MONGODB_URI"]["writeHostURI"]
+readHostURI = config["MONGODB_URI"]["readHostURI"]
 
 
 def add_one_to_database(data):
@@ -28,13 +26,13 @@ def add_one_to_database(data):
         tests = db.results  # Connect to results collection in cft_test_results database
         try:
             tests.insert_one(data)
-        except Exception as e:
-            print("Unable to insert a document into database. Observed following exception:")
-            print(e)
+        except PyMongoError as mongo_error:
+            print("Unable to insert documents into database. Observed following exception:")
+            print(mongo_error)
             return False
         else:
             print("Document added into database")
-            return True
+        return True
 
 
 def add_multiple_to_database(data):
@@ -52,9 +50,9 @@ def add_multiple_to_database(data):
         tests = db.results  # Connect to results collection in cft_test_results database
         try:
             tests.insert_many(data)
-        except Exception as e:
+        except PyMongoError as mongo_error:
             print("Unable to insert documents into database. Observed following exception:")
-            print(e)
+            print(mongo_error)
             return False
         else:
             print("Documents added into database")
@@ -78,9 +76,9 @@ def find_and_update_one(db_filter, update):
         tests = db.results
         try:
             tests.find_one_and_update(db_filter, {"$set": update})
-        except Exception as e:
+        except PyMongoError as mongo_error:
             print("Unable to find and update document into database. Observed following exception:")
-            print(e)
+            print(mongo_error)
             return False
         else:
             print("Document updated in database")
@@ -102,9 +100,9 @@ def delete_one(db_filter):
         tests = db.results
         try:
             tests.delete_one(db_filter)
-        except Exception as e:
+        except PyMongoError as mongo_error:
             print("Unable to delete a document from database. Observed following exception:")
-            print(e)
+            print(mongo_error)
             return False
         else:
             print("Document deleted from database")
@@ -126,9 +124,9 @@ def delete_many(db_filter):
         tests = db.results
         try:
             tests.delete_many(db_filter)
-        except Exception as e:
+        except PyMongoError as mongo_error:
             print("Unable to delete documents from database. Observed following exception:")
-            print(e)
+            print(mongo_error)
             return False
         else:
             print("Documents deleted from database")
@@ -151,9 +149,9 @@ def find(db_filter):
         result = None
         try:
             result = tests.find(db_filter)
-        except Exception as e:
+        except PyMongoError as mongo_error:
             print("Unable to search documents from database. Observed following exception:")
-            print(e)
+            print(mongo_error)
             return False
         else:
             print("Documents search complete")
@@ -176,9 +174,9 @@ def count_documents(db_filter):
         result = None
         try:
             result = tests.count_documents(db_filter)
-        except Exception as e:
+        except PyMongoError as mongo_error:
             print("Unable to search documents from database. Observed following exception:")
-            print(e)
+            print(mongo_error)
             return False
         else:
             print("Documents count complete")
@@ -202,9 +200,9 @@ def find_distinct(entry, db_filter):
         result = None
         try:
             result = tests.distinct(entry, db_filter)
-        except Exception as e:
+        except PyMongoError as mongo_error:
             print("Unable to search documents from database. Observed following exception:")
-            print(e)
+            print(mongo_error)
             return False
         else:
             print("Distinct documents retrieved")
