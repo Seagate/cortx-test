@@ -55,11 +55,11 @@ ras_sspl_alert:
   csm_alert_gen_delay: 60
   default_mem_usage: 80
   start_rmq: True
-  selinux_key: "selinux"
+  selinux_key: "SELINUX"
   selinux_disabled: "disabled"
-  selinux_enforced: "enforced"
+  selinux_enforced: "enforcing"
   local_selinux_path: "selinux_config"
-  reboot_delay: 600
+  reboot_delay: 720
   one_min_delay: 60
   disk_clean_time: 120
 
