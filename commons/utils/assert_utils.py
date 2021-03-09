@@ -202,34 +202,34 @@ def compare(*argv, **kwargs):
             assert_list_equal(argv[0], argv[1])
 
 
-def assert_false(matcher, reason):
+def assert_false(matcher, reason=""):
     """AssertEqual Implementation."""
-    assert not matcher, reason
+    assert not matcher, reason if reason else matcher
 
 
-def assert_true(matcher, reason):
+def assert_true(matcher, reason=""):
     """AssertTrue Implementation."""
-    assert matcher, reason
+    assert matcher, reason if reason else matcher
 
 
-def assert_in(actual, matcher, reason):
+def assert_in(actual, matcher, reason=""):
     """AssertIn implementation."""
-    assert actual in matcher, reason
+    assert actual in matcher, reason if reason else matcher
 
 
-def assert_not_in(actual, matcher, reason):
+def assert_not_in(actual, matcher, reason=""):
     """AssertIn implementation."""
-    assert actual not in matcher, reason
+    assert actual not in matcher, reason if reason else matcher
 
 
-def assert_equal(actual, matcher, reason):
+def assert_equal(actual, matcher, reason=""):
     """AssertEqual Implementation."""
-    assert actual == matcher, reason
+    assert actual == matcher, reason if reason else matcher
 
 
-def assert_not_equal(actual, matcher, reason):
+def assert_not_equal(actual, matcher, reason=""):
     """AssertNotEqual Implementation."""
-    assert actual != matcher, reason
+    assert actual != matcher, reason if reason else matcher
 
 def assert_is_not_none(actual,reason=""):
     """ AssertIsNotNone Implementation."""

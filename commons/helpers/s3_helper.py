@@ -36,6 +36,7 @@ from config import S3_CFG, CMN_CFG
 LOGGER = logging.getLogger(__name__)
 CM_CFG = CMN_CFG["nodes"][0]
 
+
 class S3Helper:
     """S3 Helper class to perform S3 related operations."""
 
