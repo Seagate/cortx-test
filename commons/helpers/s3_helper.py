@@ -32,11 +32,9 @@ from commons import commands
 from commons.helpers.host import Host
 from commons.utils import config_utils
 from commons.utils.system_utils import run_local_cmd, run_remote_cmd
-from config.params import COMMON_CONFIG
-
+from config import S3_CFG, CMN_CFG
 LOGGER = logging.getLogger(__name__)
-CM_CFG = config_utils.read_yaml(COMMON_CONFIG)[1]
-
+CM_CFG = CMN_CFG["nodes"][0]
 
 class S3Helper:
     """S3 Helper class to perform S3 related operations."""
@@ -66,7 +64,7 @@ class S3Helper:
     def configure_s3cfg(
             access: str = None,
             secret: str = None,
-            path: str = CM_CFG["s3cfg_path"]) -> bool:
+            path: str = S3_CFG["s3cfg_path"]) -> bool:
         """
         Function to configure access and secret keys in s3cfg file.
 
@@ -93,7 +91,7 @@ class S3Helper:
     def configure_s3fs(
             access: str = None,
             secret: str = None,
-            path: str = CM_CFG["s3fs_path"]) -> bool:
+            path: str = S3_CFG["s3fs_path"]) -> bool:
         """
         Function to configure access and secret keys for s3fs.
 
@@ -649,7 +647,7 @@ class S3Helper:
     @staticmethod
     def configure_minio(access: str = None,
                         secret: str = None,
-                        path: str = CM_CFG["minio_path"]) -> bool:
+                        path: str = S3_CFG["minio_path"]) -> bool:
         """
         Function to configure minio creds in config.json file.
 
@@ -672,8 +670,8 @@ class S3Helper:
 
     @staticmethod
     def get_local_keys(
-            path: str = CM_CFG["aws_path"],
-            section: str = CM_CFG["aws_cred_section"]) -> tuple:
+            path: str = S3_CFG["aws_path"],
+            section: str = S3_CFG["aws_cred_section"]) -> tuple:
         """
         Get local s3 access and secret keys.
 
