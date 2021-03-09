@@ -713,6 +713,9 @@ class IamTestLib(IamLib, S3IamCli):
                 response)
             raise CTException(err.S3_CLIENT_ERROR, response)
 
+        # TODO : Check if profile is also created or not here and raise
+        # exception if not
+
         return status, response
 
     def update_account_login_profile_s3iamcli(
