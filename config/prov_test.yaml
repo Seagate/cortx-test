@@ -9,7 +9,10 @@ deploy:
                "network.data.private_interfaces=eth3,eth4\n", "network.mgmt.interfaces=eth0\n",
                "bmc.user=None\n", "bmc.secret=None\n"]
   deploy_done: "Deploy VM - Done"
+  setup_path: "/var/log/seagate/provisioner/setup.log"
+  done: "cmd:auto_deploy_vm Done"
   sleep_time: 60
 system:
   offline: "offline"
   stopped: "Stopped"
+

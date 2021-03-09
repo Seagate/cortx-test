@@ -138,11 +138,18 @@ class TestProvSingleNode:
         LOGGER.info("Start the deployment.")
         cmd = common_cmds.DEPLOY_SINGLE_NODE.format(self.passwd, self.host, test_cfg["file_name"], self.build_path)
         resp = self.nd_obj.execute_cmd(cmd, read_lines=True)
+        LOGGER.info("Deployment process output: {}".format(resp))
+        value = False
+        cmd = common_cmds.RD_LOG.format(test_cfg["setup_path"])
+        resp = self.nd_obj.execute_cmd(cmd, read_lines=True)
         for line in resp:
-            assert test_cfg["deploy_done"] not in line, "Deployment is not successful."
+            if test_cfg["done"] in line or test_cfg["deploy_done"] in line:
+                value = True
+        assert value is True, "Deployment is not successful."
         LOGGER.info("Deployment done.")
 
         LOGGER.info("Start the cluster.")
+        time.sleep(test_cfg["sleep_time"])
         cmd = common_cmds.START_CLSTR
         self.nd_obj.execute_cmd(cmd)
         time.sleep(test_cfg["sleep_time"])
