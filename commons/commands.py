@@ -205,9 +205,16 @@ CMD_DELETE_BUCKET = "s3buckets delete {}"
 CREATE_IAM_USER = "s3iamusers create"
 LIST_IAM_USER = "s3iamusers show"
 DELETE_IAM_USER = "s3iamusers delete"
+CMD_GENERATE_SUPPORT_BUNDLE = "support_bundle generate"
+CMD_GENERATE_SUPPORT_BUNDLE_OS = "support_bundle generate {0} --os"
+CMD_SUPPORT_BUNDLE_STATUS = "support_bundle status"
 
 # Linux System Commands
 CMD_MKDIR = "mkdir -p {}"
+CMD_MOUNT = "mount -t nfs {} {}"
+CMD_UMOUNT = "umount {}"
+CMD_TAR = "tar -zxvf {} -C {}"
+CMD_REMOVE_DIR = "rm -rf {}"
 
 # Provisioner commands
 CMD_LSBLK = "lsblk -S | grep disk | wc -l"
