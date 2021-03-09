@@ -93,7 +93,7 @@ class TestAwsCliS3Api:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-7113")
     @CTFailOn(error_handler)
-    def test_2328(self):
+    def test_2328_create_single_bucket(self):
         """
         create single bucket using aws cli
         """
@@ -106,7 +106,7 @@ class TestAwsCliS3Api:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-7114")
     @CTFailOn(error_handler)
-    def test_2329(self):
+    def test_2329_create_multiple_bucket(self):
         """
         Create multiple buckets using aws cli
         """
@@ -122,14 +122,14 @@ class TestAwsCliS3Api:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-7115")
     @CTFailOn(error_handler)
-    def test_2330(self):
+    def test_2330_list_buckets(self):
         """
         list buckets using aws cli
         """
         resp = self.s3test_obj.create_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = run_local_cmd(cmd=commands.AWSCLI_LIST_BUCKETS)
+        resp = run_local_cmd(cmd=commands.CMD_AWSCLI_LIST_BUCKETS)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], self.bucket_name)
         LOGGER.info("Successfully listed buckets using awscli")
@@ -138,7 +138,7 @@ class TestAwsCliS3Api:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-7116")
     @CTFailOn(error_handler)
-    def test_2331(self):
+    def test_2331_create_max_buckets(self):
         """
         max no of buckets supported using aws cli
         """
@@ -154,7 +154,7 @@ class TestAwsCliS3Api:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-7117")
     @CTFailOn(error_handler)
-    def test_2332(self):
+    def test_2332_delete_empty_bucket(self):
         """
         delete empty bucket using aws cli
         """
@@ -170,7 +170,7 @@ class TestAwsCliS3Api:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-7118")
     @CTFailOn(error_handler)
-    def test_2333(self):
+    def test_2333_delete_non_empty_bucket(self):
         """
         delete bucket which has objects using aws cli
         """
@@ -180,7 +180,7 @@ class TestAwsCliS3Api:
         assert_utils.assert_true(resp[0], resp[1])
         resp = create_file(fpath=self.object_name, count=1)
         resp = run_local_cmd(
-            cmd=commands.AWSCLI_PUT_OBJECT.format(
+            cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
                 self.object_name,
                 self.bucket_name,
                 self.object_name))
@@ -195,7 +195,7 @@ class TestAwsCliS3Api:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-7119")
     @CTFailOn(error_handler)
-    def test_2334(self):
+    def test_2334_head_bucket(self):
         """
         Verify HEAD bucket using aws client
         """
@@ -203,7 +203,7 @@ class TestAwsCliS3Api:
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         resp = run_local_cmd(
-            cmd=commands.AWSCLI_HEAD_BUCKET.format(
+            cmd=commands.CMD_AWSCLI_HEAD_BUCKET.format(
                 self.bucket_name))
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Successfully verified head bucket using awscli")
@@ -212,7 +212,7 @@ class TestAwsCliS3Api:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-7120")
     @CTFailOn(error_handler)
-    def test_2335(self):
+    def test_2335_bucket_location(self):
         """
         Verification of bucket location using aws
         """
@@ -221,7 +221,7 @@ class TestAwsCliS3Api:
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         resp = run_local_cmd(
-            cmd=commands.AWSCLI_GET_BUCKET_LOCATION.format(
+            cmd=commands.CMD_AWSCLI_GET_BUCKET_LOCATION.format(
                 self.bucket_name))
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], location)
@@ -231,7 +231,7 @@ class TestAwsCliS3Api:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-7121")
     @CTFailOn(error_handler)
-    def test_2336(self):
+    def test_2336_create_duplicate_bucket(self):
         """
         create bucket using existing bucket name using aws cli
         """
@@ -249,7 +249,7 @@ class TestAwsCliS3Api:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-7122")
     @CTFailOn(error_handler)
-    def test_2337(self):
+    def test_2337_delete_bucket_forcefully(self):
         """
         Delete bucket forcefully which has objects using aws cli
         """
@@ -258,7 +258,7 @@ class TestAwsCliS3Api:
         assert_utils.assert_true(resp[0], resp[1])
         resp = create_file(fpath=self.object_name, count=1)
         resp = run_local_cmd(
-            cmd=commands.AWSCLI_PUT_OBJECT.format(
+            cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
                 self.object_name,
                 self.bucket_name,
                 self.object_name))
@@ -272,7 +272,7 @@ class TestAwsCliS3Api:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-7123")
     @CTFailOn(error_handler)
-    def test_2338(self):
+    def test_2338_list_objects(self):
         """
         list objects in bucket using AWS
         """
@@ -281,13 +281,13 @@ class TestAwsCliS3Api:
         assert_utils.assert_true(resp[0], resp[1])
         resp = create_file(fpath=self.object_name, count=1)
         resp = run_local_cmd(
-            cmd=commands.AWSCLI_PUT_OBJECT.format(
+            cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
                 self.object_name,
                 self.bucket_name,
                 self.object_name))
         assert_utils.assert_true(resp[0], resp[1])
         resp = run_local_cmd(
-            cmd=commands.AWSCLI_LIST_OBJECTS.format(self.bucket_name))
+            cmd=commands.CMD_AWSCLI_LIST_OBJECTS.format(self.bucket_name))
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], self.object_name)
         LOGGER.info("Successfully listed objects from bucket using awscli")
@@ -296,7 +296,7 @@ class TestAwsCliS3Api:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-7124")
     @CTFailOn(error_handler)
-    def test_2339(self):
+    def test_2339_delete_single_object(self):
         """
         delete single object using aws cli
         """
@@ -305,16 +305,16 @@ class TestAwsCliS3Api:
         assert_utils.assert_true(resp[0], resp[1])
         create_file(fpath=self.object_name, count=1)
         resp = run_local_cmd(
-            cmd=commands.AWSCLI_PUT_OBJECT.format(
+            cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
                 self.object_name,
                 self.bucket_name,
                 self.object_name))
         assert_utils.assert_true(resp[0], resp[1])
         resp = run_local_cmd(
-            cmd=commands.AWSCLI_LIST_OBJECTS.format(self.bucket_name))
+            cmd=commands.CMD_AWSCLI_LIST_OBJECTS.format(self.bucket_name))
         assert_utils.assert_exact_string(resp[1], self.object_name)
         resp = run_local_cmd(
-            cmd=commands.AWSCLI_REMOVE_OBJECTS.format(
+            cmd=commands.CMD_AWSCLI_REMOVE_OBJECTS.format(
                 self.bucket_name,
                 self.object_name))
         assert_utils.assert_true(resp[0], resp[1])
@@ -325,7 +325,7 @@ class TestAwsCliS3Api:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-7125")
     @CTFailOn(error_handler)
-    def test_2340(self):
+    def test_2340_delete_multiple_objects(self):
         """
         delete multiple object using aws cli
         """
@@ -339,22 +339,22 @@ class TestAwsCliS3Api:
         for i in range(object_count):
             self.object_name = "".join([filename, str(i)])
             resp = run_local_cmd(
-                cmd=commands.AWSCLI_PUT_OBJECT.format(
+                cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
                     filename,
                     self.bucket_name,
                     self.object_name))
             assert_utils.assert_true(resp[0], resp[1])
             resp = run_local_cmd(
-                cmd=commands.AWSCLI_LIST_OBJECTS.format(self.bucket_name))
+                cmd=commands.CMD_AWSCLI_LIST_OBJECTS.format(self.bucket_name))
             assert_utils.assert_exact_string(resp[1], self.object_name)
             object_list.append(self.object_name)
-        delete_objs_cmd = commands.AWSCLI_REMOVE_OBJECTS.format(
+        delete_objs_cmd = commands.CMD_AWSCLI_REMOVE_OBJECTS.format(
             self.bucket_name, "")
         delete_objs_cmd = " ".join([delete_objs_cmd,
-                                    commands.AWSCLI_RECURSIVE_FLAG,
-                                    commands.AWSCLI_EXCLUDE_FLAG.format("*"),
-                                    commands.AWSCLI_INCLUDE_FLAG.format(object_list[0]),
-                                    commands.AWSCLI_INCLUDE_FLAG.format(object_list[1]),
+                                    commands.CMD_AWSCLI_RECURSIVE_FLAG,
+                                    commands.CMD_AWSCLI_EXCLUDE_FLAG.format("*"),
+                                    commands.CMD_AWSCLI_INCLUDE_FLAG.format(object_list[0]),
+                                    commands.CMD_AWSCLI_INCLUDE_FLAG.format(object_list[1]),
                                     ])
         resp = run_local_cmd(cmd=delete_objs_cmd)
         assert_utils.assert_true(resp[0], resp[1])
@@ -367,7 +367,7 @@ class TestAwsCliS3Api:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-7126")
     @CTFailOn(error_handler)
-    def test_2341(self):
+    def test_2341_delete_all_objects(self):
         """
         delete max no of objects using aws cli
         """
@@ -381,17 +381,17 @@ class TestAwsCliS3Api:
         for i in range(object_count):
             self.object_name = "".join([filename, str(i)])
             resp = run_local_cmd(
-                cmd=commands.AWSCLI_PUT_OBJECT.format(
+                cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
                     filename,
                     self.bucket_name,
                     self.object_name))
             assert_utils.assert_true(resp[0], resp[1])
             resp = run_local_cmd(
-                cmd=commands.AWSCLI_LIST_OBJECTS.format(self.bucket_name))
+                cmd=commands.CMD_AWSCLI_LIST_OBJECTS.format(self.bucket_name))
             assert_utils.assert_exact_string(resp[1], self.object_name)
             object_list.append(self.object_name)
-        delete_objs_cmd = " ".join([commands.AWSCLI_REMOVE_OBJECTS.format(
-            self.bucket_name, ""), commands.AWSCLI_RECURSIVE_FLAG])
+        delete_objs_cmd = " ".join([commands.CMD_AWSCLI_REMOVE_OBJECTS.format(
+            self.bucket_name, ""), commands.CMD_AWSCLI_RECURSIVE_FLAG])
         resp = run_local_cmd(cmd=delete_objs_cmd)
         assert_utils.assert_true(resp[0], resp[1])
         for obj in object_list:
@@ -403,7 +403,7 @@ class TestAwsCliS3Api:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-7127")
     @CTFailOn(error_handler)
-    def test_2342(self):
+    def test_2342_multipart_upload(self):
         """
         update object of large size of(10gb) using aws cli
         """
@@ -417,7 +417,7 @@ class TestAwsCliS3Api:
 
         LOGGER.info("Creating Multipart upload")
         resp = run_local_cmd(
-            cmd=commands.AWSCLI_CREATE_MULTIPART_UPLOAD.format(
+            cmd=commands.CMD_AWSCLI_CREATE_MULTIPART_UPLOAD.format(
                 self.bucket_name, self.object_name))
         assert_utils.assert_true(resp[0], resp[1])
         mpu_upload_id = resp[1][resp[1].find(
@@ -426,7 +426,7 @@ class TestAwsCliS3Api:
 
         LOGGER.info("Listing Multipart uploads")
         resp = run_local_cmd(
-            cmd=commands.AWSCLI_LIST_MULTIPART_UPLOADS.format(
+            cmd=commands.CMD_AWSCLI_LIST_MULTIPART_UPLOADS.format(
                 self.bucket_name))
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], mpu_upload_id)
@@ -434,7 +434,7 @@ class TestAwsCliS3Api:
         LOGGER.info("Uploading parts to bucket")
         for i in range(no_of_parts):
             upload_parts = run_local_cmd(
-                commands.AWSCLI_UPLOAD_PARTS.format(
+                commands.CMD_AWSCLI_UPLOAD_PARTS.format(
                     self.bucket_name,
                     self.object_name,
                     i + 1,
@@ -444,7 +444,7 @@ class TestAwsCliS3Api:
 
         LOGGER.info("Listing uploaded parts")
         resp = run_local_cmd(
-            cmd=commands.AWSCLI_LIST_PARTS.format(
+            cmd=commands.CMD_AWSCLI_LIST_PARTS.format(
                 self.bucket_name, self.object_name, mpu_upload_id))
         assert_utils.assert_true(resp[0], resp[1])
         parts_str = resp[1][resp[1].find("{"):resp[1].rfind("}") + 1]
@@ -468,14 +468,14 @@ class TestAwsCliS3Api:
 
         LOGGER.info("Completing multipart upload")
         resp = run_local_cmd(
-            cmd=commands.AWSCLI_COMPLETE_MULTIPART.format(
+            cmd=commands.CMD_AWSCLI_COMPLETE_MULTIPART.format(
                 json_file,
                 self.bucket_name,
                 self.object_name,
                 mpu_upload_id))
         assert_utils.assert_true(resp[0], resp[1])
         resp = run_local_cmd(
-            cmd=commands.AWSCLI_LIST_OBJECTS.format(self.bucket_name))
+            cmd=commands.CMD_AWSCLI_LIST_OBJECTS.format(self.bucket_name))
         assert_utils.assert_exact_string(resp[1], self.object_name)
         remove_file(json_file)
         for part in mpu_parts_list:
@@ -486,7 +486,7 @@ class TestAwsCliS3Api:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-7128")
     @CTFailOn(error_handler)
-    def test_2343(self):
+    def test_2343_copy_object_to_bucket(self):
         """
         copy object from bucket using aws cli
         """
@@ -495,13 +495,13 @@ class TestAwsCliS3Api:
         assert_utils.assert_true(resp[0], resp[1])
         resp = create_file(fpath=self.object_name, count=1)
         resp = run_local_cmd(
-            cmd=commands.AWSCLI_PUT_OBJECT.format(
+            cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
                 self.object_name,
                 self.bucket_name,
                 self.object_name))
         assert_utils.assert_true(resp[0], resp[1])
         resp = run_local_cmd(
-            cmd=commands.AWSCLI_LIST_OBJECTS.format(self.bucket_name))
+            cmd=commands.CMD_AWSCLI_LIST_OBJECTS.format(self.bucket_name))
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], self.object_name)
         LOGGER.info("Successfully copied objects to bucket using awscli")
@@ -510,7 +510,7 @@ class TestAwsCliS3Api:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-7130")
     @CTFailOn(error_handler)
-    def test_2344(self):
+    def test_2344_download_object_from_bucket(self):
         """
         download an object using aws cli
         """
@@ -525,19 +525,19 @@ class TestAwsCliS3Api:
                 "rb").read()).hexdigest()
         LOGGER.info("Uploading objects to bucket using awscli")
         resp = run_local_cmd(
-            cmd=commands.AWSCLI_PUT_OBJECT.format(
+            cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
                 self.object_name,
                 self.bucket_name,
                 self.object_name))
         assert_utils.assert_true(resp[0], resp[1])
         resp = run_local_cmd(
-            cmd=commands.AWSCLI_LIST_OBJECTS.format(self.bucket_name))
+            cmd=commands.CMD_AWSCLI_LIST_OBJECTS.format(self.bucket_name))
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], self.object_name)
 
         LOGGER.info("Downloading object from bucket using awscli")
         resp = run_local_cmd(
-            cmd=commands.AWSCLI_DOWNLOAD_OBJECT.format(
+            cmd=commands.CMD_AWSCLI_DOWNLOAD_OBJECT.format(
                 self.bucket_name,
                 self.object_name,
                 downloaded_file))
