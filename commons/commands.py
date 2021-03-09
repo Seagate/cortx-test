@@ -230,3 +230,25 @@ CMD_DEPLOY_SINGLE_NODE = "sshpass -p \"{0}\" provisioner auto_deploy_vm srvnode-
                      "--target-build {3}"
 CMD_START_CLSTR = "cortx cluster start"
 CMD_RD_LOG = "cat {0}"
+
+# S3 awscli  Commands
+CMD_AWSCLI_CREATE_BUCKET = "aws s3 mb s3://{0}"
+CMD_AWSCLI_DELETE_BUCKET = "aws s3 rb s3://{0}"
+CMD_AWSCLI_LIST_BUCKETS = "aws s3 ls"
+CMD_AWSCLI_PUT_OBJECT = "aws s3 cp {0} s3://{1}/{2}"
+CMD_AWSCLI_HEAD_BUCKET = "aws s3api head-bucket --bucket {0}"
+CMD_AWSCLI_GET_BUCKET_LOCATION = "aws s3api get-bucket-location --bucket {0}"
+CMD_AWSCLI_LIST_OBJECTS = "aws s3 ls s3://{0}"
+CMD_AWSCLI_REMOVE_OBJECTS = "aws s3 rm s3://{0}/{1}"
+CMD_AWSCLI_RECURSIVE_FLAG = "--recursive"
+CMD_AWSCLI_EXCLUDE_FLAG = "--exclude '{}'"
+CMD_AWSCLI_INCLUDE_FLAG = "--include '{}'"
+CMD_AWSCLI_CREATE_MULTIPART_UPLOAD = "aws s3api create-multipart-upload --bucket {0} --key {1}"
+CMD_AWSCLI_LIST_MULTIPART_UPLOADS = "aws s3api list-multipart-uploads --bucket {0}"
+CMD_AWSCLI_UPLOAD_PARTS = "aws s3api upload-part --bucket {0} --key {1} --part-number {2} " \
+                        "--body {3} --upload-id {4}"
+CMD_AWSCLI_LIST_PARTS = "aws s3api list-parts --bucket {0} --key {1} --upload-id {2}"
+CMD_AWSCLI_COMPLETE_MULTIPART = "aws s3api complete-multipart-upload --multipart-upload file://{0} " \
+                                "--bucket {1} --key {2} --upload-id {3}"
+CMD_AWSCLI_DOWNLOAD_OBJECT = "aws s3 cp s3://{0}/{1} {2}"
+
