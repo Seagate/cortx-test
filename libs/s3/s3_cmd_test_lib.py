@@ -126,7 +126,7 @@ class S3CmdTestLib(S3LibCmd):
                         str(count)))
                 create_file(file_path, 10)
             status, response = super().upload_folder_cli(
-                bucket_name, folder_path, CM_CFG["aws_cred_section"])
+                bucket_name, folder_path, S3_CFG["aws_cred_section"])
             shutil.rmtree(folder_path)
             LOGGER.debug(response)
             upload_cnt = response.count(b"upload:") if isinstance(
@@ -146,7 +146,7 @@ class S3CmdTestLib(S3LibCmd):
             self,
             bucket_name: str = None,
             folder_path: str = None,
-            profile_name: str = CM_CFG["aws_cred_section"]) -> tuple:
+            profile_name: str = S3_CFG["aws_cred_section"]) -> tuple:
         """
         Downloading s3 objects to a local directory recursively using awscli.
 
