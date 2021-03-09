@@ -18,9 +18,11 @@ S3_ACCOUNTS_TAB_ID = 's3accountstab'
 SETTINGS_ID = 'Settings'
 EMAIL_NOTIFICATION_ID = 'goToNotifications'
 IAM_USER_TAB_ID = "s3iamuserstab"
+BUCKET_TAB_ID = "s3bucketstab"
 DASHBOARD_MENU_ID = "Dashboard"
 MAINTENANCE_MENU_ID = 'Maintenance'
 AUDIT_LOG_TAB_ID = "goToAuditLog"
+HEALTH_TAB_ID = "Health"
 SW_UPDATE_TAB_ID = "goToSoftware"
 FW_UPDATE_TAB_ID = "goToFirmware"
 LYVE_PILOT_ID= "Lyve Pilot"
@@ -179,6 +181,13 @@ AUDIT_LOG_COMPONENT_DROP_DOWN_ID = "auditlog-component"
 AUDIT_LOG_TIME_PERIOD_DROP_DOWN_ID = "auditlog-timeperiod"
 AUDIT_LOG_DATA_ID = "auditlog-data"
 
+#Bucket 
+ADD_BUCKET_FORM_ID = "bucket-addbucket-formbtn"
+BUCKET_NAME_ID = "bucketName"
+BUCKET_CREATE_BUTTON_ID = "bucket-create-btn"
+DELETE_BUCKET_XPATH = '//tr[@id="{0}"]//*[@id="bucket-delete-icon"]'
+CONFIRM_CREATE_BUTTON_ID = "bucket-closedialodbox"
+BUCKET_ROW_ELEMENT_XPATH = '//tr[@id="{0}"]'
 # Software Update Page
 UPLOAD_SW_FILE_BTN_ID = "btnInstallHotfix"
 CHOOSE_SW_UPDATE_FILE_BTN_ID = "file"
