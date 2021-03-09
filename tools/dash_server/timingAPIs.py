@@ -135,31 +135,6 @@ def delete_many(db_filter):
             return True
 
 
-def find(db_filter, db_filter2):
-    '''
-    Find multiple documents matching the db_filter
-
-        Parameters:
-            db_filter (dict): A query that matches the document to delete
-                e.g. {'result': 'Fail'} will query database for documents with result as Fail
-        Returns:
-            result (bool): find operation successfully completed or not
-    '''
-    with MongoClient(readHostURI) as client:
-        db = client['cft_test_results']
-        tests = db.timings
-        result = None
-        try:
-            result = tests.find(db_filter, db_filter2)
-        except Exception as e:
-            print("Unable to search documents from database. Observed following exception:")
-            print(e)
-            return False
-        else:
-            print("Documents search complete")
-            return result
-
-
 def find(db_filter):
     '''
     Find multiple documents matching the db_filter
