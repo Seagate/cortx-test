@@ -58,6 +58,9 @@ class TestOpenLdap:
             cls.CM_LDAP_CFG["date_format"])
         cls.backup_path = cls.CM_LDAP_CFG["backup_path"]
         cls.default_ldap_pw = True
+        cls.host = CM_CFG["nodes"][0]["host"]
+        cls.username = CM_CFG["nodes"][0]["username"],
+        cls.pwd = CM_CFG["nodes"][0]["password"],
 
     def remote_execution(self, hostname, username, password, cmd):
         """running remote cmd."""
@@ -80,15 +83,15 @@ class TestOpenLdap:
         :return: None
         """
         self.remote_execution(
-            CM_CFG["host"],
-            CM_CFG["username"],
-            CM_CFG["password"],
+            self.host,
+            self.username,
+            self.pwd,
             ch_owner_cmd)
         self.log.info(ch_owner_cmd)
         status, resp = self.remote_execution(
-            CM_CFG["host"],
-            CM_CFG["username"],
-            CM_CFG["password"],
+            self.host,
+            self.username,
+            self.pwd,
             chk_owner_cmd)
         self.log.info(chk_owner_cmd)
         assert status, resp
@@ -111,9 +114,9 @@ class TestOpenLdap:
         """
         cmd = self.CM_LDAP_CFG["chk_owner_cmd"].format(dir_path)
         status, resp = self.remote_execution(
-            CM_CFG["host"],
-            CM_CFG["username"],
-            CM_CFG["password"],
+            self.host,
+            self.username,
+            self.pwd,
             cmd)
         assert status, resp
         resp = list(map(lambda s: s.strip(), resp))
@@ -134,15 +137,15 @@ class TestOpenLdap:
         :return: None
         """
         self.remote_execution(
-            CM_CFG["host"],
-            CM_CFG["username"],
-            CM_CFG["password"],
+            self.host,
+            self.username,
+            self.pwd,
             bkp_cmd)
         self.log.info(bkp_cmd)
         status, resp = self.remote_execution(
-            CM_CFG["host"],
-            CM_CFG["username"],
-            CM_CFG["password"],
+            self.host,
+            self.username,
+            self.pwd,
             ls_cmd)
         assert status, resp
         resp = list(map(lambda s: s.strip(), resp))
@@ -164,15 +167,15 @@ class TestOpenLdap:
         :return: None
         """
         self.remote_execution(
-            CM_CFG["host"],
-            CM_CFG["username"],
-            CM_CFG["password"],
+            self.host,
+            self.username,
+            self.pwd,
             cr_cmd)
         self.log.info(cr_cmd)
         status, resp = self.remote_execution(
-            CM_CFG["host"],
-            CM_CFG["username"],
-            CM_CFG["password"],
+            self.host,
+            self.username,
+            self.pwd,
             ls_cmd)
         assert status, resp
         resp = list(map(lambda s: s.strip(), resp))
@@ -193,15 +196,15 @@ class TestOpenLdap:
         :return: None
         """
         self.remote_execution(
-            CM_CFG["host"],
-            CM_CFG["username"],
-            CM_CFG["password"],
+            self.host,
+            self.username,
+            self.pwd,
             re_cmd)
         self.log.info(re_cmd)
         status, resp = self.remote_execution(
-            CM_CFG["host"],
-            CM_CFG["username"],
-            CM_CFG["password"],
+            self.host,
+            self.username,
+            self.pwd,
             ls_cmd)
         assert status, resp
         resp = list(map(lambda s: s.strip(), resp))
@@ -223,16 +226,16 @@ class TestOpenLdap:
         """
         channel_data = str()
         hosts = list()
-        hosts.append(CM_CFG["host"])
-        hosts.append(CM_CFG["host2"])
+        hosts.append(self.host)
+        hosts.append(CM_CFG["nodes"][1]["host"])
         self.log.info("Creating a shell session on channel...")
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         for host in hosts:
             ssh.connect(
                 host,
-                username=CM_CFG["username"],
-                password=CM_CFG["password"])
+                username=self.username,
+                password=self.pwd)
             channel = ssh.invoke_shell()
             self.log.info("Created a shell session on channel")
             while True:
@@ -281,9 +284,9 @@ class TestOpenLdap:
             "Creating a backup directory %s...",
             self.backup_path)
         self.remote_execution(
-            CM_CFG["host"],
-            CM_CFG["username"],
-            CM_CFG["password"],
+            self.host,
+            self.username,
+            self.pwd,
             self.CM_LDAP_CFG["mk_dir_cmd"].format(self.backup_path))
         self.log.info(
             "Created a backup directory %s",
@@ -358,9 +361,9 @@ class TestOpenLdap:
             self.log.info("Started %s service", self.slapd_service)
         self.log.info("Deleting backup dir %s...", self.backup_path)
         self.remote_execution(
-            CM_CFG["host"],
-            CM_CFG["username"],
-            CM_CFG["password"],
+            self.host,
+            self.username,
+            self.pwd,
             self.CM_LDAP_CFG["rm_dir_cmd"].format(self.backup_path))
         self.log.info("Deleted backup dir %s", self.backup_path)
         remove_file(self.CM_LDAP_CFG["temp_path"])
@@ -382,9 +385,9 @@ class TestOpenLdap:
             "Step 1: Verifying if %s is present under %s",
             self.slapd_dir, self.openldap_path)
         status, resp = self.remote_execution(
-            CM_CFG["host"],
-            CM_CFG["username"],
-            CM_CFG["password"],
+            self.host,
+            self.username,
+            self.pwd,
             self.CM_LDAP_CFG["ls_cmd"])
         assert status, resp
         resp = list(map(lambda s: s.strip(), resp))
@@ -430,9 +433,9 @@ class TestOpenLdap:
             ldap_data_dir,
             ldap_data_path)
         status, resp = self.remote_execution(
-            CM_CFG["host"],
-            CM_CFG["username"],
-            CM_CFG["password"],
+            self.host,
+            self.username,
+            self.pwd,
             cfg_5067["ls_ldap_data_dir_cmd"])
         assert status, resp
         resp = list(map(lambda s: s.strip(), resp))
@@ -471,9 +474,9 @@ class TestOpenLdap:
             "Step 1: Verifying if openldap configuration directory is present under %s",
             self.openldap_path)
         status, resp = self.remote_execution(
-            CM_CFG["host"],
-            CM_CFG["username"],
-            CM_CFG["password"],
+            self.host,
+            self.username,
+            self.pwd,
             self.CM_LDAP_CFG["ls_cmd"])
         assert status, resp
         resp = list(map(lambda s: s.strip(), resp))
@@ -574,9 +577,9 @@ class TestOpenLdap:
             "Step 1: Verifying if openldap configuration directory is present under %s",
             self.openldap_path)
         status, resp = self.remote_execution(
-            CM_CFG["host"],
-            CM_CFG["username"],
-            CM_CFG["password"],
+            self.host,
+            self.username,
+            self.pwd,
             self.CM_LDAP_CFG["ls_cmd"])
         assert status, resp
         resp = list(map(lambda s: s.strip(), resp))
@@ -681,9 +684,9 @@ class TestOpenLdap:
             "Step 1: Verifying that ldap data directory is present under %s",
             ldap_data_path)
         status, resp = self.remote_execution(
-            CM_CFG["host"],
-            CM_CFG["username"],
-            CM_CFG["password"],
+            self.host,
+            self.username,
+            self.pwd,
             cfg_5070["ls_ldap_data_cmd"])
         assert status, resp
         resp = list(map(lambda s: s.strip(), resp))
@@ -781,9 +784,9 @@ class TestOpenLdap:
             "Step 1: Verifying that ldap data directory is present under %s",
             ldap_data_path)
         status, resp = self.remote_execution(
-            CM_CFG["host"],
-            CM_CFG["username"],
-            CM_CFG["password"],
+            self.host,
+            self.username,
+            self.pwd,
             cfg_5071["ls_ldap_data_cmd"])
         assert status, resp
         resp = list(map(lambda s: s.strip(), resp))
