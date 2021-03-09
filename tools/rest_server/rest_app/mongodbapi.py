@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """MongoDb APIs, backend for REST Server."""
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
@@ -16,8 +17,7 @@
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
-#
-# -*- coding: utf-8 -*-
+
 from http import HTTPStatus
 
 from pymongo import MongoClient
@@ -26,6 +26,8 @@ from pymongo.errors import ServerSelectionTimeoutError, OperationFailure
 
 
 def pymongo_exception(func):
+    """Decorator for pymongo exceptions"""
+
     def new_func(*args, **kwargs):
         try:
             ret = func(*args, **kwargs)
@@ -33,17 +35,17 @@ def pymongo_exception(func):
         except ServerSelectionTimeoutError:
             return False, (HTTPStatus.SERVICE_UNAVAILABLE,
                            "Unable to connect to mongoDB. Probably MongoDB server is down")
-        except OperationFailure as e1:
-            if e1.code == 18:
-                return False, (HTTPStatus.UNAUTHORIZED, f"Wrong username/password. {e1}")
-            elif e1.code == 13:
+        except OperationFailure as ops_exception:
+            if ops_exception.code == 18:
+                return False, (HTTPStatus.UNAUTHORIZED, f"Wrong username/password. {ops_exception}")
+            if ops_exception.code == 13:
                 return False, (HTTPStatus.FORBIDDEN,
-                               f"User does not have permission for operation. {e1}")
-            else:
-                return False, (HTTPStatus.SERVICE_UNAVAILABLE,
-                               f"Unable to connect to mongoDB. {e1}")
-        except PyMongoError as e2:
-            return False, (HTTPStatus.SERVICE_UNAVAILABLE, f"Unable to connect to mongoDB. {e2}")
+                               f"User does not have permission for operation. {ops_exception}")
+            return False, (HTTPStatus.SERVICE_UNAVAILABLE,
+                           f"Unable to connect to mongoDB. {ops_exception}")
+        except PyMongoError as mongo_error:
+            return False, (HTTPStatus.SERVICE_UNAVAILABLE,
+                           f"Unable to connect to mongoDB. {mongo_error}")
 
     return new_func
 
@@ -68,8 +70,8 @@ def count_documents(query: dict,
         On success returns number of documents
     """
     with MongoClient(uri) as client:
-        db = client[db_name]
-        tests = db[collection]
+        pymongo_db = client[db_name]
+        tests = pymongo_db[collection]
         result = tests.count_documents(query)
         return True, result
 
@@ -96,8 +98,8 @@ def find_documents(query: dict,
         On success returns documents
     """
     with MongoClient(uri) as client:
-        db = client[db_name]
-        tests = db[collection]
+        pymongo_db = client[db_name]
+        tests = pymongo_db[collection]
         result = tests.find(query, projection)
         return True, result
 
@@ -122,8 +124,8 @@ def add_document(data: dict,
         On success returns created document ID
     """
     with MongoClient(uri) as client:
-        db = client[db_name]
-        tests = db[collection]
+        pymongo_db = client[db_name]
+        tests = pymongo_db[collection]
         result = tests.insert_one(data)
         return True, result
 
@@ -150,8 +152,8 @@ def update_documents(query: dict,
         On success returns created document ID
     """
     with MongoClient(uri) as client:
-        db = client[db_name]
-        tests = db[collection]
+        pymongo_db = client[db_name]
+        tests = pymongo_db[collection]
         result = tests.update_many(query, data)
         return True, result
 
@@ -184,4 +186,32 @@ def update_document(query: dict,
         database = client[db_name]
         tests = database[collection]
         result = tests.find_one_and_update(query, data, upsert=upsert)
+        return True, result
+
+
+@pymongo_exception
+def distinct_fields(field: str,
+                    query: dict,
+                    uri: str,
+                    db_name: str,
+                    collection: str
+                    ) -> (bool, int):
+    """
+    Get distinct fields for given query from MongoDB database
+
+    Args:
+        field: Field for distinct
+        query: Query to be searched in MongoDB
+        uri: URI of MongoDB database
+        db_name: Database name
+        collection: Collection name in database
+
+    Returns:
+        On failure returns http status code and message
+        On success returns number of documents
+    """
+    with MongoClient(uri) as client:
+        pymongo_db = client[db_name]
+        tests = pymongo_db[collection]
+        result = tests.distinct(field, query)
         return True, result
