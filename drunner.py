@@ -170,7 +170,6 @@ def run(opts: dict) -> None:
     # start kafka producer
     _producer = Thread(target=producer.server,
                        args=(topic, work_queue))  # Use finish in server
-    # _producer.setDaemon(True)
     _producer.start()
 
     # for parallel group create a kafka entry
@@ -205,8 +204,8 @@ def run(opts: dict) -> None:
 
 def develop_execution_plan(rev_tag_map, selected_tag_map, skip_test, test_map, tickets):
     """Develop Test execution plan to be followed by test runners."""
-    # get the te meta and create an execution plan
     for ticket in tickets:
+        # get the te meta and create an execution plan
         test_list, ignore = get_te_tickets_data(ticket)
         print(f"Ignoring TE tag field {ignore}")
         # group test_list into narrow feature groups
