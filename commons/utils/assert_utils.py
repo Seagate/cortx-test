@@ -230,3 +230,7 @@ def assert_equal(actual, matcher, reason):
 def assert_not_equal(actual, matcher, reason):
     """AssertNotEqual Implementation."""
     assert actual != matcher, reason
+
+def assert_is_not_none(actual,reason=""):
+    """ AssertIsNotNone Implementation."""
+    assert actual != None, reason
