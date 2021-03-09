@@ -92,9 +92,8 @@ class CortxCli(CortxCliClient):
         :keyword login_cortxcli: command for login to CLI
         :return: True/False and output
         """
-        login_cortxcli = commands.CMD_LOGIN_CORTXCLI
         username_param = kwargs.get("username_param", None)
-        login_cortxcli = kwargs.get("cmd", login_cortxcli)
+        login_cortxcli = kwargs.get("cmd", commands.CMD_LOGIN_CORTXCLI)
         if username_param:
             login_cortxcli = " ".join(
                 [login_cortxcli, "--username", username_param])

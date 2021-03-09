@@ -124,7 +124,7 @@ class TestCliIAMUser:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10858")
-    def test_867(self):
+    def test_867_create_iam_user(self):
         """
         Test that ` s3iamuser create <user_name>` with
         correct username and password should create new IAM user
@@ -140,7 +140,7 @@ class TestCliIAMUser:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10861")
-    def test_875(self):
+    def test_875_delete_iam_user(self):
         """
         Test that ` s3iamuser delete <iam_user_name>` must delete the given IAM user
         """
@@ -159,7 +159,7 @@ class TestCliIAMUser:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10852")
-    def test_873(self):
+    def test_873_create_duplicate_user(self):
         """
         Initiating the test case to verify duplicate IAM user in same account
         """
@@ -186,7 +186,7 @@ class TestCliIAMUser:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10851")
-    def test_870(self):
+    def test_870_display_help(self):
         """
         Initiating the test case to display help information for s3iamusers create
         """
@@ -200,7 +200,7 @@ class TestCliIAMUser:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10854")
-    def test_871(self):
+    def test_871_create_invalid_user(self):
         """
         Initiating the test case to verify invalid IAM user name
         """
@@ -221,7 +221,7 @@ class TestCliIAMUser:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10855")
-    def test_872(self):
+    def test_872_missing_username_param(self):
         """
         Initiating the test case to verify missing IAM user name
         """
@@ -241,8 +241,7 @@ class TestCliIAMUser:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10856")
-
-    def test_874(self, generate_random_string):
+    def test_874_invalid_pwd(self, generate_random_string):
         """
         Initiating the test case to verify invalid IAM user password
         """
@@ -263,7 +262,7 @@ class TestCliIAMUser:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10859")
-    def test_6453(self):
+    def test_6453_mismatch_pwd(self):
         """
         Initiating the test case to verify error message in
          case providing mismatch password while creating IAM user
@@ -284,7 +283,7 @@ class TestCliIAMUser:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10860")
-    def test_876(self):
+    def test_876_delete_non_exist_user(self):
         """
         Initiating the test case to verify delete non existing IAM user
         """
@@ -302,7 +301,7 @@ class TestCliIAMUser:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10862")
-    def test_1145(self):
+    def test_1145_login_with_iam_user(self):
         """
         Initiating the test case to verify IAM user should not able to login to csmcli
         """
@@ -337,7 +336,7 @@ class TestCliIAMUser:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10863")
-    def test_878(self):
+    def test_878_list_user(self):
         """
         Initiating the test case to verify IAM user show command
         """
@@ -369,7 +368,7 @@ class TestCliIAMUser:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10864")
-    def test_1152(self):
+    def test_1152_user_logout(self):
         """
         Initiating the test case to verify User is logged out from csmcli when he enters exit
         """
@@ -388,7 +387,7 @@ class TestCliIAMUser:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10865")
-    def test_1149(self, generate_random_string):
+    def test_1149_invalid_password(self, generate_random_string):
         """
         Initiating the test case to verify appropriate
         error should be returned when user enters invalid password
@@ -429,7 +428,7 @@ class TestCliIAMUser:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10866")
-    def test_1148(self):
+    def test_1148_invalid_username(self):
         """
         Initiating the test case to verify appropriate
         error should be returned when user enters invalid username
@@ -455,7 +454,7 @@ class TestCliIAMUser:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10868")
-    def test_1154(self):
+    def test_1154_logged_out_with_ctrl_c(self):
         """
         Initiating the test case to verify user is logged
         out when user presses Ctrl+C in interactive csmcli
@@ -477,7 +476,7 @@ class TestCliIAMUser:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10867")
-    def test_1150(self):
+    def test_1150_login_with_valid_user(self):
         """
         Initiating the test case to verify appropriate
         message should be returned when user enters valid username

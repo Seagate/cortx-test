@@ -26,15 +26,15 @@ from typing import Union, Tuple
 from libs.csm.cli.cortx_cli import CortxCli
 from commons.commands import CMD_GENERATE_SUPPORT_BUNDLE
 from commons.commands import CMD_GENERATE_SUPPORT_BUNDLE_OS
-from commons.commands import SUPPORT_BUNDLE_STATUS
+from commons.commands import CMD_SUPPORT_BUNDLE_STATUS
 from commons import constants as const
 from commons import commands
-from commons.helpers import node_helper, s3_helper
+from commons.helpers import node_helper
 from commons.utils import system_utils
+from libs.s3 import S3H_OBJ
 from config import CMN_CFG
 
 LOGGER = logging.getLogger(__name__)
-s3_helper_obj = s3_helper.S3Helper()
 
 
 class CortxCliSupportBundle(CortxCli):
@@ -95,7 +95,7 @@ class CortxCliSupportBundle(CortxCli):
             const.TAR_POSTFIX)
 
         # Check if file is exists on node
-        resp = s3_helper_obj.is_s3_server_path_exists(
+        resp = S3H_OBJ.is_s3_server_path_exists(
             tar_file_name,
             host,
             user,
@@ -117,10 +117,10 @@ class CortxCliSupportBundle(CortxCli):
         # List directory
         path = "{0}{1}/".format(dest_dir, bundle_id)
         list_dir = obj.list_dir(path)
-        if len(list_dir) == 0:
+        if not list_dir:
             return False, list_dir
         list_dir = [i for i in list_dir if "." not in i]
-        if len(list_dir) == 0:
+        if not list_dir:
             return False, list_dir
 
         return True, list_dir
@@ -155,16 +155,15 @@ class CortxCliSupportBundle(CortxCli):
         :param bool help_param: True for displaying help/usage
         :return: (Boolean/Response)
         """
-        support_bundle_status_cmd = SUPPORT_BUNDLE_STATUS
         if output_format:
             support_bundle_status_cmd = "{} {} -f {}".format(
-                support_bundle_status_cmd, bundle_id, output_format)
+                CMD_SUPPORT_BUNDLE_STATUS, bundle_id, output_format)
         elif help_param:
             support_bundle_status_cmd = "{} -h".format(
-                support_bundle_status_cmd)
+                CMD_SUPPORT_BUNDLE_STATUS)
         else:
             support_bundle_status_cmd = "{} {}".format(
-                support_bundle_status_cmd, bundle_id)
+                CMD_SUPPORT_BUNDLE_STATUS, bundle_id)
 
         output = self.execute_cli_commands(cmd=support_bundle_status_cmd)[1]
         LOGGER.info(output)

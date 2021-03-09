@@ -24,12 +24,14 @@ import time
 import pytest
 from commons.utils import assert_utils
 from commons.helpers.node_helper import Node
-from commons.helpers import s3_helper
 from commons.utils import system_utils
 from commons import constants
 from commons import commands
+from commons.errorcodes import error_handler
+from commons.ct_fail_on import CTFailOn
 from config import CMN_CFG
 from libs.csm.cli.cortx_cli_support_bundle import CortxCliSupportBundle
+from libs.s3 import S3H_OBJ
 
 
 class TestCliSupportBundle:
@@ -69,7 +71,7 @@ class TestCliSupportBundle:
             "STARTED : Teardown operations at test function level")
         remove_cmd = commands.CMD_REMOVE_DIR.format("/tmp/csm_support_bundle/")
         for each_node in self.node_list:
-            resp = s3_helper.S3Helper.is_s3_server_path_exists(
+            resp = S3H_OBJ.is_s3_server_path_exists(
                 "/tmp/csm_support_bundle/",
                 each_node,
                 CMN_CFG["csm"]["admin_user"],
@@ -84,6 +86,7 @@ class TestCliSupportBundle:
         self.LOGGER.info("ENDED : Teardown operations at test function level")
 
     @pytest.mark.csm_cli
+    @CTFailOn(error_handler)
     @pytest.mark.tags("TEST-12845")
     def test_4487_generate_support_bundle(self):
         """
@@ -130,6 +133,7 @@ class TestCliSupportBundle:
             "Step 3: Verified logs are generated for each component")
 
     @pytest.mark.csm_cli
+    @CTFailOn(error_handler)
     @pytest.mark.tags("TEST-12843")
     def test_10367_generate_support_bundle_os(self):
         """
