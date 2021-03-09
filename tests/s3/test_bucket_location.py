@@ -28,7 +28,7 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils import assert_utils
-from config import CMN_CFG
+from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
 from libs.s3 import s3_test_lib, iam_test_lib, s3_acl_test_lib
 
 IAM_OBJ = iam_test_lib.IamTestLib()
@@ -48,8 +48,8 @@ class TestBucketLocation:
         """
         cls.log = logging.getLogger(__name__)
         cls.log.info("STARTED: setup test suite operations.")
-        cls.ldap_user = CMN_CFG["ldap_username"]
-        cls.ldap_pwd = CMN_CFG["ldap_passwd"]
+        cls.ldap_user = LDAP_USERNAME
+        cls.ldap_pwd = LDAP_PASSWD
         cls.bucket_prefix = "location-bkt"
         cls.account_prefix = "location-acc"
         cls.email_id = "@seagate.com"
