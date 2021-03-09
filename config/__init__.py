@@ -23,14 +23,12 @@ import os
 import sys
 import re
 from commons.utils import config_utils
-
 from commons import configmanager
 from commons.params import COMMON_CONFIG, CSM_CONFIG, S3_CONFIG
 from commons.params import RAS_CONFIG_PATH
 from commons.params import SSPL_TEST_CONFIG_PATH
 from commons.params import COMMON_DESTRUCTIVE_CONFIG_PATH
 from commons.params import PROV_TEST_CONFIG_PATH
-
 
 pytest_args = sys.argv
 proc_name = os.path.split(pytest_args[0])[-1]
