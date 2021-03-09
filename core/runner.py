@@ -34,6 +34,7 @@ from config import CMN_CFG
 
 LOGGER = logging.getLogger(__name__)
 
+
 def get_jira_credential() -> Tuple[str, Optional[str]]:
     """
     Adapter function to get Jira Credentials.
@@ -72,7 +73,7 @@ def get_db_credential() -> Tuple[str, Optional[str]]:
     return db_user, db_pwd
 
 
-def parse_json(json_file) :
+def parse_json(json_file):
     """
     Parse given json file.
     """

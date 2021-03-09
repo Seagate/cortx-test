@@ -37,11 +37,11 @@ LOGGER = logging.getLogger(__name__)
 class ControllerLib:
     """Controller helper functions."""
 
-    def __init__(self, host=CMN_CFG["host"], h_user=CMN_CFG["username"],
-                 h_pwd=CMN_CFG["password"],
-                 enclosure_ip=CMN_CFG["primary_enclosure_ip"],
-                 enclosure_user=CMN_CFG["enclosure_user"],
-                 enclosure_pwd=CMN_CFG["enclosure_pwd"]):
+    def __init__(self, host=CMN_CFG["nodes"][0]["host"], h_user=CMN_CFG["nodes"][0]["username"],
+                 h_pwd=CMN_CFG["nodes"][0]["password"],
+                 enclosure_ip=CMN_CFG["enclosure"]["primary_enclosure_ip"],
+                 enclosure_user=CMN_CFG["enclosure"]["enclosure_user"],
+                 enclosure_pwd=CMN_CFG["enclosure"]["enclosure_pwd"]):
         """
         Method to initialize members of ControllerLib class.
 
