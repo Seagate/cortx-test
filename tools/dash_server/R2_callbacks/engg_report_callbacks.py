@@ -72,17 +72,14 @@ def gen_table_comp_summary(n_clicks, branch, build_no, test_system, test_team):
         query_input = {
             "query": {"buildType": branch, "buildNo": build, "testPlanLabel": test_system,
                       "testTeam": test_team},
-            "projection": {"issueIDs": True}}
+            "field": "issueIDs"}
 
         query_input.update(common.credentials)
-        response = requests.request("GET", common.search_endpoint, headers=common.headers,
+        response = requests.request("GET", common.distinct_endpoint, headers=common.headers,
                                     data=json.dumps(query_input))
         if response.status_code == HTTPStatus.OK:
             json_response = json.loads(response.text)
-            issue_list = []
-            for each in json_response["result"]:
-                issue_list.extend(each["issueIDs"])
-
+            issue_list = json_response["result"]
             issue_df = common.get_issue_details(issue_list)
             build_dict = {}
             for comp in component_list:
@@ -398,16 +395,14 @@ def gen_table_detail_reported_bugs(n_clicks, branch, build_no, test_system, test
     query_input = {
         "query": {"buildType": branch, "buildNo": build_no, "testPlanLabel": test_system,
                   "testTeam": test_team},
-        "projection": {"issueIDs": True}}
+        "field": "issueIDs"}
 
     query_input.update(common.credentials)
-    response = requests.request("GET", common.search_endpoint, headers=common.headers,
+    response = requests.request("GET", common.distinct_endpoint, headers=common.headers,
                                 data=json.dumps(query_input))
     if response.status_code == HTTPStatus.OK:
         json_response = json.loads(response.text)
-        issue_list = []
-        for each in json_response["result"]:
-            issue_list.extend(each["issueIDs"])
+        issue_list = json_response["result"]
         print("Issue list (reported bugs)", issue_list)
         df_detail_reported_bugs = common.get_issue_details(issue_list)
         detail_reported_bugs = dash_table.DataTable(

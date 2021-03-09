@@ -100,16 +100,13 @@ def gen_table_reported_bugs(n_clicks, version, build_no, test_system, test_team)
     query_input = {
         "query": {"buildType": version, "buildNo": build_no, "testPlanLabel": test_system,
                   "testTeam": test_team},
-        "projection": {"issueIDs": True}}
+        "field": "issueIDs"}
 
     query_input.update(common.credentials)
-    response = requests.request("GET", common.search_endpoint, headers=common.headers,
+    response = requests.request("GET", common.distinct_endpoint, headers=common.headers,
                                 data=json.dumps(query_input))
     if response.status_code == HTTPStatus.OK:
-        issue_list = []
-        for each in json.loads(response.text)["result"]:
-            issue_list.extend(each["issueIDs"])
-
+        issue_list =  json.loads(response.text)["result"]
         df_issue_details = common.get_issue_details(issue_list)
         # check issue type and priority
         # test issues
