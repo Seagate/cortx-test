@@ -180,8 +180,6 @@ def server(*args: Any) -> None:
     }
     """
 
-
-    #schema_str = json.dumps(schema_str)
     schema_registry_conf = {"url": SCHEMA_REGISTRY}
     schema_registry_client = SchemaRegistryClient(schema_registry_conf)
 
@@ -197,7 +195,7 @@ def server(*args: Any) -> None:
         try:
             work_item = work_queue.get()
             if work_item is None:
-                work_queue.task_done()
+                work_queue.task_done()  # poisoning can break the loop
                 break
             test_set = list(work_item.get())
             te_ticket = work_item.tickets
