@@ -1,0 +1,74 @@
+{
+"setupname":"Enter unique name",
+"nodes":[
+    {
+        "host": "Enter eosnode-number",
+        "hostname": "Enter complete hostname",
+        "ip": "Enter IP address",
+        "username": "",
+        "password": ""
+    },
+    {
+        "host": "",
+        "hostname": "",
+        "ip": "",
+        "username": "",
+        "password": ""
+    }
+],
+
+"enclosure":
+{
+    "primary_enclosure_ip": "10.0.0.2",
+    "secondary_enclosure_ip": "10.0.0.3",
+    "username": "",
+    "password": ""
+},
+
+"pdu":{
+    "ip": "",
+    "username": "",
+    "password": "",
+    "power_on": "on",
+    "power_off": "off",
+    "sleep_time": 120
+},
+
+"gem_controller":
+{
+    "ip": "",
+    "username": "",
+    "password": "",
+    "port1": "9012",
+    "port2": "9014"
+},
+
+"bmc":
+{
+    "username": "",
+    "password": ""
+},
+
+"ldap":
+{
+    "username": "",
+    "password": "",
+    "sspl_pass": ""
+},
+
+"csm":
+{
+  "mgmt_vip": "",
+  "csm_admin_user":{
+    "username": "",
+    "password": ""
+  }
+
+},
+"s3":
+{
+    "s3_server_ip": "",
+    "s3_server_user": "",
+    "s3_server_pwd": ""
+}
+}

@@ -8,6 +8,7 @@ Resource    ../../../resources/page_objects/s3accountPage.robot
 Resource    ../../../resources/common/common.robot
 Resource    ../../../resources/page_objects/userSettingsLocalPage.robot
 Resource    ../../../resources/page_objects/auditlogPage.robot
+Resource    ../../../resources/page_objects/softwareUpdatepage.robot
 Variables   ../../../resources/common/common_variables.py
 
 
@@ -26,6 +27,7 @@ ${Sub_tab}  None
 ${username}
 ${password}
 ${Download_File_Path}  \root\Downloads\
+${sw_version}  683
 
 *** Test Cases ***
 
@@ -49,7 +51,7 @@ TEST-1226
 TEST-1213
     [Documentation]  Test that CSM user with role manager has access to dashboard and perform actions on alerts
     ...  Reference : https://jts.seagate.com/browse/TEST-1213
-    [Tags]  Priority_High  CFT_test
+    [Tags]  Priority_High  CFT_test  user_role
     ${new_password}=  Generate New Password
     Navigate To Page  MANAGE_MENU_ID
     Create New CSM User  manage1213  ${new_password}  manage
@@ -88,7 +90,7 @@ TEST-1213
 TEST-1219
     [Documentation]  Test that monitor user can view alerts and stats.
     ...  Reference : https://jts.seagate.com/browse/TEST-1219
-    [Tags]  Priority_High  CFT_test
+    [Tags]  Priority_High  CFT_test  user_role
     ${new_password}=  Generate New Password
     Navigate To Page  MANAGE_MENU_ID
     Create New CSM User  monitor1219  ${new_password}  monitor
@@ -190,3 +192,15 @@ TEST-4932
     Sleep  5s  #S3 Audit takes a while
     Verify Audit Log Downloaded  ${Download_File_Path}  s3
     Capture Page Screenshot  test_4932_S3_audit_log_downloaded.png
+
+TEST-7820
+    [Documentation]  Test that after software update is done, appropriate last update status, last update version
+    ...  and last update description is displayed
+    ...  Reference : https://jts.seagate.com/browse/TEST-7820
+    Navigate To Page  MAINTENANCE_MENU_ID  SW_UPDATE_TAB_ID
+    Click On Upload New Software File Button
+    ${path}=  Download SW ISO File  ${sw_version}  ${Download_File_Path}
+    Upload File  CHOOSE_SW_UPDATE_FILE_BTN_ID  ${path}
+    # These following lines should be executed in case you have the proper machine
+    #Click On Upload New Software File Button
+    #Click On Start Software Update Button

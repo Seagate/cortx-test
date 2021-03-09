@@ -46,9 +46,9 @@ class RASTestLib(RASCoreLib):
     """
     def __init__(
             self,
-            host: str = CMN_CFG["host"],
-            username: str = CMN_CFG["username"],
-            password: str = CMN_CFG["password"]) -> None:
+            host: str = CMN_CFG["nodes"][0]["host"],
+            username: str = CMN_CFG["nodes"][0]["username"],
+            password: str = CMN_CFG["nodes"][0]["password"]) -> None:
         """
         Method initializes members of RASTestLib and its parent class
 
@@ -60,7 +60,7 @@ class RASTestLib(RASCoreLib):
         self.username = username
         self.pwd = password
         self.common_cfg = CMN_CFG
-        self.sspl_pass = CMN_CFG["sspl_pass"]
+        self.sspl_pass = CMN_CFG['ldap']["sspl_pass"]
         super().__init__(host, username, password)
 
     def start_rabbitmq_reader_cmd(self, sspl_exchange: str, sspl_key: str,
