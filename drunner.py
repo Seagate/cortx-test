@@ -181,7 +181,7 @@ def run(opts: dict) -> None:
         witem.tag = tg
         witem.parallel = True
         witem.targets = targets
-        witem.tickets = tickets
+        witem.tickets = test_map[next(iter(parallel_set))][-1]
         witem.build = build
         witem.build_type = build_type
         witem.test_plan = test_plan
@@ -192,7 +192,7 @@ def run(opts: dict) -> None:
             w_item.tag = tg
             w_item.parallel = False
             w_item.targets = targets
-            w_item.tickets = tickets
+            w_item.tickets = test_map[set_item][-1]
             w_item.build = build
             w_item.build_type = build_type
             w_item.test_plan = test_plan
@@ -219,6 +219,7 @@ def develop_execution_plan(rev_tag_map, selected_tag_map, skip_test, test_map, t
                     LOGGER.error("Test %s having %s found with no marker."
                                  " Skipping it in execution.", test, nid)
                     continue
+                test_map.update({test: (tmark, nid, _tags, ticket)})
             else:
                 LOGGER.error("Unknown Test %s found Continue...", test)
                 continue
