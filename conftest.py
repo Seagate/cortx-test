@@ -577,8 +577,9 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
 
         LOGGER.info("Adding log file path to %s", test_id)
         comment = "Log file path: {}".format(resp[1])
-        task.update_execution_details(test_exe_id=Globals.TE_TKT,
-                                      test_id=test_id, comment=comment)
+        data = task.get_test_details(test_exe_id=Globals.TE_TKT)
+        task.update_execution_details(data=data, test_id=test_id,
+                                      comment=comment)
 
 
 @pytest.fixture(scope='function')

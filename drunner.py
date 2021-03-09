@@ -68,7 +68,7 @@ def parse_args(argv):
     """Argument parser for Jenkins supplied args."""
 
     parser = argparse.ArgumentParser(description='DTR')
-    parser.add_argument("-te", "--tickets", type=str,
+    parser.add_argument("-te", "--tickets", nargs='+', type=str,
                         help="Jira xray test execution ticket ids")
     parser.add_argument("-tp", "--test_plan", type=str,
                         help="jira xray test plan id")
@@ -206,43 +206,44 @@ def run(opts: dict) -> None:
 def develop_execution_plan(rev_tag_map, selected_tag_map, skip_test, test_map, tickets):
     """Develop Test execution plan to be followed by test runners."""
     # get the te meta and create an execution plan
-    test_list, ignore = get_te_tickets_data(tickets)
-    print(f"Ignoring TE tag field {ignore}")
-    # group test_list into narrow feature groups
-    # with each feature group create parallel and non parallel groups
-    for test in test_list:
-        if test in skip_test:
-            continue
-        if test in test_map:
-            tmark, nid, _tags = test_map.get(test)
-            if not tmark:
-                LOGGER.error("Test %s having %s found with no marker."
-                             " Skipping it in execution.", test, nid)
+    for ticket in tickets:
+        test_list, ignore = get_te_tickets_data(ticket)
+        print(f"Ignoring TE tag field {ignore}")
+        # group test_list into narrow feature groups
+        # with each feature group create parallel and non parallel groups
+        for test in test_list:
+            if test in skip_test:
                 continue
-        else:
-            LOGGER.error("Unknown Test %s found Continue...", test)
-            continue
-        tdict = rev_tag_map.get(tmark)
-        if not tdict:
-            LOGGER.error("Reverse test map entry %s is empty for %s", tmark,
-                         test)
-            continue
-        p_set, s_set = tdict['parallel'], tdict['sequential']
+            if test in test_map:
+                tmark, nid, _tags = test_map.get(test)
+                if not tmark:
+                    LOGGER.error("Test %s having %s found with no marker."
+                                 " Skipping it in execution.", test, nid)
+                    continue
+            else:
+                LOGGER.error("Unknown Test %s found Continue...", test)
+                continue
+            tdict = rev_tag_map.get(tmark)
+            if not tdict:
+                LOGGER.error("Reverse test map entry %s is empty for %s", tmark,
+                             test)
+                continue
+            p_set, s_set = tdict['parallel'], tdict['sequential']
 
-        if tmark not in selected_tag_map:
-            p_s = set()
-            s_s = set()
-            if test in p_set:
-                p_s.add(test)
+            if tmark not in selected_tag_map:
+                p_s = set()
+                s_s = set()
+                if test in p_set:
+                    p_s.add(test)
+                else:
+                    s_s.add(test)
+                selected_tag_map.update({tmark: [p_s, s_s]})
             else:
-                s_s.add(test)
-            selected_tag_map.update({tmark: [p_s, s_s]})
-        else:
-            t_l = selected_tag_map.get(tmark)
-            if test in p_set:
-                t_l[0].add(test)
-            else:
-                t_l[1].add(test)
+                t_l = selected_tag_map.get(tmark)
+                if test in p_set:
+                    t_l[0].add(test)
+                else:
+                    t_l[1].add(test)
 
 
 def create_test_map(base_components_marks: Tuple,

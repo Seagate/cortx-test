@@ -202,16 +202,14 @@ class JiraTask:
         data = response.json()
         return data
 
-    def update_execution_details(self, test_exe_id, test_id, comment):
+    def update_execution_details(self, data, test_id, comment):
         """
         Add comment to the mentioned jira id
         """
         run_id = None
         try:
-            data = self.get_test_details(test_exe_id)
             if len(data) == 0:
-                print("No test details found in test execution tkt %s",
-                      test_exe_id)
+                print("No test details found in test execution tkt")
                 return False
 
             for test in data:
