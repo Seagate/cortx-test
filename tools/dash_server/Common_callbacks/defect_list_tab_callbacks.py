@@ -21,7 +21,6 @@
 # !/usr/bin/python
 
 
-import json
 from http import HTTPStatus
 import dash_table
 import pandas as pd
@@ -41,7 +40,7 @@ def get_test_executions_from_test_plan(test_plan: str, username: str, password: 
         test_plan (str): Test plan number in JIRA
         username (str): JIRA Username
         password (str): JIRA Password
-    :return list of Test execution keys attached to testplan
+    :return list of Test execution keys attached to test plan
     """
     jira_url = f'https://jts.seagate.com/rest/raven/1.0/api/testplan/{test_plan}/testexecution'
     response = requests.get(jira_url, auth=(username, password))
@@ -50,25 +49,6 @@ def get_test_executions_from_test_plan(test_plan: str, username: str, password: 
         for each in response.json():
             te_ids.append(each["key"])
     return te_ids
-
-
-def get_test_from_test_execution(test_execution: str, username: str, password: str):
-    """
-
-    Args:
-        test_execution (str): Test execution number in JIRA
-        username (str): JIRA Username
-        password (str): JIRA Password
-
-    Returns:
-        [{"key":"TEST-10963", "status":"FAIL", "defects": []}, {...}]
-        "defects" = [{key:"EOS-123", "summary": "Bug Title", "status": "New/Started/Closed"},{}]
-    """
-    jira_url = f'https://jts.seagate.com/rest/raven/1.0/api/testexec/{test_execution}/test'
-    query = {'detailed': "true"}
-    response = requests.get(jira_url, auth=(username, password), params=query)
-    if response.status_code == HTTPStatus.OK and response.json():
-        return response.json()
 
 
 @app.callback(
@@ -81,7 +61,7 @@ def gen_table_execution_wise_defect(n_clicks, ids):
     """
     Callback : Returns the defect details attached to the test execution ids
     :param n_clicks: Event after submit button clicked.
-    :param te_ids: List of test execution id's
+    :param ids: List of test execution id's
     :return: Datatable
     """
     if n_clicks is None or ids is None:
@@ -95,42 +75,45 @@ def gen_table_execution_wise_defect(n_clicks, ids):
                                                      "test_execution"])
     jira_url = "https://jts.seagate.com/"
     auth_jira = JIRA({'server': jira_url}, basic_auth=(common.jira_username, common.jira_password))
-    for id in ids_list:
+    for input_id in ids_list:
         te_ids = []
         try:
-            id_details = auth_jira.issue(id)
+            id_details = auth_jira.issue(input_id)
         except Exception as ex:
-            invalid_id.append(id)
-
-        if id_details.fields.issuetype.name == 'Test Plan':
-            tp_id = id
-            temp_list = get_test_executions_from_test_plan(id, common.jira_username,
-                                                           common.jira_password)
-            if len(temp_list) > 0:
-                te_ids.extend(temp_list)
-        elif id_details.fields.issuetype.name == 'Test Execution':
-            tp_id = "-"
-            te_ids.append(id)
+            print("Exception received while accessing Jira {}".format(ex))
+            invalid_id.append(input_id)
         else:
-            invalid_id.append(id)
+            if id_details.fields.issuetype.name == 'Test Plan':
+                tp_id = input_id
+                temp_list = get_test_executions_from_test_plan(input_id, common.jira_username,
+                                                               common.jira_password)
+                if len(temp_list) > 0:
+                    te_ids.extend(temp_list)
+            elif id_details.fields.issuetype.name == 'Test Execution':
+                tp_id = "-"
+                te_ids.append(input_id)
+            else:
+                invalid_id.append(input_id)
+                continue
 
-        print("TE ids : ", te_ids)
-        for te_id in te_ids:
-            issue_list = []
-            jiraLink = 'https://jts.seagate.com/rest/raven/1.0/api/testexec/' + str(te_id) + \
-                       '/test?detailed=true'
-            response = requests.get(jiraLink, auth=(common.jira_username, common.jira_password))
-            test_execution_data = response.json()
-            for each in test_execution_data:
-                for defect_no in range(len(each['defects'])):
-                    issue_list.append(each['defects'][defect_no]['key'])
-            print("Issue List:", issue_list)
-            te_df = common.get_issue_details(issue_list)
+            print("TE ids : ", te_ids)
+            for te_id in te_ids:
+                issue_list = []
+                jira_link = 'https://jts.seagate.com/rest/raven/1.0/api/testexec/' +\
+                            str(te_id) + '/test?detailed=true'
+                response = requests.get(jira_link, auth=(common.jira_username,
+                                                         common.jira_password))
+                test_execution_data = response.json()
+                for each in test_execution_data:
+                    for defect_no in range(len(each['defects'])):
+                        issue_list.append(each['defects'][defect_no]['key'])
+                print("Issue List:", issue_list)
+                te_df = common.get_issue_details(issue_list)
 
-            for _ in te_df:
-                te_df["test_execution"] = te_id
-                te_df["test_plan"] = tp_id
-            df_execution_wise_defect = df_execution_wise_defect.append(te_df)
+                for _ in te_df:
+                    te_df["test_execution"] = te_id
+                    te_df["test_plan"] = tp_id
+                df_execution_wise_defect = df_execution_wise_defect.append(te_df)
 
     if common.DEBUG_PRINTS:
         print("gen_table_execution_wise_defect : Dataframe returned ")

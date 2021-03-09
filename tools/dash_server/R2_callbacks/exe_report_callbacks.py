@@ -21,11 +21,14 @@
 # !/usr/bin/python
 import json
 from http import HTTPStatus
+
 import dash_table
+import numpy as np
 import pandas as pd
 import requests
 from dash.dependencies import Output, Input
 from dash.exceptions import PreventUpdate
+
 import common
 from common import app
 
@@ -313,9 +316,11 @@ def gen_table_feature_breakdown_summary(n_clicks, version, build_no, test_system
         df_feature_breakdown_summary["% Passed"] = (
                 df_feature_breakdown_summary["Passed"] /
                 df_feature_breakdown_summary["Total"] * 100)
+        df_feature_breakdown_summary["% Passed"] = np.ceil(df_feature_breakdown_summary["% Passed"])
         df_feature_breakdown_summary["% Failed"] = (df_feature_breakdown_summary["Failed"] /
-                                                    df_feature_breakdown_summary["Total"] * 100)
-
+                                                    df_feature_breakdown_summary[
+                                                        "Total"] * 100)
+        df_feature_breakdown_summary["% Failed"] = np.floor(df_feature_breakdown_summary["% Failed"])
         feature_breakdown_summary = dash_table.DataTable(
             id="feature_breakdown_summary",
             columns=[{"name": i, "id": i} for i in df_feature_breakdown_summary.columns],

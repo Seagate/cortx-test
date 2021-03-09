@@ -27,11 +27,11 @@ import dash_html_components as html
 import common
 
 # R1 TAB 1: Executive report
+report_header_style = {'text-align': 'center', 'font-size': '30px', 'font-weight': 'bold', 'font-family':'Serif'}
 r1_exec_report_content = dbc.Card(
     dbc.CardBody(
         [
-            html.P(html.U("Executive Report"),
-                   style={'text-align': 'center', 'font-size': '30px', 'font-weight': 'bold'}),
+            html.P(html.U("Executive Report"),style=report_header_style),
             html.P(html.H5(id="r1_product_heading_exe"), className="card-text", ),
             html.P(html.H5(id="r1_build_heading_exe"), className="card-text", ),
             html.P(html.H5(id="r1_date_heading_exe"), className="card-text", ),
@@ -55,8 +55,7 @@ r1_exec_report_content = dbc.Card(
 r1_engg_report_content = dbc.Card(
     dbc.CardBody(
         [
-            html.P(html.U("Engineers Report"),
-                   style={'text-align': 'center', 'font-size': '30px', 'font-weight': 'bold'}),
+            html.P(html.U("Engineer Report"),style=report_header_style),
             html.P(html.H5(id="r1_product_heading_eng"), className="card-text", ),
             html.P(html.H5(id="r1_build_heading_eng"), className="card-text", ),
             html.P(html.H5(id="r1_date_heading_eng"), className="card-text"),
@@ -88,8 +87,7 @@ r1_engg_report_content = dbc.Card(
 r2_exec_report_content = dbc.Card(
     dbc.CardBody(
         [
-            html.P(html.U("Executive Report"),
-                   style={'text-align': 'center', 'font-size': '30px', 'font-weight': 'bold'}),
+            html.P(html.U("Executive Report"),style=report_header_style),
             html.P(html.H5(id="product_heading_exe"), className="card-text", ),
             html.P(html.H5(id="build_heading_exe"), className="card-text", ),
             html.P(html.H5(id="date_heading_exe"), className="card-text", ),
@@ -113,8 +111,7 @@ r2_exec_report_content = dbc.Card(
 r2_engg_report_content = dbc.Card(
     dbc.CardBody(
         [
-            html.P(html.U("Engineers Report"),
-                   style={'text-align': 'center', 'font-size': '30px', 'font-weight': 'bold'}),
+            html.P(html.U("Engineer Report"),style=report_header_style),
             html.P(html.H5(id="product_heading_eng"), className="card-text", ),
             html.P(html.H5(id="build_heading_eng"), className="card-text", ),
             html.P(html.H5(id="date_heading_eng"), className="card-text"),
@@ -135,7 +132,7 @@ r2_engg_report_content = dbc.Card(
             html.P("Multiple Buckets Performance Statistics (Average) using HSBench and COSBench",
                    style=common.dict_style_table_caption),
             html.Div(id="table_multi_bucket_perf_stats"),
-            html.P("Detail Reported Bugs"),
+            html.P("Detail Reported Bugs",style=common.dict_style_table_caption),
             html.Div(id="table_detail_reported_bugs")
         ]
     ),

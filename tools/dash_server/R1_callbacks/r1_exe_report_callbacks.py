@@ -22,12 +22,14 @@
 
 
 import dash_table
+import numpy as np
 import pandas as pd
 from dash.dependencies import Output, Input
 from dash.exceptions import PreventUpdate
+
 import common
-from common import app
 import mongodbAPIs as r1Api
+from common import app
 
 
 @app.callback(
@@ -145,6 +147,7 @@ def get_previous_build(current_build, version):
                 return 'release_' + prev
             return prev
         except Exception as ex:
+            print("Exception received while checking previous versions {}".format(ex))
             return prev
     else:
         return None
@@ -266,9 +269,11 @@ def gen_table_feature_breakdown_summary(n_clicks, branch, build_no):
     df_feature_breakdown_summary = pd.DataFrame(data_feature_breakdown_summary)
     df_feature_breakdown_summary["% Passed"] = (df_feature_breakdown_summary["Passed"] /
                                                 df_feature_breakdown_summary["Total"] * 100)
+    df_feature_breakdown_summary["% Passed"] = np.ceil(df_feature_breakdown_summary["% Passed"])
 
     df_feature_breakdown_summary["% Failed"] = (df_feature_breakdown_summary["Failed"] /
                                                 df_feature_breakdown_summary["Total"] * 100)
+    df_feature_breakdown_summary["% Failed"] = np.floor(df_feature_breakdown_summary["% Failed"])
 
     feature_breakdown_summary = dash_table.DataTable(
         id="feature_breakdown_summary",

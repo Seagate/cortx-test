@@ -61,12 +61,12 @@ def add_multiple_to_database(data):
             return True
 
 
-def find_and_update_one(filter, update):
+def find_and_update_one(db_filter, update):
     '''
     Finds a single document and updates it
 
         Parameters:
-            filter (dict): A query that matches the document to update
+            db_filter (dict): A query that matches the document to update
                 e.g. {'testid': 'Test1'} will query database for a document with testid as Test1
             update (dict): The update operations to apply
                 e.g. {'$set': {'result': 'Pass'}} will set Pass in result field
@@ -77,7 +77,7 @@ def find_and_update_one(filter, update):
         db = client['cft_test_results']
         tests = db.timings
         try:
-            tests.find_one_and_update(filter, {"$set": update})
+            tests.find_one_and_update(db_filter, {"$set": update})
         except Exception as e:
             print("Unable to find and update document into database. Observed following exception:")
             print(e)
@@ -87,12 +87,12 @@ def find_and_update_one(filter, update):
             return True
 
 
-def delete_one(filter):
+def delete_one(db_filter):
     '''
-    Delete a single document matching the filter
+    Delete a single document matching the db_filter
 
         Parameters:
-            filter (dict): A query that matches the document to delete
+            db_filter (dict): A query that matches the document to delete
                 e.g. {'testid': 'Test1'} will query database for a document with testid as Test1
         Returns:
             result (bool): delete operation successfully completed or not
@@ -101,7 +101,7 @@ def delete_one(filter):
         db = client['cft_test_results']
         tests = db.timings
         try:
-            tests.delete_one(filter)
+            tests.delete_one(db_filter)
         except Exception as e:
             print("Unable to delete a document from database. Observed following exception:")
             print(e)
@@ -111,12 +111,12 @@ def delete_one(filter):
             return True
 
 
-def delete_many(filter):
+def delete_many(db_filter):
     '''
-    Delete multiple documents matching the filter
+    Delete multiple documents matching the db_filter
 
         Parameters:
-            filter (dict): A query that matches the document to delete
+            db_filter (dict): A query that matches the document to delete
                 e.g. {'build': 'demo'} will query database for documents with build as demo
         Returns:
             result (bool): delete operation successfully completed or not
@@ -125,7 +125,7 @@ def delete_many(filter):
         db = client['cft_test_results']
         tests = db.timings
         try:
-            tests.delete_many(filter)
+            tests.delete_many(db_filter)
         except Exception as e:
             print("Unable to delete documents from database. Observed following exception:")
             print(e)
@@ -135,12 +135,12 @@ def delete_many(filter):
             return True
 
 
-def find(filter, filter2):
+def find(db_filter, db_filter2):
     '''
-    Find multiple documents matching the filter
+    Find multiple documents matching the db_filter
 
         Parameters:
-            filter (dict): A query that matches the document to delete
+            db_filter (dict): A query that matches the document to delete
                 e.g. {'result': 'Fail'} will query database for documents with result as Fail
         Returns:
             result (bool): find operation successfully completed or not
@@ -150,7 +150,7 @@ def find(filter, filter2):
         tests = db.timings
         result = None
         try:
-            result = tests.find(filter, filter2)
+            result = tests.find(db_filter, db_filter2)
         except Exception as e:
             print("Unable to search documents from database. Observed following exception:")
             print(e)
@@ -160,12 +160,12 @@ def find(filter, filter2):
             return result
 
 
-def find(filter):
+def find(db_filter):
     '''
-    Find multiple documents matching the filter
+    Find multiple documents matching the db_filter
 
         Parameters:
-            filter (dict): A query that matches the document to delete
+            db_filter (dict): A query that matches the document to delete
                 e.g. {'result': 'Fail'} will query database for documents with result as Fail
         Returns:
             result (bool): find operation successfully completed or not
@@ -175,7 +175,7 @@ def find(filter):
         tests = db.timings
         result = None
         try:
-            result = tests.find(filter)
+            result = tests.find(db_filter)
         except Exception as e:
             print("Unable to search documents from database. Observed following exception:")
             print(e)
@@ -185,22 +185,22 @@ def find(filter):
             return result
 
 
-def count_documents(filter):
+def count_documents(db_filter):
     '''
-    Count documents matching the filter
+    Count documents matching the db_filter
 
         Parameters:
-            filter (dict): A query that matches the document to delete
+            db_filter (dict): A query that matches the document to delete
                 e.g. {'result': 'Fail'} will query database for documents with result as Fail
         Returns:
-            result (int): number of documents matching the filter
+            result (int): number of documents matching the db_filter
     '''
     with MongoClient(readHostURI) as client:
         db = client['cft_test_results']
         tests = db.timings
         result = None
         try:
-            result = tests.count_documents(filter)
+            result = tests.count_documents(db_filter)
         except Exception as e:
             print("Unable to search documents from database. Observed following exception:")
             print(e)
@@ -210,13 +210,13 @@ def count_documents(filter):
             return result
 
 
-def find_distinct(entry, filter):
+def find_distinct(entry, db_filter):
     with MongoClient(readHostURI) as client:
         db = client['cft_test_results']
         tests = db.timings
         result = None
         try:
-            result = tests.distinct(entry, filter)
+            result = tests.distinct(entry, db_filter)
         except Exception as e:
             print("Unable to search documents from database. Observed following exception:")
             print(e)

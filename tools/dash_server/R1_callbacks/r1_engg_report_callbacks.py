@@ -165,6 +165,7 @@ def gen_table_timing_summary(n_clicks, branch, build_no):
             try:
                 data = sum(cursor) / len(cursor)
             except Exception as ex:
+                print("Exception received while calculating average{}".format(ex))
                 data = "-"
             data_list.append(data)
         timing_data.append(data_list)
