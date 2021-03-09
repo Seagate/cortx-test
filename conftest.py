@@ -574,6 +574,8 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
                                                    local_path=test_log)
         if resp[0]:
             LOGGER.info("Log file is uploaded at location : %s", resp[1])
+        else:
+            LOGGER.error("Failed to upload log file at location %s", resp[1])
 
         LOGGER.info("Adding log file path to %s", test_id)
         comment = "Log file path: {}".format(resp[1])

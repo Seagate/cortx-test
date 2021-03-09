@@ -208,7 +208,7 @@ class JiraTask:
         """
         run_id = None
         try:
-            if len(data) == 0:
+            if not data:
                 print("No test details found in test execution tkt")
                 return False
 
