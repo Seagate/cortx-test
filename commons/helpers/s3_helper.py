@@ -34,7 +34,6 @@ from commons.utils import config_utils
 from commons.utils.system_utils import run_local_cmd, run_remote_cmd
 from config import S3_CFG, CMN_CFG
 LOGGER = logging.getLogger(__name__)
-# CM_CFG = config_utils.read_yaml(COMMON_CONFIG)[1]
 CM_CFG = CMN_CFG["nodes"][0]
 
 
@@ -114,9 +113,9 @@ class S3Helper:
         return status
 
     @staticmethod
-    def check_s3services_online(host: str = CMN_CFG["nodes"][0]["host"],
-                                user: str = CMN_CFG["nodes"][0]["username"],
-                                pwd: str = CMN_CFG["nodes"][0]["password"]) -> tuple:
+    def check_s3services_online(host: str = CM_CFG["host"],
+                                user: str = CM_CFG["username"],
+                                pwd: str = CM_CFG["password"]) -> tuple:
         """
         Check whether all s3server services are online.
 
@@ -156,9 +155,9 @@ class S3Helper:
 
     @staticmethod
     def get_s3server_service_status(service: str = None,
-                                    host: str = CMN_CFG["nodes"][0]["host"],
-                                    user: str = CMN_CFG["nodes"][0]["username"],
-                                    pwd: str = CMN_CFG["nodes"][0]["password"]) -> tuple:
+                                    host: str = CM_CFG["host"],
+                                    user: str = CM_CFG["username"],
+                                    pwd: str = CM_CFG["password"]) -> tuple:
         """
         Execute command to get status any system service at remote s3 server.
 
@@ -189,9 +188,9 @@ class S3Helper:
 
     def start_s3server_service(self,
                                service: str = None,
-                               host: str = CMN_CFG["nodes"][0]["host"],
-                               user: str = CMN_CFG["nodes"][0]["username"],
-                               pwd: str = CMN_CFG["nodes"][0]["password"]) -> tuple:
+                               host: str = CM_CFG["host"],
+                               user: str = CM_CFG["username"],
+                               pwd: str = CM_CFG["password"]) -> tuple:
         """
         Execute command to start any system service at remote s3 server.
 
@@ -221,9 +220,9 @@ class S3Helper:
 
     def stop_s3server_service(self,
                               service: str = None,
-                              host: str = CMN_CFG["nodes"][0]["host"],
-                              user: str = CMN_CFG["nodes"][0]["username"],
-                              pwd: str = CMN_CFG["nodes"][0]["password"]) -> tuple:
+                              host: str = CM_CFG["host"],
+                              user: str = CM_CFG["username"],
+                              pwd: str = CM_CFG["password"]) -> tuple:
         """
         Execute command to stop any system service at remote s3 server.
 
@@ -253,9 +252,9 @@ class S3Helper:
 
     def restart_s3server_service(self,
                                  service: str = None,
-                                 host: str = CMN_CFG["nodes"][0]["host"],
-                                 user: str = CMN_CFG["nodes"][0]["username"],
-                                 pwd: str = CMN_CFG["nodes"][0]["password"]) -> tuple:
+                                 host: str = CM_CFG["host"],
+                                 user: str = CM_CFG["username"],
+                                 pwd: str = CM_CFG["password"]) -> tuple:
         """
         Execute command to restart any system service at remote s3 server.
 
@@ -288,9 +287,9 @@ class S3Helper:
             return False, error
 
     def restart_s3server_processes(self,
-                                   host: str = CMN_CFG["nodes"][0]["host"],
-                                   user: str = CMN_CFG["nodes"][0]["username"],
-                                   pwd: str = CMN_CFG["nodes"][0]["password"],
+                                   host: str = CM_CFG["host"],
+                                   user: str = CM_CFG["username"],
+                                   pwd: str = CM_CFG["password"],
                                    wait_time: int = 20) -> tuple:
         """
         Restart all s3server processes using hctl command.
@@ -340,9 +339,9 @@ class S3Helper:
             return False, error
 
     @staticmethod
-    def get_s3server_resource(host: str = CMN_CFG["nodes"][0]["host"],
-                              user: str = CMN_CFG["nodes"][0]["username"],
-                              pwd: str = CMN_CFG["nodes"][0]["password"]) -> tuple:
+    def get_s3server_resource(host: str = CM_CFG["host"],
+                              user: str = CM_CFG["username"],
+                              pwd: str = CM_CFG["password"]) -> tuple:
         """
         Get resources of all s3server instances using pcs command.
 
@@ -376,9 +375,9 @@ class S3Helper:
             return False, error
 
     def restart_s3server_resources(self,
-                                   host: str = CMN_CFG["nodes"][0]["host"],
-                                   user: str = CMN_CFG["nodes"][0]["username"],
-                                   pwd: str = CMN_CFG["nodes"][0]["password"],
+                                   host: str = CM_CFG["host"],
+                                   user: str = CM_CFG["username"],
+                                   pwd: str = CM_CFG["password"],
                                    wait_time: int = 20) -> tuple:
         """
         Restart all s3server resources using pcs command.
@@ -429,9 +428,9 @@ class S3Helper:
 
     @staticmethod
     def is_s3_server_path_exists(path: str = None,
-                                 host: str = CMN_CFG["nodes"][0]["host"],
-                                 user: str = CMN_CFG["nodes"][0]["username"],
-                                 pwd: str = CMN_CFG["nodes"][0]["password"]) -> tuple:
+                                 host: str = CM_CFG["host"],
+                                 user: str = CM_CFG["username"],
+                                 pwd: str = CM_CFG["password"]) -> tuple:
         """
         Check if file exists on s3 server.
 
@@ -456,9 +455,9 @@ class S3Helper:
             return False, error
 
     @staticmethod
-    def get_s3server_fids(host: str = CMN_CFG["nodes"][0]["host"],
-                          user: str = CMN_CFG["nodes"][0]["username"],
-                          pwd: str = CMN_CFG["nodes"][0]["password"]) -> tuple:
+    def get_s3server_fids(host: str = CM_CFG["host"],
+                          user: str = CM_CFG["username"],
+                          pwd: str = CM_CFG["password"]) -> tuple:
         """
         Get fid's of all s3server processes.
 
@@ -493,9 +492,9 @@ class S3Helper:
     @staticmethod
     def copy_s3server_file(file_path: str = None,
                            local_path: str = None,
-                           host: str = CMN_CFG["nodes"][0]["host"],
-                           user: str = CMN_CFG["nodes"][0]["username"],
-                           pwd: str = CMN_CFG["nodes"][0]["password"]) -> tuple:
+                           host: str = CM_CFG["host"],
+                           user: str = CM_CFG["username"],
+                           pwd: str = CM_CFG["password"]) -> tuple:
         """
         copy file from s3 server to local path.
 
@@ -538,9 +537,9 @@ class S3Helper:
         :param pwd: password for the user.
         :return: bool, response.
         """
-        host = kwargs.get("host", CMN_CFG["nodes"][0]["host"])
-        user = kwargs.get("user", CMN_CFG["nodes"][0]["username"])
-        pwd = kwargs.get("password", CMN_CFG["nodes"][0]["password"])
+        host = kwargs.get("host", CM_CFG["host"])
+        user = kwargs.get("user", CM_CFG["username"])
+        pwd = kwargs.get("password", CM_CFG["password"])
         local_path = os.path.join(os.getcwd(), 'temp_file')
         try:
             if os.path.exists(local_path):
@@ -591,9 +590,9 @@ class S3Helper:
         :return: boolean and response/error.
         """
         try:
-            host = kwargs.get("host", CMN_CFG["nodes"][0]["host"])
-            user = kwargs.get("user", CMN_CFG["nodes"][0]["username"])
-            pwd = kwargs.get("password", CMN_CFG["nodes"][0]["password"])
+            host = kwargs.get("host", CM_CFG["host"])
+            user = kwargs.get("user", CM_CFG["username"])
+            pwd = kwargs.get("password", CM_CFG["password"])
             status, resources = self.get_s3server_resource()
             if not status:
                 return status, resources
@@ -712,9 +711,9 @@ class S3Helper:
         :param pwd: password for the user.
         :return: bool, response..
         """
-        host = kwargs.get("host", CMN_CFG["nodes"][0]["host"])
-        user = kwargs.get("user", CMN_CFG["nodes"][0]["username"])
-        pwd = kwargs.get("password", CMN_CFG["nodes"][0]["password"])
+        host = kwargs.get("host", CM_CFG["host"])
+        user = kwargs.get("user", CM_CFG["username"])
+        pwd = kwargs.get("password", CM_CFG["password"])
         local_path = os.path.join(os.getcwd(), "temp_file")
         try:
             if os.path.exists(local_path):
