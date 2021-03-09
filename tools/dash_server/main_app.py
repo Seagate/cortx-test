@@ -45,32 +45,33 @@ def favicon():
     """
     return flask.send_from_directory(os.path.join(server.root_path, 'static'), 'favicon.ico')
 
+
 input_options = dbc.Row(
     [
         dcc.Dropdown(
             id="version_dropdown",
             options=versions,
             placeholder="select version",
-            style={'width': '200px', 'verticalAlign': 'middle', "margin-right": "15px","margin-top":"10px",
-                   "margin-bottom":"10px"},
+            style={'width': '200px', 'verticalAlign': 'middle', "margin-right": "15px",
+                   "margin-top": "10px"},
         ),
 
         dcc.Dropdown(
             id="branch_dropdown",
             placeholder="select branch",
-            style={'width': '200px', 'verticalAlign': 'middle', "margin-right": "15px","margin-top":"10px",
-                   'margin-bottom':"10px"},
+            style={'width': '200px', 'verticalAlign': 'middle', "margin-right": "15px",
+                   "margin-top": "10px"},
         ),
 
         dcc.Dropdown(
             id='build_no_dropdown',
             placeholder="select build",
-            style={'width': '200px', 'verticalAlign': 'middle', "margin-right": "15px","margin-top":"10px",
-                   "margin-bottom":"10px"},
+            style={'width': '200px', 'verticalAlign': 'middle', "margin-right": "15px",
+                   "margin-top": "10px"},
         ),
 
         dbc.Button("Get!", id="submit_button", n_clicks=0, color="success",
-                   style={'height': '30px','margin-top':'18px'}),
+                   style={'height': '36px', 'margin-top': '20px'}),
     ],
     justify='center'
 )
@@ -80,14 +81,14 @@ input_optional_options = dbc.Row(
             id='test_system_dropdown',
             placeholder="Test System Type",
             style={'width': '200px', 'verticalAlign': 'middle', "margin-right": "15px",
-                   "margin-bottom":"10px"},
+                   "margin-top": "10px"},
         ),
 
         dcc.Dropdown(
             id='test_team_dropdown',
             placeholder="Select test component(Optional)",
             style={'width': '200px', 'verticalAlign': 'middle', "margin-right": "15px",
-                   "margin-bottom":"10px"},
+                   "margin-top": "10px"},
         ),
     ],
     justify='center',
@@ -96,7 +97,12 @@ input_optional_options = dbc.Row(
 
 # ---Overall layout-------------------------------------------------------------------
 dict_style_tab = {'margin-left': 10, 'margin-right': 10}
-dict_style_label = {'font-size': '18px', 'color': '#44cc00', 'background-color': '#343a40'}
+dict_style_label = {'font-size': '22px', 'color': '#44cc00', 'background-color': '#343a40',
+                    'border-style': 'solid', 'border-color': '#ffffff', 'font-family': 'Serif'}
+
+dict_style_sub_tab = {'margin-left': 10, 'margin-right': 10, 'margin-top': '10px'}
+dict_style_sub_label = {'font-size': '18px', 'color': '#44cc00', 'background-color': '#343a40',
+                        'border-style': 'solid', 'margin-top': '20px'}
 
 
 @app.callback(
@@ -139,40 +145,51 @@ def fetch_engg_report(value):
 
 qa_tabs = dbc.Tabs(
     [
-        dbc.Tab(id="exec_report_content", label="Executive Report", style=dict_style_tab,
-                label_style=dict_style_label),
-        dbc.Tab(id="engg_report_content", label="Engineers Report", style=dict_style_tab,
-                label_style=dict_style_label),
-        dbc.Tab(tl.defect_list_per_tp_content, label='Defect List for Test Execution Plans',
-                style=dict_style_tab,
-                label_style=dict_style_label),
-        dbc.Tab(tl.query_database, label='Query Database', style=dict_style_tab,
-                label_style=dict_style_label),
+        dbc.Tab(id="exec_report_content", label="Executive's Report", style=dict_style_sub_tab,
+                label_style=dict_style_sub_label),
+        dbc.Tab(id="engg_report_content", label="Engineer's Report", style=dict_style_sub_tab,
+                label_style=dict_style_sub_label)
     ],
     className="nav nav nav-pills nav-fill nav-pills flex-column flex-sm-row",
     id="tabs",
 )
 
-qa_page =html.Div(
+qa_page = html.Div(
     [
         html.Div(input_options),
         html.Div(input_optional_options),
-        #html.Div(build_report_header),
-        #html.Div(toast),
+        # html.Div(build_report_header),
+        # html.Div(toast),
         html.Div(qa_tabs)
     ]
 )
 
-
 perf_page = html.Div("Performance Page")
+
+query_tabs = dbc.Tabs(
+    [
+        dbc.Tab(tl.defect_list_per_tp_content, label='Defect List for Test Plans/Test Executions',
+                style=dict_style_sub_tab,
+                label_style=dict_style_sub_label),
+        dbc.Tab(tl.query_database, label='Query Database', style=dict_style_sub_tab,
+                label_style=dict_style_sub_label)
+    ],
+    className="nav nav nav-pills nav-fill nav-pills flex-column flex-sm-row",
+    id="query_tabs",
+)
+query_page = html.Div(query_tabs)
 
 main_tabs = dbc.Tabs(
     [
-        dbc.Tab(qa_page, label="QA Tab", style=dict_style_tab, label_style=dict_style_label),
-        dbc.Tab(perf_page, label="Performance Tab", style=dict_style_tab, label_style=dict_style_label)
+        dbc.Tab(qa_page, label="QA  REPORTS", style=dict_style_tab, label_style=dict_style_label,
+                active_label_style={'font-weight': 'bold'}),
+        dbc.Tab(query_page, label="QUERY  QA  DATA ", style=dict_style_tab,
+                label_style=dict_style_label, active_label_style={'font-weight': 'bold'}),
+        dbc.Tab(perf_page, label="PERFORMANCE", style=dict_style_tab, label_style=dict_style_label,
+                active_label_style={'font-weight': 'bold'}),
     ],
     className="nav nav nav-pills nav-fill nav-pills flex-column flex-sm-row",
-    id="main_tabs"
+    id="main_tabs",
 )
 
 cortx_sharepoint = "https://seagatetechnology.sharepoint.com/sites/gteamdrv1/tdrive1224"
@@ -183,22 +200,24 @@ navbar = dbc.Navbar(
         html.A(
             dbc.Row(
                 [
-                dbc.Col(html.Img(src=app.get_asset_url("seagate.png"), height="100px")),
-                dbc.Col(dbc.NavbarBrand("CORTX QA Dashboard",style={'font-size': 40,'textAlign':'center'}),
-                        className='mx-auto my-auto'),
-                dbc.Col(dbc.Button("Cortx Sharepoint", color="light", size="lg",
-                                   outline=True,
-                                   href=cortx_sharepoint,
-                                   target="_blank",
-                                   ),
-                        width="auto", className="my-auto  mr-auto d-flex justify-content-end"),
-                dbc.Col(dbc.Button("CFT Sharepoint", color="light", size="lg",
-                                   outline=True,
-                                   href=cft_sharepoint,
-                                   target="_blank"),
-                        width="auto", className="my-auto  mr-auto d-flex justify-content-end")
-            ],
-            #no_gutters=True,
+                    dbc.Col(html.Img(src=app.get_asset_url("seagate.png"), height="100px")),
+                    dbc.Col(dbc.NavbarBrand("CORTX QA Dashboard",
+                                            style={'font-size': 40, 'textAlign': 'center',
+                                                   'width': '800px'}),
+                            className='my-auto'),
+                    dbc.Col(dbc.Button("Cortx Sharepoint", color="light", size="lg",
+                                       outline=True,
+                                       href=cortx_sharepoint,
+                                       target="_blank",
+                                       ),
+                            width="auto", className="my-auto"),
+                    dbc.Col(dbc.Button("CFT Sharepoint", color="light", size="lg",
+                                       outline=True,
+                                       href=cft_sharepoint,
+                                       target="_blank"),
+                            width="auto", className="my-auto ")
+                ],
+                # no_gutters=True,
             ),
         ),
     ],

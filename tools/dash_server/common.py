@@ -63,7 +63,7 @@ versions = [
 
 # common style
 dict_style_table_caption = {'font-size': '20px', 'font-weight': 'bold', 'color': '#3131b0',
-                            'margin-top': '18px', 'margin-bottom': '5px'}
+                            'margin-top': '18px', 'margin-bottom': '5px', 'font-family': 'Serif'}
 dict_style_header = {'backgroundColor': '#7F8C8D', 'textAlign': 'center', 'font-size': '18px',
                      'fontWeight': 'bold',
                      'border': '1px solid black'}

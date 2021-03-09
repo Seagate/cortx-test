@@ -26,8 +26,6 @@ import dash_core_components as dcc
 import dash_html_components as html
 import common
 
-
-
 # R1 TAB 1: Executive report
 r1_exec_report_content = dbc.Card(
     dbc.CardBody(
@@ -79,7 +77,7 @@ r1_engg_report_content = dbc.Card(
             html.P("Multiple Buckets Performance Statistics (Average) using HSBench and COSBench",
                    style=common.dict_style_table_caption),
             html.Div(id="r1_table_multi_bucket_perf_stats"),
-            html.P("Detail Reported Bugs"),
+            html.P("Detail Reported Bugs", style=common.dict_style_table_caption),
             html.Div(id="r1_table_detail_reported_bugs")
         ]
     ),
@@ -148,7 +146,8 @@ r2_engg_report_content = dbc.Card(
 testPlan_inputs = dbc.Row(
     dbc.Col(dbc.InputGroup([
         dbc.Input(id="test_execution_input",
-                  placeholder="Enter , separated test execution IDs", debounce=True),
+                  placeholder="Enter , separated Test Execution IDs or Test Plan IDs",
+                  debounce=True),
         dbc.InputGroupAddon(
             dbc.Button("Get defects!", id="test_execution_submit_button", color="success"),
             addon_type="postpend",
@@ -158,20 +157,29 @@ testPlan_inputs = dbc.Row(
 )
 
 defect_list_per_tp_content = dbc.Card(
+
     dbc.CardBody(
         [
             testPlan_inputs,
-            html.Th("Detailed Test Execution wise Reported Bugs", id='detailed_report_tab3'),
-
-            dcc.Loading((dbc.Row(
-                [dbc.Col(html.Div(id='table_test_execution_wise_defect', className='text-center',
-                                  style={'margin': 20, 'margin-top': 10,
-                                         'margin-bottom': 20}))]))),
+            dcc.Loading(
+                (
+                    dbc.Row(
+                        [dbc.Col(
+                            html.Div(id='table_test_execution_wise_defect', className='text-center',
+                                     style={'margin': 20, 'margin-top': 10,
+                                            'margin-bottom': 20}))
+                        ]),
+                    dbc.Row(
+                        [dbc.Col(html.Div(id='test_execution_wise_defect_error'),
+                                 className='text-center',
+                                 style={'color': '#ff0000', 'margin': 20, 'font-size': 20})]
+                    )
+                )
+            )
         ]
     ),
     className="flex-sm-fill nav-link",
 )
-
 
 # TAB 4 Query DB
 query_database = dbc.Card(
