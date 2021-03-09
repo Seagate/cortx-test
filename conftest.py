@@ -354,7 +354,7 @@ def pytest_sessionstart(session: Session) -> None:
     global REPORT_CLIENT
     report_client.ReportClient.init_instance()
     REPORT_CLIENT = report_client.ReportClient.get_instance()
-    #reset_imported_module_log_level()
+    reset_imported_module_log_level()
 
 
 def reset_imported_module_log_level():
@@ -366,7 +366,8 @@ def reset_imported_module_log_level():
         if isinstance(_logger, logging.PlaceHolder):
             LOGGER.info("Skipping placeholder to reset logging level")
             continue
-        _logger.setLevel(logging.WARNING)
+        if _logger.name in ('boto3', 'botocore', 'nose', 'paramiko'):
+            _logger.setLevel(logging.WARNING)
 
 
 @pytest.hookimpl(tryfirst=True)
@@ -382,6 +383,8 @@ def pytest_collection(session):
     global CACHE
     CACHE = LRUCache(1024 * 10)
     Globals.LOCAL_RUN = _local
+    Globals.TP_TKT = config.option.tp_ticket
+    Globals.BUILD = config.option.build
     if _distributed:
         required_tests = read_dist_test_list_csv()
         Globals.TE_TKT = config.option.te_tkt
@@ -561,7 +564,9 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
             for rec in logs:
                 fp.write(rec + '\n')
         LOGGER.info("Uploading test log file to NFS server")
-        remote_path = os.path.join(params.NFS_BASE_DIR, Globals.TE_TKT,
+        remote_path = os.path.join(params.NFS_BASE_DIR,
+                                   Globals.BUILD, Globals.TP_TKT,
+                                   Globals.TE_TKT, test_id,
                                    date.today().strftime("%b-%d-%Y"))
         resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
                                                    mnt_dir=params.MOUNT_DIR,
@@ -569,6 +574,15 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
                                                    local_path=test_log)
         if resp[0]:
             LOGGER.info("Log file is uploaded at location : %s", resp[1])
+        else:
+            LOGGER.error("Failed to upload log file at location %s", resp[1])
+
+        LOGGER.info("Adding log file path to %s", test_id)
+        comment = "Log file path: {}".format(resp[1])
+        data = task.get_test_details(test_exe_id=Globals.TE_TKT)
+        task.update_execution_details(data=data, test_id=test_id,
+                                      comment=comment)
+
 
 @pytest.fixture(scope='function')
 def generate_random_string():

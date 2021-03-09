@@ -316,3 +316,38 @@ verify update s3 account has only password options
     ${password_fields} =  Get Element Count  ${EDIT_S3_ACCOUNT_OPTIONS_XPATH}
     Should Be True  ${password_fields} == 2
     Delete S3 Account  ${S3_account_name}  ${password}  True
+
+Check Setting Option Not Exists
+    [Documentation]  This keyword is to check that s3 user does not have access to setting page
+    Page Should Not Contain Element  ${SETTINGS_ID}
+
+Check Maintenance Option Not Exists
+    [Documentation]  This keyword is to check that s3 user does not have access to Maintenance page
+    Page Should Not Contain Element  ${MAINTENANCE_MENU_ID}    
+
+Check Dashboard Option Not Exists
+    [Documentation]  This keyword is to check that s3 user does not have access to Dashboard page
+    Page Should Not Contain Element  ${DASHBOARD_MENU_ID}    
+
+Check Health Option Not Exists
+    [Documentation]  This keyword is to check that s3 user does not have access to Health page
+    Page Should Not Contain Element  ${HEALTH_TAB_ID}  
+
+Check Create CSM User Option Not Exists
+    [Documentation]  This keyword is to check that s3 user does not have access to create csm user page
+    Page Should Not Contain Element  ${ADMINISTRATIVE_USER_TAB_ID}
+    
+Check Alert Icon Not Exists
+    [Documentation]   This keyword is to check that s3 user does not have access to Alert page
+    Page Should Not Contain Element  ${ALERT_IMAGE_2_ID}
+
+Check Associated S3 Account Exists
+    [Documentation]   This keyword is to check that s3 user does associated s3 account 
+    [Arguments]  ${expected_s3_account}  ${email}
+    wait until element is visible  ${S3_ACCOUNTS_TABLE_XPATH}  timeout=60
+    ${s3_account_table_data}=   Read Table Data  ${S3_ACCOUNTS_TABLE_XPATH}
+    ${expected_list}=  Create List  ${expected_s3_account}  ${email}
+    Remove From List  ${s3_account_table_data}  2
+    Log To Console And Report  ${s3_account_table_data}
+    Log To Console And Report  ${expected_list}
+    Lists Should Be Equal  ${s3_account_table_data}  ${expected_list}

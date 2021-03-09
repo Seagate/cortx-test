@@ -139,6 +139,8 @@ def run(opts: dict) -> None:
     tickets = opts.tickets
     targets = opts.targets
     build = opts.build
+    build_type = opts.build_type
+    test_plan = opts.test_plan
     topic = params.TEST_EXEC_TOPIC
     # collect the test universe
     run_pytest_collect_only_cmd()
@@ -161,6 +163,47 @@ def run(opts: dict) -> None:
                     rev_tag_map, skip_marks, skip_test,
                     test_map)
 
+    develop_execution_plan(rev_tag_map, selected_tag_map, skip_test, test_map, tickets)
+
+    work_queue = worker.WorkQ(producer.produce, 1024)
+    finish = False  # Use finish to exit loop
+    # start kafka producer
+    _producer = Thread(target=producer.server,
+                       args=(topic, work_queue))  # Use finish in server
+    _producer.start()
+
+    # for parallel group create a kafka entry
+    # for each non parallel group item create a kafka entry
+    for tg in selected_tag_map:
+        parallel_set, sequential_set = selected_tag_map[tg]
+        witem = Queue()
+        witem.put(parallel_set)
+        witem.tag = tg
+        witem.parallel = True
+        witem.targets = targets
+        witem.tickets = test_map[next(iter(parallel_set))][-1]
+        witem.build = build
+        witem.build_type = build_type
+        witem.test_plan = test_plan
+        work_queue.put(witem)
+        for set_item in sequential_set:
+            w_item = Queue()
+            w_item.put([set_item])
+            w_item.tag = tg
+            w_item.parallel = False
+            w_item.targets = targets
+            w_item.tickets = test_map[set_item][-1]
+            w_item.build = build
+            w_item.build_type = build_type
+            w_item.test_plan = test_plan
+            work_queue.put(w_item)
+    work_queue.put(None)  # poison
+    work_queue.join()
+    _producer.join()
+
+
+def develop_execution_plan(rev_tag_map, selected_tag_map, skip_test, test_map, tickets):
+    """Develop Test execution plan to be followed by test runners."""
     for ticket in tickets:
         # get the te meta and create an execution plan
         test_list, ignore = get_te_tickets_data(ticket)
@@ -173,14 +216,17 @@ def run(opts: dict) -> None:
             if test in test_map:
                 tmark, nid, _tags = test_map.get(test)
                 if not tmark:
-                    LOGGER.error("Test %s found with no marker. Skipping it in execution.", test)
+                    LOGGER.error("Test %s having %s found with no marker."
+                                 " Skipping it in execution.", test, nid)
                     continue
+                test_map.update({test: (tmark, nid, _tags, ticket)})
             else:
                 LOGGER.error("Unknown Test %s found Continue...", test)
                 continue
             tdict = rev_tag_map.get(tmark)
             if not tdict:
-                LOGGER.error("Reverse test map entry %s is empty for %s", tmark, test)
+                LOGGER.error("Reverse test map entry %s is empty for %s", tmark,
+                             test)
                 continue
             p_set, s_set = tdict['parallel'], tdict['sequential']
 
@@ -198,37 +244,6 @@ def run(opts: dict) -> None:
                     t_l[0].add(test)
                 else:
                     t_l[1].add(test)
-
-    work_queue = worker.WorkQ(producer.produce, 1024)
-    finish = False  # Use finish to exit loop
-    # start kafka producer
-    _producer = Thread(target=producer.server, args=(topic, work_queue))  # Use finish in server
-    _producer.setDaemon(True)
-    _producer.start()
-
-    # for parallel group create a kafka entry
-    # for each non parallel group item create a kafka entry
-    for tg in selected_tag_map:
-        parallel_set, sequential_set = selected_tag_map[tg]
-        witem = Queue()
-        witem.put(parallel_set)
-        witem.tag = tg
-        witem.parallel = True
-        witem.targets = targets
-        witem.tickets = tickets
-        witem.build = build
-        work_queue.put(witem)
-        for set_item in sequential_set:
-            w_item = Queue()
-            w_item.put(set_item)
-            w_item.tag = tg
-            w_item.parallel = False
-            w_item.targets = targets
-            w_item.tickets = tickets
-            w_item.build = build
-            work_queue.put(w_item)
-    work_queue.put(None)  # poison
-    work_queue.join()
 
 
 def create_test_map(base_components_marks: Tuple,
@@ -288,7 +303,7 @@ def update_rev_tag_map(mark, parallel, rev_tag_map, tid):
 def create_log_dir_if_not_exists():
     """
     Create log dir if not exists in main entry.
-    :return:
+    :return: Path created dir
     """
     log_home = os.path.join(os.getcwd(), params.LOG_DIR_NAME)
     if not os.path.exists(log_home):

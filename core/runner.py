@@ -73,7 +73,7 @@ def get_db_credential() -> Tuple[str, Optional[str]]:
     return db_user, db_pwd
 
 
-def parse_json(json_file) :
+def parse_json(json_file):
     """
     Parse given json file.
     """
