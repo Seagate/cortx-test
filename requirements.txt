@@ -32,6 +32,7 @@ pandas==0.25.1
 paramiko==2.6.0
 pika==1.1.0
 pycryptodome==3.10.1
+pycrypto==2.6.1
 PyHamcrest==2.0.2
 pymongo
 pysftp==0.2.9
