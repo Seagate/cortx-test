@@ -134,7 +134,7 @@ def get_timings_data_from_db(payload, rest_ep):
     sys.exit(1)
 
 
-def get_timing_summary(builds, rest_ep, db_username, db_password):
+def get_timing_summary(test_plan_ids, builds, rest_ep, db_username, db_password):
     """Timings data from database"""
     data = [["Timing Summary (Seconds)"]]
     row = ["Parameters"]
@@ -142,10 +142,12 @@ def get_timing_summary(builds, rest_ep, db_username, db_password):
     data.extend([row])
     for param, val in TIMINGS_PARAMETERS.items():
         row = [val]
-        for build in builds:
-            payload = {"query": {'buildNo': build, param: {"$exists": True}},
-                       "projection": {param: True},
-                       "db_username": db_username, "db_password": db_password}
+        for build, tp_id in zip(builds, test_plan_ids):
+            payload = {
+                "query": {'testPlanID': tp_id, param: {"$exists": True}},
+                "projection": {param: True},
+                "db_username": db_username, "db_password": db_password
+            }
             parameter_data = get_timings_data_from_db(payload, rest_ep)
             if parameter_data:
                 row.append(round_off(sum(x[param] for x in parameter_data) / len(parameter_data)))

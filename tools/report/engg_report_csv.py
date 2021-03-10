@@ -326,7 +326,7 @@ def main():
     data.extend([""])
     data.extend(get_metadata_latencies(builds[0], uri, db_name, db_collection))
     data.extend([""])
-    data.extend(common.get_timing_summary(builds, rest, db_username, db_password))
+    data.extend(common.get_timing_summary(tp_ids, builds, rest, db_username, db_password))
     data.extend([""])
     data.extend(get_detailed_reported_bugs(test_plans.tp, username, password))
     data.extend([""])

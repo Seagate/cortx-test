@@ -189,7 +189,7 @@ def main():
     data.extend([""])
     data.extend(get_single_bucket_perf_data(builds[0], uri, db_name, db_collection))
     data.extend([""])
-    data.extend(common.get_timing_summary(builds, rest, db_username, db_password))
+    data.extend(common.get_timing_summary(tp_ids, builds, rest, db_username, db_password))
     data.extend([""])
     with open("../exec_report.csv", "a", newline='') as csv_file:
         writer = csv.writer(csv_file)
