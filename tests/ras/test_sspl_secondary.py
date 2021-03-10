@@ -41,7 +41,7 @@ NODES = CMN_CFG["nodes"]
 
 LOGGER = logging.getLogger(__name__)
 
-TEST_DATA = [CMN_CFG["host2"]]
+TEST_DATA = [CMN_CFG["nodes"][1]["host"]]
 
 
 class TestSSPLSecondary:

@@ -301,6 +301,57 @@ CMD_DELETE_BUCKET = "s3buckets delete {}"
 CREATE_IAM_USER = "s3iamusers create"
 LIST_IAM_USER = "s3iamusers show"
 DELETE_IAM_USER = "s3iamusers delete"
+CMD_GENERATE_SUPPORT_BUNDLE = "support_bundle generate"
+CMD_GENERATE_SUPPORT_BUNDLE_OS = "support_bundle generate {0} --os"
+CMD_SUPPORT_BUNDLE_STATUS = "support_bundle status"
 
 # Linux System Commands
 CMD_MKDIR = "mkdir -p {}"
+CMD_MOUNT = "mount -t nfs {} {}"
+CMD_UMOUNT = "umount {}"
+CMD_TAR = "tar -zxvf {} -C {}"
+CMD_REMOVE_DIR = "rm -rf {}"
+
+# Provisioner commands
+CMD_LSBLK = "lsblk -S | grep disk | wc -l"
+CMD_OS_REL = "cat /etc/redhat-release"
+CMD_KRNL_VER = "uname -r"
+
+# Deployment commands
+CMD_YUM_UTILS = "yum install -y yum-utils"
+CMD_CONFIG_MGR = "yum-config-manager --add-repo \"{0}/3rd_party/\""
+CMD_INSTALL_SALT = "yum install --nogpgcheck -y python3 python36-m2crypto salt salt-master salt-minion"
+CMD_RM_REPO = "rm -rf /etc/yum.repos.d/*3rd_party*.repo"
+CMD_CONFIG_MGR1 = "yum-config-manager --add-repo \"{0}/cortx_iso/\""
+CMD_PRVSNR = "yum install --nogpgcheck -y python36-cortx-prvsnr"
+CMD_RM_REPO1 = "rm -rf /etc/yum.repos.d/*cortx_iso*.repo"
+CMD_YUM_CLEAN = "yum clean all"
+CMD_RM_YUM = "rm -rf /var/cache/yum/"
+CMD_DEPLOY_SINGLE_NODE = "sshpass -p \"{0}\" provisioner auto_deploy_vm srvnode-1:{1} " \
+                     "--logfile --logfile-filename /var/log/seagate/provisioner/setup.log " \
+                     "--source rpm --config-path {2} --dist-type bundle " \
+                     "--target-build {3}"
+CMD_START_CLSTR = "cortx cluster start"
+CMD_RD_LOG = "cat {0}"
+
+# S3 awscli  Commands
+CMD_AWSCLI_CREATE_BUCKET = "aws s3 mb s3://{0}"
+CMD_AWSCLI_DELETE_BUCKET = "aws s3 rb s3://{0}"
+CMD_AWSCLI_LIST_BUCKETS = "aws s3 ls"
+CMD_AWSCLI_PUT_OBJECT = "aws s3 cp {0} s3://{1}/{2}"
+CMD_AWSCLI_HEAD_BUCKET = "aws s3api head-bucket --bucket {0}"
+CMD_AWSCLI_GET_BUCKET_LOCATION = "aws s3api get-bucket-location --bucket {0}"
+CMD_AWSCLI_LIST_OBJECTS = "aws s3 ls s3://{0}"
+CMD_AWSCLI_REMOVE_OBJECTS = "aws s3 rm s3://{0}/{1}"
+CMD_AWSCLI_RECURSIVE_FLAG = "--recursive"
+CMD_AWSCLI_EXCLUDE_FLAG = "--exclude '{}'"
+CMD_AWSCLI_INCLUDE_FLAG = "--include '{}'"
+CMD_AWSCLI_CREATE_MULTIPART_UPLOAD = "aws s3api create-multipart-upload --bucket {0} --key {1}"
+CMD_AWSCLI_LIST_MULTIPART_UPLOADS = "aws s3api list-multipart-uploads --bucket {0}"
+CMD_AWSCLI_UPLOAD_PARTS = "aws s3api upload-part --bucket {0} --key {1} --part-number {2} " \
+                        "--body {3} --upload-id {4}"
+CMD_AWSCLI_LIST_PARTS = "aws s3api list-parts --bucket {0} --key {1} --upload-id {2}"
+CMD_AWSCLI_COMPLETE_MULTIPART = "aws s3api complete-multipart-upload --multipart-upload file://{0} " \
+                                "--bucket {1} --key {2} --upload-id {3}"
+CMD_AWSCLI_DOWNLOAD_OBJECT = "aws s3 cp s3://{0}/{1} {2}"
+

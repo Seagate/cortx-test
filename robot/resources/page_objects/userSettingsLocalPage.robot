@@ -58,7 +58,7 @@ Create New CSM User
 Verify New User
     [Documentation]  Functionality to validate correc user name
     [Arguments]  ${user_name}
-    Sleep  5s  #  Reloading take some initial time
+    Sleep  6s  #  Reloading take some initial time
     ${users_list}=  Read Table Data  ${CSM_TABLE_ELEMENTS_XPATH}
     List Should Contain Value  ${users_list}  ${user_name}
 

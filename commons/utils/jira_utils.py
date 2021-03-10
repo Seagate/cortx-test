@@ -5,7 +5,7 @@ import json
 import traceback
 import requests
 import datetime
-from jira import JIRA
+from jira import JIRA, JIRAError
 from http import HTTPStatus
 
 
@@ -192,3 +192,41 @@ class JiraTask:
                                     headers=self.headers,
                                     params=None)
         return response
+
+    def get_test_details(self, test_exe_id):
+        """
+        Get details of the test cases in a test execution ticket
+        """
+        jira_url = "https://jts.seagate.com/rest/raven/1.0/api/testexec/{}/test".format(test_exe_id)
+        response = requests.get(jira_url, auth=(self.jira_id, self.jira_password))
+        data = response.json()
+        return data
+
+    def update_execution_details(self, data, test_id, comment):
+        """
+        Add comment to the mentioned jira id
+        """
+        run_id = None
+        try:
+            if not data:
+                print("No test details found in test execution tkt")
+                return False
+
+            for test in data:
+                if test['key'] == test_id:
+                    run_id = test['id']
+
+            if run_id is None:
+                print("Test ID %s not found in test execution ticket details",
+                      test_id)
+                return False
+
+            url = "https://jts.seagate.com/rest/raven/1.0/testrun/{}/comment".format(run_id)
+
+            response = requests.request("PUT", url, data=comment,
+                                        auth=(self.jira_id, self.jira_password),
+                                        headers=self.headers,
+                                        params=None)
+            return response
+        except JIRAError as err:
+            print(err.status_code, err.text)
