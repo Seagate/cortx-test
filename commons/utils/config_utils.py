@@ -31,7 +31,6 @@ import re
 from configparser import ConfigParser, MissingSectionHeaderError, NoSectionError
 from defusedxml.cElementTree import parse
 import yaml
-from jsonschema import validate
 import commons.errorcodes as cterr
 from commons.exceptions import CTException
 

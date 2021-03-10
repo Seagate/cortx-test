@@ -34,10 +34,9 @@ class RestTestLib:
     """
 
     def __init__(self):
-        #self.csm_conf = config_utils.read_yaml("config/csm/csm_config.yaml")[1]
-        self.config = CSM_REST_CFG #self.csm_conf["Restcall"]
-        self._log = logging.getLogger(__name__)
-        self.restapi = RestClient(CSM_REST_CFG) #RestClient(self.csm_conf["Restcall"])
+        self.config = CSM_REST_CFG
+        self.log = logging.getLogger(__name__)
+        self.restapi = RestClient(CSM_REST_CFG)
         self.user_type = ("valid", "duplicate", "invalid", "missing")
         self.headers = {}
 
@@ -52,7 +51,6 @@ class RestTestLib:
             endpoint = self.config["rest_login_endpoint"]
             headers = self.config["Login_headers"]
             self.log.debug("endpoint: %s", endpoint)
-            # payload = self.config[login_as] # showing some error in Cortx-1.0.0-rc3
             if isinstance(login_as, dict):
                 payload = Template(const.LOGIN_PAYLOAD).substitute(login_as)
             else:
