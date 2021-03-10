@@ -142,7 +142,7 @@ def get_timing_summary(test_plan_ids, builds, rest_ep, db_username, db_password)
     data.extend([row])
     for param, val in TIMINGS_PARAMETERS.items():
         row = [val]
-        for build, tp_id in zip(builds, test_plan_ids):
+        for tp_id in test_plan_ids:
             payload = {
                 "query": {'testPlanID': tp_id, param: {"$exists": True}},
                 "projection": {param: True},
