@@ -1,0 +1,252 @@
+iam_account_login:
+  file_path: "/home/all_users.txt"
+  acc_name_prefix: "iamAccount"
+  email_suffix: "@seagate.com"
+
+test_9780:
+  password: "seagate"
+  password_reset: True
+  msg: "PasswordResetRequired = true"
+
+test_9782:
+  account: "dummy_account"
+  access_key: "dummy_access_key"
+  secret_key: "dummy_secret_key"
+  password: "seagate"
+  password_reset: False
+  err_msg: "InvalidAccessKeyId"
+
+test_9783:
+  password: "seagate"
+  password_reset: True
+  err_msg: "InvalidAccessKeyId"
+  long_err_msg: "The AWS access key Id you provided does not exist in our records."
+
+test_9784:
+  password: ""
+  password_reset: True
+  err_msg: "PasswordPolicyVoilation"
+
+test_9785:
+  password: "XjkPGDIzihAJqrKuHOCFJKZ71AJEr4wfhB6M0btYcAP2SYhwu7JSFXcw4aUm58krF70Uly8qkvQ9Uv2r94wxHMnciDAjZZT860X9TZqUykPrUAaY5F1hSX8w1EfOrULe5"
+  password_reset: False
+  err_msg: "PasswordPolicyVoilation"
+
+test_9786:
+  list_of_passwords:
+    - "Sea123"
+    - "SEAGATE"
+    - "seagate"
+    - '"sea gate"'
+  password_reset: False
+
+test_9787:
+  list_special_invalid_char:
+    - "'Sea?gate'"
+    - "'SEAG<te'"
+    - "'sea>get'"
+    - "'sea~gate'"
+    - "'sea$gate'"
+    - "'sea`gate'"
+  password_reset: False
+
+test_9788:
+  password: "seagate"
+  password_reset: False
+
+test_9789:
+  password: "seagate"
+  password_reset: True
+
+test_9790:
+  password: "seagate"
+
+test_9791:
+  password: "seagate"
+
+test_9792:
+  password_reset: "True"
+  password: "seagate"
+  user_name: "seagate_user"
+  err_msg: "Failed to create Account login profile"
+
+test_9807:
+  password: "seagate"
+  password_reset: "True"
+
+test_9808:
+  account_name: "dummy_account"
+  access_key: "dummy_access_key"
+  secret_key: "dummy_secret_key"
+  err_msg: "Failed to get login profile"
+
+test_9809:
+  err_msg: "Failed to get login profile"
+
+test_9810:
+  password: "seagate"
+  password_reset: True
+  err_msg: "Failed to get login profile"
+
+test_9811:
+  password_reset: "True"
+  password: "seagate"
+  user_name: "seagate_user"
+  err_msg: "User is not authorized to perform invoked action"
+
+test_9812:
+  password_reset: True
+  password: "seagate"
+  new_password: "new_seagate"
+
+test_9813:
+  password_reset: False
+  password: "seagate"
+  new_password: "new_seagate"
+  new_password_reset: True
+
+test_9814:
+  password_reset: True
+  password: "seagate"
+  new_password: "new_seagate"
+  new_password_reset: False
+
+test_9815:
+  password_reset: False
+  password: "seagate"
+
+test_9816:
+  password_reset: False
+  password: "seagate"
+  new_password: "new_seagate"
+  new_password_reset: True
+
+test_9817:
+  password_reset: False
+  password: "seagate"
+  err_msg: "Please provide password or password-reset flag"
+
+test_9818:
+  password_reset: True
+  password: "seagate"
+  err_msg: "An error occurred (NoSuchEntity) : LoginProfile not created for account"
+
+test_9819:
+  account_name: "no_account"
+  access_key: "no_accesskey"
+  secret_key: "no_secretkey"
+  password: "seagate"
+  password_reset: True
+  err_msg: "The AWS access key Id you provided does not exist in our records"
+
+test_9820:
+  password: "seagate"
+  password_reset: True
+  new_password: "new_seagate"
+  err_msg: "The AWS access key Id you provided does not exist in our records"
+
+test_9821:
+  password: "seagate"
+  password_reset: True
+
+test_9822:
+  password: "seagate"
+  password_reset: True
+  new_password: "new$%?gate"
+
+test_9823:
+  password: "seagate"
+  password_reset: False
+  user_name: "new_user99"
+  new_password_reset: True
+  new_password: "seagate"
+  err_msg: "User is not authorized to perform invoked action"
+
+test_9861:
+  password: "seagate"
+  password_reset: False
+
+test_9862:
+  account_name: "dummy_account"
+  password: "seagate"
+  err_msg: "An error occurred (NoSuchEntity)"
+
+test_9863:
+  password: "seagate"
+  err_msg: "An error occurred (NoSuchEntity)"
+
+test_9864:
+  password_reset: False
+  password: "seagate"
+  bucket_name: "iamtestbucket"
+
+test_9865:
+  password_reset: False
+  password: "seagate"
+  temp_access_key: "qeopioErUdjalkjfaowf"
+  temp_secret_key: "AslkfjfjksjRsfjlskgUljflglsd"
+  temp_session_token: "2wslfaflk1aldjlakjfkljf67skhvskjdjiwfha"
+  bucket_name: "iamtestbucket"
+  err_msg: "InvalidAccessKeyId"
+
+test_9866:
+  password: "ldapadmin"
+  err_msg: "An error occurred (InvalidCredentials)"
+
+test_9867:
+  password_reset: False
+  password: "seagate"
+
+test_9868:
+  password_reset: False
+  password: "seagate"
+  duration: 1200
+  bucket_name: "iamtestbucket"
+  err_msg: "ExpiredToken"
+
+test_9869:
+  password_reset: False
+  password: "seagate"
+  duration: 800
+  err_msg: "An error occurred (MinDurationIntervalNotMaintained)"
+
+test_9870:
+  password_reset: False
+  password: "seagate"
+  invalid_password: "seegate"
+  err_msg: "An error occurred (InvalidCredentials)"
+
+test_9871:
+  password: "seagate"
+  password_reset: False
+  user_name: "seagate_user"
+  user_password: "user_pwd"
+
+test_9872:
+  password: "seagate"
+  password_reset: False
+  user_name: "seagate_user"
+  user_password: "user_pwd"
+  err_msg: "An error occurred (NoSuchEntity)"
+
+test_9873:
+  password_reset: False
+  password: "seagate"
+  user_name: "seagate_user"
+  user_password: "user_pwd"
+  err_msg: "An error occurred (InvalidCredentials)"
+
+test_9874:
+  password_reset: False
+  password: "seagate"
+  user_name: "seagate_user"
+  user_password: "user_pwd"
+  duration: 1200
+
+test_9875:
+  password_reset: False
+  password: "seagate"
+  user_name: "dummy_user"
+  user_password: "dummy_user_pwd"
+  duration: 1000
+  err_msg: "An error occurred (NoSuchEntity)"
