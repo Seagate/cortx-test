@@ -38,7 +38,7 @@ from commons.utils.config_utils import read_yaml
 from commons.utils.system_utils import execute_cmd, create_file, remove_file
 from commons.utils.assert_utils import assert_true, assert_in, assert_equal
 from libs.s3 import s3_test_lib
-from libs.s3 import S3H_OBJ, ACCESS_KEY, SECRET_KEY
+from libs.s3 import S3_CFG, S3H_OBJ, ACCESS_KEY, SECRET_KEY
 
 S3_TEST_OBJ = s3_test_lib.S3TestLib()
 BLACKBOX_CONF = read_yaml("config/blackbox/test_jcloud_jclient.yaml")[1]
@@ -75,7 +75,11 @@ class TestJcloudAndJclient:
             BLACKBOX_CONF["common_cfg"]["ls_script_path_cmd"])[1]
         res = ".jar" in res_ls
         if not res:
-            res = S3H_OBJ.configure_jclient_cloud()
+            res = S3H_OBJ.configure_jclient_cloud(
+                source=S3_CFG["jClientCloud_path"]["source"],
+                destination=S3_CFG["jClientCloud_path"]["dest"],
+                nfs_path=S3_CFG["nfs_path"]
+            )
             if not res:
                 raise CTException(
                     S3_CLIENT_ERROR,
