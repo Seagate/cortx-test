@@ -41,13 +41,13 @@ from libs.s3 import SECRET_KEY, ACCESS_KEY, S3H_OBJ
 
 s3cmd_test_obj = s3_cmd_test_lib.S3CmdTestLib()
 s3_test_obj = s3_test_lib.S3TestLib()
-s3_conf = read_yaml("config/s3/s3_config.yaml")[1]
+s3_conf = read_yaml("config/s3/s3_config.yaml")
 s3cmd_cnf = read_yaml("config/blackbox/test_s3cmd.yaml")[1]
-common_cfg = s3cmd_cnf["common_cfg"]
+common_cfg = s3cmd_cnf["common_cfg"][1]
 CM_CFG = read_yaml("config/common_config.yaml")[1]
 
 
-class TestS3cmdClient():
+class TestS3cmdClient:
     """Blackbox s3cmd testsuite"""
 
     @classmethod
@@ -67,7 +67,7 @@ class TestS3cmdClient():
         It will perform prerequisite test steps if any
         """
         self.log.info("STARTED: Setup operations")
-        access, secret = ACCESS_KEY, SECRET_KEY,
+        access, secret = ACCESS_KEY, SECRET_KEY
         s3cmd_access = get_config(
             CM_CFG["s3cfg_path"], "default", "access_key")
         s3cmd_secret = get_config(
@@ -87,7 +87,8 @@ class TestS3cmdClient():
         self.log.info("STARTED: Teardown operations")
         bucket_list = s3_test_obj.bucket_list()[1]
         s3cmd_buckets = [
-            bucket for bucket in bucket_list if s3cmd_cnf["common_cfg"]["bucket_name_prefix"] in bucket]
+            bucket for bucket in bucket_list
+            if s3cmd_cnf["common_cfg"]["bucket_name_prefix"] in bucket]
         self.log.info("Buckets to be deleted: %s", s3cmd_buckets)
         if s3cmd_buckets:
             self.log.info("Deleting buckets...")
@@ -121,13 +122,10 @@ class TestS3cmdClient():
         return True, output
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7131")
     @CTFailOn(error_handler)
     def test_2309(self):
-        """
-        create multiple bucket using s3cmd client
-        :avocado: tags=s3cmd_blackbox
-        """
+        """Create multiple bucket using s3cmd client."""
         self.log.info("STARTED: create multiple bucket using s3cmd client")
         test_cfg = s3cmd_cnf["common_cfg"]
         for _ in range(2):
@@ -147,13 +145,10 @@ class TestS3cmdClient():
         self.log.info("ENDED: create multiple bucket using s3cmd client")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7155")
     @CTFailOn(error_handler)
     def test_2311(self):
-        """
-        max no of buckets supported using s3cmd
-        :avocado: tags=s3cmd_blackbox
-        """
+        """Max no of buckets supported using s3cmd."""
         self.log.info("STARTED: max no of buckets supported using s3cmd")
         test_cfg = s3cmd_cnf["common_cfg"]
         bucket_count = s3cmd_cnf["common_cfg"]["count_bkt"]
@@ -172,7 +167,7 @@ class TestS3cmdClient():
             try:
                 if len(bucket_list) > s3cmd_cnf["common_cfg"]["count_bkt"]:
                     assert_false(resp[0], resp[1])
-            except BaseException:
+            except Exception:
                 self.log.info(
                     "skipping this exception as this is not implemented yet as mentioned in tc")
             else:
@@ -185,13 +180,10 @@ class TestS3cmdClient():
         self.log.info("ENDED: max no of buckets supported using s3cmd")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7156")
     @CTFailOn(error_handler)
     def test_2312(self):
-        """
-        Delete empty bucket using s3cmd client
-        :avocado: tags=s3cmd_blackbox
-        """
+        """Delete empty bucket using s3cmd client."""
         self.log.info("STARTED: Delete empty bucket using s3cmd client")
         test_cfg = s3cmd_cnf["common_cfg"]
         bucket_name = test_cfg["bucket_name"].format(time.time())
@@ -218,13 +210,10 @@ class TestS3cmdClient():
         self.log.info("ENDED: Delete empty bucket using s3cmd client")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7157")
     @CTFailOn(error_handler)
     def test_2308(self):
-        """
-        create bucket using s3cmd
-        :avocado: tags=s3cmd_blackbox
-        """
+        """Create bucket using s3cmd."""
         self.log.info("STARTED: create bucket using s3cmd")
         test_cfg = s3cmd_cnf["test_2308"]
         bucket_name = common_cfg["bucket_name"].format(time.time())
@@ -255,13 +244,10 @@ class TestS3cmdClient():
         self.log.info("ENDED: create bucket using s3cmd")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7158")
     @CTFailOn(error_handler)
     def test_2313(self):
-        """
-        Delete multiple buckets using s3cmd client
-        :avocado: tags=s3cmd_blackbox
-        """
+        """Delete multiple buckets using s3cmd client."""
         self.log.info("STARTED: Delete multiple buckets using s3cmd client")
         test_cfg = s3cmd_cnf["test_2313"]
         bucket_name = common_cfg["bucket_name"].format(time.time())
@@ -302,13 +288,10 @@ class TestS3cmdClient():
         self.log.info("ENDED: Delete multiple buckets using s3cmd client")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7159")
     @CTFailOn(error_handler)
     def test_2326(self):
-        """
-        Create bucket with existing bucket name using s3cmd client
-        :avocado: tags=s3cmd_blackbox
-        """
+        """Create bucket with existing bucket name using s3cmd client."""
         self.log.info(
             "STARTED: Create bucket with existing bucket name using s3cmd client")
         test_cfg = s3cmd_cnf["test_2326"]
@@ -336,13 +319,10 @@ class TestS3cmdClient():
             "ENDED: Create bucket with existing bucket name using s3cmd client")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7160")
     @CTFailOn(error_handler)
     def test_2310(self):
-        """
-        list buckets using s3cmd client
-        :avocado: tags=s3cmd_blackbox
-        """
+        """List buckets using s3cmd client."""
         self.log.info("STARTED: list buckets using s3cmd client")
         test_cfg = s3cmd_cnf["test_2310"]
         bucket_name = common_cfg["bucket_name"].format(time.time())
@@ -373,13 +353,10 @@ class TestS3cmdClient():
         self.log.info("ENDED: list buckets using s3cmd client")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7161")
     @CTFailOn(error_handler)
     def test_2316(self):
-        """
-        upload object using s3cmd client
-        :avocado: tags=s3cmd_blackbox
-        """
+        """Upload object using s3cmd client."""
         self.log.info("STARTED: upload object using s3cmd client")
         test_cfg = s3cmd_cnf["test_2316"]
         bucket_name = common_cfg["bucket_name"].format(time.time())
@@ -408,13 +385,10 @@ class TestS3cmdClient():
         self.log.info("ENDED: upload object using s3cmd client")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7162")
     @CTFailOn(error_handler)
     def test_2314(self):
-        """
-        delete bucket which has objects using s3cmd client
-        :avocado: tags=s3cmd_blackbox
-        """
+        """Delete bucket which has objects using s3cmd client."""
         self.log.info(
             "STARTED: delete bucket which has objects using s3cmd client")
         test_cfg = s3cmd_cnf["test_2314"]
@@ -452,13 +426,10 @@ class TestS3cmdClient():
             "ENDED: delete bucket which has objects using s3cmd client")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7163")
     @CTFailOn(error_handler)
     def test_2320(self):
-        """
-        delete single object from bucket using s3cmd client
-        :avocado: tags=s3cmd_blackbox
-        """
+        """Delete single object from bucket using s3cmd client."""
         self.log.info(
             "STARTED: delete single object from bucket using s3cmd client")
         test_cfg = s3cmd_cnf["test_2320"]
@@ -492,21 +463,16 @@ class TestS3cmdClient():
         resp = self.execute_command(command)
         assert_true(resp[0], resp)
         assert_in(
-            test_cfg["delete_msg"].format(
-                cmd_arguments[0]), str(
-                resp[1]), resp)
+            test_cfg["delete_msg"].format(cmd_arguments[0]), str(resp[1]), resp)
         self.log.info("STEP: 3 Single file deleted")
         self.log.info(
             "ENDED: delete single object from bucket using s3cmd client")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7164")
     @CTFailOn(error_handler)
     def test_2321(self):
-        """
-        delete multiple objects from bucket using s3cmd client
-        :avocado: tags=s3cmd_blackbox
-        """
+        """Delete multiple objects from bucket using s3cmd client."""
         self.log.info(
             "STARTED: delete multiple objects from bucket using s3cmd client")
         test_cfg = s3cmd_cnf["test_2321"]
@@ -549,25 +515,17 @@ class TestS3cmdClient():
         resp = self.execute_command(command)
         assert_true(resp[0], resp)
         assert_in(
-            test_cfg["delete_msg"].format(
-                cmd_arguments[0]), str(
-                resp[1]), resp)
-        assert_in(
-            test_cfg["delete_msg"].format(
-                cmd_arguments[1]), str(
-                resp[1]), resp)
+            test_cfg["delete_msg"].format(cmd_arguments[0]), str(resp[1]), resp)
+        assert_in(test_cfg["delete_msg"].format(cmd_arguments[1]), str(resp[1]), resp)
         self.log.info("STEP: 3 Multiple files deleted from bucket")
         self.log.info(
             "ENDED: delete multiple objects from bucket using s3cmd client")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7165")
     @CTFailOn(error_handler)
     def test_2317(self):
-        """
-        list objects using S3cmd client
-        :avocado: tags=s3cmd_blackbox
-        """
+        """List objects using S3cmd client."""
         self.log.info("STARTED: list objects using S3cmd client")
         test_cfg = s3cmd_cnf["test_2317"]
         bucket_name = common_cfg["bucket_name"].format(time.time())
@@ -604,13 +562,10 @@ class TestS3cmdClient():
         self.log.info("ENDED: list objects using S3cmd client")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7552")
     @CTFailOn(error_handler)
     def test_2322(self):
-        """
-        delete all objects from bucket using s3cmd client
-        :avocado: tags=s3cmd_blackbox
-        """
+        """Delete all objects from bucket using s3cmd client."""
         self.log.info(
             "STARTED: delete all objects from bucket using s3cmd client")
         test_cfg = s3cmd_cnf["test_2322"]
@@ -675,13 +630,10 @@ class TestS3cmdClient():
             "ENDED: delete all objects from bucket using s3cmd client")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7553")
     @CTFailOn(error_handler)
     def test_2327(self):
-        """
-        Get various information about Buckets using s3cmd client
-        :avocado: tags=s3cmd_blackbox
-        """
+        """Get various information about Buckets using s3cmd client."""
         self.log.info(
             "STARTED: Get various information about Buckets using s3cmd client")
         test_cfg = s3cmd_cnf["common_cfg"]
@@ -728,13 +680,10 @@ class TestS3cmdClient():
             "ENDED: Get various information about Buckets using s3cmd client")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7551")
     @CTFailOn(error_handler)
     def test_2319(self):
-        """
-        Get file from bucket using S3cmd client
-        :avocado: tags=s3cmd_blackbox
-        """
+        """Get file from bucket using S3cmd client."""
         self.log.info("STARTED: Get file from bucket using S3cmd client")
         test_cfg = s3cmd_cnf["test_2319"]
         bucket_name = common_cfg["bucket_name"].format(time.time())
@@ -776,15 +725,12 @@ class TestS3cmdClient():
         self.log.info("ENDED: Get file from bucket using S3cmd client")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7549")
     @CTFailOn(error_handler)
     def test_2315(self):
-        """
-        delete bucket forcefully which has objects using s3cmd client
-        :avocado: tags=s3cmd_blackbox
-        """
+        """Delete bucket forcefully which has objects using s3cmd client."""
         self.log.info(
-            "STARTED: delete bucket forefully which has objects using s3cmd client")
+            "STARTED: delete bucket forcefully which has objects using s3cmd client")
         test_cfg = s3cmd_cnf["test_2315"]
         bucket_name = common_cfg["bucket_name"].format(time.time())
         bucket_url = s3cmd_cnf["common_cfg"]["bkt_path_format"].format(
@@ -838,16 +784,13 @@ class TestS3cmdClient():
         assert_in(test_cfg["error_msg"], str(resp[1]), resp)
         self.log.info("STEP: 5 Object listed in bucket")
         self.log.info(
-            "ENDED: delete bucket forefully which has objects using s3cmd client")
+            "ENDED: delete bucket forcefully which has objects using s3cmd client")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7550")
     @CTFailOn(error_handler)
     def test_2318(self):
-        """
-        list all objects in all buckets using s3cmd
-        :avocado: tags=s3cmd_blackbox
-        """
+        """List all objects in all buckets using s3cmd."""
         self.log.info("STARTED: list all objects in all buckets using s3cmd")
         test_cfg = s3cmd_cnf["common_cfg"]
         obj_list = list()
