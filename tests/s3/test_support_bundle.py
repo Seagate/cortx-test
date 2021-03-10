@@ -58,9 +58,9 @@ class TestSupportBundle:
         cls.log.info("STARTED: Setup operations")
         cls.file_lst = []
         cls.pcs_start = True
-        cls.host_ip = CM_CFG["host"]
-        cls.uname = CM_CFG["username"]
-        cls.passwd = CM_CFG["password"]
+        cls.host_ip = CM_CFG["nodes"][0]["host"]
+        cls.uname = CM_CFG["nodes"][0]["username"]
+        cls.passwd = CM_CFG["nodes"][0]["password"]
         cls.sys_bundle_dir = const.REMOTE_DEFAULT_DIR
         cls.log.info("ENDED: Setup operations")
 
@@ -512,7 +512,7 @@ class TestSupportBundle:
         assert_true(resp, remote_path)
         self.file_lst.append(os.path.join(remote_path))
         tar_dest_dir = os.path.join(remote_path, test_cfg["common_dir"])
-        node_list = [self.host_ip, CM_CFG["host2"]]
+        node_list = [self.host_ip, CM_CFG["nodes"][1]["host"]]
         self.log.info(
             "Step 1 Creating support bundle on primary and secondary nodes")
         for node in node_list:

@@ -36,11 +36,12 @@ import multiprocessing
 import threading
 import csv
 import subprocess
-from multiprocessing import Queue
+import logging
 from typing import List
 from typing import Tuple
 from typing import Any
 from typing import Dict
+from queue import Queue
 from threading import Thread
 from core import rpcserver
 from core import report_rpc
@@ -50,14 +51,14 @@ from commons.utils import system_utils
 from commons.utils import jira_utils
 from commons.utils import config_utils
 from commons import worker
-from config import params
+from commons import params
 
-sys.path.insert(0, os.getcwd())  # Has to be placed before core.
 
 LCK_FILE = 'lockfile-%s'
 INT_IP = '0.0.0.0'
 INT_PORT = 9092
 
+LOGGER = logging.getLogger(__name__)
 
 class RunnerException(RuntimeError):
     pass
@@ -69,12 +70,16 @@ def parse_args(argv):
     parser = argparse.ArgumentParser(description='DTR')
     parser.add_argument("-te", "--tickets", nargs='+', type=str,
                         help="Jira xray test execution ticket ids")
+    parser.add_argument("-tp", "--test_plan", type=str,
+                        help="jira xray test plan id")
     parser.add_argument("-l", "--log_level", type=int, default=10,
                         help="Log level numeric value [1-10]")
     parser.add_argument("-t", "--targets", nargs='+', type=str,
                         help="Target setup details separated by space")
     parser.add_argument("-b", "--build", type=str,
                         help="Builds number deployed on target")
+    parser.add_argument("-bt", "--build_type", type=str, default='Release',
+                        help="Build type (Release/Dev)")
     parser.add_argument("-er", "--enable_async_report", type=bool, default=False,
                         help="Enable async reporting to Jira and MongoDB")
     parser.add_argument("-c", "--cancel_run", type=bool, default=False,
@@ -134,14 +139,16 @@ def run(opts: dict) -> None:
     tickets = opts.tickets
     targets = opts.targets
     build = opts.build
+    build_type = opts.build_type
+    test_plan = opts.test_plan
     topic = params.TEST_EXEC_TOPIC
     # collect the test universe
     run_pytest_collect_only_cmd()
     log_home = create_log_dir_if_not_exists()
     # Create a reverse map of test id as key and values as node_id, tags
-    meta_data = dict()
-    test_map = dict()
-    rev_tag_map = dict()
+    meta_data = dict()  # test universe collected
+    test_map = dict()  # tid: (test_mark, test_meta.get('nodeid'), test_meta.get('marks')
+    rev_tag_map = dict()  # mark: dict(parallel=set(), sequential=set())}
     skip_marks = ("dataprovider", "test", "run", "skip", "usefixtures",
                   "filterwarnings", "skipif", "xfail", "parametrize")
     base_components_marks = ('csm', 's3', 'ha', 'ras', 'stress', 'combinational')
@@ -151,45 +158,20 @@ def run(opts: dict) -> None:
     if not os.path.exists(meta_file):
         print("test meta file does not exists... check if pytest_collection ran. Exiting...")
         sys.exit(-1)
-
     meta_data = config_utils.read_content_json(meta_file)
     create_test_map(base_components_marks, meta_data,
                     rev_tag_map, skip_marks, skip_test,
                     test_map)
 
-    for ticket in tickets:
-        # get the te meta and create an execution plan
-        test_list, ignore = get_te_tickets_data(ticket)
-        print(f"Ignoring TE tag {ignore}")
-        # group test_list into narrow feature groups
-        # with each feature group create parallel and non parallel groups
-        for test in test_list:
-            if test in test_map:
-                tm, nid, _tags = test_map.get(test)
-            tdict = rev_tag_map.get(tm)
-            p_set, s_set = tdict['parallel'], tdict['sequential']
-            if tm not in selected_tag_map:
-                p_s = set()
-                s_s = set()
-                if test in p_set:
-                    p_s.add(test)
-                else:
-                    s_s.add(test)
-                selected_tag_map.update({tm: [p_s, s_s]})
-            else:
-                t_l = selected_tag_map.get(tm)
-                if test in p_set:
-                    t_l[0].add(test)
-                else:
-                    t_l[1].add(test)
+    develop_execution_plan(rev_tag_map, selected_tag_map, skip_test, test_map, tickets)
 
     work_queue = worker.WorkQ(producer.produce, 1024)
     finish = False  # Use finish to exit loop
-
     # start kafka producer
-    _producer = Thread(target=producer.server, args=(topic, work_queue))  # Use finish in server
-    _producer.setDaemon(True)
+    _producer = Thread(target=producer.server,
+                       args=(topic, work_queue))  # Use finish in server
     _producer.start()
+
     # for parallel group create a kafka entry
     # for each non parallel group item create a kafka entry
     for tg in selected_tag_map:
@@ -199,18 +181,69 @@ def run(opts: dict) -> None:
         witem.tag = tg
         witem.parallel = True
         witem.targets = targets
-        witem.tickets = tickets
+        witem.tickets = test_map[next(iter(parallel_set))][-1]
         witem.build = build
+        witem.build_type = build_type
+        witem.test_plan = test_plan
         work_queue.put(witem)
         for set_item in sequential_set:
             w_item = Queue()
-            w_item.put(set_item)
+            w_item.put([set_item])
             w_item.tag = tg
             w_item.parallel = False
             w_item.targets = targets
-            w_item.tickets = tickets
+            w_item.tickets = test_map[set_item][-1]
             w_item.build = build
+            w_item.build_type = build_type
+            w_item.test_plan = test_plan
             work_queue.put(w_item)
+    work_queue.put(None)  # poison
+    work_queue.join()
+    _producer.join()
+
+
+def develop_execution_plan(rev_tag_map, selected_tag_map, skip_test, test_map, tickets):
+    """Develop Test execution plan to be followed by test runners."""
+    for ticket in tickets:
+        # get the te meta and create an execution plan
+        test_list, ignore = get_te_tickets_data(ticket)
+        print(f"Ignoring TE tag field {ignore}")
+        # group test_list into narrow feature groups
+        # with each feature group create parallel and non parallel groups
+        for test in test_list:
+            if test in skip_test:
+                continue
+            if test in test_map:
+                tmark, nid, _tags = test_map.get(test)
+                if not tmark:
+                    LOGGER.error("Test %s having %s found with no marker."
+                                 " Skipping it in execution.", test, nid)
+                    continue
+                test_map.update({test: (tmark, nid, _tags, ticket)})
+            else:
+                LOGGER.error("Unknown Test %s found Continue...", test)
+                continue
+            tdict = rev_tag_map.get(tmark)
+            if not tdict:
+                LOGGER.error("Reverse test map entry %s is empty for %s", tmark,
+                             test)
+                continue
+            p_set, s_set = tdict['parallel'], tdict['sequential']
+
+            if tmark not in selected_tag_map:
+                p_s = set()
+                s_s = set()
+                if test in p_set:
+                    p_s.add(test)
+                else:
+                    s_s.add(test)
+                selected_tag_map.update({tmark: [p_s, s_s]})
+            else:
+                t_l = selected_tag_map.get(tmark)
+                if test in p_set:
+                    t_l[0].add(test)
+                else:
+                    t_l[1].add(test)
 
 
 def create_test_map(base_components_marks: Tuple,
@@ -220,6 +253,7 @@ def create_test_map(base_components_marks: Tuple,
                     skip_test: List,
                     test_map: Dict) -> None:
     """Create a test metadata dict and tag reverse dict."""
+    special_mark = ( 'parallel',)
     for test_meta in meta_data:
         tid = test_meta.get('test_id')
         if not tid:
@@ -236,30 +270,40 @@ def create_test_map(base_components_marks: Tuple,
                 break
         test_mark = ''
         for mark in test_meta.get('marks'):
-            if mark in skip_marks:
+            if mark in skip_marks + special_mark:
                 continue
             if mark in base_components_marks:
                 parent_marks.append(mark)
                 continue
 
-            if mark not in rev_tag_map:
-                rev_tag_map.update({mark, dict(parallel=set(), sequential=set())})
-                v_dict = rev_tag_map.get(mark)
-                _set = v_dict['parallel'] if parallel else v_dict['sequential']
-                _set.add(tid)
-
-            else:
-                v_dict = rev_tag_map.get(mark)
-                _set = v_dict['parallel'] if parallel else v_dict['sequential']
-                _set.add(tid)
+            update_rev_tag_map(mark, parallel, rev_tag_map, tid)
             test_mark = mark
+        if not test_mark and parent_marks:
+            test_mark = parent_marks[0]
+
+            # a case when a test is decorated with a base component mark
+            update_rev_tag_map(mark, parallel, rev_tag_map, tid)
+
         test_map.update({tid: (test_mark, test_meta.get('nodeid'), test_meta.get('marks'))})
+
+
+def update_rev_tag_map(mark, parallel, rev_tag_map, tid):
+    """Update reverse tag map."""
+    if mark not in rev_tag_map:
+        rev_tag_map.update({mark: dict(parallel=set(), sequential=set())})
+        v_dict = rev_tag_map.get(mark)
+        _set = v_dict['parallel'] if parallel else v_dict['sequential']
+        _set.add(tid)
+    else:
+        v_dict = rev_tag_map.get(mark)
+        _set = v_dict['parallel'] if parallel else v_dict['sequential']
+        _set.add(tid)
 
 
 def create_log_dir_if_not_exists():
     """
     Create log dir if not exists in main entry.
-    :return:
+    :return: Path created dir
     """
     log_home = os.path.join(os.getcwd(), params.LOG_DIR_NAME)
     if not os.path.exists(log_home):
@@ -329,10 +373,10 @@ def main(argv=None):
 
 if __name__ == "__main__":
     lock_file = LCK_FILE % os.getpid()
-    emutex, flag = system_utils.FileLock(lock_file)
+    mutex, flag = system_utils.file_lock(lock_file)
     name = multiprocessing.current_process().name
     print("Starting %s \n" % name)
     main()
     print("Exiting %s \n" % name)
-    system_utils.FileUnlock(emutex)
+    system_utils.file_unlock(mutex)
     sys.exit(0)
