@@ -25,44 +25,57 @@ import time
 import logging
 import pytest
 
+from commons import commands
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.utils.config_utils import read_yaml
 from commons.utils.system_utils import remove_file, run_remote_cmd
 from commons.utils.assert_utils import assert_true, assert_not_in
-from config import CMN_CFG
-from libs.s3 import S3H_OBJ
+from libs.s3 import S3H_OBJ, CM_CFG
 from libs.s3.s3_test_lib import S3TestLib
 try:
     from scripts.s3_bench import s3bench as s3b_obj
-except Exception as error:
+except ImportError as error:
     import site
     site.addsitedir('scripts/')  # Always appends to end
     from s3_bench import s3bench as s3b_obj
 
 S3_OBJ = S3TestLib()
-SCAL_CFG = read_yaml("config/s3/test_dos_scalability.yaml")
+SCAL_CFG = read_yaml("config/s3/test_dos_scalability.yaml")[1]
 
 
 class TestDosScalability:
-    """DOS Scalability Test suite"""
+    """DOS Scalability Test suite."""
+
+    @classmethod
+    def setup_class(cls):
+        """
+        Function will be invoked prior to each test case.
+
+        It will perform all prerequisite test suite steps if any.
+        """
+        cls.log = logging.getLogger(__name__)
+        cls.log.info("STARTED: setup test suite operations.")
+        cls.cmn_cfg = SCAL_CFG["test_scalability"]
+        cls.random_id = str(time.time())
+        cls.log_file = []
+        cls.log.info("ENDED: setup test suite operations.")
 
     def setup_method(self):
         """
-        This function will be invoked before each test case execution
+        Function will be invoked before each test case execution.
+
         It will perform prerequisite test steps if any.
         Define few variable, will be used while executing test and for cleanup.
         """
-        self.log = logging.getLogger(__name__)
         self.log.info("STARTED: Setup operations")
-        self.cmn_cfg = SCAL_CFG["test_scalability"]
-        self.random_id = str(time.time())
-        self.log_file = []
+        self.log.info(self.random_id)
         self.log.info("ENDED: Setup operations")
 
     def tear_method(self):
         """
-        This function will be invoked after running each test case.
+        Function will be invoked after running each test case.
+
         It will clean all resources which are getting created during
         test execution such as S3 buckets and the objects present into that bucket.
         Also removing local file created during execution.
@@ -87,13 +100,11 @@ class TestDosScalability:
     @pytest.mark.s3
     @pytest.mark.tags('TEST-5309')
     @CTFailOn(error_handler)
-    def test_scaling_obj_20Billion_size_1Bytes_5308(self):
-        """
-        Test To Verify scaling of number of objects upto 20 billion with minimum object size i.e 1B.
-        """
+    def test_scaling_obj_20billion_size_1bytes_5308(self):
+        """Verify scaling of number of objects upto 20 billion with minimum object size i.e 1B."""
         self.log.info(
-            "STARTED: Test To Verify scaling of number of objects upto 20"
-            " billion with minimum object size i.e 1B.")
+            "STARTED: Test To Verify scaling of number of objects upto 20 billion with minimum"
+            " object size i.e 1B.")
         test_cfg = SCAL_CFG["test_5308"]
         # As per discussion we are skipping step one from all tests, also
         # before running FTE we do HC
@@ -126,19 +137,17 @@ class TestDosScalability:
         res = S3H_OBJ.is_motr_online()
         assert_true(res[0], res[1])
         self.log.info(
-            "Step 3: Executed s3bench run with objects upto 20billion and"
-            " obj size 1B and checking stack status.")
+            "Step 3: Executed s3bench run with objects upto 20billion and obj size 1B and"
+            " checking stack status.")
         self.log.info(
-            "ENDED: Test To Verify scaling of number of objects upto 20 "
-            "billion with minimum object size i.e 1B ")
+            "ENDED: Test To Verify scaling of number of objects upto 20 billion with minimum "
+            "object size i.e 1B ")
 
     @pytest.mark.s3
     @pytest.mark.tags('TEST-8724')
     @CTFailOn(error_handler)
     def test_400_constant_s3_operations_5336(self):
-        """
-        Test constant 400 S3 operations using s3bench.
-        """
+        """Test constant 400 S3 operations using s3bench."""
         self.log.info(
             "STARTED: Test constant 400 S3 operations using s3bench.")
         test_cfg = SCAL_CFG["test_5336"]
@@ -147,12 +156,12 @@ class TestDosScalability:
         assert_true(res, res)
         self.log.info("Step 1: Successfully installed S3bench tool.")
         self.log.info(
-            f"Step 2: Perform with {test_cfg['num_clients']} constant s3 operations.")
+            "Step 2: Perform with {test_cfg['num_clients']} constant s3 operations.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
         res = S3_OBJ.create_bucket(bucket_name)
         assert_true(res[0], res[1])
-        for i in range(test_cfg["loop"]):
+        for _ in range(test_cfg["loop"]):
             res = s3b_obj.s3bench(
                 access_key=access_key,
                 secret_key=secret_key,
@@ -168,42 +177,39 @@ class TestDosScalability:
             self.log_file.append(res[1])
             assert_true(res[0], res)
         self.log.info(
-            f"Step 2: Successfully performed with {test_cfg['num_clients']} constant s3 operations.")
+            "Step 2: Successfully performed with %s constant s3 operations.",
+            test_cfg['num_clients'])
         self.log.info(
-            "Step 3: check any crashes happened and core logs for mero")
-        for cmd in self.cons_obj_dict["crash_commands"]:
+            "Step 3: check any crashes happened and core logs for motr")
+        for cmd in commands.CRASH_COMMANDS:
             res_cmd = run_remote_cmd(
                 cmd,
-                CMN_CFG["host"],
-                CMN_CFG["username"],
-                CMN_CFG["password"])
+                CM_CFG["host"],
+                CM_CFG["username"],
+                CM_CFG["password"])
             assert_not_in(test_cfg["cmd_msg"], str(res_cmd), res_cmd)
         self.log.info(
-            "Step 3: Successfully checked no crashes happened and core logs for mero")
-        self.log.info(
-            "ENDED: Test constant 400 S3 operations using s3bench.")
+            "Step 3: Successfully checked no crashes happened and core logs for motr")
+        self.log.info("ENDED: Test constant 400 S3 operations using s3bench.")
 
     @pytest.mark.s3
     @pytest.mark.tags('TEST-9657')
     @CTFailOn(error_handler)
     def test_300_constant_s3_operations_5337(self):
-        """
-        Test constant 300 S3 operations using s3bench.
-        """
-        self.log.info(
-            "STARTED: Test constant 300 S3 operations using s3bench")
+        """Test constant 300 S3 operations using s3bench."""
+        self.log.info("STARTED: Test constant 300 S3 operations using s3bench")
         test_cfg = SCAL_CFG["test_5337"]
         self.log.info("Step 1: Install and setup s3bench on client.")
         res = s3b_obj.setup_s3bench()
         assert_true(res, res)
         self.log.info("Step 1: Successfully installed S3bench tool.")
         self.log.info(
-            f"Step 2: Perform with {test_cfg['num_clients']} constant s3 operations.")
+            "Step 2: Perform with {test_cfg['num_clients']} constant s3 operations.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
         res = S3_OBJ.create_bucket(bucket_name)
         assert_true(res[0], res[1])
-        for i in range(test_cfg["loop"]):
+        for _ in range(test_cfg["loop"]):
             res = s3b_obj.s3bench(
                 access_key=access_key,
                 secret_key=secret_key,
@@ -219,28 +225,26 @@ class TestDosScalability:
             self.log_file.append(res[1])
             assert_true(res[0], res)
         self.log.info(
-            f"Step 2: Successfully performed with {test_cfg['num_clients']} constant s3 operations.")
+            "Step 2: Successfully performed with %s constant s3 operations.",
+            test_cfg['num_clients'])
         self.log.info(
-            "Step 3: check any crashes happened and core logs for mero")
-        for cmd in self.cons_obj_dict["crash_commands"]:
+            "Step 3: check any crashes happened and core logs for motr")
+        for cmd in commands.CRASH_COMMANDS:
             res_cmd = run_remote_cmd(
                 cmd,
-                CMN_CFG["host"],
-                CMN_CFG["username"],
-                CMN_CFG["password"])
+                CM_CFG["host"],
+                CM_CFG["username"],
+                CM_CFG["password"])
             assert_not_in(test_cfg["cmd_msg"], str(res_cmd), res_cmd)
         self.log.info(
-            "Step 3: Successfully checked no crashes happened and core logs for mero")
-        self.log.info(
-            "ENDED: Test constant 300 S3 operations using s3bench")
+            "Step 3: Successfully checked no crashes happened and core logs for motr")
+        self.log.info("ENDED: Test constant 300 S3 operations using s3bench")
 
     @pytest.mark.s3
     @pytest.mark.tags('TEST-9658')
     @CTFailOn(error_handler)
     def test_1000_constant_s3_operations_5338(self):
-        """
-        Test constant 1000 S3 operations using s3bench.
-        """
+        """Test constant 1000 S3 operations using s3bench."""
         self.log.info(
             "STARTED: Test constant 1000 S3 operations using s3bench")
         test_cfg = SCAL_CFG["test_5338"]
@@ -249,12 +253,12 @@ class TestDosScalability:
         assert_true(res, res)
         self.log.info("Step 1: Successfully installed S3bench tool.")
         self.log.info(
-            f"Step 2: Perform with {test_cfg['num_clients']} constant s3 operations.")
+            "Step 2: Perform with {test_cfg['num_clients']} constant s3 operations.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
         res = S3_OBJ.create_bucket(bucket_name)
         assert_true(res[0], res[1])
-        for i in range(test_cfg["loop"]):
+        for _ in range(test_cfg["loop"]):
             res = s3b_obj.s3bench(
                 access_key=access_key,
                 secret_key=secret_key,
@@ -270,28 +274,26 @@ class TestDosScalability:
             self.log_file.append(res[1])
             assert_true(res[0], res)
         self.log.info(
-            f"Step 2: Successfully performed with {test_cfg['num_clients']} constant s3 operations.")
+            "Step 2: Successfully performed with %s constant s3 operations.",
+            test_cfg['num_clients'])
         self.log.info(
-            "Step 3: check any crashes happened and core logs for mero")
-        for cmd in self.cons_obj_dict["crash_commands"]:
+            "Step 3: check any crashes happened and core logs for motr")
+        for cmd in commands.CRASH_COMMANDS:
             res_cmd = run_remote_cmd(
                 cmd,
-                CMN_CFG["host"],
-                CMN_CFG["username"],
-                CMN_CFG["password"])
+                CM_CFG["host"],
+                CM_CFG["username"],
+                CM_CFG["password"])
             assert_not_in(test_cfg["cmd_msg"], str(res_cmd), res_cmd)
         self.log.info(
-            "Step 3: Successfully checked no crashes happened and core logs for mero")
-        self.log.info(
-            "ENDED: Test constant 1000 S3 operations using s3bench")
+            "Step 3: Successfully checked no crashes happened and core logs for motr")
+        self.log.info("ENDED: Test constant 1000 S3 operations using s3bench")
 
     @pytest.mark.s3
     @pytest.mark.tags('TEST-9659')
     @CTFailOn(error_handler)
     def test_growing_s3_operations_5340(self):
-        """
-        Test growing S3 operations using s3bench from 1000 to 1200 then to 1500.
-        """
+        """Test growing S3 operations using s3bench from 1000 to 1200 then to 1500."""
         self.log.info(
             "STARTED: Test growing S3 operations using s3bench from 1000 to 1200 then to 1500")
         test_cfg = SCAL_CFG["test_5340"]
@@ -299,7 +301,7 @@ class TestDosScalability:
         res = s3b_obj.setup_s3bench()
         assert_true(res, res)
         self.log.info("Step 1: Successfully installed S3bench tool.")
-        self.log.info(f"Step 2: Perform with n constant s3 operations.")
+        self.log.info("Step 2: Perform with n constant s3 operations.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
         res = S3_OBJ.create_bucket(bucket_name)
@@ -326,18 +328,18 @@ class TestDosScalability:
                 assert_true(res[0], res)
             count = count + 1
         self.log.info(
-            f"Step 2: Successfully performed with n constant s3 operations.")
+            "Step 2: Successfully performed with n constant s3 operations.")
         self.log.info(
-            "Step 3: check any crashes happened and core logs for mero")
-        for cmd in self.cons_obj_dict["crash_commands"]:
+            "Step 3: check any crashes happened and core logs for motr")
+        for cmd in commands.CRASH_COMMANDS:
             res_cmd = run_remote_cmd(
                 cmd,
-                CMN_CFG["host"],
-                CMN_CFG["username"],
-                CMN_CFG["password"])
+                CM_CFG["host"],
+                CM_CFG["username"],
+                CM_CFG["password"])
             assert_not_in(test_cfg["cmd_msg"], str(res_cmd), res_cmd)
         self.log.info(
-            "Step 3: Successfully checked no crashes happened and core logs for mero")
+            "Step 3: Successfully checked no crashes happened and core logs for motr")
         self.log.info(
             "ENDED: Test growing S3 operations using s3bench from 1000 to 1200 then to 1500")
 
@@ -346,17 +348,17 @@ class TestDosScalability:
     @CTFailOn(error_handler)
     def test_growing_s3_operations_5341(self):
         """
-        Test growing S3 operations using s3bench from 1000 to 1500 then back to 1000 then to 1500 again.
+        Growing S3 operations using s3bench from 1000 to 1500 then back to 1000 then to 1500 again.
         """
         self.log.info(
-            "STARTED: Test growing S3 operations using s3bench from 1000 to 1500 then "
-            "back to 1000 then to 1500 again")
+            "STARTED: Test growing S3 operations using s3bench from 1000 to 1500 then back"
+            " to 1000 then to 1500 again")
         test_cfg = SCAL_CFG["test_5341"]
         self.log.info("Step 1: Install and setup s3bench on client.")
         res = s3b_obj.setup_s3bench()
         assert_true(res, res)
         self.log.info("Step 1: Successfully installed S3bench tool.")
-        self.log.info(f"Step 2: Perform with n constant s3 operations.")
+        self.log.info("Step 2: Perform with n constant s3 operations.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
         res = S3_OBJ.create_bucket(bucket_name)
@@ -377,18 +379,18 @@ class TestDosScalability:
             self.log_file.append(res[1])
             assert_true(res[0], res)
         self.log.info(
-            f"Step 2: Successfully performed with n constant s3 operations.")
+            "Step 2: Successfully performed with n constant s3 operations.")
         self.log.info(
-            "Step 3: check any crashes happened and core logs for mero")
-        for cmd in self.cons_obj_dict["crash_commands"]:
+            "Step 3: check any crashes happened and core logs for motr")
+        for cmd in commands.CRASH_COMMANDS:
             res_cmd = run_remote_cmd(
                 cmd,
-                CMN_CFG["host"],
-                CMN_CFG["username"],
-                CMN_CFG["password"])
+                CM_CFG["host"],
+                CM_CFG["username"],
+                CM_CFG["password"])
             assert_not_in(test_cfg["cmd_msg"], str(res_cmd), res_cmd)
         self.log.info(
-            "Step 3: Successfully checked no crashes happened and core logs for mero")
+            "Step 3: Successfully checked no crashes happened and core logs for motr")
         self.log.info(
             "ENDED: Test growing S3 operations using s3bench from 1000 to 1500 then "
             "back to 1000 then to 1500 again")
