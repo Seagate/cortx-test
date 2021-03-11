@@ -1,3 +1,5 @@
+import os
+import time
 import argparse
 from core import runner
 from commons.utils.jira_utils import JiraTask
@@ -30,7 +32,7 @@ def parse_args():
                         help="username")
     parser.add_argument("-cp", "--csm_pass", type=str,
                         help="password")
-    parser.add_argument("-h", "--headless", type=str,
+    parser.add_argument("-hl", "--headless", type=str,
                         help="headless")
     return parser.parse_args()
 
@@ -85,18 +87,18 @@ def create_report_payload(test_info, d_u, d_pass):
     return data_kwargs
 
 
-def collect_te_info(te):
+def collect_te_info(jira_obj, te):
     te_details = jira_obj.get_issue_details(te)
     te_label = ''
     te_comp = ''
     if te_details.fields.labels:  # Optional I.e. Isolated, NearFull, By default: Normal
-        te_label = tp_details.fields.labels[0]
+        te_label = te_details.fields.labels[0]
     if te_details.fields.components:
-        te_comp = te.fields.components[0].name
+        te_comp = te_details.fields.components[0].name
     return te_label, te_comp
 
 
-def collect_tp_info(tp):
+def collect_tp_info(jira_obj, tp):
     tp_details = jira_obj.get_issue_details(tp)
     build = ''
     build_type = "stable"
@@ -116,7 +118,7 @@ def collect_tp_info(tp):
     return build, build_type, test_plan_label
 
 
-def collect_test_info(test):
+def collect_test_info(jira_obj, test):
     test_details = jira_obj.get_issue_details(test)
     test_name = test_details.fields.summary
     test_label = test_details.fields.labels[0]
@@ -135,8 +137,8 @@ def trigger_tests_from_te(args):
     # TODO get data from jira
     test_info = dict()
     if args.db_update == 'yes':
-        build_number, build_type, test_plan_label = collect_tp_info(args.test_plan)
-        te_label, te_comp = collect_te_info(args.te_ticket)
+        build_number, build_type, test_plan_label = collect_tp_info(jira_obj, args.test_plan)
+        te_label, te_comp = collect_te_info(jira_obj, args.te_ticket)
         test_info['build'] = build_number
         test_info['build_type'] = build_type
         test_info['tp_label'] = test_plan_label
@@ -147,9 +149,12 @@ def trigger_tests_from_te(args):
     else:
         build_number = args.build_number
 
+    import pdb
+    pdb.set_trace()
+
     for test in test_list:
         if args.db_update == 'yes':
-            test_name, test_label = collect_test_info(test)
+            test_name, test_label = collect_test_info(jira_obj, test)
 
         # TODO
         # execute test using test id tag
@@ -161,7 +166,7 @@ def trigger_tests_from_te(args):
 
         # move all log files to nfs share
         test_log = ''  # test log path
-        LOGGER.info("Uploading test log file to NFS server")
+        print("Uploading test log file to NFS server")
         remote_path = os.path.join(params.NFS_BASE_DIR, build_number, args.test_plan,
                                    args.te_ticket,
                                    date.today().strftime("%b-%d-%Y"))
@@ -170,7 +175,7 @@ def trigger_tests_from_te(args):
                                                    remote_path=remote_path,
                                                    local_path=test_log)
         if resp[0]:
-            LOGGER.info("Log file is uploaded at location : %s", resp[1])
+            print("Log file is uploaded at location : %s", resp[1])
 
         # update jira for status and log file
         jira_obj.update_test_jira_status(args.te_ticket, test_id, test_status, remote_path)
