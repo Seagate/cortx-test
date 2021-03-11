@@ -45,7 +45,7 @@ ALERT_API_OBJ = GenerateAlertLib()
 CM_CFG = RAS_VAL["ras_sspl_alert"]
 LOGGER = logging.getLogger(__name__)
 
-TEST_DATA = [CMN_CFG["host"]]
+TEST_DATA = [CMN_CFG["nodes"][0]["host"]]
 
 
 class TestSSPL:
@@ -56,9 +56,9 @@ class TestSSPL:
     def setup_class(cls):
         """Setup for module."""
         LOGGER.info("Running setup_class")
-        cls.host = CMN_CFG["host"]
-        cls.uname = CMN_CFG["username"]
-        cls.passwd = CMN_CFG["password"]
+        cls.host = CMN_CFG["nodes"][0]["host"]
+        cls.uname = CMN_CFG["nodes"][0]["username"]
+        cls.passwd = CMN_CFG["nodes"][0]["password"]
         cls.sspl_stop = cls.changed_level = cls.selinux_enabled = False
         cls.default_cpu_usage = cls.default_mem_usage = True
 
@@ -70,9 +70,9 @@ class TestSSPL:
                                 password=cls.passwd)
         cls.controller_obj = ControllerLib(
             host=cls.host, h_user=cls.uname, h_pwd=cls.passwd,
-            enclosure_ip=CMN_CFG["primary_enclosure_ip"],
-            enclosure_user=CMN_CFG["enclosure_user"],
-            enclosure_pwd=CMN_CFG["enclosure_pwd"])
+            enclosure_ip=CMN_CFG["enclosure"]["primary_enclosure_ip"],
+            enclosure_user=CMN_CFG["enclosure"]["enclosure_user"],
+            enclosure_pwd=CMN_CFG["enclosure"]["enclosure_pwd"])
 
         cls.csm_alert_obj = SystemAlerts(host=cls.host, username=cls.uname,
                                          password=cls.passwd)
@@ -84,9 +84,9 @@ class TestSSPL:
                       "user", "password", "secret")
         LOGGER.info("Putting expected values in KV store")
         for field in field_list:
-            res = cls.ras_test_obj.put_kv_store(CMN_CFG["enclosure_user"],
-                                                CMN_CFG["enclosure_pwd"],
-                                                field)
+            res = cls.ras_test_obj.put_kv_store(
+                CMN_CFG["enclosure"]["enclosure_user"],
+                CMN_CFG["enclosure"]["enclosure_pwd"], field)
             assert res
 
     def setup_method(self):
@@ -1058,8 +1058,7 @@ class TestSSPL:
             LOGGER.info("Step 9: Verified the generated alert logs")
 
         LOGGER.info("Step 10: Checking logs in sspl.log")
-        exp_string = r"WARNING Disk usage increased to \d{2}.\d%, beyond " \
-                     r"configured threshold of \d{2}.\d%"
+        exp_string = r"WARNING Disk usage increased to \d{2}.\d%?, beyond configured threshold of \d{2}.\d%?"
 
         self.ras_test_obj.check_sspl_log(exp_string, test_cfg["test_sspl_file"])
 
@@ -1463,13 +1462,14 @@ class TestSSPL:
         LOGGER.info(
             "STARTED: Test Username/Password Security coverage on consul")
         LOGGER.info("Step 1: Modifying and validating enclosure username to "
-                    "'%s' and password to '%s'", CMN_CFG["enclosure_user"],
-                    CMN_CFG["enclosure_pwd"])
+                    "'%s' and password to '%s'",
+                    CMN_CFG["enclosure"]["enclosure_user"],
+                    CMN_CFG["enclosure"]["enclosure_pwd"])
         test_cfg = RAS_TEST_CFG["test_5924"]
         for field in test_cfg["fields"]:
-            res = self.ras_test_obj.put_kv_store(CMN_CFG["enclosure_user"],
-                                                 CMN_CFG["enclosure_pwd"],
-                                                 field)
+            res = self.ras_test_obj.put_kv_store(
+                CMN_CFG["enclosure"]["enclosure_user"],
+                CMN_CFG["enclosure"]["enclosure_pwd"], field)
             assert res, f"Failed to update value for {field}"
         LOGGER.info(
             "Step 1: Modified and validated enclosure username and password")

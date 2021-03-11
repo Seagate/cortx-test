@@ -75,7 +75,7 @@ raid_param:
   fail_operation: "fail_disk"
   remove_operation: "remove_disk"
   add_operation: "add_disk"
-  csm_alert_reflection_time: 10
+  csm_alert_reflection_time: 60
   md0_path: "/dev/md0"
   disk_path: "/dev/{}"
   resync_delay: 300

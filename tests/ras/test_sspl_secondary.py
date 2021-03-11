@@ -51,10 +51,10 @@ class TestSSPLSecondary:
     @pytest.mark.parametrize("host", TEST_DATA)
     def setup_class(cls):
         """Setup for module."""
-        cls.host2 = CMN_CFG["host2"]
-        cls.host = CMN_CFG["host"]
-        cls.uname = CMN_CFG["username"]
-        cls.passwd = CMN_CFG["password"]
+        cls.host2 = CMN_CFG["nodes"][1]["host"]
+        cls.host = CMN_CFG["nodes"][0]["host"]
+        cls.uname = CMN_CFG["nodes"][0]["username"]
+        cls.passwd = CMN_CFG["nodes"][0]["password"]
 
         cls.ras_test_obj = RASTestLib(host=cls.host, username=cls.uname,
                                       password=cls.passwd)
@@ -81,9 +81,9 @@ class TestSSPLSecondary:
                       "user", "password", "secret"]
         LOGGER.info("Putting expected values in KV store")
         for field in field_list:
-            res = cls.ras_test_obj.put_kv_store(CMN_CFG["enclosure_user"],
-                                                CMN_CFG["enclosure_pwd"],
-                                                field)
+            res = cls.ras_test_obj.put_kv_store(
+                CMN_CFG["enclosure"]["enclosure_user"],
+                CMN_CFG["enclosure"]["enclosure_pwd"], field)
             assert res
 
     def setup_method(self):
@@ -224,18 +224,18 @@ class TestSSPLSecondary:
 
         LOGGER.info("Step 3: Checking sspl state on both the nodes")
         res = self.ras_test_obj.get_sspl_state()
-        LOGGER.info("State of sspl on %s is %s", NODES[0], res[1])
+        LOGGER.info("State of sspl on %s is %s", NODES[0]["host"], res[1])
 
         res = self.ras_test_obj2.get_sspl_state()
-        LOGGER.info("State of sspl on %s is %s", NODES[1], res[1])
+        LOGGER.info("State of sspl on %s is %s", NODES[1]["host"], res[1])
 
-        LOGGER.info("Step 4: Stopping sspl-ll service on node %s", NODES[1])
+        LOGGER.info("Step 4: Stopping sspl-ll service on node %s", NODES[1]["host"])
         resp = self.ras_test_obj2.enable_disable_service(
             "disable", CM_CFG["sspl_resource_id"])
         assert not resp[0], resp[1]
         self.sspl_disable = True
         LOGGER.info("Step 4: SSPL service was successfully stopped and "
-                    "validated on node %s", NODES[1])
+                    "validated on node %s", NODES[1]["host"])
 
         time.sleep(CM_CFG["sleep_val"])
 
@@ -245,7 +245,7 @@ class TestSSPLSecondary:
             service=CM_CFG["service"]["sspl_service"], host=self.host2,
             user=self.uname, pwd=self.passwd)
         assert resp[0], resp[1]
-        LOGGER.info("Step 5: Sspl-ll is up and running on node %s", NODES[1])
+        LOGGER.info("Step 5: Sspl-ll is up and running on node %s", NODES[1]["host"])
 
         LOGGER.info("Inducing FAN alert")
         buffer_sz = test_cfg["buffer_sz"]
@@ -328,21 +328,21 @@ class TestSSPLSecondary:
         assert resp[0], resp[1]
         LOGGER.info("Step 2: Sspl-ll is up and running on secondary node")
 
-        LOGGER.info("Step 3: Checking sspl state on %s", NODES[0])
+        LOGGER.info("Step 3: Checking sspl state on %s", NODES[0]["host"])
         res = self.ras_test_obj.get_sspl_state()
-        LOGGER.info("State of sspl on %s is %s", NODES[0], res[1])
+        LOGGER.info("State of sspl on %s is %s", NODES[0]["host"], res[1])
 
-        LOGGER.info("Step 3: Checking sspl state on %s", NODES[1])
+        LOGGER.info("Step 3: Checking sspl state on %s", NODES[1]["host"])
         res = self.ras_test_obj2.get_sspl_state()
-        LOGGER.info("State of sspl on %s is %s", NODES[1], res[1])
+        LOGGER.info("State of sspl on %s is %s", NODES[1]["host"], res[1])
 
-        LOGGER.info("Step 4: Killing sspl-ll service on node %s", NODES[1])
+        LOGGER.info("Step 4: Killing sspl-ll service on node %s", NODES[1]["host"])
         resp = self.ras_test_obj2.check_service_recovery(
             service_cfg["sspl_service"])
 
         assert resp
         LOGGER.info("Step 4: SSPL service was successfully killed and "
-                    "validated on node %s", NODES[1])
+                    "validated on node %s", NODES[1]["host"])
 
         time.sleep(CM_CFG["sleep_val"])
 
@@ -352,7 +352,7 @@ class TestSSPLSecondary:
             service=CM_CFG["service"]["sspl_service"], host=self.host2,
             user=self.uname, pwd=self.passwd)
         assert resp[0], resp[1]
-        LOGGER.info("Step 5: Sspl-ll is up and running on node %s", NODES[1])
+        LOGGER.info("Step 5: Sspl-ll is up and running on node %s", NODES[1]["host"])
 
         LOGGER.info("Inducing FAN alert")
         buffer_sz = test_cfg["buffer_sz"]
