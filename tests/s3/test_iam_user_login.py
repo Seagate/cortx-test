@@ -40,8 +40,8 @@ class TestUserLoginProfileTests():
 
     def setup_method(self):
         """Setup method."""
-        self.log.info("STARTED: Setup operations")
         self.log = logging.getLogger(__name__)
+        self.log.info("STARTED: Setup operations")
         self.ldap_user = LDAP_USERNAME
         self.ldap_pwd = LDAP_PASSWD
         self.delete_accounts_and_users()
@@ -1033,7 +1033,6 @@ class TestUserLoginProfileTests():
     def test_2929(self):
         """Get temporary credentials for valid user."""
         self.log.info("STARTED: Get temporary credentials for valid user")
-        user_cfg = USER_CONFIG["iam_user_login"]
         test_9923_cfg = USER_CONFIG["test_9923"]
         email_id = "{0}{1}".format(
             test_9923_cfg["account_name"],
@@ -1093,7 +1092,6 @@ class TestUserLoginProfileTests():
     def test_2930(self):
         """Get temporary credentials for Invalid user."""
         self.log.info("STARTED: Get temporary credentials for Invalid user")
-        user_cfg = USER_CONFIG["iam_user_login"]
         test_9924_cfg = USER_CONFIG["test_9924"]
         email_id = "{0}{1}".format(
             test_9924_cfg["account_name"],
@@ -1128,7 +1126,6 @@ class TestUserLoginProfileTests():
         """Get the temporary Credentials for user which is recently got deleted."""
         self.log.info("STARTED: Get the temporary Credentials for user which "
                       "is recently got deleted")
-        user_cfg = USER_CONFIG["iam_user_login"]
         test_9925_cfg = USER_CONFIG["test_9925"]
         email_id = "{0}{1}".format(
             test_9925_cfg["account_name"],
