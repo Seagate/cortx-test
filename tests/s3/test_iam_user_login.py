@@ -31,9 +31,6 @@ from commons.helpers import s3_helper
 from commons.utils.assert_utils import assert_true, assert_in, assert_false
 
 S3_HLPR = s3_helper.S3Helper()
-S3_TEST_OBJ = s3_test_lib.S3TestLib()
-TAG_OBJ = s3_tagging_test_lib.S3TaggingTestLib()
-S3_MP_OBJ = s3_multipart_test_lib.S3MultipartTestLib()
 IAM_TEST_OBJ = iam_test_lib.IamTestLib()
 USER_CONFIG = read_yaml("config/s3/test_iam_user_login.yaml")[1]
 
@@ -51,7 +48,7 @@ class TestUserLoginProfileTests():
         iam_users_list = [user["UserName"]
                           for user in all_users if
                           user_cfg["user_name_prefix"] in user["UserName"]]
-        self.log.debug("IAM users: %s",iam_users_list)
+        self.log.debug("IAM users: %s", iam_users_list)
         if iam_users_list:
             self.log.debug("Deleting IAM users...")
             for user in iam_users_list:
@@ -64,12 +61,12 @@ class TestUserLoginProfileTests():
                             user, key["AccessKeyId"])
                     self.log.debug("Deleted user access key")
                 IAM_TEST_OBJ.delete_user(user)
-                self.log.debug("Deleted user : %s",user)
+                self.log.debug("Deleted user : %s", user)
         all_accounts = IAM_TEST_OBJ.list_accounts_s3iamcli(
             ldap_user, ldap_pwd)[1]
         iam_accounts = [acc["AccountName"]
-                        for acc in all_accounts if user_cfg["acc_name_prefix"] in acc["AccountName"]]
-        self.log.debug("IAM accounts: %s",iam_accounts)
+            for acc in all_accounts if user_cfg["acc_name_prefix"] in acc["AccountName"]]
+        self.log.debug("IAM accounts: %s", iam_accounts)
         if iam_accounts:
             self.log.debug("Deleting IAM accounts...")
             for acc in iam_accounts:
@@ -107,15 +104,15 @@ class TestUserLoginProfileTests():
         resp = IAM_TEST_OBJ.create_user(user_name)
         assert_true(resp[0], resp[1])
         self.log.info("Created a user with name %s", user_name)
-        self.log.info("Creating login profile for user %s",user_name)
+        self.log.info("Creating login profile for user %s", user_name)
         resp = IAM_TEST_OBJ.create_user_login_profile(
             user_name, password, pwd_reset)
         assert_true(resp[0], resp[1])
         self.log.info("Created login profile for user %s", user_name)
-        self.log.info("Creating access key for user %s",user_name)
+        self.log.info("Creating access key for user %s", user_name)
         resp = IAM_TEST_OBJ.create_access_key(user_name)
         assert_true(resp[0], resp[1])
-        self.log.info("Created access key for user %s",user_name)
+        self.log.info("Created access key for user %s", user_name)
         access_key = resp[1]["AccessKey"]["AccessKeyId"]
         secret_key = resp[1]["AccessKey"]["SecretAccessKey"]
         return access_key, secret_key
@@ -164,6 +161,7 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5664")
+    @CTFailOn(error_handler)
     def test_2846(self):
         """Verify update-login-profile (password change) for IAM user."""
         self.log.info(
@@ -185,6 +183,7 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5665")
+    @CTFailOn(error_handler)
     def test_2847(self):
         """Verify update-login-profile (password change) for a non-existing IAM user"""
         self.log.info("STARTED: Verify update-login-profile (password change)"
@@ -201,9 +200,11 @@ class TestUserLoginProfileTests():
                 error.message)
         self.log.info("ENDED: Verify update-login-profile (password change)"
                       " for a non-existing IAM user")
+
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5663")
+    @CTFailOn(error_handler)
     def test_2848(self):
         """Verify update-login-profile (passwd change) for IAM user with 'Blank' or 'NO' passwd."""
         self.log.info("STARTED: Verify update-login-profile (password change)"
@@ -239,6 +240,7 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5681")
+    @CTFailOn(error_handler)
     def test_2850(self):
         """Provide password length 128 valid characters long. """
         self.log.info("STARTED: Provide password length 128 valid "
@@ -260,6 +262,7 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5680")
+    @CTFailOn(error_handler)
     def test_2851(self):
         """Provide password length more than128 valid characters long."""
         self.log.info("STARTED: Provide password length more than128"
@@ -287,6 +290,7 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5704")
+    @CTFailOn(error_handler)
     def test_2852(self):
         """Change the password for IAM user with --password-reset-required option."""
         self.log.info("STARTED: Change the password for IAM user with "
@@ -310,6 +314,7 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5678")
+    @CTFailOn(error_handler)
     def test_2853(self):
         """Update login profile for IAM user which does not have the login profile created."""
         self.log.info("STARTED: Update login profile for IAM user which does"
@@ -332,11 +337,13 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5662")
+    @CTFailOn(error_handler)
     def test_2854(self):
         """verify update-login-profile with password having
         combinations of special characters  _+=,.@- ."""
-        self.log.info("STARTED: verify update-login-profile with password having"
-                      " combinations of special characters  _+=,.@-")
+        self.log.info(
+            "STARTED: verify update-login-profile with password having"
+            " combinations of special characters  _+=,.@-")
         test_9832_cfg = USER_CONFIG["test_9832"]
         resp = IAM_TEST_OBJ.create_user(test_9832_cfg["user_name"])
         assert_true(resp[0], resp[1])
@@ -355,6 +362,7 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5676")
+    @CTFailOn(error_handler)
     def test_2855(self):
         """Update login profile for IAM user without mentioning
         --password-reset-required --no-password-reset-required."""
@@ -379,6 +387,7 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5677")
+    @CTFailOn(error_handler)
     def test_2856(self):
         """ update login profile for IAM user with both options
          --no-password-reset-required --password-reset-required."""
@@ -404,6 +413,7 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5675")
+    @CTFailOn(error_handler)
     def test_2857(self):
         """Update login profile for IAM user without password and reset flag enabled."""
         self.log.info("STARTED: Update login profile for IAM user without "
@@ -433,9 +443,11 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5703")
+    @CTFailOn(error_handler)
     def test_2858(self):
         """Create a login profile for the existing IAM user."""
-        self.log.info("STARTED: Create a login profile for the existing IAM user")
+        self.log.info(
+            "STARTED: Create a login profile for the existing IAM user")
         test_9836_cfg = USER_CONFIG["test_9836"]
         resp = IAM_TEST_OBJ.create_user(test_9836_cfg["user_name"])
         assert_true(resp[0], resp[1])
@@ -444,14 +456,17 @@ class TestUserLoginProfileTests():
             test_9836_cfg["password"],
             test_9836_cfg["password_reset"])
         assert_true(resp[0], resp[1])
-        self.log.info("ENDED: Create a login profile for the existing IAM user")
+        self.log.info(
+            "ENDED: Create a login profile for the existing IAM user")
 
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5702")
+    @CTFailOn(error_handler)
     def test_2859(self):
         """Create a login profile for the non-existing IAM user."""
-        self.log.info("STARTED: Create a login profile for the non-existing IAM user")
+        self.log.info(
+            "STARTED: Create a login profile for the non-existing IAM user")
         test_9837_cfg = USER_CONFIG["test_9837"]
         try:
             IAM_TEST_OBJ.create_user_login_profile(
@@ -464,11 +479,13 @@ class TestUserLoginProfileTests():
                 test_9837_cfg["err_message"],
                 error.message,
                 error.message)
-        self.log.info("ENDED: Create a login profile for the non-existing IAM user")
+        self.log.info(
+            "ENDED: Create a login profile for the non-existing IAM user")
 
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5697")
+    @CTFailOn(error_handler)
     def test_2860(self):
         """Create a login profile with password of 0 character or
         without password for existing user"""
@@ -491,10 +508,10 @@ class TestUserLoginProfileTests():
         self.log.info("ENDED: Create a login profile with password of 0 "
                       "character or without password for existing user")
 
-    #@pytest.mark.parallel
-    #@pytest.mark.s3
-    #@pytest.mark.tags("TEST-5696")
-    #def test_2861(self):
+    # @pytest.mark.parallel
+    # @pytest.mark.s3
+    # @pytest.mark.tags("TEST-5696")
+    # def test_2861(self):
     #    """
     #    Create a login profile with password of 1 character for existing user
     #    """
@@ -504,6 +521,7 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5695")
+    @CTFailOn(error_handler)
     def test_2862(self):
         """Create a login profile with password of 128 characters for existing user"""
         self.log.info("STARTED: Create a login profile with password of 128"
@@ -522,6 +540,7 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5693")
+    @CTFailOn(error_handler)
     def test_2863(self):
         """Create a login profile with password of more than 128 characters for existing user."""
         self.log.info("STARTED: Create a login profile with password of more "
@@ -546,6 +565,7 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5699")
+    @CTFailOn(error_handler)
     def test_2864(self):
         """Create a login profile with password having special characters only."""
         self.log.info("STARTED: Create a login profile with password having"
@@ -564,6 +584,7 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5701")
+    @CTFailOn(error_handler)
     def test_2865(self):
         """Create a login profile with password - try few combinations of
         special characters and alphanumberic characters."""
@@ -588,6 +609,7 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5688")
+    @CTFailOn(error_handler)
     def test_2866(self):
         """Create login profiles for maximum nos of existing IAM users."""
         self.log.info("STARTED: Create login profiles for maximum nos of "
@@ -610,6 +632,7 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5692")
+    @CTFailOn(error_handler)
     def test_2867(self):
         """Create login profile for IAM user with --no-password-reset-required option."""
         self.log.info("STARTED: Create login profile for IAM user with "
@@ -629,6 +652,7 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5691")
+    @CTFailOn(error_handler)
     def test_2868(self):
         """Create login profile for IAM user with --password-reset-required option."""
         self.log.info(
@@ -650,6 +674,7 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5689")
+    @CTFailOn(error_handler)
     def test_2869(self):
         """Create login profile for IAM user without mentioning
         --password-reset-required --no-password-reset-required."""
@@ -672,6 +697,7 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5690")
+    @CTFailOn(error_handler)
     def test_2870(self):
         """Create login profile for IAM user with both options
         --no-password-reset-required --password-reset-required."""
@@ -695,6 +721,7 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5670")
+    @CTFailOn(error_handler)
     def test_2871(self):
         """Verify get-login-profile for s3 IAM user."""
         self.log.info("STARTED: Verify get-login-profile for s3 IAM user")
@@ -716,9 +743,11 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5671")
+    @CTFailOn(error_handler)
     def test_2872(self):
         """Verify get-login-profile for non-existing s3 IAM user."""
-        self.log.info("STARTED: Verify get-login-profile for non-existing s3 IAM user")
+        self.log.info(
+            "STARTED: Verify get-login-profile for non-existing s3 IAM user")
         test_9850_cfg = USER_CONFIG["test_9850"]
         try:
             IAM_TEST_OBJ.get_user_login_profile_s3iamcli(
@@ -731,11 +760,13 @@ class TestUserLoginProfileTests():
                 test_9850_cfg["err_message"],
                 error.message,
                 error.message)
-        self.log.info("ENDED: Verify get-login-profile for non-existing s3 IAM user")
+        self.log.info(
+            "ENDED: Verify get-login-profile for non-existing s3 IAM user")
 
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5672")
+    @CTFailOn(error_handler)
     def test_2873(self):
         """Verify get-login-profile for a non profile IAM user
          (IAM user with no profile created)."""
@@ -763,6 +794,7 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5668")
+    @CTFailOn(error_handler)
     def test_2897(self):
         """Verify password change for IAM user."""
         self.log.info("STARTED: Verify password change for IAM user")
@@ -786,6 +818,7 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5669")
+    @CTFailOn(error_handler)
     def test_2898(self):
         """Verify password change for a non-existing IAM user."""
         self.log.info("STARTED: Verify password change for a "
@@ -810,6 +843,7 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5682")
+    @CTFailOn(error_handler)
     def test_2899(self):
         """Provide only six character length in password."""
         self.log.info("STARTED: Provide only six character length in password")
@@ -830,6 +864,7 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5683")
+    @CTFailOn(error_handler)
     def test_2849(self):
         """Provide only one character length in password."""
         self.log.info("STARTED: Provide only one character length in password")
@@ -905,6 +940,7 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5661")
+    @CTFailOn(error_handler)
     def test_2903(self):
         """
         verify with valid strings as passwordNote:Allowed special characters are
@@ -938,6 +974,7 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5673")
+    @CTFailOn(error_handler)
     def test_2904(self):
         """Verify change password with old password."""
         self.log.info("STARTED: Verify change password with old password")
@@ -965,6 +1002,7 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5705")
+    @CTFailOn(error_handler)
     def test_2905(self):
         """Verify change password for the user with users invalid
          access key and secret key."""
@@ -992,6 +1030,7 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5686")
+    @CTFailOn(error_handler)
     def test_2929(self):
         """Get temporary credentials for valid user."""
         self.log.info("STARTED: Get temporary credentials for valid user")
@@ -1002,8 +1041,8 @@ class TestUserLoginProfileTests():
             test_9923_cfg["email_id"])
         self.log.info(
             "Creating account with name %s and email id %s",
-                test_9923_cfg["account_name"],
-                email_id)
+            test_9923_cfg["account_name"],
+            email_id)
         resp = IAM_TEST_OBJ.create_account_s3iamcli(
             test_9923_cfg["account_name"],
             email_id,
@@ -1014,7 +1053,7 @@ class TestUserLoginProfileTests():
         secret_key = resp[1]["secret_key"]
         self.log.info(
             "Creating account login profile for account %s",
-                USER_CONFIG["test_9923"]["account_name"])
+            USER_CONFIG["test_9923"]["account_name"])
         resp = IAM_TEST_OBJ.create_account_login_profile_s3iamcli(
             test_9923_cfg["account_name"],
             test_9923_cfg["account_password"],
@@ -1023,14 +1062,14 @@ class TestUserLoginProfileTests():
         assert_true(resp[0], resp[1])
         self.log.info(
             "Creating user %s for account %s",
-                test_9923_cfg["user_name"],
-                test_9923_cfg["account_name"])
+            test_9923_cfg["user_name"],
+            test_9923_cfg["account_name"])
         resp = IAM_TEST_OBJ.create_user_using_s3iamcli(
             test_9923_cfg["user_name"], access_key, secret_key)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Creating user login profile for user %s",
-                test_9923_cfg["user_name"])
+            test_9923_cfg["user_name"])
         resp = IAM_TEST_OBJ.create_user_login_profile_s3iamcli(
             test_9923_cfg["user_name"],
             test_9923_cfg["user_password"],
@@ -1040,7 +1079,7 @@ class TestUserLoginProfileTests():
         assert_true(resp[0], resp[1])
         self.log.info(
             "Getting temporary credentials for user %s",
-                USER_CONFIG["test_9923"]["user_name"])
+            USER_CONFIG["test_9923"]["user_name"])
         resp = IAM_TEST_OBJ.get_temp_auth_credentials_user(
             test_9923_cfg["account_name"],
             test_9923_cfg["user_name"],
@@ -1051,6 +1090,7 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5660")
+    @CTFailOn(error_handler)
     def test_2930(self):
         """Get temporary credentials for Invalid user."""
         self.log.info("STARTED: Get temporary credentials for Invalid user")
@@ -1060,7 +1100,7 @@ class TestUserLoginProfileTests():
             test_9924_cfg["account_name"],
             test_9924_cfg["email_id"])
         self.log.info("Creating account with name %s and email id %s",
-                test_9924_cfg["account_name"], email_id)
+                      test_9924_cfg["account_name"], email_id)
         res = IAM_TEST_OBJ.create_account_s3iamcli(
             test_9924_cfg["account_name"],
             email_id,
@@ -1084,6 +1124,7 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5685")
+    @CTFailOn(error_handler)
     def test_2931(self):
         """Get the temporary Credentials for user which is recently got deleted."""
         self.log.info("STARTED: Get the temporary Credentials for user which "
@@ -1094,7 +1135,7 @@ class TestUserLoginProfileTests():
             test_9925_cfg["account_name"],
             test_9925_cfg["email_id"])
         self.log.info("Creating account with name %s and email id %s",
-            test_9925_cfg["account_name"], email_id)
+                      test_9925_cfg["account_name"], email_id)
         res = IAM_TEST_OBJ.create_account_s3iamcli(
             test_9925_cfg["account_name"],
             email_id,
@@ -1104,7 +1145,7 @@ class TestUserLoginProfileTests():
         acc_access_key = res[1]["access_key"]
         acc_secret_key = res[1]["secret_key"]
         self.log.info("Creating user with name %s",
-                USER_CONFIG["test_9925"]["user_name"])
+                      USER_CONFIG["test_9925"]["user_name"])
         res = IAM_TEST_OBJ.create_user_using_s3iamcli(
             test_9925_cfg["user_name"], acc_access_key, acc_secret_key)
         assert_true(res[0], res[1])
@@ -1133,6 +1174,7 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-10923")
+    @CTFailOn(error_handler)
     def test_2932(self):
         """Verify that by using user valid temporary credentials
          to perform s3 operations."""
@@ -1149,7 +1191,7 @@ class TestUserLoginProfileTests():
             test_9927_cfg["user_password"],
             user_profile=True)
         self.log.info("Getting temporary credentials for user %s",
-                USER_CONFIG["test_9927"]["user_name"])
+                      USER_CONFIG["test_9927"]["user_name"])
         res = IAM_TEST_OBJ.get_temp_auth_credentials_user(
             test_9927_cfg["account_name"],
             test_9927_cfg["user_name"],
@@ -1172,10 +1214,12 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5674")
+    @CTFailOn(error_handler)
     def test_2933(self):
         """Verify and perform s3 operations by using user invalid temporary credentials."""
-        self.log.info("STARTED: Verify and perform s3 operations by using user "
-                      "invalid temporary credentials")
+        self.log.info(
+            "STARTED: Verify and perform s3 operations by using user "
+            "invalid temporary credentials")
         test_28_cfg = USER_CONFIG["test_9928"]
         email_id = "{0}{1}".format(
             test_28_cfg["account_name"],
@@ -1206,6 +1250,7 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5659")
+    @CTFailOn(error_handler)
     def test_2934(self):
         """Get temporary credentials for the user which doesn't
         contain the user login profile for that user."""
@@ -1234,16 +1279,19 @@ class TestUserLoginProfileTests():
                 test_29_cfg["err_message"],
                 error.message,
                 error.message)
-        self.log.info("ENDED: Get temporary credentials for the user "
+        self.log.info(
+            "ENDED: Get temporary credentials for the user "
             "which doesn't contain the user login profile for that user")
 
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5687")
+    @CTFailOn(error_handler)
     def test_2935(self):
         """Get temporary credentials for the user which contain the user login profile."""
-        self.log.info("STARTED: Get temporary credentials for the user which contain"
-                      " the user login profile")
+        self.log.info(
+            "STARTED: Get temporary credentials for the user which contain"
+            " the user login profile")
         test_30_cfg = USER_CONFIG["test_9930"]
         email_id = "{0}{1}".format(
             test_30_cfg["account_name"],
@@ -1255,18 +1303,20 @@ class TestUserLoginProfileTests():
             test_30_cfg["user_password"],
             user_profile=True)
         self.log.info("Getting temporary credentials for user %s",
-                test_30_cfg["user_name"])
+                      test_30_cfg["user_name"])
         res = IAM_TEST_OBJ.get_temp_auth_credentials_user(
             test_30_cfg["account_name"],
             test_30_cfg["user_name"],
             test_30_cfg["user_password"])
         assert_true(res[0], res[1])
-        self.log.info("ENDED: Get temporary credentials for the user which contain"
-                      " the user login profile")
+        self.log.info(
+            "ENDED: Get temporary credentials for the user which contain"
+            " the user login profile")
 
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5666")
+    @CTFailOn(error_handler)
     def test_2936(self):
         """Verify time duration of 20 mins for the Get temporary credentials for the valid user."""
         self.log.info("STARTED: Verify time duration of 20 mins for the Get"
@@ -1319,6 +1369,7 @@ class TestUserLoginProfileTests():
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5667")
+    @CTFailOn(error_handler)
     def test_2937(self):
         """Verify time duration less than 15 mins for the Get temporary
          credentails for the valid user."""
@@ -1350,12 +1401,14 @@ class TestUserLoginProfileTests():
                 test_32_cfg["err_message"],
                 error.message,
                 error.message)
-        self.log.info("STARTED: Verify time duration less than 15 mins for the "
+        self.log.info(
+            "STARTED: Verify time duration less than 15 mins for the "
             "Get temporary credentails for the valid user")
 
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5684")
+    @CTFailOn(error_handler)
     def test_2939(self):
         """List users By using Users get temporary credentials."""
         self.log.info("STARTED:List users By using Users get temp credentials")
@@ -1370,7 +1423,7 @@ class TestUserLoginProfileTests():
             test_36_cfg["user_password"],
             user_profile=True)
         self.log.info("Getting temp auth credentials for user %s",
-                test_36_cfg["user_name"])
+                      test_36_cfg["user_name"])
         res = IAM_TEST_OBJ.get_temp_auth_credentials_user(
             test_36_cfg["account_name"],
             test_36_cfg["user_name"],
