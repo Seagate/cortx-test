@@ -22,13 +22,26 @@ Click Details Button
     [Documentation]  On Alert Page, click on Details icon
     Click Element    ${ALERT_DETAILS_PAGE_ICON_XPATH}
 
+Click AlertEventDetails Button
+    [Documentation]  On Alert Page, click on Details icon
+    Click Element    ${ALERT_MORE_DETAILS_ICON_XPATH}
+
+Click AlertEventDetailsClose Button
+    [Documentation]  On Alert Page, click on Details icon
+    Click Element    ${ALERT_MORE_DETAILS_CLOSE_ICON_XPATH}
+
+Capture AlertEventDetails Screenshot
+    [Documentation]  On Alert Details Page, Capture More Alerts Details Screenshot
+    [Arguments]  ${filename}
+    Capture Element Screenshot  ${ALERT_MORE_DETAILS_BODY_XPATH}  ${filename}
+
 Click Comments Button
     [Documentation]  On Alert Page, click on Comment icon
     wait until element is visible  ${ALERT_COMMENT_ICON_XPATH}  timeout=10
     Click Element    ${ALERT_COMMENT_ICON_XPATH}
 
 Add CommentInCommentBox Text
-    [Documentation]  Verify Presence of Details and Comments Buttons on Alert Action for monitor user
+    [Documentation]  Add Comment in The CommentBox popup
     wait until element is visible  ${ALERT_COMMENT_TEXT_ID}  timeout=10
     input text  ${ALERT_COMMENT_TEXT_ID}  ${TEST_COMMENT}
     Click Element    ${ALERT_COMMENT_SAVE_BUTTON_ID}
@@ -45,6 +58,15 @@ Verify Presence of Details Comments
     [Documentation]  Verify Presence of Details and Comments Buttons on Alert Action for monitor user
     Page Should Contain Element  ${ALERT_DETAILS_PAGE_ICON_XPATH}
     Page Should Contain Element  ${ALERT_COMMENT_ICON_XPATH}
+
+Verify Presence of AlertEventDetails Image
+    [Documentation]  Verify Presence of Details Icon on Alert Details Page
+    Page Should Contain Element  ${ALERT_MORE_DETAILS_ICON_XPATH}
+
+Verify Presence of AlertEventDetailsBody Close 
+    [Documentation]  Verify Presence of More Alert Details and Close Icon
+    Page Should Contain Element  ${ALERT_MORE_DETAILS_BODY_XPATH}
+    Page Should Contain Element  ${ALERT_MORE_DETAILS_CLOSE_ICON_XPATH}
 
 Verify Absence of Acknowledge
     [Documentation]  Verify Absence of Acknowledge for monitor user
