@@ -25,10 +25,10 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils.config_utils import read_yaml
-from libs.s3 import iam_test_lib
-from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
 from commons.helpers import s3_helper
 from commons.utils.assert_utils import assert_true, assert_in, assert_false
+from libs.s3 import iam_test_lib
+from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
 
 S3_HLPR = s3_helper.S3Helper()
 IAM_TEST_OBJ = iam_test_lib.IamTestLib()
@@ -36,13 +36,26 @@ USER_CONFIG = read_yaml("config/s3/test_iam_user_login.yaml")[1]
 
 
 class TestUserLoginProfileTests():
-    """User Login Profile Test Suite"""
+    """User Login Profile Test Suite."""
+
+    def setup_method(self):
+        """Setup method."""
+        self.log.info("STARTED: Setup operations")
+        self.log = logging.getLogger(__name__)
+        self.ldap_user = LDAP_USERNAME
+        self.ldap_pwd = LDAP_PASSWD
+        self.delete_accounts_and_users()
+        self.log.info("ENDED: Setup operations")
+
+    def teardown_method(self):
+        """Teardown method."""
+        self.log.info("STARTED: Teardown operations")
+        self.delete_accounts_and_users()
+        self.log.info("ENDED: Teardown operations")
 
     def delete_accounts_and_users(self):
-        """
-        This function will delete all accounts and users which are getting created
-        while running test cases.
-        """
+        """This function will delete all accounts and users which are getting created
+        while running test cases."""
         user_cfg = USER_CONFIG["iam_user_login"]
         all_users = IAM_TEST_OBJ.list_users()[1]
         iam_users_list = [user["UserName"]
@@ -73,21 +86,6 @@ class TestUserLoginProfileTests():
                 self.log.debug("Deleting %s account", acc)
                 IAM_TEST_OBJ.reset_access_key_and_delete_account_s3iamcli(acc)
             self.log.debug("Deleted IAM accounts successfully")
-
-    def setup_method(self):
-        """ Setup method."""
-        self.log.info("STARTED: Setup operations")
-        self.log = logging.getLogger(__name__)
-        self.ldap_user = LDAP_USERNAME
-        self.ldap_pwd = LDAP_PASSWD
-        self.delete_accounts_and_users()
-        self.log.info("ENDED: Setup operations")
-
-    def teardown_method(self):
-        """ Teardown method"""
-        self.log.info("STARTED: Teardown operations")
-        self.delete_accounts_and_users()
-        self.log.info("ENDED: Teardown operations")
 
     def create_user_and_access_key(
             self,
@@ -186,7 +184,7 @@ class TestUserLoginProfileTests():
     @pytest.mark.tags("TEST-5665")
     @CTFailOn(error_handler)
     def test_2847(self):
-        """Verify update-login-profile (password change) for a non-existing IAM user"""
+        """Verify update-login-profile (password change) for a non-existing IAM user."""
         self.log.info("STARTED: Verify update-login-profile (password change)"
                       " for a non-existing IAM user")
         test_9825_cfg = USER_CONFIG["test_9825"]
@@ -390,7 +388,7 @@ class TestUserLoginProfileTests():
     @pytest.mark.tags("TEST-5677")
     @CTFailOn(error_handler)
     def test_2856(self):
-        """ update login profile for IAM user with both options
+        """update login profile for IAM user with both options
          --no-password-reset-required --password-reset-required."""
         self.log.info("STARTED: update login profile for IAM user with both"
                       " options --no-password-reset-required "
