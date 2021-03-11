@@ -44,6 +44,7 @@ def get_tests_from_te(jira_obj, args, test_type='ALL'):
         raise EnvironmentError("Please check TE provided, tests or tag is missing")
     return test_list, tag
 
+
 def create_report_payload(test_info, d_u, d_pass):
     """Create Report Payload for POST request to put data in Report DB."""
     os_ver = system_utils.get_os_version()
@@ -62,11 +63,11 @@ def create_report_payload(test_info, d_u, d_pass):
                        log_path=test_info['log_path'],
                        testPlanLabel=test_info['tp_label'],  # get from TP    tp.fields.labels
                        testExecutionLabel=test_info['te_label'],  # get from TE  te.fields.labels
-                       nodes= '',  # number of target hosts
+                       nodes='',  # number of target hosts
                        nodes_hostnames='',
                        test_exec_id=test_info['te_tkt'],
                        test_exec_time=test_info['duration'],
-                       test_name= test_info['test_name'],
+                       test_name=test_info['test_name'],
                        test_id=test_info['test_id'],
                        test_id_labels=test_info['labels'],
                        test_plan_id=test_info['tp_ticket'],
@@ -76,11 +77,51 @@ def create_report_payload(test_info, d_u, d_pass):
                        test_team=test_info['te_component'],  # TE te.fields.components[0].name
                        test_type='Robot',  # TE Avocado/CFT/Locust/S3bench/ Pytest
                        latest=True,
-                       feature='Test',  # feature Should be read from master test plan board.
+                       feature='Cluster User Operation (CSM)',
+                       # feature Should be read from master test plan board.
                        db_username=d_u,
                        db_password=d_pass
                        )
     return data_kwargs
+
+
+def collect_te_info(te):
+    te_details = jira_obj.get_issue_details(te)
+    te_label = ''
+    te_comp = ''
+    if te_details.fields.labels:  # Optional I.e. Isolated, NearFull, By default: Normal
+        te_label = tp_details.fields.labels[0]
+    if te_details.fields.components:
+        te_comp = te.fields.components[0].name
+    return te_label, te_comp
+
+
+def collect_tp_info(tp):
+    tp_details = jira_obj.get_issue_details(tp)
+    build = ''
+    build_type = "stable"
+    test_plan_label = "regular"
+    if tp_details.fields.environment:
+        branch_build = tp_details.fields.environment
+        if "_" in branch_build:
+            b_str = branch_build.split("_")
+            build = b_str[-1]
+            build_type = "_".join(b_str[:-1])
+        else:
+            build = branch_build
+
+    if tp_details.fields.labels:  # Optional I.e. Isolated, NearFull, By default: Normal
+        test_plan_label = tp_details.fields.labels[0]
+
+    return build, build_type, test_plan_label
+
+
+def collect_test_info(test):
+    test_details = jira_obj.get_issue_details(test)
+    test_name = test_details.fields.summary
+    test_label = test_details.fields.labels[0]
+    return test_name, test_label
+
 
 def trigger_tests_from_te(args):
     """
@@ -91,26 +132,38 @@ def trigger_tests_from_te(args):
     jira_obj = JiraTask(jira_id, jira_pwd)
     test_list, te_tag = get_tests_from_te(jira_obj, args)
 
-    #TODO get data from jira
-    build_number = ''
+    # TODO get data from jira
+    test_info = dict()
     if args.db_update == 'yes':
-        test_info = dict()
-
-        #build_number = test_info['build_number']
+        build_number, build_type, test_plan_label = collect_tp_info(args.test_plan)
+        te_label, te_comp = collect_te_info(args.te_ticket)
+        test_info['build'] = build_number
+        test_info['build_type'] = build_type
+        test_info['tp_label'] = test_plan_label
+        test_info['te_label'] = te_label
+        test_info['te_tkt'] = args.te_ticket
+        test_info['tp_ticket'] = args.test_plan
+        test_info['te_component'] = te_comp
     else:
         build_number = args.build_number
 
     for test in test_list:
-        #TODO
-        #execute test using test id tag
+        if args.db_update == 'yes':
+            test_name, test_label = collect_test_info(test)
 
-        #parse result json/xml to get test status
+        # TODO
+        # execute test using test id tag
+        start_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+
+        # parse result json/xml to get test status and duration
         test_status = ''
+        duration = ''
 
-        #move all log files to nfs share
-        test_log = '' #test log path
+        # move all log files to nfs share
+        test_log = ''  # test log path
         LOGGER.info("Uploading test log file to NFS server")
-        remote_path = os.path.join(params.NFS_BASE_DIR, build_number, args.test_plan, args.te_ticket,
+        remote_path = os.path.join(params.NFS_BASE_DIR, build_number, args.test_plan,
+                                   args.te_ticket,
                                    date.today().strftime("%b-%d-%Y"))
         resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
                                                    mnt_dir=params.MOUNT_DIR,
@@ -119,16 +172,23 @@ def trigger_tests_from_te(args):
         if resp[0]:
             LOGGER.info("Log file is uploaded at location : %s", resp[1])
 
-        #update jira for status and log file
-        jira_obj.update_test_jira_status(args.te_ticket, test_id, test_status,remote_path)
+        # update jira for status and log file
+        jira_obj.update_test_jira_status(args.te_ticket, test_id, test_status, remote_path)
 
-        #update db entry
+        # update db entry
         if args.db_update == 'yes':
+            test_info['log_path'] = remote_path
+            test_info['logs_collected'] = 'yes'
+            test_info['start_time'] = start_time
+            test_info['duration'] = duration
+            test_info['test_name'] = test_name
+            test_info['test_id'] = test
+            test_info['labels'] = test_label
+            test_info['final_result'] = test_status
+
             db_user, db_pass = get_db_credential()
             payload = create_report_payload(test_info, db_user, db_pass)
             REPORT_CLIENT.create_db_entry(**payload)
-
-
 
 
 def main(args):
