@@ -34,10 +34,11 @@ apollojenkins.pun.seagate.com:27017/
 ?authSource=cft_test_results&replicaSet=rs0"""
 DB_NAME = "cft_test_results"
 SYS_INFO_COLLECTION = "r2_systems"
-DBUSER=os.environ['DBUSER']
-DBPSWD=os.environ['DBPSWD']
+DBUSER = os.environ['DBUSER']
+DBPSWD = os.environ['DBPSWD']
 
-def insert_new_setup():
+
+def insert_new_setup(new_entry_check=True):
     LOG = logging.getLogger(__name__)
     with open(FPATH, 'rb') as json_file:
         data = json.loads(json_file.read())
@@ -55,14 +56,13 @@ def insert_new_setup():
     LOG.debug("Collection obj for DB interaction %s", collection_obj)
     LOG.debug("Setup query : %s", setup_query)
     LOG.debug("Data to be updated : %s", data)
-    import pdb
-    pdb.set_trace()
-    if not collection_obj.find(setup_query).count():
-        rdata = collection_obj.update(setup_query, {'$set': data})
-    if collection_obj.find(setup_query).count():
-        LOG.error("Setup entry failed.")
+    entry_exist = collection_obj.find(setup_query).count()
+    if new_entry_check and entry_exist:
+        LOG.error("%s already exists", setup_query)
     else:
+        rdata = collection_obj.update(setup_query, {'$set': data})
         LOG.debug("Data is updated successfully")
+
 
 if __name__ == '__main__':
     insert_new_setup()
