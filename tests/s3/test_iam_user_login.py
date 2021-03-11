@@ -63,7 +63,7 @@ class TestUserLoginProfileTests():
                 IAM_TEST_OBJ.delete_user(user)
                 self.log.debug("Deleted user : %s", user)
         all_accounts = IAM_TEST_OBJ.list_accounts_s3iamcli(
-            ldap_user, ldap_pwd)[1]
+            self.ldap_user, self.ldap_pwd)[1]
         iam_accounts = [acc["AccountName"]
             for acc in all_accounts if user_cfg["acc_name_prefix"] in acc["AccountName"]]
         self.log.debug("IAM accounts: %s", iam_accounts)
@@ -75,6 +75,7 @@ class TestUserLoginProfileTests():
             self.log.debug("Deleted IAM accounts successfully")
 
     def setup_method(self):
+        """ Setup method."""
         self.log.info("STARTED: Setup operations")
         self.log = logging.getLogger(__name__)
         self.ldap_user = LDAP_USERNAME
@@ -83,6 +84,7 @@ class TestUserLoginProfileTests():
         self.log.info("ENDED: Setup operations")
 
     def teardown_method(self):
+        """ Teardown method"""
         self.log.info("STARTED: Teardown operations")
         self.delete_accounts_and_users()
         self.log.info("ENDED: Teardown operations")
@@ -135,10 +137,9 @@ class TestUserLoginProfileTests():
         :param user_profile: Creates user login profile if this is True
         :return: Tuple containing access and secret keys of an account
         """
-        user_cfg = USER_CONFIG["iam_user_login"]
         self.log.info("Creating account with name %s", acc_name)
         resp = IAM_TEST_OBJ.create_account_s3iamcli(
-            acc_name, email_id, ldap_user, ldap_pwd)
+            acc_name, email_id, self.ldap_user, self.ldap_pwd)
         assert_true(resp[0], resp[1])
         self.log.info("Created account with name %s", acc_name)
         access_key = resp[1]["access_key"]
