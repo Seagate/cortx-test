@@ -1,0 +1,258 @@
+iam_user_login:
+  user_name_prefix: "iamuser"
+  acc_name_prefix: "iamaccount"
+test_9824:
+  user_name: "iamuser9824"
+  password: "seagate"
+  password_reset: True
+  new_password: "calsoft"
+test_9825:
+  user_name: "iamuser9825"
+  password: "seagate"
+  err_message: "NoSuchEntity"
+test_9826:
+  user_name: "iamuser9826"
+  password: "seagate"
+  password_reset: True
+  new_password: None
+  err_message: "PasswordPolicyVoilation"
+test_9828:
+  user_name: "iamuser9828"
+  password: "seagate"
+  password_reset: True
+  new_password: "XjkPGDIzihAJqrKuHOCFJKZ71AJEr4wfhB6M0btYcAP2SYhwu7JSFXcw4aUm58krF70Uly8qkvQ9Uv2r94wxHMnciDAjZZT860X9TZqUykPrUAaY5F1hSX8w1EfOrULe"
+test_9829:
+  user_name: "iamuser9829"
+  password: "seagate"
+  password_reset: True
+  new_password: "XjkPGDIzihAJqrKuHOCFJKZ71AJEr4wfhB6M0btYcAP2SYhwu7JSFXcw4aUm58krF70Uly8qkvQ9Uv2r94wxHMnciDAjZZT860X9TZqUykPrUAaY5F1hSX8w1EfOrULea"
+  err_message: "PasswordPolicyVoilation"
+test_9830:
+  user_name: "iamuser9830"
+  password: "seagate"
+  password_reset: False
+  new_password: "calsoft"
+  new_password_reset: True
+test_9831:
+  user_name: "iamuser9831"
+  password: "seagatenew"
+  err_message: "NoSuchEntity"
+test_9832:
+  user_name: "iamuser9832"
+  password: "seagate"
+  password_reset: False
+  special_char_pwd:
+    - "Sea_gate"
+    - "SEAG+te"
+    - "sea=get"
+    - "sea,ate"
+    - "sea.gate"
+    - "sea@ga-te"
+test_9833:
+  user_name: "iamuser9833"
+  password: "seagate"
+  password_reset: True
+  new_password: "abcxyz"
+test_9834:
+  user_name: "iamuser9834"
+  password: "seagate"
+  new_password: "calsoft"
+test_9835:
+  user_name: "iamuser9835"
+  password: "seagate"
+  password_reset: True
+  err_message: "Please provide password or password-reset flag"
+test_9836:
+  user_name: "iamuser9836"
+  password: "seagate"
+  password_reset: True
+test_9837:
+  user_name: "iamuser9837"
+  password: "seagate"
+  password_reset: True
+  err_message: "NoSuchEntity"
+test_9838:
+  user_name: "iamuser9838"
+  password: None
+  password_reset: True
+  err_message: "PasswordPolicyVoilation"
+test_9840:
+  user_name: "iamuser9840"
+  password: "XjkPGDIzihAJqrKuHOCFJKZ71AJEr4wfhB6M0btYcAP2SYhwu7JSFXcw4aUm58krF70Uly8qkvQ9Uv2r94wxHMnciDAjZZT860X9TZqUykPrUAaY5F1hSX8w1EfOrULe"
+  password_reset: True
+test_9841:
+  user_name: "iamuser9841"
+  password: "XjkPGDIzihAJqrKuHOCFJKZ71AJEr4wfhB6M0btYcAP2SYhwu7JSFXcw4aUm58krF70Uly8qkvQ9Uv2r94wxHMnciDAjZZT860X9TZqUykPrUAaY5F1hSX8w1EfOrULea"
+  password_reset: True
+  err_message: "PasswordPolicyVoilation"
+test_9842:
+  user_name: "iamuser9842"
+  password: "_+=?>$&"
+  password_reset: True
+test_9843:
+  user_name: "iamuser9843"
+  special_char_pwd:
+    - "Sea?gate"
+    - "SEAG<te"
+    - "sea>get"
+    - "sea$ate"
+    - "sea~gate"
+    - "sea&gate"
+  password_reset: True
+test_9844:
+  user_name: "iamuser9844"
+  user_name_suffix: "_{}"
+  password: "seagate"
+  password_reset: True
+  no_of_users: 101
+test_9845:
+  user_name: "iamuser9845"
+  password: "seagate"
+  password_reset: False
+test_9846:
+  user_name: "iamuser9846"
+  password: "seagate"
+  password_reset: True
+test_9847:
+  user_name: "iamuser9847"
+  password: "seagate"
+test_9848:
+  user_name: "iamuser9848"
+  password: "seagate"
+  both_reset_options: True
+test_9849:
+  user_name: "iamuser9849"
+  password: "seagate"
+  password_reset: True
+test_9850:
+  user_name: "iamuser9850"
+  err_message: "NoSuchEntity"
+test_9851:
+  user_name: "iamuser9851"
+  err_message: "NoSuchEntity"
+test_9876:
+  user_name: "iamuser9876"
+  password: "seagate"
+  new_password: "calsoft"
+test_9877:
+  password: "seagate"
+  user_access_key: "dummy_access_key"
+  user_secret_key: "dummy_secret_key"
+  new_password: "calsoft"
+  err_message: "InvalidAccessKeyId"
+test_9878:
+  user_name: "iamuser9878"
+  password: "seagate"
+  new_password: "calsoft"
+test_9879:
+  user_name: "iamuser9879"
+  password: "seagate"
+  new_password: "a"
+  err_message: "PasswordPolicyVoilation"
+test_9880:
+  user_name: "iamuser9880"
+  password: "seagate"
+  new_password: "XjkPGDIzihAJqrKuHOCFJKZ71AJEr4wfhB6M0btYcAP2SYhwu7JSFXcw4aUm58krF70Uly8qkvQ9Uv2r94wxHMnciDAjZZT860X9TZqUykPrUAaY5F1hSX8w1EfOrULe"
+test_9881:
+  user_name: "iamuser9881"
+  password: "seagate"
+  new_password: "XjkPGDIzihAJqrKuHOCFJKZ71AJEr4wfhB6M0btYcAP2SYhwu7JSFXcw4aUm58krF70Uly8qkvQ9Uv2r94wxHMnciDAjZZT860X9TZqUykPrUAaY5F1hSX8w1EfOrULea"
+  err_message: "InvalidParameterValue"
+test_9882:
+  user_name: "iamuser9882"
+  password: "seagate"
+  password_reset: True
+  list_special_char_pwd:
+    - "Sea?gate"
+    - '"SEAG<te"'
+    - '"sea\\nate"'
+    - "sea~gate"
+    - "sea@gate"
+    - '"sea&gate"'
+    - "sea\\tate"
+    - "sea^ate"
+    - '"sea|ate"'
+    - "sea%ate"
+    - "sea*nate"
+    - "'sea$gate'"
+test_9883:
+  user_name: "iamuser9883"
+  password: "seagate"
+  password_reset: True
+  err_message: "InvalidPassword"
+test_9884:
+  user_name: "iamuser9884"
+  password: "seagate"
+  new_password: "sEagate"
+  dummy_access_key: "aldkjakjfakjfklafj"
+  dummy_secret_key: "kahdahfouk692583"
+  err_message: "InvalidAccessKeyId"
+test_9923:
+  account_name: "iamaccount9923"
+  email_id: "@seagate.com"
+  user_name: "iamuser9923"
+  account_password: "sEagate"
+  user_password:  "seagate"
+  password_reset: False
+test_9924:
+  account_name: "iamaccount9924"
+  email_id: "@seagate.com"
+  user_name: "dummy_user"
+  user_password: "dummyPassword"
+  err_message: "NoSuchEntity"
+test_9925:
+  account_name: "iamaccount9925"
+  email_id: "@seagate.com"
+  user_name: "iamuser9925"
+  user_password: "dummyPassword"
+  err_message: "NoSuchEntity"
+test_9927:
+  account_name: "iamaccount99271"
+  email_id: "@seagate.com"
+  user_name: "iamuser9927"
+  user_password: "seagate"
+  bucket_name: "iambkt9927"
+test_9928:
+  account_name: "iamaccount9928"
+  email_id: "@seagate.com"
+  user_name: "iamuser9928"
+  user_password: "seagate"
+  dummy_access_key: "qeopioErUdjalkjfaowf"
+  dummy_secret_key: "AslkfjfjksjRsfjlskgUljflglsd"
+  dummy_session_token: "2wslfaflk1aldjlakjfkljf67skhvskjdjiwfha"
+  err_message: "InvalidAccessKeyId"
+  bucket_name: "iambkt9928"
+test_9929:
+  account_name: "iamaccount9929"
+  email_id: "@seagate.com"
+  user_name: "iamuser9929"
+  user_password: "dummyPassword"
+  err_message: "InvalidCredentials"
+test_9930:
+  account_name: "iamaccount9930"
+  email_id: "@seagate.com"
+  user_name: "iamuser9930"
+  user_password: "seagate"
+  password_reset: False
+test_9931:
+  account_name: "iamaccount9931"
+  email_id: "@seagate.com"
+  user_name: "iamuser9931"
+  user_password: "seagate"
+  duration: 1200
+  bucket_name: "iambkt9931"
+  err_message: "ExpiredToken"
+test_9932:
+  account_name: "iamaccount99320"
+  email_id: "@seagate.com"
+  user_name: "iamuser9932"
+  user_password: "seagate"
+  duration: 800
+  err_message: "MinDurationIntervalNotMaintained"
+test_9936:
+  account_name: "iamaccount9936"
+  email_id: "@seagate.com"
+  user_name: "iamuser9936"
+  user_password: "seagate"
+  password_reset: False
+  err_message: "InvalidClientTokenId"
