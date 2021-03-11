@@ -1,11 +1,12 @@
 import os
 import time
+from datetime import date
 import argparse
 from core import runner
 from commons.utils.jira_utils import JiraTask
 from commons import report_client
 from commons.utils import system_utils
-from config import params
+from commons import params
 from core.runner import get_db_credential
 from core.runner import get_jira_credential
 
@@ -52,8 +53,9 @@ def create_report_payload(test_info, d_u, d_pass):
     os_ver = system_utils.get_os_version()
     if test_info['final_result'] == 'FAIL':
         health_chk_res = "TODO"
-    elif test_info['final_result'] == 'PASS':
+    else:
         health_chk_res = "NA"
+
 
     data_kwargs = dict(os=os_ver,
                        build=test_info['build'],
@@ -65,8 +67,8 @@ def create_report_payload(test_info, d_u, d_pass):
                        log_path=test_info['log_path'],
                        testPlanLabel=test_info['tp_label'],  # get from TP    tp.fields.labels
                        testExecutionLabel=test_info['te_label'],  # get from TE  te.fields.labels
-                       nodes='',  # number of target hosts
-                       nodes_hostnames='',
+                       nodes=0,  # number of target hosts
+                       nodes_hostnames=[],
                        test_exec_id=test_info['te_tkt'],
                        test_exec_time=test_info['duration'],
                        test_name=test_info['test_name'],
@@ -121,7 +123,9 @@ def collect_tp_info(jira_obj, tp):
 def collect_test_info(jira_obj, test):
     test_details = jira_obj.get_issue_details(test)
     test_name = test_details.fields.summary
-    test_label = test_details.fields.labels[0]
+    test_label = ''
+    if test_details.fields.labels:
+        test_label = test_details.fields.labels[0]
     return test_name, test_label
 
 
@@ -162,7 +166,7 @@ def trigger_tests_from_te(args):
 
         # parse result json/xml to get test status and duration
         test_status = ''
-        duration = ''
+        duration = 10
 
         # move all log files to nfs share
         test_log = ''  # test log path
@@ -178,7 +182,7 @@ def trigger_tests_from_te(args):
             print("Log file is uploaded at location : %s", resp[1])
 
         # update jira for status and log file
-        jira_obj.update_test_jira_status(args.te_ticket, test_id, test_status, remote_path)
+        jira_obj.update_test_jira_status(args.te_ticket, test, test_status, remote_path)
 
         # update db entry
         if args.db_update == 'yes':
