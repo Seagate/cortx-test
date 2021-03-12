@@ -1,7 +1,6 @@
 test_scalability:
     bkt_name_prefix: "scalable-test"
     obj_name_prefix: "scalable-obj"
-    end_point: "https://s3.seagate.com"
 
 test_5308:
     bucket_name: "scalable-test-5308-{}"

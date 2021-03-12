@@ -31,14 +31,10 @@ from commons.errorcodes import error_handler
 from commons.utils.config_utils import read_yaml
 from commons.utils.system_utils import remove_file, run_remote_cmd
 from commons.utils.assert_utils import assert_true, assert_not_in
-from libs.s3 import S3H_OBJ, CM_CFG
+from scripts.s3_bench import s3bench as s3b_obj
+from libs.s3 import S3H_OBJ, CM_CFG, S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
-try:
-    from scripts.s3_bench import s3bench as s3b_obj
-except ImportError as error:
-    import site
-    site.addsitedir('scripts/')  # Always appends to end
-    from s3_bench import s3bench as s3b_obj
+
 
 S3_OBJ = S3TestLib()
 SCAL_CFG = read_yaml("config/s3/test_dos_scalability.yaml")[1]
@@ -70,9 +66,16 @@ class TestDosScalability:
         """
         self.log.info("STARTED: Setup operations")
         self.log.info(self.random_id)
+        self.host = CM_CFG["nodes"][0]["host"]
+        self.username = CM_CFG["nodes"][0]["username"]
+        self.password = CM_CFG["nodes"][0]["password"]
+        self.log.info("Step: Install and setup s3bench on client.")
+        res = s3b_obj.setup_s3bench()
+        assert_true(res, res)
+        self.log.info("Step: Successfully installed S3bench tool: %s.", res)
         self.log.info("ENDED: Setup operations")
 
-    def tear_method(self):
+    def teardown_method(self):
         """
         Function will be invoked after running each test case.
 
@@ -87,7 +90,8 @@ class TestDosScalability:
         pref_list = [
             each_bucket for each_bucket in bucket_list if each_bucket.startswith(
                 SCAL_CFG["test_scalability"]["bkt_name_prefix"])]
-        S3_OBJ.delete_multiple_buckets(pref_list)
+        if pref_list:
+            S3_OBJ.delete_multiple_buckets(pref_list)
         self.log.info("All the buckets/objects deleted successfully")
         self.log.info("Deleting files created during execution")
         for file in self.log_file:
@@ -108,12 +112,7 @@ class TestDosScalability:
         test_cfg = SCAL_CFG["test_5308"]
         # As per discussion we are skipping step one from all tests, also
         # before running FTE we do HC
-        self.log.info(
-            "Step 2: Install and Configure S3bench tool and validate the testcase.")
-        res = s3b_obj.setup_s3bench()
-        assert_true(res, res)
-        self.log.info(
-            "Step 2: Successfully installed and Configured S3bench tool.")
+        # Step added in setup: Install and Configure S3bench tool and validate the testcase
         self.log.info(
             "Step 3: Executed s3bench run with objects upto 20billion and obj size 1B.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
@@ -125,7 +124,7 @@ class TestDosScalability:
                 access_key=access_key,
                 secret_key=secret_key,
                 bucket=bucket_name,
-                end_point=self.cmn_cfg["end_point"],
+                end_point=S3_CFG['s3_url'],
                 num_clients=test_cfg["num_clients"],
                 num_sample=test_cfg["num_sample"],
                 obj_name_pref=test_cfg["obj_name"],
@@ -151,10 +150,7 @@ class TestDosScalability:
         self.log.info(
             "STARTED: Test constant 400 S3 operations using s3bench.")
         test_cfg = SCAL_CFG["test_5336"]
-        self.log.info("Step 1: Install and setup s3bench on client.")
-        res = s3b_obj.setup_s3bench()
-        assert_true(res, res)
-        self.log.info("Step 1: Successfully installed S3bench tool.")
+        # Step added in setup: Install and Configure S3bench tool and validate the testcase
         self.log.info(
             "Step 2: Perform with {test_cfg['num_clients']} constant s3 operations.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
@@ -166,7 +162,7 @@ class TestDosScalability:
                 access_key=access_key,
                 secret_key=secret_key,
                 bucket=bucket_name,
-                end_point=self.cmn_cfg["end_point"],
+                end_point=S3_CFG['s3_url'],
                 num_clients=test_cfg["num_clients"],
                 num_sample=test_cfg["num_sample"],
                 obj_name_pref=test_cfg["obj_name"],
@@ -184,9 +180,9 @@ class TestDosScalability:
         for cmd in commands.CRASH_COMMANDS:
             res_cmd = run_remote_cmd(
                 cmd,
-                CM_CFG["host"],
-                CM_CFG["username"],
-                CM_CFG["password"])
+                self.host,
+                self.username,
+                self.password)
             assert_not_in(test_cfg["cmd_msg"], str(res_cmd), res_cmd)
         self.log.info(
             "Step 3: Successfully checked no crashes happened and core logs for motr")
@@ -199,10 +195,7 @@ class TestDosScalability:
         """Test constant 300 S3 operations using s3bench."""
         self.log.info("STARTED: Test constant 300 S3 operations using s3bench")
         test_cfg = SCAL_CFG["test_5337"]
-        self.log.info("Step 1: Install and setup s3bench on client.")
-        res = s3b_obj.setup_s3bench()
-        assert_true(res, res)
-        self.log.info("Step 1: Successfully installed S3bench tool.")
+        # Step added in setup: Install and Configure S3bench tool and validate the testcase
         self.log.info(
             "Step 2: Perform with {test_cfg['num_clients']} constant s3 operations.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
@@ -214,7 +207,7 @@ class TestDosScalability:
                 access_key=access_key,
                 secret_key=secret_key,
                 bucket=bucket_name,
-                end_point=self.cmn_cfg["end_point"],
+                end_point=S3_CFG['s3_url'],
                 num_clients=test_cfg["num_clients"],
                 num_sample=test_cfg["num_sample"],
                 obj_name_pref=test_cfg["obj_name"],
@@ -232,9 +225,9 @@ class TestDosScalability:
         for cmd in commands.CRASH_COMMANDS:
             res_cmd = run_remote_cmd(
                 cmd,
-                CM_CFG["host"],
-                CM_CFG["username"],
-                CM_CFG["password"])
+                self.host,
+                self.username,
+                self.password)
             assert_not_in(test_cfg["cmd_msg"], str(res_cmd), res_cmd)
         self.log.info(
             "Step 3: Successfully checked no crashes happened and core logs for motr")
@@ -248,10 +241,7 @@ class TestDosScalability:
         self.log.info(
             "STARTED: Test constant 1000 S3 operations using s3bench")
         test_cfg = SCAL_CFG["test_5338"]
-        self.log.info("Step 1: Install and setup s3bench on client.")
-        res = s3b_obj.setup_s3bench()
-        assert_true(res, res)
-        self.log.info("Step 1: Successfully installed S3bench tool.")
+        # Step added in setup: Install and Configure S3bench tool and validate the testcase.
         self.log.info(
             "Step 2: Perform with {test_cfg['num_clients']} constant s3 operations.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
@@ -263,7 +253,7 @@ class TestDosScalability:
                 access_key=access_key,
                 secret_key=secret_key,
                 bucket=bucket_name,
-                end_point=self.cmn_cfg["end_point"],
+                end_point=S3_CFG['s3_url'],
                 num_clients=test_cfg["num_clients"],
                 num_sample=test_cfg["num_sample"],
                 obj_name_pref=test_cfg["obj_name"],
@@ -281,9 +271,9 @@ class TestDosScalability:
         for cmd in commands.CRASH_COMMANDS:
             res_cmd = run_remote_cmd(
                 cmd,
-                CM_CFG["host"],
-                CM_CFG["username"],
-                CM_CFG["password"])
+                self.host,
+                self.username,
+                self.password)
             assert_not_in(test_cfg["cmd_msg"], str(res_cmd), res_cmd)
         self.log.info(
             "Step 3: Successfully checked no crashes happened and core logs for motr")
@@ -297,10 +287,7 @@ class TestDosScalability:
         self.log.info(
             "STARTED: Test growing S3 operations using s3bench from 1000 to 1200 then to 1500")
         test_cfg = SCAL_CFG["test_5340"]
-        self.log.info("Step 1: Install and setup s3bench on client.")
-        res = s3b_obj.setup_s3bench()
-        assert_true(res, res)
-        self.log.info("Step 1: Successfully installed S3bench tool.")
+        # Step added in setup: Install and Configure S3bench tool and validate the testcase.
         self.log.info("Step 2: Perform with n constant s3 operations.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
@@ -316,7 +303,7 @@ class TestDosScalability:
                     access_key=access_key,
                     secret_key=secret_key,
                     bucket=bucket_name,
-                    end_point=self.cmn_cfg["end_point"],
+                    end_point=S3_CFG['s3_url'],
                     num_clients=client,
                     num_sample=client,
                     obj_name_pref=test_cfg["obj_name"],
@@ -334,9 +321,9 @@ class TestDosScalability:
         for cmd in commands.CRASH_COMMANDS:
             res_cmd = run_remote_cmd(
                 cmd,
-                CM_CFG["host"],
-                CM_CFG["username"],
-                CM_CFG["password"])
+                self.host,
+                self.username,
+                self.password)
             assert_not_in(test_cfg["cmd_msg"], str(res_cmd), res_cmd)
         self.log.info(
             "Step 3: Successfully checked no crashes happened and core logs for motr")
@@ -354,10 +341,7 @@ class TestDosScalability:
             "STARTED: Test growing S3 operations using s3bench from 1000 to 1500 then back"
             " to 1000 then to 1500 again")
         test_cfg = SCAL_CFG["test_5341"]
-        self.log.info("Step 1: Install and setup s3bench on client.")
-        res = s3b_obj.setup_s3bench()
-        assert_true(res, res)
-        self.log.info("Step 1: Successfully installed S3bench tool.")
+        # Step added in setup: Install and Configure S3bench tool and validate the testcase.
         self.log.info("Step 2: Perform with n constant s3 operations.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
@@ -368,7 +352,7 @@ class TestDosScalability:
                 access_key=access_key,
                 secret_key=secret_key,
                 bucket=bucket_name,
-                end_point=self.cmn_cfg["end_point"],
+                end_point=S3_CFG['s3_url'],
                 num_clients=client,
                 num_sample=client,
                 obj_name_pref=test_cfg["obj_name"],
@@ -385,9 +369,9 @@ class TestDosScalability:
         for cmd in commands.CRASH_COMMANDS:
             res_cmd = run_remote_cmd(
                 cmd,
-                CM_CFG["host"],
-                CM_CFG["username"],
-                CM_CFG["password"])
+                self.host,
+                self.username,
+                self.password)
             assert_not_in(test_cfg["cmd_msg"], str(res_cmd), res_cmd)
         self.log.info(
             "Step 3: Successfully checked no crashes happened and core logs for motr")
