@@ -39,11 +39,6 @@ IAM_CFG = get_config_wrapper(fpath="config/s3/test_iam_account_login.yaml")
 class TestAccountLoginProfile:
     """Account Login Profile Test Suite."""
 
-    # account_name = None
-    # email_id = None
-    # ldap_user = None
-    # ldap_pwd = None
-
     def setup_method(self):
         LOGGER.info("STARTED: Setup Operation")
         self.account_name = IAM_CFG["iam_account_login"]["acc_name_prefix"]

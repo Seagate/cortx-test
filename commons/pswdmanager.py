@@ -74,8 +74,11 @@ def decrypt_all_passwd(data: dict) -> dict:
         'new_password',
         'list_of_passwords',
         'list_special_invalid_char',
+        'special_char_pwd',
+        'list_special_char_pwd',
         'invalid_password',
-        'user_password', 'root_pwd', 'new_pwd',
+        'user_password', 'account_password',
+        'root_pwd', 'new_pwd',
         'test_s3account_password',
         'test_csmuser_password',
     ]
