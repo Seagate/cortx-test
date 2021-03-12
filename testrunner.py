@@ -58,7 +58,7 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
     """Form a pytest command for execution."""
     env['TARGET'] = args.target
     build, build_type = args.build, args.build_type
-    #tag = '-m ' + te_tag
+    tag = '-m ' + te_tag
     run_type = ''
     is_distributed = ''
     try:
@@ -101,7 +101,7 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
         cmd_line = cmd_line + ["--target=" + args.target]
 
     if te_tag:
-       cmd_line = cmd_line + [te_tag]
+       cmd_line = cmd_line + [tag]
     read_metadata = "--readmetadata=" + str(True)
     cmd_line = cmd_line + [read_metadata]
     cmd_line = cmd_line + ['--build=' + build, '--build_type=' + build_type,
