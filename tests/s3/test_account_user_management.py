@@ -94,6 +94,7 @@ class TestAccountUserManagement:
         It will perform all prerequisite test steps if any.
         """
         # Delete created user with prefix.
+        self.log.info("STARTED: Test setup operations.")
         self.log.info(
             "Delete created user with prefix: %s",
             self.acc_user_config["user_name"])

@@ -22,7 +22,7 @@
 from confluent_kafka import DeserializingConsumer
 from confluent_kafka.schema_registry.json_schema import JSONDeserializer
 from confluent_kafka.serialization import StringDeserializer
-from config.params import BOOTSTRAP_SERVERS,TEST_EXEC_TOPIC
+from commons.params import BOOTSTRAP_SERVERS,TEST_EXEC_TOPIC
 
 
 def dict_to_kafka_msg(obj, ctx):
@@ -38,10 +38,12 @@ def dict_to_kafka_msg(obj, ctx):
 
     return KafkaMsg(tag=obj['tag'],
                     parallel=obj['parallel'],
-                    test_set=obj['test_list'],
-                    te_tickets=obj['te_tickets'],
-                    target_list=obj['target_list'],
-                    build=obj['build'])
+                    test_set=obj['test_set'],
+                    te_ticket=obj['te_ticket'],
+                    target_list=obj['targets'],
+                    build=obj['build'],
+                    build_type=obj['build_type'],
+                    test_plan=obj['test_plan'])
 
 
 def get_consumer():
@@ -82,11 +84,13 @@ class KafkaMsg:
         """
         self.tag = kwargs.get('tag')
         self.parallel = kwargs.get('parallel')
-        self.te_tickets = kwargs.get('te_tickets')
+        self.te_ticket = kwargs.get('te_ticket')
         # test set should not be serialized, see convert_ticket_to_dict()
         self.test_list = list(kwargs.get('test_set'))
-        self.target_list = kwargs.get('target_list')
+        self.target_list = kwargs.get('targets')
         self.build = kwargs.get('build')
+        self.test_plan = kwargs.get('test_plan')
+        self.build_type = kwargs.get('build_type')
 
     def get_build_number(self):
         """
@@ -102,38 +106,50 @@ class KafkaMsg:
 
 
 SCHEMA_STR = """
-            {
-              "$schema": "http://json-schema.org/draft-07/schema#",
-              "title": "Kakfa_msg",
-              "description": "A Confluent Kafka Message Structure",
-              "type": "object",
-              "properties": {
-               "tag": {
-                  "description": "Tag",
-                  "type": "string",
-                },
-                "build": {
-                  "description": "build number",
-                  "type": "string",
-                },
-                "te_tickets": {
-                  "description": "List of test execution ids",
-                  "type": "List"
-                },
-                "parallel": {
-                  "description": "Execution type: parallel/non-parallel",
-                  "type": "boolean",
-                },
-                "target_list": {
-                  "description": "List of targets available for this execution",
-                  "type": "List"
-                },
-                "test_set": {
-                  "description": "Set of tests to execute",
-                  "type": "string"
-                }
-
-              },
-              "required": [ "build", "parallel", "target_list", "test_set", "te_tickets" ]
+    {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Ticket",
+      "description": "A Test Set or single test TBE by test runner",
+      "type": "object",
+      "properties": {
+            "tag": {
+                "description": "Test cases tag",
+                "type": "string"
+            },
+            "test_set": {
+                "description": "A set of test cases to be executed",
+                "type": "array",
+                "items": { "type": "string" }
+            },
+            "te_ticket": {
+                "description": "Test execution tickets",
+                "type": "string"
+            },
+            "targets": {
+                "description": "Test execution tickets",
+                "type": "string",
+                "default": "automation"
+            },
+            "build": {
+                "description": "Build string or number",
+                "type": "string",
+                "default": "000"
+            },
+            "build_type": {
+                "description": "Build type string",
+                "type": "string"
+            },
+            "test_plan": {
+                "description": "Test plan ticket",
+                "type": "string"
+            },
+            "parallel": {
+                "description": "Test execution can happen in parallel or not",
+                "type": "boolean"
             }
-            """
+
+        },
+        "required": ["tag", "test_set", "te_ticket", "targets", "build", 
+        "build_type", "test_plan", "parallel"]
+    }
+    """

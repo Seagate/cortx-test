@@ -34,7 +34,6 @@ import yaml
 from jsonschema import validate
 import commons.errorcodes as cterr
 from commons.exceptions import CTException
-from commons import pswdmanager
 
 LOG = logging.getLogger(__name__)
 MAIN_CONFIG_PATH = "config/main_config.yaml"
@@ -367,84 +366,3 @@ def update_configs(all_configs: dict) -> None:
     """
     for conf in all_configs.keys():
         read_write_config(conf, all_configs[conf])
-
-def get_config_from_yaml(fpath: str = 'config.yaml') -> dict:
-    """Reads the config and decrypts the passwords
-
-    :param fpath: configuration file path
-    :return [type]: dictionary containing config data
-    """
-    with open(fpath) as fin:
-        data = yaml.safe_load(fin)
-        data['end'] = 'end'
-        pswdmanager.decrypt_all_passwd(data)
-    return data
-
-
-def get_config_db(cname="r2_systems"):
-    """Reads the configuration from the database
-
-    :param cname:collection which will be read
-    """
-    print(cname)
-    # TODO: This will covered in EOS-17026
-    return None
-
-
-def get_config_wrapper(**kwargs):
-    """Get the configuration from the database as well as yaml and merge.
-    It is expected that duplicate data should not be present between DB and yaml
-    """
-    flag = False
-    data = {}
-    if "fpath" in kwargs:
-        flag = True
-        data.update(get_config_from_yaml(fpath=kwargs['fpath']))
-    if "cname" in kwargs:
-        flag = True
-        data.update(get_config_db(cname=kwargs['cname']))
-    if not flag:
-        print("Invalid keyword argument")
-        raise ValueError("Invalid argument")
-    return data
-
-def verify_json_schema(instance, *schemas):
-    """
-    Verify the schema for the given instance of the response
-    exception is raised if the schema doesn't match
-    which can be handled by calling function
-    :param instance: json log instance which needs to be verified.
-    :param schemas: json schema for verification
-    """
-
-    for schema in schemas:
-        validate(instance=instance, schema=schema)
-
-def verify_json_response(actual_result, expect_result, match_exact=False):
-    """
-    This function will verify the json response with actual response
-    :param actual_result: actual json response from REST call
-    :param expect_result: the json response to be matched
-    :param match_exact: to match actual and expect result to be exact
-    :return: Success(True)/Failure(False)
-    """
-    try:
-        # Matching exact values
-        if match_exact:
-            LOG.debug("Matching exact values")
-            return actual_result == expect_result
-
-        # Check for common keys between actual value and expect value
-        if actual_result.keys().isdisjoint(expect_result):
-            LOG.debug(
-                "No common keys between actual value and expect value")
-            return False
-
-        return all(actual_result[key] == value for key, value in expect_result.items())
-    except Exception as error:
-        LOG.error("%s %s: %s",
-                        const.EXCEPTION_ERROR,
-                        RestTestLib.verify_json_response.__name__,
-                        error)
-        raise CTException(
-            err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
