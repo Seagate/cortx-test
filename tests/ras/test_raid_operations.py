@@ -208,11 +208,11 @@ class TestRAIDOperations:
 
         LOGGER.info("ENDED: Teardown Operations")
 
-    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.tags("TEST-15733")
     @pytest.mark.sw_alert
     @pytest.mark.skip
+    @CTFailOn(error_handler)
     def test_5345(self):
         """
         EOS-10613 RAID: Assemble a array
@@ -298,10 +298,10 @@ class TestRAIDOperations:
         LOGGER.info(
             "ENDED: TEST-5345 RAID: Assemble a array")
 
-    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.tags("TEST-15732")
     @pytest.mark.sw_alert
+    @CTFailOn(error_handler)
     def test_5342(self):
         """
         EOS-10615 RAID: Remove a drive from array
@@ -392,10 +392,10 @@ class TestRAIDOperations:
         LOGGER.info(
             "ENDED: TEST-5342 RAID: Remove a drive from array")
 
-    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.tags("TEST-15868")
     @pytest.mark.sw_alert
+    @CTFailOn(error_handler)
     def test_4785(self):
         """
         EOS-10617 RAID: Fail a drive of array
@@ -447,10 +447,10 @@ class TestRAIDOperations:
         LOGGER.info(
             "ENDED: TEST-4785 RAID: Fail a drive of array")
 
-    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.tags("TEST-16214")
     @pytest.mark.sw_alert
+    @CTFailOn(error_handler)
     def test_5343(self):
         """
         EOS-10614 RAID: Add drive to array
