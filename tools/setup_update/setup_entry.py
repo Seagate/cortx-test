@@ -59,8 +59,10 @@ def insert_new_setup(new_entry_check=True):
     entry_exist = collection_obj.find(setup_query).count()
     if new_entry_check and entry_exist:
         LOG.error("%s already exists", setup_query)
+    elif new_entry_check and not entry_exist:
+        rdata = collection_obj.insert_one(data)
     else:
-        rdata = collection_obj.update(setup_query, {'$set': data})
+        rdata = collection_obj.update_one(setup_query, {'$set': data})
         LOG.debug("Data is updated successfully")
 
 
