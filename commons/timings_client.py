@@ -58,12 +58,12 @@ def create_timings_db_entry(payload):
     if tp_details.fields.environment:
         branch_build = tp_details.fields.environment
         if "_" in branch_build:
-            build_type = branch_build.split("_")[0]
+            build_type = "".join(branch_build.split("_")[:-1])
 
     if tp_details.fields.labels:
         test_plan_label = tp_details.fields.labels[0]
     else:
-        test_plan_label = "Regular"
+        test_plan_label = "regular"
     headers = {
         'Content-Type': 'application/json'
     }
