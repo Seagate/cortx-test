@@ -182,7 +182,7 @@ class TestSSPL:
 
         if self.changed_level:
             kv_store_path = cons.LOG_STORE_PATH
-            common_cfg = RAS_TEST_CFG["ras_sspl_alert"]["sspl_config"]
+            common_cfg = RAS_VAL["ras_sspl_alert"]["sspl_config"]
             res = self.ras_test_obj.update_threshold_values(
                 kv_store_path, common_cfg["sspl_log_level_key"],
                 common_cfg["sspl_log_dval"],
