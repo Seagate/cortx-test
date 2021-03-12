@@ -45,7 +45,7 @@ def encrypt(secret: str) -> str:
     return base64.b64encode(data).decode()
 
 
-def decrypt(enc_secret :str) ->str:
+def decrypt(enc_secret: str) -> str:
     """
     Decrypt encrypted word using AES-CBC mode decryption
     """
@@ -63,29 +63,44 @@ def decrypt(enc_secret :str) ->str:
     return data[:-padding].decode()
 
 
-def decrypt_all_passwd(data :dict) -> dict:
+def decrypt_all_passwd(data: dict) -> dict:
     """Decrypt all the values with the key "password"
 
-    :param data: dictionary of configuration which contains encryted passwords
+    :param data: dictionary of configuration which contains encrypted passwords
     :return [type]: return the decrypted passwords
     """
-    decrypt_list = ["password",'test_s3account_password','test_csmuser_password']
+    decrypt_list = [
+        "password",
+        'new_password',
+        'list_of_passwords',
+        'list_special_invalid_char',
+        'invalid_password',
+        'user_password', 'root_pwd', 'new_pwd',
+        'test_s3account_password',
+        'test_csmuser_password',
+    ]
     for key, value in data.items():
         if isinstance(value, dict):
             decrypt_all_passwd(value)
         else:
             if key.lower() in decrypt_list:
-                data[key] = decrypt(value)
+                if isinstance(value, list):
+                    new_val = []
+                    for element in value:
+                        new_val.append(decrypt(element))
+                    data[key] = new_val
+                else:
+                    data[key] = decrypt(value)
             if key == 'end' and value == 'end':
                 data.pop('end')
                 return data
 
 
 def get_secrets(fpath="secrets.json", secret_ids=None) -> dict:
-    """Fetch the screts from enviornment or database
+    """Fetch the secrets from environment or database
 
     :param fpath: local json file path for reading secrets
-    :param secret_ids: keys to be read from json file / enviornment
+    :param secret_ids: keys to be read from json file / environment
     :return [type]: dict of {secrets_id : secret }
     """
     if secret_ids is None:
