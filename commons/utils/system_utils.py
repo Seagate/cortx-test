@@ -395,7 +395,7 @@ def remove_dir(dpath: str) -> bool:
 
 def remove_dirs(dpath: str) -> bool:
     """
-    Remove directory and hierarchy understand.
+    Remove directory and hierarchy.
     :param dpath: Directory path.
     :return:boolean based on cleanup.
     """

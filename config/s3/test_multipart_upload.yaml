@@ -5,7 +5,6 @@ multipart:
     actions:
         - "backup"
         - "restore"
-    aws_config_path: "/root/.aws/config"
 
 test_8660_8664_8665_8668:
     bucket_name: "mp-bkt-test8660"
