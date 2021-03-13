@@ -165,7 +165,7 @@ class TestMultipartUpload:
     @pytest.mark.s3
     @pytest.mark.tags('TEST-5588')
     @CTFailOn(error_handler)
-    def test_2061_2065_2066_2069(self):
+    def test_multipart_upload_for_file_2061_2065_2066_2069(self):
         """
         Initiate Multipart upload for file of given size
         Upload parts into bucket which are prepared in initiate multipart upload stage
@@ -206,7 +206,7 @@ class TestMultipartUpload:
     @pytest.mark.s3
     @pytest.mark.tags('TEST-5583')
     @CTFailOn(error_handler)
-    def test_2070(self):
+    def test_abort_multipart_upload_2070(self):
         """
         Abort Multipart upload.
         """
@@ -234,7 +234,7 @@ class TestMultipartUpload:
     @pytest.mark.s3
     @pytest.mark.tags('TEST-5589')
     @CTFailOn(error_handler)
-    def test_2062(self):
+    def test_multipart_upload_file_1gb_to_10gb_2062(self):
         """
         Initiate Multipart upload for file of size of 1GB to 10GB having varying part size.
         i.e.Different part size.
@@ -272,7 +272,7 @@ class TestMultipartUpload:
     @pytest.mark.s3
     @pytest.mark.tags('TEST-5590')
     @CTFailOn(error_handler)
-    def test_2063(self):
+    def test_multipart_upliad_large_file_with_metadata_2063(self):
         """
         Initiate Multipart upload for large file with meta data.
         """
@@ -303,7 +303,7 @@ class TestMultipartUpload:
     @pytest.mark.s3
     @pytest.mark.tags('TEST-5599')
     @CTFailOn(error_handler)
-    def test_2067(self):
+    def test_verify_max_no_parts_listed_using_part_command_2067(self):
         """
         Verify max no. of parts being listed by using List part command.
         """
@@ -332,7 +332,7 @@ class TestMultipartUpload:
     @pytest.mark.s3
     @pytest.mark.tags('TEST-5591')
     @CTFailOn(error_handler)
-    def test_2068(self):
+    def test_list_multipart_upload_2068(self):
         """
         List Multipart uploads.
         """
@@ -365,7 +365,7 @@ class TestMultipartUpload:
     @pytest.mark.s3
     @pytest.mark.tags('TEST-5597')
     @CTFailOn(error_handler)
-    def test_2071(self):
+    def test_multipart_upload_through_configuration_file_2071(self):
         """
         Multipart upload through configuration file. (Automatic multipart upload).
         """
@@ -426,7 +426,7 @@ class TestMultipartUpload:
     @pytest.mark.s3
     @pytest.mark.tags('TEST-5584')
     @CTFailOn(error_handler)
-    def test_2073(self):
+    def test_abort_multipart_upload_from_client2_started_from_client1_2073(self):
         """
         Abort multipart upload from client 2 if upload has started from client 1.
         """
@@ -443,7 +443,7 @@ class TestMultipartUpload:
             mp_config["total_parts"])
         mpu_id, parts = res
         self.log.info("Aborting multipart upload")
-        res = S3_MP_TEST_OBJ.abort_multipart_upload(
+        res = S3_MP_TEST_OBJ_CLIENT2.abort_multipart_upload(
             mp_config["bucket_name"],
             mp_config["object_name"],
             mpu_id)
@@ -456,7 +456,7 @@ class TestMultipartUpload:
     @pytest.mark.s3
     @pytest.mark.tags('TEST-5598')
     @CTFailOn(error_handler)
-    def test_2075(self):
+    def test_large_object_multipart_upload_2075(self):
         """
         Start a large object multipart upload and check if the parts can be seen
         from other client and if they can be accessed.
@@ -488,7 +488,7 @@ class TestMultipartUpload:
     @pytest.mark.s3
     @pytest.mark.tags('TEST-5586')
     @CTFailOn(error_handler)
-    def test_2294(self):
+    def test_multiprt_upload_having_more_than_10000_parts_2294(self):
         """
         Create multipart upload having more than 10,000 parts.
         """
@@ -532,7 +532,7 @@ class TestMultipartUpload:
     @pytest.mark.s3
     @pytest.mark.tags('TEST-5594')
     @CTFailOn(error_handler)
-    def test_2296(self):
+    def test_multipart_upload_all_parts_less_than_5mb_2296(self):
         """
         Multipart upload - create all parts less than 5 MB size, last part can be > 5 MB.
         """
@@ -578,7 +578,7 @@ class TestMultipartUpload:
     @pytest.mark.s3
     @pytest.mark.tags('TEST-5596')
     @CTFailOn(error_handler)
-    def test_2295(self):
+    def test_multipart_upload_part_number_should_be_in_range_1_to_10k_2295(self):
         """
         Multipart Upload Part numbers should be in range of 1 to 10,000.
         """
@@ -596,7 +596,7 @@ class TestMultipartUpload:
     @pytest.mark.s3
     @pytest.mark.tags('TEST-5595')
     @CTFailOn(error_handler)
-    def test_2297(self):
+    def test_multipart_upload_few_part_more_than_5gb_2297(self):
         """
         Multipart upload - create few parts more than 5 GB size.
         """
@@ -641,7 +641,7 @@ class TestMultipartUpload:
     @pytest.mark.s3
     @pytest.mark.tags('TEST-5587')
     @CTFailOn(error_handler)
-    def test_2298(self):
+    def test_create_upto_1k_multipart_uploads_2298(self):
         """
         Create up to 1000 Multipart uploads.
         """
@@ -706,7 +706,7 @@ class TestMultipartUpload:
     @pytest.mark.s3
     @pytest.mark.tags('TEST-5585')
     @CTFailOn(error_handler)
-    def test_2299(self):
+    def test_create_more_than_1k_multipart_uploads_2299(self):
         """
         Create more than 1000 Multipart uploads.
         """
@@ -769,7 +769,7 @@ class TestMultipartUpload:
     @pytest.mark.s3
     @pytest.mark.tags('TEST-5593')
     @CTFailOn(error_handler)
-    def test_2300(self):
+    def test_multipart_upload_varying_request_numbers_max_concurrent_requests_2300(self):
         """
         Multipart upload - by varying request numbers max_concurrent_requests.
         """
@@ -836,7 +836,7 @@ class TestMultipartUpload:
     @pytest.mark.s3
     @pytest.mark.tags('TEST-5592')
     @CTFailOn(error_handler)
-    def test_2301(self):
+    def test_multipart_upload_varying_multipart_threshold_2301(self):
         """
         Multipart upload - by varying multipart_threshold.
         """
@@ -901,9 +901,9 @@ class TestMultipartUpload:
     @pytest.mark.s3
     @pytest.mark.tags('TEST-8723')
     @CTFailOn(error_handler)
-    def test_631(self):
+    def test_multipart_upload_with_invalid_json_input_631(self):
         """
-        Test Multipart upload with invalid json input.
+        Multipart upload with invalid json input.
         """
         self.log.info("STARTED: Test Multipart upload with invalid json input")
         mp_config = MPART_CFG["test_631"]
