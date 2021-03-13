@@ -216,4 +216,21 @@ S3ACC_DELETE_HELP = ["positional arguments:",
 S3ACC_RESET_PWD_HELP = [
     "positional arguments:",
     "account_name  Name of S3 account whose password want to be reset."]
-
+SUPPORT_BUNDLE_PATH = "/var/log/seagate/support_bundle/"
+TAR_POSTFIX = "tar.gz"
+SB_STATUS = "status"
+BUNDLE_ID = "bundle_id"
+SB_COMMENT = "comment"
+NODE_NAME = "node_name"
+MESSAGE = "message"
+RESULT = "result"
+JSON_LIST_FORMAT = "json"
+TABLE_LIST_FORMAT = "table"
+XML_LIST_FORMAT = "xml"
+SUPPORT_BUNDLE_MSG = "Support bundle generation completed"
+CSM_USER_HELP =[
+    "support_bundle",
+    "alerts",
+    "s3accounts",
+    "system",
+    "users"]

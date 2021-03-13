@@ -41,23 +41,23 @@ from common import app
 @app.callback(
     Output('table_comp_summary', 'children'),
     [Input('submit_button', 'n_clicks'),
-     Input('version_dropdown', 'value'),
+     Input('branch_dropdown', 'value'),
      Input('build_no_dropdown', 'value'),
      Input('test_system_dropdown', 'value'),
      Input('test_team_dropdown', 'value'),
      ]
 )
-def gen_table_comp_summary(n_clicks, version, build_no, test_system, test_team):
+def gen_table_comp_summary(n_clicks, branch, build_no, test_system, test_team):
     """
     Returns the component wise issues for current and previous builds.
     :param n_clicks: Input event
-    :param version: Build version
+    :param branch: Build branch
     :param build_no: Build Number
     :param test_system: System type
     :param test_team: Testing team
     :return:
     """
-    if n_clicks is None or version is None or build_no is None or \
+    if n_clicks is None or branch is None or build_no is None or \
             test_system is None or test_team is None:
         raise PreventUpdate
 
@@ -70,24 +70,21 @@ def gen_table_comp_summary(n_clicks, version, build_no, test_system, test_team):
 
     for build in build_no_list:
         query_input = {
-            "query": {"buildType": version, "buildNo": build, "testPlanLabel": test_system,
+            "query": {"buildType": branch, "buildNo": build, "testPlanLabel": test_system,
                       "testTeam": test_team},
-            "projection": {"issueIDs": True}}
+            "field": "issueIDs"}
 
         query_input.update(common.credentials)
-        response = requests.request("GET", common.search_endpoint, headers=common.headers,
+        response = requests.request("GET", common.distinct_endpoint, headers=common.headers,
                                     data=json.dumps(query_input))
         if response.status_code == HTTPStatus.OK:
             json_response = json.loads(response.text)
-            issue_list = []
-            for each in json_response["result"]:
-                issue_list.extend(each["issueIDs"])
-
+            issue_list = json_response["result"]
             issue_df = common.get_issue_details(issue_list)
             build_dict = {}
             for comp in component_list:
                 build_dict[comp] = issue_df[issue_df.issue_comp == comp].shape[0]
-            builds_details.insert(build_dict)
+            builds_details.append(build_dict)
 
     df_comp_summary = pd.DataFrame({
         "Component": component_list,
@@ -375,39 +372,37 @@ def gen_table_multi_bucket_perf_stats(n_clicks):
 @app.callback(
     Output('table_detail_reported_bugs', 'children'),
     [Input('submit_button', 'n_clicks'),
-     Input('version_dropdown', 'value'),
+     Input('branch_dropdown', 'value'),
      Input('build_no_dropdown', 'value'),
      Input('test_system_dropdown', 'value'),
      Input('test_team_dropdown', 'value'),
      ]
 )
-def gen_table_detail_reported_bugs(n_clicks, version, build_no, test_system, test_team):
+def gen_table_detail_reported_bugs(n_clicks, branch, build_no, test_system, test_team):
     """
     Table : List all the bugs for the specified inputs.
     :param n_clicks:Input Event
-    :param version:Build version
+    :param branch:Build branch
     :param build_no:Build Number
     :param test_system:
     :param test_team:
     :return:
     """
-    if n_clicks is None or version is None or build_no is None or \
+    if n_clicks is None or branch is None or build_no is None or \
             test_system is None or test_team is None:
         raise PreventUpdate
 
     query_input = {
-        "query": {"buildType": version, "buildNo": build_no, "testPlanLabel": test_system,
+        "query": {"buildType": branch, "buildNo": build_no, "testPlanLabel": test_system,
                   "testTeam": test_team},
-        "projection": {"issueIDs": True}}
+        "field": "issueIDs"}
 
     query_input.update(common.credentials)
-    response = requests.request("GET", common.search_endpoint, headers=common.headers,
+    response = requests.request("GET", common.distinct_endpoint, headers=common.headers,
                                 data=json.dumps(query_input))
     if response.status_code == HTTPStatus.OK:
         json_response = json.loads(response.text)
-        issue_list = []
-        for each in json_response["result"]:
-            issue_list.extend(each["issueIDs"])
+        issue_list = json_response["result"]
         print("Issue list (reported bugs)", issue_list)
         df_detail_reported_bugs = common.get_issue_details(issue_list)
         detail_reported_bugs = dash_table.DataTable(

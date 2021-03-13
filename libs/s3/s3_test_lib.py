@@ -24,14 +24,14 @@ import os
 import time
 import logging
 from time import perf_counter
-from random import SystemRandom
-
+from random import randint
 import boto3
 from botocore import UNSIGNED
 from botocore.client import Config
+from commons import commands
 from commons import errorcodes as err
 from commons.exceptions import CTException
-from commons.utils.system_utils import create_file
+from commons.utils.system_utils import create_file, run_local_cmd
 from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_core_lib import S3Lib
 from libs.s3.s3_acl_test_lib import S3AclTestLib
@@ -494,9 +494,12 @@ class S3TestLib(S3Lib):
                     os.remove(file_path)
                 with open(file_path, 'wb') as fout:
                     fout.write(
-                        SystemRandom().randint(
-                            1024000 * int(min_size),
-                            1024000 * int(max_size)))
+                        os.urandom(
+                            randint(
+                                1024000 *
+                                int(min_size),
+                                1024000 *
+                                int(max_size))))
                 LOGGER.info(
                     "Uploading object of size %d", os.path.getsize(file_path))
                 self.s3_resource.meta.client.upload_file(
@@ -558,8 +561,7 @@ class S3TestLib(S3Lib):
     def get_object(
             self,
             bucket: str = None,
-            key: str = None,
-            ranges: str = None,) -> tuple:
+            key: str = None) -> tuple:
         """
         Retrieve object from specified S3 bucket.
 
@@ -570,7 +572,7 @@ class S3TestLib(S3Lib):
         """
         try:
             LOGGER.info("Retrieving object from a bucket")
-            response = super().get_object(bucket, key, ranges)
+            response = super().get_object(bucket, key)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          S3TestLib.get_object.__name__,
@@ -638,6 +640,45 @@ class S3TestLib(S3Lib):
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
+
+    @staticmethod
+    def create_bucket_awscli(bucket_name: str):
+        """
+        Method to create a bucket using awscli
+        :param bucket_name: Name of the bucket
+        :return: True/False and output of command execution
+        """
+        LOGGER.info("Creating a bucket with name: %s", bucket_name)
+        success_msg = "make_bucket: {}".format(bucket_name)
+        response = run_local_cmd(
+            cmd=commands.CMD_AWSCLI_CREATE_BUCKET.format(bucket_name))[1]
+        LOGGER.info("Response returned: %s", response)
+        buckets_list = run_local_cmd(cmd=commands.CMD_AWSCLI_LIST_BUCKETS)[1]
+        if success_msg in response and bucket_name in buckets_list:
+            return True, response
+
+        return False, response
+
+    @staticmethod
+    def delete_bucket_awscli(bucket_name: str, force: bool = False):
+        """
+        Method to delete a bucket using awscli
+        :param bucket_name: Name of the bucket
+        :param force: True for forcefully deleting bucket containing objects
+        :return: True/False and output of command execution
+        """
+        LOGGER.info("Deleting bucket: %s", bucket_name)
+        success_msg = "remove_bucket: {}".format(bucket_name)
+        delete_bkt_cmd = commands.CMD_AWSCLI_DELETE_BUCKET
+        if force:
+            delete_bkt_cmd = " ".join([delete_bkt_cmd, "--force"])
+        response = run_local_cmd(cmd=delete_bkt_cmd.format(bucket_name))[1]
+        LOGGER.info("Response returned: %s", response)
+        buckets_list = run_local_cmd(cmd=commands.CMD_AWSCLI_LIST_BUCKETS)[1]
+        if success_msg in response and bucket_name not in buckets_list:
+            return True, response
+
+        return False, response
 
 
 class S3LibNoAuth(S3TestLib, S3AclTestLib, S3BucketPolicyTestLib):

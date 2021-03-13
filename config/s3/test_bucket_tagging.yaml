@@ -1,0 +1,170 @@
+bucket_tag:
+  bkt_name_prefix: "tagbucket"
+
+test_2432:
+  bucket_name: "tagbucket2432"
+  key: "testkey"
+  value: "testval"
+  tag_id: 0
+
+test_2433:
+  bucket_name: "tagbucket2433"
+  key: "testkey"
+  value: "testval"
+  tag_id: 0
+
+test_2434:
+  bucket_name: "tagbucket2434"
+  key: "testkey"
+  value: "testval"
+  err_message: "NoSuchTagSetError"
+
+test_2435:
+  bucket_name: "tagbucket2435"
+  key: "organizationCreateatagwhosekeyisupto128UnicodecharactersinlengtCreateatagwhosekeyisupto128Unicodecharacterslengthshouldbe128cha"
+  value: "testvalue"
+  tag_id: 0
+
+test_2436:
+  bucket_name: "tagbucket2436"
+  key: "organizationCreateatagwhosekeyisupto128UnicodecharactersinlengtCreateatagwhosekeyisupto128Unicodecharacterslengthshouldbe128char"
+  value: "testvalue"
+  err_message: "InvalidTagError"
+
+test_2437:
+  bucket_name: "tagbucket2437"
+  key: "testkey"
+  value: "organizationCreateatagwhosekeyisupto128UnicodecharactersinlengtCreateatagwhosekeyisupto128Unicodecharacterslengthshouldbe128charorganizationCreateatagwhosekeyisupto128UnicodecharactersinlengtCreateatagwhosekeyisupto128Unicodecharacterslengthshouldbe128cha"
+  tag_id: 0
+
+test_2438:
+  bucket_name: "tagbucket2438"
+  key: "testkey"
+  value: "caationCreateatagwhosekeyisupto128UnicodecharactersinlengtCreateatagwhosekeyisupto128Unicodecharacterslengthshouldbe128charorganaationCreateatagwhosekeyisupto128UnicodecharactersinlengtCreateatagwhosekeyisupto128Unicodecharacterslengthshouldbe128charorganaationCreateatagwhosekeyisupto128UnicodecharactersinlengtCreateatagwhosekeyisupto128Unicodecharacterslengthshouldbe128charorgaaationCreateatagwhosekeyisupto128UnicodecharactersinlengtCreateatagwhosekeyisupto128Unicodecharacterslengthshouldbe128charorgaaaaaa"
+  err_message: "InvalidTagError"
+
+test_2439:
+  bucket_name: "tagbucket2439"
+  key: "testkey"
+  value: "testval"
+  tag_count: 50
+
+test_2440:
+  bucket_name: "tagbucket2440"
+  key: "testkey"
+  value: "testval"
+  tag_count: 51
+  err_message: "InvalidTagError"
+
+test_2441:
+  bucket_name: "tagbucket2441"
+  key: "TESTKEY"
+  value: "testval"
+  tag_id: 0
+
+test_2442:
+  bucket_name: "tagbucket2442"
+  key: "testkey"
+  value: "TESTVALUE"
+  tag_id: 0
+
+test_2443:
+  bucket_name: "tagbucket2443"
+  spl_chars_list:
+    - "+"
+    - "-"
+    - "="
+    - "."
+    - "_"
+    - ":"
+  value: "testval"
+  key: "key"
+  tag_id: 0
+
+test_2444:
+  bucket_name: "tagbucket2444"
+  spl_chars_list:
+    - "?"
+    - "*"
+    - "!"
+    - "@"
+    - "#"
+  value: "testval"
+  key: "key"
+  err_message: "InvalidTagError"
+
+test_2445:
+  bucket_name: "tagbucket2445"
+  spl_chars_list:
+    - "?"
+    - "*"
+    - "!"
+    - "@"
+    - "#"
+  key: "testkey"
+  value: "val"
+  err_message: "InvalidTagError"
+
+test_2446:
+  bucket_name: "tagsbucket2446"
+  key: "testkey"
+  value: "testval"
+  err_message: "MalformedXML"
+
+test_2447:
+  bucket_name: "tagbucket2447"
+  key: "testkey"
+  value: "testvalue"
+  tag_count: 2
+
+test_2448:
+  bucket_name: "tagbucket2448"
+  key: "testkey"
+  value: "testvalue"
+
+test_9405:
+  bucket_name: "tagbucket9405"
+  key: "testkey"
+  value: "testval"
+  err_message: "NoSuchBucket"
+
+test_2450:
+  bucket_name: "tagbucket2450"
+  bucket_count: 100
+  tag_count: 50
+  key: "testkey"
+  value: "testval"
+
+test_2451:
+  bucket_name: "tagbucket2451"
+  key: "testkey"
+  value: "testvalue"
+  err_message: "NoSuchBucket"
+
+test_2452:
+  bucket_name: "tagbucket2452"
+  key: "testkey"
+  value: "testvalue"
+  err_message: "NoSuchBucket"
+
+test_2453:
+  bucket_name: "tagbucket2453"
+  key: "testkey"
+  value: "testvalue"
+  err_message: "NoSuchBucket"
+
+test_2449:
+  bucket_name: "tagbucket2449"
+  obj_name: "tagobj2449"
+  file_path: "/home/obj_tag.txt"
+  mb_count: 1
+  bkt_key: "testkey"
+  bkt_value: "testvalue"
+  bkt_tag: 1
+  obj_key: "testobjkey"
+  obj_value: "testobjvalue"
+  obj_tags: 2
+  err_message: "NoSuchBucket"
+
+
+

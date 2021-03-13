@@ -7,7 +7,9 @@ from core import runner
 from core import kafka_consumer
 from core.locking_server import LockingServer
 from commons.utils.jira_utils import JiraTask
-from config import params
+from commons import configmanager
+from commons.utils import config_utils
+from commons import params
 
 
 def parse_args():
@@ -54,6 +56,7 @@ def str_to_bool(val):
 
 def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution=False):
     """Form a pytest command for execution."""
+    env['TARGET'] = args.target
     build, build_type = args.build, args.build_type
     tag = '-m ' + te_tag
     run_type = ''
@@ -97,8 +100,8 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
     if args.target:
         cmd_line = cmd_line + ["--target=" + args.target]
 
-    # if te_tag:
-    #    cmd_line = cmd_line + [tag]
+    if te_tag:
+       cmd_line = cmd_line + [tag]
     read_metadata = "--readmetadata=" + str(True)
     cmd_line = cmd_line + [read_metadata]
     cmd_line = cmd_line + ['--build=' + build, '--build_type=' + build_type,
@@ -167,7 +170,9 @@ def trigger_unexecuted_tests(args, test_list):
     Check if some tests are not executed in earlier TE
     Rerun those tests in seqential manner.
     """
-    te_test_list = get_tests_from_te(args, 'TODO')
+    jira_id, jira_pwd = runner.get_jira_credential()
+    jira_obj = JiraTask(jira_id, jira_pwd)
+    te_test_list, tag = get_tests_from_te(jira_obj, args, 'TODO')
     if len(te_test_list) != 0:
         # check if there are any selected tests with todo status
         unexecuted_test_list = [test for test in test_list if test in te_test_list]
@@ -184,18 +189,62 @@ def trigger_unexecuted_tests(args, test_list):
             run_pytest_cmd(args, te_tag=None, parallel_exe=args.parallel_exe,
                            env=_env, re_execution=True)
 
+def create_test_meta_data_file(args, test_list):
+    """
+    Create test meta data file
+    """
+    jira_id, jira_pwd = runner.get_jira_credential()
+    jira_obj = JiraTask(jira_id, jira_pwd)
+    # Create test meta file for reporting TR.
+    tp_meta_file = os.path.join(os.getcwd(),
+                                params.LOG_DIR_NAME,
+                                params.JIRA_TEST_META_JSON)
+    with open(tp_meta_file, 'w') as t_meta:
+
+        test_meta = list()
+        # test plan meta
+        tp_meta = dict()
+        tp_resp = jira_obj.get_issue_details(args.test_plan)  # test plan id
+        tp_meta['test_plan_label'] = tp_resp.fields.labels
+        te_resp = jira_obj.get_issue_details(args.te_ticket)  # test execution id
+        if te_resp.fields.components:
+            te_components = te_resp.fields.components[0].name
+        tp_meta['te_meta'] = dict(te_id=args.te_ticket,
+                                  te_label=te_resp.fields.labels,
+                                  te_components=te_components)
+        # test_name, test_id, test_id_labels, test_team, test_type
+        for test in test_list:
+            item = dict()
+            item['test_id'] = test
+            resp = jira_obj.get_issue_details(test)
+            item['test_name'] = resp.fields.summary
+            item['labels'] = resp.fields.labels
+            if resp.fields.components:
+                component = resp.fields.components[0].name  # First items is of interest
+            else:
+                component = list()
+            item['component'] = component
+            test_meta.append(item)
+        tp_meta['test_meta'] = test_meta
+        json.dump(tp_meta, t_meta, ensure_ascii=False)
+
 
 def trigger_tests_from_kafka_msg(args, kafka_msg):
     """
     Trigger pytest execution for received test list
     """
     # writing the data into the file
-    with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_TEST_LIST), 'w') as f:
+    with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME,
+                           params.JIRA_DIST_TEST_LIST), 'w') as f:
         write = csv.writer(f)
         for test in kafka_msg.test_list:
             write.writerow([test])
+
+    create_test_meta_data_file(args, kafka_msg.test_list)
+
     _env = os.environ.copy()
     _env['pytest_run'] = 'distributed'
+
     # First execute all tests with parallel tag which are mentioned in given tag.
     run_pytest_cmd(args, te_tag=None, parallel_exe=kafka_msg.parallel, env=_env)
 
@@ -237,38 +286,7 @@ def trigger_tests_from_te(args):
         for test in test_list:
             write.writerow([test])
 
-    # Create test meta file for reporting TR.
-    tp_meta_file = os.path.join(os.getcwd(),
-                                params.LOG_DIR_NAME,
-                                params.JIRA_TEST_META_JSON)
-    with open(tp_meta_file, 'w') as t_meta:
-
-        test_meta = list()
-        # test plan meta
-        tp_meta = dict()
-        tp_resp = jira_obj.get_issue_details(args.test_plan)  # test plan id
-        tp_meta['test_plan_label'] = tp_resp.fields.labels
-        te_resp = jira_obj.get_issue_details(args.te_ticket)  # test execution id
-        if te_resp.fields.components:
-            te_components = te_resp.fields.components[0].name
-        tp_meta['te_meta'] = dict(te_id=args.te_ticket,
-                                  te_label=te_resp.fields.labels,
-                                  te_components=te_components)
-        # test_name, test_id, test_id_labels, test_team, test_type
-        for test in test_list:
-            item = dict()
-            item['test_id'] = test
-            resp = jira_obj.get_issue_details(test)
-            item['test_name'] = resp.fields.summary
-            item['labels'] = resp.fields.labels
-            if resp.fields.components:
-                component = resp.fields.components[0].name  # First items is of interest
-            else:
-                component = list()
-            item['component'] = component
-            test_meta.append(item)
-        tp_meta['test_meta'] = test_meta
-        json.dump(tp_meta, t_meta, ensure_ascii=False)
+    create_test_meta_data_file(args, test_list)
     _env = os.environ.copy()
 
     if not args.force_serial_run:
@@ -312,6 +330,7 @@ def check_kafka_msg_trigger_test(args):
     Trigger tests specified in kafka message
     """
     consumer = kafka_consumer.get_consumer()
+    print(consumer)
     received_stop_signal = False
     lock_task = LockingServer()
     while not received_stop_signal:
@@ -321,29 +340,40 @@ def check_kafka_msg_trigger_test(args):
             if msg is None:
                 continue
             kafka_msg = msg.value()
+            print(kafka_msg)
             if kafka_msg is None:
                 continue
-            if kafka_msg.te_id == "STOP":
+            if kafka_msg.te_ticket == "STOP":
                 received_stop_signal = True
             else:
                 execution_done = False
                 while not execution_done:
-                    acquired_target = get_available_target(kafka_msg)
+                    #acquired_target = get_available_target(kafka_msg)
                     # execute te id on acquired target
                     # release lock on acquired target
-                    args.te_ticket = kafka_msg.te_tickets
+                    args.te_ticket = kafka_msg.te_ticket
                     args.parallel_exe = kafka_msg.parallel
+                    args.build = kafka_msg.build
+                    args.build_type = kafka_msg.build_type
+                    args.test_plan = kafka_msg.test_plan
                     trigger_tests_from_kafka_msg(args, kafka_msg)
                     # rerun unexecuted tests in case of parallel execution
                     if kafka_msg.parallel:
                         trigger_unexecuted_tests(args, kafka_msg.test_list)
                     # Release lock on acquired target.
-                    lock_task.release_target_lock(acquired_target, acquired_target)
+                    #lock_task.release_target_lock(acquired_target, acquired_target)
                     execution_done = True
         except KeyboardInterrupt:
             break
     consumer.close()
 
+def get_setup_details():
+    if not os.path.exists(params.LOG_DIR_NAME):
+        os.mkdir(params.LOG_DIR_NAME)
+    if os.path.exists(params.SETUPS_FPATH):
+        os.remove(params.SETUPS_FPATH)
+    setups = configmanager.get_config_db(setup_query = {})
+    config_utils.create_content_json(params.SETUPS_FPATH, setups)
 
 def main(args):
     """Main Entry function using argument parser to parse options and forming pyttest command.
@@ -362,5 +392,6 @@ def main(args):
 
 
 if __name__ == '__main__':
+    get_setup_details()
     opts = parse_args()
     main(opts)

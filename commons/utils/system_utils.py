@@ -124,7 +124,7 @@ def run_local_cmd(cmd: str = None, flg: bool = False) -> tuple:
     return True, str(output)
 
 
-def execute_cmd(cmd: str, remote: bool, *remoteargs, **remoteKwargs) -> tuple:
+def execute_cmd(cmd: str, remote: bool = False, *remoteargs, **remoteKwargs) -> tuple:
     """Execute command on local / remote machine based on remote flag
     :param cmd: cmd to be executed
     :param remote: if True executes on remote machine
@@ -442,8 +442,9 @@ def create_file(
     """
     cmd = commands.CREATE_FILE.format(dev, fpath, b_size, count)
     LOGGER.debug(cmd)
-    result = run_local_cmd(cmd)
+    result = run_local_cmd(cmd, flg=True)
     LOGGER.debug("output = %s", str(result))
+    result = (os.path.exists(fpath), result[1])
 
     return result
 
@@ -830,3 +831,49 @@ def insert_into_builtins(name, obj):
         builtins[name] = obj
     else:
         builtins.obj = obj
+
+
+def mount_upload_to_server(host_dir: str = None, mnt_dir: str = None,
+                           remote_path: str = None, local_path: str = None) \
+        -> tuple:
+    """Mount NFS directory and upload file to NFS
+    :param host_dir: Link of NFS server directory
+    :param mnt_dir: Path of directory to be mounted
+    :param remote_path: Dir Path to which file is to be uploaded on NFS server
+    :param local_path: Local path of the file to be uploaded
+    :return: Bool, response"""
+    if not os.path.ismount(mnt_dir):
+        if not os.path.exists(mnt_dir):
+            LOGGER.info("Creating a mount directory to share")
+            resp = make_dirs(dpath=mnt_dir)
+
+        cmd = commands.CMD_MOUNT.format(host_dir, mnt_dir)
+        resp = run_local_cmd(cmd=cmd)
+        if not resp[0]:
+            return resp
+
+    new_path = os.path.join(mnt_dir, remote_path)
+    LOGGER.info("Creating directory on server")
+    if not os.path.exists(new_path):
+        resp = make_dirs(dpath=new_path)
+
+    LOGGER.info("Copying file to mounted directory")
+    shutil.copy(local_path, new_path)
+    log_path = os.path.join(host_dir.split(":")[0], remote_path)
+    return True, log_path
+
+
+def umount_dir(mnt_dir: str = None) -> tuple:
+    """Function to unmount directory
+    :param mnt_dir: Path of mounted directory
+    :return: Bool, response"""
+    if os.path.ismount(mnt_dir):
+        LOGGER.info("Unmounting mounted directory")
+        cmd = commands.CMD_UMOUNT.format(mnt_dir)
+        resp = run_local_cmd(cmd=cmd)
+        if not resp[0]:
+            return resp
+
+        remove_dir(dpath=mnt_dir)
+
+    return True, "Directory is unmounted"
