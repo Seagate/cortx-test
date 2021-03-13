@@ -393,6 +393,24 @@ def remove_dir(dpath: str) -> bool:
     return os.path.exists(dpath)
 
 
+def remove_dirs(dpath: str) -> bool:
+    """
+    Remove directory and hierarchy understand.
+    :param dpath: Directory path.
+    :return:boolean based on cleanup.
+    """
+    try:
+        shutil.rmtree(dpath)
+    except IOError as error:
+        LOGGER.error(
+            "*ERROR* An exception occurred in %s: %s",
+            remove_dirs.__name__,
+            error)
+        return False
+
+    return True
+
+
 def get_file_checksum(filename: str):
     """
     This function will return checksum of file content present on the
