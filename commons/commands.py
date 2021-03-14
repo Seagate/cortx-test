@@ -208,6 +208,10 @@ DELETE_IAM_USER = "s3iamusers delete"
 CMD_GENERATE_SUPPORT_BUNDLE = "support_bundle generate"
 CMD_GENERATE_SUPPORT_BUNDLE_OS = "support_bundle generate {0} --os"
 CMD_SUPPORT_BUNDLE_STATUS = "support_bundle status"
+CMD_SYSTEM_STATUS = "system status"
+CMD_SYSTEM_START = "system start"
+CMD_SYSTEM_STOP = "system stop"
+CMD_SYSTEM_SHUTDOWN = "system shutdown"
 
 # Linux System Commands
 CMD_MKDIR = "mkdir -p {}"

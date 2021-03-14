@@ -179,8 +179,8 @@ class CortxCli(CortxCliClient):
         # Splitting values of each row column-wise
         for i, string in enumerate(response):
             response[i] = string.split('|')
-            for j, substr in enumerate(string):
-                response[i][j] = substr.strip()
+            for j in range(len(response[i])):
+                response[i][j] = response[i][j].strip()
         response = response[4:len(response) - 2]
         self.log.info(response)
         return response
