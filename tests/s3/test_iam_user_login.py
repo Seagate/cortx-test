@@ -24,7 +24,7 @@ import pytest
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
-from commons.utils.config_utils import read_yaml
+from commons.configmanager import get_config_wrapper
 from commons.helpers import s3_helper
 from commons.utils.assert_utils import assert_true, assert_in, assert_false
 from libs.s3 import iam_test_lib
@@ -32,7 +32,7 @@ from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
 
 S3_HLPR = s3_helper.S3Helper()
 IAM_TEST_OBJ = iam_test_lib.IamTestLib()
-USER_CONFIG = read_yaml("config/s3/test_iam_user_login.yaml")[1]
+USER_CONFIG = get_config_wrapper(fpath="config/s3/test_iam_user_login.yaml")
 
 
 class TestUserLoginProfileTests():
