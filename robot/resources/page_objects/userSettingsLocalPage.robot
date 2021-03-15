@@ -58,7 +58,7 @@ Create New CSM User
 Verify New User
     [Documentation]  Functionality to validate correc user name
     [Arguments]  ${user_name}
-    Sleep  5s  #  Reloading take some initial time
+    Sleep  6s  #  Reloading take some initial time
     ${users_list}=  Read Table Data  ${CSM_TABLE_ELEMENTS_XPATH}
     List Should Contain Value  ${users_list}  ${user_name}
 
@@ -243,3 +243,44 @@ Verify IAM User Section Not Present
     Sleep  1s
     Page Should Not Contain Element  ${IAM_USER_TAB_ID}
 
+Edit CSM User Details
+    [Documentation]  Functionality to Edit given user email id
+    [Arguments]  ${user_name}  ${new_password}  ${new_email}  ${old_password}
+    Action On The Table Element  ${CSM_USER_EDIT_XPATH}  ${user_name}
+    Sleep  1s
+    Click Button  ${CHANGE_PASSWORD_BTN_ID}
+    Sleep  1s
+    Press Keys  ${UPDATE_USER_EMAIL_ID_INPUT_ID}  CTRL+a
+    Press Keys  ${UPDATE_USER_EMAIL_ID_INPUT_ID}  BACKSPACE
+    Input Text  ${UPDATE_USER_EMAIL_ID_INPUT_ID}  ${new_email}
+    Input Text  ${ADD_USER_PASSWORD_INPUT_ID}  ${new_password}
+    Input Text  ${UPDATE_USER_CONFIRM_PASSWORD_INPUT_ID}  ${new_password}
+    Input Text  ${OLD_PASSWORD_INPUT_ID}  ${old_password}
+    Click Button  ${UPDATE_USER_BTN_ID}
+    Sleep  3s
+    click on confirm button
+    sleep  1s
+    ${users_list}=  Read Table Data  ${CSM_TABLE_ELEMENTS_XPATH}
+    List Should Contain Value  ${users_list}  ${new_email}
+
+Verify that monitor user is not able to create delete csm user
+       [Documentation]  this keyword verifys that monitor user not able to edit or delete csm user
+       Page Should Not Contain Element  ${ADD_USER_BUTTON_ID}
+       Page Should Not Contain Element  ${DELETE_USER_BTN_ID}
+
+
+Verify that user can not access Lyve Pilot menu
+       [Documentation]  this keyword verifys that monitor user can not access Lyve Pilot menu
+       Page Should Not Contain Element  ${LYVE_PILOT_ID}
+
+Verify bucket Section Not Present
+    [Documentation]  Functionality to verify bucket User Section Not Present.
+    Navigate To Page  MANAGE_MENU_ID
+    Sleep  1s
+    Page Should Not Contain Element  ${BUCKETS_TAB_ID}
+
+Verify that CSM manage user can not access setting menu
+    [Documentation]  Functionality to verify settings options are not accessable for manage user
+    Navigate To Page  DASHBOARD_MENU_ID
+    Sleep  1s
+    Page Should Not Contain Element  ${SETTINGS_ID}

@@ -26,8 +26,9 @@ import logging
 import json
 import xmltodict
 import commons.errorcodes as err
-from config import CMN_CFG
+from commons import commands
 from commons.exceptions import CTException
+from config import CMN_CFG
 from libs.csm.cli.cortx_cli_client import CortxCliClient
 
 
@@ -37,28 +38,37 @@ class CortxCli(CortxCliClient):
     def __init__(
             self,
             host: str = CMN_CFG["csm"]["mgmt_vip"],
-            username: str = CMN_CFG["csm"]["admin_user"],
-            password: str = CMN_CFG["csm"]["admin_pass"],
-            port: int = 22):
+            username: str = CMN_CFG["csm"]["csm_admin_user"]["username"],
+            password: str = CMN_CFG["csm"]["csm_admin_user"]["password"],
+            **kwargs):
         """
         This method initializes members of CortxCli and its parent class
         :param str host: host/ip of CSM server
         :param str username: username of CSM server
         :param str password: password of CSM server
-        :param int port: port number
+        :keyword object session_obj: session object of host connection if already established
+        :keyword int port: port number
         """
         self.log = logging.getLogger(__name__)
-        super().__init__(host=host, username=username, password=password, port=port)
+        session_obj = kwargs.get("session_obj", None)
+        port = kwargs.get("port", 22)
+        super().__init__(
+            host=host,
+            username=username,
+            password=password,
+            session_obj=session_obj,
+            port=port)
 
-    def execute_cli_commands(self, cmd: str, time_out: int = 300) -> tuple:
+    def execute_cli_commands(self, cmd: str, time_out: int = 800, sleep_time: int = 6) -> tuple:
         """
         This function executes command on interactive shell on csm server and returns output
         :param str cmd: command to execute on shell
         :param int time_out: max time to wait for command execution output
+        :param int sleep_time: wait time for receiving data
         :return: output of executed command
         """
         try:
-            output = super().execute_cli_commands(cmd=cmd, time_out=time_out)
+            output = super().execute_cli_commands(cmd=cmd, time_out=time_out, sleep_time=sleep_time)
             if "error" in output.lower() or "exception" in output.lower():
                 return False, output
             return True, output
@@ -71,17 +81,25 @@ class CortxCli(CortxCliClient):
 
     def login_cortx_cli(
             self,
-            username: str = CMN_CFG["csm"]["admin_user"],
-            password: str = CMN_CFG["csm"]["admin_pass"]) -> tuple:
+            username: str = CMN_CFG["csm"]["csm_admin_user"]["username"],
+            password: str = CMN_CFG["csm"]["csm_admin_user"]["password"],
+            **kwargs) -> tuple:
         """
         This function will be used to login to CORTX CLI with given credentials
         :param str username: User name to login
         :param str password: User password
+        :keyword username_param: username to pass as argument
+        :keyword login_cortxcli: command for login to CLI
         :return: True/False and output
         """
-        login_cmd = "cortxcli"
+        username_param = kwargs.get("username_param", None)
+        login_cortxcli = kwargs.get("cmd", commands.CMD_LOGIN_CORTXCLI)
+        if username_param:
+            login_cortxcli = " ".join(
+                [login_cortxcli, "--username", username_param])
+
         self.log.info("Opening interactive CORTX CLI session....")
-        output = self.execute_cli_commands(login_cmd)[1]
+        output = self.execute_cli_commands(login_cortxcli)[1]
 
         if "Username:" in output:
             self.log.info("Logging in CORTX CLI as user %s", username)
@@ -100,11 +118,15 @@ class CortxCli(CortxCliClient):
         This function will be used to logout of CORTX CLI
         :return: True/False and output
         """
-        logout_cmd = "exit"
-        self.log.info("Logging out of CORTX CLI")
-        output = self.execute_cli_commands(logout_cmd)[1]
-        if "Successfully logged out" in output:
-            return True, output
+        output = self.execute_cli_commands(cmd=commands.CMD_HELP_OPTION)[1]
+        if "usage: cortxcli" in output:
+            self.log.info("Logging out of CORTX CLI")
+            output = self.execute_cli_commands(
+                cmd=commands.CMD_LOGOUT_CORTXCLI)[1]
+            if "Successfully logged out" in output:
+                return True, output
+
+        self.log.info("Response returned: \n%s", output)
 
         return False, output
 

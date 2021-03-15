@@ -22,6 +22,7 @@
 
 import logging
 import time
+import re
 from typing import Tuple, List, Any
 from commons.helpers.host import Host
 from commons import commands
@@ -269,9 +270,31 @@ class Health(Host):
         cmd = commands.PCS_RESOURCE_RESTART_CMD.format(resource)
 
         resp = self.execute_cmd(cmd, read_lines=True)
+        resp = re.sub(r'[^\w-]', ' ', resp[0]).strip()
         time.sleep(wait_time)
         success_msg = "{} successfully restarted".format(resource)
-        if success_msg in resp:
+        if success_msg == resp:
+            LOG.info("Successfully restarted service %s", format(resource))
             return True, resp
 
         return False, resp
+
+    def pcs_service_status(self, resource: str = None) -> Tuple[bool, str]:
+        """
+        Get status of given resource using pcs resource command
+
+        :param resource: resource name from pcs resource
+        :return: tuple with boolean and response/error
+        :rtype: tuple
+        """
+        cmd = commands.PCS_RESOURCE_STATUS_CMD.format(resource)
+        LOG.info("Running command : %s", cmd)
+
+        resp = self.execute_cmd(cmd, read_lines=True)
+        resp = ''.join(resp)
+        check_msg = "Stopped"
+        if check_msg in resp:
+            LOG.info("%s is in stopped state", format(resource))
+            return False, resp
+
+        return True, resp

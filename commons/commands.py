@@ -2,8 +2,7 @@
 # RAS Commands
 PCS_RESOURCE_DISABLE_ENABLE = "pcs resource {} {}"
 SYSTEMCTL_STATUS = "systemctl status {}"
-START_RABBITMQ_READER_CMD = "python3 /opt/seagate/sspl/low-level/tests/" \
-                            "manual/rabbitmq_reader.py {} {} {}"
+START_RABBITMQ_READER_CMD = "python3 /root/rabbitmq_reader.py {} {} {}"
 REMOVE_UNWANTED_CONSUL = "/usr/bin/consul kv delete --recurse SSPL_"
 SHOW_DISKS_CMD = "show disks"
 CMD_SHOW_DISK_GROUP = "show disk-groups"
@@ -14,7 +13,7 @@ CHECK_SSPL_LOG_FILE = "tail -f /var/log/cortx/sspl/sspl.log > '{}' 2>&1 &"
 SSPL_SERVICE_CMD = "journalctl -xefu sspl-ll.service"
 SET_DRIVE_STATUS_CMD = "set expander-phy encl {} controller {} type drive phy" \
                        " {} {}"
-ENCRYPT_PASSWORD_CMD = "./encryptor_updated.py encrypt {} {} storage_enclosure"
+ENCRYPT_PASSWORD_CMD = "python3 encryptor.py encrypt {} {} storage_enclosure"
 GET_CLUSTER_ID_CMD = "salt-call grains.get cluster_id"
 COPY_FILE_CMD = "cp -rfv {} {}"
 KILL_PROCESS_CMD = "pkill -f {}"
@@ -88,6 +87,7 @@ PCS_RESOURCE_SHOW_CMD = "pcs resource show"
 PCS_RESOURCE_RESTART_CMD = "pcs resource restart {}"
 PCS_RESOURCE_ENABLE_CMD = "pcs resource enable {}"
 PCS_RESOURCE_DISABLE_CMD = "pcs resource disable {}"
+PCS_RESOURCE_STATUS_CMD = "pcs resource show {}"
 PGREP_CMD = "sudo pgrep {}"
 PKIL_CMD = "pkill {}"
 RPM_GREP_CMD = "rpm -qa | grep {}"
@@ -97,6 +97,8 @@ SYSTEM_CTL_STATUS_CMD = "systemctl status {}"
 SYSTEM_CTL_RESTART_CMD = "systemctl restart {}"
 SYSTEM_CTL_START_CMD = "systemctl start {}"
 SYSTEM_CTL_STOP_CMD = "systemctl stop {}"
+GET_PID_CMD = "systemctl status {}.service | grep PID"
+KILL_CMD = "kill -9 {}"
 
 # S3IAMCLI Commands
 BUNDLE_CMD = "sh /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh"
@@ -183,3 +185,76 @@ DEL_ACNT_USING_TEMP_CREDS_FORCE = "s3iamcli deleteaccount -n {} " \
 S3_UPLOAD_FILE_CMD = "aws s3 cp {0} s3://{1}/{2}"
 S3_UPLOAD_FOLDER_CMD = "aws s3 cp {0} s3://{1}/ --recursive --profile {2}"
 S3_DOWNLOAD_BUCKET_CMD = "aws s3 cp --recursive s3://{} {} --profile {}"
+
+# CORTXCLI Commands
+CMD_LOGIN_CORTXCLI = "cortxcli"
+CMD_LOGOUT_CORTXCLI = "exit"
+CMD_CREATE_CSM_USER = "users create"
+CMD_DELETE_CSM_USER = "users delete"
+CMD_UPDATE_ROLE = "users update"
+CMD_RESET_PWD = "users reset_password"
+CMD_LIST_CSM_USERS = "users show"
+CMD_HELP_OPTION = "-h"
+CMD_CREATE_S3ACC = "s3accounts create"
+CMD_SHOW_S3ACC = "s3accounts show"
+CMD_DELETE_S3ACC = "s3accounts delete {}"
+CMD_RESET_S3ACC_PWD = "s3accounts reset_password {}"
+CMD_CREATE_BUCKET = "s3buckets create {}"
+CMD_SHOW_BUCKETS = "s3buckets show"
+CMD_DELETE_BUCKET = "s3buckets delete {}"
+CREATE_IAM_USER = "s3iamusers create"
+LIST_IAM_USER = "s3iamusers show"
+DELETE_IAM_USER = "s3iamusers delete"
+CMD_GENERATE_SUPPORT_BUNDLE = "support_bundle generate"
+CMD_GENERATE_SUPPORT_BUNDLE_OS = "support_bundle generate {0} --os"
+CMD_SUPPORT_BUNDLE_STATUS = "support_bundle status"
+
+# Linux System Commands
+CMD_MKDIR = "mkdir -p {}"
+CMD_MOUNT = "mount -t nfs {} {}"
+CMD_UMOUNT = "umount {}"
+CMD_TAR = "tar -zxvf {} -C {}"
+CMD_REMOVE_DIR = "rm -rf {}"
+
+# Provisioner commands
+CMD_LSBLK = "lsblk -S | grep disk | wc -l"
+CMD_OS_REL = "cat /etc/redhat-release"
+CMD_KRNL_VER = "uname -r"
+
+# Deployment commands
+CMD_YUM_UTILS = "yum install -y yum-utils"
+CMD_CONFIG_MGR = "yum-config-manager --add-repo \"{0}/3rd_party/\""
+CMD_INSTALL_SALT = "yum install --nogpgcheck -y python3 python36-m2crypto salt salt-master salt-minion"
+CMD_RM_REPO = "rm -rf /etc/yum.repos.d/*3rd_party*.repo"
+CMD_CONFIG_MGR1 = "yum-config-manager --add-repo \"{0}/cortx_iso/\""
+CMD_PRVSNR = "yum install --nogpgcheck -y python36-cortx-prvsnr"
+CMD_RM_REPO1 = "rm -rf /etc/yum.repos.d/*cortx_iso*.repo"
+CMD_YUM_CLEAN = "yum clean all"
+CMD_RM_YUM = "rm -rf /var/cache/yum/"
+CMD_DEPLOY_SINGLE_NODE = "sshpass -p \"{0}\" provisioner auto_deploy_vm srvnode-1:{1} " \
+                     "--logfile --logfile-filename /var/log/seagate/provisioner/setup.log " \
+                     "--source rpm --config-path {2} --dist-type bundle " \
+                     "--target-build {3}"
+CMD_START_CLSTR = "cortx cluster start"
+CMD_RD_LOG = "cat {0}"
+
+# S3 awscli  Commands
+CMD_AWSCLI_CREATE_BUCKET = "aws s3 mb s3://{0}"
+CMD_AWSCLI_DELETE_BUCKET = "aws s3 rb s3://{0}"
+CMD_AWSCLI_LIST_BUCKETS = "aws s3 ls"
+CMD_AWSCLI_PUT_OBJECT = "aws s3 cp {0} s3://{1}/{2}"
+CMD_AWSCLI_HEAD_BUCKET = "aws s3api head-bucket --bucket {0}"
+CMD_AWSCLI_GET_BUCKET_LOCATION = "aws s3api get-bucket-location --bucket {0}"
+CMD_AWSCLI_LIST_OBJECTS = "aws s3 ls s3://{0}"
+CMD_AWSCLI_REMOVE_OBJECTS = "aws s3 rm s3://{0}/{1}"
+CMD_AWSCLI_RECURSIVE_FLAG = "--recursive"
+CMD_AWSCLI_EXCLUDE_FLAG = "--exclude '{}'"
+CMD_AWSCLI_INCLUDE_FLAG = "--include '{}'"
+CMD_AWSCLI_CREATE_MULTIPART_UPLOAD = "aws s3api create-multipart-upload --bucket {0} --key {1}"
+CMD_AWSCLI_LIST_MULTIPART_UPLOADS = "aws s3api list-multipart-uploads --bucket {0}"
+CMD_AWSCLI_UPLOAD_PARTS = "aws s3api upload-part --bucket {0} --key {1} --part-number {2} " \
+                        "--body {3} --upload-id {4}"
+CMD_AWSCLI_LIST_PARTS = "aws s3api list-parts --bucket {0} --key {1} --upload-id {2}"
+CMD_AWSCLI_COMPLETE_MULTIPART = "aws s3api complete-multipart-upload --multipart-upload file://{0} " \
+                                "--bucket {1} --key {2} --upload-id {3}"
+CMD_AWSCLI_DOWNLOAD_OBJECT = "aws s3 cp s3://{0}/{1} {2}"

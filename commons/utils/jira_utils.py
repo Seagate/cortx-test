@@ -5,7 +5,7 @@ import json
 import traceback
 import requests
 import datetime
-from jira import JIRA
+from jira import JIRA, JIRAError
 from http import HTTPStatus
 
 
@@ -13,6 +13,7 @@ class JiraTask:
     def __init__(self, jira_id, jira_password):
         self.jira_id = jira_id
         self.jira_password = jira_password
+        self.auth = (self.jira_id, self.jira_password)
         self.headers = {
             'content-type': "application/json",
             'accept': "application/json",
@@ -70,6 +71,11 @@ class JiraTask:
                                 if str(test['status']) == 'ABORTED':
                                     test_list.append(test['key'])
             return test_list, te_tag
+        elif response.status_code == HTTPStatus.UNAUTHORIZED:
+            print('JIRA Unauthorized access')
+        elif response.status_code == HTTPStatus.SERVICE_UNAVAILABLE:
+            print('JIRA Service Unavailable')
+        return test_list, te_tag
 
     def get_test_list_from_te(self, test_exe_id, status='ALL'):
         """
@@ -109,9 +115,64 @@ class JiraTask:
             print("Returned code from xray jira request: {}".format(response.status_code))
         return test_details, te_tag
 
+    def get_test_plan_details(self, test_plan_id: str) -> [dict]:
+        """
+        Summary: Get test executions from test plan.
+
+        Description: Returns dictionary of test executions from test plan.
+
+        Args:
+            test_plan_id:  (str): Test plan number in JIRA
+
+        Returns:
+            List of dictionaries
+            Each dict will have id, key, summary, self, testEnvironments
+            [{"id": 311993, "key": "TEST-16653", "summary": "TE:Auto-Stability-Release 515",
+             "self": "https://jts.seagate.com/rest/api/2/issue/311993",
+             "testEnvironments": ["515_full"]},
+            ]
+        """
+        jira_url = f'https://jts.seagate.com/rest/raven/1.0/api/testplan/' \
+                   f'{test_plan_id}/testexecution'
+        response = requests.get(jira_url, auth=(self.jira_id, self.jira_password))
+        if response.status_code == HTTPStatus.OK:
+            return response.json()
+        return response.text
+
+    def get_issue_details(self, issue_id: str):
+        """
+        Get issue details from Jira.
+        Args:
+            issue_id (str): Bug ID or TEST ID string
+        Returns:
+            {
+                "fields":{
+                    "labels":["Integration","QA"],
+                    "environment":"515",
+                    "components":[
+                        {
+                            "name": "CSM"
+                        },
+                        {
+                            "name": "CFT"
+                        }
+                    ],
+                    "priority":{"name": "Critical"},
+                    "summary": "JIRA Title",
+                    "status": {"name": "In Progress"},
+                    "issuelinks": [{"inwardIssue": {"key": "TEST-5342"}},
+                                   {"inwardIssue": {"key": "TEST-1034"}}]
+                    },
+            }
+        """
+        jira_url = "https://jts.seagate.com/"
+        options = {'server': jira_url}
+        auth_jira = JIRA(options, basic_auth=self.auth)
+        return auth_jira.issue(issue_id)
+
     def update_test_jira_status(self, test_exe_id, test_id, test_status, log_path=''):
         """
-        Update test jira status in xray jira
+        Update test jira status in xray jira.
         """
         state = {}
         status = {}
@@ -131,3 +192,41 @@ class JiraTask:
                                     headers=self.headers,
                                     params=None)
         return response
+
+    def get_test_details(self, test_exe_id):
+        """
+        Get details of the test cases in a test execution ticket
+        """
+        jira_url = "https://jts.seagate.com/rest/raven/1.0/api/testexec/{}/test".format(test_exe_id)
+        response = requests.get(jira_url, auth=(self.jira_id, self.jira_password))
+        data = response.json()
+        return data
+
+    def update_execution_details(self, data, test_id, comment):
+        """
+        Add comment to the mentioned jira id
+        """
+        run_id = None
+        try:
+            if not data:
+                print("No test details found in test execution tkt")
+                return False
+
+            for test in data:
+                if test['key'] == test_id:
+                    run_id = test['id']
+
+            if run_id is None:
+                print("Test ID %s not found in test execution ticket details",
+                      test_id)
+                return False
+
+            url = "https://jts.seagate.com/rest/raven/1.0/testrun/{}/comment".format(run_id)
+
+            response = requests.request("PUT", url, data=comment,
+                                        auth=(self.jira_id, self.jira_password),
+                                        headers=self.headers,
+                                        params=None)
+            return response
+        except JIRAError as err:
+            print(err.status_code, err.text)

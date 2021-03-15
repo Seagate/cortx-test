@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# !/usr/bin/python
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -16,27 +18,22 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-# -*- coding: utf-8 -*-
-# !/usr/bin/python
-import os
+"""Read config file for database."""
 
-LOG_FILE = 'cortx-test.log'
+import configparser
+import sys
 
-USER_JSON = '_usersdata'
+config = configparser.ConfigParser()
+config.read('config.ini')
+try:
+    db_hostname = config["MongoDB"]["db_hostname"]
+    db_name = config["MongoDB"]["db_name"]
+    results_collection = config["MongoDB"]["results_collection"]
+    cmi_collection = config["MongoDB"]["cmi_collection"]
+    system_collection = config["MongoDB"]["system_info_collection"]
+    timing_collection = config["MongoDB"]["timing_collection"]
+except KeyError:
+    print("Could not start REST server. Please verify config.ini file")
+    sys.exit(1)
 
-CONFIG_DIR = 'config'
-
-COMMON_CONFIG = os.path.join(CONFIG_DIR, 'common_config.yaml')
-S3_CONFIG = os.path.join(CONFIG_DIR, 's3', 's3_config.yaml')
-
-LOG_DIR_NAME = 'log'
-
-JIRA_TEST_LIST = 'test_lists.csv'
-JIRA_TEST_COLLECTION = 'test_collection.csv'
-
-# Kafka Config Params
-
-SCHEMA_REGISTRY = "cft2:8090"  # Bootstrap broker(s) (host[:port])
-BOOTSTRAP_SERVERS = "https://cft2:8091"  # Schema Registry (http(s)://host[:port]
-TEST_EXEC_TOPIC = 'cortx-test-exec-topic'
-TEST_ABORT_TOPIC = 'cortx-test-abort-topic'  # Read by all semantics
+mongodb_uri = "mongodb://{0}:{1}@{2}"

@@ -1,0 +1,238 @@
+""" Main file for the Dashboard server."""
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
+# -*- coding: utf-8 -*-
+# !/usr/bin/python
+
+
+import os
+import qa_tab_layouts as tl
+import dash_bootstrap_components as dbc
+import dash_core_components as dcc
+import dash_html_components as html
+import flask
+from dash.dependencies import Output, Input
+from dash.exceptions import PreventUpdate
+from common import app, versions, server
+from Common_callbacks import defect_list_tab_callbacks, \
+    main_page_callbacks  # pylint: disable=unused-import
+from R1_callbacks import r1_exe_report_callbacks, \
+    r1_engg_report_callbacks  # pylint: disable=unused-import
+from R2_callbacks import exe_report_callbacks, \
+    engg_report_callbacks  # pylint: disable=unused-import
+
+
+@server.route('/favicon.ico')
+def favicon():
+    """
+    Seagate logo used as icon that appears at top of browser tab
+    """
+    return flask.send_from_directory(os.path.join(server.root_path, 'static'), 'favicon.ico')
+
+
+input_options = dbc.Row(
+    [
+        dcc.Dropdown(
+            id="version_dropdown",
+            options=versions,
+            placeholder="select version",
+            style={'width': '200px', 'verticalAlign': 'middle', "margin-right": "15px",
+                   "margin-top": "10px"},
+        ),
+
+        dcc.Dropdown(
+            id="branch_dropdown",
+            placeholder="select branch",
+            style={'width': '200px', 'verticalAlign': 'middle', "margin-right": "15px",
+                   "margin-top": "10px"},
+        ),
+
+        dcc.Dropdown(
+            id='build_no_dropdown',
+            placeholder="select build",
+            style={'width': '200px', 'verticalAlign': 'middle', "margin-right": "15px",
+                   "margin-top": "10px"},
+        ),
+
+        dbc.Button("Get!", id="submit_button", n_clicks=0, color="success",
+                   style={'height': '36px', 'margin-top': '20px'}),
+    ],
+    justify='center'
+)
+input_optional_options = dbc.Row(
+    [
+        dcc.Dropdown(
+            id='test_system_dropdown',
+            placeholder="Test System Type",
+            style={'width': '200px', 'verticalAlign': 'middle', "margin-right": "15px",
+                   "margin-top": "10px"},
+        ),
+
+        dcc.Dropdown(
+            id='test_team_dropdown',
+            placeholder="Select test component(Optional)",
+            style={'width': '200px', 'verticalAlign': 'middle', "margin-right": "15px",
+                   "margin-top": "10px"},
+        ),
+    ],
+    justify='center',
+    id="toggle_visibility"
+)
+
+# ---Overall layout-------------------------------------------------------------------
+dict_style_tab = {'margin-left': 10, 'margin-right': 10}
+dict_style_label = {'font-size': '22px', 'color': '#44cc00', 'background-color': '#343a40',
+                    'border-style': 'solid', 'border-color': '#ffffff', 'font-family': 'Serif'}
+
+dict_style_sub_tab = {'margin-left': 10, 'margin-right': 10, 'margin-top': '10px'}
+dict_style_sub_label = {'font-size': '18px', 'color': '#44cc00', 'background-color': '#343a40',
+                        'border-style': 'solid', 'margin-top': '20px'}
+
+
+@app.callback(
+    Output('exec_report_content', 'children'),
+    [Input('version_dropdown', 'value')],
+)
+def fetch_exec_report(value):
+    """
+    Fetch executive report based on product version
+    :param value:
+    :return:
+    """
+    if not value:
+        raise PreventUpdate
+    if value == "LR1":
+        content = tl.r1_exec_report_content
+    else:
+        content = tl.r2_exec_report_content
+    return content
+
+
+@app.callback(
+    Output('engg_report_content', 'children'),
+    [Input('version_dropdown', 'value')],
+)
+def fetch_engg_report(value):
+    """
+    Fetch engineering report based on product version
+    :param value:
+    :return:
+    """
+    if not value:
+        raise PreventUpdate
+    if value == "LR1":
+        content = tl.r1_engg_report_content
+    else:
+        content = tl.r2_engg_report_content
+    return content
+
+
+qa_tabs = dbc.Tabs(
+    [
+        dbc.Tab(id="exec_report_content", label="Executive's Report", style=dict_style_sub_tab,
+                label_style=dict_style_sub_label),
+        dbc.Tab(id="engg_report_content", label="Engineer's Report", style=dict_style_sub_tab,
+                label_style=dict_style_sub_label)
+    ],
+    className="nav nav nav-pills nav-fill nav-pills flex-column flex-sm-row",
+    id="tabs",
+)
+
+qa_page = html.Div(
+    [
+        html.Div(input_options),
+        html.Div(input_optional_options),
+        # html.Div(build_report_header),
+        # html.Div(toast),
+        html.Div(qa_tabs)
+    ]
+)
+
+perf_page = html.Div("Performance Page")
+
+query_tabs = dbc.Tabs(
+    [
+        dbc.Tab(tl.defect_list_per_tp_content, label='Defect List for Test Plans/Test Executions',
+                style=dict_style_sub_tab,
+                label_style=dict_style_sub_label),
+        dbc.Tab(tl.query_database, label='Query Database', style=dict_style_sub_tab,
+                label_style=dict_style_sub_label)
+    ],
+    className="nav nav nav-pills nav-fill nav-pills flex-column flex-sm-row",
+    id="query_tabs",
+)
+query_page = html.Div(query_tabs)
+
+main_tabs = dbc.Tabs(
+    [
+        dbc.Tab(qa_page, label="QA  REPORTS", style=dict_style_tab, label_style=dict_style_label,
+                active_label_style={'font-weight': 'bold'}),
+        dbc.Tab(query_page, label="QUERY  QA  DATA ", style=dict_style_tab,
+                label_style=dict_style_label, active_label_style={'font-weight': 'bold'}),
+        dbc.Tab(perf_page, label="PERFORMANCE", style=dict_style_tab, label_style=dict_style_label,
+                active_label_style={'font-weight': 'bold'}),
+    ],
+    className="nav nav nav-pills nav-fill nav-pills flex-column flex-sm-row",
+    id="main_tabs",
+)
+
+cortx_sharepoint = "https://seagatetechnology.sharepoint.com/sites/gteamdrv1/tdrive1224"
+cft_sharepoint = "https://seagatetechnology.sharepoint.com/:f:/r/sites/gteamdrv1/tdrive1224/" \
+                 "Shared%20Documents/CFT_IntegrationTeam?csf=1&web=1&e=9Wgzsx"
+navbar = dbc.Navbar(
+    [
+        html.A(
+            dbc.Row(
+                [
+                    dbc.Col(html.Img(src=app.get_asset_url("seagate.png"), height="100px")),
+                    dbc.Col(dbc.NavbarBrand("CORTX QA Dashboard",
+                                            style={'font-size': 40, 'textAlign': 'center',
+                                                   'width': '800px'}),
+                            className='my-auto'),
+                    dbc.Col(dbc.Button("Cortx Sharepoint", color="light", size="lg",
+                                       outline=True,
+                                       href=cortx_sharepoint,
+                                       target="_blank",
+                                       ),
+                            width="auto", className="my-auto"),
+                    dbc.Col(dbc.Button("CFT Sharepoint", color="light", size="lg",
+                                       outline=True,
+                                       href=cft_sharepoint,
+                                       target="_blank"),
+                            width="auto", className="my-auto ")
+                ],
+                # no_gutters=True,
+            ),
+        ),
+    ],
+    color="dark",
+    dark=True,
+)
+
+app.layout = html.Div([
+    navbar,
+    main_tabs,
+    dcc.Location(id='url', refresh=False),
+    html.Link(
+        rel='stylesheet',
+        href='/static/topography.css'
+    )])
+
+if __name__ == '__main__':
+    app.run_server(port=5002, threaded=True, debug=True)

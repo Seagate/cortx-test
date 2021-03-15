@@ -23,8 +23,11 @@
 import logging
 import os
 import sys
+import platform
 import random
 import shutil
+import socket
+import builtins
 from typing import Tuple
 from subprocess import Popen, PIPE
 from hashlib import md5
@@ -121,7 +124,7 @@ def run_local_cmd(cmd: str = None, flg: bool = False) -> tuple:
     return True, str(output)
 
 
-def execute_cmd(cmd: str, remote: bool, *remoteargs, **remoteKwargs) -> tuple:
+def execute_cmd(cmd: str, remote: bool = False, *remoteargs, **remoteKwargs) -> tuple:
     """Execute command on local / remote machine based on remote flag
     :param cmd: cmd to be executed
     :param remote: if True executes on remote machine
@@ -408,6 +411,22 @@ def get_file_checksum(filename: str):
         return False, error
 
 
+def get_os_version():
+    """Platform independent function to get OS version."""
+    if sys.platform == 'win32':
+        return platform.system() + platform.release()
+    else:
+        plat, ver, core = platform.dist()
+        ver = ver[:3]
+        LOGGER.debug("Tests are running on plat %s with ver %s and core %s ", plat, ver, core)
+        return plat + ver
+
+
+def get_host_name():
+    """Handle for all OS."""
+    return socket.gethostname()
+
+
 def create_file(
         fpath: str,
         count: int,
@@ -423,8 +442,9 @@ def create_file(
     """
     cmd = commands.CREATE_FILE.format(dev, fpath, b_size, count)
     LOGGER.debug(cmd)
-    result = run_local_cmd(cmd)
+    result = run_local_cmd(cmd, flg=True)
     LOGGER.debug("output = %s", str(result))
+    result = (os.path.exists(fpath), result[1])
 
     return result
 
@@ -803,3 +823,57 @@ def file_unlock(fmutex):
     else:
         fcntl.flock(fmutex.fileno(), fcntl.LOCK_UN)
         fmutex.close()
+
+
+def insert_into_builtins(name, obj):
+    """May be required in worst case."""
+    if isinstance(builtins, dict):
+        builtins[name] = obj
+    else:
+        builtins.obj = obj
+
+
+def mount_upload_to_server(host_dir: str = None, mnt_dir: str = None,
+                           remote_path: str = None, local_path: str = None) \
+        -> tuple:
+    """Mount NFS directory and upload file to NFS
+    :param host_dir: Link of NFS server directory
+    :param mnt_dir: Path of directory to be mounted
+    :param remote_path: Dir Path to which file is to be uploaded on NFS server
+    :param local_path: Local path of the file to be uploaded
+    :return: Bool, response"""
+    if not os.path.ismount(mnt_dir):
+        if not os.path.exists(mnt_dir):
+            LOGGER.info("Creating a mount directory to share")
+            resp = make_dirs(dpath=mnt_dir)
+
+        cmd = commands.CMD_MOUNT.format(host_dir, mnt_dir)
+        resp = run_local_cmd(cmd=cmd)
+        if not resp[0]:
+            return resp
+
+    new_path = os.path.join(mnt_dir, remote_path)
+    LOGGER.info("Creating directory on server")
+    if not os.path.exists(new_path):
+        resp = make_dirs(dpath=new_path)
+
+    LOGGER.info("Copying file to mounted directory")
+    shutil.copy(local_path, new_path)
+    log_path = os.path.join(host_dir.split(":")[0], remote_path)
+    return True, log_path
+
+
+def umount_dir(mnt_dir: str = None) -> tuple:
+    """Function to unmount directory
+    :param mnt_dir: Path of mounted directory
+    :return: Bool, response"""
+    if os.path.ismount(mnt_dir):
+        LOGGER.info("Unmounting mounted directory")
+        cmd = commands.CMD_UMOUNT.format(mnt_dir)
+        resp = run_local_cmd(cmd=cmd)
+        if not resp[0]:
+            return resp
+
+        remove_dir(dpath=mnt_dir)
+
+    return True, "Directory is unmounted"

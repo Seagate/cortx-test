@@ -1,0 +1,62 @@
+minio_cfg:
+  bkt_name_prefix: "min-bkt"
+  success_msg: "Bucket created successfully"
+  file_path: "/tmp/minio_client.txt"
+  file_size: 5
+  create_bkt_cmd: "./mc mb s3/{0}"
+  upload_obj_cmd: "./mc cp {0} s3/{1}"
+  list_obj_cmd: "./mc ls s3/{0}"
+
+test_2345:
+  bucket_name: "min-bkt-2345{0}"
+
+test_2346:
+  bucket_name_1: "min-bkt-23461{0}"
+  bucket_name_2: "min-bkt-23462{0}"
+  cr_two_bkt_cmd: "./mc mb s3/{0} s3/{1}"
+
+test_2347:
+  bucket_name: "min-bkt-2347{0}"
+  lst_bkt_cmd: "./mc ls s3"
+
+test_2348:
+  bucket_name: "min-bkt-2348{0}"
+  no_of_buckets: 1000
+
+test_2349:
+  bucket_name: "min-bkt-2349{0}"
+  dlt_bkt_cmd: "./mc rb s3/{0}"
+
+test_2350:
+  bucket_name: "min-bkt-2350{0}"
+  dlt_bkt_cmd: "./mc rb s3/{0}"
+
+test_2351:
+  bucket_name: "min-bkt-2351{0}"
+  error_message: "Unable to make bucket"
+
+test_2352:
+  bucket_name: "min-bkt-2352{0}"
+
+test_2353:
+  bucket_name: "min-bkt-2353{0}"
+  dlt_obj: "./mc rm s3/{0}/{1}"
+  str_length: 0
+
+test_2354:
+  bucket_name: "min-bkt-2354{0}"
+
+test_2355:
+  bucket_name: "min-bkt-2355{0}"
+  file_size: 5024
+
+test_2357:
+  bucket_name: "min-bkt-2357{0}"
+  display_cont: "./mc cat s3/{0}/{1}"
+
+test_2358:
+  bucket_name: "min-bkt-2358{0}"
+  upload_data: "Blaclbox minio client Testsuite\nMinio client operations\nPerforming head operation on object"
+  mode : "w"
+  no_of_lines: 2
+  head_obj: "./mc head -n {0} s3/{1}/{2}"
