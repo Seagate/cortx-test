@@ -148,7 +148,7 @@ test_9878:
 test_9879:
   user_name: "iamuser9879"
   password: "MKfKFPvnz+bywHQ4bPCB0ty8+jz1+YSHPHfUOCM/bQU="
-  new_password: "a"
+  new_password: "l8eFHwZQtUp++zFTdUEwnVNeMev7oSIy3t8wXyTcDWw="
   err_message: "PasswordPolicyVoilation"
 test_9880:
   user_name: "iamuser9880"
