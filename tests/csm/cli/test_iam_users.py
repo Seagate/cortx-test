@@ -44,8 +44,8 @@ class TestCliIAMUser:
         """
         cls.LOGGER = logging.getLogger(__name__)
         cls.LOGGER.info("STARTED : Setup operations for test suit")
-        cls.iam_password = CSM_CFG["CliConfig"]["iam_password"]
-        cls.acc_password = CSM_CFG["CliConfig"]["acc_password"]
+        cls.iam_password = CSM_CFG["CliConfig"]["iam_user"]["password"]
+        cls.acc_password = CSM_CFG["CliConfig"]["s3_account"]["password"]
         cls.user_name = None
         cls.iam_obj = CortxCliIamUser()
         cls.iam_obj.open_connection()

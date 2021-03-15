@@ -54,7 +54,7 @@ class TestCliS3ACC:
         cls.s3acc_prefix = "cli_s3acc"
         cls.s3acc_name = cls.s3acc_prefix
         cls.s3acc_email = "{}@seagate.com"
-        cls.s3acc_password = CSM_CFG["CliConfig"]["acc_password"]
+        cls.s3acc_password = CSM_CFG["CliConfig"]["s3_account"]["password"]
         cls.LOGGER.info("ENDED : Setup operations at test suit level")
 
     def setup_method(self):
@@ -102,7 +102,7 @@ class TestCliS3ACC:
         """
         cls.LOGGER.info("STARTED : Teardown operations at test suit level")
         cls.S3ACC_OBJ.close_connection()
-        cls.self.LOGGER.info("ENDED : Teardown operations at test suit level")
+        cls.LOGGER.info("ENDED : Teardown operations at test suit level")
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10872")
@@ -369,7 +369,7 @@ class TestCliS3ACC:
         """
         csm_user_name = "{0}{1}".format("auto_csm_user", str(int(time.time())))
         csm_user_email = "{0}{1}".format(csm_user_name, "@seagate.com")
-        csm_user_pwd = CSM_CFG["CliConfig"]["csm_user_pwd"]
+        csm_user_pwd = CSM_CFG["CliConfig"]["csm_user"]["password"]
         self.LOGGER.info("Creating csm user with name %s", csm_user_name)
         resp = self.CSM_USER_OBJ.create_csm_user_cli(
             csm_user_name=csm_user_name,
@@ -415,7 +415,7 @@ class TestCliS3ACC:
         """
         Test s3 account user can update his password through csmcli
         """
-        new_password = CSM_CFG["CliConfig"]["csm_user_pwd"]
+        new_password = CSM_CFG["CliConfig"]["csm_user"]["password"]
         resp = self.S3ACC_OBJ.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
             account_email=self.s3acc_email,
@@ -470,7 +470,7 @@ class TestCliS3ACC:
             username=self.s3acc_name,
             password=self.s3acc_password)
         assert_utils.assert_equals(True, login[0], login[1])
-        resp = S3BKT_OBJ.create_bucket_cortx_cli(bucket_name)
+        resp = self.S3BKT_OBJ.create_bucket_cortx_cli(bucket_name)
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.LOGGER.info("Created bucket %s", bucket_name)
         resp = self.S3ACC_OBJ.delete_s3account_cortx_cli(
@@ -478,7 +478,7 @@ class TestCliS3ACC:
         assert_utils.assert_equals(False, resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], error_msg)
         self.LOGGER.info("Deleting s3 account failed with error %s", resp[1])
-        resp = S3BKT_OBJ.delete_bucket_cortx_cli(bucket_name)
+        resp = self.S3BKT_OBJ.delete_bucket_cortx_cli(bucket_name)
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.LOGGER.info("Deleted bucket %s", bucket_name)
 
@@ -545,7 +545,7 @@ class TestCliS3ACC:
             account_name=self.s3acc_name,
             account_email=self.s3acc_email,
             password=self.s3acc_password,
-            confirm_password=CSM_CFG["CliConfig"]["csm_user_pwd"])
+            confirm_password=CSM_CFG["CliConfig"]["csm_user"]["password"])
         assert_utils.assert_equals(False, resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], error_msg)
         self.LOGGER.info("Creating s3 account failed with error %s", resp[1])
@@ -585,7 +585,7 @@ class TestCliS3ACC:
         """
         Test that password is not updated when user selects "NO" on update password confirmation
         """
-        new_password = CSM_CFG["CliConfig"]["csm_user_pwd"]
+        new_password = CSM_CFG["CliConfig"]["csm_user"]["password"]
         resp = self.S3ACC_OBJ.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
             account_email=self.s3acc_email,
@@ -673,7 +673,7 @@ class TestCliS3ACC:
         to perform s3iamuser create/delete/show operations
         """
         iam_user_name = "{0}{1}".format("cli_iam_user", str(int(time.time())))
-        iam_user_pwd = CSM_CFG["CliConfig"]["iam_password"]
+        iam_user_pwd = CSM_CFG["CliConfig"]["iam_user"]["password"]
         resp = self.S3ACC_OBJ.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
             account_email=self.s3acc_email,
@@ -719,13 +719,13 @@ class TestCliS3ACC:
             username=self.s3acc_name,
             password=self.s3acc_password)
         assert_utils.assert_equals(True, login[0], login[1])
-        resp = S3BKT_OBJ.create_bucket_cortx_cli(bucket_name)
+        resp = self.S3BKT_OBJ.create_bucket_cortx_cli(bucket_name)
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.LOGGER.info("Created bucket %s", bucket_name)
-        resp = S3BKT_OBJ.list_buckets_cortx_cli()
+        resp = self.S3BKT_OBJ.list_buckets_cortx_cli()
         assert_utils.assert_exact_string(resp[1], bucket_name)
         self.LOGGER.info("Listed buckets %s", resp[1])
-        resp = S3BKT_OBJ.delete_bucket_cortx_cli(bucket_name)
+        resp = self.S3BKT_OBJ.delete_bucket_cortx_cli(bucket_name)
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.LOGGER.info("Deleted buckets %s", resp[1])
 
@@ -788,7 +788,7 @@ class TestCliS3ACC:
         """
         bucket_name = "{0}{1}".format("clis3bkt", int(time.time()))
         iam_user_name = "{0}{1}".format("cli_iam_user", str(int(time.time())))
-        iam_user_pwd = CSM_CFG["CliConfig"]["iam_password"]
+        iam_user_pwd = CSM_CFG["CliConfig"]["iam_user"]["password"]
         resp = self.S3ACC_OBJ.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
             account_email=self.s3acc_email,
@@ -803,13 +803,13 @@ class TestCliS3ACC:
         assert_utils.assert_equals(True, login[0], login[1])
 
         self.LOGGER.info("Performing s3 bucket operations using s3 account")
-        resp = S3BKT_OBJ.create_bucket_cortx_cli(bucket_name)
+        resp = self.S3BKT_OBJ.create_bucket_cortx_cli(bucket_name)
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.LOGGER.info("Created bucket %s", bucket_name)
-        resp = S3BKT_OBJ.list_buckets_cortx_cli()
+        resp = self.S3BKT_OBJ.list_buckets_cortx_cli()
         assert_utils.assert_exact_string(resp[1], bucket_name)
         self.LOGGER.info("Listed buckets %s", resp[1])
-        resp = S3BKT_OBJ.delete_bucket_cortx_cli(bucket_name)
+        resp = self.S3BKT_OBJ.delete_bucket_cortx_cli(bucket_name)
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.LOGGER.info("Deleted buckets %s", resp[1])
 
@@ -863,7 +863,7 @@ class TestCliS3ACC:
         iam_users using CLI created by owner S3_account
         """
         iam_user_name = "{0}{1}".format("cli_iam_user", str(int(time.time())))
-        iam_user_pwd = CSM_CFG["CliConfig"]["iam_password"]
+        iam_user_pwd = CSM_CFG["CliConfig"]["iam_user"]["password"]
         resp = self.S3ACC_OBJ.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
             account_email=self.s3acc_email,
@@ -940,7 +940,7 @@ class TestCliS3ACC:
         Test that s3_account user can perform list, update, delete operation on
         owner s3_accounts using CLI
         """
-        new_password = CSM_CFG["CliConfig"]["csm_user_pwd"]
+        new_password = CSM_CFG["CliConfig"]["csm_user"]["password"]
         resp = self.S3ACC_OBJ.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
             account_email=self.s3acc_email,

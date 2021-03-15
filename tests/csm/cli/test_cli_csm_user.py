@@ -56,9 +56,9 @@ class TestCliCSMUser:
         cls.BKT_OPS = CortxCliS3BucketOperations()
         cls.S3_ACC = CortxCliS3AccountOperations(session_obj=cls.CSM_USER.session_obj)
         cls.GENERATE_ALERT_OBJ = GenerateAlertLib()
-        cls.csm_user_pwd = CSM_CFG["CliConfig"]["csm_user_pwd"]
-        cls.acc_password = CSM_CFG["CliConfig"]["acc_password"]
-        cls.iam_password = CSM_CFG["CliConfig"]["iam_password"]
+        cls.csm_user_pwd = CSM_CFG["CliConfig"]["csm_user"]["password"]
+        cls.acc_password = CSM_CFG["CliConfig"]["s3_account"]["password"]
+        cls.iam_password = CSM_CFG["CliConfig"]["iam_user"]["password"]
         cls.update_password = None
         cls.new_pwd = None
         cls.user_name = None

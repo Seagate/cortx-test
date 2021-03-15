@@ -51,7 +51,7 @@ class TestCliS3BKT:
         cls.s3acc_prefix = "clis3bkt_acc"
         cls.s3acc_name = "{}_{}".format(cls.s3acc_prefix, int(time.time()))
         cls.s3acc_email = "{}@seagate.com".format(cls.s3acc_name)
-        cls.s3acc_password = CSM_CFG["CliConfig"]["acc_password"]
+        cls.s3acc_password = CSM_CFG["CliConfig"]["s3_account"]["password"]
         cls.bucket_name = None
         login = cls.S3ACC_OBJ.login_cortx_cli()
         assert_utils.assert_equals(True, login[0], login[1])
@@ -125,10 +125,10 @@ class TestCliS3BKT:
         """
         resp = self.S3BKT_OBJ.create_bucket_cortx_cli(self.bucket_name)
         assert_utils.assert_equals(True, resp[0], resp[1])
-        self.self.LOGGER.info("Created bucket %s", self.bucket_name)
+        self.LOGGER.info("Created bucket %s", self.bucket_name)
         resp = self.S3BKT_OBJ.delete_bucket_cortx_cli(self.bucket_name)
         assert_utils.assert_equals(True, resp[0], resp[1])
-        self.self.LOGGER.info("Deleted bucket %s", self.bucket_name)
+        self.LOGGER.info("Deleted bucket %s", self.bucket_name)
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10804")
@@ -160,7 +160,7 @@ class TestCliS3BKT:
 
         csm_user_name = "{0}{1}".format("auto_csm_user", str(int(time.time())))
         csm_user_email = "{0}{1}".format(csm_user_name, "@seagate.com")
-        csm_user_pwd = CSM_CFG["CliConfig"]["csm_user_pwd"]
+        csm_user_pwd = CSM_CFG["CliConfig"]["csm_user"]["password"]
         self.LOGGER.info("Creating csm user with name %s", csm_user_name)
         resp = self.CSM_USER_OBJ.create_csm_user_cli(
             csm_user_name=csm_user_name,
