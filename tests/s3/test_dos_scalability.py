@@ -72,6 +72,11 @@ class TestDosScalability:
         Define few variable, will be used while executing test and for cleanup.
         """
         self.log.info("STARTED: Setup operations")
+        self.log.info("Step: hctl status should show all services as STARTED")
+        status, resp = S3H_OBJ.check_s3services_online()
+        assert_true(status, resp)
+        self.log.info(
+            "Step: Successfully checked hctl status show all services as STARTED")
         self.log.info(self.random_id)
         self.log.info("ENDED: Setup operations")
 
@@ -110,12 +115,11 @@ class TestDosScalability:
             "STARTED: Test To Verify scaling of number of objects upto 20 billion with minimum"
             " object size i.e 1B.")
         test_cfg = SCAL_CFG["test_5308"]
-        # As per discussion we are skipping step one from all tests, also
-        # before running FTE we do HC
-        # Step added in setup: Install and Configure S3bench tool and validate
-        # the testcase
         self.log.info(
-            "Step 3: Executed s3bench run with objects upto 20billion and obj size 1B.")
+            "Step 1: Check done in setup: S3 services up and running,"
+            " Install and Configure S3bench tool and validate")
+        self.log.info(
+            "Step 2: Executed s3bench run with objects upto 20billion and obj size 1B.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
         res = S3_OBJ.create_bucket(bucket_name)
@@ -137,7 +141,7 @@ class TestDosScalability:
         res = S3H_OBJ.is_motr_online()
         assert_true(res[0], res[1])
         self.log.info(
-            "Step 3: Executed s3bench run with objects upto 20billion and obj size 1B and"
+            "Step 2: Executed s3bench run with objects upto 20billion and obj size 1B and"
             " checking stack status.")
         self.log.info(
             "ENDED: Test To Verify scaling of number of objects upto 20 billion with minimum "
@@ -151,8 +155,9 @@ class TestDosScalability:
         self.log.info(
             "STARTED: Test constant 400 S3 operations using s3bench.")
         test_cfg = SCAL_CFG["test_5336"]
-        # Step added in setup: Install and Configure S3bench tool and validate
-        # the testcase
+        self.log.info(
+            "Step 1: Check done in setup: S3 services up and running,"
+            " Install and Configure S3bench tool and validate")
         self.log.info(
             "Step 2: Perform with {test_cfg['num_clients']} constant s3 operations.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
@@ -197,8 +202,9 @@ class TestDosScalability:
         """Test constant 300 S3 operations using s3bench."""
         self.log.info("STARTED: Test constant 300 S3 operations using s3bench")
         test_cfg = SCAL_CFG["test_5337"]
-        # Step added in setup: Install and Configure S3bench tool and validate
-        # the testcase
+        self.log.info(
+            "Step 1: Check done in setup: S3 services up and running,"
+            " Install and Configure S3bench tool and validate")
         self.log.info(
             "Step 2: Perform with {test_cfg['num_clients']} constant s3 operations.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
@@ -244,8 +250,9 @@ class TestDosScalability:
         self.log.info(
             "STARTED: Test constant 1000 S3 operations using s3bench")
         test_cfg = SCAL_CFG["test_5338"]
-        # Step added in setup: Install and Configure S3bench tool and validate
-        # the testcase.
+        self.log.info(
+            "Step 1: Check done in setup: S3 services up and running,"
+            " Install and Configure S3bench tool and validate")
         self.log.info(
             "Step 2: Perform with {test_cfg['num_clients']} constant s3 operations.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
@@ -291,8 +298,9 @@ class TestDosScalability:
         self.log.info(
             "STARTED: Test growing S3 operations using s3bench from 1000 to 1200 then to 1500")
         test_cfg = SCAL_CFG["test_5340"]
-        # Step added in setup: Install and Configure S3bench tool and validate
-        # the testcase.
+        self.log.info(
+            "Step 1: Check done in setup: S3 services up and running,"
+            " Install and Configure S3bench tool and validate")
         self.log.info("Step 2: Perform with n constant s3 operations.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
@@ -348,8 +356,9 @@ class TestDosScalability:
             "STARTED: Test growing S3 operations using s3bench from 1000 to 1500 then back"
             " to 1000 then to 1500 again")
         test_cfg = SCAL_CFG["test_5341"]
-        # Step added in setup: Install and Configure S3bench tool and validate
-        # the testcase.
+        self.log.info(
+            "Step 1: Check done in setup: S3 services up and running,"
+            " Install and Configure S3bench tool and validate")
         self.log.info("Step 2: Perform with n constant s3 operations.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
