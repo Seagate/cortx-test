@@ -1,6 +1,4 @@
 multipart:
-    ldap_user_id: "sgiamadmin"
-    ldap_password: "ldapadmin"
     bkt_name_prefix: "mp-bkt"
     actions:
         - "backup"

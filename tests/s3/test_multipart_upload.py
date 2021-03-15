@@ -110,8 +110,6 @@ class TestMultipartUpload:
             S3_TEST_OBJ.delete_multiple_buckets(pref_list)
         except CTException as error:
             self.log.info(error)
-        if path_exists(self.mp_obj_path):
-            remove_file(self.mp_obj_path)
         self.log.info(
             "Restoring aws config file from %s to %s...",
             self.backup_path,
@@ -126,6 +124,8 @@ class TestMultipartUpload:
         self.log.info("Deleting a backup directory...")
         if path_exists(self.backup_path):
             remove_dirs(self.backup_path)
+        if path_exists(self.mp_obj_path):
+            remove_file(self.mp_obj_path)
         self.log.info("Deleted a backup directory")
         self.log.info("ENDED: Teardown operations")
 
