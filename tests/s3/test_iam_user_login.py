@@ -228,14 +228,6 @@ class TestUserLoginProfileTests():
         self.log.info("ENDED: Verify update-login-profile (password change)"
                       " for IAM user with 'Blank' or 'NO' password")
 
-    # def test_2849(self):
-    #    """
-    #    Provide only one character length in password
-    #
-    #    """
-    #    # This is invalid test case as per the new password policy. As per new password policy,
-    #    # password should have minimum 6 characters.
-
     @pytest.mark.parallel
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5681")
@@ -506,16 +498,6 @@ class TestUserLoginProfileTests():
                 error.message)
         self.log.info("ENDED: Create a login profile with password of 0 "
                       "character or without password for existing user")
-
-    # @pytest.mark.parallel
-    # @pytest.mark.s3
-    # @pytest.mark.tags("TEST-5696")
-    # def test_2861(self):
-    #    """
-    #    Create a login profile with password of 1 character for existing user
-    #    """
-    #    # This is invalid test case as per the new password policy. As per new password policy,
-    #    # password should have minimum 6 characters.
 
     @pytest.mark.parallel
     @pytest.mark.s3
