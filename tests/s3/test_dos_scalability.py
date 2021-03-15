@@ -105,7 +105,6 @@ class TestDosScalability:
         self.log.info("Created files deleted")
         self.log.info("ENDED: Teardown Operations")
 
-    # https://jts.seagate.com/browse/EOS-6643 bug raised for this test.
     @pytest.mark.s3
     @pytest.mark.tags('TEST-5309')
     @CTFailOn(error_handler)
