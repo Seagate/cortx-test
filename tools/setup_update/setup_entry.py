@@ -52,7 +52,7 @@ DBUSER = args.dbuser
 DBPSWD = args.dbpassword
 
 
-def insert_new_setup(new_entry_check=True):
+def insert_new_setup():
     new_entry_check = args.new_entry
     LOG = logging.getLogger(__name__)
     with open(FPATH, 'rb') as json_file:
