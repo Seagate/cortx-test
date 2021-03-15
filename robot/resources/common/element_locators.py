@@ -98,6 +98,13 @@ LICENSE_CANCLE_BUTTON_ID = 'license-cancelagreementbtn'
 LICENSE_CANCLE_IMAGE_ID = 'license-cancelagreementicon'
 LICENSE_TITLE_ID = 'agreement-title'
 LICENSE_DATA_ID = 'agreement-data'
+ADMIN_USER_FIELD_ID = 'adminUsername'
+ADMIN_USER_EMAIL_ID_FIELD_ID = 'adminEmail'
+ADMIN_PASSWORD_FIELD_ID = 'adminPassword'
+ADMIN_CONFIRM_PASSWORD_FIELD_ID = 'confirmAdminPassword'
+APPLY_AND_CONTINUE_BUTTON_ID = 'admin-createadminuser'
+ADMIN_USER_ALREADY_EXISTS_ID = 'admin-invalidmsg'
+
 
 #  CSM User section
 CSM_USERS_TABLE_XPATH = '//*[@id="localuser-tabledata"]//table'
