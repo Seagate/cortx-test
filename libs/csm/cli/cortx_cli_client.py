@@ -63,7 +63,9 @@ class CortxCliClient:
                 username=self.username,
                 password=self.password)
             self.host_obj.connect(True, port=self.port)
+            self.log.debug("Opened an ssh connection with host: %s", self.host)
             self.session_obj = self.host_obj.shell_obj
+            self.log.debug("Invoked a shell session: %s", self.session_obj)
 
     def execute_cli_commands(self, cmd: str, time_out: int = 500, sleep_time: int = 6) -> str:
         """
@@ -95,3 +97,4 @@ class CortxCliClient:
         """
         self.session_obj.close()
         self.host_obj.disconnect()
+        self.log.debug("Closed ssh connection with host %s", self.host)
