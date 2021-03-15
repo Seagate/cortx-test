@@ -22,6 +22,7 @@
 Prov test file for all the Prov tests scenarios for single node VM.
 """
 
+import jenkins
 import time
 import logging
 import pytest
@@ -29,6 +30,7 @@ from commons.utils import  config_utils as conf_utils
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
 from commons import commands as common_cmds
+from commons import constants as common_cnst
 from config import CMN_CFG, PROV_CFG
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
@@ -61,6 +63,21 @@ class TestProvSingleNode:
         """
         Setup operations for each test.
         """
+
+    def build_job(self, name, parameters=None, token=None):
+        """
+        Helper function to start the jenkins job.
+        """
+        self.jenkins_server = jenkins.Jenkins(common_cnst.JENKINS_URL, username=common_cnst.JENKINS_USERNAME,
+                                              password=common_cnst.JENKINS_PASSWORD)
+        LOGGER.info("Jenkins_server: {}".format(self.jenkins_server))
+        next_build_number = self.jenkins_server.get_job_info(name)['nextBuildNumber']
+        LOGGER.info("Next build number: {}".format(next_build_number))
+        self.jenkins_server.build_job(name, parameters=parameters, token=token)
+        time.sleep(10)
+        build_info = self.jenkins_server.get_build_info(name, next_build_number)
+        LOGGER.info("Build info: {}".format(build_info))
+        return build_info
 
     def teardown_method(self):
         """
@@ -104,6 +121,7 @@ class TestProvSingleNode:
         LOGGER.info("Starting the deployment steps.")
         test_cfg = PROV_CFG["deploy"]
 
+        '''
         LOGGER.info("Setting up the environment:")
         cmd = common_cmds.CMD_YUM_UTILS
         self.nd_obj.execute_cmd(cmd)
@@ -152,6 +170,12 @@ class TestProvSingleNode:
         cmd = common_cmds.CMD_START_CLSTR
         self.nd_obj.execute_cmd(cmd)
         time.sleep(test_cfg["sleep_time"])
+        '''
+
+        output = self.build_job(test_cfg.name_of_job,
+                                common_cnst.PARAMS.format(self.build_path, self.host, self.passwd),
+                                common_cnst.TOKEN_NAME)
+        LOGGER.info("Jenkins Build URL: {}".format(output['url']))
 
         LOGGER.info("Starting the post deployment checks.")
         test_cfg = PROV_CFG["system"]
