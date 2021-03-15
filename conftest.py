@@ -541,7 +541,7 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
             log = strip_ansi(log)
             logs = log.split('\n')
             test_id = CACHE.lookup(report.nodeid)
-            name = str(test_id) + '_' + report.nodeid.split('::')[1]
+            name = str(test_id) + '_' + report.nodeid.split('::')[1] + '.log'
             test_log = os.path.join(os.getcwd(), LOG_DIR, 'latest', name)
             with open(test_log, 'w') as fp:
                 for rec in logs:
@@ -559,7 +559,7 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
         log = strip_ansi(log)
         logs = log.split('\n')
         test_id = CACHE.lookup(report.nodeid)
-        name = str(test_id) + '_' + report.nodeid.split('::')[1]
+        name = str(test_id) + '_' + report.nodeid.split('::')[1] + '.log'
         test_log = os.path.join(os.getcwd(), LOG_DIR, 'latest', name)
         with open(test_log, 'w') as fp:
             for rec in logs:
