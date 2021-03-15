@@ -28,7 +28,9 @@ from commons import cortxlogging
 from commons.constants import Rest as const
 from commons.utils import assert_utils
 from commons.utils import config_utils
+from commons.helpers.node_helper import Node
 from libs.csm.csm_setup import CSMConfigsCheck
+from config import CMN_CFG
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 
 
@@ -42,15 +44,18 @@ class TestCsmAlerts():
         """ This is method is for test suite set-up """
         cls.log = logging.getLogger(__name__)
         cls.log.info("Initializing test setups ......")
-        cls.csm_alerts = SystemAlerts()
+        cls.node_obj = Node(hostname=CMN_CFG["nodes"][0]["hostname"], 
+                            username=CMN_CFG["nodes"][0]["username"],
+                            password=CMN_CFG["nodes"][0]["password"])
+        cls.csm_alerts = SystemAlerts(cls.node_obj)
         cls.log.info("Checking if predefined CSM users are present...")
-        cls.config = CSMConfigsCheck()
-        user_already_present = cls.config.check_predefined_csm_user_present()
-        cls.log.info("Creating predefined CSM users if not already present...")
-        if not user_already_present:
-            user_already_present = cls.config.setup_csm_users()
-        assert user_already_present
-        cls.csm_conf = config_utils.read_yaml("config/csm/test_rest_csm_alert.yaml")
+        #cls.config = CSMConfigsCheck()
+        #user_already_present = cls.config.check_predefined_csm_user_present()
+        #cls.log.info("Creating predefined CSM users if not already present...")
+        #if not user_already_present:
+        #    user_already_present = cls.config.setup_csm_users()
+        #assert user_already_present
+        cls.csm_conf = config_utils.read_yaml("config/csm/test_rest_csm_alert.yaml")[1]
         cls.resolve_type = None
         cls.alert_timeout = None
         cls.alert_type = None
