@@ -92,7 +92,7 @@ class TestAuthServerHealthCheckAPI:
         resg = S3H_OBJ.copy_s3server_file(fpath, lpath)
         with open(lpath, "r+") as filep:
             data = filep.readlines()
-            for i in range(len(data)):
+            for i, _ in enumerate(data):
                 if "enable" in status:
                     update_value = "    option httpchk HEAD / HTTP/1.1\\r\\nHost:\\ localhost\n"
                 else:
