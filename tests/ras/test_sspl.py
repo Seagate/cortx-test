@@ -1176,6 +1176,8 @@ class TestSSPL:
         res = self.ras_test_obj.verify_the_logs(test_cfg["test_sspl_file"],
                                                 log_level_val_lst)
         if False in res:
+            LOGGER.error("%s not found in %s. Response: %s",
+                         log_level_val_lst, test_cfg["test_sspl_file"], res)
             assert False
 
         LOGGER.info("Step 4: Verified the warning log message in the log "
