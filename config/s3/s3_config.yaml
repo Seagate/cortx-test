@@ -12,18 +12,19 @@ create_account_delay: 5
 create_user_access_key_delay: 5
 delete_account_delay: 5
 reset_account_access_key_delay: 5
-minio_path: "/root/.mc/config.json" 
-aws_cred_section: "default" 
+minio_path: "/root/.mc/config.json"
+aws_cred_section: "default"
 aws_path: "/root/.aws/credentials"
-s3ServiceCount: 11 
-s3ServiceName: "s3server-c" 
-s3cfg_path: "/root/.s3cfg" 
-s3fs_path: "/etc/passwd-s3fs" 
-locust_details: 
-  user: "locust" 
-  email: "locust@seagate.com" 
+aws_config_path: "/root/.aws/config"
+s3ServiceCount: 11
+s3ServiceName: "s3server-c"
+s3cfg_path: "/root/.s3cfg"
+s3fs_path: "/etc/passwd-s3fs"
+locust_details:
+    user: "locust"
+    email: "locust@seagate.com"
 aws_locust_cred_section: "locust"
 nfs_path: "sm13-r2-ipmi.pun.seagate.com:/EES_LOGS/jclientCloud/"
 jClientCloud_path:
-  dest: "scripts/tools/"
-  source: "/root/jclientCloud/"
+    dest: "scripts/tools/"
+    source: "/root/jclientCloud/"
