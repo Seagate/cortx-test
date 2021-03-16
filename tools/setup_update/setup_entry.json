@@ -1,19 +1,19 @@
 {
-"setupname":"Enter unique name",
+"setupname":"T2",
 "nodes":[
     {
-        "host": "Enter eosnode-number",
-        "hostname": "Enter complete hostname",
-        "ip": "Enter IP address",
-        "username": "",
-        "password": ""
+        "host": "eos-node-0",
+        "hostname": "node 0 hostname",
+        "ip": "node 0 ip",
+        "username": "node 0 username",
+        "password": "node 0 password"
     },
     {
-        "host": "",
-        "hostname": "",
-        "ip": "",
-        "username": "",
-        "password": ""
+        "host": "eos-node-1",
+        "hostname": "node 1 hostname",
+        "ip": "node 1 ip address",
+        "username": "node 1 username",
+        "password": "node 1 password"
     }
 ],
 
@@ -21,8 +21,8 @@
 {
     "primary_enclosure_ip": "10.0.0.2",
     "secondary_enclosure_ip": "10.0.0.3",
-    "enclosure_user": "",
-    "enclosure_pwd": ""
+    "username": "",
+    "password": ""
 },
 
 "pdu":{
