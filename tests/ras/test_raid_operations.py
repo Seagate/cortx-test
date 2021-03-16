@@ -64,8 +64,7 @@ class TestRAIDOperations:
                              password=cls.passwd)
         cls.ras_obj = RASTestLib(host=cls.host, username=cls.uname,
                                  password=cls.passwd)
-        cls.csm_alert_obj = SystemAlerts(host=cls.host, username=cls.uname,
-                                         password=cls.passwd)
+        cls.csm_alert_obj = SystemAlerts(cls.nd_obj)
         cls.alert_api_obj = GenerateAlertLib()
         cls.cm_cfg = RAS_VAL["ras_sspl_alert"]
         LOGGER.info("Done: Setup module operations")

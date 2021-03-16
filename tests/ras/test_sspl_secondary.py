@@ -66,8 +66,7 @@ class TestSSPLSecondary:
         cls.health_obj2 = Health(hostname=cls.host2, username=cls.uname,
                                  password=cls.passwd)
 
-        cls.csm_alert_obj = SystemAlerts(host=cls.host2, username=cls.uname,
-                                         password=cls.passwd)
+        cls.csm_alert_obj = SystemAlerts(cls.node_obj2)
 
         # Enable this flag for starting RMQ channel
         cls.start_rmq = cls.cm_cfg["start_rmq"]
