@@ -107,7 +107,7 @@ def get_secrets(fpath="secrets.json", secret_ids=None) -> dict:
     :return [type]: dict of {secrets_id : secret }
     """
     if secret_ids is None:
-        secret_ids = ['KEY', 'DBUSER', 'DBPSWD']
+        secret_ids = ['KEY', 'DB_USER', 'DB_PASSWORD']
     secrets = {}
     for secret_id in secret_ids:
         secret_id = secret_id.upper()
