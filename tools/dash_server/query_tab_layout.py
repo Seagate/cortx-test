@@ -35,8 +35,7 @@ test_results_options = [
 ]
 
 # TAB 4 Query DB
-query_input_style = {'width': '200px', 'margin-right': '15px', 'margin-top': '10px',
-                     'margin-top': '10px'}
+query_input_style = {'width': '200px', 'margin-right': '15px', 'margin-top': '10px'}
 
 first_row = dbc.Row([
     dcc.Dropdown(

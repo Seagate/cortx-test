@@ -20,19 +20,24 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 import json
-import dash_table
 from http import HTTPStatus
+
+import dash
+import dash_table
+import pandas as  pd
 import requests
 from dash.dependencies import Output, Input, State
 from dash.exceptions import PreventUpdate
 
 import common
-import dash
 from common import app
-import pandas as  pd
 
 
 def get_distinct_field_values(field_name):
+    """
+    Get distinct values from database for dropdowns with no filter in query.
+    Used only while retrieving initial values for dropdown
+    """
     query_input = {"field": field_name, "query": {"latest": True}}
     query_input.update(common.credentials)
     response = requests.request("GET", common.distinct_endpoint, headers=common.headers,
@@ -44,10 +49,9 @@ def get_distinct_field_values(field_name):
         output = [
             {'label': val, 'value': val} for val in field_values if val.strip() != ""
         ]
-        '''
         if common.DEBUG_PRINTS:
             print("Fetch {} value  for dropdown : {}".format(field_name, output))
-        '''
+
         return output
     return None
 
@@ -62,6 +66,7 @@ db_field_mapping = {"query_branch.value": "buildType", "query_build.value": "bui
                     "query_execution_type.value": "executionType",
                     "query_test_results.value": "testResult"}
 
+# Display Names for table in output.
 column_names = {"buildType": "Build Type", "buildNo": "Build No", "testPlanID": "Test Plan ID",
                 "testPlanLabel": "Test Plan Labels",
                 "testExecutionID": "Test Execution ID",
@@ -93,6 +98,9 @@ column_names = {"buildType": "Build Type", "buildNo": "Build No", "testPlanID": 
      ]
 )
 def retrieve_query_results(n_clicks, *values):
+    """
+    Function triggered after Get Results button to retrieve the table contents.
+    """
     ctx = dash.callback_context
     # update only when getresults button is clicked.
     if ctx.triggered[0]['prop_id'] == 'query_result_button.n_clicks':
@@ -100,33 +108,35 @@ def retrieve_query_results(n_clicks, *values):
 
         # Check valid inputs given before get result button
         input_found = False
-        for input in ctx.inputs:
-            if ctx.inputs[input] not in [None, [],
-                                         [None]] and input != "query_result_button.n_clicks" \
-                    and input != "query_table_view.value":
+        for input_val in ctx.inputs:
+            if ctx.inputs[input_val] not in [None, [], [None]] \
+                    and input_val != "query_result_button.n_clicks" \
+                    and input_val != "query_table_view.value":
                 input_found = True
                 break
+
         if not input_found:
             return "No Inputs Selected!!!"
 
         # form query based on inputs
-        for input in ctx.inputs:
-            if ctx.inputs[input] not in [None, [],
-                                         [None]] and input != "query_result_button.n_clicks" \
-                    and input != "query_table_view.value":
-                if len(ctx.inputs[input]) == 0:
+        for input_val in ctx.inputs:
+            if ctx.inputs[input_val] not in [None, [], [None]] \
+                    and input_val != "query_result_button.n_clicks" \
+                    and input_val != "query_table_view.value":
+                if len(ctx.inputs[input_val]) == 0:
                     pass
-                elif len(ctx.inputs[input]) == 1:
-                    query_input[db_field_mapping[input]] = ctx.inputs[input][0]
+                elif len(ctx.inputs[input_val]) == 1:
+                    query_input[db_field_mapping[input_val]] = ctx.inputs[input_val][0]
                 else:
                     temp_list = []
-                    for i in range(len(ctx.inputs[input])):
-                        temp_dict = {db_field_mapping[input]: ctx.inputs[input][i]}
+                    for i in range(len(ctx.inputs[input_val])):
+                        temp_dict = {db_field_mapping[input_val]: ctx.inputs[input_val][i]}
                         temp_list.append(temp_dict)
                     query_input['$or'] = temp_list
         query = {"query": query_input}
         query.update(common.credentials)
-        print("Sending Query :{}".format(query))
+        if common.DEBUG_PRINTS:
+            print("Sending Query (retrieve_query_results):{}".format(query))
         response = requests.request("GET", common.search_endpoint, headers=common.headers,
                                     data=json.dumps(query))
         # Fields to display
@@ -174,7 +184,6 @@ def retrieve_query_results(n_clicks, *values):
                 page_size=20,
                 export_format="csv",
                 export_headers="display",
-                # sort_action="native",
                 style_cell_conditional=[{'if': {'column_id': 'testName'},
                                          'overflow': 'hidden',
                                          'textOverflow': 'ellipsis',
@@ -216,22 +225,26 @@ def retrieve_query_results(n_clicks, *values):
 
 
 def build_query(inputs):
+    """
+    Build query based on the existing state of the the dropdowns in the QA query page
+    """
     query_input = {"latest": True}
-    for input in inputs:
-        if inputs[input] not in [None, [None], []] and input != "query_result_button.n_clicks" \
-                and input != "query_table_view.value":
-            print("build query", inputs[input])
-            if len(inputs[input]) == 0:
+    for input_val in inputs:
+        if inputs[input_val] not in [None, [None], []] \
+                and input_val != "query_result_button.n_clicks" \
+                and input_val != "query_table_view.value":
+            if len(inputs[input_val]) == 0:
                 pass
-            elif len(inputs[input]) == 1:
-                query_input[db_field_mapping[input]] = inputs[input][0]
+            elif len(inputs[input_val]) == 1:
+                query_input[db_field_mapping[input_val]] = inputs[input_val][0]
             else:
                 temp_list = []
-                for i in range(len(inputs[input])):
-                    temp_dict = {db_field_mapping[input]: inputs[input][i]}
+                for i in range(len(inputs[input_val])):
+                    temp_dict = {db_field_mapping[input_val]: inputs[input_val][i]}
                     temp_list.append(temp_dict)
                 query_input['$or'] = temp_list
-    print("Build query output : ", query_input)
+    if common.DEBUG_PRINTS:
+        print("Build query output : {}".format(query_input))
     return query_input
 
 
@@ -251,20 +264,20 @@ def build_query(inputs):
 def retrieve_query_branch(build, system_type, feature, test_plan, test_execution, test_id,
                           execution_type, current_val):
     '''
-    Updates Branch values dynamically
+    Updates Branch values dynamically in dropdown based on other entered value
     '''
-    print("Query_branch :", current_val)
-    ctx = dash.callback_context
+    # pylint: disable=unused-variable
 
-    print("ctx inputs branch: ", ctx.inputs)
     if current_val not in [None, [None], []]:
         raise PreventUpdate
 
     # form query based on inputs
+    ctx = dash.callback_context
     query_input = build_query(ctx.inputs)
     query = {"field": "buildType", "query": query_input}
     query.update(common.credentials)
-    print("Sending Query :{}".format(query))
+    if common.DEBUG_PRINTS:
+        print("Sending Query (retrieve_query_branch):{}".format(query))
     response = requests.request("GET", common.distinct_endpoint, headers=common.headers,
                                 data=json.dumps(query))
     if response.status_code == HTTPStatus.OK:
@@ -291,20 +304,20 @@ def retrieve_query_branch(build, system_type, feature, test_plan, test_execution
 )
 def retrieve_query_build(branch, system_type, feature, test_plan, test_execution, test_id,
                          execution_type, current_val):
-    '''
-    Updates Branch values dynamically
-    '''
-
+    """
+    Updates Build values dynamically in dropdown based on other entered value
+    """
+    # pylint: disable=unused-variable
     # form query based on inputs
     if current_val not in [None, [None], []]:
         raise PreventUpdate
 
     ctx = dash.callback_context
-    print("ctx inputs build :", ctx.inputs)
     query_input = build_query(ctx.inputs)
     query = {"field": "buildNo", "query": query_input}
     query.update(common.credentials)
-    print("Sending Query :{}".format(query))
+    if common.DEBUG_PRINTS:
+        print("Sending Query (retrieve_query_build):{}".format(query))
     response = requests.request("GET", common.distinct_endpoint, headers=common.headers,
                                 data=json.dumps(query))
     if response.status_code == HTTPStatus.OK:
@@ -331,10 +344,10 @@ def retrieve_query_build(branch, system_type, feature, test_plan, test_execution
 )
 def retrieve_query_system_type(branch, build, feature, test_plan, test_execution, test_id,
                                execution_type, current_val):
-    '''
-    Updates Branch values dynamically
-    '''
-
+    """
+    Updates System type values dynamically in dropdown based on other entered value
+    """
+    # pylint: disable=unused-variable
     if current_val not in [None, [None], []]:
         raise PreventUpdate
 
@@ -343,7 +356,8 @@ def retrieve_query_system_type(branch, build, feature, test_plan, test_execution
     query_input = build_query(ctx.inputs)
     query = {"field": "testPlanLabel", "query": query_input}
     query.update(common.credentials)
-    print("Sending Query :{}".format(query))
+    if common.DEBUG_PRINTS:
+        print("Sending Query (retrieve_query_system_type):{}".format(query))
     response = requests.request("GET", common.distinct_endpoint, headers=common.headers,
                                 data=json.dumps(query))
     if response.status_code == HTTPStatus.OK:
@@ -370,9 +384,10 @@ def retrieve_query_system_type(branch, build, feature, test_plan, test_execution
 )
 def retrieve_query_feature(branch, build, system_type, test_plan, test_execution, test_id,
                            execution_type, current_val):
-    '''
-    Updates Branch values dynamically
-    '''
+    """
+    Updates Feature values dynamically in dropdown based on other entered value
+    """
+    # pylint: disable=unused-variable
     if current_val not in [None, [None], []]:
         raise PreventUpdate
 
@@ -381,7 +396,8 @@ def retrieve_query_feature(branch, build, system_type, test_plan, test_execution
     query_input = build_query(ctx.inputs)
     query = {"field": "feature", "query": query_input}
     query.update(common.credentials)
-    print("Sending Query :{}".format(query))
+    if common.DEBUG_PRINTS:
+        print("Sending Query (retrieve_query_feature):{}".format(query))
     response = requests.request("GET", common.distinct_endpoint, headers=common.headers,
                                 data=json.dumps(query))
     if response.status_code == HTTPStatus.OK:
@@ -409,9 +425,10 @@ def retrieve_query_feature(branch, build, system_type, test_plan, test_execution
 )
 def retrieve_query_test_plan(branch, build, system_type, test_plan, test_execution, test_id,
                              execution_type, current_val):
-    '''
-    Updates Branch values dynamically
-    '''
+    """
+    Updates Testplan values dynamically in dropdown based on other entered value
+    """
+    # pylint: disable=unused-variable
     if current_val not in [None, [None], []]:
         raise PreventUpdate
 
@@ -420,7 +437,8 @@ def retrieve_query_test_plan(branch, build, system_type, test_plan, test_executi
     query_input = build_query(ctx.inputs)
     query = {"field": "testPlanID", "query": query_input}
     query.update(common.credentials)
-    print("Sending Query :{}".format(query))
+    if common.DEBUG_PRINTS:
+        print("Sending Query (retrieve_query_test_plan):{}".format(query))
     response = requests.request("GET", common.distinct_endpoint, headers=common.headers,
                                 data=json.dumps(query))
     if response.status_code == HTTPStatus.OK:
@@ -447,9 +465,10 @@ def retrieve_query_test_plan(branch, build, system_type, test_plan, test_executi
 )
 def retrieve_query_test_execution(branch, build, system_type, feature, test_plan, test_id,
                                   execution_type, current_val):
-    '''
-    Updates Branch values dynamically
-    '''
+    """
+    Updates Test execution values dynamically in dropdown based on other entered value
+    """
+    # pylint: disable=unused-variable
     if current_val not in [None, [None], []]:
         raise PreventUpdate
 
@@ -458,7 +477,8 @@ def retrieve_query_test_execution(branch, build, system_type, feature, test_plan
     query_input = build_query(ctx.inputs)
     query = {"field": "testExecutionID", "query": query_input}
     query.update(common.credentials)
-    print("Sending Query :{}".format(query))
+    if common.DEBUG_PRINTS:
+        print("Sending Query (retrieve_query_test_execution):{}".format(query))
     response = requests.request("GET", common.distinct_endpoint, headers=common.headers,
                                 data=json.dumps(query))
     if response.status_code == HTTPStatus.OK:
@@ -485,9 +505,10 @@ def retrieve_query_test_execution(branch, build, system_type, feature, test_plan
 )
 def retrieve_query_test_id(branch, build, system_type, feature, test_plan, test_execution,
                            execution_type, current_val):
-    '''
-    Updates Branch values dynamically
-    '''
+    """
+    Updates Test id values dynamically in dropdown based on other entered value
+    """
+    # pylint: disable=unused-variable
     if current_val not in [None, [None], []]:
         raise PreventUpdate
 
@@ -496,7 +517,8 @@ def retrieve_query_test_id(branch, build, system_type, feature, test_plan, test_
     query_input = build_query(ctx.inputs)
     query = {"field": "testID", "query": query_input}
     query.update(common.credentials)
-    print("Sending Query :{}".format(query))
+    if common.DEBUG_PRINTS:
+        print("Sending Query (retrieve_query_test_id):{}".format(query))
     response = requests.request("GET", common.distinct_endpoint, headers=common.headers,
                                 data=json.dumps(query))
     if response.status_code == HTTPStatus.OK:
@@ -523,9 +545,10 @@ def retrieve_query_test_id(branch, build, system_type, feature, test_plan, test_
 )
 def retrieve_query_execution_type(branch, build, system_type, feature, test_plan, test_execution,
                                   test_id, current_val):
-    '''
-    Updates Branch values dynamically
-    '''
+    """
+    Updates Execution type values dynamically in dropdown based on other entered value
+    """
+    # pylint: disable=unused-variable
     if current_val not in [None, [None], []]:
         raise PreventUpdate
 
@@ -534,7 +557,8 @@ def retrieve_query_execution_type(branch, build, system_type, feature, test_plan
     query_input = build_query(ctx.inputs)
     query = {"field": "executionType", "query": query_input}
     query.update(common.credentials)
-    print("Sending Query :{}".format(query))
+    if common.DEBUG_PRINTS:
+        print("Sending Query (retrieve_query_execution_type):{}".format(query))
     response = requests.request("GET", common.distinct_endpoint, headers=common.headers,
                                 data=json.dumps(query))
     if response.status_code == HTTPStatus.OK:
