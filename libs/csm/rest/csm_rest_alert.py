@@ -30,7 +30,6 @@ from commons.helpers.node_helper import Node
 from commons.alerts_simulator.generate_alert_lib import GenerateAlertLib
 from commons import errorcodes as err
 from commons.exceptions import CTException
-from config import CMN_CFG
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
 
 class SystemAlerts(RestTestLib):
