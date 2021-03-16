@@ -1,8 +1,8 @@
 *** Settings ***
-Resource  ../common/common.robot
+Resource  ${EXECDIR}/resources/common/common.robot
 Library     SeleniumLibrary
-Variables  ../common/element_locators.py
-Variables  ../common/common_variables.py
+Variables  ${EXECDIR}/resources/common/element_locators.py
+Variables  ${EXECDIR}/resources/common/common_variables.py
 
 *** Keywords ***
 Navigate To About

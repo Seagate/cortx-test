@@ -55,3 +55,7 @@ DUPLICATE_IAM_USER_ERROR_MSG = "The request was rejected because it attempted to
 
 # Alerts
 TEST_COMMENT = "Test Comment"
+
+# Preboarding
+ADMIN_USER_ALREADY_EXISTS_MESSAGE = "Admin user already exists"
+EMAIL_DOMAIN =  "@seagate.com"

@@ -11,8 +11,12 @@ Resource    ${EXECDIR}/resources/page_objects/auditlogPage.robot
 Resource    ${EXECDIR}/resources/page_objects/softwareUpdatepage.robot
 Resource    ${EXECDIR}/resources/page_objects/firmwareUpdatepage.robot
 Variables   ${EXECDIR}/resources/common/common_variables.py
+Resource    ${EXECDIR}/resources/page_objects/preboardingPage.robot
+Variables   ${EXECDIR}/resources/common/common_variables.py
 
-
+Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
+...  ${username}  ${password}
+...  AND  Close Browser
 Test Setup  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
 Test Teardown  Close Browser
 Suite Teardown  Close All Browsers
