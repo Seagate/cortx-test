@@ -33,7 +33,7 @@ from commons.utils.assert_utils import \
 
 LOGGER = logging.getLogger(__name__)
 IAM_OBJ = iam_test_lib.IamTestLib()
-IAM_CFG = read_yaml("config/s3/test_iam_account_login.yaml")
+IAM_CFG = read_yaml("config/s3/test_iam_account_login.yaml")[1]
 
 
 class TestAccountLoginProfile():
@@ -1547,7 +1547,7 @@ class TestAccountLoginProfile():
             self.account_name)
         LOGGER.info(
             "ENDED: Get temp cred for the acc which doesn't contain"
-            " the acc login prof for that acc")"
+            " the acc login prof for that acc")
 
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5632")
