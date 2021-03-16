@@ -26,8 +26,6 @@ from commons.utils import assert_utils
 from config import CMN_CFG
 from commons.helpers import bmc_helper
 from commons.helpers.node_helper import Node
-from commons.ct_fail_on import CTFailOn
-from commons.errorcodes import error_handler
 from libs.csm.cli.cortx_cli_system import CortxCliSystemtOperations
 from libs.csm.cli.cortx_cli import CortxCli
 
@@ -78,10 +76,10 @@ class TestCliSystem:
         self.log.info("STARTED: Setup Operations")
         self.node_stop = False
         self.pri_node_logout = True
-        self.log.info("Logging into CSMCLI as admin...")
+        self.log.info("Logging into CORTXCLI as admin...")
         login = self.system_obj_node1.login_cortx_cli()
         assert_utils.assert_equals(True, login[0], login[1])
-        self.log.info("Logged into CSMCLI as admin successfully")
+        self.log.info("Logged into CORTXCLI as admin successfully")
         self.log.info("ENDED: Setup Operations")
 
     def teardown_method(self):
