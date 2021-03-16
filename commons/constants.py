@@ -92,7 +92,6 @@ const.AUTHSERVER_FILE = "/opt/seagate/cortx/auth/resources/authserver.properties
 const.SCRIPT_PATH = "cd /opt/seagate/cortx/auth/scripts"
 
 
-
 class Rest:
     # REST LIB
     EXCEPTION_ERROR = "Error in"
@@ -109,7 +108,7 @@ class Rest:
     USER_NAME = "user_name"
     USER_ID = "user_id"
     IAM_USER = "test_iam_user"
-    IAM_PASSWORD = ""
+    IAM_PASSWORD = "Seagate@123"
     ARN = "arn"
     BAD_REQUEST = 400
     UNAUTHORIZED = 401
