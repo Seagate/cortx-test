@@ -39,7 +39,7 @@ class SystemAlerts(RestTestLib):
     def __init__(self, node_obj:object=None) -> None:
         """
         Initialize the rest api
-        node_obj is required if create_alert and resolve_alert functions are used.
+        :param: node_obj is required if create_alert and resolve_alert functions are used.
         """
         super().__init__()
         self.node_obj = node_obj
