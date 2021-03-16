@@ -181,7 +181,8 @@ def run(opts: dict) -> None:
         witem.tag = tg
         witem.parallel = True
         witem.targets = targets
-        witem.tickets = test_map[next(iter(parallel_set))][-1]
+        set_t = parallel_set if len(parallel_set) else sequential_set
+        witem.tickets = test_map[next(iter(set_t))][-1]
         witem.build = build
         witem.build_type = build_type
         witem.test_plan = test_plan

@@ -69,10 +69,10 @@ def _get_collection_obj():
     LOG.debug("Database hostname: %s", DB_HOSTNAME)
     LOG.debug("Database name: %s", DB_NAME)
     LOG.debug("Collection name: %s", SYS_INFO_COLLECTION)
-    db_creds = pswdmanager.get_secrets(secret_ids=['DBUSER', 'DBPSWD'])
+    db_creds = pswdmanager.get_secrets(secret_ids=['DB_USER', 'DB_PASSWORD'])
     mongodburi = "mongodb://{0}:{1}@{2}"
     uri = mongodburi.format(
-        quote_plus(db_creds['DBUSER']), quote_plus(db_creds['DBPSWD']), DB_HOSTNAME)
+        quote_plus(db_creds['DB_USER']), quote_plus(db_creds['DB_PASSWORD']), DB_HOSTNAME)
     LOG.debug("URI : %s", uri)
     client = MongoClient(uri)
     setup_db = client[DB_NAME]
