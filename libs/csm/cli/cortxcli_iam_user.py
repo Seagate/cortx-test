@@ -31,6 +31,13 @@ LOG = logging.getLogger(__name__)
 class CortxCliIamUser(CortxCli):
     """This class has all IAM methods"""
 
+    def __init__(self, session_obj: object = None):
+        """
+        This method initializes members of CortxCliIamUser
+        :param object session_obj: session object of host connection if already established
+        """
+        super().__init__(session_obj=session_obj)
+
     def create_iam_user(
             self,
             user_name: str = None,
