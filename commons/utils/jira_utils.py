@@ -193,7 +193,7 @@ class JiraTask:
                                     params=None)
         return response
 
-    def get_test_details(self, test_exe_id):
+    def get_test_details(self, test_exe_id: str) -> list:
         """
         Get details of the test cases in a test execution ticket
         """
@@ -225,7 +225,8 @@ class JiraTask:
         except requests.exceptions.RequestException:
             print(traceback.print_exc())
 
-    def update_execution_details(self, data, test_id, comment):
+    def update_execution_details(self, data: list, test_id: str, comment: str)\
+            -> bool:
         """
         Add comment to the mentioned jira id
         """
@@ -257,8 +258,8 @@ class JiraTask:
             if response.status_code == HTTPStatus.OK:
                 print("Updated execution details successfully for test id "
                       "%s", test_id)
-                return True, response
-            return False, response
+                return True
+            return False
         except JIRAError as err:
             print(err.status_code, err.text)
-            return False, err.status_code
+            return False

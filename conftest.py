@@ -582,7 +582,7 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
         data = task.get_test_details(test_exe_id=Globals.TE_TKT)
         resp = task.update_execution_details(data=data, test_id=test_id,
                                              comment=comment)
-        if resp[0]:
+        if resp:
             LOGGER.info("Added execution details comment in: %s", test_id)
         else:
             LOGGER.error("Failed to comment to %s", test_id)
