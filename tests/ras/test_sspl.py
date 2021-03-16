@@ -40,22 +40,17 @@ from commons.alerts_simulator.generate_alert_lib import \
      GenerateAlertLib, AlertType
 from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
 
-ALERT_API_OBJ = GenerateAlertLib()
-
-CM_CFG = RAS_VAL["ras_sspl_alert"]
 LOGGER = logging.getLogger(__name__)
-
-TEST_DATA = [CMN_CFG["nodes"][0]["host"]]
 
 
 class TestSSPL:
     """SSPL Test Suite."""
 
     @classmethod
-    @pytest.mark.parametrize("host", TEST_DATA)
     def setup_class(cls):
         """Setup for module."""
         LOGGER.info("Running setup_class")
+        cls.cm_cfg = RAS_VAL["ras_sspl_alert"]
         cls.host = CMN_CFG["nodes"][0]["host"]
         cls.uname = CMN_CFG["nodes"][0]["username"]
         cls.passwd = CMN_CFG["nodes"][0]["password"]
@@ -76,8 +71,9 @@ class TestSSPL:
 
         cls.csm_alert_obj = SystemAlerts(host=cls.host, username=cls.uname,
                                          password=cls.passwd)
+        cls.alert_api_obj = GenerateAlertLib()
         # Enable this flag for starting RMQ channel
-        cls.start_rmq = CM_CFG["start_rmq"]
+        cls.start_rmq = cls.cm_cfg["start_rmq"]
 
         field_list = ("primary_controller_ip", "secondary_controller_ip",
                       "primary_controller_port", "secondary_controller_port",
@@ -94,7 +90,7 @@ class TestSSPL:
         LOGGER.info("Running setup_method")
         self.starttime = time.time()
         LOGGER.info("Retaining the original/default config")
-        self.ras_test_obj.retain_config(CM_CFG["file"]["original_sspl_conf"],
+        self.ras_test_obj.retain_config(self.cm_cfg["file"]["original_sspl_conf"],
                                         False)
 
         LOGGER.info("Performing Setup operations")
@@ -112,14 +108,14 @@ class TestSSPL:
         self.node_obj.execute_cmd(cmd=cmd, read_lines=True)
 
         LOGGER.info("Restarting sspl service")
-        resp = self.health_obj.restart_pcs_resource(CM_CFG["sspl_resource_id"])
+        resp = self.health_obj.restart_pcs_resource(self.cm_cfg["sspl_resource_id"])
         assert resp, "Failed to restart sspl-ll"
-        time.sleep(CM_CFG["after_service_restart_sleep_val"])
+        time.sleep(self.cm_cfg["after_service_restart_sleep_val"])
         LOGGER.info(
             "Verifying the status of sspl and rabittmq service is online")
 
         # Getting SSPl and RabbitMQ service status
-        services = CM_CFG["service"]
+        services = self.cm_cfg["service"]
         resp = S3Helper.get_s3server_service_status(
             service=services["sspl_service"], host=self.host, user=self.uname,
             pwd=self.passwd)
@@ -135,7 +131,7 @@ class TestSSPL:
         if self.start_rmq:
             LOGGER.info("Running rabbitmq_reader.py script on node")
             resp = self.ras_test_obj.start_rabbitmq_reader_cmd(
-                CM_CFG["sspl_exch"], CM_CFG["sspl_key"])
+                self.cm_cfg["sspl_exch"], self.cm_cfg["sspl_key"])
             assert resp, "Failed to start RMQ channel"
             LOGGER.info(
                 "Successfully started rabbitmq_reader.py script on node")
@@ -150,34 +146,34 @@ class TestSSPL:
     def teardown_method(self):
         """Teardown operations."""
         LOGGER.info("Performing Teardown operation")
-        self.ras_test_obj.retain_config(CM_CFG["file"]["original_sspl_conf"],
+        self.ras_test_obj.retain_config(self.cm_cfg["file"]["original_sspl_conf"],
                                         True)
 
         if self.sspl_stop:
             LOGGER.info("Enable the SSPL master")
             resp = self.ras_test_obj.enable_disable_service(
-                "enable", CM_CFG["sspl_resource_id"])
+                "enable", self.cm_cfg["sspl_resource_id"])
             assert resp, "Failed to enable sspl-master"
 
         LOGGER.info("Restoring values to default in consul")
         LOGGER.info("Updating disk usage threshold value")
         res = self.ras_test_obj.update_threshold_values(
-            cons.KV_STORE_DISK_USAGE, CM_CFG["sspl_config"]["sspl_du_key"],
-            CM_CFG["sspl_config"]["sspl_du_dval"])
+            cons.KV_STORE_DISK_USAGE, self.cm_cfg["sspl_config"]["sspl_du_key"],
+            self.cm_cfg["sspl_config"]["sspl_du_dval"])
         assert res
 
         if not self.default_cpu_usage:
             LOGGER.info("Updating default cpu usage threshold value")
             res = self.ras_test_obj.update_threshold_values(
                 cons.KV_STORE_DISK_USAGE, cons.CPU_USAGE_KEY,
-                CM_CFG["default_cpu_usage"])
+                self.cm_cfg["default_cpu_usage"])
             assert res
 
         if not self.default_mem_usage:
             LOGGER.info("Updating default memory usage threshold value")
             res = self.ras_test_obj.update_threshold_values(
                 cons.KV_STORE_DISK_USAGE, cons.MEM_USAGE_KEY,
-                CM_CFG["default_mem_usage"])
+                self.cm_cfg["default_mem_usage"])
             assert res
 
         if self.changed_level:
@@ -189,9 +185,9 @@ class TestSSPL:
                 update=True)
             assert res
 
-        if os.path.exists(CM_CFG["file"]["telnet_xml"]):
+        if os.path.exists(self.cm_cfg["file"]["telnet_xml"]):
             LOGGER.info("Remove telnet file")
-            os.remove(CM_CFG["file"]["telnet_xml"])
+            os.remove(self.cm_cfg["file"]["telnet_xml"])
 
         if self.node_obj.path_exists(
                 RAS_VAL["ras_sspl_alert"]["file"]["disk_usage_temp_file"]):
@@ -205,8 +201,8 @@ class TestSSPL:
 
         LOGGER.debug("Copying contents of sspl.log")
         read_resp = self.node_obj.read_file(
-            filename=CM_CFG["file"]["sspl_log_file"],
-            local_path=CM_CFG["file"]["sspl_log_file"])
+            filename=self.cm_cfg["file"]["sspl_log_file"],
+            local_path=self.cm_cfg["file"]["sspl_log_file"])
         LOGGER.debug(
             "======================================================")
         LOGGER.debug(read_resp)
@@ -214,27 +210,27 @@ class TestSSPL:
             "======================================================")
 
         LOGGER.info(
-            "Removing file %s", CM_CFG["file"]["sspl_log_file"])
-        self.node_obj.remove_file(filename=CM_CFG["file"]["sspl_log_file"])
+            "Removing file %s", self.cm_cfg["file"]["sspl_log_file"])
+        self.node_obj.remove_file(filename=self.cm_cfg["file"]["sspl_log_file"])
 
         if self.start_rmq:
             LOGGER.info("Terminating the process rabbitmq_reader.py")
             self.ras_test_obj.kill_remote_process("rabbitmq_reader.py")
-            files = [CM_CFG["file"]["alert_log_file"],
-                     CM_CFG["file"]["extracted_alert_file"],
-                     CM_CFG["file"]["screen_log"]]
+            files = [self.cm_cfg["file"]["alert_log_file"],
+                     self.cm_cfg["file"]["extracted_alert_file"],
+                     self.cm_cfg["file"]["screen_log"]]
             for file in files:
                 LOGGER.info("Removing log file %s from the Node", file)
                 self.node_obj.remove_file(filename=file)
 
         self.health_obj.restart_pcs_resource(
-            resource=CM_CFG["sspl_resource_id"])
-        time.sleep(CM_CFG["sleep_val"])
+            resource=self.cm_cfg["sspl_resource_id"])
+        time.sleep(self.cm_cfg["sleep_val"])
 
         if self.selinux_enabled:
-            local_path = CM_CFG["local_selinux_path"]
-            new_value = CM_CFG["selinux_disabled"]
-            old_value = CM_CFG["selinux_enforced"]
+            local_path = self.cm_cfg["local_selinux_path"]
+            new_value = self.cm_cfg["selinux_disabled"]
+            old_value = self.cm_cfg["selinux_enforced"]
             LOGGER.info("Modifying selinux status from %s to %s on node %s",
                         old_value, new_value, self.host)
             resp = self.ras_test_obj.modify_selinux_file()
@@ -245,7 +241,7 @@ class TestSSPL:
             LOGGER.info(
                 "Rebooting node %s after modifying selinux status", self.host)
             self.node_obj.execute_cmd(cmd=common_cmd.REBOOT_NODE_CMD)
-            time.sleep(CM_CFG["reboot_delay"])
+            time.sleep(self.cm_cfg["reboot_delay"])
             os.remove(local_path)
             LOGGER.info("Rebooted node %s after modifying selinux status",
                         self.host)
@@ -268,7 +264,7 @@ class TestSSPL:
         params = RAS_TEST_CFG["test_3005"]
 
         LOGGER.info("Step 1: Running ALERT API")
-        resp = ALERT_API_OBJ.generate_alert(
+        resp = self.alert_api_obj.generate_alert(
             AlertType.DISK_FAULT_NO_ALERT,
             input_parameters={
                 "du_val": params["du_val"],
@@ -318,7 +314,7 @@ class TestSSPL:
         LOGGER.info(
             "Step 1: Running ALERT API for generating and resolving disk "
             "full fault")
-        resp = ALERT_API_OBJ.generate_alert(
+        resp = self.alert_api_obj.generate_alert(
             AlertType.DISK_FAULT_RESOLVED_ALERT,
             input_parameters={
                 "du_val": params["alert_fault_resolved"]["du_val"],
@@ -655,7 +651,7 @@ class TestSSPL:
         csm_error_msg = RAS_VAL["ras_sspl_alert"]["csm_error_msg"]
 
         LOGGER.info("Step 1: Simulating fault psu state on MC debug console")
-        response = ALERT_API_OBJ.generate_alert(AlertType.PSU_FAULT)
+        response = self.alert_api_obj.generate_alert(AlertType.PSU_FAULT)
 
         assert response[0], "{} {}".format(response[1],
                                            "Couldn't connect to port "
@@ -676,7 +672,7 @@ class TestSSPL:
                                                               "resource_type"])
 
         LOGGER.info("Step 3: Putting in fault-resolved state")
-        response = ALERT_API_OBJ.generate_alert(AlertType.PSU_FAULT_RESOLVED)
+        response = self.alert_api_obj.generate_alert(AlertType.PSU_FAULT_RESOLVED)
 
         assert response[0], "{} {}".format(response[1],
                                            "Couldn't connect to port "
@@ -724,7 +720,7 @@ class TestSSPL:
 
         LOGGER.info("Step 1: Simulating fault on controller using"
                     "MC debug console")
-        response = ALERT_API_OBJ.generate_alert(AlertType.CONTROLLER_FAULT)
+        response = self.alert_api_obj.generate_alert(AlertType.CONTROLLER_FAULT)
 
         assert response[0], "{} {}".format(response[1],
                                            "Couldn't connect to port "
@@ -737,7 +733,7 @@ class TestSSPL:
         time.sleep(RAS_VAL["ras_sspl_alert"]["telnet_sleep_val"])
 
         LOGGER.info("Step 2: Putting in fault-resolved state")
-        response = ALERT_API_OBJ.generate_alert(
+        response = self.alert_api_obj.generate_alert(
             AlertType.CONTROLLER_FAULT_RESOLVED)
 
         assert response[0], "{} {}".format(response[1],
@@ -792,7 +788,7 @@ class TestSSPL:
         csm_error_msg = RAS_VAL["ras_sspl_alert"]["csm_error_msg"]
 
         LOGGER.info("Step 1: Simulating fault psu state on MC debug console")
-        response = ALERT_API_OBJ.generate_alert(AlertType.PSU_FAULT)
+        response = self.alert_api_obj.generate_alert(AlertType.PSU_FAULT)
 
         assert response[0], "{} {}".format(response[1],
                                            "Couldn't connect to port "
@@ -805,7 +801,7 @@ class TestSSPL:
         time.sleep(RAS_VAL["ras_sspl_alert"]["telnet_sleep_val"])
 
         LOGGER.info("Step 2: Putting in fault-resolved state")
-        response = ALERT_API_OBJ.generate_alert(AlertType.PSU_FAULT_RESOLVED)
+        response = self.alert_api_obj.generate_alert(AlertType.PSU_FAULT_RESOLVED)
 
         assert response[0], "{} {}".format(response[1],
                                            "Couldn't connect to port "
@@ -858,7 +854,7 @@ class TestSSPL:
 
         LOGGER.info("Step 1: Simulating fault on controller using"
                     "MC debug console")
-        response = ALERT_API_OBJ.generate_alert(AlertType.CONTROLLER_FAULT)
+        response = self.alert_api_obj.generate_alert(AlertType.CONTROLLER_FAULT)
 
         assert response[0], "{} {}".format(response[1],
                                            "Couldn't connect to port "
@@ -878,7 +874,7 @@ class TestSSPL:
                                                               "resource_type"])
 
         LOGGER.info("Step 3: Putting in fault-resolved state")
-        response = ALERT_API_OBJ.generate_alert(
+        response = self.alert_api_obj.generate_alert(
             AlertType.CONTROLLER_FAULT_RESOLVED)
 
         assert response[0], "{} {}".format(response[1],
@@ -1036,7 +1032,7 @@ class TestSSPL:
         LOGGER.info("Generating disk full alert")
 
         LOGGER.info("Step 8: Running ALERT API for generating fault")
-        resp = ALERT_API_OBJ.generate_alert(
+        resp = self.alert_api_obj.generate_alert(
             AlertType.DISK_FAULT_ALERT,
             input_parameters={
                 "du_val": params["alert_fault"]["du_val"],
@@ -1217,7 +1213,7 @@ class TestSSPL:
         phy_num = random.randint(0, resp[1] - 1)
 
         LOGGER.info("Step 2: Disabling phy number %s", phy_num)
-        resp = ALERT_API_OBJ.generate_alert(
+        resp = self.alert_api_obj.generate_alert(
             AlertType.DISK_DISABLE,
             input_parameters={"enclid": test_cfg["encl"],
                               "ctrl_name": test_cfg["ctrl"],
@@ -1255,7 +1251,7 @@ class TestSSPL:
         LOGGER.info("Step 5: Again enabling phy number %s", phy_num)
         i = 0
         while i < test_cfg["retry"]:
-            resp = ALERT_API_OBJ.generate_alert(
+            resp = self.alert_api_obj.generate_alert(
                 AlertType.DISK_ENABLE,
                 input_parameters={"enclid": test_cfg["encl"],
                                   "ctrl_name": test_cfg["ctrl"],
@@ -1315,7 +1311,7 @@ class TestSSPL:
         phy_num = random.randint(0, resp[1] - 1)
 
         LOGGER.info("Step 2: Disabling phy number %s", phy_num)
-        resp = ALERT_API_OBJ.generate_alert(
+        resp = self.alert_api_obj.generate_alert(
             AlertType.DISK_DISABLE,
             input_parameters={"enclid": test_cfg["encl"],
                               "ctrl_name": test_cfg["ctrl"],
@@ -1337,7 +1333,7 @@ class TestSSPL:
         LOGGER.info("Step 4: Again enabling phy number %s", phy_num)
         i = 0
         while i < test_cfg["retry"]:
-            resp = ALERT_API_OBJ.generate_alert(
+            resp = self.alert_api_obj.generate_alert(
                 AlertType.DISK_ENABLE,
                 input_parameters={"enclid": test_cfg["encl"],
                                   "ctrl_name": test_cfg["ctrl"],
@@ -1496,7 +1492,7 @@ class TestSSPL:
 
         LOGGER.info(
             "Step 1: Running ALERT API for generating CPU usage fault")
-        resp = ALERT_API_OBJ.generate_alert(
+        resp = self.alert_api_obj.generate_alert(
             AlertType.CPU_USAGE_ALERT, input_parameters={
                 "delta_cpu_usage": test_cfg["delta_cpu_usage"]})
         assert resp[0], resp[1]
@@ -1536,7 +1532,7 @@ class TestSSPL:
 
         LOGGER.info(
             "Step 1: Running ALERT API for generating memory usage fault")
-        resp = ALERT_API_OBJ.generate_alert(
+        resp = self.alert_api_obj.generate_alert(
             AlertType.MEM_USAGE_ALERT, input_parameters={
                 "delta_mem_usage": test_cfg["delta_mem_usage"]})
         assert resp[0], resp[1]
@@ -1606,7 +1602,7 @@ class TestSSPL:
         LOGGER.info(
             "Step 5: Running ALERT API for generating and resolving disk full "
             "fault")
-        resp = ALERT_API_OBJ.generate_alert(
+        resp = self.alert_api_obj.generate_alert(
             AlertType.DISK_FAULT_RESOLVED_ALERT,
             input_parameters={
                 "du_val": params["alert_fault_resolved"]["du_val"],

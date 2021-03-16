@@ -40,7 +40,6 @@ from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 
-
 # Global Constants
 LOGGER = logging.getLogger(__name__)
 

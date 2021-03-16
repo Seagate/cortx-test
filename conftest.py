@@ -453,6 +453,7 @@ def pytest_collection(session):
     if session.config.option.collectonly:
         te_meta = config_utils.create_content_json(os.path.join(cache_home, 'te_meta.json'), meta)
         LOGGER.debug("Items meta dict %s created at %s", meta, te_meta)
+        Globals.te_meta = te_meta
     if not _local and session.config.option.readmetadata:
         tp_meta_file = os.path.join(os.getcwd(),
                                     params.LOG_DIR_NAME,
