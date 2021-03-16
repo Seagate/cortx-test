@@ -1,13 +1,3 @@
-test_authserver_healthcheck:
-    service: "haproxy"
-    remote_file: "/etc/haproxy/haproxy.cfg"
-    local_file: "/tmp/haproxy.cfg"
-    auth_log_path: "/var/log/seagate/auth/server/app.log"
-    head_urls:
-        - "https://iam.seagate.com:9443/auth/health"
-        - "https://iam.seagate.com:9443/auth/health"
-        # - "http://iam.seagate.com:9080/auth/health"
-
 test_1161:
     status_code: "200"
     status: "enable"

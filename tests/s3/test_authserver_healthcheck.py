@@ -20,17 +20,19 @@
 
 """AuthServer HealthCheck API test module."""
 
+import os
 import logging
 import pytest
 
+from commons.constants import const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.utils.config_utils import read_yaml
 from commons.utils.web_utils import http_head_request
 from commons.utils.assert_utils import assert_equal, assert_true
-from commons.utils.system_utils import path_exists, remove_file
+from commons.utils.system_utils import path_exists, remove_file, make_dirs
 from commons.helpers.node_helper import Node
-from libs.s3 import S3H_OBJ, CM_CFG
+from libs.s3 import S3H_OBJ, CM_CFG, S3_CFG
 
 AUTH_CFG = read_yaml("config/s3/test_authserver_healthcheck.yaml")[1]
 
@@ -46,28 +48,35 @@ class TestAuthServerHealthCheckAPI:
         It will perform all prerequisite test suite steps if any.
         """
         cls.log = logging.getLogger(__name__)
-        cls.cm_cfg = AUTH_CFG["test_authserver_healthcheck"]
         cls.nodeobj = Node(hostname=CM_CFG["nodes"][1]["host"],
                            username=CM_CFG["nodes"][1]["username"],
                            password=CM_CFG["nodes"][1]["password"])
+        cls.service = "haproxy"
+        cls.remote_path = const.CFG_FILES[0]
+        cls.auth_log_path = const.AUTHSERVER_LOG_PATH
+        cls.test_dir_path = os.path.join(os.getcwd(), "testdata")
+        cls.local_file = os.path.join(cls.test_dir_path, "haproxy.cfg")
+        if not path_exists(cls.test_dir_path):
+            make_dirs(cls.test_dir_path)
+            cls.log.info("Created path: %s", cls.test_dir_path)
 
     def setup_method(self):
         """Function to perform the setup ops for each test."""
         self.log.info("Started: Performing setup operations")
-        resp = self.nodeobj.path_exists(self.cm_cfg["remote_file"])
+        resp = self.nodeobj.path_exists(self.remote_path)
         assert_true(
             resp,
-            f"Server path not exists: {self.cm_cfg['remote_file']}")
+            f"Server path not exists: {self.remote_path}")
         self.log.info("Ended: performed setup operations")
 
     def teardown_method(self):
         """Function to perform the clean up for each test."""
         self.log.info("Started: Performing clean up operations")
         resp = self.toggle_auth_server_health_check(
-            self.cm_cfg["remote_file"], self.cm_cfg["local_file"])
+            self.remote_path, self.local_file)
         self.log.info(resp)
-        if path_exists(self.cm_cfg["local_file"]):
-            remove_file(self.cm_cfg["local_file"])
+        if path_exists(self.local_file):
+            remove_file(self.local_file)
         self.log.info("Ended: Performed clean up operations")
 
     def toggle_auth_server_health_check(self, fpath, lpath, status="enable"):
@@ -110,18 +119,18 @@ class TestAuthServerHealthCheckAPI:
             "Started: Test authserver response when health check is enabled")
         test_cfg = AUTH_CFG["test_1161"]
         resp = self.toggle_auth_server_health_check(
-            self.cm_cfg["remote_file"],
-            self.cm_cfg["local_file"],
+            self.remote_path,
+            self.local_file,
             status=test_cfg["status"])
         self.log.info(resp)
-        resp = S3H_OBJ.restart_s3server_service(self.cm_cfg["service"])
+        resp = S3H_OBJ.restart_s3server_service(self.service)
         assert_true(resp[0], resp[1])
-        resp = S3H_OBJ.get_authserver_log(path=self.cm_cfg["auth_log_path"])
+        resp = S3H_OBJ.get_authserver_log(path=self.auth_log_path)
         self.log.debug(resp)
-        res = http_head_request(url=self.cm_cfg["head_urls"][0])
+        res = http_head_request(url=S3_CFG["head_urls"])
         assert_equal(test_cfg["status_code"], str(res.status_code))
         self.log.info(res)
-        res = http_head_request(url=self.cm_cfg["head_urls"][1])
+        res = http_head_request(url=S3_CFG["head_urls"])
         assert_equal(test_cfg["status_code"], str(res.status_code))
         self.log.info(res)
         self.log.info(
@@ -136,18 +145,18 @@ class TestAuthServerHealthCheckAPI:
             "Started: Test authserver response when health check is disabled")
         test_cfg = AUTH_CFG["test_1164"]
         resp = self.toggle_auth_server_health_check(
-            self.cm_cfg["remote_file"],
-            self.cm_cfg["local_file"],
+            self.remote_path,
+            self.local_file,
             status=test_cfg["status"])
         self.log.info(resp)
-        resp = S3H_OBJ.restart_s3server_service(self.cm_cfg["service"])
+        resp = S3H_OBJ.restart_s3server_service(self.service)
         assert_true(resp[0], resp[1])
-        resp = S3H_OBJ.get_authserver_log(path=self.cm_cfg["auth_log_path"])
+        resp = S3H_OBJ.get_authserver_log(path=self.auth_log_path)
         self.log.debug(resp)
-        res = http_head_request(url=self.cm_cfg["head_urls"][0])
+        res = http_head_request(url=S3_CFG["head_urls"])
         assert_equal(test_cfg["status_code"], str(res.status_code))
         self.log.info(res)
-        res = http_head_request(url=self.cm_cfg["head_urls"][1])
+        res = http_head_request(url=S3_CFG["head_urls"])
         assert_equal(test_cfg["status_code"], str(res.status_code))
         self.log.info(res)
         self.log.info(
