@@ -366,3 +366,15 @@ def update_configs(all_configs: dict) -> None:
     """
     for conf in all_configs.keys():
         read_write_config(conf, all_configs[conf])
+
+def verify_json_schema(self, instance, *schemas):
+    """
+    Verify the schema for the given instance of the response
+    exception is raised if the schema doesn't match 
+    which can be handled by calling function
+    :param instance: json log instance which needs to be verified.
+    :param schemas: json schema for verification
+    """
+
+    for schema in schemas:
+        validate(instance=instance, schema=schema)
