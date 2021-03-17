@@ -1,17 +1,20 @@
 *** Settings ***
 Documentation    This suite verifies the testcases for csm login
 Library     SeleniumLibrary
-Resource    ../../../resources/page_objects/loginPage.robot
-Resource    ../../../resources/page_objects/dashboard.robot
-Resource    ../../../resources/page_objects/alertPage.robot
-Resource    ../../../resources/page_objects/s3accountPage.robot
-Resource    ../../../resources/common/common.robot
-Resource    ../../../resources/page_objects/userSettingsLocalPage.robot
-Resource    ../../../resources/page_objects/auditlogPage.robot
-Resource    ../../../resources/page_objects/softwareUpdatepage.robot
-Variables   ../../../resources/common/common_variables.py
+Resource    ${EXECDIR}/resources/page_objects/loginPage.robot
+Resource    ${EXECDIR}/resources/page_objects/dashboard.robot
+Resource    ${EXECDIR}/resources/page_objects/alertPage.robot
+Resource    ${EXECDIR}/resources/page_objects/s3accountPage.robot
+Resource    ${EXECDIR}/resources/common/common.robot
+Resource    ${EXECDIR}/resources/page_objects/userSettingsLocalPage.robot
+Resource    ${EXECDIR}/resources/page_objects/auditlogPage.robot
+Resource    ${EXECDIR}/resources/page_objects/softwareUpdatepage.robot
+Resource    ${EXECDIR}/resources/page_objects/preboardingPage.robot
+Variables   ${EXECDIR}/resources/common/common_variables.py
 
-
+Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
+...  ${username}  ${password}
+...  AND  Close Browser
 Test Setup  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
 Test Teardown  Close Browser
 Suite Teardown  Close All Browsers

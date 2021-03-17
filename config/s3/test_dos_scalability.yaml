@@ -1,0 +1,72 @@
+test_scalability:
+    bkt_name_prefix: "scalable-test"
+    obj_name_prefix: "scalable-obj"
+
+test_5308:
+    bucket_name: "scalable-test-5308-{}"
+    obj_name: "scalable-obj-5308"
+    loop: 20000
+    num_clients: 100
+    num_sample: 1000000
+    obj_size: 1024
+    skip_cleanup: True
+    verbose: True
+
+test_5336:
+    bucket_name: "scalable-test-dos-5336-{}"
+    obj_name: "scalable-obj-dos-5336"
+    loop: 5
+    num_clients: 400
+    num_sample: 1000
+    obj_size: 1048576
+    skip_cleanup: True
+    verbose: True
+    cmd_msg: "core."
+
+test_5337:
+    bucket_name: "scalable-test-dos-5337-{}"
+    obj_name: "scalable-obj-dos-5337"
+    loop: 5
+    num_clients: 300
+    num_sample: 1000
+    obj_size: 1048576
+    skip_cleanup: True
+    verbose: True
+    cmd_msg: "core."
+
+test_5338:
+    bucket_name: "scalable-test-dos-5338-{}"
+    obj_name: "scalable-obj-dos-5338"
+    loop: 5
+    num_clients: 1000
+    num_sample: 1000
+    obj_size: 1048576
+    skip_cleanup: True
+    verbose: True
+    cmd_msg: "core."
+
+test_5340:
+    bucket_name: "scalable-test-dos-5340-{}"
+    obj_name: "scalable-obj-dos-5340"
+    iteration: 5
+    nclients:
+        - 1000
+        - 1200
+        - 1500
+    obj_size: 1048576
+    skip_cleanup: True
+    verbose: True
+    cmd_msg: "core."
+
+test_5341:
+    bucket_name: "scalable-test-dos-5341-{}"
+    obj_name: "scalable-obj-dos-5341"
+    nclients:
+        - 1000
+        - 1500
+        - 1000
+        - 1500
+    obj_size: 1048576
+    skip_cleanup: True
+    verbose: True
+    cmd_msg: "core."
