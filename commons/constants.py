@@ -233,3 +233,4 @@ CSM_USER_HELP =[
     "s3accounts",
     "system",
     "users"]
+BKT_POLICY_MSG = "Bucket Policy Updated Successfully"
