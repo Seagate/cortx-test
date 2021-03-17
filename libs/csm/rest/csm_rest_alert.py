@@ -30,13 +30,13 @@ from commons.helpers.node_helper import Node
 from commons.alerts_simulator.generate_alert_lib import GenerateAlertLib, AlertType
 from commons import errorcodes as err
 from commons.exceptions import CTException
-from config import CMN_CFG
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
+
 
 class SystemAlerts(RestTestLib):
     """SystemAlerts contains all the Rest API calls for system health related operations"""
 
-    def __init__(self, node_obj:object=None) -> None:
+    def __init__(self, node_obj: object = None) -> None:
         """
         Initialize the rest api
         :param: node_obj is required if create_alert and resolve_alert functions are used.
@@ -345,7 +345,7 @@ class SystemAlerts(RestTestLib):
                               " read from GET api")
 
                 if resp_obj["alerts"][alert_id_index]["comments"][comment_id_index] == \
-                    response_alert_comment_added:
+                        response_alert_comment_added:
                     return True
                 else:
                     self.log.info("Error: Comment was not added")
@@ -397,12 +397,12 @@ class SystemAlerts(RestTestLib):
         remote_path = ras_cons.REMOTE_TELNET_PATH
         self.log.info("Copying file %s to %s", local_path, remote_path)
         self.node_obj.copy_file_to_remote(local_path=local_path,
-                                            remote_path=remote_path)
+                                          remote_path=remote_path)
         resp = alert_api_obj.generate_alert(
             eval('AlertType.{}'.format(alert_type)),
-            host_details={'host':self.node_obj.hostname, 
-                          'host_user':self.node_obj.username,
-                          'host_password':self.node_obj.password})
+            host_details={'host': self.node_obj.hostname,
+                          'host_user': self.node_obj.username,
+                          'host_password': self.node_obj.password})
         if not resp[0]:
             self.log.error("Failed to created alert")
             return False
@@ -467,7 +467,7 @@ class SystemAlerts(RestTestLib):
         remote_path = ras_cons.REMOTE_TELNET_PATH
         self.log.info("Copying file %s to %s", local_path, remote_path)
         self.node_obj.copy_file_to_remote(local_path=local_path,
-                                            remote_path=remote_path)
+                                          remote_path=remote_path)
 
         response = self.get_alerts(resolved=False)
         pre_resolve = self.extract_alert_ids(response)
