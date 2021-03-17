@@ -26,7 +26,6 @@ import jenkins
 import time
 import logging
 import pytest
-from commons.utils import  config_utils as conf_utils
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
 from commons import commands as common_cmds
