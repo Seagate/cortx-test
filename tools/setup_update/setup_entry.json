@@ -1,0 +1,74 @@
+{
+"setupname":"T2",
+"nodes":[
+    {
+        "host": "eos-node-0",
+        "hostname": "node 0 hostname",
+        "ip": "node 0 ip",
+        "username": "node 0 username",
+        "password": "node 0 password"
+    },
+    {
+        "host": "eos-node-1",
+        "hostname": "node 1 hostname",
+        "ip": "node 1 ip address",
+        "username": "node 1 username",
+        "password": "node 1 password"
+    }
+],
+
+"enclosure":
+{
+    "primary_enclosure_ip": "10.0.0.2",
+    "secondary_enclosure_ip": "10.0.0.3",
+    "username": "",
+    "password": ""
+},
+
+"pdu":{
+    "ip": "",
+    "username": "",
+    "password": "",
+    "power_on": "on",
+    "power_off": "off",
+    "sleep_time": 120
+},
+
+"gem_controller":
+{
+    "ip": "",
+    "username": "",
+    "password": "",
+    "port1": "9012",
+    "port2": "9014"
+},
+
+"bmc":
+{
+    "username": "",
+    "password": ""
+},
+
+"ldap":
+{
+    "username": "",
+    "password": "",
+    "sspl_pass": ""
+},
+
+"csm":
+{
+  "mgmt_vip": "",
+  "csm_admin_user":{
+    "username": "",
+    "password": ""
+  }
+
+},
+"s3":
+{
+    "s3_server_ip": "",
+    "s3_server_user": "",
+    "s3_server_pwd": ""
+}
+}

@@ -35,13 +35,9 @@ Restcall:
   health_component_endpoint: "/api/v1/system/health/components"
 
 CliConfig:
-  host: "10.237.65.73"
-  port: "22"
-  username: "admin"
-  password: "cARSYungsWpwHvqqjLajLof1slLANtt76lOv9foSbJA="
-
-node2_csm_confg:
-  host: "eosnode-2"
-  port: "22"
-  username: "admin"
-  password: "cARSYungsWpwHvqqjLajLof1slLANtt76lOv9foSbJA="
+  iam_user:
+    password: "KAGpbh5Tit5kX0lVGuxSeaOwsUTFaoIsaBFf64q8OqI="
+  s3_account:
+    password: "bbTlh4ugvzXd2/4ODI12T8p2rTCYj9t5rSkUVUKiotY="
+  csm_user:
+    password: "cmTWHmhFPTRudB+GOaql0UVi8qMd1qKOzImFb0E0+g4="
