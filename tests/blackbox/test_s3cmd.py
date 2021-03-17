@@ -606,10 +606,9 @@ class TestS3cmdClient:
             S3CMD_CNF, S3CMD_CNF["test_2322"]["list_bucket"], cmd_arguments)
         resp = execute_cmd(command)
         assert_true(resp[0], resp[1])
-        assert_not_in(test_cfg["delete_msg"].format(
-            expected_substring), str(resp[1]), resp)
-        assert_not_in(test_cfg["delete_msg"].format(
-            expected_substring1), str(resp[1]), resp)
+        for exp_str in [expected_substr, expected_substr1]:
+            assert_not_in(test_cfg["delete_msg"].format(
+                exp_str), str(resp[1]), resp)
         self.log.info("STEP: 5 Object listed in bucket")
         self.log.info(
             "ENDED: delete all objects from bucket using s3cmd client")
