@@ -31,12 +31,10 @@ from commons.errorcodes import error_handler
 from commons.utils.config_utils import read_yaml
 from commons.utils.system_utils import remove_file, run_remote_cmd
 from commons.utils.assert_utils import assert_true, assert_not_in
+from scripts.s3_bench import s3bench as s3b_obj
 from libs.s3 import S3H_OBJ, CM_CFG, S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
-try:
-    from scripts.s3_bench import s3bench as s3b_obj
-except ImportError as err:
-    pass  # TODO: Once s3bench part of scripts will remove it.
+
 
 S3_OBJ = S3TestLib()
 SCAL_CFG = read_yaml("config/s3/test_dos_scalability.yaml")[1]
