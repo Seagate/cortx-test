@@ -1,25 +1,48 @@
-import sys
-sys.path.append("...")
-import unittest
-import os
-import shutil
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
+
+"""S3 Bench Unit Tests."""
 import logging
-from eos_test.s3 import s3_test_lib
-import s3bench as sb
-from eos_test.utility import utility
-from ctp.utils import ctpyaml
+import shutil
+import os
+import unittest
+import sys
+from scripts.s3_bench import s3bench as sb
+
+from libs.s3 import ACCESS_KEY, SECRET_KEY
+from commons.utils.config_utils import read_yaml
+from libs.s3 import s3_test_lib
+
+sys.path.append("...")
 
 S3_TEST_OBJ = s3_test_lib.S3TestLib()
-UT_OBJ = utility.Utility()
 
 
 class TestS3Bench(unittest.TestCase):
     """
     S3 Bench lib unittest suite.
     """
-    et_cm_cfg = ctpyaml.read_yaml("config/common_config.yaml")
-    s3_cm_cfg = ctpyaml.read_yaml("config/s3/s3_config.yaml")
-    ut_cm_cfg = ctpyaml.read_yaml("config/scripts/test_s3bench_cfg.yaml")
+    et_cm_cfg = read_yaml("config/common_config.yaml")[1]
+    s3_cm_cfg = read_yaml("config/s3/s3_config.yaml")[1]
+    ut_cm_cfg = read_yaml("config/scripts/test_s3bench_cfg.yaml")[1]
 
     def setUp(self):
         """
@@ -50,7 +73,7 @@ class TestS3Bench(unittest.TestCase):
         pref_list = [
             each_bucket for each_bucket in bucket_list if each_bucket.startswith(
                 ut_cfg["bkt_prefix"])]
-        self.log.info("bucket-list: {}".format(pref_list))
+        self.log.info("bucket-list: %s", pref_list)
         S3_TEST_OBJ.delete_multiple_buckets(pref_list)
         self.log.info("Deleting Common dir and files...")
         if os.path.exists(ut_cfg["common_path"]):
@@ -58,10 +81,12 @@ class TestS3Bench(unittest.TestCase):
         self.log.info("ENDED: Teardown operations")
 
     def test_00_create_log_file(self):
+        """test_00 create_log_file """
         resp = sb.setup_s3bench()
         self.assertTrue(resp, resp)
 
     def test_01_create_log_file(self):
+        """test_01 create_log_file"""
         test_cfg = self.ut_cfg["test_01"]
         resp = sb.create_log(
             resp=test_cfg["resp_msg"],
@@ -70,9 +95,10 @@ class TestS3Bench(unittest.TestCase):
         self.assertTrue(res, test_cfg["err_msg"].format(res))
 
     def test_02_s3bench(self):
+        """test_02_s3bench."""
         test_cfg = self.ut_cfg["test_02"]
         S3_TEST_OBJ.create_bucket(test_cfg["bucket_name"])
-        access, secret = UT_OBJ.get_local_keys()
+        access, secret = ACCESS_KEY, SECRET_KEY
         resp = sb.s3bench(
             access,
             secret,
@@ -85,11 +111,14 @@ class TestS3Bench(unittest.TestCase):
             test_cfg["duration"],
             test_cfg["verbose"])
         self.assertIsNotNone(resp[0], resp)
-        self.assertEqual(resp[0][0]["numSamples"], str(test_cfg["num_sample"]), resp)
+        self.assertEqual(
+            resp[0][0]["numSamples"], str(
+                test_cfg["num_sample"]), resp)
         res = os.path.exists(resp[1])
         self.assertTrue(res, test_cfg["err_msg"].format(res))
 
     def test_03_create_json_resp(self):
+        """test_03_create_json_resp. """
         test_cfg = self.ut_cfg["test_03"]
         dummy_resp = [
             'Test parameters\nendpoint(s):      [https://s3.seagate.com]\nbucket:           '
@@ -115,6 +144,7 @@ class TestS3Bench(unittest.TestCase):
         self.assertEqual(resp[0]["bucket"], test_cfg["bucket_name"], resp)
         resp = sb.create_json_reps([])
         self.assertEqual(resp, [], resp)
+
 
 if __name__ == '__main__':
     unittest.main()
