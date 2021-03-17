@@ -367,6 +367,27 @@ def update_configs(all_configs: dict) -> None:
     for conf in all_configs.keys():
         read_write_config(conf, all_configs[conf])
 
+def verify_json_response(actual_result, expect_result, match_exact=False):
+    """
+    This function will verify the json response with actual response
+    :param actual_result: actual json response from REST call
+    :param expect_result: the json response to be matched
+    :param match_exact: to match actual and expect result to be exact
+    :return: Success(True)/Failure(False)
+    """
+    # Matching exact values
+    if match_exact:
+        LOG.info("Matching exact values")
+        return actual_result == expect_result
+
+    # Check for common keys between actual value and expect value
+    if actual_result.keys().isdisjoint(expect_result):
+        LOG.info(
+            "No common keys between actual value and expect value")
+        return False
+
+    return all(actual_result[key] == value for key, value in expect_result.items())
+
 def verify_json_schema(instance, *schemas):
     """
     Verify the schema for the given instance of the response
