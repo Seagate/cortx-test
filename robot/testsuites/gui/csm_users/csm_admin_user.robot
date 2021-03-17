@@ -1,8 +1,12 @@
 *** Settings ***
 Documentation    This suite verifies the testcases for csm user creation
-Resource    ../../../resources/page_objects/loginPage.robot
-Resource    ../../../resources/page_objects/userSettingsLocalPage.robot
+Resource    ${EXECDIR}/resources/page_objects/loginPage.robot
+Resource    ${EXECDIR}/resources/page_objects/userSettingsLocalPage.robot
+Resource    ${EXECDIR}/resources/page_objects/preboardingPage.robot
 
+Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
+...  ${username}  ${password}
+...  AND  Close Browser
 Test Setup  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
 Test Teardown  Close Browser
 Suite Teardown  Close All Browsers

@@ -1,3 +1,23 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
 """ This is the core module for REST API. """
 import logging
 import json
@@ -17,7 +37,7 @@ class RestClient:
         :param config: configuration of setup
         """
         requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-        self._log = logging.getLogger(__name__)
+        self.log = logging.getLogger(__name__)
         self._config = config
         self._request = {"get": requests.get, "post": requests.post,
                          "patch": requests.patch, "delete": requests.delete,
@@ -44,13 +64,13 @@ class RestClient:
         # Building final endpoint request url
         set_secure = const.SSL_CERTIFIED if secure_connection else const.NON_SSL
         request_url = "{}{}{}".format(set_secure, self._base_url, endpoint)
-        self._log.debug("fetching data from : {}".format(request_url))
+        self.log.debug("fetching data from : %s", request_url)
 
         # Request a REST call
         response_object = self._request[request_type](
             request_url, headers=headers,
             data=data, params=params, verify=False, json=json_dict)
-        self._log.debug("result of request is: {}".format(response_object))
+        self.log.debug("result of request is: %s", response_object)
 
         # Can be used in case of larger response
         if save_json:
