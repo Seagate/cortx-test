@@ -39,6 +39,13 @@ class CortxCliCsmUser(CortxCli):
     This class has methods for performing operations on CSM user using cortxcli
     """
 
+    def __init__(self, session_obj: object = None):
+        """
+        This method initializes members of CortxCliCsmUser
+        :param object session_obj: session object of host connection if already established
+        """
+        super().__init__(session_obj=session_obj)
+
     def create_csm_user_cli(
             self,
             csm_user_name: str = None,

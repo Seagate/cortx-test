@@ -44,14 +44,15 @@ class TestCliIAMUser:
         """
         cls.LOGGER = logging.getLogger(__name__)
         cls.LOGGER.info("STARTED : Setup operations for test suit")
-        cls.iam_password = CSM_CFG["CliConfig"]["iam_password"]
-        cls.acc_password = CSM_CFG["CliConfig"]["acc_password"]
+        cls.iam_password = CSM_CFG["CliConfig"]["iam_user"]["password"]
+        cls.acc_password = CSM_CFG["CliConfig"]["s3_account"]["password"]
         cls.user_name = None
         cls.iam_obj = CortxCliIamUser()
+        cls.iam_obj.open_connection()
         cls.node_helper_obj = node_helper.Node(hostname=CMN_CFG["csm"]["mgmt_vip"],
                                    username=CMN_CFG["csm"]["admin_user"],
                                    password=CMN_CFG["csm"]["admin_pass"])
-        cls.s3acc_obj = CortxCliS3AccountOperations()
+        cls.s3acc_obj = CortxCliS3AccountOperations(session_obj=cls.iam_obj.session_obj)
         cls.s3acc_name = "{}_{}".format("cli_s3acc", int(time.time()))
         cls.s3acc_email = "{}@seagate.com".format(cls.s3acc_name)
         cls.LOGGER.info("Creating s3 account with name %s", cls.s3acc_name)
@@ -119,6 +120,7 @@ class TestCliIAMUser:
         resp = cls.s3acc_obj.delete_s3account_cortx_cli(account_name=cls.s3acc_name)
         assert_utils.assert_equals(resp[0], True, resp[1])
         cls.s3acc_obj.logout_cortx_cli()
+        cls.iam_obj.close_connection()
         cls.LOGGER.info("Deleted s3 account %s", cls.s3acc_name)
 
 
@@ -495,4 +497,3 @@ class TestCliIAMUser:
         self.LOGGER.info(
             "Verified that appropriate message should be returned when user enters valid username")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
-
