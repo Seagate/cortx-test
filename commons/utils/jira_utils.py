@@ -242,6 +242,7 @@ class JiraTask:
                         continue
                     else:
                         run_id = test['id']
+                        break
 
             if run_id is None:
                 print("Test ID %s not found in test execution ticket details",
