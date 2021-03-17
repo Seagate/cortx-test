@@ -11,7 +11,7 @@ test_607:
 
 test_608:
   alert_timeout: 300
-  alert_type: "iem_test_error_alert"
+  alert_type: "IEM_TEST_ERROR_ALERT"
   alert_severity: "error"
 
 test_609:
@@ -63,5 +63,6 @@ test_621:
   alert_timeout: 300
   alert_type: "CONTROLLER_A_FAULT"
   resolve_type: "CONTROLLER_A_FAULT_RESOLVED"
+  
 test_1039:
   comment_text: "Comment by S3 user"

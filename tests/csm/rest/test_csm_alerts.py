@@ -32,7 +32,7 @@ from commons.helpers.node_helper import Node
 from libs.csm.csm_setup import CSMConfigsCheck
 from config import CMN_CFG
 from libs.csm.rest.csm_rest_alert import SystemAlerts
-
+from libs.ras.ras_test_lib import RASTestLib
 
 class TestCsmAlerts():
     """
@@ -49,18 +49,22 @@ class TestCsmAlerts():
                             password=CMN_CFG["nodes"][0]["password"])
         cls.csm_alerts = SystemAlerts(cls.node_obj)
         cls.log.info("Checking if predefined CSM users are present...")
-        #cls.config = CSMConfigsCheck()
-        #user_already_present = cls.config.check_predefined_csm_user_present()
-        #cls.log.info("Creating predefined CSM users if not already present...")
-        #if not user_already_present:
-        #    user_already_present = cls.config.setup_csm_users()
-        #assert user_already_present
         cls.csm_conf = config_utils.read_yaml("config/csm/test_rest_csm_alert.yaml")[1]
         cls.resolve_type = None
         cls.alert_timeout = None
         cls.alert_type = None
+        cls.ras_test_obj = RASTestLib(host=CMN_CFG["nodes"][0]["hostname"], 
+                                      username=CMN_CFG["nodes"][0]["username"],
+                                      password=CMN_CFG["nodes"][0]["password"])
         cls.log.info("Initiating Rest Client for Alert ...")
-
+        field_list = ("primary_controller_ip", "secondary_controller_ip",
+                      "primary_controller_port", "secondary_controller_port",
+                      "user", "password", "secret")
+        cls.log.info("Putting expected values in KV store")
+        for field in field_list:
+            res = cls.ras_test_obj.put_kv_store(CMN_CFG["enclosure"]["enclosure_user"],
+                                                CMN_CFG["enclosure"]["enclosure_pwd"],
+                                                field)
     def teardown_method(self):
         """Teardown method
         """
@@ -348,7 +352,7 @@ class TestCsmAlerts():
             self.csm_alerts.edit_alerts(new_alert, ack=True)
         self.log.info("Get alerts with acknowledged True...")
         response = self.csm_alerts.get_alerts(acknowledged=True)
-        expected_response = self.csm_alerts.success_response
+        expected_response = const.SUCCESS_STATUS
         assert_utils.assert_equals(response.status_code, expected_response,
                                    "Status code check failed.")
         ack_alerts = self.csm_alerts.extract_alert_ids(response)
@@ -395,7 +399,7 @@ class TestCsmAlerts():
             "Get alerts with acknowledged True and resolved False...")
         response = self.csm_alerts.get_alerts(
             acknowledged=True, resolved=False)
-        expected_response = self.csm_alerts.success_response
+        expected_response = const.SUCCESS_STATUS
         assert_utils.assert_equals(response.status_code, expected_response,
                                    "Status code check failed.")
         ack_alerts = self.csm_alerts.extract_alert_ids(response)
@@ -441,7 +445,7 @@ class TestCsmAlerts():
         assert result, "Failed to resolve alert."
         before_resolve, after_resolve = result
         diff_resolve = list(set(after_resolve) - set(before_resolve))
-        assert diff_resolve != [], "UnAck Alerts before and after resolve alert is same."
+        assert diff_resolve == [], "UnAck Alerts before and after resolve alert is same."
         self.resolve_type = None
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -503,7 +507,7 @@ class TestCsmAlerts():
         self.log.info("Verifying the status code %s and response %s returned",
                       response.status_code, response.json())
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_alerts.success_response)
+                                   const.SUCCESS_STATUS)
         assert response.json()
         alert_id = response.json()["alerts"][0]["alert_uuid"]
 
@@ -521,7 +525,7 @@ class TestCsmAlerts():
         self.log.info("Verifying the status code %s returned",
                       response_add.status_code)
         assert_utils.assert_equals(response_add.status_code,
-                                   self.csm_alerts.success_response)
+                                   const.SUCCESS_STATUS)
 
         self.log.info("Verifying that comment was added to the alert")
         response = self.csm_alerts.verify_added_alert_comment(
@@ -542,7 +546,7 @@ class TestCsmAlerts():
         self.log.info("Verifying the status code %s and response %s returned",
                       response.status_code, response.json())
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_alerts.success_response)
+                                   const.SUCCESS_STATUS)
         assert response.json()
         alert_id = response.json()["alerts"][0]["alert_uuid"]
         self.log.info(
@@ -559,7 +563,7 @@ class TestCsmAlerts():
         self.log.info("Verifying the status code %s returned",
                       response_add.status_code)
         assert_utils.assert_equals(response_add.status_code,
-                                   self.csm_alerts.success_response)
+                                   const.SUCCESS_STATUS)
 
         self.log.info("Verifying that comment was added to the alert")
         response = self.csm_alerts.verify_added_alert_comment(
@@ -591,7 +595,7 @@ class TestCsmAlerts():
         response = self.csm_alerts.get_alerts(login_as="csm_user_monitor")
 
         self.log.info("Verifying the status returned %s",response.status_code)
-        assert_utils.assert_equals(response.status_code, self.csm_alerts.success_response)
+        assert_utils.assert_equals(response.status_code, const.SUCCESS_STATUS)
 
         self.log.info("Step 1: Verified CSM monitor user can perform GET API request for alerts")
 
@@ -613,7 +617,7 @@ class TestCsmAlerts():
         response = self.csm_alerts.get_alerts()
         self.log.debug("Verifying the response %s", response)
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_alerts.success_response)
+                                   const.SUCCESS_STATUS)
         self.log.debug("Verified the request was successful")
 
         self.log.info("Step 1: Verifying that acknowledged and resolved combined status is not "
@@ -669,7 +673,7 @@ class TestCsmAlerts():
         response = self.csm_alerts.get_alerts(resolved=False)
         self.log.debug("Response is: %s", response)
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_alerts.success_response)
+                                   const.SUCCESS_STATUS)
 
         self.log.info("Reading the alert id...")
         alert_id = response.json()["alerts"][0]["alert_uuid"]
@@ -678,13 +682,13 @@ class TestCsmAlerts():
         response = self.csm_alerts.edit_alerts(alert_id=alert_id, ack=True)
         self.log.debug("Response is: %s", response)
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_alerts.success_response)
+                                   const.SUCCESS_STATUS)
 
         self.log.info("Fetching acknowledged alerts...")
         response = self.csm_alerts.get_alerts(acknowledged=True)
         self.log.debug("Response is: %s", response)
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_alerts.success_response)
+                                   const.SUCCESS_STATUS)
 
         self.log.info("Verifying if alert %s is acknowledged", alert_id)
         alert_id_list = [item["alert_uuid"]
@@ -698,13 +702,13 @@ class TestCsmAlerts():
             alert_id=alert_id, ack=False)
         self.log.debug("Response is: %s", response)
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_alerts.success_response)
+                                   const.SUCCESS_STATUS)
 
         self.log.info("Fetching alerts...")
         response = self.csm_alerts.get_alerts()
         self.log.debug("Response is: %s", response)
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_alerts.success_response)
+                                   const.SUCCESS_STATUS)
 
         self.log.info(
             "Verifying if alert %s is unacknowledged", alert_id)
@@ -735,7 +739,7 @@ class TestCsmAlerts():
         response = self.csm_alerts.get_alerts()
         self.log.debug("Response is: %s", response)
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_alerts.success_response)
+                                   const.SUCCESS_STATUS)
 
         self.log.info("Reading the alert id...")
         alert_id = response.json()["alerts"][0]["alert_uuid"]
