@@ -26,9 +26,9 @@ def parse_args():
                         help="parallel_exe: True for parallel, False for sequential")
     parser.add_argument("-tp", "--test_plan", type=str,
                         help="jira xray test plan id")
-    parser.add_argument("-b", "--build", type=str, default='000',
+    parser.add_argument("-b", "--build", type=str, default='',
                         help="Build number")
-    parser.add_argument("-t", "--build_type", type=str, default='Release',
+    parser.add_argument("-t", "--build_type", type=str, default='',
                         help="Build type (Release/Dev)")
     parser.add_argument("-tg", "--target", type=str,
                         default='', help="Target setup details")
@@ -101,7 +101,7 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
         cmd_line = cmd_line + ["--target=" + args.target]
 
     if te_tag:
-       cmd_line = cmd_line + [tag]
+        cmd_line = cmd_line + [tag]
     read_metadata = "--readmetadata=" + str(True)
     cmd_line = cmd_line + [read_metadata]
     cmd_line = cmd_line + ['--build=' + build, '--build_type=' + build_type,
@@ -189,10 +189,12 @@ def trigger_unexecuted_tests(args, test_list):
             run_pytest_cmd(args, te_tag=None, parallel_exe=args.parallel_exe,
                            env=_env, re_execution=True)
 
+
 def create_test_meta_data_file(args, test_list):
     """
     Create test meta data file
     """
+    tp_meta = dict()  # test plan meta
     jira_id, jira_pwd = runner.get_jira_credential()
     jira_obj = JiraTask(jira_id, jira_pwd)
     # Create test meta file for reporting TR.
@@ -202,10 +204,9 @@ def create_test_meta_data_file(args, test_list):
     with open(tp_meta_file, 'w') as t_meta:
 
         test_meta = list()
-        # test plan meta
-        tp_meta = dict()
         tp_resp = jira_obj.get_issue_details(args.test_plan)  # test plan id
         tp_meta['test_plan_label'] = tp_resp.fields.labels
+        tp_meta['environment'] = tp_resp.fields.environment
         te_resp = jira_obj.get_issue_details(args.te_ticket)  # test execution id
         if te_resp.fields.components:
             te_components = te_resp.fields.components[0].name
@@ -227,6 +228,7 @@ def create_test_meta_data_file(args, test_list):
             test_meta.append(item)
         tp_meta['test_meta'] = test_meta
         json.dump(tp_meta, t_meta, ensure_ascii=False)
+    return tp_meta
 
 
 def trigger_tests_from_kafka_msg(args, kafka_msg):
@@ -240,8 +242,7 @@ def trigger_tests_from_kafka_msg(args, kafka_msg):
         for test in kafka_msg.test_list:
             write.writerow([test])
 
-    create_test_meta_data_file(args, kafka_msg.test_list)
-
+    create_test_meta_data_file(args, kafka_msg.test_list)  # why this data is needed in kafka exec
     _env = os.environ.copy()
     _env['pytest_run'] = 'distributed'
 
@@ -286,9 +287,17 @@ def trigger_tests_from_te(args):
         for test in test_list:
             write.writerow([test])
 
-    create_test_meta_data_file(args, test_list)
-    _env = os.environ.copy()
+    tp_metadata = create_test_meta_data_file(args, test_list)
+    if not args.build and not args.build_type:
+        if 'environment' in tp_metadata and tp_metadata.get('environment'):
+            test_env = tp_metadata.get('environment')
+            try:
+                _build, _build_type = test_env.split('_')
+            except ValueError:
+                raise EnvironmentError('Test plan env needs to be in format <build_type>_<build#>')
+            args.build, args.build_type = _build, _build_type
 
+    _env = os.environ.copy()
     if not args.force_serial_run:
         # First execute all tests with parallel tag which are mentioned in given tag.
         run_pytest_cmd(args, te_tag, True, env=_env)
@@ -348,7 +357,7 @@ def check_kafka_msg_trigger_test(args):
             else:
                 execution_done = False
                 while not execution_done:
-                    #acquired_target = get_available_target(kafka_msg)
+                    # acquired_target = get_available_target(kafka_msg)
                     # execute te id on acquired target
                     # release lock on acquired target
                     args.te_ticket = kafka_msg.te_ticket
@@ -361,19 +370,21 @@ def check_kafka_msg_trigger_test(args):
                     if kafka_msg.parallel:
                         trigger_unexecuted_tests(args, kafka_msg.test_list)
                     # Release lock on acquired target.
-                    #lock_task.release_target_lock(acquired_target, acquired_target)
+                    # lock_task.release_target_lock(acquired_target, acquired_target)
                     execution_done = True
         except KeyboardInterrupt:
             break
     consumer.close()
+
 
 def get_setup_details():
     if not os.path.exists(params.LOG_DIR_NAME):
         os.mkdir(params.LOG_DIR_NAME)
     if os.path.exists(params.SETUPS_FPATH):
         os.remove(params.SETUPS_FPATH)
-    setups = configmanager.get_config_db(setup_query = {})
+    setups = configmanager.get_config_db(setup_query={})
     config_utils.create_content_json(params.SETUPS_FPATH, setups)
+
 
 def main(args):
     """Main Entry function using argument parser to parse options and forming pyttest command.

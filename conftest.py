@@ -200,7 +200,7 @@ def pytest_addoption(parser):
         "--force_serial_run", action="store", default=False, help="Force serial execution"
     )
     parser.addoption(
-        "--target", action="store", default="auto_setup", help="Target or setup under test"
+        "--target", action="store", default="automation", help="Target or setup under test"
     )
     parser.addoption(
         "--nodes", action="store", default=[], help="Nodes of a setup"
