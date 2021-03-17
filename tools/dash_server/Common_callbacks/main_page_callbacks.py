@@ -72,8 +72,8 @@ def fetch_branch_for_dropdown(value):
 
 @app.callback(
     [Output('build_no_dropdown', 'options')],
-    [Input('version_dropdown', 'value')],
-    [Input('branch_dropdown', 'value')],
+    [Input('version_dropdown', 'value'),
+     Input('branch_dropdown', 'value')],
 )
 def fetch_build_for_dropdown(version, branch):
     """
@@ -112,9 +112,9 @@ def fetch_build_for_dropdown(version, branch):
 
 @app.callback(
     [Output('test_system_dropdown', 'options')],
-    [Input('version_dropdown', 'value')],
-    [Input('branch_dropdown', 'value')],
-    [Input('build_no_dropdown', 'value')]
+    [Input('version_dropdown', 'value'),
+    Input('branch_dropdown', 'value'),
+    Input('build_no_dropdown', 'value')]
 )
 def fetch_test_system_for_dropdown(version, branch, build_no):
     """
@@ -149,10 +149,10 @@ def fetch_test_system_for_dropdown(version, branch, build_no):
 
 @app.callback(
     [Output('test_team_dropdown', 'options')],
-    [Input('version_dropdown', 'value')],
-    [Input('branch_dropdown', 'value')],
-    [Input('build_no_dropdown', 'value')],
-    [Input('test_system_dropdown', 'value')]
+    [Input('version_dropdown', 'value'),
+    Input('branch_dropdown', 'value'),
+    Input('build_no_dropdown', 'value'),
+    Input('test_system_dropdown', 'value')]
 )
 def fetch_team_for_dropdown(version, branch, build_no, system_type):
     """
