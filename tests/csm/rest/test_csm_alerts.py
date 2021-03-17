@@ -23,16 +23,15 @@
 import logging
 import random
 import pytest
-
 from commons import cortxlogging
 from commons.constants import Rest as const
 from commons.utils import assert_utils
 from commons.utils import config_utils
 from commons.helpers.node_helper import Node
-from libs.csm.csm_setup import CSMConfigsCheck
 from config import CMN_CFG
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.ras.ras_test_lib import RASTestLib
+
 
 class TestCsmAlerts():
     """
@@ -44,7 +43,7 @@ class TestCsmAlerts():
         """ This is method is for test suite set-up """
         cls.log = logging.getLogger(__name__)
         cls.log.info("Initializing test setups ......")
-        cls.node_obj = Node(hostname=CMN_CFG["nodes"][0]["hostname"], 
+        cls.node_obj = Node(hostname=CMN_CFG["nodes"][0]["hostname"],
                             username=CMN_CFG["nodes"][0]["username"],
                             password=CMN_CFG["nodes"][0]["password"])
         cls.csm_alerts = SystemAlerts(cls.node_obj)
@@ -53,7 +52,7 @@ class TestCsmAlerts():
         cls.resolve_type = None
         cls.alert_timeout = None
         cls.alert_type = None
-        cls.ras_test_obj = RASTestLib(host=CMN_CFG["nodes"][0]["hostname"], 
+        cls.ras_test_obj = RASTestLib(host=CMN_CFG["nodes"][0]["hostname"],
                                       username=CMN_CFG["nodes"][0]["username"],
                                       password=CMN_CFG["nodes"][0]["password"])
         cls.log.info("Initiating Rest Client for Alert ...")
@@ -62,9 +61,10 @@ class TestCsmAlerts():
                       "user", "password", "secret")
         cls.log.info("Putting expected values in KV store")
         for field in field_list:
-            res = cls.ras_test_obj.put_kv_store(CMN_CFG["enclosure"]["enclosure_user"],
+            _ = cls.ras_test_obj.put_kv_store(CMN_CFG["enclosure"]["enclosure_user"],
                                                 CMN_CFG["enclosure"]["enclosure_pwd"],
                                                 field)
+
     def teardown_method(self):
         """Teardown method
         """
@@ -607,7 +607,7 @@ class TestCsmAlerts():
 
         response = self.csm_alerts.get_alerts(login_as="csm_user_monitor")
 
-        self.log.info("Verifying the status returned %s",response.status_code)
+        self.log.info("Verifying the status returned %s", response.status_code)
         assert_utils.assert_equals(response.status_code, const.SUCCESS_STATUS)
 
         self.log.info("Step 1: Verified CSM monitor user can perform GET API request for alerts")
