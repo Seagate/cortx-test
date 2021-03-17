@@ -1,16 +1,18 @@
 *** Settings ***
 Documentation    This suite verifies the testcases for csm login
 Library     SeleniumLibrary
-Resource    ../../../resources/page_objects/loginPage.robot
-Resource    ../../../resources/page_objects/s3accountPage.robot
-Resource    ../../../resources/page_objects/bucket_page.robot
-Resource    ../../../resources/page_objects/IAM_UsersPage.robot
-Resource    ../../../resources/page_objects/bucket_page.robot
-Resource   ../../../resources/common/common.robot
-Variables  ../../../resources/common/element_locators.py
-Variables  ../../../resources/common/common_variables.py
+Resource    ${EXECDIR}/resources/page_objects/loginPage.robot
+Resource    ${EXECDIR}/resources/page_objects/s3accountPage.robot
+Resource    ${EXECDIR}/resources/page_objects/bucket_page.robot
+Resource    ${EXECDIR}/resources/page_objects/IAM_UsersPage.robot
+Resource    ${EXECDIR}/resources/page_objects/bucket_page.robot
+Resource   ${EXECDIR}/resources/common/common.robot
+Variables  ${EXECDIR}/resources/common/element_locators.py
+Variables  ${EXECDIR}/resources/common/common_variables.py
+Resource   ${EXECDIR}/resources/page_objects/preboardingPage.robot
 
-
+Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}  ${username}  ${password}
+...  AND  Close Browser
 Suite Teardown  Close All Browsers
 Force Tags  CSM_GUI  CSM_login
 Test Setup  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
@@ -48,7 +50,7 @@ Test action on table
 
 TEST-5268
     [Documentation]  Test S3 account user should only be able to see S3 account details of the accounts which are associated with its account
-    [Tags]  Priority_High  Smoke_test  user_role
+    [Tags]  Priority_High  Smoke_test  user_role  TEST-5268
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
@@ -59,7 +61,7 @@ TEST-5268
     
 TEST-1033
     [Documentation]  Test that alerts should not get visible to the s3 user
-    [Tags]  Priority_High  Smoke_test  user_role
+    [Tags]  Priority_High  Smoke_test  user_role  TEST-1033
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
@@ -70,7 +72,7 @@ TEST-1033
 
 TEST-1042
     [Documentation]  Test that setting option not available for s3 user
-    [Tags]  Priority_High  Smoke_test  user_role
+    [Tags]  Priority_High  Smoke_test  user_role  TEST-1042
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
@@ -80,7 +82,7 @@ TEST-1042
 
 TEST-6454
     [Documentation]  Test Alert icon should not be visible to s3 account user Verify Alert icon should not be visible to s3 account user
-    [Tags]  Priority_High  Smoke_test  user_role
+    [Tags]  Priority_High  Smoke_test  user_role  TEST-6454
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
@@ -90,7 +92,7 @@ TEST-6454
 
 TEST-1037
     [Documentation]  Test that maintenance option not available for s3 user
-    [Tags]  Priority_High  Smoke_test  user_role
+    [Tags]  Priority_High  Smoke_test  user_role  TEST-1037
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
@@ -100,7 +102,7 @@ TEST-1037
 
 TEST-1035
     [Documentation]  Test that maintenance option not available for s3 user
-    [Tags]  Priority_High  Smoke_test  user_role
+    [Tags]  Priority_High  Smoke_test  user_role  TEST-1035
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
@@ -110,7 +112,7 @@ TEST-1035
 
 TEST-1034
     [Documentation]  Test that s3 user should only have access to IAM user and Bucket section in provisoning section
-    [Tags]  Priority_High  Smoke_test  user_role
+    [Tags]  Priority_High  Smoke_test  user_role  TEST-1034
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
@@ -123,7 +125,7 @@ TEST-1034
  
 TEST-1036
     [Documentation]  Test that S3 account user have access to create IAM users and buckets
-    [Tags]  Priority_High  Smoke_test  user_role
+    [Tags]  Priority_High  Smoke_test  user_role  TEST-1036
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${testname}=  generate new User Name
@@ -153,27 +155,27 @@ TEST-1036
     ${status}=  Is Bucket Present   ${testname}
     Should be equal  ${status}  ${False}
 
-test_99
+TEST-99
     [Documentation]  This test case is to verify that create user button remain disabled till required
     ...  fields got filled on s3 configure.
-    [Tags]  Priority_High  test_99  S3_test
+    [Tags]  Priority_High  TEST-99  S3_test  TEST-99
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     Click on add new s3 account button
     Check create S3 account button disabled
 
-test_102
+TEST-102
     [Documentation]  This test case is to verify that by clicking on "add new account" button create s3user form is
     ...  getting opened.
-    [Tags]  Priority_High  test_102  S3_test  Somoke_test
+    [Tags]  Priority_High  TEST-102  S3_test  Somoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     Click on add new s3 account button
     Check s3 account form is opened
 
-test_106
+TEST-106
     [Documentation]  This test case is to verify that s3 accounts form does not accepts invalid user name.
-    [Tags]  Priority_High  test_106  S3_test  Somoke_test
+    [Tags]  Priority_High  TEST-106  S3_test  Somoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     Click on add new s3 account button
@@ -181,9 +183,9 @@ test_106
     ...  ${invalid_S3_account_password}
     Verify message  INVALID_S3_ACCOUNT_NAME_MSG_ID  ${INVALID_S3_ACCOUNT_MESSAGE}
 
-test_107
+TEST-107
     [Documentation]  This test case is to verify that s3 accounts form does not accepts invalid email id.
-    [Tags]  Priority_High  test_107  S3_test  Somoke_test
+    [Tags]  Priority_High  TEST-107  S3_test  Somoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     Click on add new s3 account button
@@ -191,16 +193,16 @@ test_107
     ...  ${invalid_S3_account_password}
     Verify message  INVALID_S3_EMAIL_MSG_ID  ${INVALID_S3_EMAIL_MESSAGE}
 
-test_109
+TEST-109
     [Documentation]  This test case is to verify cancle button functionality on s3 accounts form .
-    [Tags]  Priority_High  test_109  S3_test  Somoke_test
+    [Tags]  Priority_High  TEST-109  S3_test  Somoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     check cancel s3 account form feature
 
-test_110
+TEST-110
     [Documentation]  This test case is to verify that user is able to create new s3 account.
-    [Tags]  Priority_High  test_110  S3_test  Somoke_test
+    [Tags]  Priority_High  TEST-110  S3_test  Somoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
@@ -210,9 +212,9 @@ test_110
     sleep  2s
     Delete S3 Account  ${S3_account_name}  ${password}
 
-test_111
+TEST-111
     [Documentation]  This test case is to verify that user is able to delete s3 account.
-    [Tags]  Priority_High  test_111  S3_test  Somoke_test
+    [Tags]  Priority_High  TEST-111  S3_test  Somoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
@@ -222,9 +224,9 @@ test_111
     sleep  2s
     Delete S3 Account  ${S3_account_name}  ${password}
 
-test_123
+TEST-123
     [Documentation]  This test case is to verify that user should not be able to create duplicate s3 account.
-    [Tags]  Priority_High  test_123  S3_test
+    [Tags]  Priority_High  TEST-123  S3_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
@@ -241,9 +243,9 @@ test_123
     sleep  2s
     Delete S3 Account  ${S3_account_name}  ${password}
 
-test_1528
+TEST-1528
     [Documentation]  This test case is to verify that edit s3 account form is getting opened.
-    [Tags]  Priority_High  test_1528  test_112  S3_test
+    [Tags]  Priority_High  TEST-1528  TEST-112  S3_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
@@ -256,10 +258,10 @@ test_1528
     Verify edit s3 account form getting opened
     Delete S3 Account  ${S3_account_name}  ${password}  True
 
-test_116
+TEST-116
     [Documentation]  This test case is to verify that update s3 account button remains disabled if data is not entered
     ...  in required fields.
-    [Tags]  Priority_High  test_116  S3_test
+    [Tags]  Priority_High  TEST-116  S3_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
@@ -272,9 +274,9 @@ test_116
     Verify update s3 account button remains disabled
     Delete S3 Account  ${S3_account_name}  ${password}  True
 
-test_1530
+TEST-1530
     [Documentation]  This test case is to verify that user is able to update s3 account password.
-    [Tags]  Priority_High  test_1530  S3_test  Somoke_test
+    [Tags]  Priority_High  TEST-1530  S3_test  Somoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
@@ -288,9 +290,9 @@ test_1530
     Edit S3 account  ${S3_account_name}  ${new_password}  ${new_password}
     Delete S3 Account  ${S3_account_name}  ${new_password}  True
 
-test_1531
+TEST-1531
     [Documentation]  This test case is to verify update s3 account password field accepts only valid data.
-    [Tags]  Priority_High  test_1531   S3_test
+    [Tags]  Priority_High  TEST-1531   S3_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
@@ -304,10 +306,10 @@ test_1531
     Delete S3 Account  ${S3_account_name}  ${password}  True
 
 
-test_1532
+TEST-1532
     [Documentation]  This test case is to verify that update button must remain disable in case password field
     ...  is blank while updating s3 account user
-    [Tags]  Priority_High  test_1532   S3_test
+    [Tags]  Priority_High  TEST-1532   S3_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
@@ -321,10 +323,10 @@ test_1532
     Delete S3 Account  ${S3_account_name}  ${password}  True
 
 
-test_1533
+TEST-1533
     [Documentation]  This test case is to verify that update button must remain disable in case confirm password field
     ...  is blank while updating s3 account user
-    [Tags]  Priority_High  test_1533   S3_test
+    [Tags]  Priority_High  TEST-1533   S3_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
@@ -338,10 +340,10 @@ test_1533
     Verify update s3 account accepts only valid password  ${new_password}  ${SPACE*10}  False  True
     Delete S3 Account  ${S3_account_name}  ${password}  True
 
-test_1534
+TEST-1534
     [Documentation]  This test case is to verify that s3 account should provide proper error message in case
     ...  user provide miss-match password while updating its user name
-    [Tags]  Priority_High  test_1534   S3_test
+    [Tags]  Priority_High  TEST-1534   S3_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
@@ -355,10 +357,10 @@ test_1534
     Verify update s3 account accepts only valid password  ${new_password}  ${password}  False  True
     Delete S3 Account  ${S3_account_name}  ${password}  True
 
-test_4025
+TEST-4025
     [Documentation]  This test case is to verify that s3 account user is able to login to csm GUI
     ...  user provide miss-match password while updating its user name
-    [Tags]  Priority_High  test_4025  S3_test  Somoke_test
+    [Tags]  Priority_High  TEST-4025  S3_test  Somoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
@@ -369,10 +371,10 @@ test_4025
     Delete S3 Account  ${S3_account_name}  ${password}
 
 
-test_4027
+TEST-4027
     [Documentation]  This test case is to verify that s3 account user is able to perform s3 oprations.
     ...  user provide miss-match password while updating its user name
-    [Tags]  Priority_High  test_4027  S3_test  Somoke_test
+    [Tags]  Priority_High  TEST-4027  S3_test  Somoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
@@ -386,16 +388,16 @@ test_4027
     Edit S3 account  ${S3_account_name}  ${new_password}  ${new_password}
     Delete S3 Account  ${S3_account_name}  ${new_password}  True
 
-test_5198
+TEST-5198
     [Documentation]  This test case is to verify that duplicate users should not be created between csm
     ...  users and s3 account users in CSM UI
-    [Tags]  Priority_High  test_5198  S3_test
+    [Tags]  Priority_High  TEST-5198  S3_test
     Verify unique username for csm and s3 account
 
 
-test_5199
+TEST-5199
     [Documentation]  This test case is to verify that s3 accounts form does not accepts invalid password.
-    [Tags]  Priority_High  test_5199  S3_test  Somoke_test
+    [Tags]  Priority_High  TEST-5199  S3_test  Somoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     Click on add new s3 account button
@@ -403,10 +405,10 @@ test_5199
     ...  ${invalid_S3_account_password}
     Verify message  INVALID_S3_PASSWORD_MSG_ID  ${INVALID_S3_PASSWORD_MESSAGE}
 
-test_5200
+TEST-5200
     [Documentation]  This test case is to verify that s3 accounts form does not accepts
     ...  miss-match password while creating s3 account.
-    [Tags]  Priority_High  test_5200  S3_test  Somoke_test
+    [Tags]  Priority_High  TEST-5200  S3_test  Somoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${new_password}=  Generate New Password
@@ -415,41 +417,41 @@ test_5200
     ...  ${new_password}
     Verify message  INVALID_S3_CONFIRM_PASS_MSG_ID  ${INVALID_S3_CONFIRM_PASSWORD_MESSAGE}
 
-test_13101
+TEST-13101
     [Documentation]  This test case is to verify table for access keys is shown below s3 accounts table
     ...  with required columns.
-    [Tags]  Priority_High  test_13101  S3_test
+    [Tags]  Priority_High  TEST-13101  S3_test
     verify the table eders for s3 account access key
 
-test_13102
+TEST-13102
     [Documentation]  This test case is to verify new access key is getting generated.
     ...  with required columns.
-    [Tags]  Priority_High  test_13102  S3_test
+    [Tags]  Priority_High  TEST-13102  S3_test
     verify new access key is getting added
 
-test_13103
+TEST-13103
     [Documentation]  This test case is to verify access key is getting deleted.
-    [Tags]  Priority_High  test_13103  S3_test
+    [Tags]  Priority_High  TEST-13103  S3_test
     verify delete access key
 
-test_13107
+TEST-13107
     [Documentation]  This test case is to verify data in access key table.
-    [Tags]  Priority_High  test_13107  S3_test
+    [Tags]  Priority_High  TEST-13107  S3_test
     verify access key table data
 
-test_13108
+TEST-13108
     [Documentation]  This test case verify that add access key button disables after limit exceeded
-    [Tags]  Priority_High  test_13108  S3_test
+    [Tags]  Priority_High  TEST-13108  S3_test
     verify that add access key button disables after limit exceeded
 
-test_1529
+TEST-1529
     [Documentation]  This test case verify that update s3 account has only password options
-    [Tags]  Priority_High  test_1529  S3_test
+    [Tags]  Priority_High  TEST-1529  S3_test
     verify update s3 account has only password options
 
-test_17018
+TEST-17018
     [Documentation]  Test a reset password functionality on clicking "edit" button on S3 account page
-    [Tags]  Priority_High  S3_test
+    [Tags]  Priority_High  S3_test  TEST-17018
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
