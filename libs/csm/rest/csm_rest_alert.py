@@ -7,7 +7,7 @@ import datetime
 from commons.constants import Rest as const
 from commons import constants as ras_cons
 from commons.helpers.node_helper import Node
-from commons.alerts_simulator.generate_alert_lib import GenerateAlertLib
+from commons.alerts_simulator.generate_alert_lib import GenerateAlertLib, AlertType
 from commons import errorcodes as err
 from commons.exceptions import CTException
 from config import CMN_CFG
@@ -379,7 +379,10 @@ class SystemAlerts(RestTestLib):
         self.node_obj.copy_file_to_remote(local_path=local_path,
                                             remote_path=remote_path)
         resp = alert_api_obj.generate_alert(
-            eval('AlertType.{}'.format(alert_type)))
+            eval('AlertType.{}'.format(alert_type)),
+            host_details={'host':self.node_obj.hostname, 
+                          'host_user':self.node_obj.username,
+                          'host_password':self.node_obj.password})
         if not resp[0]:
             self.log.error("Failed to created alert")
             return False

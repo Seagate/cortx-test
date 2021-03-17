@@ -4,64 +4,65 @@ test_1225:
 
 test_607:
   alert_timeout: 300
-  alert_type: "controller_a_fault"
-  resolve_type: "controller_a_fault_resolved"
+  alert_type: "CONTROLLER_A_FAULT"
+  resolve_type: "CONTROLLER_A_FAULT_RESOLVED"
   alert_severity: "critical"
   resolve_severity: "informational"
 
 test_608:
   alert_timeout: 300
-  alert_type: "iem_test_error_alert"
+  alert_type: "IEM_TEST_ERROR_ALERT"
   alert_severity: "error"
 
 test_609:
   alert_timeout: 300
-  alert_type: "controller_a_fault"
-  resolve_type: "controller_a_fault_resolved"
+  alert_type: "CONTROLLER_A_FAULT"
+  resolve_type: "CONTROLLER_A_FAULT_RESOLVED"
   alert_severity: "critical"
 
 test_610:
   alert_timeout: 300
-  alert_type: "controller_a_fault"
-  resolve_type: "controller_a_fault_resolved"
+  alert_type: "CONTROLLER_A_FAULT"
+  resolve_type: "CONTROLLER_A_FAULT_RESOLVED"
   alert_severity: "critical"
   resolve_severity: "informational"
 
 test_611:
   alert_timeout: 300
-  alert_type: "controller_a_fault"
-  resolve_type: "controller_a_fault_resolved"
+  alert_type: "CONTROLLER_A_FAULT"
+  resolve_type: "CONTROLLER_A_FAULT_RESOLVED"
   alert_severity: "critical"
   resolve_severity: "informational"
 
 test_616:
   alert_timeout: 300
-  alert_type: "controller_a_fault"
-  resolve_type: "controller_a_fault_resolved"
+  alert_type: "CONTROLLER_A_FAULT"
+  resolve_type: "CONTROLLER_A_FAULT_RESOLVED"
 
 test_617:
   alert_timeout: 300
-  alert_type: "controller_a_fault"
-  resolve_type: "controller_a_fault_resolved"
+  alert_type: "CONTROLLER_A_FAULT"
+  resolve_type: "CONTROLLER_A_FAULT_RESOLVED"
 
 test_618:
   alert_timeout: 300
-  alert_type: "controller_a_fault"
-  resolve_type: "controller_a_fault_resolved"
+  alert_type: "CONTROLLER_A_FAULT"
+  resolve_type: "CONTROLLER_A_FAULT_RESOLVED"
 
 test_619:
   alert_timeout: 300
-  alert_type: "controller_a_fault"
-  resolve_type: "controller_a_fault_resolved"
+  alert_type: "CONTROLLER_A_FAULT"
+  resolve_type: "CONTROLLER_A_FAULT_RESOLVED"
 
 test_620:
   alert_timeout: 300
-  alert_type: "controller_a_fault"
-  resolve_type: "controller_a_fault_resolved"
+  alert_type: "CONTROLLER_A_FAULT"
+  resolve_type: "CONTROLLER_A_FAULT_RESOLVED"
 
 test_621:
   alert_timeout: 300
-  alert_type: "controller_a_fault"
-  resolve_type: "controller_a_fault_resolved"
+  alert_type: "CONTROLLER_A_FAULT"
+  resolve_type: "CONTROLLER_A_FAULT_RESOLVED"
+  
 test_1039:
   comment_text: "Comment by S3 user"
