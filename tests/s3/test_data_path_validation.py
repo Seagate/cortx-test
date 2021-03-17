@@ -44,8 +44,6 @@ except BaseException as error:
     site.addsitedir('scripts/')  # Always appends to end
     from s3_bench import s3bench as s3bench_obj
 
-from eos_test.s3 import constants as cons
-
 S3_OBJ = s3_test_lib.S3TestLib()
 IAM_TEST_OBJ = iam_test_lib.IamTestLib()
 ACL_OBJ = s3_acl_test_lib.S3AclTestLib()
@@ -78,7 +76,6 @@ class DataPathValidation(Test):
         self.ldap_pwd = LDAP_PASSWD
         self.log_file = []
         self.nodes = common_cfg["nodes"]
-        build_ver_type = common_cfg["BUILD_VER_TYPE"]
         self.log.info("ENDED: Setup operations")
 
     def tearDown(self):
