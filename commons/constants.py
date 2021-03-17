@@ -78,6 +78,8 @@ CLUSTER_STATUS_MSG = "cluster is not currently running on this node"
 NODE_RANGE_START = 1
 NODE_RANGE_END = 3
 NODE_PREFIX = "eosnode-"
+MERO_STATUS_CMD = "hctl status"
+FAILED_LIST = ['failed', 'not running', 'offline']
 
 """ S3 constants """
 const.S3_CONFIG = "/opt/seagate/cortx/s3/conf/s3config.yaml"
@@ -90,6 +92,7 @@ const.CFG_FILES = ["/etc/haproxy/haproxy.cfg",
                    "/opt/seagate/cortx/s3/s3startsystem.sh"]
 const.AUTHSERVER_FILE = "/opt/seagate/cortx/auth/resources/authserver.properties"
 const.SCRIPT_PATH = "cd /opt/seagate/cortx/auth/scripts"
+const.CRASH_COMMANDS = ["ls -l /var/crash", "ls -lR /var/motr | grep core"],
 
 
 
