@@ -1,8 +1,6 @@
 acc_user_mng:
   account_name: "seagate_account_1nm"
   email_id: "seagate_account_1nm@seagate.com"
-  ldap_user: "sgiamadmin"
-  ldap_password: "ldapadmin"
   password: "seagate"
   password_reset: False
   user_name: "seagate_user_9"

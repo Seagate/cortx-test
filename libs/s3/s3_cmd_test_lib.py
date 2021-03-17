@@ -172,7 +172,7 @@ class S3CmdTestLib(S3LibCmd):
     def command_formatter(
             s3cmd_cnf: str = None,
             operation: str = None,
-            cmd_arguments: str = None) -> str:
+            cmd_arguments: list = None) -> str:
         """
         Creating command from dictionary cmd_options.
 
