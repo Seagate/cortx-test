@@ -195,7 +195,7 @@ class JiraTask:
 
     def get_test_details(self, test_exe_id: str) -> list:
         """
-        Get details of the test cases in a test execution ticket
+        Get details of the test cases in a test execution ticket.
         """
         test_info = list()
         try:
@@ -228,7 +228,7 @@ class JiraTask:
     def update_execution_details(self, data: list, test_id: str, comment: str)\
             -> bool:
         """
-        Add comment to the mentioned jira id
+        Add comment to the mentioned jira id.
         """
         run_id = None
         try:
