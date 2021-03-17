@@ -283,8 +283,7 @@ def gen_table_feature_breakdown_summary(n_clicks, version, build_no, test_system
                 if each["feature"] == feature and each["testResult"].lower() == "pass":
                     pass_count = pass_count + 1
                 elif each["feature"] == feature and each["testResult"].lower() == "fail" or \
-                        each[
-                            "testResult"].lower() == "blocked":
+                        each["testResult"].lower() == "blocked":
                     fail_count = fail_count + 1
                 else:
                     pass
