@@ -1,13 +1,17 @@
 *** Settings ***
 Documentation    This suite verifies the testcases for create bucket
 Library     SeleniumLibrary
-Resource    ../../../resources/page_objects/loginPage.robot
-Resource    ../../../resources/page_objects/s3accountPage.robot
-Resource    ../../../resources/page_objects/IAM_UsersPage.robot
-Resource    ../../../resources/page_objects/bucket_page.robot
-Variables   ../../../resources/common/common_variables.py
+Resource    ${EXECDIR}/resources/page_objects/loginPage.robot
+Resource    ${EXECDIR}/resources/page_objects/s3accountPage.robot
+Resource    ${EXECDIR}/resources/page_objects/IAM_UsersPage.robot
+Resource    ${EXECDIR}/resources/page_objects/bucket_page.robot
+Resource    ${EXECDIR}/resources/page_objects/preboardingPage.robot
+Variables   ${EXECDIR}/resources/common/common_variables.py
 
 
+Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
+...  ${username}  ${password}
+...  AND  Close Browser
 Suite Teardown  Close All Browsers
 Force Tags  CSM_GUI  CSM_BUCKET_CREATE
 Test Setup  Login To S3 Account

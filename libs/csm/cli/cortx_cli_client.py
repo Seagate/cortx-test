@@ -48,18 +48,24 @@ class CortxCliClient:
         self.host = host
         self.username = username
         self.password = password
-        session_obj = kwargs.get("session_obj", None)
+        self.session_obj = kwargs.get("session_obj", None)
         self.port = kwargs.get("port", 22)
+        self.host_obj = None
 
-        if not session_obj:
+    def open_connection(self):
+        """
+        This function will open the ssh connection with host
+        :return: None
+        """
+        if not self.session_obj:
             self.host_obj = Host(
                 hostname=self.host,
                 username=self.username,
                 password=self.password)
             self.host_obj.connect(True, port=self.port)
+            self.log.debug("Opened an ssh connection with host: %s", self.host)
             self.session_obj = self.host_obj.shell_obj
-        else:
-            self.session_obj = session_obj
+            self.log.debug("Invoked a shell session: %s", self.session_obj)
 
     def execute_cli_commands(self, cmd: str, time_out: int = 500, sleep_time: int = 6) -> str:
         """
@@ -91,3 +97,4 @@ class CortxCliClient:
         """
         self.session_obj.close()
         self.host_obj.disconnect()
+        self.log.debug("Closed ssh connection with host %s", self.host)

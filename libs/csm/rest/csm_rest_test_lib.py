@@ -1,10 +1,29 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
 """ REST API Alert operation Library. """
 import logging
 from string import Template
-from jsonschema import validate
+
 import commons.errorcodes as err
 from commons.constants import Rest as const
-from commons.utils import config_utils
 from commons.exceptions import CTException
 from libs.csm.rest.csm_rest_core_lib import RestClient
 from config import CSM_REST_CFG
@@ -15,53 +34,45 @@ class RestTestLib:
     """
 
     def __init__(self):
-        #self.csm_conf = config_utils.read_yaml("config/csm/csm_config.yaml")[1]
-        self.config = CSM_REST_CFG #self.csm_conf["Restcall"]
-        self._log = logging.getLogger(__name__)
-        self.restapi = RestClient(CSM_REST_CFG) #RestClient(self.csm_conf["Restcall"])
+        self.config = CSM_REST_CFG
+        self.log = logging.getLogger(__name__)
+        self.restapi = RestClient(CSM_REST_CFG)
         self.user_type = ("valid", "duplicate", "invalid", "missing")
-        self.success_response = const.SUCCESS_STATUS
-        self.bad_request_response = const.BAD_REQUEST
-        self.conflict_response = const.CONFLICT
-        self.forbidden = const.FORBIDDEN
-        self.method_not_found = const.METHOD_NOT_FOUND
-        self.default_s3user_name = self.config["s3account_user"]["username"]
-        self.default_csm_user_monitor = self.config["csm_user_monitor"]["username"]
-        self.default_csm_user_manage = self.config["csm_user_manage"]["username"]
-        self.exception_error = const.EXCEPTION_ERROR
-        self.success_response_post = const.SUCCESS_STATUS_FOR_POST
+        self.headers = {}
 
     def rest_login(self, login_as):
         """
         This function will request for login
-        login_as str: The type of user you desire to login
+        login_as str/dict: The type of user you desire to login
         object : In case complete response is required
         """
         try:
             # Building response
             endpoint = self.config["rest_login_endpoint"]
             headers = self.config["Login_headers"]
-            self._log.debug(f"endpoint {endpoint}")
-            # payload = self.config[login_as] # showing some error in Cortx-1.0.0-rc3
-            payload = Template(const.LOGIN_PAYLOAD).substitute(
-                **self.config[login_as])
-            print(payload)
+            self.log.debug("endpoint: %s", endpoint)
+            if isinstance(login_as, dict):
+                payload = Template(const.LOGIN_PAYLOAD).substitute(login_as)
+            else:
+                payload = Template(const.LOGIN_PAYLOAD).substitute(
+                    **self.config[login_as])
+
             # Fetch and verify response
             response = self.restapi.rest_call(
                 "post", endpoint, headers=headers, data=payload, save_json=False)
-            self._log.debug(f"response : {response}")
-
+            self.log.debug("response : %s", response)
             return response
+
         except BaseException as error:
-            self._log.error("{0} {1}: {2}".format(
-                self.exception_error,
-                RestTestLib.rest_login.__name__,
-                error))
+            self.log.error("%s %s: %s",
+                            const.EXCEPTION_ERROR,
+                            RestTestLib.rest_login.__name__,
+                            error)
             raise CTException(
-                err.CSM_REST_AUTHENTICATION_ERROR, error.args[0])
+                err.CSM_REST_AUTHENTICATION_ERROR, error.args[0]) from error
 
     def custom_rest_login(self, username, password,
-                           username_key="username", password_key="password"):
+                          username_key="username", password_key="password"):
         """
         This function tests the invalid login scenarios
         :param str username: username
@@ -74,22 +85,22 @@ class RestTestLib:
             # Building response
             endpoint = self.config["rest_login_endpoint"]
             headers = self.config["Login_headers"]
-            self._log.debug(f"endpoint {endpoint}")
+            self.log.debug("endpoint %s", endpoint)
             payload = "{{\"{}\":\"{}\",\"{}\":\"{}\"}}".format(
                 username_key, username, password_key, password)
 
             # Fetch and verify response
             response = self.restapi.rest_call(
                 "post", endpoint, headers=headers, data=payload, save_json=False)
-            self._log.debug(f"response : {response}")
+            self.log.debug("response : %s", response)
 
         except BaseException as error:
-            self._log.error("{0} {1}: {2}".format(
-                self.exception_error,
-                RestTestLib.custom_rest_login.__name__,
-                error))
+            self.log.error("%s %s: %s",
+                            const.EXCEPTION_ERROR,
+                            RestTestLib.custom_rest_login.__name__,
+                            error)
             raise CTException(
-                err.CSM_REST_AUTHENTICATION_ERROR, error.args[0])
+                err.CSM_REST_AUTHENTICATION_ERROR, error.args[0]) from error
         return response
 
     def authenticate_and_login(func):
@@ -97,6 +108,7 @@ class RestTestLib:
         :type: Decorator
         :functionality: Authorize the user before any rest calls
         """
+
         def create_authenticate_header(self, *args, **kwargs):
             """
             This function will fetch the login token and create the authentication header
@@ -108,7 +120,7 @@ class RestTestLib:
             :return: function executables
             """
             self.headers = {}  # Initiate headers
-            self._log.debug(
+            self.log.debug(
                 "user is getting authorized for REST operations ...")
 
             # Checking the type of login user
@@ -120,7 +132,7 @@ class RestTestLib:
                 "authorized") if "authorized" in kwargs else True
 
             # Fetching the login response
-            self._log.debug("user will be logged in as {}".format(login_type))
+            self.log.debug("user will be logged in as %s", login_type)
             response = self.rest_login(login_as=login_type)
 
             if authorized and response.status_code == const.SUCCESS_STATUS:
@@ -147,48 +159,9 @@ class RestTestLib:
             # Verify successfully added
             return user_type in self.config
         except Exception as error:
-            self._log.error("{0} {1}: {2}".format(
-                self.exception_error,
-                RestTestLib.update_csm_config_for_user.__name__,
-                error))
-            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
-
-    def verify_json_response(self, actual_result, expect_result, match_exact=False):
-        """
-        This function will verify the json response with actual response
-        :param actual_result: actual json response from REST call
-        :param expect_result: the json response to be matched
-        :param match_exact: to match actual and expect result to be exact
-        :return: Success(True)/Failure(False)
-        """
-        try:
-            # Matching exact values
-            if match_exact:
-                self._log.debug("Matching exact values")
-                return actual_result == expect_result
-
-            # Check for common keys between actual value and expect value
-            if actual_result.keys().isdisjoint(expect_result):
-                self._log.debug(
-                    "No common keys between actual value and expect value")
-                return False
-
-            return all(actual_result[key] == value for key, value in expect_result.items())
-        except Exception as error:
-            self._log.error("{0} {1}: {2}".format(
-                self.exception_error,
-                RestTestLib.verify_json_response.__name__,
-                error))
-            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
-
-    def verify_json_schema(self, instance, *schemas):
-        """
-        Verify the schema for the given instance of the response
-        exception is raised if the schema doesn't match 
-        which can be handled by calling function
-        :param instance: json log instance which needs to be verified.
-        :param schemas: json schema for verification
-        """
-
-        for schema in schemas:
-            validate(instance=instance, schema=schema)
+            self.log.error("%s %s: %s",
+                            const.EXCEPTION_ERROR,
+                            RestTestLib.update_csm_config_for_user.__name__,
+                            error)
+            raise CTException(
+                err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
