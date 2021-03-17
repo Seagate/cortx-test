@@ -106,4 +106,3 @@ test_4968:
   epoc_time_diff: 500
   default_interval: 10
   error_msg: "403: Forbidden"
-  

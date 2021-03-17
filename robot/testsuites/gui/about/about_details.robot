@@ -1,16 +1,19 @@
 *** Settings ***
 Documentation    This suite verifies the testcases for ssl details
-Resource    ../../../resources/page_objects/loginPage.robot
-Resource    ../../../resources/page_objects/aboutPage.robot
-Variables  ../../../resources/common/element_locators.py
-Variables  ../../../resources/common/common_variables.py
+Resource    ${EXECDIR}/resources/page_objects/loginPage.robot
+Resource    ${EXECDIR}/resources/page_objects/aboutPage.robot
+Resource    ${EXECDIR}/resources/page_objects/preboardingPage.robot
+Variables  ${EXECDIR}/resources/common/element_locators.py
+Variables  ${EXECDIR}/resources/common/common_variables.py
 
 
-Suite Teardown  Close All Browsers
-Force Tags  CSM_GUI  about_page 
-
+Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
+...  ${username}  ${password}
+...  AND  Close Browser
 Test Setup  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
-Test Teardown  CSM GUI Logout
+Test Teardown   CSM GUI Logout
+Suite Teardown  Close All Browsers
+Force Tags  CSM_GUI  CSM_login
 
 *** Variables ***
 
@@ -25,5 +28,3 @@ test_1111
     Verify Subject Details
     Click Issuer Option
     Verify Issuer Details
-
- 

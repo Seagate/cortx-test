@@ -1,3 +1,23 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
 """Test library for CSM user related operations."""
 import time
 import json
@@ -6,9 +26,9 @@ from commons.constants import Rest as const
 import commons.errorcodes as err
 from commons.exceptions import CTException
 from commons.utils import config_utils
-from libs.csm.rest.csm_rest_test_lib import RestTestLib as Base
+from libs.csm.rest.csm_rest_test_lib import RestTestLib
 
-class RestCsmUser(Base):
+class RestCsmUser(RestTestLib):
     """RestCsmUser contains all the Rest API calls for csm user operations"""
 
     def __init__(self):
@@ -83,7 +103,7 @@ class RestCsmUser(Base):
             raise CTException(
         err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
 
-    @Base.authenticate_and_login
+    @RestTestLib.authenticate_and_login
     def create_csm_user(self, user_type="valid", user_role="manage",
                         save_new_user=False):
         """
@@ -191,7 +211,7 @@ class RestCsmUser(Base):
             raise CTException(
         err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
 
-    @Base.authenticate_and_login
+    @RestTestLib.authenticate_and_login
     def list_csm_users(self, expect_status_code, offset=None, limit=None,
         sort_by=None, sort_dir=None, return_actual_response=False,
         verify_negative_scenario=False):
@@ -465,7 +485,7 @@ class RestCsmUser(Base):
             raise CTException(
         err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
 
-    @Base.authenticate_and_login
+    @RestTestLib.authenticate_and_login
     def verify_list_csm_users_unauthorised_access_failure(self):
         """
         This function verifies that unauthorized access to csm api gives 403(forbidden) error
@@ -499,7 +519,7 @@ class RestCsmUser(Base):
             raise CTException(
         err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
 
-    @Base.authenticate_and_login
+    @RestTestLib.authenticate_and_login
     def list_csm_users_empty_param(self, expect_status_code,
         csm_list_user_param, return_actual_response=False):
         """
@@ -558,7 +578,7 @@ class RestCsmUser(Base):
             raise CTException(
         err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
 
-    @Base.authenticate_and_login
+    @RestTestLib.authenticate_and_login
     def list_csm_single_user(self, request_type, expect_status_code, user,
         payload=None, data=False, params=False, return_actual_response=False):
         """
@@ -779,7 +799,7 @@ class RestCsmUser(Base):
 
         return found
 
-    @Base.authenticate_and_login
+    @RestTestLib.authenticate_and_login
     def delete_csm_user(self, user_id):
         """
         This function will create new CSM user

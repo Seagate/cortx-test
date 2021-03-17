@@ -1,3 +1,23 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
 """Test library for IAM user related operations."""
 import time
 from string import Template
@@ -6,11 +26,11 @@ import json
 from commons.constants import Rest as const
 import commons.errorcodes as err
 from commons.exceptions import CTException
-from libs.csm.rest.csm_rest_test_lib import RestTestLib as Base
+from libs.csm.rest.csm_rest_test_lib import RestTestLib
 from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 
 
-class RestIamUser(Base):
+class RestIamUser(RestTestLib):
     """RestIamUser contains all the Rest API calls for iam user operations"""
 
     def __init__(self):
@@ -19,7 +39,7 @@ class RestIamUser(Base):
         self.iam_user = None
         self.csm_user = RestCsmUser()
 
-    @Base.authenticate_and_login
+    @RestTestLib.authenticate_and_login
     def create_iam_user(self, user=const.IAM_USER,
                         password=const.IAM_PASSWORD,
                         require_reset_val="true"):
@@ -57,7 +77,7 @@ class RestIamUser(Base):
                 err.CSM_REST_AUTHENTICATION_ERROR,
                 error.args[0]) from error
 
-    @Base.authenticate_and_login
+    @RestTestLib.authenticate_and_login
     def delete_iam_user(self, user=None):
         """
         This function will delete payload according to the required type for
@@ -117,7 +137,7 @@ class RestIamUser(Base):
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
 
-    @Base.authenticate_and_login
+    @RestTestLib.authenticate_and_login
     def iam_user_login(self, user=None,
                        password=const.IAM_PASSWORD):
         """
@@ -152,7 +172,7 @@ class RestIamUser(Base):
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR, error.args[0]) from error
 
-    @Base.authenticate_and_login
+    @RestTestLib.authenticate_and_login
     def list_iam_users(self):
         """
         This function will list all IAM users.

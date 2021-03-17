@@ -1,3 +1,23 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
 """Test library for s3 bucket operations."""
 import time
 import json
@@ -6,8 +26,8 @@ from commons.constants import Rest as const
 import commons.errorcodes as err
 from commons.exceptions import CTException
 from commons.utils import config_utils
-from libs.csm.rest.csm_rest_test_lib import RestTestLib as Base
-class RestS3Bucket(Base):
+from libs.csm.rest.csm_rest_test_lib import RestTestLib
+class RestS3Bucket(RestTestLib):
     """RestS3Bucket contains all the Rest Api calls for s3 account operations"""
 
     def __init__(self):
@@ -26,7 +46,7 @@ class RestS3Bucket(Base):
         }
         self.user_data = None
 
-    @Base.authenticate_and_login
+    @RestTestLib.authenticate_and_login
     def create_s3_bucket(self, bucket_type):
         """
         This function will create new s3 bucket
@@ -61,7 +81,7 @@ class RestS3Bucket(Base):
                 err.CSM_REST_AUTHENTICATION_ERROR,
                 error.args[0]) from error
 
-    @Base.authenticate_and_login
+    @RestTestLib.authenticate_and_login
     def list_all_created_buckets(self):
         """
         This function will list down all created buckets
@@ -87,7 +107,7 @@ class RestS3Bucket(Base):
                 err.CSM_REST_AUTHENTICATION_ERROR,
                 error.args[0]) from error
 
-    @Base.authenticate_and_login
+    @RestTestLib.authenticate_and_login
     def delete_s3_bucket(self, bucket_name):
         """
         This function will delete the required bucket
@@ -266,7 +286,7 @@ class RestS3Bucket(Base):
             raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0]
                                 ) from error
 
-    @Base.authenticate_and_login
+    @RestTestLib.authenticate_and_login
     def create_invalid_s3_bucket(self, bucket_name):
         """
         This function will verify invalid s3 bucket creation
@@ -299,7 +319,7 @@ class RestS3Bucket(Base):
                 err.CSM_REST_AUTHENTICATION_ERROR, error.args[0]) from error
 
 
-class RestS3BucketPolicy(Base):
+class RestS3BucketPolicy(RestTestLib):
     """RestS3BucketPolicy contains all the Rest Api calls for s3 bucket
     policy operations"""
 
@@ -326,7 +346,7 @@ class RestS3BucketPolicy(Base):
         }
         self.bucket_name = bucketname
 
-    @Base.authenticate_and_login
+    @RestTestLib.authenticate_and_login
     def create_bucket_policy(self, operation="default", custom_policy_params=None):
         """
          This function will create new s3 bucket policy
@@ -436,7 +456,7 @@ class RestS3BucketPolicy(Base):
                 err.CSM_REST_VERIFICATION_FAILED,
                 error.args[0]) from error
 
-    @Base.authenticate_and_login
+    @RestTestLib.authenticate_and_login
     def get_bucket_policy(self, bucket_name=None, login_as="s3account_user"):
         """
          This function will get s3 bucket policy
@@ -517,7 +537,7 @@ class RestS3BucketPolicy(Base):
                 err.CSM_REST_VERIFICATION_FAILED,
                 error.args[0]) from error
 
-    @Base.authenticate_and_login
+    @RestTestLib.authenticate_and_login
     def delete_bucket_policy(self, login_as="s3account_user"):
         """
          This function will delete s3 bucket policy
