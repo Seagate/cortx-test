@@ -58,4 +58,3 @@ urllib3==1.25.3
 Werkzeug==0.15.5
 xmltodict==0.12.0
 Cython==0.29.21
-nfs-utils
