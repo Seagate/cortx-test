@@ -367,7 +367,7 @@ def update_configs(all_configs: dict) -> None:
     for conf in all_configs.keys():
         read_write_config(conf, all_configs[conf])
 
-def verify_json_schema(self, instance, *schemas):
+def verify_json_schema(instance, *schemas):
     """
     Verify the schema for the given instance of the response
     exception is raised if the schema doesn't match 
