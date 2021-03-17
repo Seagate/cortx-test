@@ -51,8 +51,8 @@ class TestProvSingleNode:
         LOGGER.info("STARTED: Setup Module operations")
         cls.host = input('Specify hostname fqdn:\n')
         cls.build_path = input('Specify the build url:\n')
-        cls.uname = CMN_CFG["username"]
-        cls.passwd = CMN_CFG["password"]
+        cls.uname = CMN_CFG["nodes"][0]["username"]
+        cls.passwd = CMN_CFG["nodes"][0]["password"]
         cls.nd_obj = Node(hostname=cls.host, username=cls.uname,
                           password=cls.passwd)
         cls.hlt_obj = Health(hostname=cls.host, username=cls.uname,
@@ -68,15 +68,25 @@ class TestProvSingleNode:
         """
         Helper function to start the jenkins job.
         """
+        test_cfg = PROV_CFG["deploy"]
         self.jenkins_server = jenkins.Jenkins(common_cnst.JENKINS_URL, username=common_cnst.JENKINS_USERNAME,
                                               password=common_cnst.JENKINS_PASSWORD)
-        LOGGER.info("Jenkins_server: {}".format(self.jenkins_server))
+        LOGGER.info("Jenkins_server obj: {}".format(self.jenkins_server))
+        completed_build_number = self.jenkins_server.get_job_info(name)['lastCompletedBuild']['number']
         next_build_number = self.jenkins_server.get_job_info(name)['nextBuildNumber']
-        LOGGER.info("Next build number: {}".format(next_build_number))
+        LOGGER.info(
+            "Complete build number: {} and  Next build number: {}".format(completed_build_number, next_build_number))
         self.jenkins_server.build_job(name, parameters=parameters, token=token)
-        time.sleep(10)
+        time.sleep(test_cfg["sleep_time"])
+        LOGGER.info("Running the deployment job")
+        while True:
+            if self.jenkins_server.get_job_info(name)['lastCompletedBuild']['number'] == \
+                    self.jenkins_server.get_job_info(name)['lastBuild']['number']:
+                break
+        time.sleep(test_cfg["sleep_time"])
         build_info = self.jenkins_server.get_build_info(name, next_build_number)
-        LOGGER.info("Build info: {}".format(build_info))
+        console_output = self.jenkins_server.get_build_console_output(name, next_build_number)
+        LOGGER.debug("console output: {}".format(console_output))
         return build_info
 
     def teardown_method(self):
@@ -84,9 +94,9 @@ class TestProvSingleNode:
         Teardown operations after each test.
         """
 
-    @CTFailOn(error_handler)
     @pytest.mark.prov
     @pytest.mark.singlenode
+    @CTFailOn(error_handler)
     def test_deployment_single_node(self):
         """
         Test method for the single node VM deployment.
@@ -121,61 +131,12 @@ class TestProvSingleNode:
         LOGGER.info("Starting the deployment steps.")
         test_cfg = PROV_CFG["deploy"]
 
-        '''
-        LOGGER.info("Setting up the environment:")
-        cmd = common_cmds.CMD_YUM_UTILS
-        self.nd_obj.execute_cmd(cmd)
-        cmd = common_cmds.CMD_CONFIG_MGR.format(self.build_path)
-        self.nd_obj.execute_cmd(cmd)
-        cmd = common_cmds.CMD_INSTALL_SALT
-        self.nd_obj.execute_cmd(cmd)
-        cmd = common_cmds.CMD_RM_REPO
-        self.nd_obj.execute_cmd(cmd)
-        cmd = common_cmds.CMD_CONFIG_MGR1.format(self.build_path)
-        self.nd_obj.execute_cmd(cmd)
-        cmd = common_cmds.CMD_PRVSNR
-        self.nd_obj.execute_cmd(cmd)
-        cmd = common_cmds.CMD_RM_REPO1
-        self.nd_obj.execute_cmd(cmd)
-        cmd = common_cmds.CMD_YUM_CLEAN
-        self.nd_obj.execute_cmd(cmd)
-        cmd = common_cmds.CMD_RM_YUM
-        self.nd_obj.execute_cmd(cmd)
-        LOGGER.info("All the prerequisites installed.")
-
-        LOGGER.info("Create config.ini file.")
-        file = open(test_cfg["file_name"], "w")
-        file.writelines(test_cfg["file_lines"])
-        file.close()
-        conf_utils.update_config_ini(path=test_cfg["file_name"], section="srvnode-1",
-                                     key="hostname", value=self.host)
-        self.nd_obj.copy_file_to_remote(test_cfg["file_name"], test_cfg["file_name"])
-        LOGGER.info("Created config.ini file.")
-
-        LOGGER.info("Start the deployment.")
-        cmd = common_cmds.CMD_DEPLOY_SINGLE_NODE.format(self.passwd, self.host, test_cfg["file_name"], self.build_path)
-        resp = self.nd_obj.execute_cmd(cmd, read_lines=True)
-        LOGGER.info("Deployment process output: {}".format(resp))
-        value = False
-        cmd = common_cmds.CMD_RD_LOG.format(test_cfg["setup_path"])
-        resp = self.nd_obj.execute_cmd(cmd, read_lines=True)
-        for line in resp:
-            if test_cfg["done"] in line or test_cfg["deploy_done"] in line:
-                value = True
-        assert value is True, "Deployment is not successful."
-        LOGGER.info("Deployment done.")
-
-        LOGGER.info("Start the cluster.")
-        time.sleep(test_cfg["sleep_time"])
-        cmd = common_cmds.CMD_START_CLSTR
-        self.nd_obj.execute_cmd(cmd)
-        time.sleep(test_cfg["sleep_time"])
-        '''
-
-        output = self.build_job(test_cfg.name_of_job,
-                                common_cnst.PARAMS.format(self.build_path, self.host, self.passwd),
-                                common_cnst.TOKEN_NAME)
+        common_cnst.PARAMS["CORTX_BUILD"] = self.build_path
+        common_cnst.PARAMS["HOST"] = self.host
+        common_cnst.PARAMS["HOST_PASS"] = self.passwd
+        output = self.build_job(common_cnst.JOB_NAME, common_cnst.PARAMS, common_cnst.TOKEN_NAME)
         LOGGER.info("Jenkins Build URL: {}".format(output['url']))
+        assert output['result'] == test_cfg["success_msg"], "Deployment is not successful, please check the url."
 
         LOGGER.info("Starting the post deployment checks.")
         test_cfg = PROV_CFG["system"]

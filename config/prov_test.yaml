@@ -3,17 +3,10 @@ prereq:
   os_release: "CentOS Linux release 7.8.2003 (Core)"
   kernel: "3.10.0-1127.el7.x86_64"
 deploy:
-  file_name: "/root/config.ini"
-  file_lines: ["[storage]\n", "type=other\n\n", "[srvnode-1]\n", "hostname=host1.localdomain\n",
-               "network.data.private_ip=None\n", "network.data.public_interfaces=eth1,eth2\n",
-               "network.data.private_interfaces=eth3,eth4\n", "network.mgmt.interfaces=eth0\n",
-               "bmc.user=None\n", "bmc.secret=None\n"]
-  deploy_done: "Deploy VM - Done"
-  setup_path: "/var/log/seagate/provisioner/setup.log"
-  done: "cmd:auto_deploy_vm Done"
-  sleep_time: 60
-  name_of_job: "Single Node VM"
+  sleep_time: 10
+  success_msg: "SUCCESS"
 system:
   offline: "offline"
   stopped: "Stopped"
+
 
