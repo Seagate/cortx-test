@@ -23,7 +23,7 @@ common_vars:
   mk_dir_cmd: "mkdir {}"
   press_enter: "\n"
   pwd_prompt_msg: "Enter RootDnPasword: "
-  root_pwd: "seagate"
+  root_pwd: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
   decode_format: "utf-8"
   time_out: 300
   default_wait_time: 1
@@ -92,13 +92,13 @@ test_5071:
 test_5073:
   ch_pwd_cmd: "sh enc_ldap_passwd_in_cfg.sh -p {} -c {}"
   output_msg: "OpenLdap password Updated Successfully"
-  new_pwd: 'ABCD##$%184329GDk5073sjfsckjf'
+  new_pwd: "bIH1A5ciaw74MiXpQQ4MMWF5mBNfSg4ksEexscTJl7A/zjNUNoAmXo0otXZfv6At"
   output_str: "You need to Restart Slapd"
 
 test_5074:
   ch_pwd_cmd: "sh enc_ldap_passwd_in_cfg.sh -p {} -c {}"
   temp_path: "authserver.properties"
-  new_pwd: "ABCD##$%184329GDksj5074fsckjf"
+  new_pwd: "pQcWJA3X+q+rEazSHfUi2KC+2wD9pFjf6BYFXRV2fCRW0AT3wsN+1Ja961SW0aAY"
   output_str: "You need to Restart Slapd"
   output_msg: "OpenLdap password Updated Successfully"
   login_pwd_section: "ldapLoginPW"
@@ -107,7 +107,7 @@ test_5074:
 test_5075:
   ch_pwd_cmd: "sh enc_ldap_passwd_in_cfg.sh -p {} -c {}"
   temp_path: "authserver.properties"
-  new_pwd: "DEGASD$%1##84329GDksj5074nyczera"
+  new_pwd: "vfbzvj21TW6Om4Q8FN4cTs61MtxrazWieo05GD4wFJ6iUwlbQA2Y2gEDtBZSJ3mMtLIFdltdVHlZIYXFwA8+IA=="
   output_str: "You need to Restart Slapd"
   output_msg: "OpenLdap password Updated Successfully"
   login_pwd_section: "ldapLoginPW"
@@ -115,5 +115,5 @@ test_5075:
 
 test_5076:
   ch_pwd_cmd: "sh enc_ldap_passwd_in_cfg.sh -p {} -c {}"
-  new_pwd: '""'
+  new_pwd: "4FKjc7D0fN5oVDhoubV0lyGl4qB3i8uOL7XHKwjgDWU="
   err_message: "Ldap password not specified"
