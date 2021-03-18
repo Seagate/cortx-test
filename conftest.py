@@ -543,7 +543,8 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
             logs = log.split('\n')
             test_id = CACHE.lookup(report.nodeid)
             name = str(test_id) + '_' + report.nodeid.split('::')[1] + '_' \
-                + time.strftime("%H%M%S") + '.log'
+                + datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S') \
+                + '.log'
             test_log = os.path.join(os.getcwd(), LOG_DIR, 'latest', name)
             with open(test_log, 'w') as fp:
                 for rec in logs:
