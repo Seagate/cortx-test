@@ -207,3 +207,8 @@ PAGE_LOADING_MSG_ID = "lblLoaderMessage"
 
 #Buckets Tab
 BUCKETS_TAB_ID = "s3bucketstab"
+
+# Firmware Update
+UPLOAD_FW_FILE_BTN_ID = "btnInstallFirmware"
+CHOOSE_FW_UPDATE_FILE_BTN_ID = "file"
+START_FW_UPDATE_BUTTON_ID = "btnStartUpgrade"
