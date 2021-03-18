@@ -69,7 +69,7 @@ class RestCsmUser(RestTestLib):
                         int(self.random_num), int(time.time()))
                     user_role = [user_defined_role]
                 else:
-                    user_name,  = "test{}".format(int(time.time()))
+                    user_name = "test{}".format(int(time.time()))
                     user_role = [user_defined_role]
 
             if user_type == "duplicate":
@@ -101,7 +101,7 @@ class RestCsmUser(RestTestLib):
                 RestCsmUser.create_payload_for_new_csm_user.__name__,
                 error)
             raise CTException(
-        err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
+        err.CSM_REST_VERIFICATION_FAILED, error) from error
 
     @RestTestLib.authenticate_and_login
     def create_csm_user(self, user_type="valid", user_role="manage",
@@ -148,7 +148,7 @@ class RestCsmUser(RestTestLib):
                 RestCsmUser.create_csm_user.__name__,
                 error)
             raise CTException(
-                err.CSM_REST_AUTHENTICATION_ERROR, error.args[0]) from error
+                err.CSM_REST_AUTHENTICATION_ERROR, error) from error
 
     def create_and_verify_csm_user_creation(self, user_type, user_role,
                                             expect_status_code):
@@ -209,7 +209,7 @@ class RestCsmUser(RestTestLib):
                 RestCsmUser.create_and_verify_csm_user_creation.__name__,
                 error)
             raise CTException(
-        err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
+        err.CSM_REST_VERIFICATION_FAILED, error) from error
 
     @RestTestLib.authenticate_and_login
     def list_csm_users(self, expect_status_code, offset=None, limit=None,
@@ -286,7 +286,7 @@ class RestCsmUser(RestTestLib):
                 RestCsmUser.list_csm_users.__name__,
                 error)
             raise CTException(
-                err.CSM_REST_AUTHENTICATION_ERROR, error.args[0]) from error
+                err.CSM_REST_AUTHENTICATION_ERROR, error) from error
 
     def verify_list_csm_users(self, actual_response, offset=None, limit=None,
                               sort_by=None, sort_dir=None):
@@ -341,7 +341,7 @@ class RestCsmUser(RestTestLib):
                 RestCsmUser.verify_list_csm_users.__name__,
                 error)
             raise CTException(
-        err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
+        err.CSM_REST_VERIFICATION_FAILED, error) from error
 
     def list_actual_num_of_csm_users(self):
         """
@@ -407,7 +407,7 @@ class RestCsmUser(RestTestLib):
                 RestCsmUser.list_actual_num_of_csm_users.__name__,
                 error)
             raise CTException(
-        err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
+        err.CSM_REST_VERIFICATION_FAILED, error) from error
 
     def verify_csm_user_list_valid_params(self):
         """
@@ -483,7 +483,7 @@ class RestCsmUser(RestTestLib):
                 RestCsmUser.verify_csm_user_list_valid_params.__name__,
                 error)
             raise CTException(
-        err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
+        err.CSM_REST_VERIFICATION_FAILED, error) from error
 
     @RestTestLib.authenticate_and_login
     def verify_list_csm_users_unauthorised_access_failure(self):
@@ -517,7 +517,7 @@ class RestCsmUser(RestTestLib):
                 RestCsmUser.verify_list_csm_users_unauthorised_access_failure.__name__,
                 error)
             raise CTException(
-        err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
+        err.CSM_REST_VERIFICATION_FAILED, error) from error
 
     @RestTestLib.authenticate_and_login
     def list_csm_users_empty_param(self, expect_status_code,
@@ -576,7 +576,7 @@ class RestCsmUser(RestTestLib):
                 RestCsmUser.list_csm_users_empty_param.__name__,
                 error)
             raise CTException(
-        err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
+        err.CSM_REST_VERIFICATION_FAILED, error) from error
 
     @RestTestLib.authenticate_and_login
     def list_csm_single_user(self, request_type, expect_status_code, user,
@@ -649,7 +649,7 @@ class RestCsmUser(RestTestLib):
                 RestCsmUser.list_csm_single_user.__name__,
                 error)
             raise CTException(
-        err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
+        err.CSM_REST_VERIFICATION_FAILED, error) from error
 
     def verify_modify_csm_user(self, user, payload_login, expect_status_code,
         return_actual_response=False):
@@ -713,7 +713,7 @@ class RestCsmUser(RestTestLib):
                 RestCsmUser.verify_modify_csm_user.__name__,
                 error)
             raise CTException(
-        err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
+        err.CSM_REST_VERIFICATION_FAILED, error) from error
 
     def revert_csm_user_password(self, username, current_password, old_password,
     return_actual_response=False):
@@ -776,7 +776,7 @@ class RestCsmUser(RestTestLib):
                 RestCsmUser.revert_csm_user_password.__name__,
                 error)
             raise CTException(
-        err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
+        err.CSM_REST_VERIFICATION_FAILED, error) from error
 
     def verify_user_exits(self, user: str) -> bool:
         """
@@ -826,4 +826,4 @@ class RestCsmUser(RestTestLib):
                 RestCsmUser.delete_csm_user.__name__,
                 error)
             raise CTException(
-                err.CSM_REST_AUTHENTICATION_ERROR, error.args[0]) from error
+                err.CSM_REST_AUTHENTICATION_ERROR, error) from error

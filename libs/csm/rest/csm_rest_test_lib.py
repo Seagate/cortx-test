@@ -69,7 +69,7 @@ class RestTestLib:
                             RestTestLib.rest_login.__name__,
                             error)
             raise CTException(
-                err.CSM_REST_AUTHENTICATION_ERROR, error.args[0]) from error
+                err.CSM_REST_AUTHENTICATION_ERROR, error) from error
 
     def custom_rest_login(self, username, password,
                           username_key="username", password_key="password"):
@@ -100,7 +100,7 @@ class RestTestLib:
                             RestTestLib.custom_rest_login.__name__,
                             error)
             raise CTException(
-                err.CSM_REST_AUTHENTICATION_ERROR, error.args[0]) from error
+                err.CSM_REST_AUTHENTICATION_ERROR, error) from error
         return response
 
     def authenticate_and_login(func):
@@ -119,6 +119,8 @@ class RestTestLib:
             :keyword authorized : to verify unauthorized scenarios (boolean)
             :return: function executables
             """
+            import pdb
+            pdb.set_trace()
             self.headers = {}  # Initiate headers
             self.log.debug(
                 "user is getting authorized for REST operations ...")
@@ -164,4 +166,4 @@ class RestTestLib:
                             RestTestLib.update_csm_config_for_user.__name__,
                             error)
             raise CTException(
-                err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
+                err.CSM_REST_VERIFICATION_FAILED, error) from error

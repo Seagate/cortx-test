@@ -89,7 +89,7 @@ class CSMConfigsCheck:
             self._log.info("Checking the presence of pre defined s3 account")
             response = self._s3account.list_all_created_s3account().json()["s3_accounts"]
             expected_result = {const.ACC_NAME: self._s3account.config["s3account_user"]["username"]}
-            result = any(self._s3account.verify_json_response(
+            result = any(config_utils.verify_json_response(
                 actual_result, expected_result) for actual_result in response)
         except Exception as error:
             # CTP Exception handling not done here as this is being called in setup for every test suit

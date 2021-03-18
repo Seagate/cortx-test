@@ -75,7 +75,7 @@ class RestIamUser(RestTestLib):
                             error)
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR,
-                error.args[0]) from error
+                error) from error
 
     @RestTestLib.authenticate_and_login
     def delete_iam_user(self, user=None):
@@ -106,7 +106,7 @@ class RestIamUser(RestTestLib):
                             error)
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR,
-                error.args[0]) from error
+                error) from error
 
     def create_and_verify_iam_user_response_code(self,
                                                  user=const.IAM_USER +
@@ -135,7 +135,7 @@ class RestIamUser(RestTestLib):
                             RestIamUser.create_and_verify_iam_user_response_code.__name__,
                             error)
             raise CTException(
-                err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
+                err.CSM_REST_VERIFICATION_FAILED, error) from error
 
     @RestTestLib.authenticate_and_login
     def iam_user_login(self, user=None,
@@ -170,7 +170,7 @@ class RestIamUser(RestTestLib):
                             RestIamUser.iam_user_login.__name__,
                             error)
             raise CTException(
-                err.CSM_REST_AUTHENTICATION_ERROR, error.args[0]) from error
+                err.CSM_REST_AUTHENTICATION_ERROR, error) from error
 
     @RestTestLib.authenticate_and_login
     def list_iam_users(self):
@@ -197,7 +197,7 @@ class RestIamUser(RestTestLib):
                             error)
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR,
-                error.args[0]) from error
+                error) from error
 
     def verify_unauthorized_access_to_csm_user_api(self):
         """
@@ -260,6 +260,7 @@ class RestIamUser(RestTestLib):
             self.log.debug(
                 "Verifying unauthorised access to CREATE CSM user API request")
             # Creating required payload to be added for request
+
             data = self.csm_user.create_payload_for_new_csm_user(
                 user_type="valid", user_defined_role="manage")
             user_data = const.USER_DATA
@@ -354,4 +355,4 @@ class RestIamUser(RestTestLib):
                 error)
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR,
-                error.args[0]) from error
+                error) from error
