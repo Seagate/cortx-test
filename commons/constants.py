@@ -95,7 +95,6 @@ const.SCRIPT_PATH = "cd /opt/seagate/cortx/auth/scripts"
 const.CRASH_COMMANDS = ["ls -l /var/crash", "ls -lR /var/motr | grep core"],
 
 
-
 class Rest:
     # REST LIB
     EXCEPTION_ERROR = "Error in"
@@ -112,7 +111,7 @@ class Rest:
     USER_NAME = "user_name"
     USER_ID = "user_id"
     IAM_USER = "test_iam_user"
-    IAM_PASSWORD = ""
+    IAM_PASSWORD = "Seagate@123"
     ARN = "arn"
     BAD_REQUEST = 400
     UNAUTHORIZED = 401
@@ -170,7 +169,55 @@ class Rest:
         "required": ["total", "good"]
     }
 
-# CORTXCLI Constants
+# cortxcli constants
+S3BUCKET_HELP = [
+    f'usage: cortxcli s3buckets [-h] {{show,create,delete}}',
+    'positional arguments:',
+    '{show,create,delete}',
+    'show                Displays S3 buckets On The CLI',
+    'create              Create new S3 bucket',
+    'delete              Delete the bucket',
+    'optional arguments:',
+    '-h, --help            show this help message and exit']
+S3BUCKET_CREATE_HELP = [
+    f"usage: cortxcli s3buckets create [-h] bucket_name",
+    "positional arguments:",
+    "bucket_name  Give a bucket name to create.",
+    "optional arguments:",
+    "-h, --help   show this help message and exit"]
+S3BUCKET_SHOW_HELP = [
+    f"usage: cortxcli s3buckets show [-h] [-f {{table,xml,json}}]",
+    "optional arguments:",
+    "-h, --help           show this help message and exit",
+    "-f {table,xml,json}  Format of Output"]
+S3BUCKET_DELETE_HELP = [
+    f"usage: cortxcli s3buckets delete [-h] bucket_name",
+    "positional arguments:",
+    "bucket_name  Bucket Name",
+    "optional arguments:",
+    "-h, --help   show this help message and exit"]
+S3ACCOUNT_HELP_CMDS = [
+        "s3iamusers",
+        "support_bundle",
+        "system",
+        "s3buckets",
+        "s3accounts",
+        "s3bucketpolicy"]
+S3ACCOUNT_HELP = ["positional arguments:",
+                  "{show,create}",
+                  "show         Displays S3 Accounts On the cli",
+                  "create       Create a new S3 Account."]
+S3ACC_CREATE_HELP = ["positional arguments:",
+                     "account_name   Name to be given to S3 account",
+                     "account_email  Email to be given to S3 account"]
+S3ACC_SHOW_HELP = ["optional arguments:",
+                   "-h, --help           show this help message and exit",
+                   "-f {table,xml,json}  Format of Output"]
+S3ACC_DELETE_HELP = ["positional arguments:",
+                     "account_name  Name of the account to be Deleted."]
+S3ACC_RESET_PWD_HELP = [
+    "positional arguments:",
+    "account_name  Name of S3 account whose password want to be reset."]
 SUPPORT_BUNDLE_PATH = "/var/log/seagate/support_bundle/"
 TAR_POSTFIX = "tar.gz"
 SB_STATUS = "status"
@@ -189,4 +236,3 @@ CSM_USER_HELP =[
     "s3accounts",
     "system",
     "users"]
-

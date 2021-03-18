@@ -44,14 +44,17 @@ class CortxCliS3AccountOperations(CortxCli):
             self,
             account_name: str,
             account_email: str,
-            password: str) -> tuple:
+            password: str,
+            **kwargs) -> tuple:
         """
         This function will create s3 account with specified name using CORTX CLI.
         :param str account_name: Name of s3 account to be created.
         :param str account_email: Account email for account creation.
         :param str password: Password to create s3 account user.
+        :keyword confirm_password: Confirm password in case want to enter different than password
         :return: True/False and Response returned by CORTX CLI
         """
+        confirm_password = kwargs.get("confirm_password", password)
         command = " ".join(
             [commands.CMD_CREATE_S3ACC, account_name, account_email])
         LOGGER.info("Creating S3 account with name %s", account_name)
@@ -60,7 +63,7 @@ class CortxCliS3AccountOperations(CortxCli):
         if "Password:" in response:
             response = self.execute_cli_commands(cmd=password)[1]
             if "Confirm Password:" in response:
-                response = self.execute_cli_commands(cmd=password)[1]
+                response = self.execute_cli_commands(cmd=confirm_password)[1]
                 if "[Y/n]" in response:
                     response = self.execute_cli_commands(cmd="Y")[1]
                     if account_name in response:
@@ -107,13 +110,16 @@ class CortxCliS3AccountOperations(CortxCli):
     def reset_s3account_password(
             self,
             account_name: str,
-            new_password: str) -> tuple:
+            new_password: str,
+            **kwargs) -> tuple:
         """
         This function will update password for specified s3 account to new_password using CORTX CLI.
         :param account_name: Name of the s3 account whose password is to be update
         :param new_password: New password for s3 account
+        :keyword reset_password: Y/n
         :return: True/False and Response returned by CORTX CLI
         """
+        reset_password = kwargs.get("reset_password", "Y")
         reset_pwd_cmd = commands.CMD_RESET_S3ACC_PWD.format(account_name)
         LOGGER.info("Resetting s3 account password to %s", new_password)
         response = self.execute_cli_commands(cmd=reset_pwd_cmd)[1]
@@ -122,7 +128,7 @@ class CortxCliS3AccountOperations(CortxCli):
             if "Confirm Password:" in response:
                 response = self.execute_cli_commands(cmd=new_password)[1]
                 if "[Y/n]" in response:
-                    response = self.execute_cli_commands(cmd="Y")[1]
+                    response = self.execute_cli_commands(cmd=reset_password)[1]
                     if account_name in response:
                         LOGGER.info("Response returned: \n%s", response)
                         return True, response

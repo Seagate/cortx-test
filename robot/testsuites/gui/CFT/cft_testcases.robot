@@ -1,17 +1,22 @@
 *** Settings ***
 Documentation    This suite verifies the testcases for csm login
 Library     SeleniumLibrary
-Resource    ../../../resources/page_objects/loginPage.robot
-Resource    ../../../resources/page_objects/dashboard.robot
-Resource    ../../../resources/page_objects/alertPage.robot
-Resource    ../../../resources/page_objects/s3accountPage.robot
-Resource    ../../../resources/common/common.robot
-Resource    ../../../resources/page_objects/userSettingsLocalPage.robot
-Resource    ../../../resources/page_objects/auditlogPage.robot
-Resource    ../../../resources/page_objects/softwareUpdatepage.robot
-Variables   ../../../resources/common/common_variables.py
+Resource    ${EXECDIR}/resources/page_objects/loginPage.robot
+Resource    ${EXECDIR}/resources/page_objects/dashboard.robot
+Resource    ${EXECDIR}/resources/page_objects/alertPage.robot
+Resource    ${EXECDIR}/resources/page_objects/s3accountPage.robot
+Resource    ${EXECDIR}/resources/common/common.robot
+Resource    ${EXECDIR}/resources/page_objects/userSettingsLocalPage.robot
+Resource    ${EXECDIR}/resources/page_objects/auditlogPage.robot
+Resource    ${EXECDIR}/resources/page_objects/softwareUpdatepage.robot
+Resource    ${EXECDIR}/resources/page_objects/firmwareUpdatepage.robot
+Variables   ${EXECDIR}/resources/common/common_variables.py
+Resource    ${EXECDIR}/resources/page_objects/preboardingPage.robot
+Variables   ${EXECDIR}/resources/common/common_variables.py
 
-
+Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
+...  ${username}  ${password}
+...  AND  Close Browser
 Test Setup  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
 Test Teardown  Close Browser
 Suite Teardown  Close All Browsers
@@ -34,7 +39,7 @@ ${sw_version}  683
 TEST-1226
     [Documentation]  Test that CSM user with role manager cannot update or delete s3 accounts
     ...  Reference : https://jts.seagate.com/browse/TEST-1226
-    [Tags]  Priority_High  CFT_test
+    [Tags]  Priority_High  CFT_test  TEST-1226
     ${new_password}=  Generate New Password
     Navigate To Page  MANAGE_MENU_ID
     Create New CSM User  manage1226  ${new_password}  manage
@@ -51,7 +56,7 @@ TEST-1226
 TEST-1213
     [Documentation]  Test that CSM user with role manager has access to dashboard and perform actions on alerts
     ...  Reference : https://jts.seagate.com/browse/TEST-1213
-    [Tags]  Priority_High  CFT_test  user_role
+    [Tags]  Priority_High  CFT_test  user_role  TEST-1213
     ${new_password}=  Generate New Password
     Navigate To Page  MANAGE_MENU_ID
     Create New CSM User  manage1213  ${new_password}  manage
@@ -90,7 +95,7 @@ TEST-1213
 TEST-1219
     [Documentation]  Test that monitor user can view alerts and stats.
     ...  Reference : https://jts.seagate.com/browse/TEST-1219
-    [Tags]  Priority_High  CFT_test  user_role
+    [Tags]  Priority_High  CFT_test  user_role  TEST-1219
     ${new_password}=  Generate New Password
     Navigate To Page  MANAGE_MENU_ID
     Create New CSM User  monitor1219  ${new_password}  monitor
@@ -124,7 +129,7 @@ TEST-1219
 TEST-4409
     [Documentation]  Test that on click of details option on Alerts detail page all the alerts related details gets displayed in the pop-up
     ...  Reference : https://jts.seagate.com/browse/TEST-4409
-    [Tags]  Priority_High  CFT_test
+    [Tags]  Priority_High  CFT_test  TEST-4409
     ${new_password}=  Generate New Password
     Navigate To Page  MANAGE_MENU_ID
     Create New CSM User  monitor4409  ${new_password}  monitor
@@ -159,7 +164,7 @@ TEST-4409
 TEST-1037
     [Documentation]  Test that S3 account user must not have access to create CSM user
     ...  Reference : https://jts.seagate.com/browse/TEST-1037
-    [Tags]  Priority_High  CFT_Test
+    [Tags]  Priority_High  CFT_Test  TEST-1037
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
@@ -175,7 +180,7 @@ TEST-1037
 TEST-4932
     [Documentation]  Verify the audit log data for the logs seen/downloaded from audit log UI
     ...  Reference : https://jts.seagate.com/browse/TEST-4932
-    [Tags]  Priority_High  CFT_test
+    [Tags]  Priority_High  CFT_test  TEST-4932
     Navigate To Audit Log Section
     Capture Page Screenshot  test_4932_audit_log_section.png
     View Audit Log  CSM  One day
@@ -197,6 +202,7 @@ TEST-7820
     [Documentation]  Test that after software update is done, appropriate last update status, last update version
     ...  and last update description is displayed
     ...  Reference : https://jts.seagate.com/browse/TEST-7820
+    [Tags]  Priority_High  CFT_test  TEST-7820
     Navigate To Page  MAINTENANCE_MENU_ID  SW_UPDATE_TAB_ID
     Click On Upload New Software File Button
     ${path}=  Download SW ISO File  ${sw_version}  ${Download_File_Path}
@@ -204,3 +210,16 @@ TEST-7820
     # These following lines should be executed in case you have the proper machine
     #Click On Upload New Software File Button
     #Click On Start Software Update Button
+
+TEST-6150
+    [Documentation]  est that appropriate success message is getting
+    ...  displayed in cases of FW update is successful.
+    ...  Reference : https://jts.seagate.com/browse/TEST-6150
+    [Tags]  Priority_High  CFT_test  TEST-6150
+    Navigate To Page  MAINTENANCE_MENU_ID  FW_UPDATE_TAB_ID
+    Click On Upload New Firmware File Button
+    ${path}=  Download Firmware Binary  ${Download_File_Path}
+    Upload File  CHOOSE_FW_UPDATE_FILE_BTN_ID  ${path}
+    # These following lines should be executed in case you have the proper machine
+    #Click On Upload New Firmware File Button
+    #Click On Start Firmware Update Button
