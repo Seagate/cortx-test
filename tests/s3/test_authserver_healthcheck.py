@@ -127,12 +127,10 @@ class TestAuthServerHealthCheckAPI:
         assert_true(resp[0], resp[1])
         resp = S3H_OBJ.get_authserver_log(path=self.auth_log_path)
         self.log.debug(resp)
-        res = http_head_request(url=S3_CFG["head_urls"])
-        assert_equal(test_cfg["status_code"], str(res.status_code))
-        self.log.info(res)
-        res = http_head_request(url=S3_CFG["head_urls"])
-        assert_equal(test_cfg["status_code"], str(res.status_code))
-        self.log.info(res)
+        for _ in range(2):
+            res = http_head_request(url=S3_CFG["head_urls"])
+            self.log.info(res)
+            assert_equal(test_cfg["status_code"], str(res.status_code))
         self.log.info(
             "Ended: Test authserver response when health check is enabled")
 
@@ -153,11 +151,9 @@ class TestAuthServerHealthCheckAPI:
         assert_true(resp[0], resp[1])
         resp = S3H_OBJ.get_authserver_log(path=self.auth_log_path)
         self.log.debug(resp)
-        res = http_head_request(url=S3_CFG["head_urls"])
-        assert_equal(test_cfg["status_code"], str(res.status_code))
-        self.log.info(res)
-        res = http_head_request(url=S3_CFG["head_urls"])
-        assert_equal(test_cfg["status_code"], str(res.status_code))
-        self.log.info(res)
+        for _ in range(2):
+            res = http_head_request(url=S3_CFG["head_urls"])
+            self.log.info(res)
+            assert_equal(test_cfg["status_code"], str(res.status_code))
         self.log.info(
             "Ended: Test authserver response when health check is disabled")
