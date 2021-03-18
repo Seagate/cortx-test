@@ -22,6 +22,8 @@
 import logging
 import time
 import pytest
+from commons.ct_fail_on import CTFailOn
+from commons.errorcodes import error_handler
 from commons.utils import assert_utils
 from config import CMN_CFG
 from commons.helpers import bmc_helper
@@ -118,6 +120,7 @@ class TestCliSystem:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-11742")
+    @CTFailOn(error_handler)
     def test_7019_verify_node_status(self):
         """
         Test that user able to view the resource status using csmcli system status commands.
@@ -132,6 +135,7 @@ class TestCliSystem:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-12846")
+    @CTFailOn(error_handler)
     def test_7018_node_operations(self):
         """
         Test that only root user is able to perform start,stop and shutdown options through csmcli.
@@ -197,6 +201,7 @@ class TestCliSystem:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-15860")
+    @CTFailOn(error_handler)
     def test_7021_stop_node(self):
         """
         Test that user should able to Stop node resource using the system stop [resource_name] command.
@@ -229,6 +234,7 @@ class TestCliSystem:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-16213")
+    @CTFailOn(error_handler)
     def test_7025_start_node(self):
         """
         Test that user is able to Start node resource using the system start [resource_name] command.
