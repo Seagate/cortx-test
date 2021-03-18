@@ -236,8 +236,8 @@ CSM_USER_HELP =[
 
 # Prov Constants:
 JENKINS_URL = "http://eos-jenkins.mero.colo.seagate.com/job/QA/"
-JENKINS_USERNAME = "532852"
-JENKINS_PASSWORD = "1109c921e98a859961fb842693b918f5e7"
-TOKEN_NAME = "seagateauto"
+JENKINS_USERNAME = "6LS9f5yJ1IFpxbasg/wPKG4p5ycaBT6x/j7Kj7anTSk="
+JENKINS_PASSWORD = "/AxML7GgiVqRSmKGcPSJSorUq0X9FLZrfrlEyw6tjKnccwT67II+SwOcKBWPV6SWoBwM/46rAky+fXKumyX41Q=="
+TOKEN_NAME = "10Mnx/XE4tEN8xrzQTNp2iSGQxPjpcHXbIdZgJyIN7Y="
 PARAMS = {"CORTX_BUILD": "{0}", "HOST": "{1}", "HOST_PASS": "{2}", "DEBUG": "True"}
 JOB_NAME = "QA-R2-Single-Node-Deployment"
