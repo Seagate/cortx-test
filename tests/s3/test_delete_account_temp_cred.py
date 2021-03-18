@@ -26,14 +26,15 @@ from libs.s3 import s3_test_lib, iam_test_lib
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
-from commons.utils.config_utils import read_yaml
+from commons.configmanager import get_config_wrapper
 from commons.utils.assert_utils import \
     assert_true, assert_in, assert_equal, assert_not_in
 
 LOGGER = logging.getLogger(__name__)
 IAM_TEST_OBJ = iam_test_lib.IamTestLib()
-TEST_CONFIG = read_yaml("config/s3/test_delete_account_temp_cred.yaml")[1]
+TEST_CONFIG = get_config_wrapper(fpath="config/s3/test_delete_account_temp_cred.yaml")
 from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
+
 
 class TestDeleteAccountTempCred():
     """Delete Account Temp Cred Testsuite."""
