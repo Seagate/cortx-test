@@ -292,7 +292,7 @@ def trigger_tests_from_te(args):
         if 'environment' in tp_metadata and tp_metadata.get('environment'):
             test_env = tp_metadata.get('environment')
             try:
-                _build, _build_type = test_env.split('_')
+                _build_type, _build = test_env.split('_')
             except ValueError:
                 raise EnvironmentError('Test plan env needs to be in format <build_type>_<build#>')
             args.build, args.build_type = _build, _build_type

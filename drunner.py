@@ -152,7 +152,7 @@ def run(opts: dict) -> None:
     if not opts.build and not opts.build_type:
         test_env = tp_meta.get('environment')
         try:
-            _build, _build_type = test_env.split('_')
+            _build_type, _build = test_env.split('_')
         except ValueError:
             raise EnvironmentError('Test plan env needs to be in format <build_type>_<build#>')
         opts.build, opts.build_type = _build, _build_type

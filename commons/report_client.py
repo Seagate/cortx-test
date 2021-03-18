@@ -132,7 +132,7 @@ class ReportClient(SingletonMixin):
         """
         payload = {"OSVersion": data_kwargs.get('os', "CentOS"),
                    "buildNo": data_kwargs.get('build'),
-                   "buildType": data_kwargs.get('build_type', "Stable"),  # Revisit
+                   "buildType": data_kwargs.get('build_type', "stable"),  # Revisit
                    "clientHostname": data_kwargs.get('client_hostname', "autoclient"),
                    "executionType": data_kwargs.get('execution_type', "Automated"),  # Revisit
                    "healthCheckResult": data_kwargs.get('health_chk_res', "Pass"),  # setup
