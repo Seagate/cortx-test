@@ -59,12 +59,12 @@ class SaltHelper(Host):
             pillar_key)
         log.info(
             "Fetching pillar value with cmd: {}".format(get_pillar_cmd))
-        flag, output = self.execute_cmd(cmd=get_pillar_cmd, shell=False)
+        output = self.execute_cmd(cmd=get_pillar_cmd, shell=False)
         if not output:
             err_msg = "Pillar value not found for {}".format(pillar_key)
             return False, err_msg
 
-        pillar_value = output[0].strip("\n")
+        pillar_value = output.decode().strip("\n")
         log.info(
             "Pillar value for {} is {}".format(
                 pillar_key, pillar_value))
@@ -75,8 +75,8 @@ class SaltHelper(Host):
                 return False, err_msg
             decrypt_cmd = "salt-call lyveutil.decrypt {} {} --output=newline_values_only".format(
                 component, pillar_value)
-            flag, output = self.execute_cmd(decrypt_cmd, shell=False)
-            pillar_value = output[0].strip("\n")
+            output = self.execute_cmd(decrypt_cmd, shell=False)
+            pillar_value = output.decode().strip("\n")
             log.info(
                 "Decrypted Pillar value for {} is {}".format(
                     pillar_key, pillar_value))
