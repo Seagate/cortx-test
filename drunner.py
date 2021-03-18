@@ -322,7 +322,6 @@ def run_pytest_collect_only_cmd(te_tag=None):
         cmd_line = ["pytest", collect_only, local, tag]
     else:
         cmd_line = ["pytest", collect_only, local]
-    cmd_line = cmd_line + ["--target=automation"]
     prc = subprocess.Popen(cmd_line)
     prc.communicate()
 
