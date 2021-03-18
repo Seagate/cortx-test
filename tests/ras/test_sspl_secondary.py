@@ -36,25 +36,21 @@ from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 
-CM_CFG = RAS_VAL["ras_sspl_alert"]
-NODES = CMN_CFG["nodes"]
-
 LOGGER = logging.getLogger(__name__)
-
-TEST_DATA = [CMN_CFG["nodes"][1]["host"]]
 
 
 class TestSSPLSecondary:
     """SSPL Test Suite."""
 
     @classmethod
-    @pytest.mark.parametrize("host", TEST_DATA)
     def setup_class(cls):
         """Setup for module."""
-        cls.host2 = CMN_CFG["host2"]
-        cls.host = CMN_CFG["host"]
-        cls.uname = CMN_CFG["username"]
-        cls.passwd = CMN_CFG["password"]
+        cls.cm_cfg = RAS_VAL["ras_sspl_alert"]
+        cls.nodes = CMN_CFG["nodes"]
+        cls.host2 = CMN_CFG["nodes"][1]["host"]
+        cls.host = CMN_CFG["nodes"][0]["host"]
+        cls.uname = CMN_CFG["nodes"][0]["username"]
+        cls.passwd = CMN_CFG["nodes"][0]["password"]
 
         cls.ras_test_obj = RASTestLib(host=cls.host, username=cls.uname,
                                       password=cls.passwd)
@@ -73,16 +69,16 @@ class TestSSPLSecondary:
         cls.csm_alert_obj = SystemAlerts(cls.node_obj2)
 
         # Enable this flag for starting RMQ channel
-        cls.start_rmq = CM_CFG["start_rmq"]
+        cls.start_rmq = cls.cm_cfg["start_rmq"]
 
         field_list = ["primary_controller_ip", "secondary_controller_ip",
                       "primary_controller_port", "secondary_controller_port",
                       "user", "password", "secret"]
         LOGGER.info("Putting expected values in KV store")
         for field in field_list:
-            res = cls.ras_test_obj.put_kv_store(CMN_CFG["enclosure_user"],
-                                                CMN_CFG["enclosure_pwd"],
-                                                field)
+            res = cls.ras_test_obj.put_kv_store(
+                CMN_CFG["enclosure"]["enclosure_user"],
+                CMN_CFG["enclosure"]["enclosure_pwd"], field)
             assert res
 
     def setup_method(self):
@@ -91,7 +87,7 @@ class TestSSPLSecondary:
         self.sspl_disable = False
         LOGGER.info("Retaining the original/default config")
         self.ras_test_obj2.retain_config(
-            CM_CFG["file"]["original_sspl_conf"], False)
+            self.cm_cfg["file"]["original_sspl_conf"], False)
 
         LOGGER.info("Performing Setup operations")
 
@@ -110,13 +106,13 @@ class TestSSPLSecondary:
         LOGGER.info("Response is: %s", response)
 
         LOGGER.info("Restarting sspl service")
-        self.health_obj2.restart_pcs_resource(CM_CFG["sspl_resource_id"])
-        time.sleep(CM_CFG["after_service_restart_sleep_val"])
+        self.health_obj2.restart_pcs_resource(self.cm_cfg["sspl_resource_id"])
+        time.sleep(self.cm_cfg["after_service_restart_sleep_val"])
         LOGGER.info(
             "Verifying the status of sspl and rabittmq service is online")
 
         # Getting SSPl and RabbitMQ service status
-        services = CM_CFG["service"]
+        services = self.cm_cfg["service"]
         resp = S3Helper.get_s3server_service_status(
             service=services["sspl_service"], host=self.host, user=self.uname,
             pwd=self.passwd)
@@ -133,7 +129,7 @@ class TestSSPLSecondary:
         if self.start_rmq:
             LOGGER.info("Running rabbitmq_reader.py script on node")
             resp = self.ras_test_obj2.start_rabbitmq_reader_cmd(
-                CM_CFG["sspl_exch"], CM_CFG["sspl_key"])
+                self.cm_cfg["sspl_exch"], self.cm_cfg["sspl_key"])
             assert resp, "Failed to start RMQ channel"
             LOGGER.info(
                 "Successfully started rabbitmq_reader.py script on node")
@@ -148,20 +144,20 @@ class TestSSPLSecondary:
     def teardown_method(self):
         """Teardown operations."""
         LOGGER.info("Performing Teardown operation")
-        self.ras_test_obj2.retain_config(CM_CFG["file"]["original_sspl_conf"],
+        self.ras_test_obj2.retain_config(self.cm_cfg["file"]["original_sspl_conf"],
                                          True)
 
-        if os.path.exists(CM_CFG["file"]["telnet_xml"]):
+        if os.path.exists(self.cm_cfg["file"]["telnet_xml"]):
             LOGGER.info("Remove telnet file")
-            os.remove(CM_CFG["file"]["telnet_xml"])
+            os.remove(self.cm_cfg["file"]["telnet_xml"])
 
         LOGGER.info("Terminating the process of reading sspl.log")
         self.ras_test_obj2.kill_remote_process("/sspl/sspl.log")
 
         LOGGER.debug("Copying contents of sspl.log")
         read_resp = self.node_obj2.read_file(
-            filename=CM_CFG["file"]["sspl_log_file"],
-            local_path=CM_CFG["file"]["sspl_log_file"])
+            filename=self.cm_cfg["file"]["sspl_log_file"],
+            local_path=self.cm_cfg["file"]["sspl_log_file"])
         LOGGER.debug(
             "======================================================")
         LOGGER.debug(read_resp)
@@ -169,30 +165,30 @@ class TestSSPLSecondary:
             "======================================================")
 
         LOGGER.info(
-            "Removing file %s", CM_CFG["file"]["sspl_log_file"])
-        self.node_obj2.remove_file(filename=CM_CFG["file"]["sspl_log_file"])
+            "Removing file %s", self.cm_cfg["file"]["sspl_log_file"])
+        self.node_obj2.remove_file(filename=self.cm_cfg["file"]["sspl_log_file"])
 
         if self.start_rmq:
             LOGGER.info("Terminating the process rabbitmq_reader.py")
             self.ras_test_obj2.kill_remote_process("rabbitmq_reader.py")
-            files = [CM_CFG["file"]["alert_log_file"],
-                     CM_CFG["file"]["extracted_alert_file"],
-                     CM_CFG["file"]["screen_log"]]
+            files = [self.cm_cfg["file"]["alert_log_file"],
+                     self.cm_cfg["file"]["extracted_alert_file"],
+                     self.cm_cfg["file"]["screen_log"]]
             for file in files:
                 LOGGER.info("Removing log file %s from the Node", file)
                 self.node_obj2.remove_file(filename=file)
 
         self.health_obj2.restart_pcs_resource(
-            resource=CM_CFG["sspl_resource_id"])
-        time.sleep(CM_CFG["sleep_val"])
+            resource=self.cm_cfg["sspl_resource_id"])
+        time.sleep(self.cm_cfg["sleep_val"])
 
         LOGGER.info("Successfully performed Teardown operation")
 
-    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-14034")
     @pytest.mark.skip
+    @CTFailOn(error_handler)
     def test_1648(self):
         """
         EOS-10619: Pacemaker Resource Agents for SSPL service(Stop sspl service
@@ -208,7 +204,7 @@ class TestSSPLSecondary:
         LOGGER.info(
             "Step 1: Checking sspl-ll service status on primary node")
         resp = S3Helper.get_s3server_service_status(
-            service=CM_CFG["service"]["sspl_service"], host=self.host,
+            service=self.cm_cfg["service"]["sspl_service"], host=self.host,
             user=self.uname, pwd=self.passwd)
         assert resp[0], resp[1]
         LOGGER.info("Step 1: Sspl-ll is up and running on primary node")
@@ -216,35 +212,35 @@ class TestSSPLSecondary:
         LOGGER.info("Step 2: Checking sspl-ll service status on secondary "
                     "node")
         resp = S3Helper.get_s3server_service_status(
-            service=CM_CFG["service"]["sspl_service"], host=self.host2,
+            service=self.cm_cfg["service"]["sspl_service"], host=self.host2,
             user=self.uname, pwd=self.passwd)
         assert resp[0], resp[1]
         LOGGER.info("Step 2: Sspl-ll is up and running on secondary node")
 
         LOGGER.info("Step 3: Checking sspl state on both the nodes")
         res = self.ras_test_obj.get_sspl_state()
-        LOGGER.info("State of sspl on %s is %s", NODES[0], res[1])
+        LOGGER.info("State of sspl on %s is %s", self.nodes[0]["host"], res[1])
 
         res = self.ras_test_obj2.get_sspl_state()
-        LOGGER.info("State of sspl on %s is %s", NODES[1], res[1])
+        LOGGER.info("State of sspl on %s is %s", self.nodes[1]["host"], res[1])
 
-        LOGGER.info("Step 4: Stopping sspl-ll service on node %s", NODES[1])
+        LOGGER.info("Step 4: Stopping sspl-ll service on node %s", self.nodes[1]["host"])
         resp = self.ras_test_obj2.enable_disable_service(
-            "disable", CM_CFG["sspl_resource_id"])
+            "disable", self.cm_cfg["sspl_resource_id"])
         assert not resp[0], resp[1]
         self.sspl_disable = True
         LOGGER.info("Step 4: SSPL service was successfully stopped and "
-                    "validated on node %s", NODES[1])
+                    "validated on node %s", self.nodes[1]["host"])
 
-        time.sleep(CM_CFG["sleep_val"])
+        time.sleep(self.cm_cfg["sleep_val"])
 
         LOGGER.info("Step 5: Checking if sspl-ll is restarted automatically "
                     "by pacemaker")
         resp = S3Helper.get_s3server_service_status(
-            service=CM_CFG["service"]["sspl_service"], host=self.host2,
+            service=self.cm_cfg["service"]["sspl_service"], host=self.host2,
             user=self.uname, pwd=self.passwd)
         assert resp[0], resp[1]
-        LOGGER.info("Step 5: Sspl-ll is up and running on node %s", NODES[1])
+        LOGGER.info("Step 5: Sspl-ll is up and running on node %s", self.nodes[1]["host"])
 
         LOGGER.info("Inducing FAN alert")
         buffer_sz = test_cfg["buffer_sz"]
@@ -297,10 +293,10 @@ class TestSSPLSecondary:
             "ENDED: Pacemaker Resource Agents for SSPL service(Stop sspl "
             "service on Node)")
 
-    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-14035")
+    @CTFailOn(error_handler)
     def test_1783(self):
         """
         EOS-10620: Run SSPL in degraded mode (Fail  SSPL service)
@@ -309,49 +305,49 @@ class TestSSPLSecondary:
         """
         LOGGER.info(
             "STARTED: Run SSPL in degraded mode (Fail  SSPL service)")
-        service_cfg = CM_CFG["service"]
+        service_cfg = self.cm_cfg["service"]
         test_cfg = RAS_TEST_CFG["test_1648"]
 
         LOGGER.info(
             "Step 1: Checking sspl-ll service status on primary node")
         resp = S3Helper.get_s3server_service_status(
-            service=CM_CFG["service"]["sspl_service"], host=self.host,
+            service=self.cm_cfg["service"]["sspl_service"], host=self.host,
             user=self.uname, pwd=self.passwd)
         assert resp[0], resp[1]
         LOGGER.info("Step 1: Sspl-ll is up and running on primary node")
 
         LOGGER.info("Step 2: Checking sspl-ll service status on secondary node")
         resp = S3Helper.get_s3server_service_status(
-            service=CM_CFG["service"]["sspl_service"], host=self.host2,
+            service=self.cm_cfg["service"]["sspl_service"], host=self.host2,
             user=self.uname, pwd=self.passwd)
         assert resp[0], resp[1]
         LOGGER.info("Step 2: Sspl-ll is up and running on secondary node")
 
-        LOGGER.info("Step 3: Checking sspl state on %s", NODES[0])
+        LOGGER.info("Step 3: Checking sspl state on %s", self.nodes[0]["host"])
         res = self.ras_test_obj.get_sspl_state()
-        LOGGER.info("State of sspl on %s is %s", NODES[0], res[1])
+        LOGGER.info("State of sspl on %s is %s", self.nodes[0]["host"], res[1])
 
-        LOGGER.info("Step 3: Checking sspl state on %s", NODES[1])
+        LOGGER.info("Step 3: Checking sspl state on %s", self.nodes[1]["host"])
         res = self.ras_test_obj2.get_sspl_state()
-        LOGGER.info("State of sspl on %s is %s", NODES[1], res[1])
+        LOGGER.info("State of sspl on %s is %s", self.nodes[1]["host"], res[1])
 
-        LOGGER.info("Step 4: Killing sspl-ll service on node %s", NODES[1])
+        LOGGER.info("Step 4: Killing sspl-ll service on node %s", self.nodes[1]["host"])
         resp = self.ras_test_obj2.check_service_recovery(
             service_cfg["sspl_service"])
 
         assert resp
         LOGGER.info("Step 4: SSPL service was successfully killed and "
-                    "validated on node %s", NODES[1])
+                    "validated on node %s", self.nodes[1]["host"])
 
-        time.sleep(CM_CFG["sleep_val"])
+        time.sleep(self.cm_cfg["sleep_val"])
 
         LOGGER.info("Step 5: Checking if sspl-ll is restarted automatically "
                     "by pacemaker")
         resp = S3Helper.get_s3server_service_status(
-            service=CM_CFG["service"]["sspl_service"], host=self.host2,
+            service=self.cm_cfg["service"]["sspl_service"], host=self.host2,
             user=self.uname, pwd=self.passwd)
         assert resp[0], resp[1]
-        LOGGER.info("Step 5: Sspl-ll is up and running on node %s", NODES[1])
+        LOGGER.info("Step 5: Sspl-ll is up and running on node %s", self.nodes[1]["host"])
 
         LOGGER.info("Inducing FAN alert")
         buffer_sz = test_cfg["buffer_sz"]
@@ -404,11 +400,11 @@ class TestSSPLSecondary:
             "ENDED: Pacemaker Resource Agents for SSPL service(Stop sspl "
             "service on Node)")
 
-    @CTFailOn(error_handler)
     @pytest.mark.skip
     @pytest.mark.ras
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-14794")
+    @CTFailOn(error_handler)
     def test_1645(self):
         """
         EOS-10618: Pacemaker Resource Agents for SSPL service (Reboot the Node
@@ -424,14 +420,14 @@ class TestSSPLSecondary:
         LOGGER.info(
             "Step 1: Checking sspl-ll service status on primary node")
         resp = S3Helper.get_s3server_service_status(
-            service=CM_CFG["service"]["sspl_service"], host=self.host,
+            service=self.cm_cfg["service"]["sspl_service"], host=self.host,
             user=self.uname, pwd=self.passwd)
         assert resp[0], resp[1]
         LOGGER.info("Step 1: Sspl-ll is up and running on primary node")
 
         LOGGER.info("Step 2: Checking sspl-ll service status on secondary node")
         resp = S3Helper.get_s3server_service_status(
-            service=CM_CFG["service"]["sspl_service"], host=self.host2,
+            service=self.cm_cfg["service"]["sspl_service"], host=self.host2,
             user=self.uname, pwd=self.passwd)
         assert resp[0], resp[1]
         LOGGER.info("Step 2: Sspl-ll is up and running on secondary node")
@@ -511,14 +507,14 @@ class TestSSPLSecondary:
         LOGGER.info(
             "Step 7: Checking sspl-ll service status on primary node")
         resp = S3Helper.get_s3server_service_status(
-            service=CM_CFG["service"]["sspl_service"], host=self.host,
+            service=self.cm_cfg["service"]["sspl_service"], host=self.host,
             user=self.uname, pwd=self.passwd)
         assert resp[0], resp[1]
         LOGGER.info("Step 7: Sspl-ll is up and running on primary node")
 
         LOGGER.info("Step 8: Checking sspl-ll service status on secondary node")
         resp = S3Helper.get_s3server_service_status(
-            service=CM_CFG["service"]["sspl_service"], host=self.host2,
+            service=self.cm_cfg["service"]["sspl_service"], host=self.host2,
             user=self.uname, pwd=self.passwd)
         assert resp[0], resp[1]
         LOGGER.info("Step 8: Sspl-ll is up and running on secondary node")
