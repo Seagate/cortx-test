@@ -201,7 +201,7 @@ def pytest_addoption(parser):
         "--force_serial_run", action="store", default=False, help="Force serial execution"
     )
     parser.addoption(
-        "--target", action="store", default="auto_setup", help="Target or setup under test"
+        "--target", action="store", default="automation", help="Target or setup under test"
     )
     parser.addoption(
         "--nodes", action="store", default=[], help="Nodes of a setup"
@@ -267,7 +267,8 @@ def pytest_sessionfinish(session, exitstatus):
 
 def get_test_metadata_from_tp_meta(item):
     tests_meta = Globals.tp_meta['test_meta']
-    tp_label = Globals.tp_meta['test_plan_label'][0]  # first is significant
+    flg = Globals.tp_meta['test_plan_label']
+    tp_label = Globals.tp_meta['test_plan_label'][0] if flg else 'regular'  # first is significant
     te_meta = Globals.tp_meta['te_meta']
     te_label = te_meta['te_label'][0]
     te_component = Globals.tp_meta['te_meta']['te_components']
