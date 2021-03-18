@@ -29,6 +29,7 @@ import json
 import logging
 import csv
 import time
+import datetime
 import pytest
 from datetime import date
 from _pytest.nodes import Item
@@ -560,8 +561,9 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
         log = strip_ansi(log)
         logs = log.split('\n')
         test_id = CACHE.lookup(report.nodeid)
-        name = str(test_id) + '_' + report.nodeid.split('::')[1] + '_' \
-            + time.strftime("%H%M%S") + '.log'
+        name = str(test_id) + '_' + report.nodeid.split('::')[1] + '_' + \
+            datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S') + \
+            '.log'
         test_log = os.path.join(os.getcwd(), LOG_DIR, 'latest', name)
         with open(test_log, 'w') as fp:
             for rec in logs:
