@@ -76,10 +76,10 @@ def parse_args(argv):
                         help="Log level numeric value [1-10]")
     parser.add_argument("-t", "--targets", nargs='+', type=str,
                         help="Target setup details separated by space")
-    parser.add_argument("-b", "--build", type=str,
+    parser.add_argument("-b", "--build", type=str, default='',
                         help="Builds number deployed on target")
-    parser.add_argument("-bt", "--build_type", type=str, default='Release',
-                        help="Build type (Release/Dev)")
+    parser.add_argument("-bt", "--build_type", type=str, default='',
+                        help="Build type (beta/stable)")
     parser.add_argument("-er", "--enable_async_report", type=bool, default=False,
                         help="Enable async reporting to Jira and MongoDB")
     parser.add_argument("-c", "--cancel_run", type=bool, default=False,
@@ -138,12 +138,25 @@ def run(opts: dict) -> None:
         start_rpc_server(_queue)  # starts an rpc server for async reporting task management
     tickets = opts.tickets
     targets = opts.targets
-    build = opts.build
-    build_type = opts.build_type
     test_plan = opts.test_plan
     topic = params.TEST_EXEC_TOPIC
     # collect the test universe
     run_pytest_collect_only_cmd()
+
+    tp_meta = dict()  # test plan meta
+    jira_id, jira_pwd = runner.get_jira_credential()
+    jira_obj = jira_utils.JiraTask(jira_id, jira_pwd)
+    tp_resp = jira_obj.get_issue_details(test_plan)  # test plan id
+    tp_meta['test_plan_label'] = tp_resp.fields.labels
+    tp_meta['environment'] = tp_resp.fields.environment
+    if not opts.build and not opts.build_type:
+        test_env = tp_meta.get('environment')
+        try:
+            _build_type, _build = test_env.split('_')
+        except ValueError:
+            raise EnvironmentError('Test plan env needs to be in format <build_type>_<build#>')
+        opts.build, opts.build_type = _build, _build_type
+
     log_home = create_log_dir_if_not_exists()
     # Create a reverse map of test id as key and values as node_id, tags
     meta_data = dict()  # test universe collected
@@ -183,8 +196,8 @@ def run(opts: dict) -> None:
         witem.targets = targets
         set_t = parallel_set if len(parallel_set) else sequential_set
         witem.tickets = test_map[next(iter(set_t))][-1]
-        witem.build = build
-        witem.build_type = build_type
+        witem.build = opts.build
+        witem.build_type = opts.build_type
         witem.test_plan = test_plan
         work_queue.put(witem)
         for set_item in sequential_set:
@@ -194,8 +207,8 @@ def run(opts: dict) -> None:
             w_item.parallel = False
             w_item.targets = targets
             w_item.tickets = test_map[set_item][-1]
-            w_item.build = build
-            w_item.build_type = build_type
+            w_item.build = opts.build
+            w_item.build_type = opts.build_type
             w_item.test_plan = test_plan
             work_queue.put(w_item)
     work_queue.put(None)  # poison
@@ -314,14 +327,18 @@ def create_log_dir_if_not_exists():
 
 
 def run_pytest_collect_only_cmd(te_tag=None):
-    """Form a pytest command to collect tests in TE ticket."""
+    """Form a pytest command to collect tests in TE ticket.
+    Target default to automation as a nominal value for collection.
+    """
     tag = '-m ' + te_tag if te_tag else None
     collect_only = '--collect-only'
     local = '--local=True'
+    target = '--target=automation'
     if tag:
         cmd_line = ["pytest", collect_only, local, tag]
     else:
         cmd_line = ["pytest", collect_only, local]
+    cmd_line = cmd_line + [target]
     prc = subprocess.Popen(cmd_line)
     prc.communicate()
 
