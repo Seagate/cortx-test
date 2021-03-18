@@ -29,6 +29,7 @@ import json
 import logging
 import csv
 import time
+import datetime
 import pytest
 from datetime import date
 from _pytest.nodes import Item
@@ -200,7 +201,7 @@ def pytest_addoption(parser):
         "--force_serial_run", action="store", default=False, help="Force serial execution"
     )
     parser.addoption(
-        "--target", action="store", default="auto_setup", help="Target or setup under test"
+        "--target", action="store", default="automation", help="Target or setup under test"
     )
     parser.addoption(
         "--nodes", action="store", default=[], help="Nodes of a setup"
@@ -266,7 +267,8 @@ def pytest_sessionfinish(session, exitstatus):
 
 def get_test_metadata_from_tp_meta(item):
     tests_meta = Globals.tp_meta['test_meta']
-    tp_label = Globals.tp_meta['test_plan_label'][0]  # first is significant
+    flg = Globals.tp_meta['test_plan_label']
+    tp_label = Globals.tp_meta['test_plan_label'][0] if flg else 'regular'  # first is significant
     te_meta = Globals.tp_meta['te_meta']
     te_label = te_meta['te_label'][0]
     te_component = Globals.tp_meta['te_meta']['te_components']
@@ -453,6 +455,7 @@ def pytest_collection(session):
     if session.config.option.collectonly:
         te_meta = config_utils.create_content_json(os.path.join(cache_home, 'te_meta.json'), meta)
         LOGGER.debug("Items meta dict %s created at %s", meta, te_meta)
+        Globals.te_meta = te_meta
     if not _local and session.config.option.readmetadata:
         tp_meta_file = os.path.join(os.getcwd(),
                                     params.LOG_DIR_NAME,
@@ -540,7 +543,9 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
             log = strip_ansi(log)
             logs = log.split('\n')
             test_id = CACHE.lookup(report.nodeid)
-            name = str(test_id) + '_' + report.nodeid.split('::')[1] + '.log'
+            name = str(test_id) + '_' + report.nodeid.split('::')[1] + '_' \
+                + datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S') \
+                + '.log'
             test_log = os.path.join(os.getcwd(), LOG_DIR, 'latest', name)
             with open(test_log, 'w') as fp:
                 for rec in logs:
@@ -558,7 +563,9 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
         log = strip_ansi(log)
         logs = log.split('\n')
         test_id = CACHE.lookup(report.nodeid)
-        name = str(test_id) + '_' + report.nodeid.split('::')[1] + '.log'
+        name = str(test_id) + '_' + report.nodeid.split('::')[1] + '_' + \
+            datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S') + \
+            '.log'
         test_log = os.path.join(os.getcwd(), LOG_DIR, 'latest', name)
         with open(test_log, 'w') as fp:
             for rec in logs:
