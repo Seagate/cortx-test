@@ -1,8 +1,9 @@
 *** Settings ***
-Resource  ${EXECDIR}/resources/common/common.robot
-Library     SeleniumLibrary
+Library    SeleniumLibrary
+Resource   ${EXECDIR}/resources/common/common.robot
 
 *** Keywords ***
+
 Click On Add User Button
     [Documentation]  Perform click operation on add user button
     Click button    ${add user button id}
@@ -250,8 +251,7 @@ Edit CSM User Details
     Sleep  1s
     Click Button  ${CHANGE_PASSWORD_BTN_ID}
     Sleep  1s
-    Press Keys  ${UPDATE_USER_EMAIL_ID_INPUT_ID}  CTRL+a
-    Press Keys  ${UPDATE_USER_EMAIL_ID_INPUT_ID}  BACKSPACE
+    Press Keys  ${UPDATE_USER_EMAIL_ID_INPUT_ID}  CTRL+a+BACKSPACE
     Input Text  ${UPDATE_USER_EMAIL_ID_INPUT_ID}  ${new_email}
     Input Text  ${ADD_USER_PASSWORD_INPUT_ID}  ${new_password}
     Input Text  ${UPDATE_USER_CONFIRM_PASSWORD_INPUT_ID}  ${new_password}

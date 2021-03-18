@@ -1,9 +1,8 @@
 *** Settings ***
-Resource  ${EXECDIR}/resources/common/common.robot
-Resource  ${EXECDIR}/resources/page_objects/loginPage.robot
-Library     SeleniumLibrary
+Library    SeleniumLibrary
+Resource   ${EXECDIR}/resources/page_objects/loginPage.robot
+Resource   ${EXECDIR}/resources/common/common.robot
 Variables  ${EXECDIR}/resources/common/element_locators.py
-
 
 *** Keywords ***
 
@@ -32,30 +31,31 @@ check admin user already exists
     Verify message  ADMIN_USER_ALREADY_EXISTS_ID  ${ADMIN_USER_ALREADY_EXISTS_MESSAGE}
     log to console and report  Admin user already exists
 
+Verify Presence of Elements on EULA Page
+    [Documentation]  On EULA, Verify Presence of diffren emelnets
+    Page Should Contain Button  ${license_cancle_button_id}
+    Page Should Contain Image  ${license_cancle_image_id}
+    Page Should Contain Button  ${license_accept_button_id}
+    Page Should Contain Element  ${license_title_id}
+    Page Should Contain Element  ${license_data_id}
+    Capture Element Screenshot  ${license_data_id}  eula_data.png
+
 Validate ELUA Success
     [Documentation]  This keyword is used to validate that Preboarding page is accessable.
-    sleep   1s
+    sleep  1s
     Capture Page Screenshot  preboarding.png
     Click Accept Button
-    sleep   1s
+    sleep  1s
     Capture Page Screenshot  eula.png
-    Page Should Contain Button  ${license_cancle_button_id}
-    Page Should Contain Image  ${license_cancle_image_id}
-    Page Should Contain Button  ${license_accept_button_id}
-    Page Should Contain Element  ${license_title_id}
-    Page Should Contain Element  ${license_data_id}
+    Verify Presence of Elements on EULA Page
     Click LicenseCancle Button
     Click Accept Button
-    Page Should Contain Button  ${license_cancle_button_id}
-    Page Should Contain Image  ${license_cancle_image_id}
-    Page Should Contain Button  ${license_accept_button_id}
-    Page Should Contain Element  ${license_title_id}
-    Page Should Contain Element  ${license_data_id}
+    Verify Presence of Elements on EULA Page
     Click LicenseCancle Image
     Click Accept Button
-    sleep   1s
+    sleep  1s
     Click License Button
-    sleep   1s
+    sleep  1s
     Capture Page Screenshot  admin_config.png
 
 Preboarding
@@ -65,9 +65,9 @@ Preboarding
     ...  ELSE  Open URL  ${url}preboarding/welcome  ${browser}
     Page Should Contain Button  ${welcome_start_button_id}
     Click Start Button
-    sleep   3s
+    sleep  3s
     Page Should Contain Button  ${elua_button_id}
-    sleep   3s
+    sleep  3s
     Log To Console And Report  Waiting for receiving GUI response...
 
 navigate to csm admin creation page

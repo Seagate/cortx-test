@@ -1,8 +1,9 @@
 *** Settings ***
 Documentation    This suite verifies the testcases for csm user creation
-Resource    ${EXECDIR}/resources/page_objects/loginPage.robot
-Resource    ${EXECDIR}/resources/page_objects/userSettingsLocalPage.robot
-Resource    ${EXECDIR}/resources/page_objects/preboardingPage.robot
+Resource   ${EXECDIR}/resources/page_objects/loginPage.robot
+Resource   ${EXECDIR}/resources/page_objects/settingsPage.robot
+Resource   ${EXECDIR}/resources/page_objects/userSettingsLocalPage.robot
+Resource   ${EXECDIR}/resources/page_objects/preboardingPage.robot
 
 Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
 ...  ${username}  ${password}
@@ -21,8 +22,11 @@ ${page name}  MANAGE_MENU_ID
 ${url}
 ${username}
 ${password}
+${Download_File_Path}  \root\Downloads\
+${server_file_name}  s3server.pem
 
 *** Test Cases ***
+
 TEST-5326
     [Documentation]  Test that "Add new user" should open a form to create new user on the User Settings
     ...  Reference : https://jts.seagate.com/browse/TEST-5326
@@ -262,10 +266,55 @@ TEST-5229
     Verify IAM User Section Not Present
 
 TEST-6338
-    [Documentation]  TTest that on 'Create Local User' form, role section should never be empty
+    [Documentation]  Test that on 'Create Local User' form, role section should never be empty
     ...  Reference : https://jts.seagate.com/browse/TEST-6338
     [Tags]  Priority_High
     Navigate To Page  ${page name}
     ${value}=  Fetch Radio Button Value
     Should Not Be Empty  ${value}
     Should be equal  ${value}  manage
+
+TEST-1214
+    [Documentation]  Test that CSM user with admin role can view, add, or edit Settings
+    ...  Reference : https://jts.seagate.com/browse/TEST-1214
+    [Tags]  Priority_High  user_role  TEST-1214
+    Verify that CSM Admin can access Setting menu
+
+TEST-5389
+    [Documentation]  Test that CSM user with admin role can view, add, or edit Settings
+    ...  Reference : https://jts.seagate.com/browse/TEST-5389
+    [Tags]  Priority_High  user_role  TEST-5389
+    Navigate To Page  SETTINGS_ID
+    Sleep  5s
+    Verify Setting menu item
+    Verify Setting menu navigating
+
+TEST-4871
+    [Documentation]  Test that SSl certificate get uploaded on SSl certificate upload page	
+    ...  Reference : https://jts.seagate.com/browse/TEST-4871
+    [Tags]  Priority_High  CFT_Test  TEST-4871
+    ${installation_status_init} =  Format String  not_installed
+    Navigate To Page  SETTINGS_ID  SETTINGS_SSL_BUTTON_ID
+    Sleep  3s
+    SSL Upload  ${Download_File_Path}  ${server_file_name}
+    Verify SSL status  ${installation_status_init}  ${server_file_name}
+
+TEST-9045
+    [Documentation]  Test that user should able to see latest changes on settings page : SSL certificate	
+    ...  Reference : https://jts.seagate.com/browse/TEST-9045
+    [Tags]  Priority_High  CFT_Test  TEST-9045
+    ${installation_status_init} =  Format String  not_installed
+    ${installation_status_success} =  Format String  installation_successful
+    Navigate To Page  SETTINGS_ID  SETTINGS_SSL_BUTTON_ID
+    Sleep  3s
+    SSL Upload  ${Download_File_Path}  ${server_file_name}
+    Verify SSL status  ${installation_status_init}  ${server_file_name} 
+    # # These following lines should be executed in case you have the proper machine
+    # Install uploaded SSL
+    # Sleep  5 minutes  #will re-start all service
+    # Close Browser
+    # CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
+    # Sleep  20s  # Took time to load dashboard after install
+    # Reload Page
+    # Sleep  10s  # Took time to load dashboard after install
+    # Verify SSL status  ${installation_status_success}  ${server_file_name}

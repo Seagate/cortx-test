@@ -1,12 +1,11 @@
 *** Settings ***
 Documentation    This suite verifies the testcases for csm login
 Library     SeleniumLibrary
+Resource    ${EXECDIR}/resources/page_objects/IAM_UsersPage.robot
 Resource    ${EXECDIR}/resources/page_objects/loginPage.robot
 Resource    ${EXECDIR}/resources/page_objects/s3accountPage.robot
-Resource    ${EXECDIR}/resources/page_objects/IAM_UsersPage.robot
-Variables   ${EXECDIR}/resources/common/common_variables.py
 Resource    ${EXECDIR}/resources/page_objects/preboardingPage.robot
-
+Variables   ${EXECDIR}/resources/common/common_variables.py
 
 Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}  ${username}  ${password}
 ...  AND  Close Browser
@@ -48,20 +47,19 @@ Delete S3 Account And Close Browser
     Sleep  1s
     Close Browser
 
-
 *** Test Cases ***
 
 TEST-951
     [Documentation]  Test a form appears on clicking "create user" button on IAM user page
     ...  Reference : https://jts.seagate.com/browse/TEST-951
-    [Tags]  Priority_High
+    [Tags]  Priority_High  TEST-951
     Click Create IAM User Button
     Verify A Form Got Open To Create IAM Users
 
 TEST-953
     [Documentation]  Test the form get closed on clicking "cancel" button on IAM user page
     ...  Reference : https://jts.seagate.com/browse/TEST-951
-    [Tags]  Priority_High
+    [Tags]  Priority_High  TEST-953
     Click Create IAM User Button
     Click on IAM User Cancel Button
     Verify Form To Create IAM Users Got Closed
@@ -69,7 +67,7 @@ TEST-953
 TEST-954
     [Documentation]  Test  tooltip value in IAM user creation
     ...  Reference : https://jts.seagate.com/browse/TEST-954
-    [Tags]  Priority_High
+    [Tags]  Priority_High  TEST-954
     Click Create IAM User Button
     Verify IAM User Username Tooltip
     Verify IAM User Password Tooltip
@@ -77,24 +75,26 @@ TEST-954
 TEST-955
     [Documentation]  Test error msg shown when user enters different password in "password" and "confirm password"
     ...  Reference : https://jts.seagate.com/browse/TEST-955
-    [Tags]  Priority_High
+    [Tags]  Priority_High  TEST-955
     Click Create IAM User Button
     Verify Missmatch IAMuser Password Error
 
 TEST-957
     [Documentation]  Test "create" button should clickable only after all the mandatory fields are filled
     ...  Reference : https://jts.seagate.com/browse/TEST-957
-    [Tags]  Priority_High
+    [Tags]  Priority_High  TEST-957
     Click Create IAM User Button
+    sleep  1s
     Verify Create IAMuser Button Must Remain disbaled
 
 TEST-952
     [Documentation]  Test IAMuser should get successfully created
     ...  Reference : https://jts.seagate.com/browse/TEST-952
-    [Tags]  Priority_High
+    [Tags]  Priority_High  TEST-952
     ${username}=  Generate New User Name
     ${password}=  Generate New Password
     Click Create IAM User Button
+    sleep  1s
     Create IAMuser  ${username}  ${password}
     Sleep  5s  # Need to reload the uses
     ${status}=  Is IAMuser Present  ${username}
@@ -105,7 +105,7 @@ TEST-952
 TEST-956
     [Documentation]  Test duplicate IAMuser should not get created
     ...  Reference : https://jts.seagate.com/browse/TEST-956
-    [Tags]  Priority_High
+    [Tags]  Priority_High  TEST-956
     ${username}=  Generate New User Name
     ${password}=  Generate New Password
     Click Create IAM User Button
@@ -122,13 +122,13 @@ TEST-956
 TEST-958
     [Documentation]  Test that all mandatory fields are marked with asteric sign
     ...  Reference : https://jts.seagate.com/browse/TEST-958
-    [Tags]  Priority_High
+    [Tags]  Priority_High  TEST-958
     Verify All Mandatory Fields In IAMusers Has astreic sign
 
 TEST-962
     [Documentation]  Test that IAMuser should get deleted successfully
     ...  Reference : https://jts.seagate.com/browse/TEST-962
-    [Tags]  Priority_High
+    [Tags]  Priority_High  TEST-962
     ${username}=  Generate New User Name
     ${password}=  Generate New Password
     Click Create IAM User Button
@@ -142,14 +142,14 @@ TEST-962
 TEST-960
     [Documentation]  Test that no data is retained in the fields when you had canceled iam user creation process
     ...  Reference : https://jts.seagate.com/browse/TEST-960
-    [Tags]  Priority_High
+    [Tags]  Priority_High  TEST-960
     Click Create IAM User Button
     Verify No Data Retains After Cancel IAMuser
 
 TEST-961
     [Documentation]  Test username, arn and user id should be present
     ...  Reference : https://jts.seagate.com/browse/TEST-961
-    [Tags]  Priority_High
+    [Tags]  Priority_High  TEST-961
     ${username}=  Generate New User Name
     ${password}=  Generate New Password
     Click Create IAM User Button
@@ -158,10 +158,10 @@ TEST-961
     Delete IAMuser  ${username}
     Sleep  5s  # Need to reload the uses
 
-TEST-17018
+TEST-17018  # TODO: correct test ID, correct Tag
     [Documentation]  Test a reset password functionality on clicking "edit" button on IAM user page
     ...  Reference : https://jts.seagate.com/browse/TEST-v1
-    [Tags]  Priority_High
+    [Tags]  Priority_High  TEST-17018  R2
     ${username}=  Generate New User Name
     ${password}=  Generate New Password
     Click Create IAM User Button

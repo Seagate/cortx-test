@@ -1,13 +1,12 @@
 *** Settings ***
 Documentation    This suite verifies the testcases for create bucket
 Library     SeleniumLibrary
-Resource    ${EXECDIR}/resources/page_objects/loginPage.robot
-Resource    ${EXECDIR}/resources/page_objects/s3accountPage.robot
-Resource    ${EXECDIR}/resources/page_objects/IAM_UsersPage.robot
 Resource    ${EXECDIR}/resources/page_objects/bucket_page.robot
+Resource    ${EXECDIR}/resources/page_objects/IAM_UsersPage.robot
+Resource    ${EXECDIR}/resources/page_objects/loginPage.robot
 Resource    ${EXECDIR}/resources/page_objects/preboardingPage.robot
+Resource    ${EXECDIR}/resources/page_objects/s3accountPage.robot
 Variables   ${EXECDIR}/resources/common/common_variables.py
-
 
 Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
 ...  ${username}  ${password}
@@ -40,7 +39,6 @@ Login To S3 Account
     Re-login  ${S3_account_name}  ${password}  MANAGE_MENU_ID
     Navigate To Page  MANAGE_MENU_ID  BUCKET_TAB_ID
 
-
 Delete S3 Account And Close Browser
     [Documentation]  This key word is for test case teardown which delete s3 account and close browsers
     [Tags]  Priority_High  S3_test
@@ -52,9 +50,10 @@ Delete S3 Account And Close Browser
     Close Browser
 
 *** Test Cases ***
+
 TEST-939
    [Documentation]  Test that buckets is created
-   [Tags]  Priority_High  Smoke_test
+   [Tags]  Priority_High  Smoke_test  TEST-939
    Click On Create Bucket Form
    ${bucketname}=  Generate New User Name
    Create Bucket  ${bucketname}

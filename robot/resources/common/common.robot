@@ -1,14 +1,15 @@
 *** Settings ***
 Documentation  This is the common resources file containing common keywords
-Library  SeleniumLibrary    screenshot_root_directory=reports/screenshots
-Library  String
-Library  DateTime
-Library  Collections
-Library  ${EXECDIR}/utils/Download.py
-Variables  common_variables.py
-Variables  element_locators.py
+Library    SeleniumLibrary    screenshot_root_directory=reports/screenshots
+Library    String
+Library    DateTime
+Library    Collections
+Library    ${EXECDIR}/utils/Download.py
+Variables  ${EXECDIR}/resources/common/common_variables.py
+Variables  ${EXECDIR}/resources/common/element_locators.py
 
 *** Keywords ***
+
 Log To Console And Report
     [Documentation]  This Keyword is for logging the same string to console and report.
     [Arguments]  ${log_message}
@@ -20,7 +21,7 @@ Navigate To Page
     [Arguments]  ${page_name}  ${sub_page}=False
     log to console and report  Navigating to ${page_name}
     Click Element  ${${page_name}}
-    Sleep  1s
+    Sleep  5s
     ${value}=  Convert To Boolean  ${sub_page}
     Run Keyword If  ${value}
     ...  Click Element  ${${sub_page}}
@@ -85,7 +86,6 @@ Verify message
     Log To Console And Report  message from guI is ${msg_from_gui}
     should be equal  ${msg_from_gui}  ${message_to_verify}
 
-
 Upload File
     [Documentation]  This keyword upload files to required webelement
     [Arguments]  ${element_locator}  ${file_path}
@@ -118,3 +118,5 @@ wait for page or element to load
     [Arguments]  ${time}=5s
     sleep  ${time}
 
+Go Forward
+    Execute Javascript  history.forward()

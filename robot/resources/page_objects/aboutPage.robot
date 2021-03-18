@@ -1,10 +1,11 @@
 *** Settings ***
-Resource  ${EXECDIR}/resources/common/common.robot
-Library     SeleniumLibrary
-Variables  ${EXECDIR}/resources/common/element_locators.py
+Library    SeleniumLibrary
+Resource   ${EXECDIR}/resources/common/common.robot
 Variables  ${EXECDIR}/resources/common/common_variables.py
+Variables  ${EXECDIR}/resources/common/element_locators.py
 
 *** Keywords ***
+
 Navigate To About
     [Documentation]  Test keyword is for navigating to about Section
     Wait Until Element Is Visible  ${MAINTENANCE_MENU_ID}  timeout=10
