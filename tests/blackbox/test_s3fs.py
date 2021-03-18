@@ -149,7 +149,7 @@ class S3fs:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-7928")
     @CTFailOn(error_handler)
-    def test_2359(self):
+    def test_mount_bucket_2359(self):
         """Mount bucket using s3fs client."""
         self.log.info("STARTED: mount bucket using s3fs client")
         self.create_and_mount_bucket()
@@ -158,7 +158,7 @@ class S3fs:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-7929")
     @CTFailOn(error_handler)
-    def test_2360(self):
+    def test_umount_bucket_2360(self):
         """Umount bucket directory using s3fs client."""
         self.log.info("STARTED: umount bucket directory using s3fs client")
         bucket_name, dir_name = self.create_and_mount_bucket()
@@ -177,7 +177,7 @@ class S3fs:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-7930")
     @CTFailOn(error_handler)
-    def test_2361(self):
+    def test_list_object_mount_bucket_2361(self):
         """List objects on Mount directory with mounted bucket using s3fs client."""
         self.log.info(
             "STARTED: list objects on Mount directory with mounted bucket using s3fs client")
@@ -209,7 +209,7 @@ class S3fs:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-7931")
     @CTFailOn(error_handler)
-    def test_2362(self):
+    def test_list_bucket_umount_dir_2362(self):
         """List objects where directory was umount and check bucket objects using s3fs client."""
         self.log.info(
             "STARTED: list objects where directory was umount and "
@@ -245,7 +245,7 @@ class S3fs:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-7932")
     @CTFailOn(error_handler)
-    def test_2363(self):
+    def test_delete_file_check_obj_2363(self):
         """Delete File from Mount dir and check object is present in bucket using s3fs client."""
         self.log.info(
             "STARTED: Delete File from Mount directory and "
@@ -290,7 +290,7 @@ class S3fs:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-7935")
     @CTFailOn(error_handler)
-    def test_2367(self):
+    def test_create_subdir_2367(self):
         """Create sub directory under mount directory and list the bucket."""
         self.log.info(
             "STARTED: Create sub directory under mount directory and list the bucket")
@@ -320,7 +320,7 @@ class S3fs:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-7933")
     @CTFailOn(error_handler)
-    def test_2364(self):
+    def test_upload_large_file_2364(self):
         """Upload large file on mount dir and check its present in bucket using s3fs client."""
         self.log.info(
             "STARTED: upload large file on mount directory and "
@@ -357,7 +357,7 @@ class S3fs:
     @pytest.mark.s3
     @pytest.mark.tags("TEST-7934")
     @CTFailOn(error_handler)
-    def test_2365(self):
+    def test_upload_file_2365(self):
         """Upload file in mount directory and check that object is present in bucket."""
         self.log.info(
             "STARTED: upload file in mount directory and check that object is present in bucket")
