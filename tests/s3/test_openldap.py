@@ -30,12 +30,13 @@ from commons.constants import const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.utils.config_utils import read_yaml, get_config
+from commons.configmanager import get_config_wrapper
 from commons.utils.system_utils import run_remote_cmd, remove_file
 from commons.utils.assert_utils import assert_false, assert_true, assert_in, assert_equal, assert_not_equal
 from libs.s3 import S3H_OBJ, CM_CFG, LDAP_PASSWD
 
 
-LDAP_CFG = read_yaml("config/s3/test_openldap.yaml")[1]
+LDAP_CFG = get_config_wrapper(fpath="config/s3/test_openldap.yaml")
 
 
 class TestOpenLdap:

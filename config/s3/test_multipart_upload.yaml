@@ -1,0 +1,165 @@
+multipart:
+    bkt_name_prefix: "mp-bkt"
+    actions:
+        - "backup"
+        - "restore"
+
+test_8660_8664_8665_8668:
+    bucket_name: "mp-bkt-test8660"
+    object_name: "mp-obj-test8660"
+    file_size: 100
+    total_parts: 10
+
+test_8669:
+    bucket_name: "mp-bkt-test8669"
+    object_name: "mp-obj-test8669"
+    file_size: 100
+    total_parts: 10
+
+test_8661:
+    bucket_name: "mp-bkt-test8661"
+    file_size: 3000
+    total_parts: 3
+
+test_8662:
+    bucket_name: "mp-bkt-test8662"
+    object_name: "mp-obj-test8662"
+    m_key: "user_id"
+    m_value: "1111"
+
+test_8663:
+    bucket_name: "mp-bkt-test8663"
+    object_name: "mp-obj-test8663"
+    file_size: 50
+    total_parts: 5
+
+test_8666:
+    bucket_name: "mp-bkt-test8666"
+    object_name: "mp-obj-test8666"
+    file_size: 5005
+    total_parts: 1001
+    max_parts: 1000
+
+test_8667:
+    bucket_name: "mp-bkt-test8667"
+    object_name: "mp-obj-test8667"
+
+test_8670:
+    bucket_name: "mp-bkt-test8670"
+    object_name: "mp-obj-test8670"
+    file_size: 500
+    aws_set_cmd: "aws configure set"
+    aws_get_cmd: "aws configure get"
+    s3_configs:
+        - "default.s3.max_concurrent_requests"
+        - "default.s3.max_queue_size"
+        - "default.s3.multipart_threshold"
+        - "default.s3.multipart_chunksize"
+        - "default.s3.max_bandwidth"
+        - "default.s3.addressing_style"
+    multipart_s3_config_values:
+        - "20"
+        - "10000"
+        - "64MB"
+        - "16MB"
+        - "50MB/s"
+        - "path"
+    default_s3_config_values:
+        - "10"
+        - "1000"
+        - "8MB"
+        - "5MB"
+        - "None"
+        - "auto"
+
+test_8672:
+    bucket_name: "mp-bkt-test8672"
+    object_name: "mp-obj-test8672"
+    file_size: 180
+    total_parts: 30
+
+test_8673:
+    bucket_name: "mp-bkt-test8673"
+    object_name: "mp-obj-test8673"
+    file_size: 5000000
+    total_parts: 10000
+
+test_8674:
+    bucket_name: "mp-bkt-test8674"
+    object_name: "mp-obj-test8674"
+    file_size: 180
+    total_parts: 30
+
+test_8922:
+    bucket_name: "mp-bkt-test8922"
+    object_name: "mp-obj-test8922"
+    file_size: 50005
+    total_parts: 10001
+    err_msg: "InvalidPart"
+
+test_8923:
+    bucket_name: "mp-bkt-test8923"
+    object_name: "mp-obj-test8923"
+    file_size: 50000
+    total_parts: 10000
+
+test_8924:
+    bucket_name: "mp-bkt-test8924"
+    object_name: "mp-obj-test8924"
+    file_size: 20
+    total_parts: 5
+    err_msg: "EntityTooSmall"
+
+test_8925:
+    bucket_name: "mp-bkt-test8925"
+    object_name: "mp-obj-test8925"
+    file_size: 11000
+    total_parts: 2
+    err_msg: "EntityTooLarge"
+
+test_8926:
+    bucket_name: "mp-bkt-test8926"
+    object_name: "mp-obj-test8926"
+    file_size: 10
+    total_parts: 2
+    total_mp_uploads: 1000
+
+test_8927:
+    bucket_name: "mp-bkt-test8927"
+    object_name: "mp-obj-test8927"
+    file_size: 10
+    total_parts: 2
+    total_mp_uploads: 1001
+    max_uploads: 1000
+
+test_8928:
+    bucket_name: "mp-bkt-test8928"
+    object_name: "mp-obj-test8928"
+    file_size: 500
+    aws_set_cmd: "aws configure set"
+    aws_get_cmd: "aws configure get"
+    s3_configs: "default.s3.max_concurrent_requests"
+    max_concurrent_requests: "40"
+    default_max_concurrent_requests: "10"
+
+test_8929:
+    bucket_name: "mp-bkt-test8928"
+    object_name: "mp-obj-test8928"
+    file_size: 500
+    aws_set_cmd: "aws configure set"
+    aws_get_cmd: "aws configure get"
+    s3_configs: "default.s3.multipart_threshold"
+    multipart_threshold: "64MB"
+    default_multipart_threshold: "8MB"
+
+test_631:
+    bucket_name: "mp-bkt-test631"
+    object_name: "mp-obj-test631"
+    error_msg: "An error occurred(InvalidPart) when calling the CompleteMultipartUpload operation:
+    One or more of the specified parts could not be found. The part might not have been uploaded,
+    or the specified entity tag might not have matched the part's entity tag."
+    wrong_json:
+        - ETag: d41d8cd98f00b204e9800998ecf8427e
+        PartNumber: 1
+        - ETag: d41d8cd98876362482364f00b204e980
+        PartNumber: 2
