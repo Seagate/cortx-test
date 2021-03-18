@@ -771,11 +771,13 @@ class S3Helper:
 
         return False, file_path
 
+    @staticmethod
     def remote_execution(self, hostname, username, password, cmd):
         """running remote cmd."""
         LOGGER.info("Remote Execution")
         return run_remote_cmd(cmd, hostname, username, password)
 
+    @staticmethod
     def is_mero_online(self, host, user, passwd):
         """
         Check whether all services are online in mero cluster
