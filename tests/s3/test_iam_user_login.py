@@ -25,12 +25,10 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.configmanager import get_config_wrapper
-from commons.helpers import s3_helper
 from commons.utils.assert_utils import assert_true, assert_in, assert_false
 from libs.s3 import iam_test_lib
-from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
+from libs.s3 import LDAP_USERNAME, LDAP_PASSWD, S3H_OBJ
 
-S3_HLPR = s3_helper.S3Helper()
 IAM_TEST_OBJ = iam_test_lib.IamTestLib()
 USER_CONFIG = get_config_wrapper(fpath="config/s3/test_iam_user_login.yaml")
 
@@ -78,7 +76,7 @@ class TestUserLoginProfileTests():
         all_accounts = IAM_TEST_OBJ.list_accounts_s3iamcli(
             self.ldap_user, self.ldap_pwd)[1]
         iam_accounts = [acc["AccountName"]
-            for acc in all_accounts if user_cfg["acc_name_prefix"] in acc["AccountName"]]
+                        for acc in all_accounts if user_cfg["acc_name_prefix"] in acc["AccountName"]]
         self.log.debug("IAM accounts: %s", iam_accounts)
         if iam_accounts:
             self.log.debug("Deleting IAM accounts...")
@@ -151,7 +149,7 @@ class TestUserLoginProfileTests():
             self.log.info(
                 "Creating user login profile for user %s", user_name)
             resp = IAM_TEST_OBJ.create_user_login_profile_s3iamcli(
-                user_name, user_password, pwd_reset, access_key, secret_key)
+                user_name, user_password, pwd_reset, access_key=access_key, secret_key=secret_key)
             assert_true(resp[0], resp[1])
             self.log.info(
                 "Created user login profile for user %s", user_name)
@@ -394,8 +392,8 @@ class TestUserLoginProfileTests():
         resp = IAM_TEST_OBJ.update_user_login_profile_s3iamcli_with_both_reset_options(
             test_9834_cfg["user_name"],
             test_9834_cfg["password"],
-            S3_HLPR.get_local_keys()[0],
-            S3_HLPR.get_local_keys()[1])
+            S3H_OBJ.get_local_keys()[0],
+            S3H_OBJ.get_local_keys()[1])
         assert_true(resp[0], resp[1])
         self.log.info("ENDED: update login profile for IAM user with both"
                       " options --no-password-reset-required "
@@ -420,8 +418,8 @@ class TestUserLoginProfileTests():
         try:
             IAM_TEST_OBJ.update_user_login_profile_without_passowrd_and_reset_option(
                 test_9835_cfg["user_name"],
-                S3_HLPR.get_local_keys()[0],
-                S3_HLPR.get_local_keys()[1])
+                S3H_OBJ.get_local_keys()[0],
+                S3H_OBJ.get_local_keys()[1])
         except CTException as error:
             self.log.debug(error.message)
             assert_in(
@@ -668,8 +666,8 @@ class TestUserLoginProfileTests():
         resp = IAM_TEST_OBJ.create_user_login_profile_s3iamcli_with_both_reset_options(
             test_9847_cfg["user_name"],
             test_9847_cfg["password"],
-            S3_HLPR.get_local_keys()[0],
-            S3_HLPR.get_local_keys()[1])
+            S3H_OBJ.get_local_keys()[0],
+            S3H_OBJ.get_local_keys()[1])
         assert_true(resp[0], resp[1])
         self.log.info(
             "ENDED: Create login profile for IAM user without mentioning  "
@@ -691,9 +689,9 @@ class TestUserLoginProfileTests():
         resp = IAM_TEST_OBJ.create_user_login_profile_s3iamcli_with_both_reset_options(
             test_9848_cfg["user_name"],
             test_9848_cfg["password"],
-            S3_HLPR.get_local_keys()[0],
-            S3_HLPR.get_local_keys()[1],
-            test_9848_cfg["both_reset_options"])
+            S3H_OBJ.get_local_keys()[0],
+            S3H_OBJ.get_local_keys()[1],
+            both_reset_options=test_9848_cfg["both_reset_options"])
         assert_true(resp[0], resp[1])
         self.log.info(
             "ENDED: Create login profile for IAM user with both options "
@@ -716,8 +714,8 @@ class TestUserLoginProfileTests():
         assert_true(resp[0], resp[1])
         resp = IAM_TEST_OBJ.get_user_login_profile_s3iamcli(
             test_9849_cfg["user_name"],
-            S3_HLPR.get_local_keys()[0],
-            S3_HLPR.get_local_keys()[1])
+            S3H_OBJ.get_local_keys()[0],
+            S3H_OBJ.get_local_keys()[1])
         assert_true(resp[0], resp[1])
         self.log.info("ENDED: Verify get-login-profile for s3 IAM user")
 
@@ -733,8 +731,8 @@ class TestUserLoginProfileTests():
         try:
             IAM_TEST_OBJ.get_user_login_profile_s3iamcli(
                 test_9850_cfg["user_name"],
-                S3_HLPR.get_local_keys()[0],
-                S3_HLPR.get_local_keys()[1])
+                S3H_OBJ.get_local_keys()[0],
+                S3H_OBJ.get_local_keys()[1])
         except CTException as error:
             self.log.debug(error.message)
             assert_in(
@@ -760,8 +758,8 @@ class TestUserLoginProfileTests():
         try:
             IAM_TEST_OBJ.get_user_login_profile_s3iamcli(
                 test_9851_cfg["user_name"],
-                S3_HLPR.get_local_keys()[0],
-                S3_HLPR.get_local_keys()[1])
+                S3H_OBJ.get_local_keys()[0],
+                S3H_OBJ.get_local_keys()[1])
         except CTException as error:
             self.log.debug(error.message)
             assert_in(
@@ -925,7 +923,7 @@ class TestUserLoginProfileTests():
     def test_2903(self):
         """
         verify with valid strings as passwordNote:Allowed special characters are
-        ~, !, @, #, $, %, ^, *, (, ),-, _, +, =, \, /, ?, .., \n, \t, \rFor special
+        ~, !, @, #, $, %, ^, *, (, ),-, _, +, =, \\, /, ?, .., \n, \t, \rFor special
         characters &, <, > and | , if user want to use these then
         password should be added in quote.
         """
@@ -1026,8 +1024,8 @@ class TestUserLoginProfileTests():
         resp = IAM_TEST_OBJ.create_account_s3iamcli(
             test_9923_cfg["account_name"],
             email_id,
-            ldap_user,
-            ldap_pwd)
+            self.ldap_user,
+            self.ldap_pwd)
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
@@ -1054,8 +1052,8 @@ class TestUserLoginProfileTests():
             test_9923_cfg["user_name"],
             test_9923_cfg["user_password"],
             test_9923_cfg["password_reset"],
-            access_key,
-            secret_key)
+            access_key=access_key,
+            secret_key=secret_key)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Getting temporary credentials for user %s",
@@ -1083,8 +1081,8 @@ class TestUserLoginProfileTests():
         res = IAM_TEST_OBJ.create_account_s3iamcli(
             test_9924_cfg["account_name"],
             email_id,
-            ldap_user,
-            ldap_pwd)
+            self.ldap_user,
+            self.ldap_pwd)
         assert_true(res[0], res[1])
         self.log.info("Getting temporary credentials for invalid user")
         try:
@@ -1117,8 +1115,8 @@ class TestUserLoginProfileTests():
         res = IAM_TEST_OBJ.create_account_s3iamcli(
             test_9925_cfg["account_name"],
             email_id,
-            ldap_user,
-            ldap_pwd)
+            self.ldap_user,
+            self.ldap_pwd)
         assert_true(res[0], res[1])
         acc_access_key = res[1]["access_key"]
         acc_secret_key = res[1]["secret_key"]
