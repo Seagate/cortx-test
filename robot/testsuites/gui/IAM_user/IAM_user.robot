@@ -1,16 +1,19 @@
 *** Settings ***
 Documentation    This suite verifies the testcases for csm login
 Library     SeleniumLibrary
-Resource    ../../../resources/page_objects/loginPage.robot
-Resource    ../../../resources/page_objects/s3accountPage.robot
-Resource    ../../../resources/page_objects/IAM_UsersPage.robot
-Variables   ../../../resources/common/common_variables.py
+Resource    ${EXECDIR}/resources/page_objects/loginPage.robot
+Resource    ${EXECDIR}/resources/page_objects/s3accountPage.robot
+Resource    ${EXECDIR}/resources/page_objects/IAM_UsersPage.robot
+Variables   ${EXECDIR}/resources/common/common_variables.py
+Resource    ${EXECDIR}/resources/page_objects/preboardingPage.robot
 
 
+Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}  ${username}  ${password}
+...  AND  Close Browser
 Suite Teardown  Close All Browsers
-Force Tags  CSM_GUI  CSM_IAM_USER
 Test Setup  Login To S3 Account
 Test Teardown  Delete S3 Account And Close Browser
+Force Tags  CSM_GUI  CSM_IAM_USER
 
 *** Variables ***
 ${url}
@@ -35,6 +38,7 @@ Login To S3 Account
     wait for page or element to load  3s
     Re-login  ${S3_account_name}  ${s3password}  MANAGE_MENU_ID
     Navigate To Page  MANAGE_MENU_ID  IAM_USER_TAB_ID
+    wait for page or element to load  3s
     set suite variable    ${S3_account_name}
     set suite variable    ${s3password}
 
@@ -165,10 +169,10 @@ TEST-17018
     ${username}=  Generate New User Name
     ${password}=  Generate New Password
     Click Create IAM User Button
-    #Create IAMuser  ${username}  ${password}
-    #wait for page or element to load
-    #Reset Password IAMuser  ${username}  # Aplicable for LDR R2
-    #wait for page or element to load
+    Create IAMuser  ${username}  ${password}
+    wait for page or element to load
+    Reset Password IAMuser  ${username}  # Aplicable for LDR R2
+    wait for page or element to load
 
 TEST-13109
     [Documentation]  Verify that two empty tables are shown on IAM users page

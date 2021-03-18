@@ -33,14 +33,15 @@ from commons.helpers.host import Host
 from commons.utils import config_utils
 from commons.utils.system_utils import run_local_cmd, run_remote_cmd
 from config import S3_CFG, CMN_CFG
+
 LOGGER = logging.getLogger(__name__)
-CM_CFG = CMN_CFG["nodes"][0]
 
 
 class S3Helper:
     """S3 Helper class to perform S3 related operations."""
 
     __instance = None
+    cm_cfg = CMN_CFG["nodes"][0]
 
     def __init__(self) -> None:
         """Virtually private constructor."""
@@ -49,6 +50,9 @@ class S3Helper:
                 "S3Helper is a singleton!, "
                 "use S3Helper.get_instance() to access existing object.")
         S3Helper.__instance = self
+        self.host = self.cm_cfg["host"]
+        self.pwd = self.cm_cfg["password"]
+        self.user = self.cm_cfg["username"]
 
     @staticmethod
     def get_instance() -> object:
@@ -112,10 +116,9 @@ class S3Helper:
 
         return status
 
-    @staticmethod
-    def check_s3services_online(host: str = CM_CFG["host"],
-                                user: str = CM_CFG["username"],
-                                pwd: str = CM_CFG["password"]) -> tuple:
+    def check_s3services_online(self, host: str = None,
+                                user: str = None,
+                                pwd: str = None) -> tuple:
         """
         Check whether all s3server services are online.
 
@@ -124,6 +127,9 @@ class S3Helper:
         :param pwd: password for the user.
         :return: False if no s3server services found or are not Online else True.
         """
+        host = host if host else self.host
+        user = user if user else self.user
+        pwd = pwd if pwd else self.pwd
         try:
             status, output = run_remote_cmd(
                 commands.MOTR_STATUS_CMD,
@@ -153,11 +159,10 @@ class S3Helper:
                 str(error))
             return False, error
 
-    @staticmethod
-    def get_s3server_service_status(service: str = None,
-                                    host: str = CM_CFG["host"],
-                                    user: str = CM_CFG["username"],
-                                    pwd: str = CM_CFG["password"]) -> tuple:
+    def get_s3server_service_status(self, service: str = None,
+                                    host: str = None,
+                                    user: str = None,
+                                    pwd: str = None) -> tuple:
         """
         Execute command to get status any system service at remote s3 server.
 
@@ -167,6 +172,9 @@ class S3Helper:
         :param pwd: password for the user.
         :return: response.
         """
+        host = host if host else self.host
+        user = user if user else self.user
+        pwd = pwd if pwd else self.pwd
         try:
             status, result = run_remote_cmd(commands.SYSTEM_CTL_STATUS_CMD.format(
                 service), host, user, pwd, read_lines=True)
@@ -188,9 +196,9 @@ class S3Helper:
 
     def start_s3server_service(self,
                                service: str = None,
-                               host: str = CM_CFG["host"],
-                               user: str = CM_CFG["username"],
-                               pwd: str = CM_CFG["password"]) -> tuple:
+                               host: str = None,
+                               user: str = None,
+                               pwd: str = None) -> tuple:
         """
         Execute command to start any system service at remote s3 server.
 
@@ -200,6 +208,9 @@ class S3Helper:
         :param pwd: password for the user.
         :return: response
         """
+        host = host if host else self.host
+        user = user if user else self.user
+        pwd = pwd if pwd else self.pwd
         try:
             status, result = run_remote_cmd(commands.SYSTEM_CTL_START_CMD.format(
                 service), host, user, pwd, read_lines=True)
@@ -220,9 +231,9 @@ class S3Helper:
 
     def stop_s3server_service(self,
                               service: str = None,
-                              host: str = CM_CFG["host"],
-                              user: str = CM_CFG["username"],
-                              pwd: str = CM_CFG["password"]) -> tuple:
+                              host: str = None,
+                              user: str = None,
+                              pwd: str = None) -> tuple:
         """
         Execute command to stop any system service at remote s3 server.
 
@@ -232,6 +243,9 @@ class S3Helper:
         :param pwd: password for the user.
         :return: response.
         """
+        host = host if host else self.host
+        user = user if user else self.user
+        pwd = pwd if pwd else self.pwd
         try:
             status, result = run_remote_cmd(commands.SYSTEM_CTL_STOP_CMD.format(
                 service), host, user, pwd, read_lines=True)
@@ -252,9 +266,9 @@ class S3Helper:
 
     def restart_s3server_service(self,
                                  service: str = None,
-                                 host: str = CM_CFG["host"],
-                                 user: str = CM_CFG["username"],
-                                 pwd: str = CM_CFG["password"]) -> tuple:
+                                 host: str = None,
+                                 user: str = None,
+                                 pwd: str = None) -> tuple:
         """
         Execute command to restart any system service at remote s3 server.
 
@@ -264,6 +278,9 @@ class S3Helper:
         :param pwd: password for the user.
         :return: bool, response.
         """
+        host = host if host else self.host
+        user = user if user else self.user
+        pwd = pwd if pwd else self.pwd
         try:
             status, result = run_remote_cmd(
                 commands.SYSTEM_CTL_RESTART_CMD.format(service),
@@ -287,9 +304,9 @@ class S3Helper:
             return False, error
 
     def restart_s3server_processes(self,
-                                   host: str = CM_CFG["host"],
-                                   user: str = CM_CFG["username"],
-                                   pwd: str = CM_CFG["password"],
+                                   host: str = None,
+                                   user: str = None,
+                                   pwd: str = None,
                                    wait_time: int = 20) -> tuple:
         """
         Restart all s3server processes using hctl command.
@@ -300,6 +317,9 @@ class S3Helper:
         :param wait_time: Wait time in sec after restart.
         :return: True if s3server process restarted else False.
         """
+        host = host if host else self.host
+        user = user if user else self.user
+        pwd = pwd if pwd else self.pwd
         try:
             status, fids = self.get_s3server_fids()
             LOGGER.debug(fids)
@@ -338,10 +358,9 @@ class S3Helper:
                 error)
             return False, error
 
-    @staticmethod
-    def get_s3server_resource(host: str = CM_CFG["host"],
-                              user: str = CM_CFG["username"],
-                              pwd: str = CM_CFG["password"]) -> tuple:
+    def get_s3server_resource(self, host: str = None,
+                              user: str = None,
+                              pwd: str = None) -> tuple:
         """
         Get resources of all s3server instances using pcs command.
 
@@ -350,6 +369,9 @@ class S3Helper:
         :param pwd: password for the user.
         :return: response, list of s3 resources.
         """
+        host = host if host else self.host
+        user = user if user else self.user
+        pwd = pwd if pwd else self.pwd
         try:
             status, output = run_remote_cmd(
                 commands.PCS_RESOURCE_SHOW_CMD,
@@ -375,9 +397,9 @@ class S3Helper:
             return False, error
 
     def restart_s3server_resources(self,
-                                   host: str = CM_CFG["host"],
-                                   user: str = CM_CFG["username"],
-                                   pwd: str = CM_CFG["password"],
+                                   host: str = None,
+                                   user: str = None,
+                                   pwd: str = None,
                                    wait_time: int = 20) -> tuple:
         """
         Restart all s3server resources using pcs command.
@@ -388,6 +410,9 @@ class S3Helper:
         :param wait_time: Wait time in sec after restart.
         :return: True if services restarted else False.
         """
+        host = host if host else self.host
+        user = user if user else self.user
+        pwd = pwd if pwd else self.pwd
         try:
             status, resources = self.get_s3server_resource(
                 host=host, user=user, pwd=pwd)
@@ -426,11 +451,10 @@ class S3Helper:
                 error)
             return False, error
 
-    @staticmethod
-    def is_s3_server_path_exists(path: str = None,
-                                 host: str = CM_CFG["host"],
-                                 user: str = CM_CFG["username"],
-                                 pwd: str = CM_CFG["password"]) -> tuple:
+    def is_s3_server_path_exists(self, path: str = None,
+                                 host: str = None,
+                                 user: str = None,
+                                 pwd: str = None) -> tuple:
         """
         Check if file exists on s3 server.
 
@@ -440,6 +464,9 @@ class S3Helper:
         :param pwd: Password for the user.
         :return: bool, response.
         """
+        host = host if host else self.host
+        user = user if user else self.user
+        pwd = pwd if pwd else self.pwd
         try:
             status, response = run_remote_cmd(
                 f"stat {path}", host, user, pwd, read_lines=True)
@@ -454,10 +481,9 @@ class S3Helper:
                 error)
             return False, error
 
-    @staticmethod
-    def get_s3server_fids(host: str = CM_CFG["host"],
-                          user: str = CM_CFG["username"],
-                          pwd: str = CM_CFG["password"]) -> tuple:
+    def get_s3server_fids(self, host: str = None,
+                          user: str = None,
+                          pwd: str = None) -> tuple:
         """
         Get fid's of all s3server processes.
 
@@ -466,6 +492,9 @@ class S3Helper:
         :param pwd: password for the user.
         :return: bool, response.
         """
+        host = host if host else self.host
+        user = user if user else self.user
+        pwd = pwd if pwd else self.pwd
         try:
             status, output = run_remote_cmd(
                 commands.MOTR_STATUS_CMD,
@@ -489,12 +518,11 @@ class S3Helper:
                 error)
             return False, error
 
-    @staticmethod
-    def copy_s3server_file(file_path: str = None,
+    def copy_s3server_file(self, file_path: str = None,
                            local_path: str = None,
-                           host: str = CM_CFG["host"],
-                           user: str = CM_CFG["username"],
-                           pwd: str = CM_CFG["password"]) -> tuple:
+                           host: str = None,
+                           user: str = None,
+                           pwd: str = None) -> tuple:
         """
         copy file from s3 server to local path.
 
@@ -505,6 +533,9 @@ class S3Helper:
         :param pwd: password for the user.
         :return: True if file copied else False, error/path.
         """
+        host = host if host else self.host
+        user = user if user else self.user
+        pwd = pwd if pwd else self.pwd
         try:
             hobj = Host(hostname=host, username=user, password=pwd)
             hobj.connect_pysftp()
@@ -532,14 +563,14 @@ class S3Helper:
 
         :param string: String to be check.
         :param file_path: file path.
-        :param host: IP of the host.
-        :param user: user name of the host.
-        :param pwd: password for the user.
+        :keyword host: IP of the host.
+        :keyword user: user name of the host.
+        :keyword pwd: password for the user.
         :return: bool, response.
         """
-        host = kwargs.get("host", CM_CFG["host"])
-        user = kwargs.get("user", CM_CFG["username"])
-        pwd = kwargs.get("password", CM_CFG["password"])
+        host = kwargs.get("host", self.host)
+        user = kwargs.get("user", self.user)
+        pwd = kwargs.get("password", self.pwd)
         local_path = os.path.join(os.getcwd(), 'temp_file')
         try:
             if os.path.exists(local_path):
@@ -583,16 +614,16 @@ class S3Helper:
         Enable or disable s3server instances using pcs command.
 
         :param resource_disable: True for disable and False for enable.
-        :param host: IP of the host.
-        :param user: user name of the host.
-        :param pwd: password for the user.
         :param wait_time: Wait time in sec after resource action.
+        :keyword host: IP of the host.
+        :keyword user: user name of the host.
+        :keyword pwd: password for the user.
         :return: boolean and response/error.
         """
         try:
-            host = kwargs.get("host", CM_CFG["host"])
-            user = kwargs.get("user", CM_CFG["username"])
-            pwd = kwargs.get("password", CM_CFG["password"])
+            host = kwargs.get("host", self.host)
+            user = kwargs.get("user", self.user)
+            pwd = kwargs.get("password", self.pwd)
             status, resources = self.get_s3server_resource()
             if not status:
                 return status, resources
@@ -711,9 +742,9 @@ class S3Helper:
         :param pwd: password for the user.
         :return: bool, response..
         """
-        host = kwargs.get("host", CM_CFG["host"])
-        user = kwargs.get("user", CM_CFG["username"])
-        pwd = kwargs.get("password", CM_CFG["password"])
+        host = kwargs.get("host", self.host)
+        user = kwargs.get("user", self.user)
+        pwd = kwargs.get("password", self.pwd)
         local_path = os.path.join(os.getcwd(), "temp_file")
         try:
             if os.path.exists(local_path):

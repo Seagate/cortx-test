@@ -29,6 +29,7 @@ import json
 import logging
 import csv
 import time
+import datetime
 import pytest
 from datetime import date
 from _pytest.nodes import Item
@@ -453,6 +454,7 @@ def pytest_collection(session):
     if session.config.option.collectonly:
         te_meta = config_utils.create_content_json(os.path.join(cache_home, 'te_meta.json'), meta)
         LOGGER.debug("Items meta dict %s created at %s", meta, te_meta)
+        Globals.te_meta = te_meta
     if not _local and session.config.option.readmetadata:
         tp_meta_file = os.path.join(os.getcwd(),
                                     params.LOG_DIR_NAME,
@@ -540,7 +542,9 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
             log = strip_ansi(log)
             logs = log.split('\n')
             test_id = CACHE.lookup(report.nodeid)
-            name = str(test_id) + '_' + report.nodeid.split('::')[1] + '.log'
+            name = str(test_id) + '_' + report.nodeid.split('::')[1] + '_' \
+                + datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S') \
+                + '.log'
             test_log = os.path.join(os.getcwd(), LOG_DIR, 'latest', name)
             with open(test_log, 'w') as fp:
                 for rec in logs:
@@ -558,7 +562,9 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
         log = strip_ansi(log)
         logs = log.split('\n')
         test_id = CACHE.lookup(report.nodeid)
-        name = str(test_id) + '_' + report.nodeid.split('::')[1] + '.log'
+        name = str(test_id) + '_' + report.nodeid.split('::')[1] + '_' + \
+            datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S') + \
+            '.log'
         test_log = os.path.join(os.getcwd(), LOG_DIR, 'latest', name)
         with open(test_log, 'w') as fp:
             for rec in logs:
@@ -580,8 +586,12 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
         LOGGER.info("Adding log file path to %s", test_id)
         comment = "Log file path: {}".format(resp[1])
         data = task.get_test_details(test_exe_id=Globals.TE_TKT)
-        task.update_execution_details(data=data, test_id=test_id,
-                                      comment=comment)
+        resp = task.update_execution_details(data=data, test_id=test_id,
+                                             comment=comment)
+        if resp:
+            LOGGER.info("Added execution details comment in: %s", test_id)
+        else:
+            LOGGER.error("Failed to comment to %s", test_id)
 
 
 @pytest.fixture(scope='function')
