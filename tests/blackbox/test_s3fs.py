@@ -17,7 +17,7 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-"""Test suite for s3 fs operations"""
+"""Test suite for s3 fs operations."""
 
 import time
 import logging
@@ -39,7 +39,7 @@ CM_CFG = read_yaml("config/common_config.yaml")[1]
 
 
 class S3fs:
-    """Blackbox s3fs testsuite"""
+    """Blackbox s3fs testsuite."""
 
     @classmethod
     def setup_class(cls):
@@ -51,12 +51,10 @@ class S3fs:
         cls.log = logging.getLogger(__name__)
         cls.log.info("STARTED: setup test suite operations.")
 
-    @pytest.mark.s3
-    @pytest.mark.tags("")
-    @CTFailOn(error_handler)
     def setup_method(self):
         """
-        This function will be invoked before each test case execution
+        Function will be invoked before each test case execution.
+
         It will perform prerequisite test steps if any
         """
         self.log.info("STARTED: Setup operations")
@@ -69,7 +67,8 @@ class S3fs:
 
     def teardown_method(self):
         """
-        This function will be invoked after each test case.
+        Function will be invoked after each test case.
+
         It will perform all cleanup operations.
         This function will unmount the directories and delete it.
         It will delete buckets and objects uploaded to that bucket.
@@ -93,7 +92,8 @@ class S3fs:
     @staticmethod
     def create_cmd(operation, cmd_arguments=None):
         """
-        Creating command from operation and cmd_options
+        Creating command from operation and cmd_options.
+
         :param str operation: type of operation to be performed on s3
         :param list cmd_arguments: parameters for the command
         :return str: actual command that is going to execute for utility
@@ -110,7 +110,8 @@ class S3fs:
 
     def create_and_mount_bucket(self):
         """
-        This method helps to create bucket and mount bucket using s3fs client
+        Method helps to create bucket and mount bucket using s3fs client.
+
         :return tuple: bucket_name & dir_name
         """
         bucket_name = S3FS_COMMON_CFG["bucket_name"].format(time.time())
@@ -146,25 +147,19 @@ class S3fs:
         return bucket_name, dir_name
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7928")
     @CTFailOn(error_handler)
     def test_2359(self):
-        """
-        mount bucket using s3fs client
-        :avocado: tags=s3fs_blackbox
-        """
+        """Mount bucket using s3fs client."""
         self.log.info("STARTED: mount bucket using s3fs client")
         self.create_and_mount_bucket()
         self.log.info("ENDED: mount bucket using s3fs client")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7929")
     @CTFailOn(error_handler)
     def test_2360(self):
-        """
-        umount bucket directory using s3fs client
-        :avocado: tags=s3fs_blackbox
-        """
+        """Umount bucket directory using s3fs client."""
         self.log.info("STARTED: umount bucket directory using s3fs client")
         bucket_name, dir_name = self.create_and_mount_bucket()
         self.log.info("Created Bucket Name is %s", bucket_name)
@@ -180,13 +175,10 @@ class S3fs:
         self.log.info("ENDED: umount bucket directory using s3fs client")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7930")
     @CTFailOn(error_handler)
     def test_2361(self):
-        """
-        list objects on Mount directory with mounted bucket using s3fs client
-        :avocado: tags=s3fs_blackbox
-        """
+        """List objects on Mount directory with mounted bucket using s3fs client."""
         self.log.info(
             "STARTED: list objects on Mount directory with mounted bucket using s3fs client")
         bucket_name, dir_name = self.create_and_mount_bucket()
@@ -215,13 +207,10 @@ class S3fs:
             "ENDED: list objects on Mount directory with mounted bucket using s3fs client")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7931")
     @CTFailOn(error_handler)
     def test_2362(self):
-        """
-        list objects where directory was umount and check bucket objects using s3fs client
-        :avocado: tags=s3fs_blackbox
-        """
+        """List objects where directory was umount and check bucket objects using s3fs client."""
         self.log.info(
             "STARTED: list objects where directory was umount and "
             "check bucket objects using s3fs client")
@@ -254,13 +243,10 @@ class S3fs:
             "check bucket objects using s3fs client")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7932")
     @CTFailOn(error_handler)
     def test_2363(self):
-        """
-        Delete File from Mount directory and check object is present in bucket using s3fs client
-        :avocado: tags=s3fs_blackbox
-        """
+        """Delete File from Mount dir and check object is present in bucket using s3fs client."""
         self.log.info(
             "STARTED: Delete File from Mount directory and "
             "check object is present in bucket using s3fs client")
@@ -302,13 +288,10 @@ class S3fs:
             "check object is present in bucket using s3fs client")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7935")
     @CTFailOn(error_handler)
     def test_2367(self):
-        """
-        Create sub directory under mount directory and list the bucket
-        :avocado: tags=s3fs_blackbox
-        """
+        """Create sub directory under mount directory and list the bucket."""
         self.log.info(
             "STARTED: Create sub directory under mount directory and list the bucket")
         bucket_name, dir_name = self.create_and_mount_bucket()
@@ -335,13 +318,10 @@ class S3fs:
             "ENDED: Create sub directory under mount directory and list the bucket")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7933")
     @CTFailOn(error_handler)
     def test_2364(self):
-        """
-        upload large file on mount directory and check its present in bucket using s3fs client
-        :avocado: tags=s3fs_blackbox
-        """
+        """Upload large file on mount dir and check its present in bucket using s3fs client."""
         self.log.info(
             "STARTED: upload large file on mount directory and "
             "check its present in bucket using s3fs client")
@@ -375,13 +355,10 @@ class S3fs:
             "check its present in bucket using s3fs client")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7934")
     @CTFailOn(error_handler)
     def test_2365(self):
-        """
-        upload file in mount directory and check that object is present in bucket
-        :avocado: tags=s3fs_blackbox
-        """
+        """Upload file in mount directory and check that object is present in bucket."""
         self.log.info(
             "STARTED: upload file in mount directory and check that object is present in bucket")
         bucket_name, dir_name = self.create_and_mount_bucket()
