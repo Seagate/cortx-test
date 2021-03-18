@@ -30,6 +30,7 @@ from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
 from commons import commands as common_cmds
 from commons import constants as common_cnst
+from commons.utils import assert_utils
 from config import CMN_CFG, PROV_CFG
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
@@ -63,14 +64,18 @@ class TestProvSingleNode:
         Setup operations for each test.
         """
 
-    def build_job(self, name, parameters=None, token=None):
+    def build_job(self, name: str, parameters: dict=None, token: str=None):
         """
         Helper function to start the jenkins job.
+        :param name: Name of the jenkins job
+        :param parameters: Dict of different parameters to be passed
+        :param token: Authentication Token for jenkins job
+        :return: response
         """
         test_cfg = PROV_CFG["deploy"]
         self.jenkins_server = jenkins.Jenkins(common_cnst.JENKINS_URL, username=common_cnst.JENKINS_USERNAME,
                                               password=common_cnst.JENKINS_PASSWORD)
-        LOGGER.info("Jenkins_server obj: {}".format(self.jenkins_server))
+        LOGGER.debug("Jenkins_server obj: {}".format(self.jenkins_server))
         completed_build_number = self.jenkins_server.get_job_info(name)['lastCompletedBuild']['number']
         next_build_number = self.jenkins_server.get_job_info(name)['nextBuildNumber']
         LOGGER.info(
@@ -118,14 +123,15 @@ class TestProvSingleNode:
         resp = self.nd_obj.execute_cmd(cmd, read_lines=True)
         resp = resp[0].strip()
         LOGGER.info("os rel: {}".format(resp))
-        assert resp == test_cfg["os_release"], "OS release is different than expected."
+        assert_utils.assert_equal(resp, test_cfg["os_release"],
+                                  "OS release is different than expected.")
 
         LOGGER.info("Checking kernel version")
         cmd = common_cmds.CMD_KRNL_VER
         resp = self.nd_obj.execute_cmd(cmd, read_lines=True)
         resp = resp[0].strip()
         LOGGER.info("kernel: {}".format(resp))
-        assert resp == test_cfg["kernel"], "Kernel version differs than expected."
+        assert_utils.assert_equal(resp, test_cfg["kernel"], "Kernel version differs than expected.")
 
         LOGGER.info("Starting the deployment steps.")
         test_cfg = PROV_CFG["deploy"]
@@ -135,7 +141,8 @@ class TestProvSingleNode:
         common_cnst.PARAMS["HOST_PASS"] = self.passwd
         output = self.build_job(common_cnst.JOB_NAME, common_cnst.PARAMS, common_cnst.TOKEN_NAME)
         LOGGER.info("Jenkins Build URL: {}".format(output['url']))
-        assert output['result'] == test_cfg["success_msg"], "Deployment is not successful, please check the url."
+        assert_utils.assert_equal(output['result'], test_cfg["success_msg"],
+                                  "Deployment is not successful, please check the url.")
 
         LOGGER.info("Starting the post deployment checks.")
         test_cfg = PROV_CFG["system"]
@@ -145,14 +152,14 @@ class TestProvSingleNode:
         resp = self.nd_obj.execute_cmd(cmd, read_lines=True)
         LOGGER.info("hctl status: %s", resp)
         for line in resp:
-            assert test_cfg["offline"] not in line, "Some services look offline."
+            assert_utils.assert_not_in(test_cfg["offline"], line, "Some services look offline.")
 
         LOGGER.info("Check that all services are up in pcs.")
         cmd = common_cmds.PCS_STATUS_CMD
         resp = self.nd_obj.execute_cmd(cmd, read_lines=True)
         LOGGER.info("PCS status: %s", resp)
         for line in resp:
-            assert test_cfg["stopped"] not in line, "Some services are not up."
+            assert_utils.assert_not_in(test_cfg["stopped"], line, "Some services are not up.")
 
         LOGGER.info("Successfully deployed the build after prereq checks and done post "
                     "deploy checks as well.")
