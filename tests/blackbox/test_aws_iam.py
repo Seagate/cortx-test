@@ -27,7 +27,7 @@ import pytest
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
-from commons.utils.config_utils import read_yaml
+from commons.configmanager import get_config_wrapper
 from commons.utils.assert_utils import \
     assert_true, assert_false, assert_in, assert_equal
 from libs.s3 import iam_test_lib
@@ -35,7 +35,7 @@ from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
 
 IAM_OBJ = iam_test_lib.IamTestLib()
 
-IAM_CFG = read_yaml("config/blackbox/test_aws_iam.yaml")[1]
+IAM_CFG = get_config_wrapper(fpath="config/blackbox/test_aws_iam.yaml")
 
 
 def create_account():
