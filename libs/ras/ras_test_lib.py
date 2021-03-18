@@ -59,7 +59,6 @@ class RASTestLib(RASCoreLib):
         self.host = host
         self.username = username
         self.pwd = password
-        self.common_cfg = CMN_CFG
         self.sspl_pass = CMN_CFG['ldap']["sspl_pass"]
         super().__init__(host, username, password)
 
