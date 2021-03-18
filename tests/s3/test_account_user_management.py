@@ -26,11 +26,11 @@ import shutil
 import logging
 import pytest
 
+from commons.configmanager import get_config_wrapper
 from commons.constants import const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
-from commons.utils.config_utils import read_yaml
 from commons.utils.system_utils import create_file, remove_file
 from libs.s3 import S3H_OBJ, LDAP_USERNAME, LDAP_PASSWD
 from libs.s3.s3_test_lib import S3TestLib
@@ -39,7 +39,7 @@ from libs.s3.iam_test_lib import IamTestLib
 IAM_OBJ = IamTestLib()
 S3_OBJ = S3TestLib()
 
-TEST_CFG = read_yaml("config/s3/test_account_user_management.yaml")[1]
+TEST_CFG = get_config_wrapper(fpath="config/s3/test_account_user_management.yaml")
 
 
 class TestAccountUserManagement:
