@@ -9,7 +9,6 @@ dataclasses
 defusedxml
 docutils==0.14
 dataclasses
-defusedxml
 fastavro
 fabric~=2.5.0
 filelock==3.0.12

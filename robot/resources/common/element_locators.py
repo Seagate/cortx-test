@@ -98,6 +98,13 @@ LICENSE_CANCLE_BUTTON_ID = 'license-cancelagreementbtn'
 LICENSE_CANCLE_IMAGE_ID = 'license-cancelagreementicon'
 LICENSE_TITLE_ID = 'agreement-title'
 LICENSE_DATA_ID = 'agreement-data'
+ADMIN_USER_FIELD_ID = 'adminUsername'
+ADMIN_USER_EMAIL_ID_FIELD_ID = 'adminEmail'
+ADMIN_PASSWORD_FIELD_ID = 'adminPassword'
+ADMIN_CONFIRM_PASSWORD_FIELD_ID = 'confirmAdminPassword'
+APPLY_AND_CONTINUE_BUTTON_ID = 'admin-createadminuser'
+ADMIN_USER_ALREADY_EXISTS_ID = 'admin-invalidmsg'
+
 
 #  CSM User section
 CSM_USERS_TABLE_XPATH = '//*[@id="localuser-tabledata"]//table'
@@ -200,3 +207,8 @@ PAGE_LOADING_MSG_ID = "lblLoaderMessage"
 
 #Buckets Tab
 BUCKETS_TAB_ID = "s3bucketstab"
+
+# Firmware Update
+UPLOAD_FW_FILE_BTN_ID = "btnInstallFirmware"
+CHOOSE_FW_UPDATE_FILE_BTN_ID = "file"
+START_FW_UPDATE_BUTTON_ID = "btnStartUpgrade"

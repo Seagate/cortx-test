@@ -1,7 +1,7 @@
 delete_account_temp_cred:
   account_name: "delacctempcred_acc"
   email_id: "{}@seagate.com"
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
   password_reset: False
   bucket_name_prefix: "delacctempcred-bkt-"
   acc_create_failed_msg: "Failed to create an account"
