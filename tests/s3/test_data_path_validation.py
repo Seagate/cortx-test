@@ -32,53 +32,53 @@ from commons.utils.assert_utils import assert_true, assert_in, assert_false
 from commons.constants import const
 from libs.s3 import S3H_OBJ, s3_test_lib, iam_test_lib, s3_acl_test_lib, s3_multipart_test_lib
 from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
+from libs.s3 import S3H_OBJ
 
+from scripts.s3_bench import s3bench as s3bench_obj
 
-USER_CONFIG = get_config_wrapper(fpath="config/s3/test_iam_user_login.yaml")
-
-try:
-    from scripts.s3_bench import s3bench as s3bench_obj
-except BaseException as error:
-    import site
-    import sys
-    site.addsitedir('scripts/')  # Always appends to end
-    from s3_bench import s3bench as s3bench_obj
-
-S3_OBJ = s3_test_lib.S3TestLib()
 IAM_TEST_OBJ = iam_test_lib.IamTestLib()
 ACL_OBJ = s3_acl_test_lib.S3AclTestLib()
 
 data_path_cfg = read_yaml("config/s3/test_data_path_validate.yaml")[1]
-common_cfg = read_yaml("config/common_config.yaml")[1]
+CM_CFG = get_config_wrapper(fpath="config/common_config.yaml")
 
-class DataPathValidation(Test):
-    """
-    Data Path Test suite
-    """
+class TestDataPathValidation():
+    """Data Path Test suite."""
 
-
-    @CTPLogformatter()
-    def setUp(self):
+    @classmethod
+    def setup_class(cls):
         """
-        This function will be invoked before each test case execution
+        Summary: Function will be invoked prior to each test case.
+
+        Description: It will perform all prerequisite test steps if any.
+        Initializing common variable which will be used in test and
+        teardown for cleanup
+        """
+        cls.log = logging.getLogger(__name__)
+        cls.log.info("STARTED: Setup operations")
+        cls.ldap_user = LDAP_USERNAME
+        cls.ldap_pwd = LDAP_PASSWD
+        cls.account_name = "{}{}".format(
+            data_path_cfg["data_path"]["acc_name_prefix"],
+            str(time.time()))
+        cls.email_id = "{}{}".format(
+            self.account_name,
+            data_path_cfg["data_path"]["email_suffix"])
+        cls.nodes = CM_CFG["nodes"]
+        cls.log.info("ENDED: Setup operations")
+
+    def setup_method(self):
+        """
+        Summary: This function will be invoked before each test case execution
         It will perform prerequisite test steps if any
         """
 
         self.log.info("STARTED: Setup operations")
         self.random_id = str(time.time())
-        self.account_name = "{}{}".format(
-            data_path_cfg["data_path"]["acc_name_prefix"],
-            str(time.time()))
-        self.email_id = "{}{}".format(
-            self.account_name,
-            data_path_cfg["data_path"]["email_suffix"])
-        self.ldap_user = LDAP_USERNAME
-        self.ldap_pwd = LDAP_PASSWD
         self.log_file = []
-        self.nodes = common_cfg["nodes"]
         self.log.info("ENDED: Setup operations")
 
-    def tearDown(self):
+    def teardown_method(self):
         """
         This function will be invoked after running each test case.
         It will clean all resources which are getting created during
@@ -424,7 +424,8 @@ class DataPathValidation(Test):
         commands = const.CRASH_COMMANDS
         for node, cmd in zip(self.nodes, commands):
             res_cmd = S3H_OBJ.remote_execution(
-                node, common_cfg["username"], common_cfg["password"], cmd)
+                node,CM_CFG["nodes"][node]["username"],
+                CM_CFG["nodes"][node]["password"], cmd)
             self.assertNotIn(cmd_msg, res_cmd, res_cmd)
         self.log.info("Step 3: checked system stability")
         self.log.info("ENDED: Test gradual increase of concurrent client sessions"
@@ -468,7 +469,8 @@ class DataPathValidation(Test):
         commands = const.CRASH_COMMANDS
         for node, cmd in zip(self.nodes, commands):
             res_cmd = S3H_OBJ.remote_execution(
-                node, common_cfg["username"], common_cfg["password"], cmd)
+                node, CM_CFG["nodes"][node]["username"],
+                CM_CFG["nodes"][node]["password"], cmd)
             self.assertNotIn(cmd_msg, res_cmd, res_cmd)
         self.log.info("Step 3: checked system stability")
         self.log.info("ENDED: Test gradual increase of concurrent client sessions"
@@ -515,7 +517,8 @@ class DataPathValidation(Test):
         commands = const.CRASH_COMMANDS
         for node, cmd in zip(self.nodes, commands):
             res_cmd = S3H_OBJ.remote_execution(
-                node, common_cfg["username"], common_cfg["password"], cmd)
+                node, CM_CFG["nodes"][node]["username"],
+                CM_CFG["nodes"][node]["password"], cmd)
             self.assertNotIn(cmd_msg, res_cmd, res_cmd)
         self.log.info("Step 3: checked system stability")
         self.log.info("ENDED: Test gradual increase of concurrent client sessions"
@@ -560,7 +563,8 @@ class DataPathValidation(Test):
         commands = const.CRASH_COMMANDS
         for node, cmd in zip(self.nodes, commands):
             res_cmd = S3H_OBJ.remote_execution(
-                node, common_cfg["username"], common_cfg["password"], cmd)
+                node, CM_CFG["nodes"][node]["username"],
+                CM_CFG["nodes"][node]["password"], cmd)
             self.assertNotIn(cmd_msg, res_cmd, res_cmd)
         self.log.info("Step 3: checked system stability")
         self.log.info("ENDED: Test gradual increase of concurrent client sessions"
