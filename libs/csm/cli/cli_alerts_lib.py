@@ -33,6 +33,13 @@ class CortxCliAlerts(CortxCli):
     This class has methods for performing operations on alerts using cortxcli
     """
 
+    def __init__(self, session_obj: object = None):
+        """
+        This method initializes members of CortxCliAlerts
+        :param object session_obj: session object of host connection if already established
+        """
+        super().__init__(session_obj=session_obj)
+
     def show_alerts_cli(
             self,
             duration: str = None,

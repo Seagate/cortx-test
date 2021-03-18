@@ -5,7 +5,10 @@ Resource    ${EXECDIR}/resources/page_objects/userSettingsLocalPage.robot
 Resource    ${EXECDIR}/resources/page_objects/alertPage.robot
 Resource    ${EXECDIR}/resources/page_objects/dashboard.robot
 Resource    ${EXECDIR}/resources/page_objects/s3accountPage.robot
+Resource    ${EXECDIR}/resources/page_objects/preboardingPage.robot
 
+Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}  ${username}  ${password}
+...  AND  Close Browser
 Test Setup  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
 Test Teardown  Close Browser
 Suite Teardown  Close All Browsers
@@ -36,34 +39,34 @@ Create and login with CSM manage user
 
 
 *** Test Cases ***
-test_1220
+TEST-1220
     [Documentation]  Test manager user don't have access to setting menu.
-    [Tags]  Priority_High  user_role  test_1220
+    [Tags]  Priority_High  user_role  TEST-1220
     ${new_user_name}  ${new_password}=  Create and login with CSM manage user
     Verify that CSM manage user can not access setting menu
     Re-login  ${username}  ${password}  ${page_name}
     Delete CSM User  ${new_user_name}
 
-test_1226
+TEST-1226
     [Documentation]  Test manager user can not edit or delete s3 account.
-    [Tags]  Priority_High  user_role  test_1226
+    [Tags]  Priority_High  user_role  TEST-1226
     ${new_user_name}  ${new_password}=  Create and login with CSM manage user
     Verify Absence of Edit And Delete Button on S3account
     Re-login  ${username}  ${password}  ${page_name}
     Delete CSM User  ${new_user_name}
 
-test_1218
+TEST-1218
     [Documentation]  Test manager user don't have access to Lyve Pilot menu
-    [Tags]  Priority_High  user_role  test_1218
+    [Tags]  Priority_High  user_role  TEST-1218
     ${new_user_name}  ${new_password}=  Create and login with CSM manage user
     wait for page or element to load  2s
     Verify that user can not access Lyve Pilot menu
     Re-login  ${username}  ${password}  ${page_name}
     Delete CSM User  ${new_user_name}
 
-test_1216
+TEST-1216
     [Documentation]  Test manager user can not access IAM user and buckets tab.
-    [Tags]  Priority_High  user_role  test_1216
+    [Tags]  Priority_High  user_role  TEST-1216
     ${new_user_name}  ${new_password}=  Create and login with CSM manage user
     wait for page or element to load  2s
     Verify IAM User Section Not Present
@@ -72,9 +75,9 @@ test_1216
     Re-login  ${username}  ${password}  ${page_name}
     Delete CSM User  ${new_user_name}
 
-test_1215
+TEST-1215
     [Documentation]  Test that CSM user with role manager can view and create s3 accounts.
-    [Tags]  Priority_High  user_role  test_1215
+    [Tags]  Priority_High  user_role  TEST-1215
     ${new_user_name}  ${new_password}=  Create and login with CSM manage user
     wait for page or element to load  2s
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
@@ -91,9 +94,9 @@ test_1215
     Navigate To Page    MANAGE_MENU_ID
     Delete CSM User  ${new_user_name}
 
-test_1217
+TEST-1217
     [Documentation]  Test that manager user can view and create CSM users.
-    [Tags]  Priority_High  user_role  test_1217
+    [Tags]  Priority_High  user_role  TEST-1217
     ${new_user_name}  ${new_password}=  Create and login with CSM manage user
     wait for page or element to load  2s
     ${new_csm_user_password}=  Generate New Password

@@ -284,13 +284,12 @@ class RASCoreLib:
             elif field in ("password", "secret"):
                 password = pwd
 
+                self.node_utils.copy_file_to_remote(local_path=local_path,
+                                                    remote_path=path)
                 if not self.node_utils.path_exists(path=path):
-                    self.node_utils.copy_file_to_remote(local_path=local_path,
-                                                        remote_path=path)
-                    if not self.node_utils.path_exists(path=path):
-                        LOGGER.debug('Failed to copy the file')
-                        return False
-                    self.change_file_mode(path=path)
+                    LOGGER.debug('Failed to copy the file')
+                    return False
+                self.change_file_mode(path=path)
                 LOGGER.info("Getting cluster id")
                 cluster_id = self.get_cluster_id()
                 cluster_id = cluster_id[1].decode("utf-8")
