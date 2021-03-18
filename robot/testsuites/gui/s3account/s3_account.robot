@@ -33,7 +33,7 @@ ${invalid_S3_account_password}  TestPass
 *** Test Cases ***
 
 Check S3 Account Exists
-    [Documentation]  This test is to verify that S3 account existes
+    [Documentation]  This test is to verify that S3 account exists
     [Tags]  Priority_High  S3_test
     Validate CSM Login Success  ${username}
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
@@ -215,7 +215,7 @@ TEST-107
     Verify message  INVALID_S3_EMAIL_MSG_ID  ${INVALID_S3_EMAIL_MESSAGE}
 
 TEST-109
-    [Documentation]  This test case is to verify cancle button functionality on s3 accounts form .
+    [Documentation]  This test case is to verify cancel button functionality on s3 accounts form .
     [Tags]  Priority_High  TEST-109  S3_test  Somoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
@@ -393,7 +393,7 @@ TEST-4025
 
 
 TEST-4027
-    [Documentation]  This test case is to verify that s3 account user is able to perform s3 oprations.
+    [Documentation]  This test case is to verify that s3 account user is able to perform s3 operations.
     ...  user provide miss-match password while updating its user name
     [Tags]  Priority_High  TEST-4027  S3_test  Somoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
@@ -442,7 +442,7 @@ TEST-13101
     [Documentation]  This test case is to verify table for access keys is shown below s3 accounts table
     ...  with required columns.
     [Tags]  Priority_High  TEST-13101  S3_test
-    verify the table eders for s3 account access key
+    verify the table headers for s3 account access key
 
 TEST-13102
     [Documentation]  This test case is to verify new access key is getting generated.
@@ -487,7 +487,7 @@ TEST-17018  # TODO: correct test ID, correct Tag
     Close Browser
 
 TEST-4026
-    [Documentation]  Test User should not able to login using invald s3 credentials on CSM UI
+    [Documentation]  Test User should not able to login using invalid s3 credentials on CSM UI
     ...  Reference : https://jts.seagate.com/browse/TEST-4026
     [Tags]  Priority_High  TEST-4026
     CSM GUI Login with Incorrect Credentials  ${url}  ${browser}  ${headless}

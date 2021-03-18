@@ -31,7 +31,7 @@ Verify Issuer Details
     Verify message  ISSUER_ORGANIZATION_VALUE_ID  ${ORGANIZATION_NAME_SSL_MESSAGE}
 
 Verify Subject Details 
-    [Documentation]  Test keyword is for Verifing Subject tab Details
+    [Documentation]  Test keyword is for verifying Subject tab Details
     sleep  3s
     Wait Until Element Is Visible  ${SUBJECT_COMMON_NAME_VALUE_ID}  timeout=10
     Verify message  SUBJECT_COMMON_NAME_VALUE_ID  ${COMMON_NAME_SSL_MESSAGE}

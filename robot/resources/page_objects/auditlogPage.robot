@@ -25,7 +25,7 @@ Click On Download Audit Log Button
     Click Button  ${AUDIT_LOG_DOWNLOAD_BUTTON_ID}
 
 Select Audit Log Details
-    [Documentation]  Test keyword is for generatting audit log of given details
+    [Documentation]  Test keyword is for generating audit log of given details
     [Arguments]  ${component}  ${duration}
     ${component}=  Convert To Upper Case  ${component}
     Log To Console And Report  generating audit log for ${component}

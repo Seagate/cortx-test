@@ -155,7 +155,7 @@ UPDATE_USER_BTN_ID = "lblLocalApplyInterface"
 CONFIRM_NEW_PASSWORD_INPUT_ID = "txtLocalConfirmNewPass"
 OLD_PASSWORD_INPUT_ID = "txtLocalOldPass"
 PAGINATION_BAR_XPATH = "//div[@class='v-data-footer']"
-PAGIANTION_PAGE_OPTIONS_XPATH = "//*[@role='option']"
+PAGINATION_PAGE_OPTIONS_XPATH = "//*[@role='option']"
 RADIO_BTN_VALUE_XPATH = "//*[@type='radio']"
 PAGINATION_LIST_ICON_XPATH = "//*[@class='v-select__selection v-select__selection--comma']"
 

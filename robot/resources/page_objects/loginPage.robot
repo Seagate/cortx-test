@@ -18,18 +18,18 @@ Open URL In Headless
     maximize browser window
 
 Enter Username And Password
-    [Documentation]  Test keyword is for entring the username and password on login form.
+    [Documentation]  Test keyword is for entering the username and password on login form.
     [Arguments]  ${username}  ${password}
     input text  ${csm username id}  ${username}
     input password  ${csm password id}  ${password}
 
 Click Sigin Button and Verify Button Disabled
-    [Documentation]  This keyword is for entring the username and password on login form for Test-6373.
+    [Documentation]  This keyword is for entering the username and password on login form for Test-6373.
     click button    ${signin_button_id}
     Element Should Be Disabled  ${signin_button_id}
 
 Click Sigin Button
-    [Documentation]  This keyword is for entring the username and password on login form.
+    [Documentation]  This keyword is for entering the username and password on login form.
     Wait Until Element Is Visible  ${signin_button_id}  timeout=10
     click button    ${signin_button_id}
     Sleep  5s  #  Sigin take some initial time
@@ -41,7 +41,7 @@ Validate CSM Login Failure
     [Return]  ${csm_login_fail_msg}
 
 Validate CSM Login Success
-    [Documentation]  This keyword is used to validate that user is loggied in.
+    [Documentation]  This keyword is used to validate that user is logged in.
     [Arguments]  ${username}
     wait until element is visible  ${LOGGED_IN_USER_NAME_ID}  timeout=60
     ${csm_dashboard_text}=  get text  ${LOGGED_IN_USER_NAME_ID}
@@ -82,7 +82,7 @@ CSM GUI Login and Verify Button Enabled Disabled with Correct Credentials
     Element Should Be Enabled  ${signin_button_id}
     Click Sigin Button and Verify Button Disabled
     sleep  5s
-    Log To Console And Report  Waiting for receiving GUI responce...
+    Log To Console And Report  Waiting for receiving GUI response...
 
 CSM GUI Login
     [Documentation]  This keyword is used to login to CSM GUI.
@@ -92,7 +92,7 @@ CSM GUI Login
     Enter Username And Password  ${username}  ${password}
     Click Sigin Button
     sleep  5s
-    Log To Console And Report  Waiting for receiving GUI responce...
+    Log To Console And Report  Waiting for receiving GUI response...
 
 CSM GUI Logout
     [Documentation]  This keyword is used to logout of CSM GUI.
@@ -101,7 +101,7 @@ CSM GUI Logout
     wait until element is visible  ${CSM_USERNAME_ID}  timeout=30
 
 Re-login
-    [Documentation]  Functionlity to Logout and login again
+    [Documentation]  Functionality to Logout and login again
     [Arguments]  ${user_name}  ${password}  ${page}
     CSM GUI Logout
     Wait Until Element Is Visible  ${csm username id}  timeout=10

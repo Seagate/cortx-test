@@ -45,6 +45,8 @@ TEST-1220
     [Documentation]  Test manager user don't have access to setting menu.
     [Tags]  Priority_High  user_role  TEST-1220
     ${new_user_name}  ${new_password}=  Create and login with CSM manage user
+    Navigate To Page  DASHBOARD_MENU_ID
+    Sleep  1s
     Verify that CSM manage user can not access setting menu
     Re-login  ${username}  ${password}  ${page_name}
     Delete CSM User  ${new_user_name}

@@ -77,7 +77,7 @@ TEST-955
     ...  Reference : https://jts.seagate.com/browse/TEST-955
     [Tags]  Priority_High  TEST-955
     Click Create IAM User Button
-    Verify Missmatch IAMuser Password Error
+    Verify Mismatch IAMuser Password Error
 
 TEST-957
     [Documentation]  Test "create" button should clickable only after all the mandatory fields are filled
@@ -85,7 +85,7 @@ TEST-957
     [Tags]  Priority_High  TEST-957
     Click Create IAM User Button
     sleep  1s
-    Verify Create IAMuser Button Must Remain disbaled
+    Verify Create IAMuser Button Must Remain disabled
 
 TEST-952
     [Documentation]  Test IAMuser should get successfully created

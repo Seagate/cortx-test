@@ -19,7 +19,7 @@ Click License Button
     click button    ${license_accept_button_id}
 
 Click LicenseCancle Button
-    [Documentation]  On EULA Pop Up, click on Cancle Button
+    [Documentation]  On EULA Pop Up, click on Cancel Button
     click button    ${license_cancle_button_id}
 
 Click LicenseCancle Image
@@ -32,7 +32,7 @@ check admin user already exists
     log to console and report  Admin user already exists
 
 Verify Presence of Elements on EULA Page
-    [Documentation]  On EULA, Verify Presence of diffren emelnets
+    [Documentation]  On EULA, Verify Presence of different elements
     Page Should Contain Button  ${license_cancle_button_id}
     Page Should Contain Image  ${license_cancle_image_id}
     Page Should Contain Button  ${license_accept_button_id}
@@ -41,7 +41,7 @@ Verify Presence of Elements on EULA Page
     Capture Element Screenshot  ${license_data_id}  eula_data.png
 
 Validate ELUA Success
-    [Documentation]  This keyword is used to validate that Preboarding page is accessable.
+    [Documentation]  This keyword is used to validate that Preboarding page is accessible.
     sleep  1s
     Capture Page Screenshot  preboarding.png
     Click Accept Button
@@ -71,7 +71,7 @@ Preboarding
     Log To Console And Report  Waiting for receiving GUI response...
 
 navigate to csm admin creation page
-    [Documentation]  This keyword is for navigavagating to creationg CSM Admin User page.
+    [Documentation]  This keyword is for navigating to creating CSM Admin User page.
     [Arguments]  ${url}  ${browser}  ${headless}
     Preboarding  ${url}  ${browser}  ${headless}
     Click Accept Button
@@ -82,7 +82,7 @@ navigate to csm admin creation page
     wait for page or element to load  2s
 
 create csm admin user
-    [Documentation]  This keyword is for creationg CSM Admin User.
+    [Documentation]  This keyword is for creating CSM Admin User.
     [Arguments]  ${username}  ${password}
     log to console and report  ${EMAIL_DOMAIN}
     log to console and report  ${username}

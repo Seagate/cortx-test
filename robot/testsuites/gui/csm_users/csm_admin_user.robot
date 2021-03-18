@@ -72,7 +72,7 @@ TEST-1853
     [Tags]  Priority_High
     Navigate To Page  ${page name}
     Click On Add User Button
-    Verify Create Button Must Remain disbaled
+    Verify Create Button Must Remain disabled
 
 TEST-1854
     [Documentation]  Test that "Password" and "confirm password" field must remain hidden while adding password to user on the User Settings
@@ -88,7 +88,7 @@ TEST-1863
     [Tags]  Priority_High
     Navigate To Page  ${page name}
     Click On Add User Button
-    Verify Missmatch Password Error
+    Verify Mismatch Password Error
 
 TEST-1838
     [Documentation]  Test that monitor user can't able to delete any user
@@ -203,14 +203,14 @@ TEST-5327
     ...  Reference : https://jts.seagate.com/browse/TEST-1865
     [Tags]  Priority_High
     Navigate To Page  ${page name}
-    Verify Presence of Pagiantion
+    Verify Presence of Pagination
 
 TEST-5328
     [Documentation]  Test that pagination bar must have 5/10/15/All rows per page option
     ...  Reference : https://jts.seagate.com/browse/TEST-5328
     [Tags]  Priority_High
     Navigate To Page  ${page name}
-    ${fetched_values}=  Read Pagiantion Options
+    ${fetched_values}=  Read Pagination Options
     ${actual_values}=  Create List  5  10  15  All
     Lists Should Be Equal  ${fetched_values}  ${actual_values}
 

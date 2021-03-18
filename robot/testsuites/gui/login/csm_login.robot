@@ -34,7 +34,7 @@ TEST-4242
     CSM GUI Logout
 
 TEST-3586
-    [Documentation]  Test Verify the forward and backward oprations after login on login page
+    [Documentation]  Test Verify the forward and backward operations after login on login page
     ...  Reference : https://jts.seagate.com/browse/TEST-3586
     [Tags]  Priority_High  TEST-3586
     CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}

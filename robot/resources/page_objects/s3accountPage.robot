@@ -33,13 +33,13 @@ Click on create new S3 account button
     click button  ${CREATE_S3_ACCOUNT_BUTTON_ID}
 
 Click on download and close button
-    [Documentation]  This keyword is to click on the downlaod and close button on s3 account.
+    [Documentation]  This keyword is to click on the download and close button on s3 account.
     sleep  3s
     wait until element is visible  ${DOWNLOAD_AND_CLOSE_BUTTON_ID}  timeout=10
     click element  ${DOWNLOAD_AND_CLOSE_BUTTON_ID}
 
-Click on calcle button on s3 account
-    [Documentation]  This keyword is to click on the calcel button on s3 account.
+Click on cancel button on s3 account
+    [Documentation]  This keyword is to click on the cancel button on s3 account.
     click button  ${CANCEL_S3_ACCOUNT_ID}
 
 Click on edit s3 account option
@@ -117,9 +117,9 @@ Check s3 account form is opened
     wait until element is visible  ${S3_ACCOUNT_NAME_FIELD_ID}  timeout=10
 
 check cancel s3 account form feature
-    [Documentation]  This keyword checks whether s3 account form is getting closed by clicking on the calcle button.
+    [Documentation]  This keyword checks whether s3 account form is getting closed by clicking on the cancel button.
     Click on add new s3 account button
-    Click on calcle button on s3 account
+    Click on cancel button on s3 account
     sleep  2s
     Element Should Not Be Visible  ${S3_ACCOUNT_NAME_FIELD_ID}
 
@@ -216,7 +216,7 @@ Verify unique username for csm and s3 account
     Reload Page
     Delete CSM User  ${user_name}
 
-verify the table eders for s3 account access key
+verify the table headers for s3 account access key
     [Documentation]  This keyword verify the table headers for s3 account access key table.
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
@@ -234,7 +234,7 @@ verify the table eders for s3 account access key
     Delete S3 Account  ${S3_account_name}  ${password}  True
 
 generate new access key
-     [Documentation]  This keyword generate new access kay.
+     [Documentation]  This keyword generate new access key.
      Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
      sleep  2s
      ${S3_account_name}  ${email}  ${password} =  Create S3 account

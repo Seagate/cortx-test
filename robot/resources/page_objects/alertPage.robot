@@ -79,7 +79,7 @@ Verify Absence of comment textbox
     Page Should Not Contain Element  ${ALERT_COMMENT_TEXT_ID}
 
 Verify comment on alert
-     [Documentation]  this keyword adds comments and verifys it
+     [Documentation]  this keyword adds comments and verifies it
      Click AlertPageDashboard Image
      Click Comments Button
      Add CommentInCommentBox Text
