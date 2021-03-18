@@ -7318,7 +7318,7 @@ _date
             " and Values 'True'")
 
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-6762")
+    @pytest.mark.tags("TEST-7521")
     @CTFailOn(error_handler)
     def test_6763(self):
         """
@@ -9141,7 +9141,7 @@ _date
             "ENDED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-storage-class' and Values ['True', 'False']")
 
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-6763")
+    @pytest.mark.tags("TEST-8043")
     @CTFailOn(error_handler)
     def test_6762(self):
         """
