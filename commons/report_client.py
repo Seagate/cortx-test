@@ -185,7 +185,7 @@ class ReportClient(SingletonMixin):
         """
         # build, tp, te , tid
         new_build_type = data_kwargs.get('update_build_type')
-        payload = {"filter": {"buildType": data_kwargs.get('build_type', "Stable")},
+        payload = {"filter": {"buildType": data_kwargs.get('build_type', "stable")},
                    "update": {"$set": {"buildType": new_build_type,
                                        "OSVersion": data_kwargs.get('os')}},
                    "db_username": self.db_user,
