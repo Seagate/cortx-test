@@ -255,7 +255,7 @@ class TestCliBucketPolicy:
         self.log.info(
             "Step 5: Verifying policy is uploaded on a bucket %s",
             self.bucket_name)
-        resp = self.s3bkt_plc_obj.show_bucket_policy(self.bucket_name, "json")
+        resp = self.s3bkt_plc_obj.show_bucket_policy(self.bucket_name)
         json_data = self.s3bkt_plc_obj.format_str_to_dict(resp[1])
         assert json_data['Statement'][0] == self.bkt_policy[0]
         self.log.info(
@@ -323,7 +323,7 @@ class TestCliBucketPolicy:
         self.log.info(
             "Step 5: Verifying policy is uploaded on a bucket %s",
             self.bucket_name)
-        resp = self.s3bkt_plc_obj.show_bucket_policy(self.bucket_name, "json")
+        resp = self.s3bkt_plc_obj.show_bucket_policy(self.bucket_name)
         json_data = self.s3bkt_plc_obj.format_str_to_dict(resp[1])
         assert json_data['Statement'][0] == self.bkt_policy[0]
         self.log.info(
@@ -432,7 +432,7 @@ class TestCliBucketPolicy:
         self.log.info(
             "Step 5: Verifying policy is uploaded on a bucket %s",
             self.bucket_name)
-        resp = self.s3bkt_plc_obj.show_bucket_policy(self.bucket_name, "json")
+        resp = self.s3bkt_plc_obj.show_bucket_policy(self.bucket_name)
         json_data = self.s3bkt_plc_obj.format_str_to_dict(resp[1])
         assert json_data['Statement'][0] == self.bkt_policy[0]
         self.log.info(
@@ -477,7 +477,7 @@ class TestCliBucketPolicy:
         self.log.info(
             "Step 5: Verifying policy is uploaded on a bucket %s",
             self.bucket_name)
-        resp = self.s3bkt_plc_obj.show_bucket_policy(self.bucket_name, "json")
+        resp = self.s3bkt_plc_obj.show_bucket_policy(self.bucket_name)
         json_data = self.s3bkt_plc_obj.format_str_to_dict(resp[1])
         assert json_data['Statement'][0] == self.bkt_policy[0]
         self.log.info(
@@ -589,7 +589,7 @@ class TestCliBucketPolicy:
         self.log.info(
             "Step 5: Verifying policy is uploaded on a bucket %s",
             self.bucket_name)
-        resp = self.s3bkt_plc_obj.show_bucket_policy(self.bucket_name, "json")
+        resp = self.s3bkt_plc_obj.show_bucket_policy(self.bucket_name)
         json_data = self.s3bkt_plc_obj.format_str_to_dict(resp[1])
         assert json_data['Statement'][0] == self.bkt_policy[0]
         self.log.info(
@@ -695,7 +695,7 @@ class TestCliBucketPolicy:
         self.log.info(
             "Step 5: Verifying policy is uploaded on a bucket %s",
             self.bucket_name)
-        resp = self.s3bkt_plc_obj.show_bucket_policy(self.bucket_name, "json")
+        resp = self.s3bkt_plc_obj.show_bucket_policy(self.bucket_name)
         json_data = self.s3bkt_plc_obj.format_str_to_dict(resp[1])
         assert json_data['Statement'][0] == self.bkt_policy[0]
         self.log.info(
@@ -736,7 +736,7 @@ class TestCliBucketPolicy:
         self.log.info(
             "Step 9: Verifying new bucket policy is updated on a bucket %s",
             self.bucket_name)
-        resp = self.s3bkt_plc_obj.show_bucket_policy(self.bucket_name, "json")
+        resp = self.s3bkt_plc_obj.show_bucket_policy(self.bucket_name)
         json_data = self.s3bkt_plc_obj.format_str_to_dict(resp[1])
         assert json_data['Statement'][0] == new_bkt_policy[0]
         self.log.info(
@@ -780,7 +780,7 @@ class TestCliBucketPolicy:
         self.log.info(
             "Step 4: Uploaded policy on a bucket %s", self.bucket_name)
         self.log.info("Step 5: Verifying policy in json format")
-        resp = self.s3bkt_plc_obj.show_bucket_policy(self.bucket_name, "json")
+        resp = self.s3bkt_plc_obj.show_bucket_policy(self.bucket_name)
         json_data = self.s3bkt_plc_obj.format_str_to_dict(resp[1])
         assert json_data['Statement'][0] == self.bkt_policy[0]
         self.log.info("Step 5: Verified policy in json format")
@@ -825,7 +825,7 @@ class TestCliBucketPolicy:
         self.log.info(
             "Step 5: Verifying policy is uploaded on a bucket %s",
             self.bucket_name)
-        resp = self.s3bkt_plc_obj.show_bucket_policy(self.bucket_name, "json")
+        resp = self.s3bkt_plc_obj.show_bucket_policy(self.bucket_name)
         json_data = self.s3bkt_plc_obj.format_str_to_dict(resp[1])
         assert json_data['Statement'][0] == self.bkt_policy[0]
         self.log.info(
@@ -843,7 +843,7 @@ class TestCliBucketPolicy:
             "Step 6: Created s3 account user with name %s", s3acc_name)
         self.log.info("Step 7: Listing bucket policy with another account")
         self.s3bkt_plc_obj.login_cortx_cli(s3acc_name, self.acc_password)
-        resp = self.s3bkt_plc_obj.show_bucket_policy(self.bucket_name, "json")
+        resp = self.s3bkt_plc_obj.show_bucket_policy(self.bucket_name)
         assert_utils.assert_equals(resp[0], False, resp[1])
         assert_utils.assert_exact_string(resp[1], "Access Denied")
         self.s3bkt_plc_obj.logout_cortx_cli()
@@ -889,7 +889,7 @@ class TestCliBucketPolicy:
         self.log.info(
             "Step 4: Uploaded policy on a bucket %s", self.bucket_name)
         self.log.info("Step 5: Verifying s3 account can see bucket policy")
-        resp = self.s3bkt_plc_obj.show_bucket_policy(self.bucket_name, "json")
+        resp = self.s3bkt_plc_obj.show_bucket_policy(self.bucket_name)
         json_data = self.s3bkt_plc_obj.format_str_to_dict(resp[1])
         assert json_data['Statement'][0] == self.bkt_policy[0]
         self.log.info("Step 5: Verified s3 account can see bucket policy")

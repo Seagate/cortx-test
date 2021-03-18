@@ -23,21 +23,15 @@ This library contains methods for S3 Bucket Policy operations using CORTX CLI
 
 import logging
 from commons import commands
-from commons.helpers.node_helper import Node
-from config import CMN_CFG
 from libs.csm.cli.cortx_cli import CortxCli
-
-LOGGER = logging.getLogger(__name__)
-NODE_HELPER_OBJ = Node(
-    hostname=CMN_CFG["csm"]["mgmt_vip"],
-    username=CMN_CFG["csm"]["csm_admin_user"]["username"],
-    password=CMN_CFG["csm"]["csm_admin_user"]["password"])
 
 
 class CortxCliS3BktPolicyOperations(CortxCli):
     """
     This class has all s3 bucket policy operations
     """
+
+    LOGGER = logging.getLogger(__name__)
 
     def __init__(self, session_obj: object = None):
         """
@@ -58,7 +52,7 @@ class CortxCliS3BktPolicyOperations(CortxCli):
         :param file_path: File path of policy
         :return: (Boolean, response)
         """
-        LOGGER.info("Applying policy on a bucket %s", bucket_name)
+        self.LOGGER.info("Applying policy on a bucket %s", bucket_name)
         command = " ".join(
             [commands.CMD_CREATE_BUCKET_POLICY, bucket_name, policy_id, file_path])
 
@@ -78,7 +72,7 @@ class CortxCliS3BktPolicyOperations(CortxCli):
         :param bucket_name: Name of the bucket for which policy will be deleted
         :return: (Boolean, response)
         """
-        LOGGER.info("Applying policy on a bucket %s", bucket_name)
+        self.LOGGER.info("Applying policy on a bucket %s", bucket_name)
         command = " ".join(
             [commands.CMD_DELETE_BUCKET_POLICY, bucket_name])
 
@@ -92,8 +86,8 @@ class CortxCliS3BktPolicyOperations(CortxCli):
 
     def show_bucket_policy(
             self,
-            bucket_name: str = None,
-            output_format: str = None) -> tuple:
+            bucket_name: str,
+            output_format: str = "json") -> tuple:
         """
         This function will return the bucket policy of given bucket
         :param bucket_name: Name of the bucket
@@ -101,7 +95,7 @@ class CortxCliS3BktPolicyOperations(CortxCli):
                                  eg. 'json'|'xml'
         :return: (Boolean, Response)
         """
-        LOGGER.info("Showing policy of a bucket %s", bucket_name)
+        self.LOGGER.info("Showing policy of a bucket %s", bucket_name)
         show_bkt_policy = " ".join(
             [commands.CMD_SHOW_BUCKET_POLICY, bucket_name])
         if output_format:
