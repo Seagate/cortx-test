@@ -62,7 +62,7 @@ def teardown_function():
 
 
 @pytest.mark.csm
-@pytest.mark.csm.alert
+@pytest.mark.csm_alert
 @pytest.mark.tags("TEST-14032")
 def test_131():
     """
@@ -106,7 +106,7 @@ def test_131():
 
 
 @pytest.mark.csm
-@pytest.mark.csm.alert
+@pytest.mark.csm_alert
 @pytest.mark.tags("TEST-14031")
 def test_6306():
     """
@@ -145,7 +145,7 @@ def test_6306():
 
 
 @pytest.mark.csm
-@pytest.mark.csm.alert
+@pytest.mark.csm_alert
 @pytest.mark.tags("TEST-14662")
 def test_3289(self):
     """
@@ -164,7 +164,7 @@ def test_3289(self):
 
 
 @pytest.mark.csm
-@pytest.mark.csm.alert
+@pytest.mark.csm_alert
 @pytest.mark.tags("TEST-14663")
 def test_3290():
     """
@@ -210,7 +210,7 @@ def test_3290():
 
 
 @pytest.mark.csm
-@pytest.mark.csm.alert
+@pytest.mark.csm_alert
 @pytest.mark.tags("TEST-14664")
 def test_6309():
     """
@@ -232,7 +232,7 @@ def test_6309():
 
 
 @pytest.mark.csm
-@pytest.mark.csm.alert
+@pytest.mark.csm_alert
 @pytest.mark.tags("TEST-14754")
 def test_245():
     """
@@ -251,7 +251,7 @@ def test_245():
 
 
 @pytest.mark.csm
-@pytest.mark.csm.alert
+@pytest.mark.csm_alert
 @pytest.mark.tags("TEST-14755")
 def test_3288():
     """
@@ -297,7 +297,7 @@ def test_3288():
 
 
 @pytest.mark.csm
-@pytest.mark.csm.alert
+@pytest.mark.csm_alert
 @pytest.mark.tags("TEST-15199")
 def test_6308():
     """
@@ -316,7 +316,7 @@ def test_6308():
 
 
 @pytest.mark.csm
-@pytest.mark.csm.alert
+@pytest.mark.csm_alert
 @pytest.mark.tags("TEST-15727")
 def test_247(self):
     """
@@ -336,7 +336,7 @@ def test_247(self):
 
 
 @pytest.mark.csm
-@pytest.mark.csm.alert
+@pytest.mark.csm_alert
 @pytest.mark.tags("TEST-16933")
 def test_252():
     """
@@ -362,7 +362,7 @@ def test_252():
 
 
 @pytest.mark.csm
-@pytest.mark.csm.alert
+@pytest.mark.csm_alert
 @pytest.mark.tags("TEST-17177")
 def test_1440():
     """
@@ -381,7 +381,7 @@ def test_1440():
 
 
 @pytest.mark.csm
-@pytest.mark.csm.alert
+@pytest.mark.csm_alert
 def test_1438():
     """
     Test if `alerts show -f <format> -d<>` displays alert in desired given format
