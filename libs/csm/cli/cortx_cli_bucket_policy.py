@@ -25,13 +25,13 @@ import logging
 from commons import commands
 from libs.csm.cli.cortx_cli import CortxCli
 
+LOGGER = logging.getLogger(__name__)
+
 
 class CortxCliS3BktPolicyOperations(CortxCli):
     """
     This class has all s3 bucket policy operations
     """
-
-    LOGGER = logging.getLogger(__name__)
 
     def __init__(self, session_obj: object = None):
         """
@@ -52,7 +52,7 @@ class CortxCliS3BktPolicyOperations(CortxCli):
         :param file_path: File path of policy
         :return: (Boolean, response)
         """
-        self.LOGGER.info("Applying policy on a bucket %s", bucket_name)
+        LOGGER.info("Applying policy on a bucket %s", bucket_name)
         command = " ".join(
             [commands.CMD_CREATE_BUCKET_POLICY, bucket_name, policy_id, file_path])
 
@@ -72,7 +72,7 @@ class CortxCliS3BktPolicyOperations(CortxCli):
         :param bucket_name: Name of the bucket for which policy will be deleted
         :return: (Boolean, response)
         """
-        self.LOGGER.info("Applying policy on a bucket %s", bucket_name)
+        LOGGER.info("Applying policy on a bucket %s", bucket_name)
         command = " ".join(
             [commands.CMD_DELETE_BUCKET_POLICY, bucket_name])
 
@@ -95,7 +95,7 @@ class CortxCliS3BktPolicyOperations(CortxCli):
                                  eg. 'json'|'xml'
         :return: (Boolean, Response)
         """
-        self.LOGGER.info("Showing policy of a bucket %s", bucket_name)
+        LOGGER.info("Showing policy of a bucket %s", bucket_name)
         show_bkt_policy = " ".join(
             [commands.CMD_SHOW_BUCKET_POLICY, bucket_name])
         if output_format:

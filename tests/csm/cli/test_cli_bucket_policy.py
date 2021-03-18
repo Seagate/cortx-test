@@ -25,8 +25,9 @@ import json
 import uuid
 import logging
 import pytest
+from commons.ct_fail_on import CTFailOn
+from commons.errorcodes import error_handler
 from commons.utils import assert_utils
-from commons import constants
 from commons import commands
 from commons.helpers.node_helper import Node
 from commons.utils import system_utils
@@ -97,7 +98,8 @@ class TestCliBucketPolicy:
             "Effect": "Allow",
             "Resource": "arn:aws:s3:::{0}/*",
             "Principal": "*"}]
-        cls.policy_file_path = "/root/bkt_policy.json"
+        cls.bkt_policy_msg = "Bucket Policy Updated Successfully"
+        cls.policy_file_path = os.path.join(str(os.getcwdb().decode()), "bkt_policy.json")
         cls.remote_file_path = "/tmp/bkt_policy.json"
 
     def setup_method(self):
@@ -151,7 +153,6 @@ class TestCliBucketPolicy:
                     hostname=each_node,
                     username=CMN_CFG["nodes"][1]["username"],
                     password=CMN_CFG["nodes"][1]["password"])
-        # os.remove(self.policy_file_path)
         self.log.info("ENDED : Teardown operations for test function")
 
     @classmethod
@@ -219,6 +220,7 @@ class TestCliBucketPolicy:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10798")
+    @CTFailOn(error_handler)
     def test_6175_create_bucket_policy(self):
         """
         Initiating the test case to verify S3 account can add policy to the bucket
@@ -249,7 +251,7 @@ class TestCliBucketPolicy:
             self.policy_id,
             self.remote_file_path)
         assert_utils.assert_equals(resp[0], True, resp[1])
-        assert_utils.assert_exact_string(resp[1], constants.BKT_POLICY_MSG)
+        assert_utils.assert_exact_string(resp[1], self.bkt_policy_msg)
         self.log.info(
             "Step 4: Uploaded policy on a bucket %s", self.bucket_name)
         self.log.info(
@@ -264,6 +266,7 @@ class TestCliBucketPolicy:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10799")
+    @CTFailOn(error_handler)
     def test_6174_delete_non_exist_policy(self):
         """
         Initiating the test case to verify delete
@@ -288,6 +291,7 @@ class TestCliBucketPolicy:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10800")
+    @CTFailOn(error_handler)
     def test_6170_delete_bucket_policy(self):
         """
         Initiating the test case to verify delete bucket policy on bucket
@@ -317,7 +321,7 @@ class TestCliBucketPolicy:
             self.policy_id,
             self.remote_file_path)
         assert_utils.assert_equals(resp[0], True, resp[1])
-        assert_utils.assert_exact_string(resp[1], constants.BKT_POLICY_MSG)
+        assert_utils.assert_exact_string(resp[1], self.bkt_policy_msg)
         self.log.info(
             "Step 4: Uploaded policy on a bucket %s", self.bucket_name)
         self.log.info(
@@ -342,6 +346,7 @@ class TestCliBucketPolicy:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10802")
+    @CTFailOn(error_handler)
     def test_6177_bkt_plc_with_invalid_path(self):
         """
         Initiating the test case to verify error occurs on
@@ -377,6 +382,7 @@ class TestCliBucketPolicy:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10801")
+    @CTFailOn(error_handler)
     def test_6172_delete_plc_invalid_bkt(self):
         """
         Initiating the test case to verify error occurs if invalid bucket name
@@ -395,6 +401,7 @@ class TestCliBucketPolicy:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10803")
+    @CTFailOn(error_handler)
     def test_6178_add_policy(self):
         """
         Initiating the test case to verify that s3 account can
@@ -426,7 +433,7 @@ class TestCliBucketPolicy:
             self.policy_id,
             self.remote_file_path)
         assert_utils.assert_equals(resp[0], True, resp[1])
-        assert_utils.assert_exact_string(resp[1], constants.BKT_POLICY_MSG)
+        assert_utils.assert_exact_string(resp[1], self.bkt_policy_msg)
         self.log.info(
             "Step 4: Uploaded policy on a bucket %s", self.bucket_name)
         self.log.info(
@@ -441,6 +448,7 @@ class TestCliBucketPolicy:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10982")
+    @CTFailOn(error_handler)
     def test_6171_delete_plc_with_csm_user(self):
         """
         Initiating the test case to Verify that admin/csm user cannot delete bucket policy
@@ -471,7 +479,7 @@ class TestCliBucketPolicy:
             self.policy_id,
             self.remote_file_path)
         assert_utils.assert_equals(resp[0], True, resp[1])
-        assert_utils.assert_exact_string(resp[1], constants.BKT_POLICY_MSG)
+        assert_utils.assert_exact_string(resp[1], self.bkt_policy_msg)
         self.log.info(
             "Step 4: Uploaded policy on a bucket %s", self.bucket_name)
         self.log.info(
@@ -512,6 +520,7 @@ class TestCliBucketPolicy:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10980")
+    @CTFailOn(error_handler)
     def test_6176_create_plc_incorrect_bkt(self):
         """
         Initiating the test case to verify that error occours when incorrect/invalid bucket
@@ -550,6 +559,7 @@ class TestCliBucketPolicy:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10983")
+    @CTFailOn(error_handler)
     def test_6173_delete_bkt_from_another_account(self):
         """
         Initiating the test case to verify that s3 account cannot
@@ -583,7 +593,7 @@ class TestCliBucketPolicy:
             self.policy_id,
             self.remote_file_path)
         assert_utils.assert_equals(resp[0], True, resp[1])
-        assert_utils.assert_exact_string(resp[1], constants.BKT_POLICY_MSG)
+        assert_utils.assert_exact_string(resp[1], self.bkt_policy_msg)
         self.log.info(
             "Step 4: Uploaded policy on a bucket %s", self.bucket_name)
         self.log.info(
@@ -618,6 +628,7 @@ class TestCliBucketPolicy:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10981")
+    @CTFailOn(error_handler)
     def test_6179_bkt_plc_with_missing_param(self):
         """
         Initiating the test case to verify that appropriate error message is returned
@@ -659,6 +670,7 @@ class TestCliBucketPolicy:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-11226")
+    @CTFailOn(error_handler)
     def test_6181_update_bkt_policy(self):
         """
         Initiating the test case to verify user can Update bucket policy using create policy command
@@ -689,7 +701,7 @@ class TestCliBucketPolicy:
             self.policy_id,
             self.remote_file_path)
         assert_utils.assert_equals(resp[0], True, resp[1])
-        assert_utils.assert_exact_string(resp[1], constants.BKT_POLICY_MSG)
+        assert_utils.assert_exact_string(resp[1], self.bkt_policy_msg)
         self.log.info(
             "Step 4: Uploaded policy on a bucket %s", self.bucket_name)
         self.log.info(
@@ -729,7 +741,7 @@ class TestCliBucketPolicy:
             self.policy_id,
             self.remote_file_path)
         assert_utils.assert_equals(resp[0], True, resp[1])
-        assert_utils.assert_exact_string(resp[1], constants.BKT_POLICY_MSG)
+        assert_utils.assert_exact_string(resp[1], self.bkt_policy_msg)
         self.log.info(
             "Step 8: Updated new bucket policy on a bucket %s",
             self.bucket_name)
@@ -745,6 +757,7 @@ class TestCliBucketPolicy:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-11227")
+    @CTFailOn(error_handler)
     def test_6185_show_bkt_policy(self):
         """
         Initiating the test case to verify bucket
@@ -776,7 +789,7 @@ class TestCliBucketPolicy:
             self.policy_id,
             self.remote_file_path)
         assert_utils.assert_equals(resp[0], True, resp[1])
-        assert_utils.assert_exact_string(resp[1], constants.BKT_POLICY_MSG)
+        assert_utils.assert_exact_string(resp[1], self.bkt_policy_msg)
         self.log.info(
             "Step 4: Uploaded policy on a bucket %s", self.bucket_name)
         self.log.info("Step 5: Verifying policy in json format")
@@ -787,6 +800,7 @@ class TestCliBucketPolicy:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-12028")
+    @CTFailOn(error_handler)
     def test_6183_show_policy_from_another_account(self):
         """
         Test that s3 account cannot see bucket policy for bucket created by another s3 account
@@ -819,7 +833,7 @@ class TestCliBucketPolicy:
             self.policy_id,
             self.remote_file_path)
         assert_utils.assert_equals(resp[0], True, resp[1])
-        assert_utils.assert_exact_string(resp[1], constants.BKT_POLICY_MSG)
+        assert_utils.assert_exact_string(resp[1], self.bkt_policy_msg)
         self.log.info(
             "Step 4: Uploaded policy on a bucket %s", self.bucket_name)
         self.log.info(
@@ -855,6 +869,7 @@ class TestCliBucketPolicy:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-11228")
+    @CTFailOn(error_handler)
     def test_6182_show_bkt_polc_s3_acc(self):
         """
         Initiating the test case to verify s3 account can see bucket policy with all parameters
@@ -885,7 +900,7 @@ class TestCliBucketPolicy:
             self.policy_id,
             self.remote_file_path)
         assert_utils.assert_equals(resp[0], True, resp[1])
-        assert_utils.assert_exact_string(resp[1], constants.BKT_POLICY_MSG)
+        assert_utils.assert_exact_string(resp[1], self.bkt_policy_msg)
         self.log.info(
             "Step 4: Uploaded policy on a bucket %s", self.bucket_name)
         self.log.info("Step 5: Verifying s3 account can see bucket policy")
@@ -896,6 +911,7 @@ class TestCliBucketPolicy:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-12033")
+    @CTFailOn(error_handler)
     def test_6184_no_policy_exist(self):
         """
         Test that error is returned when no policy exist on bucket
@@ -919,6 +935,7 @@ class TestCliBucketPolicy:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-13137")
+    @CTFailOn(error_handler)
     def test_6180_invalid_bkt_policy(self):
         """
         Test that error occours when statement file contains invalid bucket policy
