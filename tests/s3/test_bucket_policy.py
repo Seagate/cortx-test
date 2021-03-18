@@ -1481,7 +1481,7 @@ class TestBucketPolicy:
             "ENDED: Apply Delete-bucket-policy without specifying policy.")
 
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-6093 ")
+    @pytest.mark.tags("TEST-6093")
     @CTFailOn(error_handler)
     def test_566(self):
         """
@@ -5681,7 +5681,7 @@ _date
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format.")
 
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-6940")
+    @pytest.mark.tags("TEST-6970")
     @CTFailOn(error_handler)
     def test_5925(self):
         """
@@ -7821,7 +7821,7 @@ _date
             "ENDED: Test when blank file is provided for put bucket policy")
 
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5210")
+    @pytest.mark.tags("TEST-7612")
     @CTFailOn(error_handler)
     def test_5211(self):
         """
@@ -7897,7 +7897,7 @@ _date
             "and from user deny its account for Get/PutBucketPolicy")
 
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-5211")
+    @pytest.mark.tags("TEST-7613")
     @CTFailOn(error_handler)
     def test_5210(self):
         """
