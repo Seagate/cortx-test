@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Script used to generate engineering csv report."""
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
@@ -16,8 +17,7 @@
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
-#
-# -*- coding: utf-8 -*-
+
 import argparse
 import csv
 from collections import defaultdict
@@ -185,7 +185,7 @@ def get_hsbench_data(build, uri, db_name, db_collection):
                 elif row_num == 3:
                     head = f"{configs[0]} Buckets"
                 elif row_num == 4:
-                    head = f"{int(configs[1]/configs[0])} Objects"
+                    head = f"{int(configs[1] / configs[0])} Objects"
                 elif row_num == 5:
                     head = f"{configs[2]} Sessions"
                 temp_data = [head, f"{operation.capitalize()} {stat}"]
@@ -295,40 +295,38 @@ def get_args():
 
     test_plans = parser.parse_args()
 
-    uri, db_name, db_collection = common.get_db_details()
+    uri, db_name, db_collection = common.get_perf_db_details()
     return test_plans, uri, db_name, db_collection
 
 
 def main():
     """Generate csv engineering report from test plan JIRA."""
     test_plans, uri, db_name, db_collection = get_args()
-
+    rest, db_username, db_password = common.get_timings_db_details()
     username, password = jira_api.get_username_password()
-    main_table_data, build = jira_api.get_main_table_data(test_plans.tp, username, password)
-    report_bugs_table_data = jira_api.get_reported_bug_table_data(test_plans.tp, username, password)
-    overall_qa_table_data = jira_api.get_overall_qa_report_table_data(test_plans.tp, test_plans.tp1,
-                                                                      build, username,
-                                                                      password)
-    component_level_summary_data = get_component_level_summary(
-        [test_plans.tp, test_plans.tp1, test_plans.tp2, test_plans.tp3], username, password
-    )
+
+    tp_ids = [test_plans.tp, test_plans.tp1, test_plans.tp2, test_plans.tp3]
+    builds = [jira_api.get_build_from_test_plan(test_plan, username, password) if
+              test_plan else "NA" for test_plan in tp_ids]
 
     data = []
-    data.extend(main_table_data)
+    data.extend(jira_api.get_main_table_data(test_plans.tp))
     data.extend([""])
-    data.extend(report_bugs_table_data)
+    data.extend(jira_api.get_reported_bug_table_data(test_plans.tp, username, password))
     data.extend([""])
-    data.extend(overall_qa_table_data)
+    data.extend(jira_api.get_overall_qa_report_table_data(test_plans.tp, test_plans.tp1,
+                                                          builds[0], username,
+                                                          password))
     data.extend([""])
-    data.extend(component_level_summary_data)
+    data.extend(get_component_level_summary(tp_ids, username, password))
     data.extend([""])
-    data.extend(get_single_bucket_perf_stats(build, uri, db_name, db_collection))
+    data.extend(get_single_bucket_perf_stats(builds[0], uri, db_name, db_collection))
     data.extend([""])
-    data.extend(get_multiple_bucket_perf_stats(build, uri, db_name, db_collection))
+    data.extend(get_multiple_bucket_perf_stats(builds[0], uri, db_name, db_collection))
     data.extend([""])
-    data.extend(get_metadata_latencies(build, uri, db_name, db_collection))
+    data.extend(get_metadata_latencies(builds[0], uri, db_name, db_collection))
     data.extend([""])
-    data.extend(jira_api.get_timing_summary())
+    data.extend(common.get_timing_summary(tp_ids, builds, rest, db_username, db_password))
     data.extend([""])
     data.extend(get_detailed_reported_bugs(test_plans.tp, username, password))
     data.extend([""])
