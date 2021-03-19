@@ -23,25 +23,28 @@ import logging
 import pytest
 from libs.s3 import S3H_OBJ
 from libs.s3 import CM_CFG
-from libs.s3 import iam_test_lib
-from libs.s3 import s3_acl_test_lib
 from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
+from libs.s3.iam_test_lib import IamTestLib
+from libs.s3.s3_acl_test_lib import S3AclTestLib
 from commons.constants import const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
+from commons.utils.config_utils import read_yaml
 from commons.utils.system_utils import remove_file
+from commons.utils.system_utils import run_remote_cmd
+from commons.utils.system_utils import run_local_cmd
 from commons.utils.assert_utils import assert_true
 from commons.utils.assert_utils import assert_in
 from commons.utils.assert_utils import assert_equal
 from commons.utils.assert_utils import assert_is_not_none
 from commons.utils.assert_utils import assert_not_in
-from commons.utils.config_utils import read_yaml
+from commons.helpers.health_helper import Health
 from scripts.s3_bench import s3bench as s3bench_obj
 
-IAM_TEST_OBJ = iam_test_lib.IamTestLib()
-ACL_OBJ = s3_acl_test_lib.S3AclTestLib()
-
-data_path_cfg = read_yaml("config/s3/test_data_path_validate.yaml")[1]
+IAM_TEST_OBJ = IamTestLib()
+ACL_OBJ = S3AclTestLib()
+S3_HEALTH = Health
+DATA_PATH_CFG = read_yaml("config/s3/test_data_path_validate.yaml")[1]
 
 
 class TestDataPathValidation():
@@ -61,11 +64,11 @@ class TestDataPathValidation():
         cls.ldap_user = LDAP_USERNAME
         cls.ldap_pwd = LDAP_PASSWD
         cls.account_name = "{}{}".format(
-            data_path_cfg["data_path"]["acc_name_prefix"],
+            DATA_PATH_CFG["data_path"]["acc_name_prefix"],
             str(time.time()))
         cls.email_id = "{}{}".format(
             cls.account_name,
-            data_path_cfg["data_path"]["email_suffix"])
+            DATA_PATH_CFG["data_path"]["email_suffix"])
         cls.nodes = CM_CFG["nodes"]
         cls.log.info("ENDED: Setup operations")
 
@@ -91,10 +94,10 @@ class TestDataPathValidation():
         resp = S3H_OBJ.bucket_list()
         pref_list = [
             each_bucket for each_bucket in resp[1] if each_bucket.startswith(
-                data_path_cfg["data_path"]["bkt_name_prefix"])]
+                DATA_PATH_CFG["data_path"]["bkt_name_prefix"])]
         for bucket in pref_list:
             ACL_OBJ.put_bucket_acl(
-                bucket, acl=data_path_cfg["data_path"]["bkt_permission"])
+                bucket, acl=DATA_PATH_CFG["data_path"]["bkt_permission"])
         S3H_OBJ.delete_multiple_buckets(pref_list)
         self.log.info("Deleting IAM accounts")
         acc_list = IAM_TEST_OBJ.list_accounts_s3iamcli(
@@ -110,8 +113,8 @@ class TestDataPathValidation():
         for file in self.log_file:
             if os.path.exists(file):
                 remove_file(file)
-        if os.path.exists(data_path_cfg["data_path"]["file_path"]):
-            os.remove(data_path_cfg["data_path"]["file_path"])
+        if os.path.exists(DATA_PATH_CFG["data_path"]["file_path"]):
+            os.remove(DATA_PATH_CFG["data_path"]["file_path"])
         self.log.info("Created files deleted")
         self.log.info("ENDED: Teardown operations")
 
@@ -144,12 +147,12 @@ class TestDataPathValidation():
         self.log.info(
             "Step 3:Upload object of size : %d", test_conf["obj_size"])
         cmd = "dd if=/dev/zero of={} bs={} count={}".format(
-            data_path_cfg["data_path"]["file_path"], bs, test_conf["obj_size"])
+            DATA_PATH_CFG["data_path"]["file_path"], bs, test_conf["obj_size"])
         self.log.info(cmd)
-        S3H_OBJ.run_cmd(cmd)
+        run_local_cmd(cmd)
         res = S3H_OBJ.put_object(bucket_name,
                                 test_conf["object_name"],
-                                data_path_cfg["data_path"]["file_path"])
+                                DATA_PATH_CFG["data_path"]["file_path"])
         assert_true(res[0], res[1])
 
     def run_s3bench(self, test_conf, bucket):
@@ -166,19 +169,19 @@ class TestDataPathValidation():
         """
         self.log.info("concurrent users TC using S3bench")
         access_key, secret_key = S3H_OBJ.get_local_keys()
-        cmd = data_path_cfg["data_path"]["s3bench_cmd"].format(
+        cmd = DATA_PATH_CFG["data_path"]["s3bench_cmd"].format(
             access_key,
             secret_key,
             bucket,
-            data_path_cfg["data_path"]["endpoint"],
-            data_path_cfg["data_path"]["clients"],
-            data_path_cfg["data_path"]["samples"],
+            DATA_PATH_CFG["data_path"]["endpoint"],
+            DATA_PATH_CFG["data_path"]["clients"],
+            DATA_PATH_CFG["data_path"]["samples"],
             test_conf["obj_prefix"],
-            data_path_cfg["data_path"]["obj_size"])
-        S3H_OBJ.run_cmd(
+            DATA_PATH_CFG["data_path"]["obj_size"])
+        run_local_cmd(
             "cd {}".format(
-                data_path_cfg["data_path"]["s3bench_path"]))
-        resp = S3H_OBJ.run_cmd(cmd)
+                DATA_PATH_CFG["data_path"]["s3bench_path"]))
+        resp = run_local_cmd(cmd)
         self.log.debug(resp)
         assert_is_not_none(resp[0], resp)
         resp_split = resp[0].split("\n")
@@ -194,7 +197,7 @@ class TestDataPathValidation():
         """Validate Data-Path on fresh system with 1 byte object size."""
         self.log.info(
             "STARTED: Validate Data-Path on fresh system with 1 byte object size")
-        test_conf = data_path_cfg["test_1696"]
+        test_conf = DATA_PATH_CFG["test_1696"]
         bucket = self.create_bucket(test_conf)
         self.put_object(test_conf, bucket)
         self.log.info(
@@ -207,7 +210,7 @@ class TestDataPathValidation():
         """Validate Data-Path on fresh system with 1 KB object size."""
         self.log.info(
             "STARTED: Validate Data-Path on fresh system with 1 KB object size")
-        test_conf = data_path_cfg["test_1697"]
+        test_conf = DATA_PATH_CFG["test_1697"]
         bucket = self.create_bucket(test_conf)
         self.put_object(test_conf, bucket)
         self.log.info(
@@ -220,7 +223,7 @@ class TestDataPathValidation():
         """Validate Data-Path on fresh system with 1 MB object size."""
         self.log.info(
             "STARTED: Validate Data-Path on fresh system with 1 MB object size")
-        test_conf = data_path_cfg["test_1698"]
+        test_conf = DATA_PATH_CFG["test_1698"]
         bucket = self.create_bucket(test_conf)
         self.put_object(test_conf, bucket, test_conf["size_mb"])
         self.log.info(
@@ -233,7 +236,7 @@ class TestDataPathValidation():
         """Validate Data-Path on fresh system with 10 MB object size."""
         self.log.info(
             "STARTED: Validate Data-Path on fresh system with 10 MB object size")
-        test_conf = data_path_cfg["test_1699"]
+        test_conf = DATA_PATH_CFG["test_1699"]
         bucket = self.create_bucket(test_conf)
         self.put_object(test_conf, bucket, test_conf["size_mb"])
         self.log.info(
@@ -246,7 +249,7 @@ class TestDataPathValidation():
         """Validate Data-Path on fresh system with 100 MB object size."""
         self.log.info(
             "STARTED: Validate Data-Path on fresh system with 100 MB object size")
-        test_conf = data_path_cfg["test_1700"]
+        test_conf = DATA_PATH_CFG["test_1700"]
         bucket = self.create_bucket(test_conf)
         self.put_object(test_conf, bucket, test_conf["size_mb"])
         self.log.info(
@@ -259,7 +262,7 @@ class TestDataPathValidation():
         """Validate Data-Path on fresh system with 1 GB object size."""
         self.log.info(
             "STARTED: Validate Data-Path on fresh system with 1 GB object size")
-        test_conf = data_path_cfg["test_1701"]
+        test_conf = DATA_PATH_CFG["test_1701"]
         bucket = self.create_bucket(test_conf)
         self.put_object(test_conf, bucket, test_conf["size_mb"])
         self.log.info(
@@ -272,7 +275,7 @@ class TestDataPathValidation():
         """Validate Data-Path on fresh system with 10 GB object size."""
         self.log.info(
             "STARTED: Validate Data-Path on fresh system with 10 GB object size")
-        test_conf = data_path_cfg["test_1702"]
+        test_conf = DATA_PATH_CFG["test_1702"]
         bucket = self.create_bucket(test_conf)
         self.put_object(test_conf, bucket, test_conf["size_mb"])
         self.log.info(
@@ -285,7 +288,7 @@ class TestDataPathValidation():
         """Validate Data-Path on loaded system with 1 byte object size."""
         self.log.info(
             "STARTED: Validate Data-Path on loaded system with 1 byte object size")
-        test_conf = data_path_cfg["test_1703"]
+        test_conf = DATA_PATH_CFG["test_1703"]
         bucket = self.create_bucket(test_conf)
         self.run_s3bench(test_conf, bucket)
         self.put_object(test_conf, bucket)
@@ -299,7 +302,7 @@ class TestDataPathValidation():
         """Validate Data-Path on loaded system with 1 KB object size."""
         self.log.info(
             "STARTED: Validate Data-Path on loaded system with 1 KB object size")
-        test_conf = data_path_cfg["test_1704"]
+        test_conf = DATA_PATH_CFG["test_1704"]
         bucket = self.create_bucket(test_conf)
         self.run_s3bench(test_conf, bucket)
         self.put_object(test_conf, bucket)
@@ -313,7 +316,7 @@ class TestDataPathValidation():
         """Validate Data-Path on loaded system with 1 MB object size."""
         self.log.info(
             "STARTED: Validate Data-Path on loaded system with 1 MB object size")
-        test_conf = data_path_cfg["test_1705"]
+        test_conf = DATA_PATH_CFG["test_1705"]
         bucket = self.create_bucket(test_conf)
         self.run_s3bench(test_conf, bucket)
         self.put_object(test_conf, bucket, test_conf["size_mb"])
@@ -327,7 +330,7 @@ class TestDataPathValidation():
         """Validate Data-Path on loaded system with 10 MB object size."""
         self.log.info(
             "STARTED: Validate Data-Path on loaded system with 10 MB object size")
-        test_conf = data_path_cfg["test_1706"]
+        test_conf = DATA_PATH_CFG["test_1706"]
         bucket = self.create_bucket(test_conf)
         self.run_s3bench(test_conf, bucket)
         self.put_object(test_conf, bucket, test_conf["size_mb"])
@@ -341,7 +344,7 @@ class TestDataPathValidation():
         """Validate Data-Path on loaded system with 100 MB object size."""
         self.log.info(
             "STARTED: Validate Data-Path on loaded system with 100 MB object size")
-        test_conf = data_path_cfg["test_1707"]
+        test_conf = DATA_PATH_CFG["test_1707"]
         bucket = self.create_bucket(test_conf)
         self.run_s3bench(test_conf, bucket)
         self.put_object(test_conf, bucket, test_conf["size_mb"])
@@ -355,7 +358,7 @@ class TestDataPathValidation():
         """Validate Data-Path on loaded system with 1 GB object size."""
         self.log.info(
             "STARTED: Validate Data-Path on loaded system with 1 GB object size")
-        test_conf = data_path_cfg["test_1708"]
+        test_conf = DATA_PATH_CFG["test_1708"]
         bucket = self.create_bucket(test_conf)
         self.run_s3bench(test_conf, bucket)
         self.put_object(test_conf, bucket, test_conf["size_mb"])
@@ -369,7 +372,7 @@ class TestDataPathValidation():
         """Validate Data-Path on loaded system with 10 GB object size."""
         self.log.info(
             "STARTED: Validate Data-Path on loaded system with 10 GB object size")
-        test_conf = data_path_cfg["test_1709"]
+        test_conf = DATA_PATH_CFG["test_1709"]
         bucket = self.create_bucket(test_conf)
         self.run_s3bench(test_conf, bucket)
         self.put_object(test_conf, bucket, test_conf["size_mb"])
@@ -384,7 +387,7 @@ class TestDataPathValidation():
         self.log.info(
             "STARTED: Test gradual increase of concurrent client sessions"
             " with single client on single bucket")
-        test_cfg = data_path_cfg["test_1745"]
+        test_cfg = DATA_PATH_CFG["test_1745"]
         bucket_name = "{}{}".format(
             test_cfg["bucket_name"], time.time())
         self.log.info("Step 1: Create bucket with name %s.", bucket_name)
@@ -403,7 +406,7 @@ class TestDataPathValidation():
                 access_key=access_key,
                 secret_key=secret_key,
                 bucket=bucket_name,
-                end_point=data_path_cfg["data_path"]["endpoint"],
+                end_point=DATA_PATH_CFG["data_path"]["endpoint"],
                 num_clients=test_cfg["num_clients"],
                 num_sample=request_load,
                 obj_name_pref=test_cfg["obj_name"],
@@ -416,14 +419,15 @@ class TestDataPathValidation():
             "Step 2: Successfully performed concurrent I/O with 100 client and"
             "gradually increasing requests.")
         self.log.info("Step 3: checking system stability")
-        res = S3H_OBJ.is_mero_online()
+        res = S3_HEALTH.is_motr_online()
         assert_true(res[0], res[1])
-        cmd_msg = data_path_cfg["data_path"]["cmd_msg"]
+        cmd_msg = DATA_PATH_CFG["data_path"]["cmd_msg"]
         commands = const.CRASH_COMMANDS
         for node, cmd in zip(self.nodes, commands):
-            res_cmd = S3H_OBJ.remote_execution(
-                node, CM_CFG["nodes"][node]["username"],
-                CM_CFG["nodes"][node]["password"], cmd)
+            res_cmd = run_remote_cmd(cmd,
+                                     node,
+                                     CM_CFG["nodes"][node]["username"],
+                                     CM_CFG["nodes"][node]["password"])
             assert_not_in(cmd_msg, res_cmd, res_cmd)
         self.log.info("Step 3: checked system stability")
         self.log.info(
@@ -438,7 +442,7 @@ class TestDataPathValidation():
         self.log.info(
             "STARTED: Test gradual increase of concurrent client sessions"
             " with multiple clients on single buckets")
-        test_cfg = data_path_cfg["test_1746"]
+        test_cfg = DATA_PATH_CFG["test_1746"]
         bucket_name = "{}{}".format(
             test_cfg["bucket_name"], time.time())
         self.log.info("Step 1: Create bucket with name %s.", bucket_name)
@@ -457,7 +461,7 @@ class TestDataPathValidation():
                 access_key=access_key,
                 secret_key=secret_key,
                 bucket=bucket_name,
-                end_point=data_path_cfg["data_path"]["endpoint"],
+                end_point=DATA_PATH_CFG["data_path"]["endpoint"],
                 num_clients=client,
                 num_sample=request_load,
                 obj_name_pref=test_cfg["obj_name"],
@@ -472,12 +476,13 @@ class TestDataPathValidation():
         self.log.info("Step 3: checking system stability")
         res = S3H_OBJ.is_mero_online()
         assert_true(res[0], res[1])
-        cmd_msg = data_path_cfg["data_path"]["cmd_msg"]
+        cmd_msg = DATA_PATH_CFG["data_path"]["cmd_msg"]
         commands = const.CRASH_COMMANDS
         for node, cmd in zip(self.nodes, commands):
-            res_cmd = S3H_OBJ.remote_execution(
-                node, CM_CFG["nodes"][node]["username"],
-                CM_CFG["nodes"][node]["password"], cmd)
+            res_cmd = run_remote_cmd(cmd,
+                                     node,
+                                     CM_CFG["nodes"][node]["username"],
+                                     CM_CFG["nodes"][node]["password"])
             assert_not_in(cmd_msg, res_cmd, res_cmd)
         self.log.info("Step 3: checked system stability")
         self.log.info(
@@ -492,7 +497,7 @@ class TestDataPathValidation():
         self.log.info(
             "STARTED: Test gradual increase of concurrent client sessions"
             " with multiple clients on multiple buckets")
-        test_cfg = data_path_cfg["test_1747"]
+        test_cfg = DATA_PATH_CFG["test_1747"]
         self.log.info("Step 1: Creating %s buckets.", test_cfg['bkt_count'])
         bkt_list = []
         for bkt in range(test_cfg["bkt_count"]):
@@ -514,7 +519,7 @@ class TestDataPathValidation():
                 access_key=access_key,
                 secret_key=secret_key,
                 bucket=bkt,
-                end_point=data_path_cfg["data_path"]["endpoint"],
+                end_point=DATA_PATH_CFG["data_path"]["endpoint"],
                 num_clients=client,
                 num_sample=request_load,
                 obj_name_pref=test_cfg["obj_name"],
@@ -529,12 +534,13 @@ class TestDataPathValidation():
         self.log.info("Step 3: checking system stability")
         res = S3H_OBJ.is_mero_online()
         assert_true(res[0], res[1])
-        cmd_msg = data_path_cfg["data_path"]["cmd_msg"]
+        cmd_msg = DATA_PATH_CFG["data_path"]["cmd_msg"]
         commands = const.CRASH_COMMANDS
         for node, cmd in zip(self.nodes, commands):
-            res_cmd = S3H_OBJ.remote_execution(
-                node, CM_CFG["nodes"][node]["username"],
-                CM_CFG["nodes"][node]["password"], cmd)
+            res_cmd = run_remote_cmd(cmd,
+                                     node,
+                                     CM_CFG["nodes"][node]["username"],
+                                     CM_CFG["nodes"][node]["password"])
             assert_not_in(cmd_msg, res_cmd, res_cmd)
         self.log.info("Step 3: checked system stability")
         self.log.info(
@@ -549,7 +555,7 @@ class TestDataPathValidation():
         self.log.info(
             "STARTED: Test gradual increase of concurrent client sessions"
             " with multiple clients on single buckets")
-        test_cfg = data_path_cfg["test_1748"]
+        test_cfg = DATA_PATH_CFG["test_1748"]
         self.log.info("Step 1: Create bucket.")
         bkt_list = []
         for bkt in range(test_cfg["bkt_count"]):
@@ -570,7 +576,7 @@ class TestDataPathValidation():
                 access_key=access_key,
                 secret_key=secret_key,
                 bucket=bkt,
-                end_point=data_path_cfg["data_path"]["endpoint"],
+                end_point=DATA_PATH_CFG["data_path"]["endpoint"],
                 num_clients=client,
                 num_sample=request_load,
                 obj_name_pref=test_cfg["obj_name"],
@@ -584,12 +590,13 @@ class TestDataPathValidation():
         self.log.info("Step 3: checking system stability")
         res = S3H_OBJ.is_mero_online()
         assert_true(res[0], res[1])
-        cmd_msg = data_path_cfg["data_path"]["cmd_msg"]
+        cmd_msg = DATA_PATH_CFG["data_path"]["cmd_msg"]
         commands = const.CRASH_COMMANDS
         for node, cmd in zip(self.nodes, commands):
-            res_cmd = S3H_OBJ.remote_execution(
-                node, CM_CFG["nodes"][node]["username"],
-                CM_CFG["nodes"][node]["password"], cmd)
+            res_cmd = run_remote_cmd(cmd,
+                                     node,
+                                     CM_CFG["nodes"][node]["username"],
+                                     CM_CFG["nodes"][node]["password"])
             assert_not_in(cmd_msg, res_cmd, res_cmd)
         self.log.info("Step 3: checked system stability")
         self.log.info(

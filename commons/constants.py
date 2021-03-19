@@ -78,8 +78,6 @@ CLUSTER_STATUS_MSG = "cluster is not currently running on this node"
 NODE_RANGE_START = 1
 NODE_RANGE_END = 3
 NODE_PREFIX = "eosnode-"
-MERO_STATUS_CMD = "hctl status"
-FAILED_LIST = ['failed', 'not running', 'offline']
 
 """ S3 constants """
 const.S3_CONFIG = "/opt/seagate/cortx/s3/conf/s3config.yaml"

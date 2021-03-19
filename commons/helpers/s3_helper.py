@@ -25,12 +25,10 @@ import os
 import re
 import time
 import logging
-import subprocess
 
 from configparser import NoSectionError
 from paramiko.ssh_exception import SSHException
 from commons import commands
-from commons import constants
 from commons.helpers.host import Host
 from commons.utils import config_utils
 from commons.utils.system_utils import run_local_cmd, run_remote_cmd
@@ -38,7 +36,6 @@ from config import S3_CFG, CMN_CFG
 
 LOGGER = logging.getLogger(__name__)
 
-const = constants
 
 class S3Helper:
     """S3 Helper class to perform S3 related operations."""
@@ -771,47 +768,3 @@ class S3Helper:
 
         return False, file_path
 
-    @staticmethod
-    def remote_execution(self, hostname, username, password, cmd):
-        """running remote cmd."""
-        LOGGER.info("Remote Execution")
-        return run_remote_cmd(cmd, hostname, username, password)
-
-    @staticmethod
-    def is_mero_online(self, host, user, passwd):
-        """
-        Check whether all services are online in mero cluster
-        :param host: IP of the host
-        :param user: user name of the host
-        :param pwd: password for the user
-        :return: bool , response
-        """
-        try:
-            output = self.remote_execution(
-                host, user, passwd, const.MERO_STATUS_CMD)
-            LOGGER.info(output)
-            fail_list = const.FAILED_LIST
-            for line in output:
-                if any(fail_str in line for fail_str in fail_list):
-                    return False, output
-            return True, output
-        except BaseException as error:
-            LOGGER.error("{} {}: {}".format(
-                "Error in", S3Helper.is_mero_online.__name__,
-                error))
-            return False, error
-
-    @staticmethod
-    def run_cmd(cmd):
-        """
-        Execute any given command
-        :param cmd: Command to execute on the node
-        :return: response
-        """
-        LOGGER.info(cmd)
-        proc = subprocess.Popen(cmd, shell=True,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
-        result = str(proc.communicate())
-        LOGGER.debug("Output:{}".format(result))
-        return result
