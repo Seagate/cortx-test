@@ -767,4 +767,3 @@ class S3Helper:
                 os.remove(local_path)
 
         return False, file_path
-
