@@ -106,6 +106,8 @@ class TestProvSingleNode:
     def test_deployment_single_node(self):
         """
         Test method for the single node VM deployment.
+        This has 3 main stages: check for the required prerequisites, trigger the deployment jenkins job
+        and after deployment done, check for services status.
         """
         LOGGER.info("Starting the prerequisite checks.")
         test_cfg = PROV_CFG["prereq"]
