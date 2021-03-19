@@ -62,3 +62,10 @@ TEST_COMMENT = "Test Comment"
 # Preboarding
 ADMIN_USER_ALREADY_EXISTS_MESSAGE = "Admin user already exists"
 EMAIL_DOMAIN =  "@seagate.com"
+
+#Buckets
+BUCKET_NAME_POLICY_TEXT = "The bucket name must be of minimum 4 characters and maximum 56 characters." \
+                          " Only lowercase, numbers, and dash (-) are allowed. " \
+                          "The bucket name cannot start and end with a dash (-)."
+DUPLICATE_BUCKET_NAME_ALERT_MESSAGE = "The bucket you tried to create already exists, and you own" \
+                                      " it."

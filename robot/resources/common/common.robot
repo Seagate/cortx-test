@@ -120,3 +120,8 @@ wait for page or element to load
 
 Go Forward
     Execute Javascript  history.forward()
+
+Check element is not visiable
+    [Documentation]  This kaeyword is to verify that provided web element is not visiable on screen
+    [Arguments]  ${element_locator}
+    Element Should Not Be Visible  ${${element_locator}}
