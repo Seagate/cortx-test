@@ -43,7 +43,7 @@ from scripts.s3_bench import s3bench as s3bench_obj
 
 IAM_TEST_OBJ = IamTestLib()
 ACL_OBJ = S3AclTestLib()
-S3_HEALTH = Health
+S3_HEALTH = Health()
 DATA_PATH_CFG = read_yaml("config/s3/test_data_path_validate.yaml")[1]
 
 
