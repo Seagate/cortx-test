@@ -17,9 +17,10 @@
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
+
 """This file contains test related to Bucket Tagging."""
+
 import os
-import shutil
 import time
 import logging
 import pytest
@@ -32,6 +33,7 @@ from commons.utils.assert_utils import assert_true
 from commons.utils.assert_utils import assert_in
 from commons.utils.assert_utils import assert_equal
 from commons.utils.assert_utils import assert_is_not_none
+from commons.utils.assert_utils import assert_false
 from commons.utils.system_utils import make_dirs
 from commons.utils.system_utils import path_exists
 from commons.utils.system_utils import remove_dirs
@@ -56,7 +58,8 @@ class TestBucketTagging():
         cls.log = logging.getLogger(__name__)
         cls.log.info("STARTED: setup test suite operations.")
         cls.test_file = "obj_tag.txt"
-        cls.test_dir_path = os.path.join(os.getcwd(), "testdata", "buckettagging")
+        cls.test_dir_path = os.path.join(
+            os.getcwd(), "testdata", "buckettagging")
         cls.test_file_path = os.path.join(cls.test_dir_path, cls.test_file)
         if not path_exists(cls.test_dir_path):
             make_dirs(cls.test_dir_path)
@@ -269,10 +272,11 @@ class TestBucketTagging():
         self.log.info("Step 1: Created a bucket: %s", bucket_name)
         self.log.info("Step 2: Setting tag for a bucket")
         try:
-            TAG_OBJ.set_bucket_tag(
+            resp = TAG_OBJ.set_bucket_tag(
                 bucket_name,
                 TEST_CONF["test_2436"]["key"],
                 TEST_CONF["test_2436"]["value"])
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 TEST_CONF["test_2436"]["err_message"], str(
@@ -341,10 +345,11 @@ class TestBucketTagging():
         self.log.info("Step 1: Created a bucket: %s", bucket_name)
         self.log.info("Step 2: Setting tag for a bucket")
         try:
-            TAG_OBJ.set_bucket_tag(
+            resp = TAG_OBJ.set_bucket_tag(
                 bucket_name,
                 TEST_CONF["test_2438"]["key"],
                 TEST_CONF["test_2438"]["value"])
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 TEST_CONF["test_2438"]["err_message"], str(
@@ -386,11 +391,11 @@ class TestBucketTagging():
             x["Key"][len(TEST_CONF["test_2439"]["key"]):]))
         self.log.info(sorted_tags)
         assert_true(resp[0], resp[1])
-        for n in range(TEST_CONF["test_2439"]["tag_count"]):
-            tag_key = f"{TEST_CONF['test_2439']['key']}{n}"
-            tag_value = f"{TEST_CONF['test_2439']['value']}{n}"
-            assert_equal(sorted_tags[n]["Key"], tag_key, tag_key)
-            assert_equal(sorted_tags[n]["Value"], tag_value, tag_value)
+        for num in range(TEST_CONF["test_2439"]["tag_count"]):
+            tag_key = f"{TEST_CONF['test_2439']['key']}{num}"
+            tag_value = f"{TEST_CONF['test_2439']['value']}{num}"
+            assert_equal(sorted_tags[num]["Key"], tag_key, tag_key)
+            assert_equal(sorted_tags[num]["Value"], tag_value, tag_value)
         self.log.info("Step 3: Retrieved tags of a bucket")
         self.log.info("ENDED: Create Bucket tags, up to 50")
 
@@ -414,11 +419,12 @@ class TestBucketTagging():
             "Step 2: Setting %d tags for a bucket",
             TEST_CONF["test_2440"]["tag_count"])
         try:
-            TAG_OBJ.set_bucket_tag(
+            resp = TAG_OBJ.set_bucket_tag(
                 bucket_name,
                 TEST_CONF["test_2440"]["key"],
                 TEST_CONF["test_2440"]["value"],
                 TEST_CONF["test_2440"]["tag_count"])
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 TEST_CONF["test_2440"]["err_message"], str(
@@ -564,18 +570,19 @@ class TestBucketTagging():
             key = "{0}{1}{2}".format(
                 char, TEST_CONF["test_2444"]["key"], char)
             try:
-                TAG_OBJ.set_bucket_tag(
+                resp = TAG_OBJ.set_bucket_tag(
                     bucket_name,
                     key,
                     TEST_CONF["test_2444"]["value"])
+                assert_false(resp[0], resp[1])
             except CTException as error:
                 assert_in(
                     TEST_CONF["test_2444"]["err_message"], str(
                         error.message), error.message)
         self.log.info("Step 2: Could not set tags for a bucket with tag keys "
-                    "having invalid special characters")
+                      "having invalid special characters")
         self.log.info("ENDED: Create multiple tags with tag keys having"
-                    " invalid special characters")
+                      " invalid special characters")
 
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5524")
@@ -583,7 +590,7 @@ class TestBucketTagging():
     def test_2445(self):
         """Create multiple tags with tag values having invalid special character."""
         self.log.info("STARTED: Create multiple tags with tag values having "
-                    "invalid special character")
+                      "invalid special character")
         bucket_name = "{}{}".format(TEST_CONF["test_2445"]["bucket_name"],
                                     str(int(time.time())))
         self.log.info("Step 1: Creating a bucket %s", bucket_name)
@@ -595,23 +602,24 @@ class TestBucketTagging():
             resp[1])
         self.log.info("Step 1: Created a bucket %s", bucket_name)
         self.log.info("Step 2: Setting multiple tags with tag values having "
-                    "invalid special character")
+                      "invalid special character")
         for char in TEST_CONF["test_2445"]["spl_chars_list"]:
             value = "{0}{1}{2}".format(
                 char, TEST_CONF["test_2445"]["value"], char)
             try:
-                TAG_OBJ.set_bucket_tag(
+                resp = TAG_OBJ.set_bucket_tag(
                     bucket_name,
                     TEST_CONF["test_2445"]["key"],
                     value)
+                assert_false(resp[0], resp[1])
             except CTException as error:
                 assert_in(
                     TEST_CONF["test_2445"]["err_message"], str(
                         error.message), error.message)
         self.log.info("Step 2: Could not set multiple tags with tag values"
-                    " having invalid special character")
+                      " having invalid special character")
         self.log.info("ENDED: Create multiple tags with tag values having "
-                    "invalid special character")
+                      "invalid special character")
 
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5531")
@@ -631,10 +639,11 @@ class TestBucketTagging():
         self.log.info("Step 1: Created a bucket: %s", bucket_name)
         self.log.info("Step 2: Setting bucket tags with duplicate keys")
         try:
-            TAG_OBJ.set_bucket_tag_duplicate_keys(
+            resp = TAG_OBJ.set_bucket_tag_duplicate_keys(
                 bucket_name,
                 TEST_CONF["test_2446"]["key"],
                 TEST_CONF["test_2446"]["value"])
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 TEST_CONF["test_2446"]["err_message"], str(
@@ -677,11 +686,11 @@ class TestBucketTagging():
         self.log.info("Step 3: Retrieving tag of a bucket")
         resp = TAG_OBJ.get_bucket_tags(bucket_name)
         assert_true(resp[0], resp[1])
-        for n in range(TEST_CONF["test_2447"]["tag_count"]):
-            updated_key = f"{TEST_CONF['test_2447']['key']}{n}"
-            updated_val = f"{TEST_CONF['test_2447']['value']}{n}"
-            assert_equal(resp[1][n]["Key"], updated_key, updated_key)
-            assert_equal(resp[1][n]["Value"], updated_val, updated_val)
+        for num in range(TEST_CONF["test_2447"]["tag_count"]):
+            updated_key = f"{TEST_CONF['test_2447']['key']}{num}"
+            updated_val = f"{TEST_CONF['test_2447']['value']}{num}"
+            assert_equal(resp[1][num]["Key"], updated_key, updated_key)
+            assert_equal(resp[1][num]["Value"], updated_val, updated_val)
         self.log.info("Step 3: Retrieved tag of a bucket")
         self.log.info("ENDED: verify values in a tag set should be unique")
 
@@ -691,7 +700,7 @@ class TestBucketTagging():
     def test_2448(self):
         """Create bucket tags with invalid special characters."""
         self.log.info("STARTED: Create bucket tags with invalid "
-                    "(characters outside the allowed set) special characters")
+                      "(characters outside the allowed set) special characters")
         bucket_name = "{}{}".format(TEST_CONF["test_2448"]["bucket_name"],
                                     str(int(time.time())))
         self.log.info("Step 1: Creating a bucket %s", bucket_name)
@@ -715,7 +724,7 @@ class TestBucketTagging():
         assert_true(resp[0], resp[1])
         self.log.info("Step 3: Retrieved tag of a bucket")
         self.log.info("ENDED: Create bucket tags with invalid "
-                    "(characters outside the allowed set) special characters")
+                      "(characters outside the allowed set) special characters")
 
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5523")
@@ -770,19 +779,19 @@ class TestBucketTagging():
         self.log.info("Step 5: Verifying tag is set for an object")
         resp = TAG_OBJ.get_object_tags(bucket_name, obj_name)
         assert_true(resp[0], resp[1])
-        for n in range(TEST_CONF["test_2449"]["obj_tags"]):
-            tag_key = f"{TEST_CONF['test_2449']['obj_key']}{n}"
-            tag_val = f"{TEST_CONF['test_2449']['obj_value']}{n}"
-            assert_equal(resp[1][n]["Key"], tag_key, tag_key)
-            assert_equal(resp[1][n]["Value"], tag_val, tag_val)
+        for num in range(TEST_CONF["test_2449"]["obj_tags"]):
+            tag_key = f"{TEST_CONF['test_2449']['obj_key']}{num}"
+            tag_val = f"{TEST_CONF['test_2449']['obj_value']}{num}"
+            assert_equal(resp[1][num]["Key"], tag_key, tag_key)
+            assert_equal(resp[1][num]["Value"], tag_val, tag_val)
         self.log.info("Step 5: Verified tag is set for an object")
         self.log.info("Step 6: Deleting a bucket")
         resp = S3_OBJ.delete_bucket(bucket_name, force=True)
         assert_true(resp[0], resp[1])
-        self.log.info("Step 6: Deleted a bucket")
         self.log.info("Step 7: Retrieving tag of a bucket")
         try:
-            TAG_OBJ.get_bucket_tags(bucket_name)
+            resp = TAG_OBJ.get_bucket_tags(bucket_name)
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 TEST_CONF["test_2449"]["err_message"], str(
@@ -792,7 +801,8 @@ class TestBucketTagging():
             TEST_CONF["test_2449"]["err_message"])
         self.log.info("Step 8: Retrieving tag of an object")
         try:
-            TAG_OBJ.get_object_tags(bucket_name, obj_name)
+            resp = TAG_OBJ.get_object_tags(bucket_name, obj_name)
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 TEST_CONF["test_2449"]["err_message"], str(
@@ -810,7 +820,7 @@ class TestBucketTagging():
     def test_2450(self):
         """Verify user can create max no of buckets with max no of tags per bucket."""
         self.log.info("STARTED: Verification of max. no. of Buckets user"
-                    " can create with max no. of tags per Bucket")
+                      " can create with max no. of tags per Bucket")
         for i in range(TEST_CONF["test_2450"]["bucket_count"]):
             bucket_name = "{}{}{}".format(TEST_CONF["test_2450"]["bucket_name"],
                                           str(i), str(int(time.time())))
@@ -829,7 +839,7 @@ class TestBucketTagging():
         self.log.debug(buckets)
         self.log.debug("Total buckets : %d", len(buckets))
         self.log.info("ENDED: Verification of max. no. of Buckets user can "
-                    "create with max no. of tags per Bucket")
+                      "create with max no. of tags per Bucket")
 
     @pytest.mark.s3
     @pytest.mark.tags("TEST-5513")
@@ -866,10 +876,11 @@ class TestBucketTagging():
             "STARTED: Verify GET bucket tagging to non-existing bucket")
         self.log.info("Step 1: Setting a tag for non existing bucket")
         try:
-            TAG_OBJ.set_bucket_tag(
+            resp = TAG_OBJ.set_bucket_tag(
                 TEST_CONF["test_2452"]["bucket_name"],
                 TEST_CONF["test_2452"]["key"],
                 TEST_CONF["test_2452"]["value"])
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 TEST_CONF["test_2452"]["err_message"], str(
@@ -879,8 +890,9 @@ class TestBucketTagging():
             TEST_CONF["test_2452"]["err_message"])
         self.log.info("Step 2: Retrieving tag of non existing bucket")
         try:
-            TAG_OBJ.get_bucket_tags(
+            resp = TAG_OBJ.get_bucket_tags(
                 TEST_CONF["test_2452"]["bucket_name"])
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 TEST_CONF["test_2452"]["err_message"], str(
@@ -900,10 +912,11 @@ class TestBucketTagging():
             "STARTED: Verify DELETE bucket tagging to non-existing bucket")
         self.log.info("Step 1: Setting tag for non existing bucket")
         try:
-            TAG_OBJ.set_bucket_tag(
+            resp = TAG_OBJ.set_bucket_tag(
                 TEST_CONF["test_2453"]["bucket_name"],
                 TEST_CONF["test_2453"]["key"],
                 TEST_CONF["test_2453"]["value"])
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 TEST_CONF["test_2453"]["err_message"], str(
@@ -911,8 +924,9 @@ class TestBucketTagging():
         self.log.info("Step 1: Setting tag for non existing bucket failed")
         self.log.info("Step 2: Deleting tag of a non existing bucket")
         try:
-            TAG_OBJ.delete_bucket_tagging(
+            resp = TAG_OBJ.delete_bucket_tagging(
                 TEST_CONF["test_2453"]["bucket_name"])
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 TEST_CONF["test_2453"]["err_message"], str(
