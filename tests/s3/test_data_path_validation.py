@@ -43,7 +43,6 @@ from scripts.s3_bench import s3bench as s3bench_obj
 
 IAM_TEST_OBJ = IamTestLib()
 ACL_OBJ = S3AclTestLib()
-S3_HEALTH = Health()
 DATA_PATH_CFG = read_yaml("config/s3/test_data_path_validate.yaml")[1]
 
 
@@ -70,6 +69,11 @@ class TestDataPathValidation():
             cls.account_name,
             DATA_PATH_CFG["data_path"]["email_suffix"])
         cls.nodes = CM_CFG["nodes"]
+        cls.host = CM_CFG["nodes"][0]["host"]
+        cls.uname = CM_CFG["nodes"][0]["username"]
+        cls.passwd = CM_CFG["nodes"][0]["password"]
+        cls.health_obj = Health(hostname=cls.host, username=cls.uname,
+                                password=cls.passwd)
         cls.log.info("ENDED: Setup operations")
 
     def setup_method(self):
@@ -419,7 +423,7 @@ class TestDataPathValidation():
             "Step 2: Successfully performed concurrent I/O with 100 client and"
             "gradually increasing requests.")
         self.log.info("Step 3: checking system stability")
-        res = S3_HEALTH.is_motr_online()
+        res = self.health_obj.is_motr_online()
         assert_true(res[0], res[1])
         cmd_msg = DATA_PATH_CFG["data_path"]["cmd_msg"]
         commands = const.CRASH_COMMANDS
