@@ -26,9 +26,9 @@ from http import HTTPStatus
 
 import requests
 
+from commons.params import REPORT_SRV
 from commons.utils import jira_utils
 from core import runner
-from params import REPORT_SRV
 
 TIMING_EP = REPORT_SRV + "timings"
 
