@@ -55,10 +55,13 @@ def create_timings_db_entry(payload):
     tp_details = jira_obj.get_issue_details(payload["testPlanID"])
 
     build_type = "stable"
-    if tp_details.fields.environment:
-        branch_build = tp_details.fields.environment
-        if "_" in branch_build:
-            build_type = "".join(branch_build.split("_")[:-1])
+    try:
+        if tp_details.fields.environment:
+            branch_build = tp_details.fields.environment
+            if "_" in branch_build:
+                build_type = "".join(branch_build.split("_")[:-1])
+    except ValueError:
+        build_type = "stable"
 
     if tp_details.fields.labels:
         test_plan_label = tp_details.fields.labels[0]
