@@ -151,8 +151,8 @@ class TestDataPathValidation():
         self.log.info(cmd)
         run_local_cmd(cmd)
         res = S3H_OBJ.put_object(bucket_name,
-                                test_conf["object_name"],
-                                DATA_PATH_CFG["data_path"]["file_path"])
+                                 test_conf["object_name"],
+                                 DATA_PATH_CFG["data_path"]["file_path"])
         assert_true(res[0], res[1])
 
     def run_s3bench(self, test_conf, bucket):
@@ -401,7 +401,7 @@ class TestDataPathValidation():
             "gradually increase request.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
         for request_load in test_cfg["requests"]:
-            self.log.info("I/O with %s request",request_load)
+            self.log.info("I/O with %s request", request_load)
             res = s3bench_obj.s3bench(
                 access_key=access_key,
                 secret_key=secret_key,
