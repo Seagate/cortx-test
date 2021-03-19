@@ -32,6 +32,7 @@ from commons import commands as common_cmds
 from commons import constants as common_cnst
 from commons.utils import assert_utils
 from commons import pswdmanager
+from commons import params as prm
 from config import CMN_CFG, PROV_CFG
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
@@ -76,20 +77,18 @@ class TestProvSingleNode:
         test_cfg = PROV_CFG["deploy"]
         username = pswdmanager.decrypt(common_cnst.JENKINS_USERNAME)
         password = pswdmanager.decrypt(common_cnst.JENKINS_PASSWORD)
-        self.jenkins_server = jenkins.Jenkins(common_cnst.JENKINS_URL, username=username, password=password)
+        self.jenkins_server = jenkins.Jenkins(prm.JENKINS_URL, username=username, password=password)
         LOGGER.debug("Jenkins_server obj: {}".format(self.jenkins_server))
         completed_build_number = self.jenkins_server.get_job_info(name)['lastCompletedBuild']['number']
         next_build_number = self.jenkins_server.get_job_info(name)['nextBuildNumber']
         LOGGER.info(
             "Complete build number: {} and  Next build number: {}".format(completed_build_number, next_build_number))
         self.jenkins_server.build_job(name, parameters=parameters, token=token)
-        time.sleep(test_cfg["sleep_time"])
         LOGGER.info("Running the deployment job")
         while True:
             if self.jenkins_server.get_job_info(name)['lastCompletedBuild']['number'] == \
                     self.jenkins_server.get_job_info(name)['lastBuild']['number']:
                 break
-        time.sleep(test_cfg["sleep_time"])
         build_info = self.jenkins_server.get_build_info(name, next_build_number)
         console_output = self.jenkins_server.get_build_console_output(name, next_build_number)
         LOGGER.debug("console output: {}".format(console_output))
@@ -144,7 +143,7 @@ class TestProvSingleNode:
         common_cnst.PARAMS["HOST"] = self.host
         common_cnst.PARAMS["HOST_PASS"] = self.passwd
         token = pswdmanager.decrypt(common_cnst.TOKEN_NAME)
-        output = self.build_job(common_cnst.JOB_NAME, common_cnst.PARAMS, token)
+        output = self.build_job(test_cfg["job_name"], common_cnst.PARAMS, token)
         LOGGER.info("Jenkins Build URL: {}".format(output['url']))
         assert_utils.assert_equal(output['result'], test_cfg["success_msg"],
                                   "Deployment is not successful, please check the url.")
