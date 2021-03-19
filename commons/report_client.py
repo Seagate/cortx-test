@@ -132,7 +132,7 @@ class ReportClient(SingletonMixin):
         """
         payload = {"OSVersion": data_kwargs.get('os', "CentOS"),
                    "buildNo": data_kwargs.get('build'),
-                   "buildType": data_kwargs.get('build_type', "Release"),  # Revisit
+                   "buildType": data_kwargs.get('build_type', "stable"),  # Revisit
                    "clientHostname": data_kwargs.get('client_hostname', "autoclient"),
                    "executionType": data_kwargs.get('execution_type', "Automated"),  # Revisit
                    "healthCheckResult": data_kwargs.get('health_chk_res', "Pass"),  # setup
@@ -185,7 +185,7 @@ class ReportClient(SingletonMixin):
         """
         # build, tp, te , tid
         new_build_type = data_kwargs.get('update_build_type')
-        payload = {"filter": {"buildType": data_kwargs.get('build_type', "Release")},
+        payload = {"filter": {"buildType": data_kwargs.get('build_type', "stable")},
                    "update": {"$set": {"buildType": new_build_type,
                                        "OSVersion": data_kwargs.get('os')}},
                    "db_username": self.db_user,

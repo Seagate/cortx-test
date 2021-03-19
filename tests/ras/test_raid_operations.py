@@ -40,7 +40,6 @@ from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 
-
 # Global Constants
 LOGGER = logging.getLogger(__name__)
 
@@ -56,17 +55,16 @@ class TestRAIDOperations:
         Setup operations for the test file.
         """
         LOGGER.info("STARTED: Setup Module operations")
-        cls.host = CMN_CFG["host"]
-        cls.uname = CMN_CFG["username"]
-        cls.passwd = CMN_CFG["password"]
+        cls.host = CMN_CFG["nodes"][0]["host"]
+        cls.uname = CMN_CFG["nodes"][0]["username"]
+        cls.passwd = CMN_CFG["nodes"][0]["password"]
         cls.nd_obj = Node(hostname=cls.host, username=cls.uname,
                           password=cls.passwd)
         cls.hlt_obj = Health(hostname=cls.host, username=cls.uname,
                              password=cls.passwd)
         cls.ras_obj = RASTestLib(host=cls.host, username=cls.uname,
                                  password=cls.passwd)
-        cls.csm_alert_obj = SystemAlerts(host=cls.host, username=cls.uname,
-                                         password=cls.passwd)
+        cls.csm_alert_obj = SystemAlerts(cls.nd_obj)
         cls.alert_api_obj = GenerateAlertLib()
         cls.cm_cfg = RAS_VAL["ras_sspl_alert"]
         LOGGER.info("Done: Setup module operations")
@@ -208,11 +206,11 @@ class TestRAIDOperations:
 
         LOGGER.info("ENDED: Teardown Operations")
 
-    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.tags("TEST-15733")
     @pytest.mark.sw_alert
     @pytest.mark.skip
+    @CTFailOn(error_handler)
     def test_5345(self):
         """
         EOS-10613 RAID: Assemble a array
@@ -298,10 +296,10 @@ class TestRAIDOperations:
         LOGGER.info(
             "ENDED: TEST-5345 RAID: Assemble a array")
 
-    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.tags("TEST-15732")
     @pytest.mark.sw_alert
+    @CTFailOn(error_handler)
     def test_5342(self):
         """
         EOS-10615 RAID: Remove a drive from array
@@ -392,10 +390,10 @@ class TestRAIDOperations:
         LOGGER.info(
             "ENDED: TEST-5342 RAID: Remove a drive from array")
 
-    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.tags("TEST-15868")
     @pytest.mark.sw_alert
+    @CTFailOn(error_handler)
     def test_4785(self):
         """
         EOS-10617 RAID: Fail a drive of array
@@ -447,10 +445,10 @@ class TestRAIDOperations:
         LOGGER.info(
             "ENDED: TEST-4785 RAID: Fail a drive of array")
 
-    @CTFailOn(error_handler)
     @pytest.mark.ras
     @pytest.mark.tags("TEST-16214")
     @pytest.mark.sw_alert
+    @CTFailOn(error_handler)
     def test_5343(self):
         """
         EOS-10614 RAID: Add drive to array

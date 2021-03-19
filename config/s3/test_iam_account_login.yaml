@@ -4,7 +4,7 @@ iam_account_login:
   email_suffix: "@seagate.com"
 
 test_9780:
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
   password_reset: True
   msg: "PasswordResetRequired = true"
 
@@ -12,66 +12,66 @@ test_9782:
   account: "dummy_account"
   access_key: "dummy_access_key"
   secret_key: "dummy_secret_key"
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
   password_reset: False
   err_msg: "InvalidAccessKeyId"
 
 test_9783:
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
   password_reset: True
   err_msg: "InvalidAccessKeyId"
   long_err_msg: "The AWS access key Id you provided does not exist in our records."
 
 test_9784:
-  password: ""
+  password: "aNOm4xqgBspLAC4o9dR704Ti7yoOGZ/15JzLw1Jb36A="
   password_reset: True
   err_msg: "PasswordPolicyVoilation"
 
 test_9785:
-  password: "XjkPGDIzihAJqrKuHOCFJKZ71AJEr4wfhB6M0btYcAP2SYhwu7JSFXcw4aUm58krF70Uly8qkvQ9Uv2r94wxHMnciDAjZZT860X9TZqUykPrUAaY5F1hSX8w1EfOrULe5"
+  password: "IEhPX0D4Ek79B3tYce+ZfwICAj51DLmbTiyEP3aSJs00E3BcvVKHqeJn0Rm6/vwfISaGJOJRPZB7axzfgYNTZju8gHo9FFl7f/x1aeQHHRR+7z8MBZr3dMy7zhBVW6FtuMbA0S/I5ASZgeEgwL5jy4PBL52mw9AQ46T4ZApXL45Cjg1LiN5Ul8unpGdp/RS5ViowWWbjFfnx11YvuRprxg=="
   password_reset: False
   err_msg: "PasswordPolicyVoilation"
 
 test_9786:
   list_of_passwords:
-    - "Sea123"
-    - "SEAGATE"
-    - "seagate"
-    - '"sea gate"'
+    - "Lqckb7sMfSw7joS2zFn2LZK1RlMUx01FHVMoWVEFhDU="
+    - "COmpsDmylsDZ7iLC9jv78ZI+l0bUpo/TwNMhsfrMC00="
+    - "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
+    - "2Ugu1j2T3vpGDQKe7IKP39bcVtf3JWkrtUl3oPVvI8U="
   password_reset: False
 
 test_9787:
   list_special_invalid_char:
-    - "'Sea?gate'"
-    - "'SEAG<te'"
-    - "'sea>get'"
-    - "'sea~gate'"
-    - "'sea$gate'"
-    - "'sea`gate'"
+    - "SyKP0sW5djTj5mvAfwUNZdG6pQgm5vN7ytfD+xwfoqs="
+    - "Dn3yl1ldWmjiB4XlcUJiENeUgZuCiz0xMGB945CxUk0="
+    - "fj1Jnp+tnzDaiNugjqy6QmH3finqsjhCYrDvUcfP8fI="
+    - "O36j7i6uMDNpWUs086czDzdEYNmgJiuvxpFbtXrt4+U="
+    - "p/MwB+c2Y10T5ISQfDcR/XxSXJ+I664xJnOIV0KD14k="
+    - "uLXhYl8AyPjiB+x7I+GPuCt8ygIwXEBCzdcM33xF7I8="
   password_reset: False
 
 test_9788:
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
   password_reset: False
 
 test_9789:
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
   password_reset: True
 
 test_9790:
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
 
 test_9791:
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
 
 test_9792:
   password_reset: "True"
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
   user_name: "seagate_user"
   err_msg: "Failed to create Account login profile"
 
 test_9807:
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
   password_reset: "True"
 
 test_9808:
@@ -84,105 +84,105 @@ test_9809:
   err_msg: "Failed to get login profile"
 
 test_9810:
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
   password_reset: True
   err_msg: "Failed to get login profile"
 
 test_9811:
   password_reset: "True"
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
   user_name: "seagate_user"
   err_msg: "User is not authorized to perform invoked action"
 
 test_9812:
   password_reset: True
-  password: "seagate"
-  new_password: "new_seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
+  new_password: "Sf7bfyuMGqCDb7yoxB8COo9dbkk1LiFEB5KTsYvNv9s="
 
 test_9813:
   password_reset: False
-  password: "seagate"
-  new_password: "new_seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
+  new_password: "Sf7bfyuMGqCDb7yoxB8COo9dbkk1LiFEB5KTsYvNv9s="
   new_password_reset: True
 
 test_9814:
   password_reset: True
-  password: "seagate"
-  new_password: "new_seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
+  new_password: "Sf7bfyuMGqCDb7yoxB8COo9dbkk1LiFEB5KTsYvNv9s="
   new_password_reset: False
 
 test_9815:
   password_reset: False
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
 
 test_9816:
   password_reset: False
-  password: "seagate"
-  new_password: "new_seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
+  new_password: "Sf7bfyuMGqCDb7yoxB8COo9dbkk1LiFEB5KTsYvNv9s="
   new_password_reset: True
 
 test_9817:
   password_reset: False
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
   err_msg: "Please provide password or password-reset flag"
 
 test_9818:
   password_reset: True
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
   err_msg: "An error occurred (NoSuchEntity) : LoginProfile not created for account"
 
 test_9819:
   account_name: "no_account"
   access_key: "no_accesskey"
   secret_key: "no_secretkey"
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
   password_reset: True
   err_msg: "The AWS access key Id you provided does not exist in our records"
 
 test_9820:
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
   password_reset: True
-  new_password: "new_seagate"
+  new_password: "nCuTjXVKVqZA9ARDwKbCYhenkXC/JCPT11Qi483PpNA="
   err_msg: "The AWS access key Id you provided does not exist in our records"
 
 test_9821:
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
   password_reset: True
 
 test_9822:
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
   password_reset: True
-  new_password: "new$%?gate"
+  new_password: "KogDN0tQA0UMf4aQClKmHFV4Pk0tkIOY9sgeOWlI3jk="
 
 test_9823:
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
   password_reset: False
   user_name: "new_user99"
   new_password_reset: True
-  new_password: "seagate"
+  new_password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
   err_msg: "User is not authorized to perform invoked action"
 
 test_9861:
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
   password_reset: False
 
 test_9862:
   account_name: "dummy_account"
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
   err_msg: "An error occurred (NoSuchEntity)"
 
 test_9863:
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
   err_msg: "An error occurred (NoSuchEntity)"
 
 test_9864:
   password_reset: False
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
   bucket_name: "iamtestbucket"
 
 test_9865:
   password_reset: False
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
   temp_access_key: "qeopioErUdjalkjfaowf"
   temp_secret_key: "AslkfjfjksjRsfjlskgUljflglsd"
   temp_session_token: "2wslfaflk1aldjlakjfkljf67skhvskjdjiwfha"
@@ -190,63 +190,64 @@ test_9865:
   err_msg: "InvalidAccessKeyId"
 
 test_9866:
-  password: "ldapadmin"
+  password: "nRHRiP0c8Uf7tPaDgAuR7V4Po1XLAG61KBfOpR3dnsI="
   err_msg: "An error occurred (InvalidCredentials)"
 
 test_9867:
   password_reset: False
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
 
 test_9868:
   password_reset: False
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
   duration: 1200
   bucket_name: "iamtestbucket"
   err_msg: "ExpiredToken"
 
 test_9869:
   password_reset: False
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
   duration: 800
   err_msg: "An error occurred (MinDurationIntervalNotMaintained)"
 
 test_9870:
   password_reset: False
-  password: "seagate"
-  invalid_password: "seegate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
+  invalid_password: "hBnypgcZpgCgs12vxVP+IgaUKdfbkHWrCwq3M5ueZpM="
   err_msg: "An error occurred (InvalidCredentials)"
 
 test_9871:
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
   password_reset: False
   user_name: "seagate_user"
-  user_password: "user_pwd"
+  user_password: "ND0e3stzCIBPKbh2Z26+cmfVnhrbl2n9t2kfKrgX6FM="
 
 test_9872:
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
   password_reset: False
   user_name: "seagate_user"
-  user_password: "user_pwd"
+  user_password: "ND0e3stzCIBPKbh2Z26+cmfVnhrbl2n9t2kfKrgX6FM="
   err_msg: "An error occurred (NoSuchEntity)"
 
 test_9873:
   password_reset: False
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
   user_name: "seagate_user"
-  user_password: "user_pwd"
+  user_password: "ND0e3stzCIBPKbh2Z26+cmfVnhrbl2n9t2kfKrgX6FM="
   err_msg: "An error occurred (InvalidCredentials)"
 
 test_9874:
   password_reset: False
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
   user_name: "seagate_user"
-  user_password: "user_pwd"
+  user_password: "ND0e3stzCIBPKbh2Z26+cmfVnhrbl2n9t2kfKrgX6FM="
   duration: 1200
 
 test_9875:
   password_reset: False
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
   user_name: "dummy_user"
-  user_password: "dummy_user_pwd"
+  user_password: "f8dpfmqXLqaeCB0We0C2ueVKbun6JZecL5FWpX+1iLY="
   duration: 1000
   err_msg: "An error occurred (NoSuchEntity)"
+

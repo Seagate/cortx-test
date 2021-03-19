@@ -4,7 +4,7 @@ Library  SeleniumLibrary    screenshot_root_directory=reports/screenshots
 Library  String
 Library  DateTime
 Library  Collections
-Library  ../../utils/Download.py
+Library  ${EXECDIR}/utils/Download.py
 Variables  common_variables.py
 Variables  element_locators.py
 

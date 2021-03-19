@@ -23,6 +23,7 @@
 
 import os
 import qa_tab_layouts as tl
+import query_tab_layout as query_tl
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
@@ -31,7 +32,7 @@ from dash.dependencies import Output, Input
 from dash.exceptions import PreventUpdate
 from common import app, versions, server
 from Common_callbacks import defect_list_tab_callbacks, \
-    main_page_callbacks  # pylint: disable=unused-import
+    main_page_callbacks, query_tab_callbacks  # pylint: disable=unused-import
 from R1_callbacks import r1_exe_report_callbacks, \
     r1_engg_report_callbacks  # pylint: disable=unused-import
 from R2_callbacks import exe_report_callbacks, \
@@ -171,7 +172,7 @@ query_tabs = dbc.Tabs(
         dbc.Tab(tl.defect_list_per_tp_content, label='Defect List for Test Plans/Test Executions',
                 style=dict_style_sub_tab,
                 label_style=dict_style_sub_label),
-        dbc.Tab(tl.query_database, label='Query Database', style=dict_style_sub_tab,
+        dbc.Tab(query_tl.query_database, label='Query Database', style=dict_style_sub_tab,
                 label_style=dict_style_sub_label)
     ],
     className="nav nav nav-pills nav-fill nav-pills flex-column flex-sm-row",
@@ -236,3 +237,4 @@ app.layout = html.Div([
 
 if __name__ == '__main__':
     app.run_server(port=5002, threaded=True, debug=True)
+    # app.run_server(port=5002, threaded=True)

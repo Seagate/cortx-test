@@ -43,7 +43,7 @@ COMMON_DESTRUCTIVE_CONFIG_PATH = "config/common_destructive.yaml"
 
 JIRA_TEST_LIST = 'test_lists.csv'
 
-CSM_CONFIG = os.path.join(CONFIG_DIR, 'csm', 'csm_config.yaml')
+CSM_CONFIG_PATH = os.path.join(CONFIG_DIR, 'csm', 'csm_config.yaml')
 
 JIRA_TEST_META_JSON = 'test_meta_data.json'
 
