@@ -6,6 +6,7 @@
 # URL's required to connect to the CSM GUI
 CSM_URL = "https://10.230.246.58:28100/#/"
 SW_UPDATE_URL = "http://cortx-storage.colo.seagate.com/releases/eos/github/main/centos-7.8.2003/{0}/prod/iso/cortx-2.0.0-{0}-single.iso"
+FW_UPDATE_URL = "http://ssc-nfs-srvr2.pun.seagate.com/sw-installs/5U84-FW/GN265R008-04.bin"
 
 #  Login page msg.
 LOGIN_FAILED_MESSAGE = 'Login failed !'
@@ -26,7 +27,7 @@ INVALID_PASSWORD_MSG = "Invalid password."
 INVALID_USER_TYPE_MESSAGE = "Invalid username."
 MISSMATCH_PASSWORD_MESSAGE = "Passwords do not match."
 
-#S3 Expected Messages
+# S3 Expected Messages
 INVALID_S3_ACCOUNT_MESSAGE = 'Invalid account name.'
 INVALID_S3_EMAIL_MESSAGE = 'Invalid email id.'
 INVALID_S3_PASSWORD_MESSAGE = 'Invalid password.'
@@ -50,6 +51,8 @@ ACCESS_KEY_GENERATED_MESSAGE = 'Access key created'
 IAM_USER_USERNAME_TOOLTIP_MSG = "The username must be of minimum 4 characters and maximum 56 characters"
 IAM_USER_PASSWD_TOOLTIP_MSG = "Password must contain: Minimum 8 characters"
 IAM_USER_PASSWD_MISSMATCH_MSG = "Passwords do not match"
+SECRET_KEY_VALUE = "XXXX"
+IAMUSER_ACCESS_KEY_HEADERS = ['Access key', 'Secret key', 'common.action']
 DUPLICATE_IAM_USER_ERROR_MSG = "The request was rejected because it attempted to create or update a resource that already exists."
 
 # Alerts
