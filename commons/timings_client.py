@@ -28,8 +28,8 @@ import requests
 
 from commons.utils import jira_utils
 from core import runner
+from params import REPORT_SRV
 
-REPORT_SRV = "http://cftic2.pun.seagate.com:5000/"
 TIMING_EP = REPORT_SRV + "timings"
 
 DB_USERNAME, DB_PASSWORD = runner.get_db_credential()

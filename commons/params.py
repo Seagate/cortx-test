@@ -75,3 +75,5 @@ apollojenkins.pun.seagate.com:27017/
 ?authSource=cft_test_results&replicaSet=rs0"""
 DB_NAME = "cft_test_results"
 SYS_INFO_COLLECTION = "r2_systems"
+
+REPORT_SRV = "http://cftic2.pun.seagate.com:5000/"
