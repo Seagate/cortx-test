@@ -5,7 +5,6 @@ data_path:
   email_suffix: "@seagate.com"
   file_path: "/home/bkt-dp.txt"
   cmd_msg: "core."
-  pwd: "password"
   s3bench_path: "/root/go/bin"
   endpoint: "https://s3.seagate.com"
   s3bench_cmd: "go run s3bench -accessKey={} -accessSecret={} -bucket={} -endpoint={} -numClients={} -numSamples={} -objectNamePrefix={}"
