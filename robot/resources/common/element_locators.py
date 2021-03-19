@@ -105,7 +105,6 @@ ADMIN_CONFIRM_PASSWORD_FIELD_ID = 'confirmAdminPassword'
 APPLY_AND_CONTINUE_BUTTON_ID = 'admin-createadminuser'
 ADMIN_USER_ALREADY_EXISTS_ID = 'admin-invalidmsg'
 
-
 #  CSM User section
 CSM_USERS_TABLE_XPATH = '//*[@id="localuser-tabledata"]//table'
 CSM_USERS_NUMBER_OF_ROWS_XPATH = '//*[@id="localuser-tabledata"]//table/tbody/tr[2]'
@@ -198,6 +197,15 @@ BUCKET_CREATE_BUTTON_ID = "bucket-create-btn"
 DELETE_BUCKET_XPATH = '//tr[@id="{0}"]//*[@id="bucket-delete-icon"]'
 CONFIRM_CREATE_BUTTON_ID = "bucket-closedialodbox"
 BUCKET_ROW_ELEMENT_XPATH = '//tr[@id="{0}"]'
+BUCKET_NAME_POLICY_TOOLTIP_ID = "tooltip-msg"
+BUCKET_NAME_POLICY_TOOLTIP_ICON_ID = "Bucket name*"
+CANCEL_BUCKET_CREATION_BUTTON_ID = "bucket-cancel-btn"
+DUPLICATE_BUCKET_MESSAGE_ID = "dialog-message-label"
+CLOSE_DUPLICATE_BUCKET_MESSAGE_ID = "close-msg-dialogbox"
+CANCEL_BUCKET_DELETION_ID = "confirmation-dialog-cancel-btn"
+CANCEL_BUCKET_DELITION_ICON_ID = "confirmation-dialogclose"
+
+
 # Software Update Page
 UPLOAD_SW_FILE_BTN_ID = "btnInstallHotfix"
 CHOOSE_SW_UPDATE_FILE_BTN_ID = "file"
