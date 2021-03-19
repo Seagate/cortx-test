@@ -32,9 +32,9 @@ test_8685:
 test_8686:
   max_access_keys: 2
 test_8687:
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
   password_reset: True
-  new_password: "calsoft"
+  new_password: "udXC/QLVeEgI0yIidEGy5XlwitDX6rLezfUlJ39i7zU="
 test_8689:
   local_cert_path: "ca.crt"
   starts_with: "-----BEGIN CERTIFICATE-----"
@@ -42,9 +42,9 @@ test_8689:
   err_message_1: "Certificate does not begin with {}"
   err_message_2: "Certificate does not end with {}"
 test_8691:
-  password: "seagate"
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
   pwd_reset: True
-  new_password: "calsoft"
+  new_password: "udXC/QLVeEgI0yIidEGy5XlwitDX6rLezfUlJ39i7zU="
 test_4625:
   arn_str: "arn:aws:iam::{}:user/{}"
   err_message: "Invalid user ARN format"
