@@ -185,6 +185,15 @@ IAM_USER_RESET_NEW_PASSWORD_ID = "user-password"
 IAM_USER_RESET_CONFIRM_PASSWORD_ID = "confirm-password"
 IAM_USER_SUCCESS_MESSAGE_ID = 'iam-success-dialog'
 IAM_USER_SUCCESS_MESSAGE_BUTTON_ID = 'confirmation-dialogbox-btn'
+IAM_USER_TABLE_ID = "iam-datatable"
+IAM_USER_ACCESS_KEY_ID = "iam-accesskey-datatable"
+ACCESS_KEY_TABLE_NAME_ID = "iam-accesskey-datatable-title"
+IAM_USER_ACCESS_KEY_DATA_XPATH = "//td[contains(@id, 'iam-accesskey')]"
+ADD_IAM_USER_ACCESS_KEY_BUTTON_ID = "iam-accesskey-add-btn"
+DOWNLOAD_IAM_USER_ACCESS_KEY_BUTTON_ID = "download-csv-dialog-btn"
+IAM_USER_SECRET_KEY_XPATH = "//div[@id='iam-accesskey-datatable']//td[2]"
+IAM_USER_ACCESS_KEY_TABLE_HEADERS_XPATH = "//div[@id='iam-accesskey-datatable']//th"
+DELETE_IAM_USER_ACCESS_KEY_BUTTON_ID = "//img[contains(@id, 'iam-accesskey-datatable-delete')]"
 
 # About Section
 ABOUT_VIEW_ID = 'menu-actionmanagebtn'

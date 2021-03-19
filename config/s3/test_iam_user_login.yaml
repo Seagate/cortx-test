@@ -15,7 +15,7 @@ test_9826:
   user_name: "iamuser9826"
   password: "IF3OQHWNXva4PJRak+mDiXyysjuH0RdZSHde8L2T8js="
   password_reset: True
-  new_password: None
+  new_password: "o22+WkHq9tJVUUZd21qKzHBM9wk+Fi/3QaUsDPcIzIM="
   err_message: "PasswordPolicyVoilation"
 test_9828:
   user_name: "iamuser9828"
@@ -74,7 +74,7 @@ test_9837:
   err_message: "NoSuchEntity"
 test_9838:
   user_name: "iamuser9838"
-  password: None
+  password: "o22+WkHq9tJVUUZd21qKzHBM9wk+Fi/3QaUsDPcIzIM="
   password_reset: True
   err_message: "PasswordPolicyVoilation"
 test_9840:
