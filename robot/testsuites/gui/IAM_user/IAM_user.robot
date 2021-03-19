@@ -24,6 +24,7 @@ ${Sub_tab}  None
 ${username}
 ${password}
 ${S3_account_name}
+${s3password}
 
 *** Keywords ***
 
@@ -32,11 +33,14 @@ Login To S3 Account
     [Tags]  Priority_High  S3_test
     CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    sleep  2s
-    ${S3_account_name}  ${email}  ${password} =  Create S3 account
-    sleep  3s
-    Re-login  ${S3_account_name}  ${password}  MANAGE_MENU_ID
+    wait for page or element to load  2s
+    ${S3_account_name}  ${email}  ${s3password} =  Create S3 account
+    wait for page or element to load  3s
+    Re-login  ${S3_account_name}  ${s3password}  MANAGE_MENU_ID
     Navigate To Page  MANAGE_MENU_ID  IAM_USER_TAB_ID
+    wait for page or element to load  3s
+    set suite variable    ${S3_account_name}
+    set suite variable    ${s3password}
 
 
 Delete S3 Account And Close Browser
@@ -44,8 +48,8 @@ Delete S3 Account And Close Browser
     [Tags]  Priority_High  S3_test
     Navigate To Page  MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     ${S3_account_name}=  Fetch S3 Account Name
-    Delete S3 Account  ${S3_account_name}  ${password}  True
-    Sleep  1s
+    Delete S3 Account  ${S3_account_name}  ${s3password}  True
+    wait for page or element to load  1s
     Close Browser
 
 
@@ -96,11 +100,11 @@ TEST-952
     ${password}=  Generate New Password
     Click Create IAM User Button
     Create IAMuser  ${username}  ${password}
-    Sleep  5s  # Need to reload the uses
+    wait for page or element to load  # Need to reload the uses
     ${status}=  Is IAMuser Present  ${username}
     Should be equal  ${status}  ${True}
     Delete IAMuser  ${username}
-    Sleep  5s  # To start the teardown process
+    wait for page or element to load  # To start the teardown process
 
 TEST-956
     [Documentation]  Test duplicate IAMuser should not get created
@@ -110,14 +114,14 @@ TEST-956
     ${password}=  Generate New Password
     Click Create IAM User Button
     Create IAMuser  ${username}  ${password}
-    Sleep  5s  # Need to reload the uses
+    wait for page or element to load  # Need to reload the uses
     ${status}=  Is IAMuser Present  ${username}
     Should be equal  ${status}  ${True}
     Click Create IAM User Button
     Create IAMuser  ${username}  ${password}  true
     Verify Duplicate User Error MSG
     Delete IAMuser  ${username}
-    Sleep  5s  # Need to reload the uses
+    wait for page or element to load  # Need to reload the uses
 
 TEST-958
     [Documentation]  Test that all mandatory fields are marked with asteric sign
@@ -134,10 +138,10 @@ TEST-962
     Click Create IAM User Button
     Create IAMuser  ${username}  ${password}
     Delete IAMuser  ${username}
-    Sleep  5s  # Need to reload the uses
+    wait for page or element to load  # Need to reload the uses
     ${status}=  Is IAMuser Present  ${username}
     Should be equal  ${status}  ${False}
-    Sleep  5s  # To start the teardown process
+    wait for page or element to load  # To start the teardown process
 
 TEST-960
     [Documentation]  Test that no data is retained in the fields when you had canceled iam user creation process
@@ -156,16 +160,147 @@ TEST-961
     Create IAMuser  ${username}  ${password}
     Verify ARN Username UserID  ${username}
     Delete IAMuser  ${username}
-    Sleep  5s  # Need to reload the uses
+    wait for page or element to load  # Need to reload the uses
 
 TEST-17018
     [Documentation]  Test a reset password functionality on clicking "edit" button on IAM user page
-    ...  Reference : https://jts.seagate.com/browse/TEST-v1
-    [Tags]  Priority_High
+    ...  Reference : https://jts.seagate.com/browse/TEST-17018
+    [Tags]  Priority_High  TEST-17018
     ${username}=  Generate New User Name
     ${password}=  Generate New Password
     Click Create IAM User Button
     Create IAMuser  ${username}  ${password}
-    sleep  5s
-    Reset Password IAMuser  ${username}
-    sleep  5s
+    wait for page or element to load
+    Reset Password IAMuser  ${username}  # Aplicable for LDR R2
+    wait for page or element to load
+
+TEST-13109
+    [Documentation]  Verify that two empty tables are shown on IAM users page
+    ...  Reference : https://jts.seagate.com/browse/TEST-13109
+    [Tags]  Priority_High  TEST-13109
+    Verify Presence of Two Tables
+
+TEST-1021
+    [Documentation]  Test that IAM user is not able to log-in and access the CSM GUI.
+    ...  Reference : https://jts.seagate.com/browse/TEST-1021
+    [Tags]  Priority_High  TEST-1021
+    ${iamusername}=  Generate New User Name
+    ${iampassword}=  Generate New Password
+    Click Create IAM User Button
+    Create IAMuser  ${iamusername}  ${iampassword}
+    wait for page or element to load  # Need to reload the uses
+    ${status}=  Is IAMuser Present  ${iamusername}
+    Should be equal  ${status}  ${True}
+    Try to Login As IAMUser  ${iamusername}  ${iampassword}
+    Validate CSM Login Failure
+    Reload Page
+    wait for page or element to load
+    Re-login  ${S3_account_name}  ${s3password}  IAM_USER_TAB_ID  False
+    Delete IAMuser  ${iamusername}
+    wait for page or element to load  # Need to reload the uses
+
+TEST-13110
+    [Documentation]  Verify that if IAM user exist, first IAM user is selected by
+    ...  default and its access keys are shown in keys table
+    ...  Reference : https://jts.seagate.com/browse/TEST-13110
+    [Tags]  Priority_High  TEST-13110
+    ${iamusername}=  Generate New User Name
+    ${iampassword}=  Generate New Password
+    Click Create IAM User Button
+    Create IAMuser  ${iamusername}  ${iampassword}
+    wait for page or element to load  # Need to reload the uses
+    Verify the IAMuser of the Access Key Table  ${iamusername}
+    Delete IAMuser  ${iamusername}
+    wait for page or element to load  # Need to reload the uses
+
+TEST-13111
+    [Documentation]  Verify that keys table gets updated according to the selected IAM user
+    ...  Reference : https://jts.seagate.com/browse/TEST-13111
+    [Tags]  Priority_High  TEST-13111
+    ${iamusername1}=  Generate New User Name
+    ${iamusername2}=  Generate New User Name
+    ${iampassword}=  Generate New Password
+    Click Create IAM User Button
+    Create IAMuser  ${iamusername1}  ${iampassword}
+    Verify the IAMuser of the Access Key Table  ${iamusername1}
+    Click Create IAM User Button
+    Create IAMuser  ${iamusername2}  ${iampassword}
+    Click On IAMuser  ${iamusername2}
+    Verify the IAMuser of the Access Key Table  ${iamusername2}
+    Delete IAMuser  ${iamusername1}
+    Delete IAMuser  ${iamusername2}
+    wait for page or element to load  # Need to reload the uses
+
+TEST-13112
+    [Documentation]  Test that s3 account user can generate keys for IAM users
+    ...  Reference : https://jts.seagate.com/browse/TEST-13112
+    [Tags]  Priority_High  TEST-13112
+    ${iamusername}=  Generate New User Name
+    ${iampassword}=  Generate New Password
+    Click Create IAM User Button
+    Create IAMuser  ${iamusername}  ${iampassword}
+    Click On IAMuser  ${iamusername}
+    Generate IAM User Add Access Key
+    ${count}=  Get IAMUser Access Key Count
+    Should be equal  '${count}'  '2'
+    Delete IAMuser  ${iamusername}
+    wait for page or element to load  # Need to reload the uses
+
+TEST-13113
+    [Documentation]  Test that s3 account user can delete keys for IAM users
+    ...  Reference : https://jts.seagate.com/browse/TEST-13113
+    [Tags]  Priority_High  TEST-13113
+    ${iamusername}=  Generate New User Name
+    ${iampassword}=  Generate New Password
+    Click Create IAM User Button
+    Create IAMuser  ${iamusername}  ${iampassword}
+    Click On IAMuser  ${iamusername}
+    Generate IAM User Add Access Key
+    Delete IAM User Add Access Key
+    wait for page or element to load
+    ${count}=  Get IAMUser Access Key Count
+    Should be equal  '${count}'  '1'
+    Delete IAMuser  ${iamusername}
+    wait for page or element to load  # Need to reload the uses
+
+TEST-13114
+    [Documentation]  Verify that table for IAM user keys contains data in appropriate format
+    ...  Reference : https://jts.seagate.com/browse/TEST-13114
+    [Tags]  Priority_High  TEST-13114
+    ${iamusername}=  Generate New User Name
+    ${iampassword}=  Generate New Password
+    Click Create IAM User Button
+    Create IAMuser  ${iamusername}  ${iampassword}
+    Verify IAMuser Access Key table content
+    Delete IAMuser  ${iamusername}
+    wait for page or element to load  # Need to reload the uses
+
+TEST-13115
+    [Documentation]  Verify that a table for IAM user's access keys is
+    ...  shown below IAM users table with required columns
+    ...  Reference : https://jts.seagate.com/browse/TEST-13115
+    [Tags]  Priority_High  TEST-13115
+    ${iamusername}=  Generate New User Name
+    ${iampassword}=  Generate New Password
+    Click Create IAM User Button
+    Create IAMuser  ${iamusername}  ${iampassword}
+    Click On IAMuser  ${iamusername}
+    Verify Access Key Table Headers
+    Delete IAMuser  ${iamusername}
+    wait for page or element to load  # Need to reload the uses
+
+TEST-13116
+    [Documentation]  Verify that table for IAM user keys contains data in appropriate format
+    ...  Reference : https://jts.seagate.com/browse/TEST-13116
+    [Tags]  Priority_High  TEST-13116
+    ${iamusername}=  Generate New User Name
+    ${iampassword}=  Generate New Password
+    Click Create IAM User Button
+    Create IAMuser  ${iamusername}  ${iampassword}
+    Click On IAMuser  ${iamusername}
+    Generate IAM User Add Access Key
+    wait for page or element to load
+    Verify Generate Access Key Button Must Remain Disable
+    Delete IAMuser  ${iamusername}
+    wait for page or element to load  # Need to reload the uses
+

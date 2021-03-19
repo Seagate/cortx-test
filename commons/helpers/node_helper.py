@@ -52,8 +52,7 @@ class Node(Host):
     def send_systemctl_cmd(
             self,
             command: str,
-            services: list,
-            timeout: int = 60) -> list:
+            services: list) -> list:
         """
         send/execute command on remote node.
         """
@@ -67,7 +66,7 @@ class Node(Host):
             log.debug(
                 "Performing %s on service %s...", command, service)
             cmd = commands.SYSTEM_CTL_CMD.format(command, service)
-            out.append(self.execute_cmd(cmd, timeout=timeout))
+            out.append(self.execute_cmd(cmd))
 
         return out
 
