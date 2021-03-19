@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Common functions used while generating engineering and executive csv reports."""
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
@@ -16,17 +17,16 @@
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
-#
-# -*- coding: utf-8 -*-
+
 import getpass
 import os
 import sys
 from collections import Counter
 from datetime import date
 from http import HTTPStatus
-from jira import JIRA
 
 import requests
+from jira import JIRA
 
 BUGS_PRIORITY = ["Blocker", "Critical", "Major", "Minor", "Trivial"]
 TEST_STATUS = ["PASS", "FAIL", "ABORTED", "BLOCKED", "TODO"]
@@ -193,13 +193,12 @@ def get_build_from_test_plan(test_plan: str, username: str, password: str):
     return build_no
 
 
-def get_main_table_data(test_plan: str, username: str, password: str):
+def get_main_table_data(build_no: str):
     """Get header table data."""
-    build_no = get_build_from_test_plan(test_plan, username, password)
     data = [["CFT Exec Report"], ["Product", "Lyve Rack"],
             ["Build", build_no],
             ["Date", date.today().strftime("%B %d, %Y")], ["System", ""]]
-    return data, build_no
+    return data
 
 
 def get_reported_bug_table_data(test_plan: str, username: str, password: str):
@@ -244,33 +243,6 @@ def get_overall_qa_report_table_data(test_plan: str, test_plan1: str,
         data.extend([
             [status.capitalize(), count_0[status], count_1[status]],
         ])
-    return data
-
-
-def get_timing_summary():
-    """
-    ToDo: Need to decide on how to figure out these timings from test JIRAs? DO we need to add or
-          remove some timings for R2.
-    """
-    data = [
-        ["Timing Summary (Seconds)"],
-        ["Parameters", 515, 463, 403, 398, 394],
-        ["Update", 1440.0, "NA", "NA", "NA", "NA"],
-        ["Deployment", 5220.0, "NA", 5400.0, "NA", "NA"],
-        ["Boxing", 240.0, "NA", "NA", "NA", "NA"],
-        ["Unboxing", 1380.0, "NA", "NA", "NA", "NA", ],
-        ["Onboarding", "NA", "NA", 240.0, "NA", "NA"],
-        ["Firmware Update", "NA", "NA", "NA", "NA", "NA"],
-        ["Reboot Node", 278.0, "NA", 345.0, "NA", "NA"],
-        ["Start Node", "NA", "NA", "NA", "NA", "NA"],
-        ["Stop Node", "NA", "NA", 10.0, "NA", "NA"],
-        ["Stop all Services", 170.0, "NA", 167.0, "NA", "NA"],
-        ["Node Failover", 180.0, "NA", 183.0, "NA", "NA"],
-        ["Node Failback", 160.0, "NA", 205.0, "NA", "NA"],
-        ["Start All Services", 196.0, "NA", 205.0, "NA", "NA"],
-        ["Bucket Creation", 1.0, "NA", 1.0, "NA", "NA"],
-        ["Bucket Deletion", 5.0, "NA", 4.0, "NA", "NA"]
-    ]
     return data
 
 

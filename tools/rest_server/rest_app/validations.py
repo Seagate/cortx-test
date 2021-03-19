@@ -43,7 +43,8 @@ cmi_keys_string = ["testPlanLabel", "buildType", "buildNo"]
 
 cmi_keys = cmi_keys_float + cmi_keys_string
 
-timing_keys_str = ["buildNo", "testID", "testPlanID", "testExecutionID", "testStartTime"]
+timing_keys_str = ["buildNo", "buildType", "testPlanLabel", "testID", "testPlanID",
+                   "testExecutionID", "testStartTime"]
 timing_keys_array = ["logs"]
 timing_keys = timing_keys_str + timing_keys_array
 extra_timing_keys = ["nodeRebootTime", "allServicesStartTime", "allServicesStopTime",
