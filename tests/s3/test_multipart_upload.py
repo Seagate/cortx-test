@@ -56,9 +56,9 @@ class TestMultipartUpload:
         cls.aws_config_path.append(S3_CFG["aws_config_path"])
         cls.actions = MPART_CFG["multipart"]["actions"]
         cls.test_file = "mp_obj"
-        cls.test_dir_path = os.path.join(os.getcwd(), "testdata")
+        cls.test_dir_path = os.path.join(os.getcwd(), "testdata", "multipart_upload")
         cls.mp_obj_path = os.path.join(cls.test_dir_path, cls.test_file)
-        cls.backup_path = os.path.join(cls.test_dir_path, "config_backup")
+        cls.config_backup_path = os.path.join(cls.test_dir_path, "config_backup")
         if not path_exists(cls.test_dir_path):
             make_dirs(cls.test_dir_path)
             cls.log.info("Created path: %s", cls.test_dir_path)
@@ -85,13 +85,13 @@ class TestMultipartUpload:
         self.log.info("STARTED: Setup operations")
         self.log.info(
             "Taking a backup of aws config file located at %s to %s...",
-            self.aws_config_path, self.backup_path)
+            self.aws_config_path, self.config_backup_path)
         resp = backup_or_restore_files(
-            self.actions[0], self.backup_path, self.aws_config_path)
+            self.actions[0], self.config_backup_path, self.aws_config_path)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Taken a backup of aws config file located at %s to %s",
-            self.aws_config_path, self.backup_path)
+            self.aws_config_path, self.config_backup_path)
         self.log.info("ENDED: Setup operations")
 
     def teardown_method(self):
@@ -106,24 +106,23 @@ class TestMultipartUpload:
         pref_list = [
             each_bucket for each_bucket in resp[1] if each_bucket.startswith(
                 MPART_CFG["multipart"]["bkt_name_prefix"])]
-        try:
-            S3_TEST_OBJ.delete_multiple_buckets(pref_list)
-        except CTException as error:
-            self.log.info(error)
+        if pref_list:
+            resp = S3_TEST_OBJ.delete_multiple_buckets(pref_list)
+            assert_true(resp[0], resp[1])
         self.log.info(
             "Restoring aws config file from %s to %s...",
-            self.backup_path,
+            self.config_backup_path,
             self.aws_config_path)
         resp = backup_or_restore_files(
-            self.actions[1], self.backup_path, self.aws_config_path)
+            self.actions[1], self.config_backup_path, self.aws_config_path)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Restored aws config file from %s to %s",
-            self.backup_path,
+            self.config_backup_path,
             self.aws_config_path)
         self.log.info("Deleting a backup directory...")
-        if path_exists(self.backup_path):
-            remove_dirs(self.backup_path)
+        if path_exists(self.config_backup_path):
+            remove_file(self.config_backup_path)
         if path_exists(self.mp_obj_path):
             remove_file(self.mp_obj_path)
         self.log.info("Deleted a backup directory")
