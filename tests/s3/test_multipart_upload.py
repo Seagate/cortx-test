@@ -31,6 +31,7 @@ from commons.utils.config_utils import read_yaml
 from commons.utils.system_utils import create_file, remove_file, run_local_cmd, path_exists
 from commons.utils.system_utils import backup_or_restore_files, split_file, make_dirs, remove_dirs
 from commons.utils.assert_utils import assert_true, assert_equal, assert_in, assert_not_in
+from commons.utils.assert_utils import assert_false
 from libs.s3 import S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
@@ -394,6 +395,7 @@ class TestMultipartUpload:
         res = create_file(
             self.mp_obj_path,
             mp_config["file_size"])
+        assert_true(res[0], res[1])
         assert_true(
             path_exists(
                 self.mp_obj_path))
@@ -506,13 +508,14 @@ class TestMultipartUpload:
             "Multipart Upload initiated with mpu_id %s", mpu_id)
         self.log.info("Uploading parts into bucket")
         try:
-            S3_MP_TEST_OBJ.upload_parts(
+            resp = S3_MP_TEST_OBJ.upload_parts(
                 mpu_id,
                 mp_config["bucket_name"],
                 mp_config["object_name"],
                 mp_config["file_size"],
                 total_parts=mp_config["total_parts"],
                 multipart_obj_path=self.mp_obj_path)
+            assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error.message)
             assert_in(
@@ -549,11 +552,12 @@ class TestMultipartUpload:
         err_msg = mp_config["err_msg"]
         self.log.info("Completing multipart upload")
         try:
-            S3_MP_TEST_OBJ.complete_multipart_upload(
+            resp = S3_MP_TEST_OBJ.complete_multipart_upload(
                 mpu_id,
                 parts,
                 mp_config["bucket_name"],
                 mp_config["object_name"])
+            assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error.message)
             assert_in(
@@ -610,11 +614,12 @@ class TestMultipartUpload:
         self.log.info("Listed parts of multipart upload: %s", res[1])
         self.log.info("Completing multipart upload")
         try:
-            S3_MP_TEST_OBJ.complete_multipart_upload(
+            resp = S3_MP_TEST_OBJ.complete_multipart_upload(
                 mpu_id,
                 parts,
                 MPART_CFG["test_8925"]["bucket_name"],
                 MPART_CFG["test_8925"]["object_name"])
+            assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error.message)
             assert_in(
@@ -790,6 +795,7 @@ class TestMultipartUpload:
         res = create_file(
             self.mp_obj_path,
             mp_config["file_size"])
+        assert_true(res[0], res[1])
         assert_true(
             path_exists(
                 self.mp_obj_path))
@@ -854,6 +860,7 @@ class TestMultipartUpload:
         res = create_file(
             self.mp_obj_path,
             mp_config["file_size"])
+        assert_true(res[0], res[1])
         assert_true(
             path_exists(
                 self.mp_obj_path))
@@ -913,11 +920,12 @@ class TestMultipartUpload:
         self.log.info(
             "Step 4: Complete the multipart with input of wrong json/etag")
         try:
-            S3_MP_TEST_OBJ.complete_multipart_upload(
+            resp = S3_MP_TEST_OBJ.complete_multipart_upload(
                 mpu_id,
                 wrong_json,
                 mp_config["bucket_name"],
                 mp_config["object_name"])
+            assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error)
             assert_equal(
