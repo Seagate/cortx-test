@@ -26,9 +26,10 @@ from http import HTTPStatus
 
 import requests
 
+from commons.params import REPORT_SRV
+from commons.utils import jira_utils
 from core import runner
 
-REPORT_SRV = "http://cftic2.pun.seagate.com:5000/"
 TIMING_EP = REPORT_SRV + "timings"
 
 DB_USERNAME, DB_PASSWORD = runner.get_db_credential()
@@ -49,11 +50,31 @@ def create_timings_db_entry(payload):
         "nodeRebootTime": 45.5,
     }
     """
-    payload["db_username"] = DB_USERNAME
-    payload["db_password"] = DB_PASSWORD
+    jira_id, jira_pwd = runner.get_jira_credential()
+    jira_obj = jira_utils.JiraTask(jira_id, jira_pwd)
+    tp_details = jira_obj.get_issue_details(payload["testPlanID"])
+
+    build_type = "stable"
+    try:
+        if tp_details.fields.environment:
+            branch_build = tp_details.fields.environment
+            if "_" in branch_build:
+                build_type = "".join(branch_build.split("_")[:-1])
+    except ValueError:
+        build_type = "stable"
+
+    if tp_details.fields.labels:
+        test_plan_label = tp_details.fields.labels[0]
+    else:
+        test_plan_label = "regular"
     headers = {
         'Content-Type': 'application/json'
     }
+
+    payload["db_username"] = DB_USERNAME
+    payload["db_password"] = DB_PASSWORD
+    payload["buildType"] = build_type
+    payload["testPlanLabel"] = test_plan_label
     response = requests.request("POST", TIMING_EP, headers=headers, data=json.dumps(payload))
     if response.status_code == HTTPStatus.OK:
         LOGGER.info("Stored timings data into database.")

@@ -22,13 +22,17 @@
 Prov test file for all the Prov tests scenarios for single node VM.
 """
 
+import jenkins
 import time
 import logging
 import pytest
-from commons.utils import  config_utils as conf_utils
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
 from commons import commands as common_cmds
+from commons import constants as common_cnst
+from commons.utils import assert_utils
+from commons import pswdmanager
+from commons import params as prm
 from config import CMN_CFG, PROV_CFG
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
@@ -49,8 +53,8 @@ class TestProvSingleNode:
         LOGGER.info("STARTED: Setup Module operations")
         cls.host = input('Specify hostname fqdn:\n')
         cls.build_path = input('Specify the build url:\n')
-        cls.uname = CMN_CFG["username"]
-        cls.passwd = CMN_CFG["password"]
+        cls.uname = CMN_CFG["nodes"][0]["username"]
+        cls.passwd = CMN_CFG["nodes"][0]["password"]
         cls.nd_obj = Node(hostname=cls.host, username=cls.uname,
                           password=cls.passwd)
         cls.hlt_obj = Health(hostname=cls.host, username=cls.uname,
@@ -62,17 +66,47 @@ class TestProvSingleNode:
         Setup operations for each test.
         """
 
+    def build_job(self, name: str, parameters: dict=None, token: str=None):
+        """
+        Helper function to start the jenkins job.
+        :param name: Name of the jenkins job
+        :param parameters: Dict of different parameters to be passed
+        :param token: Authentication Token for jenkins job
+        :return: response
+        """
+        test_cfg = PROV_CFG["deploy"]
+        username = pswdmanager.decrypt(common_cnst.JENKINS_USERNAME)
+        password = pswdmanager.decrypt(common_cnst.JENKINS_PASSWORD)
+        self.jenkins_server = jenkins.Jenkins(prm.JENKINS_URL, username=username, password=password)
+        LOGGER.debug("Jenkins_server obj: {}".format(self.jenkins_server))
+        completed_build_number = self.jenkins_server.get_job_info(name)['lastCompletedBuild']['number']
+        next_build_number = self.jenkins_server.get_job_info(name)['nextBuildNumber']
+        LOGGER.info(
+            "Complete build number: {} and  Next build number: {}".format(completed_build_number, next_build_number))
+        self.jenkins_server.build_job(name, parameters=parameters, token=token)
+        LOGGER.info("Running the deployment job")
+        while True:
+            if self.jenkins_server.get_job_info(name)['lastCompletedBuild']['number'] == \
+                    self.jenkins_server.get_job_info(name)['lastBuild']['number']:
+                break
+        build_info = self.jenkins_server.get_build_info(name, next_build_number)
+        console_output = self.jenkins_server.get_build_console_output(name, next_build_number)
+        LOGGER.debug("console output: {}".format(console_output))
+        return build_info
+
     def teardown_method(self):
         """
         Teardown operations after each test.
         """
 
-    @CTFailOn(error_handler)
     @pytest.mark.prov
     @pytest.mark.singlenode
+    @CTFailOn(error_handler)
     def test_deployment_single_node(self):
         """
         Test method for the single node VM deployment.
+        This has 3 main stages: check for the required prerequisites, trigger the deployment jenkins job
+        and after deployment done, check for services status.
         """
         LOGGER.info("Starting the prerequisite checks.")
         test_cfg = PROV_CFG["prereq"]
@@ -92,66 +126,27 @@ class TestProvSingleNode:
         resp = self.nd_obj.execute_cmd(cmd, read_lines=True)
         resp = resp[0].strip()
         LOGGER.info("os rel: {}".format(resp))
-        assert resp == test_cfg["os_release"], "OS release is different than expected."
+        assert_utils.assert_equal(resp, test_cfg["os_release"],
+                                  "OS release is different than expected.")
 
         LOGGER.info("Checking kernel version")
         cmd = common_cmds.CMD_KRNL_VER
         resp = self.nd_obj.execute_cmd(cmd, read_lines=True)
         resp = resp[0].strip()
         LOGGER.info("kernel: {}".format(resp))
-        assert resp == test_cfg["kernel"], "Kernel version differs than expected."
+        assert_utils.assert_equal(resp, test_cfg["kernel"], "Kernel version differs than expected.")
 
         LOGGER.info("Starting the deployment steps.")
         test_cfg = PROV_CFG["deploy"]
 
-        LOGGER.info("Setting up the environment:")
-        cmd = common_cmds.CMD_YUM_UTILS
-        self.nd_obj.execute_cmd(cmd)
-        cmd = common_cmds.CMD_CONFIG_MGR.format(self.build_path)
-        self.nd_obj.execute_cmd(cmd)
-        cmd = common_cmds.CMD_INSTALL_SALT
-        self.nd_obj.execute_cmd(cmd)
-        cmd = common_cmds.CMD_RM_REPO
-        self.nd_obj.execute_cmd(cmd)
-        cmd = common_cmds.CMD_CONFIG_MGR1.format(self.build_path)
-        self.nd_obj.execute_cmd(cmd)
-        cmd = common_cmds.CMD_PRVSNR
-        self.nd_obj.execute_cmd(cmd)
-        cmd = common_cmds.CMD_RM_REPO1
-        self.nd_obj.execute_cmd(cmd)
-        cmd = common_cmds.CMD_YUM_CLEAN
-        self.nd_obj.execute_cmd(cmd)
-        cmd = common_cmds.CMD_RM_YUM
-        self.nd_obj.execute_cmd(cmd)
-        LOGGER.info("All the prerequisites installed.")
-
-        LOGGER.info("Create config.ini file.")
-        file = open(test_cfg["file_name"], "w")
-        file.writelines(test_cfg["file_lines"])
-        file.close()
-        conf_utils.update_config_ini(path=test_cfg["file_name"], section="srvnode-1",
-                                     key="hostname", value=self.host)
-        self.nd_obj.copy_file_to_remote(test_cfg["file_name"], test_cfg["file_name"])
-        LOGGER.info("Created config.ini file.")
-
-        LOGGER.info("Start the deployment.")
-        cmd = common_cmds.CMD_DEPLOY_SINGLE_NODE.format(self.passwd, self.host, test_cfg["file_name"], self.build_path)
-        resp = self.nd_obj.execute_cmd(cmd, read_lines=True)
-        LOGGER.info("Deployment process output: {}".format(resp))
-        value = False
-        cmd = common_cmds.CMD_RD_LOG.format(test_cfg["setup_path"])
-        resp = self.nd_obj.execute_cmd(cmd, read_lines=True)
-        for line in resp:
-            if test_cfg["done"] in line or test_cfg["deploy_done"] in line:
-                value = True
-        assert value is True, "Deployment is not successful."
-        LOGGER.info("Deployment done.")
-
-        LOGGER.info("Start the cluster.")
-        time.sleep(test_cfg["sleep_time"])
-        cmd = common_cmds.CMD_START_CLSTR
-        self.nd_obj.execute_cmd(cmd)
-        time.sleep(test_cfg["sleep_time"])
+        common_cnst.PARAMS["CORTX_BUILD"] = self.build_path
+        common_cnst.PARAMS["HOST"] = self.host
+        common_cnst.PARAMS["HOST_PASS"] = self.passwd
+        token = pswdmanager.decrypt(common_cnst.TOKEN_NAME)
+        output = self.build_job(test_cfg["job_name"], common_cnst.PARAMS, token)
+        LOGGER.info("Jenkins Build URL: {}".format(output['url']))
+        assert_utils.assert_equal(output['result'], test_cfg["success_msg"],
+                                  "Deployment is not successful, please check the url.")
 
         LOGGER.info("Starting the post deployment checks.")
         test_cfg = PROV_CFG["system"]
@@ -161,14 +156,14 @@ class TestProvSingleNode:
         resp = self.nd_obj.execute_cmd(cmd, read_lines=True)
         LOGGER.info("hctl status: %s", resp)
         for line in resp:
-            assert test_cfg["offline"] not in line, "Some services look offline."
+            assert_utils.assert_not_in(test_cfg["offline"], line, "Some services look offline.")
 
         LOGGER.info("Check that all services are up in pcs.")
         cmd = common_cmds.PCS_STATUS_CMD
         resp = self.nd_obj.execute_cmd(cmd, read_lines=True)
         LOGGER.info("PCS status: %s", resp)
         for line in resp:
-            assert test_cfg["stopped"] not in line, "Some services are not up."
+            assert_utils.assert_not_in(test_cfg["stopped"], line, "Some services are not up.")
 
         LOGGER.info("Successfully deployed the build after prereq checks and done post "
                     "deploy checks as well.")

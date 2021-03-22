@@ -28,7 +28,7 @@ import logging
 from commons import errorcodes as err
 from commons.exceptions import CTException
 from commons.utils.system_utils import create_file
-from libs.s3 import CM_CFG, S3_CFG, ACCESS_KEY, SECRET_KEY
+from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_core_lib import S3LibCmd
 
 LOGGER = logging.getLogger(__name__)

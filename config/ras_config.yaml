@@ -54,7 +54,7 @@ ras_sspl_alert:
   csm_error_msg: "Failed to get alerts using CSM REST API"
   csm_alert_gen_delay: 60
   default_mem_usage: 80
-  start_rmq: True
+  start_rmq: False
   selinux_key: "SELINUX"
   selinux_disabled: "disabled"
   selinux_enforced: "enforcing"
@@ -75,7 +75,7 @@ raid_param:
   fail_operation: "fail_disk"
   remove_operation: "remove_disk"
   add_operation: "add_disk"
-  csm_alert_reflection_time: 10
+  csm_alert_reflection_time: 60
   md0_path: "/dev/md0"
   disk_path: "/dev/{}"
   resync_delay: 300
