@@ -203,7 +203,8 @@ class TestBucketTagging():
         self.log.info("Step 3: Deleted tag of a bucket")
         self.log.info("Step 4: Retrieving tag of same bucket")
         try:
-            TAG_OBJ.get_bucket_tags(bucket_name)
+            resp = TAG_OBJ.get_bucket_tags(bucket_name)
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 TEST_CONF["test_2434"]["err_message"], str(
