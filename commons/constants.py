@@ -90,7 +90,9 @@ const.CFG_FILES = ["/etc/haproxy/haproxy.cfg",
                    "/opt/seagate/cortx/s3/s3startsystem.sh"]
 const.AUTHSERVER_FILE = "/opt/seagate/cortx/auth/resources/authserver.properties"
 const.SCRIPT_PATH = "cd /opt/seagate/cortx/auth/scripts"
+const.CRASH_COMMANDS = ["ls -l /var/crash", "ls -lR /var/motr | grep core"],
 const.AUTHSERVER_LOG_PATH = "/var/log/seagate/auth/server/app.log"
+
 
 class Rest:
     # REST LIB
@@ -233,3 +235,10 @@ CSM_USER_HELP =[
     "s3accounts",
     "system",
     "users"]
+
+# Prov Constants:
+JENKINS_USERNAME = "6LS9f5yJ1IFpxbasg/wPKG4p5ycaBT6x/j7Kj7anTSk="
+JENKINS_PASSWORD = "/AxML7GgiVqRSmKGcPSJSorUq0X9FLZrfrlEyw6tjKnccwT67II+SwOcKBWPV6SWoBwM/46rAky+fXKumyX41Q=="
+TOKEN_NAME = "10Mnx/XE4tEN8xrzQTNp2iSGQxPjpcHXbIdZgJyIN7Y="
+PARAMS = {"CORTX_BUILD": "{0}", "HOST": "{1}", "HOST_PASS": "{2}", "DEBUG": "True"}
+
