@@ -727,7 +727,6 @@ class IamTestLib(IamLib, S3IamCli):
             **kwargs) -> tuple:
         """
         Update account login profile using s3iamcli.
-
         :param acc_name: Account user name.
         :param password: Account password.
         :param access_key: Account access key.
