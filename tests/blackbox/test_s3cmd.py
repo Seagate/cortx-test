@@ -35,11 +35,14 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.utils.config_utils import read_yaml, get_config
 from commons.utils.assert_utils import assert_true, assert_false, assert_in, assert_not_in
+from commons.helpers.node_helper import Node
+
+from config import CMN_CFG
+
 from libs.s3 import S3_CFG
 from libs.s3.s3_cmd_test_lib import S3CmdTestLib
 from libs.s3. s3_test_lib import S3TestLib
 from libs.s3 import SECRET_KEY, ACCESS_KEY, S3H_OBJ
-
 
 S3CMD_TEST_OBJ = S3CmdTestLib()
 S3_TEST_OBJ = S3TestLib()
@@ -58,6 +61,11 @@ class TestS3cmdClient:
         """
         cls.log = logging.getLogger(__name__)
         cls.common_cfg = S3CMD_CNF["common_cfg"]
+        cls.node_helper_obj = Node(
+            hostname=CMN_CFG["nodes"][0]["host"],
+            username=CMN_CFG["nodes"][0]["username"],
+            password=CMN_CFG["nodes"][0]["password"])
+
         cls.log.info("STARTED: setup test suite operations.")
 
     @CTFailOn(error_handler)
@@ -97,7 +105,7 @@ class TestS3cmdClient:
         file_list = os.listdir(os.getcwd())
         for file in file_list:
             if file.startswith(self.common_cfg["file_prefix"]):
-                S3H_OBJ.remove_file(file)
+                self.node_helper_obj.remove_file(file)
         self.log.info("ENDED: Teardown Operations")
 
     @pytest.mark.s3
@@ -442,8 +450,7 @@ class TestS3cmdClient:
         assert_true(resp[0], resp)
         assert_in(
             test_cfg["delete_msg"].format(
-                cmd_arguments[0]), str(
-                resp[1]), resp)
+                cmd_arguments[0]), str(resp[1]), resp)
         self.log.info("STEP: 3 Single file deleted")
         self.log.info(
             "ENDED: delete single object from bucket using s3cmd client")
@@ -495,13 +502,8 @@ class TestS3cmdClient:
         resp = execute_cmd(command)
         assert_true(resp[0], resp)
         assert_in(
-            test_cfg["delete_msg"].format(
-                cmd_arguments[0]), str(
-                resp[1]), resp)
-        assert_in(
-            test_cfg["delete_msg"].format(
-                cmd_arguments[1]), str(
-                resp[1]), resp)
+            test_cfg["delete_msg"].format(cmd_arguments[0]), str(resp[1]), resp)
+        assert_in(test_cfg["delete_msg"].format(cmd_arguments[1]), str(resp[1]), resp)
         self.log.info("STEP: 3 Multiple files deleted from bucket")
         self.log.info(
             "ENDED: delete multiple objects from bucket using s3cmd client")
@@ -606,7 +608,9 @@ class TestS3cmdClient:
             S3CMD_CNF, S3CMD_CNF["test_2322"]["list_bucket"], cmd_arguments)
         resp = execute_cmd(command)
         assert_true(resp[0], resp[1])
-        for exp_str in [expected_substr, expected_substr1]:
+        expected_substring = "/".join([bucket_url, filename])
+        expected_substring1 = "/".join([bucket_url, filename1])
+        for exp_str in [expected_substring, expected_substring1]:
             assert_not_in(test_cfg["delete_msg"].format(
                 exp_str), str(resp[1]), resp)
         self.log.info("STEP: 5 Object listed in bucket")
