@@ -451,7 +451,6 @@ def pytest_collection(session):
             system_utils.make_dir(cache_home)
         except OSError as error:
             LOGGER.error(str(error))
-
     latest = os.path.join(cache_home, 'latest')
     if not os.path.exists(latest):
         os.makedirs(latest)

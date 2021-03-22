@@ -823,24 +823,33 @@ def file_lock(lock_file, non_blocking=False):
     return fmutex, True
 
 
-def file_unlock(fmutex):
+def file_unlock(fmutex, path=''):
     """
     Unlock the file lock.
-    :param fmutex:
+    :param path: Lock file path
+    :param fmutex: File lock
     :return:
     """
     if sys.platform == 'win32':
         msvcrt.locking(fmutex, msvcrt.LK_UNLCK, 1)
         os.close(fmutex)
-        try:
-            os.remove(fmutex.name)
-        # Probably another instance of the application
-        # that acquired the file lock.
-        except OSError:
-            pass
+        remove_lck_file(path)
     else:
         fcntl.flock(fmutex.fileno(), fcntl.LOCK_UN)
         fmutex.close()
+        remove_lck_file(path)
+
+
+def remove_lck_file(path):
+    """Remove lock file."""
+    try:
+        os.remove(path)
+    # Probably another instance of the application
+    # that acquired the file lock.
+    except OSError:
+        pass
+    except FileNotFoundError:
+        pass
 
 
 def insert_into_builtins(name, obj):

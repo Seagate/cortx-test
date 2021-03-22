@@ -52,13 +52,14 @@ from commons.utils import jira_utils
 from commons.utils import config_utils
 from commons import worker
 from commons import params
+from commons import cortxlogging
 
-
-LCK_FILE = 'lockfile-%s'
+LCK_FILE = 'DistRunLockFile.lck'
 INT_IP = '0.0.0.0'
 INT_PORT = 9092
 
 LOGGER = logging.getLogger(__name__)
+
 
 class RunnerException(RuntimeError):
     pass
@@ -93,6 +94,18 @@ def parse_args(argv):
     return parser.parse_args(args=argv)
 
 
+def initialize_handlers(log) -> None:
+    """Initialize drunner logging with stream and file handlers."""
+    log.setLevel(logging.DEBUG)
+    cwd = os.getcwd()
+    dir_path = os.path.join(os.path.join(cwd, params.LOG_DIR_NAME, params.LATEST_LOG_FOLDER))
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path, exist_ok=True)
+    name = os.path.splitext(os.path.basename(__file__))[0]
+    name = os.path.join(dir_path, name + '.log')
+    cortxlogging.set_log_handlers(log, name, mode='w')
+
+
 class Runner:
     """Runs the RPC server for aysnc reporting."""
 
@@ -102,8 +115,8 @@ class Runner:
     def wait_for_parent(self):
         """Process using this function will exit if parent exited/killed."""
         lk_file = LCK_FILE % os.getpid()
-        e_mutex, _ = system_utils.FileLock(lk_file)
-        system_utils.file_unlock(e_mutex)
+        e_mutex, _ = system_utils.file_lock(lk_file)
+        system_utils.file_unlock(e_mutex, lk_file)
         sys.exit(0)  # os._exit(0)
 
     def run(self):
@@ -267,7 +280,7 @@ def create_test_map(base_components_marks: Tuple,
                     skip_test: List,
                     test_map: Dict) -> None:
     """Create a test metadata dict and tag reverse dict."""
-    special_mark = ( 'parallel',)
+    special_mark = ('parallel',)
     for test_meta in meta_data:
         tid = test_meta.get('test_id')
         if not tid:
@@ -390,11 +403,12 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
-    lock_file = LCK_FILE % os.getpid()
+    lock_file = LCK_FILE
     mutex, flag = system_utils.file_lock(lock_file)
     name = multiprocessing.current_process().name
     print("Starting %s \n" % name)
+    initialize_handlers(LOGGER)
     main()
     print("Exiting %s \n" % name)
-    system_utils.file_unlock(mutex)
+    system_utils.file_unlock(mutex, lock_file)
     sys.exit(0)
