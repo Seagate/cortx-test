@@ -102,6 +102,7 @@ class TestProvSingleNode:
 
     @pytest.mark.prov
     @pytest.mark.singlenode
+    @pytest.mark.tags("TEST-19439")
     @CTFailOn(error_handler)
     def test_deployment_single_node(self):
         """
