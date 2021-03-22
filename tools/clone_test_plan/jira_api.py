@@ -146,6 +146,9 @@ def add_tests_to_te_tp(existing_te, new_te, new_tp, jira_id, jira_password):
     elif response.status_code == HTTPStatus.SERVICE_UNAVAILABLE:
         print('JIRA Service Unavailable')
         return False
+    elif response.status_code != HTTPStatus.OK:
+        print('Error while adding tests to test execution')
+        return False
 
     print("adding tests to test plan {}".format(new_tp))
     response = requests.post(
