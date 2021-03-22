@@ -24,6 +24,7 @@ import random
 import string
 import pytest
 import os
+import glob
 import pathlib
 import json
 import logging
@@ -552,6 +553,24 @@ def pytest_runtest_makereport(item, call):
             f.write(report.nodeid + extra + "\n")
 
 
+def upload_supporting_logs(test_id: str, remote_path: str):
+    """
+    Upload all supporting (s3bench) log files to nfs share
+    :param test_id: test number in file name
+    :param remote_path: path on NFS share
+    """
+    support_logs = glob.glob(f"{LOG_DIR}/latest/{test_id}_s3bench_*")
+    for support_log in support_logs:
+        resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
+                                                   mnt_dir=params.MOUNT_DIR,
+                                                   remote_path=remote_path,
+                                                   local_path=support_log)
+        if resp[0]:
+            LOGGER.info("Supporting log files are uploaded at location : %s", resp[1])
+        else:
+            LOGGER.error("Failed to supporting log file at location %s", resp[1])
+
+
 def pytest_runtest_logreport(report: "TestReport") -> None:
     """
     Provides an intercept to create a) generate log per test case
@@ -606,7 +625,7 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
             LOGGER.info("Log file is uploaded at location : %s", resp[1])
         else:
             LOGGER.error("Failed to upload log file at location %s", resp[1])
-
+        upload_supporting_logs(test_id, remote_path)
         LOGGER.info("Adding log file path to %s", test_id)
         comment = "Log file path: {}".format(resp[1])
         data = task.get_test_details(test_exe_id=Globals.TE_TKT)

@@ -1,4 +1,4 @@
-log_dir: "s3bench_logs/"
+log_dir: "log/latest/"
 go_path: "/root/go/src/"
 s3bench_path: "/root/go/src/s3bench"
 cmd_go: "sudo yum install -y go"

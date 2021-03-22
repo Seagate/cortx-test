@@ -58,19 +58,20 @@ def setup_s3bench(
         return False
 
 
-def create_log(resp, log_dir=LOG_DIR):
+def create_log(resp, log_file_prefix, log_dir=LOG_DIR):
     """
     To create log file for s3bench run
-    :param resp: List of string rersponse
+    :param resp: List of string response
+    :param log_file_prefix: Log file prefix
     :param log_dir: Directory path for creating log file
     :return: Path of the log file
     """
     if not path_exists(log_dir):
         make_dirs(log_dir)
 
-    path = f"{log_dir}" \
-        f"s3bench{str(datetime.now()).replace(' ', '-').replace(':', '-').replace('.', '-')}.log"
-    # Writing complete response in file, appends respose in case of duration
+    now = datetime.now().strftime("%d-%m-%Y-%H-%M-%S-%f")
+    path = f"{log_dir}{log_file_prefix}_s3bench_{now}"
+    # Writing complete response in file, appends response in case of duration
     # given
     with open(path, "a") as fd_write:
         for i in resp:
@@ -102,6 +103,25 @@ def create_json_reps(list_resp):
     return js_res
 
 
+def check_log_file_error(file_path, error):
+    """
+    Function to find out error is reported in given file or not
+    :param str file_path: the file in which error is to be searched
+    :param str error: error sting to be searched for
+    :return: errorFound: True (if error is seen) else False
+    :rtype: Boolean
+    """
+    error_found = False
+    LOGGER.info("Debug: Log File Path {}".format(file_path))
+    with open(file_path, "r") as s3LogFile:
+        for line in s3LogFile:
+            if error in line:
+                error_found = True
+                LOGGER.error("Error Found in S3Bench Run : {}".format(line))
+                break
+    return error_found
+
+
 def s3bench(
         access_key,
         secret_key,
@@ -114,7 +134,8 @@ def s3bench(
         region="igneous-test",
         skip_cleanup=False,
         duration=None,
-        verbose=False):
+        verbose=False,
+        log_file_prefix=""):
     """
     To run s3bench tool
     :param access_key: S3 access key
@@ -129,11 +150,12 @@ def s3bench(
     :param skip_cleanup: skip deleting objects created by this tool at the end of the run
     :param duration: Execute same ops with defined time. 1h24m|0h22m else None
     :param verbose: verbose per thread status write and read
+    :param log_file_prefix: Test number prefix for log file
     :return: tuple with json response and log path
     """
     result = []
     # Creating log file
-    log_path = create_log(result)
+    log_path = create_log(result, log_file_prefix)
     LOGGER.info("Running s3 bench tool")
     # GO command formatter
     cmd = f"go run s3bench -accessKey={access_key} -accessSecret={secret_key} " \
