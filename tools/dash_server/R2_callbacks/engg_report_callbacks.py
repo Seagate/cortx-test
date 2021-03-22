@@ -209,26 +209,6 @@ def gen_table_metadata_latency(n_clicks):
     return metadata_latency
 
 
-def get_df_to_rows(dataframe, row_span_text, no_of_rows_to_span):
-    """
-    Generate hmtl rows of the given dataframe
-    As row span feature is not supported in datatable,
-    added different dataframe for each subcomponent(sharing the same row)
-    :param dataframe: Dataframe
-    :param row_span_text:text to spanned across no of rows
-    :param no_of_rows_to_span:
-    :return:
-    """
-    rows = []
-    for i in range(len(dataframe)):
-        row = []
-        if i == 0:
-            row.append(html.Td(row_span_text, rowSpan=no_of_rows_to_span))
-        for col in dataframe.columns:
-            value = dataframe.iloc[i][col]
-            row.append(html.Td(children=value))
-        rows.append(html.Tr(row))
-    return rows
 
 
 @app.callback(
@@ -262,7 +242,7 @@ def gen_table_multi_bucket_perf_stats(n_clicks):
             }
     temp_df = pd.DataFrame(data)
     text = ["Hsbench", html.Br(), "1 Buckets", html.Br(), "100 Objects", html.Br(), "100 Sessions"]
-    final_rows.extend(get_df_to_rows(temp_df, text, 6))
+    final_rows.extend(common.get_data_to_html_rows(temp_df, text, 6))
 
     # HS bench 10 bucket 100 Objects 100 Sessions
     data = {
@@ -280,7 +260,7 @@ def gen_table_multi_bucket_perf_stats(n_clicks):
     }
     temp_df = pd.DataFrame(data)
     text = ["Hsbench", html.Br(), "10 Buckets", html.Br(), "100 Objects", html.Br(), "100 Sessions"]
-    final_rows.extend(get_df_to_rows(temp_df, text, 6))
+    final_rows.extend(common.get_data_to_html_rows(temp_df, text, 6))
 
     # HS bench 50 bucket 100 Objects 100 Sessions
     data = {
@@ -298,7 +278,7 @@ def gen_table_multi_bucket_perf_stats(n_clicks):
     }
     temp_df = pd.DataFrame(data)
     text = ["Hsbench", html.Br(), "50 Buckets", html.Br(), "100 Objects", html.Br(), "100 Sessions"]
-    final_rows.extend(get_df_to_rows(temp_df, text, 6))
+    final_rows.extend(common.get_data_to_html_rows(temp_df, text, 6))
 
     # Cosbench 1 bucket 100 Objects 100 Sessions
     data = {
@@ -316,7 +296,7 @@ def gen_table_multi_bucket_perf_stats(n_clicks):
     }
     temp_df = pd.DataFrame(data)
     text = ["Cosbench", html.Br(), "1 Buckets", html.Br(), "100 Objects", html.Br(), "100 Sessions"]
-    final_rows.extend(get_df_to_rows(temp_df, text, 6))
+    final_rows.extend(common.get_data_to_html_rows(temp_df, text, 6))
 
     # Cosbench 10 bucket 100 Objects 100 Sessions
     data = {
@@ -335,7 +315,7 @@ def gen_table_multi_bucket_perf_stats(n_clicks):
     temp_df = pd.DataFrame(data)
     text = ["Cosbench", html.Br(), "10 Buckets", html.Br(), "100 Objects", html.Br(),
             "100 Sessions"]
-    final_rows.extend(get_df_to_rows(temp_df, text, 6))
+    final_rows.extend(common.get_data_to_html_rows(temp_df, text, 6))
 
     # Cosbench 50 bucket 100 Objects 100 Sessions
     data = {
@@ -354,7 +334,7 @@ def gen_table_multi_bucket_perf_stats(n_clicks):
     temp_df = pd.DataFrame(data)
     text = ["Cosbench", html.Br(), "50 Buckets", html.Br(), "100 Objects", html.Br(),
             "100 Sessions"]
-    final_rows.extend(get_df_to_rows(temp_df, text, 6))
+    final_rows.extend(common.get_data_to_html_rows(temp_df, text, 6))
 
     columns = ["Bench"]
     columns.extend(temp_df.columns)

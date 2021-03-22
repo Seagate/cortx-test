@@ -20,17 +20,17 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 
-
+import dash
 import dash_table
 import numpy as np
 import pandas as pd
-from dash.dependencies import Output, Input
+from dash.dependencies import Output, Input, State
 from dash.exceptions import PreventUpdate
 
 import common
 import mongodbAPIs as r1Api
 from common import app
-
+import R1_callbacks.r1_perf_tables as r1_perf_tables
 
 @app.callback(
     [Output('r1_product_heading_exe', 'children'), Output('r1_product_heading_eng', 'children'),
@@ -338,3 +338,32 @@ def gen_table_code_maturity(n_clicks, branch, build_no):
         style_cell=common.dict_style_cell
     )
     return code_maturity
+
+
+
+@app.callback(
+    Output('r1_table_s3_bucket_perf','children'),
+    Input('submit_button', 'n_clicks'),
+    [State('branch_dropdown', 'value'),
+    State('build_no_dropdown', 'value')]
+)
+def gen_table_s3_bucket_perf(n_clicks,branch,build_no):
+    """
+    Single Bucket Performance Statistics using S3bench
+    """
+    if n_clicks is None or branch is None or build_no is None:
+        raise PreventUpdate
+
+    df_s3_bucket_perf = r1_perf_tables.get_single_bucket_perf_data(build_no)
+    s3_bucket_perf = dash_table.DataTable(
+        id="S3 Bucket Perf",
+        columns=[{"name": i, "id": i} for i in df_s3_bucket_perf.columns],
+        data=df_s3_bucket_perf.to_dict('records'),
+        style_header=common.dict_style_header,
+        style_data_conditional=[{'if': {'row_index': 'odd'}, 'backgroundColor': '#F8F8F8'},
+                                {'if': {'column_id': "Statistics"},
+                                 'backgroundColor': "#b9b9bd"}
+                                ],
+        style_cell=common.dict_style_cell
+    )
+    return s3_bucket_perf
