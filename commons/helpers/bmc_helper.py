@@ -108,10 +108,10 @@ class Bmc(Host):
             LOGGER.info("Running command: %s", cmd)
             response = self.execute_cmd(cmd=cmd, read_lines=False,
                                         read_nbytes=8000)
-            response = response.decode(
-                "utf-8") if isinstance(response, bytes) else response
+
+            response = response.decode() if isinstance(response, bytes) else response
             LOGGER.debug(response)
-            for res in str(response[1]).split("\\n"):
+            for res in response.split("\n"):
                 if "IP Address" in res and "IP Address Source" not in res:
                     bmc_ip = res.split(":")[-1].strip()
                     break
