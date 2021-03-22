@@ -21,7 +21,6 @@
 
 import time
 import os
-import json
 import uuid
 import logging
 import pytest
@@ -99,7 +98,8 @@ class TestCliBucketPolicy:
             "Resource": "arn:aws:s3:::{0}/*",
             "Principal": "*"}]
         cls.bkt_policy_msg = "Bucket Policy Updated Successfully"
-        cls.policy_file_path = os.path.join(str(os.getcwdb().decode()), "bkt_policy.json")
+        cls.policy_file_path = os.path.join(
+            str(os.getcwdb().decode()), "bkt_policy.json")
         cls.remote_file_path = "/tmp/bkt_policy.json"
 
     def setup_method(self):
@@ -289,8 +289,8 @@ class TestCliBucketPolicy:
             "Step 2: Created bucket policy on a bucket %s", self.bucket_name)
         self.log.info("Step 3: Creating json file for bucket policy")
         self.s3bkt_plc_obj.create_copy_json_file(self.bkt_policy,
-                                   self.policy_file_path,
-                                   self.remote_file_path)
+                                                 self.policy_file_path,
+                                                 self.remote_file_path)
         self.log.info("Step 3: Created json file for bucket policy")
         self.log.info(
             "Step 4: Uploading policy on a bucket %s", self.bucket_name)
