@@ -53,18 +53,18 @@ class SaltHelper(Host):
         :return: True/False and pillar output value
         :rtype: bool, str
         """
-
         pillar_key = ":".join([component, *keys])
         get_pillar_cmd = "salt-call pillar.get {} --output=newline_values_only".format(
             pillar_key)
         log.info(
             "Fetching pillar value with cmd: {}".format(get_pillar_cmd))
         output = self.execute_cmd(cmd=get_pillar_cmd, shell=False)
+        output = output.decode() if isinstance(output, bytes) else output
         if not output:
             err_msg = "Pillar value not found for {}".format(pillar_key)
             return False, err_msg
 
-        pillar_value = output.decode().strip("\n")
+        pillar_value = output.strip("\n")
         log.info(
             "Pillar value for {} is {}".format(
                 pillar_key, pillar_value))
@@ -76,7 +76,8 @@ class SaltHelper(Host):
             decrypt_cmd = "salt-call lyveutil.decrypt {} {} --output=newline_values_only".format(
                 component, pillar_value)
             output = self.execute_cmd(decrypt_cmd, shell=False)
-            pillar_value = output.decode().strip("\n")
+            output = output.decode() if isinstance(output, bytes) else output
+            pillar_value = output.strip("\n")
             log.info(
                 "Decrypted Pillar value for {} is {}".format(
                     pillar_key, pillar_value))

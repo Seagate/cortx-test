@@ -59,7 +59,7 @@ class TestCliSecurity:
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-16930")
     @CTFailOn(error_handler)
-    def test_6130(self):
+    def test_6130_check_password(self):
         """
         Test that password should be in encrypted format in csm.conf file
         """
