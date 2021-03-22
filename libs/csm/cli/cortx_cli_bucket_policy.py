@@ -127,7 +127,7 @@ class CortxCliS3BktPolicyOperations(CortxCli):
             local_file_path: str = None,
             remote_file_path: str = None):
         """
-        Helper function to create and copy json file to remote
+        Function to create json file on server nodes with specified bucket policy
         :param bkt_policy: Policy which has to be added in json file
         :param local_file_path: Local file path
         :param remote_file_path: Remote file path
