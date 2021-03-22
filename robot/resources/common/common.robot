@@ -118,3 +118,7 @@ wait for page or element to load
     [Arguments]  ${time}=5s
     sleep  ${time}
 
+Check element is not visiable
+    [Documentation]  This kaeyword is to verify that provided web element is not visiable on screen
+    [Arguments]  ${element_locator}
+    Element Should Not Be Visible  ${${element_locator}}
