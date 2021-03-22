@@ -119,8 +119,6 @@ class RestTestLib:
             :keyword authorized : to verify unauthorized scenarios (boolean)
             :return: function executables
             """
-            import pdb
-            pdb.set_trace()
             self.headers = {}  # Initiate headers
             self.log.debug(
                 "user is getting authorized for REST operations ...")
