@@ -101,10 +101,9 @@ def create_content_json(path: str, data: object) -> str:
     :return: path of the file.
     """
     with open(path, 'w') as outfile:
-        json.dump(data, outfile, ensure_ascii=False)
+        json.dump(data, outfile, ensure_ascii=True)
 
     return path
-
 
 def read_content_json(fpath: str) -> dict:
     """
@@ -113,7 +112,7 @@ def read_content_json(fpath: str) -> dict:
     :param fpath: Path of the json file
     :return: Data of the json file
     """
-    with open(fpath, 'rb') as json_file:
+    with open(fpath, 'r') as json_file:
         data = json.loads(json_file.read())
 
     return data

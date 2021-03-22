@@ -243,6 +243,7 @@ class TestAuditLogs():
 
     @pytest.mark.csmrest
     @pytest.mark.tags('TEST-15865')
+    @pytest.mark.skip(reason="Test is taking exceptionally long time")
     def test_4922(self):
         """
         Test that GET api returns audit logs for date range specified and total

@@ -393,11 +393,6 @@ class SystemAlerts(RestTestLib):
         pre_alerts = self.extract_alert_ids(response)
 
         self.log.info("Creating alert...")
-        local_path = ras_cons.TELNET_OP_PATH
-        remote_path = ras_cons.REMOTE_TELNET_PATH
-        self.log.info("Copying file %s to %s", local_path, remote_path)
-        self.node_obj.copy_file_to_remote(local_path=local_path,
-                                          remote_path=remote_path)
         resp = alert_api_obj.generate_alert(
             eval('AlertType.{}'.format(alert_type)),
             host_details={'host': self.node_obj.hostname,
