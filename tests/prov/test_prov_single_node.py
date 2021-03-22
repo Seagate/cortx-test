@@ -51,8 +51,9 @@ class TestProvSingleNode:
         Setup operations for the test file.
         """
         LOGGER.info("STARTED: Setup Module operations")
-        cls.host = input('Specify hostname fqdn:\n')
-        cls.build_path = input('Specify the build url:\n')
+        cls.host = pytest.host_fqdn
+        cls.build_path = pytest.buildpath
+        LOGGER.info("User provided Hostname: {} and build path: {}".format(cls.host, cls.build_path))
         cls.uname = CMN_CFG["nodes"][0]["username"]
         cls.passwd = CMN_CFG["nodes"][0]["password"]
         cls.nd_obj = Node(hostname=cls.host, username=cls.uname,
@@ -74,7 +75,6 @@ class TestProvSingleNode:
         :param token: Authentication Token for jenkins job
         :return: response
         """
-        test_cfg = PROV_CFG["deploy"]
         username = pswdmanager.decrypt(common_cnst.JENKINS_USERNAME)
         password = pswdmanager.decrypt(common_cnst.JENKINS_PASSWORD)
         self.jenkins_server = jenkins.Jenkins(prm.JENKINS_URL, username=username, password=password)
@@ -84,6 +84,7 @@ class TestProvSingleNode:
         LOGGER.info(
             "Complete build number: {} and  Next build number: {}".format(completed_build_number, next_build_number))
         self.jenkins_server.build_job(name, parameters=parameters, token=token)
+        time.sleep(10)
         LOGGER.info("Running the deployment job")
         while True:
             if self.jenkins_server.get_job_info(name)['lastCompletedBuild']['number'] == \
@@ -101,6 +102,7 @@ class TestProvSingleNode:
 
     @pytest.mark.prov
     @pytest.mark.singlenode
+    @pytest.mark.tags("TEST-19439")
     @CTFailOn(error_handler)
     def test_deployment_single_node(self):
         """
