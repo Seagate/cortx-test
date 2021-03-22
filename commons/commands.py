@@ -309,6 +309,10 @@ CMD_SUPPORT_BUNDLE_STATUS = "support_bundle status"
 CMD_CREATE_BUCKET_POLICY = "s3bucketpolicy create"
 CMD_DELETE_BUCKET_POLICY = "s3bucketpolicy delete"
 CMD_SHOW_BUCKET_POLICY = "s3bucketpolicy show"
+CMD_SYSTEM_STATUS = "system status"
+CMD_SYSTEM_START = "system start"
+CMD_SYSTEM_STOP = "system stop"
+CMD_SYSTEM_SHUTDOWN = "system shutdown"
 
 # Linux System Commands
 CMD_MKDIR = "mkdir -p {}"
