@@ -24,6 +24,7 @@ import os
 import json
 from http import HTTPStatus
 import requests
+import logging
 from core import runner
 
 LOGGER = logging.getLogger(__name__)
