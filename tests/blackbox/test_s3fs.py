@@ -29,13 +29,13 @@ from commons.utils.config_utils import read_yaml
 from commons.utils.system_utils import execute_cmd
 from commons.utils.assert_utils import assert_true, assert_in
 
+from config import CMN_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3 import ACCESS_KEY, SECRET_KEY, S3H_OBJ
 
 S3_TEST_OBJ = S3TestLib()
 S3FS_CNF = read_yaml("config/blackbox/test_s3fs.yaml")[1]
 S3FS_COMMON_CFG = S3FS_CNF["common_cfg"]
-CM_CFG = read_yaml("config/common_config.yaml")[1]
 
 
 class S3fs:
@@ -59,7 +59,7 @@ class S3fs:
         """
         self.log.info("STARTED: Setup operations")
         access, secret = ACCESS_KEY, SECRET_KEY
-        res = execute_cmd(f"cat {CM_CFG['s3fs_path']}")
+        res = execute_cmd(f"cat {CMN_CFG['s3fs_path']}")
         if f"{access}:{secret}" != res[1]:
             self.log.info("Setting access and secret key for s3fs.")
             S3H_OBJ.configure_s3fs(access, secret)
