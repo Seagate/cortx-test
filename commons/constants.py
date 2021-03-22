@@ -90,7 +90,9 @@ const.CFG_FILES = ["/etc/haproxy/haproxy.cfg",
                    "/opt/seagate/cortx/s3/s3startsystem.sh"]
 const.AUTHSERVER_FILE = "/opt/seagate/cortx/auth/resources/authserver.properties"
 const.SCRIPT_PATH = "cd /opt/seagate/cortx/auth/scripts"
+const.CRASH_COMMANDS = ["ls -l /var/crash", "ls -lR /var/motr | grep core"],
 const.AUTHSERVER_LOG_PATH = "/var/log/seagate/auth/server/app.log"
+
 
 class Rest:
     # REST LIB
