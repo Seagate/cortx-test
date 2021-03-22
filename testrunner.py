@@ -3,12 +3,15 @@ import subprocess
 import argparse
 import csv
 import json
+from datetime import datetime
+from multiprocessing import Process
 from core import runner
 from core import kafka_consumer
 from core.locking_server import LockingServer
 from commons.utils.jira_utils import JiraTask
 from commons import configmanager
 from commons.utils import config_utils
+from commons.utils import system_utils
 from commons import params
 
 
@@ -231,6 +234,23 @@ def create_test_meta_data_file(args, test_list):
     return tp_meta
 
 
+def trigger_runner_process(args, kafka_msg, client):
+    """
+        Runner process to trigger tests in kafka msg on available target
+    """
+    lock_task = LockingServer()
+    trigger_tests_from_kafka_msg(args, kafka_msg)
+    # rerun unexecuted tests in case of parallel execution
+    if kafka_msg.parallel:
+        trigger_unexecuted_tests(args, kafka_msg.test_list)
+    # Release lock on acquired target.
+    lock_released = lock_task.release_target_lock(args.target, client)
+    if lock_released:
+        print("lock released on target {}".format(args.target))
+    else:
+        print("Error in releasing lock on target {}".format(args.target))
+
+
 def trigger_tests_from_kafka_msg(args, kafka_msg):
     """
     Trigger pytest execution for received test list
@@ -315,21 +335,117 @@ def trigger_tests_from_te(args):
         run_pytest_cmd(args, te_tag, False, env=_env)
 
 
-def get_available_target(kafka_msg):
+def check_for_shared_target(target_list, client):
+    """
+    check for shared target which will be used for parallel execution
+    """
+    lock_task = LockingServer()
+    found_target = ""
+    target = lock_task.check_available_shared_target(target_list)
+    if target != "":
+        print("target found {}".format(target))
+        lock_success = lock_task.take_shared_target_lock(target, client)
+        if lock_success:
+            confirm_lock_success = lock_task.confirm_shared_target_lock(target, client)
+            if confirm_lock_success:
+                found_target = target
+                print("lock acquired {}".format(target))
+    return found_target
+
+
+def check_for_target(target_list, client):
+    """
+    Check for target which will be used for sequential execution.
+    """
+    lock_task = LockingServer()
+    found_target = ""
+    target = lock_task.check_available_target(target_list)
+    if target != "":
+        print("target found {}".format(target))
+        lock_success = lock_task.take_target_lock(target, client)
+        if lock_success:
+            confirm_lock_success = lock_task.confirm_target_lock(target, client)
+            if confirm_lock_success:
+                found_target = target
+                print("lock acquired {}".format(target))
+    return found_target
+
+
+def acquire_target_to_shared(target, client):
+    """
+    acquire target for parallel execution.
+    """
+    lock_task = LockingServer()
+    acquired_target = ""
+    if target != "":
+        print("target found {}".format(target))
+        lock_success = lock_task.take_new_shared_target_lock(target, client)
+        if lock_success:
+            print("shared lock acquired {}".format(target))
+            confirm_lock_success = lock_task.confirm_shared_target_lock(target, client)
+            if confirm_lock_success:
+                acquired_target = target
+                print("shared lock confirmed {}".format(target))
+    return acquired_target
+
+
+def acquire_shared_target(target, client):
+    """
+    check for shared target which will be used for parallel execution
+    """
+    lock_task = LockingServer()
+    found_target = ""
+    if target != "":
+        print("shared target found {}".format(target))
+        lock_success = lock_task.take_shared_target_lock(target, client)
+        if lock_success:
+            print("shared lock acquired {}".format(target))
+            confirm_lock_success = lock_task.confirm_shared_target_lock(target, client)
+            if confirm_lock_success:
+                found_target = target
+                print("shared lock confirmed {}".format(target))
+    return found_target
+
+
+def acquire_target(target, client):
+    """
+    Check for target which will be used for sequential execution.
+    """
+    lock_task = LockingServer()
+    found_target = ""
+    if target != "":
+        print("target found {}".format(target))
+        lock_success = lock_task.take_target_lock(target, client)
+        if lock_success:
+            print("lock acquired {}".format(target))
+            confirm_lock_success = lock_task.confirm_target_lock(target, client)
+            if confirm_lock_success:
+                found_target = target
+                print("lock confirmed {}".format(target))
+    return found_target
+
+
+def get_available_target(kafka_msg, client):
     """
     Check available target from target list
     Get lock on target if available
     """
     lock_task = LockingServer()
     acquired_target = ""
+
     while acquired_target == "":
-        target = lock_task.check_available_target(kafka_msg.target_list)
-        if target != "":
-            print("target found {}".format(target))
-            lock_success = lock_task.take_target_lock(target)
-            if lock_success:
-                acquired_target = target
-                print("lock acquired {}".format(target))
+        if kafka_msg.parallel:
+            target = lock_task.check_available_shared_target(kafka_msg.target_list)
+            if target == "":
+                seq_target = lock_task.check_available_target(kafka_msg.target_list)
+                if seq_target != "":
+                    acquired_target = acquire_target_to_shared(seq_target, client)
+            else:
+                acquired_target = acquire_shared_target(target, client)
+        else:
+            seq_target = lock_task.check_available_target(kafka_msg.target_list)
+            if seq_target != "":
+                acquired_target = acquire_target(seq_target, client)
     return acquired_target
 
 
@@ -355,23 +471,18 @@ def check_kafka_msg_trigger_test(args):
             if kafka_msg.te_ticket == "STOP":
                 received_stop_signal = True
             else:
-                execution_done = False
-                while not execution_done:
-                    # acquired_target = get_available_target(kafka_msg)
-                    # execute te id on acquired target
-                    # release lock on acquired target
-                    args.te_ticket = kafka_msg.te_ticket
-                    args.parallel_exe = kafka_msg.parallel
-                    args.build = kafka_msg.build
-                    args.build_type = kafka_msg.build_type
-                    args.test_plan = kafka_msg.test_plan
-                    trigger_tests_from_kafka_msg(args, kafka_msg)
-                    # rerun unexecuted tests in case of parallel execution
-                    if kafka_msg.parallel:
-                        trigger_unexecuted_tests(args, kafka_msg.test_list)
-                    # Release lock on acquired target.
-                    # lock_task.release_target_lock(acquired_target, acquired_target)
-                    execution_done = True
+                current_time_ms = datetime.utcnow().strftime('%Y-%m-%d_%H:%M:%S.%f')
+                client = system_utils.get_host_name() + "_" + current_time_ms
+                acquired_target = get_available_target(kafka_msg, client)
+                args.te_ticket = kafka_msg.te_ticket
+                args.parallel_exe = kafka_msg.parallel
+                args.build = kafka_msg.build
+                args.build_type = kafka_msg.build_type
+                args.test_plan = kafka_msg.test_plan
+                args.target = acquired_target
+                p = Process(target=trigger_runner_process, args=(args, kafka_msg, client))
+                p.start()
+
         except KeyboardInterrupt:
             break
     consumer.close()
