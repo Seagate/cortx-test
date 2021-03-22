@@ -45,6 +45,7 @@ def create_new_test_exe(te, jira_id, jira_pwd, tp_info):
 
     labels = test_exe_details.fields.labels
     env_field = tp_info['build_type'] + "_" + tp_info['build']
+    test_eve_labels = test_exe_details.fields.customfield_21006
 
     tp_dict = {'project':'TEST',
                'summary':summary,
@@ -52,7 +53,8 @@ def create_new_test_exe(te, jira_id, jira_pwd, tp_info):
                'issuetype':{'name':'Test Execution'},
                'components':components,
                'labels':labels,
-               'environment':env_field}
+               'environment':env_field,
+               'customfield_21006':test_eve_labels}
     try:
         jira_url = "https://jts.seagate.com/"
         options = {'server':jira_url}
