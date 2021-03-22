@@ -21,8 +21,13 @@
 This library contains methods for S3 Bucket Policy operations using CORTX CLI
 """
 
+import os
+import time
+import json
 import logging
 from commons import commands
+from commons.helpers.node_helper import Node
+from config import CMN_CFG
 from libs.csm.cli.cortx_cli import CortxCli
 
 LOGGER = logging.getLogger(__name__)
@@ -32,6 +37,15 @@ class CortxCliS3BktPolicyOperations(CortxCli):
     """
     This class has all s3 bucket policy operations
     """
+    node1_helper_obj = Node(
+        hostname=CMN_CFG["nodes"][0]["host"],
+        username=CMN_CFG["nodes"][0]["username"],
+        password=CMN_CFG["nodes"][0]["password"])
+
+    node2_helper_obj = Node(
+        hostname=CMN_CFG["nodes"][1]["host"],
+        username=CMN_CFG["nodes"][1]["username"],
+        password=CMN_CFG["nodes"][1]["password"])
 
     def __init__(self, session_obj: object = None):
         """
@@ -106,3 +120,25 @@ class CortxCliS3BktPolicyOperations(CortxCli):
             return False, output
 
         return True, output
+
+    def create_copy_json_file(
+            self,
+            bkt_policy: list = None,
+            local_file_path: str = None,
+            remote_file_path: str = None):
+        """
+        Helper function to create and copy json file to remote
+        :param bkt_policy: Policy which has to be added in json file
+        :param local_file_path: Local file path
+        :param remote_file_path: Remote file path
+        :return: None
+        """
+        if os.path.exists(local_file_path):
+            os.remove(local_file_path)
+        with open(local_file_path, "w") as data:
+            json.dump(bkt_policy, data, indent=4)
+        self.node1_helper_obj.copy_file_to_remote(
+            local_file_path, remote_file_path)
+        self.node2_helper_obj.copy_file_to_remote(
+            local_file_path, remote_file_path)
+        time.sleep(2)

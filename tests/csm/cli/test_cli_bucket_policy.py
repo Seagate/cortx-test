@@ -180,28 +180,6 @@ class TestCliBucketPolicy:
             cls.s3acc_obj.logout_cortx_cli()
         cls.log.info("Deleted s3 account %s", cls.s3acc_name)
 
-    def create_copy_json_file(
-            self,
-            bkt_policy: list = None,
-            local_file_path: str = None,
-            remote_file_path: str = None):
-        """
-        Helper function to create and copy json file to remote
-        :param bkt_policy: Policy which has to be added in json file
-        :param local_file_path: Local file path
-        :param remote_file_path: Remote file path
-        :return: None
-        """
-        if os.path.exists(local_file_path):
-            os.remove(local_file_path)
-        with open(local_file_path, "w") as data:
-            json.dump(bkt_policy, data, indent=4)
-        self.node1_helper_obj.copy_file_to_remote(
-            local_file_path, remote_file_path)
-        self.node2_helper_obj.copy_file_to_remote(
-            local_file_path, remote_file_path)
-        time.sleep(2)
-
     def create_verify_bucket(self, bucket_name: str = None):
         """
         Helper function to create bucket and verify bucket is created
@@ -239,7 +217,7 @@ class TestCliBucketPolicy:
         self.log.info(
             "Step 2: Created bucket policy on a bucket %s", self.bucket_name)
         self.log.info("Step 3: Creating json file for bucket policy")
-        self.create_copy_json_file(
+        self.s3bkt_plc_obj.create_copy_json_file(
             self.bkt_policy,
             self.policy_file_path,
             self.remote_file_path)
@@ -310,7 +288,7 @@ class TestCliBucketPolicy:
         self.log.info(
             "Step 2: Created bucket policy on a bucket %s", self.bucket_name)
         self.log.info("Step 3: Creating json file for bucket policy")
-        self.create_copy_json_file(self.bkt_policy,
+        self.s3bkt_plc_obj.create_copy_json_file(self.bkt_policy,
                                    self.policy_file_path,
                                    self.remote_file_path)
         self.log.info("Step 3: Created json file for bucket policy")
@@ -421,7 +399,7 @@ class TestCliBucketPolicy:
         self.log.info(
             "Step 2: Created bucket policy on a bucket %s", self.bucket_name)
         self.log.info("Step 3: Creating json file for bucket policy")
-        self.create_copy_json_file(
+        self.s3bkt_plc_obj.create_copy_json_file(
             self.bkt_policy,
             self.policy_file_path,
             self.remote_file_path)
@@ -467,7 +445,7 @@ class TestCliBucketPolicy:
         self.log.info(
             "Step 2: Created bucket policy on a bucket %s", self.bucket_name)
         self.log.info("Step 3: Creating json file for bucket policy")
-        self.create_copy_json_file(
+        self.s3bkt_plc_obj.create_copy_json_file(
             self.bkt_policy,
             self.policy_file_path,
             self.remote_file_path)
@@ -540,7 +518,7 @@ class TestCliBucketPolicy:
         self.log.info(
             "Step 2: Created bucket policy on a bucket %s", self.bucket_name)
         self.log.info("Step 3: Creating json file for bucket policy")
-        self.create_copy_json_file(
+        self.s3bkt_plc_obj.create_copy_json_file(
             self.bkt_policy,
             self.policy_file_path,
             self.remote_file_path)
@@ -581,7 +559,7 @@ class TestCliBucketPolicy:
         self.log.info(
             "Step 2: Created bucket policy on a bucket %s", self.bucket_name)
         self.log.info("Step 3: Creating json file for bucket policy")
-        self.create_copy_json_file(
+        self.s3bkt_plc_obj.create_copy_json_file(
             self.bkt_policy,
             self.policy_file_path,
             self.remote_file_path)
@@ -648,7 +626,7 @@ class TestCliBucketPolicy:
         self.log.info(
             "Step 2: Created bucket policy on a bucket %s", self.bucket_name)
         self.log.info("Step 3: Creating json file for bucket policy")
-        self.create_copy_json_file(
+        self.s3bkt_plc_obj.create_copy_json_file(
             self.bkt_policy,
             self.policy_file_path,
             self.remote_file_path)
@@ -689,7 +667,7 @@ class TestCliBucketPolicy:
         self.log.info(
             "Step 2: Created bucket policy on a bucket %s", self.bucket_name)
         self.log.info("Step 3: Creating json file for bucket policy")
-        self.create_copy_json_file(
+        self.s3bkt_plc_obj.create_copy_json_file(
             self.bkt_policy,
             self.policy_file_path,
             self.remote_file_path)
@@ -728,7 +706,7 @@ class TestCliBucketPolicy:
             self.bucket_name)
         self.log.info("Step 6: Created new bucket policy")
         self.log.info("Step 7: Creating json file for new  bucket policy")
-        self.create_copy_json_file(
+        self.s3bkt_plc_obj.create_copy_json_file(
             new_bkt_policy,
             self.policy_file_path,
             self.remote_file_path)
@@ -777,7 +755,7 @@ class TestCliBucketPolicy:
         self.log.info(
             "Step 2: Created bucket policy on a bucket %s", self.bucket_name)
         self.log.info("Step 3: Creating json file for bucket policy")
-        self.create_copy_json_file(
+        self.s3bkt_plc_obj.create_copy_json_file(
             self.bkt_policy,
             self.policy_file_path,
             self.remote_file_path)
@@ -821,7 +799,7 @@ class TestCliBucketPolicy:
         self.log.info(
             "Step 2: Created bucket policy on a bucket %s", self.bucket_name)
         self.log.info("Step 3: Creating json file for bucket policy")
-        self.create_copy_json_file(
+        self.s3bkt_plc_obj.create_copy_json_file(
             self.bkt_policy,
             self.policy_file_path,
             self.remote_file_path)
@@ -888,7 +866,7 @@ class TestCliBucketPolicy:
         self.log.info(
             "Step 2: Created bucket policy on a bucket %s", self.bucket_name)
         self.log.info("Step 3: Creating json file for bucket policy")
-        self.create_copy_json_file(
+        self.s3bkt_plc_obj.create_copy_json_file(
             self.bkt_policy,
             self.policy_file_path,
             self.remote_file_path)
@@ -959,7 +937,7 @@ class TestCliBucketPolicy:
         self.log.info(
             "Step 2: Created bucket policy on a bucket %s", self.bucket_name)
         self.log.info("Step 3: Creating json file for bucket policy")
-        self.create_copy_json_file(
+        self.s3bkt_plc_obj.create_copy_json_file(
             invalid_policy,
             self.policy_file_path,
             self.remote_file_path)
