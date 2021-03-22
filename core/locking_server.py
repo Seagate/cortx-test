@@ -26,6 +26,7 @@ from http import HTTPStatus
 import requests
 import logging
 from core import runner
+from commons import params
 
 LOGGER = logging.getLogger(__name__)
 
@@ -38,7 +39,7 @@ class LockingServer:
 
     def __init__(self):
         self.db_username, self.db_password = runner.get_db_credential()
-        self.host = "http://cftic2.pun.seagate.com:5000/"
+        self.host = params.REPORT_SRV
         self.db_collection = "systemdb/"
         self.headers = {
             'content-type':"application/json",
@@ -66,7 +67,7 @@ class LockingServer:
                     available_target = target_name
                     break
             else:
-                LOGGER.info("target {} is not present in db".format(target_name))
+                LOGGER.error("target {} is not present in db".format(target_name))
 
         return available_target
 
