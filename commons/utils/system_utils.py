@@ -849,9 +849,9 @@ def remove_lck_file(path):
         os.remove(path)
     # Probably another instance of the application
     # that acquired the file lock.
-    except OSError:
-        pass
     except FileNotFoundError:
+        pass
+    except OSError:
         pass
 
 
