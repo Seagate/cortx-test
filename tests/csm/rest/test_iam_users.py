@@ -23,6 +23,7 @@
 import logging
 import pytest
 from commons.utils import config_utils
+from commons import configmanager
 from commons import cortxlogging
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_iamuser import RestIamUser
@@ -38,8 +39,7 @@ class TestIamUser():
         """
         cls.log = logging.getLogger(__name__)
         cls.log.info("Initializing test setups")
-        cls.csm_conf = config_utils.read_yaml(
-            "config/csm/test_rest_iam_user.yaml")[1]
+        cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_iam_user.yaml")
         cls.log.info("Ended test module setups")
         cls.config = CSMConfigsCheck()
         setup_ready = cls.config.check_predefined_s3account_present()

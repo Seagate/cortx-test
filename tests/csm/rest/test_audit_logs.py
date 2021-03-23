@@ -28,7 +28,7 @@ from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 from libs.csm.rest.csm_rest_audit_logs import RestAuditLogs
 from libs.csm.rest.csm_rest_bucket import RestS3Bucket
 from libs.csm.rest.csm_rest_s3user import RestS3user
-from commons.utils import config_utils
+from commons import configmanager
 from commons.constants import Rest as const
 from commons.utils import assert_utils
 from commons import cortxlogging
@@ -64,8 +64,7 @@ class TestAuditLogs():
         assert setup_ready
         cls.s3_buckets = RestS3Bucket()
         cls.s3_account = RestS3user()
-        cls.csm_conf = config_utils.read_yaml(
-            "config/csm/test_rest_audit_logs.yaml")[1]
+        cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_audit_logs.yaml")
         cls.log.info("Test setup initialized...")
 
     @pytest.mark.csmrest

@@ -26,6 +26,7 @@ import pytest
 from commons.utils import config_utils
 from commons.constants import Rest as const
 from commons import cortxlogging
+from commons import configmanager
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_s3user import RestS3user
 
@@ -43,7 +44,7 @@ class TestS3user():
             user_already_present = cls.config.setup_csm_s3()
         assert user_already_present
         cls.s3user = RestS3user()
-        cls.csm_conf = config_utils.read_yaml("config/csm/test_rest_s3_user.yaml")[1]
+        cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_s3_user.yaml")
         cls.log.info("Initiating Rest Client for Alert ...")
 
     @pytest.mark.parallel
