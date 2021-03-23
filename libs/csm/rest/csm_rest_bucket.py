@@ -318,6 +318,105 @@ class RestS3Bucket(RestTestLib):
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR, error.args[0]) from error
 
+    @RestTestLib.authenticate_and_login
+    def create_s3_bucket_for_given_account(self, bucket_name, account_name, account_password,
+                                           bucket_type="valid"):
+        """
+        This function will create new s3 bucket for the given user_name.
+        :param bucket_name: Bucket name
+        :param account_name: S3 account name under which we want to create new bucket
+        :param account_password: S3 account password under which we want to create new bucket
+        :param bucket_type: type of bucket required
+        :return: response of create bucket
+        """
+        try:
+            self.log.debug("Creating new S3 bucket under {}".format(account_name))
+            endpoint = self.config["s3_bucket_endpoint"]
+            self.log.debug("Endpoint for S3 bucket creation is {}".format(endpoint))
+            headers = self.get_headers(account_name, account_password)
+            user_data = "{{\"{}\":\"{}\"}}".format(
+                "bucket_name", bucket_name)
+
+            # Fetching api response
+            response = self.restapi.rest_call("post", endpoint=endpoint, data=user_data,
+                                              headers=headers)
+            if response.status_code != const.SUCCESS_STATUS:
+                self.log.error(f"POST on {endpoint} request failed.\n"
+                               f"Response code : {response.status_code}")
+                self.log.error(f"Response content: {response.content}")
+                self.log.error(f"Request headers : {response.request.headers}\n"
+                               f"Request body : {response.request.body}")
+                raise CTException(err.CSM_REST_POST_REQUEST_FAILED)
+            return response
+        except BaseException as error:
+            self.log.error("{0} {1}: {2}".format(
+                const.EXCEPTION_ERROR,
+                RestS3Bucket.create_s3_bucket_for_given_account.__name__,
+                error))
+            raise CTException(
+                err.CSM_REST_AUTHENTICATION_ERROR,
+                error.args[0])
+
+    @RestTestLib.authenticate_and_login
+    def list_buckets_under_given_account(self, account_name):
+        """
+        This function will list down all created buckets under given account_name.
+        :param account_name: S3 account name under which we want to create new bucket
+        :return: response of list bucket
+        """
+        self.log.debug("Listing all S3 buckets under {} account".format(account_name))
+        endpoint = self.config["s3_bucket_endpoint"]
+        self.log.debug("Endpoint for S3 bucket listing is {}".format(endpoint))
+        try:
+            response = self.restapi.rest_call(
+                "get", endpoint=endpoint, headers=self.headers)
+
+        except Exception as error:
+            self.log.error("{0} {1}: {2}".format(
+                const.EXCEPTION_ERROR,
+                RestS3Bucket.list_buckets_under_given_account.__name__,
+                error))
+            raise CTException(
+                err.CSM_REST_AUTHENTICATION_ERROR,
+                error.args[0])
+        if response.status_code != const.SUCCESS_STATUS:
+            self.log.error(f"GET on {endpoint} request failed.\n"
+                           f"Response code : {response.status_code}")
+            self.log.error(f"Response content: {response.content}")
+            self.log.error(f"Request headers : {response.request.headers}\n"
+                           f"Request body : {response.request.body}")
+            raise CTException(err.CSM_REST_GET_REQUEST_FAILED,
+                              msg="List buckets under given account failed.")
+        return response
+
+    @RestTestLib.authenticate_and_login
+    def delete_given_s3_bucket(self, bucket_name, account_name):
+        """
+        This function will delete given s3 bucket.
+        :param bucket_name: name of bucket to be deleted
+        :param account_name: S3 account name under which we want to create new bucket
+        """
+        self.log.debug("Deleting given S3 bucket under {} account".format(account_name))
+        endpoint = "{}/{}".format(self.config["s3_bucket_endpoint"], bucket_name)
+        self.log.debug("Endpoint for S3 bucket deletion is {}".format(endpoint))
+        try:
+            response = self.restapi.rest_call("delete", endpoint=endpoint, headers=self.headers)
+        except Exception as error:
+            self.log.error("{0} {1}: {2}".format(
+                const.EXCEPTION_ERROR,
+                RestS3Bucket.delete_given_s3_bucket.__name__,
+                error))
+            raise CTException(
+                err.CSM_REST_AUTHENTICATION_ERROR,
+                error.args[0])
+        if response.status_code != const.SUCCESS_STATUS:
+            self.log.error(f"DELETE on {endpoint} request failed.\n"
+                           f"Response code : {response.status_code}")
+            self.log.error(f"Response content: {response.content}")
+            self.log.error(f"Request headers : {response.request.headers}\n"
+                           f"Request body : {response.request.body}")
+            raise CTException(err.CSM_REST_GET_REQUEST_FAILED, msg="Delete given s3 bucket failed.")
+
 
 class RestS3BucketPolicy(RestTestLib):
     """RestS3BucketPolicy contains all the Rest Api calls for s3 bucket
@@ -597,3 +696,86 @@ class RestS3BucketPolicy(RestTestLib):
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED,
                 error.args[0]) from error
+
+    @RestTestLib.authenticate_and_login
+    def create_bucket_policy_under_given_account(self, account_name):
+        """
+        This function will create new s3 bucket policy under given account_name.
+        :param account_name: S3 account name under which we want to create new bucket
+        """
+        self.log.debug("Creating bucket policy under {} account".format(account_name))
+        endpoint = self.config["bucket_policy_endpoint"].format(self.bucket_name)
+        self.log.debug("Endpoint for bucket policy creation is {}".format(endpoint))
+        user_data = self._bucketpolicy_payload["payload"]
+        try:
+            response = self.restapi.rest_call("put", endpoint=endpoint,
+                                              data=user_data, headers=self.headers)
+        except Exception as error:
+            self.log.error("{0} {1}: {2}".format(
+                const.EXCEPTION_ERROR,
+                RestS3BucketPolicy.create_bucket_policy_under_given_account.__name__,
+                error))
+            raise CTException(
+                err.CSM_REST_AUTHENTICATION_ERROR,
+                error.args[0])
+        if response.status_code != const.SUCCESS_STATUS:
+            self.log.error(f"PUT on {endpoint} request failed.\n"
+                           f"Response code : {response.status_code}")
+            self.log.error(f"Response content: {response.content}")
+            self.log.error(f"Request headers : {response.request.headers}\n"
+                           f"Request body : {response.request.body}")
+            raise CTException(err.CSM_REST_PUT_REQUEST_FAILED, msg="Create bucket policy failed.")
+
+    @RestTestLib.authenticate_and_login
+    def get_bucket_policy_under_given_account(self, account_name):
+        """
+        This function will get s3 bucket policy under given account_name.
+        :param account_name: S3 account name under which we want to create new bucket
+        :return: response of get bucket policy
+        """
+        self.log.debug("Getting bucket policy under {} account".format(account_name))
+        endpoint = self.config["bucket_policy_endpoint"].format(self.bucket_name)
+        self.log.debug("Endpoint for bucket policy get is {}".format(endpoint))
+        try:
+            response = self.restapi.rest_call("get", endpoint=endpoint, headers=self.headers)
+            if response.status_code != const.SUCCESS_STATUS:
+                self.log.error(f"GET on {endpoint} request failed.\n"
+                               f"Response code : {response.status_code}")
+                self.log.error(f"Response content: {response.content}")
+                self.log.error(f"Request headers : {response.request.headers}\n"
+                               f"Request body : {response.request.body}")
+                raise CTException(err.CSM_REST_GET_REQUEST_FAILED)
+            return response
+        except Exception as error:
+            self.log.error("{0} {1}: {2}".format(
+                const.EXCEPTION_ERROR,
+                RestS3BucketPolicy.get_bucket_policy_under_given_account.__name__,
+                error))
+            raise CTException(err.CSM_REST_AUTHENTICATION_ERROR, error.args[0])
+
+    @RestTestLib.authenticate_and_login
+    def delete_bucket_policy_under_given_name(self, account_name):
+        """
+        This function will delete s3 bucket policy under given account_name.
+        :param account_name: S3 account name under which we want to create new bucket
+        :return: response of delete bucket policy
+        """
+        self.log.debug("Deleting bucket policy under {} account".format(account_name))
+        endpoint = self.config["bucket_policy_endpoint"].format(self.bucket_name)
+        self.log.debug("Endpoint for bucket policy deletion is {}".format(endpoint))
+        try:
+            response = self.restapi.rest_call("delete", endpoint=endpoint, headers=self.headers)
+        except Exception as error:
+            self.log.error("{0} {1}: {2}".format(
+                const.EXCEPTION_ERROR,
+                RestS3BucketPolicy.delete_bucket_policy_under_given_name.__name__,
+                error))
+            raise CTException(err.CSM_REST_AUTHENTICATION_ERROR, error.args[0])
+        if response.status_code != const.SUCCESS_STATUS:
+            self.log.error(f"DELETE on {endpoint} request failed.\n"
+                           f"Response code : {response.status_code}")
+            self.log.error(f"Response content: {response.content}")
+            self.log.error(f"Request headers : {response.request.headers}\n"
+                           f"Request body : {response.request.body}")
+            raise CTException(err.CSM_REST_DELETE_REQUEST_FAILED, msg="Delete bucket policy failed")
+        return response
