@@ -48,13 +48,13 @@ class TestAuthServerHealthCheckAPI:
         It will perform all prerequisite test suite steps if any.
         """
         cls.log = logging.getLogger(__name__)
-        cls.nodeobj = Node(hostname=CM_CFG["nodes"][1]["host"],
-                           username=CM_CFG["nodes"][1]["username"],
-                           password=CM_CFG["nodes"][1]["password"])
+        cls.nobj = Node(hostname=CM_CFG["nodes"][0]["host"],
+                        username=CM_CFG["nodes"][0]["username"],
+                        password=CM_CFG["nodes"][0]["password"])
         cls.service = "haproxy"
         cls.remote_path = const.CFG_FILES[0]
         cls.auth_log_path = const.AUTHSERVER_LOG_PATH
-        cls.test_dir_path = os.path.join(os.getcwd(), "testdata")
+        cls.test_dir_path = os.path.join(os.getcwd(), "testdata", "AuthServerHealthCheck")
         cls.local_file = os.path.join(cls.test_dir_path, "haproxy.cfg")
         if not path_exists(cls.test_dir_path):
             make_dirs(cls.test_dir_path)
@@ -63,7 +63,8 @@ class TestAuthServerHealthCheckAPI:
     def setup_method(self):
         """Function to perform the setup ops for each test."""
         self.log.info("Started: Performing setup operations")
-        resp = self.nodeobj.path_exists(self.remote_path)
+        resp = self.nobj.path_exists(self.remote_path)
+        self.log.info(resp)
         assert_true(
             resp,
             f"Server path not exists: {self.remote_path}")
@@ -72,25 +73,31 @@ class TestAuthServerHealthCheckAPI:
     def teardown_method(self):
         """Function to perform the clean up for each test."""
         self.log.info("Started: Performing clean up operations")
-        resp = self.toggle_auth_server_health_check(
+        resp = self.update_auth_server_health_check_status(
             self.remote_path, self.local_file)
         self.log.info(resp)
         if path_exists(self.local_file):
             remove_file(self.local_file)
         self.log.info("Ended: Performed clean up operations")
 
-    def toggle_auth_server_health_check(self, fpath, lpath, status="enable"):
+    def update_auth_server_health_check_status(
+            self, remote_path, local_path, status="enable"):
         """
         Function to toggle healthcheck status of the authserver.
 
         It will add or remove entry under backend s3-auth in haproxy.cfg
-        :param str fpath: remote config file path
-        :param str lpath: local config file path
+        :param str remote_path: remote config file path
+        :param str local_path: local config file path
         :param str status: enable | disable
-        :return: tuple of tupple
+        :return: tuple.
         """
-        resg = S3H_OBJ.copy_s3server_file(fpath, lpath)
-        with open(lpath, "r+") as filep:
+        resp = S3H_OBJ.copy_s3server_file(remote_path, local_path)
+        self.log.info("remote_path: %s", remote_path)
+        self.log.info("local_path: %s", local_path)
+        assert_true(
+            resp,
+            f"copy_s3server_file failed: remote path: {remote_path}, local path: {local_path}")
+        with open(local_path, "r+") as filep:
             data = filep.readlines()
             for i, _ in enumerate(data):
                 if "enable" in status:
@@ -98,17 +105,15 @@ class TestAuthServerHealthCheckAPI:
                 else:
                     update_value = "    #option httpchk HEAD / HTTP/1.1\\r\\nHost:\\ localhost\n"
 
-                if "    option httpchk HEAD / HTTP/1.1\\r\\nHost:\\ localhost\n" in data[i]:
+                if "option httpchk HEAD / HTTP/1.1\\r\\nHost:\\ localhost\n" in data[i]:
                     data[i] = update_value
-                elif "    #option httpchk HEAD / HTTP/1.1\\r\\nHost:\\ localhost\n" in data[i]:
-                    data[i] = update_value
-            with open(lpath, "w+") as nfp:
-                for i in data:
-                    nfp.write(i)
-        self.nodeobj.copy_file_to_remote(lpath, fpath)
-        resp = self.nodeobj.path_exists(fpath)
+        with open(local_path, "w+") as nfp:
+            for i in data:
+                nfp.write(i)
+        self.nobj.copy_file_to_remote(local_path, remote_path)
+        resp = self.nobj.path_exists(remote_path)
 
-        return resg, resp
+        return resp
 
     @pytest.mark.s3
     @pytest.mark.tags('TEST-7577')
@@ -118,14 +123,15 @@ class TestAuthServerHealthCheckAPI:
         self.log.info(
             "Started: Test authserver response when health check is enabled")
         test_cfg = AUTH_CFG["test_1161"]
-        resp = self.toggle_auth_server_health_check(
+        resp = self.update_auth_server_health_check_status(
             self.remote_path,
             self.local_file,
             status=test_cfg["status"])
         self.log.info(resp)
+        assert_true(resp, f"Failed to toggle healthcheck status of the authserver: {resp}")
         resp = S3H_OBJ.restart_s3server_service(self.service)
         assert_true(resp[0], resp[1])
-        resp = S3H_OBJ.get_authserver_log(path=self.auth_log_path)
+        resp = self.nobj.get_authserver_log(path=self.auth_log_path)
         self.log.debug(resp)
         for _ in range(2):
             res = http_head_request(url=S3_CFG["head_urls"])
@@ -142,14 +148,15 @@ class TestAuthServerHealthCheckAPI:
         self.log.info(
             "Started: Test authserver response when health check is disabled")
         test_cfg = AUTH_CFG["test_1164"]
-        resp = self.toggle_auth_server_health_check(
+        resp = self.update_auth_server_health_check_status(
             self.remote_path,
             self.local_file,
             status=test_cfg["status"])
         self.log.info(resp)
+        assert_true(resp, f"Failed to toggle healthcheck status of the authserver: {resp}")
         resp = S3H_OBJ.restart_s3server_service(self.service)
         assert_true(resp[0], resp[1])
-        resp = S3H_OBJ.get_authserver_log(path=self.auth_log_path)
+        resp = self.nobj.get_authserver_log(path=self.auth_log_path)
         self.log.debug(resp)
         for _ in range(2):
             res = http_head_request(url=S3_CFG["head_urls"])

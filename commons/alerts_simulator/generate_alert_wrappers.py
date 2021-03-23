@@ -326,9 +326,14 @@ class GenerateAlertWrapper:
         :return: Returns stdout response
         :rtype: (string)
         """
-        logger_alert_cmd = input_parameters['cmd']
-        LOGGER.info("Logger cmd : %s", logger_alert_cmd)
-        host_connect = Host(hostname=host, username=h_user, password=h_pwd)
-        resp = host_connect.execute_cmd(cmd=logger_alert_cmd, read_lines=True,
-                                        shell=False)
-        return resp
+        try:
+            logger_alert_cmd = input_parameters['cmd']
+            LOGGER.info("Logger cmd : %s", logger_alert_cmd)
+            host_connect = Host(hostname=host, username=h_user, password=h_pwd)
+            resp = host_connect.execute_cmd(cmd=logger_alert_cmd, read_lines=True,
+                                            shell=False)
+            return True, resp
+        except BaseException as error:
+            LOGGER.error("%s %s: %s", cons.EXCEPTION_ERROR,
+                         GenerateAlertWrapper.iem_alerts.__name__, error)
+            return False, error
