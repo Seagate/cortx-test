@@ -40,8 +40,8 @@ class TestCliSecurity:
         It will perform all prerequisite test suite steps if any.
             - Initialize few common variables
         """
-        cls.LOGGER = logging.getLogger(__name__)
-        cls.LOGGER.info("STARTED : Setup operations for test suit")
+        cls.logger = logging.getLogger(__name__)
+        cls.logger.info("STARTED : Setup operations for test suit")
         cls.file_path = CSM_CFG["CliConfig"]["csm_conf_file"]
         cls.s3_component = "openldap"
         cls.s3_keys = ["iam_admin", "secret"]
@@ -55,7 +55,7 @@ class TestCliSecurity:
             hostname=CMN_CFG["nodes"][0]["host"],
             username=CMN_CFG["nodes"][0]["username"],
             password=CMN_CFG["nodes"][0]["password"])
-        cls.LOGGER.info("ENDED : Setup operations for test suit")
+        cls.logger.info("ENDED : Setup operations for test suit")
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-16930")
@@ -64,45 +64,45 @@ class TestCliSecurity:
         """
         Test that password should be in encrypted format in csm.conf file
         """
-        self.LOGGER.info("Verifying csm conf file is exist")
+        self.logger.info("Verifying csm conf file is exist")
         resp = S3H_OBJ.is_s3_server_path_exists(path=self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
-        self.LOGGER.info("Verified csm conf file is exist")
-        self.LOGGER.info("Retrieving ldap passwords in encrypted format")
+        self.logger.info("Verified csm conf file is exist")
+        self.logger.info("Retrieving ldap passwords in encrypted format")
         s3_resp = self.sal_obj.get_pillar_values(
             self.s3_component, self.s3_keys)
         assert_utils.assert_equal(True, s3_resp[0], s3_resp[1])
-        self.LOGGER.info("Retrieved ldap passwords in encrypted format")
-        self.LOGGER.info(
+        self.logger.info("Retrieved ldap passwords in encrypted format")
+        self.logger.info(
             "Verifying ldap password is in encrypted format in csm.conf file")
         resp = self.node_obj.is_string_in_remote_file(
             string=s3_resp[1], file_path=self.file_path)
         assert_utils.assert_equal(True, resp[0], resp[1])
-        self.LOGGER.info(
+        self.logger.info(
             "Verified ldap password is in encrypted format in csm.conf file")
-        self.LOGGER.info("Verifying ldap password can be decrypted")
+        self.logger.info("Verifying ldap password can be decrypted")
         resp = self.sal_obj.get_pillar_values(
             self.s3_component, self.s3_keys,
             decrypt=True)
         assert_utils.assert_equal(True, resp[0], resp[1])
-        self.LOGGER.debug(resp)
-        self.LOGGER.info("Verified ldap password can be decrypted")
-        self.LOGGER.info("Retrieving sspl passwords in encrypted format")
+        self.logger.debug(resp)
+        self.logger.info("Verified ldap password can be decrypted")
+        self.logger.info("Retrieving sspl passwords in encrypted format")
         sspl_resp = self.sal_obj.get_pillar_values(
             self.sspl_component, self.sspl_keys)
         assert_utils.assert_equal(True, sspl_resp[0], sspl_resp[1])
-        self.LOGGER.info("Retrieved sspl passwords in encrypted format")
-        self.LOGGER.info(
+        self.logger.info("Retrieved sspl passwords in encrypted format")
+        self.logger.info(
             "Verifying sspl password is in encrypted format in csm.conf file")
         resp = self.node_obj.is_string_in_remote_file(
             string=sspl_resp[1], file_path=self.file_path)
         assert_utils.assert_equal(True, resp[0], resp[1])
-        self.LOGGER.info(
+        self.logger.info(
             "Verified sspl password is in encrypted format in csm.conf file")
-        self.LOGGER.info("Verifying sspl password can be decrypted")
+        self.logger.info("Verifying sspl password can be decrypted")
         resp = self.sal_obj.get_pillar_values(
             self.sspl_component, self.sspl_keys,
             decrypt=True)
         assert_utils.assert_equal(True, resp[0], resp[1])
-        self.LOGGER.debug(resp)
-        self.LOGGER.info("Verified sspl password can be decrypted")
+        self.logger.debug(resp)
+        self.logger.info("Verified sspl password can be decrypted")
