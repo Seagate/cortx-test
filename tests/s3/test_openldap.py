@@ -26,22 +26,22 @@ from datetime import datetime
 
 import paramiko
 import pytest
+from config import CMN_CFG
 from commons.constants import const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
-from commons.utils.config_utils import read_yaml, get_config
-from commons.utils.system_utils import run_remote_cmd, remove_file
+from commons.utils.config_utils import get_config
+from commons.configmanager import get_config_wrapper
+from commons.utils.system_utils import run_remote_cmd, remove_file, path_exists
 from commons.utils.assert_utils import assert_false, assert_true, assert_in, assert_equal, assert_not_equal
-from libs.s3 import S3H_OBJ, CM_CFG, LDAP_PASSWD
+from libs.s3 import S3H_OBJ, LDAP_PASSWD
 
 
-LDAP_CFG = read_yaml("config/s3/test_openldap.yaml")[1]
+LDAP_CFG = get_config_wrapper(fpath="config/s3/test_openldap.yaml")
 
 
 class TestOpenLdap:
     """Open LDAP Test Suite."""
-
-    CM_LDAP_CFG = LDAP_CFG["common_vars"]
 
     @classmethod
     def setup_class(cls):
@@ -51,6 +51,11 @@ class TestOpenLdap:
         It will perform all prerequisite test suite steps if any.
         """
         cls.log = logging.getLogger(__name__)
+        cls.log.info(CMN_CFG["nodes"])
+        cls.host = CMN_CFG["nodes"][0]["host"]
+        cls.username = CMN_CFG["nodes"][0]['username']
+        cls.pwd = CMN_CFG["nodes"][0]['password']
+        cls.CM_LDAP_CFG = LDAP_CFG["common_vars"]
         cls.openldap_path = cls.CM_LDAP_CFG["openldap_path"]
         cls.slapd_dir = cls.CM_LDAP_CFG["slapd_dir"]
         cls.slapd_service = cls.CM_LDAP_CFG["slapd_service"]
@@ -58,18 +63,15 @@ class TestOpenLdap:
             cls.CM_LDAP_CFG["date_format"])
         cls.backup_path = cls.CM_LDAP_CFG["backup_path"]
         cls.default_ldap_pw = True
-        cls.host = CM_CFG["nodes"][0]["host"]
-        cls.username = CM_CFG["nodes"][0]["username"],
-        cls.pwd = CM_CFG["nodes"][0]["password"],
 
     def remote_execution(self, hostname, username, password, cmd):
         """running remote cmd."""
         self.log.info("Remote Execution")
         return run_remote_cmd(
-            cmd,
-            hostname,
-            username,
-            password,
+            cmd=cmd,
+            hostname=hostname,
+            username=username,
+            password=password,
             read_lines=True)
 
     def chown_dir(self, ch_owner_cmd, owner, chk_owner_cmd, ch_owner_dir):
@@ -226,16 +228,13 @@ class TestOpenLdap:
         """
         channel_data = str()
         hosts = list()
-        hosts.append(self.host)
-        hosts.append(CM_CFG["nodes"][1]["host"])
+        for i in range(len(CMN_CFG["nodes"])):
+            hosts.append(CMN_CFG["nodes"][i]["host"])
         self.log.info("Creating a shell session on channel...")
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         for host in hosts:
-            ssh.connect(
-                host,
-                username=self.username,
-                password=self.pwd)
+            ssh.connect(hostname=host, username=self.username, password=self.pwd)
             channel = ssh.invoke_shell()
             self.log.info("Created a shell session on channel")
             while True:
@@ -279,7 +278,6 @@ class TestOpenLdap:
             - Create backup directory named "backup" under "/root".
         """
         self.log.info("STARTED: Setup operations")
-
         self.log.info(
             "Creating a backup directory %s...",
             self.backup_path)
@@ -349,7 +347,8 @@ class TestOpenLdap:
             self.log.info(
                 "Restarting %s service",
                 self.slapd_service)
-            S3H_OBJ.restart_s3server_service(self.slapd_service)
+            resp = S3H_OBJ.restart_s3server_service(self.slapd_service)
+            assert_true(resp[0], resp[1])
             self.log.info("Step 2: Restored openldap password")
         if not S3H_OBJ.get_s3server_service_status(self.slapd_service)[0]:
             self.log.info(
@@ -366,7 +365,8 @@ class TestOpenLdap:
             self.pwd,
             self.CM_LDAP_CFG["rm_dir_cmd"].format(self.backup_path))
         self.log.info("Deleted backup dir %s", self.backup_path)
-        remove_file(self.CM_LDAP_CFG["temp_path"])
+        if path_exists(self.CM_LDAP_CFG["temp_path"]):
+            remove_file(self.CM_LDAP_CFG["temp_path"])
         self.log.info("ENDED: Teardown operations")
 
     @pytest.mark.parallel
@@ -895,7 +895,8 @@ class TestOpenLdap:
         self.log.info(
             "Step 2: Restarting %s service",
             self.slapd_service)
-        S3H_OBJ.restart_s3server_service(self.slapd_service)
+        resp = S3H_OBJ.restart_s3server_service(self.slapd_service)
+        assert_true(resp[0], resp[1])
         time.sleep(self.CM_LDAP_CFG["restart_serv_pause"])
         resp = S3H_OBJ.get_s3server_service_status(self.slapd_service)
         assert_true(resp[0], resp[1])
@@ -937,7 +938,8 @@ class TestOpenLdap:
         self.log.info(
             "Step 3: Restarting %s service",
             self.slapd_service)
-        S3H_OBJ.restart_s3server_service(self.slapd_service)
+        resp = S3H_OBJ.restart_s3server_service(self.slapd_service)
+        assert_true(resp[0], resp[1])
         time.sleep(self.CM_LDAP_CFG["restart_serv_pause"])
         resp = S3H_OBJ.get_s3server_service_status(self.slapd_service)
         assert_true(resp[0], resp[1])
@@ -992,7 +994,8 @@ class TestOpenLdap:
         self.log.info(
             "Step 3: Restarting %s service",
             self.slapd_service)
-        S3H_OBJ.restart_s3server_service(self.slapd_service)
+        resp = S3H_OBJ.restart_s3server_service(self.slapd_service)
+        assert_true(resp[0], resp[1])
         time.sleep(self.CM_LDAP_CFG["restart_serv_pause"])
         resp = S3H_OBJ.get_s3server_service_status(self.slapd_service)
         assert_true(resp[0], resp[1])

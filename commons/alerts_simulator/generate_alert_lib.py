@@ -93,18 +93,18 @@ class GenerateAlertLib:
             h_user = host_details["host_user"]
             h_pwd = host_details["host_password"]
         else:
-            host = COMMON_CONF["host"]
-            h_user = COMMON_CONF["username"]
-            h_pwd = COMMON_CONF["password"]
+            host = COMMON_CONF["nodes"][0]["host"]
+            h_user = COMMON_CONF["nodes"][0]["username"]
+            h_pwd = COMMON_CONF["nodes"][0]["password"]
 
         if enclosure_details:
             enc_ip = enclosure_details["enclosure_ip"]
             enc_user = enclosure_details["enclosure_user"]
             enc_pwd = enclosure_details["enclosure_pwd"]
         else:
-            enc_ip = COMMON_CONF["primary_enclosure_ip"]
-            enc_user = COMMON_CONF["enclosure_user"]
-            enc_pwd = COMMON_CONF["enclosure_pwd"]
+            enc_ip = COMMON_CONF["enclosure"]["primary_enclosure_ip"]
+            enc_user = COMMON_CONF["enclosure"]["enclosure_user"]
+            enc_pwd = COMMON_CONF["enclosure"]["enclosure_pwd"]
 
         if input_parameters is None:
             input_parameters = eval('dict_cons.{}'.format(alert_type.name))

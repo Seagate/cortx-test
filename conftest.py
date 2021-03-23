@@ -29,6 +29,7 @@ import json
 import logging
 import csv
 import time
+import datetime
 import pytest
 from datetime import date
 from _pytest.nodes import Item
@@ -200,7 +201,7 @@ def pytest_addoption(parser):
         "--force_serial_run", action="store", default=False, help="Force serial execution"
     )
     parser.addoption(
-        "--target", action="store", default="auto_setup", help="Target or setup under test"
+        "--target", action="store", default="automation", help="Target or setup under test"
     )
     parser.addoption(
         "--nodes", action="store", default=[], help="Nodes of a setup"
@@ -212,6 +213,12 @@ def pytest_addoption(parser):
     parser.addoption(
         "--readmetadata", action="store", default=False,
         help="Read test metadata"
+    )
+    parser.addoption(
+        "--host_fqdn", action="store", default=None, help="Hostname fqdn"
+    )
+    parser.addoption(
+        "--buildpath", action="store", default=None, help="Build url to be deployed"
     )
 
 
@@ -266,7 +273,8 @@ def pytest_sessionfinish(session, exitstatus):
 
 def get_test_metadata_from_tp_meta(item):
     tests_meta = Globals.tp_meta['test_meta']
-    tp_label = Globals.tp_meta['test_plan_label'][0]  # first is significant
+    flg = Globals.tp_meta['test_plan_label']
+    tp_label = Globals.tp_meta['test_plan_label'][0] if flg else 'regular'  # first is significant
     te_meta = Globals.tp_meta['te_meta']
     te_label = te_meta['te_label'][0]
     te_component = Globals.tp_meta['te_meta']['te_components']
@@ -443,7 +451,6 @@ def pytest_collection(session):
             system_utils.make_dir(cache_home)
         except OSError as error:
             LOGGER.error(str(error))
-
     latest = os.path.join(cache_home, 'latest')
     if not os.path.exists(latest):
         os.makedirs(latest)
@@ -453,13 +460,13 @@ def pytest_collection(session):
     if session.config.option.collectonly:
         te_meta = config_utils.create_content_json(os.path.join(cache_home, 'te_meta.json'), meta)
         LOGGER.debug("Items meta dict %s created at %s", meta, te_meta)
+        Globals.te_meta = te_meta
     if not _local and session.config.option.readmetadata:
         tp_meta_file = os.path.join(os.getcwd(),
                                     params.LOG_DIR_NAME,
                                     params.JIRA_TEST_META_JSON)
         tp_meta = config_utils.read_content_json(tp_meta_file)
         Globals.tp_meta = tp_meta
-        #system_utils.insert_into_builtins('tp_meta', tp_meta)
         LOGGER.debug("Reading test plan meta dict %s", tp_meta)
     return items
 
@@ -468,7 +475,7 @@ def pytest_collection(session):
 def pytest_runtest_makereport(item, call):
     """
     Execute all other hooks to obtain the report object. Follow the pytest execution protocol
-    to understand where does this fucntion fits in. In short this function will help to create
+    to understand where does this function fits in. In short this function will help to create
     failed, passed lists in multiple runs. The clean up of logs files should happen before the
     test runs starts.
     All code prior to yield statement would be ran prior
@@ -504,6 +511,10 @@ def pytest_runtest_makereport(item, call):
                 task.update_test_jira_status(item.config.option.te_tkt, test_id, 'PASS')
                 payload = create_report_payload(item, call, 'PASS', db_user, db_pass)
                 REPORT_CLIENT.create_db_entry(**payload)
+            elif item.rep_setup.skipped and (item.rep_teardown.skipped or item.rep_teardown.passed):
+                # Jira reporting of skipped cases does not contain skipped option
+                # Keeping it todo_status and skipping db update for now
+                pass
 
     if report.when == 'teardown':
         if item.rep_setup.failed or item.rep_teardown.failed:
@@ -516,6 +527,9 @@ def pytest_runtest_makereport(item, call):
             mode = "a" if os.path.exists(current_file) else "w"
         elif item.rep_setup.passed and item.rep_call.passed and item.rep_teardown.passed:
             current_file = pass_file
+            current_file = os.path.join(os.getcwd(), LOG_DIR, 'latest', current_file)
+            mode = "a" if os.path.exists(current_file) else "w"
+        elif item.rep_setup.skipped and (item.rep_teardown.skipped or item.rep_teardown.passed):
             current_file = os.path.join(os.getcwd(), LOG_DIR, 'latest', current_file)
             mode = "a" if os.path.exists(current_file) else "w"
         with open(current_file, mode) as f:
@@ -540,7 +554,9 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
             log = strip_ansi(log)
             logs = log.split('\n')
             test_id = CACHE.lookup(report.nodeid)
-            name = str(test_id) + '_' + report.nodeid.split('::')[1] + '.log'
+            name = str(test_id) + '_' + report.nodeid.split('::')[1] + '_' \
+                + datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S') \
+                + '.log'
             test_log = os.path.join(os.getcwd(), LOG_DIR, 'latest', name)
             with open(test_log, 'w') as fp:
                 for rec in logs:
@@ -558,7 +574,9 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
         log = strip_ansi(log)
         logs = log.split('\n')
         test_id = CACHE.lookup(report.nodeid)
-        name = str(test_id) + '_' + report.nodeid.split('::')[1] + '.log'
+        name = str(test_id) + '_' + report.nodeid.split('::')[1] + '_' + \
+            datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S') + \
+            '.log'
         test_log = os.path.join(os.getcwd(), LOG_DIR, 'latest', name)
         with open(test_log, 'w') as fp:
             for rec in logs:
@@ -580,8 +598,12 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
         LOGGER.info("Adding log file path to %s", test_id)
         comment = "Log file path: {}".format(resp[1])
         data = task.get_test_details(test_exe_id=Globals.TE_TKT)
-        task.update_execution_details(data=data, test_id=test_id,
-                                      comment=comment)
+        resp = task.update_execution_details(data=data, test_id=test_id,
+                                             comment=comment)
+        if resp:
+            LOGGER.info("Added execution details comment in: %s", test_id)
+        else:
+            LOGGER.error("Failed to comment to %s", test_id)
 
 
 @pytest.fixture(scope='function')
@@ -592,3 +614,13 @@ def generate_random_string():
     :rtype: str
     """
     return ''.join(random.choice(string.ascii_lowercase) for i in range(5))
+
+
+@pytest.fixture(scope='module', autouse=True)
+def host_fqdn(request):
+    pytest.host_fqdn = request.config.getoption('--host_fqdn')
+
+
+@pytest.fixture(scope='module', autouse=True)
+def buildpath(request):
+    pytest.buildpath = request.config.getoption('--buildpath')

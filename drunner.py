@@ -43,6 +43,8 @@ from typing import Any
 from typing import Dict
 from queue import Queue
 from threading import Thread
+from confluent_kafka.admin import AdminClient
+from confluent_kafka.admin import NewTopic
 from core import rpcserver
 from core import report_rpc
 from core import runner
@@ -52,13 +54,14 @@ from commons.utils import jira_utils
 from commons.utils import config_utils
 from commons import worker
 from commons import params
+from commons import cortxlogging
 
-
-LCK_FILE = 'lockfile-%s'
+LCK_FILE = 'DistRunLockFile.lck'
 INT_IP = '0.0.0.0'
 INT_PORT = 9092
 
 LOGGER = logging.getLogger(__name__)
+
 
 class RunnerException(RuntimeError):
     pass
@@ -76,10 +79,10 @@ def parse_args(argv):
                         help="Log level numeric value [1-10]")
     parser.add_argument("-t", "--targets", nargs='+', type=str,
                         help="Target setup details separated by space")
-    parser.add_argument("-b", "--build", type=str,
+    parser.add_argument("-b", "--build", type=str, default='',
                         help="Builds number deployed on target")
-    parser.add_argument("-bt", "--build_type", type=str, default='Release',
-                        help="Build type (Release/Dev)")
+    parser.add_argument("-bt", "--build_type", type=str, default='',
+                        help="Build type (beta/stable)")
     parser.add_argument("-er", "--enable_async_report", type=bool, default=False,
                         help="Enable async reporting to Jira and MongoDB")
     parser.add_argument("-c", "--cancel_run", type=bool, default=False,
@@ -93,6 +96,18 @@ def parse_args(argv):
     return parser.parse_args(args=argv)
 
 
+def initialize_handlers(log) -> None:
+    """Initialize drunner logging with stream and file handlers."""
+    log.setLevel(logging.DEBUG)
+    cwd = os.getcwd()
+    dir_path = os.path.join(os.path.join(cwd, params.LOG_DIR_NAME, params.LATEST_LOG_FOLDER))
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path, exist_ok=True)
+    name = os.path.splitext(os.path.basename(__file__))[0]
+    name = os.path.join(dir_path, name + '.log')
+    cortxlogging.set_log_handlers(log, name, mode='w')
+
+
 class Runner:
     """Runs the RPC server for aysnc reporting."""
 
@@ -102,8 +117,8 @@ class Runner:
     def wait_for_parent(self):
         """Process using this function will exit if parent exited/killed."""
         lk_file = LCK_FILE % os.getpid()
-        e_mutex, _ = system_utils.FileLock(lk_file)
-        system_utils.file_unlock(e_mutex)
+        e_mutex, _ = system_utils.file_lock(lk_file)
+        system_utils.file_unlock(e_mutex, lk_file)
         sys.exit(0)  # os._exit(0)
 
     def run(self):
@@ -138,12 +153,25 @@ def run(opts: dict) -> None:
         start_rpc_server(_queue)  # starts an rpc server for async reporting task management
     tickets = opts.tickets
     targets = opts.targets
-    build = opts.build
-    build_type = opts.build_type
     test_plan = opts.test_plan
     topic = params.TEST_EXEC_TOPIC
     # collect the test universe
     run_pytest_collect_only_cmd()
+
+    tp_meta = dict()  # test plan meta
+    jira_id, jira_pwd = runner.get_jira_credential()
+    jira_obj = jira_utils.JiraTask(jira_id, jira_pwd)
+    tp_resp = jira_obj.get_issue_details(test_plan)  # test plan id
+    tp_meta['test_plan_label'] = tp_resp.fields.labels
+    tp_meta['environment'] = tp_resp.fields.environment
+    if not opts.build and not opts.build_type:
+        test_env = tp_meta.get('environment')
+        try:
+            _build_type, _build = test_env.split('_')
+        except ValueError:
+            raise EnvironmentError('Test plan env needs to be in format <build_type>_<build#>')
+        opts.build, opts.build_type = _build, _build_type
+
     log_home = create_log_dir_if_not_exists()
     # Create a reverse map of test id as key and values as node_id, tags
     meta_data = dict()  # test universe collected
@@ -183,8 +211,8 @@ def run(opts: dict) -> None:
         witem.targets = targets
         set_t = parallel_set if len(parallel_set) else sequential_set
         witem.tickets = test_map[next(iter(set_t))][-1]
-        witem.build = build
-        witem.build_type = build_type
+        witem.build = opts.build
+        witem.build_type = opts.build_type
         witem.test_plan = test_plan
         work_queue.put(witem)
         for set_item in sequential_set:
@@ -194,8 +222,8 @@ def run(opts: dict) -> None:
             w_item.parallel = False
             w_item.targets = targets
             w_item.tickets = test_map[set_item][-1]
-            w_item.build = build
-            w_item.build_type = build_type
+            w_item.build = opts.build
+            w_item.build_type = opts.build_type
             w_item.test_plan = test_plan
             work_queue.put(w_item)
     work_queue.put(None)  # poison
@@ -254,7 +282,7 @@ def create_test_map(base_components_marks: Tuple,
                     skip_test: List,
                     test_map: Dict) -> None:
     """Create a test metadata dict and tag reverse dict."""
-    special_mark = ( 'parallel',)
+    special_mark = ('parallel',)
     for test_meta in meta_data:
         tid = test_meta.get('test_id')
         if not tid:
@@ -314,14 +342,18 @@ def create_log_dir_if_not_exists():
 
 
 def run_pytest_collect_only_cmd(te_tag=None):
-    """Form a pytest command to collect tests in TE ticket."""
+    """Form a pytest command to collect tests in TE ticket.
+    Target default to automation as a nominal value for collection.
+    """
     tag = '-m ' + te_tag if te_tag else None
     collect_only = '--collect-only'
     local = '--local=True'
+    target = '--target=automation'
     if tag:
         cmd_line = ["pytest", collect_only, local, tag]
     else:
         cmd_line = ["pytest", collect_only, local]
+    cmd_line = cmd_line + [target]
     prc = subprocess.Popen(cmd_line)
     prc.communicate()
 
@@ -349,6 +381,26 @@ def save_to_logdir(test_list: List) -> None:
             write.writerow([test])
 
 
+def create_topic(admin_client: AdminClient):
+    topic_list = [NewTopic(params.TEST_EXEC_TOPIC, 1, 1)]
+    admin_client.create_topics(topic_list)
+
+
+def delete_topic(client, topics):
+    """ Call delete_topic to asynchronously delete topics, a future is returned.
+    By default this operation on the broker returns immediately while
+    topics are deleted in the background. Timeout (30s) is given
+    to propagate in the cluster before returning.
+    """
+    fs = client.delete_topics(topics, operation_timeout=30)
+    for topic, f in fs.items():  # Returns a dict of <topic,future>.
+        try:
+            f.result()  # The result itself is None
+            LOGGER.info("Topic {} deleted".format(topic))
+        except Exception as e:
+            LOGGER.info("Failed to delete topic {}: {}".format(topic, e))
+
+
 def main(argv=None):
     """
     Handles argument parser.
@@ -373,11 +425,12 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
-    lock_file = LCK_FILE % os.getpid()
+    lock_file = LCK_FILE
     mutex, flag = system_utils.file_lock(lock_file)
     name = multiprocessing.current_process().name
     print("Starting %s \n" % name)
+    initialize_handlers(LOGGER)
     main()
     print("Exiting %s \n" % name)
-    system_utils.file_unlock(mutex)
+    system_utils.file_unlock(mutex, lock_file)
     sys.exit(0)

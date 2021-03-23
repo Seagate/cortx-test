@@ -27,18 +27,14 @@ LOG_FILE = 'cortx-test.log'
 USER_JSON = '_usersdata'
 
 CONFIG_DIR = 'config'
+LOG_DIR_NAME = 'log'
+LATEST_LOG_FOLDER = 'latest'
 
 COMMON_CONFIG = os.path.join(CONFIG_DIR, 'common_config.yaml')
 S3_CONFIG = os.path.join(CONFIG_DIR, 's3', 's3_config.yaml')
-
-LOG_DIR_NAME = 'log'
-
 RAS_CONFIG_PATH = "config/ras_config.yaml"
-
 SSPL_TEST_CONFIG_PATH = "config/ras_test.yaml"
-
 PROV_TEST_CONFIG_PATH = "config/prov_test.yaml"
-
 COMMON_DESTRUCTIVE_CONFIG_PATH = "config/common_destructive.yaml"
 
 JIRA_TEST_LIST = 'test_lists.csv'
@@ -75,3 +71,8 @@ apollojenkins.pun.seagate.com:27017/
 ?authSource=cft_test_results&replicaSet=rs0"""
 DB_NAME = "cft_test_results"
 SYS_INFO_COLLECTION = "r2_systems"
+
+# Jenkins url for deployment
+JENKINS_URL = "http://eos-jenkins.mero.colo.seagate.com/job/QA/"
+
+REPORT_SRV = "http://cftic2.pun.seagate.com:5000/"
