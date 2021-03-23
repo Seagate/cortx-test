@@ -19,14 +19,18 @@
 #
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
+import dash_bootstrap_components as dbc
 import dash_table
 import pandas as pd
-from dash.dependencies import Output, Input
+from dash.dependencies import Output, Input, State
 from dash.exceptions import PreventUpdate
 import common
 from common import app
 import mongodbAPIs as r1Api
 import timingAPIs as timingAPIs
+import R1_callbacks.r1_perf_tables as r1_perf_tables
+import dash_html_components as html
+import perfdbAPIs as perf_api
 
 
 @app.callback(
@@ -187,3 +191,176 @@ def gen_table_timing_summary(n_clicks, branch, build_no):
         style_cell=common.dict_style_cell
     )
     return timing_summary
+
+
+@app.callback(
+    Output('r1_table_detailed_s3_bucket_perf', 'children'),
+    Input('submit_button', 'n_clicks'),
+    [State('branch_dropdown', 'value'),
+     State('build_no_dropdown', 'value')]
+)
+def gen_table_detailed_s3_bucket_perf(n_clicks, branch, build_no):
+    """
+    Single Bucket Performance Statistics (Average) using S3Bench
+    """
+    if n_clicks is None or branch is None or build_no is None:
+        raise PreventUpdate
+
+    df_det_s3_bucket_perf = r1_perf_tables.get_detailed_s3_bucket_perf(build_no)
+    det_s3_bucket_perf = dash_table.DataTable(
+        id="Detailed S3 Bucket Perf",
+        columns=[{"name": i, "id": i} for i in df_det_s3_bucket_perf.columns],
+        data=df_det_s3_bucket_perf.to_dict('records'),
+        style_header=common.dict_style_header,
+        style_data_conditional=[{'if': {'row_index': 'odd'}, 'backgroundColor': '#F8F8F8'},
+                                {'if': {'column_id': "Statistics"},
+                                 'backgroundColor': "#b9b9bd"}
+                                ],
+        style_cell=common.dict_style_cell
+    )
+    return det_s3_bucket_perf
+
+
+@app.callback(
+    Output('r1_table_metadata_latency', 'children'),
+    Input('submit_button', 'n_clicks'),
+    [State('branch_dropdown', 'value'),
+     State('build_no_dropdown', 'value')]
+)
+def gen_table_metadata_latency(n_clicks, branch, build_no):
+    """
+    Metadata Latencies(captured with 1KB object)
+    """
+    if n_clicks is None or branch is None or build_no is None:
+        raise PreventUpdate
+
+    df_metadata_latency = r1_perf_tables.get_metadata_latencies(build_no)
+    metadata_latency = dash_table.DataTable(
+        id="R1 Metadata Latency",
+        columns=[{"name": i, "id": i} for i in df_metadata_latency.columns],
+        data=df_metadata_latency.to_dict('records'),
+        style_header=common.dict_style_header,
+        style_data_conditional=[{'if': {'row_index': 'odd'}, 'backgroundColor': '#F8F8F8'},
+                                {'if': {'column_id': "Operation Latency"},
+                                 'backgroundColor': "#b9b9bd"}
+                                ],
+        style_cell=common.dict_style_cell
+    )
+    return metadata_latency
+
+
+@app.callback(
+    Output('r1_table_multi_bucket_perf_stats', 'children'),
+    Input('submit_button', 'n_clicks'),
+    [State('branch_dropdown', 'value'),
+     State('build_no_dropdown', 'value')]
+)
+def gen_table_multi_bucket_perf_stats(n_clicks, branch, build_no):
+    """
+    Multiple Buckets Performance Statistics (Average) using HSBench and COSBench
+    """
+    if n_clicks is None or branch is None or build_no is None:
+        raise PreventUpdate
+
+    final_rows = []
+    col_names = ["Statistics", "4 KB", "100 KB", "1 MB", "5 MB", "36 MB", "64 MB", "128 MB",
+                 "256 MB"]
+
+    # retrieve overall hsbench data
+    data = r1_perf_tables.get_hsbench_data(build_no)
+    hs_bench_text = [["Hsbench", html.Br(), "1 Buckets", html.Br(), "100 Objects", html.Br(),
+                      "100 Sessions"],
+                     ["Hsbench", html.Br(), "10 Buckets", html.Br(), "100 Objects", html.Br(),
+                      "100 Sessions"],
+                     ["Hsbench", html.Br(), "50 Buckets", html.Br(), "100 Objects", html.Br(),
+                      "100 Sessions"]
+                     ]
+    index = 0
+    for i in range(0, 18, 6):
+        final_rows.extend(
+            common.get_data_to_html_rows(data[i:i + 6], col_names, hs_bench_text[index], 6))
+        index = index + 1
+
+    # Retrieve data for cosbench
+    data = r1_perf_tables.get_cosbench_data(build_no)
+    cos_bench_text = [
+        ["Cosbench", html.Br(), "1 Buckets", html.Br(), "100 Objects", html.Br(), "100 Sessions"],
+        ["Cosbench", html.Br(), "10 Buckets", html.Br(), "100 Objects", html.Br(),
+         "100 Sessions"],
+        ["Cosbench", html.Br(), "50 Buckets", html.Br(), "100 Objects", html.Br(),
+         "100 Sessions"]
+    ]
+    index = 0
+    for i in range(0, 18, 6):
+        final_rows.extend(
+            common.get_data_to_html_rows(data[i:i + 6], col_names, cos_bench_text[index], 6))
+        index = index + 1
+
+    col_names.insert(0, "Bench")
+    table_headers = [html.Thead(html.Tr([html.Th(col) for col in col_names]))]
+    table_body = [html.Tbody(final_rows)]
+    table = dbc.Table(table_headers + table_body, bordered=True,
+                      className="caption-Top col-xs-6",
+                      hover=True,
+                      responsive=True,
+                      striped=True,
+
+                      style=common.dict_style_cell)
+    return table
+
+
+# callback only for 1 bucket,1000 objects,100 sessions
+@app.callback(
+    Output('r1_table_bucket_ops_data', 'children'),
+    [Input('submit_button', 'n_clicks'),
+     Input('Bucket_Ops_Dropdown', 'value')],
+    [State('branch_dropdown', 'value'),
+     State('build_no_dropdown', 'value'),
+     ]
+)
+def get_table_bucket_ops_data(n_clicks, bucket_op, branch, build_no):
+    if n_clicks is None or branch is None or build_no is None:
+        raise PreventUpdate
+    print("Bucket op", bucket_op)
+    if bucket_op is None:
+        bucket_op = "AvgLat"
+    operations = ['INIT BCLR', 'INIT BDEL', 'BINIT', 'PUT', 'LIST', 'GET', 'DEL', 'BCLR', 'BDEL']
+    object_size = ['4Kb', '100Kb', '1Mb', '5Mb', '36Mb', '64Mb', '128Mb', '256Mb']
+    final_dict = {}
+    bucket_obj_input = {'First': {'Bucket': 1, 'Object': 1000},  # 100 Sessions by default
+                        'Second': {'Bucket': 10, 'Object': 1000},
+                        'Third': {'Bucket': 50, 'Object': 5000}, }
+    html_data = []
+    for keys in bucket_obj_input:
+        final_dict["Operations"] = operations
+        for ob_size in object_size:
+            query = {'Build': build_no, 'Name': 'Hsbench', 'Object_Size': ob_size,
+                     'Buckets': bucket_obj_input[keys]['Bucket'],
+                     'Objects': bucket_obj_input[keys]['Object'], 'Sessions': 100}
+            cursor = perf_api.find(query)
+            doc = cursor[0]
+            temp_data = []
+            for i in range(0, 9):
+                try:
+                    temp_data.append(r1_perf_tables.round_off(doc['Bucket_Ops'][i][bucket_op]))
+                except Exception as ex:
+                    print("Exception {}".format(ex))
+                    temp_data.append('-')
+            final_dict[ob_size] = temp_data
+
+        df = pd.DataFrame(final_dict)
+        span_txt = "{} Bucket,{} Objects,100 sessions".format(bucket_obj_input[keys]['Bucket'],
+                                                              bucket_obj_input[keys]['Object'])
+        html_data.extend(common.get_df_to_rows(df, span_txt, 9))
+
+    col_name = ["Buckets", "Operations"]
+    col_name.extend(operations)
+    table_headers = [html.Thead(html.Tr([html.Th(col) for col in col_name]))]
+    table_body = [html.Tbody(html_data)]
+    table = dbc.Table(table_headers + table_body, bordered=True,
+                      className="caption-Top col-xs-6",
+                      hover=True,
+                      responsive=True,
+                      striped=True,
+                      style=common.dict_style_cell)
+    return table

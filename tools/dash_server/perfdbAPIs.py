@@ -8,9 +8,9 @@ from urllib.parse import quote_plus
 # Each collection can have multiple documents(row) in it.
 config = configparser.ConfigParser()
 config.read('config.ini')
-hostname = config["MONGODB_URI"]["hostname"]
-db_username = config["MONGODB_URI"]["db_username"]
-db_password = config["MONGODB_URI"]["db_password"]
+hostname = config["PERF_DB"]["hostname"]
+db_username = config["PERF_DB"]["db_username"]
+db_password = config["PERF_DB"]["db_password"]
 hostURI = "mongodb://{0}:{1}@{2}".format(quote_plus(db_username),
                                          quote_plus(db_password),
                                          hostname)
@@ -25,7 +25,7 @@ def find(db_filter):
             result (bool): find operation successfully completed or not
     """
     with MongoClient(hostURI) as client:
-        db = client['cft_test_results']
+        db = client['performance_db']
         tests = db.results
         result = None
         try:
@@ -49,7 +49,7 @@ def count_documents(db_filter):
             result (int): number of documents matching the db_filter
     """
     with MongoClient(hostURI) as client:
-        db = client['cft_test_results']
+        db = client['performance_db']
         tests = db.results
         result = None
         try:
@@ -74,7 +74,7 @@ def find_distinct(entry, db_filter):
            result (int): number of documents matching the db_filter
        """
     with MongoClient(hostURI) as client:
-        db = client['cft_test_results']
+        db = client['performance_db']
         tests = db.results
         result = None
         try:
