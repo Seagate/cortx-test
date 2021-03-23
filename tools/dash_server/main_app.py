@@ -52,21 +52,21 @@ input_options = dbc.Row(
         dcc.Dropdown(
             id="version_dropdown",
             options=versions,
-            placeholder="select version",
+            placeholder="Select Version",
             style={'width': '200px', 'verticalAlign': 'middle', "margin-right": "15px",
                    "margin-top": "10px"},
         ),
 
         dcc.Dropdown(
             id="branch_dropdown",
-            placeholder="select branch",
+            placeholder="Select Branch",
             style={'width': '200px', 'verticalAlign': 'middle', "margin-right": "15px",
                    "margin-top": "10px"},
         ),
 
         dcc.Dropdown(
             id='build_no_dropdown',
-            placeholder="select build",
+            placeholder="Select Build",
             style={'width': '200px', 'verticalAlign': 'middle', "margin-right": "15px",
                    "margin-top": "10px"},
         ),
@@ -80,14 +80,14 @@ input_optional_options = dbc.Row(
     [
         dcc.Dropdown(
             id='test_system_dropdown',
-            placeholder="Test System Type",
+            placeholder="Test System Type(Opt)",
             style={'width': '200px', 'verticalAlign': 'middle', "margin-right": "15px",
                    "margin-top": "10px"},
         ),
 
         dcc.Dropdown(
             id='test_team_dropdown',
-            placeholder="Select test component(Optional)",
+            placeholder="Test Component(Opt)",
             style={'width': '200px', 'verticalAlign': 'middle', "margin-right": "15px",
                    "margin-top": "10px"},
         ),

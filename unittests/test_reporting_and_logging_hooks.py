@@ -79,6 +79,7 @@ def test_max_lc(logger):
     assert val == 6
 
 
+@pytest.mark.skip
 @pytest.mark.ha
 @pytest.mark.parallel
 @pytest.mark.tags("TEST-17413")
@@ -99,6 +100,7 @@ def test_min(logger):
     assert val == 1
 
 
+@pytest.mark.skip
 @pytest.mark.ha
 @pytest.mark.parallel
 @pytest.mark.tags("TEST-17414")

@@ -31,10 +31,10 @@ from commons.errorcodes import error_handler
 from commons.utils.config_utils import read_yaml
 from commons.utils.system_utils import remove_file, run_remote_cmd
 from commons.utils.assert_utils import assert_true, assert_not_in
+from commons.helpers.health_helper import Health
 from scripts.s3_bench import s3bench as s3b_obj
 from libs.s3 import S3H_OBJ, CM_CFG, S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
-
 
 S3_OBJ = S3TestLib()
 SCAL_CFG = read_yaml("config/s3/test_dos_scalability.yaml")[1]
@@ -58,6 +58,9 @@ class TestDosScalability:
         cls.host = CM_CFG["nodes"][0]["host"]
         cls.username = CM_CFG["nodes"][0]["username"]
         cls.password = CM_CFG["nodes"][0]["password"]
+        cls.hobj = Health(hostname=cls.host,
+                          username=cls.username,
+                          password=cls.password)
         cls.log.info("Step: Install and setup s3bench on client.")
         res = s3b_obj.setup_s3bench()
         assert_true(res, res)
@@ -137,8 +140,8 @@ class TestDosScalability:
                 verbose=test_cfg["verbose"])
             self.log.debug(res)
             self.log_file.append(res[1])
-        res = S3H_OBJ.is_motr_online()
-        assert_true(res[0], res[1])
+        res = self.hobj.is_motr_online()
+        assert_true(res, res)
         self.log.info(
             "Step 2: Executed s3bench run with objects upto 20billion and obj size 1B and"
             " checking stack status.")
