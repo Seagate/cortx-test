@@ -43,6 +43,8 @@ from typing import Any
 from typing import Dict
 from queue import Queue
 from threading import Thread
+from confluent_kafka.admin import AdminClient
+from confluent_kafka.admin import NewTopic
 from core import rpcserver
 from core import report_rpc
 from core import runner
@@ -377,6 +379,26 @@ def save_to_logdir(test_list: List) -> None:
         write = csv.writer(fptr)
         for test in test_list:
             write.writerow([test])
+
+
+def create_topic(admin_client):
+    topic_list = [NewTopic(params.TEST_EXEC_TOPIC, 1, 1)]
+    admin_client.create_topics(topic_list)
+
+
+def delete_topic(client, topics):
+    """ Call delete_topic to asynchronously delete topics, a future is returned.
+    By default this operation on the broker returns immediately while
+    topics are deleted in the background. Timeout (30s) is given
+    to propagate in the cluster before returning.
+    """
+    fs = client.delete_topics(topics, operation_timeout=30)
+    for topic, f in fs.items():  # Returns a dict of <topic,future>.
+        try:
+            f.result()  # The result itself is None
+            LOGGER.info("Topic {} deleted".format(topic))
+        except Exception as e:
+            LOGGER.info("Failed to delete topic {}: {}".format(topic, e))
 
 
 def main(argv=None):
