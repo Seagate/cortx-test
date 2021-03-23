@@ -115,7 +115,7 @@ def get_data_to_html_rows(data,col_names, row_span_text, no_of_rows_to_span):
     :return:
     """
     rows = []
-    for i in range(len(data)):
+    for i in enumerate(data):
         row = []
         if i == 0:
             row.append(html.Td(row_span_text, rowSpan=no_of_rows_to_span))

@@ -226,7 +226,7 @@ def gen_table_multi_bucket_perf_stats(n_clicks):
         raise PreventUpdate
 
     final_rows = []
-
+    '''
     # HS bench 1 bucket 1000 Objects 100 Sessions
     data = {"Statistics": ["Write Throughput(MBps)", "Read Throughput(MBps)", "Write Latency(ms)",
                            "Read Latency(ms)",
@@ -347,6 +347,8 @@ def gen_table_multi_bucket_perf_stats(n_clicks):
                       striped=True,
                       style=common.dict_style_cell)
     return table
+    '''
+    return "No data available for R2"
 
 
 @app.callback(
