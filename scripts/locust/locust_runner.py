@@ -85,3 +85,4 @@ if __name__ == '__main__':
         args.log_file)
     CMD = "{}; {}\n".format(ULIMIT_CMD, LOCUST_RUN_CMD)
     run_cmd(CMD)
+    os.write(1, str.encode("Locust run completed."))
