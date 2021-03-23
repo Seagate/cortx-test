@@ -98,6 +98,12 @@ LICENSE_CANCLE_BUTTON_ID = 'license-cancelagreementbtn'
 LICENSE_CANCLE_IMAGE_ID = 'license-cancelagreementicon'
 LICENSE_TITLE_ID = 'agreement-title'
 LICENSE_DATA_ID = 'agreement-data'
+ADMIN_USER_FIELD_ID = 'adminUsername'
+ADMIN_USER_EMAIL_ID_FIELD_ID = 'adminEmail'
+ADMIN_PASSWORD_FIELD_ID = 'adminPassword'
+ADMIN_CONFIRM_PASSWORD_FIELD_ID = 'confirmAdminPassword'
+APPLY_AND_CONTINUE_BUTTON_ID = 'admin-createadminuser'
+ADMIN_USER_ALREADY_EXISTS_ID = 'admin-invalidmsg'
 
 #  CSM User section
 CSM_USERS_TABLE_XPATH = '//*[@id="localuser-tabledata"]//table'
@@ -163,6 +169,15 @@ IAM_USER_RESET_NEW_PASSWORD_ID = "user-password"
 IAM_USER_RESET_CONFIRM_PASSWORD_ID = "confirm-password"
 IAM_USER_SUCCESS_MESSAGE_ID = 'iam-success-dialog'
 IAM_USER_SUCCESS_MESSAGE_BUTTON_ID = 'confirmation-dialogbox-btn'
+IAM_USER_TABLE_ID = "iam-datatable"
+IAM_USER_ACCESS_KEY_ID = "iam-accesskey-datatable"
+ACCESS_KEY_TABLE_NAME_ID = "iam-accesskey-datatable-title"
+IAM_USER_ACCESS_KEY_DATA_XPATH = "//td[contains(@id, 'iam-accesskey')]"
+ADD_IAM_USER_ACCESS_KEY_BUTTON_ID = "iam-accesskey-add-btn"
+DOWNLOAD_IAM_USER_ACCESS_KEY_BUTTON_ID = "download-csv-dialog-btn"
+IAM_USER_SECRET_KEY_XPATH = "//div[@id='iam-accesskey-datatable']//td[2]"
+IAM_USER_ACCESS_KEY_TABLE_HEADERS_XPATH = "//div[@id='iam-accesskey-datatable']//th"
+DELETE_IAM_USER_ACCESS_KEY_BUTTON_ID = "//img[contains(@id, 'iam-accesskey-datatable-delete')]"
 
 # About Section
 ABOUT_VIEW_ID = 'menu-actionmanagebtn'
@@ -191,6 +206,15 @@ BUCKET_CREATE_BUTTON_ID = "bucket-create-btn"
 DELETE_BUCKET_XPATH = '//tr[@id="{0}"]//*[@id="bucket-delete-icon"]'
 CONFIRM_CREATE_BUTTON_ID = "bucket-closedialodbox"
 BUCKET_ROW_ELEMENT_XPATH = '//tr[@id="{0}"]'
+BUCKET_NAME_POLICY_TOOLTIP_ID = "tooltip-msg"
+BUCKET_NAME_POLICY_TOOLTIP_ICON_ID = "Bucket name*"
+CANCEL_BUCKET_CREATION_BUTTON_ID = "bucket-cancel-btn"
+DUPLICATE_BUCKET_MESSAGE_ID = "dialog-message-label"
+CLOSE_DUPLICATE_BUCKET_MESSAGE_ID = "close-msg-dialogbox"
+CANCEL_BUCKET_DELETION_ID = "confirmation-dialog-cancel-btn"
+CANCEL_BUCKET_DELITION_ICON_ID = "confirmation-dialogclose"
+
+
 # Software Update Page
 UPLOAD_SW_FILE_BTN_ID = "btnInstallHotfix"
 CHOOSE_SW_UPDATE_FILE_BTN_ID = "file"
@@ -200,3 +224,8 @@ PAGE_LOADING_MSG_ID = "lblLoaderMessage"
 
 #Buckets Tab
 BUCKETS_TAB_ID = "s3bucketstab"
+
+# Firmware Update
+UPLOAD_FW_FILE_BTN_ID = "btnInstallFirmware"
+CHOOSE_FW_UPDATE_FILE_BTN_ID = "file"
+START_FW_UPDATE_BUTTON_ID = "btnStartUpgrade"

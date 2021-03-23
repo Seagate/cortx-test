@@ -1,8 +1,12 @@
 *** Settings ***
 Documentation    This suite verifies the testcases for csm user creation
-Resource    ../../../resources/page_objects/loginPage.robot
-Resource    ../../../resources/page_objects/userSettingsLocalPage.robot
+Resource    ${EXECDIR}/resources/page_objects/loginPage.robot
+Resource    ${EXECDIR}/resources/page_objects/userSettingsLocalPage.robot
+Resource    ${EXECDIR}/resources/page_objects/preboardingPage.robot
 
+Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
+...  ${username}  ${password}
+...  AND  Close Browser
 Test Setup  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
 Test Teardown  Close Browser
 Suite Teardown  Close All Browsers
@@ -42,7 +46,7 @@ TEST-1852
 TEST-5322
     [Documentation]  Test that Clicking "Create" Button after filling required fields should create a new user
     ...  Reference : https://jts.seagate.com/browse/TEST-5322
-    [Tags]  Priority_High
+    [Tags]  Priority_High  Smoke_test
     Navigate To Page  ${page name}
     ${new_user_name}=  Generate New User Name
     Create New CSM User  ${new_user_name}
@@ -147,7 +151,7 @@ TEST-7393
 TEST-5325
     [Documentation]  Test that user should able to edit after create a new user on the User Settings.
     ...  Reference : https://jts.seagate.com/browse/TEST-5325
-    [Tags]  Priority_High
+    [Tags]  Priority_High  Smoke_test
     ${new_password}=  Generate New Password
     Navigate To Page  ${page name}
     ${new_user_name}=  Generate New User Name
@@ -165,7 +169,7 @@ TEST-5325
 TEST-5323
     [Documentation]  Test that User should able to delete after create a new user on the User Settings
     ...  Reference : https://jts.seagate.com/browse/TEST-5323
-    [Tags]  Priority_High
+    [Tags]  Priority_High  Smoke_test
     ${new_password}=  Generate New Password
     Navigate To Page  ${page name}
     ${new_user_name}=  Generate New User Name

@@ -4,7 +4,7 @@ Library  SeleniumLibrary    screenshot_root_directory=reports/screenshots
 Library  String
 Library  DateTime
 Library  Collections
-Library  ../../utils/Download.py
+Library  ${EXECDIR}/utils/Download.py
 Variables  common_variables.py
 Variables  element_locators.py
 
@@ -118,3 +118,7 @@ wait for page or element to load
     [Arguments]  ${time}=5s
     sleep  ${time}
 
+Check element is not visiable
+    [Documentation]  This kaeyword is to verify that provided web element is not visiable on screen
+    [Arguments]  ${element_locator}
+    Element Should Not Be Visible  ${${element_locator}}

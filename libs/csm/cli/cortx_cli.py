@@ -59,7 +59,7 @@ class CortxCli(CortxCliClient):
             session_obj=session_obj,
             port=port)
 
-    def execute_cli_commands(self, cmd: str, time_out: int = 800, sleep_time: int = 6) -> tuple:
+    def execute_cli_commands(self, cmd: str, time_out: int = 800, sleep_time: int = 2) -> tuple:
         """
         This function executes command on interactive shell on csm server and returns output
         :param str cmd: command to execute on shell
@@ -179,8 +179,8 @@ class CortxCli(CortxCliClient):
         # Splitting values of each row column-wise
         for i, string in enumerate(response):
             response[i] = string.split('|')
-            for j, substr in enumerate(string):
-                response[i][j] = substr.strip()
+            for j in range(len(response[i])):
+                response[i][j] = response[i][j].strip()
         response = response[4:len(response) - 2]
         self.log.info(response)
         return response

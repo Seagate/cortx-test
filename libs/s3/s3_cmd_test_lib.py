@@ -28,7 +28,7 @@ import logging
 from commons import errorcodes as err
 from commons.exceptions import CTException
 from commons.utils.system_utils import create_file
-from libs.s3 import CM_CFG, S3_CFG, ACCESS_KEY, SECRET_KEY
+from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_core_lib import S3LibCmd
 
 LOGGER = logging.getLogger(__name__)
@@ -172,7 +172,7 @@ class S3CmdTestLib(S3LibCmd):
     def command_formatter(
             s3cmd_cnf: str = None,
             operation: str = None,
-            cmd_arguments: str = None) -> str:
+            cmd_arguments: list = None) -> str:
         """
         Creating command from dictionary cmd_options.
 

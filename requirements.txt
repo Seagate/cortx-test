@@ -9,7 +9,6 @@ dataclasses
 defusedxml
 docutils==0.14
 dataclasses
-defusedxml
 fastavro
 fabric~=2.5.0
 filelock==3.0.12
@@ -45,6 +44,7 @@ pytest-ordering==0.6
 pytest-parallel==0.1.0
 pytest-xdist==2.2.0
 python-dateutil==2.8.0
+python-jenkins
 pyyaml==5.1.2
 pyzmq==18.0.2
 requests==2.22.0

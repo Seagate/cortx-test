@@ -193,18 +193,42 @@ class JiraTask:
                                     params=None)
         return response
 
-    def get_test_details(self, test_exe_id):
+    def get_test_details(self, test_exe_id: str) -> list:
         """
-        Get details of the test cases in a test execution ticket
+        Get details of the test cases in a test execution ticket.
         """
-        jira_url = "https://jts.seagate.com/rest/raven/1.0/api/testexec/{}/test".format(test_exe_id)
-        response = requests.get(jira_url, auth=(self.jira_id, self.jira_password))
-        data = response.json()
-        return data
+        test_info = list()
+        try:
+            jira_url = "https://jts.seagate.com/rest/raven/1.0/api/testexec/{}/test".format(test_exe_id)
+            response = requests.get(jira_url, auth=(self.jira_id, self.jira_password))
+            if response.status_code == HTTPStatus.BAD_REQUEST:
+                page_not_zero = 1
+                page_cnt = 1
+                while page_not_zero:
+                    jira_url = "https://jts.seagate.com/rest/raven/1.0/api/testexec/{}/test?page={}" \
+                        .format(test_exe_id, page_cnt)
+                    try:
+                        response = requests.get(jira_url, auth=(self.jira_id, self.jira_password))
+                        data = response.json()
+                        test_info.append(data)
+                    except Exception as e:
+                        print(e)
+                    else:
+                        if len(data) == 0:
+                            page_not_zero = 0
+                        else:
+                            page_cnt = page_cnt + 1
+            else:
+                data = response.json()
+                test_info.append(data)
+            return test_info
+        except requests.exceptions.RequestException:
+            print(traceback.print_exc())
 
-    def update_execution_details(self, data, test_id, comment):
+    def update_execution_details(self, data: list, test_id: str, comment: str)\
+            -> bool:
         """
-        Add comment to the mentioned jira id
+        Add comment to the mentioned jira id.
         """
         run_id = None
         try:
@@ -212,9 +236,13 @@ class JiraTask:
                 print("No test details found in test execution tkt")
                 return False
 
-            for test in data:
-                if test['key'] == test_id:
-                    run_id = test['id']
+            for i in range(0, len(data)):
+                for test in data[i]:
+                    if test['key'] != test_id:
+                        continue
+                    else:
+                        run_id = test['id']
+                        break
 
             if run_id is None:
                 print("Test ID %s not found in test execution ticket details",
@@ -227,6 +255,12 @@ class JiraTask:
                                         auth=(self.jira_id, self.jira_password),
                                         headers=self.headers,
                                         params=None)
-            return response
+            print("Response code: %s", response.status_code)
+            if response.status_code == HTTPStatus.OK:
+                print("Updated execution details successfully for test id "
+                      "%s", test_id)
+                return True
+            return False
         except JIRAError as err:
             print(err.status_code, err.text)
+            return False

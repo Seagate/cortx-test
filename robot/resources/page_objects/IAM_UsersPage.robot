@@ -1,5 +1,5 @@
 *** Settings ***
-Resource  ../common/common.robot
+Resource  ${EXECDIR}/resources/common/common.robot
 Library     SeleniumLibrary
 
 *** Keywords ***
@@ -31,6 +31,38 @@ Click on IAM User Cancel Button
     [Documentation]  This keyword will click on cancel IAM user button
     wait until element is visible  ${CANCEL_IAM_USER_BUTTON_ID}  timeout=60
     click button    ${CANCEL_IAM_USER_BUTTON_ID}
+
+Generate IAM User Add Access Key
+    [Documentation]  This keyword will Add Access Key
+    wait until element is visible  ${ADD_IAM_USER_ACCESS_KEY_BUTTON_ID}  timeout=60
+    click button    ${ADD_IAM_USER_ACCESS_KEY_BUTTON_ID}
+    wait until element is visible  ${DOWNLOAD_IAM_USER_ACCESS_KEY_BUTTON_ID}  timeout=60
+    click element    ${DOWNLOAD_IAM_USER_ACCESS_KEY_BUTTON_ID}
+
+Verify Generate Access Key Button Must Remain Disable
+    [Documentation]  Verify Generate Access Key Button Must Remain Disable
+    wait until element is visible  ${ADD_IAM_USER_ACCESS_KEY_BUTTON_ID}  timeout=60
+    ${status}=  Get Element Attribute  ${ADD_IAM_USER_ACCESS_KEY_BUTTON_ID}  disabled
+    Log To Console And Report  ${status}
+    Should be equal  ${status}  true
+
+Delete IAM User Add Access Key
+    [Documentation]  This keyword will click on delete Access Key Button
+    wait until element is visible  ${DELETE_IAM_USER_ACCESS_KEY_BUTTON_ID}  timeout=60
+    click element    ${DELETE_IAM_USER_ACCESS_KEY_BUTTON_ID}
+    wait until element is visible  ${IAM_USER_SUCCESS_MESSAGE_BUTTON_ID}  timeout=60
+    Sleep  2s
+    Click Button  ${IAM_USER_SUCCESS_MESSAGE_BUTTON_ID}
+
+Click On IAMuser
+    [Documentation]  Click on the IAM user present
+    [Arguments]  ${user_name}
+    wait for page or element to load
+    ${element}=  Format String  ${IAM_USER_ROW_ELEMENT_XPATH}  ${user_name}
+    Log To Console And Report  ${element}
+    Wait Until Element Is Visible  ${element}  timeout=60
+    Sleep  2s
+    Click Element  ${element}
 
 Verify Duplicate User Error MSG
     [Documentation]  This keyword will Verify Duplicate User Error MSG
@@ -191,3 +223,50 @@ Verify ARN Username UserID
     ${data}=  get text  ${element}
     Log To Console And Report  ${data}
     Should Not Be Empty  ${data}
+
+Try to Login As IAMUser
+    [Documentation]  Try to login to CSM portal using IAMuser credentials
+    [Arguments]  ${user_name}  ${password}
+    CSM GUI Logout
+    Wait Until Element Is Visible  ${csm username id}  timeout=60
+    Enter Username And Password  ${username}  ${password}
+    Click Sigin Button
+
+Verify Presence of Two Tables
+    [Documentation]  Verify presence of IAMuser table and access key table
+    Sleep  5s
+    Element Should Be Visible  ${IAM_USER_TABLE_ID}
+    Element Should Be Visible  ${IAM_USER_ACCESS_KEY_ID}
+
+Verify the IAMuser of the Access Key Table
+    [Documentation]  Verify the IAMuser to which the access key belongs
+    [Arguments]  ${user_name}
+    Wait Until Element Is Visible  ${ACCESS_KEY_TABLE_NAME_ID}
+    ${table_name}=  get text  ${ACCESS_KEY_TABLE_NAME_ID}
+    Log To Console And Report  ${table_name}
+    Should Contain  ${table_name}  ${username}
+
+Get IAMUser Access Key Count
+    [Documentation]  Return the no. of access key present
+    Wait Until Element Is Visible  ${IAM_USER_ACCESS_KEY_DATA_XPATH}
+    ${count}=  Get Element Count  ${IAM_USER_ACCESS_KEY_DATA_XPATH}
+    Log To Console And Report  no. of access key is ${count}
+    [Return]   ${count}
+
+Verify IAMuser Access Key table content
+    [Documentation]  Verify IAMuser Access Key table content
+    Wait Until Element Is Visible  ${IAM_USER_ACCESS_KEY_DATA_XPATH}
+    ${accesskey}=  get text  ${IAM_USER_ACCESS_KEY_DATA_XPATH}
+    Log To Console And Report  access key is ${accesskey}
+    ${chars}=  Get Length  ${accesskey}
+    Should be equal  '${chars}'  '26'
+    ${secretkey}=  get text  ${IAM_USER_SECRET_KEY_XPATH}
+    Log To Console And Report  access key is ${secretkey}
+    Should be equal  ${secretkey}  ${SECRET_KEY_VALUE}
+
+Verify Access Key Table Headers
+    [Documentation]  Verify Access Key Table Headers
+    Wait Until Element Is Visible  ${IAM_USER_ACCESS_KEY_TABLE_HEADERS_XPATH}
+    ${headers}=  Get text of elements from elements list  ${IAM_USER_ACCESS_KEY_TABLE_HEADERS_XPATH}
+    Log To Console And Report  Headers are ${headers}
+    Lists Should Be Equal  ${headers}  ${IAMUSER_ACCESS_KEY_HEADERS}

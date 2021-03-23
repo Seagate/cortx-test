@@ -1,7 +1,7 @@
 *** Settings ***
-Resource  ../common/common.robot
+Resource  ${EXECDIR}/resources/common/common.robot
 Library     SeleniumLibrary
-Variables  ../common/element_locators.py
+Variables  ${EXECDIR}/resources/common/element_locators.py
 
 *** Variables ***
 
@@ -33,9 +33,8 @@ Click Sigin Button
 
 Validate CSM Login Failure
     [Documentation]  Test keyword is for Validating login failure on CSM GUI.
-    ${csm_login_fail_msg}=  get text  ${csm login fail msg id}
-    should be equal  ${csm_login_fail_msg} ${LOGIN_FAILED_MESSAGE}
-    [Return]  ${csm_login_fail_msg}
+    wait for page or element to load  2s
+    Element Should Be Visible  ${CSM_LOGIN_FAIL_MSG_ID}
 
 Validate CSM Login Success
     [Documentation]  This keyword is used to validate that user is loggied in.
@@ -63,9 +62,9 @@ CSM GUI Logout
 
 Re-login
     [Documentation]  Functionlity to Logout and login again
-    [Arguments]  ${user_name}  ${password}  ${page}
-    CSM GUI Logout
-    Wait Until Element Is Visible  ${csm username id}  timeout=10
+    [Arguments]  ${user_name}  ${password}  ${page}  ${Logout}=${True}
+    Run Keyword If  '${Logout}' == 'True'  CSM GUI Logout
+    Wait Until Element Is Visible  ${csm username id}  timeout=60
     Enter Username And Password  ${username}  ${password}
     Click Sigin Button
     Navigate To Page  ${page}

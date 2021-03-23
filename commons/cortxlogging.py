@@ -2,6 +2,7 @@
 Extended log rotation class for cortx log files
 """
 import os
+import sys
 import gzip
 import shutil
 import datetime
@@ -30,6 +31,8 @@ def make_log_dir(dirpath) -> None:
     if not os.path.exists(dirpath):
         os.makedirs(dirpath, exist_ok=True)
 
+def get_frame():
+    return sys._getframe().f_code.co_name
 
 class CortxRotatingFileHandler(handlers.RotatingFileHandler):
     """
