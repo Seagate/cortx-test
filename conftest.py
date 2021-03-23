@@ -514,7 +514,7 @@ def pytest_runtest_makereport(item, call):
             elif item.rep_setup.skipped and (item.rep_teardown.skipped or item.rep_teardown.passed):
                 # Jira reporting of skipped cases does not contain skipped option
                 # Keeping it todo_status and skipping db update for now
-                pass
+                task.update_test_jira_status(item.config.option.te_tkt, test_id, 'BLOCKED')
 
     if report.when == 'teardown':
         if item.rep_setup.failed or item.rep_teardown.failed:
