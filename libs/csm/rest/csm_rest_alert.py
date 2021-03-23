@@ -393,6 +393,12 @@ class SystemAlerts(RestTestLib):
         pre_alerts = self.extract_alert_ids(response)
 
         self.log.info("Creating alert...")
+        # Commented until tested on R2
+        #local_path = ras_cons.TELNET_OP_PATH
+        #remote_path = ras_cons.REMOTE_TELNET_PATH
+        #self.log.info("Copying file %s to %s", local_path, remote_path)
+        #self.node_obj.copy_file_to_remote(local_path=local_path,
+        #                                  remote_path=remote_path)
         resp = alert_api_obj.generate_alert(
             eval('AlertType.{}'.format(alert_type)),
             host_details={'host': self.node_obj.hostname,
@@ -457,12 +463,12 @@ class SystemAlerts(RestTestLib):
             return False
         before_alert_ids = self.extract_alert_ids(response)
         self.log.info("Pre Alert IDs: %s", before_alert_ids)
-
-        local_path = ras_cons.TELNET_OP_PATH
-        remote_path = ras_cons.REMOTE_TELNET_PATH
-        self.log.info("Copying file %s to %s", local_path, remote_path)
-        self.node_obj.copy_file_to_remote(local_path=local_path,
-                                          remote_path=remote_path)
+        # Commented until tested on R2
+        #local_path = ras_cons.TELNET_OP_PATH
+        #remote_path = ras_cons.REMOTE_TELNET_PATH
+        #self.log.info("Copying file %s to %s", local_path, remote_path)
+        #self.node_obj.copy_file_to_remote(local_path=local_path,
+        #                                  remote_path=remote_path)
 
         response = self.get_alerts(resolved=False)
         pre_resolve = self.extract_alert_ids(response)
