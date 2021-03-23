@@ -92,7 +92,7 @@ def write_yaml(
     return True, fpath
 
 
-def create_content_json(path: str, data: object) -> str:
+def create_content_json(path: str, data: object, ensure_ascii=True) -> str:
     """
     Function to create json file.
 
@@ -101,18 +101,18 @@ def create_content_json(path: str, data: object) -> str:
     :return: path of the file.
     """
     with open(path, 'w') as outfile:
-        json.dump(data, outfile, ensure_ascii=True)
+        json.dump(data, outfile, ensure_ascii=ensure_ascii)
 
     return path
 
-def read_content_json(fpath: str) -> dict:
+def read_content_json(fpath: str, mode='r') -> dict:
     """
     Function to read json file.
 
     :param fpath: Path of the json file
     :return: Data of the json file
     """
-    with open(fpath, 'r') as json_file:
+    with open(fpath, mode) as json_file:
         data = json.loads(json_file.read())
 
     return data
