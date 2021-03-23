@@ -51,6 +51,8 @@ ACCESS_KEY_GENERATED_MESSAGE = 'Access key created'
 IAM_USER_USERNAME_TOOLTIP_MSG = "The username must be of minimum 4 characters and maximum 56 characters"
 IAM_USER_PASSWD_TOOLTIP_MSG = "Password must contain: Minimum 8 characters"
 IAM_USER_PASSWD_MISSMATCH_MSG = "Passwords do not match"
+SECRET_KEY_VALUE = "XXXX"
+IAMUSER_ACCESS_KEY_HEADERS = ['Access key', 'Secret key', 'common.action']
 DUPLICATE_IAM_USER_ERROR_MSG = "The request was rejected because it attempted to create or update a resource that already exists."
 
 # Alerts
@@ -59,3 +61,10 @@ TEST_COMMENT = "Test Comment"
 # Preboarding
 ADMIN_USER_ALREADY_EXISTS_MESSAGE = "Admin user already exists"
 EMAIL_DOMAIN =  "@seagate.com"
+
+#Buckets
+BUCKET_NAME_POLICY_TEXT = "The bucket name must be of minimum 4 characters and maximum 56 characters." \
+                          " Only lowercase, numbers, and dash (-) are allowed. " \
+                          "The bucket name cannot start and end with a dash (-)."
+DUPLICATE_BUCKET_NAME_ALERT_MESSAGE = "The bucket you tried to create already exists, and you own" \
+                                      " it."

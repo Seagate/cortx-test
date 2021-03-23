@@ -337,4 +337,3 @@ class GenerateAlertWrapper:
             LOGGER.error("%s %s: %s", cons.EXCEPTION_ERROR,
                          GenerateAlertWrapper.iem_alerts.__name__, error)
             return False, error
-        return resp

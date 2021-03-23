@@ -391,7 +391,7 @@ def verify_json_response(actual_result, expect_result, match_exact=False):
 def verify_json_schema(instance, *schemas):
     """
     Verify the schema for the given instance of the response
-    exception is raised if the schema doesn't match 
+    exception is raised if the schema doesn't match
     which can be handled by calling function
     :param instance: json log instance which needs to be verified.
     :param schemas: json schema for verification

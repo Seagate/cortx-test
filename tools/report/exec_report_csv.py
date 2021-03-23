@@ -155,41 +155,41 @@ def get_args():
     parser.add_argument('tp', help='Testplan for current build')
     parser.add_argument('--tp1', help='Testplan for current-1 build', default=None)
     parser.add_argument('--tp2', help='Testplan for current-2 build', default=None)
+    parser.add_argument('--tp3', help='Testplan for current-2 build', default=None)
 
     test_plans = parser.parse_args()
 
-    uri, db_name, db_collection = common.get_db_details()
+    uri, db_name, db_collection = common.get_perf_db_details()
     return test_plans, uri, db_name, db_collection
 
 
 def main():
     """Generate csv executive report from test plan JIRA."""
     test_plans, uri, db_name, db_collection = get_args()
-
+    tp_ids = [test_plans.tp, test_plans.tp1, test_plans.tp2, test_plans.tp3]
+    rest, db_username, db_password = common.get_timings_db_details()
     username, password = jira_api.get_username_password()
-    main_table_data, build = jira_api.get_main_table_data(test_plans.tp, username, password)
-    report_bugs_table_data = jira_api.get_reported_bug_table_data(test_plans.tp, username, password)
-    overall_qa_table_data = jira_api.get_overall_qa_report_table_data(test_plans.tp, test_plans.tp1,
-                                                                      build, username, password)
-    feature_breakdown_summary_table_data = get_feature_breakdown_summary_table_data(
-        test_plans.tp, username, password)
-    code_maturity_table_data = get_code_maturity_data(test_plans.tp, test_plans.tp1, test_plans.tp2,
-                                                      username, password)
+
+    builds = [jira_api.get_build_from_test_plan(test_plan, username, password) if
+              test_plan else "NA" for test_plan in tp_ids]
 
     data = []
-    data.extend(main_table_data)
+    data.extend(jira_api.get_main_table_data(builds[0]))
     data.extend([""])
-    data.extend(report_bugs_table_data)
+    data.extend(jira_api.get_reported_bug_table_data(test_plans.tp, username, password))
     data.extend([""])
-    data.extend(overall_qa_table_data)
+    data.extend(jira_api.get_overall_qa_report_table_data(test_plans.tp, test_plans.tp1,
+                                                          builds[0], username, password))
     data.extend([""])
-    data.extend(feature_breakdown_summary_table_data)
+    data.extend(get_feature_breakdown_summary_table_data(
+        test_plans.tp, username, password))
     data.extend([""])
-    data.extend(code_maturity_table_data)
+    data.extend(get_code_maturity_data(test_plans.tp, test_plans.tp1, test_plans.tp2,
+                                       username, password))
     data.extend([""])
-    data.extend(get_single_bucket_perf_data(build, uri, db_name, db_collection))
+    data.extend(get_single_bucket_perf_data(builds[0], uri, db_name, db_collection))
     data.extend([""])
-    data.extend(jira_api.get_timing_summary())
+    data.extend(common.get_timing_summary(tp_ids, builds, rest, db_username, db_password))
     data.extend([""])
     with open("../exec_report.csv", "a", newline='') as csv_file:
         writer = csv.writer(csv_file)
