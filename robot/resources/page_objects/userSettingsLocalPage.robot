@@ -1,8 +1,9 @@
 *** Settings ***
-Resource  ${EXECDIR}/resources/common/common.robot
-Library     SeleniumLibrary
+Library    SeleniumLibrary
+Resource   ${EXECDIR}/resources/common/common.robot
 
 *** Keywords ***
+
 Click On Add User Button
     [Documentation]  Perform click operation on add user button
     Click button    ${add user button id}
@@ -88,7 +89,7 @@ Verify Only Valid User Allowed For Username
     Input Text  ${ADD_USER_USER_NAME_INPUT_BOX_ID}  ${value}
     Page Should Not Contain Element  ${INVALID_LOCAL_USER_MSG_ID}
 
-Verify Create Button Must Remain disbaled
+Verify Create Button Must Remain disabled
     [Documentation]  Functionality to verify create button status at different scenario
     ${password}=  Generate New Password
     Element Should Be Disabled  ${CREATE_NEW_CSM_USER_BUTTON_ID}
@@ -116,8 +117,8 @@ Verify Passwords Remain Hidden
     ${attribute}=  Get Element Attribute  ${ADD_USER_CONFIRM_PASSWORD_INPUT_ID}  type
     should be equal  ${attribute}  ${hidden type element}
 
-Verify Missmatch Password Error
-    [Documentation]  Functionality to verify error msg at missmatch password
+Verify Mismatch Password Error
+    [Documentation]  Functionality to verify error msg at mismatch password
     Log To Console And Report  Verifying miss match pasword
     ${password}=  Generate New Password
     Input Text  ${ADD_USER_PASSWORD_INPUT_ID}  ${password}
@@ -126,7 +127,7 @@ Verify Missmatch Password Error
     Input Text  ${ADD_USER_CONFIRM_PASSWORD_INPUT_ID}  ${value}
     Page Should Contain Element  ${PASSWORD_MISS_MATCH_MSG_ID}
     ${text}=  get text  ${PASSWORD_MISS_MATCH_MSG_ID}
-    should be equal  ${text}  ${missmatch password msg}
+    should be equal  ${text}  ${mismatch password msg}
 
 Verify Absence of Edit And Delete Button on S3account
     [Documentation]  Verify Presence of Edit And Delete Button on S3account
@@ -197,17 +198,17 @@ Verify Deleted User
     ${user_list}=  Read Table Data  ${CSM_TABLE_ELEMENTS_XPATH}
     List Should Not Contain Value  ${user_list}  ${user_name}
 
-Verify Presence of Pagiantion
+Verify Presence of Pagination
     [Documentation]  Functionality to validate correc user name
     Sleep  1s
     Page Should Contain Element  ${PAGINATION_BAR_XPATH}
 
-Read Pagiantion Options
-    [Documentation]  This Keyword is for reading all available function for pagiantion
+Read Pagination Options
+    [Documentation]  This Keyword is for reading all available function for pagination
     @{data_list}=    Create List
     Click Element  ${PAGINATION_LIST_ICON_XPATH}
     Sleep  3s
-    @{elements}=  Get WebElements  ${PAGIANTION_PAGE_OPTIONS_XPATH}
+    @{elements}=  Get WebElements  ${PAGINATION_PAGE_OPTIONS_XPATH}
     FOR  ${element}  IN  @{elements}
             ${text}=    Get Text    ${element}
             Append To List  ${data_list}  ${text}
@@ -250,8 +251,7 @@ Edit CSM User Details
     Sleep  1s
     Click Button  ${CHANGE_PASSWORD_BTN_ID}
     Sleep  1s
-    Press Keys  ${UPDATE_USER_EMAIL_ID_INPUT_ID}  CTRL+a
-    Press Keys  ${UPDATE_USER_EMAIL_ID_INPUT_ID}  BACKSPACE
+    Press Keys  ${UPDATE_USER_EMAIL_ID_INPUT_ID}  CTRL+a+BACKSPACE
     Input Text  ${UPDATE_USER_EMAIL_ID_INPUT_ID}  ${new_email}
     Input Text  ${ADD_USER_PASSWORD_INPUT_ID}  ${new_password}
     Input Text  ${UPDATE_USER_CONFIRM_PASSWORD_INPUT_ID}  ${new_password}
@@ -278,9 +278,3 @@ Verify bucket Section Not Present
     Navigate To Page  MANAGE_MENU_ID
     Sleep  1s
     Page Should Not Contain Element  ${BUCKETS_TAB_ID}
-
-Verify that CSM manage user can not access setting menu
-    [Documentation]  Functionality to verify settings options are not accessable for manage user
-    Navigate To Page  DASHBOARD_MENU_ID
-    Sleep  1s
-    Page Should Not Contain Element  ${SETTINGS_ID}

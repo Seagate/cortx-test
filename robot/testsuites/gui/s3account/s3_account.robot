@@ -1,15 +1,15 @@
 *** Settings ***
 Documentation    This suite verifies the testcases for csm login
-Library     SeleniumLibrary
-Resource    ${EXECDIR}/resources/page_objects/loginPage.robot
-Resource    ${EXECDIR}/resources/page_objects/s3accountPage.robot
-Resource    ${EXECDIR}/resources/page_objects/bucket_page.robot
-Resource    ${EXECDIR}/resources/page_objects/IAM_UsersPage.robot
-Resource    ${EXECDIR}/resources/page_objects/bucket_page.robot
-Resource   ${EXECDIR}/resources/common/common.robot
-Variables  ${EXECDIR}/resources/common/element_locators.py
-Variables  ${EXECDIR}/resources/common/common_variables.py
+Library    SeleniumLibrary
+Resource   ${EXECDIR}/resources/page_objects/bucket_page.robot
+Resource   ${EXECDIR}/resources/page_objects/IAM_UsersPage.robot
+Resource   ${EXECDIR}/resources/page_objects/loginPage.robot
 Resource   ${EXECDIR}/resources/page_objects/preboardingPage.robot
+Resource   ${EXECDIR}/resources/page_objects/s3accountPage.robot
+Resource   ${EXECDIR}/resources/page_objects/settingsPage.robot
+Resource   ${EXECDIR}/resources/common/common.robot
+Variables  ${EXECDIR}/resources/common/common_variables.py
+Variables  ${EXECDIR}/resources/common/element_locators.py
 
 Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}  ${username}  ${password}
 ...  AND  Close Browser
@@ -19,7 +19,7 @@ Test Setup  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${passw
 Test Teardown  Close Browser
 
 *** Variables ***
-${url}  https://10.230.246.58:28100/#/
+${url}
 ${browser}  chrome
 ${headless}  True
 ${navigate_to_subpage}  False
@@ -33,7 +33,7 @@ ${invalid_S3_account_password}  TestPass
 *** Test Cases ***
 
 Check S3 Account Exists
-    [Documentation]  This test is to verify that S3 account existes
+    [Documentation]  This test is to verify that S3 account exists
     [Tags]  Priority_High  S3_test
     Validate CSM Login Success  ${username}
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
@@ -54,6 +54,7 @@ TEST-5268
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
+    sleep  2s
     Re-login   ${S3_account_name}  ${password}  MANAGE_MENU_ID
     sleep  5s
     Check Associated S3 Account Exists  ${S3_account_name}  ${email} 
@@ -76,8 +77,10 @@ TEST-1042
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
+    sleep  2s
     Re-login   ${S3_account_name}  ${password}  MANAGE_MENU_ID
-    Check Setting Option Not Exists
+    sleep  2s
+    Verify that S3 user can not access setting menu
     Delete S3 Account  ${S3_account_name}  ${password}  True
 
 TEST-6454
@@ -86,19 +89,10 @@ TEST-6454
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
+    sleep  2s
     Re-login   ${S3_account_name}  ${password}  MANAGE_MENU_ID
     Check Alert Icon Not Exists
     Delete S3 Account  ${S3_account_name}  ${password}  True       
-
-TEST-1037
-    [Documentation]  Test that maintenance option not available for s3 user
-    [Tags]  Priority_High  Smoke_test  user_role  TEST-1037
-    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    sleep  2s
-    ${S3_account_name}  ${email}  ${password} =  Create S3 account
-    Re-login   ${S3_account_name}  ${password}  MANAGE_MENU_ID
-    Check Create CSM User Option Not Exists
-    Delete S3 Account  ${S3_account_name}  ${password}  True     
 
 TEST-1035
     [Documentation]  Test that maintenance option not available for s3 user
@@ -106,6 +100,29 @@ TEST-1035
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
+    sleep  2s
+    Re-login   ${S3_account_name}  ${password}  MANAGE_MENU_ID
+    Check Maintenance Option Not Exists
+    Delete S3 Account  ${S3_account_name}  ${password}  True   
+
+TEST-1872
+    [Documentation]  Test that Test s3user not able to do system shutdown
+    [Tags]  Priority_High  Smoke_test  user_role  TEST-1872
+    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    sleep  2s
+    ${S3_account_name}  ${email}  ${password} =  Create S3 account
+    sleep  2s
+    Re-login   ${S3_account_name}  ${password}  MANAGE_MENU_ID
+    Check Maintenance Option Not Exists
+    Delete S3 Account  ${S3_account_name}  ${password}  True   
+
+TEST-1873
+    [Documentation]  Test s3user not able to do any service restart
+    [Tags]  Priority_High  Smoke_test  user_role  TEST-1873
+    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    sleep  2s
+    ${S3_account_name}  ${email}  ${password} =  Create S3 account
+    sleep  2s
     Re-login   ${S3_account_name}  ${password}  MANAGE_MENU_ID
     Check Maintenance Option Not Exists
     Delete S3 Account  ${S3_account_name}  ${password}  True   
@@ -116,12 +133,13 @@ TEST-1034
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
+    sleep  2s
     Re-login   ${S3_account_name}  ${password}  MANAGE_MENU_ID
     Check Dashboard Option Not Exists
     Check Health Option Not Exists
-    Check Setting Option Not Exists
+    Verify that S3 user can not access setting menu
     Check Maintenance Option Not Exists
-    Delete S3 Account  ${S3_account_name}  ${password}  True      
+    Delete S3 Account  ${S3_account_name}  ${password}  True
  
 TEST-1036
     [Documentation]  Test that S3 account user have access to create IAM users and buckets
@@ -130,6 +148,7 @@ TEST-1036
     sleep  2s
     ${testname}=  generate new User Name
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
+    sleep  2s
     Re-login   ${S3_account_name}  ${password}  MANAGE_MENU_ID
     Navigate To Page  MANAGE_MENU_ID  IAM_USER_TAB_ID
     Click Create IAM User Button
@@ -143,9 +162,9 @@ TEST-1036
     Should be equal  ${status}  ${False}
     sleep  3s
     Navigate To Page  MANAGE_MENU_ID  BUCKET_TAB_ID
-    sleep  2s
+    sleep  5s
     Click On Create Bucket Form
-    sleep  2s
+    sleep  3s
     Create Bucket  ${testname}
     sleep  5s
     ${status}=  Is Bucket Present   ${testname}
@@ -154,11 +173,13 @@ TEST-1036
     sleep  5s
     ${status}=  Is Bucket Present   ${testname}
     Should be equal  ${status}  ${False}
+    sleep  2s
+    Delete S3 Account  ${S3_account_name}  ${password}  True
 
 TEST-99
     [Documentation]  This test case is to verify that create user button remain disabled till required
     ...  fields got filled on s3 configure.
-    [Tags]  Priority_High  TEST-99  S3_test  TEST-99
+    [Tags]  Priority_High  TEST-99  S3_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     Click on add new s3 account button
@@ -194,7 +215,7 @@ TEST-107
     Verify message  INVALID_S3_EMAIL_MSG_ID  ${INVALID_S3_EMAIL_MESSAGE}
 
 TEST-109
-    [Documentation]  This test case is to verify cancle button functionality on s3 accounts form .
+    [Documentation]  This test case is to verify cancel button functionality on s3 accounts form .
     [Tags]  Priority_High  TEST-109  S3_test  Somoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
@@ -372,7 +393,7 @@ TEST-4025
 
 
 TEST-4027
-    [Documentation]  This test case is to verify that s3 account user is able to perform s3 oprations.
+    [Documentation]  This test case is to verify that s3 account user is able to perform s3 operations.
     ...  user provide miss-match password while updating its user name
     [Tags]  Priority_High  TEST-4027  S3_test  Somoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
@@ -421,7 +442,7 @@ TEST-13101
     [Documentation]  This test case is to verify table for access keys is shown below s3 accounts table
     ...  with required columns.
     [Tags]  Priority_High  TEST-13101  S3_test
-    verify the table eders for s3 account access key
+    verify the table headers for s3 account access key
 
 TEST-13102
     [Documentation]  This test case is to verify new access key is getting generated.
@@ -449,15 +470,26 @@ TEST-1529
     [Tags]  Priority_High  TEST-1529  S3_test
     verify update s3 account has only password options
 
-TEST-17018
+TEST-17018  # TODO: correct test ID, correct Tag
     [Documentation]  Test a reset password functionality on clicking "edit" button on S3 account page
-    [Tags]  Priority_High  S3_test  TEST-17018
+    [Tags]  Priority_High  S3_test  TEST-17018  R2
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     sleep  5s
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
     sleep  2s
+    Re-login   ${S3_account_name}  ${S3_password}  MANAGE_MENU_ID
+    sleep  5s
     Reset Password S3 Account  ${S3_account_name}
     sleep  2s
+    Delete S3 Account  ${S3_account_name}  ${password}  True
+    Close Browser
+
+TEST-4026
+    [Documentation]  Test User should not able to login using invalid s3 credentials on CSM UI
+    ...  Reference : https://jts.seagate.com/browse/TEST-4026
+    [Tags]  Priority_High  TEST-4026
+    CSM GUI Login with Incorrect Credentials  ${url}  ${browser}  ${headless}
+    Validate CSM Login Failure
     Close Browser
