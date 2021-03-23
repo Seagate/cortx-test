@@ -1,11 +1,12 @@
 *** Settings ***
-Resource  ${EXECDIR}/resources/common/common.robot
-Library     SeleniumLibrary
-Library     OperatingSystem
+Library    OperatingSystem
+Library    SeleniumLibrary
+Resource   ${EXECDIR}/resources/common/common.robot
 Variables  ${EXECDIR}/resources/common/element_locators.py
 Variables  ${EXECDIR}/resources/common/common_variables.py
 
 *** Keywords ***
+
 Navigate To Audit Log Section
     [Documentation]  Test keyword is for navigating to Audit Log Section
     Wait Until Element Is Visible  ${MAINTENANCE_MENU_ID}  timeout=30
@@ -24,7 +25,7 @@ Click On Download Audit Log Button
     Click Button  ${AUDIT_LOG_DOWNLOAD_BUTTON_ID}
 
 Select Audit Log Details
-    [Documentation]  Test keyword is for generatting audit log of given details
+    [Documentation]  Test keyword is for generating audit log of given details
     [Arguments]  ${component}  ${duration}
     ${component}=  Convert To Upper Case  ${component}
     Log To Console And Report  generating audit log for ${component}

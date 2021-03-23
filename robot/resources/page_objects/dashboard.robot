@@ -1,8 +1,5 @@
 *** Settings ***
-Resource  ${EXECDIR}/resources/common/common.robot
-Resource  userSettingsLocalPage.robot
-Resource  loginPage.robot
-Library     SeleniumLibrary
+Library    SeleniumLibrary
 Variables  ${EXECDIR}/resources/common/element_locators.py
 
 *** Keywords ***

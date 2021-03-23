@@ -24,7 +24,7 @@ from http import HTTPStatus
 
 import dash
 import dash_table
-import pandas as  pd
+import pandas as pd
 import requests
 from dash.dependencies import Output, Input, State
 from dash.exceptions import PreventUpdate
@@ -102,7 +102,7 @@ def retrieve_query_results(n_clicks, *values):
     Function triggered after Get Results button to retrieve the table contents.
     """
     ctx = dash.callback_context
-    # update only when getresults button is clicked.
+    # update only when get results button is clicked.
     if ctx.triggered[0]['prop_id'] == 'query_result_button.n_clicks':
         query_input = {"latest": True}
 
@@ -263,9 +263,9 @@ def build_query(inputs):
 )
 def retrieve_query_branch(build, system_type, feature, test_plan, test_execution, test_id,
                           execution_type, current_val):
-    '''
+    """
     Updates Branch values dynamically in dropdown based on other entered value
-    '''
+    """
     # pylint: disable=unused-variable
 
     if current_val not in [None, [None], []]:
@@ -426,7 +426,7 @@ def retrieve_query_feature(branch, build, system_type, test_plan, test_execution
 def retrieve_query_test_plan(branch, build, system_type, test_plan, test_execution, test_id,
                              execution_type, current_val):
     """
-    Updates Testplan values dynamically in dropdown based on other entered value
+    Updates Test plan values dynamically in dropdown based on other entered value
     """
     # pylint: disable=unused-variable
     if current_val not in [None, [None], []]:
@@ -527,7 +527,7 @@ def retrieve_query_test_id(branch, build, system_type, feature, test_plan, test_
         options = [
             {'label': res_val, 'value': res_val} for res_val in results
         ]
-    return [options]
+        return [options]
 
 
 @app.callback(

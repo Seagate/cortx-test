@@ -37,7 +37,6 @@ def find(db_filter):
             print(mongo_error)
             return False
         else:
-            print("Documents search complete")
             return result
 
 
@@ -62,7 +61,6 @@ def count_documents(db_filter):
             print(mongo_error)
             return False
         else:
-            print("Documents count complete")
             return result
 
 
@@ -78,5 +76,4 @@ def find_distinct(entry, db_filter):
             print(mongo_error)
             return False
         else:
-            print("Distinct documents retrieved")
             return result
