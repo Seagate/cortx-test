@@ -20,17 +20,17 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 
-import dash
 import dash_table
 import numpy as np
 import pandas as pd
 from dash.dependencies import Output, Input, State
 from dash.exceptions import PreventUpdate
 
+import R1_callbacks.r1_perf_tables as r1_perf_tables
 import common
 import mongodbAPIs as r1Api
 from common import app
-import R1_callbacks.r1_perf_tables as r1_perf_tables
+
 
 @app.callback(
     [Output('r1_product_heading_exe', 'children'), Output('r1_product_heading_eng', 'children'),
