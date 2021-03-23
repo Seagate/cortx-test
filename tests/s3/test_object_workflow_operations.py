@@ -689,7 +689,7 @@ class TestObjectWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3
-    @pytest.mark.tags("TEST-8175")
+    @pytest.mark.tags("TEST-8715")
     @CTFailOn(error_handler)
     def test_delete_objects_and_mention_1001_objects_7656(self):
         """Delete objects and mention 1001 objects."""

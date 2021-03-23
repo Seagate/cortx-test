@@ -32,6 +32,7 @@ from commons.exceptions import CTException
 from commons.utils.config_utils import read_yaml
 from commons.utils import assert_utils
 from commons.utils.system_utils import create_file, make_dirs, cleanup_dir, path_exists
+from commons.utils.system_utils import remove_dirs
 from libs.s3 import s3_test_lib, iam_test_lib, s3_acl_test_lib
 from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
 
@@ -64,13 +65,26 @@ class TestBucketACL():
         cls.ldap_user = LDAP_USERNAME
         cls.ldap_pwd = LDAP_PASSWD
         cls.test_file = "testfile"
-        cls.test_dir_path = os.path.join(os.getcwd(), "testdata")
+        cls.test_dir_path = os.path.join(os.getcwd(), "testdata", "BucketACL")
         cls.test_file_path = os.path.join(cls.test_dir_path, cls.test_file)
         cls.log.info(
             "LDAP credentials: User: %s, pass: %s",
             cls.ldap_user,
             cls.ldap_pwd)
         cls.log.info("ENDED: setup test suite operations.")
+
+    @staticmethod
+    def teardown_class(cls):
+        """
+        Summary: This function will be invoked end of test suites.
+
+        Description: It will remove test suite directory.
+        """
+        cls.log.info("STARTED: Teardown Operations")
+        if not path_exists(cls.test_dir_path):
+            resp = remove_dirs(cls.test_dir_path)
+            cls.log.info("Created path: %s", resp)
+        cls.log.info("ENDED: Teardown Operations")
 
     def helper_method(self, bucket, acl, error_msg):
         """Helper method for creating bucket with acl."""
