@@ -26,6 +26,7 @@ from commons.errorcodes import error_handler
 from commons.utils import assert_utils
 from commons.helpers.salt_helper import SaltHelper
 from config import CMN_CFG
+from config import CSM_CFG
 from libs.s3 import S3H_OBJ
 from commons.helpers.node_helper import Node
 
@@ -41,7 +42,7 @@ class TestCliSecurity:
         """
         cls.LOGGER = logging.getLogger(__name__)
         cls.LOGGER.info("STARTED : Setup operations for test suit")
-        cls.file_path = "/etc/csm/csm.conf"
+        cls.file_path = CSM_CFG["CliConfig"]["csm_conf_file"]
         cls.s3_component = "openldap"
         cls.s3_keys = ["iam_admin", "secret"]
         cls.sspl_component = "sspl"
@@ -84,7 +85,7 @@ class TestCliSecurity:
             self.s3_component, self.s3_keys,
             decrypt=True)
         assert_utils.assert_equal(True, resp[0], resp[1])
-        self.LOGGER.info(resp)
+        self.LOGGER.debug(resp)
         self.LOGGER.info("Verified ldap password can be decrypted")
         self.LOGGER.info("Retrieving sspl passwords in encrypted format")
         sspl_resp = self.sal_obj.get_pillar_values(
@@ -103,5 +104,5 @@ class TestCliSecurity:
             self.sspl_component, self.sspl_keys,
             decrypt=True)
         assert_utils.assert_equal(True, resp[0], resp[1])
-        self.LOGGER.info(resp)
+        self.LOGGER.debug(resp)
         self.LOGGER.info("Verified sspl password can be decrypted")
