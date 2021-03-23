@@ -26,6 +26,7 @@ import dash
 import dash_bootstrap_components as dbc
 from jira import JIRA
 import pandas as pd
+import dash_html_components as html
 
 external_stylesheets = [dbc.themes.COSMO]
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP],
@@ -35,7 +36,7 @@ app.title = "CORTX Test Status"
 server = app.server
 __version__ = "5.27"
 
-DEBUG_PRINTS = True
+DEBUG_PRINTS = False
 
 # database Details
 config = configparser.ConfigParser()
@@ -102,3 +103,46 @@ def get_issue_details(issue_list):
     }
     res_dataframe = pd.DataFrame(overall_details)
     return res_dataframe
+
+
+def get_data_to_html_rows(data,col_names, row_span_text, no_of_rows_to_span):
+    """
+    Generate hmtl rows of the given data
+    As row span feature is not supported in datatable,
+    :param data: list of list(row)
+    :param row_span_text:text to spanned across no of rows
+    :param no_of_rows_to_span:
+    :return:
+    """
+    rows = []
+    for i in enumerate(data):
+        row = []
+        if i == 0:
+            row.append(html.Td(row_span_text, rowSpan=no_of_rows_to_span))
+        for col_no in range(len(col_names)):
+            value = data[i][col_no]
+            row.append(html.Td(children=value))
+        rows.append(html.Tr(row))
+    return rows
+
+
+def get_df_to_rows(dataframe, row_span_text, no_of_rows_to_span):
+    """
+    Generate hmtl rows of the given dataframe
+    As row span feature is not supported in datatable,
+    added different dataframe for each subcomponent(sharing the same row)
+    :param dataframe: Dataframe
+    :param row_span_text:text to spanned across no of rows
+    :param no_of_rows_to_span:
+    :return:
+    """
+    rows = []
+    for i in range(len(dataframe)):
+        row = []
+        if i == 0:
+            row.append(html.Td(row_span_text, rowSpan=no_of_rows_to_span))
+        for col in dataframe.columns:
+            value = dataframe.iloc[i][col]
+            row.append(html.Td(children=value))
+        rows.append(html.Tr(row))
+    return rows
