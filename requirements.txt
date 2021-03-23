@@ -22,7 +22,7 @@ Jinja2==2.10.1
 jira
 jmespath==0.9.4
 jsonschema==3.2.0
-locustio==0.11.0
+locust==1.4.3
 MarkupSafe==1.1.1
 matplotlib==3.1.1
 mdstat==1.0.4

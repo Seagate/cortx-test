@@ -18,14 +18,15 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
+"""
+Locust runner file
+"""
 
 import os
 import argparse
 import subprocess
-import configparser
-
-locust_cfg = configparser.ConfigParser()
-locust_cfg.read('scripts/Locust/locust_config.ini')
+import time
+from scripts.locust import LOCUST_CFG
 
 
 def run_cmd(cmd):
@@ -44,29 +45,43 @@ def run_cmd(cmd):
 
 
 if __name__ == '__main__':
-    host_url = locust_cfg['default']['ENDPOINT_URL']
-    hatch_rate = int(locust_cfg['default']['HATCH_RATE'])
-    log_file = locust_cfg['default']['LOGFILE']
-    ulimit_cmd = "ulimit -n 100000"
-    locust_cmd = "locust --host={} -f {} --no-web -c {} -r {} --run-time {} --only-summary > {} 2>&1"
+    HOST_URL = LOCUST_CFG['default']['ENDPOINT_URL']
+    HATCH_RATE = int(LOCUST_CFG['default']['HATCH_RATE'])
+    LOG_FILE = "".join([LOCUST_CFG['default']['LOGFILE'],
+                        str(time.strftime("-%Y%m%d-%H%M%S")), ".log"])
+    HTML_FILE = "".join([LOCUST_CFG['default']['HTMLFILE'], str(
+        time.strftime("-%Y%m%d-%H%M%S")), ".html"])
+    ULIMIT_CMD = "ulimit -n 100000"
+    LOCUST_RUN_CMD = \
+        "locust --host={} -f {} --headless -u {} -r {} --run-time {} --html {} --logfile {}"
 
     parser = argparse.ArgumentParser(description='Run locust tool.')
     parser.add_argument('file_path', help='locust.py file path')
-    parser.add_argument('--h', dest='host_url', help='host URL', nargs='?', const=host_url,
-                        type=str, default=host_url)
-    parser.add_argument('--u', dest='user_count', help='number of Locust users to spawn', nargs='?',
-                        type=int)
-    parser.add_argument('--r', dest='hatch_rate', help='specifies the hatch rate (number of users to spawn per second)',
-                        nargs='?', const=hatch_rate, type=int, default=hatch_rate)
-    parser.add_argument('--t', dest='duration', help='specify the run time for a test, eg:1h30m', nargs='?',
-                        type=str)
-    parser.add_argument('--l', dest='log_file', help='specify the path to store logs', nargs='?',
-                        const=log_file, type=str, default=log_file)
+    parser.add_argument('--host', dest='host_url', help='host URL', nargs='?', const=HOST_URL,
+                        type=str, default=HOST_URL)
+    parser.add_argument(
+        '--u', dest='user_count', help='number of Locust users to spawn', nargs='?', type=int)
+    parser.add_argument(
+        '--r', dest='hatch_rate',
+        help='specifies the hatch rate (number of users to spawn per second)',
+        nargs='?', const=HATCH_RATE, type=int, default=HATCH_RATE)
+    parser.add_argument(
+        '--t', dest='duration', help='specify the run time for a test, eg:1h30m',
+        nargs='?', type=str)
+    parser.add_argument(
+        '--logfile', dest='log_file', help='specify the path to store logs', nargs='?',
+        const=LOG_FILE, type=str, default=LOG_FILE)
 
     args = parser.parse_args()
 
     os.write(1, str.encode("Setting ulimit for locust\n"))
-    ulimit_command = ulimit_cmd
-    locust_command = locust_cmd.format(args.host_url, args.file_path, args.user_count, args.hatch_rate, args.duration, args.log_file)
-    cmd = "{}; {}\n".format(ulimit_command, locust_command)
-    run_cmd(cmd)
+    LOCUST_RUN_CMD = LOCUST_RUN_CMD.format(
+        args.host_url,
+        args.file_path,
+        args.user_count,
+        args.hatch_rate,
+        args.duration,
+        HTML_FILE,
+        args.log_file)
+    CMD = "{}; {}\n".format(ULIMIT_CMD, LOCUST_RUN_CMD)
+    run_cmd(CMD)

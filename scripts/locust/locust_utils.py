@@ -18,37 +18,43 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-# Utility methods written for use accross all the locust test scenarios
+"""
+Utility methods written for use accross all the locust test scenarios
+"""
 
 import time
 import os
 import logging
-import configparser
 import random
 import boto3
 from botocore.client import Config
 from locust import events
+from scripts.locust import LOCUST_CFG
 
 LOGGER = logging.getLogger(__name__)
 
-locust_cfg = configparser.ConfigParser()
-locust_cfg.read('scripts/locust/locust_config.ini')
-
-OBJ_NAME = locust_cfg['default']['OBJ_NAME']
-GET_OBJ_PATH = locust_cfg['default']['GET_OBJ_PATH']
+OBJ_NAME = LOCUST_CFG['default']['OBJ_NAME']
+GET_OBJ_PATH = LOCUST_CFG['default']['GET_OBJ_PATH']
 
 
 class LocustUtils:
     """
     Locust Utility methods
     """
+
     def __init__(self):
         session = boto3.session.Session()
-        access_key = os.getenv('AWS_ACCESS_KEY_ID')
-        secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
-        endpoint_url = locust_cfg['default']['ENDPOINT_URL']
-        s3_cert_path = locust_cfg['default']['S3_CERT_PATH']
-        max_pool_connections = int(locust_cfg['default']['MAX_POOL_CONNECTIONS'])
+        access_key = os.getenv(
+            'AWS_ACCESS_KEY_ID',
+            LOCUST_CFG['default']['ACCESS_KEY'])
+        secret_key = os.getenv(
+            'AWS_SECRET_ACCESS_KEY',
+            LOCUST_CFG['default']['SECRET_KEY'])
+        endpoint_url = LOCUST_CFG['default']['ENDPOINT_URL']
+        s3_cert_path = LOCUST_CFG['default']['S3_CERT_PATH']
+        max_pool_connections = int(
+            LOCUST_CFG['default']['MAX_POOL_CONNECTIONS'])
+        self.bucket_list = list()
 
         self.s3_client = session.client(
             service_name="s3",
@@ -75,38 +81,43 @@ class LocustUtils:
         with open(OBJ_NAME, 'wb') as fout:
             fout.write(os.urandom(object_size))
 
-    def create_buckets(self, bucket_count: int) -> list:
+    @staticmethod
+    def total_time(start_time: float) -> float:
+        """
+        Method to calculate total time for a request to be completed
+        :param start_time: Time when request was initialized
+        :return: Total time take by request
+        """
+        return int((time.time() - start_time) * 1000)
+
+    def create_buckets(self, bucket_count: int):
         """
         Method to create number of buckets equal to given bucket count
         :param bucket_count: number of buckets to be created
-        :return: list of created buckets
         """
-        bucket_list = list()
-        for i in range(bucket_count):
+        for _ in range(bucket_count):
             bucket_name = "locust-bucket{}".format(str(time.time()))
             start_time = time.time()
-            LOGGER.info("Creating bucket: {}".format(bucket_name))
+            LOGGER.info("Creating bucket: %s", bucket_name)
             try:
-                resp = self.s3_client.create_bucket(Bucket=bucket_name)
-                bucket_list.append(bucket_name)
-                total_time = int((time.time() - start_time) * 1000)
+                self.s3_client.create_bucket(Bucket=bucket_name)
+                self.bucket_list.append(bucket_name)
                 events.request_success.fire(
                     request_type="put",
                     name="create_bucket",
-                    response_time=total_time,
-                    response_length=len(resp)
+                    response_time=self.total_time(start_time),
+                    response_length=10
                 )
-            except Exception as error:
-                total_time = int((time.time() - start_time) * 1000)
+            except BaseException as error:
                 LOGGER.error("Create bucket failed with error: %s", error)
                 events.request_failure.fire(
                     request_type="put",
                     name="create_bucket",
-                    response_time=total_time,
+                    response_time=self.total_time(start_time),
+                    response_length=10,
                     exception=error
                 )
-        LOGGER.info("Buckets Created: %s", bucket_list)
-        return bucket_list
+        LOGGER.info("Buckets Created: %s", self.bucket_list)
 
     def delete_buckets(self, bucket_list: list):
         """
@@ -120,28 +131,27 @@ class LocustUtils:
                 bucket = self.s3_resource.Bucket(bucket)
                 bucket.objects.all().delete()
                 bucket.delete()
-                LOGGER.info("Deleted bucket : {}".format(bucket))
-                total_time = int((time.time() - start_time) * 1000)
+                LOGGER.info("Deleted bucket : %s", bucket)
                 events.request_success.fire(
                     request_type="delete",
                     name="delete_bucket",
-                    response_time=total_time,
+                    response_time=self.total_time(start_time),
                     response_length=10,
                 )
-            except Exception as error:
-                total_time = int((time.time() - start_time) * 1000)
+            except BaseException as error:
                 LOGGER.error("Delete bucket failed with error: %s", error)
                 events.request_failure.fire(
                     request_type="delete",
                     name="delete_bucket",
-                    response_time=total_time,
+                    response_time=self.total_time(start_time),
+                    response_length=10,
                     exception=error
                 )
 
-    def put_object(self, bucket: str, object_size: int):
+    def put_object(self, bucket_name: str, object_size: int):
         """
         Method to put object of given size into given bucket
-        :param bucket: Name of the bucket
+        :param bucket_name: Name of the bucket
         :param object_size: Size of the object
         """
         if os.path.exists(OBJ_NAME):
@@ -151,33 +161,33 @@ class LocustUtils:
                 LOGGER.error(error)
         self.create_file(object_size)
         obj_name = "test_obj{0}".format(str(time.time()))
-        LOGGER.info("Uploading object {0} into bucket {1}".format(obj_name, bucket))
+        LOGGER.info(
+            "Uploading object %s into bucket %s", obj_name, bucket_name)
         start_time = time.time()
         try:
-            self.s3_client.upload_file(OBJ_NAME, bucket, obj_name)
-            total_time = int((time.time() - start_time) * 1000)
+            self.s3_client.upload_file(OBJ_NAME, bucket_name, obj_name)
             events.request_success.fire(
-                    request_type="put",
-                    name="put_object",
-                    response_time=total_time,
-                    response_length=10
-                    )
-        except Exception as error:
-            total_time = int((time.time() - start_time) * 1000)
+                request_type="put",
+                name="put_object",
+                response_time=self.total_time(start_time),
+                response_length=10
+            )
+        except BaseException as error:
             LOGGER.error("Upload object failed with error: %s", error)
             events.request_failure.fire(
                 request_type="put",
                 name="put_object",
-                response_time=total_time,
+                response_time=self.total_time(start_time),
+                response_length=10,
                 exception=error
             )
 
-    def download_object(self, bucket: str):
+    def download_object(self, bucket_name: str):
         """
         Method to download any random object from the given bucket
-        :param bucket: Name of the bucket
+        :param bucket_name: Name of the bucket
         """
-        bucket = self.s3_resource.Bucket(bucket)
+        bucket = self.s3_resource.Bucket(bucket_name)
         objects = [obj.key for obj in bucket.objects.all()]
         if len(objects) > 1:
             start_time = time.time()
@@ -187,53 +197,60 @@ class LocustUtils:
                 except OSError as error:
                     LOGGER.error(error)
             obj_name = random.choice(objects)
-            LOGGER.info("Starting downloading the object %s form bucket %s", obj_name, bucket)
+            LOGGER.info(
+                "Starting downloading the object %s form bucket %s",
+                obj_name,
+                bucket)
             try:
-                resp = self.s3_resource.Bucket(bucket).download_file(obj_name, GET_OBJ_PATH)
-                LOGGER.info("The %s has been downloaded successfully at %s ", obj_name, GET_OBJ_PATH)
-                total_time = int((time.time() - start_time) * 1000)
+                bucket.download_file(obj_name, GET_OBJ_PATH)
+                LOGGER.info(
+                    "The %s has been downloaded successfully at %s ",
+                    obj_name,
+                    GET_OBJ_PATH)
                 events.request_success.fire(
                     request_type="get",
                     name="download_object",
-                    response_time=total_time,
-                    response_length=len(resp)
+                    response_time=self.total_time(start_time),
+                    response_length=10
                 )
-            except Exception as error:
-                total_time = int((time.time() - start_time) * 1000)
+            except BaseException as error:
                 LOGGER.error("Download object failed with error: %s", error)
                 events.request_failure.fire(
                     request_type="get",
                     name="download_object",
-                    response_time=total_time,
+                    response_time=self.total_time(start_time),
+                    response_length=10,
                     exception=error
                 )
 
-    def delete_object(self, bucket: str):
+    def delete_object(self, bucket_name: str):
         """
         Method to delete any random object from given bucket
-        :param bucket: Name of the bucket
+        :param bucket_name: Name of the bucket
         """
-        bucket = self.s3_resource.Bucket(bucket)
+        bucket = self.s3_resource.Bucket(bucket_name)
         objects = [obj.key for obj in bucket.objects.all()]
         if len(objects) > 1:
             start_time = time.time()
             obj_name = random.choice(objects)
-            LOGGER.info("Deleting object %s from the bucket %s", obj_name, bucket)
+            LOGGER.info(
+                "Deleting object %s from the bucket %s",
+                obj_name,
+                bucket)
             try:
-                resp = self.s3_resource.Object(bucket, obj_name).delete()
-                total_time = int((time.time() - start_time) * 1000)
+                self.s3_resource.Object(bucket_name, obj_name).delete()
                 events.request_success.fire(
                     request_type="delete",
                     name="delete_object",
-                    response_time=total_time,
-                    response_length=len(resp)
+                    response_time=self.total_time(start_time),
+                    response_length=10
                 )
-            except Exception as error:
-                total_time = int((time.time() - start_time) * 1000)
-                LOGGER.error("Download object failed with error: %s", error)
+            except BaseException as error:
+                LOGGER.error("Delete object failed with error: %s", error)
                 events.request_failure.fire(
                     request_type="delete",
                     name="delete_object",
-                    response_time=total_time,
+                    response_time=self.total_time(start_time),
+                    response_length=10,
                     exception=error
                 )
