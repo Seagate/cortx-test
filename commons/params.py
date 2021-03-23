@@ -27,18 +27,14 @@ LOG_FILE = 'cortx-test.log'
 USER_JSON = '_usersdata'
 
 CONFIG_DIR = 'config'
+LOG_DIR_NAME = 'log'
+LATEST_LOG_FOLDER = 'latest'
 
 COMMON_CONFIG = os.path.join(CONFIG_DIR, 'common_config.yaml')
 S3_CONFIG = os.path.join(CONFIG_DIR, 's3', 's3_config.yaml')
-
-LOG_DIR_NAME = 'log'
-
 RAS_CONFIG_PATH = "config/ras_config.yaml"
-
 SSPL_TEST_CONFIG_PATH = "config/ras_test.yaml"
-
 PROV_TEST_CONFIG_PATH = "config/prov_test.yaml"
-
 COMMON_DESTRUCTIVE_CONFIG_PATH = "config/common_destructive.yaml"
 
 JIRA_TEST_LIST = 'test_lists.csv'

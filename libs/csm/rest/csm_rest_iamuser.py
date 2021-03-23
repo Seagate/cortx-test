@@ -356,3 +356,102 @@ class RestIamUser(RestTestLib):
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR,
                 error) from error
+
+    @RestTestLib.authenticate_and_login
+    def create_iam_user_under_given_account(self, iam_user, iam_password, account_name):
+        """
+        This function will create iam user under given account_name.
+        :param iam_user: username for new iam user
+        :param iam_password: password of new iam user
+        :param account_name: username of S3 account under which new iam user will be created
+        :return: new iam user details
+        """
+
+        self.log.debug("Creating new iam user {} under {}".format(iam_user, account_name))
+        iam_user_payload = {
+            "user_name": iam_user,
+            "password": iam_password,
+            "require_reset": False
+        }
+        endpoint = self.config["IAM_users_endpoint"]
+        self.log.debug("Endpoint for iam user creation is {}".format(endpoint))
+        self.log.info(f"self.headers = {self.headers}")
+        self.headers["Content-Type"] = "application/json"
+        try:
+            response = self.restapi.rest_call("post", endpoint=endpoint,
+                                              data=json.dumps(iam_user_payload),
+                                              headers=self.headers)
+        except Exception as error:
+            self.log.error("{0} {1}: {2}".format(
+                const.EXCEPTION_ERROR,
+                RestIamUser.create_iam_user_under_given_account.__name__,
+                error))
+            raise CTException(
+                err.CSM_REST_AUTHENTICATION_ERROR,
+                error.args[0])
+        if response.status_code != const.SUCCESS_STATUS:
+            self.log.error(f'Response ={response.text}\n'
+                           f'Request Headers={response.request.headers}\n'
+                           f'Request Body={response.request.body}')
+            raise CTException(err.CSM_REST_POST_REQUEST_FAILED,
+                              msg="Create IAM user request failed")
+
+        return response
+
+    @RestTestLib.authenticate_and_login
+    def list_iam_users_for_given_s3_user(self, user):
+        """
+        This function will list all iam users from given s3 user.
+        :param user: username of S3 account under which new iam user will be created
+        :return: response of delete iam user
+        """
+        self.log.debug("Listing all iam users under S3 account {}".format(user))
+        endpoint = self.config["IAM_users_endpoint"]
+        self.log.debug("Endpoint for iam user listing is {}".format(endpoint))
+        self.headers.update(self.config["Login_headers"])
+        try:
+            # Fetching api response
+            response = self.restapi.rest_call("get", endpoint=endpoint, headers=self.headers)
+        except Exception as error:
+            self.log.error("{0} {1}: {2}".format(
+                const.EXCEPTION_ERROR,
+                RestIamUser.list_iam_users_for_given_s3_user.__name__,
+                error))
+            raise CTException(
+                err.CSM_REST_GET_REQUEST_FAILED,
+                error.args[0])
+        if response.status_code != const.SUCCESS_STATUS:
+            self.log.error(f'Response ={response.text}\n'
+                           f'Request Headers={response.request.headers}\n'
+                           f'Request Body={response.request.body}')
+            raise CTException(err.CSM_REST_GET_REQUEST_FAILED, msg="List IAM users request failed.")
+        return response
+
+    @RestTestLib.authenticate_and_login
+    def delete_iam_user_under_given_account(self, iam_user, account_name):
+        """
+        This function will delete iam user from given account_name.
+        :param iam_user: iam user name which needs to be deleted
+        :param account_name: username of S3 account under which new iam user will be created
+        """
+        self.log.debug("Deleting {} under S3 account {}".format(iam_user, account_name))
+        endpoint = '/'.join((self.config["IAM_users_endpoint"], iam_user))
+        self.log.debug("Endpoint for iam user deletion is {}".format(endpoint))
+
+        try:
+            response = self.restapi.rest_call("delete", endpoint=endpoint, headers=self.headers)
+        except Exception as error:
+            self.log.error("{0} {1}: {2}".format(
+                const.EXCEPTION_ERROR,
+                RestIamUser.delete_iam_user_under_given_account.__name__,
+                error))
+            raise CTException(
+                err.CSM_REST_AUTHENTICATION_ERROR,
+                error.args[0])
+        if response.status_code != const.SUCCESS_STATUS:
+            self.log.error(f'Response ={response.text}\n'
+                           f'Request Headers={response.request.headers}\n'
+                           f'Request Body={response.request.body}')
+            raise CTException(err.CSM_REST_DELETE_REQUEST_FAILED,
+                              msg="Delete IAM users request failed.")
+        return response

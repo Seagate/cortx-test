@@ -36,9 +36,8 @@ Create and login with CSM monitor user
     Re-login  ${new_user_name}  ${new_password}  ${page name}
     [Return]  ${new_user_name}  ${new_password}
 
-
-
 *** Test Cases ***
+
 TEST-5321
     [Documentation]  Test that user with monitor privilege should be able to edit his own email
     ...  id and password.

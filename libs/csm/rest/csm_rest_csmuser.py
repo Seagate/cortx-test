@@ -827,3 +827,47 @@ class RestCsmUser(RestTestLib):
                 error)
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR, error) from error
+
+    @RestTestLib.authenticate_and_login
+    def update_csm_account_password(self, username, old_password, new_password):
+        """
+        This function will update csm account user password
+        :param username: Username
+        :param old_password: Old Password
+        :param new_password: New Password
+        :return: Success(True)/Failure(False)
+        """
+        try:
+            self.log.debug(
+                f"Changing password of csm user {username} from {old_password} to "
+                f"{new_password}")
+            # Prepare patch for s3 account user
+            patch_payload = {
+                "password": new_password,
+                "current_password": old_password
+            }
+            self.log.debug("editing user {}".format(patch_payload))
+            endpoint = "{}/{}".format(self.config["csmuser_endpoint"], username)
+            self.log.debug("Endpoint for s3 accounts is {}".format(endpoint))
+
+            # Log in using old password and get headers
+            headers = self.get_headers(username, old_password)
+            patch_payload = json.dumps(patch_payload)
+
+            # Fetching api response
+            response = self.restapi.rest_call("patch", data=patch_payload, endpoint=endpoint,
+                                              headers=headers)
+        except Exception as error:
+            self.log.error("{0} {1}: {2}".format(
+                const.EXCEPTION_ERROR,
+                RestCsmUser.update_csm_account_password.__name__,
+                error))
+            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
+
+        if response.status_code != const.SUCCESS_STATUS:
+            self.log.error(f"Response code : {response.status_code}")
+            self.log.error(f"Response content: {response.content}")
+            self.log.error(f"Request headers : {response.request.headers}\n"
+                           f"Request body : {response.request.body}")
+            raise CTException(err.CSM_REST_GET_REQUEST_FAILED,
+                              msg="CSM user password change request failed.")
