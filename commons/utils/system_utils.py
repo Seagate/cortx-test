@@ -584,6 +584,7 @@ def backup_or_restore_files(action,
     """
     Used to take backup or restore mentioned files at the required path
     """
+    rpath = os.getcwd()
     try:
         if action == "backup":
             LOGGER.debug('Starting the backup')
@@ -609,10 +610,12 @@ def backup_or_restore_files(action,
                     LOGGER.debug(
                         "File :%s got copied successfully at path %s",
                         file, file_path)
+                os.chdir(rpath)
                 return True, backup_path
     except BaseException as error:
         LOGGER.error("*ERROR* An exception occurred in %s: %s",
                      backup_or_restore_files.__name__, error)
+        os.chdir(rpath)
         return False, error
 
 
@@ -823,24 +826,33 @@ def file_lock(lock_file, non_blocking=False):
     return fmutex, True
 
 
-def file_unlock(fmutex):
+def file_unlock(fmutex, path=''):
     """
     Unlock the file lock.
-    :param fmutex:
+    :param path: Lock file path
+    :param fmutex: File lock
     :return:
     """
     if sys.platform == 'win32':
         msvcrt.locking(fmutex, msvcrt.LK_UNLCK, 1)
         os.close(fmutex)
-        try:
-            os.remove(fmutex.name)
-        # Probably another instance of the application
-        # that acquired the file lock.
-        except OSError:
-            pass
+        remove_lck_file(path)
     else:
         fcntl.flock(fmutex.fileno(), fcntl.LOCK_UN)
         fmutex.close()
+        remove_lck_file(path)
+
+
+def remove_lck_file(path):
+    """Remove lock file."""
+    try:
+        os.remove(path)
+    # Probably another instance of the application
+    # that acquired the file lock.
+    except FileNotFoundError:
+        pass
+    except OSError:
+        pass
 
 
 def insert_into_builtins(name, obj):
