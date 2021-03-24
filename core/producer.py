@@ -195,7 +195,7 @@ def server(*args: Any) -> None:
         try:
             work_item = work_queue.get()
             if work_item is None:
-                work_queue.task_done()  # poisoning can break the loop
+                work_queue.task_done()  # poisoning will break the loop
                 break
             test_set = list(work_item.get())
             te_ticket = work_item.tickets
