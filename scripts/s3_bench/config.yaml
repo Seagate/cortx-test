@@ -1,9 +1,5 @@
 log_dir: "log/latest/"
-go_path: "/root/go/src/"
-s3bench_path: "/root/go/src/s3bench"
-cmd_go: "sudo yum install -y go"
-s3bench_get: "go get github.com/igneous-systems/s3bench"
-s3bench_git: "git clone https://github.com/igneous-systems/s3bench.git {}"
+s3bench_path: "scripts/s3_bench/s3bench"
 
 log_format:
     format: "%(asctime)s - %(message)s"

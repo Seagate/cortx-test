@@ -23,7 +23,6 @@ import logging
 
 import pytest
 
-from commons.constants import KB, MB, GB
 from libs.s3 import ACCESS_KEY, SECRET_KEY
 from libs.s3 import s3_test_lib
 from scripts.s3_bench import s3bench
@@ -41,20 +40,20 @@ class TestWorkloadS3Bench:
     def test_19471(self):
         """S3bench Workload test"""
         bucket_name = "test-bucket"
-        S3_TEST_OBJ.create_bucket(bucket_name)
         workloads = [
-            1 * KB, 4 * KB, 8 * KB, 16 * KB, 32 * KB, 64 * KB, 128 * KB, 256 * KB, 512 * KB,
-            1 * MB, 4 * MB, 8 * MB, 16 * MB, 32 * MB, 64 * MB, 128 * MB, 256 * MB, 512 * MB,
-            1 * GB, 4 * GB, 8 * GB, 16 * GB
+            "1Kb", "4Kb", "8Kb", "16Kb", "32Kb", "64Kb", "128Kb", "256Kb", "512Kb",
+            "1Mb", "4Mb", "8Mb", "16Mb", "32Mb", "64Mb", "128Mb", "256Mb", "512Mb",
+            "1Gb", "4Gb", "8Gb", "16Gb"
         ]
         resp = s3bench.setup_s3bench()
         assert (resp, resp), "Could not setup s3bench."
         for workload in workloads:
             resp = s3bench.s3bench(ACCESS_KEY, SECRET_KEY, bucket=bucket_name, num_clients=1,
                                    num_sample=5, obj_name_pref="loadgen_test_", obj_size=workload,
-                                   region="igneous-test", skip_cleanup=False, duration=None,
-                                   verbose=True, log_file_prefix="TEST-19471")
+                                   skip_cleanup=False, duration=None, verbose=True,
+                                   log_file_prefix="TEST-19471")
             self.log.info(f"json_resp {resp[0]}\n Log Path {resp[1]}")
-            assert not s3bench.check_log_file_error(resp[1], "error: "), \
+            assert not s3bench.check_log_file_error(resp[1],
+                                                    ["with error ", "panic", "status code"]), \
                 f"S3b3nch workload for object size {workload} failed." \
                 f"Please read log file {resp[1]}"
