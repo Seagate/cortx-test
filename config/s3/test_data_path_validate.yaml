@@ -3,7 +3,6 @@ data_path:
   acc_name_prefix: "dpv-acc"
   bkt_permission: "private"
   email_suffix: "@seagate.com"
-  file_path: "/home/bkt-dp.txt"
   cmd_msg: "core."
   s3bench_path: "/root/go/bin"
   endpoint: "https://s3.seagate.com"
