@@ -58,7 +58,7 @@ def create_log(resp, log_file_prefix, log_dir=LOG_DIR):
         make_dirs(log_dir)
 
     now = datetime.now().strftime("%d-%m-%Y-%H-%M-%S-%f")
-    path = f"{log_dir}{log_file_prefix}_s3bench_{now}"
+    path = f"{log_dir}{log_file_prefix}_s3bench_{now}.log"
     # Writing complete response in file, appends response in case of duration
     # given
     with open(path, "a") as fd_write:

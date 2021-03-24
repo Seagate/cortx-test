@@ -553,13 +553,14 @@ def pytest_runtest_makereport(item, call):
             f.write(report.nodeid + extra + "\n")
 
 
-def upload_supporting_logs(test_id: str, remote_path: str):
+def upload_supporting_logs(test_id: str, remote_path: str, log: str):
     """
     Upload all supporting (s3bench) log files to nfs share
     :param test_id: test number in file name
     :param remote_path: path on NFS share
+    :param log: log file string e.g. s3bench
     """
-    support_logs = glob.glob(f"{LOG_DIR}/latest/{test_id}_s3bench_*")
+    support_logs = glob.glob(f"{LOG_DIR}/latest/{test_id}_{log}_*")
     for support_log in support_logs:
         resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
                                                    mnt_dir=params.MOUNT_DIR,
@@ -625,7 +626,7 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
             LOGGER.info("Log file is uploaded at location : %s", resp[1])
         else:
             LOGGER.error("Failed to upload log file at location %s", resp[1])
-        upload_supporting_logs(test_id, remote_path)
+        upload_supporting_logs(test_id, remote_path, "s3bench")
         LOGGER.info("Adding log file path to %s", test_id)
         comment = "Log file path: {}".format(resp[1])
         data = task.get_test_details(test_exe_id=Globals.TE_TKT)
