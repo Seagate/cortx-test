@@ -1,6 +1,6 @@
 *** Settings ***
-Resource  ${EXECDIR}/resources/common/common.robot
-Library     SeleniumLibrary
+Library    SeleniumLibrary
+Resource   ${EXECDIR}/resources/common/common.robot
 
 *** Keywords ***
 

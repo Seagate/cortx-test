@@ -1,0 +1,40 @@
+system_limit_common:
+  bucket_prefix: "test-bucket"
+  iam_user_prefix: "testiamuser"
+  new_password: "cOPLLtFurVdnbaqe7w+D0fMKp1Mqs/wlVM/HUxQmRSs="
+
+test_13693:
+  csm_count: 0
+  s3_count: 498
+  iam_count: 1
+  bucket_count: 1
+
+test_16009:
+  csm_count: 0
+  s3_count: 1
+  iam_count: 500
+  bucket_count: 50
+
+test_16908:
+  csm_count: 0
+  s3_count: 1
+  iam_count: 5
+  bucket_count: 1000
+
+test_16909:
+  csm_count: 0
+  s3_count: 100
+  iam_count: 1
+  bucket_count: 100
+
+test_16910:
+  csm_count: 1000
+  s3_count: 0
+  iam_count: 0
+  bucket_count: 0
+
+test_16911:
+  csm_count: 100
+  s3_count: 0
+  iam_count: 0
+  bucket_count: 0
