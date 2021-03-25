@@ -186,7 +186,7 @@ def run(opts: dict) -> None:
     if not os.path.exists(meta_file):
         print("test meta file does not exists... check if pytest_collection ran. Exiting...")
         sys.exit(-1)
-    meta_data = config_utils.read_content_json(meta_file)
+    meta_data = config_utils.read_content_json(meta_file, mode='rb')
     create_test_map(base_components_marks, meta_data,
                     rev_tag_map, skip_marks, skip_test,
                     test_map)

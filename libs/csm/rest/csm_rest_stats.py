@@ -76,7 +76,7 @@ class SystemStats(RestTestLib):
                             SystemStats.get_stats.__name__,
                             error)
             raise CTException(
-                err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
+                err.CSM_REST_VERIFICATION_FAILED, error) from error
 
     def verify_list(self, expected_list, actual_list):
         """Verifies if the given list is the sub set of the actual list
@@ -203,4 +203,4 @@ class SystemStats(RestTestLib):
                             SystemStats.get_metrics.__name__,
                             error)
             raise CTException(
-                err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
+                err.CSM_REST_VERIFICATION_FAILED, error) from error
