@@ -690,10 +690,10 @@ class S3Helper:
         """
         res = False
         if os.path.exists(path):
-            data = config_utils.read_content_json(path)
+            data = config_utils.read_content_json(path, mode='rb')
             data["hosts"]["s3"]["accessKey"] = access
             data["hosts"]["s3"]["secretKey"] = secret
-            res = config_utils.create_content_json(path=path, data=data)
+            res = config_utils.create_content_json(path=path, data=data, ensure_ascii=False)
         else:
             LOGGER.warning(
                 "Minio is not installed please install and than run the configuration.")

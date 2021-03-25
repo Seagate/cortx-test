@@ -511,7 +511,7 @@ def get_setup_details():
     if os.path.exists(params.SETUPS_FPATH):
         os.remove(params.SETUPS_FPATH)
     setups = configmanager.get_config_db(setup_query={})
-    config_utils.create_content_json(params.SETUPS_FPATH, setups)
+    config_utils.create_content_json(params.SETUPS_FPATH, setups, ensure_ascii=False)
 
 
 def main(args):
