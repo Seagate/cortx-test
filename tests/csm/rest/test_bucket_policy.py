@@ -53,7 +53,7 @@ class TestBucketPolicy():
         response = self.s3_buckets.create_s3_bucket(
             bucket_type="valid", login_as="s3account_user")
         self.bucket_name = response.json()['bucket_name']
-        print("##### bucket name %s #####", self.bucket_name)
+        self.log.info("##### bucket name %s #####", self.bucket_name)
         self.bucket_policy = RestS3BucketPolicy(self.bucket_name)
         self.rest_iam_user = RestIamUser()
         self.created_iam_users = set()

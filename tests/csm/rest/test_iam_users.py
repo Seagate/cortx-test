@@ -110,8 +110,7 @@ class TestIamUser():
 
         self.log.debug(
             "Verifying that IAM user is not able to execute and access the CSM REST APIs")
-        assert (
-            self.rest_iam_user.verify_unauthorized_access_to_csm_user_api())
+        assert self.rest_iam_user.verify_unauthorized_access_to_csm_user_api()
         self.log.debug(
             "Verified that IAM user is not able to execute and access the CSM REST APIs")
         self.log.info("##### Test ended -  %s #####", test_case_name)

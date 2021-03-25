@@ -508,7 +508,7 @@ class TestSystemStats():
         epoc_time_diff = self.test_conf["test_4968"]["epoc_time_diff"]
         interval = self.test_conf["test_4968"]["default_interval"]
         error_msg = self.test_conf["test_4968"]["error_msg"]
-        expected_response = self.system_stats.forbidden
+        expected_response = const.FORBIDDEN
         metrics = self.system_stats.get_metrics()
         metric = random.choice(metrics)
         self.log.info("Checking for metrics : %s", metric)

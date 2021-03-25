@@ -454,18 +454,19 @@ def pytest_collection(session):
     latest = os.path.join(cache_home, 'latest')
     if not os.path.exists(latest):
         os.makedirs(latest)
-    _path = config_utils.create_content_json(cache_path, _get_items_from_cache())
+    _path = config_utils.create_content_json(cache_path, _get_items_from_cache(), ensure_ascii=False)
     if not os.path.exists(_path):
         LOGGER.info("Items Cache file %s not created" % (_path,))
     if session.config.option.collectonly:
-        te_meta = config_utils.create_content_json(os.path.join(cache_home, 'te_meta.json'), meta)
+        te_meta = config_utils.create_content_json(os.path.join(cache_home, 'te_meta.json'), meta,
+                                                   ensure_ascii=False)
         LOGGER.debug("Items meta dict %s created at %s", meta, te_meta)
         Globals.te_meta = te_meta
     if not _local and session.config.option.readmetadata:
         tp_meta_file = os.path.join(os.getcwd(),
                                     params.LOG_DIR_NAME,
                                     params.JIRA_TEST_META_JSON)
-        tp_meta = config_utils.read_content_json(tp_meta_file)
+        tp_meta = config_utils.read_content_json(tp_meta_file, mode='rb')
         Globals.tp_meta = tp_meta
         LOGGER.debug("Reading test plan meta dict %s", tp_meta)
     return items
