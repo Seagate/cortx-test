@@ -1,9 +1,10 @@
 *** Settings ***
-Resource  ${EXECDIR}/resources/common/common.robot
-Library     SeleniumLibrary
+Library    SeleniumLibrary
+Resource   ${EXECDIR}/resources/common/common.robot
 Variables  ${EXECDIR}/resources/common/element_locators.py
 
 *** Keywords ***
+
 Create Bucket
     [Documentation]  Test keyword is for create bucket
     [Arguments]  ${bucketname} 

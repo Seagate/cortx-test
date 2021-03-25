@@ -138,7 +138,14 @@ class RestTestLib:
             if authorized and response.status_code == const.SUCCESS_STATUS:
                 self.headers = {
                     'Authorization': response.headers['Authorization']}
-
+            else:
+                self.log.error(f"Authentication request failed in"
+                               f" {RestTestLib.authenticate_and_login.__name__}.\n"
+                               f"Response code : {response.status_code}")
+                self.log.error(f"Response content: {response.content}")
+                self.log.error(f"Request headers : {response.request.headers}\n"
+                               f"Request body : {response.request.body}")
+                raise CTException(err.CSM_REST_AUTHENTICATION_ERROR)
             return func(self, *args, **kwargs)
         return create_authenticate_header
 
@@ -163,5 +170,45 @@ class RestTestLib:
                             const.EXCEPTION_ERROR,
                             RestTestLib.update_csm_config_for_user.__name__,
                             error)
+            raise CTException(
+                err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
+
+    def get_headers(self, user_name, user_password):
+        """
+        This function will login with given user_name, user_password
+        and gets the token. It creates and returns the required
+        headers for user with token.
+        :param user_name: user name for which we need headers
+        :param user_password: user password for which we need headers
+        :return: required headers
+        """
+        try:
+            self.log.debug("Getting required headers for user {}".format(user_name))
+            endpoint = self.config["rest_login_endpoint"]
+            headers = self.config["Login_headers"]
+            payload = "{{\"{}\":\"{}\",\"{}\":\"{}\"}}".format(
+                "username", user_name, "password", user_password)
+            self.log.debug("Payload for S3 account login is {}".format(payload))
+
+            # Fetch user token from response
+            response = self.restapi.rest_call(
+                "post", endpoint, headers=headers, data=payload, save_json=False)
+            if response.status_code != const.SUCCESS_STATUS:
+                self.log.error("Authentication request failed.\n"
+                               f"Response code : {response.status_code}")
+                self.log.error(f"Response content: {response.content}")
+                self.log.error(f"Request headers : {response.request.headers}\n"
+                               f"Request body : {response.request.body}")
+                raise CTException(err.CSM_REST_AUTHENTICATION_ERROR)
+            token = response.headers['Authorization']
+            headers = {'Authorization': token}
+            conf_headers = self.config["Login_headers"]
+            headers.update(conf_headers)
+            return headers
+        except Exception as error:
+            self.log.error("%s %s: %s",
+                           const.EXCEPTION_ERROR,
+                           RestTestLib.get_headers.__name__,
+                           error)
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error

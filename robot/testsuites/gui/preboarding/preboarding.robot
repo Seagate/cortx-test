@@ -1,7 +1,7 @@
 *** Settings ***
 Documentation    This suite verifies the test-cases for Pre-boarding and EULA
-Resource    ${EXECDIR}/resources/page_objects/preboardingPage.robot
-Resource  ${EXECDIR}/resources/common/common.robot
+Resource   ${EXECDIR}/resources/page_objects/preboardingPage.robot
+Resource   ${EXECDIR}/resources/common/common.robot
 Variables  ${EXECDIR}/resources/common/element_locators.py
 Variables  ${EXECDIR}/resources/common/common_variables.py
 
