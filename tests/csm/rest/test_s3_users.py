@@ -23,7 +23,6 @@
 import json
 import logging
 import pytest
-from commons.utils import config_utils
 from commons.constants import Rest as const
 from commons import cortxlogging
 from commons import configmanager

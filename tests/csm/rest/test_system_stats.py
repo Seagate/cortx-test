@@ -25,7 +25,6 @@ import random
 import logging
 import pytest
 from libs.csm.rest.csm_rest_stats import SystemStats
-from commons.utils import config_utils
 from commons.utils import assert_utils
 from commons import cortxlogging
 from commons.constants import Rest as const

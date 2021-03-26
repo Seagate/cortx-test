@@ -22,7 +22,6 @@
 """
 import logging
 import pytest
-from commons.utils import config_utils
 from commons import configmanager
 from commons import cortxlogging
 from libs.csm.csm_setup import CSMConfigsCheck
