@@ -214,12 +214,6 @@ def pytest_addoption(parser):
         "--readmetadata", action="store", default=False,
         help="Read test metadata"
     )
-    parser.addoption(
-        "--host_fqdn", action="store", default=None, help="Hostname fqdn"
-    )
-    parser.addoption(
-        "--buildpath", action="store", default=None, help="Build url to be deployed"
-    )
 
 
 def read_test_list_csv() -> List:
@@ -615,13 +609,3 @@ def generate_random_string():
     :rtype: str
     """
     return ''.join(random.choice(string.ascii_lowercase) for i in range(5))
-
-
-@pytest.fixture(scope='module', autouse=True)
-def host_fqdn(request):
-    pytest.host_fqdn = request.config.getoption('--host_fqdn')
-
-
-@pytest.fixture(scope='module', autouse=True)
-def buildpath(request):
-    pytest.buildpath = request.config.getoption('--buildpath')
