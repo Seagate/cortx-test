@@ -214,12 +214,6 @@ def pytest_addoption(parser):
         "--readmetadata", action="store", default=False,
         help="Read test metadata"
     )
-    parser.addoption(
-        "--host_fqdn", action="store", default=None, help="Hostname fqdn"
-    )
-    parser.addoption(
-        "--buildpath", action="store", default=None, help="Build url to be deployed"
-    )
 
 
 def read_test_list_csv() -> List:
@@ -451,24 +445,23 @@ def pytest_collection(session):
             system_utils.make_dir(cache_home)
         except OSError as error:
             LOGGER.error(str(error))
-
     latest = os.path.join(cache_home, 'latest')
     if not os.path.exists(latest):
         os.makedirs(latest)
-    _path = config_utils.create_content_json(cache_path, _get_items_from_cache())
+    _path = config_utils.create_content_json(cache_path, _get_items_from_cache(), ensure_ascii=False)
     if not os.path.exists(_path):
         LOGGER.info("Items Cache file %s not created" % (_path,))
     if session.config.option.collectonly:
-        te_meta = config_utils.create_content_json(os.path.join(cache_home, 'te_meta.json'), meta)
+        te_meta = config_utils.create_content_json(os.path.join(cache_home, 'te_meta.json'), meta,
+                                                   ensure_ascii=False)
         LOGGER.debug("Items meta dict %s created at %s", meta, te_meta)
         Globals.te_meta = te_meta
     if not _local and session.config.option.readmetadata:
         tp_meta_file = os.path.join(os.getcwd(),
                                     params.LOG_DIR_NAME,
                                     params.JIRA_TEST_META_JSON)
-        tp_meta = config_utils.read_content_json(tp_meta_file)
+        tp_meta = config_utils.read_content_json(tp_meta_file, mode='rb')
         Globals.tp_meta = tp_meta
-        #system_utils.insert_into_builtins('tp_meta', tp_meta)
         LOGGER.debug("Reading test plan meta dict %s", tp_meta)
     return items
 
@@ -477,7 +470,7 @@ def pytest_collection(session):
 def pytest_runtest_makereport(item, call):
     """
     Execute all other hooks to obtain the report object. Follow the pytest execution protocol
-    to understand where does this fucntion fits in. In short this function will help to create
+    to understand where does this function fits in. In short this function will help to create
     failed, passed lists in multiple runs. The clean up of logs files should happen before the
     test runs starts.
     All code prior to yield statement would be ran prior
@@ -513,6 +506,10 @@ def pytest_runtest_makereport(item, call):
                 task.update_test_jira_status(item.config.option.te_tkt, test_id, 'PASS')
                 payload = create_report_payload(item, call, 'PASS', db_user, db_pass)
                 REPORT_CLIENT.create_db_entry(**payload)
+            elif item.rep_setup.skipped and (item.rep_teardown.skipped or item.rep_teardown.passed):
+                # Jira reporting of skipped cases does not contain skipped option
+                # Keeping it todo_status and skipping db update for now
+                pass
 
     if report.when == 'teardown':
         if item.rep_setup.failed or item.rep_teardown.failed:
@@ -525,6 +522,9 @@ def pytest_runtest_makereport(item, call):
             mode = "a" if os.path.exists(current_file) else "w"
         elif item.rep_setup.passed and item.rep_call.passed and item.rep_teardown.passed:
             current_file = pass_file
+            current_file = os.path.join(os.getcwd(), LOG_DIR, 'latest', current_file)
+            mode = "a" if os.path.exists(current_file) else "w"
+        elif item.rep_setup.skipped and (item.rep_teardown.skipped or item.rep_teardown.passed):
             current_file = os.path.join(os.getcwd(), LOG_DIR, 'latest', current_file)
             mode = "a" if os.path.exists(current_file) else "w"
         with open(current_file, mode) as f:
@@ -609,11 +609,3 @@ def generate_random_string():
     :rtype: str
     """
     return ''.join(random.choice(string.ascii_lowercase) for i in range(5))
-
-@pytest.fixture(scope='module', autouse=True)
-def host_fqdn(request):
-    pytest.host_fqdn = request.config.getoption('--host_fqdn')
-
-@pytest.fixture(scope='module', autouse=True)
-def buildpath(request):
-    pytest.buildpath = request.config.getoption('--buildpath')

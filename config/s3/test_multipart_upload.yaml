@@ -160,6 +160,6 @@ test_631:
     or the specified entity tag might not have matched the part's entity tag."
     wrong_json:
         - ETag: d41d8cd98f00b204e9800998ecf8427e
-        PartNumber: 1
+        - PartNumber: 1
         - ETag: d41d8cd98876362482364f00b204e980
-        PartNumber: 2
+        - PartNumber: 2

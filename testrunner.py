@@ -3,6 +3,7 @@ import subprocess
 import argparse
 import csv
 import json
+import logging
 from datetime import datetime
 from multiprocessing import Process
 from core import runner
@@ -13,6 +14,9 @@ from commons import configmanager
 from commons.utils import config_utils
 from commons.utils import system_utils
 from commons import params
+from commons import cortxlogging
+
+LOGGER = logging.getLogger(__name__)
 
 
 def parse_args():
@@ -43,6 +47,18 @@ def parse_args():
                         default=False, nargs='?', const=True,
                         help="Force sequential run if you face problems with parallel run")
     return parser.parse_args()
+
+
+def initialize_loghandler(log) -> None:
+    """Initialize test runner logging with stream and file handlers."""
+    log.setLevel(logging.DEBUG)
+    cwd = os.getcwd()
+    dir_path = os.path.join(os.path.join(cwd, params.LOG_DIR_NAME, params.LATEST_LOG_FOLDER))
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path, exist_ok=True)
+    name = os.path.splitext(os.path.basename(__file__))[0]
+    name = os.path.join(dir_path, name + '.log')
+    cortxlogging.set_log_handlers(log, name, mode='w')
 
 
 def str_to_bool(val):
@@ -109,6 +125,7 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
     cmd_line = cmd_line + [read_metadata]
     cmd_line = cmd_line + ['--build=' + build, '--build_type=' + build_type,
                            '--tp_ticket=' + args.test_plan]
+    LOGGER.debug('Running pytest command %s', cmd_line)
     prc = subprocess.Popen(cmd_line, env=env)
     prc.communicate()
 
@@ -494,14 +511,13 @@ def get_setup_details():
     if os.path.exists(params.SETUPS_FPATH):
         os.remove(params.SETUPS_FPATH)
     setups = configmanager.get_config_db(setup_query={})
-    config_utils.create_content_json(params.SETUPS_FPATH, setups)
+    config_utils.create_content_json(params.SETUPS_FPATH, setups, ensure_ascii=False)
 
 
 def main(args):
     """Main Entry function using argument parser to parse options and forming pyttest command.
     It renames up the latest folder and parses TE ticket to create detailed test details csv.
     """
-    runner.cleanup()
     if args.json_file:
         json_dict, cmd, run_using = runner.parse_json(args.json_file)
         cmd_line = runner.get_cmd_line(cmd, run_using, args.html_report, args.log_level)
@@ -514,6 +530,8 @@ def main(args):
 
 
 if __name__ == '__main__':
+    runner.cleanup()
+    initialize_loghandler(LOGGER)
     get_setup_details()
     opts = parse_args()
     main(opts)

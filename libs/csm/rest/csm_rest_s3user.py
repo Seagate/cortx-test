@@ -19,12 +19,15 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 """Test library for s3 account operations."""
+import json
 import time
+
 import commons.errorcodes as err
-from commons.exceptions import CTException
 from commons.constants import Rest as const
+from commons.exceptions import CTException
 from commons.utils import config_utils
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
+
 
 class RestS3user(RestTestLib):
     """RestS3user contains all the Rest Api calls for s3 account operations"""
@@ -481,3 +484,38 @@ class RestS3user(RestTestLib):
                             error)
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR, error) from error
+
+    @RestTestLib.authenticate_and_login
+    def update_s3_user_password(self, username, old_password, new_password):
+        """
+        This function will update s3 account user password
+        :param username: Username
+        :param old_password: Old Password
+        :param new_password: New Password
+        """
+        self.log.debug(f"Changing password of s3 user {username} from {old_password} to "
+                       f"{new_password}")
+        # Prepare patch for s3 account user
+        patch_payload = {"password": new_password, "reset_access_key": "true"}
+        self.log.debug("editing user {}".format(patch_payload))
+        endpoint = "{}/{}".format(self.config["s3accounts_endpoint"], username)
+        self.log.debug("Endpoint for s3 accounts is {}".format(endpoint))
+        self.headers["Content-Type"] = "application/json"
+        try:
+            # Fetching api response
+            response = self.restapi.rest_call("patch", data=json.dumps(patch_payload),
+                                              endpoint=endpoint, headers=self.headers)
+        except Exception as error:
+            self.log.error("{0} {1}: {2}".format(
+                const.EXCEPTION_ERROR,
+                RestS3user.update_s3_user_password.__name__,
+                error))
+            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
+
+        if response.status_code != const.SUCCESS_STATUS:
+            self.log.error(f"Response code : {response.status_code}")
+            self.log.error(f"Response content: {response.content}")
+            self.log.error(f"Request headers : {response.request.headers}\n"
+                           f"Request body : {response.request.body}")
+            raise CTException(err.CSM_REST_GET_REQUEST_FAILED,
+                              msg="CSM user password change request failed.")

@@ -64,7 +64,8 @@ class TestAuditLogs():
         assert setup_ready
         cls.s3_buckets = RestS3Bucket()
         cls.s3_account = RestS3user()
-        cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_audit_logs.yaml")
+        cls.csm_conf = configmanager.get_config_wrapper(
+            fpath="config/csm/test_rest_audit_logs.yaml")
         cls.log.info("Test setup initialized...")
 
     @pytest.mark.csmrest
@@ -242,6 +243,7 @@ class TestAuditLogs():
 
     @pytest.mark.csmrest
     @pytest.mark.tags('TEST-15865')
+    @pytest.mark.skip(reason="Test is taking exceptionally long time")
     def test_4922(self):
         """
         Test that GET api returns audit logs for date range specified and total

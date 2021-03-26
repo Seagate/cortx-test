@@ -36,7 +36,8 @@ class TestSystemHealth():
         cls.log.info("Initializing test setups started......")
         cls.system_health = SystemHealth()
         cls.log.info("Initiating test setup completed ...")
-        
+
+
     @pytest.mark.csmrest
     @pytest.mark.tags('TEST-12786')
     def test_6813(self):

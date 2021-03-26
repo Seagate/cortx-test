@@ -1,11 +1,9 @@
 *** Settings ***
-Resource  ${EXECDIR}/resources/common/common.robot
-Resource  userSettingsLocalPage.robot
-Resource  loginPage.robot
-Library     SeleniumLibrary
+Library    SeleniumLibrary
+Resource   ${EXECDIR}/resources/page_objects/loginPage.robot
+Resource   ${EXECDIR}/resources/page_objects/userSettingsLocalPage.robot
+Resource   ${EXECDIR}/resources/common/common.robot
 Variables  ${EXECDIR}/resources/common/element_locators.py
-
-*** Variables ***
 
 *** Keywords ***
 
@@ -35,13 +33,13 @@ Click on create new S3 account button
     click button  ${CREATE_S3_ACCOUNT_BUTTON_ID}
 
 Click on download and close button
-    [Documentation]  This keyword is to click on the downlaod and close button on s3 account.
+    [Documentation]  This keyword is to click on the download and close button on s3 account.
     sleep  3s
     wait until element is visible  ${DOWNLOAD_AND_CLOSE_BUTTON_ID}  timeout=10
     click element  ${DOWNLOAD_AND_CLOSE_BUTTON_ID}
 
-Click on calcle button on s3 account
-    [Documentation]  This keyword is to click on the calcel button on s3 account.
+Click on cancel button on s3 account
+    [Documentation]  This keyword is to click on the cancel button on s3 account.
     click button  ${CANCEL_S3_ACCOUNT_ID}
 
 Click on edit s3 account option
@@ -64,7 +62,6 @@ Click on download and close button for new access key
     wait until element is visible  ${ACCESS_KEY_DOWNLOAD_AND_CLOSE_BTN_ID}  timeout=10
     click element  ${ACCESS_KEY_DOWNLOAD_AND_CLOSE_BTN_ID}
 
-
 Add data to create new S3 account
     [Documentation]  This keyword is to add data in s3 account form.
     [Arguments]  ${s3_account_name}  ${email_id}  ${password}  ${confirm_password}
@@ -84,6 +81,7 @@ Create S3 account
     log to console and report  password is ${password}
     Add data to create new S3 account  ${S3_account_name}  ${email}  ${password}  ${password}
     Click on create new S3 account button
+    sleep  1s
     Click on download and close button
     [Return]    ${S3_account_name}  ${email}  ${password}
 
@@ -97,6 +95,7 @@ Delete S3 Account
     ...  Enter Username And Password    ${s3_account_name}  ${password}
     ...  AND
     ...  Click Sigin Button
+    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     Validate CSM Login Success  ${s3_account_name}
     log to console and report   deleting S3 account ${s3_account_name}
     wait until element is visible  ${DELETE_S3_ACCOUNT_ID}  timeout=10
@@ -118,9 +117,9 @@ Check s3 account form is opened
     wait until element is visible  ${S3_ACCOUNT_NAME_FIELD_ID}  timeout=10
 
 check cancel s3 account form feature
-    [Documentation]  This keyword checks whether s3 account form is getting closed by clicking on the calcle button.
+    [Documentation]  This keyword checks whether s3 account form is getting closed by clicking on the cancel button.
     Click on add new s3 account button
-    Click on calcle button on s3 account
+    Click on cancel button on s3 account
     sleep  2s
     Element Should Not Be Visible  ${S3_ACCOUNT_NAME_FIELD_ID}
 
@@ -217,7 +216,7 @@ Verify unique username for csm and s3 account
     Reload Page
     Delete CSM User  ${user_name}
 
-verify the table eders for s3 account access key
+verify the table headers for s3 account access key
     [Documentation]  This keyword verify the table headers for s3 account access key table.
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
@@ -235,7 +234,7 @@ verify the table eders for s3 account access key
     Delete S3 Account  ${S3_account_name}  ${password}  True
 
 generate new access key
-     [Documentation]  This keyword generate new access kay.
+     [Documentation]  This keyword generate new access key.
      Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
      sleep  2s
      ${S3_account_name}  ${email}  ${password} =  Create S3 account
@@ -298,7 +297,9 @@ verify access key table data
 verify that add access key button disables after limit exceeded
     [Documentation]  This keyword verify that add access key button disables after limit exceeded
     ${S3_account_name}  ${password} =  generate new access key
+    sleep  1s
     Click on download and close button for new access key
+    sleep  1s
     ${state_add_access_key_btn}=  Get Element Attribute  ${ADD_S3_ACCOUNT_ACCESS_KEY_ID}  disabled
     Run Keyword If  ${${state_add_access_key_btn}} == True  log to console and report  add access key button disables.
     Delete S3 Account  ${S3_account_name}  ${password}  True
@@ -316,10 +317,6 @@ verify update s3 account has only password options
     ${password_fields} =  Get Element Count  ${EDIT_S3_ACCOUNT_OPTIONS_XPATH}
     Should Be True  ${password_fields} == 2
     Delete S3 Account  ${S3_account_name}  ${password}  True
-
-Check Setting Option Not Exists
-    [Documentation]  This keyword is to check that s3 user does not have access to setting page
-    Page Should Not Contain Element  ${SETTINGS_ID}
 
 Check Maintenance Option Not Exists
     [Documentation]  This keyword is to check that s3 user does not have access to Maintenance page
