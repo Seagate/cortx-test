@@ -118,7 +118,7 @@ def get_config_wrapper(**kwargs):
         flag = True
         if os.path.exists(SETUPS_FPATH):
             LOG.debug("Reading config from setups.json for setup: %s", target)
-            setup_details = config_utils.read_content_json(SETUPS_FPATH)[target]
+            setup_details = config_utils.read_content_json(SETUPS_FPATH, mode='rb')[target]
         else:
             setup_query = {"setupname": kwargs['target']}
             LOG.debug("Reading config from DB for setup: %s", target)

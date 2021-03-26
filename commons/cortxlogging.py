@@ -2,7 +2,7 @@
 Extended log rotation class for cortx log files
 """
 import os
-import sys
+import inspect
 import gzip
 import shutil
 import datetime
@@ -49,7 +49,7 @@ def make_log_dir(dirpath) -> None:
 
 def get_frame():
     """Get current frame and name."""
-    return sys._getframe().f_code.co_name
+    return inspect.stack()[1][3]
 
 
 class CortxRotatingFileHandler(handlers.RotatingFileHandler):
