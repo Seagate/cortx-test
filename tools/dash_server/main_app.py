@@ -38,6 +38,9 @@ from R1_callbacks import r1_exe_report_callbacks, \
 from R2_callbacks import exe_report_callbacks, \
     engg_report_callbacks  # pylint: disable=unused-import
 
+from Performance.statistics import statistics_callbacks
+from Performance.graphs import graphs_callbacks
+from Performance.perf_main import perf_stats_page, perf_graphs_page
 
 @server.route('/favicon.ico')
 def favicon():
@@ -186,7 +189,9 @@ main_tabs = dbc.Tabs(
                 active_label_style={'font-weight': 'bold'}),
         dbc.Tab(query_page, label="QUERY  QA  DATA ", style=dict_style_tab,
                 label_style=dict_style_label, active_label_style={'font-weight': 'bold'}),
-        dbc.Tab(perf_page, label="PERFORMANCE", style=dict_style_tab, label_style=dict_style_label,
+        dbc.Tab(perf_stats_page, label="Performance Statistics", style=dict_style_tab, label_style=dict_style_label,
+                active_label_style={'font-weight': 'bold'}),
+        dbc.Tab(perf_graphs_page, label="Performance Trends", style=dict_style_tab, label_style=dict_style_label,
                 active_label_style={'font-weight': 'bold'}),
     ],
     className="nav nav nav-pills nav-fill nav-pills flex-column flex-sm-row",
