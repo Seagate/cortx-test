@@ -35,30 +35,41 @@ LOG_DIR = cfg_obj["log_dir"]
 S3_BENCH_PATH = cfg_obj["s3bench_path"]
 
 
-def setup_s3bench():
+def setup_s3bench(
+        get_cmd=cfg_obj["s3bench_get"],
+        git_url=cfg_obj["s3bench_git"],
+        path=cfg_obj["go_path"]):
     """
-    Configuring client machine with s3bench dependencies.
+    Configurig client machine with s3bench dependencies.
+    :param string get_cmd: S3Bench go get command
+    :param string git_url: S3Bench git url command
+    :param string path: Go src path
     :return bool: True/False
     """
-    assert path_exists(S3_BENCH_PATH), f"{S3_BENCH_PATH} does not exist."
-    resp = run_local_cmd(f'chmod +x {S3_BENCH_PATH}')
-    assert resp[0], "Could not change s3bench permissions."
+    if not (path_exists(path) or path_exists(cfg_obj["s3bench_path"])):
+        run_local_cmd(cfg_obj["cmd_go"])
+        # executing go get for s3bench
+        run_local_cmd(get_cmd)
+        # Clone s3bench to go src
+        run_local_cmd(git_url.format(cfg_obj["s3bench_path"]))
     return True
 
 
-def create_log(resp, log_file_prefix, log_dir=LOG_DIR):
+def create_log(resp, log_file_prefix, client, samples, size):
     """
     To create log file for s3bench run
     :param resp: List of string response
     :param log_file_prefix: Log file prefix
-    :param log_dir: Directory path for creating log file
+    :param client: number of clients
+    :param samples: number of samples
+    :param size: object size
     :return: Path of the log file
     """
-    if not path_exists(log_dir):
-        make_dirs(log_dir)
+    if not path_exists(LOG_DIR):
+        make_dirs(LOG_DIR)
 
     now = datetime.now().strftime("%d-%m-%Y-%H-%M-%S-%f")
-    path = f"{log_dir}{log_file_prefix}_s3bench_{now}.log"
+    path = f"{LOG_DIR}{log_file_prefix}_s3bench_{client}_{samples}_{size}_{now}.log"
     # Writing complete response in file, appends response in case of duration
     # given
     with open(path, "a") as fd_write:
@@ -149,7 +160,7 @@ def s3bench(
     """
     result = []
     # Creating log file
-    log_path = create_log(result, log_file_prefix)
+    log_path = create_log(result, log_file_prefix, num_clients, num_sample, obj_size)
     LOGGER.info("Running s3 bench tool")
     # GO command formatter
     cmd = f"{S3_BENCH_PATH} -accessKey={access_key} -accessSecret={secret_key} " \

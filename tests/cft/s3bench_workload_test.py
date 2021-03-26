@@ -55,5 +55,5 @@ class TestWorkloadS3Bench:
             self.log.info(f"json_resp {resp[0]}\n Log Path {resp[1]}")
             assert not s3bench.check_log_file_error(resp[1],
                                                     ["with error ", "panic", "status code"]), \
-                f"S3b3nch workload for object size {workload} failed." \
+                f"S3bench workload for object size {workload} failed. " \
                 f"Please read log file {resp[1]}"
