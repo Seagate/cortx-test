@@ -18,7 +18,7 @@
 #
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
-"""Constants
+"""Configurable items like paths , items which are test environments specific
 """
 import os
 

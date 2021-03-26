@@ -33,9 +33,9 @@ class TestSystemHealth():
     def setup_class(cls):
         """ This is method is for test suite set-up """
         cls.log = logging.getLogger(__name__)
-        cls.log.info("Initializing test setups ......")
+        cls.log.info("Initializing test setups started......")
         cls.system_health = SystemHealth()
-        cls.log.info("Initiating Rest Client for Alert ...")
+        cls.log.info("Initiating test setup completed ...")
 
     @pytest.mark.csmrest
     @pytest.mark.tags('TEST-12786')
