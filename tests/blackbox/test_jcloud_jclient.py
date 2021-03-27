@@ -60,8 +60,8 @@ class TestJcloudAndJclient:
         cls.access_key = ACCESS_KEY
         cls.secret_key = SECRET_KEY
         cls.file_path_lst = []
+        cls.log.info("ENDED: setup test suite operations.")
 
-    @CTFailOn(error_handler)
     def setup_method(self):
         """
         Function will be invoked prior to each test case.
@@ -84,7 +84,6 @@ class TestJcloudAndJclient:
                 raise CTException(
                     S3_CLIENT_ERROR,
                     BLACKBOX_CONF["common_cfg"]["jar_skip_err"])
-
         self.log.info("ENDED: Setup operations.")
 
     def teardown_method(self):

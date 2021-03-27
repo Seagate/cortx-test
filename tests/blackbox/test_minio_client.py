@@ -54,8 +54,8 @@ class TestMinioClient:
         cls.file_path = cls.minio_cnf["file_path"]
         cls.file_size = cls.minio_cnf["file_size"]
         cls.timestamp = str(time.time())
+        cls.log.info("ENDED: setup test suite operations.")
 
-    @CTFailOn(error_handler)
     def setup_method(self):
         """
         Function will be invoked prior to each test case.

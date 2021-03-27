@@ -34,26 +34,11 @@ from libs.s3 import iam_test_lib
 from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
 
 IAM_OBJ = iam_test_lib.IamTestLib()
-
 IAM_CFG = get_config_wrapper(fpath="config/blackbox/test_aws_iam.yaml")
-
-
-def create_account():
-    """Function will create IAM account."""
-    acc_name = "{}{}".format(
-        IAM_CFG["acc_user_mng"]["account_name"], str(int(time.time())))
-    acc_email = "{}{}".format(acc_name, IAM_CFG["acc_user_mng"]["email_id"])
-    return IAM_OBJ.create_account_s3iamcli(
-        acc_name,
-        acc_email,
-        LDAP_USERNAME,
-        LDAP_PASSWD)
 
 
 class TestBlackBox:
     """Blackbox Testsuite for aws iam tool."""
-
-    cfg = IAM_CFG["acc_user_mng"]
 
     @classmethod
     def setup_class(cls):
@@ -63,12 +48,13 @@ class TestBlackBox:
         It will perform all prerequisite test suite steps if any.
         """
         cls.log = logging.getLogger(__name__)
+        cls.cfg = IAM_CFG["acc_user_mng"]
         cls.log.info("STARTED: setup test suite operations.")
         cls.new_access_key = None
         cls.new_secret_key = None
         cls.random_str = None
+        cls.log.info("ENDED: setup test suite operations.")
 
-    @CTFailOn(error_handler)
     def setup_method(self):
         """Function to perform the setup ops for each test."""
         self.random_str = str(int(time.time()))
@@ -114,6 +100,17 @@ class TestBlackBox:
                 self.log.info("Deleted %s account", acc)
         self.log.info("ENDED: Teardown Operations")
 
+    def create_account(self):
+        """Function will create IAM account."""
+        acc_name = "{}{}".format(
+            IAM_CFG["acc_user_mng"]["account_name"], str(int(time.time())))
+        acc_email = "{}{}".format(acc_name, IAM_CFG["acc_user_mng"]["email_id"])
+        return IAM_OBJ.create_account_s3iamcli(
+            acc_name,
+            acc_email,
+            LDAP_USERNAME,
+            LDAP_PASSWD)
+
     def create_user_and_access_key(
             self,
             user_name,
@@ -155,7 +152,7 @@ class TestBlackBox:
         self.log.info("STARTED: Update User using aws iam")
         self.log.info(
             "Step 1: Create new account and new user and new profile in it")
-        resp = create_account()
+        resp = self.create_account()
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
@@ -201,7 +198,7 @@ class TestBlackBox:
         self.log.info(
             "STARTED: list user using aws iam")
         self.log.info("Step 1: Create new account and new user in it")
-        resp = create_account()
+        resp = self.create_account()
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
@@ -231,7 +228,7 @@ class TestBlackBox:
         self.log.info(
             "STARTED: Delete User using aws iam")
         self.log.info("Step 1: Create new account and new user in it")
-        resp = create_account()
+        resp = self.create_account()
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
@@ -260,7 +257,7 @@ class TestBlackBox:
         """Create 100 Users per account using aws iam."""
         self.log.info(
             "STARTED: Create 100 Users per account using aws iam")
-        resp = create_account()
+        resp = self.create_account()
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
@@ -290,7 +287,7 @@ class TestBlackBox:
         self.log.info("STARTED: list accesskeys for the user using aws iam")
         self.log.info(
             "Step 1: Create new account and new user and new profile in it")
-        resp = create_account()
+        resp = self.create_account()
         assert_true(resp[0], resp[1])
         self.new_access_key = resp[1]["access_key"]
         self.new_secret_key = resp[1]["secret_key"]
@@ -326,7 +323,7 @@ class TestBlackBox:
         self.log.info("STARTED: Delete Accesskey of a user using aws iam")
         self.log.info(
             "Step 1: Create new account and new user and new profile in it")
-        resp = create_account()
+        resp = self.create_account()
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
@@ -353,7 +350,7 @@ class TestBlackBox:
         self.log.info("STARTED: Create Access key to the user using aws iam")
         self.log.info(
             "Step 1: Create new account and new user and new profile in it")
-        resp = create_account()
+        resp = self.create_account()
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
@@ -390,7 +387,7 @@ class TestBlackBox:
         self.log.info(
             "STARTED: Create new user for current Account AWS IAM")
         self.log.info("Step 1: Create new account and new user in it")
-        resp = create_account()
+        resp = self.create_account()
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
@@ -422,7 +419,7 @@ class TestBlackBox:
         self.log.info(
             "STARTED: creating user with existing name With AWS IAM client")
         self.log.info("Step 1: Create new account")
-        resp = create_account()
+        resp = self.create_account()
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
@@ -463,7 +460,7 @@ class TestBlackBox:
         self.log.info(
             "Step 1: Creating a new account with name %s",
             IAM_CFG["acc_user_mng"]["account_name"])
-        resp = create_account()
+        resp = self.create_account()
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
@@ -520,7 +517,7 @@ class TestBlackBox:
         self.log.info(
             "Step 1: Creating a new account with name %s",
             IAM_CFG["acc_user_mng"]["account_name"])
-        resp = create_account()
+        resp = self.create_account()
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
@@ -575,7 +572,7 @@ class TestBlackBox:
             "STARTED: create access key key with existing user name using aws iam")
         self.log.info(
             "Step 1: Create new account and new user and new profile in it")
-        resp = create_account()
+        resp = self.create_account()
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]

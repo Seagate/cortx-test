@@ -60,15 +60,14 @@ class TestS3cmdClient:
         It will perform all prerequisite test suite steps if any.
         """
         cls.log = logging.getLogger(__name__)
+        cls.log.info("STARTED: setup test suite operations.")
         cls.common_cfg = S3CMD_CNF["common_cfg"]
         cls.node_helper_obj = Node(
             hostname=CMN_CFG["nodes"][0]["host"],
             username=CMN_CFG["nodes"][0]["username"],
             password=CMN_CFG["nodes"][0]["password"])
+        cls.log.info("ENDED: setup test suite operations.")
 
-        cls.log.info("STARTED: setup test suite operations.")
-
-    @CTFailOn(error_handler)
     def setup_method(self):
         """
         This function will be invoked before each test case execution
