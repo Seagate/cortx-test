@@ -22,7 +22,6 @@
 import ast
 import random
 import string
-import pytest
 import os
 import pathlib
 import json
@@ -30,6 +29,7 @@ import logging
 import csv
 import time
 import datetime
+import pytest
 import requests
 from datetime import date
 from _pytest.nodes import Item
@@ -213,6 +213,10 @@ def pytest_addoption(parser):
     parser.addoption(
         "--readmetadata", action="store", default=False,
         help="Read test metadata"
+    )
+    parser.addoption(
+        "--db_update", action="store", default=True,
+        help="Decide whether to update reporting DB."
     )
 
 
@@ -497,28 +501,31 @@ def pytest_runtest_makereport(item, call):
             try:
                 if item.rep_setup.failed or item.rep_teardown.failed:
                     task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
-                    try:
-                        payload = create_report_payload(item, call, 'FAIL', db_user, db_pass)
-                        REPORT_CLIENT.create_db_entry(**payload)
-                    except requests.exceptions.RequestException as fault:
-                        LOGGER.exception(str(fault))
-                        LOGGER.error("Failed to execute DB update for %s", test_id)
+                    if item.config.option.db_update:
+                        try:
+                            payload = create_report_payload(item, call, 'FAIL', db_user, db_pass)
+                            REPORT_CLIENT.create_db_entry(**payload)
+                        except requests.exceptions.RequestException as fault:
+                            LOGGER.exception(str(fault))
+                            LOGGER.error("Failed to execute DB update for %s", test_id)
                 elif item.rep_setup.passed and (item.rep_call.failed or item.rep_teardown.failed):
                     task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
-                    try:
-                        payload = create_report_payload(item, call, 'FAIL', db_user, db_pass)
-                        REPORT_CLIENT.create_db_entry(**payload)
-                    except requests.exceptions.RequestException as fault:
-                        LOGGER.exception(str(fault))
-                        LOGGER.error("Failed to execute DB update for %s", test_id)
+                    if item.config.option.db_update:
+                        try:
+                            payload = create_report_payload(item, call, 'FAIL', db_user, db_pass)
+                            REPORT_CLIENT.create_db_entry(**payload)
+                        except requests.exceptions.RequestException as fault:
+                            LOGGER.exception(str(fault))
+                            LOGGER.error("Failed to execute DB update for %s", test_id)
                 elif item.rep_setup.passed and item.rep_call.passed and item.rep_teardown.passed:
                     task.update_test_jira_status(item.config.option.te_tkt, test_id, 'PASS')
-                    try:
-                        payload = create_report_payload(item, call, 'PASS', db_user, db_pass)
-                        REPORT_CLIENT.create_db_entry(**payload)
-                    except requests.exceptions.RequestException as fault:
-                        LOGGER.exception(str(fault))
-                        LOGGER.error("Failed to execute DB update for %s", test_id)
+                    if item.config.option.db_update:
+                        try:
+                            payload = create_report_payload(item, call, 'PASS', db_user, db_pass)
+                            REPORT_CLIENT.create_db_entry(**payload)
+                        except requests.exceptions.RequestException as fault:
+                            LOGGER.exception(str(fault))
+                            LOGGER.error("Failed to execute DB update for %s", test_id)
                 elif item.rep_setup.skipped and \
                         (item.rep_teardown.skipped or item.rep_teardown.passed):
                     # Jira reporting of skipped cases does not contain skipped option

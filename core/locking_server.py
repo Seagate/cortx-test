@@ -42,7 +42,7 @@ class LockingServer:
         self.host = params.REPORT_SRV
         self.db_collection = "systemdb/"
         self.headers = {
-            'content-type':"application/json",
+            'content-type': "application/json",
         }
 
     def check_available_shared_target(self, target_list):
@@ -54,11 +54,11 @@ class LockingServer:
             target_found = self.is_target_present_in_db(target_name)
             if target_found:
                 payload = {
-                    "query":{"is_setup_free":{"$eq":False}, "setupname":target_name,
-                             "in_use_for_parallel":{"$eq":True}},
-                    "projection":{"setupname":True, "setup_in_useby":True},
-                    "db_username":self.db_username,
-                    "db_password":self.db_password
+                    "query": {"is_setup_free": {"$eq": False}, "setupname": target_name,
+                              "in_use_for_parallel": {"$eq": True}},
+                    "projection": {"setupname": True, "setup_in_useby": True},
+                    "db_username": self.db_username,
+                    "db_password": self.db_password
                 }
                 response = requests.request("GET", self.host + self.db_collection + "search",
                                             headers=self.headers, data=json.dumps(payload))
@@ -80,10 +80,10 @@ class LockingServer:
             target_found = self.is_target_present_in_db(target_name)
             if target_found:
                 payload = {
-                    "query":{"is_setup_free":{"$eq":True}, "setupname":target_name},
-                    "projection":{"setupname":True, "setup_in_useby":True},
-                    "db_username":self.db_username,
-                    "db_password":self.db_password
+                    "query": {"is_setup_free": {"$eq": True}, "setupname": target_name},
+                    "projection": {"setupname": True, "setup_in_useby": True},
+                    "db_username": self.db_username,
+                    "db_password": self.db_password
                 }
                 response = requests.request("GET", self.host + self.db_collection + "search",
                                             headers=self.headers, data=json.dumps(payload))
@@ -102,10 +102,10 @@ class LockingServer:
         """
         target_found = False
         payload = {
-            "query":{"setupname":target_name},
-            "projection":{"setupname":True, "is_setup_free":True},
-            "db_username":self.db_username,
-            "db_password":self.db_password
+            "query": {"setupname": target_name},
+            "projection": {"setupname": True, "is_setup_free": True},
+            "db_username": self.db_username,
+            "db_password": self.db_password
         }
         response = requests.request("GET", self.host + self.db_collection + "search",
                                     headers=self.headers, data=json.dumps(payload))
@@ -119,14 +119,14 @@ class LockingServer:
         """
         lock_confirmed = False
         payload = {
-            "query":{"is_setup_free":{"$eq":False},
-                     "setupname":target_name,
-                     "in_use_for_parallel":{"$eq":True},
-                     },
-            "projection":{"setupname":True, "setup_in_useby":True, "in_use_for_parallel":True,
-                          "parallel_client_cnt":True},
-            "db_username":self.db_username,
-            "db_password":self.db_password
+            "query": {"is_setup_free": {"$eq": False},
+                      "setupname": target_name,
+                      "in_use_for_parallel": {"$eq": True},
+                      },
+            "projection": {"setupname": True, "setup_in_useby": True, "in_use_for_parallel": True,
+                           "parallel_client_cnt": True},
+            "db_username": self.db_username,
+            "db_password": self.db_password
         }
         response = requests.request("GET", self.host + self.db_collection + "search",
                                     headers=self.headers, data=json.dumps(payload))
@@ -148,13 +148,13 @@ class LockingServer:
         """
         lock_confirmed = False
         payload = {
-            "query":{"is_setup_free":{"$eq":False},
-                     "setupname":target_name,
-                     "setup_in_useby":client
-                     },
-            "projection":{"setupname":True, "setup_in_useby":True},
-            "db_username":self.db_username,
-            "db_password":self.db_password
+            "query": {"is_setup_free": {"$eq": False},
+                      "setupname": target_name,
+                      "setup_in_useby": client
+                      },
+            "projection": {"setupname": True, "setup_in_useby": True},
+            "db_username": self.db_username,
+            "db_password": self.db_password
         }
         response = requests.request("GET", self.host + self.db_collection + "search",
                                     headers=self.headers, data=json.dumps(payload))
@@ -168,23 +168,23 @@ class LockingServer:
         """
         lock_acquired = False
         payload = {
-            "query":{"is_setup_free":{"$eq":True},
-                     "setupname":target_name,
-                     "in_use_for_parallel":{"$eq":False}
-                     },
-            "projection":{"setupname":True, "setup_in_useby":True, "parallel_client_cnt":True},
-            "db_username":self.db_username,
-            "db_password":self.db_password
+            "query": {"is_setup_free": {"$eq": True},
+                      "setupname": target_name,
+                      "in_use_for_parallel": {"$eq": False}
+                      },
+            "projection": {"setupname": True, "setup_in_useby": True, "parallel_client_cnt": True},
+            "db_username": self.db_username,
+            "db_password": self.db_password
         }
         response = requests.request("GET", self.host + self.db_collection + "search",
                                     headers=self.headers, data=json.dumps(payload))
         if response.status_code == HTTPStatus.OK:
             payload = {
-                "filter":{"setupname":target_name},
-                "update":{"$set":{"is_setup_free":False, "setup_in_useby":client,
-                                  "parallel_client_cnt":1, "in_use_for_parallel":True}},
-                "db_username":self.db_username,
-                "db_password":self.db_password
+                "filter": {"setupname": target_name},
+                "update": {"$set": {"is_setup_free": False, "setup_in_useby": client,
+                                    "parallel_client_cnt": 1, "in_use_for_parallel": True}},
+                "db_username": self.db_username,
+                "db_password": self.db_password
             }
             response = requests.request("PATCH", self.host + self.db_collection + "update",
                                         headers=self.headers, data=json.dumps(payload))
@@ -198,13 +198,13 @@ class LockingServer:
         """
         lock_acquired = False
         payload = {
-            "query":{"is_setup_free":{"$eq":False},
-                     "setupname":target_name,
-                     "in_use_for_parallel":{"$eq":True}
-                     },
-            "projection":{"setupname":True, "setup_in_useby":True, "parallel_client_cnt":True},
-            "db_username":self.db_username,
-            "db_password":self.db_password
+            "query": {"is_setup_free": {"$eq": False},
+                      "setupname": target_name,
+                      "in_use_for_parallel": {"$eq": True}
+                      },
+            "projection": {"setupname": True, "setup_in_useby": True, "parallel_client_cnt": True},
+            "db_username": self.db_username,
+            "db_password": self.db_password
         }
         response = requests.request("GET", self.host + self.db_collection + "search",
                                     headers=self.headers, data=json.dumps(payload))
@@ -220,11 +220,11 @@ class LockingServer:
                 clients = existing_clients + " " + client
 
                 payload = {
-                    "filter":{"setupname":target_name},
-                    "update":{"$set":{"is_setup_free":False, "setup_in_useby":clients,
-                                      "parallel_client_cnt":client_cnts}},
-                    "db_username":self.db_username,
-                    "db_password":self.db_password
+                    "filter": {"setupname": target_name},
+                    "update": {"$set": {"is_setup_free": False, "setup_in_useby": clients,
+                                        "parallel_client_cnt": client_cnts}},
+                    "db_username": self.db_username,
+                    "db_password": self.db_password
                 }
                 response = requests.request("PATCH", self.host + self.db_collection + "update",
                                             headers=self.headers, data=json.dumps(payload))
@@ -238,22 +238,22 @@ class LockingServer:
         """
         lock_acquired = False
         payload = {
-            "query":{"is_setup_free":{"$eq":True},
-                     "setupname":target_name,
-                     "setup_in_useby":""
-                     },
-            "projection":{"setupname":True, "setup_in_useby":True},
-            "db_username":self.db_username,
-            "db_password":self.db_password
+            "query": {"is_setup_free": {"$eq": True},
+                      "setupname": target_name,
+                      "setup_in_useby": ""
+                      },
+            "projection": {"setupname": True, "setup_in_useby": True},
+            "db_username": self.db_username,
+            "db_password": self.db_password
         }
         response = requests.request("GET", self.host + self.db_collection + "search",
                                     headers=self.headers, data=json.dumps(payload))
         if response.status_code == HTTPStatus.OK:
             payload = {
-                "filter":{"setupname":target_name},
-                "update":{"$set":{"is_setup_free":False, "setup_in_useby":client}},
-                "db_username":self.db_username,
-                "db_password":self.db_password
+                "filter": {"setupname": target_name},
+                "update": {"$set": {"is_setup_free": False, "setup_in_useby": client}},
+                "db_username": self.db_username,
+                "db_password": self.db_password
             }
             response = requests.request("PATCH", self.host + self.db_collection + "update",
                                         headers=self.headers, data=json.dumps(payload))
@@ -267,13 +267,13 @@ class LockingServer:
         """
         lock_released = False
         payload = {
-            "query":{"is_setup_free":{"$eq":False},
-                     "setupname":target_name,
-                     },
-            "projection":{"setupname":True, "setup_in_useby":True,
-                          "in_use_for_parallel":True, "parallel_client_cnt":True},
-            "db_username":self.db_username,
-            "db_password":self.db_password
+            "query": {"is_setup_free": {"$eq": False},
+                      "setupname": target_name,
+                      },
+            "projection": {"setupname": True, "setup_in_useby": True,
+                           "in_use_for_parallel": True, "parallel_client_cnt": True},
+            "db_username": self.db_username,
+            "db_password": self.db_password
         }
         response = requests.request("GET", self.host + self.db_collection + "search",
                                     headers=self.headers, data=json.dumps(payload))
@@ -285,12 +285,12 @@ class LockingServer:
                     parallel_cnt = json_response["result"][0]["parallel_client_cnt"]
                     if parallel_cnt == 1:
                         payload = {
-                            "filter":{"setupname":target_name},
-                            "update":{"$set":{"is_setup_free":True, "setup_in_useby":"",
-                                              "in_use_for_parallel":False,
-                                              "parallel_client_cnt":0}},
-                            "db_username":self.db_username,
-                            "db_password":self.db_password
+                            "filter": {"setupname": target_name},
+                            "update": {"$set": {"is_setup_free": True, "setup_in_useby": "",
+                                                "in_use_for_parallel": False,
+                                                "parallel_client_cnt": 0}},
+                            "db_username": self.db_username,
+                            "db_password": self.db_password
                         }
                         response = requests.request("PATCH",
                                                     self.host + self.db_collection + "update",
@@ -303,11 +303,11 @@ class LockingServer:
                         new_clients = new_clients.strip()
                         new_parallel_cnt = parallel_cnt - 1
                         payload = {
-                            "filter":{"setupname":target_name},
-                            "update":{"$set":{"setup_in_useby":new_clients,
-                                              "parallel_client_cnt":new_parallel_cnt}},
-                            "db_username":self.db_username,
-                            "db_password":self.db_password
+                            "filter": {"setupname": target_name},
+                            "update": {"$set": {"setup_in_useby": new_clients,
+                                                "parallel_client_cnt": new_parallel_cnt}},
+                            "db_username": self.db_username,
+                            "db_password": self.db_password
                         }
                         response = requests.request("PATCH",
                                                     self.host + self.db_collection + "update",
@@ -316,10 +316,10 @@ class LockingServer:
                             lock_released = True
                 else:
                     payload = {
-                        "filter":{"setupname":target_name, "setup_in_useby":client},
-                        "update":{"$set":{"is_setup_free":True, "setup_in_useby":""}},
-                        "db_username":self.db_username,
-                        "db_password":self.db_password
+                        "filter": {"setupname": target_name, "setup_in_useby": client},
+                        "update": {"$set": {"is_setup_free": True, "setup_in_useby": ""}},
+                        "db_username": self.db_username,
+                        "db_password": self.db_password
                     }
                     response = requests.request("PATCH", self.host + self.db_collection + "update",
                                                 headers=self.headers, data=json.dumps(payload))
