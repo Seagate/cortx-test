@@ -29,3 +29,6 @@ nfs_path: "sm13-r2-ipmi.pun.seagate.com:/EES_LOGS/jclientCloud/"
 jClientCloud_path:
     dest: "scripts/tools/"
     source: "/root/jclientCloud/"
+
+s3_object:
+

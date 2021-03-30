@@ -8,32 +8,33 @@ common_var:
   acc_name_prefix: "my_account"
   start_range: 10000
   end_range: 20000
+  obj_acl: "FULL_CONTROL"
 
 test_9852:
-  obj_acl: "FULL_CONTROL"
+  #obj_acl: "FULL_CONTROL"
 
 test_9853:
   err_msg: "NoSuchKey"
 
 test_get_obj_acl_mp:
-  obj_acl: "FULL_CONTROL"
+  #obj_acl: "FULL_CONTROL"
   file_size: 100
   total_parts: 10
   mupart_obj_path: "/home/mp_obj"
 
 test_9857:
-  obj_acl: "FULL_CONTROL"
+  #obj_acl: "FULL_CONTROL"
   single_part_sz: 500
   total_parts: 5
   mupart_obj_path: "/home/mp_obj"
 
 test_9897:
-  obj_acl: "FULL_CONTROL"
+  #obj_acl: "FULL_CONTROL"
   file_path: "/home/test_file"
   f_size: 2048
 
 test_9898:
-  obj_acl: "FULL_CONTROL"
+  #obj_acl: "FULL_CONTROL"
   file_path: "/home/test_file"
   f_size: 2048
   run_cmd: "aws configure set default.s3.multipart_chunksize 16MB"
@@ -45,48 +46,48 @@ test_9899:
   mupart_obj_path: "/home/mp_obj"
 
 test_10208:
-  obj_acl: "FULL_CONTROL"
+  #obj_acl: "FULL_CONTROL"
   account_name: "my_account208{}"
   emailid: "my_account208{}@seagate.com"
 
 test_10209:
-  obj_acl: "FULL_CONTROL"
+  #obj_acl: "FULL_CONTROL"
   account_name: "my_account209{}"
   emailid: "my_account{}@seagate.com"
 
 test_10210:
-  obj_acl: "FULL_CONTROL"
+  #obj_acl: "FULL_CONTROL"
   invalid_can_id: "999FFFFHHHHH445F"
   assert_msg: "InvalidArgument"
 
 test_10211:
-  obj_acl: "READ"
+  obj_acl_rd: "READ"
   account_name: "my_account211{}"
   emailid: "my_account211{}@seagate.com"
 
 test_10212:
-  obj_acl: "WRITE"
+  obj_acl_wr: "WRITE"
   account_name: "my_account212{}"
   emailid: "my_account212{}@seagate.com"
 
 test_10213:
-  obj_acl: "READ_ACP"
+  obj_acl_rdc: "READ_ACP"
   account_name: "my_account213{}"
   emailid: "my_account213{}@seagate.com"
 
 test_10214:
-  obj_acl: "WRITE_ACP"
+  obj_acl_wrc: "WRITE_ACP"
   account_name: "my_account214{}"
   emailid: "my_account214{}@seagate.com"
 
 test_10215:
-  obj_acl: "READ_WRITE"
+  obj_acl_rdwr: "READ_WRITE"
   account_name: "my_account215{}"
   emailid: "my_account215{}@seagate.com"
   error_msg: "InvalidACL"
 
 test_10216:
-  obj_acl: "READ_WRITE"
+  obj_acl_rdwr: "READ_WRITE"
   account_name: "my_account216{}"
   emailid: "my_account216{}@seagate.com"
   Type: "CanonicalUser"
@@ -94,14 +95,14 @@ test_10216:
   error_msg: "InvalidACL"
 
 test_10224:
-  obj_acl: "FULL_CONTROL"
+  #obj_acl: "FULL_CONTROL"
   account_name_1: "my_account_one{}"
   emailid_1: "my_account_one{}@seagate.com"
   account_name_2: "my_account_two{}"
   emailid_2: "my_account_two{}@seagate.com"
 
 test_10225:
-  obj_acl: "FULL_CONTROL"
+  #obj_acl: "FULL_CONTROL"
   account_name: "my_account225{}"
   emailid: "my_account225{}@seagate.com"
   Type: "CanonicalUser"
@@ -109,13 +110,13 @@ test_10225:
   error_msg: "NoSuchKey"
 
 test_10227:
-  obj_acl: "FULL_CONTROL"
+  #obj_acl: "FULL_CONTROL"
   grant_count: 99
   name_initials: "my_account{}{}"
   name_postfix: "@seagate.com"
 
 test_10228:
-  obj_acl: "FULL_CONTROL"
+  #obj_acl: "FULL_CONTROL"
   grant_count: 99
   name_initials: "my_account{}{}"
   name_postfix: "@seagate.com"
@@ -557,7 +558,7 @@ test_311:
   emailid_2: "my_account_two{}@seagate.com"
 
 test_286:
-  obj_acl: "READ_ACP"
+  obj_acl_rdc: "READ_ACP"
   account_name: "my_account_one{}"
   emailid: "my_account_one{}@seagate.com"
 

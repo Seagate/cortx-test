@@ -239,7 +239,7 @@ class TestObjectACL:
         obj = OBJ_ACL_CONFIG["common_var"]["object_name"].format(
             self.random_num)
         self.log.info("Bucket and Object : %s %s", bucket, obj)
-        obj_acl = OBJ_ACL_CONFIG["test_9852"]["obj_acl"]
+        obj_acl = OBJ_ACL_CONFIG["common_var"]["obj_acl"]
         self.create_bucket_obj(bucket, obj)
         self.log.info("Step 3: Getting the object ACL: %s", obj)
         res = S3_ACL_OBJ.get_object_acl(bucket, obj)
@@ -365,7 +365,7 @@ class TestObjectACL:
             self.random_num)
         obj = OBJ_ACL_CONFIG["common_var"]["object_name"].format(
             self.random_num)
-        obj_acl = OBJ_ACL_CONFIG["test_get_obj_acl_mp"]["obj_acl"]
+        obj_acl = OBJ_ACL_CONFIG["common_var"]["obj_acl"]
         file_size = OBJ_ACL_CONFIG["test_get_obj_acl_mp"]["file_size"]
         total_parts = OBJ_ACL_CONFIG["test_get_obj_acl_mp"]["total_parts"]
         self.log.info("Step 1: Creating a bucket: %s", bucket)
@@ -430,7 +430,7 @@ class TestObjectACL:
             self.random_num)
         single_part_sz = OBJ_ACL_CONFIG["test_9857"]["single_part_sz"]
         total_parts = OBJ_ACL_CONFIG["test_9857"]["total_parts"]
-        object_acl = OBJ_ACL_CONFIG["test_9857"]["obj_acl"]
+        object_acl = OBJ_ACL_CONFIG["common_var"]["obj_acl"]
         self.log.info("Step 1: Creating a bucket: %s", bucket)
         res = S3_OBJ.create_bucket(bucket)
         assert res[0], res[1]
@@ -487,7 +487,7 @@ class TestObjectACL:
             self.random_num)
         obj = OBJ_ACL_CONFIG["common_var"]["object_name"].format(
             self.random_num)
-        object_acl = OBJ_ACL_CONFIG["test_9897"]["obj_acl"]
+        object_acl = OBJ_ACL_CONFIG["common_var"]["obj_acl"]
         self.log.info("Step 1: Creating a bucket: %s", bucket)
         res = S3_OBJ.create_bucket(bucket)
         assert res[0], res[1]
@@ -532,7 +532,7 @@ class TestObjectACL:
             self.random_num)
         obj = OBJ_ACL_CONFIG["common_var"]["object_name"].format(
             self.random_num)
-        object_acl = OBJ_ACL_CONFIG["test_9898"]["obj_acl"]
+        object_acl = OBJ_ACL_CONFIG["common_var"]["obj_acl"]
         remove_file(OBJ_ACL_CONFIG["test_9898"]["run_cmd"])
         self.log.info("Step 1: Creating a bucket: %s", bucket)
         res = S3_OBJ.create_bucket(bucket)
@@ -633,7 +633,7 @@ class TestObjectACL:
             self.random_num)
         email_id = OBJ_ACL_CONFIG["test_10208"]["emailid"].format(
             self.random_num)
-        permission = OBJ_ACL_CONFIG["test_10208"]["obj_acl"]
+        permission = OBJ_ACL_CONFIG["common_var"]["obj_acl"]
         result = self.create_s3iamcli_acc(account_name, email_id)
         canonical_id = result[0]
         self.create_bucket_obj(bucket, obj)
@@ -665,7 +665,7 @@ class TestObjectACL:
             self.random_num)
         email_id = OBJ_ACL_CONFIG["test_10209"]["emailid"].format(
             self.random_num)
-        permission = OBJ_ACL_CONFIG["test_10209"]["obj_acl"]
+        permission = OBJ_ACL_CONFIG["common_var"]["obj_acl"]
         result = self.create_s3iamcli_acc(account_name, email_id)
         canonical_id = result[0]
         self.create_bucket_obj(bucket, obj)
@@ -692,7 +692,7 @@ class TestObjectACL:
             self.random_num)
         obj = OBJ_ACL_CONFIG["common_var"]["object_name"].format(
             self.random_num)
-        permission = OBJ_ACL_CONFIG["test_10210"]["obj_acl"]
+        permission = OBJ_ACL_CONFIG["common_var"]["obj_acl"]
         invalid_canonical_id = OBJ_ACL_CONFIG["test_10210"]["invalid_can_id"]
         assert_msg = OBJ_ACL_CONFIG["test_10210"]["assert_msg"]
         self.create_bucket_obj(bucket, obj)
@@ -725,7 +725,7 @@ class TestObjectACL:
             self.random_num)
         email_id = OBJ_ACL_CONFIG["test_10211"]["emailid"].format(
             self.random_num)
-        permission = OBJ_ACL_CONFIG["test_10211"]["obj_acl"]
+        permission = OBJ_ACL_CONFIG["test_10211"]["obj_acl_rd"]
         result = self.create_s3iamcli_acc(account_name, email_id)
         canonical_id = result[0]
         self.log.info("Step 1: Completed creating account")
@@ -760,7 +760,7 @@ class TestObjectACL:
             self.random_num)
         email_id = OBJ_ACL_CONFIG["test_10212"]["emailid"].format(
             self.random_num)
-        permission = OBJ_ACL_CONFIG["test_10212"]["obj_acl"]
+        permission = OBJ_ACL_CONFIG["test_10212"]["obj_acl_wr"]
         result = self.create_s3iamcli_acc(account_name, email_id)
         canonical_id = result[0]
         self.create_bucket_obj(bucket, obj)
@@ -794,7 +794,7 @@ class TestObjectACL:
             self.random_num)
         email_id = OBJ_ACL_CONFIG["test_10213"]["emailid"].format(
             self.random_num)
-        permission = OBJ_ACL_CONFIG["test_10213"]["obj_acl"]
+        permission = OBJ_ACL_CONFIG["test_10213"]["obj_acl_rdc"]
         result = self.create_s3iamcli_acc(account_name, email_id)
         canonical_id = result[0]
         self.create_bucket_obj(bucket, obj)
@@ -829,7 +829,7 @@ class TestObjectACL:
             self.random_num)
         email_id = OBJ_ACL_CONFIG["test_10214"]["emailid"].format(
             self.random_num)
-        permission = OBJ_ACL_CONFIG["test_10214"]["obj_acl"]
+        permission = OBJ_ACL_CONFIG["test_10214"]["obj_acl_wrc"]
         result = self.create_s3iamcli_acc(account_name, email_id)
         canonical_id = result[0]
         self.create_bucket_obj(bucket, obj)
@@ -863,7 +863,7 @@ class TestObjectACL:
             self.random_num)
         email_id = OBJ_ACL_CONFIG["test_10215"]["emailid"].format(
             self.random_num)
-        permission = OBJ_ACL_CONFIG["test_10215"]["obj_acl"]
+        permission = OBJ_ACL_CONFIG["test_10215"]["obj_acl_rdwr"]
         result = self.create_s3iamcli_acc(account_name, email_id)
         canonical_id = result[0]
         self.create_bucket_obj(bucket, obj)
@@ -892,7 +892,7 @@ class TestObjectACL:
             self.random_num)
         email_id = OBJ_ACL_CONFIG["test_10216"]["emailid"].format(
             self.random_num)
-        permission = OBJ_ACL_CONFIG["test_10216"]["obj_acl"]
+        permission = OBJ_ACL_CONFIG["test_10216"]["obj_acl_rdwr"]
         result = self.create_s3iamcli_acc(account_name, email_id)
         canonical_id = result[0]
         self.create_bucket_obj(bucket, obj)
@@ -927,7 +927,7 @@ class TestObjectACL:
             self.random_num)
         email_id_1 = OBJ_ACL_CONFIG["test_10224"]["emailid_1"].format(
             self.random_num)
-        permission = OBJ_ACL_CONFIG["test_10224"]["obj_acl"]
+        permission = OBJ_ACL_CONFIG["common_var"]["obj_acl"]
         result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         canonical_id_1 = result[0]
         self.log.info("Step 1: Completed creating account 1")
@@ -983,7 +983,7 @@ class TestObjectACL:
             self.random_num)
         email_id = OBJ_ACL_CONFIG["test_10225"]["emailid"].format(
             self.random_num)
-        permission = OBJ_ACL_CONFIG["test_10225"]["obj_acl"]
+        permission = OBJ_ACL_CONFIG["common_var"]["obj_acl"]
         result = self.create_s3iamcli_acc(account_name, email_id)
         canonical_id = result[0]
         self.log.info("Step 1: Completed creating account")
@@ -1024,7 +1024,7 @@ class TestObjectACL:
             self.random_num)
         obj = OBJ_ACL_CONFIG["common_var"]["object_name"].format(
             self.random_num)
-        permission = OBJ_ACL_CONFIG["test_10227"]["obj_acl"]
+        permission = OBJ_ACL_CONFIG["common_var"]["obj_acl"]
         name_initial = OBJ_ACL_CONFIG["test_10227"]["name_initials"]
         self.create_bucket_obj(bucket, obj)
         self.log.info(
@@ -1055,7 +1055,7 @@ class TestObjectACL:
             self.random_num)
         obj = OBJ_ACL_CONFIG["common_var"]["object_name"].format(
             self.random_num)
-        permission = OBJ_ACL_CONFIG["test_10228"]["obj_acl"]
+        permission = OBJ_ACL_CONFIG["common_var"]["obj_acl"]
         name_initial = OBJ_ACL_CONFIG["test_10228"]["name_initials"]
         self.create_bucket_obj(bucket, obj)
         self.log.info(
@@ -4615,7 +4615,7 @@ class TestObjectACL:
             self.random_num)
         email_id = OBJ_ACL_CONFIG["test_286"]["emailid"].format(
             self.random_num)
-        permission = OBJ_ACL_CONFIG["test_286"]["obj_acl"]
+        permission = OBJ_ACL_CONFIG["test_286"]["obj_acl_rdc"]
         result = self.create_s3iamcli_acc(account_name, email_id)
         canonical_id = result[0]
         acl_obj_2 = result[2]
