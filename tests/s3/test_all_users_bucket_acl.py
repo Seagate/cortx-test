@@ -30,7 +30,6 @@ from commons.utils.assert_utils import assert_in
 from commons.utils.assert_utils import assert_equal
 from commons.utils.assert_utils import assert_not_in
 from commons.utils.system_utils import create_file
-from commons.utils.system_utils import remove_file
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_test_lib import S3LibNoAuth
 from libs.s3.s3_acl_test_lib import S3AclTestLib
