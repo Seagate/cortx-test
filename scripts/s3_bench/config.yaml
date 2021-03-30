@@ -1,6 +1,6 @@
 log_dir: "log/latest/"
 go_path: "/root/go/src/"
-s3bench_path: "/root/go/bin/s3bench"
+s3bench_path: "/root/go/src/s3bench"
 cmd_go: "sudo yum install -y go"
 s3bench_get: "go get github.com/Seagate/s3bench"
 s3bench_git: "git clone https://github.com/Seagate/s3bench.git {}"

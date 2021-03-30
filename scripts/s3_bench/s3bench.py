@@ -20,7 +20,7 @@
 #
 #
 
-"""Script will be responsible to envoke and execute s3bench tool."""
+"""Script will be responsible to invoke and execute s3bench tool."""
 
 import argparse
 import logging
@@ -46,12 +46,12 @@ def setup_s3bench(
     :param string path: Go src path
     :return bool: True/False
     """
-    if not (path_exists(path) or path_exists(cfg_obj["s3bench_path"])):
+    if not (path_exists(path) or path_exists(S3_BENCH_PATH)):
         run_local_cmd(cfg_obj["cmd_go"])
         # executing go get for s3bench
         run_local_cmd(get_cmd)
         # Clone s3bench to go src
-        run_local_cmd(git_url.format(cfg_obj["s3bench_path"]))
+        run_local_cmd(git_url.format(S3_BENCH_PATH))
     return True
 
 
@@ -163,7 +163,7 @@ def s3bench(
     log_path = create_log(result, log_file_prefix, num_clients, num_sample, obj_size)
     LOGGER.info("Running s3 bench tool")
     # GO command formatter
-    cmd = f"{S3_BENCH_PATH} -accessKey={access_key} -accessSecret={secret_key} " \
+    cmd = f"go run s3bench -accessKey={access_key} -accessSecret={secret_key} " \
           f"-bucket={bucket} -endpoint={end_point} -numClients={num_clients} " \
           f"-numSamples={num_sample} -objectNamePrefix={obj_name_pref} -objectSize={obj_size} "
 
