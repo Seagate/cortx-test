@@ -26,7 +26,7 @@ benchmark_config = 'Performance/configs/benchmark.yml'
 
 def makeconfig(name):  #function for connecting with configuration file
     with open(name) as config_file:
-        configs = yaml.safe_load(config_file, Loader=yaml.FullLoader)
+        configs = yaml.safe_load(config_file)
     return configs
 
 

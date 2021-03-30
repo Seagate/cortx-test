@@ -241,7 +241,7 @@ def hsbench2_callback(n_clicks, branch, build):
     workload = fetch_configs_from_file(benchmark_config, 'Hsbench', 'workload-2')
     workload_heading = get_hsbench_workload_headings(html, workload['sessions'], workload['buckets'], workload['objects'])
     return [workload_heading, benchmark_global('Hsbench', workload, branch, build, 'hsbench-table-2')]
-    
+
 @app.callback(
     [Output('statistics_hsbench_workload_3', 'children'),
     Output('statistics_hsbench_table_3', 'children'),],

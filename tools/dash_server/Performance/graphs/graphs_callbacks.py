@@ -247,7 +247,7 @@ def update_TTFB(n_clicks, xfilter, release, option1, option2, bench, configs, op
         raise PreventUpdate
 
     else:
-        if xfilter == 'build': 
+        if xfilter == 'build':
             titleText = 'Object Sizes'
         else:
             titleText = 'Builds'
