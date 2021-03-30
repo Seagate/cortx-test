@@ -4,6 +4,7 @@ import argparse
 import csv
 import json
 import logging
+import warnings
 from datetime import datetime
 from multiprocessing import Process
 from core import runner
@@ -506,12 +507,19 @@ def check_kafka_msg_trigger_test(args):
 
 
 def get_setup_details():
+    """Get the setup details from the DB and create setups.json file
+    """
     if not os.path.exists(params.LOG_DIR_NAME):
         os.mkdir(params.LOG_DIR_NAME)
-    if os.path.exists(params.SETUPS_FPATH):
-        os.remove(params.SETUPS_FPATH)
-    setups = configmanager.get_config_db(setup_query={})
-    config_utils.create_content_json(params.SETUPS_FPATH, setups, ensure_ascii=False)
+    try:
+        setups = configmanager.get_config_db(setup_query={})
+        if os.path.exists(params.SETUPS_FPATH):
+            os.remove(params.SETUPS_FPATH)
+        config_utils.create_content_json(params.SETUPS_FPATH, setups, ensure_ascii=False)
+    except BaseException as error:
+        if not os.path.exists(params.SETUPS_FPATH):
+            raise Exception from error
+        warnings.warn("Using the stale data from setups.json file")
 
 
 def main(args):
