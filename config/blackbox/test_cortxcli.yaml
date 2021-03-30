@@ -1,0 +1,63 @@
+acc_user_mng:
+  account_name: "seagate_account"
+  email_id: "@seagate.com"
+  ldap_user: "sgiamadmin"
+  ldap_password: "ldapadmin"
+  password: "seagate"
+  password_reset: False
+  user_name: "seagate_user_9"
+  test_file_path: "/home/testfile"
+test_2399:
+  total_accounts: 50
+test_2396:
+  err_message: "EntityAlreadyExists"
+test_2430:
+  file_size: 1
+  bucket_name: "testbucket2430"
+  obj_name: "testobj2430"
+test_2405:
+  total_users: 100
+test_2404:
+  err_message: "EntityAlreadyExists"
+test_2402:
+  new_user_name: "testuser2402"
+test_2398:
+  file_size: 1
+  user_access_key: "alfjkalfjiecnk@#&kafjkancsmnc"
+  user_secret_key: "*HSLKJMDqpowdapofmamcamc"
+  bucket_name: "testbucket2398"
+  obj_name: "testobj2398"
+  error: "InvalidAccessKeyId"
+  download_obj_err: "Forbidden"
+test_2397:
+  file_size: 1
+  bucket_name: "testbucket2397"
+  obj_name: "testobj2397"
+test_2415:
+  file_size: 1
+  user_access_key: "alfjkalfjiecnk@#&kafjkancsmnc"
+  user_secret_key: "*HSLKJMDqpowdapofmamcamc"
+  bucket_name: "testbucket2415"
+  obj_name: "testobj2415"
+  error: "InvalidAccessKeyId"
+  download_obj_err: "Forbidden"
+test_2414:
+  file_size: 1
+  bucket_name: "testbucket2414"
+  obj_name: "testobj2414"
+test_2431:
+  file_size: 1
+  user_access_key: "alfjkalfjiecnk@#&kafjkancsmnc"
+  user_secret_key: "*HSLKJMDqpowdapofmamcamc"
+  bucket_name: "testbucket2431"
+  obj_name: "testobj2431"
+  error: "InvalidAccessKeyId"
+  download_obj_err: "Forbidden"
+test_2416:
+  total_accounts: 50
+test_2409:
+  status: "Inactive"
+test_2408:
+  status: "Active"
+test_2417:
+  err_message: "EntityAlreadyExists"
