@@ -30,7 +30,7 @@ import logging
 import csv
 import time
 import datetime
-import pytest
+import requests
 from datetime import date
 from _pytest.nodes import Item
 from _pytest.runner import CallInfo
@@ -214,12 +214,6 @@ def pytest_addoption(parser):
         "--readmetadata", action="store", default=False,
         help="Read test metadata"
     )
-    parser.addoption(
-        "--host_fqdn", action="store", default=None, help="Hostname fqdn"
-    )
-    parser.addoption(
-        "--buildpath", action="store", default=None, help="Build url to be deployed"
-    )
 
 
 def read_test_list_csv() -> List:
@@ -323,7 +317,7 @@ def create_report_payload(item, call, final_result, d_u, d_pass):
                        nodes_hostnames=item.config.option.nodes,
                        test_exec_id=item.config.option.te_tkt,
                        test_exec_time=call.duration,
-                       test_name= _item_dict['test_name'],
+                       test_name=_item_dict['test_name'],
                        test_id=_item_dict['test_id'],
                        test_id_labels=_item_dict['labels'],
                        test_plan_id=item.config.option.tp_ticket,
@@ -454,18 +448,19 @@ def pytest_collection(session):
     latest = os.path.join(cache_home, 'latest')
     if not os.path.exists(latest):
         os.makedirs(latest)
-    _path = config_utils.create_content_json(cache_path, _get_items_from_cache())
+    _path = config_utils.create_content_json(cache_path, _get_items_from_cache(), ensure_ascii=False)
     if not os.path.exists(_path):
         LOGGER.info("Items Cache file %s not created" % (_path,))
     if session.config.option.collectonly:
-        te_meta = config_utils.create_content_json(os.path.join(cache_home, 'te_meta.json'), meta)
+        te_meta = config_utils.create_content_json(os.path.join(cache_home, 'te_meta.json'), meta,
+                                                   ensure_ascii=False)
         LOGGER.debug("Items meta dict %s created at %s", meta, te_meta)
         Globals.te_meta = te_meta
     if not _local and session.config.option.readmetadata:
         tp_meta_file = os.path.join(os.getcwd(),
                                     params.LOG_DIR_NAME,
                                     params.JIRA_TEST_META_JSON)
-        tp_meta = config_utils.read_content_json(tp_meta_file)
+        tp_meta = config_utils.read_content_json(tp_meta_file, mode='rb')
         Globals.tp_meta = tp_meta
         LOGGER.debug("Reading test plan meta dict %s", tp_meta)
     return items
@@ -499,22 +494,39 @@ def pytest_runtest_makereport(item, call):
         task = jira_utils.JiraTask(jira_id, jira_pwd)
         test_id = CACHE.lookup(report.nodeid)
         if report.when == 'teardown':
-            if item.rep_setup.failed or item.rep_teardown.failed:
-                task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
-                payload = create_report_payload(item, call, 'FAIL', db_user, db_pass)
-                REPORT_CLIENT.create_db_entry(**payload)
-            elif item.rep_setup.passed and (item.rep_call.failed or item.rep_teardown.failed):
-                task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
-                payload = create_report_payload(item, call, 'FAIL', db_user, db_pass)
-                REPORT_CLIENT.create_db_entry(**payload)
-            elif item.rep_setup.passed and item.rep_call.passed and item.rep_teardown.passed:
-                task.update_test_jira_status(item.config.option.te_tkt, test_id, 'PASS')
-                payload = create_report_payload(item, call, 'PASS', db_user, db_pass)
-                REPORT_CLIENT.create_db_entry(**payload)
-            elif item.rep_setup.skipped and (item.rep_teardown.skipped or item.rep_teardown.passed):
-                # Jira reporting of skipped cases does not contain skipped option
-                # Keeping it todo_status and skipping db update for now
-                pass
+            try:
+                if item.rep_setup.failed or item.rep_teardown.failed:
+                    task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
+                    try:
+                        payload = create_report_payload(item, call, 'FAIL', db_user, db_pass)
+                        REPORT_CLIENT.create_db_entry(**payload)
+                    except requests.exceptions.RequestException as fault:
+                        LOGGER.exception(str(fault))
+                        LOGGER.error("Failed to execute DB update for %s", test_id)
+                elif item.rep_setup.passed and (item.rep_call.failed or item.rep_teardown.failed):
+                    task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
+                    try:
+                        payload = create_report_payload(item, call, 'FAIL', db_user, db_pass)
+                        REPORT_CLIENT.create_db_entry(**payload)
+                    except requests.exceptions.RequestException as fault:
+                        LOGGER.exception(str(fault))
+                        LOGGER.error("Failed to execute DB update for %s", test_id)
+                elif item.rep_setup.passed and item.rep_call.passed and item.rep_teardown.passed:
+                    task.update_test_jira_status(item.config.option.te_tkt, test_id, 'PASS')
+                    try:
+                        payload = create_report_payload(item, call, 'PASS', db_user, db_pass)
+                        REPORT_CLIENT.create_db_entry(**payload)
+                    except requests.exceptions.RequestException as fault:
+                        LOGGER.exception(str(fault))
+                        LOGGER.error("Failed to execute DB update for %s", test_id)
+                elif item.rep_setup.skipped and \
+                        (item.rep_teardown.skipped or item.rep_teardown.passed):
+                    # Jira reporting of skipped cases does not contain skipped option
+                    # Keeping it todo_status and skipping db update for now
+                    task.update_test_jira_status(item.config.option.te_tkt, test_id, 'BLOCKED')
+            except Exception as exception:
+                LOGGER.error("Exception %s occurred in reporting for test %s.",
+                             str(exception), test_id)
 
     if report.when == 'teardown':
         if item.rep_setup.failed or item.rep_teardown.failed:
@@ -555,8 +567,8 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
             logs = log.split('\n')
             test_id = CACHE.lookup(report.nodeid)
             name = str(test_id) + '_' + report.nodeid.split('::')[1] + '_' \
-                + datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S') \
-                + '.log'
+                   + datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S') \
+                   + '.log'
             test_log = os.path.join(os.getcwd(), LOG_DIR, 'latest', name)
             with open(test_log, 'w') as fp:
                 for rec in logs:
@@ -575,8 +587,8 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
         logs = log.split('\n')
         test_id = CACHE.lookup(report.nodeid)
         name = str(test_id) + '_' + report.nodeid.split('::')[1] + '_' + \
-            datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S') + \
-            '.log'
+               datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S') + \
+               '.log'
         test_log = os.path.join(os.getcwd(), LOG_DIR, 'latest', name)
         with open(test_log, 'w') as fp:
             for rec in logs:
@@ -614,13 +626,3 @@ def generate_random_string():
     :rtype: str
     """
     return ''.join(random.choice(string.ascii_lowercase) for i in range(5))
-
-
-@pytest.fixture(scope='module', autouse=True)
-def host_fqdn(request):
-    pytest.host_fqdn = request.config.getoption('--host_fqdn')
-
-
-@pytest.fixture(scope='module', autouse=True)
-def buildpath(request):
-    pytest.buildpath = request.config.getoption('--buildpath')
