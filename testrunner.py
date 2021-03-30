@@ -519,7 +519,7 @@ def get_setup_details():
     except BaseException as error:
         if not os.path.exists(params.SETUPS_FPATH):
             raise Exception from error
-        warnings.warn("Using the stale data from setups.json file")
+        LOGGER.warning("Using the stale data from setups.json file")
 
 
 def main(args):
