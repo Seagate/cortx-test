@@ -2,7 +2,7 @@
 Extended log rotation class for cortx log files
 """
 import os
-import sys
+import inspect
 import gzip
 import shutil
 import datetime
@@ -14,6 +14,7 @@ LOG_FILE = 'cortx-test.log'
 
 
 def init_loghandler(log) -> None:
+    """Initialize logging with stream and file handlers."""
     log.setLevel(logging.DEBUG)
     make_log_dir(LOG_DIR)
     fh = logging.FileHandler(os.path.join(os.getcwd(), LOG_DIR, 'latest', LOG_FILE), mode='w')
@@ -27,18 +28,36 @@ def init_loghandler(log) -> None:
     log.addHandler(ch)
 
 
+def set_log_handlers(log, name, mode='w'):
+    """Set stream and file handlers."""
+    fh = logging.FileHandler(name, mode=mode)
+    fh.setLevel(logging.DEBUG)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    fh.setFormatter(formatter)
+    ch.setFormatter(formatter)
+    log.addHandler(fh)
+    log.addHandler(ch)
+
+
 def make_log_dir(dirpath) -> None:
+    """Create dir if not exists.Don't throw error for existence."""
     if not os.path.exists(dirpath):
         os.makedirs(dirpath, exist_ok=True)
 
+
 def get_frame():
-    return sys._getframe().f_code.co_name
+    """Get current frame and name."""
+    return inspect.stack()[1][3]
+
 
 class CortxRotatingFileHandler(handlers.RotatingFileHandler):
     """
     Handler overriding the existing RotatingFileHandler for switching cortx-test log files
     when the current file reaches a certain size.
     """
+
     def __init__(self, filename="cortx-test.log", maxBytes=10485760, backupCount=5):
         """
         Initialization for cortx rotating file handler

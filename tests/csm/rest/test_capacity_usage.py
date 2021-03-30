@@ -25,8 +25,8 @@ import pytest
 from libs.csm.rest.csm_rest_capacity import SystemCapacity
 from commons.helpers.health_helper import Health
 from commons.utils import assert_utils
-from commons.utils import config_utils
 from commons import cortxlogging
+from config import CMN_CFG
 
 class TestSystemCapacity():
     """System Capacity Testsuite"""
@@ -38,10 +38,9 @@ class TestSystemCapacity():
         cls.log.info("Initializing test setups ......")
         cls.system_capacity = SystemCapacity()
         cls.log.info("Initiating Rest Client ...")
-        main_conf = config_utils.read_yaml("config\\common_config.yaml")[1]
-        cls.health_helper = Health(main_conf["server_hostname"]+main_conf["host_domain"],
-                                    main_conf["server_username"],
-                                    main_conf["server_password"])
+        cls.health_helper = Health(CMN_CFG["nodes"][0]["hostname"],
+                                    CMN_CFG["nodes"][0]["username"],
+                                    CMN_CFG["nodes"][0]["password"])
 
     @pytest.mark.csmrest
     @pytest.mark.tags('TEST-15200')

@@ -25,10 +25,10 @@ import random
 import logging
 import pytest
 from libs.csm.rest.csm_rest_stats import SystemStats
-from commons.utils import config_utils
 from commons.utils import assert_utils
 from commons import cortxlogging
 from commons.constants import Rest as const
+from commons import configmanager
 
 class TestSystemStats():
 
@@ -42,8 +42,8 @@ class TestSystemStats():
         cls.log.info("Initializing test setups ......")
         cls.system_stats = SystemStats()
         cls.log.info("Initiating Rest Client for Alert ...")
-        cls.test_conf = config_utils.read_yaml(
-            "config/csm/test_rest_system_stats.yaml")[1]
+        cls.test_conf = configmanager.get_config_wrapper(
+            fpath="config/csm/test_rest_system_stats.yaml")
 
     @pytest.mark.csmrest
     @pytest.mark.tags('TEST-14752')
@@ -508,7 +508,7 @@ class TestSystemStats():
         epoc_time_diff = self.test_conf["test_4968"]["epoc_time_diff"]
         interval = self.test_conf["test_4968"]["default_interval"]
         error_msg = self.test_conf["test_4968"]["error_msg"]
-        expected_response = self.system_stats.forbidden
+        expected_response = const.FORBIDDEN
         metrics = self.system_stats.get_metrics()
         metric = random.choice(metrics)
         self.log.info("Checking for metrics : %s", metric)

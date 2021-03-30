@@ -1,14 +1,15 @@
 *** Settings ***
 Documentation  This is the common resources file containing common keywords
-Library  SeleniumLibrary    screenshot_root_directory=reports/screenshots
-Library  String
-Library  DateTime
-Library  Collections
-Library  ${EXECDIR}/utils/Download.py
-Variables  common_variables.py
-Variables  element_locators.py
+Library    SeleniumLibrary    screenshot_root_directory=reports/screenshots
+Library    String
+Library    DateTime
+Library    Collections
+Library    ${EXECDIR}/utils/Download.py
+Variables  ${EXECDIR}/resources/common/common_variables.py
+Variables  ${EXECDIR}/resources/common/element_locators.py
 
 *** Keywords ***
+
 Log To Console And Report
     [Documentation]  This Keyword is for logging the same string to console and report.
     [Arguments]  ${log_message}
@@ -16,11 +17,11 @@ Log To Console And Report
     Log To Console  ${\n}${log_message}
 
 Navigate To Page
-    [Documentation]  This Keyword is for naviagting to certain page
+    [Documentation]  This Keyword is for navigating to certain page
     [Arguments]  ${page_name}  ${sub_page}=False
     log to console and report  Navigating to ${page_name}
     Click Element  ${${page_name}}
-    Sleep  1s
+    Sleep  5s
     ${value}=  Convert To Boolean  ${sub_page}
     Run Keyword If  ${value}
     ...  Click Element  ${${sub_page}}
@@ -40,7 +41,7 @@ Read Table Data
     [Return]   @{table_data}
 
 Action On The Table Element
-    [Documentation]  This Keyword is for performing actions like edit/delete on perticualr user/element in html table.
+    [Documentation]  This Keyword is for performing actions like edit/delete on particular user/element in html table.
     [Arguments]  ${Element_for_action}  ${USER_NAME}
     sleep  2s
     Log To Console And Report   ${Element_for_action}
@@ -52,7 +53,7 @@ Action On The Table Element
     sleep  2s
 
 Generate New User Name
-    [Documentation]  Functionlity to generate new user name
+    [Documentation]  Functionality to generate new user name
     ${str}=  Get Current Date
     ${str}=  Replace String  ${str}  :  ${EMPTY}
     ${str}=  Replace String  ${str}  .  ${EMPTY}
@@ -62,13 +63,13 @@ Generate New User Name
     [Return]  ${str}
 
 Generate New User Email
-    [Documentation]  Functionlity to generate new user email
+    [Documentation]  Functionality to generate new user email
     ${name}=  Generate New User Name
     ${email}=  catenate  SEPARATOR=  ${name}  @seagate.com
     [Return]  ${email}
 
 Generate New Password
-    [Documentation]  Functionlity to generate valid password
+    [Documentation]  Functionality to generate valid password
     ${upper_case}=  Generate Random String  2  [UPPER]
     ${lower_case}=  Generate Random String  2  [LOWER]
     ${numbers}=  Generate Random String  2  [NUMBERS]
@@ -85,7 +86,6 @@ Verify message
     Log To Console And Report  message from guI is ${msg_from_gui}
     should be equal  ${msg_from_gui}  ${message_to_verify}
 
-
 Upload File
     [Documentation]  This keyword upload files to required webelement
     [Arguments]  ${element_locator}  ${file_path}
@@ -94,7 +94,7 @@ Upload File
     Choose File  id=${${element_locator}}  ${file_path}
 
 Get element list
-    [Documentation]  This kaeyword returs the list of elements.
+    [Documentation]  This keyword returns the list of elements.
     [Arguments]  ${locator}
     wait until element is visible  ${locator}  timeout=10
     @{element_list}=  Get WebElements  ${locator}
@@ -102,7 +102,7 @@ Get element list
     [Return]  @{element_list}
 
 Get text of elements from elements list
-    [Documentation]  This kaeyword returs the list of element text from the element list.
+    [Documentation]  This keyword returns the list of element text from the element list.
     [Arguments]  ${locator}
     ${text_list}=    Create List
     @{text_elements}=  Get element list  ${locator}
@@ -114,7 +114,14 @@ Get text of elements from elements list
     [Return]  ${text_list}
 
 wait for page or element to load
-    [Documentation]  This kaeyword is to wait for page or element to wait for provided time.
+    [Documentation]  This keyword is to wait for page or element to wait for provided time.
     [Arguments]  ${time}=5s
     sleep  ${time}
 
+Go Forward
+    Execute Javascript  history.forward()
+
+Check element is not visiable
+    [Documentation]  This kaeyword is to verify that provided web element is not visiable on screen
+    [Arguments]  ${element_locator}
+    Element Should Not Be Visible  ${${element_locator}}

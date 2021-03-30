@@ -7,6 +7,7 @@
 CSM_URL = "https://10.230.246.58:28100/#/"
 SW_UPDATE_URL = "http://cortx-storage.colo.seagate.com/releases/eos/github/main/centos-7.8.2003/{0}/prod/iso/cortx-2.0.0-{0}-single.iso"
 FW_UPDATE_URL = "http://ssc-nfs-srvr2.pun.seagate.com/sw-installs/5U84-FW/GN265R008-04.bin"
+SSL_URL = "http://cftic2.pun.seagate.com/tools/SSL/"
 
 #  Login page msg.
 LOGIN_FAILED_MESSAGE = 'Login failed !'
@@ -14,7 +15,7 @@ LOGIN_FAILED_MESSAGE = 'Login failed !'
 # Add Infra variables
 BROWSER = "chrome"
 
-#  Expected value
+# Expected value
 S3_ACCOUNT = 'tests3account'
 CSM_USER = 'monitoruser'
 INVALID_LOCAL_USER = ["abc", "account@123", "!@#$%^&*()~", "user"*15]
@@ -47,10 +48,12 @@ S3_TABLE_HEADER_SECRET_KEY = 'Secret key'
 S3_TABLE_HEADER_ACTION = 'common.action'
 ACCESS_KEY_GENERATED_MESSAGE = 'Access key created'
 
-#  IAM Users Messages
+# IAM Users Messages
 IAM_USER_USERNAME_TOOLTIP_MSG = "The username must be of minimum 4 characters and maximum 56 characters"
 IAM_USER_PASSWD_TOOLTIP_MSG = "Password must contain: Minimum 8 characters"
 IAM_USER_PASSWD_MISSMATCH_MSG = "Passwords do not match"
+SECRET_KEY_VALUE = "XXXX"
+IAMUSER_ACCESS_KEY_HEADERS = ['Access key', 'Secret key', 'common.action']
 DUPLICATE_IAM_USER_ERROR_MSG = "The request was rejected because it attempted to create or update a resource that already exists."
 
 # Alerts
@@ -59,3 +62,10 @@ TEST_COMMENT = "Test Comment"
 # Preboarding
 ADMIN_USER_ALREADY_EXISTS_MESSAGE = "Admin user already exists"
 EMAIL_DOMAIN =  "@seagate.com"
+
+#Buckets
+BUCKET_NAME_POLICY_TEXT = "The bucket name must be of minimum 4 characters and maximum 56 characters." \
+                          " Only lowercase, numbers, and dash (-) are allowed. " \
+                          "The bucket name cannot start and end with a dash (-)."
+DUPLICATE_BUCKET_NAME_ALERT_MESSAGE = "The bucket you tried to create already exists, and you own" \
+                                      " it."

@@ -29,6 +29,33 @@ import common
 # R1 TAB 1: Executive report
 report_header_style = {'text-align': 'center', 'font-size': '30px', 'font-weight': 'bold',
                        'font-family': 'Serif'}
+
+bucketOps = [
+    {'label': 'Average Latency', 'value': 'AvgLat'},
+    {'label': 'Minimum Latency', 'value': 'MinLat'},
+    {'label': 'Maximum Latency', 'value': 'MaxLat'},
+    {'label': 'IOPS', 'value': 'Iops'},
+    {'label': 'Throughput', 'value': 'Mbps'},
+    {'label': 'Operations', 'value': 'Ops'},
+    {'label': 'Execution Time', 'value': 'Seconds'},
+]
+bucketops_caption = [
+    html.Caption(dbc.Row([html.Tr([html.Th("Bucket Operations for")]),
+                          dcc.Dropdown(
+                              id="Bucket_Ops_Dropdown",
+                              options=bucketOps,
+                              placeholder="Average Latency",
+                              style={'width': '300px', 'verticalAlign': 'middle',
+                                     "margin-right": "15px"},
+                          ),
+                          html.P(
+                              html.Em("⟽ Select one of the bucket operations to view statistics."),
+                              className="card-text", ),
+
+                          ], justify="center", align="center"
+                         ),
+                 ),
+]
 r1_exec_report_content = dbc.Card(
     dbc.CardBody(
         [
@@ -77,6 +104,8 @@ r1_engg_report_content = dbc.Card(
             html.P("Multiple Buckets Performance Statistics (Average) using HSBench and COSBench",
                    style=common.dict_style_table_caption),
             html.Div(id="r1_table_multi_bucket_perf_stats"),
+            html.Div(dbc.Table(bucketops_caption),style = {'textAlign': 'center'}),
+            html.Div(id = "r1_table_bucket_ops_data"),
             html.P("Detail Reported Bugs", style=common.dict_style_table_caption),
             html.Div(id="r1_table_detail_reported_bugs")
         ]

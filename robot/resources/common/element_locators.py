@@ -11,7 +11,6 @@ CSM_LOGIN_FAIL_MSG_ID = 'login-failsmsg'
 LOGGED_IN_USER_NAME_ID = 'header-username'
 LOG_OUT_ID = 'logout-icon'
 
-
 # Menus
 MANAGE_MENU_ID = 'Manage'
 S3_ACCOUNTS_TAB_ID = 's3accountstab'
@@ -27,17 +26,34 @@ SW_UPDATE_TAB_ID = "goToSoftware"
 FW_UPDATE_TAB_ID = "goToFirmware"
 LYVE_PILOT_ID= "Lyve Pilot"
 
+# Settings
+SETTINGS_NOTIFICATION_ID = 'menu-Email Notifications'
+SETTINGS_NOTIFICATION_BUTTON_ID = 'goToNotifications'
+SETTINGS_DNS_ID = 'menu-DNS'
+SETTINGS_DNS_BUTTON_ID = 'goToDNS'
+SETTINGS_NTP_ID = 'menu-NTP'
+SETTINGS_NTP_BUTTON_ID = 'goToNTP'
+SETTINGS_SSL_ID = 'menu-SSL Certificate'
+SETTINGS_SSL_BUTTON_ID = 'goToSSL'
+CHOOSE_SSL_UPDATE_FILE_BTN_ID = 'file'
+UPLOAD_SSL_FILE_PEM_ID = 'btnUploadSSL'
+INSTALL_SSL_FILE_PEM_ID = 'btnInstallFirmware'
+CONFIRMAATION_INSTALL_SSL_ID = 'confirmation-dialogbox-btn'
+SSL_PEM_FILE_NAME_XPATH = '//*[@id="app"]//div[@class ="container mt-0 ml-0"]/div[1]/div[1]/table/tr[2]/td[2]/label'
+SSL_PEM_FILE_STATUS_XPATH= '//*[@id="app"]//div[@class ="container mt-0 ml-0"]/div[1]/div[1]/table/tr[1]/td[2]/label'
+
 # Alerts
 ALERT_IMAGE_1_ID = 'alert-zoom'  # from Dashbard
 ALERT_IMAGE_2_ID = 'alert-dotwhite'  # from All pages
 ALERT_COMMENT_SAVE_BUTTON_ID = 'alert-save-commnetbtn'
 ALERT_COMMENT_CLOSE_BUTTON_ID = 'alert-close-comment-dialogbtn'
 ALERT_COMMENT_CLOSE_IMAGE_ID = 'alert-closeadd-comment-dialog'
+ALERT_MORE_DETAILS_CLOSE_ICON_ID = 'alert-showalert-details-dialogbox'
 ALERT_COMMENT_TEXT_ID = 'alert-comment-textarea'
 ALERT_DETAILS_PAGE_ICON_XPATH = '//*[@id="tblAlertLarge"]/div/table/tbody/tr[1]/td[5]/img'
-ALERT_MORE_DETAILS_ICON_XPATH = '//*[@id="app"]/div/div[1]/div[2]/div[2]/div/div[2]/div[4]/div[2]/label'
-ALERT_MORE_DETAILS_BODY_XPATH = '//*[@id="app"]/div/div[1]/div[2]/div[2]/div/div[4]/div/div[2]'
-ALERT_MORE_DETAILS_CLOSE_ICON_XPATH = '//*[@id="app"]/div/div[1]/div[2]/div[2]/div/div[4]/div/div[1]/img'
+ALERT_MORE_DETAILS_ICON_XPATH = '//label[@class="cortx-text-md cortx-cursor-pointer"]'
+ALERT_MORE_DETAILS_BODY_XPATH = '//*[@id="app"]//div[@class ="cortx-modal-container"]/div[1]/div[2]'
+ALERT_MORE_DETAILS_CLOSE_ICON_XPATH = '//*[@id="app"]//div[@class ="cortx-modal-container"]/div[1]/div[1]/img[1]'
 ALERT_COMMENT_ICON_XPATH = '//*[@id="tblAlertLarge"]/div/table/tbody/tr[1]/td[5]/div/div'
 ALERT_ACKNOWLEDGE_ICON_XPATH = '//*[@id="tblAlertLarge"]/div/table/tbody/tr[1]/td[5]/div/span[2]/div'
 ALERTS_COMMENT_TEXT_XPATH = '//*[@class="cortx-comment"]//span[@class="cortx-text-md"]'
@@ -105,7 +121,6 @@ ADMIN_CONFIRM_PASSWORD_FIELD_ID = 'confirmAdminPassword'
 APPLY_AND_CONTINUE_BUTTON_ID = 'admin-createadminuser'
 ADMIN_USER_ALREADY_EXISTS_ID = 'admin-invalidmsg'
 
-
 #  CSM User section
 CSM_USERS_TABLE_XPATH = '//*[@id="localuser-tabledata"]//table'
 CSM_USERS_NUMBER_OF_ROWS_XPATH = '//*[@id="localuser-tabledata"]//table/tbody/tr[2]'
@@ -140,7 +155,7 @@ UPDATE_USER_BTN_ID = "lblLocalApplyInterface"
 CONFIRM_NEW_PASSWORD_INPUT_ID = "txtLocalConfirmNewPass"
 OLD_PASSWORD_INPUT_ID = "txtLocalOldPass"
 PAGINATION_BAR_XPATH = "//div[@class='v-data-footer']"
-PAGIANTION_PAGE_OPTIONS_XPATH = "//*[@role='option']"
+PAGINATION_PAGE_OPTIONS_XPATH = "//*[@role='option']"
 RADIO_BTN_VALUE_XPATH = "//*[@type='radio']"
 PAGINATION_LIST_ICON_XPATH = "//*[@class='v-select__selection v-select__selection--comma']"
 
@@ -170,6 +185,15 @@ IAM_USER_RESET_NEW_PASSWORD_ID = "user-password"
 IAM_USER_RESET_CONFIRM_PASSWORD_ID = "confirm-password"
 IAM_USER_SUCCESS_MESSAGE_ID = 'iam-success-dialog'
 IAM_USER_SUCCESS_MESSAGE_BUTTON_ID = 'confirmation-dialogbox-btn'
+IAM_USER_TABLE_ID = "iam-datatable"
+IAM_USER_ACCESS_KEY_ID = "iam-accesskey-datatable"
+ACCESS_KEY_TABLE_NAME_ID = "iam-accesskey-datatable-title"
+IAM_USER_ACCESS_KEY_DATA_XPATH = "//td[contains(@id, 'iam-accesskey')]"
+ADD_IAM_USER_ACCESS_KEY_BUTTON_ID = "iam-accesskey-add-btn"
+DOWNLOAD_IAM_USER_ACCESS_KEY_BUTTON_ID = "download-csv-dialog-btn"
+IAM_USER_SECRET_KEY_XPATH = "//div[@id='iam-accesskey-datatable']//td[2]"
+IAM_USER_ACCESS_KEY_TABLE_HEADERS_XPATH = "//div[@id='iam-accesskey-datatable']//th"
+DELETE_IAM_USER_ACCESS_KEY_BUTTON_ID = "//img[contains(@id, 'iam-accesskey-datatable-delete')]"
 
 # About Section
 ABOUT_VIEW_ID = 'menu-actionmanagebtn'
@@ -198,6 +222,15 @@ BUCKET_CREATE_BUTTON_ID = "bucket-create-btn"
 DELETE_BUCKET_XPATH = '//tr[@id="{0}"]//*[@id="bucket-delete-icon"]'
 CONFIRM_CREATE_BUTTON_ID = "bucket-closedialodbox"
 BUCKET_ROW_ELEMENT_XPATH = '//tr[@id="{0}"]'
+BUCKET_NAME_POLICY_TOOLTIP_ID = "tooltip-msg"
+BUCKET_NAME_POLICY_TOOLTIP_ICON_ID = "Bucket name*"
+CANCEL_BUCKET_CREATION_BUTTON_ID = "bucket-cancel-btn"
+DUPLICATE_BUCKET_MESSAGE_ID = "dialog-message-label"
+CLOSE_DUPLICATE_BUCKET_MESSAGE_ID = "close-msg-dialogbox"
+CANCEL_BUCKET_DELETION_ID = "confirmation-dialog-cancel-btn"
+CANCEL_BUCKET_DELITION_ICON_ID = "confirmation-dialogclose"
+
+
 # Software Update Page
 UPLOAD_SW_FILE_BTN_ID = "btnInstallHotfix"
 CHOOSE_SW_UPDATE_FILE_BTN_ID = "file"

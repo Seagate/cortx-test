@@ -23,13 +23,14 @@
 import logging
 import random
 import pytest
-
 from commons import cortxlogging
 from commons.constants import Rest as const
 from commons.utils import assert_utils
-from commons.utils import config_utils
-from libs.csm.csm_setup import CSMConfigsCheck
+from commons import configmanager
+from commons.helpers.node_helper import Node
+from config import CMN_CFG
 from libs.csm.rest.csm_rest_alert import SystemAlerts
+from libs.ras.ras_test_lib import RASTestLib
 
 
 class TestCsmAlerts():
@@ -42,19 +43,27 @@ class TestCsmAlerts():
         """ This is method is for test suite set-up """
         cls.log = logging.getLogger(__name__)
         cls.log.info("Initializing test setups ......")
-        cls.csm_alerts = SystemAlerts()
+        cls.node_obj = Node(hostname=CMN_CFG["nodes"][0]["hostname"],
+                            username=CMN_CFG["nodes"][0]["username"],
+                            password=CMN_CFG["nodes"][0]["password"])
+        cls.csm_alerts = SystemAlerts(cls.node_obj)
         cls.log.info("Checking if predefined CSM users are present...")
-        cls.config = CSMConfigsCheck()
-        user_already_present = cls.config.check_predefined_csm_user_present()
-        cls.log.info("Creating predefined CSM users if not already present...")
-        if not user_already_present:
-            user_already_present = cls.config.setup_csm_users()
-        assert user_already_present
-        cls.csm_conf = config_utils.read_yaml("config/csm/test_rest_csm_alert.yaml")
+        cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_csm_alert.yaml")
         cls.resolve_type = None
         cls.alert_timeout = None
         cls.alert_type = None
+        cls.ras_test_obj = RASTestLib(host=CMN_CFG["nodes"][0]["hostname"],
+                                      username=CMN_CFG["nodes"][0]["username"],
+                                      password=CMN_CFG["nodes"][0]["password"])
         cls.log.info("Initiating Rest Client for Alert ...")
+        field_list = ("primary_controller_ip", "secondary_controller_ip",
+                      "primary_controller_port", "secondary_controller_port",
+                      "user", "password", "secret")
+        cls.log.info("Putting expected values in KV store")
+        for field in field_list:
+            _ = cls.ras_test_obj.put_kv_store(CMN_CFG["enclosure"]["enclosure_user"],
+                                                CMN_CFG["enclosure"]["enclosure_pwd"],
+                                                field)
 
     def teardown_method(self):
         """Teardown method
@@ -64,6 +73,7 @@ class TestCsmAlerts():
             assert result, "Teardown: Failed to resolve alert"
 
     @pytest.mark.csmrest
+    @pytest.mark.tags('TEST-17185')
     def test_607(self):
         """
         Test that Get request with valid Severity ,Acknowledged as false and Resolved parameters
@@ -102,6 +112,7 @@ class TestCsmAlerts():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.tags('TEST-17183')
     def test_608(self):
         """
         Test that Get request with Acknowledged False and Resolved parameters as true and severity
@@ -129,6 +140,7 @@ class TestCsmAlerts():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.tags('TEST-17184')
     def test_609(self):
         """
         Test that Get request with specific severity returns correct data.
@@ -164,6 +176,7 @@ class TestCsmAlerts():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.tags('TEST-19207')
     def test_610(self):
         """
         Test that Get request with specific severity and resolved parameter as true returns
@@ -208,6 +221,7 @@ class TestCsmAlerts():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.tags('TEST-19208')
     def test_611(self):
         """
         Test that Get request with specific severity and resolved parameter as false returns
@@ -249,6 +263,7 @@ class TestCsmAlerts():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.tags('TEST-17178')
     def test_616(self):
         """
         Test that Get request with Resolved parameter as true returns correct data.
@@ -283,6 +298,7 @@ class TestCsmAlerts():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.tags('TEST-17179')
     def test_617(self):
         """
         Test that Get request with Resolved parameter as false returns correct data.
@@ -317,6 +333,7 @@ class TestCsmAlerts():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.tags('TEST-17180')
     def test_618(self):
         """
         Test that Get request with Acknowledged parameter as true returns correct data.
@@ -343,7 +360,7 @@ class TestCsmAlerts():
             self.csm_alerts.edit_alerts(new_alert, ack=True)
         self.log.info("Get alerts with acknowledged True...")
         response = self.csm_alerts.get_alerts(acknowledged=True)
-        expected_response = self.csm_alerts.success_response
+        expected_response = const.SUCCESS_STATUS
         assert_utils.assert_equals(response.status_code, expected_response,
                                    "Status code check failed.")
         ack_alerts = self.csm_alerts.extract_alert_ids(response)
@@ -361,6 +378,7 @@ class TestCsmAlerts():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.tags('TEST-17181')
     def test_619(self):
         """
         Test that Get request with Acknowledged parameter as true and Resolved parameter as false
@@ -381,16 +399,16 @@ class TestCsmAlerts():
         diff_alert = list(set(after_alerts) - set(before_alerts))
         assert diff_alert == [], "Ack unresolved alerts before and after create alert is not same."
         for new_alert in new_alerts:
-            self.log.info("New Alert created: %s",new_alert)
+            self.log.info("New Alert created: %s", new_alert)
             response = self.csm_alerts.get_alerts(alert_id=new_alert)
-            self.log.info("New Alert details : %s",response.json())
+            self.log.info("New Alert details : %s", response.json())
             self.log.info("Acknowledging new alert...")
             self.csm_alerts.edit_alerts(new_alert, ack=True)
         self.log.info(
             "Get alerts with acknowledged True and resolved False...")
         response = self.csm_alerts.get_alerts(
             acknowledged=True, resolved=False)
-        expected_response = self.csm_alerts.success_response
+        expected_response = const.SUCCESS_STATUS
         assert_utils.assert_equals(response.status_code, expected_response,
                                    "Status code check failed.")
         ack_alerts = self.csm_alerts.extract_alert_ids(response)
@@ -407,6 +425,7 @@ class TestCsmAlerts():
         self.resolve_type = None
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.tags('TEST-19209')
     @pytest.mark.csmrest
     def test_620(self):
         """
@@ -425,9 +444,9 @@ class TestCsmAlerts():
         assert result, "Failed to create alert."
         new_alerts, before_alerts, after_alerts = result
         for new_alert in new_alerts:
-            self.log.info("New Alert created: %s",new_alert)
+            self.log.info("New Alert created: %s", new_alert)
             response = self.csm_alerts.get_alerts(alert_id=new_alert)
-            self.log.info("New Alert details : %s",response.json())
+            self.log.info("New Alert details : %s", response.json())
         diff_alert = list(set(after_alerts) - set(before_alerts))
         assert diff_alert != [], "UnAck Alerts before and after create alert is same."
         self.log.info("Resolving alert and checking get alert response with acknowledged False.")
@@ -436,11 +455,12 @@ class TestCsmAlerts():
         assert result, "Failed to resolve alert."
         before_resolve, after_resolve = result
         diff_resolve = list(set(after_resolve) - set(before_resolve))
-        assert diff_resolve != [], "UnAck Alerts before and after resolve alert is same."
+        assert diff_resolve == [], "UnAck Alerts before and after resolve alert is same."
         self.resolve_type = None
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.tags('TEST-17182')
     def test_621(self):
         """
         Test that Get request with Acknowledged parameter as false and Resolved parameter as
@@ -459,9 +479,9 @@ class TestCsmAlerts():
         assert result, "Failed to create alert."
         new_alerts, before_alerts, after_alerts = result
         for new_alert in new_alerts:
-            self.log.info("New Alert created: %s",new_alert)
+            self.log.info("New Alert created: %s", new_alert)
             response = self.csm_alerts.get_alerts(alert_id=new_alert)
-            self.log.info("New Alert details : %s",response.json())
+            self.log.info("New Alert details : %s", response.json())
         diff_alert = list(set(after_alerts) - set(before_alerts))
         assert diff_alert == [], "UnAck Resolved Alerts before and after create alert is not same."
         self.log.info("Resolving alert and checking get alert response with acknowledged False and"
@@ -476,6 +496,7 @@ class TestCsmAlerts():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.tags('TEST-15725')
     def test_1225(self):
         """
         Test that CSM user with role manager can perform GET, POST (for adding comments) API
@@ -498,7 +519,7 @@ class TestCsmAlerts():
         self.log.info("Verifying the status code %s and response %s returned",
                       response.status_code, response.json())
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_alerts.success_response)
+                                   const.SUCCESS_STATUS)
         assert response.json()
         alert_id = response.json()["alerts"][0]["alert_uuid"]
 
@@ -516,7 +537,7 @@ class TestCsmAlerts():
         self.log.info("Verifying the status code %s returned",
                       response_add.status_code)
         assert_utils.assert_equals(response_add.status_code,
-                                   self.csm_alerts.success_response)
+                                   const.SUCCESS_STATUS)
 
         self.log.info("Verifying that comment was added to the alert")
         response = self.csm_alerts.verify_added_alert_comment(
@@ -537,7 +558,7 @@ class TestCsmAlerts():
         self.log.info("Verifying the status code %s and response %s returned",
                       response.status_code, response.json())
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_alerts.success_response)
+                                   const.SUCCESS_STATUS)
         assert response.json()
         alert_id = response.json()["alerts"][0]["alert_uuid"]
         self.log.info(
@@ -554,7 +575,7 @@ class TestCsmAlerts():
         self.log.info("Verifying the status code %s returned",
                       response_add.status_code)
         assert_utils.assert_equals(response_add.status_code,
-                                   self.csm_alerts.success_response)
+                                   const.SUCCESS_STATUS)
 
         self.log.info("Verifying that comment was added to the alert")
         response = self.csm_alerts.verify_added_alert_comment(
@@ -570,6 +591,7 @@ class TestCsmAlerts():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.tags('TEST-15726')
     def test_1231(self):
         """
         Test that CSM user with role monitor can perform GET API request for alerts
@@ -578,15 +600,15 @@ class TestCsmAlerts():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Testing that CSM user with role monitor can perform GET API request for "
-        "alerts")
+                      "alerts")
 
         # Verifying CSM monitor user can perform GET API request for alerts
         self.log.info("Step 1: Verifying CSM monitor user can perform GET API request for alerts")
 
         response = self.csm_alerts.get_alerts(login_as="csm_user_monitor")
 
-        self.log.info("Verifying the status returned %s",response.status_code)
-        assert_utils.assert_equals(response.status_code, self.csm_alerts.success_response)
+        self.log.info("Verifying the status returned %s", response.status_code)
+        assert_utils.assert_equals(response.status_code, const.SUCCESS_STATUS)
 
         self.log.info("Step 1: Verified CSM monitor user can perform GET API request for alerts")
 
@@ -594,6 +616,7 @@ class TestCsmAlerts():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.tags('TEST-16215')
     def test_1448(self):
         """
         Verify Rest request with default arguments returns  appropriate records.
@@ -608,7 +631,7 @@ class TestCsmAlerts():
         response = self.csm_alerts.get_alerts()
         self.log.debug("Verifying the response %s", response)
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_alerts.success_response)
+                                   const.SUCCESS_STATUS)
         self.log.debug("Verified the request was successful")
 
         self.log.info("Step 1: Verifying that acknowledged and resolved combined status is not "
@@ -621,7 +644,7 @@ class TestCsmAlerts():
                           response.json()["alerts"][i]["acknowledged"],
                           response.json()["alerts"][i]["resolved"])
             if (response.json()["alerts"][i]["acknowledged"] and
-                response.json()["alerts"][i]["resolved"]):
+                    response.json()["alerts"][i]["resolved"]):
                 self.log.debug("Alert %s acknowledged status is %s and resolved status is %s",
                                response.json()["alerts"][i]["alert_uuid"],
                                response.json()["alerts"][i]["acknowledged"],
@@ -650,6 +673,7 @@ class TestCsmAlerts():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.tags('TEST-16216')
     def test_1457(self):
         """
         Test that user is able to un-acknowledge the alert using rest request.
@@ -664,7 +688,7 @@ class TestCsmAlerts():
         response = self.csm_alerts.get_alerts(resolved=False)
         self.log.debug("Response is: %s", response)
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_alerts.success_response)
+                                   const.SUCCESS_STATUS)
 
         self.log.info("Reading the alert id...")
         alert_id = response.json()["alerts"][0]["alert_uuid"]
@@ -673,13 +697,13 @@ class TestCsmAlerts():
         response = self.csm_alerts.edit_alerts(alert_id=alert_id, ack=True)
         self.log.debug("Response is: %s", response)
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_alerts.success_response)
+                                   const.SUCCESS_STATUS)
 
         self.log.info("Fetching acknowledged alerts...")
         response = self.csm_alerts.get_alerts(acknowledged=True)
         self.log.debug("Response is: %s", response)
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_alerts.success_response)
+                                   const.SUCCESS_STATUS)
 
         self.log.info("Verifying if alert %s is acknowledged", alert_id)
         alert_id_list = [item["alert_uuid"]
@@ -693,13 +717,13 @@ class TestCsmAlerts():
             alert_id=alert_id, ack=False)
         self.log.debug("Response is: %s", response)
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_alerts.success_response)
+                                   const.SUCCESS_STATUS)
 
         self.log.info("Fetching alerts...")
         response = self.csm_alerts.get_alerts()
         self.log.debug("Response is: %s", response)
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_alerts.success_response)
+                                   const.SUCCESS_STATUS)
 
         self.log.info(
             "Verifying if alert %s is unacknowledged", alert_id)
@@ -716,6 +740,7 @@ class TestCsmAlerts():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.tags('TEST-16937')
     def test_1039(self):
         """
         Test that S3 account should not have access to alert operations
@@ -730,7 +755,7 @@ class TestCsmAlerts():
         response = self.csm_alerts.get_alerts()
         self.log.debug("Response is: %s", response)
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_alerts.success_response)
+                                   const.SUCCESS_STATUS)
 
         self.log.info("Reading the alert id...")
         alert_id = response.json()["alerts"][0]["alert_uuid"]

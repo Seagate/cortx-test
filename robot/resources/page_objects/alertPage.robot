@@ -1,12 +1,9 @@
 *** Settings ***
-Resource  ${EXECDIR}/resources/common/common.robot
-Resource  userSettingsLocalPage.robot
-Resource  loginPage.robot
-Library     SeleniumLibrary
+Library    SeleniumLibrary
+Resource   ${EXECDIR}/resources/page_objects/loginPage.robot
+Resource   ${EXECDIR}/resources/page_objects/userSettingsLocalPage.robot
+Resource   ${EXECDIR}/resources/common/common.robot
 Variables  ${EXECDIR}/resources/common/element_locators.py
-
-*** Variables ***
-
 
 *** Keywords ***
 
@@ -82,7 +79,7 @@ Verify Absence of comment textbox
     Page Should Not Contain Element  ${ALERT_COMMENT_TEXT_ID}
 
 Verify comment on alert
-     [Documentation]  this keyword adds comments and verifys it
+     [Documentation]  this keyword adds comments and verifies it
      Click AlertPageDashboard Image
      Click Comments Button
      Add CommentInCommentBox Text
