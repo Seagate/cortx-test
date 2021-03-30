@@ -86,7 +86,7 @@ def get_objsizewise_data(build,bench,configs,operation,param,subparam=None):
 
     for object_size in objsize_list:
         data_routine(data, build, object_size, bench, operation, param, buckets, objects, sessions, subparam)
-    
+
     data_dict = dict(zip(objsize_list, data))
     for k, v in dict(data_dict).items():
         if v is None or v is 'NA':
@@ -100,10 +100,10 @@ def get_buildwise_data(version, object_size, bench, configs, operation, param, s
     builds_list = get_chain(version)
 
     buckets, objects, sessions = get_configs(bench, configs)
-    # print(buckets, objects, sessions)
+
     for build in builds_list:
         data_routine(data, build, object_size, bench, operation, param, buckets, objects, sessions, subparam)
-    
+
     data_dict = dict(zip(builds_list, data))
     for k, v in dict(data_dict).items():
         if v is None or v is 'NA':
@@ -117,5 +117,3 @@ def get_data_based_on_filter(Xfilter, version, option, bench, configs, operation
         return get_objsizewise_data(option,bench,configs,operation,param,subparam)
     else:
         return get_buildwise_data(version,option,bench,configs,operation,param,subparam)
-        
-

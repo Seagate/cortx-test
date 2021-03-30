@@ -57,7 +57,7 @@ statistics_layout = Card(
             Markdown('''
             ___
             '''),
-            html.P("IOPath Performance Statistics", 
+            html.P("IOPath Performance Statistics",
                 style=dict_style_table_caption),
             html.P(id="statistics_hsbench_workload_1", style=style_workload_captions),
             html.Div(id="statistics_hsbench_table_1"),
@@ -88,7 +88,7 @@ statistics_layout = Card(
             Markdown('''
             ___
             '''),
-            html.P("IOPath Performance Statistics", 
+            html.P("IOPath Performance Statistics",
                 style=dict_style_table_caption),
             html.P(id="statistics_cosbench_workload_1", style=style_workload_captions),
             html.Div(id="statistics_cosbench_table_1"),

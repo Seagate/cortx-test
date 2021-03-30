@@ -89,14 +89,14 @@ def update_builds_dropdown(release):
 def s3bench_callback(n_clicks, branch, build):
     if n_clicks is None or branch is None or build is None:
         raise PreventUpdate
-    
+
     workload_heading = html.H5("Workload: 1 Bucket")
     objects = fetch_configs_from_file(benchmark_config, 'S3bench', 'object_size')
     threads = []
     data = {
         'Object Sizes' : statistics_column_headings
     }
-    
+
     for obj in objects:
         temp = Thread(target=get_s3benchmark_data, args=(build, obj, data))
         temp.start()
@@ -200,7 +200,7 @@ def benchmark_global(bench, workload, branch, build, table_ID):
     columns = [
                 {'name' : column, 'id' : column} for column in list(df_bench.columns)
         ]
-    
+
     hsbenchmark = get_dash_table(dash_table.DataTable, table_ID, columns,
                  df_bench, dict_style_header, [
             {'if': {'row_index': 'odd'}, 'backgroundColor': '#E5E4E2'},
@@ -220,7 +220,7 @@ def benchmark_global(bench, workload, branch, build, table_ID):
 def hsbench1_callback(n_clicks, branch, build):
     if n_clicks is None or branch is None or build is None:
         raise PreventUpdate
-    
+
     workload = fetch_configs_from_file(benchmark_config, 'Hsbench', 'workload-1')
     workload_heading = get_hsbench_workload_headings(html, workload['sessions'], workload['buckets'], workload['objects'])
     return [workload_heading, benchmark_global('Hsbench', workload, branch, build, 'hsbench-table-1')]
@@ -236,7 +236,7 @@ def hsbench1_callback(n_clicks, branch, build):
 def hsbench2_callback(n_clicks, branch, build):
     if n_clicks is None or branch is None or build is None:
         raise PreventUpdate
-    
+
     workload = fetch_configs_from_file(benchmark_config, 'Hsbench', 'workload-2')
     workload_heading = get_hsbench_workload_headings(html, workload['sessions'], workload['buckets'], workload['objects'])
     return [workload_heading, benchmark_global('Hsbench', workload, branch, build, 'hsbench-table-2')]
@@ -252,7 +252,7 @@ def hsbench2_callback(n_clicks, branch, build):
 def hsbench3_callback(n_clicks, branch, build):
     if n_clicks is None or branch is None or build is None:
         raise PreventUpdate
-    
+
     workload = fetch_configs_from_file(benchmark_config, 'Hsbench', 'workload-3')
     workload_heading = get_hsbench_workload_headings(html, workload['sessions'], workload['buckets'], workload['objects'])
     return [workload_heading, benchmark_global('Hsbench', workload, branch, build, 'hsbench-table-3')]
@@ -268,7 +268,7 @@ def hsbench3_callback(n_clicks, branch, build):
 def cosbench1_callback(n_clicks, branch, build):
     if n_clicks is None or branch is None or build is None:
         raise PreventUpdate
-    
+
     workload = fetch_configs_from_file(benchmark_config, 'Cosbench', 'workload-1')
     workload_heading = get_cosbench_workload_headings(html, workload['sessions'], workload['buckets'], workload['objects'])
     return [workload_heading, benchmark_global('Cosbench', workload, branch, build, 'cosbench-table-1')]
@@ -284,11 +284,11 @@ def cosbench1_callback(n_clicks, branch, build):
 def cosbench2_callback(n_clicks, branch, build):
     if n_clicks is None or branch is None or build is None:
         raise PreventUpdate
-    
+
     workload = fetch_configs_from_file(benchmark_config, 'Cosbench', 'workload-2')
     workload_heading = get_cosbench_workload_headings(html, workload['sessions'], workload['buckets'], workload['objects'])
     return [workload_heading, benchmark_global('Cosbench', workload, branch, build, 'cosbench-table-2')]
-    
+
 @app.callback(
     [Output('statistics_cosbench_workload_3', 'children'),
     Output('statistics_cosbench_table_3', 'children'),],
@@ -300,7 +300,7 @@ def cosbench2_callback(n_clicks, branch, build):
 def cosbench3_callback(n_clicks, branch, build):
     if n_clicks is None or branch is None or build is None:
         raise PreventUpdate
-    
+
     workload = fetch_configs_from_file(benchmark_config, 'Cosbench', 'workload-3')
     workload_heading = get_cosbench_workload_headings(html, workload['sessions'], workload['buckets'], workload['objects'])
     return [workload_heading, benchmark_global('Cosbench', workload, branch, build, 'cosbench-table-3')]
@@ -343,7 +343,7 @@ def get_bucketops_everything(workload, branch, build, object_size, table_ID):
             {'if': {'row_index': 'odd'}, 'backgroundColor': '#E5E4E2'},
             {'if': {'column_id': 'Operations'}, 'backgroundColor': '#D8D8D8'}
                 ], dict_style_cell)
-    
+
     return bucketops
 
 @app.callback(

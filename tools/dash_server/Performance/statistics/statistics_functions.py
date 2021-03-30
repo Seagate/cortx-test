@@ -37,7 +37,7 @@ def get_performance_metrics(build: str, object_size: str, bench: str, operation:
                                                     collection=db_collection)
     db_data = find_documents(query=query, uri=uri, db_name=db_name,
                                                      collection=db_collection)
-    
+
     return count, db_data
 
 
@@ -72,7 +72,7 @@ def get_s3benchmark_data(build, object_size, data, release='R1', version='releas
                 temp_data.append(get_average_data(count, db_data, stat, "Avg", 1000))
             else:
                 temp_data.append(get_data(count, db_data, stat, 1))
-    
+
     data[object_size] = temp_data
 
 
@@ -94,9 +94,9 @@ def get_hsbenchmark_data(build, object_size, sessions, buckets, objects, data, r
         count, db_data = get_performance_metrics(build, object_size, 'Hsbench', operation, sessions, buckets, objects)
         stats = ["Throughput", "Latency", "IOPS"]
 
-        for stat in stats:                
+        for stat in stats:
             temp_data.append(get_data(count, db_data, stat, 1))
-    
+
     data[object_size] = temp_data
 
 
@@ -151,12 +151,12 @@ def get_bucketops(object_size, benchmark_config, build, operation, modes, bucket
 
     count, db_data = get_performance_metrics(build, object_size, 'Hsbench', operation, sessions, buckets, objects)
     results = db_data[0]['Bucket_Ops']
-    
+
     temp_data = []
     for mode in modes:
         if count > 0 and keys_exists(results[mode], bucket_operation):
             temp_data.append(round_off(results[mode][bucket_operation]))
         else:
             temp_data.append("NA")
-    
+
     data[bucket_operation] = temp_data

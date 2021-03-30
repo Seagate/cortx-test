@@ -178,9 +178,9 @@ def update_latency(n_clicks, xfilter, release, option1, option2, bench, configs,
     if bench != 'S3bench' and configs is None:
         raise PreventUpdate
 
-    else:   
-        if xfilter == 'build': 
-            titleText = 'Object Sizes' 
+    else:
+        if xfilter == 'build':
+            titleText = 'Object Sizes'
         else:
             titleText = 'Builds'
 
@@ -248,7 +248,7 @@ def update_TTFB(n_clicks, xfilter, release, option1, option2, bench, configs, op
 
         fig = graphs_global(bench, operation_opt, option1, option2, xfilter, release, configs, titleText, "Data (ms)", 'TTFB', 'Avg')
         return_val = fig
-    
+
     return return_val
 
 @app.callback(
@@ -308,13 +308,13 @@ def update_all(n_clicks, xfilter, release, option1, option2, bench, configs, ope
             title_font_color="blue",
             title_font_family="Sans Serif",
             legend_title= 'Glossary',
-            yaxis=dict(            
+            yaxis=dict(
                 title_text="Data",
                 titlefont=dict(size=20, family="Sans Serif")),
             xaxis=dict(
                 title_text=titleText,
                 titlefont=dict(size=20, family="Sans Serif")
-            ),        
+            ),
         )
         return_val = fig
 

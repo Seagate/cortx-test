@@ -20,7 +20,6 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 
-
 import os
 import qa_tab_layouts as tl
 import query_tab_layout as query_tl
@@ -38,8 +37,8 @@ from R1_callbacks import r1_exe_report_callbacks, \
 from R2_callbacks import exe_report_callbacks, \
     engg_report_callbacks  # pylint: disable=unused-import
 
-from Performance.statistics import statistics_callbacks
-from Performance.graphs import graphs_callbacks
+from Performance.statistics import statistics_callbacks # pylint: disable=unused-import
+from Performance.graphs import graphs_callbacks # pylint: disable=unused-import
 from Performance.perf_main import perf_stats_page, perf_graphs_page
 
 @server.route('/favicon.ico')
