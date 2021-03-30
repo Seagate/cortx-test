@@ -26,7 +26,7 @@ import pytest
 from commons import cortxlogging
 from commons.constants import Rest as const
 from commons.utils import assert_utils
-from commons.utils import config_utils
+from commons import configmanager
 from commons.helpers.node_helper import Node
 from config import CMN_CFG
 from libs.csm.rest.csm_rest_alert import SystemAlerts
@@ -48,7 +48,7 @@ class TestCsmAlerts():
                             password=CMN_CFG["nodes"][0]["password"])
         cls.csm_alerts = SystemAlerts(cls.node_obj)
         cls.log.info("Checking if predefined CSM users are present...")
-        cls.csm_conf = config_utils.read_yaml("config/csm/test_rest_csm_alert.yaml")[1]
+        cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_csm_alert.yaml")
         cls.resolve_type = None
         cls.alert_timeout = None
         cls.alert_type = None

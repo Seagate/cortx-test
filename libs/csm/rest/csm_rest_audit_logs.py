@@ -72,7 +72,7 @@ class RestAuditLogs(RestTestLib):
                 error)
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR,
-                error.args[0]) from error
+                error) from error
 
     def verify_audit_logs_csm_show(self,
                                    params,
@@ -146,7 +146,7 @@ class RestAuditLogs(RestTestLib):
                 error)
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED,
-                error.args[0]) from error
+                error) from error
 
     @RestTestLib.authenticate_and_login
     def audit_logs_csm_download(self, params, invalid_component=False):
@@ -181,7 +181,7 @@ class RestAuditLogs(RestTestLib):
                 error)
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR,
-                error.args[0]) from error
+                error) from error
 
     def verify_audit_logs_csm_download(self,
                                        params,
@@ -232,7 +232,7 @@ class RestAuditLogs(RestTestLib):
                 error)
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED,
-                error.args[0]) from error
+                error) from error
 
     @RestTestLib.authenticate_and_login
     def audit_logs_s3_show(self, params):
@@ -261,7 +261,7 @@ class RestAuditLogs(RestTestLib):
                 error)
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR,
-                error.args[0]) from error
+                error) from error
 
     def verify_audit_logs_s3_show(self,
                                   params,
@@ -506,7 +506,7 @@ class RestAuditLogs(RestTestLib):
                 error)
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED,
-                error.args[0]) from error
+                error) from error
 
     @RestTestLib.authenticate_and_login
     def audit_logs_s3_download(self, params):
@@ -535,7 +535,7 @@ class RestAuditLogs(RestTestLib):
                 error)
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR,
-                error.args[0]) from error
+                error) from error
 
     def verify_audit_logs_s3_download(self,
                                       params,
@@ -583,7 +583,7 @@ class RestAuditLogs(RestTestLib):
                 error)
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED,
-                error.args[0]) from error
+                error) from error
 
     def verify_audit_logs_show_download(self, audit_log_show_response, audit_log_download_response):
         """
@@ -753,4 +753,4 @@ class RestAuditLogs(RestTestLib):
                 error)
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED,
-                error.args[0]) from error
+                error) from error
