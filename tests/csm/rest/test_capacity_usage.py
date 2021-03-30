@@ -25,7 +25,6 @@ import pytest
 from libs.csm.rest.csm_rest_capacity import SystemCapacity
 from commons.helpers.health_helper import Health
 from commons.utils import assert_utils
-from commons.utils import config_utils
 from commons import cortxlogging
 from config import CMN_CFG
 
