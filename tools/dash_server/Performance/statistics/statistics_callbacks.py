@@ -26,7 +26,7 @@ import pandas as pd
 from threading import Thread
 import dash_html_components as html
 
-from Performance.statistics.statistics_functions import get_s3benchmark_data, fetch_configs_from_file, get_metadata_latencies, get_hsbenchmark_data
+from Performance.statistics.statistics_functions import get_s3benchmark_data, fetch_configs_from_file, get_metadata_latencies
 from common import app
 from Performance.styles import dict_style_header, dict_style_cell
 from Performance.statistics.statistics_functions import update_hsbench_callbacks, get_dash_table, get_bucketops
@@ -65,7 +65,7 @@ def update_branches_dropdown(release):
             {'label' : 'Release', 'value' : 'release'},
         ]
     return versions
-    
+
 @app.callback(
     Output('perf_build_dropdown', 'options'),
     Input('perf_branch_dropdown', 'value')
@@ -102,8 +102,8 @@ def s3bench_callback(n_clicks, branch, build):
         temp.start()
         threads.append(temp)
 
-    for i in range(len(threads)):
-        threads[i].join()
+    for thread in enumerate(threads):
+        thread.join()
 
     df_s3bench = pd.DataFrame(data)
     df_s3bench = df_s3bench[['Object Sizes']+ objects]
@@ -153,8 +153,8 @@ def metadata_callback(n_clicks, branch, build):
         temp.start()
         threads.append(temp)
 
-    for i in range(len(threads)):
-        threads[i].join()
+    for thread in enumerate(threads):
+        thread.join()
 
     df_metadata = pd.DataFrame(data)
     
@@ -333,8 +333,8 @@ def get_bucketops_everything(workload, branch, build, object_size, table_ID):
         temp.start()
         threads.append(temp)
 
-    for i in range(len(threads)):
-        threads[i].join()
+    for thread in enumerate(threads):
+        thread.join()
 
     df_bucketops = pd.DataFrame(data)
 

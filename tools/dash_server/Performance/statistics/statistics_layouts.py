@@ -43,12 +43,12 @@ statistics_layout = Card(
             ___
             '''),
 
-            html.P("IOPath Performance Statistics", 
+            html.P("IOPath Performance Statistics",
                 style=dict_style_table_caption),
             html.P(id="statistics_s3bench_workload", style=style_workload_captions),
             html.Div(id="statistics_s3bench_table"),
 
-            html.P("Metadata Operations Latency (captured with 1KB object)", 
+            html.P("Metadata Operations Latency (captured with 1KB object)",
                 style=dict_style_table_caption),
             html.Div(id="statistics_metadata_table"),
 
@@ -66,7 +66,7 @@ statistics_layout = Card(
             html.P(id="statistics_hsbench_workload_3", style=style_workload_captions),
             html.Div(id="statistics_hsbench_table_3"),
 
-            html.P("Bucket Operations Statistics", 
+            html.P("Bucket Operations Statistics",
                 style=dict_style_table_caption),
             Row(
                 Dropdown(
@@ -129,7 +129,7 @@ stats_input_options = Row(
 )
 
 statistics_perf_tabs = html.Div(
-        Tab(statistics_layout, id="perf_statistics_content", label="Performance Statistics", 
+        Tab(statistics_layout, id="perf_statistics_content", label="Performance Statistics",
             style=dict_style_sub_tab, label_style=dict_style_sub_label
         )
 )

@@ -20,18 +20,18 @@
 # !/usr/bin/python
 
 from Performance.global_functions import get_db_details, keys_exists, round_off, makeconfig
-from Performance.mongodb_api import find_documents, count_documents, find_distinct_values
+from Performance.mongodb_api import find_documents, count_documents
 
 def get_performance_metrics(build: str, object_size: str, bench: str, operation: str,
     sessions: int= None, buckets: int = None, objects: int = None, version='release', release='R1'):
     """need to add release and version logic"""
     uri, db_name, db_collection = get_db_details()
-    
+
     if sessions:
         query = {'Build': build, 'Name': bench, 'Object_Size': object_size,
                          'Operation': operation, 'Sessions': sessions, 'Buckets': buckets, 'Objects': objects }
     else:
-        query = {'Build': build, 'Name': bench, 'Object_Size': object_size, 'Operation': operation} 
+        query = {'Build': build, 'Name': bench, 'Object_Size': object_size, 'Operation': operation}
 
     count = count_documents(query=query, uri=uri, db_name=db_name,
                                                     collection=db_collection)
@@ -41,9 +41,9 @@ def get_performance_metrics(build: str, object_size: str, bench: str, operation:
     return count, db_data
 
 
-def fetch_configs_from_file(benchmark_config, bench, property):
+def fetch_configs_from_file(benchmark_config, bench, prop):
     config = makeconfig(benchmark_config)
-    return config[bench][property]
+    return config[bench][prop]
 
 
 def get_average_data(count, data, stat, subparam, multiplier):
@@ -67,7 +67,7 @@ def get_s3benchmark_data(build, object_size, data, release='R1', version='releas
         count, db_data = get_performance_metrics(build, object_size, 'S3bench', operation)
         stats = ["Throughput", "Latency", "IOPS", "TTFB"]
 
-        for stat in stats:                
+        for stat in stats:
             if stat in ["Latency", "TTFB"]:
                 temp_data.append(get_average_data(count, db_data, stat, "Avg", 1000))
             else:
@@ -110,7 +110,7 @@ def get_cosbenchmark_data(build, object_size, sessions, buckets, objects, data, 
         for stat in stats:        
             if stat == "Latency":
                 temp_data.append(get_average_data(count, db_data, stat, "Avg", 1))
-            else:        
+            else:
                 temp_data.append(get_data(count, db_data, stat, 1))
     
     data[object_size] = temp_data
@@ -129,8 +129,8 @@ def update_hsbench_callbacks(bench, workload, objects, build, Thread, data):
         temp.start()
         threads.append(temp)
 
-    for i in range(len(threads)):
-        threads[i].join()
+    for thread in enumerate(threads):
+        thread.join()
 
 
 def get_dash_table(DataTable, table_id, columns, dataframe, header_style, conditional_style, cell_Style):

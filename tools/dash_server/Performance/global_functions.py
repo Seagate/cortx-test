@@ -26,7 +26,7 @@ benchmark_config = 'Performance/configs/benchmark.yml'
 
 def makeconfig(name):  #function for connecting with configuration file
     with open(name) as config_file:
-        configs = yaml.load(config_file, Loader=yaml.FullLoader)
+        configs = yaml.safe_load(config_file, Loader=yaml.FullLoader)
     return configs
 
 
@@ -43,7 +43,6 @@ def get_db_details():
     import sys
     from urllib.parse import quote_plus
 
-    """Read DB details from config.init file"""
     config = makeconfig(config_path)
     try:
         db_hostname = config["PerfDB"]["hostname"]
@@ -106,7 +105,7 @@ def get_dict_from_array(options, makeReverse, allcaps=False):
     if allcaps:
         versions = [
             {'label' : option.upper(), 'value' : option} for option in options
-        ]        
+        ]
         return versions
-    
+
     return versions

@@ -21,7 +21,6 @@
 
 from Performance.global_functions import benchmark_config, get_chain
 from Performance.statistics.statistics_functions import fetch_configs_from_file, get_performance_metrics, get_data, get_average_data
-from threading import Thread
 
 def get_structure_trace(Scatter, operation, metrics, option, x_axis, y_data):
     trace = Scatter(
@@ -40,7 +39,7 @@ def get_operations(bench, operation_opt):
             return ['Read', 'Write']
         else:
             return operation_opt.capitalize()
-    
+
     if operation_opt == 'both':
         return ['read', 'write']
     else:

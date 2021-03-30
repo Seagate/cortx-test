@@ -89,7 +89,7 @@ def update_configs_style(bench):
     if bench == 'S3bench':
         return {'display': 'none'}
     else:
-       return {'display': 'block', 'width': '250px', 'verticalAlign': 'middle', "margin-right": "10px","margin-top":"10px"} 
+       return {'display': 'block', 'width': '250px', 'verticalAlign': 'middle', "margin-right": "10px","margin-top":"10px"}
 
 
 def graphs_global(bench, operation_opt, option1, option2, xfilter, release, configs, titleText, y_axis_test, metric, param=None):
@@ -105,7 +105,7 @@ def graphs_global(bench, operation_opt, option1, option2, xfilter, release, conf
             trace = get_structure_trace(go.Scatter, op, metric, option, x_axis, y_data)
             fig.add_trace(trace)
 
-        
+
     fig.update_layout(
         autosize=True,
         height=625,
@@ -115,13 +115,13 @@ def graphs_global(bench, operation_opt, option1, option2, xfilter, release, conf
         title_font_color="blue",
         title_font_family="Sans Serif",
         legend_title= 'Glossary',
-        yaxis=dict(            
+        yaxis=dict(
             title_text=y_axis_test,
             titlefont=dict(size=20, family="Sans Serif")),
         xaxis=dict(
             title_text=titleText,
             titlefont=dict(size=20, family="Sans Serif")
-        ),        
+        ),
     )
     print('returned')
     return fig
@@ -140,21 +140,23 @@ def graphs_global(bench, operation_opt, option1, option2, xfilter, release, conf
     prevent_initial_call=True
 )
 def update_throughput(n_clicks, xfilter, release, option1, option2, bench, configs, operation_opt):
+    return_val = None
     if n_clicks is None or xfilter is None or release is None or option1 is None:
         raise PreventUpdate
-        return None
-    
-    if xfilter == 'build': 
-        titleText = 'Object Sizes' 
-    else:
-        titleText = 'Builds'
 
     if bench != 'S3bench' and configs is None:
         raise PreventUpdate
-        return None
 
-    fig = graphs_global(bench, operation_opt, option1, option2, xfilter, release, configs, titleText, "Data (MBps)", 'Throughput')
-    return fig
+    else:
+        if xfilter == 'build':
+            titleText = 'Object Sizes'
+        else:
+            titleText = 'Builds'
+        fig = graphs_global(bench, operation_opt, option1, option2, xfilter, release, configs, titleText, "Data (MBps)", 'Throughput')
+
+        return_val = fig
+
+    return return_val
 
 @app.callback(
     Output('plot_Latency', 'figure'),
@@ -169,20 +171,23 @@ def update_throughput(n_clicks, xfilter, release, option1, option2, bench, confi
     prevent_initial_call=True
 )
 def update_latency(n_clicks, xfilter, release, option1, option2, bench, configs, operation_opt):
+    return_val = None
     if n_clicks is None or xfilter is None or release is None or option1 is None:
         raise PreventUpdate
-        return None
-    
-    if xfilter == 'build': 
-        titleText = 'Object Sizes' 
-    else:
-        titleText = 'Builds'
 
     if bench != 'S3bench' and configs is None:
         raise PreventUpdate
 
-    fig = graphs_global(bench, operation_opt, option1, option2, xfilter, release, configs, titleText, "Data (ms)", 'Latency', 'Avg')
-    return fig
+    else:   
+        if xfilter == 'build': 
+            titleText = 'Object Sizes' 
+        else:
+            titleText = 'Builds'
+
+        fig = graphs_global(bench, operation_opt, option1, option2, xfilter, release, configs, titleText, "Data (ms)", 'Latency', 'Avg')
+        return_val = fig
+
+    return return_val
 
 @app.callback(
     Output('plot_IOPS', 'figure'),
@@ -197,21 +202,23 @@ def update_latency(n_clicks, xfilter, release, option1, option2, bench, configs,
     prevent_initial_call=True
 )
 def update_IOPS(n_clicks, xfilter, release, option1, option2, bench, configs, operation_opt):
+    return_val = None
     if n_clicks is None or xfilter is None or release is None or option1 is None:
         raise PreventUpdate
-        return None
-    
-    if xfilter == 'build': 
-        titleText = 'Object Sizes' 
-    else:
-        titleText = 'Builds'
 
     if bench != 'S3bench' and configs is None:
         raise PreventUpdate
-        return None
 
-    fig = graphs_global(bench, operation_opt, option1, option2, xfilter, release, configs, titleText, "Data", 'IOPS')
-    return fig
+    else:  
+        if xfilter == 'build': 
+            titleText = 'Object Sizes' 
+        else:
+            titleText = 'Builds'
+
+        fig = graphs_global(bench, operation_opt, option1, option2, xfilter, release, configs, titleText, "Data", 'IOPS')
+        return_val = fig
+
+    return return_val
 
 @app.callback(
     Output('plot_TTFB', 'figure'),
@@ -226,24 +233,23 @@ def update_IOPS(n_clicks, xfilter, release, option1, option2, bench, configs, op
     prevent_initial_call=True
 )
 def update_TTFB(n_clicks, xfilter, release, option1, option2, bench, configs, operation_opt):
+    return_val = None
     if n_clicks is None or xfilter is None or release is None or option1 is None:
         raise PreventUpdate
-        return None
 
     if bench != 'S3bench':
         raise PreventUpdate
-    
-    if xfilter == 'build': 
-        titleText = 'Object Sizes' 
+
     else:
-        titleText = 'Builds'
+        if xfilter == 'build': 
+            titleText = 'Object Sizes' 
+        else:
+            titleText = 'Builds'
 
-    if bench != 'S3bench' and configs is None:
-        raise PreventUpdate
-        return None
-
-    fig = graphs_global(bench, operation_opt, option1, option2, xfilter, release, configs, titleText, "Data (ms)", 'TTFB', 'Avg')
-    return fig
+        fig = graphs_global(bench, operation_opt, option1, option2, xfilter, release, configs, titleText, "Data (ms)", 'TTFB', 'Avg')
+        return_val = fig
+    
+    return return_val
 
 @app.callback(
     Output('plot_all', 'figure'),
@@ -258,55 +264,58 @@ def update_TTFB(n_clicks, xfilter, release, option1, option2, bench, configs, op
     prevent_initial_call=True
 )
 def update_all(n_clicks, xfilter, release, option1, option2, bench, configs, operation_opt):
-    if n_clicks is None:
+    return_val = None
+
+    if n_clicks is None or xfilter is None or release is None or option1 is None:
         raise PreventUpdate
-        return None
 
-    fig = go.Figure()
-
-    operations = get_operations(bench, operation_opt)
-    options = get_options(option1, option2)
-
-    if xfilter == 'build': 
-        titleText = 'Object Sizes' 
     else:
-        titleText = 'Builds'
+        fig = go.Figure()
 
-    if xfilter == 'Object Size' and bench == 'Cosbench':
-        option1 = option1[:-2] + " " + option1[-2:].upper()
+        operations = get_operations(bench, operation_opt)
+        options = get_options(option1, option2)
 
-    if bench == 'S3bench':
-        metrics = ['Throughput', 'Latency', 'IOPS', 'TTFB']
-    else:
-        metrics = ['Throughput', 'Latency', 'IOPS']
-
-    for metric in metrics:
-        if metric in ['Latency', 'TTFB']:
-            param = 'Avg'
+        if xfilter == 'build': 
+            titleText = 'Object Sizes' 
         else:
-            param = None
-        for op in operations:
-            for option in options:
-                [x_axis, y_data] = get_data_based_on_filter(xfilter, release, option, bench, configs, op, metric, param)
-                trace = get_structure_trace(go.Scatter, op, metric, option, x_axis, y_data)
-                fig.add_trace(trace)
+            titleText = 'Builds'
 
-    fig.update_layout(
-        autosize=True,
-        height=625,
-        showlegend = True,
-        title = 'All Plots in One',
-        title_font_size=24,
-        title_font_color="blue",
-        title_font_family="Sans Serif",
-        legend_title= 'Glossary',
-        yaxis=dict(            
-            title_text="Data",
-            titlefont=dict(size=20, family="Sans Serif")),
-        xaxis=dict(
-            title_text=titleText,
-            titlefont=dict(size=20, family="Sans Serif")
-        ),        
-    )
+        if xfilter == 'Object Size' and bench == 'Cosbench':
+            option1 = option1[:-2] + " " + option1[-2:].upper()
 
-    return fig
+        if bench == 'S3bench':
+            metrics = ['Throughput', 'Latency', 'IOPS', 'TTFB']
+        else:
+            metrics = ['Throughput', 'Latency', 'IOPS']
+
+        for metric in metrics:
+            if metric in ['Latency', 'TTFB']:
+                param = 'Avg'
+            else:
+                param = None
+            for op in operations:
+                for option in options:
+                    [x_axis, y_data] = get_data_based_on_filter(xfilter, release, option, bench, configs, op, metric, param)
+                    trace = get_structure_trace(go.Scatter, op, metric, option, x_axis, y_data)
+                    fig.add_trace(trace)
+
+        fig.update_layout(
+            autosize=True,
+            height=625,
+            showlegend = True,
+            title = 'All Plots in One',
+            title_font_size=24,
+            title_font_color="blue",
+            title_font_family="Sans Serif",
+            legend_title= 'Glossary',
+            yaxis=dict(            
+                title_text="Data",
+                titlefont=dict(size=20, family="Sans Serif")),
+            xaxis=dict(
+                title_text=titleText,
+                titlefont=dict(size=20, family="Sans Serif")
+            ),        
+        )
+        return_val = fig
+
+    return return_val

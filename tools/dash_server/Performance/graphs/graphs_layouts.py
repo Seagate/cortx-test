@@ -22,7 +22,7 @@
 from dash_bootstrap_components import Card, CardBody, Row, Button, Tab
 from dash_core_components import Dropdown, Graph
 import dash_html_components as html
-from Performance.styles import dict_style_sub_tab, dict_style_sub_label, dict_style_dropdown_medium, dict_style_dropdown_large
+from Performance.styles import dict_style_sub_tab, dict_style_sub_label, dict_style_dropdown_medium
 
 versions = [
             {'label' : 'Cortx-1.0-Beta', 'value' : 'beta'},
@@ -52,7 +52,7 @@ config_list = [
 operations = [
     {'label': 'Both', 'value':'both'},
     {'label': 'Read', 'value':'read'},
-    {'label': 'Write', 'value':'write'},    
+    {'label': 'Write', 'value':'write'},
 ]
 
 graphs_input_options = Row([
@@ -123,7 +123,7 @@ graphs_layout = Card(
 )
 
 graphs_perf_tabs = html.Div(
-        Tab(graphs_layout, id="perf_graphs_content", label="Performance Graphs", 
+        Tab(graphs_layout, id="perf_graphs_content", label="Performance Graphs",
             style=dict_style_sub_tab, label_style=dict_style_sub_label
         )
 )
