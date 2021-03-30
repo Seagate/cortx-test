@@ -26,7 +26,8 @@ import pandas as pd
 from threading import Thread
 import dash_html_components as html
 
-from Performance.statistics.statistics_functions import get_s3benchmark_data, fetch_configs_from_file, get_metadata_latencies
+from Performance.statistics.statistics_functions import get_s3benchmark_data,\
+            fetch_configs_from_file, get_metadata_latencies
 from common import app
 from Performance.styles import dict_style_header, dict_style_cell
 from Performance.statistics.statistics_functions import update_hsbench_callbacks, get_dash_table, get_bucketops
@@ -157,7 +158,7 @@ def metadata_callback(n_clicks, branch, build):
         thread.join()
 
     df_metadata = pd.DataFrame(data)
-    
+
     headings = [{'name' : 'Operations', 'id' : 'Statistics'},
                 {'name' : 'Latency (ms)', 'id' : '1Kb'}
     ]

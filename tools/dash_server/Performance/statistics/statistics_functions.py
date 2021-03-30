@@ -107,12 +107,12 @@ def get_cosbenchmark_data(build, object_size, sessions, buckets, objects, data, 
         count, db_data = get_performance_metrics(build, object_size, 'Cosbench', operation, sessions, buckets, objects)
         stats = ["Throughput", "Latency", "IOPS"]
 
-        for stat in stats:        
+        for stat in stats:
             if stat == "Latency":
                 temp_data.append(get_average_data(count, db_data, stat, "Avg", 1))
             else:
                 temp_data.append(get_data(count, db_data, stat, 1))
-    
+
     data[object_size] = temp_data
 
 
@@ -125,7 +125,8 @@ def update_hsbench_callbacks(bench, workload, objects, build, Thread, data):
         target = get_cosbenchmark_data
 
     for obj in objects:
-        temp = Thread(target=target, args=(build, obj, workload['sessions'], workload['buckets'], workload['objects'], data))
+        temp = Thread(target=target, args=(build, obj, workload['sessions'],
+            workload['buckets'], workload['objects'], data))
         temp.start()
         threads.append(temp)
 
@@ -147,9 +148,11 @@ def get_dash_table(DataTable, table_id, columns, dataframe, header_style, condit
     return table
 
 
-def get_bucketops(object_size, benchmark_config, build, operation, modes, bucket_operation, sessions, buckets, objects, data):
+def get_bucketops(object_size, benchmark_config, build, operation, modes, bucket_operation,
+        sessions, buckets, objects, data):
 
-    count, db_data = get_performance_metrics(build, object_size, 'Hsbench', operation, sessions, buckets, objects)
+    count, db_data = get_performance_metrics(build, object_size, 'Hsbench',
+                                                operation, sessions, buckets, objects)
     results = db_data[0]['Bucket_Ops']
 
     temp_data = []

@@ -29,7 +29,8 @@ from Performance.global_functions import get_dict_from_array, get_chain
 from Performance.statistics.statistics_functions import fetch_configs_from_file
 from Performance.global_functions import benchmark_config
 
-from Performance.graphs.graphs_functions import get_data_based_on_filter, get_operations, get_options, get_structure_trace
+from Performance.graphs.graphs_functions import get_data_based_on_filter, \
+    get_operations, get_options, get_structure_trace
 
 traces = []
 
@@ -62,7 +63,6 @@ def option2_callback(Xfilter, release):
     if Xfilter is None or release is None:
         raise PreventUpdate
 
-    # if Xfilter == 'build':
     builds = get_chain(release)
     return get_dict_from_array(builds, True)
 
@@ -76,7 +76,8 @@ def option2_style_callback(xfilter):
         raise PreventUpdate
 
     if xfilter == 'build':
-        return {'display': 'block', 'width': '160px', 'verticalAlign': 'middle', "margin-right": "10px","margin-top":"10px"}
+        return {'display': 'block', 'width': '160px', 'verticalAlign': 'middle',
+                    "margin-right": "10px","margin-top":"10px"}
     else:
         return {'display': 'none'}
 
@@ -89,10 +90,12 @@ def update_configs_style(bench):
     if bench == 'S3bench':
         return {'display': 'none'}
     else:
-       return {'display': 'block', 'width': '250px', 'verticalAlign': 'middle', "margin-right": "10px","margin-top":"10px"}
+       return {'display': 'block', 'width': '250px', 'verticalAlign': 'middle',
+                "margin-right": "10px","margin-top":"10px"}
 
 
-def graphs_global(bench, operation_opt, option1, option2, xfilter, release, configs, titleText, y_axis_test, metric, param=None):
+def graphs_global(bench, operation_opt, option1, option2, xfilter,
+                release, configs, titleText, y_axis_test, metric, param=None):
     operations = get_operations(bench, operation_opt)
     options = get_options(option1, option2)
     fig = go.Figure()
@@ -101,10 +104,10 @@ def graphs_global(bench, operation_opt, option1, option2, xfilter, release, conf
 
     for op in operations:
         for option in options:
-            [x_axis, y_data] = get_data_based_on_filter(xfilter, release, option, bench, configs, op, metric, param)
+            [x_axis, y_data] = get_data_based_on_filter(xfilter,
+                                release, option, bench, configs, op, metric, param)
             trace = get_structure_trace(go.Scatter, op, metric, option, x_axis, y_data)
             fig.add_trace(trace)
-
 
     fig.update_layout(
         autosize=True,
@@ -123,7 +126,7 @@ def graphs_global(bench, operation_opt, option1, option2, xfilter, release, conf
             titlefont=dict(size=20, family="Sans Serif")
         ),
     )
-    print('returned')
+
     return fig
 
 
@@ -152,7 +155,8 @@ def update_throughput(n_clicks, xfilter, release, option1, option2, bench, confi
             titleText = 'Object Sizes'
         else:
             titleText = 'Builds'
-        fig = graphs_global(bench, operation_opt, option1, option2, xfilter, release, configs, titleText, "Data (MBps)", 'Throughput')
+        fig = graphs_global(bench, operation_opt, option1, option2, xfilter,
+                            release, configs, titleText, "Data (MBps)", 'Throughput')
 
         return_val = fig
 
@@ -184,7 +188,8 @@ def update_latency(n_clicks, xfilter, release, option1, option2, bench, configs,
         else:
             titleText = 'Builds'
 
-        fig = graphs_global(bench, operation_opt, option1, option2, xfilter, release, configs, titleText, "Data (ms)", 'Latency', 'Avg')
+        fig = graphs_global(bench, operation_opt, option1, option2, xfilter,
+                            release, configs, titleText, "Data (ms)", 'Latency', 'Avg')
         return_val = fig
 
     return return_val
@@ -209,13 +214,14 @@ def update_IOPS(n_clicks, xfilter, release, option1, option2, bench, configs, op
     if bench != 'S3bench' and configs is None:
         raise PreventUpdate
 
-    else:  
-        if xfilter == 'build': 
-            titleText = 'Object Sizes' 
+    else:
+        if xfilter == 'build':
+            titleText = 'Object Sizes'
         else:
             titleText = 'Builds'
 
-        fig = graphs_global(bench, operation_opt, option1, option2, xfilter, release, configs, titleText, "Data", 'IOPS')
+        fig = graphs_global(bench, operation_opt, option1, option2,
+                            xfilter, release, configs, titleText, "Data", 'IOPS')
         return_val = fig
 
     return return_val
@@ -242,11 +248,12 @@ def update_TTFB(n_clicks, xfilter, release, option1, option2, bench, configs, op
 
     else:
         if xfilter == 'build': 
-            titleText = 'Object Sizes' 
+            titleText = 'Object Sizes'
         else:
             titleText = 'Builds'
 
-        fig = graphs_global(bench, operation_opt, option1, option2, xfilter, release, configs, titleText, "Data (ms)", 'TTFB', 'Avg')
+        fig = graphs_global(bench, operation_opt, option1, option2,
+                    xfilter, release, configs, titleText, "Data (ms)", 'TTFB', 'Avg')
         return_val = fig
 
     return return_val
@@ -275,8 +282,8 @@ def update_all(n_clicks, xfilter, release, option1, option2, bench, configs, ope
         operations = get_operations(bench, operation_opt)
         options = get_options(option1, option2)
 
-        if xfilter == 'build': 
-            titleText = 'Object Sizes' 
+        if xfilter == 'build':
+            titleText = 'Object Sizes'
         else:
             titleText = 'Builds'
 
@@ -295,7 +302,8 @@ def update_all(n_clicks, xfilter, release, option1, option2, bench, configs, ope
                 param = None
             for op in operations:
                 for option in options:
-                    [x_axis, y_data] = get_data_based_on_filter(xfilter, release, option, bench, configs, op, metric, param)
+                    [x_axis, y_data] = get_data_based_on_filter(xfilter,
+                                    release, option, bench, configs, op, metric, param)
                     trace = get_structure_trace(go.Scatter, op, metric, option, x_axis, y_data)
                     fig.add_trace(trace)
 

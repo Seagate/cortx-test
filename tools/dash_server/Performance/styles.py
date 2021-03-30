@@ -44,6 +44,8 @@ dict_style_sub_tab = {'margin-left': 10, 'margin-right': 10, 'margin-top': '10px
 dict_style_sub_label = {'font-size': '18px', 'color': '#44cc00', 'background-color': '#343a40',
                         'border-style': 'solid', 'margin-top': '20px'}
 
-dict_style_dropdown_medium = {'width': '160px', 'verticalAlign': 'middle', "margin-right": "10px","margin-top":"10px", "margin-bottom": "10px"}
+dict_style_dropdown_medium = {'width': '160px', 'verticalAlign': 'middle',
+            "margin-right": "10px","margin-top":"10px", "margin-bottom": "10px"}
 
-dict_style_dropdown_large = {'width': '250px', 'verticalAlign': 'middle', "margin-right": "10px","margin-top":"10px", "margin-bottom": "10px"}
+dict_style_dropdown_large = {'width': '250px', 'verticalAlign': 'middle',
+            "margin-right": "10px","margin-top":"10px", "margin-bottom": "10px"}

@@ -98,7 +98,8 @@ graphs_input_options = Row([
         value = 'both',
         style=dict_style_dropdown_medium
     ),
-    Button("Get!", id="get_graph_button", color="success",style={'height': '35px', "margin-right": "40px", "margin-top":"10px"}),
+    Button("Get!", id="get_graph_button", color="success",
+            style={'height': '35px', "margin-right": "40px", "margin-top":"10px"}),
     ],
     justify='center',style={'padding':'10px'}
 )

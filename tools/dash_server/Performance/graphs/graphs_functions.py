@@ -20,7 +20,8 @@
 # !/usr/bin/python
 
 from Performance.global_functions import benchmark_config, get_chain
-from Performance.statistics.statistics_functions import fetch_configs_from_file, get_performance_metrics, get_data, get_average_data
+from Performance.statistics.statistics_functions import fetch_configs_from_file,\
+    get_performance_metrics, get_data, get_average_data
 
 def get_structure_trace(Scatter, operation, metrics, option, x_axis, y_data):
     trace = Scatter(
@@ -53,18 +54,21 @@ def get_options(option1, option2):
         return [option1]
 
 
-def data_routine(results, build, object_size, bench,operation,param,buckets=None,objects=None,sessions=None,subparam=None):
-    # print(build, object_size, bench, operation, param, buckets, objects, sessions, subparam)
+def data_routine(results, build, object_size, bench, operation, param,
+                    buckets=None,objects=None,sessions=None,subparam=None):
+
     if subparam:
         try:
-            count, data = get_performance_metrics(build, object_size, bench, operation, sessions, buckets, objects)
+            count, data = get_performance_metrics(build, object_size, bench,
+                                            operation, sessions, buckets, objects)
             results.append(get_average_data(count, data, param, subparam, 1000))
 
         except KeyError:
             results.append(None)
     else:
         try:
-            count, data = get_performance_metrics(build, object_size, bench, operation, sessions, buckets, objects)
+            count, data = get_performance_metrics(build, object_size,
+                            bench, operation, sessions, buckets, objects)
             results.append(get_data(count, data, param, 1))
 
         except KeyError:
@@ -85,7 +89,8 @@ def get_objsizewise_data(build,bench,configs,operation,param,subparam=None):
     buckets, objects, sessions = get_configs(bench, configs)
 
     for object_size in objsize_list:
-        data_routine(data, build, object_size, bench, operation, param, buckets, objects, sessions, subparam)
+        data_routine(data, build, object_size, bench, operation,
+                            param, buckets, objects, sessions, subparam)
 
     data_dict = dict(zip(objsize_list, data))
     for k, v in dict(data_dict).items():
@@ -102,7 +107,8 @@ def get_buildwise_data(version, object_size, bench, configs, operation, param, s
     buckets, objects, sessions = get_configs(bench, configs)
 
     for build in builds_list:
-        data_routine(data, build, object_size, bench, operation, param, buckets, objects, sessions, subparam)
+        data_routine(data, build, object_size, bench,
+                        operation, param, buckets, objects, sessions, subparam)
 
     data_dict = dict(zip(builds_list, data))
     for k, v in dict(data_dict).items():
