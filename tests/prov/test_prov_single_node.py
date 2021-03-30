@@ -51,8 +51,8 @@ class TestProvSingleNode:
         Setup operations for the test file.
         """
         LOGGER.info("STARTED: Setup Module operations")
-        cls.host = pytest.host_fqdn
-        cls.build_path = pytest.buildpath
+        cls.host = CMN_CFG["nodes"][0]["hostname"]
+        cls.build_path = CMN_CFG["build_path"]
         LOGGER.info("User provided Hostname: {} and build path: {}".format(cls.host, cls.build_path))
         cls.uname = CMN_CFG["nodes"][0]["username"]
         cls.passwd = CMN_CFG["nodes"][0]["password"]

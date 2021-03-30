@@ -1,6 +1,6 @@
 test_1914:
   payload:
-    password: "abc"
+    password: 'QiX19+/DsLfV9kXp2ORsP0eTU5Ky9QBWhKg6EkfrupQ='
     reset_access_key: "false" 
 test_1915:
   response_msg:
