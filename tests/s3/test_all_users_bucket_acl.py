@@ -27,6 +27,7 @@ from commons.exceptions import CTException
 from commons.utils.config_utils import read_yaml
 from commons.utils.assert_utils import assert_true
 from commons.utils.assert_utils import assert_in
+from commons.utils.assert_utils import assert_false
 from commons.utils.assert_utils import assert_equal
 from commons.utils.assert_utils import assert_not_in
 from commons.utils.system_utils import create_file
@@ -193,10 +194,11 @@ class TestAllUsers():
             "Step 4: Trying to put an object to a bucket "
             "from other unsigned user")
         try:
-            NO_AUTH_OBJ.put_object(
-                all_users_conf["test_376"]["bucket_name"],
-                all_users_conf["test_376"]["new_obj_name"],
-                self.test_file_path)
+            resp = NO_AUTH_OBJ.put_object(
+                    all_users_conf["test_376"]["bucket_name"],
+                    all_users_conf["test_376"]["new_obj_name"],
+                    self.test_file_path)
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 all_users_conf["test_376"]["err_message"],
@@ -243,9 +245,10 @@ class TestAllUsers():
         self.log.info(
             "Step 4: Trying to delete an object from other unsigned user")
         try:
-            NO_AUTH_OBJ.delete_object(
-                all_users_conf["test_377"]["bucket_name"],
-                all_users_conf["test_377"]["obj_name"])
+            resp = NO_AUTH_OBJ.delete_object(
+                    all_users_conf["test_377"]["bucket_name"],
+                    all_users_conf["test_377"]["obj_name"])
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 all_users_conf["test_377"]["err_message"],
@@ -291,9 +294,10 @@ class TestAllUsers():
         self.log.info(
             "Step 4: Trying to read an object's ACL from other unsigned user")
         try:
-            NO_AUTH_OBJ.get_object_acl(
-                all_users_conf["test_378"]["bucket_name"],
-                all_users_conf["test_378"]["obj_name"])
+            resp = NO_AUTH_OBJ.get_object_acl(
+                    all_users_conf["test_378"]["bucket_name"],
+                    all_users_conf["test_378"]["obj_name"])
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 all_users_conf["test_378"]["err_message"],
@@ -338,8 +342,9 @@ class TestAllUsers():
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info("Step 4: Reading bucket's ACL from other unsigned user")
         try:
-            NO_AUTH_OBJ.get_bucket_acl(
+            resp = NO_AUTH_OBJ.get_bucket_acl(
                 all_users_conf["test_379"]["bucket_name"])
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 all_users_conf["test_379"]["err_message"],
@@ -384,9 +389,10 @@ class TestAllUsers():
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info("Step 4: Updating bucket ACL from other unsigned user")
         try:
-            NO_AUTH_OBJ.put_bucket_acl(
-                all_users_conf["test_380"]["bucket_name"],
-                acl=all_users_conf["test_380"]["acl"])
+            resp = NO_AUTH_OBJ.put_bucket_acl(
+                    all_users_conf["test_380"]["bucket_name"],
+                    acl=all_users_conf["test_380"]["acl"])
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 all_users_conf["test_380"]["err_message"],
@@ -432,10 +438,11 @@ class TestAllUsers():
         self.log.info(
             "Step 4: Updating object's ACL from other unsigned user")
         try:
-            NO_AUTH_OBJ.put_object_canned_acl(
-                all_users_conf["test_381"]["bucket_name"],
-                all_users_conf["test_381"]["obj_name"],
-                acl=all_users_conf["test_381"]["acl"])
+            resp = NO_AUTH_OBJ.put_object_canned_acl(
+                    all_users_conf["test_381"]["bucket_name"],
+                    all_users_conf["test_381"]["obj_name"],
+                    acl=all_users_conf["test_381"]["acl"])
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 all_users_conf["test_381"]["err_message"],
@@ -481,7 +488,9 @@ class TestAllUsers():
         self.log.info(
             "Step 4: Listing objects in bucket from other unsigned user")
         try:
-            NO_AUTH_OBJ.object_list(all_users_conf["test_382"]["bucket_name"])
+            resp = NO_AUTH_OBJ.object_list(
+                all_users_conf["test_382"]["bucket_name"])
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 all_users_conf["test_382"]["err_message"],
@@ -631,9 +640,10 @@ class TestAllUsers():
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info("Step 4: Reading an object ACL from other unsigned user")
         try:
-            NO_AUTH_OBJ.get_object_acl(
-                all_users_conf["test_385"]["bucket_name"],
-                all_users_conf["test_385"]["obj_name"])
+            resp = NO_AUTH_OBJ.get_object_acl(
+                    all_users_conf["test_385"]["bucket_name"],
+                    all_users_conf["test_385"]["obj_name"])
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 all_users_conf["test_385"]["err_message"],
@@ -678,8 +688,9 @@ class TestAllUsers():
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info("Step 4: Reading bucket ACL from other unsigned user")
         try:
-            NO_AUTH_OBJ.get_bucket_acl(
-                all_users_conf["test_386"]["bucket_name"])
+            resp = NO_AUTH_OBJ.get_bucket_acl(
+                    all_users_conf["test_386"]["bucket_name"])
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 all_users_conf["test_386"]["err_message"],
@@ -727,9 +738,10 @@ class TestAllUsers():
             "Step 4: Trying to change bucket ACL to private from "
             "other unsigned user")
         try:
-            NO_AUTH_OBJ.put_bucket_acl(
-                all_users_conf["test_387"]["bucket_name"],
-                acl=all_users_conf["test_387"]["acl"])
+            resp = NO_AUTH_OBJ.put_bucket_acl(
+                    all_users_conf["test_387"]["bucket_name"],
+                    acl=all_users_conf["test_387"]["acl"])
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 all_users_conf["test_387"]["err_message"],
@@ -776,10 +788,11 @@ class TestAllUsers():
         self.log.info(
             "Step 4: Trying to change object ACL from other unsigned user")
         try:
-            NO_AUTH_OBJ.put_object_canned_acl(
-                all_users_conf["test_388"]["bucket_name"],
-                all_users_conf["test_388"]["obj_name"],
-                acl=all_users_conf["test_388"]["acl"])
+            resp = NO_AUTH_OBJ.put_object_canned_acl(
+                    all_users_conf["test_388"]["bucket_name"],
+                    all_users_conf["test_388"]["obj_name"],
+                    acl=all_users_conf["test_388"]["acl"])
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 all_users_conf["test_388"]["err_message"],
@@ -828,7 +841,9 @@ class TestAllUsers():
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info("Step 4: Get list of objects from other unsigned user")
         try:
-            NO_AUTH_OBJ.object_list(all_users_conf["test_389"]["bucket_name"])
+            resp = NO_AUTH_OBJ.object_list(
+                all_users_conf["test_389"]["bucket_name"])
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 all_users_conf["test_389"]["err_message"],
@@ -877,10 +892,11 @@ class TestAllUsers():
         self.log.info(
             "Step 4: Trying to upload an object from other unsigned user")
         try:
-            NO_AUTH_OBJ.put_object(
-                all_users_conf["test_390"]["bucket_name"],
-                all_users_conf["test_390"]["new_obj_name"],
-                self.test_file_path)
+            resp = NO_AUTH_OBJ.put_object(
+                    all_users_conf["test_390"]["bucket_name"],
+                    all_users_conf["test_390"]["new_obj_name"],
+                    self.test_file_path)
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 all_users_conf["test_390"]["err_message"],
@@ -929,9 +945,10 @@ class TestAllUsers():
         self.log.info(
             "Step 4:Trying to delete existing object from other unsigned user")
         try:
-            NO_AUTH_OBJ.delete_object(
-                all_users_conf["test_391"]["bucket_name"],
-                all_users_conf["test_391"]["obj_name"])
+            resp = NO_AUTH_OBJ.delete_object(
+                    all_users_conf["test_391"]["bucket_name"],
+                    all_users_conf["test_391"]["obj_name"])
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 all_users_conf["test_391"]["err_message"],
@@ -981,9 +998,10 @@ class TestAllUsers():
             "Step 4: Trying to read existing object's ACL from"
             " other unsigned user")
         try:
-            NO_AUTH_OBJ.get_object_acl(
-                all_users_conf["test_392"]["bucket_name"],
-                all_users_conf["test_392"]["obj_name"])
+            resp = NO_AUTH_OBJ.get_object_acl(
+                    all_users_conf["test_392"]["bucket_name"],
+                    all_users_conf["test_392"]["obj_name"])
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 all_users_conf["test_392"]["err_message"],
@@ -1077,9 +1095,10 @@ class TestAllUsers():
         self.log.info(
             "Step 4: Trying to update bucket's ACL from other unsigned user")
         try:
-            NO_AUTH_OBJ.put_bucket_acl(
-                all_users_conf["test_394"]["bucket_name"],
-                acl=all_users_conf["test_394"]["acl"])
+            resp = NO_AUTH_OBJ.put_bucket_acl(
+                    all_users_conf["test_394"]["bucket_name"],
+                    acl=all_users_conf["test_394"]["acl"])
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 all_users_conf["test_394"]["err_message"],
@@ -1128,10 +1147,11 @@ class TestAllUsers():
         self.log.info(
             "Step 4: Trying to update object's ACL from other unsigned user")
         try:
-            NO_AUTH_OBJ.put_object_canned_acl(
-                all_users_conf["test_395"]["bucket_name"],
-                all_users_conf["test_395"]["obj_name"],
-                acl=all_users_conf["test_395"]["acl"])
+            resp = NO_AUTH_OBJ.put_object_canned_acl(
+                    all_users_conf["test_395"]["bucket_name"],
+                    all_users_conf["test_395"]["obj_name"],
+                    acl=all_users_conf["test_395"]["acl"])
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 all_users_conf["test_395"]["err_message"],
@@ -1181,7 +1201,9 @@ class TestAllUsers():
         self.log.info(
             "Step 4: Getting list of objects in bucket from other unsigned user")
         try:
-            NO_AUTH_OBJ.object_list(all_users_conf["test_396"]["bucket_name"])
+            resp = NO_AUTH_OBJ.object_list(
+                all_users_conf["test_396"]["bucket_name"])
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 all_users_conf["test_396"]["err_message"],
@@ -1231,10 +1253,11 @@ class TestAllUsers():
         self.log.info(
             "Step 4: Uploading an object to a bucket from other unsigned user")
         try:
-            NO_AUTH_OBJ.put_object(
-                all_users_conf["test_397"]["bucket_name"],
-                all_users_conf["test_397"]["new_obj_name"],
-                self.test_file_path)
+            resp = NO_AUTH_OBJ.put_object(
+                    all_users_conf["test_397"]["bucket_name"],
+                    all_users_conf["test_397"]["new_obj_name"],
+                    self.test_file_path)
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 all_users_conf["test_397"]["err_message"],
@@ -1284,9 +1307,10 @@ class TestAllUsers():
         self.log.info(
             "Step 4: Deleting an object to a bucket from other unsigned user")
         try:
-            NO_AUTH_OBJ.delete_object(
-                all_users_conf["test_398"]["bucket_name"],
-                all_users_conf["test_398"]["obj_name"])
+            resp = NO_AUTH_OBJ.delete_object(
+                    all_users_conf["test_398"]["bucket_name"],
+                    all_users_conf["test_398"]["obj_name"])
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 all_users_conf["test_398"]["err_message"],
@@ -1335,9 +1359,10 @@ class TestAllUsers():
         self.log.info(
             "Step 4: Reading object ACL through other unsigned account")
         try:
-            NO_AUTH_OBJ.get_object_acl(
-                all_users_conf["test_399"]["bucket_name"],
-                all_users_conf["test_399"]["obj_name"])
+            resp = NO_AUTH_OBJ.get_object_acl(
+                    all_users_conf["test_399"]["bucket_name"],
+                    all_users_conf["test_399"]["obj_name"])
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 all_users_conf["test_399"]["err_message"],
@@ -1386,8 +1411,9 @@ class TestAllUsers():
         self.log.info(
             "Step 4: Reading bucket ACL through other unsigned account")
         try:
-            NO_AUTH_OBJ.get_bucket_acl(
-                all_users_conf["test_400"]["bucket_name"])
+            resp = NO_AUTH_OBJ.get_bucket_acl(
+                    all_users_conf["test_400"]["bucket_name"])
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 all_users_conf["test_400"]["err_message"],
@@ -1489,10 +1515,11 @@ class TestAllUsers():
         self.log.info(
             "Step 4: Updating object ACL through other unsigned account")
         try:
-            NO_AUTH_OBJ.put_object_canned_acl(
-                all_users_conf["test_402"]["bucket_name"],
-                all_users_conf["test_402"]["obj_name"],
-                acl=all_users_conf["test_402"]["acl"])
+            resp = NO_AUTH_OBJ.put_object_canned_acl(
+                    all_users_conf["test_402"]["bucket_name"],
+                    all_users_conf["test_402"]["obj_name"],
+                    acl=all_users_conf["test_402"]["acl"])
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 all_users_conf["test_402"]["err_message"],
@@ -1694,9 +1721,10 @@ class TestAllUsers():
         self.log.info(
             "Step 4: Reading object ACL through other unsigned account")
         try:
-            NO_AUTH_OBJ.get_object_acl(
-                all_users_conf["test_406"]["bucket_name"],
-                all_users_conf["test_406"]["obj_name"])
+            resp = NO_AUTH_OBJ.get_object_acl(
+                    all_users_conf["test_406"]["bucket_name"],
+                    all_users_conf["test_406"]["obj_name"])
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 all_users_conf["test_406"]["err_message"],
@@ -1847,10 +1875,11 @@ class TestAllUsers():
         self.log.info(
             "Step 4: Updating object ACL through other unsigned account")
         try:
-            NO_AUTH_OBJ.put_object_canned_acl(
-                all_users_conf["test_409"]["bucket_name"],
-                all_users_conf["test_409"]["obj_name"],
-                acl=all_users_conf["test_409"]["acl"])
+            resp = NO_AUTH_OBJ.put_object_canned_acl(
+                    all_users_conf["test_409"]["bucket_name"],
+                    all_users_conf["test_409"]["obj_name"],
+                    acl=all_users_conf["test_409"]["acl"])
+            assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
                 all_users_conf["test_409"]["err_message"],
