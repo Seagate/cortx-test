@@ -64,8 +64,6 @@ logging.getLogger('boto3').setLevel(logging.WARNING)
 logging.getLogger('botocore').setLevel(logging.WARNING)
 logging.getLogger('nose').setLevel(logging.WARNING)
 logging.getLogger("paramiko").setLevel(logging.WARNING)
-START_TIME = datetime.datetime.fromtimestamp(time.time()).strftime(
-    '%Y-%m-%d_%H:%M:%S')
 
 SKIP_MARKS = ("dataprovider", "test", "run", "skip", "usefixtures",
               "filterwarnings", "skipif", "xfail", "parametrize",
@@ -583,7 +581,9 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
         remote_path = os.path.join(params.NFS_BASE_DIR,
                                    Globals.BUILD, Globals.TP_TKT,
                                    Globals.TE_TKT, test_id,
-                                   START_TIME)
+                                   datetime.datetime.fromtimestamp(
+                                       time.time()).strftime('%Y-%m-%d_%H:%M:%S')
+                                   )
         resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
                                                    mnt_dir=params.MOUNT_DIR,
                                                    remote_path=remote_path,
