@@ -66,7 +66,7 @@ class TestMinioClient:
         self.log.info("STARTED: Setup operations")
         access, secret = ACCESS_KEY, SECRET_KEY
         path = S3_CFG["minio_path"]
-        if access != read_content_json(path)["hosts"]["s3"]["accessKey"]:
+        if access != read_content_json(path, mode='rb')["hosts"]["s3"]["accessKey"]:
             S3H_OBJ.configure_minio(access, secret)
         self.log.info("ENDED: Setup operations")
 

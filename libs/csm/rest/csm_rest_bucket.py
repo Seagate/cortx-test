@@ -79,7 +79,7 @@ class RestS3Bucket(RestTestLib):
                 error)
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR,
-                error.args[0]) from error
+                error) from error
 
     @RestTestLib.authenticate_and_login
     def list_all_created_buckets(self):
@@ -105,7 +105,7 @@ class RestS3Bucket(RestTestLib):
                 error)
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR,
-                error.args[0]) from error
+                error) from error
 
     @RestTestLib.authenticate_and_login
     def delete_s3_bucket(self, bucket_name):
@@ -133,7 +133,7 @@ class RestS3Bucket(RestTestLib):
                 error)
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR,
-                error.args[0]) from error
+                error) from error
 
     def create_and_verify_new_bucket(
             self,
@@ -188,7 +188,7 @@ class RestS3Bucket(RestTestLib):
                 const.EXCEPTION_ERROR,
                 RestS3Bucket.create_and_verify_new_bucket.__name__,
                 error)
-            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0]
+            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error
                     ) from error
 
     def list_and_verify_bucket(
@@ -233,7 +233,7 @@ class RestS3Bucket(RestTestLib):
                 const.EXCEPTION_ERROR,
                 RestS3Bucket.list_and_verify_bucket.__name__,
                 error)
-            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0]
+            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error
                     ) from error
 
     def delete_and_verify_new_bucket(
@@ -283,7 +283,7 @@ class RestS3Bucket(RestTestLib):
                 const.EXCEPTION_ERROR,
                 RestS3Bucket.delete_and_verify_new_bucket.__name__,
                 error)
-            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0]
+            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error
                                 ) from error
 
     @RestTestLib.authenticate_and_login
@@ -316,7 +316,7 @@ class RestS3Bucket(RestTestLib):
                 RestS3Bucket.create_invalid_s3_bucket.__name__,
                 error)
             raise CTException(
-                err.CSM_REST_AUTHENTICATION_ERROR, error.args[0]) from error
+                err.CSM_REST_AUTHENTICATION_ERROR, error) from error
 
     @RestTestLib.authenticate_and_login
     def create_s3_bucket_for_given_account(self, bucket_name, account_name, account_password,
@@ -501,7 +501,7 @@ class RestS3BucketPolicy(RestTestLib):
                 error)
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR,
-                error.args[0]) from error
+                error) from error
 
     def create_and_verify_bucket_policy(
             self,
@@ -553,7 +553,7 @@ class RestS3BucketPolicy(RestTestLib):
                 error)
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED,
-                error.args[0]) from error
+                error) from error
 
     @RestTestLib.authenticate_and_login
     def get_bucket_policy(self, bucket_name=None, login_as="s3account_user"):
@@ -589,7 +589,7 @@ class RestS3BucketPolicy(RestTestLib):
                 RestS3BucketPolicy.get_bucket_policy.__name__,
                 error)
             raise CTException(
-                err.CSM_REST_AUTHENTICATION_ERROR, error.args[0]) from error
+                err.CSM_REST_AUTHENTICATION_ERROR, error) from error
 
     def get_and_verify_bucket_policy(self, validate_expected_response=True,
                                      expected_status_code=200,
@@ -634,7 +634,7 @@ class RestS3BucketPolicy(RestTestLib):
                 error)
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED,
-                error.args[0]) from error
+                error) from error
 
     @RestTestLib.authenticate_and_login
     def delete_bucket_policy(self, login_as="s3account_user"):
@@ -665,7 +665,7 @@ class RestS3BucketPolicy(RestTestLib):
                 RestS3BucketPolicy.delete_bucket_policy.__name__,
                 error)
             raise CTException(
-                err.CSM_REST_AUTHENTICATION_ERROR, error.args[0]) from error
+                err.CSM_REST_AUTHENTICATION_ERROR, error) from error
 
     def delete_and_verify_bucket_policy(self, expected_status_code=200,
                                         login_as="s3account_user"):
@@ -695,7 +695,7 @@ class RestS3BucketPolicy(RestTestLib):
                 error)
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED,
-                error.args[0]) from error
+                error) from error
 
     @RestTestLib.authenticate_and_login
     def create_bucket_policy_under_given_account(self, account_name):
