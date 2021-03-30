@@ -53,6 +53,13 @@ class TestAllUsers():
         """
         cls.log.info("STARTED: setup test suite operations.")
         cls.log = logging.getLogger(__name__)
+        cls.test_file = "all_users.txt"
+        cls.test_dir_path = os.path.join(os.getcwd(), "testdata","TestAllUsers")
+        cls.test_file_path = os.path.join(cls.test_dir_path, cls.test_file)
+        if not os.path.exists(cls.test_dir_path):
+            os.makedirs(cls.test_dir_path)
+            cls.log.info("Created path: %s", cls.test_dir_path)
+        cls.log.info("Test file path: %s", cls.test_file_path)
         cls.log.info("ENDED: setup test suite operations.")
 
     def setup_method(self):
@@ -62,8 +69,8 @@ class TestAllUsers():
         It will perform all prerequisite steps required for test execution.
         """
         self.log.info("STARTED: Setup operations")
-        if os.path.exists(all_users_conf["all_users"]["file_path"]):
-            remove_file(all_users_conf["all_users"]["file_path"])
+        # Place holder for future work and to keep the code uniform in S3 module
+        # Do not remove it
         self.log.info("ENDED: Setup operations")
 
     def teardown_method(self):
@@ -122,7 +129,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_375"]["bucket_name"],
             all_users_conf["test_375"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info("Step 1: Created a bucket and uploaded an object")
         self.log.info("Step 2: Changing bucket permission to AllUsers READ")
@@ -165,7 +172,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_376"]["bucket_name"],
             all_users_conf["test_376"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info("Step 1: Created a bucket and uploaded an object")
         self.log.info("Step 2: Changing bucket permission to AllUsers READ")
@@ -190,7 +197,7 @@ class TestAllUsers():
             NO_AUTH_OBJ.put_object(
                 all_users_conf["test_376"]["bucket_name"],
                 all_users_conf["test_376"]["new_obj_name"],
-                all_users_conf["all_users"]["file_path"])
+                self.test_file_path)
         except CTException as error:
             assert_in(
                 all_users_conf["test_376"]["err_message"],
@@ -216,7 +223,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_377"]["bucket_name"],
             all_users_conf["test_377"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info("Step 1: Created a bucket and uploaded an object")
         self.log.info("Step 2: Changing bucket permission to AllUsers READ")
@@ -264,7 +271,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_378"]["bucket_name"],
             all_users_conf["test_378"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info("Step 1: Created a bucket and uploaded an object")
         self.log.info("Step 2: Changing bucket permission to AllUsers READ")
@@ -312,7 +319,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_379"]["bucket_name"],
             all_users_conf["test_379"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info("Step 1: Created a bucket and uploaded an object")
         self.log.info("Step 2: Changing bucket permission to AllUsers READ")
@@ -358,7 +365,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_380"]["bucket_name"],
             all_users_conf["test_380"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info("Step 1: Created a bucket and uploaded an object")
         self.log.info("Step 2: Changing bucket permission to AllUsers READ")
@@ -397,7 +404,7 @@ class TestAllUsers():
     @CTFailOn(error_handler)
     def test_381(self):
         """Update an object ACL from bucket without Authentication
-        when AllUsers have READ permission."""
+                when AllUsers have READ permission."""
         self.log.info(
             "STARTED: Update an object ACL from bucket without Authentication "
             "when AllUsers have READ permission")
@@ -405,7 +412,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_381"]["bucket_name"],
             all_users_conf["test_381"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info("Step 1: Created a bucket and uploaded an object")
         self.log.info("Step 2: Changing bucket permission to AllUsers READ")
@@ -454,7 +461,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_382"]["bucket_name"],
             all_users_conf["test_382"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info("Step 1: Created a bucket and uploaded an object")
         self.log.info("Step 2: Changing bucket permission to AllUsers WRITE")
@@ -500,7 +507,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_383"]["bucket_name"],
             all_users_conf["test_383"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info("Step 1: Created a bucket and uploaded an object")
         self.log.info("Step 2: Changing bucket permission to AllUsers WRITE")
@@ -523,7 +530,7 @@ class TestAllUsers():
         resp = NO_AUTH_OBJ.put_object(
             all_users_conf["test_383"]["bucket_name"],
             all_users_conf["test_383"]["new_obj_name"],
-            all_users_conf["all_users"]["file_path"])
+            self.test_file_path)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 4: An object %s is put to bucket %s successfully",
@@ -561,7 +568,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_384"]["bucket_name"],
             all_users_conf["test_384"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info("Step 1: Created a bucket and uploaded an object")
         self.log.info("Step 2: Changing bucket permission to AllUsers WRITE")
@@ -605,7 +612,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_385"]["bucket_name"],
             all_users_conf["test_385"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info("Step 1: Created a bucket and uploaded an object")
         self.log.info("Step 2: Changing bucket permission to AllUsers WRITE")
@@ -652,7 +659,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_386"]["bucket_name"],
             all_users_conf["test_386"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info("Step 1: Created a bucket and uploaded an object")
         self.log.info("Step 2: Changing bucket permission to AllUsers WRITE")
@@ -698,7 +705,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_387"]["bucket_name"],
             all_users_conf["test_387"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
@@ -749,7 +756,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_388"]["bucket_name"],
             all_users_conf["test_388"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
@@ -800,7 +807,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_389"]["bucket_name"],
             all_users_conf["test_389"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
@@ -848,7 +855,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_390"]["bucket_name"],
             all_users_conf["test_390"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
@@ -874,7 +881,7 @@ class TestAllUsers():
             NO_AUTH_OBJ.put_object(
                 all_users_conf["test_390"]["bucket_name"],
                 all_users_conf["test_390"]["new_obj_name"],
-                all_users_conf["all_users"]["file_path"])
+                self.test_file_path)
         except CTException as error:
             assert_in(
                 all_users_conf["test_390"]["err_message"],
@@ -900,7 +907,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_391"]["bucket_name"],
             all_users_conf["test_391"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
@@ -951,7 +958,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_392"]["bucket_name"],
             all_users_conf["test_392"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
@@ -1003,7 +1010,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_393"]["bucket_name"],
             all_users_conf["test_393"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
@@ -1048,7 +1055,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_394"]["bucket_name"],
             all_users_conf["test_394"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
@@ -1099,7 +1106,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_395"]["bucket_name"],
             all_users_conf["test_395"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
@@ -1151,7 +1158,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_396"]["bucket_name"],
             all_users_conf["test_396"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
@@ -1201,7 +1208,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_397"]["bucket_name"],
             all_users_conf["test_397"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
@@ -1228,7 +1235,7 @@ class TestAllUsers():
             NO_AUTH_OBJ.put_object(
                 all_users_conf["test_397"]["bucket_name"],
                 all_users_conf["test_397"]["new_obj_name"],
-                all_users_conf["all_users"]["file_path"])
+                self.test_file_path)
         except CTException as error:
             assert_in(
                 all_users_conf["test_397"]["err_message"],
@@ -1254,7 +1261,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_398"]["bucket_name"],
             all_users_conf["test_398"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
@@ -1306,7 +1313,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_399"]["bucket_name"],
             all_users_conf["test_399"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
@@ -1357,7 +1364,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_400"]["bucket_name"],
             all_users_conf["test_400"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
@@ -1407,7 +1414,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_401"]["bucket_name"],
             all_users_conf["test_401"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
@@ -1460,7 +1467,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_402"]["bucket_name"],
             all_users_conf["test_402"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
@@ -1512,7 +1519,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_403"]["bucket_name"],
             all_users_conf["test_403"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
@@ -1561,7 +1568,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_404"]["bucket_name"],
             all_users_conf["test_404"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
@@ -1586,7 +1593,7 @@ class TestAllUsers():
         resp = NO_AUTH_OBJ.put_object(
             all_users_conf["test_404"]["bucket_name"],
             all_users_conf["test_404"]["new_obj_name"],
-            all_users_conf["all_users"]["file_path"])
+            self.test_file_path)
         assert_true(resp[0], resp[1])
         resp = NO_AUTH_OBJ.object_list(
             all_users_conf["test_404"]["bucket_name"])
@@ -1614,7 +1621,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_405"]["bucket_name"],
             all_users_conf["test_405"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
@@ -1665,7 +1672,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_406"]["bucket_name"],
             all_users_conf["test_406"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
@@ -1716,7 +1723,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_407"]["bucket_name"],
             all_users_conf["test_407"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
@@ -1765,7 +1772,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_408"]["bucket_name"],
             all_users_conf["test_408"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
@@ -1818,7 +1825,7 @@ class TestAllUsers():
         self.create_bucket_put_object(
             all_users_conf["test_409"]["bucket_name"],
             all_users_conf["test_409"]["obj_name"],
-            all_users_conf["all_users"]["file_path"],
+            self.test_file_path,
             all_users_conf["all_users"]["mb_count"])
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")

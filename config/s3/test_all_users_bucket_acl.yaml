@@ -1,7 +1,6 @@
 all_users:
   group_uri: "uri=http://acs.amazonaws.com/groups/global/AllUsers"
   del_bkt_force: True
-  file_path: "/home/all_users.txt"
   mb_count: 5
   bkt_name_prefix: "allusersbktacl-bkt"
 test_375:
