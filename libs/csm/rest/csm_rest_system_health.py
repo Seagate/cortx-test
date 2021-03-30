@@ -26,7 +26,7 @@ import commons.errorcodes as err
 from commons.exceptions import CTException
 from commons.utils import config_utils
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
-
+from config import CMN_CFG
 
 class SystemHealth(RestTestLib):
     """RestCsmUser contains all the Rest API calls for system health related
@@ -66,7 +66,7 @@ class SystemHealth(RestTestLib):
                             SystemHealth.get_health_summary.__name__,
                             error)
             raise CTException(
-                err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
+                err.CSM_REST_VERIFICATION_FAILED, error) from error
 
     @RestTestLib.authenticate_and_login
     def verify_health_summary(self, expected_response, verify_schema=True):
@@ -94,7 +94,7 @@ class SystemHealth(RestTestLib):
                                    const.HEALTH_SUMMARY_SCHEMA)
                     self.log.info("Actual status code: %s",
                                    response.json()[const.HEALTH_SUMMARY_INSTANCE])
-                    self.verify_json_schema(
+                    config_utils.verify_json_schema(
                         response.json()[const.HEALTH_SUMMARY_INSTANCE], const.HEALTH_SUMMARY_SCHEMA)
                     self.log.info("Status code verification passed !")
                 result = True
@@ -107,7 +107,7 @@ class SystemHealth(RestTestLib):
                             SystemHealth.verify_health_summary.__name__,
                             error)
             raise CTException(
-                err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
+                err.CSM_REST_VERIFICATION_FAILED, error) from error
         self.log.info(
             "Verification result of health summary : %s", result)
         return result
@@ -142,7 +142,7 @@ class SystemHealth(RestTestLib):
                             SystemHealth.get_health_node.__name__,
                             error)
             raise CTException(
-                err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
+                err.CSM_REST_VERIFICATION_FAILED, error) from error
 
     @RestTestLib.authenticate_and_login
     def verify_health_node(self, expected_response, node, verify_schema=True):
@@ -178,7 +178,7 @@ class SystemHealth(RestTestLib):
                             SystemHealth.verify_health_node.__name__,
                             error)
             raise CTException(
-                err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
+                err.CSM_REST_VERIFICATION_FAILED, error) from error
         self.log.info(
             "Verification result of health node : %s", result)
         return result
@@ -213,7 +213,7 @@ class SystemHealth(RestTestLib):
                             SystemHealth.get_health_view.__name__,
                             error)
             raise CTException(
-                err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
+                err.CSM_REST_VERIFICATION_FAILED, error) from error
 
     @RestTestLib.authenticate_and_login
     def verify_health_view(self, expected_response, node, verify_schema=True):
@@ -249,7 +249,7 @@ class SystemHealth(RestTestLib):
                             SystemHealth.verify_health_view.__name__,
                             error)
             raise CTException(
-                err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
+                err.CSM_REST_VERIFICATION_FAILED, error) from error
         self.log.info(
             "Verification result of health view : %s", result)
         return result
@@ -265,11 +265,9 @@ class SystemHealth(RestTestLib):
         if node == "storage" or node == "all":
             node_ids.append(const.NODE_ID_OPTIONS["storage"])
         elif node == "node-1" or node == "all":
-            node_ids.append(const.NODE_ID_OPTIONS["node"],
-                            self.main_conf["server_hostname"], self.main_conf["host_domain"])
+            node_ids.append(const.NODE_ID_OPTIONS["node"].format(CMN_CFG['nodes'][0]["hostname"]))
         elif node == "node-2" or node == "all":
-            node_ids.append(const.NODE_ID_OPTIONS["node"],
-                            self.main_conf["machine1_hostname"], self.main_conf["host_domain"])
+            node_ids.append(const.NODE_ID_OPTIONS["node"].format(CMN_CFG['nodes'][0]["hostname"]))
         elif node == "":
             node_ids.append("")
         else:
@@ -342,7 +340,7 @@ class SystemHealth(RestTestLib):
                                const.HEALTH_SUMMARY_SCHEMA)
                 self.log.info("Actual status code: %s",
                                node_summary[const.HEALTH_SUMMARY_INSTANCE])
-                self.verify_json_schema(
+                config_utils.verify_json_schema(
                     node_summary[const.HEALTH_SUMMARY_INSTANCE], const.HEALTH_SUMMARY_SCHEMA)
                 self.log.info(
                     "Health schema verification passed for node : %s", node_id)
@@ -383,4 +381,4 @@ class SystemHealth(RestTestLib):
                             SystemHealth.get_health_node.__name__,
                             error)
             raise CTException(
-                err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
+                err.CSM_REST_VERIFICATION_FAILED, error) from error

@@ -28,7 +28,7 @@ from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 from libs.csm.rest.csm_rest_audit_logs import RestAuditLogs
 from libs.csm.rest.csm_rest_bucket import RestS3Bucket
 from libs.csm.rest.csm_rest_s3user import RestS3user
-from commons.utils import config_utils
+from commons import configmanager
 from commons.constants import Rest as const
 from commons.utils import assert_utils
 from commons import cortxlogging
@@ -43,7 +43,7 @@ class TestAuditLogs():
         It will perform all prerequisite test steps if any.
         """
         cls.log = logging.getLogger(__name__)
-        cls.log.info("Initializing test setups")
+        cls.log.info("Initializing test setup...")
         cls.audit_logs = RestAuditLogs(component_csm="csm",
                                         component_s3="s3")
         cls.end_time = int(time.time())
@@ -64,8 +64,9 @@ class TestAuditLogs():
         assert setup_ready
         cls.s3_buckets = RestS3Bucket()
         cls.s3_account = RestS3user()
-        cls.csm_conf = config_utils.read_yaml(
-            "config/csm/test_rest_audit_logs.yaml")[1]
+        cls.csm_conf = configmanager.get_config_wrapper(
+            fpath="config/csm/test_rest_audit_logs.yaml")
+        cls.log.info("Test setup initialized...")
 
     @pytest.mark.csmrest
     @pytest.mark.tags('TEST-10733')
@@ -242,6 +243,7 @@ class TestAuditLogs():
 
     @pytest.mark.csmrest
     @pytest.mark.tags('TEST-15865')
+    @pytest.mark.skip(reason="Test is taking exceptionally long time")
     def test_4922(self):
         """
         Test that GET api returns audit logs for date range specified and total
