@@ -24,7 +24,7 @@ import time
 import json
 import logging
 import pytest
-from commons.utils import config_utils
+from commons import configmanager
 from commons.constants import Rest as const
 from commons.utils import assert_utils
 from commons import cortxlogging
@@ -43,8 +43,7 @@ class TestCsmUser():
         """ This is method is for test suite set-up """
         cls.log = logging.getLogger(__name__)
         cls.log.info("Initializing test setups ......")
-        cls.csm_conf = config_utils.read_yaml(
-            "config/csm/test_rest_csm_user.yaml")[1]
+        cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_csm_user.yaml")
         cls.config = CSMConfigsCheck()
         user_already_present = cls.config.check_predefined_csm_user_present()
         if not user_already_present:
@@ -308,7 +307,7 @@ class TestCsmUser():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         response = self.csm_user.create_csm_user(login_as="s3account_user")
-        assert response.status_code == self.csm_user.forbidden
+        assert response.status_code == const.FORBIDDEN
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
@@ -324,7 +323,7 @@ class TestCsmUser():
         assert self.csm_user.create_and_verify_csm_user_creation(
             user_type="duplicate",
             user_role="manage",
-            expect_status_code=self.csm_user.conflict_response)
+            expect_status_code=const.CONFLICT)
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
@@ -1739,7 +1738,7 @@ class TestCsmUser():
             "Sending request to delete csm user with s3 authentication")
         response = self.csm_user.list_csm_single_user(
             request_type="delete",
-            expect_status_code=self.csm_user.forbidden,
+            expect_status_code=const.FORBIDDEN,
             user="csm_user_manage",
             return_actual_response=True,
             login_as="s3account_user")
@@ -1747,7 +1746,7 @@ class TestCsmUser():
         self.log.info("Verifying response returned")
 
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_user.forbidden)
+                                   const.FORBIDDEN)
 
         self.log.info(
             "Step 1: Verified that DELETE API returns 403 response for "
@@ -1826,7 +1825,7 @@ class TestCsmUser():
 
         response = self.csm_user.list_csm_single_user(
             request_type="patch",
-            expect_status_code=self.csm_user.method_not_found,
+            expect_status_code=const.METHOD_NOT_FOUND,
             user=userid,
             data=True,
             payload=json.dumps(data["payload"]),
@@ -1835,7 +1834,7 @@ class TestCsmUser():
         self.log.info("Verifying the status code returned : %s",
                       response.status_code)
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_user.method_not_found)
+                                   const.METHOD_NOT_FOUND)
         self.log.info("Verified the status code returned")
 
         self.log.info(
@@ -1875,14 +1874,14 @@ class TestCsmUser():
 
         response = self.csm_user.list_csm_single_user(
             request_type="get",
-            expect_status_code=self.csm_user.method_not_found,
+            expect_status_code=const.METHOD_NOT_FOUND,
             user=userid,
             return_actual_response=True)
 
         self.log.info("Verifying the status code returned : %s",
                       response.status_code)
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_user.method_not_found)
+                                   const.METHOD_NOT_FOUND)
         self.log.info("Verified the status code returned")
 
         self.log.info(
@@ -2265,7 +2264,7 @@ class TestCsmUser():
             "IAM user")
         response = rest_iam_user.list_iam_users(login_as="csm_admin_user")
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_user.forbidden)
+                                   const.FORBIDDEN)
         self.log.info(
             "Step 1: Verified CSM admin user cannot perform GET request on "
             "IAM user")
@@ -2276,7 +2275,7 @@ class TestCsmUser():
         response = rest_iam_user.list_iam_users(
             login_as="csm_user_manage")
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_user.forbidden)
+                                   const.FORBIDDEN)
         self.log.info(
             "Step 2: Verified CSM manage user cannot perform GET request on "
             "IAM user")
@@ -2288,7 +2287,7 @@ class TestCsmUser():
         response = rest_iam_user.create_iam_user(
             user=new_iam_user1, login_as="csm_admin_user")
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_user.forbidden)
+                                   const.FORBIDDEN)
         self.log.info(
             "Step 3: Verified CSM admin user cannot perform POST request on "
             "IAM user")
@@ -2300,7 +2299,7 @@ class TestCsmUser():
         response = rest_iam_user.create_iam_user(
             user=new_iam_user2, login_as="csm_user_manage")
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_user.forbidden)
+                                   const.FORBIDDEN)
         self.log.info(
             "Step 4: Verified CSM manage user cannot perform POST request on "
             "IAM user")
@@ -2311,7 +2310,7 @@ class TestCsmUser():
         response = rest_iam_user.delete_iam_user(
             user=new_iam_user, login_as="csm_admin_user")
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_user.forbidden)
+                                   const.FORBIDDEN)
         self.log.info(
             "Step 5: Verified CSM admin user cannot perform DELETE request on "
             "IAM user")
@@ -2322,7 +2321,7 @@ class TestCsmUser():
         response = rest_iam_user.delete_iam_user(
             user=new_iam_user, login_as="csm_user_manage")
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_user.forbidden)
+                                   const.FORBIDDEN)
         self.log.info(
             "Step 6: Verified CSM manage user cannot perform DELETE request on "
             "IAM user")
@@ -2350,7 +2349,7 @@ class TestCsmUser():
             "from backend")
         response = self.csm_user.create_csm_user(login_as="s3account_user")
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_user.forbidden)
+                                   const.FORBIDDEN)
         self.log.info(
             "Verified that S3 account does not have access to create csm user "
             "from backend")
@@ -2424,7 +2423,7 @@ class TestCsmUser():
         response = self.csm_user.create_csm_user(login_as="csm_user_monitor")
         self.log.debug("Verifying the response returned: %s", response)
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_user.forbidden)
+                                   const.FORBIDDEN)
         self.log.info("Verified the response: %s", response)
 
         self.log.info(
@@ -2447,13 +2446,13 @@ class TestCsmUser():
             "DELETE request on a csm user")
         response = self.csm_user.list_csm_single_user(
             request_type="delete",
-            expect_status_code=self.csm_user.forbidden,
+            expect_status_code=const.FORBIDDEN,
             user=userid,
             return_actual_response=True,
             login_as="csm_user_monitor")
         self.log.debug("Verifying the response returned: %s", response)
         assert_utils.assert_equals(
-            response.status_code, self.csm_user.forbidden)
+            response.status_code, const.FORBIDDEN)
         self.log.info("Verified the response: %s", response)
 
         self.log.info(
@@ -2470,7 +2469,7 @@ class TestCsmUser():
 
         response = self.csm_user.list_csm_single_user(
             request_type="patch",
-            expect_status_code=self.csm_user.forbidden,
+            expect_status_code=const.FORBIDDEN,
             user=userid,
             data=True,
             payload=json.dumps(payload),
@@ -2478,7 +2477,7 @@ class TestCsmUser():
             login_as="csm_user_manage")
         self.log.debug("Verifying the response returned : %s", response)
         assert_utils.assert_equals(
-            response.status_code, self.csm_user.forbidden)
+            response.status_code, const.FORBIDDEN)
         self.log.info("Verified the response: %s", response)
 
         self.log.info(
@@ -2518,7 +2517,7 @@ class TestCsmUser():
 
         self.log.debug("Verifying response returned: %s", response)
         assert_utils.assert_equals(
-            response.status_code, self.csm_user.forbidden)
+            response.status_code, const.FORBIDDEN)
         self.log.info("Verified the response: %s", response)
 
         self.log.info(
@@ -2533,7 +2532,7 @@ class TestCsmUser():
 
         self.log.debug("Verifying response returned: %s", response)
         assert_utils.assert_equals(
-            response.status_code, self.csm_user.forbidden)
+            response.status_code, const.FORBIDDEN)
         self.log.info("Verified the response: %s", response)
 
         self.log.info(
@@ -2548,7 +2547,7 @@ class TestCsmUser():
 
         self.log.debug("Verifying response returned: %s", response)
         assert_utils.assert_equals(
-            response.status_code, self.csm_user.forbidden)
+            response.status_code, const.FORBIDDEN)
         self.log.info("Verified the response: %s", response)
 
         self.log.info(
@@ -2563,7 +2562,7 @@ class TestCsmUser():
 
         self.log.debug("Verifying response returned : %s", response)
         assert_utils.assert_equals(
-            response.status_code, self.csm_user.forbidden)
+            response.status_code, const.FORBIDDEN)
         self.log.info("Verified the response: %s", response)
 
         self.log.info(
@@ -2614,10 +2613,10 @@ class TestCsmUser():
 
         self.log.debug("Verifying the response returned: %s ", response)
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_user.forbidden)
+                                   const.FORBIDDEN)
         self.log.debug("Verified the actual response returned: %s with the "
                        "expected response %s", response.status_code,
-                       self.csm_user.forbidden)
+                       const.FORBIDDEN)
 
         self.log.info(
             "Step 1: Verified that CSM user with role manager cannot perform "
@@ -2631,9 +2630,9 @@ class TestCsmUser():
 
         self.log.debug("Verifying the response returned: %s ", response)
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_user.forbidden)
+                                   const.FORBIDDEN)
         self.log.debug("Verified the actual response returned: %s with the "
-                       "expected response %s", response.status_code, self.csm_user.forbidden)
+                       "expected response %s", response.status_code, const.FORBIDDEN)
 
         self.log.info(
             "Step 2: Verified that CSM user with role manager cannot perform "
@@ -2647,10 +2646,10 @@ class TestCsmUser():
 
         self.log.debug("Verifying the response returned: %s ", response)
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_user.forbidden)
+                                   const.FORBIDDEN)
         self.log.debug("Verified the actual response returned: %s with the "
                        "expected response %s", response.status_code,
-                       self.csm_user.forbidden)
+                       const.FORBIDDEN)
 
         self.log.info(
             "Step 3: Verified that CSM user with role manager cannot "
@@ -2667,9 +2666,9 @@ class TestCsmUser():
 
         self.log.debug("Verifying the response returned: %s ", response)
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_user.forbidden)
+                                   const.FORBIDDEN)
         self.log.debug("Verified the actual response returned: %s with the "
-                       "expected response %s", response.status_code, self.csm_user.forbidden)
+                       "expected response %s", response.status_code, const.FORBIDDEN)
 
         self.log.info(
             "Step 5: Verifying that CSM user with role manager cannot perform "
@@ -2679,10 +2678,10 @@ class TestCsmUser():
 
         self.log.debug("Verifying the response returned: %s ", response)
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_user.forbidden)
+                                   const.FORBIDDEN)
         self.log.debug("Verified the actual response returned: %s with the "
                        "expected response %s", response.status_code,
-                       self.csm_user.forbidden)
+                       const.FORBIDDEN)
 
         self.log.info(
             "Step 5: Verifying that CSM user with role manager cannot perform"
@@ -2696,10 +2695,10 @@ class TestCsmUser():
 
         self.log.debug("Verifying the response returned: %s ", response)
         assert_utils.assert_equals(response.status_code,
-                                   self.csm_user.forbidden)
+                                   const.FORBIDDEN)
         self.log.debug("Verified the actual response returned: %s with the "
                        "expected response %s", response.status_code,
-                       self.csm_user.forbidden)
+                       const.FORBIDDEN)
 
         self.log.info(
             "Step 6: Verified that CSM user with role manager cannot "

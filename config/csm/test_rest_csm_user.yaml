@@ -22,10 +22,10 @@ test_5016:
     - "monitor"
   payload_manage:
     role: "manage"
-    password: "Testuser@12345"    
+    password: 'qiLA1WIqNyX0Uy4gz1RuqEiM2ZCVHAok0Ht6y0HS04E='  
   payload_monitor:
     role: "monitor"
-    password: "Testuser@12345"
+    password: 'qiLA1WIqNyX0Uy4gz1RuqEiM2ZCVHAok0Ht6y0HS04E='
 test_7421:
   data:
     - "Testuser@12345" 
@@ -54,7 +54,7 @@ test_5019:
     - "Testuser@12345"
   payload_login: 
     username: ""
-    password: ""
+    password: 'RyG8qZZccLkU7VQHimSNGBWm5kur98DznEn/y62J1j0='
 test_7422:
   payload_manage:
     roles: ["monitor"]
@@ -123,7 +123,7 @@ test_5017:
   invalid_user_id: "invaliduser123"
   payload:
     roles: ["manage"]
-    password: "Testuser@123"
+    password: '6CJC8Fy705Jm/KgS7XWgTdGOmn6GtAkAwGoPRS4bLVM='
   response_msg:
     error_code: "4101"
     message_id: "users_not_found"
@@ -138,16 +138,16 @@ test_5018:
   range:
     - 4
   payload_invalid_password_1:
-    password: ""
+    password: 'RyG8qZZccLkU7VQHimSNGBWm5kur98DznEn/y62J1j0='
   payload_invalid_password_2:
-    password: "123"    
+    password: 'UJC4S6AjJFIr4RkqLuER6O+cK4fxLny8WyTUcxaVrtQ='
   payload_invalid_password_3:
-    password: "abc"
+    password: 'YSkJh8yANAnRF4vOgeFODMx6CmVTuuLLMu1kdL2uONA='
   payload_invalid_role:
     roles: ["abc"]
   payload_invalid_password_role:
     roles: ["abc"]
-    password: "123"  
+    password: 'UJC4S6AjJFIr4RkqLuER6O+cK4fxLny8WyTUcxaVrtQ='
   invalid_password_resp_1:
     error_code: "4099"
     message: "Invalid request body: {'password': [\"Password Policy Not Met.\\nMust be more than 8 characters.\\nMust contain at least one Uppercase Alphabet.\\nMust contain at least one Lowercase Alphabet.\\nMust contain at least one Numeric value.\\nMust include !@#$%^&*()_+-=[]{}|'.\"]}"
@@ -172,7 +172,7 @@ test_1173:
   status_code: 401
 test_1172:
   username: "incorrectuser123"
-  password: "incorrectpswd123"
+  password: '1oa2EwRk/urr4oKeEiO6jCg8e74EVStVfw8WVZyw0An1fW0ingjZANtJ51xljjY4'
   status_code: 401
 test_7362:
-  password: "Testuser@12345"
+  password: 'qiLA1WIqNyX0Uy4gz1RuqEiM2ZCVHAok0Ht6y0HS04E='

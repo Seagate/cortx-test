@@ -23,9 +23,9 @@
 import json
 import logging
 import pytest
-from commons.utils import config_utils
 from commons.constants import Rest as const
 from commons import cortxlogging
+from commons import configmanager
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_s3user import RestS3user
 
@@ -43,7 +43,7 @@ class TestS3user():
             user_already_present = cls.config.setup_csm_s3()
         assert user_already_present
         cls.s3user = RestS3user()
-        cls.csm_conf = config_utils.read_yaml("config/csm/test_rest_s3_user.yaml")[1]
+        cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_s3_user.yaml")
         cls.log.info("Initiating Rest Client for Alert ...")
 
     @pytest.mark.parallel
@@ -130,7 +130,7 @@ class TestS3user():
         self.log.info("##### Test started -  %s #####", test_case_name)
         response = self.s3user.create_s3_account(
             login_as="s3account_user")
-        assert response.status_code == self.s3user.forbidden
+        assert response.status_code == const.FORBIDDEN
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
@@ -162,7 +162,7 @@ class TestS3user():
         self.log.info("##### Test started -  %s #####", test_case_name)
         response = self.s3user.edit_s3_account_user(
             "non_existing_user", login_as="s3account_user")
-        assert response.status_code == self.s3user.forbidden
+        assert response.status_code == const.FORBIDDEN
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
@@ -193,8 +193,8 @@ class TestS3user():
         self.log.info("##### Test started -  %s #####", test_case_name)
         # verifying No IAM user should present on first visit to s3 account
         response = self.s3user.edit_s3_account_user(
-            username=self.s3user.default_s3user_name, login_as="csm_admin_user")
-        assert response.status_code == self.s3user.forbidden
+            username=self.s3user.config["s3account_user"]["username"], login_as="csm_admin_user")
+        assert response.status_code == const.FORBIDDEN
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
@@ -283,7 +283,7 @@ class TestS3user():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         response = self.s3user.delete_s3_account_user("non_existing_user")
-        assert response.status_code == self.s3user.forbidden
+        assert response.status_code == const.FORBIDDEN
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
@@ -298,8 +298,8 @@ class TestS3user():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         response = self.s3user.delete_s3_account_user(
-            self.s3user.default_s3user_name, login_as="csm_admin_user")
-        assert response.status_code == self.s3user.forbidden
+            self.s3user.config["s3account_user"]["username"], login_as="csm_admin_user")
+        assert response.status_code == const.FORBIDDEN
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
@@ -316,7 +316,7 @@ class TestS3user():
         # passing user name as blank
         response = self.s3user.delete_s3_account_user(
             username="", login_as="s3account_user")
-        assert response.status_code == self.s3user.method_not_found
+        assert response.status_code == const.METHOD_NOT_FOUND
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
@@ -389,7 +389,7 @@ class TestS3user():
             username=s3_acc, payload="valid", login_as="s3account_user")
 
         self.log.debug("Verifying the response returned %s", response)
-        assert response.status_code, self.s3user.forbidden
+        assert response.status_code, const.FORBIDDEN
         assert response.json(), response_msg
         self.log.debug("Verified that expected status code %s and expected response "
                        "message %s was returned", response.status_code, response.json())

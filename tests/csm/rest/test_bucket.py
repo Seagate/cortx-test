@@ -25,7 +25,7 @@ import pytest
 from libs.csm.rest.csm_rest_bucket import RestS3Bucket
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.csm.csm_setup import CSMConfigsCheck
-from commons.utils import config_utils
+from commons import configmanager
 from commons.utils import assert_utils
 from commons import cortxlogging
 from commons.constants import Rest as const
@@ -44,8 +44,7 @@ class TestS3Bucket():
         cls.s3_buckets = RestS3Bucket()
         cls.s3_account = RestS3user()
         cls.log.info("Initiating Rest Client for Alert ...")
-        cls.csm_conf = config_utils.read_yaml(
-            "config/csm/test_rest_s3_bucket.yaml")[1]
+        cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_s3_bucket.yaml")
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
@@ -173,7 +172,7 @@ class TestS3Bucket():
         self.log.info("##### Test started -  %s #####", test_case_name)
         response = self.s3_buckets.create_s3_bucket(
             bucket_type="valid", login_as="csm_admin_user")
-        assert self.s3_buckets.forbidden == response.status_code
+        assert const.FORBIDDEN == response.status_code
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
@@ -235,7 +234,7 @@ class TestS3Bucket():
         self.log.info("##### Test started -  %s #####", test_case_name)
         response = self.s3_buckets.list_all_created_buckets(
             login_as="csm_admin_user")
-        assert self.s3_buckets.forbidden == response.status_code
+        assert const.FORBIDDEN == response.status_code
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
@@ -257,7 +256,7 @@ class TestS3Bucket():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         assert self.s3_buckets.delete_and_verify_new_bucket(
-            self.s3_buckets.method_not_found, bucket_type="does-not-exist")
+            const.METHOD_NOT_FOUND, bucket_type="does-not-exist")
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
@@ -270,7 +269,7 @@ class TestS3Bucket():
         self.log.info("##### Test started -  %s #####", test_case_name)
         response = self.s3_buckets.delete_s3_bucket(
             bucket_name="any_name", login_as="csm_admin_user")
-        assert self.s3_buckets.forbidden == response.status_code
+        assert const.FORBIDDEN == response.status_code
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
@@ -283,4 +282,4 @@ class TestS3Bucket():
         self.log.info("##### Test started -  %s #####", test_case_name)
         response = self.s3_buckets.delete_s3_bucket(
             bucket_name="", login_as="s3account_user")
-        assert self.s3_buckets.method_not_found == response.status_code
+        assert const.METHOD_NOT_FOUND == response.status_code

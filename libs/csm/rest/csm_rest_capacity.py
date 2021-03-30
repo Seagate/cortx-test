@@ -58,7 +58,7 @@ class SystemCapacity(RestTestLib):
                 SystemCapacity.get_capacity_usage.__name__,
                 error)
             raise CTException(
-                err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
+                err.CSM_REST_VERIFICATION_FAILED, error) from error
 
     def parse_capacity_usage(self, expected_response=const.SUCCESS_STATUS):
         """Parse the Json response to extract used, available and total capacity
