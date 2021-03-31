@@ -179,6 +179,10 @@ CLI_CONTROLLER_CHECK_MISSING_PARAMETER = CTError(24012, "CLI Controller Check Mi
 # CSM
 CSM_REST_AUTHENTICATION_ERROR: Any = CTError(8107, "CSM-REST Authentication Error")
 CSM_REST_VERIFICATION_FAILED: Any = CTError(8108, "Unexpected output fetched for CSM-REST")
+CSM_REST_GET_REQUEST_FAILED: Any = CTError(8109, "CSM-REST GET request failed")
+CSM_REST_POST_REQUEST_FAILED: Any = CTError(8109, "CSM-REST POST request failed")
+CSM_REST_PUT_REQUEST_FAILED: Any = CTError(8109, "CSM-REST PUT request failed")
+CSM_REST_DELETE_REQUEST_FAILED: Any = CTError(8109, "CSM-REST DELETE request failed")
 
 
 # Product Configuration DataBase Errors

@@ -15,6 +15,7 @@ from commons.utils import config_utils
 from commons.utils import system_utils
 from commons import params
 from commons import cortxlogging
+from commons import constants as common_cnst
 
 LOGGER = logging.getLogger(__name__)
 
@@ -77,7 +78,7 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
     """Form a pytest command for execution."""
     env['TARGET'] = args.target
     build, build_type = args.build, args.build_type
-    tag = '-m ' + te_tag
+
     run_type = ''
     is_distributed = ''
     try:
@@ -120,6 +121,7 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
         cmd_line = cmd_line + ["--target=" + args.target]
 
     if te_tag:
+        tag = '-m ' + te_tag
         cmd_line = cmd_line + [tag]
     read_metadata = "--readmetadata=" + str(True)
     cmd_line = cmd_line + [read_metadata]
@@ -261,11 +263,11 @@ def trigger_runner_process(args, kafka_msg, client):
     if kafka_msg.parallel:
         trigger_unexecuted_tests(args, kafka_msg.test_list)
     # Release lock on acquired target.
-    lock_released = lock_task.release_target_lock(args.target, client)
+    lock_released = lock_task.unlock_target(args.target, client)
     if lock_released:
-        print("lock released on target {}".format(args.target))
+        LOGGER.debug("lock released on target {}".format(args.target))
     else:
-        print("Error in releasing lock on target {}".format(args.target))
+        LOGGER.error("Error in releasing lock on target {}".format(args.target))
 
 
 def trigger_tests_from_kafka_msg(args, kafka_msg):
@@ -352,93 +354,21 @@ def trigger_tests_from_te(args):
         run_pytest_cmd(args, te_tag, False, env=_env)
 
 
-def check_for_shared_target(target_list, client):
-    """
-    check for shared target which will be used for parallel execution
-    """
-    lock_task = LockingServer()
-    found_target = ""
-    target = lock_task.check_available_shared_target(target_list)
-    if target != "":
-        print("target found {}".format(target))
-        lock_success = lock_task.take_shared_target_lock(target, client)
-        if lock_success:
-            confirm_lock_success = lock_task.confirm_shared_target_lock(target, client)
-            if confirm_lock_success:
-                found_target = target
-                print("lock acquired {}".format(target))
-    return found_target
-
-
-def check_for_target(target_list, client):
-    """
-    Check for target which will be used for sequential execution.
-    """
-    lock_task = LockingServer()
-    found_target = ""
-    target = lock_task.check_available_target(target_list)
-    if target != "":
-        print("target found {}".format(target))
-        lock_success = lock_task.take_target_lock(target, client)
-        if lock_success:
-            confirm_lock_success = lock_task.confirm_target_lock(target, client)
-            if confirm_lock_success:
-                found_target = target
-                print("lock acquired {}".format(target))
-    return found_target
-
-
-def acquire_target_to_shared(target, client):
-    """
-    acquire target for parallel execution.
-    """
-    lock_task = LockingServer()
-    acquired_target = ""
-    if target != "":
-        print("target found {}".format(target))
-        lock_success = lock_task.take_new_shared_target_lock(target, client)
-        if lock_success:
-            print("shared lock acquired {}".format(target))
-            confirm_lock_success = lock_task.confirm_shared_target_lock(target, client)
-            if confirm_lock_success:
-                acquired_target = target
-                print("shared lock confirmed {}".format(target))
-    return acquired_target
-
-
-def acquire_shared_target(target, client):
-    """
-    check for shared target which will be used for parallel execution
-    """
-    lock_task = LockingServer()
-    found_target = ""
-    if target != "":
-        print("shared target found {}".format(target))
-        lock_success = lock_task.take_shared_target_lock(target, client)
-        if lock_success:
-            print("shared lock acquired {}".format(target))
-            confirm_lock_success = lock_task.confirm_shared_target_lock(target, client)
-            if confirm_lock_success:
-                found_target = target
-                print("shared lock confirmed {}".format(target))
-    return found_target
-
-
-def acquire_target(target, client):
+def acquire_target(target, client, lock_type, convert_to_shared=False):
     """
     Check for target which will be used for sequential execution.
     """
     lock_task = LockingServer()
     found_target = ""
     if target != "":
-        print("target found {}".format(target))
-        lock_success = lock_task.take_target_lock(target, client)
+        LOGGER.debug("target found {}".format(target))
+        lock_success = lock_task.lock_target(target, client, lock_type, convert_to_shared)
         if lock_success:
-            print("lock acquired {}".format(target))
-            confirm_lock_success = lock_task.confirm_target_lock(target, client)
+            LOGGER.debug("lock acquired {}".format(target))
+            confirm_lock_success = lock_task.is_target_locked(target, client, lock_type)
             if confirm_lock_success:
                 found_target = target
-                print("lock confirmed {}".format(target))
+                LOGGER.debug("lock confirmed {}".format(target))
     return found_target
 
 
@@ -452,17 +382,21 @@ def get_available_target(kafka_msg, client):
 
     while acquired_target == "":
         if kafka_msg.parallel:
-            target = lock_task.check_available_shared_target(kafka_msg.target_list)
+            target = lock_task.find_free_target(kafka_msg.target_list, common_cnst.SHARED_LOCK)
             if target == "":
-                seq_target = lock_task.check_available_target(kafka_msg.target_list)
+                seq_target = lock_task.find_free_target(kafka_msg.target_list,
+                                                        common_cnst.EXCLUSIVE_LOCK)
                 if seq_target != "":
-                    acquired_target = acquire_target_to_shared(seq_target, client)
+                    acquired_target = acquire_target(seq_target, client, common_cnst.SHARED_LOCK,
+                                                     True)
             else:
-                acquired_target = acquire_shared_target(target, client)
+                acquired_target = acquire_target(target, client, common_cnst.SHARED_LOCK)
         else:
-            seq_target = lock_task.check_available_target(kafka_msg.target_list)
+            seq_target = lock_task.find_free_target(kafka_msg.target_list,
+                                                    common_cnst.EXCLUSIVE_LOCK)
             if seq_target != "":
-                acquired_target = acquire_target(seq_target, client)
+                acquired_target = acquire_target(seq_target, client,
+                                                 common_cnst.EXCLUSIVE_LOCK)
     return acquired_target
 
 
@@ -474,7 +408,7 @@ def check_kafka_msg_trigger_test(args):
     consumer = kafka_consumer.get_consumer()
     print(consumer)
     received_stop_signal = False
-    lock_task = LockingServer()
+
     while not received_stop_signal:
         try:
             # SIGINT can't be handled when polling, limit timeout to 60 seconds.
@@ -487,6 +421,8 @@ def check_kafka_msg_trigger_test(args):
                 continue
             if kafka_msg.te_ticket == "STOP":
                 received_stop_signal = True
+            elif not len(kafka_msg.test_list):
+                continue
             else:
                 current_time_ms = datetime.utcnow().strftime('%Y-%m-%d_%H:%M:%S.%f')
                 client = system_utils.get_host_name() + "_" + current_time_ms
@@ -511,7 +447,7 @@ def get_setup_details():
     if os.path.exists(params.SETUPS_FPATH):
         os.remove(params.SETUPS_FPATH)
     setups = configmanager.get_config_db(setup_query={})
-    config_utils.create_content_json(params.SETUPS_FPATH, setups)
+    config_utils.create_content_json(params.SETUPS_FPATH, setups, ensure_ascii=False)
 
 
 def main(args):

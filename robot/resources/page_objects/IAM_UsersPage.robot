@@ -1,6 +1,6 @@
 *** Settings ***
-Resource  ${EXECDIR}/resources/common/common.robot
-Library     SeleniumLibrary
+Library    SeleniumLibrary
+Resource   ${EXECDIR}/resources/common/common.robot
 
 *** Keywords ***
 
@@ -109,8 +109,8 @@ Verify IAM User Password Tooltip
     Log To Console And Report  ${text}
     Should Contain    ${text}  ${IAM_USER_PASSWD_TOOLTIP_MSG}
 
-Verify Missmatch IAMuser Password Error
-    [Documentation]  Functionality to verify error msg at missmatch IAMuser password
+Verify Mismatch IAMuser Password Error
+    [Documentation]  Functionality to verify error msg at mismatch IAMuser password
     Log To Console And Report  Verifying miss match pasword
     ${password}=  Generate New Password
     Input Text  ${CREATE_IAM_USER_PASSWORD_ID}  ${password}
@@ -122,7 +122,7 @@ Verify Missmatch IAMuser Password Error
     should be equal  ${text}  ${IAM_USER_PASSWD_MISSMATCH_MSG}
 
 
-Verify Create IAMuser Button Must Remain disbaled
+Verify Create IAMuser Button Must Remain disabled
     [Documentation]  Functionality to verify create button status at different scenario
     ${password}=  Generate New Password
     Element Should Be Disabled  ${CREATE_IAM_USER_BUTTON_ID}
@@ -198,7 +198,7 @@ Verify All Mandatory Fields In IAMusers Has astreic sign
 
 Verify No Data Retains After Cancel IAMuser
     [Documentation]  Verify Blank IAMuser Form opens after IAM user got canceled
-    Verify Create IAMuser Button Must Remain disbaled
+    Verify Create IAMuser Button Must Remain disabled
     Click on IAM User Cancel Button
     Click Create IAM User Button
     ${value} =  Get Element Attribute  ${CREATE_IAM_USER_USERNAME_ID}  value

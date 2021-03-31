@@ -23,15 +23,17 @@
 Python library which have config related operations using package
 like config parser, yaml etc.
 """
+import json
 import logging
 import os
-import json
-import shutil
 import re
+import shutil
 from configparser import ConfigParser, MissingSectionHeaderError, NoSectionError
-from defusedxml.cElementTree import parse
+
 import yaml
+from defusedxml.cElementTree import parse
 from jsonschema import validate
+
 import commons.errorcodes as cterr
 from commons.exceptions import CTException
 
@@ -92,7 +94,7 @@ def write_yaml(
     return True, fpath
 
 
-def create_content_json(path: str, data: object) -> str:
+def create_content_json(path: str, data: object, ensure_ascii=True) -> str:
     """
     Function to create json file.
 
@@ -101,19 +103,18 @@ def create_content_json(path: str, data: object) -> str:
     :return: path of the file.
     """
     with open(path, 'w') as outfile:
-        json.dump(data, outfile, ensure_ascii=False)
+        json.dump(data, outfile, ensure_ascii=ensure_ascii)
 
     return path
 
-
-def read_content_json(fpath: str) -> dict:
+def read_content_json(fpath: str, mode='r') -> dict:
     """
     Function to read json file.
 
     :param fpath: Path of the json file
     :return: Data of the json file
     """
-    with open(fpath, 'rb') as json_file:
+    with open(fpath, mode) as json_file:
         data = json.loads(json_file.read())
 
     return data
@@ -367,6 +368,7 @@ def update_configs(all_configs: dict) -> None:
     for conf in all_configs.keys():
         read_write_config(conf, all_configs[conf])
 
+
 def verify_json_response(actual_result, expect_result, match_exact=False):
     """
     This function will verify the json response with actual response
@@ -387,6 +389,7 @@ def verify_json_response(actual_result, expect_result, match_exact=False):
         return False
 
     return all(actual_result[key] == value for key, value in expect_result.items())
+
 
 def verify_json_schema(instance, *schemas):
     """

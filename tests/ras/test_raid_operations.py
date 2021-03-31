@@ -28,7 +28,7 @@ import logging
 import pytest
 from libs.ras.ras_test_lib import RASTestLib
 from commons.utils import system_utils as sys_utils
-from commons.helpers.s3_helper import S3Helper
+from libs.s3 import S3H_OBJ
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
 from commons import constants as common_cons
@@ -67,6 +67,7 @@ class TestRAIDOperations:
         cls.csm_alert_obj = SystemAlerts(cls.nd_obj)
         cls.alert_api_obj = GenerateAlertLib()
         cls.cm_cfg = RAS_VAL["ras_sspl_alert"]
+        cls.s3obj = S3H_OBJ
         LOGGER.info("Done: Setup module operations")
 
     def setup_method(self):
@@ -116,12 +117,14 @@ class TestRAIDOperations:
 
         LOGGER.info(
             "Verifying the status of sspl and rabittmq service is online")
-        resp = S3Helper.get_s3server_service_status(
-            self.cm_cfg["service"]["sspl_service"])
+        resp = self.s3obj.get_s3server_service_status(
+            service=self.cm_cfg["service"]["sspl_service"], host=self.host,
+            user=self.uname, pwd=self.passwd)
         assert resp[0], resp[1]
 
-        resp = S3Helper.get_s3server_service_status(
-            self.cm_cfg["service"]["rabitmq_service"])
+        resp = self.s3obj.get_s3server_service_status(
+            service=self.cm_cfg["service"]["rabitmq_service"], host=self.host,
+            user=self.uname, pwd=self.passwd)
         assert resp[0], resp[1]
         LOGGER.info(
             "Validated the status of sspl and rabittmq service are online")

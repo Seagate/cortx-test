@@ -30,7 +30,7 @@ import logging
 import csv
 import time
 import datetime
-import pytest
+import requests
 from datetime import date
 from _pytest.nodes import Item
 from _pytest.runner import CallInfo
@@ -266,10 +266,6 @@ def pytest_sessionfinish(session, exitstatus):
         for handler in handlers:
             _logger.removeHandler(handler)
 
-    resp = system_utils.umount_dir(mnt_dir=params.MOUNT_DIR)
-    if resp[0]:
-        LOGGER.info("Successfully unmounted directory")
-
 
 def get_test_metadata_from_tp_meta(item):
     tests_meta = Globals.tp_meta['test_meta']
@@ -323,7 +319,7 @@ def create_report_payload(item, call, final_result, d_u, d_pass):
                        nodes_hostnames=item.config.option.nodes,
                        test_exec_id=item.config.option.te_tkt,
                        test_exec_time=call.duration,
-                       test_name= _item_dict['test_name'],
+                       test_name=_item_dict['test_name'],
                        test_id=_item_dict['test_id'],
                        test_id_labels=_item_dict['labels'],
                        test_plan_id=item.config.option.tp_ticket,
@@ -499,22 +495,39 @@ def pytest_runtest_makereport(item, call):
         task = jira_utils.JiraTask(jira_id, jira_pwd)
         test_id = CACHE.lookup(report.nodeid)
         if report.when == 'teardown':
-            if item.rep_setup.failed or item.rep_teardown.failed:
-                task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
-                payload = create_report_payload(item, call, 'FAIL', db_user, db_pass)
-                REPORT_CLIENT.create_db_entry(**payload)
-            elif item.rep_setup.passed and (item.rep_call.failed or item.rep_teardown.failed):
-                task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
-                payload = create_report_payload(item, call, 'FAIL', db_user, db_pass)
-                REPORT_CLIENT.create_db_entry(**payload)
-            elif item.rep_setup.passed and item.rep_call.passed and item.rep_teardown.passed:
-                task.update_test_jira_status(item.config.option.te_tkt, test_id, 'PASS')
-                payload = create_report_payload(item, call, 'PASS', db_user, db_pass)
-                REPORT_CLIENT.create_db_entry(**payload)
-            elif item.rep_setup.skipped and (item.rep_teardown.skipped or item.rep_teardown.passed):
-                # Jira reporting of skipped cases does not contain skipped option
-                # Keeping it todo_status and skipping db update for now
-                pass
+            try:
+                if item.rep_setup.failed or item.rep_teardown.failed:
+                    task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
+                    try:
+                        payload = create_report_payload(item, call, 'FAIL', db_user, db_pass)
+                        REPORT_CLIENT.create_db_entry(**payload)
+                    except requests.exceptions.RequestException as fault:
+                        LOGGER.exception(str(fault))
+                        LOGGER.error("Failed to execute DB update for %s", test_id)
+                elif item.rep_setup.passed and (item.rep_call.failed or item.rep_teardown.failed):
+                    task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
+                    try:
+                        payload = create_report_payload(item, call, 'FAIL', db_user, db_pass)
+                        REPORT_CLIENT.create_db_entry(**payload)
+                    except requests.exceptions.RequestException as fault:
+                        LOGGER.exception(str(fault))
+                        LOGGER.error("Failed to execute DB update for %s", test_id)
+                elif item.rep_setup.passed and item.rep_call.passed and item.rep_teardown.passed:
+                    task.update_test_jira_status(item.config.option.te_tkt, test_id, 'PASS')
+                    try:
+                        payload = create_report_payload(item, call, 'PASS', db_user, db_pass)
+                        REPORT_CLIENT.create_db_entry(**payload)
+                    except requests.exceptions.RequestException as fault:
+                        LOGGER.exception(str(fault))
+                        LOGGER.error("Failed to execute DB update for %s", test_id)
+                elif item.rep_setup.skipped and \
+                        (item.rep_teardown.skipped or item.rep_teardown.passed):
+                    # Jira reporting of skipped cases does not contain skipped option
+                    # Keeping it todo_status and skipping db update for now
+                    task.update_test_jira_status(item.config.option.te_tkt, test_id, 'BLOCKED')
+            except Exception as exception:
+                LOGGER.error("Exception %s occurred in reporting for test %s.",
+                             str(exception), test_id)
 
     if report.when == 'teardown':
         if item.rep_setup.failed or item.rep_teardown.failed:
@@ -555,8 +568,8 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
             logs = log.split('\n')
             test_id = CACHE.lookup(report.nodeid)
             name = str(test_id) + '_' + report.nodeid.split('::')[1] + '_' \
-                + datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S') \
-                + '.log'
+                   + datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S') \
+                   + '.log'
             test_log = os.path.join(os.getcwd(), LOG_DIR, 'latest', name)
             with open(test_log, 'w') as fp:
                 for rec in logs:
@@ -575,8 +588,8 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
         logs = log.split('\n')
         test_id = CACHE.lookup(report.nodeid)
         name = str(test_id) + '_' + report.nodeid.split('::')[1] + '_' + \
-            datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S') + \
-            '.log'
+               datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S') + \
+               '.log'
         test_log = os.path.join(os.getcwd(), LOG_DIR, 'latest', name)
         with open(test_log, 'w') as fp:
             for rec in logs:
@@ -585,7 +598,9 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
         remote_path = os.path.join(params.NFS_BASE_DIR,
                                    Globals.BUILD, Globals.TP_TKT,
                                    Globals.TE_TKT, test_id,
-                                   date.today().strftime("%b-%d-%Y"))
+                                   datetime.datetime.fromtimestamp(
+                                       time.time()).strftime('%Y-%m-%d_%H:%M:%S')
+                                   )
         resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
                                                    mnt_dir=params.MOUNT_DIR,
                                                    remote_path=remote_path,
