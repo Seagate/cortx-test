@@ -418,25 +418,5 @@ def gen_table_s3_bucket_perf(n_clicks, branch, build_no):
     """
     if n_clicks is None or branch is None or build_no is None:
         raise PreventUpdate
-    '''
-    data_s3_bucket_perf = {
-        "Statistics": ["Write Throughput(MBps)", "Read Throughput(MBps)", "Write Latency(ms)",
-                       "Read Latency(ms)"],
-        "4KB Object": ["1", "2", "3", "4"],
-        "256MB Object": ["1", "2", "3", "4"],
-    }
-    df_s3_bucket_perf = pd.DataFrame(data_s3_bucket_perf)
-    s3_bucket_perf = dash_table.DataTable(
-        id="code_maturity",
-        columns=[{"name": i, "id": i} for i in df_s3_bucket_perf.columns],
-        data=df_s3_bucket_perf.to_dict('records'),
-        style_header=common.dict_style_header,
-        style_data_conditional=[{'if': {'row_index': 'odd'}, 'backgroundColor': '#F8F8F8'},
-                                {'if': {'column_id': "Statistics"},
-                                 'backgroundColor': "#b9b9bd"}
-                                ],
-        style_cell=common.dict_style_cell
-    )
-    return s3_bucket_perf
-    '''
+    
     return "No data available for R2"
