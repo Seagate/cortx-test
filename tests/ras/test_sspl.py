@@ -29,7 +29,7 @@ from libs.ras.ras_test_lib import RASTestLib
 from commons.helpers.node_helper import Node
 from commons.helpers.health_helper import Health
 from commons.helpers.controller_helper import ControllerLib
-from commons.helpers.s3_helper import S3Helper
+from libs.s3 import S3H_OBJ
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons import constants as cons
@@ -73,6 +73,7 @@ class TestSSPL:
         cls.csm_alert_obj = SystemAlerts(cls.node_obj)
         # Enable this flag for starting RMQ channel
         cls.start_rmq = cls.cm_cfg["start_rmq"]
+        cls.s3obj = S3H_OBJ
 
         field_list = ("primary_controller_ip", "secondary_controller_ip",
                       "primary_controller_port", "secondary_controller_port",
@@ -115,11 +116,11 @@ class TestSSPL:
 
         # Getting SSPl and RabbitMQ service status
         services = self.cm_cfg["service"]
-        resp = S3Helper.get_s3server_service_status(
+        resp = self.s3obj.get_s3server_service_status(
             service=services["sspl_service"], host=self.host, user=self.uname,
             pwd=self.passwd)
         assert resp[0], resp[1]
-        resp = S3Helper.get_s3server_service_status(
+        resp = self.s3obj.get_s3server_service_status(
             service=services["rabitmq_service"], host=self.host, user=self.uname,
             pwd=self.passwd)
         assert resp[0], resp[1]
@@ -918,7 +919,7 @@ class TestSSPL:
         kv_store_path = cons.LOG_STORE_PATH
         log_level_val = test_cfg["log_level_val"]
         LOGGER.info("Step 1: Ensure SSPL service is up and running")
-        resp = S3Helper.get_s3server_service_status(
+        resp = self.s3obj.get_s3server_service_status(
             service=common_cfg["service"]["sspl_service"], host=self.host,
             user=self.uname, pwd=self.passwd)
         assert resp[0], resp[1]
@@ -973,7 +974,7 @@ class TestSSPL:
         LOGGER.info("Step 1: Checking status of sspl services")
         services = common_cfg["service"]
         for service in services:
-            resp = S3Helper.get_s3server_service_status(
+            resp = self.s3obj.get_s3server_service_status(
                 service=common_cfg["service"][service], host=self.host,
                 user=self.uname, pwd=self.passwd)
             assert resp[0], resp[1]
@@ -1003,11 +1004,11 @@ class TestSSPL:
         LOGGER.info("Step 4: Updated port numbers to 5100")
 
         LOGGER.info("Step 5: Checking status of sspl services")
-        resp = S3Helper.get_s3server_service_status(
+        resp = self.s3obj.get_s3server_service_status(
             service=services["sspl_service"], host=self.host, user=self.uname,
             pwd=self.passwd)
         assert resp[0], resp[1]
-        resp = S3Helper.get_s3server_service_status(
+        resp = self.s3obj.get_s3server_service_status(
             service=services["rabitmq_service"], host=self.host,
             user=self.uname,
             pwd=self.passwd)
@@ -1091,7 +1092,7 @@ class TestSSPL:
 
         LOGGER.info("Step 1: Checking status of rsyslog services")
         service = test_cfg["rsyslog_service"]
-        resp = S3Helper.get_s3server_service_status(
+        resp = self.s3obj.get_s3server_service_status(
             service=service, host=self.host, user=self.uname, pwd=self.passwd)
         assert resp[0], resp[1]
         LOGGER.info("Step 1: %s service is up and running", service)
@@ -1152,7 +1153,7 @@ class TestSSPL:
         log_level_val = test_cfg["log_level_val"][0]
         log_level_val_lst = test_cfg["log_level_val"]
         LOGGER.info("Step 1: Ensure SSPL service is up and running")
-        resp = S3Helper.get_s3server_service_status(
+        resp = self.s3obj.get_s3server_service_status(
             service=common_cfg["service"]["sspl_service"], host=self.host,
             user=self.uname, pwd=self.passwd)
         assert resp[0], resp[1]
@@ -1626,7 +1627,7 @@ class TestSSPL:
         LOGGER.info("Step 6: Successfully checked CSM REST API for alerts")
 
         LOGGER.info("Step 7: Checking the status of sspl service")
-        resp = S3Helper.get_s3server_service_status(
+        resp = self.s3obj.get_s3server_service_status(
             service=common_cfg["service"]["sspl_service"], host=self.host,
             user=self.uname, pwd=self.passwd)
         assert resp[0], resp[1]
