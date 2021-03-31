@@ -375,7 +375,7 @@ class TestBlackBox:
     @pytest.mark.tags("")
     @CTFailOn(error_handler)
     def test_2406(self):
-        """Create access key for user using s3iamcli."""
+        """Create access key for user using cortxcli."""
         self.log.info("STARTED: create access key for user using cortxcli")
         acc_name = "{}{}".format(conf_blackbox["acc_user_mng"]["account_name"],
                                  str(int(time.time())))
