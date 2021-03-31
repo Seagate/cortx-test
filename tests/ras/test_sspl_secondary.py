@@ -27,7 +27,7 @@ import pytest
 from libs.ras.ras_test_lib import RASTestLib
 from commons.helpers.node_helper import Node
 from commons.helpers.health_helper import Health
-from commons.helpers.s3_helper import S3Helper
+from libs.s3 import S3H_OBJ
 from commons import constants as cons
 from commons import commands as common_cmd
 from commons.utils.assert_utils import *
@@ -67,6 +67,7 @@ class TestSSPLSecondary:
                                  password=cls.passwd)
 
         cls.csm_alert_obj = SystemAlerts(cls.node_obj2)
+        cls.s3obj = S3H_OBJ
 
         # Enable this flag for starting RMQ channel
         cls.start_rmq = cls.cm_cfg["start_rmq"]
@@ -113,11 +114,11 @@ class TestSSPLSecondary:
 
         # Getting SSPl and RabbitMQ service status
         services = self.cm_cfg["service"]
-        resp = S3Helper.get_s3server_service_status(
+        resp = self.s3obj.get_s3server_service_status(
             service=services["sspl_service"], host=self.host, user=self.uname,
             pwd=self.passwd)
         assert resp[0], resp[1]
-        resp = S3Helper.get_s3server_service_status(
+        resp = self.s3obj.get_s3server_service_status(
             service=services["rabitmq_service"], host=self.host,
             user=self.uname,
             pwd=self.passwd)
@@ -203,7 +204,7 @@ class TestSSPLSecondary:
 
         LOGGER.info(
             "Step 1: Checking sspl-ll service status on primary node")
-        resp = S3Helper.get_s3server_service_status(
+        resp = self.s3obj.get_s3server_service_status(
             service=self.cm_cfg["service"]["sspl_service"], host=self.host,
             user=self.uname, pwd=self.passwd)
         assert resp[0], resp[1]
@@ -211,7 +212,7 @@ class TestSSPLSecondary:
 
         LOGGER.info("Step 2: Checking sspl-ll service status on secondary "
                     "node")
-        resp = S3Helper.get_s3server_service_status(
+        resp = self.s3obj.get_s3server_service_status(
             service=self.cm_cfg["service"]["sspl_service"], host=self.host2,
             user=self.uname, pwd=self.passwd)
         assert resp[0], resp[1]
@@ -236,7 +237,7 @@ class TestSSPLSecondary:
 
         LOGGER.info("Step 5: Checking if sspl-ll is restarted automatically "
                     "by pacemaker")
-        resp = S3Helper.get_s3server_service_status(
+        resp = self.s3obj.get_s3server_service_status(
             service=self.cm_cfg["service"]["sspl_service"], host=self.host2,
             user=self.uname, pwd=self.passwd)
         assert resp[0], resp[1]
@@ -310,14 +311,14 @@ class TestSSPLSecondary:
 
         LOGGER.info(
             "Step 1: Checking sspl-ll service status on primary node")
-        resp = S3Helper.get_s3server_service_status(
+        resp = self.s3obj.get_s3server_service_status(
             service=self.cm_cfg["service"]["sspl_service"], host=self.host,
             user=self.uname, pwd=self.passwd)
         assert resp[0], resp[1]
         LOGGER.info("Step 1: Sspl-ll is up and running on primary node")
 
         LOGGER.info("Step 2: Checking sspl-ll service status on secondary node")
-        resp = S3Helper.get_s3server_service_status(
+        resp = self.s3obj.get_s3server_service_status(
             service=self.cm_cfg["service"]["sspl_service"], host=self.host2,
             user=self.uname, pwd=self.passwd)
         assert resp[0], resp[1]
@@ -343,7 +344,7 @@ class TestSSPLSecondary:
 
         LOGGER.info("Step 5: Checking if sspl-ll is restarted automatically "
                     "by pacemaker")
-        resp = S3Helper.get_s3server_service_status(
+        resp = self.s3obj.get_s3server_service_status(
             service=self.cm_cfg["service"]["sspl_service"], host=self.host2,
             user=self.uname, pwd=self.passwd)
         assert resp[0], resp[1]
@@ -419,14 +420,14 @@ class TestSSPLSecondary:
 
         LOGGER.info(
             "Step 1: Checking sspl-ll service status on primary node")
-        resp = S3Helper.get_s3server_service_status(
+        resp = self.s3obj.get_s3server_service_status(
             service=self.cm_cfg["service"]["sspl_service"], host=self.host,
             user=self.uname, pwd=self.passwd)
         assert resp[0], resp[1]
         LOGGER.info("Step 1: Sspl-ll is up and running on primary node")
 
         LOGGER.info("Step 2: Checking sspl-ll service status on secondary node")
-        resp = S3Helper.get_s3server_service_status(
+        resp = self.s3obj.get_s3server_service_status(
             service=self.cm_cfg["service"]["sspl_service"], host=self.host2,
             user=self.uname, pwd=self.passwd)
         assert resp[0], resp[1]
@@ -506,14 +507,14 @@ class TestSSPLSecondary:
 
         LOGGER.info(
             "Step 7: Checking sspl-ll service status on primary node")
-        resp = S3Helper.get_s3server_service_status(
+        resp = self.s3obj.get_s3server_service_status(
             service=self.cm_cfg["service"]["sspl_service"], host=self.host,
             user=self.uname, pwd=self.passwd)
         assert resp[0], resp[1]
         LOGGER.info("Step 7: Sspl-ll is up and running on primary node")
 
         LOGGER.info("Step 8: Checking sspl-ll service status on secondary node")
-        resp = S3Helper.get_s3server_service_status(
+        resp = self.s3obj.get_s3server_service_status(
             service=self.cm_cfg["service"]["sspl_service"], host=self.host2,
             user=self.uname, pwd=self.passwd)
         assert resp[0], resp[1]

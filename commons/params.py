@@ -18,7 +18,7 @@
 #
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
-"""Configurable items like paths , items which are test environments specific
+"""Constants
 """
 import os
 
@@ -71,6 +71,7 @@ apollojenkins.pun.seagate.com:27017/
 ?authSource=cft_test_results&replicaSet=rs0"""
 DB_NAME = "cft_test_results"
 SYS_INFO_COLLECTION = "r2_systems"
+LOCAL_LOG_PATH = "/root/pytest_logs"
 
 # Jenkins url for deployment
 JENKINS_URL = "http://eos-jenkins.mero.colo.seagate.com/job/QA/"
