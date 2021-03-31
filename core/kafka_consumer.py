@@ -40,7 +40,7 @@ def dict_to_kafka_msg(obj, ctx):
                     parallel=obj['parallel'],
                     test_set=obj['test_set'],
                     te_ticket=obj['te_ticket'],
-                    target_list=obj['targets'],
+                    targets=obj['targets'],
                     build=obj['build'],
                     build_type=obj['build_type'],
                     test_plan=obj['test_plan'])
@@ -87,7 +87,7 @@ class KafkaMsg:
         self.te_ticket = kwargs.get('te_ticket')
         # test set should not be serialized, see convert_ticket_to_dict()
         self.test_list = list(kwargs.get('test_set'))
-        self.target_list = kwargs.get('targets')
+        self.target_list = list(kwargs.get('targets'))
         self.build = kwargs.get('build')
         self.test_plan = kwargs.get('test_plan')
         self.build_type = kwargs.get('build_type')
@@ -126,9 +126,9 @@ SCHEMA_STR = """
                 "type": "string"
             },
             "targets": {
-                "description": "Test execution tickets",
-                "type": "string",
-                "default": "automation"
+                "description": "Test execution targets",
+                "type": "array",
+                "items": { "type": "string" }
             },
             "build": {
                 "description": "Build string or number",

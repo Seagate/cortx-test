@@ -18,3 +18,4 @@ robot/reports/
 secrets.json
 setups.json
 log/
+virenv/

@@ -1,0 +1,71 @@
+S3bench:
+  object_size:
+    - '4Kb'
+    - '100Kb'
+    - '1Mb'
+    - '5Mb'
+    - '36Mb'
+    - '64Mb'
+    - '128Mb'
+    - '256Mb'
+  meta_data:
+    - '1Kb'
+
+Hsbench:
+  object_size:
+    - '4Kb'
+    - '100Kb'
+    - '1Mb'
+    - '5Mb'
+    - '36Mb'
+    - '64Mb'
+    - '128Mb'
+    - '256Mb'
+  workload-1:
+    sessions: 100
+    buckets: 1
+    objects: 1000
+  
+  workload-2:
+    sessions: 100
+    buckets: 10
+    objects: 1000
+
+  workload-3:
+    sessions: 100
+    buckets: 50
+    objects: 5000
+  
+  modes:
+    2: BINIT
+    3: PUT
+    4: LIST
+    5: GET
+    6: DEL
+    7: BCLR
+    8: BDEL
+
+Cosbench:
+  object_size:
+    - '4 KB'
+    - '100 KB'
+    - '1 MB'
+    - '5 MB'
+    - '36 MB'
+    - '64 MB'
+    - '128 MB'
+    - '256 MB'
+  workload-1:
+    sessions: 100
+    buckets: 1
+    objects: 1000
+  
+  workload-2:
+    sessions: 100
+    buckets: 10
+    objects: 100
+
+  workload-3:
+    sessions: 100
+    buckets: 50
+    objects: 100
