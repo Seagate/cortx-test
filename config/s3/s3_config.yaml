@@ -32,3 +32,7 @@ jClientCloud_path:
 
 s3_object:
 
+
+s3_iam:
+
+
