@@ -20,18 +20,19 @@
 #
 #
 
-"""Script will be responsible to envoke and execute s3bench tool."""
+"""Script will be responsible to invoke and execute s3bench tool."""
 
+import argparse
 import logging
 from datetime import datetime, timedelta
 
-import argparse
 from commons.utils.config_utils import read_yaml
 from commons.utils.system_utils import path_exists, run_local_cmd, make_dirs
 
 LOGGER = logging.getLogger(__name__)
 cfg_obj = read_yaml("scripts/s3_bench/config.yaml")[1]
 LOG_DIR = cfg_obj["log_dir"]
+S3_BENCH_PATH = cfg_obj["s3bench_path"]
 
 
 def setup_s3bench(
@@ -45,32 +46,31 @@ def setup_s3bench(
     :param string path: Go src path
     :return bool: True/False
     """
-    try:
-        if not (path_exists(path) or path_exists(cfg_obj["s3bench_path"])):
-            run_local_cmd(cfg_obj["cmd_go"])
-            # executing go get for s3bench
-            run_local_cmd(get_cmd)
-            # Clone s3bench to go src
-            run_local_cmd(git_url.format(cfg_obj["s3bench_path"]))
-        return True
-    except Exception as err:
-        LOGGER.error(err)
-        return False
+    if not (path_exists(path) or path_exists(S3_BENCH_PATH)):
+        run_local_cmd(cfg_obj["cmd_go"])
+        # executing go get for s3bench
+        run_local_cmd(get_cmd)
+        # Clone s3bench to go src
+        run_local_cmd(git_url.format(S3_BENCH_PATH))
+    return True
 
 
-def create_log(resp, log_dir=LOG_DIR):
+def create_log(resp, log_file_prefix, client, samples, size):
     """
     To create log file for s3bench run
-    :param resp: List of string rersponse
-    :param log_dir: Directory path for creating log file
+    :param resp: List of string response
+    :param log_file_prefix: Log file prefix
+    :param client: number of clients
+    :param samples: number of samples
+    :param size: object size
     :return: Path of the log file
     """
-    if not path_exists(log_dir):
-        make_dirs(log_dir)
+    if not path_exists(LOG_DIR):
+        make_dirs(LOG_DIR)
 
-    path = f"{log_dir}" \
-        f"s3bench{str(datetime.now()).replace(' ', '-').replace(':', '-').replace('.', '-')}.log"
-    # Writing complete response in file, appends respose in case of duration
+    now = datetime.now().strftime("%d-%m-%Y-%H-%M-%S-%f")
+    path = f"{LOG_DIR}{log_file_prefix}_s3bench_{client}_{samples}_{size}_{now}.log"
+    # Writing complete response in file, appends response in case of duration
     # given
     with open(path, "a") as fd_write:
         for i in resp:
@@ -102,6 +102,26 @@ def create_json_reps(list_resp):
     return js_res
 
 
+def check_log_file_error(file_path, errors):
+    """
+    Function to find out error is reported in given file or not
+    :param str file_path: the file in which error is to be searched
+    :param list(str) errors: error strings to be searched for
+    :return: errorFound: True (if error is seen) else False
+    :rtype: Boolean
+    """
+    error_found = False
+    LOGGER.info("Debug: Log File Path {}".format(file_path))
+    with open(file_path, "r") as s3LogFile:
+        for line in s3LogFile:
+            for error in errors:
+                if error.lower() in line.lower():
+                    error_found = True
+                    LOGGER.error(f"{error} Found in S3Bench Run : {line}")
+                    return error_found
+    return error_found
+
+
 def s3bench(
         access_key,
         secret_key,
@@ -110,11 +130,14 @@ def s3bench(
         num_clients=40,
         num_sample=200,
         obj_name_pref="loadgen_test_",
-        obj_size=83886080,
-        region="igneous-test",
+        obj_size="4Kb",
+        skip_write=False,
         skip_cleanup=False,
+        skip_read=False,
+        validate=True,
         duration=None,
-        verbose=False):
+        verbose=False,
+        log_file_prefix=""):
     """
     To run s3bench tool
     :param access_key: S3 access key
@@ -124,23 +147,38 @@ def s3bench(
     :param num_clients: Number of clients/workers
     :param num_sample: Number of read and write
     :param obj_name_pref: Name prefix for the object
-    :param obj_size: Object size to be used 80*1024*1024
-    :param region: AWS region to use, eg: us-west-1|us-east-1, etc (default 'igneous-test')
-    :param skip_cleanup: skip deleting objects created by this tool at the end of the run
+    :param obj_size: Object size to be used e.g. 1Kb, 2Mb, 4Gb
+    :param skip_read: Skip reading objects created in this run
+    :param skip_cleanup: skip deleting objects created in this run
+    :param skip_write: Skip writing objects
+    :param validate: Validate checksum for the objects
+        This option will download the object and give error if checksum is wrong
     :param duration: Execute same ops with defined time. 1h24m|0h22m else None
     :param verbose: verbose per thread status write and read
+    :param log_file_prefix: Test number prefix for log file
     :return: tuple with json response and log path
     """
     result = []
     # Creating log file
-    log_path = create_log(result)
+    log_path = create_log(result, log_file_prefix, num_clients, num_sample, obj_size)
     LOGGER.info("Running s3 bench tool")
     # GO command formatter
     cmd = f"go run s3bench -accessKey={access_key} -accessSecret={secret_key} " \
-        f"-bucket={bucket} -endpoint={end_point} -numClients={num_clients} " \
-        f"-numSamples={num_sample}" \
-        f" -objectNamePrefix={obj_name_pref} -objectSize={obj_size} -region={region} " \
-        f"-skipCleanup={skip_cleanup} -verbose={verbose} > {log_path} 2>&1"
+          f"-bucket={bucket} -endpoint={end_point} -numClients={num_clients} " \
+          f"-numSamples={num_sample} -objectNamePrefix={obj_name_pref} -objectSize={obj_size} "
+
+    if skip_write:
+        cmd = cmd + "-skipWrite "
+    if skip_read:
+        cmd = cmd + "-skipRead "
+    if skip_cleanup:
+        cmd = cmd + "-skip_cleanup "
+    if validate:
+        cmd = cmd + "-validate "
+    if verbose:
+        cmd = cmd + "-verbose "
+
+    cmd = f"{cmd}> {log_path} 2>&1"
 
     # In case duration is None
     if not duration:
@@ -228,7 +266,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--os",
         dest="objectSize",
-        help="size of individual requests in bytes (must be smaller than main memory). (default: 83886080)",
+        help="size of individual requests in bytes (must be smaller than main memory). (default: "
+             "83886080)",
         nargs="?",
         const=83886080,
         type=int,
