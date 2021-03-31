@@ -52,23 +52,14 @@ class TestCliBucketPolicy:
         cls.log = logging.getLogger(__name__)
         cls.log.info("STARTED : Setup operations for test suit")
         cls.bucket_name = "clis3bkt"
+        import pdb;pdb.set_trace()
         cls.s3bkt_plc_obj = CortxCliS3BktPolicyOperations()
         cls.s3acc_obj = CortxCliS3AccountOperations(
             session_obj=cls.s3bkt_plc_obj.session_obj)
         cls.bkt_obj = CortxCliS3BucketOperations(
             session_obj=cls.s3bkt_plc_obj.session_obj)
         cls.csm_user_obj = CortxCliCsmUser()
-        cls.node1_helper_obj = Node(
-            hostname=CMN_CFG["nodes"][0]["host"],
-            username=CMN_CFG["nodes"][0]["username"],
-            password=CMN_CFG["nodes"][0]["password"])
-        cls.node2_helper_obj = Node(
-            hostname=CMN_CFG["nodes"][1]["host"],
-            username=CMN_CFG["nodes"][1]["username"],
-            password=CMN_CFG["nodes"][1]["password"])
-        cls.node_list = [
-            CMN_CFG["nodes"][0]["hostname"],
-            CMN_CFG["nodes"][1]["hostname"]]
+        cls.node_list = [each["hostname"] for each in CMN_CFG["nodes"] if each["hostname"]]
         cls.csm_user_pwd = CSM_CFG["CliConfig"]["csm_user"]["password"]
         cls.acc_password = CSM_CFG["CliConfig"]["s3_account"]["password"]
         cls.s3acc_prefix = "cli_s3acc_policy"
@@ -151,8 +142,8 @@ class TestCliBucketPolicy:
                 system_utils.run_remote_cmd(
                     cmd=remove_cmd,
                     hostname=each_node,
-                    username=CMN_CFG["nodes"][1]["username"],
-                    password=CMN_CFG["nodes"][1]["password"])
+                    username=CMN_CFG["nodes"][0]["username"],
+                    password=CMN_CFG["nodes"][0]["password"])
         self.log.info("ENDED : Teardown operations for test function")
 
     @classmethod
