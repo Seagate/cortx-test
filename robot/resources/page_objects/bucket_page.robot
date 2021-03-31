@@ -7,11 +7,14 @@ Variables  ${EXECDIR}/resources/common/element_locators.py
 
 Create Bucket
     [Documentation]  Test keyword is for create bucket
-    [Arguments]  ${bucketname} 
+    [Arguments]  ${bucketname}  ${check_bucket_url}=False
+    ${bucket_url_check}=  Convert To Boolean  ${check_bucket_url}
     Log To Console And Report  Inserting bucketname ${bucketname}
     Input Text  ${BUCKET_NAME_ID}  ${bucketname}
     Click Element  ${BUCKET_CREATE_BUTTON_ID}
     Sleep  2s
+    Run Keyword If  ${bucket_url_check}  Verify bucket url after bucket creation  ${bucketname}
+    ...  ELSE  Log To Console And Report  Bucket URL not displayed
     wait until element is visible  ${CONFIRM_CREATE_BUTTON_ID}  timeout=60
     Click Button  ${CONFIRM_CREATE_BUTTON_ID}
 
@@ -89,4 +92,25 @@ Verify cancel opration of delete bucket
     Action On The Table Element  ${DELETE_BUCKET_XPATH}  ${bucketname}
     Click Element  ${CANCEL_BUCKET_DELITION_ICON_ID}
     Is Bucket Present  ${bucketname}
+
+Verify the bucket url in buckets table
+    [Documentation]  This keyword verifys the bucket url in buckets table.
+    [Arguments]  ${bucketname}
+     Log To Console And Report  Bucket ${bucketname}
+     ${tool_tip_element} =  Format String  ${BUCKET_URL_TOOLTIP_XPATH}  ${bucketname}
+     wait for page or element to load  10s
+     #wait until element is visible  ${BUCKET_URL_TOOLTIP_XPATH}  timeout=10
+     Mouse Over  ${tool_tip_element}
+     wait for page or element to load
+     wait until element is visible  ${BUCKET_URL_TOOLTIP_TEXT_ID}  timeout=10
+     ${tooltip_from_gui}=  get text  ${BUCKET_URL_TOOLTIP_TEXT_ID}
+     Should Contain  ${tooltip_from_gui}  ${bucketname}
+
+Verify bucket url after bucket creation
+    [Documentation]  This keyword verifys the bucket url after bucket creation.
+    [Arguments]  ${bucketname}
+    Log To Console And Report  Bucket ${bucketname}
+    wait for page or element to load
+    ${bucket_url_element_text}=  get text  ${BUCKET_URL_ON_BUCKET_CREATION_XPATH}
+    Should Contain  ${bucket_url_element_text}  ${bucketname}
 
