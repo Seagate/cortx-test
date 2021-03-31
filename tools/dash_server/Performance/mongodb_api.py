@@ -39,7 +39,8 @@ def pymongo_exception(func):
                 print(f"Wrong username/password. {ops_exception}")
                 sys.exit(1)
             elif ops_exception.code == 13:
-                print(f"User does not have permission for operation. {ops_exception}")
+                print(
+                    f"User does not have permission for operation. {ops_exception}")
                 sys.exit(1)
             else:
                 print(f"Unable to connect to mongoDB. {ops_exception}")
@@ -103,11 +104,11 @@ def find_documents(query: dict,
 
 @pymongo_exception
 def find_distinct_values(key: str,
-                   query: dict,
-                   uri: str,
-                   db_name: str,
-                   collection: str
-                   ) -> (bool, str):
+                         query: dict,
+                         uri: str,
+                         db_name: str,
+                         collection: str
+                         ) -> (bool, str):
     """
     Return search results for distinct values for key in MongoDB database
 

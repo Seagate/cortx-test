@@ -34,10 +34,11 @@ from Performance.graphs.graphs_functions import get_data_based_on_filter, \
 
 traces = []
 
+
 @app.callback(
     Output('option1_dropdown', 'options'),
     [Input('filter_dropdown', 'value'),
-    Input('graphs_version_dropdown', 'value')]
+     Input('graphs_version_dropdown', 'value')]
 )
 def option1_callback(Xfilter, release):
     if Xfilter is None or release is None:
@@ -47,7 +48,8 @@ def option1_callback(Xfilter, release):
         builds = get_chain(release)
         return get_dict_from_array(builds, True)
     elif Xfilter == 'Object Size':
-        Objsize_list = fetch_configs_from_file(benchmark_config, 'S3bench', 'object_size')
+        Objsize_list = fetch_configs_from_file(
+            benchmark_config, 'S3bench', 'object_size')
         return get_dict_from_array(Objsize_list, False, True)
 
     return None
@@ -56,7 +58,7 @@ def option1_callback(Xfilter, release):
 @app.callback(
     Output('option2_dropdown', 'options'),
     [Input('filter_dropdown', 'value'),
-    Input('graphs_version_dropdown', 'value')],
+     Input('graphs_version_dropdown', 'value')],
     prevent_initial_call=True
 )
 def option2_callback(Xfilter, release):
@@ -65,6 +67,7 @@ def option2_callback(Xfilter, release):
 
     builds = get_chain(release)
     return get_dict_from_array(builds, True)
+
 
 @app.callback(
     Output('option2_dropdown', 'style'),
@@ -77,9 +80,10 @@ def option2_style_callback(xfilter):
 
     if xfilter == 'build':
         return {'display': 'block', 'width': '160px', 'verticalAlign': 'middle',
-                    "margin-right": "10px","margin-top":"10px"}
+                "margin-right": "10px", "margin-top": "10px"}
     else:
         return {'display': 'none'}
+
 
 @app.callback(
     Output('configs_dropdown', 'style'),
@@ -90,12 +94,12 @@ def update_configs_style(bench):
     if bench == 'S3bench':
         return {'display': 'none'}
     else:
-       return {'display': 'block', 'width': '250px', 'verticalAlign': 'middle',
-                "margin-right": "10px","margin-top":"10px"}
+        return {'display': 'block', 'width': '250px', 'verticalAlign': 'middle',
+                "margin-right": "10px", "margin-top": "10px"}
 
 
 def graphs_global(bench, operation_opt, option1, option2, xfilter,
-                release, configs, titleText, y_axis_test, metric, param=None):
+                  release, configs, titleText, y_axis_test, metric, param=None):
     operations = get_operations(bench, operation_opt)
     options = get_options(option1, option2)
     fig = go.Figure()
@@ -105,19 +109,20 @@ def graphs_global(bench, operation_opt, option1, option2, xfilter,
     for op in operations:
         for option in options:
             [x_axis, y_data] = get_data_based_on_filter(xfilter,
-                                release, option, bench, configs, op, metric, param)
-            trace = get_structure_trace(go.Scatter, op, metric, option, x_axis, y_data)
+                                                        release, option, bench, configs, op, metric, param)
+            trace = get_structure_trace(
+                go.Scatter, op, metric, option, x_axis, y_data)
             fig.add_trace(trace)
 
     fig.update_layout(
         autosize=True,
         height=625,
-        showlegend = True,
-        title = '{} Plot'.format(metric),
+        showlegend=True,
+        title='{} Plot'.format(metric),
         title_font_size=24,
         title_font_color="blue",
         title_font_family="Sans Serif",
-        legend_title= 'Glossary',
+        legend_title='Glossary',
         yaxis=dict(
             title_text=y_axis_test,
             titlefont=dict(size=20, family="Sans Serif")),
@@ -133,13 +138,13 @@ def graphs_global(bench, operation_opt, option1, option2, xfilter,
 @app.callback(
     Output('plot_Throughput', 'figure'),
     [Input('perf_submit_button', 'n_clicks'),
-    Input('filter_dropdown', 'value'),
-    Input('graphs_version_dropdown', 'value'),
-    Input('option1_dropdown', 'value'),
-    Input('option2_dropdown', 'value'),
-    Input('benchmark_dropdown', 'value'),
-    Input('configs_dropdown', 'value'),
-    Input('operations_dropdown', 'value')],
+     Input('filter_dropdown', 'value'),
+     Input('graphs_version_dropdown', 'value'),
+     Input('option1_dropdown', 'value'),
+     Input('option2_dropdown', 'value'),
+     Input('benchmark_dropdown', 'value'),
+     Input('configs_dropdown', 'value'),
+     Input('operations_dropdown', 'value')],
     prevent_initial_call=True
 )
 def update_throughput(n_clicks, xfilter, release, option1, option2, bench, configs, operation_opt):
@@ -162,16 +167,17 @@ def update_throughput(n_clicks, xfilter, release, option1, option2, bench, confi
 
     return return_val
 
+
 @app.callback(
     Output('plot_Latency', 'figure'),
     [Input('perf_submit_button', 'n_clicks'),
-    Input('filter_dropdown', 'value'),
-    Input('graphs_version_dropdown', 'value'),
-    Input('option1_dropdown', 'value'),
-    Input('option2_dropdown', 'value'),
-    Input('benchmark_dropdown', 'value'),
-    Input('configs_dropdown', 'value'),
-    Input('operations_dropdown', 'value')],
+     Input('filter_dropdown', 'value'),
+     Input('graphs_version_dropdown', 'value'),
+     Input('option1_dropdown', 'value'),
+     Input('option2_dropdown', 'value'),
+     Input('benchmark_dropdown', 'value'),
+     Input('configs_dropdown', 'value'),
+     Input('operations_dropdown', 'value')],
     prevent_initial_call=True
 )
 def update_latency(n_clicks, xfilter, release, option1, option2, bench, configs, operation_opt):
@@ -194,16 +200,17 @@ def update_latency(n_clicks, xfilter, release, option1, option2, bench, configs,
 
     return return_val
 
+
 @app.callback(
     Output('plot_IOPS', 'figure'),
     [Input('perf_submit_button', 'n_clicks'),
-    Input('filter_dropdown', 'value'),
-    Input('graphs_version_dropdown', 'value'),
-    Input('option1_dropdown', 'value'),
-    Input('option2_dropdown', 'value'),
-    Input('benchmark_dropdown', 'value'),
-    Input('configs_dropdown', 'value'),
-    Input('operations_dropdown', 'value')],
+     Input('filter_dropdown', 'value'),
+     Input('graphs_version_dropdown', 'value'),
+     Input('option1_dropdown', 'value'),
+     Input('option2_dropdown', 'value'),
+     Input('benchmark_dropdown', 'value'),
+     Input('configs_dropdown', 'value'),
+     Input('operations_dropdown', 'value')],
     prevent_initial_call=True
 )
 def update_IOPS(n_clicks, xfilter, release, option1, option2, bench, configs, operation_opt):
@@ -226,16 +233,17 @@ def update_IOPS(n_clicks, xfilter, release, option1, option2, bench, configs, op
 
     return return_val
 
+
 @app.callback(
     Output('plot_TTFB', 'figure'),
     [Input('perf_submit_button', 'n_clicks'),
-    Input('filter_dropdown', 'value'),
-    Input('graphs_version_dropdown', 'value'),
-    Input('option1_dropdown', 'value'),
-    Input('option2_dropdown', 'value'),
-    Input('benchmark_dropdown', 'value'),
-    Input('configs_dropdown', 'value'),
-    Input('operations_dropdown', 'value')],
+     Input('filter_dropdown', 'value'),
+     Input('graphs_version_dropdown', 'value'),
+     Input('option1_dropdown', 'value'),
+     Input('option2_dropdown', 'value'),
+     Input('benchmark_dropdown', 'value'),
+     Input('configs_dropdown', 'value'),
+     Input('operations_dropdown', 'value')],
     prevent_initial_call=True
 )
 def update_TTFB(n_clicks, xfilter, release, option1, option2, bench, configs, operation_opt):
@@ -253,21 +261,22 @@ def update_TTFB(n_clicks, xfilter, release, option1, option2, bench, configs, op
             titleText = 'Builds'
 
         fig = graphs_global(bench, operation_opt, option1, option2,
-                    xfilter, release, configs, titleText, "Data (ms)", 'TTFB', 'Avg')
+                            xfilter, release, configs, titleText, "Data (ms)", 'TTFB', 'Avg')
         return_val = fig
 
     return return_val
 
+
 @app.callback(
     Output('plot_all', 'figure'),
     [Input('perf_submit_button', 'n_clicks'),
-    Input('filter_dropdown', 'value'),
-    Input('graphs_version_dropdown', 'value'),
-    Input('option1_dropdown', 'value'),
-    Input('option2_dropdown', 'value'),
-    Input('benchmark_dropdown', 'value'),
-    Input('configs_dropdown', 'value'),
-    Input('operations_dropdown', 'value')],
+     Input('filter_dropdown', 'value'),
+     Input('graphs_version_dropdown', 'value'),
+     Input('option1_dropdown', 'value'),
+     Input('option2_dropdown', 'value'),
+     Input('benchmark_dropdown', 'value'),
+     Input('configs_dropdown', 'value'),
+     Input('operations_dropdown', 'value')],
     prevent_initial_call=True
 )
 def update_all(n_clicks, xfilter, release, option1, option2, bench, configs, operation_opt):
@@ -303,19 +312,20 @@ def update_all(n_clicks, xfilter, release, option1, option2, bench, configs, ope
             for op in operations:
                 for option in options:
                     [x_axis, y_data] = get_data_based_on_filter(xfilter,
-                                    release, option, bench, configs, op, metric, param)
-                    trace = get_structure_trace(go.Scatter, op, metric, option, x_axis, y_data)
+                                                                release, option, bench, configs, op, metric, param)
+                    trace = get_structure_trace(
+                        go.Scatter, op, metric, option, x_axis, y_data)
                     fig.add_trace(trace)
 
         fig.update_layout(
             autosize=True,
             height=625,
-            showlegend = True,
-            title = 'All Plots in One',
+            showlegend=True,
+            title='All Plots in One',
             title_font_size=24,
             title_font_color="blue",
             title_font_family="Sans Serif",
-            legend_title= 'Glossary',
+            legend_title='Glossary',
             yaxis=dict(
                 title_text="Data",
                 titlefont=dict(size=20, family="Sans Serif")),

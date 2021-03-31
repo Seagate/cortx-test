@@ -24,7 +24,8 @@ import yaml
 config_path = 'Performance/configs/configs.yml'
 benchmark_config = 'Performance/configs/benchmark.yml'
 
-def makeconfig(name):  #function for connecting with configuration file
+
+def makeconfig(name):  # function for connecting with configuration file
     with open(name) as config_file:
         configs = yaml.safe_load(config_file)
     return configs
@@ -33,7 +34,7 @@ def makeconfig(name):  #function for connecting with configuration file
 def get_chain(version):
     from Performance.mongodb_api import find_documents
     uri, db, col = get_db_details()
-    cursor = find_documents({'Title' : 'Main Chain'}, uri, db, col)
+    cursor = find_documents({'Title': 'Main Chain'}, uri, db, col)
     chain = cursor[0][version]
 
     return chain
@@ -70,7 +71,8 @@ def keys_exists(element, *keys):
     if not isinstance(element, dict):
         raise AttributeError('keys_exists() expects dict as first argument.')
     if len(keys) == 0:
-        raise AttributeError('keys_exists() expects at least two arguments, one given.')
+        raise AttributeError(
+            'keys_exists() expects at least two arguments, one given.')
 
     _element = element
     for key in keys:
@@ -95,16 +97,17 @@ def round_off(value, base=1):
         return int(value)
     return base * round(value / base)
 
+
 def get_dict_from_array(options, makeReverse, allcaps=False):
     if makeReverse:
         options.reverse()
     versions = [
-            {'label' : option, 'value' : option} for option in options
+        {'label': option, 'value': option} for option in options
     ]
 
     if allcaps:
         versions = [
-            {'label' : option.upper(), 'value' : option} for option in options
+            {'label': option.upper(), 'value': option} for option in options
         ]
         return versions
 
