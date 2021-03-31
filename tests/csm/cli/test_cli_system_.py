@@ -120,6 +120,7 @@ class TestCliSystem:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-11742")
+    @pytest.mark.skip(reason="Not applicable for VM")
     @CTFailOn(error_handler)
     def test_7019_verify_node_status(self):
         """
@@ -135,6 +136,7 @@ class TestCliSystem:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-12846")
+    @pytest.mark.skip(reason="Not applicable for VM")
     @CTFailOn(error_handler)
     def test_7018_node_operations(self):
         """
@@ -201,6 +203,7 @@ class TestCliSystem:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-15860")
+    @pytest.mark.skip(reason="Not applicable for VM")
     @CTFailOn(error_handler)
     def test_7021_stop_node(self):
         """
@@ -234,6 +237,7 @@ class TestCliSystem:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-16213")
+    @pytest.mark.skip(reason="Not applicable for VM")
     @CTFailOn(error_handler)
     def test_7025_start_node(self):
         """
