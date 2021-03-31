@@ -10,6 +10,15 @@ CSM_LOGIN_FAIL_MSG_ID = 'login-failsmsg'
 # CSM Dashboard Locators
 LOGGED_IN_USER_NAME_ID = 'header-username'
 LOG_OUT_ID = 'logout-icon'
+CAPACITY_TOTAL_LABEL_ID = 'capacity-total-text'
+CAPACITY_AVAILABLE_LABEL_ID = 'capacity-available-text'
+CAPACITY_USED_LABEL_ID = 'capacity-used-text'
+CAPACITY_WIDGET_ID = 'capacityContainer'
+CAPACITY_WIDGET_LABEL_ID = 'capacity-title'
+CAPACITY_GRAPH_ID = 'gauge_capacity'
+USED_CAPACITY_VALUE_XPATH = "//*[@id='capacity-used']/td[3]"
+AVAILABLE_CAPACITY_VALUE_XPATH = "//*[@id='capacity-available']/td[3]"
+TOTAL_CAPACITY_VALUE_XPATH = "//*[@id='capacity-total']/td[3]"
 
 # Menus
 MANAGE_MENU_ID = 'Manage'
