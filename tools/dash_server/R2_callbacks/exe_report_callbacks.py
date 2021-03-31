@@ -418,5 +418,5 @@ def gen_table_s3_bucket_perf(n_clicks, branch, build_no):
     """
     if n_clicks is None or branch is None or build_no is None:
         raise PreventUpdate
-    
+
     return "No data available for R2"
