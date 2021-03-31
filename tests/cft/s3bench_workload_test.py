@@ -23,11 +23,9 @@ import logging
 
 import pytest
 
+from commons import configmanager
 from libs.s3 import ACCESS_KEY, SECRET_KEY
-from libs.s3 import s3_test_lib
 from scripts.s3_bench import s3bench
-
-S3_TEST_OBJ = s3_test_lib.S3TestLib()
 
 
 class TestWorkloadS3Bench:
@@ -35,6 +33,41 @@ class TestWorkloadS3Bench:
     def setup_class(cls):
         """Setup class"""
         cls.log = logging.getLogger(__name__)
+        test_config = "config/cft/s3bench_workload_test.yaml"
+        cls.cft_test_cfg = configmanager.get_config_wrapper(fpath=test_config)
+
+    @pytest.mark.tags("TEST-19658")
+    def test_19658(self):
+        """Longevity Test with distributed workload"""
+        test_cfg = self.cft_test_cfg["test_12345"]
+        distribution = test_cfg["workloads_distribution"]
+        total_obj = test_cfg["total_objects"]
+        loops = test_cfg["loops"]
+        clients = test_cfg["clients"]
+        bucket_name = "test-bucket"
+        workloads = [(size, int(total_obj * percent / 100)) for size, percent in
+                     distribution.items()]
+        resp = s3bench.setup_s3bench()
+        assert resp, "Could not setup s3bench."
+
+        for loop in range(loops):
+            for size, samples in workloads:
+                if samples == 0:
+                    continue
+                if clients > samples:
+                    clients = samples
+                resp = s3bench.s3bench(ACCESS_KEY, SECRET_KEY, bucket=bucket_name,
+                                       num_clients=clients, num_sample=samples,
+                                       obj_name_pref="loadgen_test_", obj_size=size,
+                                       skip_cleanup=False, duration=None, verbose=True,
+                                       log_file_prefix="TEST-19658")
+                self.log.info(
+                    f"Loop: {loop} Workload: {samples} objects of {size} with {clients} parallel "
+                    f"clients.")
+                self.log.info(f"Log Path {resp[1]}")
+                assert not s3bench.check_log_file_error(resp[1],
+                                                        ["with error ", "panic", "status code"]), \
+                    f"S3bench workload for failed in loop {loop}. Please read log file {resp[1]}"
 
     @pytest.mark.tags("TEST-19471")
     def test_19471(self):
