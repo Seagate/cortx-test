@@ -1,41 +1,21 @@
-common_var:
-  bucket_name: "testbucket{}"
-  object_name: "testobj{}"
-  account_prefix: "my_account"
-  del_file: "rm -f /home/mp_obj"
-  file_path: "/home/obj.txt"
-  file_size: 10
-  acc_name_prefix: "my_account"
-  start_range: 10000
-  end_range: 20000
-  full_ctrl: "FULL_CONTROL"
-  error_msg: "AccessDenied"
-
-test_9852:
-  #obj_acl: "FULL_CONTROL"
-
 test_9853:
   err_msg: "NoSuchKey"
 
 test_get_obj_acl_mp:
-  #obj_acl: "FULL_CONTROL"
   file_size: 100
   total_parts: 10
   mupart_obj_path: "/home/mp_obj"
 
 test_9857:
-  #obj_acl: "FULL_CONTROL"
   single_part_sz: 500
   total_parts: 5
   mupart_obj_path: "/home/mp_obj"
 
 test_9897:
-  #obj_acl: "FULL_CONTROL"
   file_path: "/home/test_file"
   f_size: 2048
 
 test_9898:
-  #obj_acl: "FULL_CONTROL"
   file_path: "/home/test_file"
   f_size: 2048
   run_cmd: "aws configure set default.s3.multipart_chunksize 16MB"
@@ -47,17 +27,14 @@ test_9899:
   mupart_obj_path: "/home/mp_obj"
 
 test_10208:
-  #obj_acl: "FULL_CONTROL"
   account_name: "my_account208{}"
   emailid: "my_account208{}@seagate.com"
 
 test_10209:
-  #obj_acl: "FULL_CONTROL"
   account_name: "my_account209{}"
   emailid: "my_account{}@seagate.com"
 
 test_10210:
-  #obj_acl: "FULL_CONTROL"
   invalid_can_id: "999FFFFHHHHH445F"
   assert_msg: "InvalidArgument"
 
@@ -96,14 +73,12 @@ test_10216:
   error_msg: "InvalidACL"
 
 test_10224:
-  #obj_acl: "FULL_CONTROL"
   account_name_1: "my_account_one{}"
   emailid_1: "my_account_one{}@seagate.com"
   account_name_2: "my_account_two{}"
   emailid_2: "my_account_two{}@seagate.com"
 
 test_10225:
-  #obj_acl: "FULL_CONTROL"
   account_name: "my_account225{}"
   emailid: "my_account225{}@seagate.com"
   Type: "CanonicalUser"
@@ -111,13 +86,11 @@ test_10225:
   error_msg: "NoSuchKey"
 
 test_10227:
-  #obj_acl: "FULL_CONTROL"
   grant_count: 99
   name_initials: "my_account{}{}"
   name_postfix: "@seagate.com"
 
 test_10228:
-  #obj_acl: "FULL_CONTROL"
   grant_count: 99
   name_initials: "my_account{}{}"
   name_postfix: "@seagate.com"
@@ -131,7 +104,6 @@ test_10229:
 
 test_10962:
   acl_permission: "private"
-  #error_msg: "AccessDenied"
   account_name_1: "my_account_one{}"
   emailid_1: "my_account_one{}@seagate.com"
   account_name_2: "my_account_two{}"
@@ -139,7 +111,6 @@ test_10962:
 
 test_10963:
   acl_permission: "private"
-  #error_msg: "AccessDenied"
   account_name_1: "my_account_one{}"
   emailid_1: "my_account_one{}@seagate.com"
   account_name_2: "my_account_two{}"
@@ -152,7 +123,6 @@ test_10964:
   emailid: "my_account_one{}@seagate.com"
 
 test_10965:
-  #error_msg: "AccessDenied"
   auth_read: "authenticated-read"
   account_name_1: "my_account_one{}"
   emailid_1: "my_account_one{}@seagate.com"
@@ -160,7 +130,6 @@ test_10965:
   emailid_2: "my_account_two{}@seagate.com"
 
 test_10966:
-  #error_msg: "AccessDenied"
   auth_read: "authenticated-read"
   account_name_1: "my_account_one{}"
   emailid_1: "my_account_one{}@seagate.com"
@@ -168,7 +137,6 @@ test_10966:
   emailid_2: "my_account_two{}@seagate.com"
 
 test_10967:
-  #error_msg: "AccessDenied"
   auth_read: "authenticated-read"
   write_acp: "WRITE_ACP"
   account_name_1: "my_account_one{}"
@@ -185,7 +153,6 @@ test_10968:
   emailid_2: "my_account_two{}@seagate.com"
 
 test_10969:
-  #error_msg: "AccessDenied"
   read_acp: "READ_ACP"
   auth_read: "authenticated-read"
   account_name_1: "my_account_one{}"
@@ -194,7 +161,6 @@ test_10969:
   emailid_2: "my_account_two{}@seagate.com"
 
 test_10972:
-  #error_msg: "AccessDenied"
   private_acl: "private"
   auth_read: "authenticated-read"
   account_name_1: "my_account_one{}"
@@ -203,7 +169,6 @@ test_10972:
   emailid_2: "my_account_two{}@seagate.com"
 
 test_10973:
-  #error_msg: "AccessDenied"
   private_acl: "private"
   auth_read: "authenticated-read"
   account_name_1: "my_account_one{}"
@@ -212,7 +177,6 @@ test_10973:
   emailid_2: "my_account_two{}@seagate.com"
 
 test_10974:
-  #error_msg: "AccessDenied"
   can_object_acl: "bucket-owner-read"
   write_acp: "WRITE"
   id_str: "id="
@@ -222,7 +186,6 @@ test_10974:
   emailid_2: "my_account_two{}@seagate.com"
 
 test_10975:
-  #error_msg: "AccessDenied"
   can_object_acl: "bucket-owner-full-control"
   write_acp: "WRITE"
   id_str: "id="
@@ -231,9 +194,7 @@ test_10975:
   account_name_2: "my_account_two{}"
   emailid_2: "my_account_two{}@seagate.com"
 
-
 test_10781:
-  error_msg: "InvalidRequest"
   emailaddress: "emailaddress={}"
   can_object_acl: "bucket-owner-full-control"
   private_acp : "private"
@@ -241,7 +202,6 @@ test_10781:
   emailid: "my_account{}@seagate.com"
 
 test_10782:
-  error_msg: "InvalidRequest"
   emailaddress: "emailaddress={}"
   can_object_acl: "bucket-owner-read"
   private_acp : "private"
@@ -249,56 +209,48 @@ test_10782:
   emailid: "my_account{}@seagate.com"
 
 test_10783:
-  error_msg: "InvalidRequest"
   emailaddress: "emailaddress={}"
   private_acp : "private"
   account_name: "my_account{}"
   emailid: "my_account{}@seagate.com"
 
 test_10784:
-  error_msg: "InvalidRequest"
   emailaddress: "emailaddress={}"
   private_acp : "private"
   account_name: "my_account{}"
   emailid: "my_account{}@seagate.com"
 
 test_10786:
-  error_msg: "InvalidRequest"
   emailaddress: "emailaddress={}"
   private_acp : "public_read"
   account_name: "my_account{}"
   emailid: "my_account{}@seagate.com"
 
 test_10787:
-  error_msg: "InvalidRequest"
   emailaddress: "emailaddress={}"
   private_acp : "public_read"
   account_name: "my_account{}"
   emailid: "my_account{}@seagate.com"
 
 test_10788:
-  error_msg: "InvalidRequest"
   emailaddress: "emailaddress={}"
   private_acp : "public-read-write"
   account_name: "my_account{}"
   emailid: "my_account{}@seagate.com"
 
 test_10789:
-  error_msg: "InvalidRequest"
   emailaddress: "emailaddress={}"
   private_acp : "public-read-write"
   account_name: "my_account{}"
   emailid: "my_account{}@seagate.com"
 
 test_10790:
-  error_msg: "InvalidRequest"
   emailaddress: "emailaddress={}"
   auth_read : "authenticate_read"
   account_name: "my_account{}"
   emailid: "my_account{}@seagate.com"
 
 test_10791:
-  error_msg: "InvalidRequest"
   emailaddress: "emailaddress={}"
   private_acp : "authenticate_read"
   account_name: "my_account{}"
@@ -306,14 +258,8 @@ test_10791:
 
 test_10712:
   bucket_permission: "bucket-owner-read"
-  #assert_msg: "FULL_CONTROL"
-
-#test_10713:
-#  bucket_permission: "bucket-owner-full-control"
-  #assert_msg: "FULL_CONTROL"
 
 test_10714:
-  #error_msg: "AccessDenied"
   auth_read: "authenticated-read"
   bucket_read: "bucket-owner-read"
   private_assert: "private"
@@ -326,11 +272,9 @@ test_10714:
   emailid_2: "my_account_two{}@seagate.com"
 
 test_10715:
-  #error_msg: "AccessDenied"
   auth_read: "authenticated-read"
   bucket_full_control: "bucket-owner-full-control"
   private_assert: "private"
-  #full_cntrl: "FULL_CONTROL"
   write_assert: "WRITE"
   read_assert: "READ"
   id_str: "id="
@@ -344,7 +288,6 @@ test_10718:
   bucket_full_control: "bucket-owner-full-control"
   acl_bucket_read: "bucket-owner-read"
   private_assert: "private"
-  #full_cntrl: "FULL_CONTROL"
   id_str: "id="
   account_name_1: "my_account_one{}"
   emailid_1: "my_account_one{}@seagate.com"
@@ -354,76 +297,53 @@ test_10719:
   bucket_full_control: "bucket-owner-full-control"
   acl_bucket_read: "bucket-owner-read"
   private_assert: "private"
-  #full_cntrl: "FULL_CONTROL"
   id_str: "id="
   account_name_1: "my_account_one{}"
   emailid_1: "my_account_one{}@seagate.com"
 
 test_10720:
-  error_msg: "InvalidRequest"
   bucket_full_control: "bucket-owner-full-control"
   email_str: "emailaddress={}"
   account_name_1: "my_account_one{}"
   emailid_1: "my_account_one{}@seagate.com"
 
 test_10721:
-  error_msg: "InvalidRequest"
   bucket_full_control: "bucket-owner-full-control"
   email_str: "emailaddress={}"
   account_name_1: "my_account_one{}"
   emailid_1: "my_account_one{}@seagate.com"
 
 test_10722:
-  error_msg: "InvalidRequest"
   bucket_full_control: "bucket-owner-full-control"
   email_str: "emailaddress={}"
   account_name_1: "my_account_one{}"
   emailid_1: "my_account_one{}@seagate.com"
 
 test_10723:
-  error_msg: "InvalidRequest"
   bucket_full_control: "bucket-owner-full-control"
   email_str: "emailaddress={}"
   account_name_1: "my_account_one{}"
   emailid_1: "my_account_one{}@seagate.com"
 
 test_10724:
-  error_msg: "InvalidRequest"
   bucket_full_control: "bucket-owner-full-control"
   email_str: "emailaddress={}"
   account_name_1: "my_account_one{}"
   emailid_1: "my_account_one{}@seagate.com"
 
-test_10725:
-  error_msg: "InvalidRequest"
-  bucket_full_control: "bucket-owner-read"
-  email_str: "emailaddress={}"
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
-
 test_10726:
-  error_msg: "InvalidRequest"
   bucket_full_control: "bucket-owner-read"
   email_str: "emailaddress={}"
   account_name_1: "my_account_one{}"
   emailid_1: "my_account_one{}@seagate.com"
 
 test_10727:
-  error_msg: "InvalidRequest"
-  bucket_full_control: "bucket-owner-read"
-  email_str: "emailaddress={}"
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
-
-test_10728:
-  error_msg: "InvalidRequest"
   bucket_full_control: "bucket-owner-read"
   email_str: "emailaddress={}"
   account_name_1: "my_account_one{}"
   emailid_1: "my_account_one{}@seagate.com"
 
 test_10729:
-  error_msg: "InvalidRequest"
   bucket_full_control: "bucket-owner-read"
   email_str: "emailaddress={}"
   account_name_1: "my_account_one{}"
@@ -435,14 +355,12 @@ test_10792:
   acc_str: "AccountName = {}"
   account_name_1: "my_account_10792{}"
   emailid_1: "my_account_10792{}@seagate.com"
-  #full_cntrl: "FULL_CONTROL"
   can_str: "CanonicalUser"
 
 test_10793:
   permission: "private"
   Type: "CanonicalUser"
   DisplayName: "testuser"
-  error_msg: "InvalidRequest"
   acc_str: "AccountName = {}"
   account_name_1: "my_account_10793{}"
   emailid_1: "my_account_10793{}@seagate.com"
@@ -451,13 +369,11 @@ test_10793:
 
 test_10794:
   error_msg: "InvalidACL"
-  #permission_1: "FULL_CONTROL"
   permission_2: "private"
   account_name_1: "my_account_10794{}"
   emailid_1: "my_account_10795{}@seagate.com"
 
 test_159:
-  #error_msg: "AccessDenied"
   permission: "private"
   account_name_1: "my_account_one{}"
   emailid_1: "my_account_one{}@seagate.com"
@@ -465,7 +381,6 @@ test_159:
   emailid_2: "my_account_two{}@seagate.com"
 
 test_170:
-  #error_msg: "AccessDenied"
   can_object_acl: "authenticated-read"
   account_name_1: "my_account_one{}"
   emailid_1: "my_account_one{}@seagate.com"
@@ -473,18 +388,15 @@ test_170:
   emailid_2: "my_account_two{}@seagate.com"
 
 test_172:
-  #error_msg: "AccessDenied"
   id_str: "id="
   permission_write: "WRITE"
   can_object_acl: "bucket-owner-read"
-  #usr2_acl: "FULL_CONTROL"
   account_name_1: "my_account_one{}"
   emailid_1: "my_account_one{}@seagate.com"
   account_name_2: "my_account_two{}"
   emailid_2: "my_account_two{}@seagate.com"
 
 test_175:
-  #error_msg: "AccessDenied"
   id_str: "id="
   permission_write: "WRITE"
   can_object_acl: "bucket-owner-full-control"
@@ -506,7 +418,6 @@ test_453:
 test_423:
   key: "key423"
   value: "value423"
-  #full_control: "FULL_CONTROL"
   account_name_1: "my_account_one{}"
   emailid_1: "my_account_one{}@seagate.com"
   account_name_2: "my_account_two{}"
@@ -520,7 +431,6 @@ test_421:
   emailid_1: "my_account_one{}@seagate.com"
   account_name_2: "my_account_two{}"
   emailid_2: "my_account_two{}@seagate.com"
-  #error_msg: "AccessDenied"
 
 test_419:
   key: "key419"
@@ -536,7 +446,6 @@ test_410:
     value: "valuekey410"
 
 test_169:
-  #error_msg: "AccessDenied"
   can_object_acl: "public-read-write"
   account_name_1: "my_account_one{}"
   emailid_1: "my_account_one{}@seagate.com"
@@ -544,7 +453,6 @@ test_169:
   emailid_2: "my_account_two{}@seagate.com"
 
 test_167:
-  #error_msg: "AccessDenied"
   can_object_acl: "public-read"
   account_name_1: "my_account_one{}"
   emailid_1: "my_account_one{}@seagate.com"
@@ -552,7 +460,6 @@ test_167:
   emailid_2: "my_account_two{}@seagate.com"
 
 test_311:
-  #error_msg: "AccessDenied"
   account_name_1: "my_account_one{}"
   emailid_1: "my_account_one{}@seagate.com"
   account_name_2: "my_account_two{}"
@@ -588,7 +495,6 @@ test_3454:
   account_name_2: "my_account_2{}"
   emailid_2: "my_account_2{}@seagate.com"
   emailaddr: "emailaddress={}"
-  #grant_permission: "FULL_CONTROL"
   type: "CanonicalUser"
   sub_can_id: "agsdhgh"
   err_message: "Invalid Argument"
@@ -601,14 +507,12 @@ test_3455:
   account_name_3: "my_account_3{}"
   emailid_3: "my_account_3{}@seagate.com"
   emailaddr: "emailaddress={}"
-  #grant_permission: "FULL_CONTROL"
   new_grantee:
     Grantee:
       DisplayName: "{}"
       ID: "{}"
       Type: "CanonicalUser"
     Permission: "FULL_CONTROL"
-  #err_message: "AccessDenied"
 
 test_3456:
   account_name_1: "my_account_1{}"
@@ -623,7 +527,6 @@ test_3456:
       ID: "{}"
       Type: "CanonicalUser"
     Permission: "READ_ACP"
-  #err_message: "AccessDenied"
 
 test_3457:
   account_name_1: "my_account_1{}"
@@ -638,7 +541,6 @@ test_3457:
       ID: "{}"
       Type: "CanonicalUser"
     Permission: "WRITE_ACP"
-  #err_message: "AccessDenied"
 
 test_3458:
   account_name_1: "my_account_1{}"
@@ -653,7 +555,6 @@ test_3458:
       ID: "{}"
       Type: "CanonicalUser"
     Permission: "WRITE"
-  #err_message: "AccessDenied"
 
 test_3459:
   account_name_1: "my_account_1{}"
@@ -661,8 +562,6 @@ test_3459:
   account_name_2: "my_account_2{}"
   emailid_2: "my_account_2{}@seagate.com"
   emailaddr: "emailaddress={}"
-  #grant_permission: "FULL_CONTROL"
-  #err_message: "AccessDenied"
 
 test_3460:
   account_name_1: "my_account_1{}"
@@ -671,7 +570,6 @@ test_3460:
   emailid_2: "my_account_2{}@seagate.com"
   emailaddr: "emailaddress={}"
   grant_permission: "READ"
-  #err_message: "AccessDenied"
 
 test_3461:
   account_name_1: "my_account_1{}"
@@ -680,7 +578,6 @@ test_3461:
   emailid_2: "my_account_2{}@seagate.com"
   emailaddr: "emailaddress={}"
   grant_permission: "READ_ACP"
-  #err_message: "AccessDenied"
 
 test_3462:
   account_name_1: "my_account_1{}"
@@ -689,7 +586,6 @@ test_3462:
   emailid_2: "my_account_2{}@seagate.com"
   emailaddr: "emailaddress={}"
   grant_permission: "WRITE_ACP"
-  #err_message: "AccessDenied"
 
 test_3463:
   account_name_1: "my_account_1{}"
@@ -703,7 +599,6 @@ test_3541:
   acl: "bucket-owner-full-control"
   emailid: "testacnt3541{}@seagate.com"
   emailaddr: "emailaddress={}"
-  err_message: "InvalidRequest"
 
 test_3228:
   policy: "{}"
@@ -726,12 +621,10 @@ test_3248:
 test_3250:
   account_name: "my_account_{}"
   emailid: "my_account_{}@seagate.com"
-  #err_msg: "AccessDenied"
 
 test_3254:
   account_name: "my_account_{}"
   emailid: "my_account_{}@seagate.com"
-  #err_msg: "AccessDenied"
   grantee_json:
       Grantee:
           Type: "CanonicalUser"
@@ -752,7 +645,6 @@ test_3255:
 test_3256:
   account_name: "my_account_{}"
   emailid: "my_account_{}@seagate.com"
-  #err_msg: "AccessDenied"
   grantee_json:
       Grantee:
           Type: "CanonicalUser"
@@ -763,7 +655,6 @@ test_3256:
 test_3257:
   account_name: "my_account_{}"
   emailid: "my_account_{}@seagate.com"
-  #err_msg: "AccessDenied"
   grantee_json:
       Grantee:
           Type: "CanonicalUser"
@@ -774,7 +665,6 @@ test_3257:
 test_3451:
   account_name: "my_account_{}"
   emailid: "my_account_{}@seagate.com"
-  #err_msg: "AccessDenied"
 
 test_3452:
   account_name: "my_account_{}"
