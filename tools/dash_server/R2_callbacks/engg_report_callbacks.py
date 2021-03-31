@@ -204,33 +204,7 @@ def gen_table_detailed_s3_bucket_perf(n_clicks, branch, build_no, test_system, t
     if test_team is not None:
         # Add to query
         pass
-    '''
-    data_detailed_s3_bucket_perf = {
-        "Statistics": ["Write Throughput(MBps)", "Read Throughput(MBps)", "Write Latency(ms)",
-                       "Read Latency(ms)",
-                       "Write IOPS", "Read IOPS", "Write TTFB(ms)", "Read TTFB(ms)"],
-        "4KB": ["1", "2", "3", "4", "5", "6", "7", "8"],
-        "100KB": ["1", "2", "3", "4", "5", "6", "7", "8"],
-        "1MB": ["1", "2", "3", "4", "5", "6", "7", "8"],
-        "5MB": ["1", "2", "3", "4", "5", "6", "7", "8"],
-        "36MB": ["1", "2", "3", "4", "5", "6", "7", "8"],
-        "64MB": ["1", "2", "3", "4", "5", "6", "7", "8"],
-        "128MB": ["1", "2", "3", "4", "5", "6", "7", "8"],
-        "256MB": ["1", "2", "3", "4", "5", "6", "7", "8"],
-    }
-    df_detailed_s3_bucket_perf = pd.DataFrame(data_detailed_s3_bucket_perf)
-    detailed_s3_bucket_perf = dash_table.DataTable(
-        id="detailed_s3_bucket_perf",
-        columns=[{"name": i, "id": i} for i in df_detailed_s3_bucket_perf.columns],
-        data=df_detailed_s3_bucket_perf.to_dict('records'),
-        style_header=common.dict_style_header,
-        style_data_conditional=[{'if': {'row_index': 'odd'}, 'backgroundColor': '#F8F8F8'},
-                                {'if': {'column_id': "Statistics"}, 'backgroundColor': "#b9b9bd"}
-                                ],
-        style_cell=common.dict_style_cell
-    )
-    return detailed_s3_bucket_perf
-    '''
+
     return "No data available for R2"
 
 
@@ -256,25 +230,6 @@ def gen_table_metadata_latency(n_clicks, branch, build_no, test_system, test_tea
     if test_team is not None:
         # Add to query
         pass
-    '''
-    data_metadata_latency = {
-        "Operation Latency": ["Add/Edit Object Tags", "Read Object Tags", "Read Object Metadata"],
-        "Response Time(ms)": ["1", "2", "3"],
-    }
-    df_metadata_latency = pd.DataFrame(data_metadata_latency)
-    metadata_latency = dash_table.DataTable(
-        id="metadata_latency",
-        columns=[{"name": i, "id": i} for i in df_metadata_latency.columns],
-        data=df_metadata_latency.to_dict('records'),
-        style_header=common.dict_style_header,
-        style_data_conditional=[{'if': {'row_index': 'odd'}, 'backgroundColor': '#F8F8F8'},
-                                {'if': {'column_id': "Operation Latency"},
-                                 'backgroundColor': "#b9b9bd"}
-                                ],
-        style_cell=common.dict_style_cell
-    )
-    return metadata_latency
-    '''
     return "No data available for R2"
 
 
@@ -302,130 +257,6 @@ def gen_table_multi_bucket_perf_stats(n_clicks, branch, build_no, test_system, t
     if test_team is not None:
         # Add to query
         pass
-    '''
-    final_rows = []
-
-    # HS bench 1 bucket 1000 Objects 100 Sessions
-    data = {"Statistics": ["Write Throughput(MBps)", "Read Throughput(MBps)", "Write Latency(ms)",
-                           "Read Latency(ms)",
-                           "Write IOPS", "Read IOPS"],
-            "4KB": ["1", "2", "3", "4", "5", "6"],
-            "100KB": ["1", "2", "3", "4", "5", "6"],
-            "1MB": ["1", "2", "3", "4", "5", "6"],
-            "5MB": ["1", "2", "3", "4", "5", "6"],
-            "36MB": ["1", "2", "3", "4", "5", "6"],
-            "64MB": ["1", "2", "3", "4", "5", "6"],
-            "128MB": ["1", "2", "3", "4", "5", "6"],
-            "256MB": ["1", "2", "3", "4", "5", "6"],
-            }
-    temp_df = pd.DataFrame(data)
-    text = ["Hsbench", html.Br(), "1 Buckets", html.Br(), "100 Objects", html.Br(), "100 Sessions"]
-    final_rows.extend(common.get_data_to_html_rows(temp_df, text, 6))
-
-    # HS bench 10 bucket 100 Objects 100 Sessions
-    data = {
-        "Statistics": ["Write Throughput(MBps)", "Read Throughput(MBps)", "Write Latency(ms)",
-                       "Read Latency(ms)",
-                       "Write IOPS", "Read IOPS"],
-        "4KB": ["1", "2", "3", "4", "5", "6"],
-        "100KB": ["1", "2", "3", "4", "5", "6"],
-        "1MB": ["1", "2", "3", "4", "5", "6"],
-        "5MB": ["1", "2", "3", "4", "5", "6"],
-        "36MB": ["1", "2", "3", "4", "5", "6"],
-        "64MB": ["1", "2", "3", "4", "5", "6"],
-        "128MB": ["1", "2", "3", "4", "5", "6"],
-        "256MB": ["1", "2", "3", "4", "5", "6"],
-    }
-    temp_df = pd.DataFrame(data)
-    text = ["Hsbench", html.Br(), "10 Buckets", html.Br(), "100 Objects", html.Br(), "100 Sessions"]
-    final_rows.extend(common.get_data_to_html_rows(temp_df, text, 6))
-
-    # HS bench 50 bucket 100 Objects 100 Sessions
-    data = {
-        "Statistics": ["Write Throughput(MBps)", "Read Throughput(MBps)", "Write Latency(ms)",
-                       "Read Latency(ms)",
-                       "Write IOPS", "Read IOPS"],
-        "4KB": ["1", "2", "3", "4", "5", "6"],
-        "100KB": ["1", "2", "3", "4", "5", "6"],
-        "1MB": ["1", "2", "3", "4", "5", "6"],
-        "5MB": ["1", "2", "3", "4", "5", "6"],
-        "36MB": ["1", "2", "3", "4", "5", "6"],
-        "64MB": ["1", "2", "3", "4", "5", "6"],
-        "128MB": ["1", "2", "3", "4", "5", "6"],
-        "256MB": ["1", "2", "3", "4", "5", "6"],
-    }
-    temp_df = pd.DataFrame(data)
-    text = ["Hsbench", html.Br(), "50 Buckets", html.Br(), "100 Objects", html.Br(), "100 Sessions"]
-    final_rows.extend(common.get_data_to_html_rows(temp_df, text, 6))
-
-    # Cosbench 1 bucket 100 Objects 100 Sessions
-    data = {
-        "Statistics": ["Write Throughput(MBps)", "Read Throughput(MBps)", "Write Latency(ms)",
-                       "Read Latency(ms)",
-                       "Write IOPS", "Read IOPS"],
-        "4KB": ["1", "2", "3", "4", "5", "6"],
-        "100KB": ["1", "2", "3", "4", "5", "6"],
-        "1MB": ["1", "2", "3", "4", "5", "6"],
-        "5MB": ["1", "2", "3", "4", "5", "6"],
-        "36MB": ["1", "2", "3", "4", "5", "6"],
-        "64MB": ["1", "2", "3", "4", "5", "6"],
-        "128MB": ["1", "2", "3", "4", "5", "6"],
-        "256MB": ["1", "2", "3", "4", "5", "6"],
-    }
-    temp_df = pd.DataFrame(data)
-    text = ["Cosbench", html.Br(), "1 Buckets", html.Br(), "100 Objects", html.Br(), "100 Sessions"]
-    final_rows.extend(common.get_data_to_html_rows(temp_df, text, 6))
-
-    # Cosbench 10 bucket 100 Objects 100 Sessions
-    data = {
-        "Statistics": ["Write Throughput(MBps)", "Read Throughput(MBps)", "Write Latency(ms)",
-                       "Read Latency(ms)",
-                       "Write IOPS", "Read IOPS"],
-        "4KB": ["1", "2", "3", "4", "5", "6"],
-        "100KB": ["1", "2", "3", "4", "5", "6"],
-        "1MB": ["1", "2", "3", "4", "5", "6"],
-        "5MB": ["1", "2", "3", "4", "5", "6"],
-        "36MB": ["1", "2", "3", "4", "5", "6"],
-        "64MB": ["1", "2", "3", "4", "5", "6"],
-        "128MB": ["1", "2", "3", "4", "5", "6"],
-        "256MB": ["1", "2", "3", "4", "5", "6"],
-    }
-    temp_df = pd.DataFrame(data)
-    text = ["Cosbench", html.Br(), "10 Buckets", html.Br(), "100 Objects", html.Br(),
-            "100 Sessions"]
-    final_rows.extend(common.get_data_to_html_rows(temp_df, text, 6))
-
-    # Cosbench 50 bucket 100 Objects 100 Sessions
-    data = {
-        "Statistics": ["Write Throughput(MBps)", "Read Throughput(MBps)", "Write Latency(ms)",
-                       "Read Latency(ms)",
-                       "Write IOPS", "Read IOPS"],
-        "4KB": ["1", "2", "3", "4", "5", "6"],
-        "100KB": ["1", "2", "3", "4", "5", "6"],
-        "1MB": ["1", "2", "3", "4", "5", "6"],
-        "5MB": ["1", "2", "3", "4", "5", "6"],
-        "36MB": ["1", "2", "3", "4", "5", "6"],
-        "64MB": ["1", "2", "3", "4", "5", "6"],
-        "128MB": ["1", "2", "3", "4", "5", "6"],
-        "256MB": ["1", "2", "3", "4", "5", "6"],
-    }
-    temp_df = pd.DataFrame(data)
-    text = ["Cosbench", html.Br(), "50 Buckets", html.Br(), "100 Objects", html.Br(),
-            "100 Sessions"]
-    final_rows.extend(common.get_data_to_html_rows(temp_df, text, 6))
-
-    columns = ["Bench"]
-    columns.extend(temp_df.columns)
-    table_headers = [html.Thead(html.Tr([html.Th(col) for col in columns]))]
-    table_body = [html.Tbody(final_rows)]
-    table = dbc.Table(table_headers + table_body, bordered=True,
-                      className="caption-Top col-xs-6",
-                      hover=True,
-                      responsive=True,
-                      striped=True,
-                      style=common.dict_style_cell)
-    return table
-    '''
     return "No data available for R2"
 
 
