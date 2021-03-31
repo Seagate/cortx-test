@@ -1,0 +1,13 @@
+PerfDB:
+    hostname : cftic1.pun.seagate.com:27017,cftic2.pun.seagate.com:27017,apollojenkins.pun.seagate.com:27017/?authSource=performance_db&replicaSet=rs0
+    database: performance_db
+    collection: results
+    auth:
+        full_access_user: <db_username> 
+        full_access_password: <db_password>
+
+# Metrics:
+#     - 'Throughput'
+#     - 'Latency'
+#     - 'TTFB'
+#     - 'IOPS'
