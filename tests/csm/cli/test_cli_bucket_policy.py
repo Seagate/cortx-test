@@ -52,7 +52,6 @@ class TestCliBucketPolicy:
         cls.log = logging.getLogger(__name__)
         cls.log.info("STARTED : Setup operations for test suit")
         cls.bucket_name = "clis3bkt"
-        import pdb;pdb.set_trace()
         cls.s3bkt_plc_obj = CortxCliS3BktPolicyOperations()
         cls.s3acc_obj = CortxCliS3AccountOperations(
             session_obj=cls.s3bkt_plc_obj.session_obj)
