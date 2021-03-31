@@ -99,7 +99,6 @@ Verify the bucket url in buckets table
      Log To Console And Report  Bucket ${bucketname}
      ${tool_tip_element} =  Format String  ${BUCKET_URL_TOOLTIP_XPATH}  ${bucketname}
      wait for page or element to load  10s
-     #wait until element is visible  ${BUCKET_URL_TOOLTIP_XPATH}  timeout=10
      Mouse Over  ${tool_tip_element}
      wait for page or element to load
      wait until element is visible  ${BUCKET_URL_TOOLTIP_TEXT_ID}  timeout=10
