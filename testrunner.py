@@ -15,6 +15,7 @@ from commons.utils import config_utils
 from commons.utils import system_utils
 from commons import params
 from commons import cortxlogging
+from commons import constants as common_cnst
 
 LOGGER = logging.getLogger(__name__)
 
@@ -381,17 +382,21 @@ def get_available_target(kafka_msg, client):
 
     while acquired_target == "":
         if kafka_msg.parallel:
-            target = lock_task.find_free_target(kafka_msg.target_list, 'shared')
+            target = lock_task.find_free_target(kafka_msg.target_list, common_cnst.SHARED_LOCK)
             if target == "":
-                seq_target = lock_task.find_free_target(kafka_msg.target_list, 'exclusive')
+                seq_target = lock_task.find_free_target(kafka_msg.target_list,
+                                                        common_cnst.EXCLUSIVE_LOCK)
                 if seq_target != "":
-                    acquired_target = acquire_target(seq_target, client, 'shared', True)
+                    acquired_target = acquire_target(seq_target, client, common_cnst.SHARED_LOCK,
+                                                     True)
             else:
-                acquired_target = acquire_target(target, client, 'shared')
+                acquired_target = acquire_target(target, client, common_cnst.SHARED_LOCK)
         else:
-            seq_target = lock_task.find_free_target(kafka_msg.target_list, 'exclusive')
+            seq_target = lock_task.find_free_target(kafka_msg.target_list,
+                                                    common_cnst.EXCLUSIVE_LOCK)
             if seq_target != "":
-                acquired_target = acquire_target(seq_target, client, 'exclusive')
+                acquired_target = acquire_target(seq_target, client,
+                                                 common_cnst.EXCLUSIVE_LOCK)
     return acquired_target
 
 
