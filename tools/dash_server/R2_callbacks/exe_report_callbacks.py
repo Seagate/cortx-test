@@ -26,8 +26,9 @@ import dash_table
 import numpy as np
 import pandas as pd
 import requests
-from dash.dependencies import Output, Input
+from dash.dependencies import Output, Input, State
 from dash.exceptions import PreventUpdate
+from numpy.distutils.command.build import build
 
 import common
 from common import app
@@ -37,28 +38,23 @@ from common import app
     [Output('product_heading_exe', 'children'), Output('product_heading_eng', 'children'),
      Output('build_heading_exe', 'children'), Output('build_heading_eng', 'children'),
      Output('date_heading_exe', 'children'), Output('date_heading_eng', 'children')],
-    [Input('submit_button', 'n_clicks'),
-     Input('branch_dropdown', 'value'),
-     Input('build_no_dropdown', 'value'),
-     Input('test_system_dropdown', 'value'),
-     Input('test_team_dropdown', 'value'),
+    Input('submit_button', 'n_clicks'),
+    [State('branch_dropdown', 'value'),
+     State('build_no_dropdown', 'value'),
      ]
 )
-def gen_tab_headers(n_clicks, version, build_no, test_system, test_team):
+def gen_tab_headers(n_clicks, branch, build_no):
     """
     Generate Report headers with details.
     """
-    if n_clicks is None or version is None or build_no is None \
-            or test_system is None or test_team is None:
+    if n_clicks is None or branch is None or build_no is None:
         raise PreventUpdate
-
     product_heading = "Product : Lyve Rack 2"
     build_heading = "Build : " + str(build_no)
     date = "Date : "
     start_of_execution = "-"
     query_input = {
-        "query": {"buildType": version, "buildNo": build_no, "testPlanLabel": test_system,
-                  "testTeam": test_team},
+        "query": {"buildType": branch, "buildNo": build_no},
         "projection": {"testStartTime": True},
         "sort": {"testStartTime": 1}
     }
@@ -76,14 +72,14 @@ def gen_tab_headers(n_clicks, version, build_no, test_system, test_team):
 @app.callback(
     [Output('table_reported_bugs_engg', 'children'),
      Output('table_reported_bugs_exe', 'children')],
-    [Input('submit_button', 'n_clicks'),
-     Input('branch_dropdown', 'value'),
-     Input('build_no_dropdown', 'value'),
-     Input('test_system_dropdown', 'value'),
-     Input('test_team_dropdown', 'value'),
+    Input('submit_button', 'n_clicks'),
+    [State('branch_dropdown', 'value'),
+     State('build_no_dropdown', 'value'),
+     State('test_system_dropdown', 'value'),
+     State('test_team_dropdown', 'value'),
      ]
 )
-def gen_table_reported_bugs(n_clicks, version, build_no, test_system, test_team):
+def gen_table_reported_bugs(n_clicks, branch, build_no, test_system, test_team):
     """
     Generate Priority wise and Cortx/Test issue table
     """
@@ -93,20 +89,23 @@ def gen_table_reported_bugs(n_clicks, version, build_no, test_system, test_team)
     cortx_issue_dict = {"Total": 0, "Blocker": 0, "Critical": 0, "Major": 0, "Minor": 0,
                         "Trivial": 0}
 
-    if n_clicks is None or version is None or build_no is None or \
-            test_system is None or test_team is None:
+    if n_clicks is None or branch is None or build_no is None:
         raise PreventUpdate
 
-    query_input = {
-        "query": {"buildType": version, "buildNo": build_no, "testPlanLabel": test_system,
-                  "testTeam": test_team},
-        "field": "issueIDs"}
+    query = {"buildType": branch, "buildNo": build_no}
 
+    if test_system is not None:
+        query["testPlanLabel"] = test_system
+    if test_team is not None:
+        query["testTeam"] = test_team
+
+    query_input = {"query": query, "field": "issueIDs"}
     query_input.update(common.credentials)
+
     response = requests.request("GET", common.distinct_endpoint, headers=common.headers,
                                 data=json.dumps(query_input))
     if response.status_code == HTTPStatus.OK:
-        issue_list =  json.loads(response.text)["result"]
+        issue_list = json.loads(response.text)["result"]
         df_issue_details = common.get_issue_details(issue_list)
         # check issue type and priority
         # test issues
@@ -155,29 +154,30 @@ def gen_table_reported_bugs(n_clicks, version, build_no, test_system, test_team)
 @app.callback(
     [Output('table_overall_qa_report_engg', 'children'),
      Output('table_overall_qa_report_exe', 'children')],
-    [Input('submit_button', 'n_clicks'),
-     Input('branch_dropdown', 'value'),
-     Input('build_no_dropdown', 'value'),
-     Input('test_system_dropdown', 'value'),
-     Input('test_team_dropdown', 'value'),
-     ]
+    Input('submit_button', 'n_clicks'),
+    [State('branch_dropdown', 'value'),
+     State('build_no_dropdown', 'value'),
+     State('test_system_dropdown', 'value'),
+     State('test_team_dropdown', 'value')]
 )
-def gen_table_overall_qa_report(n_clicks, version, build_no, test_system, test_team):
+def gen_table_overall_qa_report(n_clicks, branch, build_no, test_system, test_team):
     """
     Generate Overall test reports along with the previous build reports
     """
-    if n_clicks is None or version is None or build_no is None or \
-            test_system is None or test_team is None:
+    if n_clicks is None or branch is None or build_no is None:
         raise PreventUpdate
+
+    query = {"buildType": branch, "buildNo": build_no}
+    if test_system is not None:
+        query["testPlanLabel"] = test_system,
+    if test_team is not None:
+        query["testTeam"] = test_team
+
     category = ["TOTAL", "PASS", "FAIL", "ABORTED", "BLOCKED", "TODO"]
     current_build = []
-    previous_build = []
 
     # Get current build data
-    query_input = {
-        "query": {"buildType": version, "buildNo": build_no, "testPlanLabel": test_system,
-                  "testTeam": test_team},
-        "projection": {"testResult": True}}
+    query_input = {"query": query, "projection": {"testResult": True}}
     query_input.update(common.credentials)
     response = requests.request("GET", common.search_endpoint, headers=common.headers,
                                 data=json.dumps(query_input))
@@ -196,31 +196,38 @@ def gen_table_overall_qa_report(n_clicks, version, build_no, test_system, test_t
         current_build = ["-", "-", "-", "-", "-", "-"]
 
     # Query and change build no to previous build
-    query_input = {
-        "query": {"buildType": version, "buildNo": build_no, "testPlanLabel": test_system,
-                  "testTeam": test_team},
-        "projection": {"testResult": True}}
-    query_input.update(common.credentials)
-    print("Query :{}".format(query_input))
-    response = requests.request("GET", common.search_endpoint, headers=common.headers,
-                                data=json.dumps(query_input))
-    if response.status_code == HTTPStatus.OK:
-        json_response = json.loads(response.text)
-        for result_type in category[1:]:
-            count = 0
-            for each in json_response["result"]:
-                if str(each["testResult"]).lower() == result_type.lower():
-                    count = count + 1
-            previous_build.append(count)
-        previous_build.insert(0, sum(previous_build))
-        print("previous build {}".format(previous_build))
+    previous_build = common.r2_get_previous_builds(branch, build_no)
+    print("previous build :{}".format(previous_build))
+    if len(previous_build):
+        previous_build_no = previous_build[0]
+        query = {"buildType": previous_build_no, "buildNo": build_no}
+        if test_system is not None:
+            query["testPlanLabel"] = test_system,
+        if test_team is not None:
+            query["testTeam"] = test_team
+        query_input = {"query": query, "projection": {"testResult": True}}
+        query_input.update(common.credentials)
+        response = requests.request("GET", common.search_endpoint, headers=common.headers,
+                                    data=json.dumps(query_input))
+        if response.status_code == HTTPStatus.OK:
+            json_response = json.loads(response.text)
+            for result_type in category[1:]:
+                count = 0
+                for each in json_response["result"]:
+                    if str(each["testResult"]).lower() == result_type.lower():
+                        count = count + 1
+                previous_build.append(count)
+            previous_build.insert(0, sum(previous_build))
+            print("previous build {}".format(previous_build))
+        else:
+            print("Error previous received : {}".format(response))
+            previous_build = ["-", "-", "-", "-", "-", "-"]
     else:
-        print("Error previous received : {}".format(response))
+        previous_build_no = "-"
         previous_build = ["-", "-", "-", "-", "-", "-"]
-
     data_overall_qa_report = {"Category": category,
-                              "Current Build": current_build,
-                              "Previous Build": previous_build}
+                              build_no: current_build,
+                              previous_build_no: previous_build}
     df_overall_qa_report = pd.DataFrame(data_overall_qa_report)
 
     overall_qa_report = dash_table.DataTable(
@@ -243,25 +250,28 @@ def gen_table_overall_qa_report(n_clicks, version, build_no, test_system, test_t
 
 @app.callback(
     Output('table_feature_breakdown_summary', 'children'),
-    [Input('submit_button', 'n_clicks'),
-     Input('branch_dropdown', 'value'),
-     Input('build_no_dropdown', 'value'),
-     Input('test_system_dropdown', 'value'),
-     Input('test_team_dropdown', 'value'),
+    Input('submit_button', 'n_clicks'),
+    [State('branch_dropdown', 'value'),
+     State('build_no_dropdown', 'value'),
+     State('test_system_dropdown', 'value'),
+     State('test_team_dropdown', 'value'),
      ]
 )
-def gen_table_feature_breakdown_summary(n_clicks, version, build_no, test_system, test_team):
+def gen_table_feature_breakdown_summary(n_clicks, branch, build_no, test_system, test_team):
     """
     Generate feature wise breakdown of test results.
     """
-    if n_clicks is None or version is None or build_no is None or \
-            test_system is None or test_team is None:
+    if n_clicks is None or branch is None or build_no is None:
         raise PreventUpdate
 
-    query_input = {
-        "query": {"buildType": version, "buildNo": build_no, "testPlanLabel": test_system,
-                  "testTeam": test_team},
-        "projection": {"testResult": True, "feature": True}}
+    query = {"buildType": branch, "buildNo": build_no}
+    if test_system is not None:
+        query["testPlanLabel"] = test_system
+    if test_team is not None:
+        query["testTeam"] = test_team
+
+    query_input = {"query": query,
+                   "projection": {"testResult": True, "feature": True}}
     query_input.update(common.credentials)
     print("Query :{}".format(query_input))
     response = requests.request("GET", common.search_endpoint, headers=common.headers,
@@ -316,7 +326,8 @@ def gen_table_feature_breakdown_summary(n_clicks, version, build_no, test_system
         df_feature_breakdown_summary["% Failed"] = (df_feature_breakdown_summary["Failed"] /
                                                     df_feature_breakdown_summary[
                                                         "Total"] * 100)
-        df_feature_breakdown_summary["% Failed"] = np.floor(df_feature_breakdown_summary["% Failed"])
+        df_feature_breakdown_summary["% Failed"] = np.floor(
+            df_feature_breakdown_summary["% Failed"])
         feature_breakdown_summary = dash_table.DataTable(
             id="feature_breakdown_summary",
             columns=[{"name": i, "id": i} for i in df_feature_breakdown_summary.columns],
@@ -337,20 +348,51 @@ def gen_table_feature_breakdown_summary(n_clicks, version, build_no, test_system
 
 @app.callback(
     Output('table_code_maturity', 'children'),
-    [Input('submit_button', 'n_clicks')]
-)
-def gen_table_code_maturity(n_clicks):
+    Input('submit_button', 'n_clicks'),
+    [State('branch_dropdown', 'value'),
+     State('build_no_dropdown', 'value'),
+     State('test_system_dropdown', 'value'),
+     State('test_team_dropdown', 'value'),
+     ])
+def gen_table_code_maturity(n_clicks, branch, build_no, test_system, test_team
+                            ):
     """
     Code Maturity with reference to the previous builds
     """
-    if n_clicks is None:
+    if n_clicks is None or branch is None or build_no is None:
         raise PreventUpdate
-    data_code_maturity = {"Category": ["Total", "Pass", "Fail", "Aborted", "Blocked"],
-                          "Current Build": ["1", "2", "3", "4", "5"],
-                          "Prev Build": ["1", "2", "3", "4", "5"],
-                          "Prev Build 1": ["1", "2", "3", "4", "5"],
-                          "Prev Build 2": ["1", "2", "3", "4", "5"],
-                          }
+
+    query = {"buildType": branch, "buildNo": build_no}
+    if test_system is not None:
+        query["testPlanLabel"] = test_system
+    if test_team is not None:
+        query["testTeam"] = test_team
+    previous_build_list = common.r2_get_previous_builds(branch, build_no, 3)
+    data_code_maturity = {}
+    data_code_maturity["Category"] = ["PASS", "FAIL", "ABORTED", "BLOCKED", "TOTAL"]
+    previous_build_list.insert(0, build_no)
+    for build in previous_build_list:
+        build_results = []
+        for category in data_code_maturity["Category"]:
+            if category == "TOTAL":
+                try:
+                    build_results.append(sum(build_results))
+                except TypeError:
+                    build_results.append("-")
+            else:
+                query["testResult"] = category
+                query.update(common.credentials)
+                response = requests.request("GET", common.count_endpoint, headers=common.headers,
+                                            data=json.dumps(query))
+                if response.status_code == HTTPStatus.OK:
+                    json_response = json.loads(response.text)
+                    build_results.append(json_response["result"])
+                elif response.status_code == HTTPStatus.NOT_FOUND:
+                    build_results.append(0)
+                else:
+                    build_results.append("-")
+        data_code_maturity[build] = build_results
+
     df_code_maturity = pd.DataFrame(data_code_maturity)
     code_maturity = dash_table.DataTable(
         id="code_maturity",
@@ -367,14 +409,17 @@ def gen_table_code_maturity(n_clicks):
 
 @app.callback(
     Output('table_s3_bucket_perf', 'children'),
-    [Input('submit_button', 'n_clicks')]
+    Input('submit_button', 'n_clicks'),
+    [State('branch_dropdown', 'value'),
+     State('build_no_dropdown', 'value')]
 )
-def gen_table_s3_bucket_perf(n_clicks):
+def gen_table_s3_bucket_perf(n_clicks, branch, build_no):
     """
     Single Bucket Performance Statistics using S3bench
     """
-    if n_clicks is None:
+    if n_clicks is None or branch is None or build_no is None:
         raise PreventUpdate
+    '''
     data_s3_bucket_perf = {
         "Statistics": ["Write Throughput(MBps)", "Read Throughput(MBps)", "Write Latency(ms)",
                        "Read Latency(ms)"],
@@ -394,3 +439,5 @@ def gen_table_s3_bucket_perf(n_clicks):
         style_cell=common.dict_style_cell
     )
     return s3_bucket_perf
+    '''
+    return "No data available for R2"

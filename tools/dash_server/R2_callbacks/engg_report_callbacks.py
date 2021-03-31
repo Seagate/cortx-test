@@ -23,13 +23,13 @@
 import json
 from http import HTTPStatus
 
-import dash_bootstrap_components as dbc
-import dash_html_components as html
 import dash_table
 import pandas as pd
 import requests
-from dash.dependencies import Output, Input
+from dash.dependencies import Output, Input, State
 from dash.exceptions import PreventUpdate
+from pymongo.network import command
+
 import common
 from common import app
 
@@ -40,12 +40,11 @@ from common import app
 
 @app.callback(
     Output('table_comp_summary', 'children'),
-    [Input('submit_button', 'n_clicks'),
-     Input('branch_dropdown', 'value'),
-     Input('build_no_dropdown', 'value'),
-     Input('test_system_dropdown', 'value'),
-     Input('test_team_dropdown', 'value'),
-     ]
+    Input('submit_button', 'n_clicks'),
+    [State('branch_dropdown', 'value'),
+     State('build_no_dropdown', 'value'),
+     State('test_system_dropdown', 'value'),
+     State('test_team_dropdown', 'value')]
 )
 def gen_table_comp_summary(n_clicks, branch, build_no, test_system, test_team):
     """
@@ -57,22 +56,24 @@ def gen_table_comp_summary(n_clicks, branch, build_no, test_system, test_team):
     :param test_team: Testing team
     :return:
     """
-    if n_clicks is None or branch is None or build_no is None or \
-            test_system is None or test_team is None:
+    if n_clicks is None or branch is None or build_no is None:
         raise PreventUpdate
 
     component_list = ["S3", "Provisioner", "CSM", "RAS", "Motr", "HA"]
     # **Query for previous build
     # current build, previous build
+    # TODO
     build_no_list = [build_no, build_no]
     # list of dictionary
     builds_details = []
 
     for build in build_no_list:
-        query_input = {
-            "query": {"buildType": branch, "buildNo": build, "testPlanLabel": test_system,
-                      "testTeam": test_team},
-            "field": "issueIDs"}
+        query = {"buildType": branch, "buildNo": build}
+        if test_system is not None:
+            query["testPlanLabel"] = test_system
+        if test_system is not None:
+            query["testTeam"] = test_team
+        query_input = {"query": query, "field": "issueIDs"}
 
         query_input.update(common.credentials)
         response = requests.request("GET", common.distinct_endpoint, headers=common.headers,
@@ -88,8 +89,8 @@ def gen_table_comp_summary(n_clicks, branch, build_no, test_system, test_team):
 
     df_comp_summary = pd.DataFrame({
         "Component": component_list,
-        "Current Build": builds_details[0].values(),
-        "Previous Build ": builds_details[1].values()
+        build_no_list[0]: builds_details[0].values(),
+        build_no_list[1]: builds_details[1].values()
     })
     comp_summary = dash_table.DataTable(
         id="comp_summary",
@@ -106,25 +107,67 @@ def gen_table_comp_summary(n_clicks, branch, build_no, test_system, test_team):
 
 @app.callback(
     Output('table_timing_summary', 'children'),
-    [Input('submit_button', 'n_clicks')]
+    Input('submit_button', 'n_clicks'),
+    [State('branch_dropdown', 'value'),
+     State('build_no_dropdown', 'value'),
+     State('test_system_dropdown', 'value'),
+     State('test_team_dropdown', 'value')]
 )
-def gen_table_timing_summary(n_clicks):
+def gen_table_timing_summary(n_clicks, branch, build_no, test_system, test_team):
     """
     Returns the timing details for the build
     :param n_clicks: Input Event
     :return:
     """
-    if n_clicks is None:
+    if n_clicks is None or branch is None or build_no is None:
         raise PreventUpdate
-    data_timing_summary = {
-        "Task": ["Update", "Deployment", "Boxing", "Unboxing", "Onboarding", "Firmware Update",
-                 "Bucket Creation",
-                 "Bucket Deletion"],
-        "Current Build": ["1", "2", "3", "4", "5", "6", "7", "8"],
-        "Prev Build": ["1", "2", "3", "4", "5", "6", "7", "8"],
-        "Prev Build 1": ["1", "2", "3", "4", "5", "6", "7", "8"],
-        "Prev Build 2": ["1", "2", "3", "4", "5", "6", "7", "8"],
+
+    build_seq = [build_no, build_no, build_no]
+    # timing parameters
+    timing_parameters = {
+        "nodeRebootTime": "Node Reboot",
+        "allServicesStartTime": "Start All Services",
+        "allServicesStopTime": "Stop All Services",
+        "nodeFailoverTime": "Node Failover",
+        "nodeFailbackTime": "Node Failback",
+        "bucketCreationTime": "Bucket Creation",
+        "bucketDeletionTime": "Bucket Deletion",
+        "softwareUpdateTime": "Software Update",
+        "firmwareUpdateTime": "Firmware Update",
+        "startNodeTime": "Start Node",
+        "stopNodeTime": "Stop Node"
     }
+    data_timing_summary = {"Task": timing_parameters.values()}
+
+    for build in build_seq:
+        row = []
+        for param in timing_parameters.keys():
+
+            query = {"buildType": branch, "buildNo": build, param: {"$exists": True}}
+            if test_system is not None:
+                query["testPlanLabel"] = test_system
+
+            query_input = {"query": query}
+            query_input["projection"] = {param: True}
+            query_input.update(common.credentials)
+            if command.DEBUG_PRINTS:
+                print("Query :{}".format(query_input))
+            response = requests.request("GET", common.timing_endpoint, headers=common.headers,
+                                        data=json.dumps(query_input))
+            if response.status_code == HTTPStatus.OK:
+                json_response = json.loads(response.text)
+                parameter_data = json_response["result"]
+                if parameter_data:
+                    row.append(
+                        common.round_off(
+                            sum(x[param] for x in parameter_data) / len(parameter_data)))
+                else:
+                    row.append("NA")
+            else:
+                print("Request not successful, error code :{}".format(response.status_code))
+                row.append("NA")
+        data_timing_summary[build] = row
+
     df_timing_summary = pd.DataFrame(data_timing_summary)
     timing_summary = dash_table.DataTable(
         id="timing_summary",
@@ -141,16 +184,27 @@ def gen_table_timing_summary(n_clicks):
 
 @app.callback(
     Output('table_detailed_s3_bucket_perf', 'children'),
-    [Input('submit_button', 'n_clicks')]
+    Input('submit_button', 'n_clicks'),
+    [State('branch_dropdown', 'value'),
+     State('build_no_dropdown', 'value'),
+     State('test_system_dropdown', 'value'),
+     State('test_team_dropdown', 'value')]
 )
-def gen_table_detailed_s3_bucket_perf(n_clicks):
+def gen_table_detailed_s3_bucket_perf(n_clicks, branch, build_no, test_system, test_team):
     """
     Single Bucket Performance Statistics (Average) using S3Bench (Detailed)
     :param n_clicks:
     :return:
     """
-    if n_clicks is None:
+    if n_clicks is None or branch is None or build_no is None:
         raise PreventUpdate
+    if test_system is not None:
+        # Add to query
+        pass
+    if test_team is not None:
+        # Add to query
+        pass
+    '''
     data_detailed_s3_bucket_perf = {
         "Statistics": ["Write Throughput(MBps)", "Read Throughput(MBps)", "Write Latency(ms)",
                        "Read Latency(ms)",
@@ -176,20 +230,33 @@ def gen_table_detailed_s3_bucket_perf(n_clicks):
         style_cell=common.dict_style_cell
     )
     return detailed_s3_bucket_perf
+    '''
+    return "No data available for R2"
 
 
 @app.callback(
     Output('table_metadata_latency', 'children'),
-    [Input('submit_button', 'n_clicks')]
+    Input('submit_button', 'n_clicks'),
+    [State('branch_dropdown', 'value'),
+     State('build_no_dropdown', 'value'),
+     State('test_system_dropdown', 'value'),
+     State('test_team_dropdown', 'value')]
 )
-def gen_table_metadata_latency(n_clicks):
+def gen_table_metadata_latency(n_clicks, branch, build_no, test_system, test_team):
     """
     Returns  table for Metadata Latency
     :param n_clicks:
     :return:
     """
-    if n_clicks is None:
+    if n_clicks is None or branch is None or build_no is None:
         raise PreventUpdate
+    if test_system is not None:
+        # Add to query
+        pass
+    if test_team is not None:
+        # Add to query
+        pass
+    '''
     data_metadata_latency = {
         "Operation Latency": ["Add/Edit Object Tags", "Read Object Tags", "Read Object Metadata"],
         "Response Time(ms)": ["1", "2", "3"],
@@ -207,24 +274,158 @@ def gen_table_metadata_latency(n_clicks):
         style_cell=common.dict_style_cell
     )
     return metadata_latency
-
-
+    '''
+    return "No data available for R2"
 
 
 @app.callback(
     Output('table_multi_bucket_perf_stats', 'children'),
-    [Input('submit_button', 'n_clicks')]
+    Input('submit_button', 'n_clicks'),
+    [State('branch_dropdown', 'value'),
+     State('build_no_dropdown', 'value'),
+     State('test_system_dropdown', 'value'),
+     State('test_team_dropdown', 'value')]
 )
-def gen_table_multi_bucket_perf_stats(n_clicks):
+def gen_table_multi_bucket_perf_stats(n_clicks, branch, build_no, test_system, test_team):
     """
     Multiple Buckets Performance Statistics(Average) using HSBench and COSBench
     :param n_clicks: Input Event
     :return:
     """
 
-    if n_clicks is None:
+    if n_clicks is None or branch is None or build_no is None:
         raise PreventUpdate
 
+    if test_system is not None:
+        # Add to query
+        pass
+    if test_team is not None:
+        # Add to query
+        pass
+    '''
+    final_rows = []
+
+    # HS bench 1 bucket 1000 Objects 100 Sessions
+    data = {"Statistics": ["Write Throughput(MBps)", "Read Throughput(MBps)", "Write Latency(ms)",
+                           "Read Latency(ms)",
+                           "Write IOPS", "Read IOPS"],
+            "4KB": ["1", "2", "3", "4", "5", "6"],
+            "100KB": ["1", "2", "3", "4", "5", "6"],
+            "1MB": ["1", "2", "3", "4", "5", "6"],
+            "5MB": ["1", "2", "3", "4", "5", "6"],
+            "36MB": ["1", "2", "3", "4", "5", "6"],
+            "64MB": ["1", "2", "3", "4", "5", "6"],
+            "128MB": ["1", "2", "3", "4", "5", "6"],
+            "256MB": ["1", "2", "3", "4", "5", "6"],
+            }
+    temp_df = pd.DataFrame(data)
+    text = ["Hsbench", html.Br(), "1 Buckets", html.Br(), "100 Objects", html.Br(), "100 Sessions"]
+    final_rows.extend(common.get_data_to_html_rows(temp_df, text, 6))
+
+    # HS bench 10 bucket 100 Objects 100 Sessions
+    data = {
+        "Statistics": ["Write Throughput(MBps)", "Read Throughput(MBps)", "Write Latency(ms)",
+                       "Read Latency(ms)",
+                       "Write IOPS", "Read IOPS"],
+        "4KB": ["1", "2", "3", "4", "5", "6"],
+        "100KB": ["1", "2", "3", "4", "5", "6"],
+        "1MB": ["1", "2", "3", "4", "5", "6"],
+        "5MB": ["1", "2", "3", "4", "5", "6"],
+        "36MB": ["1", "2", "3", "4", "5", "6"],
+        "64MB": ["1", "2", "3", "4", "5", "6"],
+        "128MB": ["1", "2", "3", "4", "5", "6"],
+        "256MB": ["1", "2", "3", "4", "5", "6"],
+    }
+    temp_df = pd.DataFrame(data)
+    text = ["Hsbench", html.Br(), "10 Buckets", html.Br(), "100 Objects", html.Br(), "100 Sessions"]
+    final_rows.extend(common.get_data_to_html_rows(temp_df, text, 6))
+
+    # HS bench 50 bucket 100 Objects 100 Sessions
+    data = {
+        "Statistics": ["Write Throughput(MBps)", "Read Throughput(MBps)", "Write Latency(ms)",
+                       "Read Latency(ms)",
+                       "Write IOPS", "Read IOPS"],
+        "4KB": ["1", "2", "3", "4", "5", "6"],
+        "100KB": ["1", "2", "3", "4", "5", "6"],
+        "1MB": ["1", "2", "3", "4", "5", "6"],
+        "5MB": ["1", "2", "3", "4", "5", "6"],
+        "36MB": ["1", "2", "3", "4", "5", "6"],
+        "64MB": ["1", "2", "3", "4", "5", "6"],
+        "128MB": ["1", "2", "3", "4", "5", "6"],
+        "256MB": ["1", "2", "3", "4", "5", "6"],
+    }
+    temp_df = pd.DataFrame(data)
+    text = ["Hsbench", html.Br(), "50 Buckets", html.Br(), "100 Objects", html.Br(), "100 Sessions"]
+    final_rows.extend(common.get_data_to_html_rows(temp_df, text, 6))
+
+    # Cosbench 1 bucket 100 Objects 100 Sessions
+    data = {
+        "Statistics": ["Write Throughput(MBps)", "Read Throughput(MBps)", "Write Latency(ms)",
+                       "Read Latency(ms)",
+                       "Write IOPS", "Read IOPS"],
+        "4KB": ["1", "2", "3", "4", "5", "6"],
+        "100KB": ["1", "2", "3", "4", "5", "6"],
+        "1MB": ["1", "2", "3", "4", "5", "6"],
+        "5MB": ["1", "2", "3", "4", "5", "6"],
+        "36MB": ["1", "2", "3", "4", "5", "6"],
+        "64MB": ["1", "2", "3", "4", "5", "6"],
+        "128MB": ["1", "2", "3", "4", "5", "6"],
+        "256MB": ["1", "2", "3", "4", "5", "6"],
+    }
+    temp_df = pd.DataFrame(data)
+    text = ["Cosbench", html.Br(), "1 Buckets", html.Br(), "100 Objects", html.Br(), "100 Sessions"]
+    final_rows.extend(common.get_data_to_html_rows(temp_df, text, 6))
+
+    # Cosbench 10 bucket 100 Objects 100 Sessions
+    data = {
+        "Statistics": ["Write Throughput(MBps)", "Read Throughput(MBps)", "Write Latency(ms)",
+                       "Read Latency(ms)",
+                       "Write IOPS", "Read IOPS"],
+        "4KB": ["1", "2", "3", "4", "5", "6"],
+        "100KB": ["1", "2", "3", "4", "5", "6"],
+        "1MB": ["1", "2", "3", "4", "5", "6"],
+        "5MB": ["1", "2", "3", "4", "5", "6"],
+        "36MB": ["1", "2", "3", "4", "5", "6"],
+        "64MB": ["1", "2", "3", "4", "5", "6"],
+        "128MB": ["1", "2", "3", "4", "5", "6"],
+        "256MB": ["1", "2", "3", "4", "5", "6"],
+    }
+    temp_df = pd.DataFrame(data)
+    text = ["Cosbench", html.Br(), "10 Buckets", html.Br(), "100 Objects", html.Br(),
+            "100 Sessions"]
+    final_rows.extend(common.get_data_to_html_rows(temp_df, text, 6))
+
+    # Cosbench 50 bucket 100 Objects 100 Sessions
+    data = {
+        "Statistics": ["Write Throughput(MBps)", "Read Throughput(MBps)", "Write Latency(ms)",
+                       "Read Latency(ms)",
+                       "Write IOPS", "Read IOPS"],
+        "4KB": ["1", "2", "3", "4", "5", "6"],
+        "100KB": ["1", "2", "3", "4", "5", "6"],
+        "1MB": ["1", "2", "3", "4", "5", "6"],
+        "5MB": ["1", "2", "3", "4", "5", "6"],
+        "36MB": ["1", "2", "3", "4", "5", "6"],
+        "64MB": ["1", "2", "3", "4", "5", "6"],
+        "128MB": ["1", "2", "3", "4", "5", "6"],
+        "256MB": ["1", "2", "3", "4", "5", "6"],
+    }
+    temp_df = pd.DataFrame(data)
+    text = ["Cosbench", html.Br(), "50 Buckets", html.Br(), "100 Objects", html.Br(),
+            "100 Sessions"]
+    final_rows.extend(common.get_data_to_html_rows(temp_df, text, 6))
+
+    columns = ["Bench"]
+    columns.extend(temp_df.columns)
+    table_headers = [html.Thead(html.Tr([html.Th(col) for col in columns]))]
+    table_body = [html.Tbody(final_rows)]
+    table = dbc.Table(table_headers + table_body, bordered=True,
+                      className="caption-Top col-xs-6",
+                      hover=True,
+                      responsive=True,
+                      striped=True,
+                      style=common.dict_style_cell)
+    return table
+    '''
     return "No data available for R2"
 
 
