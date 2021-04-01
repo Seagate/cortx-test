@@ -42,3 +42,5 @@ s3_object:
     inval_req: "InvalidRequest"
     emailaddr: "emailaddress={}"
     mb_count: 5
+    obj_name: "testobj"
+    key: "testkey"
