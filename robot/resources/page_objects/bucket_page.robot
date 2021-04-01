@@ -20,6 +20,26 @@ Click On Create Bucket Form
     wait until element is visible  ${ADD_BUCKET_FORM_ID}  timeout=60
     Click Button  ${ADD_BUCKET_FORM_ID}
 
+Click On Edit Bucket Icon
+    [Documentation]  Test keyword is for clicking on Edit Bucket
+    wait until element is visible  ${EDIT_BUCKET_ICON_ID}  timeout=60
+    Click Element  ${EDIT_BUCKET_ICON_ID}
+
+Click On Cancel Bucket Policy
+    [Documentation]  Test keyword is for clicking on Edit Bucket
+    wait until element is visible  ${CANCEL_BUCKET_POLICY_FORM_ID}  timeout=60
+    Click Element  ${CANCEL_BUCKET_POLICY_FORM_ID}
+
+Click On Update Bucket Policy
+    [Documentation]  Test keyword is for clicking on Edit Bucket
+    wait until element is visible  ${UPDATE_BUCKET_POLICY_BTN_ID}  timeout=60
+    Click Element  ${UPDATE_BUCKET_POLICY_BTN_ID}
+
+Click On Delete Bucket Policy
+    [Documentation]  Test keyword is for clicking on Delete Bucket
+    wait until element is visible  ${DELETE_BUCKET_POLICY}  timeout=60
+    Click Element  ${DELETE_BUCKET_POLICY}
+
 Click On cancel button for bucket creation
     [Documentation]  Test keyword is for open create bucket form
     wait until element is visible  ${CANCEL_BUCKET_CREATION_BUTTON_ID }  timeout=60
@@ -89,4 +109,65 @@ Verify cancel opration of delete bucket
     Action On The Table Element  ${DELETE_BUCKET_XPATH}  ${bucketname}
     Click Element  ${CANCEL_BUCKET_DELITION_ICON_ID}
     Is Bucket Present  ${bucketname}
+
+Verify Update Button Must Remain Disabled
+    [Documentation]  This keyword verifys the cancel opration of delete bucket.
+    wait until element is visible  ${UPDATE_BUCKET_POLICY_BTN_ID}  timeout=30
+    ${status}=  Get Element Attribute  ${UPDATE_BUCKET_POLICY_BTN_ID}  disabled
+    Log To Console And Report  Status of update policy is ${status}
+    Should be equal  ${status}  true
+
+Verify Update Bucket Policy Form Should Appear
+    [Documentation]  This keyword Verify Update Bucket Policy Form Should Appear
+    wait for page or element to load
+    Element Should Be Visible  ${BUCKET_POLICY_FORM_ID}
+
+Verify Proper Heading on Bucket Policy Form
+    [Documentation]  This keyword Verify Update Bucket Policy Form Should Appear
+    wait for page or element to load
+    ${policy_heading_fetched}=  get text  ${BUCKET_POLICY_FORM_HEADING_ID}
+    Log To Console And Report  ${policy form heading}
+    Should be Equal  ${policy form heading}  ${policy_heading_fetched}
+
+Add Json Policy To Bucket
+    [Documentation]  This keyword will Add Json Policy To Bucket
+    [Arguments]  ${policy}
+    wait until element is visible  ${ADD_POLICY_TEXT_AREA_ID}  timeout=30
+    Input Text  ${ADD_POLICY_TEXT_AREA_ID}  ${policy}
+
+Fetch Json Policy To Bucket
+    [Documentation]  This keyword will fetch Json Policy To Bucket
+    wait until element is visible  ${ADD_POLICY_TEXT_AREA_ID}  timeout=30
+    ${policy}=  Get Element Attribute  ${ADD_POLICY_TEXT_AREA_ID}  value
+    Log To Console And Report  exhisting policy : ${policy}
+    [Return]  ${policy}
+
+Verify Error Msg is Shown For Invalid Json
+    [Documentation]  This keyword will Verify Error Msg is Shown For Invalid Json
+    wait until element is visible  ${ERROR_MSG_POP_UP_ID}  timeout=30
+    ${err_msg}=  get text  ${ERROR_MSG_POP_UP_ID}
+    Log To Console And Report  ${err_msg}
+    Should be Equal  ${INVALID_POLICY_MSG}  ${err_msg}
+    Wait Until Element Is Not Visible  ${ERROR_MSG_POP_UP_ID}  timeout=30
+
+Verify Bucket Policy Not Added
+    [Documentation]  This keyword will Verify Bucket Policy Not Added
+    Click On Edit Bucket Icon
+    ${data}=  Fetch Json Policy To Bucket
+    Should Be Empty  ${data}
+
+Verify Bucket Policy Got Added
+    [Documentation]  This keyword will Verify Bucket Policy Got Added
+    [Arguments]  ${policy}
+    Click On Edit Bucket Icon
+    wait for page or element to load
+    ${data}=  Fetch Json Policy To Bucket
+    ${result}=  match_json_policy  ${data}  ${policy}
+    Should Be Equal  '${result}'  '${True}'
+
+Refresh To Bucket Page
+    [Documentation]  This keyword will refresh the page to Bucket page
+    Reload Page
+    wait for page or element to load
+    Navigate To Page  BUCKET_TAB_ID
 

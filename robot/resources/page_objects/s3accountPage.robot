@@ -98,12 +98,12 @@ Delete S3 Account
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     Validate CSM Login Success  ${s3_account_name}
     log to console and report   deleting S3 account ${s3_account_name}
-    wait until element is visible  ${DELETE_S3_ACCOUNT_ID}  timeout=10
+    wait until element is visible  ${DELETE_S3_ACCOUNT_ID}  timeout=30
     sleep  2s
     click element  ${DELETE_S3_ACCOUNT_ID}
     sleep  2s
     click element  ${CONFIRM_DELETE_S3_ACCOUNT_ID}
-    wait until element is visible  ${csm username id}  timeout=10
+    wait until element is visible  ${csm username id}  timeout=30
     log to console and report  S3 account Deleted.
 
 Check create S3 account button disabled

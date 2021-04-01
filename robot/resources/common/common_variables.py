@@ -69,3 +69,5 @@ BUCKET_NAME_POLICY_TEXT = "The bucket name must be of minimum 4 characters and m
                           "The bucket name cannot start and end with a dash (-)."
 DUPLICATE_BUCKET_NAME_ALERT_MESSAGE = "The bucket you tried to create already exists, and you own" \
                                       " it."
+POLICY_FORM_HEADING = "JSON policy"
+INVALID_POLICY_MSG = "Policy has invalid resource"

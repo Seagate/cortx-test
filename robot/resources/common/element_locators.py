@@ -215,7 +215,7 @@ AUDIT_LOG_COMPONENT_DROP_DOWN_ID = "auditlog-component"
 AUDIT_LOG_TIME_PERIOD_DROP_DOWN_ID = "auditlog-timeperiod"
 AUDIT_LOG_DATA_ID = "auditlog-data"
 
-#Bucket 
+# Bucket
 ADD_BUCKET_FORM_ID = "bucket-addbucket-formbtn"
 BUCKET_NAME_ID = "bucketName"
 BUCKET_CREATE_BUTTON_ID = "bucket-create-btn"
@@ -229,7 +229,14 @@ DUPLICATE_BUCKET_MESSAGE_ID = "dialog-message-label"
 CLOSE_DUPLICATE_BUCKET_MESSAGE_ID = "close-msg-dialogbox"
 CANCEL_BUCKET_DELETION_ID = "confirmation-dialog-cancel-btn"
 CANCEL_BUCKET_DELITION_ICON_ID = "confirmation-dialogclose"
-
+EDIT_BUCKET_ICON_ID = "bucket-edit-icon"
+UPDATE_BUCKET_POLICY_BTN_ID = "update-bucketpolicy"
+BUCKET_POLICY_FORM_ID = "bucket-policy"
+BUCKET_POLICY_FORM_HEADING_ID = "bucket-json-policy-lbl"
+CANCEL_BUCKET_POLICY_FORM_ID = "cancel-bucket-policy"
+ADD_POLICY_TEXT_AREA_ID = "policyJSONTextarea"
+ERROR_MSG_POP_UP_ID = "dialog-message-label"
+DELETE_BUCKET_POLICY = "delete-bucket-policy"
 
 # Software Update Page
 UPLOAD_SW_FILE_BTN_ID = "btnInstallHotfix"
