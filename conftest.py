@@ -302,11 +302,11 @@ def create_report_payload(item, call, final_result, d_u, d_pass):
     marks = get_marks_for_test_item(item)
     if final_result == 'FAIL':
         health_chk_res = "TODO"
-        are_logs_collected = True
+        are_logs_collected = False
         log_path = "TODO"
     elif final_result == 'PASS':
         health_chk_res = "NA"
-        are_logs_collected = True
+        are_logs_collected = False
         log_path = "NA"
     data_kwargs = dict(os=os_ver,
                        build=item.config.option.build,
