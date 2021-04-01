@@ -474,7 +474,7 @@ def get_setup_details(args):
                     exists = True
                     break
             if not exists:
-                raise Exception('target Data does not exists in setups.json')
+                raise Exception(f'target {args.target} Data does not exists in setups.json')
 
 
 def main(args):
