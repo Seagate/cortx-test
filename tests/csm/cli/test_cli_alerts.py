@@ -61,6 +61,7 @@ def teardown_function():
     LOGGER.info("Ended : Teardown operations for test function")
 
 
+@pytest.mark.cluster_user_ops
 @pytest.mark.csm_cli
 @pytest.mark.tags("TEST-14032")
 @pytest.mark.skip(reason="Not applicable for VM")
@@ -105,6 +106,7 @@ def test_131():
     LOGGER.info("%s %s", END_LOG_FORMAT, cortxlogging.get_frame())
 
 
+@pytest.mark.cluster_user_ops
 @pytest.mark.csm_cli
 @pytest.mark.tags("TEST-14031")
 @pytest.mark.skip(reason="Not applicable for VM")
@@ -144,6 +146,7 @@ def test_6306():
     LOGGER.info("%s %s", END_LOG_FORMAT, cortxlogging.get_frame())
 
 
+@pytest.mark.cluster_user_ops
 @pytest.mark.csm_cli
 @pytest.mark.tags("TEST-14662")
 @pytest.mark.skip(reason="Not applicable for VM")
@@ -163,6 +166,7 @@ def test_3289(self):
     LOGGER.info("%s %s", END_LOG_FORMAT, cortxlogging.get_frame())
 
 
+@pytest.mark.cluster_user_ops
 @pytest.mark.csm_cli
 @pytest.mark.tags("TEST-14663")
 @pytest.mark.skip(reason="Not applicable for VM")
@@ -209,6 +213,7 @@ def test_3290():
     LOGGER.info("%s %s", END_LOG_FORMAT, cortxlogging.get_frame())
 
 
+@pytest.mark.cluster_user_ops
 @pytest.mark.csm_cli
 @pytest.mark.tags("TEST-14664")
 @pytest.mark.skip(reason="Not applicable for VM")
@@ -231,6 +236,7 @@ def test_6309():
     LOGGER.info("%s %s", END_LOG_FORMAT, cortxlogging.get_frame())
 
 
+@pytest.mark.cluster_user_ops
 @pytest.mark.csm_cli
 @pytest.mark.tags("TEST-14754")
 @pytest.mark.skip(reason="Not applicable for VM")
@@ -250,6 +256,7 @@ def test_245():
     LOGGER.info("%s %s", END_LOG_FORMAT, cortxlogging.get_frame())
 
 
+@pytest.mark.cluster_user_ops
 @pytest.mark.csm_cli
 @pytest.mark.tags("TEST-14755")
 @pytest.mark.skip(reason="Not applicable for VM")
@@ -296,6 +303,7 @@ def test_3288():
     LOGGER.info("%s %s", END_LOG_FORMAT, cortxlogging.get_frame())
 
 
+@pytest.mark.cluster_user_ops
 @pytest.mark.csm_cli
 @pytest.mark.tags("TEST-15199")
 @pytest.mark.skip(reason="Not applicable for VM")
@@ -315,6 +323,7 @@ def test_6308():
     LOGGER.info("%s %s", END_LOG_FORMAT, cortxlogging.get_frame())
 
 
+@pytest.mark.cluster_user_ops
 @pytest.mark.csm_cli
 @pytest.mark.tags("TEST-15727")
 @pytest.mark.skip(reason="Not applicable for VM")
@@ -335,6 +344,7 @@ def test_247(self):
     LOGGER.info("%s %s", END_LOG_FORMAT, cortxlogging.get_frame())
 
 
+@pytest.mark.cluster_user_ops
 @pytest.mark.csm_cli
 @pytest.mark.tags("TEST-16933")
 @pytest.mark.skip(reason="Not applicable for VM")
@@ -361,6 +371,7 @@ def test_252():
     LOGGER.info("%s %s", END_LOG_FORMAT, cortxlogging.get_frame())
 
 
+@pytest.mark.cluster_user_ops
 @pytest.mark.csm_cli
 @pytest.mark.tags("TEST-17177")
 @pytest.mark.skip(reason="Not applicable for VM")
@@ -380,6 +391,7 @@ def test_1440():
     LOGGER.info("%s %s", END_LOG_FORMAT, cortxlogging.get_frame())
 
 
+@pytest.mark.cluster_user_ops
 @pytest.mark.csm_cli
 @pytest.mark.tags("TEST-19238")
 @pytest.mark.skip(reason="Not applicable for VM")

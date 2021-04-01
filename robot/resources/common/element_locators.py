@@ -114,6 +114,10 @@ S3_ACCOUNT_RESET_CONFIRM_PASSWORD_ID = 'confirm-password'
 S3_ACCOUNT_RESET_PAWWSORD_BUTTON_ID = 'reset-password-button'
 S3_ACCOUNT_SUCCESS_MESSAGE_ID = 's3-success-dialog'
 S3_ACCOUNT_SUCCESS_MESSAGE_BUTTON_ID = 'confirmation-dialogbox-btn'
+S3_ACCOUNTS_TAB_S3_URL_TEXT_ID = "s3-account-manage-lbl"
+S3_ACCOUNTS_TAB_COPY_S3_URL_ONE_ID = "copy-url-btn-0"
+S3_ACCOUNTS_TAB_COPY_S3_URL_TWO_ID = "copy-url-btn-1"
+S3_ACCOUNT_CREATION_POP_UP_TABLE_XPATH = "//*[@id='s3-secretekey-data']/tr/td"
 
 # Preboarding
 WELCOME_START_BUTTON_ID = 'welcome-startbtn'
@@ -203,6 +207,11 @@ DOWNLOAD_IAM_USER_ACCESS_KEY_BUTTON_ID = "download-csv-dialog-btn"
 IAM_USER_SECRET_KEY_XPATH = "//div[@id='iam-accesskey-datatable']//td[2]"
 IAM_USER_ACCESS_KEY_TABLE_HEADERS_XPATH = "//div[@id='iam-accesskey-datatable']//th"
 DELETE_IAM_USER_ACCESS_KEY_BUTTON_ID = "//img[contains(@id, 'iam-accesskey-datatable-delete')]"
+IAM_USER_DATA_TABLE_XPATH = "//*[@id='iam-user-data']/tr/td"
+IAM_USER_TAB_S3_URL_TEXT_ID = "s3-account-manage-lbl"
+IAM_USER_TAB_COPY_S3_URL_ONE_ID = "copy-url-btn-0"
+IAM_USER_TAB_COPY_S3_URL_TWO_ID = "copy-url-btn-1"
+IAM_USER_ACCESS_KEY_TABLE_XPATH = "//*[@id='download-csv-dialog-datatable']/tr/td"
 
 # About Section
 ABOUT_VIEW_ID = 'menu-actionmanagebtn'
@@ -238,6 +247,9 @@ DUPLICATE_BUCKET_MESSAGE_ID = "dialog-message-label"
 CLOSE_DUPLICATE_BUCKET_MESSAGE_ID = "close-msg-dialogbox"
 CANCEL_BUCKET_DELETION_ID = "confirmation-dialog-cancel-btn"
 CANCEL_BUCKET_DELITION_ICON_ID = "confirmation-dialogclose"
+BUCKET_URL_TOOLTIP_XPATH = "//*[@id='copy-bucket-url-{0}']"
+BUCKET_URL_TOOLTIP_TEXT_ID = "copy-tooltip"
+BUCKET_URL_ON_BUCKET_CREATION_XPATH = "//*[@id='bucket-url-td-value']"
 
 
 # Software Update Page

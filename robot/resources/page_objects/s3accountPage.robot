@@ -348,3 +348,40 @@ Check Associated S3 Account Exists
     Log To Console And Report  ${s3_account_table_data}
     Log To Console And Report  ${expected_list}
     Lists Should Be Equal  ${s3_account_table_data}  ${expected_list}
+
+Verify S3 urls are displayed on the S3accounts tab
+    [Documentation]  Verify S3 urls are displayed on the S3accounts tab
+    Page Should Contain Element  ${S3_ACCOUNTS_TAB_S3_URL_TEXT_ID}
+    Page Should Contain Element  ${S3_ACCOUNTS_TAB_COPY_S3_URL_ONE_ID}
+    Page Should Contain Element  ${S3_ACCOUNTS_TAB_COPY_S3_URL_TWO_ID}
+    ${S3_url_element_text}=  get text  ${S3_ACCOUNTS_TAB_S3_URL_TEXT_ID}
+    Should Contain  ${S3_url_element_text}  S3 URL
+
+Verify that s3 url is displyed access key popup
+    [Documentation]  Verify s3 url is displyed access key popup
+    Click on add new access key button
+    wait until element is visible  ${NEW_ACCESS_KEY_TABLE_XPATH}  timeout=10
+    ${new_access_key_data} =  Read Table Data   ${NEW_ACCESS_KEY_TABLE_XPATH}
+    List Should Contain Value  ${new_access_key_data}  S3 URL
+    Click on download and close button for new access key
+    wait for page or element to load  2s
+
+Verify that s3 url on s3 account creation
+    [Documentation]  Verify s3 url is displyed access key popup
+    Click on add new s3 account button
+    ${S3_account}=  Generate New User Name
+    ${email}=  Generate New User Email
+    ${s3_account_password}=  Generate New Password
+    log to console and report  S3 account user name is ${S3_account}
+    log to console and report  email-id is ${email}
+    log to console and report  password is ${s3_account_password}
+    Add data to create new S3 account  ${S3_account}  ${email}  ${s3_account_password}  ${s3_account_password}
+    Click on create new S3 account button
+    wait for page or element to load  2s
+    wait until element is visible  ${S3_ACCOUNT_CREATION_POP_UP_TABLE_XPATH}  timeout=10
+    ${new_s3_account_data} =  Read Table Data   ${S3_ACCOUNT_CREATION_POP_UP_TABLE_XPATH}
+    Should Contain  ${new_s3_account_data}  S3 URL:
+    Click on download and close button
+    Re-login  ${S3_account}  ${s3_account_password}  MANAGE_MENU_ID
+    wait for page or element to load
+    Delete S3 Account  ${S3_account}  ${s3_account_password}  True

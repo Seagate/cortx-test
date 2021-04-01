@@ -72,6 +72,7 @@ class TestBucketPolicy():
         self.log.info("Teardown ended")
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10783')
     def test_4212(self):
         """Test that s3 user can add bucket policy
@@ -82,6 +83,7 @@ class TestBucketPolicy():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10784')
     def test_4213(self):
         """Test that s3 user can update bucket policy
@@ -94,6 +96,7 @@ class TestBucketPolicy():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10785')
     def test_4214(self):
         """Test that error is retuned when s3 user sends PUT request with invalid json
@@ -106,6 +109,7 @@ class TestBucketPolicy():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10779')
     def test_4215(self):
         """test that s3 user can GET current bucket policy
@@ -118,6 +122,7 @@ class TestBucketPolicy():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10788')
     def test_4216(self):
         """Test that error code is returned when s3 user send GET request on
@@ -131,6 +136,7 @@ class TestBucketPolicy():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10781')
     def test_4217(self):
         """Test that error is returned when s3 user send GET request on incorrect/invalid bucket
@@ -145,6 +151,7 @@ class TestBucketPolicy():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10780')
     def test_4218(self):
         """Test that s3 user can delete bucket policy
@@ -156,6 +163,7 @@ class TestBucketPolicy():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10786')
     def test_4219(self):
         """Test that error is returned when s3 user try delete bucket policy which doesn't exist
@@ -167,6 +175,7 @@ class TestBucketPolicy():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10792')
     def test_4220(self):
         """test that s3 user can add bucket policy to allow some bucket related
@@ -188,6 +197,7 @@ class TestBucketPolicy():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10794')
     def test_4221(self):
         """test that s3 user can add bucket policy to allow many(more than one)
@@ -210,6 +220,7 @@ class TestBucketPolicy():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10793')
     def test_4222(self):
         """test that s3 user can add bucket policy to deny all bucket related
