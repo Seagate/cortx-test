@@ -106,7 +106,7 @@ class TestBucketTagging():
             assert_true(status, resp)
         self.log.info("ENDED: Test teardown operations.")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5514")
     @CTFailOn(error_handler)
     def test_2432(self):
@@ -140,7 +140,7 @@ class TestBucketTagging():
         self.log.info("Step 3: Retrieved tag of a bucket")
         self.log.info("ENDED: Verify PUT Bucket tagging")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5517")
     @CTFailOn(error_handler)
     def test_2433(self):
@@ -173,7 +173,7 @@ class TestBucketTagging():
         self.log.info("Step 3: Retrieved tag of a bucket")
         self.log.info("ENDED: Verify GET Bucket tagging")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5519")
     @CTFailOn(error_handler)
     def test_2434(self):
@@ -214,7 +214,7 @@ class TestBucketTagging():
             TEST_CONF["test_2434"]["err_message"])
         self.log.info("ENDED: Verify DELETE Bucket tagging")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5533")
     @CTFailOn(error_handler)
     def test_2435(self):
@@ -250,7 +250,7 @@ class TestBucketTagging():
         self.log.info(
             "ENDED: Create a tag whose key is up to 128 Unicode characters in length")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5534")
     @CTFailOn(error_handler)
     def test_2436(self):
@@ -288,7 +288,7 @@ class TestBucketTagging():
         self.log.info(
             "ENDED: Create a tag whose key is more than 128 Unicode characters in length")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5535")
     @CTFailOn(error_handler)
     def test_2437(self):
@@ -323,7 +323,7 @@ class TestBucketTagging():
         self.log.info(
             "ENDED: Create a tag having values up to 256 Unicode characters in length")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5536")
     @CTFailOn(error_handler)
     def test_2438(self):
@@ -360,7 +360,7 @@ class TestBucketTagging():
         self.log.info(
             "ENDED: Create a tag having values more than 512 Unicode characters in length")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5528")
     @CTFailOn(error_handler)
     def test_2439(self):
@@ -400,7 +400,7 @@ class TestBucketTagging():
         self.log.info("Step 3: Retrieved tags of a bucket")
         self.log.info("ENDED: Create Bucket tags, up to 50")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5529")
     @CTFailOn(error_handler)
     def test_2440(self):
@@ -436,7 +436,7 @@ class TestBucketTagging():
             TEST_CONF["test_2440"]["err_message"])
         self.log.info("ENDED: Create Bucket tags, more than 50")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5521")
     @CTFailOn(error_handler)
     def test_2441(self):
@@ -474,7 +474,7 @@ class TestBucketTagging():
         self.log.info(
             "ENDED: Verify bucket Tag Keys with case sensitive labels")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5520")
     @CTFailOn(error_handler)
     def test_2442(self):
@@ -511,7 +511,7 @@ class TestBucketTagging():
         self.log.info(
             "ENDED: Verify bucket tag Values with case sensitive labels")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5526")
     @CTFailOn(error_handler)
     def test_2443(self):
@@ -549,7 +549,7 @@ class TestBucketTagging():
         self.log.info(
             "ENDED: Create multiple tags with tag keys having special characters")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5527")
     @CTFailOn(error_handler)
     def test_2444(self):
@@ -585,7 +585,7 @@ class TestBucketTagging():
         self.log.info("ENDED: Create multiple tags with tag keys having"
                       " invalid special characters")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5524")
     @CTFailOn(error_handler)
     def test_2445(self):
@@ -622,7 +622,7 @@ class TestBucketTagging():
         self.log.info("ENDED: Create multiple tags with tag values having "
                       "invalid special character")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5531")
     @CTFailOn(error_handler)
     def test_2446(self):
@@ -654,7 +654,7 @@ class TestBucketTagging():
             TEST_CONF["test_2446"]["err_message"])
         self.log.info("ENDED: Create bucket tags with duplicate keys")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5512")
     @CTFailOn(error_handler)
     def test_2447(self):
@@ -695,7 +695,7 @@ class TestBucketTagging():
         self.log.info("Step 3: Retrieved tag of a bucket")
         self.log.info("ENDED: verify values in a tag set should be unique")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5530")
     @CTFailOn(error_handler)
     def test_2448(self):
@@ -727,7 +727,7 @@ class TestBucketTagging():
         self.log.info("ENDED: Create bucket tags with invalid "
                       "(characters outside the allowed set) special characters")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5523")
     @CTFailOn(error_handler)
     def test_2449(self):
@@ -815,7 +815,7 @@ class TestBucketTagging():
             "ENDED: Delete Bucket having tags associated with Bucket and its Objects")
 
     # Raised bug EOS-2528, Uncomment when fixed
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5522")
     @CTFailOn(error_handler)
     def test_2450(self):
@@ -842,7 +842,7 @@ class TestBucketTagging():
         self.log.info("ENDED: Verification of max. no. of Buckets user can "
                       "create with max no. of tags per Bucket")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5513")
     @CTFailOn(error_handler)
     def test_2451(self):
@@ -868,7 +868,7 @@ class TestBucketTagging():
         self.log.info(
             "ENDED: Verify PUT bucket tagging to non-existing bucket")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5516")
     @CTFailOn(error_handler)
     def test_2452(self):
@@ -904,7 +904,7 @@ class TestBucketTagging():
         self.log.info(
             "ENDED: Verify GET bucket tagging to non-existing bucket")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5518")
     @CTFailOn(error_handler)
     def test_2453(self):

@@ -215,3 +215,30 @@ def distinct_fields(field: str,
         tests = pymongo_db[collection]
         result = tests.distinct(field, query)
         return True, result
+
+
+@pymongo_exception
+def aggregate(data: list,
+              uri: str,
+              db_name: str,
+              collection: str
+              ) -> (bool, str):
+    """
+    Aggregate query  MongoDB database
+
+    Args:
+        data: Data for querying document in MongoDB
+        uri: URI of MongoDB database
+        db_name: Database name
+        collection: Collection name in database
+
+    Returns:
+        On failure returns http status code and message
+        On success returns created document ID
+    """
+    with MongoClient(uri) as client:
+        pymongo_db = client[db_name]
+        tests = pymongo_db[collection]
+        print(data)
+        result = tests.aggregate(data)
+        return True, result

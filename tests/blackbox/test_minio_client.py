@@ -110,7 +110,7 @@ class TestMinioClient:
         self.log.info(
             "Step 1: Bucket is created with name %s", bucket_name)
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7536")
     @CTFailOn(error_handler)
     def test_create_single_bucket_2345(self):
@@ -130,7 +130,7 @@ class TestMinioClient:
             bucket_name)
         self.log.info("ENDED: Create single bucket using Minio Client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7537")
     @CTFailOn(error_handler)
     def test_create_multiple_bucket_2346(self):
@@ -153,7 +153,7 @@ class TestMinioClient:
         self.log.info("Step 2: Verified that buckets are created")
         self.log.info("ENDED: Create multiple buckets using Minion client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7545")
     @CTFailOn(error_handler)
     def test_list_bucket_2347(self):
@@ -169,7 +169,7 @@ class TestMinioClient:
         self.log.info("Step 2: Buckets are listed")
         self.log.info("Ended: List buckets using Minion client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7544")
     @CTFailOn(error_handler)
     def test_max_bucket_2348(self):
@@ -199,7 +199,7 @@ class TestMinioClient:
         self.log.info("Step 2: Verified that buckets are created")
         self.log.info("ENDED: Max no of buckets supported using Minion Client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7548")
     @CTFailOn(error_handler)
     def test_delete_empty_bucket_2349(self):
@@ -228,7 +228,7 @@ class TestMinioClient:
             bucket_name)
         self.log.info("ENDED: Delete empty bucket using Minion client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7547")
     @CTFailOn(error_handler)
     def test_delete_bucket_has_obj_2350(self):
@@ -267,7 +267,7 @@ class TestMinioClient:
         self.log.info(
             "ENDED: delete bucket which has objects using Minion Client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7546")
     @CTFailOn(error_handler)
     def test_create_bucket_existing_name_2351(self):
@@ -288,7 +288,7 @@ class TestMinioClient:
         self.log.info(
             "ENDED: Create bucket using existing bucket name using Minion client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7543")
     @CTFailOn(error_handler)
     def test_list_obj_inside_bucket_2352(self):
@@ -319,7 +319,7 @@ class TestMinioClient:
         self.log.info(
             "ENDED: To list objects inside bucket using Minion client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7541")
     @CTFailOn(error_handler)
     def test_del_obj_from_bucket_2353(self):
@@ -353,7 +353,7 @@ class TestMinioClient:
         self.log.info(
             "ENDED: Delete an object from bucket using Minion client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7542")
     @CTFailOn(error_handler)
     def test_copy_obj_from_bucket_2354(self):
@@ -380,7 +380,7 @@ class TestMinioClient:
         self.log.info("Step 3: Verified that object is uploaded to a bucket")
         self.log.info("ENDED: copy object from bucket using Minion client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7538")
     @CTFailOn(error_handler)
     def test_upload_large_obj_2355(self):
@@ -412,7 +412,7 @@ class TestMinioClient:
         self.log.info(
             "ENDED: upload object of large size of(5gb) using Minion Client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7540")
     @CTFailOn(error_handler)
     def test_display_file_content_2357(self):
@@ -448,7 +448,7 @@ class TestMinioClient:
         self.log.info(
             "ENDED: Display the contents of a text file using Minion client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7539")
     @CTFailOn(error_handler)
     def test_display_few_lines_2358(self):

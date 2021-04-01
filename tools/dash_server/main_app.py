@@ -161,8 +161,6 @@ qa_page = html.Div(
     [
         html.Div(input_options),
         html.Div(input_optional_options),
-        # html.Div(build_report_header),
-        # html.Div(toast),
         html.Div(qa_tabs)
     ]
 )
@@ -185,13 +183,14 @@ query_page = html.Div(query_tabs)
 main_tabs = dbc.Tabs(
     [
         dbc.Tab(qa_page, label="QA  REPORTS", style=dict_style_tab, label_style=dict_style_label,
-                active_label_style={'font-weight': 'bold'}),
+                active_label_style={'background-color': '#13ECB4', 'color': '#000000'}),
         dbc.Tab(query_page, label="QUERY  QA  DATA ", style=dict_style_tab,
-                label_style=dict_style_label, active_label_style={'font-weight': 'bold'}),
+                label_style=dict_style_label,
+                active_label_style={'background-color': '#13ECB4', 'color': '#000000'}),
         dbc.Tab(perf_stats_page, label="Performance Statistics", style=dict_style_tab, label_style=dict_style_label,
-                active_label_style={'font-weight': 'bold'}),
+                active_label_style={'background-color': '#13ECB4', 'color': '#000000'}),
         dbc.Tab(perf_graphs_page, label="Performance Trends", style=dict_style_tab, label_style=dict_style_label,
-                active_label_style={'font-weight': 'bold'}),
+                active_label_style={'background-color': '#13ECB4', 'color': '#000000'}),
     ],
     className="nav nav nav-pills nav-fill nav-pills flex-column flex-sm-row",
     id="main_tabs",

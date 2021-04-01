@@ -237,3 +237,84 @@ class Distinct(Resource):
             return flask.Response(status=count_results[1][0],
                                   response=count_results[1][1])
         return flask.jsonify({'result': count_results[1]})
+
+
+@api.route("/aggregate", doc={"description": "Return aggregate values as per the query "})
+@api.response(200, "Success")
+@api.response(400, "Bad Request: Missing parameters. Do not retry.")
+@api.response(401, "Unauthorized: Wrong db_username/db_password.")
+@api.response(403, "Forbidden: User does not have permission for operation.")
+@api.response(404, "Not Found: No entry for that query in MongoDB.")
+@api.response(503, "Service Unavailable: Unable to connect to mongoDB.")
+class Aggregate(Resource):
+    """Update endpoint"""
+
+    @staticmethod
+    def get():
+        """Get aggregate values for given field."""
+        json_data = flask.request.get_json()
+        if not json_data:
+            return flask.Response(status=HTTPStatus.BAD_REQUEST,
+                                  response="Body is empty")
+        if not validations.check_user_pass(json_data):
+            return flask.Response(status=HTTPStatus.BAD_REQUEST,
+                                  response="db_username/db_password missing in request body")
+
+        uri = read_config.mongodb_uri.format(quote_plus(json_data["db_username"]),
+                                             quote_plus(json_data["db_password"]),
+                                             read_config.db_hostname)
+
+        # Delete username and password as not needed to add those fields in DB
+        del json_data["db_username"]
+        del json_data["db_password"]
+
+        aggregate_results = mongodbapi.aggregate(json_data["aggregate"], uri,
+                                                 read_config.db_name,
+                                                 read_config.results_collection)
+        if not aggregate_results[0]:
+            return flask.Response(status=aggregate_results[1][0],
+                                  response=aggregate_results[1][1])
+        return flask.jsonify({'result': list(aggregate_results[1])})
+
+
+@api.route("/count", doc={"description": "Count test execution entries in MongoDB"})
+@api.response(200, "Success")
+@api.response(400, "Bad Request: Missing parameters. Do not retry.")
+@api.response(401, "Unauthorized: Wrong db_username/db_password.")
+@api.response(403, "Forbidden: User does not have permission for operation.")
+@api.response(404, "Not Found: No entry for that query in MongoDB.")
+@api.response(503, "Service Unavailable: Unable to connect to mongoDB.")
+class Count(Resource):
+    """Search endpoint"""
+
+    @staticmethod
+    def get():
+        """Get test execution entry."""
+        json_data = flask.request.get_json()
+        if not json_data:
+            return flask.Response(status=HTTPStatus.BAD_REQUEST,
+                                  response="Body is empty")
+        if not validations.check_user_pass(json_data):
+            return flask.Response(status=HTTPStatus.BAD_REQUEST,
+                                  response="db_username/db_password missing in request body")
+        validate_field = validations.validate_search_fields(json_data)
+        if not validate_field[0]:
+            return flask.Response(status=validate_field[1][0], response=validate_field[1][1])
+
+        uri = read_config.mongodb_uri.format(quote_plus(json_data["db_username"]),
+                                             quote_plus(json_data["db_password"]),
+                                             read_config.db_hostname)
+
+        # Delete username and password as not needed to add those fields in DB
+        del json_data["db_username"]
+        del json_data["db_password"]
+
+        count_results = mongodbapi.count_documents(json_data["query"], uri, read_config.db_name,
+                                                   read_config.results_collection)
+        if not count_results[0]:
+            return flask.Response(status=count_results[1][0],
+                                  response=count_results[1][1])
+        if count_results[0] and count_results[1] == 0:
+            return flask.Response(status=HTTPStatus.NOT_FOUND,
+                                  response=f"No results for query {json_data}")
+        return flask.jsonify({'result': count_results[1]})
