@@ -146,7 +146,7 @@ class S3fs:
         self.log.info("Checked the mounted directory present")
         return bucket_name, dir_name
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7928")
     @CTFailOn(error_handler)
     def test_mount_bucket_2359(self):
@@ -155,7 +155,7 @@ class S3fs:
         self.create_and_mount_bucket()
         self.log.info("ENDED: mount bucket using s3fs client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7929")
     @CTFailOn(error_handler)
     def test_umount_bucket_2360(self):
@@ -174,7 +174,7 @@ class S3fs:
         self.log.info("STEP: 2 Listed the mount directory present or not")
         self.log.info("ENDED: umount bucket directory using s3fs client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7930")
     @CTFailOn(error_handler)
     def test_list_object_mount_bucket_2361(self):
@@ -206,7 +206,7 @@ class S3fs:
         self.log.info(
             "ENDED: list objects on Mount directory with mounted bucket using s3fs client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7931")
     @CTFailOn(error_handler)
     def test_list_bucket_umount_dir_2362(self):
@@ -242,7 +242,7 @@ class S3fs:
             "ENDED: list objects where directory was umount and "
             "check bucket objects using s3fs client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7932")
     @CTFailOn(error_handler)
     def test_delete_file_check_obj_2363(self):
@@ -287,7 +287,7 @@ class S3fs:
             "ENDED: Delete File from Mount directory and "
             "check object is present in bucket using s3fs client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7935")
     @CTFailOn(error_handler)
     def test_create_subdir_2367(self):
@@ -317,7 +317,7 @@ class S3fs:
         self.log.info(
             "ENDED: Create sub directory under mount directory and list the bucket")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7933")
     @CTFailOn(error_handler)
     def test_upload_large_file_2364(self):
@@ -354,7 +354,7 @@ class S3fs:
             "ENDED: upload large file on mount directory and "
             "check its present in bucket using s3fs client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7934")
     @CTFailOn(error_handler)
     def test_upload_file_2365(self):
