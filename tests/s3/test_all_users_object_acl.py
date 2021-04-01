@@ -170,7 +170,7 @@ class TestAllUsers:
         self.log.info("ENDED: Teardown operations")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-6019")
     @CTFailOn(error_handler)
     def test_put_duplicate_object_without_auth_695(self):
@@ -201,7 +201,7 @@ class TestAllUsers:
             "AllUsers have READ permission on object")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-6016")
     @CTFailOn(error_handler)
     def test_delete_object_without_authentication_697(self):
@@ -229,7 +229,7 @@ class TestAllUsers:
             "when AllUsers have READ permission on object")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-6014")
     @CTFailOn(error_handler)
     def test_read_object_acl_without_auth_698(self):
@@ -261,7 +261,7 @@ class TestAllUsers:
             "when AllUsers have READ permission on object")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-6011")
     @CTFailOn(error_handler)
     def test_update_object_acl_without_auth_699(self):
@@ -294,7 +294,7 @@ class TestAllUsers:
             "when AllUsers have READ permission on object")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-6009")
     @CTFailOn(error_handler)
     def test_put_duplicate_object_without_authentication_700(self):
@@ -326,7 +326,7 @@ class TestAllUsers:
             "when AllUsers have WRITE permission on object")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-6006")
     @CTFailOn(error_handler)
     def test_delete_obj_without_auth_701(self):
@@ -355,7 +355,7 @@ class TestAllUsers:
             "when AllUsers have WRITE permission on object")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-6004")
     @CTFailOn(error_handler)
     def test_read_obj_acl_without_auth_702(self):
@@ -385,7 +385,7 @@ class TestAllUsers:
             "when AllUsers have WRITE permission on object")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-6002")
     @CTFailOn(error_handler)
     def test_update_obj_write_permission_without_auth_703(self):
@@ -416,7 +416,7 @@ class TestAllUsers:
             "when AllUsers have WRITE permission on object")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-6001")
     @CTFailOn(error_handler)
     def test_put_duplicate_object_read_acp_704(self):
@@ -449,7 +449,7 @@ class TestAllUsers:
             "when AllUsers have READ_ACP permission on object")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5970")
     @CTFailOn(error_handler)
     def test_get_object_without_authentication_read_permission_757(self):
@@ -479,7 +479,7 @@ class TestAllUsers:
             "when AllUsers have READ permission on object")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5968")
     @CTFailOn(error_handler)
     def test_get_allusers_object_without_auth_758(self):
@@ -514,7 +514,7 @@ class TestAllUsers:
             "when AllUsers have WRITE permission on object")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5999")
     @CTFailOn(error_handler)
     def test_get_object_read_acp_705(self):
@@ -550,7 +550,7 @@ class TestAllUsers:
             "when AllUsers have READ_ACP permission on object")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5997")
     @CTFailOn(error_handler)
     def test_read_obj_without_auth_read_acp_706(self):
@@ -580,7 +580,7 @@ class TestAllUsers:
             "when AllUsers have READ_ACP permission on object")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5995")
     @CTFailOn(error_handler)
     def test_update_obj_without_auth_read_acp_707(self):
@@ -612,7 +612,7 @@ class TestAllUsers:
             "when AllUsers have READ_ACP permission on object")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5993")
     @CTFailOn(error_handler)
     def test_put_object_without_auth_write_acp_708(self):
@@ -643,7 +643,7 @@ class TestAllUsers:
             "when AllUsers have WRITE_ACP permission on object")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5986")
     @CTFailOn(error_handler)
     def test_get_object_without_auth_write_acp_709(self):
@@ -676,7 +676,7 @@ class TestAllUsers:
             "when AllUsers have WRITE_ACP permission on object")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5984")
     @CTFailOn(error_handler)
     def test_read_object_without_auth_write_acp_710(self):
@@ -709,7 +709,7 @@ class TestAllUsers:
             "when AllUsers have WRITE_ACP permission on object")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5982")
     @CTFailOn(error_handler)
     def test_update_object_without_auth_write_acp_711(self):
@@ -736,7 +736,7 @@ class TestAllUsers:
             "when AllUsers have WRITE_ACP permission on object")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5979")
     @CTFailOn(error_handler)
     def test_put_duplicate_object_full_control_712(self):
@@ -767,7 +767,7 @@ class TestAllUsers:
             "when AllUsers have FULL_CONTROL permission on object")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5977")
     @CTFailOn(error_handler)
     def test_get_object_without_auth_full_control_713(self):
@@ -797,7 +797,7 @@ class TestAllUsers:
             "when AllUsers have FULL_CONTROL permission on object")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5975")
     @CTFailOn(error_handler)
     def test_read_object_without_auth_full_control_714(self):
@@ -826,7 +826,7 @@ class TestAllUsers:
             "when AllUsers have FULL_CONTROL permission on object")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5973")
     @CTFailOn(error_handler)
     def test_update_object_without_auth_full_control_715(self):

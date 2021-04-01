@@ -370,7 +370,7 @@ class TestOpenLdap:
         self.log.info("ENDED: Teardown operations")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5498")
     @CTFailOn(error_handler)
     def test_5066(self):
@@ -415,7 +415,7 @@ class TestOpenLdap:
             "configuration directory is done successfully")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5498")
     @CTFailOn(error_handler)
     def test_5067(self):
@@ -459,7 +459,7 @@ class TestOpenLdap:
             "ENDED: Test to verify & check backup of openldap Data Directory is done successfully")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5498")
     @CTFailOn(error_handler)
     def test_5068(self):
@@ -556,7 +556,7 @@ class TestOpenLdap:
             "configuration directory is done successfully")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5498")
     @CTFailOn(error_handler)
     def test_5069(self):
@@ -667,7 +667,7 @@ class TestOpenLdap:
             "to what it was previously before restore.")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5498")
     @CTFailOn(error_handler)
     def test_5070(self):
@@ -763,7 +763,7 @@ class TestOpenLdap:
             "openldap data directories is done successfully")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5498")
     @CTFailOn(error_handler)
     def test_5071(self):
@@ -869,7 +869,7 @@ class TestOpenLdap:
             "permissions of the data directory to what it was previously")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5498")
     @CTFailOn(error_handler)
     def test_5073(self):
@@ -908,7 +908,7 @@ class TestOpenLdap:
             "enc_ldap_passwd_in_cfg.sh script.")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5498")
     @CTFailOn(error_handler)
     def test_5074(self):
@@ -961,7 +961,7 @@ class TestOpenLdap:
             "file is updated post password change/reset")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5498")
     @CTFailOn(error_handler)
     def test_5075(self):
@@ -1016,7 +1016,7 @@ class TestOpenLdap:
             " with uppercase/lowercase characters")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5498")
     @CTFailOn(error_handler)
     def test_5076(self):
