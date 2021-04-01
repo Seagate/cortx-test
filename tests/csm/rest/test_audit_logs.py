@@ -69,6 +69,7 @@ class TestAuditLogs():
         cls.log.info("Test setup initialized...")
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10733')
     def test_4918(self):
         """Test that s3 account and iam user don't have access to audit logs
@@ -85,6 +86,7 @@ class TestAuditLogs():
         self.log.info("##### Test ended -  %s #####",test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10735')
     def test_4926(self):
         """Verify that API to download audit logs returns 404 error code on invalid component name
@@ -99,6 +101,7 @@ class TestAuditLogs():
         self.log.info("##### Test ended -  %s #####",test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10736')
     def test_4925(self):
         """Verify that API to show audit logs returns 404 error code on invalid component name
@@ -113,6 +116,7 @@ class TestAuditLogs():
         self.log.info("##### Test ended -  %s #####",test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10737')
     def test_4913(self):
         """Test that GET API returns audit logs in binary format for both csm and s3 components
@@ -131,6 +135,7 @@ class TestAuditLogs():
         self.log.info("##### Test ended -  %s #####",test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10738')
     def test_4914(self):
         """Test that API response of audit logs API for CSM component
@@ -145,6 +150,7 @@ class TestAuditLogs():
         self.log.info("##### Test ended -  %s #####",test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10739')
     def test_4917(self):
         """Test that admin can download and see audit logs
@@ -162,6 +168,7 @@ class TestAuditLogs():
         self.log.info("##### Test ended -  %s #####",test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10741')
     def test_4919(self):
         """Test that audit log is returned for different time intervals
@@ -176,6 +183,7 @@ class TestAuditLogs():
         self.log.info("##### Test ended -  %s #####",test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10743')
     def test_4916(self):
         """Test that csm user(having manage or monitor rights) can download and see audit logs
@@ -195,6 +203,7 @@ class TestAuditLogs():
         self.log.info("##### Test ended -  %s #####",test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-12841')
     def test_4920(self):
         """Test that Verify that content of both 'show' and 'dowload' api is exactly same
@@ -242,6 +251,7 @@ class TestAuditLogs():
         self.log.info("##### Test ended -  %s #####",test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-15865')
     @pytest.mark.skip(reason="Test is taking exceptionally long time")
     def test_4922(self):
@@ -298,6 +308,7 @@ class TestAuditLogs():
         self.log.info("##### Test ended -  %s #####",test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-16553')
     def test_4915(self):
         """
