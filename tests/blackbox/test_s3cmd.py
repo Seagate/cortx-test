@@ -108,7 +108,7 @@ class TestS3cmdClient:
                 self.node_helper_obj.remove_file(file)
         self.log.info("ENDED: Teardown Operations")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7131")
     @CTFailOn(error_handler)
     def test_2309(self):
@@ -131,7 +131,7 @@ class TestS3cmdClient:
             self.log.info("STEP: 1 Bucket was created %s", bucket_name)
         self.log.info("ENDED: create multiple bucket using s3cmd client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7155")
     @CTFailOn(error_handler)
     def test_2311(self):
@@ -165,7 +165,7 @@ class TestS3cmdClient:
                     "STEP: 1 Bucket was created %s", bucket_name)
         self.log.info("ENDED: max no of buckets supported using s3cmd")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7156")
     @CTFailOn(error_handler)
     def test_2312(self):
@@ -195,7 +195,7 @@ class TestS3cmdClient:
         self.log.info("STEP: 1 Bucket was deleted %s", bucket_name)
         self.log.info("ENDED: Delete empty bucket using s3cmd client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7157")
     @CTFailOn(error_handler)
     def test_2308(self):
@@ -229,7 +229,7 @@ class TestS3cmdClient:
         self.log.info("STEP: 2 Buckets listed")
         self.log.info("ENDED: create bucket using s3cmd")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7158")
     @CTFailOn(error_handler)
     def test_2313(self):
@@ -273,7 +273,7 @@ class TestS3cmdClient:
         self.log.info("STEP: 2 Multiple buckets deleted")
         self.log.info("ENDED: Delete multiple buckets using s3cmd client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7159")
     @CTFailOn(error_handler)
     def test_2326(self):
@@ -304,7 +304,7 @@ class TestS3cmdClient:
         self.log.info(
             "ENDED: Create bucket with existing bucket name using s3cmd client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7160")
     @CTFailOn(error_handler)
     def test_2310(self):
@@ -338,7 +338,7 @@ class TestS3cmdClient:
         self.log.info("STEP: 2 Buckets listed")
         self.log.info("ENDED: list buckets using s3cmd client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7161")
     @CTFailOn(error_handler)
     def test_2316(self):
@@ -370,7 +370,7 @@ class TestS3cmdClient:
         self.log.info("STEP: 2 File uploaded")
         self.log.info("ENDED: upload object using s3cmd client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7162")
     @CTFailOn(error_handler)
     def test_2314(self):
@@ -411,7 +411,7 @@ class TestS3cmdClient:
         self.log.info(
             "ENDED: delete bucket which has objects using s3cmd client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7163")
     @CTFailOn(error_handler)
     def test_2320(self):
@@ -455,7 +455,7 @@ class TestS3cmdClient:
         self.log.info(
             "ENDED: delete single object from bucket using s3cmd client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7164")
     @CTFailOn(error_handler)
     def test_2321(self):
@@ -508,7 +508,7 @@ class TestS3cmdClient:
         self.log.info(
             "ENDED: delete multiple objects from bucket using s3cmd client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7165")
     @CTFailOn(error_handler)
     def test_2317(self):
@@ -548,7 +548,7 @@ class TestS3cmdClient:
         self.log.info("STEP: 3 Object listed in bucket")
         self.log.info("ENDED: list objects using S3cmd client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7552")
     @CTFailOn(error_handler)
     def test_2322(self):
@@ -617,7 +617,7 @@ class TestS3cmdClient:
         self.log.info(
             "ENDED: delete all objects from bucket using s3cmd client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7553")
     @CTFailOn(error_handler)
     def test_2327(self):
@@ -656,7 +656,7 @@ class TestS3cmdClient:
         self.log.info(
             "ENDED: Get various information about Buckets using s3cmd client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7551")
     @CTFailOn(error_handler)
     def test_2319(self):
@@ -701,7 +701,7 @@ class TestS3cmdClient:
         self.log.info("STEP: 4 Got file from bucket")
         self.log.info("ENDED: Get file from bucket using S3cmd client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7549")
     @CTFailOn(error_handler)
     def test_2315(self):
@@ -763,7 +763,7 @@ class TestS3cmdClient:
         self.log.info(
             "ENDED: delete bucket forcefully which has objects using s3cmd client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7550")
     @CTFailOn(error_handler)
     def test_2318(self):

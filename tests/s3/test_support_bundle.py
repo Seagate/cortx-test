@@ -319,7 +319,7 @@ class TestSupportBundle:
         self.log.info("ENDED: Teardown operations")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8024 ")
     @CTFailOn(error_handler)
     def test_dest_has_less_space_5274(self):
@@ -352,7 +352,7 @@ class TestSupportBundle:
             "ENDED: Support bundle collection when destination has less space than required")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8025")
     @CTFailOn(error_handler)
     def test_collect_triggered_simultaneously_5280(self):
@@ -392,7 +392,7 @@ class TestSupportBundle:
             "ENDED: Test multiple Support bundle collection triggered simultaneously")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8026")
     @CTFailOn(error_handler)
     def test_core_m0traces_all_instances_5282(self):
@@ -455,7 +455,7 @@ class TestSupportBundle:
     # As this test cases requires destructive operations to be performed on the node
     # causing cluster failure so disabling this test-case
     @pytest.mark.skip
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8691 ")
     def test_collection_with_network_fluctuation_5272(self):
         """Support bundle collection with network fluctuation."""
@@ -498,7 +498,7 @@ class TestSupportBundle:
             "ENDED: Test Support bundle collection with network fluctuation")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8692 ")
     @CTFailOn(error_handler)
     def test_collecion_primary_secondary_nodes_5273(self):
@@ -544,7 +544,7 @@ class TestSupportBundle:
     # As this test cases requires destructive operations on the node
     # causing cluster failure so disabling this test-case
     @pytest.mark.skip
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8694")
     @CTFailOn(error_handler)
     def test_collet_authservice_down_5276(self):
@@ -589,7 +589,7 @@ class TestSupportBundle:
     # As this test cases requires destructive operations on the node
     # causing cluster failure so disabling this test-case
     @pytest.mark.skip
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8695")
     @CTFailOn(error_handler)
     def test_collection_haproxy_down_5277(self):
@@ -634,7 +634,7 @@ class TestSupportBundle:
     # As this test cases requires destructive operations on the node
     # causing cluster failure so disabling this test-case
     @pytest.mark.skip
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8696")
     @CTFailOn(error_handler)
     def test_collection_cluster_down_5278(self):
@@ -669,7 +669,7 @@ class TestSupportBundle:
             "ENDED: Test Support bundle collection when Cluster is shut down")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8697")
     @CTFailOn(error_handler)
     def test_collection_one_after_other_5279(self):
@@ -707,7 +707,7 @@ class TestSupportBundle:
             "ENDED: Test multiple Support bundle collections one after the other")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8698 ")
     @CTFailOn(error_handler)
     def test_s3server_logs_all_instances_5281(self):
@@ -752,7 +752,7 @@ class TestSupportBundle:
             "ENDED: Validate Support bundle contains s3server logs for all instances")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8699")
     @CTFailOn(error_handler)
     def test_authserver_logs_5283(self):
@@ -792,7 +792,7 @@ class TestSupportBundle:
             "ENDED: Validate Support bundle contains authserver logs")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8700")
     @CTFailOn(error_handler)
     def test_haproxy_logs_5284(self):
@@ -834,7 +834,7 @@ class TestSupportBundle:
     # As this test cases requires destructive operations on the node
     # causing cluster failure so disabling this test-case
     @pytest.mark.skip
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8693")
     @CTFailOn(error_handler)
     def test_collection_s3server_down_5275(self):
@@ -877,7 +877,7 @@ class TestSupportBundle:
             "ENDED: Test Support bundle collection when s3server services are down")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8701")
     @CTFailOn(error_handler)
     def test_collection_script_5270(self):
@@ -910,7 +910,7 @@ class TestSupportBundle:
             "ENDED: Test Support bundle collection through command/script")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8689")
     @CTFailOn(error_handler)
     def test_system_configs_5285(self):
@@ -969,7 +969,7 @@ class TestSupportBundle:
             "ENDED: Validate Support bundle contains system related configs")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8690")
     @CTFailOn(error_handler)
     def test_collect_system_info_stats_5286(self):
