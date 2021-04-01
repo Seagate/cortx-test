@@ -291,6 +291,7 @@ def gen_table_feature_breakdown_summary(n_clicks, branch, build_no):
     return feature_breakdown_summary
 
 
+# TODO
 @app.callback(
     Output('r1_table_code_maturity', 'children'),
     [Input('submit_button', 'n_clicks'),
@@ -340,14 +341,13 @@ def gen_table_code_maturity(n_clicks, branch, build_no):
     return code_maturity
 
 
-
 @app.callback(
-    Output('r1_table_s3_bucket_perf','children'),
+    Output('r1_table_s3_bucket_perf', 'children'),
     Input('submit_button', 'n_clicks'),
     [State('branch_dropdown', 'value'),
-    State('build_no_dropdown', 'value')]
+     State('build_no_dropdown', 'value')]
 )
-def gen_table_s3_bucket_perf(n_clicks,branch,build_no):
+def gen_table_s3_bucket_perf(n_clicks, branch, build_no):
     """
     Single Bucket Performance Statistics using S3bench
     """
