@@ -42,7 +42,7 @@ CONC_CFG = read_yaml("config/s3/test_s3_concurrency.yaml")[1]
 
 
 class TestS3Concurrency:
-    """S3 Concurrency Operations Test suite"""
+    """S3 Concurrency Operations Test suite."""
 
     @classmethod
     def setup_class(cls):
@@ -77,7 +77,8 @@ class TestS3Concurrency:
 
     def setup_method(self):
         """
-        This function will be invoked before each test case execution
+        Function will be invoked before each test case execution.
+
         It will perform prerequisite test steps if any
         """
         self.log.info("STARTED: Setup operations")
@@ -86,7 +87,8 @@ class TestS3Concurrency:
 
     def teardown_method(self):
         """
-        This function will be invoked after running each test case.
+        Function will be invoked after running each test case.
+
         It will clean all resources which are getting created during
         test execution such as S3 buckets and the objects present into that bucket.
         """
@@ -110,17 +112,20 @@ class TestS3Concurrency:
 
     def create_bucket_thread(self, bkt_name, resp_lst):
         """
-        Creating s3 Bucket using aws/boto functionality
+        Creating s3 Bucket using aws/boto functionality.
+
         :param str bkt_name: Name of the bucket
         :param list resp_lst: shared object for maintaining operation response
         :return: None
         """
         resp = S3T_OBJ.create_bucket(bkt_name)
+        self.log.info(resp)
         resp_lst.append(resp)
 
     def create_bucket_s3cmd_thread(self, bucket_url, s3cmd_cnf, resp_lst):
         """
-        Creating s3 Bucket using s3cmd command tool
+        Creating s3 Bucket using s3cmd command tool.
+
         :param str bucket_url: URL containing bucket name
         :param dict s3cmd_cnf: yaml test configuration
         :param lst resp_lst: shared object for maintaining operation response
@@ -129,13 +134,14 @@ class TestS3Concurrency:
         cmd_arguments = [bucket_url]
         command = S3CMDT_OBJ.command_formatter(
             s3cmd_cnf, s3cmd_cnf["common_cfg"]["make_bucket"], cmd_arguments)
-        self.log.info("Command is : {}".format(command))
+        self.log.info("Command is : %s", command)
         resp = system_utils.run_local_cmd(command)
         resp_lst.append(resp)
 
     def put_object_thread(self, bkt_name, obj_name, file_path, resp_lst):
         """
-        Putting Object to the s3 Bucket using aws/boto functionality
+        Putting Object to the s3 Bucket using aws/boto functionality.
+
         :param str bkt_name: Name of s3 bucket
         :param str obj_name: Name of the object
         :param str file_path: Path to the object file
@@ -143,11 +149,13 @@ class TestS3Concurrency:
         :return: None
         """
         resp = S3T_OBJ.put_object(bkt_name, obj_name, file_path)
+        self.log.info(resp)
         resp_lst.append(resp)
 
     def upload_object_thread(self, bkt_name, obj_name, file_path, resp_lst):
         """
-        Uploading Object to the Bucket using aws/boto functionality
+        Uploading Object to the Bucket using aws/boto functionality.
+
         :param str bkt_name: Name of s3 bucket
         :param str obj_name: Name of the object
         :param str file_path: Path to the object file
@@ -155,6 +163,7 @@ class TestS3Concurrency:
         :return: None
         """
         resp = S3T_OBJ.object_upload(bkt_name, obj_name, file_path)
+        self.log.info(resp)
         resp_lst.append(resp)
 
     def put_object_s3cmd_thread(
@@ -164,7 +173,8 @@ class TestS3Concurrency:
             s3cmd_cnf,
             resp_lst):
         """
-        Putting Object to the s3 Bucket using s3cmd command tool
+        Putting Object to the s3 Bucket using s3cmd command tool.
+
         :param str bucket_url: URL path containing the bucket name
         :param str file_path: Path to the object file
         :param dict s3cmd_cnf: yaml test configuration
@@ -174,35 +184,40 @@ class TestS3Concurrency:
         cmd_arguments = [file_path, bucket_url]
         command = S3CMDT_OBJ.command_formatter(
             s3cmd_cnf, s3cmd_cnf["common_cfg"]["put_bucket"], cmd_arguments)
-        self.log.info("Command is : {}".format(command))
+        self.log.info("Command is : %s", command)
         resp = system_utils.run_local_cmd(command)
         resp_lst.append(resp)
 
     def del_object_thread(self, bkt_name, obj_name, resp_lst):
         """
-        This function deletes the object from s3 bucket using aws/boto functionality
+        Function deletes the object from s3 bucket using aws/boto functionality.
+
         :param str bkt_name: Name of s3 bucket
         :param str obj_name: Name of the object
         :param list resp_lst: shared object for maintaining operation response
         :return: None
         """
         resp = S3T_OBJ.delete_object(bkt_name, obj_name)
+        self.log.info(resp)
         resp_lst.append(resp)
 
     def del_bucket_thread(self, bkt_name, resp_lst):
         """
-        This function deletes the empty bucket or
-        deleting the buckets along with objects stored in it
+        Delete buckets.
+
+        Function deletes the empty bucket or deleting the buckets along with objects stored in it
         :param str bkt_name: Name of s3 bucket
         :param list resp_lst: shared object for maintaining operation response
         :return: None
         """
         resp = S3T_OBJ.delete_bucket(bkt_name, force=True)
+        self.log.info(resp)
         resp_lst.append(resp)
 
     def get_obj_s3cmd_thread(self, bucket_url, filename, s3cmd_cnf, resp_lst):
         """
-        Retrieves object from specified S3 bucket using the s3cmd command tool
+        Retrieve object from specified S3 bucket using the s3cmd command tool.
+
         :param str bucket_url: URL path containing the bucket name
         :param str filename: Path to the object file
         :param dict s3cmd_cnf: yaml test configuration
@@ -213,7 +228,7 @@ class TestS3Concurrency:
                          s3cmd_cnf["common_cfg"]["force"]]
         command = S3CMDT_OBJ.command_formatter(
             s3cmd_cnf, s3cmd_cnf["common_cfg"]["get"], cmd_arguments)
-        self.log.info("Command is : {}".format(command))
+        self.log.info("Command is : %s", command)
         resp = system_utils.run_local_cmd(command)
         resp_lst.append(resp)
 
@@ -225,7 +240,8 @@ class TestS3Concurrency:
             s3cmd_cnf,
             resp_lst):
         """
-        This function deletes the object from s3 bucket using s3cmd command tool
+        Function deletes the object from s3 bucket using s3cmd command tool.
+
         :param str bucket_url: URL path containing the bucket name
         :param str filename: Path to the object file
         :param str del_cmd: delete s3cmd command option
@@ -236,7 +252,7 @@ class TestS3Concurrency:
         cmd_arguments = ["/".join([bucket_url, filename])]
         command = S3CMDT_OBJ.command_formatter(
             s3cmd_cnf, del_cmd, cmd_arguments)
-        self.log.info("Command is : {}".format(command))
+        self.log.info("Command is : %s", command)
         resp = system_utils.run_local_cmd(command)
         resp_lst.append(resp)
 
@@ -247,8 +263,8 @@ class TestS3Concurrency:
             s3cmd_cnf,
             resp_lst):
         """
-        This function deletes the empty bucket or
-        deleting the buckets along with objects stored in it
+        Function deletes the empty bucket or deleting the buckets along with objects stored in it.
+
         :param str bucket_url: URL path containing the bucket name
         :param str rem_cmd: remove bucket s3cmd command option
         :param dict s3cmd_cnf: yaml test configuration
@@ -258,14 +274,14 @@ class TestS3Concurrency:
         cmd_arguments = [bucket_url]
         command = S3CMDT_OBJ.command_formatter(
             s3cmd_cnf, rem_cmd, cmd_arguments)
-        self.log.info("Command is : {}".format(command))
+        self.log.info("Command is : %s", command)
         resp = system_utils.run_local_cmd(command)
         resp_lst.append(resp)
 
     def start_concurrent_clients(self, process_lst, resp_lst, all_true=None):
         """
-        This function start concurrent clients process parallel and validate the process
-        response result
+        Start concurrent clients process parallel and validate the process response result.
+
         :param list process_lst: list containing the client process of aws and s3cmd
         :param list resp_lst: shared object for maintaining thread communication
         :param boolean all_true: flag to check all clients returning success or
@@ -278,15 +294,14 @@ class TestS3Concurrency:
             process.join()
         resp = all([resp_lst[0][1], resp_lst[1][0]]) if all_true else any(
             [resp_lst[0][1], resp_lst[1][0]])
+        self.log.info(resp)
         assert_utils.assert_true(resp, resp_lst)
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7954")
     @CTFailOn(error_handler)
     def test_existing_objects_being_overwritten_by_multiple_client_2128(self):
-        """
-        Existing Object is being overwritten by multiple client
-        """
+        """Existing Object is being overwritten by multiple client."""
         self.log.info(
             "STARTED: Existing Object is being overwritten by multiple client")
         test_cfg = CONC_CFG["test_2128"]
@@ -300,7 +315,7 @@ class TestS3Concurrency:
                                                 file_path,
                                                 test_cfg["file_size"])
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 1: List objects of bucket {}".format(bkt_name))
+        self.log.info("Step 1: List objects of bucket: %s", bkt_name)
         resp = S3T_OBJ.object_list(bkt_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 1: All the objects listed")
@@ -325,12 +340,16 @@ class TestS3Concurrency:
         self.log.info(
             "ENDED: Existing Object is being overwritten by multiple client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7962")
     @CTFailOn(error_handler)
-    def test_obj_download_triggered_from_client_and_delete_triggered_from_other_client_2129(self):
+    def test_obj_download_triggered_from_client_and_delete_triggered_from_other_client_2129(
+            self):
         """
-        Object download is in progress on one s3 client and delete object triggered from other s3 client
+        Delete object when download is in progress.
+
+        Object download is in progress on one s3 client and delete object triggered from
+        other s3 client.
         """
         self.log.info(
             "STARTED: Object download is in progress on one s3 client "
@@ -346,7 +365,7 @@ class TestS3Concurrency:
                                                 file_path,
                                                 test_cfg["file_size"])
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 1: List objects of bucket {}".format(bkt_name))
+        self.log.info("Step 1: List objects of bucket: %s", bkt_name)
         resp = S3T_OBJ.object_list(bkt_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 1: All the objects listed")
@@ -371,11 +390,14 @@ class TestS3Concurrency:
         self.log.info("ENDED: Object download is in progress on one s3 client "
                       "and delete object triggered from other s3 client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7956")
     @CTFailOn(error_handler)
-    def test_object_download_in_progress_on_one_client_delete_bucket_triggered_from_other_2130(self):
+    def test_object_download_in_progress_on_one_client_delete_bucket_triggered_from_other_2130(
+            self):
         """
+        Delete bucket on Object download.
+
         Object download in progress on one client and delete bucket
         (in which the object exits) is triggered from the other s3 client
         """
@@ -394,7 +416,7 @@ class TestS3Concurrency:
                                                 file_path,
                                                 test_cfg["file_size"])
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 1: List objects of bucket {}".format(bkt_name))
+        self.log.info("Step 1: List objects of bucket: %s", bkt_name)
         resp = S3T_OBJ.object_list(bkt_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 1: All the objects listed")
@@ -415,18 +437,18 @@ class TestS3Concurrency:
         self.start_concurrent_clients(client_lst, resp_lst)
         self.file_lst.append(file_path)
         self.log.info(
-            "Step 2: Delete bucket operation will get passed and Get object operation will fail in between")
+            "Step 2: Delete bucket operation will get passed and Get object operation"
+            " will fail in between")
         self.log.info(
             "ENDED: Object download in progress on one client and delete bucket "
             "(in which the object exits) is triggered from the other s3 client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7957")
     @CTFailOn(error_handler)
-    def test_parallel_bucket_creation_of_same_name_from_two_different_clients_2131(self):
-        """
-        Parallel bucket creation of same name from 2 different clients
-        """
+    def test_parallel_bucket_creation_of_same_name_from_two_different_clients_2131(
+            self):
+        """Parallel bucket creation of same name from 2 different clients."""
         self.log.info(
             "STARTED: Parallel bucket creation of same name from 2 different clients")
         test_cfg = CONC_CFG["test_2131"]
@@ -450,13 +472,12 @@ class TestS3Concurrency:
         self.log.info(
             "ENDED: Parallel bucket creation of same name from 2 different clients")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7958")
     @CTFailOn(error_handler)
-    def test_parallel_deletion_of_same_object_from_two_different_clients_2132(self):
-        """
-        Parallel deletion of same object from 2 different clients
-        """
+    def test_parallel_deletion_of_same_object_from_two_different_clients_2132(
+            self):
+        """Parallel deletion of same object from 2 different clients."""
         self.log.info(
             "STARTED: Parallel deletion of same object from 2 different clients")
         test_cfg = CONC_CFG["test_2132"]
@@ -470,7 +491,7 @@ class TestS3Concurrency:
                                                 file_path,
                                                 test_cfg["file_size"])
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 1: List objects of bucket {}".format(bkt_name))
+        self.log.info("Step 1: List objects of bucket: %s", bkt_name)
         resp = S3T_OBJ.object_list(bkt_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 1: All the objects listed")
@@ -496,11 +517,14 @@ class TestS3Concurrency:
         self.log.info(
             "ENDED: Parallel deletion of same object from 2 different clients")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7959")
     @CTFailOn(error_handler)
-    def test_upload_object_to_bucket_from_one_client_and_parallel_delete_bkt_from_other_client_2133(self):
+    def test_upload_object_to_bucket_from_one_client_and_parallel_delete_bkt_from_other_client_2133(
+            self):
         """
+        Upload objects.
+
         Upload an object to the bucket from one s3 client and in parallel
         try to delete the same bucket from other s3 client
         """
@@ -515,7 +539,7 @@ class TestS3Concurrency:
         file_path = os.path.join(self.test_dir_path, obj_name)
         resp_lst = MANAGER.list()
         system_utils.create_file(file_path, test_cfg["file_size"])
-        self.log.info("Step 1: Creating a bucket {}".format(bkt_name))
+        self.log.info("Step 1: Creating a bucket: %s", bkt_name)
         resp = S3T_OBJ.create_bucket(bkt_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 1: Bucket was created")
@@ -537,18 +561,17 @@ class TestS3Concurrency:
         self.start_concurrent_clients(client_lst, resp_lst)
         self.file_lst.append(file_path)
         self.log.info(
-            "Step 2: Delete bucket operation will get passed and Get object operation will fail in between")
+            "Step 2: Delete bucket operation will get passed and Get object operation"
+            " will fail in between")
         self.log.info(
             "ENDED: Upload an object to the bucket from one s3 client and in parallel "
             "try to delete the same bucket from other s3 client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7960")
     @CTFailOn(error_handler)
     def test_parallel_deletion_of_bucket_from_two_different_clients_2134(self):
-        """
-        Parallel deletion of bucket from 2 different clients
-        """
+        """Parallel deletion of bucket from 2 different clients."""
         self.log.info(
             "STARTED: Parallel deletion of bucket from 2 different clients")
         test_cfg = CONC_CFG["test_2134"]
@@ -562,7 +585,7 @@ class TestS3Concurrency:
                                                 file_path,
                                                 test_cfg["file_size"])
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 1: List objects of bucket {}".format(bkt_name))
+        self.log.info("Step 1: List objects of bucket: %s", bkt_name)
         resp = S3T_OBJ.object_list(bkt_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 1: All the objects listed")
@@ -587,13 +610,12 @@ class TestS3Concurrency:
         self.log.info(
             "ENDED: Parallel deletion of bucket from 2 different clients")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7961")
     @CTFailOn(error_handler)
-    def test_put_object_through_one_s3_client_try_deleting_it_from_other_client_2135(self):
-        """
-        UPut object through one s3 client and try deleting it from other s3 client
-        """
+    def test_put_object_through_one_s3_client_try_deleting_it_from_other_client_2135(
+            self):
+        """Put object through one s3 client and try deleting it from other s3 client."""
         self.log.info(
             "STARTED: Put object through one s3 client and try deleting it from other s3 client")
         test_cfg = CONC_CFG["test_2135"]
@@ -603,7 +625,7 @@ class TestS3Concurrency:
         obj_name = test_cfg["obj_name"]
         file_path = os.path.join(self.test_dir_path, obj_name)
         resp_lst = MANAGER.list()
-        self.log.info("Step 1: Creating a bucket {}".format(bkt_name))
+        self.log.info("Step 1: Creating a bucket%s", bkt_name)
         resp = S3T_OBJ.create_bucket(bkt_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 1: Bucket was created")
@@ -630,11 +652,14 @@ class TestS3Concurrency:
         self.log.info(
             "ENDED: Put object through one s3 client and try deleting it from other s3 client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7963")
     @CTFailOn(error_handler)
-    def test_download_an_already_existing_obj_from_one_client_parallel_overwrite_it_2136(self):
+    def test_download_an_already_existing_obj_from_one_client_parallel_overwrite_it_2136(
+            self):
         """
+        Download existing objects.
+
         Download an already existing object from one client and in parallel
         overwrite the same object from other s3 client
         """

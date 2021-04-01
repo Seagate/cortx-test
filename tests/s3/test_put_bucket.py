@@ -40,26 +40,38 @@ NO_AUTH_OBJ_WITHOUT_CERT = S3LibNoAuth(s3_cert_path=None)
 class TestPutBucket:
     """PUT Bucket Test suite."""
 
+    @classmethod
+    def setup_class(cls):
+        """
+        Function will be invoked prior to each test case.
+
+        It will perform all prerequisite test suite steps if any.
+        """
+        cls.log = logging.getLogger(__name__)
+        cls.log.info("STARTED: setup test suite operations.")
+        cls.bucket_name = None
+        cls.log.info("ENDED: setup test suite operations.")
+
     def setup_method(self):
         """
-        This function will be invoked before each test case execution.
+        Function will be invoked before each test case execution.
 
         It will perform prerequisite test steps if any.
         """
-        self.log = logging.getLogger(__name__)
         self.log.info("STARTED: Test setup operations.")
         self.bucket_name = "-".join(["putbk", str(time.time())])
         self.log.info("ENDED: Test setup operations.")
 
     def teardown_method(self):
         """
-        This function will be invoked after running each test case.
+        Function will be invoked after running each test case.
 
         It will clean all resources such as S3 buckets and the objects present into that bucket
         which are getting created during test execution .
         """
         self.log.info("STARTED: Test teardown operations.")
         status, bktlist = S3T_OBJ.bucket_list()
+        assert_utils.assert_true(status, bktlist)
         if self.bucket_name in bktlist:
             resp = S3T_OBJ.delete_bucket(self.bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
@@ -67,7 +79,7 @@ class TestPutBucket:
 
     def create_and_list_buckets_without_auth(self, bucket_name, err_message):
         """
-        This function creates a bucket with specified name and then list all buckets.
+        Function creates a bucket with specified name and then list all buckets.
 
         :param str bucket_name: Name of the bucket to be created
         :param str err_message: Error that will occur while creating or listing bucket
@@ -99,7 +111,7 @@ class TestPutBucket:
                 error.message,
                 error.message)
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-5838')
     @CTFailOn(error_handler)
     def test_verify_put_bucket_authorization_header_missing_412(self):
@@ -111,7 +123,7 @@ class TestPutBucket:
         self.log.info(
             "ENDED: Verify put-bucket where authorization header is missing")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-5839')
     @CTFailOn(error_handler)
     def test_verify_put_bucket_ip_address_format_authorization_header_missing_415(
@@ -125,7 +137,7 @@ class TestPutBucket:
         self.log.info(
             "ENDED: Verify put-bucket with ip address format where authorization header is missing")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-5840')
     @CTFailOn(error_handler)
     def test_create_multiple_buckets_authorization_header_missing_416(self):
@@ -137,13 +149,15 @@ class TestPutBucket:
         self.log.info(
             "ENDED: Create multiple buckets where authorization header is missing")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-5841')
     @CTFailOn(error_handler)
     def test_verify_put_bucket_without_giving_cacert_417(self):
         """
-        Verify put-bucket without giving --cacert /etc/ssl/stx-s3-clients/s3/ca.crt using curl command
-        and list that bucket
+        Verify put-bucket.
+
+        Verify put-bucket without giving --cacert /etc/ssl/stx-s3-clients/s3/ca.crt using curl
+         command and list that bucket.
         """
         self.log.info(
             "STARTED: Verify put-bucket without giving --cacert /etc/ssl/stx-s3-clients/s3/ca.crt"

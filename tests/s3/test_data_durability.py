@@ -63,12 +63,16 @@ class TestDataDurability:
         cls.passwd = CMN_CFG["nodes"][0]["password"]
         cls.ldap_user = LDAP_USERNAME
         cls.ldap_pwd = LDAP_PASSWD
-        cls.test_dir_path = os.path.join(os.getcwd(), "testdata", "TestDataDurability")
+        cls.test_dir_path = os.path.join(
+            os.getcwd(), "testdata", "TestDataDurability")
         cls.file_path = os.path.join(cls.test_dir_path, cls.test_file)
         if not system_utils.path_exists(cls.test_dir_path):
             system_utils.make_dirs(cls.test_dir_path)
             cls.log.info("Created path: %s", cls.test_dir_path)
-        cls.hobj = Host(hostname=cls.host_ip, username=cls.uname, password=cls.passwd)
+        cls.hobj = Host(
+            hostname=cls.host_ip,
+            username=cls.uname,
+            password=cls.passwd)
         cls.hobj.connect()
         cls.log.info("ENDED: setup test suite operations.")
 
@@ -88,7 +92,7 @@ class TestDataDurability:
 
     def setup_method(self):
         """
-        This function will be invoked prior to each test case.
+        Function will be invoked prior to each test case.
 
         It will perform all prerequisite test steps if any.
         Initializing common variable which will be used in test and
@@ -100,7 +104,7 @@ class TestDataDurability:
 
     def teardown_method(self):
         """
-        This function will be invoked after each test case.
+        Function will be invoked after each test case.
 
         It will perform all cleanup operations.
         This function will delete buckets and accounts created for tests.
@@ -110,9 +114,8 @@ class TestDataDurability:
             "Deleting all buckets/objects created during TC execution")
         resp = S3T_OBJ.bucket_list()
         if resp:
-            pref_list = [
-                each_bucket for each_bucket in resp[1] if each_bucket.startswith(
-                    "data-durability-bkt")]
+            pref_list = [each_bucket for each_bucket in resp[1]
+                         if each_bucket.startswith("data-durability-bkt")]
             if pref_list:
                 S3T_OBJ.delete_multiple_buckets(pref_list)
         self.log.info("All the buckets/objects deleted successfully")
@@ -137,7 +140,8 @@ class TestDataDurability:
 
     def create_bkt_put_obj(self):
         """
-        This function will create a bucket and uploads an object to it
+        Function will create a bucket and uploads an object to it.
+
         also it will calculate checksum of file content
         :return str: Checksum of file content
         """
@@ -172,9 +176,10 @@ class TestDataDurability:
                 self.bucket_name))
         return chksm_before_put_obj
 
-    def pcs_start_stop_cluster(self, start_stop_cmd , status_cmd):
+    def pcs_start_stop_cluster(self, start_stop_cmd, status_cmd):
         """
-        This function starts and stops the cluster using the pcs command
+        Function starts and stops the cluster using the pcs command.
+
         :param string start_stop_cmd : start and stop command option
         :param string status_cmd: status command option
         :return: (Boolean and response)
@@ -185,31 +190,33 @@ class TestDataDurability:
         for value in result:
             if "cluster is not currently running on this node" in value:
                 return False, result
-            
+
         return True, result
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8005')
     @CTFailOn(error_handler)
     def test_no_data_loss_in_case_s3authserver_restart_4232(self):
-        """
-        Test NO data loss in case of service restart- s3authserver.
-        """
+        """Test NO data loss in case of service restart- s3authserver."""
         self.log.info(
             "STARTED: Test NO data loss in case of service restart- s3authserver")
         restart_cmd = cmd.SYSTEM_CTL_RESTART_CMD.format("s3authserver")
         checksum_before_put_obj = self.create_bkt_put_obj()
         self.log.info(
-            "Step 4: Restarting {0} service".format(
-                "s3authserver"))
-        system_utils.run_remote_cmd(restart_cmd, self.host_ip, self.uname, self.passwd)
+            "Step 4: Restarting %s service",
+            "s3authserver")
+        system_utils.run_remote_cmd(
+            restart_cmd,
+            self.host_ip,
+            self.uname,
+            self.passwd)
         time.sleep(self.sleep_time)
         resp = S3H_OBJ.get_s3server_service_status(
             "s3authserver")
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
-            "Step 4: Restarted {0} service".format(
-                "s3authserver"))
+            "Step 4: Restarted %s service",
+            "s3authserver")
         self.log.info("Step 5: Verifying that data is accessible or not")
         resp = S3T_OBJ.object_list(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
@@ -226,34 +233,37 @@ class TestDataDurability:
         resp = system_utils.get_file_checksum(self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
         chksm_after_dwnld_obj = resp[1]
-        assert_utils.assert_equal(checksum_before_put_obj, chksm_after_dwnld_obj)
+        assert_utils.assert_equal(
+            checksum_before_put_obj,
+            chksm_after_dwnld_obj)
         self.log.info(
             "Step 7: Verified checksum of downloaded file with old file")
         self.log.info(
             "ENDED: Test NO data loss in case of service restart- s3authserver")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8006')
     @CTFailOn(error_handler)
     def test_no_data_loss_in_case_haproxy_restart_4233(self):
-        """
-        Test NO data loss in case of service restart - haproxy.
-        """
+        """Test NO data loss in case of service restart - haproxy."""
         self.log.info(
             "STARTED: Test NO data loss in case of service restart - haproxy")
         restart_cmd = cmd.SYSTEM_CTL_RESTART_CMD.format("haproxy")
         checksum_before_put_obj = self.create_bkt_put_obj()
         self.log.info(
-            "Step 4: Restarting {0} service".format(
-                "haproxy"))
-        system_utils.run_remote_cmd(restart_cmd, self.host_ip, self.uname, self.passwd)
+            "Step 4: Restarting %s service",
+            "haproxy")
+        system_utils.run_remote_cmd(
+            restart_cmd,
+            self.host_ip,
+            self.uname,
+            self.passwd)
         time.sleep(self.sleep_time)
         resp = S3H_OBJ.get_s3server_service_status(
             "haproxy")
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
-            "Step 4: Restarted {0} service".format(
-                "haproxy"))
+            "Step 4: Restarted %s service", "haproxy")
         self.log.info("Step 5: Verifying that data is accessible or not")
         resp = S3T_OBJ.object_list(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
@@ -270,19 +280,19 @@ class TestDataDurability:
         resp = system_utils.get_file_checksum(self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
         chksm_after_dwnld_obj = resp[1]
-        assert_utils.assert_equal(checksum_before_put_obj, chksm_after_dwnld_obj)
+        assert_utils.assert_equal(
+            checksum_before_put_obj,
+            chksm_after_dwnld_obj)
         self.log.info(
             "Step 7: Verified checksum of downloaded file with old file")
         self.log.info(
             "ENDED: Test NO data loss in case of service restart - haproxy")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8009')
     @CTFailOn(error_handler)
     def test_no_data_loss_in_case_account_cred_change_4238(self):
-        """
-        Test NO data loss in case of account credentials change.
-        """
+        """Test NO data loss in case of account credentials change."""
         self.log.info(
             "STARTED: Test NO data loss in case of account credentials change")
         self.log.info(
@@ -365,13 +375,11 @@ class TestDataDurability:
         self.log.info(
             "ENDED: Test NO data loss in case of account credentials change")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8004')
     @CTFailOn(error_handler)
     def test_no_data_loss_corruption_in_case_s3server_restart_4231(self):
-        """
-        Test NO data loss or corruption in case of service restart - s3server.
-        """
+        """Test NO data loss or corruption in case of service restart - s3server."""
         self.log.info(
             "STARTED: Test NO data loss or corruption in case of service restart - s3server")
         cluster_start = cmd.PCS_CLUSTER_START.format("--all")
@@ -379,7 +387,7 @@ class TestDataDurability:
         checksum_before_put_obj = self.create_bkt_put_obj()
         self.log.info("Step 4: Restarting s3service service")
         resp = self.pcs_start_stop_cluster(cluster_start, cluster_status)
-        assert_utils.assert_true(resp[0],resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 4: Restarted s3service service")
         self.log.info("Step 5: Verifying that data is accessible or not")
         resp = S3T_OBJ.object_list(self.bucket_name)
@@ -397,19 +405,19 @@ class TestDataDurability:
         resp = system_utils.get_file_checksum(self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
         chksm_after_dwnld_obj = resp[1]
-        assert_utils.assert_equal(checksum_before_put_obj, chksm_after_dwnld_obj)
+        assert_utils.assert_equal(
+            checksum_before_put_obj,
+            chksm_after_dwnld_obj)
         self.log.info(
             "Step 7: Verified checksum of downloaded file with old file")
         self.log.info(
             "ENDED: Test NO data loss or corruption in case of service restart - s3server")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8007')
     @CTFailOn(error_handler)
     def test_no_data_loss_in_case_motr_restart_4234(self):
-        """
-        Test NO data loss in case of service restart - motr.
-        """
+        """Test NO data loss in case of service restart - motr."""
         self.log.info(
             "STARTED: Test NO data loss in case of service restart - motr")
         cluster_start = cmd.PCS_CLUSTER_START.format("--all")
@@ -417,7 +425,7 @@ class TestDataDurability:
         checksum_before_put_obj = self.create_bkt_put_obj()
         self.log.info("Step 4: Restarting motr service")
         resp = self.pcs_start_stop_cluster(cluster_start, cluster_status)
-        assert_utils.assert_true(resp[0],resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 4: Restarted motr service")
         self.log.info("Step 5: Verifying that data is accessible or not")
         resp = S3T_OBJ.object_list(self.bucket_name)
@@ -435,7 +443,9 @@ class TestDataDurability:
         resp = system_utils.get_file_checksum(self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
         chksm_after_dwnld_obj = resp[1]
-        assert_utils.assert_equal(checksum_before_put_obj, chksm_after_dwnld_obj)
+        assert_utils.assert_equal(
+            checksum_before_put_obj,
+            chksm_after_dwnld_obj)
         self.log.info(
             "Step 7: Verified checksum of downloaded file with old file")
         self.log.info(
