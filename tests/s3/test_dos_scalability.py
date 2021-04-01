@@ -108,7 +108,7 @@ class TestDosScalability:
         self.log.info("Created files deleted")
         self.log.info("ENDED: Teardown Operations")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-5309')
     @CTFailOn(error_handler)
     def test_scaling_obj_20billion_size_1bytes_5308(self):
@@ -149,7 +149,7 @@ class TestDosScalability:
             "ENDED: Test To Verify scaling of number of objects upto 20 billion with minimum "
             "object size i.e 1B ")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8724')
     @CTFailOn(error_handler)
     def test_400_constant_s3_operations_5336(self):
@@ -197,7 +197,7 @@ class TestDosScalability:
             "Step 3: Successfully checked no crashes happened and core logs for motr")
         self.log.info("ENDED: Test constant 400 S3 operations using s3bench.")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-9657')
     @CTFailOn(error_handler)
     def test_300_constant_s3_operations_5337(self):
@@ -244,7 +244,7 @@ class TestDosScalability:
             "Step 3: Successfully checked no crashes happened and core logs for motr")
         self.log.info("ENDED: Test constant 300 S3 operations using s3bench")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-9658')
     @CTFailOn(error_handler)
     def test_1000_constant_s3_operations_5338(self):
@@ -292,7 +292,7 @@ class TestDosScalability:
             "Step 3: Successfully checked no crashes happened and core logs for motr")
         self.log.info("ENDED: Test constant 1000 S3 operations using s3bench")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-9659')
     @CTFailOn(error_handler)
     def test_growing_s3_operations_5340(self):
@@ -345,7 +345,7 @@ class TestDosScalability:
         self.log.info(
             "ENDED: Test growing S3 operations using s3bench from 1000 to 1200 then to 1500")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-9660')
     @CTFailOn(error_handler)
     def test_growing_s3_operations_5341(self):

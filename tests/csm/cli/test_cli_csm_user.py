@@ -122,6 +122,7 @@ class TestCliCSMUser:
         self.CSM_USER.logout_cortx_cli()
         self.LOGGER.info("Ended : Teardown operations for test function")
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-11229")
     def test_1143(self):
@@ -153,6 +154,7 @@ class TestCliCSMUser:
             "Verified CSM user is able to login cortxcli by passing username as paramter")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-13138")
     def test_1849(self):
@@ -188,6 +190,7 @@ class TestCliCSMUser:
         self.CSM_USER.login_cortx_cli()
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10816")
     def test_1266(self):
@@ -208,6 +211,7 @@ class TestCliCSMUser:
         self.LOGGER.info("Created csm user with name %s", self.user_name)
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10817")
     def test_1267(self):
@@ -228,6 +232,7 @@ class TestCliCSMUser:
         self.LOGGER.info("Created csm user with name %s", self.user_name)
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10818")
     def test_1270(self):
@@ -249,6 +254,7 @@ class TestCliCSMUser:
             resp[1])
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10819")
     def test_1268(self):
@@ -281,6 +287,7 @@ class TestCliCSMUser:
             resp[1])
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10820")
     def test_1265(self):
@@ -295,6 +302,7 @@ class TestCliCSMUser:
         self.LOGGER.info("Displayed help response for create csm user")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10821")
     def test_1269(self):
@@ -332,6 +340,7 @@ class TestCliCSMUser:
             resp[1])
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10823")
     def test_1240(self):
@@ -358,6 +367,7 @@ class TestCliCSMUser:
         self.LOGGER.info("Verified list csm user")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10824")
     def test_1244(self):
@@ -388,6 +398,7 @@ class TestCliCSMUser:
         self.LOGGER.info("Verified list csm user with offset")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10826")
     def test_1246(self):
@@ -415,6 +426,7 @@ class TestCliCSMUser:
             resp[1])
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10827")
     def test_1247(self):
@@ -441,6 +453,7 @@ class TestCliCSMUser:
         self.LOGGER.info("Verified list csm user with limit")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10829")
     def test_1248(self):
@@ -470,6 +483,7 @@ class TestCliCSMUser:
             resp[1])
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10830")
     def test_1250(self):
@@ -497,6 +511,7 @@ class TestCliCSMUser:
             resp[1])
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10830")
     def test_1261(self):
@@ -522,6 +537,7 @@ class TestCliCSMUser:
         self.LOGGER.info("Deleted CSM user with name %s", self.user_name)
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10832")
     def test_1262(self):
@@ -538,6 +554,7 @@ class TestCliCSMUser:
             resp[1])
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10834")
     def test_1263(self):
@@ -555,6 +572,7 @@ class TestCliCSMUser:
             resp[1])
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10835")
     def test_1264(self):
@@ -569,6 +587,7 @@ class TestCliCSMUser:
         self.LOGGER.info("Verified help menu for delete CSM User")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10836")
     def test_6290(self):
@@ -585,6 +604,7 @@ class TestCliCSMUser:
             resp[1])
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10838")
     def test_6292(self):
@@ -613,6 +633,7 @@ class TestCliCSMUser:
             "Verified CSM User is not deleted on entering 'no' on confirmation question")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10839")
     def test_6291(self):
@@ -636,6 +657,7 @@ class TestCliCSMUser:
             "Verified CSM User is not created on entering 'no' on confirmation question")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10841")
     def test_6289(self):
@@ -658,6 +680,7 @@ class TestCliCSMUser:
             resp[1])
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10842")
     def test_1241(self):
@@ -672,6 +695,7 @@ class TestCliCSMUser:
         self.LOGGER.info("Verified help message for list command")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10843")
     def test_1255(self):
@@ -689,6 +713,7 @@ class TestCliCSMUser:
             resp[1])
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10845")
     def test_1256(self):
@@ -706,6 +731,7 @@ class TestCliCSMUser:
             resp[1])
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10846")
     def test_1258(self):
@@ -724,6 +750,7 @@ class TestCliCSMUser:
             resp[1])
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10848")
     def test_1259(self):
@@ -742,6 +769,7 @@ class TestCliCSMUser:
             resp[1])
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10850")
     def test_1249(self):
@@ -775,6 +803,7 @@ class TestCliCSMUser:
             "where users exists less than limit value")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-18713")
     def test_1251(self):
@@ -803,6 +832,7 @@ class TestCliCSMUser:
             "Verified list csm user with valid value for param sort")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-18712")
     def test_1252(self):
@@ -822,6 +852,7 @@ class TestCliCSMUser:
             resp[1])
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-18711")
     def test_1253(self):
@@ -841,6 +872,7 @@ class TestCliCSMUser:
             resp[1])
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-18710")
     def test_1254(self):
@@ -869,6 +901,7 @@ class TestCliCSMUser:
             "Verified list csm user with valid value for param direction")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-12789")
     def test_1257(self):
@@ -900,6 +933,7 @@ class TestCliCSMUser:
             "Verified list csm user with valid value for param format")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-11232")
     def test_1848(self):
@@ -939,6 +973,7 @@ class TestCliCSMUser:
             "Verified help response with csm manage role")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-11740")
     def test_1843(self):
@@ -992,6 +1027,7 @@ class TestCliCSMUser:
             "Verified csm user with manage role can perform list,create delete on csm_users")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-11743")
     def test_1855(self):
@@ -1024,6 +1060,7 @@ class TestCliCSMUser:
             "Verified csm monitor role can perform list operation on csm_users using")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-12027")
     def test_1858(self):
@@ -1068,6 +1105,7 @@ class TestCliCSMUser:
             "perform update, delete, create operation on s3_accounts")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-11744")
     def test_1000(self):
@@ -1104,6 +1142,7 @@ class TestCliCSMUser:
             "Verified csm manage role can create S3 account")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-12030")
     def test_1260(self):
@@ -1137,6 +1176,7 @@ class TestCliCSMUser:
             "Verified list of csm users with valid values for all params")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-11745")
     def test_1844(self):
@@ -1175,6 +1215,7 @@ class TestCliCSMUser:
             "Verified csm manage role can list, create S3 account")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-13135")
     def test_5506(self):
@@ -1197,6 +1238,7 @@ class TestCliCSMUser:
         self.LOGGER.info("Created csm user with name %s", self.user_name)
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-15728")
     def test_1845(self):
@@ -1247,6 +1289,7 @@ class TestCliCSMUser:
         self.CSM_USER.login_cortx_cli()
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-16212")
     def test_1861(self):
@@ -1285,6 +1328,7 @@ class TestCliCSMUser:
             "Verified help response with csm monitor role")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-16928")
     def test_7426(self):
@@ -1327,6 +1371,7 @@ class TestCliCSMUser:
         self.CSM_USER.login_cortx_cli()
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-16931")
     def test_1859(self):
@@ -1377,6 +1422,7 @@ class TestCliCSMUser:
         self.CSM_USER.login_cortx_cli()
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-16927")
     def test_7428(self):
@@ -1424,6 +1470,7 @@ class TestCliCSMUser:
         self.LOGGER.info("Verified user is able to login using new password")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-17174")
     def test_1856(self):
@@ -1472,6 +1519,7 @@ class TestCliCSMUser:
         self.CSM_USER.login_cortx_cli()
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-18709")
     @pytest.mark.skip(reason="Not applicable for VM")
@@ -1524,6 +1572,7 @@ class TestCliCSMUser:
             "Verified that csm user with monitor role cannot update alert")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-14697")
     def test_7424(self):
@@ -1554,6 +1603,7 @@ class TestCliCSMUser:
         self.update_password = True
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-16932")
     def test_7429(self):
@@ -1610,6 +1660,7 @@ class TestCliCSMUser:
             "Verified monitor user can not change roles for other user")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-16934")
     def test_1847(self):
@@ -1656,6 +1707,7 @@ class TestCliCSMUser:
             resp[1])
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-12756")
     def test_1857(self):

@@ -99,7 +99,7 @@ def gen_table_execution_wise_defect(n_clicks, ids):
             print("TE ids : ", te_ids)
             for te_id in te_ids:
                 issue_list = []
-                jira_link = 'https://jts.seagate.com/rest/raven/1.0/api/testexec/' +\
+                jira_link = 'https://jts.seagate.com/rest/raven/1.0/api/testexec/' + \
                             str(te_id) + '/test?detailed=true'
                 response = requests.get(jira_link, auth=(common.jira_username,
                                                          common.jira_password))

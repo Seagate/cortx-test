@@ -39,6 +39,7 @@ class TestSystemHealth():
 
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-12786')
     def test_6813(self):
         """Test that GET request for API '/api/v1/system/health/summary '
@@ -52,6 +53,7 @@ class TestSystemHealth():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-17867')
     def test_6819(self):
         """
@@ -70,6 +72,7 @@ class TestSystemHealth():
 
     @pytest.mark.skip(reason="Known issue EOS-15448 ")
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-17868')
     def test_6820(self):
         """
@@ -87,6 +90,7 @@ class TestSystemHealth():
 
     @pytest.mark.skip(reason="Known issue EOS-15448 ")
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-17869')
     def test_6826(self):
         """
@@ -104,6 +108,7 @@ class TestSystemHealth():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-17870')
     def test_6827(self):
         """

@@ -20,17 +20,18 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 import dash_bootstrap_components as dbc
+import dash_html_components as html
 import dash_table
 import pandas as pd
 from dash.dependencies import Output, Input, State
 from dash.exceptions import PreventUpdate
-import common
-from common import app
-import mongodbAPIs as r1Api
-import timingAPIs as timingAPIs
+
 import R1_callbacks.r1_perf_tables as r1_perf_tables
-import dash_html_components as html
+import common
+import mongodbAPIs as r1Api
 import perfdbAPIs as perf_api
+import timingAPIs as timingAPIs
+from common import app
 
 
 @app.callback(
@@ -268,7 +269,7 @@ def gen_table_multi_bucket_perf_stats(n_clicks, branch, build_no):
 
     # retrieve overall hsbench data
     data = r1_perf_tables.get_hsbench_data(build_no)
-    hs_bench_text = [["Hsbench", html.Br(), "1 Buckets", html.Br(), "100 Objects", html.Br(),
+    hs_bench_text = [["Hsbench", html.Br(), "1 Buckets", html.Br(), "1000 Objects", html.Br(),
                       "100 Sessions"],
                      ["Hsbench", html.Br(), "10 Buckets", html.Br(), "100 Objects", html.Br(),
                       "100 Sessions"],
@@ -284,7 +285,7 @@ def gen_table_multi_bucket_perf_stats(n_clicks, branch, build_no):
     # Retrieve data for cosbench
     data = r1_perf_tables.get_cosbench_data(build_no)
     cos_bench_text = [
-        ["Cosbench", html.Br(), "1 Buckets", html.Br(), "100 Objects", html.Br(), "100 Sessions"],
+        ["Cosbench", html.Br(), "1 Buckets", html.Br(), "1000 Objects", html.Br(), "100 Sessions"],
         ["Cosbench", html.Br(), "10 Buckets", html.Br(), "100 Objects", html.Br(),
          "100 Sessions"],
         ["Cosbench", html.Br(), "50 Buckets", html.Br(), "100 Objects", html.Br(),
@@ -309,7 +310,6 @@ def gen_table_multi_bucket_perf_stats(n_clicks, branch, build_no):
     return table
 
 
-# callback only for 1 bucket,1000 objects,100 sessions
 @app.callback(
     Output('r1_table_bucket_ops_data', 'children'),
     [Input('submit_button', 'n_clicks'),
@@ -321,7 +321,6 @@ def gen_table_multi_bucket_perf_stats(n_clicks, branch, build_no):
 def get_table_bucket_ops_data(n_clicks, bucket_op, branch, build_no):
     if n_clicks is None or branch is None or build_no is None:
         raise PreventUpdate
-    print("Bucket op", bucket_op)
     if bucket_op is None:
         bucket_op = "AvgLat"
     operations = ['INIT BCLR', 'INIT BDEL', 'BINIT', 'PUT', 'LIST', 'GET', 'DEL', 'BCLR', 'BDEL']
@@ -330,6 +329,9 @@ def get_table_bucket_ops_data(n_clicks, bucket_op, branch, build_no):
     bucket_obj_input = {'First': {'Bucket': 1, 'Object': 1000},  # 100 Sessions by default
                         'Second': {'Bucket': 10, 'Object': 1000},
                         'Third': {'Bucket': 50, 'Object': 5000}, }
+    display_obj_input = {'First': {'Bucket': 1, 'Object': 1000},  # 100 Sessions by default
+                         'Second': {'Bucket': 10, 'Object': 100},
+                         'Third': {'Bucket': 50, 'Object': 100}, }
     html_data = []
     for keys in bucket_obj_input:
         final_dict["Operations"] = operations
@@ -349,8 +351,8 @@ def get_table_bucket_ops_data(n_clicks, bucket_op, branch, build_no):
             final_dict[ob_size] = temp_data
 
         df = pd.DataFrame(final_dict)
-        span_txt = "{} Bucket,{} Objects,100 sessions".format(bucket_obj_input[keys]['Bucket'],
-                                                              bucket_obj_input[keys]['Object'])
+        span_txt = "{} Bucket,{} Objects,100 sessions".format(display_obj_input[keys]['Bucket'],
+                                                              display_obj_input[keys]['Object'])
         html_data.extend(common.get_df_to_rows(df, span_txt, 9))
 
     col_name = ["Buckets", "Operations"]
