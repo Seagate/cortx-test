@@ -119,7 +119,7 @@ class TestBucketLocation:
         self.log.info("ENDED: Teardown operations.")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5310")
     @CTFailOn(error_handler)
     def test_get_bkt_loc_valid_bkt_272(self):
@@ -156,7 +156,7 @@ class TestBucketLocation:
             "Verify get bucket location for valid bucket which is present")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5311")
     @CTFailOn(error_handler)
     def test_get_bkt_loc_bkt_not_present_273(self):
@@ -181,7 +181,7 @@ class TestBucketLocation:
             "Verify get bucket location for the bucket which is not present")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7419")
     @CTFailOn(error_handler)
     def test_cross_account_get_bkt_loc_with_permission_274(self):
@@ -246,7 +246,7 @@ class TestBucketLocation:
             "permissions to account2 and check get bucket location")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5312")
     @CTFailOn(error_handler)
     def test_cross_account_get_bkt_loc_275(self):
