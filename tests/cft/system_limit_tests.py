@@ -177,9 +177,15 @@ class TestS3IOSystemLimits:
         iam_count = test_cfg['iam_count']
         bucket_count = test_cfg['bucket_count']
         self.created_csm_users = self.create_csm_accounts(csm_count)
+        assert len(self.created_csm_users) == csm_count, f"Created csm user count not matching"
         self.created_s3_users = self.create_s3_accounts(s3_count)
+        assert len(self.created_s3_users) == s3_count, f"Created s3 user count not matching"
         self.created_iam_users = self.create_iam_per_s3_account(iam_count)
+        assert len(
+            self.created_iam_users) == iam_count * s3_count, f"Created iamuser count not matching"
         self.created_buckets = self.create_bucket_per_s3_account(bucket_count)
+        assert len(
+            self.created_buckets) == bucket_count * s3_count, f"Created bucket count not matching"
 
     def get_created_csm_users(self):
         """
@@ -196,7 +202,7 @@ class TestS3IOSystemLimits:
             if each['username'].startswith("test"):
                 created_csm_users.append(each['username'])
         self.log.info(
-            f"Total CSM accounts listed {len(created_csm_users)} :\n {created_csm_users}")
+            f"Total CSM accounts listed {len(created_csm_users)} : {created_csm_users}")
         return created_csm_users
 
     def get_created_s3_users(self):
@@ -235,8 +241,7 @@ class TestS3IOSystemLimits:
             if each['user_name'].startswith("test"):
                 created_iam_users.append(each['user_name'])
         self.log.info(
-            f"Total IAM accounts listed {len(created_iam_users)} :\n"
-            f" {created_iam_users}")
+            f"Total IAM accounts listed {len(created_iam_users)} : {created_iam_users}")
         return created_iam_users
 
     def get_buckets(self, s3_account, s3_password):
@@ -260,23 +265,24 @@ class TestS3IOSystemLimits:
         """
         Delete all csm, s3, IAM accounts and buckets
         """
-        created_s3users = self.get_created_s3_users()
+        created_s3users = self.created_s3_users
 
         for s3_acc in created_s3users:
+            s3 = s3_acc["account_name"]
             # Get all IAMs under S3 account
-            iam_user_in_s3 = self.get_iam_accounts(s3_acc, s3_password)
+            iam_user_in_s3 = self.get_iam_accounts(s3, s3_password)
 
             # Get all buckets under S3 account
-            buckets_in_s3 = self.get_buckets(s3_acc, s3_password)
+            buckets_in_s3 = self.get_buckets(s3, s3_password)
 
             # Delete all iam users from S3 account
             for iam in iam_user_in_s3:
                 self.log.info("Deleting IMA user {}...".format(iam))
                 # pylint: disable=C0302
                 self.iam_user_obj.delete_iam_user_under_given_account(
-                    iam_user=iam, account_name=s3_acc,
+                    iam_user=iam, account_name=s3,
                     login_as={
-                        "username": s3_acc,
+                        "username": s3,
                         "password": s3_password
                     })
             # Delete all buckets from S3 account
@@ -284,31 +290,31 @@ class TestS3IOSystemLimits:
                 self.log.info("Deleting S3 bucket {}...".format(bucket))
                 # pylint: disable=C0302
                 self.s3_bucket_obj.delete_given_s3_bucket(
-                    bucket_name=bucket, account_name=s3_acc,
+                    bucket_name=bucket, account_name=s3,
                     login_as={
-                        "username": s3_acc,
+                        "username": s3,
                         "password": s3_password
                     })
 
             # Delete S3 account
-            self.log.info("Deleting S3 account {}".format(s3_acc))
+            self.log.info(f"Deleting S3 account {s3}")
             # pylint: disable=C0302, E1123
             res = self.s3_account_obj.delete_s3_account_user(
-                username=s3_acc,
+                username=s3,
                 login_as={
-                    "username": s3_acc,
+                    "username": s3,
                     "password": s3_password
                 })
             assert res.status_code == Const.SUCCESS_STATUS, \
                 f"Status code mismatch, expected {Const.SUCCESS_STATUS} and got {res.status_code}"
 
-        created_csm_users = self.get_created_csm_users()
+        created_csm_users = self.created_csm_users
         for csm in created_csm_users:
-            self.log.info("Deleting CSM user : {}".format(csm))
-            res = self.csm_user_obj.delete_csm_user(csm)
+            self.log.info("Deleting CSM user : {}".format(csm["username"]))
+            res = self.csm_user_obj.delete_csm_user(csm["username"])
             assert res.status_code == Const.SUCCESS_STATUS, \
                 f"Status code mismatch, expected {Const.SUCCESS_STATUS} and got {res.status_code}"
-            self.log.info("CSM user with manage role {} deleted".format(csm))
+            self.log.info("CSM user with manage role {} deleted".format(csm["username"]))
 
         self.created_csm_users = []
         self.created_s3_users = []
@@ -316,30 +322,35 @@ class TestS3IOSystemLimits:
         self.created_buckets = []
         return True
 
-    def crud_operations_on_bucket(self, password):
+    def crud_operations_on_bucket(self, password, test):
         """
         Do CRUD operations on buckets
         """
         # List buckets for all s3 users
-        created_s3users = self.get_created_s3_users()
+        created_s3users = self.created_s3_users
+        assert len(created_s3users) >= self.cft_test_cfg[test]["s3_count"],\
+            f"Created s3 user count != listed s3 user count "
 
         for s3_acc in created_s3users:
-            self.log.info("Listing new S3 buckets under {}".format(s3_acc))
+            s3 = s3_acc["account_name"]
+            self.log.info(f"Listing new S3 buckets under {s3}")
             res = self.s3_bucket_obj.list_buckets_under_given_account(
-                account_name=s3_acc,
+                account_name=s3,
                 login_as={
-                    "username": s3_acc,
+                    "username": s3,
                     "password": password
                 })
+
             assert res.status_code == Const.SUCCESS_STATUS, \
-                f"Status code mismatch, expected {Const.SUCCESS_STATUS} and got {res.status_code}"
+                f"Status code mismatch while listing buckets, " \
+                f"expected {Const.SUCCESS_STATUS} and got {res.status_code}"
+
             bucket_data = res.json()
             listed_buckets = bucket_data["buckets"]
-            self.log.info(
-                "List of all S3 buckets under {} account is {}".format(
-                    s3_acc, listed_buckets
-                )
-            )
+            self.log.info(f"List of all S3 buckets under {s3} account is {listed_buckets}")
+
+            assert len(listed_buckets) >= self.cft_test_cfg[test]["bucket_count"], \
+                f"Created bucket count != listed bucket count for s3 user {s3}"
 
             for bucket in listed_buckets:
                 s3_bucket_policy_obj = RestS3BucketPolicy(bucket["name"])
@@ -347,9 +358,9 @@ class TestS3IOSystemLimits:
                 self.log.info("Creating new bucket policy...")
                 # pylint: disable=C0302
                 s3_bucket_policy_obj.create_bucket_policy_under_given_account(
-                    account_name=s3_acc,
+                    account_name=s3,
                     login_as={
-                        "username": s3_acc,
+                        "username": s3,
                         "password": password
                     })
 
@@ -357,9 +368,9 @@ class TestS3IOSystemLimits:
                 self.log.info("Listing all bucket policy...")
                 # pylint: disable=C0302
                 s3_bucket_policy_obj.get_bucket_policy_under_given_account(
-                    account_name=s3_acc,
+                    account_name=s3,
                     login_as={
-                        "username": s3_acc,
+                        "username": s3,
                         "password": password
                     })
 
@@ -367,9 +378,9 @@ class TestS3IOSystemLimits:
                 self.log.info("Deleting bucket policy...")
                 # pylint: disable=C0302
                 s3_bucket_policy_obj.delete_bucket_policy_under_given_name(
-                    account_name=s3_acc,
+                    account_name=s3,
                     login_as={
-                        "username": s3_acc,
+                        "username": s3,
                         "password": password
                     })
 
@@ -380,21 +391,24 @@ class TestS3IOSystemLimits:
         Create 0 csm account, 498 s3 account,
         1 IAM user per s3 account, 1 bucket per s3 account
         """
-
-        self.create("test_13693")
+        test = "test_13693"
+        self.create(test)
 
         # list 498 s3 account
         created_s3users = self.get_created_s3_users()
+        assert len(created_s3users) >= self.cft_test_cfg[test]["s3_count"],\
+            f"Created s3 user count != listed s3 user count "
 
         # update 498 s3 account
-        for account_name in created_s3users:
-            self.log.info(f"Updating passwords for {account_name} s3 accounts")
+        for s3_acc in self.created_s3_users:
+            s3 = s3_acc["account_name"]
+            self.log.info(f"Updating passwords for {s3} s3 accounts")
             # pylint: disable=C0302, E1123
             self.s3_account_obj.update_s3_user_password(
-                username=account_name, old_password=self.s3_original_password,
+                username=s3, old_password=self.s3_original_password,
                 new_password=self.new_password,
                 login_as={
-                    "username": account_name,
+                    "username": s3,
                     "password": self.s3_original_password
                 })
         # Delete everything
@@ -407,13 +421,20 @@ class TestS3IOSystemLimits:
         Create 0 csm account, 1 s3 account,
         500 IAM accounts per s3 account, 50 buckets per s3 account
         """
-        self.create("test_16009")
+        test = "test_16009"
+        self.create(test)
 
         # List a s3 accounts
-        s3_accounts = self.get_created_s3_users()
+        s3_accounts = self.created_s3_users
+        assert len(s3_accounts) >= self.cft_test_cfg[test]["s3_count"], \
+            f"Created s3 user count != listed s3 user count"
+
         for each_s3 in s3_accounts:
-            self.log.info(f"Getting IAMs for {each_s3}")
-            self.get_iam_accounts(each_s3, self.s3_original_password)
+            s3 = each_s3["account_name"]
+            self.log.info(f"Getting IAMs for {s3}")
+            iam_account = self.get_iam_accounts(s3, self.s3_original_password)
+            assert len(iam_account) >= self.cft_test_cfg[test]["iam_count"],\
+                f"Created iam user count != listed iam user count for s3 user {s3}"
 
         # Delete everything
         self.destroy(s3_password=self.s3_original_password)
@@ -425,10 +446,11 @@ class TestS3IOSystemLimits:
         Create 0 csm account, 1 s3 account,
         5 IAM accounts per s3 account, 1000 buckets per s3 account
         """
-        self.create("test_16908")
+        test = "test_16908"
+        self.create(test)
 
         # Create, list and delete bucket policy
-        self.crud_operations_on_bucket(password=self.s3_original_password)
+        self.crud_operations_on_bucket(password=self.s3_original_password, test=test)
 
         # Delete everything
         self.destroy(s3_password=self.s3_original_password)
@@ -440,10 +462,11 @@ class TestS3IOSystemLimits:
         Create 0 csm account, 100 s3 account,
         1 IAM accounts per s3 account, 100 buckets per s3 account
         """
-        self.create("test_16909")
+        test = "test_16909"
+        self.create(test)
 
         # Create, list and delete bucket policy
-        self.crud_operations_on_bucket(password=self.s3_original_password)
+        self.crud_operations_on_bucket(password=self.s3_original_password, test=test)
 
         # Delete everything
         self.destroy(s3_password=self.s3_original_password)
@@ -454,17 +477,22 @@ class TestS3IOSystemLimits:
         For system limit of 1000 CSM users
         Create 1000 csm accounts
         """
-        self.create("test_16910")
+        test = "test_16910"
+        self.create(test)
 
         # List and update 1000 csm account
         created_csm_users = self.get_created_csm_users()
-        for account_name in created_csm_users:
+        assert len(created_csm_users) >= self.cft_test_cfg[test][
+            "csm_count"], f"Created CSM user count != listed CSM user count "
+
+        for account_name in self.created_csm_users:
+            csm = account_name["username"]
             # pylint: disable=C0302
             self.csm_user_obj.update_csm_account_password(
-                username=account_name, old_password=self.csm_original_password,
+                username=csm, old_password=self.csm_original_password,
                 new_password=self.new_password,
                 login_as={
-                    "username": account_name,
+                    "username": csm,
                     "password": self.csm_original_password
                 })
 
@@ -476,15 +504,20 @@ class TestS3IOSystemLimits:
         """
         Maximum number of Concurrent Management Users (100) logged in at given time
         """
-        self.create("test_16911")
+        test = "test_16911"
+        self.create(test)
         csm_users = self.get_created_csm_users()
+        assert len(csm_users) >= self.cft_test_cfg[test]["csm_count"], \
+            f"Created CSM user count != listed CSM user count "
+
         csm_user_headers = []
 
         # Login to 100 CSM users and collect authentication headers
-        for csm_user in csm_users:
-            self.log.info(f"Getting authentication for {csm_user}")
+        for csm_user in self.created_csm_users:
+            csm = csm_user["username"]
+            self.log.info(f"Getting authentication for {csm}")
             header = self.cms_rest_test_obj.get_headers(
-                csm_user, self.csm_original_password)
+                csm, self.csm_original_password)
             csm_user_headers.append(header)
 
         # Using authentication collected above, do management operation
