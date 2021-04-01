@@ -1474,6 +1474,7 @@ class TestCliCSMUser:
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-18709")
+    @pytest.mark.skip(reason="Not applicable for VM")
     def test_1850(self):
         """
         Test that csm user with monitor role cannot update alert using CLI

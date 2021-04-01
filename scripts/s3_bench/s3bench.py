@@ -40,7 +40,7 @@ def setup_s3bench(
         git_url=cfg_obj["s3bench_git"],
         path=cfg_obj["go_path"]):
     """
-    Configurig client machine with s3bench dependencies.
+    Configuring client machine with s3bench dependencies.
     :param string get_cmd: S3Bench go get command
     :param string git_url: S3Bench git url command
     :param string path: Go src path
