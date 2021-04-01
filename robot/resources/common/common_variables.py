@@ -63,7 +63,7 @@ TEST_COMMENT = "Test Comment"
 ADMIN_USER_ALREADY_EXISTS_MESSAGE = "Admin user already exists"
 EMAIL_DOMAIN =  "@seagate.com"
 
-#Buckets
+# Buckets
 BUCKET_NAME_POLICY_TEXT = "The bucket name must be of minimum 4 characters and maximum 56 characters." \
                           " Only lowercase, numbers, and dash (-) are allowed. " \
                           "The bucket name cannot start and end with a dash (-)."
@@ -71,3 +71,9 @@ DUPLICATE_BUCKET_NAME_ALERT_MESSAGE = "The bucket you tried to create already ex
                                       " it."
 POLICY_FORM_HEADING = "JSON policy"
 INVALID_POLICY_MSG = "Policy has invalid resource"
+
+# Desktop
+TOTAL_CAPACITY_LABEL_VALUE = "Total"
+TOTAL_AVAILABLE_LABEL_VALUE = "Available"
+TOTAL_USED_LABEL_VALUE = "Used"
+CAPACITY_WIDGET_LABEL_VALUE = "Capacity"
