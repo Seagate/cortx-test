@@ -1,0 +1,59 @@
+concurrency_cfg:
+  bkt_name_prefix: "concurrency"
+
+common_cfg:
+  s3cmd_tool: "s3cmd"
+  success_msg: "Bucket '{}/' create"
+  make_bucket : "mb"
+  put_bucket: "put"
+  remove_bucket : "rb"
+  force: "--force"
+  get: "get"
+  bkt_path_format: "s3://{}"
+
+test_2128:
+  bucket_name: "concurrency-2128-{}"
+  obj_name: "obj2128.txt"
+  file_size: 10
+
+test_2129:
+  bucket_name: "concurrency-2129-{}"
+  obj_name: "obj2129.txt"
+  file_size: 10
+
+test_2130:
+  bucket_name: "concurrency-2130-{}"
+  obj_name: "obj2110.txt"
+  file_size: 10
+
+test_2131:
+  bucket_name: "concurrency-2131-{}"
+
+test_2132:
+  bucket_name: "concurrency-2132-{}"
+  obj_name: "obj2132.txt"
+  del_obj: "del"
+  file_size: 10
+
+test_2133:
+  bucket_name: "concurrency-2133-{}"
+  obj_name: "obj2133.txt"
+  del_obj: "del"
+  file_size: 100
+
+test_2134:
+  bucket_name: "concurrency-2134-{}"
+  obj_name: "obj2134.txt"
+  del_obj: "del"
+  file_size: 10
+
+test_2135:
+  bucket_name: "concurrency-2135-{}"
+  obj_name: "obj2135.txt"
+  file_size: 100
+
+test_2136:
+  bucket_name: "concurrency-2136-{}"
+  obj_name: "obj2136.txt"
+  file_path: "/root"
+  file_size: 10
