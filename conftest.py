@@ -23,6 +23,7 @@ import ast
 import random
 import string
 import os
+import glob
 import pathlib
 import json
 import logging
@@ -501,31 +502,28 @@ def pytest_runtest_makereport(item, call):
             try:
                 if item.rep_setup.failed or item.rep_teardown.failed:
                     task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
-                    if item.config.option.db_update:
-                        try:
-                            payload = create_report_payload(item, call, 'FAIL', db_user, db_pass)
-                            REPORT_CLIENT.create_db_entry(**payload)
-                        except requests.exceptions.RequestException as fault:
-                            LOGGER.exception(str(fault))
-                            LOGGER.error("Failed to execute DB update for %s", test_id)
+                    try:
+                        payload = create_report_payload(item, call, 'FAIL', db_user, db_pass)
+                        REPORT_CLIENT.create_db_entry(**payload)
+                    except requests.exceptions.RequestException as fault:
+                        LOGGER.exception(str(fault))
+                        LOGGER.error("Failed to execute DB update for %s", test_id)
                 elif item.rep_setup.passed and (item.rep_call.failed or item.rep_teardown.failed):
                     task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
-                    if item.config.option.db_update:
-                        try:
-                            payload = create_report_payload(item, call, 'FAIL', db_user, db_pass)
-                            REPORT_CLIENT.create_db_entry(**payload)
-                        except requests.exceptions.RequestException as fault:
-                            LOGGER.exception(str(fault))
-                            LOGGER.error("Failed to execute DB update for %s", test_id)
+                    try:
+                        payload = create_report_payload(item, call, 'FAIL', db_user, db_pass)
+                        REPORT_CLIENT.create_db_entry(**payload)
+                    except requests.exceptions.RequestException as fault:
+                        LOGGER.exception(str(fault))
+                        LOGGER.error("Failed to execute DB update for %s", test_id)
                 elif item.rep_setup.passed and item.rep_call.passed and item.rep_teardown.passed:
                     task.update_test_jira_status(item.config.option.te_tkt, test_id, 'PASS')
-                    if item.config.option.db_update:
-                        try:
-                            payload = create_report_payload(item, call, 'PASS', db_user, db_pass)
-                            REPORT_CLIENT.create_db_entry(**payload)
-                        except requests.exceptions.RequestException as fault:
-                            LOGGER.exception(str(fault))
-                            LOGGER.error("Failed to execute DB update for %s", test_id)
+                    try:
+                        payload = create_report_payload(item, call, 'PASS', db_user, db_pass)
+                        REPORT_CLIENT.create_db_entry(**payload)
+                    except requests.exceptions.RequestException as fault:
+                        LOGGER.exception(str(fault))
+                        LOGGER.error("Failed to execute DB update for %s", test_id)
                 elif item.rep_setup.skipped and \
                         (item.rep_teardown.skipped or item.rep_teardown.passed):
                     # Jira reporting of skipped cases does not contain skipped option
@@ -557,6 +555,25 @@ def pytest_runtest_makereport(item, call):
             else:
                 extra = ""
             f.write(report.nodeid + extra + "\n")
+
+
+def upload_supporting_logs(test_id: str, remote_path: str, log: str):
+    """
+    Upload all supporting (s3bench) log files to nfs share
+    :param test_id: test number in file name
+    :param remote_path: path on NFS share
+    :param log: log file string e.g. s3bench
+    """
+    support_logs = glob.glob(f"{LOG_DIR}/latest/{test_id}_{log}_*")
+    for support_log in support_logs:
+        resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
+                                                   mnt_dir=params.MOUNT_DIR,
+                                                   remote_path=remote_path,
+                                                   local_path=support_log)
+        if resp[0]:
+            LOGGER.info("Supporting log files are uploaded at location : %s", resp[1])
+        else:
+            LOGGER.error("Failed to supporting log file at location %s", resp[1])
 
 
 def pytest_runtest_logreport(report: "TestReport") -> None:
@@ -604,7 +621,9 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
         remote_path = os.path.join(params.NFS_BASE_DIR,
                                    Globals.BUILD, Globals.TP_TKT,
                                    Globals.TE_TKT, test_id,
-                                   date.today().strftime("%b-%d-%Y"))
+                                   datetime.datetime.fromtimestamp(
+                                       time.time()).strftime('%Y-%m-%d_%H:%M:%S')
+                                   )
         resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
                                                    mnt_dir=params.MOUNT_DIR,
                                                    remote_path=remote_path,
@@ -613,7 +632,7 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
             LOGGER.info("Log file is uploaded at location : %s", resp[1])
         else:
             LOGGER.error("Failed to upload log file at location %s", resp[1])
-
+        upload_supporting_logs(test_id, remote_path, "s3bench")
         LOGGER.info("Adding log file path to %s", test_id)
         comment = "Log file path: {}".format(resp[1])
         data = task.get_test_details(test_exe_id=Globals.TE_TKT)
@@ -633,3 +652,4 @@ def generate_random_string():
     :rtype: str
     """
     return ''.join(random.choice(string.ascii_lowercase) for i in range(5))
+

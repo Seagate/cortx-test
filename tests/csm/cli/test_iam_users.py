@@ -49,10 +49,12 @@ class TestCliIAMUser:
         cls.user_name = None
         cls.iam_obj = CortxCliIamUser()
         cls.iam_obj.open_connection()
-        cls.node_helper_obj = node_helper.Node(hostname=CMN_CFG["csm"]["mgmt_vip"],
-                                   username=CMN_CFG["csm"]["admin_user"],
-                                   password=CMN_CFG["csm"]["admin_pass"])
-        cls.s3acc_obj = CortxCliS3AccountOperations(session_obj=cls.iam_obj.session_obj)
+        cls.node_helper_obj = node_helper.Node(
+            hostname=CMN_CFG["csm"]["mgmt_vip"],
+            username=CMN_CFG["csm"]["csm_admin_user"]["username"],
+            password=CMN_CFG["csm"]["csm_admin_user"]["password"])
+        cls.s3acc_obj = CortxCliS3AccountOperations(
+            session_obj=cls.iam_obj.session_obj)
         cls.s3acc_name = "{}_{}".format("cli_s3acc", int(time.time()))
         cls.s3acc_email = "{}@seagate.com".format(cls.s3acc_name)
         cls.LOGGER.info("Creating s3 account with name %s", cls.s3acc_name)
@@ -114,15 +116,16 @@ class TestCliIAMUser:
             - Logout from cortxcli
         """
         cls.LOGGER.info("Deleting s3 account %s", cls.s3acc_name)
-        resp = cls.s3acc_obj.login_cortx_cli(username=cls.s3acc_name, password=cls.acc_password)
+        resp = cls.s3acc_obj.login_cortx_cli(
+            username=cls.s3acc_name, password=cls.acc_password)
         assert_utils.assert_equals(
             resp[0], True, "Server authentication check failed")
-        resp = cls.s3acc_obj.delete_s3account_cortx_cli(account_name=cls.s3acc_name)
+        resp = cls.s3acc_obj.delete_s3account_cortx_cli(
+            account_name=cls.s3acc_name)
         assert_utils.assert_equals(resp[0], True, resp[1])
         cls.s3acc_obj.logout_cortx_cli()
         cls.iam_obj.close_connection()
         cls.LOGGER.info("Deleted s3 account %s", cls.s3acc_name)
-
 
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10858")
@@ -134,8 +137,8 @@ class TestCliIAMUser:
         self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
         self.LOGGER.info("Creating iam user with name %s", self.user_name)
         resp = self.iam_obj.create_iam_user(user_name=self.user_name,
-                                       password=self.iam_password,
-                                       confirm_password=self.iam_password)
+                                            password=self.iam_password,
+                                            confirm_password=self.iam_password)
         assert_utils.assert_exact_string(resp[1], self.user_name)
         self.LOGGER.info("Created iam user with name %s", self.iam_password)
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
@@ -149,8 +152,8 @@ class TestCliIAMUser:
         self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
         self.LOGGER.info("Creating iam user with name %s", self.user_name)
         resp = self.iam_obj.create_iam_user(user_name=self.user_name,
-                                       password=self.iam_password,
-                                       confirm_password=self.iam_password)
+                                            password=self.iam_password,
+                                            confirm_password=self.iam_password)
         assert_utils.assert_exact_string(resp[1], self.user_name)
         self.LOGGER.info("Created iam user with name %s", self.user_name)
         self.LOGGER.info("Deleting iam user with name %s", self.user_name)
