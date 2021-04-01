@@ -22,7 +22,6 @@
 import ast
 import random
 import string
-import pytest
 import os
 import glob
 import pathlib
@@ -31,6 +30,7 @@ import logging
 import csv
 import time
 import datetime
+import pytest
 import requests
 from datetime import date
 from _pytest.nodes import Item
@@ -216,10 +216,8 @@ def pytest_addoption(parser):
         help="Read test metadata"
     )
     parser.addoption(
-        "--host_fqdn", action="store", default=None, help="Hostname fqdn"
-    )
-    parser.addoption(
-        "--buildpath", action="store", default=None, help="Build url to be deployed"
+        "--db_update", action="store", default=True,
+        help="Decide whether to update reporting DB."
     )
 
 
@@ -267,6 +265,10 @@ def pytest_sessionfinish(session, exitstatus):
         for handler in handlers:
             _logger.removeHandler(handler)
 
+    resp = system_utils.umount_dir(mnt_dir=params.MOUNT_DIR)
+    if resp[0]:
+        LOGGER.info("Successfully unmounted directory")
+
 
 def get_test_metadata_from_tp_meta(item):
     tests_meta = Globals.tp_meta['test_meta']
@@ -300,11 +302,11 @@ def create_report_payload(item, call, final_result, d_u, d_pass):
     marks = get_marks_for_test_item(item)
     if final_result == 'FAIL':
         health_chk_res = "TODO"
-        are_logs_collected = True
+        are_logs_collected = False
         log_path = "TODO"
     elif final_result == 'PASS':
         health_chk_res = "NA"
-        are_logs_collected = True
+        are_logs_collected = False
         log_path = "NA"
     data_kwargs = dict(os=os_ver,
                        build=item.config.option.build,
@@ -451,18 +453,19 @@ def pytest_collection(session):
     latest = os.path.join(cache_home, 'latest')
     if not os.path.exists(latest):
         os.makedirs(latest)
-    _path = config_utils.create_content_json(cache_path, _get_items_from_cache())
+    _path = config_utils.create_content_json(cache_path, _get_items_from_cache(), ensure_ascii=False)
     if not os.path.exists(_path):
         LOGGER.info("Items Cache file %s not created" % (_path,))
     if session.config.option.collectonly:
-        te_meta = config_utils.create_content_json(os.path.join(cache_home, 'te_meta.json'), meta)
+        te_meta = config_utils.create_content_json(os.path.join(cache_home, 'te_meta.json'), meta,
+                                                   ensure_ascii=False)
         LOGGER.debug("Items meta dict %s created at %s", meta, te_meta)
         Globals.te_meta = te_meta
     if not _local and session.config.option.readmetadata:
         tp_meta_file = os.path.join(os.getcwd(),
                                     params.LOG_DIR_NAME,
                                     params.JIRA_TEST_META_JSON)
-        tp_meta = config_utils.read_content_json(tp_meta_file)
+        tp_meta = config_utils.read_content_json(tp_meta_file, mode='rb')
         Globals.tp_meta = tp_meta
         LOGGER.debug("Reading test plan meta dict %s", tp_meta)
     return items
@@ -650,12 +653,3 @@ def generate_random_string():
     """
     return ''.join(random.choice(string.ascii_lowercase) for i in range(5))
 
-
-@pytest.fixture(scope='module', autouse=True)
-def host_fqdn(request):
-    pytest.host_fqdn = request.config.getoption('--host_fqdn')
-
-
-@pytest.fixture(scope='module', autouse=True)
-def buildpath(request):
-    pytest.buildpath = request.config.getoption('--buildpath')
