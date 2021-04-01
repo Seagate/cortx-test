@@ -2133,7 +2133,7 @@ class TestObjectACL:
         key = S3_CFG["s3_object"]["object_name"].format(
             self.random_num)
         bucket_permission = S3_OBJ_TST["test_10781"]["can_object_acl"]
-        emailaddress = S3_OBJ_TST["test_10781"]["emailaddress"]
+        emailaddress = S3_CFG["s3_object"]["emailaddr"]
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
                            S3_CFG["s3_object"]["file_size"])
@@ -2182,7 +2182,7 @@ class TestObjectACL:
         key = S3_CFG["s3_object"]["object_name"].format(
             self.random_num)
         bucket_permission = S3_OBJ_TST["test_10782"]["can_object_acl"]
-        emailaddress = S3_OBJ_TST["test_10782"]["emailaddress"]
+        emailaddress = S3_CFG["s3_object"]["emailaddr"]
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
                            S3_CFG["s3_object"]["file_size"])
@@ -2230,7 +2230,7 @@ class TestObjectACL:
         key = S3_CFG["s3_object"]["object_name"].format(
             self.random_num)
         bucket_permission = S3_OBJ_TST["test_10783"]["private_acp"]
-        emailaddress = S3_OBJ_TST["test_10783"]["emailaddress"]
+        emailaddress = S3_CFG["s3_object"]["emailaddr"]
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
                            S3_CFG["s3_object"]["file_size"])
@@ -2280,7 +2280,7 @@ class TestObjectACL:
         key = S3_CFG["s3_object"]["object_name"].format(
             self.random_num)
         bucket_permission = S3_OBJ_TST["test_10784"]["private_acp"]
-        emailaddress = S3_OBJ_TST["test_10784"]["emailaddress"]
+        emailaddress = S3_CFG["s3_object"]["emailaddr"]
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
                            S3_CFG["s3_object"]["file_size"])
@@ -2330,7 +2330,7 @@ class TestObjectACL:
         key = S3_CFG["s3_object"]["object_name"].format(
             self.random_num)
         bucket_permission = S3_OBJ_TST["test_10786"]["private_acp"]
-        emailaddress = S3_OBJ_TST["test_10786"]["emailaddress"]
+        emailaddress = S3_CFG["s3_object"]["emailaddr"]
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
                            S3_CFG["s3_object"]["file_size"])
@@ -2380,7 +2380,7 @@ class TestObjectACL:
         key = S3_CFG["s3_object"]["object_name"].format(
             self.random_num)
         bucket_permission = S3_OBJ_TST["test_10787"]["private_acp"]
-        emailaddress = S3_OBJ_TST["test_10787"]["emailaddress"]
+        emailaddress = S3_CFG["s3_object"]["emailaddr"]
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
                            S3_CFG["s3_object"]["file_size"])
@@ -2430,7 +2430,7 @@ class TestObjectACL:
         key = S3_CFG["s3_object"]["object_name"].format(
             self.random_num)
         bucket_permission = S3_OBJ_TST["test_10788"]["private_acp"]
-        emailaddress = S3_OBJ_TST["test_10788"]["emailaddress"]
+        emailaddress = S3_CFG["s3_object"]["emailaddr"]
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
                            S3_CFG["s3_object"]["file_size"])
@@ -2478,7 +2478,7 @@ class TestObjectACL:
         key = S3_CFG["s3_object"]["object_name"].format(
             self.random_num)
         bucket_permission = S3_OBJ_TST["test_10789"]["private_acp"]
-        emailaddress = S3_OBJ_TST["test_10789"]["emailaddress"]
+        emailaddress = S3_CFG["s3_object"]["emailaddr"]
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
                            S3_CFG["s3_object"]["file_size"])
@@ -2523,7 +2523,7 @@ class TestObjectACL:
         email = S3_OBJ_TST["test_10790"]["emailid"].format(self.random_num)
         bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
             self.random_num)
-        emailaddress = S3_OBJ_TST["test_10790"]["emailaddress"]
+        emailaddress = S3_CFG["s3_object"]["emailaddr"]
         test_file_path = self.test_file_path
         resp = create_file(
             test_file_path,
@@ -2572,7 +2572,7 @@ class TestObjectACL:
         email = S3_OBJ_TST["test_10791"]["emailid"].format(self.random_num)
         bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
             self.random_num)
-        emailaddress = S3_OBJ_TST["test_10791"]["emailaddress"]
+        emailaddress = S3_CFG["s3_object"]["emailaddr"]
         test_file_path = self.test_file_path
         resp = create_file(
             test_file_path,
@@ -3037,7 +3037,7 @@ class TestObjectACL:
         put_res = s3obj_user.put_object(bucket_name, key, test_file_path)
         assert put_res[0]
         self.log.info("Step 3: Putting object with acl")
-        emailid = S3_OBJ_TST["test_10721"]["email_str"]
+        emailid = S3_OBJ_TST["test_10721"]["emailaddr"]
         try:
             acl_obj.put_object_canned_acl(
                 bucket_name,
@@ -3088,7 +3088,7 @@ class TestObjectACL:
         self.log.info("Step 2: Bucket was successfully created")
         self.log.info(
             "Step 3: Putting object with acl and grant permission")
-        emailid = S3_OBJ_TST["test_10722"]["email_str"]
+        emailid = S3_CFG["s3_object"]["emailaddr"]
         try:
             acl_obj.put_object_with_acl(
                 bucket_name,
@@ -3138,7 +3138,7 @@ class TestObjectACL:
         assert resp[0], resp[1]
         self.log.info("Step 2: Bucket was created successfully")
         self.log.info("Step 3: Putting object with acl permission")
-        emailid = S3_OBJ_TST["test_10723"]["email_str"]
+        emailid = S3_CFG["s3_object"]["emailaddr"]
         try:
             acl_obj.put_object_with_acl(
                 bucket_name,
@@ -3189,7 +3189,7 @@ class TestObjectACL:
         self.log.info("Step 2: Bucket was created")
         self.log.info(
             "Step 3: Putting object with acl and grant permission")
-        emailid = S3_OBJ_TST["test_10724"]["email_str"]
+        emailid = S3_CFG["s3_object"]["emailaddr"]
         try:
             acl_obj.put_object_with_acl(
                 bucket_name,
@@ -3243,7 +3243,7 @@ class TestObjectACL:
         put_res = s3obj_user.put_object(bucket_name, key, test_file_path)
         assert put_res[0]
         self.log.info("Step 3: Putting object with canned acl")
-        emailid = S3_OBJ_TST["test_10726"]["email_str"]
+        emailid = S3_CFG["s3_object"]["emailaddr"]
         try:
             acl_obj.put_object_canned_acl(
                 bucket_name,
@@ -3294,7 +3294,7 @@ class TestObjectACL:
         self.log.info("Step 2: Bucket was created")
         self.log.info(
             "Step 3: Putting object with acl and grant permission")
-        emailid = S3_OBJ_TST["test_10727"]["email_str"]
+        emailid = S3_CFG["s3_object"]["emailaddr"]
         try:
             acl_obj.put_object_with_acl(
                 bucket_name,
@@ -3346,7 +3346,7 @@ class TestObjectACL:
         self.log.info("Step 2: Bucket was created")
         self.log.info(
             "Step 3: Putting object with acl and grant permission")
-        emailid = S3_OBJ_TST["test_10720"]["email_str"]
+        emailid = S3_CFG["s3_object"]["emailaddr"]
         try:
             acl_obj.put_object_with_acl(
                 bucket_name,
@@ -3400,7 +3400,7 @@ class TestObjectACL:
         self.log.info("Step 2: Bucket was created")
         self.log.info(
             "Step 3: Putting object with acl permission and grant permission")
-        emailid = S3_OBJ_TST["test_10729"]["email_str"]
+        emailid = S3_CFG["s3_object"]["emailaddr"]
         try:
             acl_obj.put_object_with_acl(
                 bucket_name,
@@ -3528,7 +3528,7 @@ class TestObjectACL:
         modified_acp["Grants"][0] = new_grant
         self.log.info(
             "Step 2: Put ACL with private in request body and grant full control")
-        emailid = S3_OBJ_TST["test_10793"]["email_str"].format(email_id)
+        emailid = S3_CFG["s3_object"]["emailaddr"].format(email_id)
         try:
             acl_obj.put_object_canned_acl(bucket_name, obj,
                                           access_control_policy=modified_acp,
@@ -4699,7 +4699,7 @@ class TestObjectACL:
             self.random_num)
         email_id_2 = S3_OBJ_TST["test_3453"]["emailid_2"].format(
             self.random_num)
-        email = test_3453_cfg["emailaddr"].format(email_id_2)
+        email = S3_CFG["s3_object"]["emailaddr"].format(email_id_2)
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_2, email_id_2)
@@ -4837,7 +4837,7 @@ class TestObjectACL:
             self.random_num)
         email_id_2 = S3_OBJ_TST["test_3455"]["emailid_2"].format(
             self.random_num)
-        email = test_3455_cfg["emailaddr"].format(email_id_2)
+        email = S3_CFG["s3_object"]["emailaddr"].format(email_id_2)
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_2, email_id_2)
@@ -4926,7 +4926,7 @@ class TestObjectACL:
             self.random_num)
         email_id_2 = S3_OBJ_TST["test_3456"]["emailid_2"].format(
             self.random_num)
-        email = test_3456_cfg["emailaddr"].format(email_id_2)
+        email = S3_CFG["s3_object"]["emailaddr"].format(email_id_2)
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_2, email_id_2)
@@ -5009,7 +5009,7 @@ class TestObjectACL:
             self.random_num)
         email_id_2 = S3_OBJ_TST["test_3457"]["emailid_2"].format(
             self.random_num)
-        email = test_3457_cfg["emailaddr"].format(email_id_2)
+        email = S3_CFG["s3_object"]["emailaddr"].format(email_id_2)
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_2, email_id_2)
@@ -5092,7 +5092,7 @@ class TestObjectACL:
             self.random_num)
         email_id_2 = S3_OBJ_TST["test_3458"]["emailid_2"].format(
             self.random_num)
-        email = test_3458_cfg["emailaddr"].format(email_id_2)
+        email = S3_CFG["s3_object"]["emailaddr"].format(email_id_2)
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_2, email_id_2)
@@ -5192,7 +5192,7 @@ class TestObjectACL:
         self.log.info(
             "Step 3: Uploading an object to bucket name with %s permission"
             " using first account", obj_permission)
-        email = test_3459_cfg["emailaddr"].format(email_id_2)
+        email = S3_CFG["s3_object"]["emailaddr"].format(email_id_2)
         resp = s3_acl_obj1.put_object_with_acl(
             bucket_name, s3obj_name, test_file_path, grant_full_control=email)
         assert resp[0], resp[1]
@@ -5278,7 +5278,7 @@ class TestObjectACL:
         self.log.info(
             "Step 3: Uploading an object to bucket name with %s permission "
             "using first account", obj_permission)
-        email = test_3460_cfg["emailaddr"].format(email_id_2)
+        email = S3_CFG["s3_object"]["emailaddr"].format(email_id_2)
         resp = s3_acl_obj1.put_object_with_acl(
             bucket_name, s3obj_name, test_file_path, grant_read=email)
         assert resp[0], resp[1]
@@ -5369,7 +5369,7 @@ class TestObjectACL:
         self.log.info(
             "Step 3: Uploading an object to bucket name "
             "with %s permission using first account", obj_permission)
-        email = test_3461_cfg["emailaddr"].format(email_id_2)
+        email = S3_CFG["s3_object"]["emailaddr"].format(email_id_2)
         resp = s3_acl_obj1.put_object_with_acl(
             bucket_name, s3obj_name, test_file_path, grant_read_acp=email)
         assert resp[0], resp[1]
@@ -5461,7 +5461,7 @@ class TestObjectACL:
         self.log.info(
             "Step 3: Uploading an object to bucket with %s permission "
             "using first account", obj_permission)
-        email = test_3462_cfg["emailaddr"].format(email_id_2)
+        email = S3_CFG["s3_object"]["emailaddr"].format(email_id_2)
         resp = s3_acl_obj1.put_object_with_acl(
             bucket_name, s3obj_name, test_file_path, grant_write_acp=email)
         assert resp[0], resp[1]
@@ -5539,7 +5539,7 @@ class TestObjectACL:
         self.log.info(
             "Step 2: Setting an object permission to %s using first account",
             obj_permission)
-        email = test_3463_cfg["emailaddr"].format(email_id_2)
+        email = S3_CFG["s3_object"]["emailaddr"].format(email_id_2)
         resp = s3_acl_obj1.put_object_canned_acl(
             bucket_name, s3obj_name, grant_write=email)
         assert resp[0], resp[1]
@@ -5592,7 +5592,7 @@ class TestObjectACL:
                 s3obj_name,
                 test_file_path,
                 acl=test_3541_cfg["acl"],
-                grant_read_acp=test_3541_cfg["emailaddr"].format(email))
+                grant_read_acp=S3_CFG["s3_object"]["emailaddr"].format(email))
         except CTException as error:
             self.log.error(error.message)
             assert S3_CFG["s3_object"]["inval_req"] in error.message, error.message

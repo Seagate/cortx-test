@@ -40,4 +40,5 @@ s3_object:
     full_ctrl: "FULL_CONTROL"
     error_msg: "AccessDenied"
     inval_req: "InvalidRequest"
+    emailaddr: "emailaddress={}"
     mb_count: 5

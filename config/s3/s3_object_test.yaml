@@ -164,54 +164,44 @@ test_10975:
   account_name_2: "my_account_two{}"
   emailid_2: "my_account_two{}@seagate.com"
 test_10781:
-  emailaddress: "emailaddress={}"
   can_object_acl: "bucket-owner-full-control"
   private_acp : "private"
   account_name: "my_account{}"
   emailid: "my_account{}@seagate.com"
 test_10782:
-  emailaddress: "emailaddress={}"
   can_object_acl: "bucket-owner-read"
   private_acp : "private"
   account_name: "my_account{}"
   emailid: "my_account{}@seagate.com"
 test_10783:
-  emailaddress: "emailaddress={}"
   private_acp : "private"
   account_name: "my_account{}"
   emailid: "my_account{}@seagate.com"
 test_10784:
-  emailaddress: "emailaddress={}"
   private_acp : "private"
   account_name: "my_account{}"
   emailid: "my_account{}@seagate.com"
 test_10786:
-  emailaddress: "emailaddress={}"
   private_acp : "public_read"
   account_name: "my_account{}"
   emailid: "my_account{}@seagate.com"
 test_10787:
-  emailaddress: "emailaddress={}"
   private_acp : "public_read"
   account_name: "my_account{}"
   emailid: "my_account{}@seagate.com"
 test_10788:
-  emailaddress: "emailaddress={}"
   private_acp : "public-read-write"
   account_name: "my_account{}"
   emailid: "my_account{}@seagate.com"
 test_10789:
-  emailaddress: "emailaddress={}"
   private_acp : "public-read-write"
   account_name: "my_account{}"
   emailid: "my_account{}@seagate.com"
 test_10790:
-  emailaddress: "emailaddress={}"
   auth_read : "authenticate_read"
   account_name: "my_account{}"
   emailid: "my_account{}@seagate.com"
 test_10791:
-  emailaddress: "emailaddress={}"
   private_acp : "authenticate_read"
   account_name: "my_account{}"
   emailid: "my_account{}@seagate.com"
@@ -257,42 +247,34 @@ test_10719:
   emailid_1: "my_account_one{}@seagate.com"
 test_10720:
   bucket_full_control: "bucket-owner-full-control"
-  email_str: "emailaddress={}"
   account_name_1: "my_account_one{}"
   emailid_1: "my_account_one{}@seagate.com"
 test_10721:
   bucket_full_control: "bucket-owner-full-control"
-  email_str: "emailaddress={}"
   account_name_1: "my_account_one{}"
   emailid_1: "my_account_one{}@seagate.com"
 test_10722:
   bucket_full_control: "bucket-owner-full-control"
-  email_str: "emailaddress={}"
   account_name_1: "my_account_one{}"
   emailid_1: "my_account_one{}@seagate.com"
 test_10723:
   bucket_full_control: "bucket-owner-full-control"
-  email_str: "emailaddress={}"
   account_name_1: "my_account_one{}"
   emailid_1: "my_account_one{}@seagate.com"
 test_10724:
   bucket_full_control: "bucket-owner-full-control"
-  email_str: "emailaddress={}"
   account_name_1: "my_account_one{}"
   emailid_1: "my_account_one{}@seagate.com"
 test_10726:
   bucket_full_control: "bucket-owner-read"
-  email_str: "emailaddress={}"
   account_name_1: "my_account_one{}"
   emailid_1: "my_account_one{}@seagate.com"
 test_10727:
   bucket_full_control: "bucket-owner-read"
-  email_str: "emailaddress={}"
   account_name_1: "my_account_one{}"
   emailid_1: "my_account_one{}@seagate.com"
 test_10729:
   bucket_full_control: "bucket-owner-read"
-  email_str: "emailaddress={}"
   account_name_1: "my_account_one{}"
   emailid_1: "my_account_one{}@seagate.com"
 test_10792:
@@ -310,7 +292,6 @@ test_10793:
   account_name_1: "my_account_10793{}"
   emailid_1: "my_account_10793{}@seagate.com"
   can_str: "CanonicalUser"
-  email_str: "emailaddress={}"
 test_10794:
   error_msg: "InvalidACL"
   permission_2: "private"
@@ -408,7 +389,6 @@ test_3453:
   emailid_1: "my_account_1{}@seagate.com"
   account_name_2: "my_account_2{}"
   emailid_2: "my_account_2{}@seagate.com"
-  emailaddr: "emailaddress={}"
   grant_permission: "READ"
   new_grantee:
     Grantee:
@@ -421,7 +401,6 @@ test_3454:
   emailid_1: "my_account_1{}@seagate.com"
   account_name_2: "my_account_2{}"
   emailid_2: "my_account_2{}@seagate.com"
-  emailaddr: "emailaddress={}"
   type: "CanonicalUser"
   sub_can_id: "agsdhgh"
   err_message: "Invalid Argument"
@@ -432,7 +411,6 @@ test_3455:
   emailid_2: "my_account_2{}@seagate.com"
   account_name_3: "my_account_3{}"
   emailid_3: "my_account_3{}@seagate.com"
-  emailaddr: "emailaddress={}"
   new_grantee:
     Grantee:
       DisplayName: "{}"
@@ -444,7 +422,6 @@ test_3456:
   emailid_1: "my_account_1{}@seagate.com"
   account_name_2: "my_account_2{}"
   emailid_2: "my_account_2{}@seagate.com"
-  emailaddr: "emailaddress={}"
   grant_permission: "READ_ACP"
   new_grantee:
     Grantee:
@@ -457,7 +434,6 @@ test_3457:
   emailid_1: "my_account_1{}@seagate.com"
   account_name_2: "my_account_2{}"
   emailid_2: "my_account_2{}@seagate.com"
-  emailaddr: "emailaddress={}"
   grant_permission: "WRITE_ACP"
   new_grantee:
     Grantee:
@@ -470,7 +446,6 @@ test_3458:
   emailid_1: "my_account_1{}@seagate.com"
   account_name_2: "my_account_2{}"
   emailid_2: "my_account_2{}@seagate.com"
-  emailaddr: "emailaddress={}"
   grant_permission: "WRITE"
   new_grantee:
     Grantee:
@@ -483,39 +458,33 @@ test_3459:
   emailid_1: "my_account_1{}@seagate.com"
   account_name_2: "my_account_2{}"
   emailid_2: "my_account_2{}@seagate.com"
-  emailaddr: "emailaddress={}"
 test_3460:
   account_name_1: "my_account_1{}"
   emailid_1: "my_account_1{}@seagate.com"
   account_name_2: "my_account_2{}"
   emailid_2: "my_account_2{}@seagate.com"
-  emailaddr: "emailaddress={}"
   grant_permission: "READ"
 test_3461:
   account_name_1: "my_account_1{}"
   emailid_1: "my_account_1{}@seagate.com"
   account_name_2: "my_account_2{}"
   emailid_2: "my_account_2{}@seagate.com"
-  emailaddr: "emailaddress={}"
   grant_permission: "READ_ACP"
 test_3462:
   account_name_1: "my_account_1{}"
   emailid_1: "my_account_1{}@seagate.com"
   account_name_2: "my_account_2{}"
   emailid_2: "my_account_2{}@seagate.com"
-  emailaddr: "emailaddress={}"
   grant_permission: "WRITE_ACP"
 test_3463:
   account_name_1: "my_account_1{}"
   emailid_1: "my_account_1{}@seagate.com"
   account_name_2: "my_account_2{}"
   emailid_2: "my_account_2{}@seagate.com"
-  emailaddr: "emailaddress={}"
   grant_permission: "WRITE"
 test_3541:
   acl: "bucket-owner-full-control"
   emailid: "testacnt3541{}@seagate.com"
-  emailaddr: "emailaddress={}"
 test_3228:
   policy: "{}"
   err_msg: "Parameter validation failed"
