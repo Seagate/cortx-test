@@ -800,3 +800,71 @@ test_9442:
 test_9443:
     bucket_name: "objtag9443"
     error_message: "NoSuchKey"
+
+# Tests from test_object_workflow_operations
+test_2208:
+  bucket_name: "objworkflow2208"
+  obj_name: "testobj2208"
+test_2209:
+  bucket_name: "objworkflow2209"
+  obj_name: "testobj2209"
+  start_range: 200
+  stop_range: 400
+  file_count: 5
+test_2210:
+  bucket_name: "objworkflow2210"
+  file_count: 4
+test_2211:
+  bucket_name: "objworkflow2211"
+  obj_name: "testobj2211"
+  error_message: "NoSuchBucket"
+test_2213:
+  bucket_name: "objworkflow2213"
+  obj_name: "testobj2213"
+  file_path: "/home/result.log"
+test_2214:
+  bucket_name: "objworkflow2214"
+  obj_name: "testobj2214"
+  file_count: 4
+  file_path: "/home/result.log"
+test_2215:
+  bucket_name: "objworkflow2215"
+  obj_name: "testobj2215"
+  file_size: 20
+  start_byte: 0
+  stop_byte: 20
+test_2217:
+  bucket_name: "objworkflow2217"
+  obj_name: "testobj2217"
+test_2218:
+  bucket_name: "objworkflow2218"
+  obj_name: "testobj2218"
+  key: "testkey"
+  value: "testvalue"
+test_2219:
+  bucket_name: "objworkflow2219"
+  obj_name: "testobj2219"
+  key: "testkey"
+  value: "testvalue"
+  error_message: "Not Found"
+test_2220:
+  bucket_name: "objworkflow2220"
+  obj_name: "testobj2220"
+test_2221:
+  bucket_name: "objworkflow2221"
+  obj_name: "testobj2221"
+test_7653:
+  bucket_name: "objworkflow7653"
+  no_of_objects: 2
+test_7655:
+  bucket_name: "objworkflow7655"
+  no_of_objects: 2
+test_7656:
+  bucket_name: "objworkflow7656"
+  no_of_objects: 1010
+  del_obj_cnt: 1001
+  err_message: "MaxMessageLengthExceeded"
+test_7657:
+  bucket_name: "objworkflow7657"
+  no_of_objects: 1010
+  del_obj_cnt: 1000
