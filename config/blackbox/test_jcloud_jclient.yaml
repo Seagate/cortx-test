@@ -1,159 +1,157 @@
 common_cfg:
-  jcloud_tool: "jcloud"
-  jclient_tool: "jclient"
-  bkt_prefix: "jcloudjclientbucket"
-  jcloud_path: "scripts/tools/jcloudclient.jar"
-  jclient_path:  "scripts/tools/jclient.jar"
-  jcloud_cmd: "java -jar scripts/tools/jcloudclient.jar"
-  jclient_cmd : "java -jar scripts/tools/jclient.jar"
-  make_bucket : "mb"
-  jcloud_format_keys: "--access-key {} --secret-key {}"
-  jclient_format_keys: "--access_key {} --secret_key {}"
-  bkt_path_format: "s3://{}"
-  path_style_opt: "-p"
-  file_path: "/home/testfile.txt"
-  file_size: 10
-  root_path: "/home/"
-  file_format: ".txt"
-  jar_skip_err: "Error: jcloudclient.jar or jclient.jar file does not exists"
-  ls_script_path_cmd: "ls scripts/tools/"
+    jcloud_tool: "jcloud"
+    jclient_tool: "jclient"
+    bkt_prefix: "jcloudjclientbucket"
+    jcloud_path: "scripts/tools/jcloudclient.jar"
+    jclient_path: "scripts/tools/jclient.jar"
+    jcloud_cmd: "java -jar scripts/tools/jcloudclient.jar"
+    jclient_cmd: "java -jar scripts/tools/jclient.jar"
+    make_bucket: "mb"
+    jcloud_format_keys: "--access-key {} --secret-key {}"
+    jclient_format_keys: "--access_key {} --secret_key {}"
+    bkt_path_format: "s3://{}"
+    path_style_opt: "-p"
+    file_size: 10
+    file_format: ".txt"
+    jar_skip_err: "Error: jcloudclient.jar or jclient.jar file does not exists"
+    ls_script_path_cmd: "ls scripts/tools/"
 
 test_2368:
-  bucket_name: "jcloudjclientbucket-2368{}"
-  success_msg: "Bucket created successfully"
+    bucket_name: "jcloudjclientbucket-2368{}"
+    success_msg: "Bucket created successfully"
 
 test_2370:
-  bucket_name: "jcloudjclientbucket-2370{}"
-  remove_bkt: "rb"
-  success_msg_create: "Bucket created successfully"
-  success_msg_del: "Bucket deleted successfully"
+    bucket_name: "jcloudjclientbucket-2370{}"
+    remove_bkt: "rb"
+    success_msg_create: "Bucket created successfully"
+    success_msg_del: "Bucket deleted successfully"
 
 test_2373:
-  bucket_name: "jcloudjclientbucket-2373{}"
-  create_success_msg: "Bucket created successfully"
-  put_cmd: "put"
-  obj_success_msg: "Object put successfully"
+    bucket_name: "jcloudjclientbucket-2373{}"
+    create_success_msg: "Bucket created successfully"
+    put_cmd: "put"
+    obj_success_msg: "Object put successfully"
 
 test_2374:
-  bucket_name: "jcloudjclientbucket-2374{}"
-  create_success_msg: "Bucket created successfully"
-  put_cmd: "put"
-  get_cmd: "get"
-  put_obj_msg: "Object put successfully"
-  get_obj_msg: "Object download successfully"
+    bucket_name: "jcloudjclientbucket-2374{}"
+    create_success_msg: "Bucket created successfully"
+    put_cmd: "put"
+    get_cmd: "get"
+    put_obj_msg: "Object put successfully"
+    get_obj_msg: "Object download successfully"
 
 test_2375:
-  bucket_name: "jcloudjclientbucket-2375{}"
-  create_success_msg: "Bucket created successfully"
-  put_cmd: "put"
-  del_cmd: "del"
-  put_obj_msg: "Object put successfully"
-  get_obj_msg: "Object deleted successfully"
+    bucket_name: "jcloudjclientbucket-2375{}"
+    create_success_msg: "Bucket created successfully"
+    put_cmd: "put"
+    del_cmd: "del"
+    put_obj_msg: "Object put successfully"
+    get_obj_msg: "Object deleted successfully"
 
 test_2376:
-  bucket_name: "jcloudjclientbucket-2376{}"
-  obj_list:
-    - "object2376-1.txt"
-    - "object2376-2.txt"
-  multi_del: "multidel"
-  multi_del_msg: "Objects deleted successfully"
+    bucket_name: "jcloudjclientbucket-2376{}"
+    obj_list:
+        - "object2376-1.txt"
+        - "object2376-2.txt"
+    multi_del: "multidel"
+    multi_del_msg: "Objects deleted successfully"
 
 test_2377:
-  bucket_name: "jcloudjclientbucket-2377{}"
-  head_obj_cmd: "head"
-  obj_name: "objkey2377.txt"
+    bucket_name: "jcloudjclientbucket-2377{}"
+    head_obj_cmd: "head"
+    obj_name: "objkey2377.txt"
 
 test_2379:
-  bucket_name: "jcloudjclientbucket-2379{}"
-  exists_cmd: "exists"
-  obj_name: "objkey2377.txt"
-  exists_msg: "Object {} exists"
+    bucket_name: "jcloudjclientbucket-2379{}"
+    exists_cmd: "exists"
+    obj_name: "objkey2377.txt"
+    exists_msg: "Object {} exists"
 
 test_2380:
-  bucket_name: "jcloudjclientbucket-2380{}"
-  rb_bkt_cmd: "rbifempty"
-  rb_bkt_msg: "Bucket deleted successfully"
+    bucket_name: "jcloudjclientbucket-2380{}"
+    rb_bkt_cmd: "rbifempty"
+    rb_bkt_msg: "Bucket deleted successfully"
 
 test_2381:
-  bucket_name: "jcloudjclientbucket-2381{}"
-  success_msg: "Bucket created successfully"
+    bucket_name: "jcloudjclientbucket-2381{}"
+    success_msg: "Bucket created successfully"
 
 test_2382:
-  bucket_name: "jcloudjclientbucket-2382{}"
-  lst_bkt_cmd: "ls"
+    bucket_name: "jcloudjclientbucket-2382{}"
+    lst_bkt_cmd: "ls"
 
 test_2384:
-  bucket_name: "jcloudjclientbucket-2384{}"
-  remove_bkt: "rb"
-  del_success_msg: "Bucket deleted successfully"
+    bucket_name: "jcloudjclientbucket-2384{}"
+    remove_bkt: "rb"
+    del_success_msg: "Bucket deleted successfully"
 
 test_2385:
-  bucket_name: "jcloudjclientbucket-2385{}"
-  ls_cmd: "ls"
-  obj_name: "objkey2385.txt"
+    bucket_name: "jcloudjclientbucket-2385{}"
+    ls_cmd: "ls"
+    obj_name: "objkey2385.txt"
 
 test_2386:
-  bucket_name: "jcloudjclientbucket-2386{}"
-  del_cmd: "del"
-  obj_name: "objkey2386.txt"
-  multi_del_msg: "Object deleted successfully"
+    bucket_name: "jcloudjclientbucket-2386{}"
+    del_cmd: "del"
+    obj_name: "objkey2386.txt"
+    multi_del_msg: "Object deleted successfully"
 
 test_2388:
-  bucket_name: "jcloudjclientbucket-2388{}"
-  head_obj_cmd: "head"
-  obj_name: "objkey2388.txt"
+    bucket_name: "jcloudjclientbucket-2388{}"
+    head_obj_cmd: "head"
+    obj_name: "objkey2388.txt"
 
 test_2389:
-  bucket_name: "jcloudjclientbucket-2389{}"
-  put_cmd: "put"
-  obj_name: "objkey2389.txt"
-  obj_success_msg: "Object put successfully"
+    bucket_name: "jcloudjclientbucket-2389{}"
+    put_cmd: "put"
+    obj_name: "objkey2389.txt"
+    obj_success_msg: "Object put successfully"
 
 test_2390:
-  bucket_name: "jcloudjclientbucket-2390{}"
-  obj_name: "objkey2390.txt"
-  get_cmd: "get"
-  get_obj_msg: "Object download successfully"
+    bucket_name: "jcloudjclientbucket-2390{}"
+    obj_name: "objkey2390.txt"
+    get_cmd: "get"
+    get_obj_msg: "Object download successfully"
 
 test_2391:
-  bucket_name: "jcloudjclientbucket-2391{}"
-  exists_cmd: "exists"
-  exists_msg: "Bucket {} exists"
+    bucket_name: "jcloudjclientbucket-2391{}"
+    exists_cmd: "exists"
+    exists_msg: "Bucket {} exists"
 
 test_2392:
-  bucket_name: "jcloudjclientbucket-2392{}"
-  exists_cmd: "exists"
-  obj_name: "objkey2392.txt"
-  exists_msg: "Object exists"
+    bucket_name: "jcloudjclientbucket-2392{}"
+    exists_cmd: "exists"
+    obj_name: "objkey2392.txt"
+    exists_msg: "Object exists"
 
 test_2369:
-  bucket_name: "jcloudjclientbucket-2369{}"
-  ls_bkt_cmd: "ls"
+    bucket_name: "jcloudjclientbucket-2369{}"
+    ls_bkt_cmd: "ls"
 
 test_2371:
-  bucket_name: "jcloudjclientbucket-2371{}"
-  bucket_count: 1000
-  success_msg: "Bucket created successfully"
+    bucket_name: "jcloudjclientbucket-2371{}"
+    bucket_count: 1000
+    success_msg: "Bucket created successfully"
 
 test_2372:
-  bucket_name: "jcloudjclientbucket-2372{}"
-  ls_cmd: "ls"
-  obj_name: "objkey2385.txt"
+    bucket_name: "jcloudjclientbucket-2372{}"
+    ls_cmd: "ls"
+    obj_name: "objkey2385.txt"
 
 test_2378:
-  bucket_name: "jcloudjclientbucket-2378{}"
-  exists_cmd: "exists"
-  exists_msg: "Bucket {} exists"
+    bucket_name: "jcloudjclientbucket-2378{}"
+    exists_cmd: "exists"
+    exists_msg: "Bucket {} exists"
 
 test_2383:
-  bucket_name: "jcloudjclientbucket-2383{}"
-  bucket_count: 1000
-  success_msg: "Bucket created successfully"
+    bucket_name: "jcloudjclientbucket-2383{}"
+    bucket_count: 1000
+    success_msg: "Bucket created successfully"
 
 test_2387:
-  bucket_name: "jcloudjclientbucket-2387{}"
-  obj_list:
-    - "object2387-1.txt"
-    - "object2387-2.txt"
-  multi_del: "multidel"
-  multi_del_msg: "Objects deleted successfully"
+    bucket_name: "jcloudjclientbucket-2387{}"
+    obj_list:
+        - "object2387-1.txt"
+        - "object2387-2.txt"
+    multi_del: "multidel"
+    multi_del_msg: "Objects deleted successfully"
