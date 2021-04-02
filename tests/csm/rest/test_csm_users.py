@@ -58,6 +58,7 @@ class TestCsmUser():
         cls.log.info("Initiating Rest Client ...")
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-10720')
     def test_4947(self):
@@ -72,6 +73,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-10721')
     def test_4948(self):
@@ -86,6 +88,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-10722')
     def test_4949(self):
@@ -101,6 +104,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-10723')
     def test_4950(self):
@@ -115,6 +119,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-10724')
     def test_4951(self):
@@ -129,6 +134,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-10725')
     def test_4952(self):
@@ -145,6 +151,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10711')
     def test_4954(self):
         """Initiating the test case to create csm users and List CSM user with
@@ -158,6 +165,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-10726')
     def test_4955(self):
@@ -174,6 +182,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-10727')
     def test_5001(self):
@@ -200,6 +209,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-10728')
     def test_5002(self):
@@ -225,6 +235,7 @@ class TestCsmUser():
 
     # @pytest.mark.skip(reason="Test failing when running in parallel")
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-17864')
     def test_5003(self):
         """
@@ -249,6 +260,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-10715')
     def test_5011(self):
@@ -265,6 +277,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-10716')
     def test_5012(self):
@@ -280,6 +293,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-10717')
     def test_5013(self):
@@ -297,6 +311,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-10718')
     def test_5014(self):
@@ -312,6 +327,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-10719')
     def test_5015(self):
@@ -329,6 +345,7 @@ class TestCsmUser():
 
     @pytest.mark.tags('TEST-18802')
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     def test_5000(self):
         """
         Test that GET API with valid value for sort_by param returns 200 response code
@@ -351,6 +368,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-10730')
     def test_5004(self):
@@ -374,6 +392,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-10713')
     def test_5006(self):
@@ -388,6 +407,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-10714')
     def test_5008(self):
@@ -405,6 +425,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-10712')
     def test_5005(self):
@@ -433,6 +454,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-10795')
     def test_5009(self):
@@ -492,6 +514,7 @@ class TestCsmUser():
 
     # @pytest.mark.skip(reason="Skipping the test as it changes admin password")
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10797')
     def test_5016(self):
         """
@@ -606,6 +629,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-12023')
     def test_1228(self):
@@ -661,6 +685,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-12022')
     def test_1237(self):
@@ -712,6 +737,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-12021')
     def test_1235(self):
@@ -756,6 +782,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-12018')
     def test_7421(self):
         """
@@ -826,6 +853,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-12024')
     def test_7411(self):
         """
@@ -894,6 +922,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-12025')
     def test_1229(self):
         """
@@ -1060,6 +1089,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-12026')
     def test_5019(self):
         """
@@ -1274,6 +1304,7 @@ class TestCsmUser():
                       "updated successfully for csm user %s", user[3], username)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-12838')
     def test_7422(self):
@@ -1347,6 +1378,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-12839')
     def test_7412(self):
@@ -1447,6 +1479,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-12840')
     def test_7408(self):
@@ -1552,6 +1585,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-17865')
     def test_6220(self):
@@ -1666,6 +1700,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-14657')
     def test_5021(self):
@@ -1720,6 +1755,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-14658')
     def test_5023(self):
@@ -1756,6 +1792,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-14659')
     def test_5020(self):
@@ -1802,6 +1839,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-14660')
     def test_5017(self):
@@ -1851,6 +1889,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-14661')
     def test_5010(self):
@@ -1898,6 +1937,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-14696')
     def test_5018(self):
@@ -1997,6 +2037,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-15862')
     def test_1173(self):
         """
@@ -2712,6 +2753,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-12019')
     def test_7420(self):
         """

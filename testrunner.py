@@ -4,6 +4,7 @@ import argparse
 import csv
 import json
 import logging
+import requests
 from datetime import datetime
 from multiprocessing import Process
 from core import runner
@@ -26,8 +27,9 @@ def parse_args():
                         help="json file name")
     parser.add_argument("-r", "--html_report", type=str, default='report.html',
                         help="html report name")
-    parser.add_argument("-d", "--db_update", type=str, default='n',
-                        help="db update required: y/n")
+    parser.add_argument("-d", "--db_update", type=str_to_bool,
+                        default=True, nargs='?', const=True,
+                        help="Update Reports DB. Can be false in case reports db is down")
     parser.add_argument("-te", "--te_ticket", type=str,
                         help="jira xray test execution id")
     parser.add_argument("-pe", "--parallel_exe", type=str, default=False,
@@ -123,8 +125,13 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
     if te_tag:
         tag = '-m ' + te_tag
         cmd_line = cmd_line + [tag]
+
     read_metadata = "--readmetadata=" + str(True)
     cmd_line = cmd_line + [read_metadata]
+
+    if not args.db_update:
+        cmd_line = cmd_line + ["--db_update=" + str(False)]
+
     cmd_line = cmd_line + ['--build=' + build, '--build_type=' + build_type,
                            '--tp_ticket=' + args.test_plan]
     LOGGER.debug('Running pytest command %s', cmd_line)
@@ -441,19 +448,41 @@ def check_kafka_msg_trigger_test(args):
     consumer.close()
 
 
-def get_setup_details():
+def get_setup_details(args):
     if not os.path.exists(params.LOG_DIR_NAME):
         os.mkdir(params.LOG_DIR_NAME)
-    if os.path.exists(params.SETUPS_FPATH):
-        os.remove(params.SETUPS_FPATH)
-    setups = configmanager.get_config_db(setup_query={})
-    config_utils.create_content_json(params.SETUPS_FPATH, setups, ensure_ascii=False)
+    setups = None
+    try:
+        setups = configmanager.get_config_db(setup_query={})
+        if os.path.exists(params.SETUPS_FPATH):
+            os.remove(params.SETUPS_FPATH)
+        config_utils.create_content_json(params.SETUPS_FPATH, setups, ensure_ascii=False)
+    except requests.exceptions.RequestException as fault:
+        LOGGER.exception(str(fault))
+        if args.db_update:
+            raise Exception from fault
+    except Exception as fault:
+        if not os.path.exists(params.SETUPS_FPATH):
+            raise Exception from fault
+        if args.db_update and not setups:
+            LOGGER.warning("Using the cached data from setups.json")
+            # check for existence of target in setups.json
+            exists = False
+            json_data = config_utils.read_content_json(params.SETUPS_FPATH, 'r')
+            for key in json_data:
+                if key == args.target:
+                    exists = True
+                    break
+            if not exists:
+                raise Exception(f'target {args.target} Data does not exists in setups.json')
 
 
 def main(args):
     """Main Entry function using argument parser to parse options and forming pyttest command.
     It renames up the latest folder and parses TE ticket to create detailed test details csv.
     """
+    get_setup_details(args)
+
     if args.json_file:
         json_dict, cmd, run_using = runner.parse_json(args.json_file)
         cmd_line = runner.get_cmd_line(cmd, run_using, args.html_report, args.log_level)
@@ -468,6 +497,5 @@ def main(args):
 if __name__ == '__main__':
     runner.cleanup()
     initialize_loghandler(LOGGER)
-    get_setup_details()
     opts = parse_args()
     main(opts)

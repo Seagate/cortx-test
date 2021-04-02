@@ -104,6 +104,7 @@ class TestCliS3ACC:
         cls.s3acc_obj.close_connection()
         cls.logger.info("ENDED : Teardown operations at test suit level")
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10872")
     @CTFailOn(error_handler)
@@ -128,6 +129,7 @@ class TestCliS3ACC:
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info("Deleted s3 account %s", self.s3acc_name)
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10877")
     @CTFailOn(error_handler)
@@ -162,6 +164,7 @@ class TestCliS3ACC:
         self.logger.info(
             "Deleting different account failed with error %s", resp[1])
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10869")
     @CTFailOn(error_handler)
@@ -182,6 +185,7 @@ class TestCliS3ACC:
             "Creating S3 account with invalid password failed with error %s",
             resp[1])
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10870")
     @CTFailOn(error_handler)
@@ -206,6 +210,7 @@ class TestCliS3ACC:
         self.logger.info(
             "Creating duplicate S3 account failed with error %s", resp[1])
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10871")
     @CTFailOn(error_handler)
@@ -229,6 +234,7 @@ class TestCliS3ACC:
             "Listing S3 accounts with invalid format failed with error %s",
             resp[1])
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10873")
     @CTFailOn(error_handler)
@@ -261,6 +267,7 @@ class TestCliS3ACC:
         self.logger.info(
             "Verified that account is not deleted with 'no' on confirmation")
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10874")
     @CTFailOn(error_handler)
@@ -303,6 +310,7 @@ class TestCliS3ACC:
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info("Deleted s3 account %s", self.s3acc_name)
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10875")
     @CTFailOn(error_handler)
@@ -333,6 +341,7 @@ class TestCliS3ACC:
             "Performing delete operation with invalid s3 account name is failed with error %s",
             resp[1])
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10881")
     @CTFailOn(error_handler)
@@ -359,6 +368,7 @@ class TestCliS3ACC:
         self.logger.info(
             "Successfully logged into CORTX CLI by passing username as parameter")
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10883")
     @CTFailOn(error_handler)
@@ -408,6 +418,7 @@ class TestCliS3ACC:
             "Successfully logged in to CORTX CLI as csm user %s",
             csm_user_name)
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10885")
     @CTFailOn(error_handler)
@@ -448,6 +459,7 @@ class TestCliS3ACC:
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info("Deleted s3 account %s", self.s3acc_name)
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10887")
     @CTFailOn(error_handler)
@@ -482,6 +494,7 @@ class TestCliS3ACC:
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info("Deleted bucket %s", bucket_name)
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10888")
     @CTFailOn(error_handler)
@@ -509,6 +522,7 @@ class TestCliS3ACC:
         assert_utils.assert_exact_string(resp[1], error_msg)
         self.logger.info("Creating s3 account failed with error %s", resp[1])
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10889")
     @CTFailOn(error_handler)
@@ -532,6 +546,7 @@ class TestCliS3ACC:
         assert_utils.assert_exact_string(resp[1], self.s3acc_name)
         self.logger.info("Successfully listed S3 accounts in xml format")
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10890")
     @CTFailOn(error_handler)
@@ -550,6 +565,7 @@ class TestCliS3ACC:
         assert_utils.assert_exact_string(resp[1], error_msg)
         self.logger.info("Creating s3 account failed with error %s", resp[1])
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10891")
     @CTFailOn(error_handler)
@@ -578,6 +594,7 @@ class TestCliS3ACC:
         assert_utils.assert_exact_string(resp[1], error_msg)
         self.logger.info("Update s3 account password failed with error %s", resp[1])
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10892")
     @CTFailOn(error_handler)
@@ -612,6 +629,7 @@ class TestCliS3ACC:
         self.logger.info(
             "Verified s3account password not updated when user selects 'No' on confirmation")
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10893")
     @CTFailOn(error_handler)
@@ -646,6 +664,7 @@ class TestCliS3ACC:
             assert_utils.assert_exact_string(resp[1], error_msg)
         self.logger.info("Update s3 account password failed with error %s", resp[1])
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-11230")
     @CTFailOn(error_handler)
@@ -664,6 +683,7 @@ class TestCliS3ACC:
         self.logger.info(
             "Successfully verified that admin user can create S3 account")
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-11231")
     @CTFailOn(error_handler)
@@ -698,6 +718,7 @@ class TestCliS3ACC:
         assert_utils.assert_exact_string(resp[1], "IAM User Deleted")
         self.logger.info("Deleted IAM user %s", resp[1])
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-11748")
     @CTFailOn(error_handler)
@@ -729,6 +750,7 @@ class TestCliS3ACC:
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info("Deleted buckets %s", resp[1])
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-11233")
     @CTFailOn(error_handler)
@@ -753,6 +775,7 @@ class TestCliS3ACC:
         result = all(key not in login[1] for key in key_var)
         assert_utils.assert_equals(True, result, login[1])
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-11741")
     @CTFailOn(error_handler)
@@ -779,6 +802,7 @@ class TestCliS3ACC:
             assert_utils.assert_exact_string(resp[1], cmd)
         self.logger.info("Successfully verified help response for s3 account")
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-11747")
     @CTFailOn(error_handler)
@@ -826,6 +850,7 @@ class TestCliS3ACC:
         assert_utils.assert_exact_string(resp[1], "IAM User Deleted")
         self.logger.info("Deleted IAM user %s", resp[1])
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-11746")
     @CTFailOn(error_handler)
@@ -854,6 +879,7 @@ class TestCliS3ACC:
         self.logger.info(
             "Verified csm user option is not available in s3 account help")
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-12844")
     @CTFailOn(error_handler)
@@ -888,6 +914,7 @@ class TestCliS3ACC:
         assert_utils.assert_exact_string(resp[1], "IAM User Deleted")
         self.logger.info("Deleted IAM user %s", resp[1])
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-13136")
     @CTFailOn(error_handler)
@@ -932,6 +959,7 @@ class TestCliS3ACC:
         self.logger.info(
             "Creating s3 account failed with error %s", resp[1])
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-13139")
     @CTFailOn(error_handler)
@@ -973,6 +1001,7 @@ class TestCliS3ACC:
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info("Deleted s3 account %s", self.s3acc_name)
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-14033")
     @CTFailOn(error_handler)
@@ -999,6 +1028,7 @@ class TestCliS3ACC:
         self.logger.info(
             "List alert with s3 account failed with error %s", resp[1])
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-14033")
     @CTFailOn(error_handler)
@@ -1029,6 +1059,7 @@ class TestCliS3ACC:
         self.logger.info(
             "Creating s3 account failed with error %s", resp[1])
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10879")
     @CTFailOn(error_handler)
