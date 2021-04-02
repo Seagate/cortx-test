@@ -27,6 +27,7 @@ def match_json_policy(policy1, policy2):
     """
     return json.loads(policy1) == json.loads(policy2)
 
+
 def update_json_policy(policy):
     """
     Function to update json data
