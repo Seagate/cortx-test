@@ -107,7 +107,7 @@ class TestJcloudAndJclient:
         """
         self.log.info("STARTED: Setup operations.")
         if system_utils.path_exists(self.file_path):
-            system_utils.system_utils.remove_file(self.file_path)
+            system_utils.remove_file(self.file_path)
         self.log.info("Test file path: %s", self.file_path)
         self.log.info("ENDED: Setup operations.")
 
