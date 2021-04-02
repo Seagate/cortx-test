@@ -923,3 +923,36 @@ def umount_dir(mnt_dir: str = None) -> tuple:
         remove_dir(dpath=mnt_dir)
 
     return True, "Directory is unmounted"
+
+
+def configure_jclient_cloud(
+        source: str,
+        destination: str,
+        nfs_path: str) -> bool:
+    """
+        Function to configure jclient and cloud jar files
+        :param nfs_path:
+        :param source: path to the source dir where .jar are present.
+        :param destination: destination path where .jar need to be copied
+        """
+    if not os.path.exists(source):
+        os.mkdir(source)
+
+    dir_list = os.listdir(source)
+    if "jcloudclient.jar" not in dir_list or "jclient.jar" not in dir_list:
+        temp_dir = "/mnt/jjarfiles"
+        os.mkdir(temp_dir)
+        mount_cmd = f"mount.nfs -v {nfs_path} {temp_dir}"
+        umount_cmd = f"umount -v {temp_dir}"
+        run_local_cmd(mount_cmd)
+        run_local_cmd(f"yes | cp -rf {temp_dir}*.jar {source}")
+        run_local_cmd(umount_cmd)
+        os.remove(temp_dir)
+
+    run_local_cmd(f"yes | cp -rf {source}*.jar {destination}")
+    res_ls = run_local_cmd(f"ls {destination}")[1]
+    # Run commands to set cert files in client Location.
+    run_local_cmd(commands.CMD_KEYTOOL1)
+    run_local_cmd(commands.CMD_KEYTOOL2)
+
+    return bool(".jar" in res_ls)

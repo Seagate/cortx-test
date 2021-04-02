@@ -25,7 +25,7 @@ locust_details:
     user: "locust"
     email: "locust@seagate.com"
 aws_locust_cred_section: "locust"
-nfs_path: "sm13-r2-ipmi.pun.seagate.com:/EES_LOGS/jclientCloud/"
+nfs_path: "cftic2.pun.seagate.com:/cftshare/jclientCloud/"
 jClientCloud_path:
     dest: "scripts/tools/"
     source: "/root/jclientCloud/"
