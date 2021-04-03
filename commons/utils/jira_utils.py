@@ -43,19 +43,25 @@ class JiraTask:
         if response.status_code == HTTPStatus.UNAUTHORIZED:
             print('JIRA Unauthorized access')
             LOGGER.error('JIRA Unauthorized access.')
+            return test_list, te_tag
         elif response.status_code == HTTPStatus.SERVICE_UNAVAILABLE:
             print('JIRA Service Unavailable')
             LOGGER.error('JIRA Service Unavailable.')
+            return test_list, te_tag
         elif response.status_code != HTTPStatus.OK:
             # Retry to fetch te in case of 400 bad gateway.
             # This error comes in case of length of list of test cases in a te are gt than 500.
             print("Trying to request Jira again")
             jira_url = "https://jts.seagate.com/"
             options = {'server': jira_url}
-            auth_jira = JIRA(options, basic_auth=self.auth)
-            te = auth_jira.issue(test_exe_id)
-            te_tag = te.fields.customfield_21006[0]
-            te_tag = te_tag.lower()
+            try:
+                auth_jira = JIRA(options, basic_auth=self.auth)
+                te = auth_jira.issue(test_exe_id)
+                te_tag = te.fields.customfield_21006[0]
+                te_tag = te_tag.lower()
+            except (JIRAError, requests.exceptions.RequestException) as fault:
+                print('Error occurred in getting te tag')
+                LOGGER.error('Error occurred in getting te_tag from %s', test_exe_id)
         elif response.status_code == HTTPStatus.OK:
             data = response.json()
             if len(data[0]['testEnvironments']) > 0:
