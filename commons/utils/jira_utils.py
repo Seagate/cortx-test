@@ -184,7 +184,6 @@ class JiraTask:
                                    {"inwardIssue": {"key": "TEST-1034"}}]
                     },
             }
-        
         """
         if not auth_jira or not isinstance(auth_jira, JIRA):
             jira_url = "https://jts.seagate.com/"
