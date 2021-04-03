@@ -57,8 +57,11 @@ class JiraTask:
             try:
                 auth_jira = JIRA(options, basic_auth=self.auth)
                 te = auth_jira.issue(test_exe_id)
-                te_tag = te.fields.customfield_21006[0]
-                te_tag = te_tag.lower()
+                if te:
+                    te_tags = te.fields.customfield_21006
+                    if te_tags:
+                        te_tag = te_tags[0]
+                        te_tag = te_tag.lower()
             except (JIRAError, requests.exceptions.RequestException) as fault:
                 print('Error occurred in getting te tag')
                 LOGGER.error('Error occurred in getting te_tag from %s', test_exe_id)
