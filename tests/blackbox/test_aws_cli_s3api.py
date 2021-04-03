@@ -19,11 +19,10 @@
 #
 """Test suite for awscli s3api operations"""
 
-import json
-import hashlib
-import logging
-import time
 import os
+import time
+import json
+import logging
 import pytest
 
 from commons import commands
@@ -496,10 +495,8 @@ class TestAwsCliS3Api:
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         resp = system_utils.create_file(fpath=self.file_path, count=1)
-        before_md5 = hashlib.md5(
-            open(
-                self.file_path,
-                "rb").read()).hexdigest()
+        before_checksum = system_utils.calculate_checksum(self.file_path)
+        self.log.info("File path: %s, before_checksum: %s", self.file_path, before_checksum)
         self.log.info("Uploading objects to bucket using awscli")
         resp = system_utils.run_local_cmd(
             cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
@@ -518,10 +515,11 @@ class TestAwsCliS3Api:
                 self.object_name,
                 self.downloaded_file_path))
         assert_utils.assert_true(resp[0], resp[1])
-        after_md5 = hashlib.md5(open(self.downloaded_file_path, "rb").read()).hexdigest()
+        download_checksum = system_utils.calculate_checksum(self.downloaded_file_path)
+        self.log.info("File path: %s, before_checksum: %s", self.downloaded_file_path, before_checksum)
         assert_utils.assert_equals(
-            before_md5,
-            after_md5,
-            "Downloaded file is not same as uploaded")
+            before_checksum,
+            download_checksum,
+            f"Downloaded file is not same as uploaded: {before_checksum}, {download_checksum}")
         system_utils.remove_file(self.downloaded_file_path)
         self.log.info("Successfully downloaded object from bucket using awscli")

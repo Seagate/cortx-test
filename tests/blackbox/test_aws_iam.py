@@ -105,6 +105,7 @@ class TestBlackBox:
         acc_name = "{}{}".format(
             IAM_CFG["acc_user_mng"]["account_name"], str(int(time.time())))
         acc_email = "{}{}".format(acc_name, IAM_CFG["acc_user_mng"]["email_id"])
+        self.log.info("Account name: %s, Account email: %s", acc_name, acc_email)
         return IAM_OBJ.create_account_s3iamcli(
             acc_name,
             acc_email,
