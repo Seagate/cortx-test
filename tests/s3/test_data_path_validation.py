@@ -462,7 +462,7 @@ class TestDataPathValidation:
         res = self.health_obj.is_motr_online()
         assert_true(res, f"Failed to check is_motr_online: resp: {res}")
         cmd_msg = DATA_PATH_CFG["data_path"]["cmd_msg"]
-        for cmd in const.CRASH_COMMANDS:
+        for cmd in const.CRASH_COMMANDS[0]:
             for nid in range(len(self.nodes)):
                 res_cmd = run_remote_cmd(cmd,
                                          CM_CFG["nodes"][nid]["host"],
@@ -517,7 +517,9 @@ class TestDataPathValidation:
         res = self.health_obj.is_motr_online()
         assert_true(res, f"Failed to check is_motr_online: resp: {res}")
         cmd_msg = DATA_PATH_CFG["data_path"]["cmd_msg"]
-        for cmd in const.CRASH_COMMANDS:
+        self.log.info("Crash commands: %s", const.CRASH_COMMANDS[0])
+        for cmd in const.CRASH_COMMANDS[0]:
+            self.log.info(cmd)
             for nid in range(len(self.nodes)):
                 res_cmd = run_remote_cmd(cmd,
                                          CM_CFG["nodes"][nid]["host"],
@@ -575,7 +577,7 @@ class TestDataPathValidation:
         res = self.health_obj.is_motr_online()
         assert_true(res, f"Failed to check is_motr_online: resp: {res}")
         cmd_msg = DATA_PATH_CFG["data_path"]["cmd_msg"]
-        for cmd in const.CRASH_COMMANDS:
+        for cmd in const.CRASH_COMMANDS[0]:
             for nid in range(len(self.nodes)):
                 res_cmd = run_remote_cmd(cmd,
                                          CM_CFG["nodes"][nid]["host"],
@@ -631,7 +633,7 @@ class TestDataPathValidation:
         res = self.health_obj.is_motr_online()
         assert_true(res, f"Failed to check is_motr_online: resp: {res}")
         cmd_msg = DATA_PATH_CFG["data_path"]["cmd_msg"]
-        for cmd in const.CRASH_COMMANDS:
+        for cmd in const.CRASH_COMMANDS[0]:
             for nid in range(len(self.nodes)):
                 res_cmd = run_remote_cmd(cmd,
                                          CM_CFG["nodes"][nid]["host"],
