@@ -29,7 +29,7 @@ from commons.utils.config_utils import read_yaml
 from commons.utils.system_utils import execute_cmd
 from commons.utils.assert_utils import assert_true, assert_in
 
-from config import CMN_CFG
+from config import S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3 import ACCESS_KEY, SECRET_KEY, S3H_OBJ
 
@@ -38,7 +38,7 @@ S3FS_CNF = read_yaml("config/blackbox/test_s3fs.yaml")[1]
 S3FS_COMMON_CFG = S3FS_CNF["common_cfg"]
 
 
-class S3fs:
+class TestS3FS:
     """Blackbox s3fs testsuite."""
 
     @classmethod
@@ -58,8 +58,9 @@ class S3fs:
         It will perform prerequisite test steps if any
         """
         self.log.info("STARTED: Setup operations")
+        self.url = S3FS_COMMON_CFG["url"].format(S3_CFG["s3_url"])
         access, secret = ACCESS_KEY, SECRET_KEY
-        res = execute_cmd(f"cat {CMN_CFG['s3fs_path']}")
+        res = execute_cmd(f"cat {S3_CFG['s3fs_path']}")
         if f"{access}:{secret}" != res[1]:
             self.log.info("Setting access and secret key for s3fs.")
             S3H_OBJ.configure_s3fs(access, secret)
@@ -129,7 +130,7 @@ class S3fs:
         operation = " ".join([bucket_name, dir_name])
         cmd_arguments = [
             S3FS_COMMON_CFG["passwd_file"],
-            S3FS_COMMON_CFG["url"],
+            self.url,
             S3FS_COMMON_CFG["path_style"],
             S3FS_COMMON_CFG["dbglevel"]]
         command = self.create_cmd(

@@ -6,7 +6,6 @@ data_path:
   file_path: "/home/bkt-dp.txt"
   cmd_msg: "core."
   s3bench_path: "/root/go/bin"
-  endpoint: "https://s3.seagate.com"
   s3bench_cmd: "go run s3bench -accessKey={} -accessSecret={} -bucket={} -endpoint={} -numClients={} -numSamples={} -objectNamePrefix={}"
   obj_size: 8388608
   clients: 100

@@ -22,10 +22,11 @@ import os
 import logging
 import pytest
 from libs.s3 import S3H_OBJ
-from libs.s3 import CM_CFG
+from libs.s3 import CM_CFG, S3_CFG
 from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
 from libs.s3.iam_test_lib import IamTestLib
 from libs.s3.s3_acl_test_lib import S3AclTestLib
+from libs.s3.s3_test_lib import S3TestLib
 from commons.constants import const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
@@ -43,10 +44,11 @@ from scripts.s3_bench import s3bench as s3bench_obj
 
 IAM_TEST_OBJ = IamTestLib()
 ACL_OBJ = S3AclTestLib()
+S3_OBJ = S3TestLib()
 DATA_PATH_CFG = read_yaml("config/s3/test_data_path_validate.yaml")[1]
 
 
-class TestDataPathValidation():
+class TestDataPathValidation:
     """Data Path Test suite."""
 
     @classmethod
@@ -72,6 +74,7 @@ class TestDataPathValidation():
         cls.host = CM_CFG["nodes"][0]["host"]
         cls.uname = CM_CFG["nodes"][0]["username"]
         cls.passwd = CM_CFG["nodes"][0]["password"]
+        cls.s3_url = S3_CFG["s3_url"]
         cls.health_obj = Health(hostname=cls.host, username=cls.uname,
                                 password=cls.passwd)
         cls.log.info("ENDED: Setup operations")
@@ -133,7 +136,7 @@ class TestDataPathValidation():
         bucket_name = "{}{}".format(test_conf["bucket_name"],
                                     str(int(time.time())))
         self.log.info("Step 2: Creating a bucket with name : %s", bucket_name)
-        res = S3H_OBJ.create_bucket(bucket_name)
+        res = S3_OBJ.create_bucket(bucket_name)
         assert_in(bucket_name, res[1], res[1])
         return bucket_name
 
@@ -154,7 +157,7 @@ class TestDataPathValidation():
             DATA_PATH_CFG["data_path"]["file_path"], bs, test_conf["obj_size"])
         self.log.info(cmd)
         run_local_cmd(cmd)
-        res = S3H_OBJ.put_object(bucket_name,
+        res = S3_OBJ.put_object(bucket_name,
                                  test_conf["object_name"],
                                  DATA_PATH_CFG["data_path"]["file_path"])
         assert_true(res[0], res[1])
@@ -177,7 +180,7 @@ class TestDataPathValidation():
             access_key,
             secret_key,
             bucket,
-            DATA_PATH_CFG["data_path"]["endpoint"],
+            self.s3_url,
             DATA_PATH_CFG["data_path"]["clients"],
             DATA_PATH_CFG["data_path"]["samples"],
             test_conf["obj_prefix"],
@@ -395,9 +398,9 @@ class TestDataPathValidation():
         bucket_name = "{}{}".format(
             test_cfg["bucket_name"], time.time())
         self.log.info("Step 1: Create bucket with name %s.", bucket_name)
-        resp = S3H_OBJ.create_bucket(bucket_name)
+        resp = S3_OBJ.create_bucket(bucket_name)
         assert_true(resp[0], resp[1])
-        resp = S3H_OBJ.bucket_list()
+        resp = S3_OBJ.bucket_list()
         assert_in(bucket_name, resp[1], resp[1])
         self.log.info("Step 1: Successfully created bucket.")
         self.log.info(
@@ -410,7 +413,7 @@ class TestDataPathValidation():
                 access_key=access_key,
                 secret_key=secret_key,
                 bucket=bucket_name,
-                end_point=DATA_PATH_CFG["data_path"]["endpoint"],
+                end_point=self.s3_url,
                 num_clients=test_cfg["num_clients"],
                 num_sample=request_load,
                 obj_name_pref=test_cfg["obj_name"],
@@ -465,7 +468,7 @@ class TestDataPathValidation():
                 access_key=access_key,
                 secret_key=secret_key,
                 bucket=bucket_name,
-                end_point=DATA_PATH_CFG["data_path"]["endpoint"],
+                end_point=self.s3_url,
                 num_clients=client,
                 num_sample=request_load,
                 obj_name_pref=test_cfg["obj_name"],
@@ -523,7 +526,7 @@ class TestDataPathValidation():
                 access_key=access_key,
                 secret_key=secret_key,
                 bucket=bkt,
-                end_point=DATA_PATH_CFG["data_path"]["endpoint"],
+                end_point=self.s3_url,
                 num_clients=client,
                 num_sample=request_load,
                 obj_name_pref=test_cfg["obj_name"],
@@ -580,7 +583,7 @@ class TestDataPathValidation():
                 access_key=access_key,
                 secret_key=secret_key,
                 bucket=bkt,
-                end_point=DATA_PATH_CFG["data_path"]["endpoint"],
+                end_point=self.s3_url,
                 num_clients=client,
                 num_sample=request_load,
                 obj_name_pref=test_cfg["obj_name"],
