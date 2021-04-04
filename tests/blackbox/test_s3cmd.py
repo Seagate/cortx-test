@@ -33,7 +33,7 @@ import pytest
 from commons.utils.system_utils import execute_cmd
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
-from commons.utils.config_utils import read_yaml, get_config
+from commons.utils.config_utils import read_yaml, get_config, update_config_ini
 from commons.utils.assert_utils import assert_true, assert_false, assert_in, assert_not_in
 from commons.helpers.node_helper import Node
 
@@ -65,7 +65,12 @@ class TestS3cmdClient:
             hostname=CMN_CFG["nodes"][0]["host"],
             username=CMN_CFG["nodes"][0]["username"],
             password=CMN_CFG["nodes"][0]["password"])
-
+        s3cmd_host = get_config(
+            S3_CFG["s3cfg_path"], "default", "host_base")
+        if s3cmd_host != S3_CFG["s3_url"].split("/")[-1]:
+            for ky in ["host_base", "host_bucket"]:
+                update_config_ini(
+                    S3_CFG["s3cfg_path"], "default", ky, S3_CFG["s3_url"].split("/")[-1])
         cls.log.info("STARTED: setup test suite operations.")
 
     @CTFailOn(error_handler)

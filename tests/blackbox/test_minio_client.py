@@ -27,7 +27,7 @@ import pytest
 
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
-from commons.utils.config_utils import read_yaml, read_content_json
+from commons.utils.config_utils import read_yaml, read_content_json, create_content_json
 from commons.utils.system_utils import execute_cmd, create_file, remove_file
 from commons.utils.assert_utils import assert_true, assert_false
 from commons.utils.assert_utils import assert_in, assert_not_in, assert_equal
@@ -52,6 +52,13 @@ class TestMinioClient:
         cls.log.info("STARTED: setup test suite operations.")
         cls.minio_cnf = blackbox_cnf["minio_cfg"]
         cls.file_path = cls.minio_cnf["file_path"]
+        cls.path = S3_CFG["minio_path"]
+        mo_cfg_data = read_content_json(cls.path, mode='rb')
+        cls.log.debug("Miniio tool config content %s", mo_cfg_data)
+        if mo_cfg_data["hosts"]["s3"]["url"] != S3_CFG["s3_url"]:
+            mo_cfg_data["hosts"]["s3"]["url"] = S3_CFG["s3_url"]
+            create_content_json(
+                path=cls.path, data=mo_cfg_data, ensure_ascii=False)
         cls.file_size = cls.minio_cnf["file_size"]
         cls.timestamp = str(time.time())
 
@@ -65,8 +72,8 @@ class TestMinioClient:
         """
         self.log.info("STARTED: Setup operations")
         access, secret = ACCESS_KEY, SECRET_KEY
-        path = S3_CFG["minio_path"]
-        if access != read_content_json(path, mode='rb')["hosts"]["s3"]["accessKey"]:
+        if access != read_content_json(
+                fpath=self.path, mode='rb')["hosts"]["s3"]["accessKey"]:
             S3H_OBJ.configure_minio(access, secret)
         self.log.info("ENDED: Setup operations")
 
