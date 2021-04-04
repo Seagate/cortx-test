@@ -61,9 +61,10 @@ def teardown_function():
     LOGGER.info("Ended : Teardown operations for test function")
 
 
-@pytest.mark.csm
-@pytest.mark.csm_alert
+@pytest.mark.cluster_user_ops
+@pytest.mark.csm_cli
 @pytest.mark.tags("TEST-14032")
+@pytest.mark.skip(reason="Not applicable for VM")
 def test_131():
     """
     Test alerts acknowledge <alert id> -ack should acknowledge the given alert
@@ -105,9 +106,10 @@ def test_131():
     LOGGER.info("%s %s", END_LOG_FORMAT, cortxlogging.get_frame())
 
 
-@pytest.mark.csm
-@pytest.mark.csm_alert
+@pytest.mark.cluster_user_ops
+@pytest.mark.csm_cli
 @pytest.mark.tags("TEST-14031")
+@pytest.mark.skip(reason="Not applicable for VM")
 def test_6306():
     """
     Verify that all comments on alert is returned in table format on executing show alert command
@@ -144,9 +146,10 @@ def test_6306():
     LOGGER.info("%s %s", END_LOG_FORMAT, cortxlogging.get_frame())
 
 
-@pytest.mark.csm
-@pytest.mark.csm_alert
+@pytest.mark.cluster_user_ops
+@pytest.mark.csm_cli
 @pytest.mark.tags("TEST-14662")
+@pytest.mark.skip(reason="Not applicable for VM")
 def test_3289(self):
     """
     csmcli alerts acknowledge <alert id> <comment> with invalid <alert id>
@@ -163,9 +166,10 @@ def test_3289(self):
     LOGGER.info("%s %s", END_LOG_FORMAT, cortxlogging.get_frame())
 
 
-@pytest.mark.csm
-@pytest.mark.csm_alert
+@pytest.mark.cluster_user_ops
+@pytest.mark.csm_cli
 @pytest.mark.tags("TEST-14663")
+@pytest.mark.skip(reason="Not applicable for VM")
 def test_3290():
     """
     Test "csmcli alerts acknowledge" command
@@ -209,9 +213,10 @@ def test_3290():
     LOGGER.info("%s %s", END_LOG_FORMAT, cortxlogging.get_frame())
 
 
-@pytest.mark.csm
-@pytest.mark.csm_alert
+@pytest.mark.cluster_user_ops
+@pytest.mark.csm_cli
 @pytest.mark.tags("TEST-14664")
+@pytest.mark.skip(reason="Not applicable for VM")
 def test_6309():
     """
     Test that help menu opens for both 'show'
@@ -231,9 +236,10 @@ def test_6309():
     LOGGER.info("%s %s", END_LOG_FORMAT, cortxlogging.get_frame())
 
 
-@pytest.mark.csm
-@pytest.mark.csm_alert
+@pytest.mark.cluster_user_ops
+@pytest.mark.csm_cli
 @pytest.mark.tags("TEST-14754")
+@pytest.mark.skip(reason="Not applicable for VM")
 def test_245():
     """
     Test 'alerts acknowledge <wrong_alert id> -ack' should give error message
@@ -250,9 +256,10 @@ def test_245():
     LOGGER.info("%s %s", END_LOG_FORMAT, cortxlogging.get_frame())
 
 
-@pytest.mark.csm
-@pytest.mark.csm_alert
+@pytest.mark.cluster_user_ops
+@pytest.mark.csm_cli
 @pytest.mark.tags("TEST-14755")
+@pytest.mark.skip(reason="Not applicable for VM")
 def test_3288():
     """
     Test "csmcli alerts acknowledge" command
@@ -296,9 +303,10 @@ def test_3288():
     LOGGER.info("%s %s", END_LOG_FORMAT, cortxlogging.get_frame())
 
 
-@pytest.mark.csm
-@pytest.mark.csm_alert
+@pytest.mark.cluster_user_ops
+@pytest.mark.csm_cli
 @pytest.mark.tags("TEST-15199")
+@pytest.mark.skip(reason="Not applicable for VM")
 def test_6308():
     """
     Test that error is returned when wrong alert_uuid is entered in show alert command
@@ -315,9 +323,10 @@ def test_6308():
     LOGGER.info("%s %s", END_LOG_FORMAT, cortxlogging.get_frame())
 
 
-@pytest.mark.csm
-@pytest.mark.csm_alert
+@pytest.mark.cluster_user_ops
+@pytest.mark.csm_cli
 @pytest.mark.tags("TEST-15727")
+@pytest.mark.skip(reason="Not applicable for VM")
 def test_247(self):
     """
     Test 'alerts acknowledge' with missing parameter throws error
@@ -335,9 +344,10 @@ def test_247(self):
     LOGGER.info("%s %s", END_LOG_FORMAT, cortxlogging.get_frame())
 
 
-@pytest.mark.csm
-@pytest.mark.csm_alert
+@pytest.mark.cluster_user_ops
+@pytest.mark.csm_cli
 @pytest.mark.tags("TEST-16933")
+@pytest.mark.skip(reason="Not applicable for VM")
 def test_252():
     """
     Test 'alerts comments -h' should show the help
@@ -361,9 +371,10 @@ def test_252():
     LOGGER.info("%s %s", END_LOG_FORMAT, cortxlogging.get_frame())
 
 
-@pytest.mark.csm
-@pytest.mark.csm_alert
+@pytest.mark.cluster_user_ops
+@pytest.mark.csm_cli
 @pytest.mark.tags("TEST-17177")
+@pytest.mark.skip(reason="Not applicable for VM")
 def test_1440():
     """
     Test if we give negative value or wrong value for any of the options it should throw error
@@ -380,8 +391,10 @@ def test_1440():
     LOGGER.info("%s %s", END_LOG_FORMAT, cortxlogging.get_frame())
 
 
-@pytest.mark.csm
-@pytest.mark.csm_alert
+@pytest.mark.cluster_user_ops
+@pytest.mark.csm_cli
+@pytest.mark.tags("TEST-19238")
+@pytest.mark.skip(reason="Not applicable for VM")
 def test_1438():
     """
     Test if `alerts show -f <format> -d<>` displays alert in desired given format

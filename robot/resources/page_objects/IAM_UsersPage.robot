@@ -139,7 +139,7 @@ Verify Create IAMuser Button Must Remain disabled
 
 Create IAMuser
     [Documentation]  Functionality to create IAM user
-    [Arguments]  ${username}  ${password}  ${duplicate}=${False}
+    [Arguments]  ${username}  ${password}  ${duplicate}=${False}  ${verify_s3_url}=${False}
     Log To Console And Report  Inserting username ${username}
     Input Text  ${CREATE_IAM_USER_USERNAME_ID}  ${username}
     Log To Console And Report  Insrting password
@@ -148,6 +148,7 @@ Create IAMuser
     Log To Console And Report  Insrting confirm password
     Input Text  ${CREATE_IAM_USER_CONFIRM_PASSWORD_ID}  ${password}
     Click Element  ${CREATE_IAM_USER_BUTTON_ID}
+    Run Keyword If  '${verify_s3_url}' == 'True'  Verify the S3 url present on IAM user creation popup
     Run Keyword If  '${duplicate}' == 'False'  Click IAMuser Download CSV Button
 
 Delete IAMuser
@@ -270,3 +271,31 @@ Verify Access Key Table Headers
     ${headers}=  Get text of elements from elements list  ${IAM_USER_ACCESS_KEY_TABLE_HEADERS_XPATH}
     Log To Console And Report  Headers are ${headers}
     Lists Should Be Equal  ${headers}  ${IAMUSER_ACCESS_KEY_HEADERS}
+
+
+Verify the S3 url present on IAM user creation popup
+    [Documentation]  Verify the S3 url present on IAM user creation popup
+    Log To Console And Report  verifying s3 uer present
+    wait until element is visible  ${IAM_USER_DATA_TABLE_XPATH}  timeout=60
+    ${IAM_USER_TABLE_DATA}=  Read Table Data  ${IAM_USER_DATA_TABLE_XPATH}
+    Should Contain  ${IAM_USER_TABLE_DATA}  S3 URL
+
+Verify S3 urls are displayed on the IAM user tab
+    [Documentation]  Verify S3 urls are displayed on the IAM user tab
+    Page Should Contain Element  ${IAM_USER_TAB_S3_URL_TEXT_ID}
+    Page Should Contain Element  ${IAM_USER_TAB_COPY_S3_URL_ONE_ID}
+    Page Should Contain Element  ${IAM_USER_TAB_COPY_S3_URL_TWO_ID}
+    ${S3_url_element_text}=  get text  ${IAM_USER_TAB_S3_URL_TEXT_ID}
+    Should Contain  ${S3_url_element_text}  S3 URL
+
+Verify s3 urls on access keys popup
+    [Documentation]  Verify s3 urls on access keys popup
+    wait until element is visible  ${ADD_IAM_USER_ACCESS_KEY_BUTTON_ID}  timeout=60
+    wait for page or element to load
+    click button    ${ADD_IAM_USER_ACCESS_KEY_BUTTON_ID}
+    wait until element is visible  ${DOWNLOAD_IAM_USER_ACCESS_KEY_BUTTON_ID}  timeout=60
+    ${IAM_ACCESS_KEY_TABLE_DATA}=  Read Table Data  ${IAM_USER_ACCESS_KEY_TABLE_XPATH}
+    Should Contain  ${IAM_ACCESS_KEY_TABLE_DATA}  S3 URL
+    click element    ${DOWNLOAD_IAM_USER_ACCESS_KEY_BUTTON_ID}
+
+

@@ -107,6 +107,7 @@ def create_content_json(path: str, data: object, ensure_ascii=True) -> str:
 
     return path
 
+
 def read_content_json(fpath: str, mode='r') -> dict:
     """
     Function to read json file.

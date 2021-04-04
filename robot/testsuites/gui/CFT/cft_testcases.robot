@@ -2,7 +2,7 @@
 Documentation    This suite verifies the testcases for csm login
 Library     SeleniumLibrary
 Resource    ${EXECDIR}/resources/page_objects/loginPage.robot
-Resource    ${EXECDIR}/resources/page_objects/dashboard.robot
+Resource    ${EXECDIR}/resources/page_objects/dashboardPage.robot
 Resource    ${EXECDIR}/resources/page_objects/alertPage.robot
 Resource    ${EXECDIR}/resources/page_objects/s3accountPage.robot
 Resource    ${EXECDIR}/resources/page_objects/userSettingsLocalPage.robot

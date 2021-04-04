@@ -1,5 +1,6 @@
-import perfdbAPIs as perf_api
 import pandas as pd
+
+import perfdbAPIs as perf_api
 
 OPERATIONS = ["write", "read"]
 STATS = ["Throughput", "Latency", "IOPS"]
@@ -7,6 +8,7 @@ COSBENCH_CONFIG = [[1, 1000, 100], [10, 100, 100], [50, 100, 100]]
 CB_OBJECTS_SIZES = ["4 KB", "100 KB", "1 MB", "5 MB", "36 MB", "64 MB", "128 MB", "256 MB"]
 HSBENCH_CONFIG = [[1, 1000, 100], [10, 1000, 100], [50, 5000, 100]]
 HB_OBJECTS_SIZES = ["4Kb", "100Kb", "1Mb", "5Mb", "36Mb", "64Mb", "128Mb", "256Mb"]
+
 
 def keys_exists(element, *keys):
     """Check if *keys (nested) exists in `element` (dict)."""
@@ -70,13 +72,13 @@ def get_single_bucket_perf_data(build):
                 else:
                     temp_data.append("-")
             data.extend([temp_data])
-    df = pd.DataFrame(data,columns=col_names)
+    df = pd.DataFrame(data, columns=col_names)
     return df
 
 
 def get_detailed_s3_bucket_perf(build):
-    col_names= ["Statistics", "4 KB", "100 KB", "1 MB", "5 MB", "36 MB", "64 MB", "128 MB",
-             "256 MB"]
+    col_names = ["Statistics", "4 KB", "100 KB", "1 MB", "5 MB", "36 MB", "64 MB", "128 MB",
+                 "256 MB"]
     operations = ["Write", "Read"]
     stats = ["Throughput", "Latency", "IOPS", "TTFB"]
     objects_sizes = ["4Kb", "100Kb", "1Mb", "5Mb", "36Mb", "64Mb", "128Mb", "256Mb"]
@@ -105,7 +107,8 @@ def get_detailed_s3_bucket_perf(build):
                         temp_data.append("-")
             data.extend([temp_data])
 
-    return  pd.DataFrame(data, columns=col_names)
+    return pd.DataFrame(data, columns=col_names)
+
 
 def get_metadata_latencies(build):
     """Get metadata latency table data."""
@@ -121,7 +124,7 @@ def get_metadata_latencies(build):
             data.append([head, db_data[0]['Latency']['Avg'] * 1000])
         else:
             data.append([head, "-"])
-    return pd.DataFrame(data,columns=col_names)
+    return pd.DataFrame(data, columns=col_names)
 
 
 def get_cosbench_data(build):

@@ -57,6 +57,7 @@ class TestCliSecurity:
             password=CMN_CFG["nodes"][0]["password"])
         cls.logger.info("ENDED : Setup operations for test suit")
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-16930")
     @CTFailOn(error_handler)

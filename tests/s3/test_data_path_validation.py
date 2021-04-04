@@ -197,7 +197,7 @@ class TestDataPathValidation:
             self.log.debug(response)
             assert_equal(int(response.split(":")[1].strip()), 0, response)
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8735')
     @CTFailOn(error_handler)
     def test_1696(self):
@@ -210,7 +210,7 @@ class TestDataPathValidation:
         self.log.info(
             "ENDED: Validate Data-Path on fresh system with 1 byte object size")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8736')
     @CTFailOn(error_handler)
     def test_1697(self):
@@ -223,7 +223,7 @@ class TestDataPathValidation:
         self.log.info(
             "ENDED: Validate Data-Path on fresh system with 1 KB object size")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8737')
     @CTFailOn(error_handler)
     def test_1698(self):
@@ -236,7 +236,7 @@ class TestDataPathValidation:
         self.log.info(
             "ENDED: Validate Data-Path on fresh system with 1 MB object size")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8738')
     @CTFailOn(error_handler)
     def test_1699(self):
@@ -249,7 +249,7 @@ class TestDataPathValidation:
         self.log.info(
             "ENDED: Validate Data-Path on fresh system with 10 MB object size")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8739')
     @CTFailOn(error_handler)
     def test_1700(self):
@@ -262,7 +262,7 @@ class TestDataPathValidation:
         self.log.info(
             "ENDED: Validate Data-Path on fresh system with 100 MB object size")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8740')
     @CTFailOn(error_handler)
     def test_1701(self):
@@ -275,7 +275,7 @@ class TestDataPathValidation:
         self.log.info(
             "ENDED: Validate Data-Path on fresh system with 1 GB object size")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8741')
     @CTFailOn(error_handler)
     def test_1702(self):
@@ -288,7 +288,7 @@ class TestDataPathValidation:
         self.log.info(
             "ENDED: Validate Data-Path on fresh system with 10 GB object size")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8742')
     @CTFailOn(error_handler)
     def test_1703(self):
@@ -302,7 +302,7 @@ class TestDataPathValidation:
         self.log.info(
             "ENDED: Validate Data-Path on loaded system with 1 byte object size")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8743')
     @CTFailOn(error_handler)
     def test_1704(self):
@@ -316,7 +316,7 @@ class TestDataPathValidation:
         self.log.info(
             "ENDED: Validate Data-Path on loaded system with 1 KB object size")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8744')
     @CTFailOn(error_handler)
     def test_1705(self):
@@ -330,7 +330,7 @@ class TestDataPathValidation:
         self.log.info(
             "ENDED: Validate Data-Path on loaded system with 1 MB object size")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8745')
     @CTFailOn(error_handler)
     def test_1706(self):
@@ -344,7 +344,7 @@ class TestDataPathValidation:
         self.log.info(
             "ENDED: Validate Data-Path on loaded system with 10 MB object size")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8746')
     @CTFailOn(error_handler)
     def test_1707(self):
@@ -358,7 +358,7 @@ class TestDataPathValidation:
         self.log.info(
             "ENDED: Validate Data-Path on loaded system with 100 MB object size")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8729')
     @CTFailOn(error_handler)
     def test_1708(self):
@@ -372,7 +372,7 @@ class TestDataPathValidation:
         self.log.info(
             "ENDED: Validate Data-Path on loaded system with 1 GB object size")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8730')
     @CTFailOn(error_handler)
     def test_1709(self):
@@ -386,7 +386,7 @@ class TestDataPathValidation:
         self.log.info(
             "ENDED: Validate Data-Path on loaded system with 10 GB object size")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8731')
     @CTFailOn(error_handler)
     def test_1745(self):
@@ -441,7 +441,7 @@ class TestDataPathValidation:
             "ENDED: Test gradual increase of concurrent client sessions"
             " with single client on single bucket")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8732')
     @CTFailOn(error_handler)
     def test_1746(self):
@@ -496,7 +496,7 @@ class TestDataPathValidation:
             "ENDED: Test gradual increase of concurrent client sessions"
             " with multiple clients on single buckets")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8733')
     @CTFailOn(error_handler)
     def test_1747(self):
@@ -554,7 +554,7 @@ class TestDataPathValidation:
             "ENDED: Test gradual increase of concurrent client sessions"
             " with multiple clients on multiple buckets")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8734')
     @CTFailOn(error_handler)
     def test_1748(self):

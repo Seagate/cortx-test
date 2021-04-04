@@ -58,17 +58,7 @@ class TestCliBucketPolicy:
         cls.bkt_obj = CortxCliS3BucketOperations(
             session_obj=cls.s3bkt_plc_obj.session_obj)
         cls.csm_user_obj = CortxCliCsmUser()
-        cls.node1_helper_obj = Node(
-            hostname=CMN_CFG["nodes"][0]["host"],
-            username=CMN_CFG["nodes"][0]["username"],
-            password=CMN_CFG["nodes"][0]["password"])
-        cls.node2_helper_obj = Node(
-            hostname=CMN_CFG["nodes"][1]["host"],
-            username=CMN_CFG["nodes"][1]["username"],
-            password=CMN_CFG["nodes"][1]["password"])
-        cls.node_list = [
-            CMN_CFG["nodes"][0]["hostname"],
-            CMN_CFG["nodes"][1]["hostname"]]
+        cls.node_list = [each["hostname"] for each in CMN_CFG["nodes"] if each["hostname"]]
         cls.csm_user_pwd = CSM_CFG["CliConfig"]["csm_user"]["password"]
         cls.acc_password = CSM_CFG["CliConfig"]["s3_account"]["password"]
         cls.s3acc_prefix = "cli_s3acc_policy"
@@ -151,8 +141,8 @@ class TestCliBucketPolicy:
                 system_utils.run_remote_cmd(
                     cmd=remove_cmd,
                     hostname=each_node,
-                    username=CMN_CFG["nodes"][1]["username"],
-                    password=CMN_CFG["nodes"][1]["password"])
+                    username=CMN_CFG["nodes"][0]["username"],
+                    password=CMN_CFG["nodes"][0]["password"])
         self.log.info("ENDED : Teardown operations for test function")
 
     @classmethod
@@ -196,6 +186,7 @@ class TestCliBucketPolicy:
         bkt_list = [each["name"] for each in json_data["buckets"]]
         assert_utils.assert_list_item(bkt_list, bucket_name)
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10798")
     @CTFailOn(error_handler)
@@ -242,6 +233,7 @@ class TestCliBucketPolicy:
             "Step 5: Verified policy is uploaded on a bucket %s",
             self.bucket_name)
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10799")
     @CTFailOn(error_handler)
@@ -267,6 +259,7 @@ class TestCliBucketPolicy:
             "%s is failed with error %s",
             self.bucket_name, resp[1])
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10800")
     @CTFailOn(error_handler)
@@ -322,6 +315,7 @@ class TestCliBucketPolicy:
             "Step 6: Deleted policy on a bucket %s",
             self.bucket_name)
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10802")
     @CTFailOn(error_handler)
@@ -358,6 +352,7 @@ class TestCliBucketPolicy:
             self.bucket_name,
             resp[1])
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10801")
     @CTFailOn(error_handler)
@@ -377,6 +372,7 @@ class TestCliBucketPolicy:
             "Step 1: Deleting policy with invalid bucket name %s is failed with error",
             self.bucket_name)
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10803")
     @CTFailOn(error_handler)
@@ -424,6 +420,7 @@ class TestCliBucketPolicy:
             "Step 5: Verified policy is uploaded on a bucket %s",
             self.bucket_name)
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10982")
     @CTFailOn(error_handler)
@@ -496,6 +493,7 @@ class TestCliBucketPolicy:
             "Step 7: Deleting bucket policy with csm user is failed with error %s",
             resp[1])
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10980")
     @CTFailOn(error_handler)
@@ -535,6 +533,7 @@ class TestCliBucketPolicy:
         self.log.info(
             "Step 4: Uploaded invalid policy is failed with error %s", resp[1])
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10983")
     @CTFailOn(error_handler)
@@ -604,6 +603,7 @@ class TestCliBucketPolicy:
         self.log.info(
             "Step 7: Deleting bucket policy with another account is failed")
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10981")
     @CTFailOn(error_handler)
@@ -646,6 +646,7 @@ class TestCliBucketPolicy:
             self.bucket_name,
             resp[1])
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-11226")
     @CTFailOn(error_handler)
@@ -733,6 +734,7 @@ class TestCliBucketPolicy:
             "Step 9: Verified new bucket policy is updated on a bucket %s",
             self.bucket_name)
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-11227")
     @CTFailOn(error_handler)
@@ -776,6 +778,7 @@ class TestCliBucketPolicy:
         assert json_data['Statement'][0] == self.bkt_policy[0]
         self.log.info("Step 5: Verified policy in json format")
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-12028")
     @CTFailOn(error_handler)
@@ -845,6 +848,7 @@ class TestCliBucketPolicy:
             "Step 7: Listing bucket policy with another account is failed with error %s",
             resp[1])
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-11228")
     @CTFailOn(error_handler)
@@ -887,6 +891,7 @@ class TestCliBucketPolicy:
         assert json_data['Statement'][0] == self.bkt_policy[0]
         self.log.info("Step 5: Verified s3 account can see bucket policy")
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-12033")
     @CTFailOn(error_handler)
@@ -911,6 +916,7 @@ class TestCliBucketPolicy:
             self.bucket_name,
             resp[1])
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-13137")
     @CTFailOn(error_handler)

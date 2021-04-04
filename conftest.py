@@ -22,14 +22,15 @@
 import ast
 import random
 import string
-import pytest
 import os
+import glob
 import pathlib
 import json
 import logging
 import csv
 import time
 import datetime
+import pytest
 import requests
 from datetime import date
 from _pytest.nodes import Item
@@ -214,6 +215,10 @@ def pytest_addoption(parser):
         "--readmetadata", action="store", default=False,
         help="Read test metadata"
     )
+    parser.addoption(
+        "--db_update", action="store", default=True,
+        help="Decide whether to update reporting DB."
+    )
 
 
 def read_test_list_csv() -> List:
@@ -297,11 +302,11 @@ def create_report_payload(item, call, final_result, d_u, d_pass):
     marks = get_marks_for_test_item(item)
     if final_result == 'FAIL':
         health_chk_res = "TODO"
-        are_logs_collected = True
+        are_logs_collected = False
         log_path = "TODO"
     elif final_result == 'PASS':
         health_chk_res = "NA"
-        are_logs_collected = True
+        are_logs_collected = False
         log_path = "NA"
     data_kwargs = dict(os=os_ver,
                        build=item.config.option.build,
@@ -552,6 +557,25 @@ def pytest_runtest_makereport(item, call):
             f.write(report.nodeid + extra + "\n")
 
 
+def upload_supporting_logs(test_id: str, remote_path: str, log: str):
+    """
+    Upload all supporting (s3bench) log files to nfs share
+    :param test_id: test number in file name
+    :param remote_path: path on NFS share
+    :param log: log file string e.g. s3bench
+    """
+    support_logs = glob.glob(f"{LOG_DIR}/latest/{test_id}_{log}_*")
+    for support_log in support_logs:
+        resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
+                                                   mnt_dir=params.MOUNT_DIR,
+                                                   remote_path=remote_path,
+                                                   local_path=support_log)
+        if resp[0]:
+            LOGGER.info("Supporting log files are uploaded at location : %s", resp[1])
+        else:
+            LOGGER.error("Failed to supporting log file at location %s", resp[1])
+
+
 def pytest_runtest_logreport(report: "TestReport") -> None:
     """
     Provides an intercept to create a) generate log per test case
@@ -597,7 +621,9 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
         remote_path = os.path.join(params.NFS_BASE_DIR,
                                    Globals.BUILD, Globals.TP_TKT,
                                    Globals.TE_TKT, test_id,
-                                   date.today().strftime("%b-%d-%Y"))
+                                   datetime.datetime.fromtimestamp(
+                                       time.time()).strftime('%Y-%m-%d_%H:%M:%S')
+                                   )
         resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
                                                    mnt_dir=params.MOUNT_DIR,
                                                    remote_path=remote_path,
@@ -606,7 +632,7 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
             LOGGER.info("Log file is uploaded at location : %s", resp[1])
         else:
             LOGGER.error("Failed to upload log file at location %s", resp[1])
-
+        upload_supporting_logs(test_id, remote_path, "s3bench")
         LOGGER.info("Adding log file path to %s", test_id)
         comment = "Log file path: {}".format(resp[1])
         data = task.get_test_details(test_exe_id=Globals.TE_TKT)
@@ -626,3 +652,4 @@ def generate_random_string():
     :rtype: str
     """
     return ''.join(random.choice(string.ascii_lowercase) for i in range(5))
+
