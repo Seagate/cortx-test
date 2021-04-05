@@ -20,13 +20,14 @@
 #
 """
 Locust tasks set for put object, get object and delete object from bucket
+with step users and constant object size
 """
-
 import os
+import math
 import logging
-from random import randint
-from locust import HttpUser
+from locust import LoadTestShape
 from locust import events
+from locust import HttpUser
 from locust import task, constant
 from scripts.locust import locust_utils
 from scripts.locust import LOCUST_CFG
@@ -37,13 +38,9 @@ BUCKET_COUNT = int(
     os.getenv(
         'BUCKET_COUNT',
         LOCUST_CFG['default']['BUCKET_COUNT']))
-MIN_OBJECT_SIZE = int(
+OBJECT_SIZE = int(
     os.getenv(
-        'MIN_OBJECT_SIZE',
-        LOCUST_CFG['default']['OBJECT_SIZE']))
-MAX_OBJECT_SIZE = int(
-    os.getenv(
-        'MAX_OBJECT_SIZE',
+        'OBJECT_SIZE',
         LOCUST_CFG['default']['OBJECT_SIZE']))
 BUCKET_LIST = UTILS_OBJ.bucket_list
 
@@ -61,9 +58,8 @@ class LocustUser(HttpUser):
 
     @task(1)
     def put_object(self):
-        object_size = randint(MIN_OBJECT_SIZE, MAX_OBJECT_SIZE)
         for bucket in BUCKET_LIST:
-            UTILS_OBJ.put_object(bucket, object_size)
+            UTILS_OBJ.put_object(bucket, OBJECT_SIZE)
 
     @task(1)
     def get_object(self):
@@ -78,3 +74,31 @@ class LocustUser(HttpUser):
     @events.test_stop.add_listener
     def on_test_stop(**kwargs):
         UTILS_OBJ.delete_buckets(BUCKET_LIST)
+
+
+class StepLoadShape(LoadTestShape):
+    """
+    A step load shape
+    Keyword arguments:
+        step_time -- Time between steps
+        step_load -- User increase amount at each step
+        spawn_rate -- Users to stop/start per second at every step
+        time_limit -- Time limit in seconds
+    """
+
+    step_time = int(os.getenv('STEP_TIME', LOCUST_CFG['default']['STEP_TIME']))
+    step_load = int(os.getenv('STEP_LOAD', LOCUST_CFG['default']['STEP_LOAD']))
+    spawn_rate = int(
+        os.getenv(
+            'SPAWN_RATE',
+            LOCUST_CFG['default']['HATCH_RATE']))
+    time_limit = int(os.getenv('DURATION', step_time * 2))
+
+    def tick(self):
+        run_time = self.get_run_time()
+
+        if run_time > self.time_limit:
+            return None
+
+        current_step = math.floor(run_time / self.step_time) + 1
+        return current_step * self.step_load, self.spawn_rate
