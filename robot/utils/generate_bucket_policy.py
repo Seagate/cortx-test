@@ -30,9 +30,9 @@ def match_json_policy(policy1, policy2):
 
 def update_json_policy(policy):
     """
-    Function to update json data
+    Function to update json data to expected format for the policy.
     :param policy:  existing json policy
-    :return: Json policy in string format
+    :return: expected Json policy in string format
     """
     policy = json.loads(policy)
     policy["Statement"][0]["Action"].append("S3:PutObject")

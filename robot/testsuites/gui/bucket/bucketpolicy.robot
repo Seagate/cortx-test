@@ -64,7 +64,7 @@ TEST-4226
     [Documentation]  Test that json policy heading should be present in the form's heading
     ...  Reference : https://jts.seagate.com/browse/TEST-4226
     [Tags]  Priority_High  TEST-4226
-    Verify Proper Heading on Bucket Policy Form
+    Verify Heading on Bucket Policy Form
 
 TEST-4223
     [Documentation]  Test that popup window appears for bucket policy
