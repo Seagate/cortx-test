@@ -135,7 +135,7 @@ def add_tests_to_te_tp(existing_te, new_te, new_tp, jira_id, jira_password):
     test_list = get_test_ids_from_te(existing_te, jira_id, jira_password)
     if len(test_list) == 0:
         sys.exit("Received no tests from te")
-    print("adding tests to test execution {}".format(new_te))
+    print("adding {} tests to test execution {}".format(len(test_list), new_te))
     response = requests.post(
         "https://jts.seagate.com/rest/raven/1.0/api/testexec/" + new_te + "/test",
         headers={'Content-Type':'application/json'}, json={"add":test_list},
@@ -152,7 +152,7 @@ def add_tests_to_te_tp(existing_te, new_te, new_tp, jira_id, jira_password):
         print('Error while adding tests to test execution')
         return False
 
-    print("adding tests to test plan {}".format(new_tp))
+    print("adding {} tests to test plan {}".format(len(test_list), new_tp))
     response = requests.post(
         "https://jts.seagate.com/rest/raven/1.0/api/testplan/" + new_tp + "/test",
         headers={'Content-Type':'application/json'}, json={"add":test_list},
@@ -277,3 +277,13 @@ def get_username_password():
         username = input("JIRA username: ")
         password = getpass.getpass("JIRA password: ")
     return username, password
+
+
+def add_comment(test_id, comment, jira_id, jira_pwd):
+    """
+    Add comment to test jira
+    """
+    jira_url = "https://jts.seagate.com/"
+    options = {'server':jira_url}
+    auth_jira = JIRA(options, basic_auth=(jira_id, jira_pwd))
+    auth_jira.add_comment(test_id, comment)
