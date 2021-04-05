@@ -77,3 +77,6 @@ LOCAL_LOG_PATH = "/root/pytest_logs"
 JENKINS_URL = "http://eos-jenkins.mero.colo.seagate.com/job/QA/"
 
 REPORT_SRV = "http://cftic2.pun.seagate.com:5000/"
+
+# cloned test plan csv name
+CLONED_TP_CSV = 'cloned_tp_info.csv'
