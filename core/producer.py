@@ -152,9 +152,9 @@ def server(*args: Any) -> None:
                 "type": "string"
             },
             "targets": {
-                "description": "Test execution tickets",
-                "type": "string",
-                "default": "automation"
+                "description": "Test execution targets",
+                "type": "array",
+                "items": { "type": "string" }
             },
             "build": {
                 "description": "Build string or number",
@@ -200,7 +200,7 @@ def server(*args: Any) -> None:
             test_set = list(work_item.get())
             te_ticket = work_item.tickets
             ticket = Ticket(work_item.tag, work_item.parallel,
-                            test_set, str(te_ticket), str(work_item.targets),
+                            test_set, str(te_ticket), work_item.targets,
                             str(work_item.build), work_item.build_type,
                             work_item.test_plan)
             produce(producer, topic=topic, uuid=str(uuid4()), value=ticket,

@@ -48,6 +48,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags("TEST-10744")
     def test_276(self):
         """Initiating the test case for the verifying success rest alert
@@ -63,6 +64,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags("TEST-10746")
     def test_290(self):
         """Initiating the test case for the verifying success rest alert response
@@ -77,6 +79,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags("TEST-10747")
     def test_291(self):
         """Initiating the test case for the verifying success rest alert response
@@ -91,6 +94,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags("TEST-10749")
     def test_293(self):
         """Initiating the test case for the verifying success rest alert response
@@ -106,6 +110,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags("TEST-10748")
     def test_292(self):
         """Initiating the test case for the verifying success rest alert response
@@ -120,6 +125,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags("TEST-10750")
     def test_294(self):
         """Initiating the test case for unauthorized user try to create
@@ -136,6 +142,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags("TEST-10752")
     def test_586(self):
         """Initiating the test case for the verifying success rest alert response
@@ -150,6 +157,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags("TEST-10753")
     def test_590(self):
         """
@@ -168,6 +176,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags("TEST-10754")
     def test_587(self):
         """
@@ -183,6 +192,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags("TEST-10755")
     def test_592(self):
         """
@@ -200,6 +210,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags("TEST-10756")
     def test_615(self):
         """
@@ -215,6 +226,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags("TEST-10757")
     def test_598(self):
         """
@@ -230,6 +242,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags("TEST-10758")
     def test_595(self):
         """
@@ -245,6 +258,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags("TEST-10759")
     def test_606(self):
         """
@@ -260,6 +274,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags("TEST-10760")
     def test_488(self):
         """
@@ -274,6 +289,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags("TEST-10761")
     def test_491(self):
         """
@@ -289,6 +305,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags("TEST-10762")
     def test_492(self):
         """
@@ -305,6 +322,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags("TEST-10763")
     def test_493(self):
         """
@@ -322,6 +340,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags("TEST-12842")
     def test_1914(self):
         """
@@ -358,6 +377,7 @@ class TestS3user():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags("TEST-17188")
     def test_1915(self):
         """

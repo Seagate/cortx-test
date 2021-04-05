@@ -141,7 +141,7 @@ class TestJcloudAndJclient:
 
         return cmd
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7094")
     @CTFailOn(error_handler)
     def test_create_bucket_2368(self):
@@ -160,7 +160,7 @@ class TestJcloudAndJclient:
         self.log.info("STEP: 1 Bucket was created %s", bucket_name)
         self.log.info("ENDED: create bucket using Jcloudclient")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7095")
     @CTFailOn(error_handler)
     def test_delete_bucket_2370(self):
@@ -189,7 +189,7 @@ class TestJcloudAndJclient:
             "STEP: 2 Bucket %s was deleted successfully", bucket_name)
         self.log.info("ENDED: delete bucket using jcloudclient")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7096")
     @CTFailOn(error_handler)
     def test_put_object_2373(self):
@@ -223,7 +223,7 @@ class TestJcloudAndJclient:
         self.file_path_lst.append(BLACKBOX_CONF["common_cfg"]["file_path"])
         self.log.info("ENDED: get object using jcloudclient")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7097")
     @CTFailOn(error_handler)
     def test_get_object_2374(self):
@@ -271,7 +271,7 @@ class TestJcloudAndJclient:
             BLACKBOX_CONF["common_cfg"]["file_path"]))
         self.log.info("ENDED: put object using jcloudclient")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7098")
     @CTFailOn(error_handler)
     def test_delete_object_2375(self):
@@ -316,7 +316,7 @@ class TestJcloudAndJclient:
         self.file_path_lst.append(BLACKBOX_CONF["common_cfg"]["file_path"])
         self.log.info("ENDED: delete object using jcloudclient")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7099")
     @CTFailOn(error_handler)
     def test_del_multiple_objects_2376(self):
@@ -351,7 +351,7 @@ class TestJcloudAndJclient:
         self.log.info("STEP: 2 Successfully deleted all objects")
         self.log.info("ENDED: delete multiple objects using jcloudclient")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7100")
     @CTFailOn(error_handler)
     def test_head_object_2377(self):
@@ -386,7 +386,7 @@ class TestJcloudAndJclient:
         self.file_path_lst.append(file_path)
         self.log.info("ENDED: head object using jcloudclient")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7101")
     @CTFailOn(error_handler)
     def test_check_obj_exists_2379(self):
@@ -421,7 +421,7 @@ class TestJcloudAndJclient:
         self.file_path_lst.append(file_path)
         self.log.info("ENDED: object exists using jcloudclient")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7102")
     @CTFailOn(error_handler)
     def test_remove_empty_bucket_2380(self):
@@ -445,7 +445,7 @@ class TestJcloudAndJclient:
         self.log.info("STEP: 2 Bucket was successfully removed")
         self.log.info("ENDED: Remove bucket if empty")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7103")
     @CTFailOn(error_handler)
     def test_create_bucket_2381(self):
@@ -464,7 +464,7 @@ class TestJcloudAndJclient:
         self.log.info("STEP: 1 Bucket was created %s", bucket_name)
         self.log.info("ENDED: create bucket using jclient")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7104")
     @CTFailOn(error_handler)
     def test_list_bucket_2382(self):
@@ -490,7 +490,7 @@ class TestJcloudAndJclient:
         self.log.info("STEP: 2 All buckets were listed")
         self.log.info("ENDED: list bucket using jclient")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7105")
     @CTFailOn(error_handler)
     def test_delete_bucket_2384(self):
@@ -514,7 +514,7 @@ class TestJcloudAndJclient:
         self.log.info("STEP: 2 Bucket was successfully deleted")
         self.log.info("ENDED: delete bucket using jclient")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7106")
     @CTFailOn(error_handler)
     def test_list_object_2385(self):
@@ -547,7 +547,7 @@ class TestJcloudAndJclient:
         self.file_path_lst.append(file_path)
         self.log.info("ENDED: list object using jclient")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7107")
     @CTFailOn(error_handler)
     def test_delete_object_2386(self):
@@ -580,7 +580,7 @@ class TestJcloudAndJclient:
         self.file_path_lst.append(file_path)
         self.log.info("ENDED: delete object using jclient")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7108")
     @CTFailOn(error_handler)
     def test_head_object_2388(self):
@@ -613,7 +613,7 @@ class TestJcloudAndJclient:
         self.file_path_lst.append(file_path)
         self.log.info("ENDED: head object using jclient")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7109")
     @CTFailOn(error_handler)
     def test_put_obj_2389(self):
@@ -643,7 +643,7 @@ class TestJcloudAndJclient:
         self.file_path_lst.append(file_path)
         self.log.info("ENDED: put object using jclient")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7110")
     @CTFailOn(error_handler)
     def test_get_object_2390(self):
@@ -676,7 +676,7 @@ class TestJcloudAndJclient:
         self.file_path_lst.append(os.path.join(os.getcwd(), obj_name))
         self.log.info("ENDED: put object using jclient")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7111")
     @CTFailOn(error_handler)
     def test_bucket_exists_2391(self):
@@ -702,7 +702,7 @@ class TestJcloudAndJclient:
             "STEP: 2 Bucket %s exists on s3 server", bucket_name)
         self.log.info("ENDED: Bucket exists using Jclient")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7112")
     @CTFailOn(error_handler)
     def test_check_obj_exists_2392(self):
@@ -736,7 +736,7 @@ class TestJcloudAndJclient:
         self.file_path_lst.append(file_path)
         self.log.info("ENDED: object exists using jclient")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7529")
     @CTFailOn(error_handler)
     def test_list_buckets_2369(self):
@@ -761,7 +761,7 @@ class TestJcloudAndJclient:
         self.log.info("STEP 2: All the s3 bucket listed")
         self.log.info("ENDED: list buckets using jcloudclient")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7531")
     @CTFailOn(error_handler)
     def test_max_bucket_2371(self):
@@ -796,7 +796,7 @@ class TestJcloudAndJclient:
         self.log.info("STEP 2: All the s3 buckets created were verified")
         self.log.info("ENDED: max no of buckets supported using jcloudclient")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7532")
     @CTFailOn(error_handler)
     def test_list_objects_2372(self):
@@ -830,7 +830,7 @@ class TestJcloudAndJclient:
         self.file_path_lst.append(file_path)
         self.log.info("ENDED: list objects using jcloudclient")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7533")
     @CTFailOn(error_handler)
     def test_check_bucket_exist_2378(self):
@@ -856,7 +856,7 @@ class TestJcloudAndJclient:
             "STEP 2: Bucket %s exists on s3 server", bucket_name)
         self.log.info("ENDED: Bucket exists using jcloudclient")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7534")
     @CTFailOn(error_handler)
     def test_max_bucket_support_2383(self):
@@ -889,7 +889,7 @@ class TestJcloudAndJclient:
         self.log.info("STEP 2: All the s3 buckets created were verified")
         self.log.info("ENDED: max no of buckets supported using Jclient")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7535")
     @CTFailOn(error_handler)
     def test_del_multiple_object_2387(self):

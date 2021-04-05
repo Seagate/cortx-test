@@ -18,7 +18,7 @@
 #
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
-"""Configurable items like paths , items which are test environments specific
+"""Constants
 """
 import os
 
@@ -65,15 +65,19 @@ SETUPS_FPATH = os.path.join(LOG_DIR_NAME, "setups.json")
 
 NFS_SERVER_DIR = "cftic2.pun.seagate.com:/cftshare"
 NFS_BASE_DIR = "automation"
-MOUNT_DIR = os.path.join(os.getcwd(), "nfs_share")
+MOUNT_DIR = os.path.join("/root", "nfs_share")
 DB_HOSTNAME = """cftic1.pun.seagate.com:27017,
 cftic2.pun.seagate.com:27017,
 apollojenkins.pun.seagate.com:27017/
 ?authSource=cft_test_results&replicaSet=rs0"""
 DB_NAME = "cft_test_results"
 SYS_INFO_COLLECTION = "r2_systems"
+LOCAL_LOG_PATH = "/root/pytest_logs"
 
 # Jenkins url for deployment
 JENKINS_URL = "http://eos-jenkins.mero.colo.seagate.com/job/QA/"
 
 REPORT_SRV = "http://cftic2.pun.seagate.com:5000/"
+
+# cloned test plan csv name
+CLONED_TP_CSV = 'cloned_tp_info.csv'
