@@ -7,6 +7,7 @@ import logging
 import requests
 from datetime import datetime
 from multiprocessing import Process
+from jira import JIRA
 from core import runner
 from core import kafka_consumer
 from core.locking_server import LockingServer
@@ -219,13 +220,20 @@ def trigger_unexecuted_tests(args, test_list):
                            env=_env, re_execution=True)
 
 
-def create_test_meta_data_file(args, test_list):
+def create_test_meta_data_file(args, test_list, jira_obj=None):
     """
     Create test meta data file
     """
     tp_meta = dict()  # test plan meta
     jira_id, jira_pwd = runner.get_jira_credential()
-    jira_obj = JiraTask(jira_id, jira_pwd)
+    if not jira_obj:
+        jira_obj = JiraTask(jira_id, jira_pwd)
+    # Any how create Jira object to pass to get_issue_details to save on instance creation.
+    jira_url = "https://jts.seagate.com/"
+    options = {'server': jira_url}
+    auth = (jira_id, jira_pwd)
+    auth_jira = JIRA(options, basic_auth=auth)
+
     # Create test meta file for reporting TR.
     tp_meta_file = os.path.join(os.getcwd(),
                                 params.LOG_DIR_NAME,
@@ -233,10 +241,10 @@ def create_test_meta_data_file(args, test_list):
     with open(tp_meta_file, 'w') as t_meta:
 
         test_meta = list()
-        tp_resp = jira_obj.get_issue_details(args.test_plan)  # test plan id
+        tp_resp = jira_obj.get_issue_details(args.test_plan, auth_jira=auth_jira)  # test plan id
         tp_meta['test_plan_label'] = tp_resp.fields.labels
         tp_meta['environment'] = tp_resp.fields.environment
-        te_resp = jira_obj.get_issue_details(args.te_ticket)  # test execution id
+        te_resp = jira_obj.get_issue_details(args.te_ticket, auth_jira=auth_jira)  # test exec id
         if te_resp.fields.components:
             te_components = te_resp.fields.components[0].name
         tp_meta['te_meta'] = dict(te_id=args.te_ticket,
@@ -246,7 +254,7 @@ def create_test_meta_data_file(args, test_list):
         for test in test_list:
             item = dict()
             item['test_id'] = test
-            resp = jira_obj.get_issue_details(test)
+            resp = jira_obj.get_issue_details(test, auth_jira=auth_jira)
             item['test_name'] = resp.fields.summary
             item['labels'] = resp.fields.labels
             if resp.fields.components:
