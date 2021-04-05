@@ -29,6 +29,7 @@ USER_JSON = '_usersdata'
 CONFIG_DIR = 'config'
 LOG_DIR_NAME = 'log'
 LATEST_LOG_FOLDER = 'latest'
+TEST_DATA_FOLDER = 'TestData'
 
 COMMON_CONFIG = os.path.join(CONFIG_DIR, 'common_config.yaml')
 S3_CONFIG = os.path.join(CONFIG_DIR, 's3', 's3_config.yaml')
@@ -37,6 +38,8 @@ RAS_CONFIG_PATH = "config/ras_config.yaml"
 SSPL_TEST_CONFIG_PATH = "config/ras_test.yaml"
 PROV_TEST_CONFIG_PATH = "config/prov_test.yaml"
 COMMON_DESTRUCTIVE_CONFIG_PATH = "config/common_destructive.yaml"
+
+TEST_DATA_PATH = os.path.join(os.getcwd(), TEST_DATA_FOLDER)
 
 JIRA_TEST_LIST = 'test_lists.csv'
 
