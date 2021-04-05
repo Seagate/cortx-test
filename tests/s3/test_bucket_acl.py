@@ -26,24 +26,23 @@ import time
 import logging
 import pytest
 
+from commons.params import TEST_DATA_PATH
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
-from commons.utils.config_utils import read_yaml
 from commons.utils import assert_utils
-from commons.utils.system_utils import create_file, make_dirs, cleanup_dir, path_exists
-from commons.utils.system_utils import remove_dirs
-from libs.s3 import s3_test_lib, iam_test_lib, s3_acl_test_lib
+from commons.utils import system_utils
 from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
+from libs.s3 import s3_test_lib
+from libs.s3 import iam_test_lib
+from libs.s3 import s3_acl_test_lib
 
 S3_OBJ = s3_test_lib.S3TestLib()
 IAM_OBJ = iam_test_lib.IamTestLib()
 ACL_OBJ = s3_acl_test_lib.S3AclTestLib()
 
-BKT_ACL_CONFIG = read_yaml("config/s3/test_bucket_acl.yaml")[1]
 
-
-class TestBucketACL():
+class TestBucketACL:
     """Bucket ACL Test suite."""
 
     @classmethod
@@ -56,16 +55,15 @@ class TestBucketACL():
         cls.log = logging.getLogger(__name__)
         cls.log.info("STARTED: setup test suite operations.")
         cls.random_id = str(time.time())
-        cls.account_name = "{}{}".format(
-            BKT_ACL_CONFIG["bucket_acl"]["acc_name_prefix"],
-            BKT_ACL_CONFIG["bucket_acl"]["acc_name"])
-        cls.email_id = "{}{}".format(
-            cls.account_name,
-            BKT_ACL_CONFIG["bucket_acl"]["email_suffix"])
+        cls.account_name = "{}{}".format("acl", "acltestaccn")
+        cls.email_id = "{}{}".format(cls.account_name, "@seagate.com")
         cls.ldap_user = LDAP_USERNAME
         cls.ldap_pwd = LDAP_PASSWD
         cls.test_file = "testfile"
-        cls.test_dir_path = os.path.join(os.getcwd(), "testdata", "BucketACL")
+        cls.test_dir_path = os.path.join(TEST_DATA_PATH, "BucketACL")
+        if not system_utils.path_exists(cls.test_dir_path):
+            resp = system_utils.make_dirs(cls.test_dir_path)
+            cls.log.info("Created path: %s", resp)
         cls.test_file_path = os.path.join(cls.test_dir_path, cls.test_file)
         cls.log.info(
             "LDAP credentials: User: %s, pass: %s",
@@ -81,9 +79,9 @@ class TestBucketACL():
         Description: It will remove test suite directory.
         """
         cls.log.info("STARTED: Teardown Operations")
-        if not path_exists(cls.test_dir_path):
-            resp = remove_dirs(cls.test_dir_path)
-            cls.log.info("Created path: %s", resp)
+        if not system_utils.path_exists(cls.test_dir_path):
+            resp = system_utils.remove_dirs(cls.test_dir_path)
+            cls.log.info("Remove path: %s", resp)
         cls.log.info("ENDED: Teardown Operations")
 
     def helper_method(self, bucket, acl, error_msg):
@@ -115,18 +113,16 @@ class TestBucketACL():
         Description: It will perform all prerequisite test steps if any.
         """
         self.log.info("STARTED: Setup Operations")
-
-        if not path_exists(self.test_dir_path):
-            resp = make_dirs(self.test_dir_path)
-            self.log.info("Created path: %s", resp)
+        if system_utils.path_exists(self.test_file_path):
+            system_utils.remove_file(self.test_file_path)
         self.log.info("ENDED: Setup Operations")
 
     def teardown_method(self):
         """Function to perform the clean up for each test."""
         self.log.info("STARTED: Teardown Operations")
         self.log.info("Clean : %s", self.test_dir_path)
-        if path_exists(self.test_dir_path):
-            resp = cleanup_dir(self.test_dir_path)
+        if system_utils.path_exists(self.test_dir_path):
+            resp = system_utils.cleanup_dir(self.test_dir_path)
             self.log.info(
                 "cleaned path: %s, resp: %s",
                 self.test_dir_path,
@@ -135,10 +131,10 @@ class TestBucketACL():
         resp = S3_OBJ.bucket_list()
         pref_list = [
             each_bucket for each_bucket in resp[1] if each_bucket.startswith(
-                BKT_ACL_CONFIG["bucket_acl"]["bkt_name_prefix"])]
+                "acl")]
         for bucket in pref_list:
             ACL_OBJ.put_bucket_acl(
-                bucket, acl=BKT_ACL_CONFIG["bucket_acl"]["bkt_permission"])
+                bucket, acl="private")
         S3_OBJ.delete_multiple_buckets(pref_list)
         self.log.info("Deleted buckets in default account")
         self.log.info(
@@ -177,9 +173,9 @@ class TestBucketACL():
         """verify Get Bucket ACL of existing Bucket."""
         self.log.info("verify Get Bucket ACL of existing Bucket")
         bucket_name = "{}{}".format(
-            BKT_ACL_CONFIG["bucket_acl"]["bkt_name_prefix"],
-            BKT_ACL_CONFIG["test_10008"]["bucket_name"])
-        bucket_permission = BKT_ACL_CONFIG["test_10008"]["bucket_permission"]
+            "acl",
+            "bucket-10008")
+        bucket_permission = "FULL_CONTROL"
         resp = S3_OBJ.create_bucket(bucket_name)
         assert resp[0], resp[1]
         resp = ACL_OBJ.get_bucket_acl(bucket_name)
@@ -197,11 +193,11 @@ class TestBucketACL():
     def test_verify_get_bucket_acl_3013(self):
         """verify Get Bucekt ACL of non existing Bucket."""
         self.log.info("verify Get Bucket ACL of non existing Bucket")
-        bucket_name = BKT_ACL_CONFIG["test_10009"]["bucket_name"]
+        bucket_name = "bucket-10009"
         try:
             ACL_OBJ.get_bucket_acl(bucket_name)
         except CTException as error:
-            assert BKT_ACL_CONFIG["test_10009"]["err_message"] in str(
+            assert "NoSuchBucket" in str(
                 error.message), error.message
         self.log.info("verify Get Bucket ACL of non existing Bucket")
 
@@ -213,9 +209,9 @@ class TestBucketACL():
         """verify Get Bucket ACL of an empty Bucket."""
         self.log.info("verify Get Bucket ACL of an empty Bucket")
         bucket_name = "{}{}".format(
-            BKT_ACL_CONFIG["bucket_acl"]["bkt_name_prefix"],
-            BKT_ACL_CONFIG["test_10010"]["bucket_name"])
-        bucket_permission = BKT_ACL_CONFIG["test_10010"]["bucket_permission"]
+            "acl",
+            "bucket-10010")
+        bucket_permission = "FULL_CONTROL"
         resp = S3_OBJ.create_bucket(bucket_name)
         assert resp[0], resp[1]
         resp = ACL_OBJ.get_bucket_acl(bucket_name)
@@ -235,15 +231,15 @@ class TestBucketACL():
         self.log.info(
             "verify Get Bucket ACL of an existing Bucket having objects")
         bucket_name = "{}{}".format(
-            BKT_ACL_CONFIG["bucket_acl"]["bkt_name_prefix"],
-            BKT_ACL_CONFIG["test_10011"]["bucket_name"])
-        bucket_permission = BKT_ACL_CONFIG["test_10011"]["bucket_permission"]
+            "acl",
+            "bucket-10011")
+        bucket_permission = "FULL_CONTROL"
         resp = S3_OBJ.create_bucket(bucket_name)
         assert resp[0], resp[1]
         self.log.info(resp)
         assert_utils.assert_equals(resp[1], bucket_name, resp[1])
-        create_file(self.test_file_path,
-                    BKT_ACL_CONFIG["test_10011"]["file_size"])
+        system_utils.create_file(self.test_file_path,
+                    1)
         resp = S3_OBJ.object_upload(bucket_name,
                                     self.test_file,
                                     self.test_file_path)
@@ -267,7 +263,7 @@ class TestBucketACL():
         try:
             ACL_OBJ.get_bucket_acl(None)
         except CTException as error:
-            assert BKT_ACL_CONFIG["test_10012"]["err_message"] in str(
+            assert "Required parameter bucket_name not set" in str(
                 error.message), error.message
         self.log.info("Verify Get Bucket ACL without Bucket name")
 
@@ -279,8 +275,8 @@ class TestBucketACL():
         """Delete Bucket and verify Bucket ACL."""
         self.log.info("Delete Bucket and verify Bucket ACL")
         bucket_name = "{}{}".format(
-            BKT_ACL_CONFIG["bucket_acl"]["bkt_name_prefix"],
-            BKT_ACL_CONFIG["test_10013"]["bucket_name"])
+            "acl",
+            "bucket-10013")
         resp = S3_OBJ.create_bucket(bucket_name)
         assert resp[0], resp[1]
         resp = S3_OBJ.delete_bucket(bucket_name)
@@ -288,7 +284,7 @@ class TestBucketACL():
         try:
             ACL_OBJ.get_bucket_acl(bucket_name)
         except CTException as error:
-            assert BKT_ACL_CONFIG["test_10013"]["err_message"] in str(
+            assert "NoSuchBucket" in str(
                 error.message), error.message
         self.log.info("Delete Bucket and verify Bucket ACL")
 
@@ -309,12 +305,12 @@ class TestBucketACL():
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
         bucket_name = "{}{}{}".format(
-            BKT_ACL_CONFIG["bucket_acl"]["bkt_name_prefix"],
-            BKT_ACL_CONFIG["test_10014"]["bucket_name"],
+            "acl",
+            "bucket-10014",
             str(
                 int(
                     time.time())))
-        bucket_permission = BKT_ACL_CONFIG["test_10014"]["bucket_permission"]
+        bucket_permission = "FULL_CONTROL"
         s3_obj_acl = s3_test_lib.S3TestLib(
             access_key=access_key, secret_key=secret_key)
         resp = s3_obj_acl.create_bucket(bucket_name)
@@ -341,8 +337,8 @@ class TestBucketACL():
         """verify Get Bucket ACL of existing Bucket with different Account credentials."""
         self.log.info(
             "verify Get Bucket ACL of existing Bucket with different Account credentials")
-        accounts = BKT_ACL_CONFIG["test_10015"]["accounts"]
-        emails = BKT_ACL_CONFIG["test_10015"]["emails"]
+        accounts = ["acltestaccnt100151", "acltestaccnt100152"]
+        emails = ["acltestaccnt100151@seagate.com", "acltestaccnt100152@seagate.com"]
         access_keys = []
         secret_keys = []
         for account, email in zip(accounts, emails):
@@ -354,8 +350,8 @@ class TestBucketACL():
             access_keys.append(resp[1]["access_key"])
             secret_keys.append(resp[1]["secret_key"])
         bucket_name = "{}{}".format(
-            BKT_ACL_CONFIG["test_10015"]["bucket_name"], str(int(time.time())))
-        err_message = BKT_ACL_CONFIG["test_10015"]["err_message"]
+            "aclbucket10015", str(int(time.time())))
+        err_message = "AccessDenied"
         s3_obj_acl = s3_test_lib.S3TestLib(
             access_key=access_keys[0],
             secret_key=secret_keys[0])
@@ -382,11 +378,12 @@ class TestBucketACL():
         """verify Get Bucket ACL of existing Bucket with IAM User credentials."""
         self.log.info(
             "verify Get Bucket ACL of existing Bucket with IAM User credentials")
-        user_name = BKT_ACL_CONFIG["test_10016"]["user_name"]
+        user_name = "user10016"
         access_keys = []
         secret_keys = []
         for account, email in zip(
-                BKT_ACL_CONFIG["test_10016"]["accounts"], BKT_ACL_CONFIG["test_10016"]["emails"]):
+                ["acltestaccnt100161", "acltestaccnt100162"],
+                ["acltestaccnt100161@seagate.com", "acltestaccnt100162@seagate.com"]):
             resp = IAM_OBJ.create_account_s3iamcli(
                 f"{account}{str(int(time.time()))}",
                 f"{str(int(time.time()))}{email}",
@@ -396,8 +393,8 @@ class TestBucketACL():
             access_keys.append(resp[1]["access_key"])
             secret_keys.append(resp[1]["secret_key"])
         bucket_name = "{}{}".format(
-            BKT_ACL_CONFIG["test_10016"]["bucket_name"], str(int(time.time())))
-        err_message = BKT_ACL_CONFIG["test_10016"]["err_message"]
+            "aclbucket10016", str(int(time.time())))
+        err_message = "AccessDenied"
         s3_obj_acl = s3_test_lib.S3TestLib(
             access_key=access_keys[0],
             secret_key=secret_keys[0])
@@ -433,9 +430,9 @@ class TestBucketACL():
         """Add canned ACL bucket-owner-full-control along with READ ACL grant permission."""
         self.log.info(
             "Add canned ACL bucket-owner-full-control along with READ ACL grant permission")
-        self.helper_method(BKT_ACL_CONFIG["test_10766"]["bucket_name"],
-                           BKT_ACL_CONFIG["test_10766"]["acl"],
-                           BKT_ACL_CONFIG["test_10766"]["error"])
+        self.helper_method("aclbucket10766",
+                           "bucket-owner-full-control",
+                           "Specifying both Canned ACLs and Header Grants is not allowed")
         self.log.info(
             "Add canned ACL bucket-owner-full-control along with READ ACL grant permission")
 
@@ -447,9 +444,9 @@ class TestBucketACL():
         """Add canned ACL bucket-owner-read along with READ ACL grant permission."""
         self.log.info(
             "Add canned ACL bucket-owner-read along with READ ACL grant permission")
-        self.helper_method(BKT_ACL_CONFIG["test_10767"]["bucket_name"],
-                           BKT_ACL_CONFIG["test_10767"]["acl"],
-                           BKT_ACL_CONFIG["test_10767"]["error"])
+        self.helper_method("aclbucket10767",
+                           "bucket-owner-read",
+                           "Specifying both Canned ACLs and Header Grants is not allowed")
         self.log.info(
             "Add canned ACL bucket-owner-read along with READ ACL grant permission")
 
@@ -461,9 +458,9 @@ class TestBucketACL():
         """Add canned ACL "private" along with "READ" ACL grant permission."""
         self.log.info(
             "Add canned ACL 'private' along with 'READ' ACL grant permission")
-        self.helper_method(BKT_ACL_CONFIG["test_10768"]["bucket_name"],
-                           BKT_ACL_CONFIG["test_10768"]["acl"],
-                           BKT_ACL_CONFIG["test_10768"]["error"])
+        self.helper_method("aclbucket10768",
+                           "private",
+                           "Specifying both Canned ACLs and Header Grants is not allowed")
         self.log.info(
             "Add canned ACL 'private' along with 'READ' ACL grant permission")
 
@@ -475,9 +472,9 @@ class TestBucketACL():
         """Add canned ACL "private" along with "FULL_CONTROL" ACL grant permission."""
         self.log.info(
             "Add canned ACL 'private' along with 'FULL_CONTROL' ACL grant permission")
-        self.helper_method(BKT_ACL_CONFIG["test_10769"]["bucket_name"],
-                           BKT_ACL_CONFIG["test_10769"]["acl"],
-                           BKT_ACL_CONFIG["test_10769"]["error"])
+        self.helper_method("aclbucket10769",
+                           "private",
+                           "Specifying both Canned ACLs and Header Grants is not allowed")
         self.log.info(
             "Add canned ACL 'private' along with 'FULL_CONTROL' ACL grant permission")
 
@@ -489,9 +486,9 @@ class TestBucketACL():
         """Add canned ACL "public-read" along with "READ_ACP" ACL grant permission."""
         self.log.info(
             "Add canned ACL 'public-read' along with 'READ_ACP' ACL grant permission")
-        self.helper_method(BKT_ACL_CONFIG["test_10770"]["bucket_name"],
-                           BKT_ACL_CONFIG["test_10770"]["acl"],
-                           BKT_ACL_CONFIG["test_10770"]["error"])
+        self.helper_method("aclbucket10770",
+                           "public-read",
+                           "Specifying both Canned ACLs and Header Grants is not allowed")
         self.log.info(
             "Add canned ACL 'public-read' along with 'READ_ACP' ACL grant permission")
 
@@ -503,9 +500,9 @@ class TestBucketACL():
         """Add canned ACL "public-read" along with "WRITE_ACP" ACL grant permission."""
         self.log.info(
             "Add canned ACL 'public-read' along with 'WRITE_ACP' ACL grant permission")
-        self.helper_method(BKT_ACL_CONFIG["test_10771"]["bucket_name"],
-                           BKT_ACL_CONFIG["test_10771"]["acl"],
-                           BKT_ACL_CONFIG["test_10771"]["error"])
+        self.helper_method("aclbucket10771",
+                           "public-read",
+                           "Specifying both Canned ACLs and Header Grants is not allowed")
         self.log.info(
             "Add canned ACL 'public-read' along with 'WRITE_ACP' ACL grant permission")
 
@@ -517,9 +514,9 @@ class TestBucketACL():
         """Add canned ACL 'public-read-write' along with "WRITE_ACP" ACL grant permission."""
         self.log.info(
             "Add canned ACL 'public-read-write' along with 'WRITE_ACP' ACL grant permission")
-        self.helper_method(BKT_ACL_CONFIG["test_10772"]["bucket_name"],
-                           BKT_ACL_CONFIG["test_10772"]["acl"],
-                           BKT_ACL_CONFIG["test_10772"]["error"])
+        self.helper_method("aclbucket10772",
+                            "public-read-write",
+                           "Specifying both Canned ACLs and Header Grants is not allowed")
         self.log.info(
             "Add canned ACL 'public-read-write' along with 'WRITE_ACP' ACL grant permission")
 
@@ -531,9 +528,9 @@ class TestBucketACL():
         """Add canned ACL 'public-read-write' along with "FULL_CONTROL" ACL grant permission."""
         self.log.info(
             "Add canned ACL 'public-read-write' along with 'FULL_CONTROL' ACL grant permission")
-        self.helper_method(BKT_ACL_CONFIG["test_10773"]["bucket_name"],
-                           BKT_ACL_CONFIG["test_10773"]["acl"],
-                           BKT_ACL_CONFIG["test_10773"]["error"])
+        self.helper_method("aclbucket10773",
+                           "public-read-write",
+                           "Specifying both Canned ACLs and Header Grants is not allowed")
         self.log.info(
             "Add canned ACL 'public-read-write' along with 'FULL_CONTROL' ACL grant permission")
 
@@ -545,9 +542,9 @@ class TestBucketACL():
         """Add canned ACL 'authenticate-read' along with "READ" ACL grant permission."""
         self.log.info(
             "Add canned ACL 'authenticate-read' along with 'READ' ACL grant permission")
-        self.helper_method(BKT_ACL_CONFIG["test_10774"]["bucket_name"],
-                           BKT_ACL_CONFIG["test_10774"]["acl"],
-                           BKT_ACL_CONFIG["test_10774"]["error"])
+        self.helper_method("aclbucket10774",
+                           "authenticated-read",
+                           "Specifying both Canned ACLs and Header Grants is not allowed")
         self.log.info(
             "Add canned ACL 'authenticate-read' along with 'READ' ACL grant permission")
 
@@ -559,9 +556,9 @@ class TestBucketACL():
         """Add canned ACL 'authenticate-read' along with "READ_ACP" ACL grant permission."""
         self.log.info(
             "Add canned ACL 'authenticate-read' along with 'READ_ACP' ACL grant permission")
-        self.helper_method(BKT_ACL_CONFIG["test_10775"]["bucket_name"],
-                           BKT_ACL_CONFIG["test_10775"]["acl"],
-                           BKT_ACL_CONFIG["test_10775"]["error"])
+        self.helper_method("aclbucket10775",
+                           "authenticated-read",
+                           "Specifying both Canned ACLs and Header Grants is not allowed")
         self.log.info(
             "Add canned ACL 'authenticate-read' along with 'READ_ACP' ACL grant permission")
 
@@ -578,11 +575,11 @@ class TestBucketACL():
             "Add canned ACL 'private' as a request header along with FULL_CONTROL"
             " ACL grant permission as request body")
         account_name = "{}{}".format(
-            BKT_ACL_CONFIG["test_10776"]["account_name"], str(int(time.time())))
+            "acltestaccnt10776", str(int(time.time())))
         email_id = "{}{}".format(str(int(time.time())),
-                                 BKT_ACL_CONFIG["test_10776"]["email_id"])
+                                 "acltestaccnt10776@seagate.com")
         bucket_name = "{}{}".format(
-            str(int(time.time())), BKT_ACL_CONFIG["test_10776"]["bucket_name"])
+            str(int(time.time())), "aclbucket10776")
         acc_str = "AccountName = {0}".format(account_name)
         acc_list = []
         resp = IAM_OBJ.list_accounts_s3iamcli(self.ldap_user, self.ldap_pwd)
@@ -609,15 +606,15 @@ class TestBucketACL():
         newresp = {"Owner": resp[1][0], "Grants": resp[1][1]}
         self.log.info(
             "New dict to pass ACP with permission private:%s", newresp)
-        newresp["Grants"][0]["Permission"] = BKT_ACL_CONFIG["test_10776"]["acl"]
+        newresp["Grants"][0]["Permission"] = "FULL_CONTROL"
         try:
             s3_obj_acl.put_bucket_acl(
                 bucket_name=bucket_name,
-                acl=BKT_ACL_CONFIG["test_10776"]["canned_acl"],
+                acl="private",
                 access_control_policy=newresp)
         except CTException as error:
             self.log.debug(error.message)
-            assert BKT_ACL_CONFIG["test_10776"]["error_message"] in error.message, error.message
+            assert "UnexpectedContent" in error.message, error.message
         self.log.info("Cleanup activity")
         self.log.info("Deleting a bucket %s", bucket_name)
         resp = s3_test.delete_bucket(bucket_name)
@@ -643,11 +640,11 @@ class TestBucketACL():
             "Add canned ACL private in request body along with FULL_CONTROL"
             " ACL grant permission in request header")
         account_name = "{}{}".format(
-            BKT_ACL_CONFIG["test_10777"]["account_name"], str(int(time.time())))
+            "acltestaccnt10777", str(int(time.time())))
         email_id = "{}{}".format(str(int(time.time())),
-                                 BKT_ACL_CONFIG["test_10777"]["email_id"])
+                                 "acltestaccnt10777@seagate.com")
         bucket_name = "{}{}".format(
-            str(int(time.time())), BKT_ACL_CONFIG["test_10777"]["bucket_name"])
+            str(int(time.time())), "aclbucket10777")
         acc_str = "AccountName = {0}".format(account_name)
         acc_list = []
         resp = IAM_OBJ.list_accounts_s3iamcli(self.ldap_user, self.ldap_pwd)
@@ -676,15 +673,15 @@ class TestBucketACL():
         newresp = {"Owner": resp[1][0], "Grants": resp[1][1]}
         self.log.info(
             "New dict to pass ACP with permission private:%s", newresp)
-        newresp["Grants"][0]["Permission"] = BKT_ACL_CONFIG["test_10777"]["canned_acl"]
+        newresp["Grants"][0]["Permission"] = "private"
         try:
             s3_obj_acl.put_bucket_acl(
                 bucket_name=bucket_name,
-                acl=BKT_ACL_CONFIG["test_10777"]["acl"],
+                acl="FULL_CONTROL",
                 access_control_policy=newresp)
         except CTException as error:
             self.log.debug(error.message)
-            assert BKT_ACL_CONFIG["test_10777"]["error_message"] in error.message, error.message
+            assert "BadRequest" in error.message, error.message
         self.log.info("Cleanup activity")
         self.log.info("Deleting a bucket %s", bucket_name)
         resp = s3_test.delete_bucket(bucket_name, force=True)
@@ -711,11 +708,11 @@ class TestBucketACL():
             " ACL grant permission in request body")
 
         account_name = "{}{}".format(
-            BKT_ACL_CONFIG["test_10778"]["account_name"], str(int(time.time())))
+            "acltestaccnt10778", str(int(time.time())))
         email_id = "{}{}".format(str(int(time.time())),
-                                 BKT_ACL_CONFIG["test_10778"]["email_id"])
+                                 "acltestaccnt10778@seagate.com")
         bucket_name = "{}{}".format(
-            str(int(time.time())), BKT_ACL_CONFIG["test_10778"]["bucket_name"])
+            str(int(time.time())), "aclbucket10778")
         acc_list = []
         resp = IAM_OBJ.list_accounts_s3iamcli(self.ldap_user, self.ldap_pwd)
         if f"AccountName = {account_name}" in resp[1]:
@@ -742,13 +739,13 @@ class TestBucketACL():
         newresp = {"Owner": resp[1][0], "Grants": resp[1][1]}
         self.log.info(
             "New dict to pass ACP with permission private:%s", newresp)
-        newresp["Grants"][0]["Permission"] = BKT_ACL_CONFIG["test_10778"]["canned_acl"]
+        newresp["Grants"][0]["Permission"] = "private"
         new_grant = {
             "Grantee": {
                 "ID": canonical_id,
                 "Type": "CanonicalUser",
             },
-            "Permission": BKT_ACL_CONFIG["test_10778"]["acl"],
+            "Permission": "FULL_CONTROL",
         }
         # If we don"t want to modify the original ACL variable, then we
         # must do a deepcopy
@@ -762,7 +759,7 @@ class TestBucketACL():
                 access_control_policy=newresp)
         except CTException as error:
             self.log.debug(error.message)
-            assert BKT_ACL_CONFIG["test_10778"]["error_message"] in error.message, error.message
+            assert "InvalidACL" in error.message, error.message
         self.log.info("Cleanup activity")
         self.log.info("Deleting a bucket %s", bucket_name)
         resp = s3_test.delete_bucket(bucket_name)
@@ -787,8 +784,8 @@ class TestBucketACL():
         self.log.info(
             "Apply authenticated-read canned ACL to account2 and execute head-bucket "
             "from account2 on a bucket. Bucket belongs to account1")
-        accounts = BKT_ACL_CONFIG["test_10837"]["accounts"]
-        emails = BKT_ACL_CONFIG["test_10837"]["emails"]
+        accounts = ["acltestaccnt1", "acltestaccnt2"]
+        emails = ["acltestaccnt1@seagate.com", "acltestaccnt2@seagate.com"]
         access_keys = []
         secret_keys = []
         canonical_ids = []
@@ -805,7 +802,7 @@ class TestBucketACL():
             secret_keys.append(resp[1]["secret_key"])
             canonical_ids.append(resp[1]["canonical_id"])
         bucket_name = "{}{}".format(
-            BKT_ACL_CONFIG["test_10837"]["bucket_name"], str(int(time.time())))
+            "aclbucket-10837", str(int(time.time())))
 
         s3_obj1 = s3_test_lib.S3TestLib(
             access_key=access_keys[0],
@@ -826,15 +823,14 @@ class TestBucketACL():
         assert_utils.assert_equals(resp[1]["BucketName"], bucket_name, resp[1])
         self.log.info("Performing authenticated read acl")
         resp = acl_obj1.put_bucket_acl(
-            bucket_name, acl=BKT_ACL_CONFIG["test_10837"]["bucket_acl"])
+            bucket_name, acl="authenticated-read")
         assert resp[0], resp[1]
         self.log.info("Getting bucket acl")
         resp = acl_obj1.get_bucket_acl_using_iam_credentials(
             access_keys[0], secret_keys[0], bucket_name)
         assert resp[0], resp[1]
         print("aa {}".format(resp))
-        assert BKT_ACL_CONFIG["test_10837"]["grant_permission"] in resp[1][1][1]["Permission"], \
-            resp[1]
+        assert "READ" in resp[1][1][1]["Permission"], resp[1]
         self.log.info(
             "Performing head bucket with second account credentials")
         resp = s3_obj2.head_bucket(bucket_name)
@@ -862,8 +858,8 @@ class TestBucketACL():
         self.log.info(
             "Apply private canned ACL to account2 and execute head-bucket "
             "from account2 on a bucket. Bucket belongs to account1")
-        accounts = BKT_ACL_CONFIG["test_10838"]["accounts"]
-        emails = BKT_ACL_CONFIG["test_10838"]["emails"]
+        accounts = ["acltestaccnt1", "acltestaccnt2"]
+        emails = ["acltestaccnt1@seagate.com", "acltestaccnt2@seagate.com"]
         access_keys = []
         secret_keys = []
         canonical_ids = []
@@ -880,7 +876,7 @@ class TestBucketACL():
             secret_keys.append(resp[1]["secret_key"])
             canonical_ids.append(resp[1]["canonical_id"])
         bucket_name = "{}{}".format(
-            BKT_ACL_CONFIG["test_10838"]["bucket_name"], str(int(time.time())))
+            "aclbucket-10838", str(int(time.time())))
 
         s3_obj1 = s3_test_lib.S3TestLib(
             access_key=access_keys[0],
@@ -901,7 +897,7 @@ class TestBucketACL():
         assert_utils.assert_equals(resp[1]["BucketName"], bucket_name, resp[1])
         self.log.info("Performing authenticated read acl")
         resp = acl_obj1.put_bucket_acl(
-            bucket_name, acl=BKT_ACL_CONFIG["test_10838"]["bucket_acl"])
+            bucket_name, acl="private")
         assert resp[0], resp[1]
         self.log.info("Getting bucket acl")
         resp = acl_obj1.get_bucket_acl_using_iam_credentials(
@@ -913,7 +909,7 @@ class TestBucketACL():
             s3_obj2.head_bucket(bucket_name)
         except CTException as error:
             self.log.debug(error.message)
-            assert BKT_ACL_CONFIG["test_10838"]["error_message"] in error.message, error.message
+            assert "Forbidden" in error.message, error.message
         self.log.info("Deleting bucket")
         s3_obj1.delete_bucket(bucket_name, force=True)
         self.log.info("Deleting multiple accounts")
@@ -934,8 +930,8 @@ class TestBucketACL():
         self.log.info(
             "Grant read permission to account2 and execute head-bucket "
             "from account2 on a bucket. Bucket belongs to account1")
-        accounts = BKT_ACL_CONFIG["test_10839"]["accounts"]
-        emails = BKT_ACL_CONFIG["test_10839"]["emails"]
+        accounts = ["acltestaccnt1", "acltestaccnt2"]
+        emails = ["acltestaccnt1@seagate.com", "acltestaccnt2@seagate.com"]
         access_keys = []
         secret_keys = []
         canonical_ids = []
@@ -952,7 +948,7 @@ class TestBucketACL():
             secret_keys.append(resp[1]["secret_key"])
             canonical_ids.append(resp[1]["canonical_id"])
         bucket_name = "{}{}".format(
-            BKT_ACL_CONFIG["test_10839"]["bucket_name"], str(int(time.time())))
+            "aclbucket-10839", str(int(time.time())))
         s3_obj1 = s3_test_lib.S3TestLib(
             access_key=access_keys[0],
             secret_key=secret_keys[0])
@@ -974,7 +970,7 @@ class TestBucketACL():
         resp = acl_obj1.put_bucket_acl(
             bucket_name,
             grant_read="{}{}".format(
-                BKT_ACL_CONFIG["test_10839"]["id_str"],
+                "id=",
                 canonical_ids[1]))
         assert resp[0], resp[1]
         self.log.info("Getting bucket acl")
@@ -985,7 +981,7 @@ class TestBucketACL():
             account_name[1],
             resp[1])
         assert_utils.assert_equals(
-            BKT_ACL_CONFIG["test_10839"]["grant_permission"],
+            "READ",
             resp[1][1][0]["Permission"],
             resp[1])
         self.log.info(
@@ -994,7 +990,7 @@ class TestBucketACL():
         assert_utils.assert_equals(resp[1]["BucketName"], bucket_name, resp[1])
         acl_obj1.put_bucket_acl(
             bucket_name,
-            acl=BKT_ACL_CONFIG["test_10839"]["default_acl"])
+            acl="private")
         self.log.info("Deleting bucket")
         s3_obj1.delete_bucket(bucket_name, force=True)
         self.log.info("Deleting multiple accounts")
@@ -1011,8 +1007,8 @@ class TestBucketACL():
         """Perform a head bucket on a bucket"""
         self.log.info("Perform a head bucket on a bucket")
         bucket_name = "{}{}".format(
-            BKT_ACL_CONFIG["bucket_acl"]["bkt_name_prefix"],
-            BKT_ACL_CONFIG["test_10840"]["bucket_name"])
+            "acl",
+            "aclbucket-10840")
         resp = S3_OBJ.create_bucket(bucket_name)
         assert resp[0], resp[1]
         assert_utils.assert_equals(resp[1], bucket_name, resp[1])
@@ -1029,9 +1025,9 @@ class TestBucketACL():
         """Create a bucket and verify default ACL"""
         self.log.info("Create a bucket and verify default ACL")
         bucket_name = "{}{}".format(
-            BKT_ACL_CONFIG["bucket_acl"]["bkt_name_prefix"],
-            BKT_ACL_CONFIG["test_10841"]["bucket_name"])
-        bucket_permission = BKT_ACL_CONFIG["test_10841"]["bucket_permission"]
+            "acl",
+            "aclbucket-10841")
+        bucket_permission = "FULL_CONTROL"
         resp = S3_OBJ.create_bucket(bucket_name)
         assert resp[0], resp[1]
         assert_utils.assert_equals(resp[1], bucket_name, resp[1])
@@ -1053,10 +1049,7 @@ class TestBucketACL():
         """
         self.log.info(
             "STARTED: put bucket in account1 and get-bucket-acl for that bucket")
-        test_cfg = BKT_ACL_CONFIG["test_312"]
-        bkt_name = "{}{}".format(
-            BKT_ACL_CONFIG["bucket_acl"]["bkt_name_prefix"],
-            test_cfg["bucket_name"].format(self.random_id))
+        bkt_name = "{}{}".format("acl", "bucket-312-{}".format(self.random_id))
         self.log.info("Step 1: Creating bucket: %s", bkt_name)
         resp = S3_OBJ.create_bucket(bkt_name)
         assert resp[0], resp[1]
@@ -1076,12 +1069,10 @@ class TestBucketACL():
         """acc1: put bucket, acc2: no permissions or canned acl, get-bucket-acl details"""
         self.log.info(
             "STARTED:acc1: put bucket, acc2: no permissions or canned acl, get-bucket-acl details")
-        test_cfg = BKT_ACL_CONFIG["test_313"]
         bkt_name = "{}{}".format(
-            BKT_ACL_CONFIG["bucket_acl"]["bkt_name_prefix"],
-            test_cfg["bucket_name"].format(self.random_id))
-        acc_name_2 = test_cfg["account_name"].format(self.random_id)
-        emailid_2 = test_cfg["email_id"].format(self.random_id)
+            "acl", "bucket-313-{}".format(self.random_id))
+        acc_name_2 = "acltestaccnt313_{}".format(self.random_id)
+        emailid_2 = "acltestaccnt313_{}@seagate.com".format(self.random_id)
         self.log.info("Step 1: Creating bucket: %s", bkt_name)
         resp = S3_OBJ.create_bucket(bkt_name)
         assert resp[0], resp[1]
@@ -1095,10 +1086,10 @@ class TestBucketACL():
             acl_test_2.get_bucket_acl(bkt_name)
         except CTException as error:
             self.log.error(error.message)
-            assert test_cfg["err_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
             self.log.info(
                 "Step 2: retrieving bucket acl using account 2 failed with error %s",
-                test_cfg["err_message"])
+                "AccessDenied")
         self.log.info(
             "ENDED:acc1: put bucket, acc2: no permissions or canned acl, get-bucket-acl details")
 
@@ -1110,12 +1101,9 @@ class TestBucketACL():
         """acc1 -put bucket, acc2- give read-acp permissions,acc1- get-bucket-acl"""
         self.log.info(
             "STARTED:acc1 -put bucket, acc2- give read-acp permissions,acc1-get-bucket-acl")
-        test_cfg = BKT_ACL_CONFIG["test_431"]
-        bkt_name = "{}{}".format(
-            BKT_ACL_CONFIG["bucket_acl"]["bkt_name_prefix"],
-            test_cfg["bucket_name"].format(self.random_id))
-        acc_name_2 = test_cfg["account_name"].format(self.random_id)
-        emailid_2 = test_cfg["email_id"].format(self.random_id)
+        bkt_name = "{}{}".format("acl", "bucket-431-{}".format(self.random_id))
+        acc_name_2 = "acltestaccnt431_{}".format(self.random_id)
+        emailid_2 = "acltestaccnt431_{}@seagate.com".format(self.random_id)
         self.log.info("Step 1: Creating bucket: %s", bkt_name)
         resp = S3_OBJ.create_bucket(bkt_name)
         assert resp[0], resp[1]
@@ -1126,7 +1114,7 @@ class TestBucketACL():
         acl_test_2 = create_acc[1][2]
         self.log.info("Step 2: Performing authenticated read acp")
         resp = ACL_OBJ.put_bucket_acl(
-            bkt_name, grant_read_acp=test_cfg["id_str"].format(cannonical_id))
+            bkt_name, grant_read_acp="id={}".format(cannonical_id))
         assert resp[0], resp[1]
         self.log.info(
             "Step 2:Bucket with read ACP permission was set for acc2")
@@ -1145,10 +1133,8 @@ class TestBucketACL():
         """Test full-control on bucket to cross account and test delete bucket from owner account"""
         self.log.info(
             "STARTED: Test full-control on bucket to cross account and test delete")
-        test_cfg = BKT_ACL_CONFIG["test_6423"]
         bkt_name = "{0}{1}".format(
-            BKT_ACL_CONFIG["bucket_acl"]["bkt_name_prefix"],
-            test_cfg["bucket_name"].format(self.random_id))
+            "acl", "bucket-6423-{}".format(self.random_id))
         create_acc = IAM_OBJ.create_s3iamcli_acc(
             self.account_name, self.email_id)
         assert create_acc[0], create_acc[1]
@@ -1166,7 +1152,7 @@ class TestBucketACL():
             "Step 3:Performing put bucket acl for bucket %s for full control",
             bkt_name)
         resp = ACL_OBJ.put_bucket_acl(
-            bkt_name, grant_full_control=test_cfg["id_str"].format(cannonical_id))
+            bkt_name, grant_full_control="id={}".format(cannonical_id))
         assert resp[0], resp[1]
         self.log.info(
             "Step 3:Performed put bucket, bucket %s for account 2",
