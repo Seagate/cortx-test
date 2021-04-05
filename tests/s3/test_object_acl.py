@@ -32,9 +32,8 @@ import pytest
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
-#from commons.utils.config_utils import read_yaml
 from commons.utils.system_utils import create_file, remove_file
-from config import S3_CFG, S3_OBJ_TST
+from config import S3_OBJ_TST
 from libs.s3 import s3_test_lib, s3_acl_test_lib, s3_tagging_test_lib
 from libs.s3 import iam_test_lib, s3_multipart_test_lib
 from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
@@ -46,7 +45,6 @@ S3_ACL_OBJ = s3_acl_test_lib.S3AclTestLib()
 S3_MUPART_OBJ = s3_multipart_test_lib.S3MultipartTestLib()
 TAG_OBJ = s3_tagging_test_lib.S3TaggingTestLib()
 
-#S3_OBJ_TST = read_yaml("config/s3/s3_object_test.yaml")[1]
 
 
 class TestObjectACL:
@@ -76,8 +74,8 @@ class TestObjectACL:
         self.log.info("STARTED: SetUp Operations")
         if os.path.exists(self.test_file_path):
             remove_file(self.test_file_path)
-        self.start_range = S3_CFG["s3_object"]["start_range"]
-        self.end_range = S3_CFG["s3_object"]["end_range"]
+        self.start_range = S3_OBJ_TST["s3_object"]["start_range"]
+        self.end_range = S3_OBJ_TST["s3_object"]["end_range"]
         self.random_num = str(
             random.choice(
                 range(
@@ -93,7 +91,7 @@ class TestObjectACL:
         Delete buckets and objects uploaded to that bucket.
         """
         self.log.info("STARTED: TearDown Operations")
-        bucket_init = S3_CFG["s3_object"]["bucket_name"][:-2]
+        bucket_init = S3_OBJ_TST["s3_object"]["bucket_name"][:-2]
         bucket_list = S3_OBJ.bucket_list()[1]
         if os.path.exists(self.test_file_path):
             remove_file(self.test_file_path)
@@ -109,7 +107,7 @@ class TestObjectACL:
         self.log.info("setup %s", all_accounts)
         iam_accounts = [acc["AccountName"]
                         for acc in all_accounts if
-                        S3_CFG["s3_object"]["acc_name_prefix"] in acc["AccountName"]]
+                        S3_OBJ_TST["s3_object"]["acc_name_prefix"] in acc["AccountName"]]
         self.log.debug(iam_accounts)
         if iam_accounts:
             for acc in iam_accounts:
@@ -164,7 +162,7 @@ class TestObjectACL:
         self.log.info("Step : Bucket is created: %s", bucket)
         self.log.info("Step : Creating a object: %s", obj)
         create_file(file_path,
-                    S3_CFG["s3_object"]["file_size"])
+                    S3_OBJ_TST["s3_object"]["file_size"])
         res = S3_OBJ.put_object(bucket, obj, file_path)
         assert res[0], res[1]
         self.log.info("Step : Object is created: %s", obj)
@@ -228,19 +226,19 @@ class TestObjectACL:
         return s3_obj_2
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5856")
     @CTFailOn(error_handler)
     def test_get_existing_obj_acl_2874(self):
         """Verify that user able to get object ACL details for existing object."""
         self.log.info(
             "verify that user able to get object ACL details for existing object")
-        bucket = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj = S3_CFG["s3_object"]["object_name"].format(
+        obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         self.log.info("Bucket and Object : %s %s", bucket, obj)
-        obj_acl = S3_CFG["s3_object"]["full_ctrl"]
+        obj_acl = S3_OBJ_TST["s3_object"]["full_ctrl"]
         self.create_bucket_obj(bucket, obj)
         self.log.info("Step 3: Getting the object ACL: %s", obj)
         res = S3_ACL_OBJ.get_object_acl(bucket, obj)
@@ -250,16 +248,16 @@ class TestObjectACL:
             "verify that user able to get object ACL details for existing object")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5855")
     @CTFailOn(error_handler)
     def test_get_nonexising_obj_acl_2875(self):
         """verify that user able to get object ACL details for non existing object."""
         self.log.info(
             "verify that user able to get object ACL details for non existing object")
-        bucket = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj = S3_CFG["s3_object"]["object_name"].format(
+        obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         self.log.info("Step 1: Creating a bucket: %s", bucket)
         res = S3_OBJ.create_bucket(bucket)
@@ -278,16 +276,16 @@ class TestObjectACL:
             "verify that user able to get object ACL details for non existing object")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5854")
     @CTFailOn(error_handler)
     def test_download_with_empty_key_2876(self):
         """Verify that user able to download with empty key or not."""
         self.log.info(
             "verify that user able to download with empty key or not")
-        bucket = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj = S3_CFG["s3_object"]["object_name"].format(
+        obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         self.log.info("Step 1: Creating a bucket: %s", bucket)
         res = S3_OBJ.create_bucket(bucket)
@@ -304,16 +302,16 @@ class TestObjectACL:
             "verify that user able to download with empty key or not")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5857")
     @CTFailOn(error_handler)
     def test_reupload_get_obj_acl_2877(self):
         """User able to reupload object and get object acl."""
         self.log.info("User able to reupload object and get object acl")
         file_path = self.test_file_path
-        bucket = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj = S3_CFG["s3_object"]["object_name"].format(
+        obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         self.create_bucket_obj(bucket, obj)
         self.log.info("Step 1: Re-Uploading Object : %s", obj)
@@ -328,16 +326,16 @@ class TestObjectACL:
         self.log.info("User able to re-upload object and get object acl")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5858")
     @CTFailOn(error_handler)
     def test_verify_del_obj_acl_2878(self):
         """User should not get object acl when object was deleted."""
         self.log.info(
             "User should not get object acl when object was deleted")
-        bucket = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj = S3_CFG["s3_object"]["object_name"].format(
+        obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         self.create_bucket_obj(bucket, obj)
         self.log.info("Step 3: Deleting object %s", obj)
@@ -355,18 +353,18 @@ class TestObjectACL:
             "User should not get object acl when object was deleted")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("")
     @CTFailOn(error_handler)
     def test_get_obj_acl_mp(self):
         """user should able to get Object acl when multipart object is uploaded."""
         self.log.info(
             "user should able to get Object acl when multipart object is uploaded")
-        bucket = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj = S3_CFG["s3_object"]["object_name"].format(
+        obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
-        obj_acl = S3_CFG["s3_object"]["full_ctrl"]
+        obj_acl = S3_OBJ_TST["s3_object"]["full_ctrl"]
         file_size = S3_OBJ_TST["test_get_obj_acl_mp"]["file_size"]
         total_parts = S3_OBJ_TST["test_get_obj_acl_mp"]["total_parts"]
         self.log.info("Step 1: Creating a bucket: %s", bucket)
@@ -413,7 +411,7 @@ class TestObjectACL:
             "user should able to get Object acl when multipart object is uploaded")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5862")
     @CTFailOn(error_handler)
     def test_multipart_upload_verify_obj_acl_2879(self):
@@ -425,13 +423,13 @@ class TestObjectACL:
         self.log.info(
             "Perform Manual Multipart Object upload using create-multipart-upload and "
             "complete-multipart-upload and verify Get object ACL")
-        bucket = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj = S3_CFG["s3_object"]["object_name"].format(
+        obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         single_part_sz = S3_OBJ_TST["test_9857"]["single_part_sz"]
         total_parts = S3_OBJ_TST["test_9857"]["total_parts"]
-        object_acl = S3_CFG["s3_object"]["full_ctrl"]
+        object_acl = S3_OBJ_TST["s3_object"]["full_ctrl"]
         self.log.info("Step 1: Creating a bucket: %s", bucket)
         res = S3_OBJ.create_bucket(bucket)
         assert res[0], res[1]
@@ -476,7 +474,7 @@ class TestObjectACL:
             "complete-multipart-upload and verify Get object ACL")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5787")
     @CTFailOn(error_handler)
     def test_default_multipart_upload_2910(self):
@@ -484,11 +482,11 @@ class TestObjectACL:
         self.log.info(
             "Perform Multipart Object upload "
             "using default Multipart upload and verify Get object ACL")
-        bucket = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj = S3_CFG["s3_object"]["object_name"].format(
+        obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
-        object_acl = S3_CFG["s3_object"]["full_ctrl"]
+        object_acl = S3_OBJ_TST["s3_object"]["full_ctrl"]
         self.log.info("Step 1: Creating a bucket: %s", bucket)
         res = S3_OBJ.create_bucket(bucket)
         assert res[0], res[1]
@@ -517,7 +515,7 @@ class TestObjectACL:
             "and verify Get object ACL")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5803")
     @CTFailOn(error_handler)
     def test_multipart_upload_chunksize_2911(self):
@@ -529,11 +527,11 @@ class TestObjectACL:
         self.log.info(
             "Perform Multipart Object upload using default upload by specifically providing "
             "chunksize using aws s3 command set")
-        bucket = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj = S3_CFG["s3_object"]["object_name"].format(
+        obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
-        object_acl = S3_CFG["s3_object"]["full_ctrl"]
+        object_acl = S3_OBJ_TST["s3_object"]["full_ctrl"]
         remove_file(S3_OBJ_TST["test_9898"]["run_cmd"])
         self.log.info("Step 1: Creating a bucket: %s", bucket)
         res = S3_OBJ.create_bucket(bucket)
@@ -564,7 +562,7 @@ class TestObjectACL:
             "chunksize using aws s3 command set")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5804")
     @CTFailOn(error_handler)
     def test_upload_abort_multipart_upload_2912(self):
@@ -572,9 +570,9 @@ class TestObjectACL:
         self.log.info(
             "Perform Manual Multipart Object upload and abort"
             " Multipart upload and verify Get Object ACL")
-        bucket = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj = S3_CFG["s3_object"]["object_name"].format(
+        obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         single_part_sz = S3_OBJ_TST["test_9899"]["single_part_sz"]
         total_parts = S3_OBJ_TST["test_9899"]["single_part_sz"]
@@ -619,22 +617,22 @@ class TestObjectACL:
             "Multipart upload and verify Get Object ACL")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5760")
     @CTFailOn(error_handler)
     def test_vald_custom_acl_xml_3210(self):
         """put object acl with valid custom acl xml and check get object acl and compare."""
         self.log.info(
             "put object acl with valid custom acl xml and check get object acl and compare")
-        bucket = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj = S3_CFG["s3_object"]["object_name"].format(
+        obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         account_name = S3_OBJ_TST["test_10208"]["account_name"].format(
             self.random_num)
         email_id = S3_OBJ_TST["test_10208"]["emailid"].format(
             self.random_num)
-        permission = S3_CFG["s3_object"]["full_ctrl"]
+        permission = S3_OBJ_TST["s3_object"]["full_ctrl"]
         result = self.create_s3iamcli_acc(account_name, email_id)
         canonical_id = result[0]
         self.create_bucket_obj(bucket, obj)
@@ -652,21 +650,21 @@ class TestObjectACL:
             "put object acl with valid custom acl xml and check get object acl and compare")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5777")
     @CTFailOn(error_handler)
     def test_valid_canonical_id_3211(self):
         """put object acl with a valid canonical ID."""
         self.log.info("put object acl with a valid canonical ID")
-        bucket = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj = S3_CFG["s3_object"]["object_name"].format(
+        obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         account_name = S3_OBJ_TST["test_10209"]["account_name"].format(
             self.random_num)
         email_id = S3_OBJ_TST["test_10209"]["emailid"].format(
             self.random_num)
-        permission = S3_CFG["s3_object"]["full_ctrl"]
+        permission = S3_OBJ_TST["s3_object"]["full_ctrl"]
         result = self.create_s3iamcli_acc(account_name, email_id)
         canonical_id = result[0]
         self.create_bucket_obj(bucket, obj)
@@ -683,17 +681,17 @@ class TestObjectACL:
         self.log.info("Put object acl with a valid canonical ID")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5779")
     @CTFailOn(error_handler)
     def test_invalid_canonical_id_3212(self):
         """put object acl with a invalid canonical ID."""
         self.log.info("put object acl with a invalid canonical ID")
-        bucket = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj = S3_CFG["s3_object"]["object_name"].format(
+        obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
-        permission = S3_CFG["s3_object"]["full_ctrl"]
+        permission = S3_OBJ_TST["s3_object"]["full_ctrl"]
         invalid_canonical_id = S3_OBJ_TST["test_10210"]["invalid_can_id"]
         assert_msg = S3_OBJ_TST["test_10210"]["assert_msg"]
         self.create_bucket_obj(bucket, obj)
@@ -711,16 +709,16 @@ class TestObjectACL:
         self.log.info("Put object acl with a invalid canonical ID")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5759")
     @CTFailOn(error_handler)
     def test_valid_read_permission_3213(self):
         """put object acl with valid permission ------------>> [Read]."""
         self.log.info(
             "put object acl with valid permission ------------>> [Read]")
-        bucket = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj = S3_CFG["s3_object"]["object_name"].format(
+        obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         account_name = S3_OBJ_TST["test_10211"]["account_name"].format(
             self.random_num)
@@ -746,16 +744,16 @@ class TestObjectACL:
             "put object acl with valid permission ------------>> [Read]")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5756")
     @CTFailOn(error_handler)
     def test_valid_write_permission_3214(self):
         """put object acl with valid permission ------------>> [Write]."""
         self.log.info(
             "put object acl with valid permission ------------>> [Write]")
-        bucket = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj = S3_CFG["s3_object"]["object_name"].format(
+        obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         account_name = S3_OBJ_TST["test_10212"]["account_name"].format(
             self.random_num)
@@ -780,16 +778,16 @@ class TestObjectACL:
             "Put object acl with valid permission ------------>> [Write]")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5757")
     @CTFailOn(error_handler)
     def test_valid_read_acp_permission_3215(self):
         """Put object acl with valid permission ------------>> [Read_acp]."""
         self.log.info(
             "put object acl with valid permission ------------>> [Read_acp]")
-        bucket = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj = S3_CFG["s3_object"]["object_name"].format(
+        obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         account_name = S3_OBJ_TST["test_10213"]["account_name"].format(
             self.random_num)
@@ -815,16 +813,16 @@ class TestObjectACL:
             "put object acl with valid permission ------------>> [Read_acp]")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5742")
     @CTFailOn(error_handler)
     def test_valid_write_acp_permission_3216(self):
         """Put object acl with valid permission ------------>> [Write_acp]."""
         self.log.info(
             "put object acl with valid permission ------------>> [Write_acp]")
-        bucket = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj = S3_CFG["s3_object"]["object_name"].format(
+        obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         account_name = S3_OBJ_TST["test_10214"]["account_name"].format(
             self.random_num)
@@ -850,15 +848,15 @@ class TestObjectACL:
             "put object acl with valid permission ------------>> [Write_acp]")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5763")
     @CTFailOn(error_handler)
     def test_invalid_permission_3217(self):
         """Put object acl with invalid permission."""
         self.log.info("put object acl with invalid permission")
-        bucket = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj = S3_CFG["s3_object"]["object_name"].format(
+        obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         account_name = S3_OBJ_TST["test_10215"]["account_name"].format(
             self.random_num)
@@ -879,15 +877,15 @@ class TestObjectACL:
         self.log.info("Put object acl with invalid permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5762")
     @CTFailOn(error_handler)
     def test_invalid_xml_structure_3218(self):
         """Put object acl with invalid XML structure."""
         self.log.info("put object acl with invalid XML structure")
-        bucket = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj = S3_CFG["s3_object"]["object_name"].format(
+        obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         account_name = S3_OBJ_TST["test_10216"]["account_name"].format(
             self.random_num)
@@ -912,7 +910,7 @@ class TestObjectACL:
         self.log.info("put object acl with invalid XML structure")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5768")
     @CTFailOn(error_handler)
     def test_cross_account_grant_3226(self):
@@ -920,15 +918,15 @@ class TestObjectACL:
         self.log.info(
             "put object acl with cross account grant and run "
             "get-object-acl to get ACL XML and compare")
-        bucket = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj = S3_CFG["s3_object"]["object_name"].format(
+        obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         account_name_1 = S3_OBJ_TST["test_10224"]["account_name_1"].format(
             self.random_num)
         email_id_1 = S3_OBJ_TST["test_10224"]["emailid_1"].format(
             self.random_num)
-        permission = S3_CFG["s3_object"]["full_ctrl"]
+        permission = S3_OBJ_TST["s3_object"]["full_ctrl"]
         result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         canonical_id_1 = result[0]
         self.log.info("Step 1: Completed creating account 1")
@@ -969,22 +967,22 @@ class TestObjectACL:
             "run get-object-acl to get ACL XML and compare")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5765")
     @CTFailOn(error_handler)
     def test_put_objacl_invalid_obj_3227(self):
         """put object acl with invalid object [i.e object is not present]."""
         self.log.info(
             "put object acl with invalid object   [i.e object is not present]")
-        bucket = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj = S3_CFG["s3_object"]["object_name"].format(
+        obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         account_name = S3_OBJ_TST["test_10225"]["account_name"].format(
             self.random_num)
         email_id = S3_OBJ_TST["test_10225"]["emailid"].format(
             self.random_num)
-        permission = S3_CFG["s3_object"]["full_ctrl"]
+        permission = S3_OBJ_TST["s3_object"]["full_ctrl"]
         result = self.create_s3iamcli_acc(account_name, email_id)
         canonical_id = result[0]
         self.log.info("Step 1: Completed creating account")
@@ -1015,17 +1013,17 @@ class TestObjectACL:
             "Put object acl with invalid object [i.e object is not present]")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5780")
     @CTFailOn(error_handler)
     def test_put_obj_acl_100grants_3229(self):
         """put object acl with 100 grants."""
         self.log.info("put object acl with 100 grants")
-        bucket = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj = S3_CFG["s3_object"]["object_name"].format(
+        obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
-        permission = S3_CFG["s3_object"]["full_ctrl"]
+        permission = S3_OBJ_TST["s3_object"]["full_ctrl"]
         name_initial = S3_OBJ_TST["test_10227"]["name_initials"]
         self.create_bucket_obj(bucket, obj)
         self.log.info(
@@ -1046,17 +1044,17 @@ class TestObjectACL:
         self.log.info("Put object acl with 100 grants")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5761")
     @CTFailOn(error_handler)
     def test_put_objacl_morethan_100grants_3230(self):
         """Put object acl with more than 100 grants."""
         self.log.info("put object acl with more than 100 grants")
-        bucket = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj = S3_CFG["s3_object"]["object_name"].format(
+        obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
-        permission = S3_CFG["s3_object"]["full_ctrl"]
+        permission = S3_OBJ_TST["s3_object"]["full_ctrl"]
         name_initial = S3_OBJ_TST["test_10228"]["name_initials"]
         self.create_bucket_obj(bucket, obj)
         self.log.info(
@@ -1087,7 +1085,7 @@ class TestObjectACL:
         self.log.info("Put object acl with 100 grants")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5767")
     @CTFailOn(error_handler)
     def test_put_obj_invalid_partid_display_3231(self):
@@ -1095,9 +1093,9 @@ class TestObjectACL:
         self.log.info(
             "put object acl with invalid <owner> part id and Display name")
         self.log.info("put object acl with more than 100 grants")
-        bucket = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj = S3_CFG["s3_object"]["object_name"].format(
+        obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         self.create_bucket_obj(bucket, obj)
         acl = S3_ACL_OBJ.get_object_acl(bucket, obj)[1]
@@ -1116,7 +1114,7 @@ class TestObjectACL:
             "put object acl with invalid <owner> part id and Display name")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5793")
     @CTFailOn(error_handler)
     def test_canned_acl_3682(self):
@@ -1124,14 +1122,14 @@ class TestObjectACL:
         self.log.info(
             "Add canned acl private for put object acl in account1 and get object from account2")
         # Generate random unique number for bucket, objects and userid
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         acl_permission = S3_OBJ_TST["test_10962"]["acl_permission"]
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
-                           S3_CFG["s3_object"]["file_size"])
+                           S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         # User Account Variables
         account_name_1 = S3_OBJ_TST["test_10962"]["account_name_1"].format(
@@ -1176,13 +1174,13 @@ class TestObjectACL:
             self.log.info("Step 5: Getting object from user 2")
             s3_acl_obj_2.get_object_acl(bucket_name, s3obj_name)
         except CTException as error:
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
         self.log.info("Step 5: Object resp should fail with exception")
         self.log.info("Add canned acl private for put object acl in \
                                                     account1 and get object from account2")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5791")
     @CTFailOn(error_handler)
     def test_put_get_canned_acl_3683(self):
@@ -1190,14 +1188,14 @@ class TestObjectACL:
         self.log.info(
             "Add canned acl private for put object in account1 and get object from account2")
         # Generate random unique number for bucket, objects and userid
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         acl_permission = S3_OBJ_TST["test_10963"]["acl_permission"]
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
-                           S3_CFG["s3_object"]["file_size"])
+                           S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         # User Account Variables
         account_name_1 = S3_OBJ_TST["test_10963"]["account_name_1"].format(
@@ -1239,12 +1237,12 @@ class TestObjectACL:
             self.log.info("Step 5: Getting object from user 2")
             s3_acl_obj_2.get_object_acl(bucket_name, s3obj_name)
         except CTException as error:
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
         self.log.info(
             "Add canned acl private for put object in account1 and get object from account2")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5748")
     @CTFailOn(error_handler)
     def test_private_canned_write_acp_3684(self):
@@ -1257,9 +1255,9 @@ class TestObjectACL:
             "put object in account1 and give write-acp to account2 and apply"
             " private canned acl for put-objecct-acl and check for get-object-acl from account1")
         # Generate random unique number for bucket, objects and userid
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         write_acp = S3_OBJ_TST["test_10964"]["acl_permission"]
         account_name = S3_OBJ_TST["test_10964"]["account_name"].format(
@@ -1310,7 +1308,7 @@ class TestObjectACL:
             "canned acl for put-object-acl and check for get-object-acl from account1")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5794")
     @CTFailOn(error_handler)
     def test_canned_acl_authenticated_read_3685(self):
@@ -1323,9 +1321,9 @@ class TestObjectACL:
             "Add canned acl authenticated-read for put object in account1 "
             "and try to get object from account2")
         # Generate random unique number for bucket, objects and userid
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         auth_read = S3_OBJ_TST["test_10965"]["auth_read"]
         account_name_1 = S3_OBJ_TST["test_10965"]["account_name_1"].format(
@@ -1334,7 +1332,7 @@ class TestObjectACL:
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
-                           S3_CFG["s3_object"]["file_size"])
+                           S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         # Creating User Account 1
         self.log.info("Step 1: Creating User Account 1")
@@ -1374,13 +1372,13 @@ class TestObjectACL:
             self.log.info("Getting the Object from user second")
             s3_acl_obj_2.get_object_acl(bucket_name, s3obj_name)
         except CTException as error:
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
         self.log.info(
             "Add canned acl authenticated-read for put object in account1 "
             "and try to get object from account2")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5797")
     @CTFailOn(error_handler)
     def test_put_get_canned_acl_authread_3686(self):
@@ -1392,9 +1390,9 @@ class TestObjectACL:
         self.log.info(
             "Add canned acl authenticated-read for put object acl in account1 "
             "and try to get object from account2")
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         auth_read = S3_OBJ_TST["test_10966"]["auth_read"]
         account_name_1 = S3_OBJ_TST["test_10966"]["account_name_1"].format(
@@ -1403,7 +1401,7 @@ class TestObjectACL:
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
-                           S3_CFG["s3_object"]["file_size"])
+                           S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         # Creating User Account 1
         result = self.create_s3iamcli_acc(account_name_1, email_id_1)
@@ -1447,7 +1445,7 @@ class TestObjectACL:
             self.log.info("Step 6: Getting the Object from user second")
             s3_acl_obj_2.get_object_acl(bucket_name, s3obj_name)
         except CTException as error:
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
             self.log.info(
                 "Step 6: Get object ACL response using account 2 is AccessDenied")
         object_file_resp = s3_acl_obj_2.s3_client.get_object(
@@ -1458,7 +1456,7 @@ class TestObjectACL:
             "and try to get object from account2")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5749")
     @CTFailOn(error_handler)
     def test_authenticated_read_canned_acl_3687(self):
@@ -1474,20 +1472,20 @@ class TestObjectACL:
             "check for get-object-acl from account1")
 
         # Generate random unique number for bucket, objects and userid
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         write_acp = S3_OBJ_TST["test_10967"]["write_acp"]
         auth_read = S3_OBJ_TST["test_10967"]["auth_read"]
         account_name_1 = S3_OBJ_TST["test_10967"]["account_name_1"].format(
             self.random_num)
-        error_msg = S3_CFG["s3_object"]["error_msg"]
+        error_msg = S3_OBJ_TST["s3_object"]["error_msg"]
         email_id_1 = S3_OBJ_TST["test_10967"]["emailid_1"].format(
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
-                           S3_CFG["s3_object"]["file_size"])
+                           S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         # Creating User Account 2
         result = self.create_s3iamcli_acc(account_name_1, email_id_1)
@@ -1549,7 +1547,7 @@ class TestObjectACL:
             "check for get-object-acl from account1")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5792")
     @CTFailOn(error_handler)
     def test_canned_acl_private_read_acp_3688(self):
@@ -1562,9 +1560,9 @@ class TestObjectACL:
             "Add canned acl private for put object in account1 and after give "
             "read-acp permissions to account2 and check the operations")
         # Generate random unique number for bucket, objects and userid
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         read_acp = S3_OBJ_TST["test_10968"]["read_acp"]
         account_name_1 = S3_OBJ_TST["test_10968"]["account_name_1"].format(
@@ -1574,7 +1572,7 @@ class TestObjectACL:
         private_acl = S3_OBJ_TST["test_10968"]["private_acl"]
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
-                           S3_CFG["s3_object"]["file_size"])
+                           S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         # Creating User Account 1
         result = self.create_s3iamcli_acc(account_name_1, email_id_1)
@@ -1637,7 +1635,7 @@ class TestObjectACL:
             "read-acp permissions to account2 and check the operations")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5795")
     @CTFailOn(error_handler)
     def test_authenticated_read_acp_permissions_3689(self):
@@ -1649,15 +1647,15 @@ class TestObjectACL:
         self.log.info(
             "Add canned acl authenticated-read for put object in account1 "
             "and after give read-acp permissions to account2 and check the operations")
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         read_acp = S3_OBJ_TST["test_10969"]["read_acp"]
         auth_read = S3_OBJ_TST["test_10969"]["auth_read"]
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
-                           S3_CFG["s3_object"]["file_size"])
+                           S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         # User Account Variables
         account_name_1 = S3_OBJ_TST["test_10969"]["account_name_1"].format(
@@ -1725,13 +1723,13 @@ class TestObjectACL:
             self.log.info(
                 "Step 6: Get ACL response for Account 2 %s", get_acl_res)
         except CTException as error:
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
         self.log.info(
             "Add canned acl authenticated-read for put object in account1"
             "and after give read-acp permissions to account2 and check the operations")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5789")
     @CTFailOn(error_handler)
     def test_overwrite_private_canned_acl_3693(self):
@@ -1744,15 +1742,15 @@ class TestObjectACL:
             "First add authenticated-read canned ACL to object and "
             "overwrite private canned ACL to same object")
         # Generate random unique number for bucket, objects and userid
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         private_acl = S3_OBJ_TST["test_10972"]["private_acl"]
         auth_read = S3_OBJ_TST["test_10972"]["auth_read"]
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
-                           S3_CFG["s3_object"]["file_size"])
+                           S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         # User Account Variables
         account_name_1 = S3_OBJ_TST["test_10972"]["account_name_1"].format(
@@ -1805,14 +1803,14 @@ class TestObjectACL:
             self.log.info("Step 6: Getting the Object from user second")
             s3_acl_obj_2.get_object_acl(bucket_name, s3obj_name)
         except CTException as error:
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
             self.log.info("Step 6: Object from should return ACCESSIONED")
         self.log.info(
             "First add private canned ACL to object "
             "and after that overwrite authenticated-read canned ACL to same object")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5788")
     @CTFailOn(error_handler)
     def test_overwrite_authenticated_read_canned_acl_3692(self):
@@ -1825,15 +1823,15 @@ class TestObjectACL:
             "First add private canned ACL to object "
             "and after that overwrite authenticated-read canned ACL to same object")
         # Generate random unique number for bucket, objects and userid
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         auth_read = S3_OBJ_TST["test_10973"]["auth_read"]
         private_acl = S3_OBJ_TST["test_10973"]["private_acl"]
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
-                           S3_CFG["s3_object"]["file_size"])
+                           S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         # Creating User Account 1
         # User Account Variables
@@ -1887,14 +1885,14 @@ class TestObjectACL:
         try:
             s3_acl_obj_2.get_object_acl(bucket_name, s3obj_name)
         except CTException as error:
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
         self.log.info("Step 6: Done getting object ACL from user 2")
         self.log.info(
             "First add private canned ACL to object "
             "and after that overwirte authenticated-read canned ACL to same object")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5745")
     @CTFailOn(error_handler)
     def test_bucket_owner_read_canned_acl_3694(self):
@@ -1907,14 +1905,14 @@ class TestObjectACL:
             "Verify bucket-owner-read canned ACL when object does not "
             "belong to the bucket owner.and check for the results")
         # Generate random unique number for bucket, objects and userid
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         can_object_acl = S3_OBJ_TST["test_10974"]["can_object_acl"]
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
-                           S3_CFG["s3_object"]["file_size"])
+                           S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         # Creating User Account 1
         # User Account Variables
@@ -1998,13 +1996,13 @@ class TestObjectACL:
             get_usr_obj = s3_acl_obj_1.get_object_acl(bucket_name, s3obj_name)
             assert not get_usr_obj[0]
         except CTException as error:
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
         self.log.info(
             "Verify bucket-owner-read canned ACL when object does not "
             "belong to the bucket owner.and check for the results")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5746")
     @CTFailOn(error_handler)
     def test_bucket_owner_full_control_3695(self):
@@ -2017,15 +2015,15 @@ class TestObjectACL:
             "put-object from account2 with the canned acl bucket-owner-full-control "
             "from account1 where account2 has write permissions")
         # Generate random unique number for bucket, objects and userid
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         can_object_acl = S3_OBJ_TST["test_10975"]["can_object_acl"]
         write_acp = S3_OBJ_TST["test_10975"]["write_acp"]
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
-                           S3_CFG["s3_object"]["file_size"])
+                           S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         # Creating User Account 1
         # User Account Variables
@@ -2112,13 +2110,13 @@ class TestObjectACL:
         try:
             s3_acl_obj_1.get_object_acl(bucket_name, s3obj_name)
         except CTException as error:
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
         self.log.info(
             "put-object from account2 with the canned acl"
             "bucket-owner-full-control from account1 where account2 has write permissions")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5820")
     @CTFailOn(error_handler)
     def test_read_acl_permission_3504(self):
@@ -2128,15 +2126,15 @@ class TestObjectACL:
         account_name = S3_OBJ_TST["test_10781"]["account_name"].format(
             self.random_num)
         email = S3_OBJ_TST["test_10781"]["emailid"].format(self.random_num)
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        key = S3_CFG["s3_object"]["object_name"].format(
+        key = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         bucket_permission = S3_OBJ_TST["test_10781"]["can_object_acl"]
-        emailaddress = S3_CFG["s3_object"]["emailaddr"]
+        emailaddress = S3_OBJ_TST["s3_object"]["emailaddr"]
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
-                           S3_CFG["s3_object"]["file_size"])
+                           S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         self.log.info(
             "Step 1 : Creating account with name %s and email %s",
@@ -2160,14 +2158,14 @@ class TestObjectACL:
                 acl=bucket_permission,
                 grant_read=emailaddress.format(email))
         except CTException as error:
-            assert S3_CFG["s3_object"]["inval_req"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["inval_req"] in error.message, error.message
         self.log.info(
             "Step 3: Putting object with acl and bucket permission uploaded successfully")
         self.log.info(
             "Add canned ACL bucket-owner-full-control along with READ ACL grant permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5813")
     @CTFailOn(error_handler)
     def test_canned_read_acl_permission_3509(self):
@@ -2177,15 +2175,15 @@ class TestObjectACL:
         account_name = S3_OBJ_TST["test_10782"]["account_name"].format(
             self.random_num)
         email = S3_OBJ_TST["test_10782"]["emailid"].format(self.random_num)
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        key = S3_CFG["s3_object"]["object_name"].format(
+        key = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         bucket_permission = S3_OBJ_TST["test_10782"]["can_object_acl"]
-        emailaddress = S3_CFG["s3_object"]["emailaddr"]
+        emailaddress = S3_OBJ_TST["s3_object"]["emailaddr"]
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
-                           S3_CFG["s3_object"]["file_size"])
+                           S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
@@ -2209,13 +2207,13 @@ class TestObjectACL:
                 acl=bucket_permission,
                 grant_read=emailaddress.format(email))
         except CTException as error:
-            assert S3_CFG["s3_object"]["inval_req"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["inval_req"] in error.message, error.message
         self.log.info("Step 3: Done putting object with acl and grants")
         self.log.info(
             "Add canned ACL bucket-owner-read along with READ ACL grant permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5850")
     @CTFailOn(error_handler)
     def test_canned_private_read_acl_3543(self):
@@ -2225,15 +2223,15 @@ class TestObjectACL:
         account_name = S3_OBJ_TST["test_10783"]["account_name"].format(
             self.random_num)
         email = S3_OBJ_TST["test_10783"]["emailid"].format(self.random_num)
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        key = S3_CFG["s3_object"]["object_name"].format(
+        key = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         bucket_permission = S3_OBJ_TST["test_10783"]["private_acp"]
-        emailaddress = S3_CFG["s3_object"]["emailaddr"]
+        emailaddress = S3_OBJ_TST["s3_object"]["emailaddr"]
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
-                           S3_CFG["s3_object"]["file_size"])
+                           S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
@@ -2258,14 +2256,14 @@ class TestObjectACL:
                 acl=bucket_permission,
                 grant_read=emailaddress.format(email))
         except CTException as error:
-            assert S3_CFG["s3_object"]["inval_req"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["inval_req"] in error.message, error.message
         self.log.info(
             "Step 3: Completed uploading object with invalid permissions")
         self.log.info(
             "Add canned ACL private along with READ ACL grant permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5851")
     @CTFailOn(error_handler)
     def test_private_full_control_3544(self):
@@ -2275,15 +2273,15 @@ class TestObjectACL:
         account_name = S3_OBJ_TST["test_10784"]["account_name"].format(
             self.random_num)
         email = S3_OBJ_TST["test_10784"]["emailid"].format(self.random_num)
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        key = S3_CFG["s3_object"]["object_name"].format(
+        key = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         bucket_permission = S3_OBJ_TST["test_10784"]["private_acp"]
-        emailaddress = S3_CFG["s3_object"]["emailaddr"]
+        emailaddress = S3_OBJ_TST["s3_object"]["emailaddr"]
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
-                           S3_CFG["s3_object"]["file_size"])
+                           S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
@@ -2308,14 +2306,14 @@ class TestObjectACL:
                 acl=bucket_permission,
                 grant_full_control=emailaddress.format(email))
         except CTException as error:
-            assert S3_CFG["s3_object"]["inval_req"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["inval_req"] in error.message, error.message
         self.log.info(
             "Step 3: Completed uploading object with invalid permissions")
         self.log.info(
             "Add canned ACL private along with FULL_CONTROL ACL grant permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5847")
     @CTFailOn(error_handler)
     def test_public_read_acp_permission_3546(self):
@@ -2325,15 +2323,15 @@ class TestObjectACL:
         account_name = S3_OBJ_TST["test_10786"]["account_name"].format(
             self.random_num)
         email = S3_OBJ_TST["test_10786"]["emailid"].format(self.random_num)
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        key = S3_CFG["s3_object"]["object_name"].format(
+        key = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         bucket_permission = S3_OBJ_TST["test_10786"]["private_acp"]
-        emailaddress = S3_CFG["s3_object"]["emailaddr"]
+        emailaddress = S3_OBJ_TST["s3_object"]["emailaddr"]
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
-                           S3_CFG["s3_object"]["file_size"])
+                           S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
@@ -2358,14 +2356,14 @@ class TestObjectACL:
                 acl=bucket_permission,
                 grant_read_acp=emailaddress.format(email))
         except CTException as error:
-            assert S3_CFG["s3_object"]["inval_req"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["inval_req"] in error.message, error.message
         self.log.info(
             "Step 3: Completed uploading object with invalid request permissions")
         self.log.info(
             "Add canned ACL public_read along with READ_ACP ACL grant permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5845")
     @CTFailOn(error_handler)
     def test_public_read_write_acp_3547(self):
@@ -2375,15 +2373,15 @@ class TestObjectACL:
         account_name = S3_OBJ_TST["test_10787"]["account_name"].format(
             self.random_num)
         email = S3_OBJ_TST["test_10787"]["emailid"].format(self.random_num)
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        key = S3_CFG["s3_object"]["object_name"].format(
+        key = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         bucket_permission = S3_OBJ_TST["test_10787"]["private_acp"]
-        emailaddress = S3_CFG["s3_object"]["emailaddr"]
+        emailaddress = S3_OBJ_TST["s3_object"]["emailaddr"]
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
-                           S3_CFG["s3_object"]["file_size"])
+                           S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
@@ -2408,14 +2406,14 @@ class TestObjectACL:
                 acl=bucket_permission,
                 grant_write_acp=emailaddress.format(email))
         except CTException as error:
-            assert S3_CFG["s3_object"]["inval_req"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["inval_req"] in error.message, error.message
         self.log.info(
             "Step 3: Completed uploading object with invalid request permissions")
         self.log.info(
             "Add canned ACL public_read along with WRITE_ACP ACL grant permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5843")
     @CTFailOn(error_handler)
     def test_public_read_write_acp_acl_3548(self):
@@ -2425,15 +2423,15 @@ class TestObjectACL:
         account_name = S3_OBJ_TST["test_10788"]["account_name"].format(
             self.random_num)
         email = S3_OBJ_TST["test_10788"]["emailid"].format(self.random_num)
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        key = S3_CFG["s3_object"]["object_name"].format(
+        key = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         bucket_permission = S3_OBJ_TST["test_10788"]["private_acp"]
-        emailaddress = S3_CFG["s3_object"]["emailaddr"]
+        emailaddress = S3_OBJ_TST["s3_object"]["emailaddr"]
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
-                           S3_CFG["s3_object"]["file_size"])
+                           S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
@@ -2456,14 +2454,14 @@ class TestObjectACL:
                 acl=bucket_permission,
                 grant_write_acp=emailaddress.format(email))
         except CTException as error:
-            assert S3_CFG["s3_object"]["inval_req"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["inval_req"] in error.message, error.message
         self.log.info(
             "Step 3: Completed uploading object with invalid request permissions")
         self.log.info(
             "Add canned ACL public_read-write along with WRITE_ACP ACL grant permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5844")
     @CTFailOn(error_handler)
     def test_public_read_write_full_control_3549(self):
@@ -2473,15 +2471,15 @@ class TestObjectACL:
         account_name = S3_OBJ_TST["test_10789"]["account_name"].format(
             self.random_num)
         email = S3_OBJ_TST["test_10789"]["emailid"].format(self.random_num)
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        key = S3_CFG["s3_object"]["object_name"].format(
+        key = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         bucket_permission = S3_OBJ_TST["test_10789"]["private_acp"]
-        emailaddress = S3_CFG["s3_object"]["emailaddr"]
+        emailaddress = S3_OBJ_TST["s3_object"]["emailaddr"]
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
-                           S3_CFG["s3_object"]["file_size"])
+                           S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
@@ -2504,14 +2502,14 @@ class TestObjectACL:
                 acl=bucket_permission,
                 grant_full_control=emailaddress.format(email))
         except CTException as error:
-            assert S3_CFG["s3_object"]["inval_req"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["inval_req"] in error.message, error.message
         self.log.info(
             "Step 3: Completed uploading object with invalid request permissions")
         self.log.info(
             "Add canned ACL public_read-write along with FULL_CONTROL ACL grant permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5853")
     @CTFailOn(error_handler)
     def test_authenticate_read_acl_3550(self):
@@ -2521,13 +2519,13 @@ class TestObjectACL:
         account_name = S3_OBJ_TST["test_10790"]["account_name"].format(
             self.random_num)
         email = S3_OBJ_TST["test_10790"]["emailid"].format(self.random_num)
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        emailaddress = S3_CFG["s3_object"]["emailaddr"]
+        emailaddress = S3_OBJ_TST["s3_object"]["emailaddr"]
         test_file_path = self.test_file_path
         resp = create_file(
             test_file_path,
-            S3_CFG["s3_object"]["file_size"])
+            S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
@@ -2546,21 +2544,21 @@ class TestObjectACL:
         try:
             s3_acl_obj_1.put_object_with_acl(
                 bucket_name,
-                S3_CFG["s3_object"]["object_name"].format(
+                S3_OBJ_TST["s3_object"]["object_name"].format(
                     self.random_num),
                 test_file_path,
                 acl=S3_OBJ_TST["test_10790"]["auth_read"],
                 grant_read=emailaddress.format(email))
         except CTException as error:
-            assert S3_CFG["s3_object"]["inval_req"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["inval_req"] in error.message, error.message
         self.log.info(
             "Step 3: Upload object with error failure message %s",
-            S3_CFG["s3_object"]["inval_req"])
+            S3_OBJ_TST["s3_object"]["inval_req"])
         self.log.info(
             "Add canned ACL authenticate_read along with READ ACL grant permissionn")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5852")
     @CTFailOn(error_handler)
     def test_authenticate_read_acp_acl_3551(self):
@@ -2570,13 +2568,13 @@ class TestObjectACL:
         account_name = S3_OBJ_TST["test_10791"]["account_name"].format(
             self.random_num)
         email = S3_OBJ_TST["test_10791"]["emailid"].format(self.random_num)
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        emailaddress = S3_CFG["s3_object"]["emailaddr"]
+        emailaddress = S3_OBJ_TST["s3_object"]["emailaddr"]
         test_file_path = self.test_file_path
         resp = create_file(
             test_file_path,
-            S3_CFG["s3_object"]["file_size"])
+            S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
@@ -2596,36 +2594,36 @@ class TestObjectACL:
         try:
             s3_acl_obj_1.put_object_with_acl(
                 bucket_name,
-                S3_CFG["s3_object"]["object_name"].format(
+                S3_OBJ_TST["s3_object"]["object_name"].format(
                     self.random_num),
                 test_file_path,
                 acl=S3_OBJ_TST["test_10791"]["private_acp"],
                 grant_read_acp=emailaddress.format(email))
         except CTException as error:
-            assert S3_CFG["s3_object"]["inval_req"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["inval_req"] in error.message, error.message
         self.log.info(
             "Step 3: Putting object with invalid account/permission raised an "
             "exception was handled with error : %s",
-            S3_CFG["s3_object"]["inval_req"])
+            S3_OBJ_TST["s3_object"]["inval_req"])
         self.log.info(
             "Add canned ACL authenticate_read along with READ_ACP ACL grant permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5800")
     @CTFailOn(error_handler)
     def test_bucket_owner_read_canned_acl_3496(self):
         """Verify bucket-owner-read canned ACL when object belongs to the bucket owner."""
         self.log.info(
             "Verify bucket-owner-read canned ACL when object belongs to the bucket owner")
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj = S3_CFG["s3_object"]["object_name"].format(
+        obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(
             test_file_path,
-            S3_CFG["s3_object"]["file_size"])
+            S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         self.log.info("Step 1: Creating bucket")
         resp = S3_OBJ.create_bucket(bucket_name)
@@ -2643,28 +2641,28 @@ class TestObjectACL:
         self.log.info("Step 3: Getting the object acl")
         res = S3_ACL_OBJ.get_object_acl(bucket_name, obj)
         assert res[0], res[1]
-        assert S3_CFG["s3_object"]["full_ctrl"] in str(
+        assert S3_OBJ_TST["s3_object"]["full_ctrl"] in str(
             res[1]), res[0]
         self.log.info("Step 3: Object was uploaded with ACL permission")
         self.log.info(
             "Verify bucket-owner-read canned ACL when object belongs to the bucket owner")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5802")
     @CTFailOn(error_handler)
     def test_bucket_owner_full_control_acl_3497(self):
         """Verify bucket-owner-full-control canned ACL when object belongs to the bucket owner."""
         self.log.info(
             "Verify bucket-owner-full-control canned ACL when object belongs to the bucket owner")
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj = S3_CFG["s3_object"]["object_name"].format(
+        obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(
             test_file_path,
-            S3_CFG["s3_object"]["file_size"])
+            S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         self.log.info("Step 1: Creating bucket")
         resp = S3_OBJ.create_bucket(bucket_name)
@@ -2689,21 +2687,21 @@ class TestObjectACL:
             "Verify bucket-owner-full-control canned ACL when object belongs to the bucket owner")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5799")
     @CTFailOn(error_handler)
     def test_bucket_owner_read_canned_3498(self):
         """Verify bucket-owner-read canned ACL when object does not belong to the bucket owner."""
         self.log.info(
             "Verify bucket-owner-read canned ACL when object does not belong to the bucket owner")
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj_name = S3_CFG["s3_object"]["object_name"].format(
+        obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(
             test_file_path,
-            S3_CFG["s3_object"]["file_size"])
+            S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         account_name_list = []
 
@@ -2763,7 +2761,7 @@ class TestObjectACL:
         try:
             s3_acl_obj_1.get_object_acl(bucket_name, obj_name)
         except CTException as error:
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
         try:
             s3_acl_obj_1.put_object_with_acl(
                 bucket_name,
@@ -2771,7 +2769,7 @@ class TestObjectACL:
                 test_file_path,
                 acl=S3_OBJ_TST["test_10714"]["auth_read"])
         except CTException as error:
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
         self.log.info(
             "Step 4: Put Object ACL operation should fail with exception and"
             "error message was verified")
@@ -2779,7 +2777,7 @@ class TestObjectACL:
             "Verify bucket-owner-read canned ACL when object does not belong to the bucket owner")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5801")
     @CTFailOn(error_handler)
     def test_bucket_owner_full_control_3499(self):
@@ -2788,14 +2786,14 @@ class TestObjectACL:
 
         when object does not belong to the bucket owner.
         """
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj_name = S3_CFG["s3_object"]["object_name"].format(
+        obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(
             test_file_path,
-            S3_CFG["s3_object"]["file_size"])
+            S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         self.log.info("Step 1: Creating User Account 1 and 2")
         account_name_1 = S3_OBJ_TST["test_10715"]["account_name_1"].format(
@@ -2850,7 +2848,7 @@ class TestObjectACL:
         res = s3obj_user2.get_object_acl(bucket_name, obj_name)
         assert res[0], res[1]
         assert res[1]["Grants"][1]["Permission"] == \
-            S3_CFG["s3_object"]["full_ctrl"], res[1]
+            S3_OBJ_TST["s3_object"]["full_ctrl"], res[1]
         res = s3acl_user1.get_object_acl(bucket_name, obj_name)
         assert res[0], res[1]
         self.log.info(
@@ -2862,13 +2860,13 @@ class TestObjectACL:
                 test_file_path,
                 acl=S3_OBJ_TST["test_10715"]["auth_read"])
         except CTException as error:
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
         self.log.info(
             "Verify bucket-owner-full-control "
             "canned ACL when object does not belong to the bucket owner")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5805")
     @CTFailOn(error_handler)
     def test_bucket_owner_read_acl_full_control_3502(self):
@@ -2881,14 +2879,14 @@ class TestObjectACL:
         self.log.info(
             "First add bucket-owner-read canned ACL to object and after that overwrite"
             "bucket-owner-full-control canned ACL to same object")
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        key = S3_CFG["s3_object"]["object_name"].format(
+        key = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(
             test_file_path,
-            S3_CFG["s3_object"]["file_size"])
+            S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         self.log.info("Step 1: Creating User Account 1")
         account_name_1 = S3_OBJ_TST["test_10718"]["account_name_1"].format(
@@ -2930,14 +2928,14 @@ class TestObjectACL:
         resp = s3acl_user.get_object_acl(bucket_name, key)
         assert resp[0], resp[1]
         assert resp[1]["Grants"][0]["Permission"] == \
-            S3_CFG["s3_object"]["full_ctrl"], resp[1]
+            S3_OBJ_TST["s3_object"]["full_ctrl"], resp[1]
         self.log.info("Step 7: Get object ACL response is verified")
         self.log.info(
             "First add bucket-owner-read canned ACL to object and after that overwrite"
             "bucket-owner-full-control canned ACL to same object")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5806")
     @CTFailOn(error_handler)
     def test_bucket_owner_full_control_read_canned_3503(self):
@@ -2946,14 +2944,14 @@ class TestObjectACL:
 
         bucket-owner-read canned ACL to same object
         """
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        key = S3_CFG["s3_object"]["object_name"].format(
+        key = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(
             test_file_path,
-            S3_CFG["s3_object"]["file_size"])
+            S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         self.log.info("Step 1: Creating User Account 1")
         account_name_1 = S3_OBJ_TST["test_10719"]["account_name_1"].format(
@@ -2993,7 +2991,7 @@ class TestObjectACL:
         resp = s3acl_user.get_object_acl(bucket_name, key)
         assert resp[0], resp[1]
         assert resp[1]["Grants"][0]["Permission"] == \
-            S3_CFG["s3_object"]["full_ctrl"], resp[1]
+            S3_OBJ_TST["s3_object"]["full_ctrl"], resp[1]
         self.log.info(
             "Step 4: Put object was successful and get object ACL response was verified")
         self.log.info(
@@ -3001,7 +2999,7 @@ class TestObjectACL:
             "bucket-owner-read canned ACL to same object")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5817")
     @CTFailOn(error_handler)
     def test_full_control_write_acl_3505(self):
@@ -3012,14 +3010,14 @@ class TestObjectACL:
             self.random_num)
         email = S3_OBJ_TST["test_10721"]["emailid_1"].format(
             self.random_num)
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        key = S3_CFG["s3_object"]["object_name"].format(
+        key = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(
             test_file_path,
-            S3_CFG["s3_object"]["file_size"])
+            S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
@@ -3045,15 +3043,15 @@ class TestObjectACL:
                 acl=S3_OBJ_TST["test_10721"]["bucket_full_control"],
                 grant_write=emailid.format(email))
         except CTException as error:
-            assert S3_CFG["s3_object"]["inval_req"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["inval_req"] in error.message, error.message
         self.log.info(
             "Step 3: Putting object with acl was handled with error message :%s",
-            S3_CFG["s3_object"]["inval_req"])
+            S3_OBJ_TST["s3_object"]["inval_req"])
         self.log.info(
             "Add canned ACL bucket-owner-full-control along with WRITE ACL grant permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5818")
     @CTFailOn(error_handler)
     def test_full_control_read_acp_acl_3506(self):
@@ -3064,14 +3062,14 @@ class TestObjectACL:
             self.random_num)
         email = S3_OBJ_TST["test_10722"]["emailid_1"].format(
             self.random_num)
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        key = S3_CFG["s3_object"]["object_name"].format(
+        key = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(
             test_file_path,
-            S3_CFG["s3_object"]["file_size"])
+            S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
@@ -3088,7 +3086,7 @@ class TestObjectACL:
         self.log.info("Step 2: Bucket was successfully created")
         self.log.info(
             "Step 3: Putting object with acl and grant permission")
-        emailid = S3_CFG["s3_object"]["emailaddr"]
+        emailid = S3_OBJ_TST["s3_object"]["emailaddr"]
         try:
             acl_obj.put_object_with_acl(
                 bucket_name,
@@ -3097,15 +3095,15 @@ class TestObjectACL:
                 acl=S3_OBJ_TST["test_10722"]["bucket_full_control"],
                 grant_read_acp=emailid.format(email))
         except CTException as error:
-            assert S3_CFG["s3_object"]["inval_req"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["inval_req"] in error.message, error.message
         self.log.info(
             "Step 3: Putting object with acl was handled with error message :%s",
-            S3_CFG["s3_object"]["inval_req"])
+            S3_OBJ_TST["s3_object"]["inval_req"])
         self.log.info(
             "Add canned ACL bucket-owner-full-control along with READ_ACP ACL grant permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5816")
     @CTFailOn(error_handler)
     def test_bucket_owner_full_control_write_acp_3507(self):
@@ -3117,12 +3115,12 @@ class TestObjectACL:
             self.random_num)
         email = S3_OBJ_TST["test_10723"]["emailid_1"].format(
             self.random_num)
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(
             test_file_path,
-            S3_CFG["s3_object"]["file_size"])
+            S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
@@ -3138,25 +3136,25 @@ class TestObjectACL:
         assert resp[0], resp[1]
         self.log.info("Step 2: Bucket was created successfully")
         self.log.info("Step 3: Putting object with acl permission")
-        emailid = S3_CFG["s3_object"]["emailaddr"]
+        emailid = S3_OBJ_TST["s3_object"]["emailaddr"]
         try:
             acl_obj.put_object_with_acl(
                 bucket_name,
-                S3_CFG["s3_object"]["object_name"].format(
+                S3_OBJ_TST["s3_object"]["object_name"].format(
                     self.random_num),
                 test_file_path,
                 acl=S3_OBJ_TST["test_10723"]["bucket_full_control"],
                 grant_write_acp=emailid.format(email))
         except CTException as error:
-            assert S3_CFG["s3_object"]["inval_req"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["inval_req"] in error.message, error.message
         self.log.info(
             "Step 3: Putting object with acl was handled with error message :%s",
-            S3_CFG["s3_object"]["inval_req"])
+            S3_OBJ_TST["s3_object"]["inval_req"])
         self.log.info(
             "Add canned ACL bucket-owner-full-control along with WRITE_ACP ACL grant permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5822")
     @CTFailOn(error_handler)
     def test_bucket_owner_full_control_acl_3508(self):
@@ -3167,12 +3165,12 @@ class TestObjectACL:
             self.random_num)
         email = S3_OBJ_TST["test_10724"]["emailid_1"].format(
             self.random_num)
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(
             test_file_path,
-            S3_CFG["s3_object"]["file_size"])
+            S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
@@ -3189,25 +3187,25 @@ class TestObjectACL:
         self.log.info("Step 2: Bucket was created")
         self.log.info(
             "Step 3: Putting object with acl and grant permission")
-        emailid = S3_CFG["s3_object"]["emailaddr"]
+        emailid = S3_OBJ_TST["s3_object"]["emailaddr"]
         try:
             acl_obj.put_object_with_acl(
                 bucket_name,
-                S3_CFG["s3_object"]["object_name"].format(
+                S3_OBJ_TST["s3_object"]["object_name"].format(
                     self.random_num),
                 test_file_path,
                 acl=S3_OBJ_TST["test_10724"]["bucket_full_control"],
                 grant_full_control=emailid.format(email))
         except CTException as error:
-            assert S3_CFG["s3_object"]["inval_req"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["inval_req"] in error.message, error.message
         self.log.info(
             "Step 3: Object was uploaded with invalid permission was handled with error message:%s",
-            S3_CFG["s3_object"]["inval_req"])
+            S3_OBJ_TST["s3_object"]["inval_req"])
         self.log.info(
             "Add canned ACL bucket-owner-full-control along with FULL_CONTROL ACL grant permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5809")
     @CTFailOn(error_handler)
     def test_bucket_owner_read_write_acl_permission_3510(self):
@@ -3218,14 +3216,14 @@ class TestObjectACL:
             self.random_num)
         email = S3_OBJ_TST["test_10726"]["emailid_1"].format(
             self.random_num)
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        key = S3_CFG["s3_object"]["object_name"].format(
+        key = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(
             test_file_path,
-            S3_CFG["s3_object"]["file_size"])
+            S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
@@ -3243,7 +3241,7 @@ class TestObjectACL:
         put_res = s3obj_user.put_object(bucket_name, key, test_file_path)
         assert put_res[0]
         self.log.info("Step 3: Putting object with canned acl")
-        emailid = S3_CFG["s3_object"]["emailaddr"]
+        emailid = S3_OBJ_TST["s3_object"]["emailaddr"]
         try:
             acl_obj.put_object_canned_acl(
                 bucket_name,
@@ -3251,15 +3249,15 @@ class TestObjectACL:
                 acl=S3_OBJ_TST["test_10726"]["bucket_full_control"],
                 grant_write=emailid.format(email))
         except CTException as error:
-            assert S3_CFG["s3_object"]["inval_req"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["inval_req"] in error.message, error.message
         self.log.info(
             "Step 3: Putting object with invalid permission was handled with error message : %s",
-            S3_CFG["s3_object"]["inval_req"])
+            S3_OBJ_TST["s3_object"]["inval_req"])
         self.log.info(
             "Add canned ACL bucket-owner-read along with WRITE ACL grant permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5811")
     @CTFailOn(error_handler)
     def test_bucket_owner_read_acp_acl_3511(self):
@@ -3270,14 +3268,14 @@ class TestObjectACL:
             self.random_num)
         email = S3_OBJ_TST["test_10727"]["emailid_1"].format(
             self.random_num)
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        key = S3_CFG["s3_object"]["object_name"].format(
+        key = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(
             test_file_path,
-            S3_CFG["s3_object"]["file_size"])
+            S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
@@ -3294,7 +3292,7 @@ class TestObjectACL:
         self.log.info("Step 2: Bucket was created")
         self.log.info(
             "Step 3: Putting object with acl and grant permission")
-        emailid = S3_CFG["s3_object"]["emailaddr"]
+        emailid = S3_OBJ_TST["s3_object"]["emailaddr"]
         try:
             acl_obj.put_object_with_acl(
                 bucket_name,
@@ -3303,15 +3301,15 @@ class TestObjectACL:
                 acl=S3_OBJ_TST["test_10727"]["bucket_full_control"],
                 grant_read_acp=emailid.format(email))
         except CTException as error:
-            assert S3_CFG["s3_object"]["inval_req"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["inval_req"] in error.message, error.message
         self.log.info(
             "Step 3: Putting object with invalid permission was handled with error message : %s",
-            S3_CFG["s3_object"]["inval_req"])
+            S3_OBJ_TST["s3_object"]["inval_req"])
         self.log.info(
             "Add canned ACL bucket-owner-read along with READ_ACP ACL grant permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5808")
     @CTFailOn(error_handler)
     def test_bucket_owner_read_write_acp_acl_3512(self):
@@ -3322,14 +3320,14 @@ class TestObjectACL:
             self.random_num)
         email = S3_OBJ_TST["test_10720"]["emailid_1"].format(
             self.random_num)
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        key = S3_CFG["s3_object"]["object_name"].format(
+        key = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(
             test_file_path,
-            S3_CFG["s3_object"]["file_size"])
+            S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
@@ -3346,7 +3344,7 @@ class TestObjectACL:
         self.log.info("Step 2: Bucket was created")
         self.log.info(
             "Step 3: Putting object with acl and grant permission")
-        emailid = S3_CFG["s3_object"]["emailaddr"]
+        emailid = S3_OBJ_TST["s3_object"]["emailaddr"]
         try:
             acl_obj.put_object_with_acl(
                 bucket_name,
@@ -3355,15 +3353,15 @@ class TestObjectACL:
                 acl=S3_OBJ_TST["test_10720"]["bucket_full_control"],
                 grant_write_acp=emailid.format(email))
         except CTException as error:
-            assert S3_CFG["s3_object"]["inval_req"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["inval_req"] in error.message, error.message
         self.log.info(
             "Step 3: Putting object with invalid permission was handled with error message : %s",
-            S3_CFG["s3_object"]["inval_req"])
+            S3_OBJ_TST["s3_object"]["inval_req"])
         self.log.info(
             "Add canned ACL bucket-owner-read along with WRITE_ACP ACL grant permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5815")
     @CTFailOn(error_handler)
     def test_bucket_owner_read_full_control_acl_3513(self):
@@ -3378,12 +3376,12 @@ class TestObjectACL:
             self.random_num)
         email = S3_OBJ_TST["test_10729"]["emailid_1"].format(
             self.random_num)
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(
             test_file_path,
-            S3_CFG["s3_object"]["file_size"])
+            S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
@@ -3400,25 +3398,25 @@ class TestObjectACL:
         self.log.info("Step 2: Bucket was created")
         self.log.info(
             "Step 3: Putting object with acl permission and grant permission")
-        emailid = S3_CFG["s3_object"]["emailaddr"]
+        emailid = S3_OBJ_TST["s3_object"]["emailaddr"]
         try:
             acl_obj.put_object_with_acl(
                 bucket_name,
-                S3_CFG["s3_object"]["object_name"].format(
+                S3_OBJ_TST["s3_object"]["object_name"].format(
                     self.random_num),
                 test_file_path,
                 acl=S3_OBJ_TST["test_10729"]["bucket_full_control"],
                 grant_full_control=emailid.format(email))
         except CTException as error:
-            assert S3_CFG["s3_object"]["inval_req"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["inval_req"] in error.message, error.message
         self.log.info(
             "Step 3: Putting object with invalid permission was handled with error message : %s",
-            S3_CFG["s3_object"]["inval_req"])
+            S3_OBJ_TST["s3_object"]["inval_req"])
         self.log.info(
             "Add canned ACL bucket-owner-read along with FULL_CONTROL ACL grant permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5861")
     @CTFailOn(error_handler)
     def test_private_acl_full_control_3552(self):
@@ -3437,11 +3435,11 @@ class TestObjectACL:
         test_file_path = self.test_file_path
         resp = create_file(
             test_file_path,
-            S3_CFG["s3_object"]["file_size"])
+            S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj = S3_CFG["s3_object"]["object_name"].format(
+        obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         result = self.create_s3iamcli_acc(account_name, email_id)
         canonical_id = result[0]
@@ -3462,7 +3460,7 @@ class TestObjectACL:
                 "ID": canonical_id,
                 "Type": S3_OBJ_TST["test_10792"]["can_str"],
             },
-            "Permission": S3_CFG["s3_object"]["full_ctrl"],
+            "Permission": S3_OBJ_TST["s3_object"]["full_ctrl"],
         }
         modified_acl = copy.deepcopy(resp[1])
         modified_acl["Grants"].append(new_grant)
@@ -3481,7 +3479,7 @@ class TestObjectACL:
             "FULL_CONTROL ACL grant permission as request body")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5848")
     @CTFailOn(error_handler)
     def test_private_request_body_full_contorl_header_3553(self):
@@ -3500,13 +3498,13 @@ class TestObjectACL:
         test_file_path = self.test_file_path
         resp = create_file(
             test_file_path,
-            S3_CFG["s3_object"]["file_size"])
+            S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         result = self.create_s3iamcli_acc(account_name, email_id)
         canonical_id = result[0]
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj = S3_CFG["s3_object"]["object_name"].format(
+        obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         acl_obj = result[2]
         s3obj_user = result[1]
@@ -3528,21 +3526,21 @@ class TestObjectACL:
         modified_acp["Grants"][0] = new_grant
         self.log.info(
             "Step 2: Put ACL with private in request body and grant full control")
-        emailid = S3_CFG["s3_object"]["emailaddr"].format(email_id)
+        emailid = S3_OBJ_TST["s3_object"]["emailaddr"].format(email_id)
         try:
             acl_obj.put_object_canned_acl(bucket_name, obj,
                                           access_control_policy=modified_acp,
                                           grant_full_control=emailid)
         except CTException as error:
-            assert S3_CFG["s3_object"]["inval_req"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["inval_req"] in error.message, error.message
         self.log.info(
             "Step 2: Put ACL with private was handled with error message : %s",
-            S3_CFG["s3_object"]["inval_req"])
+            S3_OBJ_TST["s3_object"]["inval_req"])
         self.log.info("Add canned ACL private in request body along with"
                       "FULL_CONTROL ACL grant permission in request heade")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5848")
     @CTFailOn(error_handler)
     def test_private_full_contorl_acl_permission_3554(self):
@@ -3561,11 +3559,11 @@ class TestObjectACL:
         test_file_path = self.test_file_path
         resp = create_file(
             test_file_path,
-            S3_CFG["s3_object"]["file_size"])
+            S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
-        bucket = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj = S3_CFG["s3_object"]["object_name"].format(
+        obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         self.log.info(
             "Step 1: Creating account with name %s and email_id %s",
@@ -3588,7 +3586,7 @@ class TestObjectACL:
             bucket,
             obj,
             canonical_id,
-            S3_CFG["s3_object"]["full_ctrl"])
+            S3_OBJ_TST["s3_object"]["full_ctrl"])
         assert res[0], res[1]
         try:
             S3_ACL_OBJ.add_grantee(
@@ -3606,21 +3604,21 @@ class TestObjectACL:
                       "FULL_CONTROL ACL grant permission in request body")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("")
     @CTFailOn(error_handler)
     def test_put_object_private_canned_acl_159(self):
         """Put-object-acl from cross account on the object with private canned-acl permission."""
         self.log.info(
             "put-object-acl from cross account on the object with private canned-acl permission")
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(
             test_file_path,
-            S3_CFG["s3_object"]["file_size"])
+            S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         account_name_1 = S3_OBJ_TST["test_159"]["account_name_1"].format(
             self.random_num)
@@ -3667,7 +3665,7 @@ class TestObjectACL:
                 test_file_path,
                 acl=S3_OBJ_TST["test_159"]["permission"])
         except CTException as error:
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
         self.log.info(
             "Step 4: Put Object failure was handled with error message : %s",
             S3_OBJ_TST["test_159"]["error_msg"])
@@ -3675,21 +3673,21 @@ class TestObjectACL:
             "put-object-acl from cross account on the object with private canned-acl permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("")
     @CTFailOn(error_handler)
     def test_put_object_private_canned_acl_170(self):
         """Put-object-acl from cross account on the object with private canned-acl permission."""
         self.log.info(
             "put-object-acl from cross account on the object with private canned-acl permission")
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(
             test_file_path,
-            S3_CFG["s3_object"]["file_size"])
+            S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         account_name_1 = S3_OBJ_TST["test_170"]["account_name_1"].format(
             self.random_num)
@@ -3734,15 +3732,15 @@ class TestObjectACL:
             s3obj_user2.put_object_canned_acl(
                 bucket_name, s3obj_name, acl=S3_OBJ_TST["test_170"]["can_object_acl"])
         except CTException as error:
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
         self.log.info(
             "Step 4: Put Object response was handled with error message : %s",
-            S3_CFG["s3_object"]["error_msg"])
+            S3_OBJ_TST["s3_object"]["error_msg"])
         self.log.info(
             "put-object-acl from cross account on the object with private canned-acl permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("")
     @CTFailOn(error_handler)
     def test_put_object_owner_read_acl_172(self):
@@ -3750,17 +3748,17 @@ class TestObjectACL:
         self.log.info(
             "Test put-object-acl from cross account on the object "
             "with bucket-owner-read canned-acl permission")
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(
             test_file_path,
-            S3_CFG["s3_object"]["file_size"])
+            S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         can_object_acl = S3_OBJ_TST["test_172"]["can_object_acl"]
-        usr2_acl = S3_CFG["s3_object"]["full_ctrl"]
+        usr2_acl = S3_OBJ_TST["s3_object"]["full_ctrl"]
         account_name_1 = S3_OBJ_TST["test_172"]["account_name_1"].format(
             self.random_num)
         email_id_1 = S3_OBJ_TST["test_172"]["emailid_1"].format(
@@ -3831,15 +3829,15 @@ class TestObjectACL:
         try:
             acl_obj.get_object_acl(bucket_name, s3obj_name)
         except CTException as error:
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
         self.log.info(
             "Step 7: Get object ACL was handled with error message : %s",
-            S3_CFG["s3_object"]["error_msg"])
+            S3_OBJ_TST["s3_object"]["error_msg"])
         self.log.info("Test put-object-acl from cross account on the object"
                       "with bucket-owner-read canned-acl permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("")
     @CTFailOn(error_handler)
     def test_full_contorl_canned_acl_permission_175(self):
@@ -3851,14 +3849,14 @@ class TestObjectACL:
         self.log.info(
             "Test put-object-acl from cross account on the object "
             "with bucket-owner-full-control canned-acl permission")
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(
             test_file_path,
-            S3_CFG["s3_object"]["file_size"])
+            S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         can_object_acl = S3_OBJ_TST["test_175"]["can_object_acl"]
         self.log.info("Step 1 : Creating User Account 1 and 2")
@@ -3933,16 +3931,16 @@ class TestObjectACL:
         try:
             acl_obj.get_object_acl(bucket_name, s3obj_name)
         except CTException as error:
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
         self.log.info(
             "Step 7: Get Object ACL was handled with error message : %s",
-            S3_CFG["s3_object"]["error_msg"])
+            S3_OBJ_TST["s3_object"]["error_msg"])
         self.log.info(
             "Test put-object-acl from cross account on the object "
             "with bucket-owner-full-control canned-acl permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7566")
     @CTFailOn(error_handler)
     def test_public_read_get_obj_tagging_453(self):
@@ -3955,9 +3953,9 @@ class TestObjectACL:
             "STARTED : Add canned acl authenticated-read for put object in account1 "
             "and try to get object from account2")
         # Generate random unique number for bucket, objects and userid
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         auth_read = S3_OBJ_TST["test_453"]["public_read"]
         account_name_1 = S3_OBJ_TST["test_453"]["account_name_1"].format(
@@ -3966,7 +3964,7 @@ class TestObjectACL:
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
-                           S3_CFG["s3_object"]["file_size"])
+                           S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         self.log.info(
             "Step 1: Create tags on existing object using s3api put-object-tagging from account1")
@@ -3982,7 +3980,7 @@ class TestObjectACL:
         buck_resp = s3_obj_1.create_bucket(bucket_name)
         assert buck_resp[0], buck_resp[1]
         create_file(self.test_file_path,
-                    S3_CFG["s3_object"]["file_size"])
+                    S3_OBJ_TST["s3_object"]["file_size"])
         self.log.info(
             "Uploading an object %s to bucket %s",
             s3obj_name, bucket_name)
@@ -4044,7 +4042,7 @@ class TestObjectACL:
             "and try to get object from account2")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7567")
     @CTFailOn(error_handler)
     def test_full_contorl_get_object_tagging_423(self):
@@ -4057,18 +4055,18 @@ class TestObjectACL:
             "STARTED : Grant FULL_CONTROL permission to account2 and "
             "execute get-object-tagging from account2 on a existing object")
         # Generate random unique number for bucket, objects and userid
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
-        permission = S3_CFG["s3_object"]["full_ctrl"]
+        permission = S3_OBJ_TST["s3_object"]["full_ctrl"]
         account_name_1 = S3_OBJ_TST["test_423"]["account_name_1"].format(
             self.random_num)
         email_id_1 = S3_OBJ_TST["test_423"]["emailid_1"].format(
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
-                           S3_CFG["s3_object"]["file_size"])
+                           S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         self.log.info(
             "Step 1: Create tags on existing object using s3api put-object-tagging from account1")
@@ -4084,7 +4082,7 @@ class TestObjectACL:
         buck_resp = s3_obj_1.create_bucket(bucket_name)
         assert buck_resp[0], buck_resp[1]
         create_file(self.test_file_path,
-                    S3_CFG["s3_object"]["file_size"])
+                    S3_OBJ_TST["s3_object"]["file_size"])
         self.log.info(
             "Uploading an object %s to bucket %s",
             s3obj_name, bucket_name)
@@ -4147,7 +4145,7 @@ class TestObjectACL:
             "execute get-object-tagging from account2 on a existing object")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7568")
     @CTFailOn(error_handler)
     def test_write_execute_get_object_tagging_421(self):
@@ -4160,9 +4158,9 @@ class TestObjectACL:
             "STARTED : Grant WRITE permission to account2 and "
             "execute get-object-tagging from account2 on a existing object")
         # Generate random unique number for bucket, objects and userid
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         permission = S3_OBJ_TST["test_421"]["write"]
         account_name_1 = S3_OBJ_TST["test_421"]["account_name_1"].format(
@@ -4171,7 +4169,7 @@ class TestObjectACL:
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
-                           S3_CFG["s3_object"]["file_size"])
+                           S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         self.log.info(
             "Step 1: Create tags on existing object using s3api put-object-tagging from account1")
@@ -4187,7 +4185,7 @@ class TestObjectACL:
         buck_resp = s3_obj_1.create_bucket(bucket_name)
         assert buck_resp[0], buck_resp[1]
         create_file(self.test_file_path,
-                    S3_CFG["s3_object"]["file_size"])
+                    S3_OBJ_TST["s3_object"]["file_size"])
         self.log.info(
             "Uploading an object %s to bucket %s",
             s3obj_name, bucket_name)
@@ -4241,7 +4239,7 @@ class TestObjectACL:
         try:
             s3_tag_obj_2.get_object_tags(bucket_name, s3obj_name)
         except CTException as error:
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
         self.log.info(
             "Step 6: Done After switching to account2 perfrom get-object-tagging ")
         self.log.info(
@@ -4249,7 +4247,7 @@ class TestObjectACL:
             "execute get-object-tagging from account2 on a existing object")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7569")
     @CTFailOn(error_handler)
     def test_read_permission_get_object_tagging_419(self):
@@ -4262,9 +4260,9 @@ class TestObjectACL:
             "STARTED : Grant READ permission to account2 and "
             "execute get-object-tagging from account2 on a existing object")
         # Generate random unique number for bucket, objects and userid
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         permission = S3_OBJ_TST["test_419"]["read"]
         account_name_1 = S3_OBJ_TST["test_419"]["account_name_1"].format(
@@ -4273,7 +4271,7 @@ class TestObjectACL:
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
-                           S3_CFG["s3_object"]["file_size"])
+                           S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         self.log.info(
             "Step 1: Create tags on existing object using s3api put-object-tagging from account1")
@@ -4289,7 +4287,7 @@ class TestObjectACL:
         buck_resp = s3_obj_1.create_bucket(bucket_name)
         assert buck_resp[0], buck_resp[1]
         create_file(self.test_file_path,
-                    S3_CFG["s3_object"]["file_size"])
+                    S3_OBJ_TST["s3_object"]["file_size"])
         self.log.info(
             "Uploading an object %s to bucket %s",
             s3obj_name, bucket_name)
@@ -4350,16 +4348,16 @@ class TestObjectACL:
             "execute get-object-tagging from account2 on a existing object")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7570")
     @CTFailOn(error_handler)
     def test_get_object_tagging_410(self):
         """Verify get-object-tagging for object owner."""
         self.log.info(
             "STARTED : Verify get-object-tagging for object owner")
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         self.log.info("Step 1: Create tags on existing object")
         self.log.info(
@@ -4368,7 +4366,7 @@ class TestObjectACL:
         resp = S3_OBJ.create_bucket(bucket_name)
         assert resp[0], resp[1]
         create_file(self.test_file_path,
-                    S3_CFG["s3_object"]["file_size"])
+                    S3_OBJ_TST["s3_object"]["file_size"])
         self.log.info(
             "Uploading an object %s to bucket %s",
             s3obj_name, bucket_name)
@@ -4395,21 +4393,21 @@ class TestObjectACL:
         self.log.info("ENDED : Verify get-object-tagging for object owner")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-17181")
     def test_put_object_acl_public_read_write_169(self):
         """Put-object-acl from cross account on obj with public-read-write canned-acl permission."""
         self.log.info(
             "STARTED:put-object-acl from cross account on the object with "
             "public-read-write canned-acl permission")
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(
             test_file_path,
-            S3_CFG["s3_object"]["file_size"])
+            S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         account_name_1 = S3_OBJ_TST["test_169"]["account_name_1"].format(
             self.random_num)
@@ -4452,16 +4450,16 @@ class TestObjectACL:
             s3obj_user2.put_object_canned_acl(
                 bucket_name, s3obj_name, acl=S3_OBJ_TST["test_169"]["can_object_acl"])
         except CTException as error:
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
         self.log.info(
             "Step 4: Put Object response was handled with error message : %s",
-            S3_CFG["s3_object"]["error_msg"])
+            S3_OBJ_TST["s3_object"]["error_msg"])
         self.log.info(
             "ENDED:put-object-acl from cross account on the object "
             "with public-read-write canned-acl permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7573")
     @CTFailOn(error_handler)
     def test_public_read_canned_acl_167(self):
@@ -4469,14 +4467,14 @@ class TestObjectACL:
         self.log.info(
             "STARTED:put-object-acl from cross account on the object "
             "with public-read canned-acl permission")
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(
             test_file_path,
-            S3_CFG["s3_object"]["file_size"])
+            S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         account_name_1 = S3_OBJ_TST["test_167"]["account_name_1"].format(
             self.random_num)
@@ -4519,16 +4517,16 @@ class TestObjectACL:
             s3obj_user2.put_object_canned_acl(
                 bucket_name, s3obj_name, acl=S3_OBJ_TST["test_167"]["can_object_acl"])
         except CTException as error:
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
         self.log.info(
             "Step 4: Put Object response was handled with error message : %s",
-            S3_CFG["s3_object"]["error_msg"])
+            S3_OBJ_TST["s3_object"]["error_msg"])
         self.log.info(
             "ENDED:put-object-acl from cross account on the object with "
             "public-read canned-acl permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7574")
     @CTFailOn(error_handler)
     def test_put_get_obj_acl_311(self):
@@ -4540,14 +4538,14 @@ class TestObjectACL:
         self.log.info(
             "STARTED:put object in account1 Dont give any permissions or canned"
             " acl for account2 and get object acl from account2")
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(
             test_file_path,
-            S3_CFG["s3_object"]["file_size"])
+            S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         account_name_1 = S3_OBJ_TST["test_311"]["account_name_1"].format(
             self.random_num)
@@ -4587,16 +4585,16 @@ class TestObjectACL:
         try:
             s3obj_user2.get_object_acl(bucket_name, s3obj_name)
         except CTException as error:
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
         self.log.info(
             "Step 4: Get object ACL response was handled with error message : %s",
-            S3_CFG["s3_object"]["error_msg"])
+            S3_OBJ_TST["s3_object"]["error_msg"])
         self.log.info(
             "ENDED:put object in account1 Dont give any permissions or canned"
             " acl for account2 and get object acl from account2")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7575")
     @CTFailOn(error_handler)
     def test_put_obj_read_acp_get_obj_acl_286(self):
@@ -4608,9 +4606,9 @@ class TestObjectACL:
         self.log.info(
             "STARTED:put object in account1 and give read-acp permissions "
             "to account2 and get-object-acl details")
-        bucket = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj = S3_CFG["s3_object"]["object_name"].format(
+        obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         account_name = S3_OBJ_TST["test_286"]["account_name"].format(
             self.random_num)
@@ -4638,16 +4636,16 @@ class TestObjectACL:
             "to account2 and get-object-acl details")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7576")
     @CTFailOn(error_handler)
     def test_put_get_obj_acl_285(self):
         """put object in account1 and get-object-acl details for that object."""
         self.log.info(
             "STARTED:put object in account1 and get-object-acl details for that object")
-        bucket = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj = S3_CFG["s3_object"]["object_name"].format(
+        obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         account_name = S3_OBJ_TST["test_285"]["account_name"].format(
             self.random_num)
@@ -4665,7 +4663,7 @@ class TestObjectACL:
             "ENDED:put object in account1 and get-object-acl details for that object")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5743")
     @CTFailOn(error_handler)
     def test_put_get_obj_acl_xml_3453(self):
@@ -4677,9 +4675,9 @@ class TestObjectACL:
         self.log.info(
             "STARTED: put object acl in account1 and give read permissions to account2"
             " and get object from account2 by using acl xml")
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         test_3453_cfg = S3_OBJ_TST["test_3453"]
         grantee_json = test_3453_cfg["new_grantee"]
@@ -4699,7 +4697,7 @@ class TestObjectACL:
             self.random_num)
         email_id_2 = S3_OBJ_TST["test_3453"]["emailid_2"].format(
             self.random_num)
-        email = S3_CFG["s3_object"]["emailaddr"].format(email_id_2)
+        email = S3_OBJ_TST["s3_object"]["emailaddr"].format(email_id_2)
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_2, email_id_2)
@@ -4744,7 +4742,7 @@ class TestObjectACL:
             " account2 and get object from account2 by using acl xml")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5786")
     @CTFailOn(error_handler)
     def test_put_check_invalid_canonical_id_3454(self):
@@ -4752,12 +4750,12 @@ class TestObjectACL:
         self.log.info(
             "STARTED: put object acl in account1 and "
             "give invalid canonical id for account2 and check")
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         test_3454_cfg = S3_OBJ_TST["test_3454"]
-        obj_permission = S3_CFG["s3_object"]["full_ctrl"]
+        obj_permission = S3_OBJ_TST["s3_object"]["full_ctrl"]
         self.log.info("Step 1: Creating two accounts...")
         account_name_1 = S3_OBJ_TST["test_3454"]["account_name_1"].format(
             self.random_num)
@@ -4803,7 +4801,7 @@ class TestObjectACL:
             "give invalid canonical id for account2 and check")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5785")
     @CTFailOn(error_handler)
     def test_put_get_obj_control_permission_3455(self):
@@ -4815,12 +4813,12 @@ class TestObjectACL:
         self.log.info(
             "STARTED: put object acl in account1 and give Full-control permissions to"
             " account2 and try to get object from account3 by using acl xml")
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         test_3455_cfg = S3_OBJ_TST["test_3455"]
-        obj_permission = S3_CFG["s3_object"]["full_ctrl"]
+        obj_permission = S3_OBJ_TST["s3_object"]["full_ctrl"]
         grantee_json = test_3455_cfg["new_grantee"]
         self.log.info("Step 1: Creating three accounts...")
         account_name_1 = S3_OBJ_TST["test_3455"]["account_name_1"].format(
@@ -4837,7 +4835,7 @@ class TestObjectACL:
             self.random_num)
         email_id_2 = S3_OBJ_TST["test_3455"]["emailid_2"].format(
             self.random_num)
-        email = S3_CFG["s3_object"]["emailaddr"].format(email_id_2)
+        email = S3_OBJ_TST["s3_object"]["emailaddr"].format(email_id_2)
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_2, email_id_2)
@@ -4883,16 +4881,16 @@ class TestObjectACL:
             s3_test_obj3.get_object(bucket_name, s3obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
         self.log.info(
             "Step 4: Retrieving an object using second account failed with %s",
-            S3_CFG["s3_object"]["error_msg"])
+            S3_OBJ_TST["s3_object"]["error_msg"])
         self.log.info(
             "ENDED: put object acl in account1 and give Full-control permissions to"
             " account2 and try to get object from account3 by using acl xml")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5784")
     @CTFailOn(error_handler)
     def test_read_acp_permission_acl_xml_3456(self):
@@ -4904,9 +4902,9 @@ class TestObjectACL:
         self.log.info(
             "STARTED: put object acl in account1 and give read-acp permissions to"
             " account2 and get object from account2 by using acl xml")
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         test_3456_cfg = S3_OBJ_TST["test_3456"]
         obj_permission = test_3456_cfg["grant_permission"]
@@ -4926,7 +4924,7 @@ class TestObjectACL:
             self.random_num)
         email_id_2 = S3_OBJ_TST["test_3456"]["emailid_2"].format(
             self.random_num)
-        email = S3_CFG["s3_object"]["emailaddr"].format(email_id_2)
+        email = S3_OBJ_TST["s3_object"]["emailaddr"].format(email_id_2)
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_2, email_id_2)
@@ -4966,16 +4964,16 @@ class TestObjectACL:
             s3_test_obj2.get_object(bucket_name, s3obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
         self.log.info(
             "Step 4: Retrieving an object using second account failed with %s",
-            S3_CFG["s3_object"]["error_msg"])
+            S3_OBJ_TST["s3_object"]["error_msg"])
         self.log.info(
             "ENDED: put object acl in account1 and give read-acp permissions to account2"
             " and get object from account2 by using acl xml")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5782")
     @CTFailOn(error_handler)
     def test_write_acp_permission_get_acl_xml_3457(self):
@@ -4987,9 +4985,9 @@ class TestObjectACL:
         self.log.info(
             "STARTED: put object acl in account1 and give write-acp permissions to"
             " account2 and get object from account2 by using acl xml")
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         test_3457_cfg = S3_OBJ_TST["test_3457"]
         obj_permission = test_3457_cfg["grant_permission"]
@@ -5009,7 +5007,7 @@ class TestObjectACL:
             self.random_num)
         email_id_2 = S3_OBJ_TST["test_3457"]["emailid_2"].format(
             self.random_num)
-        email = S3_CFG["s3_object"]["emailaddr"].format(email_id_2)
+        email = S3_OBJ_TST["s3_object"]["emailaddr"].format(email_id_2)
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_2, email_id_2)
@@ -5049,16 +5047,16 @@ class TestObjectACL:
             s3_test_obj2.get_object(bucket_name, s3obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
         self.log.info(
             "Step 4: Retrieving an object using second account failed with %s",
-            S3_CFG["s3_object"]["error_msg"])
+            S3_OBJ_TST["s3_object"]["error_msg"])
         self.log.info(
             "ENDED: put object acl in account1 and give write-acp permissions to account2"
             " and get object from account2 by using acl xml")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5755")
     @CTFailOn(error_handler)
     def test_write_permission_get_obj_acl_xml_3458(self):
@@ -5070,9 +5068,9 @@ class TestObjectACL:
         self.log.info(
             "STARTED: put object acl in account1 and give write permissions to"
             " account2 and get object from account2 by using acl xml")
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         test_3458_cfg = S3_OBJ_TST["test_3458"]
         obj_permission = test_3458_cfg["grant_permission"]
@@ -5092,7 +5090,7 @@ class TestObjectACL:
             self.random_num)
         email_id_2 = S3_OBJ_TST["test_3458"]["emailid_2"].format(
             self.random_num)
-        email = S3_CFG["s3_object"]["emailaddr"].format(email_id_2)
+        email = S3_OBJ_TST["s3_object"]["emailaddr"].format(email_id_2)
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_2, email_id_2)
@@ -5132,16 +5130,16 @@ class TestObjectACL:
             s3_test_obj2.get_object(bucket_name, s3obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
         self.log.info(
             "Step 4: Retrieving an object using second account failed with %s",
-            S3_CFG["s3_object"]["error_msg"])
+            S3_OBJ_TST["s3_object"]["error_msg"])
         self.log.info(
             "ENDED: put object acl in account1 and give write permissions to"
             " account2 and get object from account2 by using acl xml")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7560")
     @CTFailOn(error_handler)
     def test_full_control_permision_header_3459(self):
@@ -5149,16 +5147,16 @@ class TestObjectACL:
         self.log.info(
             "STARTED: put object in account1 and give full control permissions to account2 "
             "using permission header")
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         test_file_path = self.test_file_path
         test_3459_cfg = S3_OBJ_TST["test_3459"]
-        obj_permission = S3_CFG["s3_object"]["full_ctrl"]
+        obj_permission = S3_OBJ_TST["s3_object"]["full_ctrl"]
         create_file(
             test_file_path,
-            S3_CFG["s3_object"]["file_size"])
+            S3_OBJ_TST["s3_object"]["file_size"])
         self.log.info("Step 1: Creating two accounts...")
         account_name_1 = S3_OBJ_TST["test_3459"]["account_name_1"].format(
             self.random_num)
@@ -5192,7 +5190,7 @@ class TestObjectACL:
         self.log.info(
             "Step 3: Uploading an object to bucket name with %s permission"
             " using first account", obj_permission)
-        email = S3_CFG["s3_object"]["emailaddr"].format(email_id_2)
+        email = S3_OBJ_TST["s3_object"]["emailaddr"].format(email_id_2)
         resp = s3_acl_obj1.put_object_with_acl(
             bucket_name, s3obj_name, test_file_path, grant_full_control=email)
         assert resp[0], resp[1]
@@ -5227,7 +5225,7 @@ class TestObjectACL:
             "using permission header")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5754")
     @CTFailOn(error_handler)
     def test_put_obj_read_permission_permission_header_3460(self):
@@ -5235,16 +5233,16 @@ class TestObjectACL:
         self.log.info(
             "STARTED: put object in account1 and "
             "give read permissions to account2 using permission header")
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         test_file_path = self.test_file_path
         test_3460_cfg = S3_OBJ_TST["test_3460"]
         obj_permission = test_3460_cfg["grant_permission"]
         create_file(
             test_file_path,
-            S3_CFG["s3_object"]["file_size"])
+            S3_OBJ_TST["s3_object"]["file_size"])
         self.log.info("Step 1: Creating two accounts...")
         account_name_1 = S3_OBJ_TST["test_3460"]["account_name_1"].format(
             self.random_num)
@@ -5278,7 +5276,7 @@ class TestObjectACL:
         self.log.info(
             "Step 3: Uploading an object to bucket name with %s permission "
             "using first account", obj_permission)
-        email = S3_CFG["s3_object"]["emailaddr"].format(email_id_2)
+        email = S3_OBJ_TST["s3_object"]["emailaddr"].format(email_id_2)
         resp = s3_acl_obj1.put_object_with_acl(
             bucket_name, s3obj_name, test_file_path, grant_read=email)
         assert resp[0], resp[1]
@@ -5304,12 +5302,12 @@ class TestObjectACL:
                 bucket_name, s3obj_name, grant_full_control=email)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
         try:
             s3_acl_obj2.get_object_acl(bucket_name, s3obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
         self.log.info(
             "Step 5: Verified that %s permission is set for second account",
             obj_permission)
@@ -5318,7 +5316,7 @@ class TestObjectACL:
             "give read permissions to account2 using permission header")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5753")
     @CTFailOn(error_handler)
     def test_put_obj_read_acp_permission_header_3461(self):
@@ -5326,16 +5324,16 @@ class TestObjectACL:
         self.log.info(
             "STARTED: put object in account1 and give read-acp permissions "
             "to account2 using permission header")
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         test_file_path = self.test_file_path
         test_3461_cfg = S3_OBJ_TST["test_3461"]
         obj_permission = test_3461_cfg["grant_permission"]
         create_file(
             test_file_path,
-            S3_CFG["s3_object"]["file_size"])
+            S3_OBJ_TST["s3_object"]["file_size"])
         self.log.info("Step 1: Creating two accounts...")
         account_name_1 = S3_OBJ_TST["test_3461"]["account_name_1"].format(
             self.random_num)
@@ -5369,7 +5367,7 @@ class TestObjectACL:
         self.log.info(
             "Step 3: Uploading an object to bucket name "
             "with %s permission using first account", obj_permission)
-        email = S3_CFG["s3_object"]["emailaddr"].format(email_id_2)
+        email = S3_OBJ_TST["s3_object"]["emailaddr"].format(email_id_2)
         resp = s3_acl_obj1.put_object_with_acl(
             bucket_name, s3obj_name, test_file_path, grant_read_acp=email)
         assert resp[0], resp[1]
@@ -5392,13 +5390,13 @@ class TestObjectACL:
             s3_test_obj2.get_object(bucket_name, s3obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
         try:
             s3_acl_obj2.put_object_canned_acl(
                 bucket_name, s3obj_name, grant_full_control=email)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
         resp = s3_acl_obj2.get_object_acl(bucket_name, s3obj_name)
         assert resp[0], resp[1]
         assert resp[1]["Grants"][0]["Permission"] == obj_permission, resp[1]
@@ -5410,7 +5408,7 @@ class TestObjectACL:
             "to account2 using permission header")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5750")
     @CTFailOn(error_handler)
     def test_write_permission_header_3462(self):
@@ -5418,16 +5416,16 @@ class TestObjectACL:
         self.log.info(
             "STARTED: put object in account1 and give write "
             "permissions to account2 using permission header")
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         test_file_path = self.test_file_path
         test_3462_cfg = S3_OBJ_TST["test_3462"]
         obj_permission = test_3462_cfg["grant_permission"]
         create_file(
             test_file_path,
-            S3_CFG["s3_object"]["file_size"])
+            S3_OBJ_TST["s3_object"]["file_size"])
         self.log.info("Step 1: Creating two accounts...")
         account_name_1 = S3_OBJ_TST["test_3462"]["account_name_1"].format(
             self.random_num)
@@ -5461,7 +5459,7 @@ class TestObjectACL:
         self.log.info(
             "Step 3: Uploading an object to bucket with %s permission "
             "using first account", obj_permission)
-        email = S3_CFG["s3_object"]["emailaddr"].format(email_id_2)
+        email = S3_OBJ_TST["s3_object"]["emailaddr"].format(email_id_2)
         resp = s3_acl_obj1.put_object_with_acl(
             bucket_name, s3obj_name, test_file_path, grant_write_acp=email)
         assert resp[0], resp[1]
@@ -5484,7 +5482,7 @@ class TestObjectACL:
             s3_test_obj2.get_object(bucket_name, s3obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
         resp = s3_acl_obj2.put_object_canned_acl(
             bucket_name, s3obj_name, grant_read=email)
         assert resp[0], resp[1]
@@ -5492,7 +5490,7 @@ class TestObjectACL:
             s3_acl_obj2.get_object_acl(bucket_name, s3obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
         self.log.info(
             "Step 5: Verified that %s permission is set for "
             "second account successfully", obj_permission)
@@ -5501,7 +5499,7 @@ class TestObjectACL:
             "to account2 using permission header")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5752")
     @CTFailOn(error_handler)
     def test_write_permission_header_3463(self):
@@ -5509,9 +5507,9 @@ class TestObjectACL:
         self.log.info(
             "STARTED: put object in account1 and give write permissions to "
             "account2 using permission header")
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         test_3463_cfg = S3_OBJ_TST["test_3463"]
         obj_permission = test_3463_cfg["grant_permission"]
@@ -5539,7 +5537,7 @@ class TestObjectACL:
         self.log.info(
             "Step 2: Setting an object permission to %s using first account",
             obj_permission)
-        email = S3_CFG["s3_object"]["emailaddr"].format(email_id_2)
+        email = S3_OBJ_TST["s3_object"]["emailaddr"].format(email_id_2)
         resp = s3_acl_obj1.put_object_canned_acl(
             bucket_name, s3obj_name, grant_write=email)
         assert resp[0], resp[1]
@@ -5560,16 +5558,16 @@ class TestObjectACL:
             "permissions to account2 using permission header")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7565")
     @CTFailOn(error_handler)
     def test_full_contorl_read_acl_permisisno_3541(self):
         """Add canned ACL bucket-owner-full-control along with READ ACL grant permission."""
         self.log.info(
             "STARTED:Add canned ACL bucket-owner-full-control along with READ ACL grant permission")
-        bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        s3obj_name = S3_CFG["s3_object"]["object_name"].format(
+        s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         test_file_path = self.test_file_path
         email = S3_OBJ_TST["test_10790"]["emailid"].format(self.random_num)
@@ -5585,35 +5583,35 @@ class TestObjectACL:
             " and READ ACL grant permission", bucket_name)
         create_file(
             test_file_path,
-            S3_CFG["s3_object"]["file_size"])
+            S3_OBJ_TST["s3_object"]["file_size"])
         try:
             S3_ACL_OBJ.put_object_with_acl(
                 bucket_name,
                 s3obj_name,
                 test_file_path,
                 acl=test_3541_cfg["acl"],
-                grant_read_acp=S3_CFG["s3_object"]["emailaddr"].format(email))
+                grant_read_acp=S3_OBJ_TST["s3_object"]["emailaddr"].format(email))
         except CTException as error:
             self.log.error(error.message)
-            assert S3_CFG["s3_object"]["inval_req"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["inval_req"] in error.message, error.message
         self.log.info(
             "Step 2: Uploading an object to bucket %s with canned acl"
             " and READ ACL grant permission failed with %s",
-            bucket_name, S3_CFG["s3_object"]["inval_req"])
+            bucket_name, S3_OBJ_TST["s3_object"]["inval_req"])
         self.log.info(
             "ENDED: Add canned ACL bucket-owner-full-control along with READ ACL grant permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5766")
     @CTFailOn(error_handler)
     def test_invalid_custom_acl_xml_json_3228(self):
         """put object acl with invalid custom acl xml using json file."""
         self.log.info(
             "STARTED: put object acl with invalid custom acl xml using json file")
-        bkt_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bkt_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj_name = S3_CFG["s3_object"]["object_name"].format(
+        obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         self.log.info("Bucket and Object : %s %s", bkt_name, obj_name)
         self.create_bucket_obj(bkt_name, obj_name)
@@ -5633,16 +5631,16 @@ class TestObjectACL:
             "ENDED: put object acl with invalid custom acl xml using json file")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5769")
     @CTFailOn(error_handler)
     def test_put_get_object_with_same_account_3248(self):
         """Put object acl with account1 and get object with same account1."""
         self.log.info(
             "STARTED: put object acl with account1 and get object with same account1")
-        bkt_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bkt_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj_name = S3_CFG["s3_object"]["object_name"].format(
+        obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         test_cfg = S3_OBJ_TST["test_3248"]
         account_name = test_cfg["account_name"].format(self.random_num)
@@ -5673,16 +5671,16 @@ class TestObjectACL:
             "ENDED: put object acl with account1 and get object with same account1")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5747")
     @CTFailOn(error_handler)
     def test_put_get_object_3249(self):
         """Put object with account1 and get object with same account1."""
         self.log.info(
             "STARTED: put object with account1 and get object with same account1")
-        bkt_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bkt_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj_name = S3_CFG["s3_object"]["object_name"].format(
+        obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         self.create_bucket_obj(bkt_name, obj_name, S3_OBJ)
         self.log.info("Step 2: Get object using account 1")
@@ -5693,16 +5691,16 @@ class TestObjectACL:
             "ENDED: put object with account1 and get object with same account1")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5790")
     @CTFailOn(error_handler)
     def test_get_object_by_changed_account_3250(self):
         """change account (to account2) and get object which is created by account1."""
         self.log.info(
             "STARTED: change account (to account2) and get object which is created by account1")
-        bkt_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bkt_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj_name = S3_CFG["s3_object"]["object_name"].format(
+        obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         test_cfg = S3_OBJ_TST["test_3250"]
         account_name = test_cfg["account_name"].format(self.random_num)
@@ -5717,7 +5715,7 @@ class TestObjectACL:
             s3_obj_2.get_object(bkt_name, obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
             self.log.info(
                 "Step 2: get object using acc 2 failed with err message: %s",
                 error.message)
@@ -5725,7 +5723,7 @@ class TestObjectACL:
             "ENDED: change account (to account2) and get object which is created by account1")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5775")
     @CTFailOn(error_handler)
     def test_put_obj_write_access_get_obj_3254(self):
@@ -5733,9 +5731,9 @@ class TestObjectACL:
         self.log.info(
             "STARTED: Put object ACL with Account 1, grant WRITE access to"
             " Account 2 and Get object with Account 2")
-        bkt_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bkt_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj_name = S3_CFG["s3_object"]["object_name"].format(
+        obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         self.create_bucket_obj(bkt_name, obj_name, S3_OBJ)
         test_cfg = S3_OBJ_TST["test_3254"]
@@ -5746,7 +5744,7 @@ class TestObjectACL:
             s3_obj_2.get_object(bkt_name, obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
             self.log.info(
                 "Step 2: get object using acc 2 failed with err message: %s",
                 error.message)
@@ -5756,7 +5754,7 @@ class TestObjectACL:
             " Account 2 and Get object with Account2")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5772")
     @CTFailOn(error_handler)
     def test_put_obj_read_access_get_obj_3255(self):
@@ -5764,9 +5762,9 @@ class TestObjectACL:
         self.log.info(
             "STARTED: Put object ACL with Account 1, grant read access to"
             " Account 2 and Get object with Account 2")
-        bkt_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bkt_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj_name = S3_CFG["s3_object"]["object_name"].format(
+        obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         self.create_bucket_obj(bkt_name, obj_name, S3_OBJ)
         test_cfg = S3_OBJ_TST["test_3255"]
@@ -5781,16 +5779,16 @@ class TestObjectACL:
             " Account 2 and Get object with Account2")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5774")
     def test_put_obj_acl_read_acp_3256(self):
         """Put obj ACL with Account1, grant read-acp access to Account2 & Get obj with Account2."""
         self.log.info(
             "STARTED: Put object ACL with Account 1, grant read-acp access to"
             " Account 2 and Get object with Account2")
-        bkt_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bkt_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj_name = S3_CFG["s3_object"]["object_name"].format(
+        obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         self.create_bucket_obj(bkt_name, obj_name, S3_OBJ)
         test_cfg = S3_OBJ_TST["test_3256"]
@@ -5801,7 +5799,7 @@ class TestObjectACL:
             s3_obj_2.get_object(bkt_name, obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
             self.log.info(
                 "Step 1: get object using acc 2 failed with err message: %s",
                 error.message)
@@ -5810,7 +5808,7 @@ class TestObjectACL:
             " Account 2 and Get object with Account2")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5771")
     @CTFailOn(error_handler)
     def test_put_obj_write_acp_get_obj_3257(self):
@@ -5818,9 +5816,9 @@ class TestObjectACL:
         self.log.info(
             "STARTED: Put object ACL with Account 1, grant "
             "write-acp access to Account 2 and Get object with Account2")
-        bkt_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bkt_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj_name = S3_CFG["s3_object"]["object_name"].format(
+        obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         self.create_bucket_obj(bkt_name, obj_name, S3_OBJ)
         test_cfg = S3_OBJ_TST["test_3257"]
@@ -5831,7 +5829,7 @@ class TestObjectACL:
             s3_obj_2.get_object(bkt_name, obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
             self.log.info(
                 "Step 1: get object using acc 2 failed with err message: %s",
                 error.message)
@@ -5840,7 +5838,7 @@ class TestObjectACL:
             " Account 2 and Get object with Account2")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5744")
     @CTFailOn(error_handler)
     def test_put_get_object_acl_xml_3451(self):
@@ -5848,9 +5846,9 @@ class TestObjectACL:
         self.log.info(
             "STARTED: put object acl in account1 and get object from "
             "account2 by using acl xml")
-        bkt_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bkt_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj_name = S3_CFG["s3_object"]["object_name"].format(
+        obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         self.create_bucket_obj(bkt_name, obj_name, S3_OBJ)
         test_cfg = S3_OBJ_TST["test_3451"]
@@ -5874,7 +5872,7 @@ class TestObjectACL:
             s3_obj_2.get_object(bkt_name, obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_CFG["s3_object"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
             self.log.info(
                 "Step 2: get object using acc 2 failed with err message: %s",
                 error.message)
@@ -5883,7 +5881,7 @@ class TestObjectACL:
             "ENDED: put object acl in account1 and get object from account2 by using acl xml")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5741")
     @CTFailOn(error_handler)
     def test_put_obj_full_control_get_acl_xml_3452(self):
@@ -5895,9 +5893,9 @@ class TestObjectACL:
         self.log.info(
             "STARTED: put object in account1 and give full control permissions to "
             "account2 and get object from account2 by using acl xml")
-        bkt_name = S3_CFG["s3_object"]["bucket_name"].format(
+        bkt_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
-        obj_name = S3_CFG["s3_object"]["object_name"].format(
+        obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         self.create_bucket_obj(bkt_name, obj_name, S3_OBJ)
         test_cfg = S3_OBJ_TST["test_3452"]

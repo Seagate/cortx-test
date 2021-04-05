@@ -1,3 +1,18 @@
+s3_object:
+    bucket_name: "testbucket{}"
+    object_name: "testobj{}"
+    file_size: 10
+    acc_name_prefix: "my_account"
+    start_range: 10000
+    end_range: 20000
+    full_ctrl: "FULL_CONTROL"
+    error_msg: "AccessDenied"
+    inval_req: "InvalidRequest"
+    emailaddr: "emailaddress={}"
+    mb_count: 5
+    obj_name: "testobj"
+    key: "testkey"
+
 # Tests from test_object_acl.py
 test_9853:
   err_msg: "NoSuchKey"
