@@ -19,8 +19,12 @@
 #
 # -*- coding: utf-8 -*-
 
+import os
 import sys
 import argparse
+import csv
+from datetime import datetime
+from commons import params
 import jira_api
 
 
@@ -64,6 +68,16 @@ def main(args):
         print("Error while adding TEs to TP")
 
     print("New Test Plan: {}".format(new_tp_key))
+    with open(os.path.join(os.getcwd(),  params.CLONED_TP_CSV), 'w', newline='') as tp_info_csv:
+        writer = csv.writer(tp_info_csv)
+        for te in new_te_keys:
+            writer.writerow([new_tp_key.strip(), te.strip()])
+
+    if args.comment_jira:
+        current_time_ms = datetime.utcnow().strftime('%Y-%m-%d_%H:%M:%S.%f')
+        comment = ' Build: {}, Setup: {}, Test Plan: {}, Test Executions: {} created on {}'. \
+            format(args.build, args.setup_type, new_tp_key, new_te_keys, current_time_ms)
+        jira_api.add_comment(args.comment_jira, comment, jira_id, jira_pwd)
 
 
 def parse_args():
@@ -79,6 +93,8 @@ def parse_args():
                         help="Build type (stable/main)", required=True)
     parser.add_argument("-s", "--setup_type", type=str, default='regular',
                         help="Setup type (regular/nearfull/isolated)", required=True)
+    parser.add_argument("-c", "--comment_jira", type=str,
+                        help="Test id where comments to be added")
     return parser.parse_args()
 
 
