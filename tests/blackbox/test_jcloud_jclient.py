@@ -23,7 +23,7 @@ Note: The pre-requisite of this testfile require two jar files.
 
 'jclient.jar' and 'jcloudclient.jar' to be placed the specific location
 These files has to be placed to the following directory of this repository
-'cortx-test/scripts/tools'
+'cortx-test/scripts/jcloud'
 """
 
 import os
@@ -75,13 +75,18 @@ class TestJcloudAndJclient:
             res = system_utils.configure_jclient_cloud(
                 source=S3_CFG["jClientCloud_path"]["source"],
                 destination=S3_CFG["jClientCloud_path"]["dest"],
-                nfs_path=S3_CFG["nfs_path"]
+                nfs_path=S3_CFG["nfs_path"],
+                ca_crt_path=S3_CFG["s3_cert_path"]
             )
             cls.log.info(res)
             if not res:
                 raise CTException(
                     S3_CLIENT_ERROR,
                     BLACKBOX_CONF["common_cfg"]["jar_skip_err"])
+        cls.s3_url = S3_CFG['s3_url'].replace("https://", "").replace("http://", "")
+        cls.s3_iam = S3_CFG['iam_url'].strip("https://").strip("http://").strip(":9443")
+        resp = cls.update_jclient_jcloud_properties()
+        assert_utils.assert_true(resp, resp)
         cls.log.info("ENDED: setup test suite operations.")
 
     @classmethod
@@ -165,8 +170,36 @@ class TestJcloudAndJclient:
         path_style = BLACKBOX_CONF["common_cfg"]["path_style_opt"]
         cmd = "{} {} {} {} {}".format(java_cmd, operation, bucket_url,
                                       aws_keys_str, path_style)
+        self.log.info("jcloud command: %s", cmd)
 
         return cmd
+
+    @classmethod
+    def update_jclient_jcloud_properties(cls):
+        """
+        Update jclient, jcloud properties with correct s3, iam endpoint.
+
+        :return: True
+        """
+        resp = True
+        jclient_prop_path = BLACKBOX_CONF["common_cfg"]["jclient_properties_path"]
+        jcloud_prop_path = BLACKBOX_CONF["common_cfg"]["jcloud_properties_path"]
+        jclient = system_utils.read_properties_file(jclient_prop_path)
+        jcloud = system_utils.read_properties_file(jcloud_prop_path)
+        if jclient:
+            if jclient['iam_endpoint'] != cls.s3_iam:
+                jclient['iam_endpoint'] = cls.s3_iam
+            if jclient['s3_endpoint'] != cls.s3_url:
+                jclient['s3_endpoint'] = cls.s3_url
+            resp = system_utils.write_properties_file(jclient_prop_path, jclient)
+        if jcloud:
+            if jcloud['iam_endpoint'] != cls.s3_iam:
+                jcloud['iam_endpoint'] = cls.s3_iam
+            if jcloud['s3_endpoint'] != cls.s3_url:
+                jcloud['s3_endpoint'] = cls.s3_url
+            resp = system_utils.write_properties_file(jcloud_prop_path, jcloud)
+
+        return resp
 
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7094")

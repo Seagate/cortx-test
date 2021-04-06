@@ -27,5 +27,5 @@ locust_details:
 aws_locust_cred_section: "locust"
 nfs_path: "cftic2.pun.seagate.com:/cftshare/jclientCloud/"
 jClientCloud_path:
-    dest: "scripts/tools/"
+    dest: "scripts/jcloud/"
     source: "/root/jclientCloud/"

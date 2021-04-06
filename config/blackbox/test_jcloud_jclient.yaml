@@ -2,10 +2,12 @@ common_cfg:
     jcloud_tool: "jcloud"
     jclient_tool: "jclient"
     bkt_prefix: "jcloudjclientbucket"
-    jcloud_path: "scripts/tools/jcloudclient.jar"
-    jclient_path: "scripts/tools/jclient.jar"
-    jcloud_cmd: "java -jar scripts/tools/jcloudclient.jar"
-    jclient_cmd: "java -jar scripts/tools/jclient.jar"
+    jclient_properties_path: "scripts/jcloud/jclient.properties"
+    jcloud_properties_path: "scripts/jcloud/jcloud.properties"
+    jcloud_path: "scripts/jcloud/jcloudclient.jar"
+    jclient_path: "scripts/jcloud/jclient.jar"
+    jcloud_cmd: "java -jar scripts/jcloud/jcloudclient.jar"
+    jclient_cmd: "java -jar scripts/jcloud/jclient.jar"
     make_bucket: "mb"
     jcloud_format_keys: "--access-key {} --secret-key {}"
     jclient_format_keys: "--access_key {} --secret_key {}"
@@ -14,7 +16,7 @@ common_cfg:
     file_size: 10
     file_format: ".txt"
     jar_skip_err: "Error: jcloudclient.jar or jclient.jar file does not exists"
-    ls_script_path_cmd: "ls scripts/tools/"
+    ls_script_path_cmd: "ls scripts/jcloud/"
 
 test_2368:
     bucket_name: "jcloudjclientbucket-2368{}"
