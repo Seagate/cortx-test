@@ -10,4 +10,6 @@ setup(name="cortxtest",
       long_description="Cortx-test automation test installation package",
       packages=find_packages(),
       include_package_data=True,
+      python_requires='==3.7',
+
       )

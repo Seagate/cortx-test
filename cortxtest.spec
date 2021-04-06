@@ -31,7 +31,7 @@ rm -rf %{buildroot}/cortxtest/
 mkdir -p %{buildroot}/cortxtest/
 cp -r /root/dk/cortx/cortx-test/ %{buildroot}/cortxtest/
 rm -rf %{buildroot}/cortxtest/log
-rm -rf %{buildroot}/cortxtest/__pycache__
+find . \( -name '__pycache__' -or -name '*.pyc' \) -delete
 exit
 
 %files
@@ -51,33 +51,38 @@ cd %{buildroot}/cortxtest/cortx-test/
 %post
 %{python} -V
 if [ "$?" = "0" ]; then
-echo "python 3.7 is installed"
+    echo "python 3.7 is installed"
 else
-yum -y update
-yum install xz-devel python-backports-lzma sqlite-devel -y
-yum install -y gcc openssl-devel bzip2-devel libffi-devel zlib-devel
-cd /usr/src
-wget https://www.python.org/ftp/python/3.7.9/Python-3.7.9.tgz
-tar -xzf Python-3.7.9.tgz
-cd Python-3.7.9
-./configure --enable-optimizations
-make altinstall
-rm -rf /usr/src/Python-3.7.9.tgz
-%{python} -V
+    yum -y update
+    yum history new
+    yum -y groupinstall "Development Tools"
+    yum install xz-devel python-backports-lzma sqlite-devel -y
+    yum install -y gcc openssl-devel bzip2-devel libffi-devel zlib-devel
+    yum install epel-release
+    cd /usr/src
+    wget https://www.python.org/ftp/python/3.7.9/Python-3.7.9.tgz
+    tar -xzf Python-3.7.9.tgz
+    cd Python-3.7.9
+    make clean
+    ./configure --enable-optimizations --with-ssl --enable-loadable-sqlite-extensions
+    make altinstall
+    rm -rf /usr/src/Python-3.7.9.tgz
+    %{python} -V
 fi
+yum install -y python34-setuptools
+easy_install-3.4 pip
 %{pip} install --upgrade pip
 %{pip} install -r /cortxtest/cortx-test/requirements.txt
-%{python} /cortxtest/cortx-test/setup.py develop
+find /cortxtest/cortx-test \( -name '__pycache__' -or -name '*.pyc' \) -delete
+
 ln -s /cortxtest/cortx-test /usr/local/lib/python3.7/site-packages/cortx-test
-ln -s /cortxtest/cortx-test/cortxtest.egg-info /usr/local/lib/python3.7/site-packages/cortx-test/cortxtest.egg-info
 
-
-script_list=("scripts/s3_bench/s3bench" "scripts/locust/locust_runner")
-short_array=("pys3bench" "runlocust")
+script_list=("scripts/s3_bench/s3bench" "scripts/locust/locust_runner" "testrunner" "drunner")
+short_array=("pys3bench" "runlocust" "testrunner" "drunner")
 for i in "${!script_list[@]}";
 do
     aliasmsg=ALIAS_MSG_${short_array[$i]}
-    aliasmsg="alias ${short_array[$i]}='/cortxtest/cortx-test/${script_list[$i]}.py'"
+    aliasmsg="alias ${short_array[$i]}='%{python} /cortxtest/cortx-test/${script_list[$i]}.py'"
     alias_msg_array[$i]="$aliasmsg"
 done
 CT_PROFILED=/etc/profile.d/ct.sh
@@ -97,7 +102,12 @@ else
     cp "$TMP_CT_PROFILED" "$CT_PROFILED"
     rm -f "$TMP_CT_PROFILED"
 fi
-
+source /etc/profile.d/ct.sh
+cd /cortxtest/cortx-test/
+echo "Installing setup.py"
+%{python} setup.py install
+echo "developing setup.py"
+%{python} setup.py develop
 echo "Installation completed"
 
 %postun
@@ -120,6 +130,7 @@ if [ "$1" = "0" ]; then
     
     echo 'To complete the uninstall,please re-login to the system'
 fi
+rm -rf /etc/profile.d/ct.sh
 
 %clean
 rm -rf %{buildroot}/SOURCES/cortxtest/
