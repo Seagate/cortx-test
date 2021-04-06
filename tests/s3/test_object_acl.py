@@ -296,7 +296,7 @@ class TestObjectACL:
         try:
             S3_ACL_OBJ.get_object_acl(bucket, obj)
         except CTException as error:
-            assert S3_OBJ_TST["test_9853"]["err_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["key_err"] in error.message, error.message
         self.log.info("Step 2: Object ACL resp is : %s", res)
         self.log.info(
             "verify that user able to download with empty key or not")
@@ -347,7 +347,7 @@ class TestObjectACL:
         try:
             S3_ACL_OBJ.get_object_acl(bucket, obj)
         except CTException as error:
-            assert S3_OBJ_TST["test_9853"]["err_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["key_err"] in error.message, error.message
         self.log.info("Step 4: Object ACL resp is : %s", res)
         self.log.info(
             "User should not get object acl when object was deleted")
@@ -5152,7 +5152,6 @@ class TestObjectACL:
         s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         test_file_path = self.test_file_path
-        test_3459_cfg = S3_OBJ_TST["test_3459"]
         obj_permission = S3_OBJ_TST["s3_object"]["full_ctrl"]
         create_file(
             test_file_path,
