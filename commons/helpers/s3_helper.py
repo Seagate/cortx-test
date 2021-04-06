@@ -722,7 +722,7 @@ class S3Helper:
 
             return access_key, secret_key
         except (FileNotFoundError, KeyError, NoSectionError) as error:
-            LOGGER.error(
+            LOGGER.warning(
                 "An exception occurred in %s: %s",
                 S3Helper.get_local_keys.__name__,
                 str(error))
