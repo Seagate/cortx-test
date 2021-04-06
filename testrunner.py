@@ -4,8 +4,10 @@ import argparse
 import csv
 import json
 import logging
+import requests
 from datetime import datetime
 from multiprocessing import Process
+from jira import JIRA
 from core import runner
 from core import kafka_consumer
 from core.locking_server import LockingServer
@@ -26,8 +28,9 @@ def parse_args():
                         help="json file name")
     parser.add_argument("-r", "--html_report", type=str, default='report.html',
                         help="html report name")
-    parser.add_argument("-d", "--db_update", type=str, default='n',
-                        help="db update required: y/n")
+    parser.add_argument("-d", "--db_update", type=str_to_bool,
+                        default=True, nargs='?', const=True,
+                        help="Update Reports DB. Can be false in case reports db is down")
     parser.add_argument("-te", "--te_ticket", type=str,
                         help="jira xray test execution id")
     parser.add_argument("-pe", "--parallel_exe", type=str, default=False,
@@ -123,8 +126,13 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
     if te_tag:
         tag = '-m ' + te_tag
         cmd_line = cmd_line + [tag]
+
     read_metadata = "--readmetadata=" + str(True)
     cmd_line = cmd_line + [read_metadata]
+
+    if not args.db_update:
+        cmd_line = cmd_line + ["--db_update=" + str(False)]
+
     cmd_line = cmd_line + ['--build=' + build, '--build_type=' + build_type,
                            '--tp_ticket=' + args.test_plan]
     LOGGER.debug('Running pytest command %s', cmd_line)
@@ -212,13 +220,20 @@ def trigger_unexecuted_tests(args, test_list):
                            env=_env, re_execution=True)
 
 
-def create_test_meta_data_file(args, test_list):
+def create_test_meta_data_file(args, test_list, jira_obj=None):
     """
     Create test meta data file
     """
     tp_meta = dict()  # test plan meta
     jira_id, jira_pwd = runner.get_jira_credential()
-    jira_obj = JiraTask(jira_id, jira_pwd)
+    if not jira_obj:
+        jira_obj = JiraTask(jira_id, jira_pwd)
+    # Any how create Jira object to pass to get_issue_details to save on instance creation.
+    jira_url = "https://jts.seagate.com/"
+    options = {'server': jira_url}
+    auth = (jira_id, jira_pwd)
+    auth_jira = JIRA(options, basic_auth=auth)
+
     # Create test meta file for reporting TR.
     tp_meta_file = os.path.join(os.getcwd(),
                                 params.LOG_DIR_NAME,
@@ -226,10 +241,10 @@ def create_test_meta_data_file(args, test_list):
     with open(tp_meta_file, 'w') as t_meta:
 
         test_meta = list()
-        tp_resp = jira_obj.get_issue_details(args.test_plan)  # test plan id
+        tp_resp = jira_obj.get_issue_details(args.test_plan, auth_jira=auth_jira)  # test plan id
         tp_meta['test_plan_label'] = tp_resp.fields.labels
         tp_meta['environment'] = tp_resp.fields.environment
-        te_resp = jira_obj.get_issue_details(args.te_ticket)  # test execution id
+        te_resp = jira_obj.get_issue_details(args.te_ticket, auth_jira=auth_jira)  # test exec id
         if te_resp.fields.components:
             te_components = te_resp.fields.components[0].name
         tp_meta['te_meta'] = dict(te_id=args.te_ticket,
@@ -239,7 +254,7 @@ def create_test_meta_data_file(args, test_list):
         for test in test_list:
             item = dict()
             item['test_id'] = test
-            resp = jira_obj.get_issue_details(test)
+            resp = jira_obj.get_issue_details(test, auth_jira=auth_jira)
             item['test_name'] = resp.fields.summary
             item['labels'] = resp.fields.labels
             if resp.fields.components:
@@ -441,19 +456,41 @@ def check_kafka_msg_trigger_test(args):
     consumer.close()
 
 
-def get_setup_details():
+def get_setup_details(args):
     if not os.path.exists(params.LOG_DIR_NAME):
         os.mkdir(params.LOG_DIR_NAME)
-    if os.path.exists(params.SETUPS_FPATH):
-        os.remove(params.SETUPS_FPATH)
-    setups = configmanager.get_config_db(setup_query={})
-    config_utils.create_content_json(params.SETUPS_FPATH, setups, ensure_ascii=False)
+    setups = None
+    try:
+        setups = configmanager.get_config_db(setup_query={})
+        if os.path.exists(params.SETUPS_FPATH):
+            os.remove(params.SETUPS_FPATH)
+        config_utils.create_content_json(params.SETUPS_FPATH, setups, ensure_ascii=False)
+    except requests.exceptions.RequestException as fault:
+        LOGGER.exception(str(fault))
+        if args.db_update:
+            raise Exception from fault
+    except Exception as fault:
+        if not os.path.exists(params.SETUPS_FPATH):
+            raise Exception from fault
+        if args.db_update and not setups:
+            LOGGER.warning("Using the cached data from setups.json")
+            # check for existence of target in setups.json
+            exists = False
+            json_data = config_utils.read_content_json(params.SETUPS_FPATH, 'r')
+            for key in json_data:
+                if key == args.target:
+                    exists = True
+                    break
+            if not exists:
+                raise Exception(f'target {args.target} Data does not exists in setups.json')
 
 
 def main(args):
     """Main Entry function using argument parser to parse options and forming pyttest command.
     It renames up the latest folder and parses TE ticket to create detailed test details csv.
     """
+    get_setup_details(args)
+
     if args.json_file:
         json_dict, cmd, run_using = runner.parse_json(args.json_file)
         cmd_line = runner.get_cmd_line(cmd, run_using, args.html_report, args.log_level)
@@ -468,6 +505,5 @@ def main(args):
 if __name__ == '__main__':
     runner.cleanup()
     initialize_loghandler(LOGGER)
-    get_setup_details()
     opts = parse_args()
     main(opts)
