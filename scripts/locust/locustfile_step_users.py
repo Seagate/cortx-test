@@ -50,30 +50,34 @@ class LocustUser(HttpUser):
     Locust user class
     """
     wait_time = constant(1)
+    utils = UTILS_OBJ
 
     @events.test_start.add_listener
     def on_test_start(**kwargs):
-        LOGGER.info("Starting test setup")
+        LOGGER.info("Starting test setup with %s %s", kwargs.get('--u'), kwargs.get('--t'))
         UTILS_OBJ.create_buckets(BUCKET_COUNT)
 
     @task(1)
     def put_object(self):
         for bucket in BUCKET_LIST:
-            UTILS_OBJ.put_object(bucket, OBJECT_SIZE)
+            self.utils.put_object(bucket, OBJECT_SIZE)
 
     @task(1)
     def get_object(self):
         for bucket in BUCKET_LIST:
-            UTILS_OBJ.download_object(bucket)
+            self.utils.download_object(bucket)
 
     @task(1)
     def delete_object(self):
         for bucket in BUCKET_LIST:
-            UTILS_OBJ.delete_object(bucket)
+            self.utils.delete_object(bucket)
 
     @events.test_stop.add_listener
     def on_test_stop(**kwargs):
+        LOGGER.info("Starting test cleanup.")
         UTILS_OBJ.delete_buckets(BUCKET_LIST)
+        LOGGER.info("Log path: %s", kwargs.get('--logfile'))
+        LOGGER.info("HTML path: %s", kwargs.get('--html'))
 
 
 class StepLoadShape(LoadTestShape):

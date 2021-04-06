@@ -24,7 +24,7 @@ Locust tasks set for put object, get object and delete object from bucket
 
 import os
 import logging
-from random import randint
+import secrets
 from locust import HttpUser
 from locust import events
 from locust import task, constant
@@ -40,11 +40,11 @@ BUCKET_COUNT = int(
 MIN_OBJECT_SIZE = int(
     os.getenv(
         'MIN_OBJECT_SIZE',
-        LOCUST_CFG['default']['OBJECT_SIZE']))
+        LOCUST_CFG['default']['MIN_OBJECT_SIZE']))
 MAX_OBJECT_SIZE = int(
     os.getenv(
         'MAX_OBJECT_SIZE',
-        LOCUST_CFG['default']['OBJECT_SIZE']))
+        LOCUST_CFG['default']['MAX_OBJECT_SIZE']))
 BUCKET_LIST = UTILS_OBJ.bucket_list
 
 
@@ -53,6 +53,8 @@ class LocustUser(HttpUser):
     Locust user class
     """
     wait_time = constant(1)
+    utils = UTILS_OBJ
+    secure_range = secrets.SystemRandom()
 
     @events.test_start.add_listener
     def on_test_start(**kwargs):
@@ -61,19 +63,19 @@ class LocustUser(HttpUser):
 
     @task(1)
     def put_object(self):
-        object_size = randint(MIN_OBJECT_SIZE, MAX_OBJECT_SIZE)
+        object_size = self.secure_range.randint(MIN_OBJECT_SIZE, MAX_OBJECT_SIZE)
         for bucket in BUCKET_LIST:
-            UTILS_OBJ.put_object(bucket, object_size)
+            self.utils.put_object(bucket, object_size)
 
     @task(1)
     def get_object(self):
         for bucket in BUCKET_LIST:
-            UTILS_OBJ.download_object(bucket)
+            self.utils.download_object(bucket)
 
     @task(1)
     def delete_object(self):
         for bucket in BUCKET_LIST:
-            UTILS_OBJ.delete_object(bucket)
+            self.utils.delete_object(bucket)
 
     @events.test_stop.add_listener
     def on_test_stop(**kwargs):

@@ -30,6 +30,7 @@ import boto3
 from botocore.client import Config
 from locust import events
 from scripts.locust import LOCUST_CFG
+from commons.utils import system_utils
 
 LOGGER = logging.getLogger(__name__)
 
@@ -154,9 +155,9 @@ class LocustUtils:
         :param bucket_name: Name of the bucket
         :param object_size: Size of the object
         """
-        if os.path.exists(OBJ_NAME):
+        if system_utils.path_exists(OBJ_NAME):
             try:
-                os.remove(OBJ_NAME)
+                system_utils.remove_file(OBJ_NAME)
             except OSError as error:
                 LOGGER.error(error)
         self.create_file(object_size)
@@ -192,9 +193,9 @@ class LocustUtils:
             bucket = self.s3_resource.Bucket(bucket_name)
             objects = [obj.key for obj in bucket.objects.all()]
             if len(objects) > 1:
-                if os.path.exists(GET_OBJ_PATH):
+                if system_utils.path_exists(GET_OBJ_PATH):
                     try:
-                        os.remove(GET_OBJ_PATH)
+                        system_utils.remove_file(GET_OBJ_PATH)
                     except OSError as error:
                         LOGGER.error(error)
                 obj_name = random.choice(objects)
