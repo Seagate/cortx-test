@@ -5,5 +5,5 @@ PerfDB:
         R1: results_1
         R2: results_2
     auth:
-        full_access_user: perfpro 
-        full_access_password: PerfPro
+        full_access_user: <db_username>
+        full_access_password: <db_password>
