@@ -6,7 +6,7 @@ acc_user_mng:
   password: "seagate"
   password_reset: False
   user_name: "seagate_user_9"
-  test_file_path: "/home/testfile"
+  test_file_path: "/root/testfile"
 test_2399:
   total_accounts: 50
 test_2396:
