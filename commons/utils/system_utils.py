@@ -33,6 +33,8 @@ from subprocess import Popen, PIPE
 from hashlib import md5
 from paramiko import SSHClient, AutoAddPolicy
 from commons import commands
+from commons import params
+
 
 if sys.platform == 'win32':
     try:
@@ -872,24 +874,35 @@ def mount_upload_to_server(host_dir: str = None, mnt_dir: str = None,
     :param remote_path: Dir Path to which file is to be uploaded on NFS server
     :param local_path: Local path of the file to be uploaded
     :return: Bool, response"""
-    if not os.path.ismount(mnt_dir):
-        if not os.path.exists(mnt_dir):
-            LOGGER.info("Creating a mount directory to share")
-            resp = make_dirs(dpath=mnt_dir)
+    try:
+        if not os.path.ismount(mnt_dir):
+            if not os.path.exists(mnt_dir):
+                LOGGER.info("Creating a mount directory to share")
+                resp = make_dirs(dpath=mnt_dir)
 
-        cmd = commands.CMD_MOUNT.format(host_dir, mnt_dir)
-        resp = run_local_cmd(cmd=cmd)
-        if not resp[0]:
-            return resp
+            cmd = commands.CMD_MOUNT.format(host_dir, mnt_dir)
+            resp = run_local_cmd(cmd=cmd)
+            if not resp[0]:
+                return resp
 
-    new_path = os.path.join(mnt_dir, remote_path)
-    LOGGER.info("Creating directory on server")
-    if not os.path.exists(new_path):
-        resp = make_dirs(dpath=new_path)
+        new_path = os.path.join(mnt_dir, remote_path)
+        LOGGER.info("Creating directory on server")
+        if not os.path.exists(new_path):
+            resp = make_dirs(dpath=new_path)
 
-    LOGGER.info("Copying file to mounted directory")
-    shutil.copy(local_path, new_path)
-    log_path = os.path.join(host_dir.split(":")[0], remote_path)
+        LOGGER.info("Copying file to mounted directory")
+        shutil.copy(local_path, new_path)
+        log_path = os.path.join(host_dir.split(":")[0], remote_path)
+    except Exception as error:
+        LOGGER.error(error)
+        LOGGER.info("Copying file to local path")
+        log_path = os.path.join(params.LOCAL_LOG_PATH, remote_path)
+        if not os.path.exists(log_path):
+            LOGGER.info("Creating local log directory")
+            resp = make_dirs(dpath=log_path)
+
+        shutil.copy(local_path, log_path)
+
     return True, log_path
 
 
@@ -904,6 +917,45 @@ def umount_dir(mnt_dir: str = None) -> tuple:
         if not resp[0]:
             return resp
 
+        while True:
+            if not os.path.ismount(mnt_dir):
+                break
+
         remove_dir(dpath=mnt_dir)
 
     return True, "Directory is unmounted"
+
+
+def configure_jclient_cloud(
+        source: str,
+        destination: str,
+        nfs_path: str,
+        ca_crt_path: str) -> bool:
+    """
+        Function to configure jclient and cloud jar files
+        :param ca_crt_path: s3 ca.crt path.
+        :param nfs_path: nfs server path where jcloudclient.jar, jclient.jar present.
+        :param source: path to the source dir where .jar are present.
+        :param destination: destination path where .jar need to be copied
+        """
+    if not os.path.exists(source):
+        os.mkdir(source)
+
+    dir_list = os.listdir(source)
+    if "jcloudclient.jar" not in dir_list or "jclient.jar" not in dir_list:
+        temp_dir = "/mnt/jjarfiles"
+        os.mkdir(temp_dir)
+        mount_cmd = f"mount.nfs -v {nfs_path} {temp_dir}"
+        umount_cmd = f"umount -v {temp_dir}"
+        run_local_cmd(mount_cmd)
+        run_local_cmd(f"yes | cp -rf {temp_dir}*.jar {source}")
+        run_local_cmd(umount_cmd)
+        os.remove(temp_dir)
+
+    run_local_cmd(f"yes | cp -rf {source}*.jar {destination}")
+    res_ls = run_local_cmd(f"ls {destination}")[1]
+    # Run commands to set cert files in client Location.
+    run_local_cmd(commands.CMD_KEYTOOL1)
+    run_local_cmd(commands.CMD_KEYTOOL2.format(ca_crt_path))
+
+    return bool(".jar" in res_ls)

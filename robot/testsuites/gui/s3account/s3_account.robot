@@ -188,7 +188,7 @@ TEST-99
 TEST-102
     [Documentation]  This test case is to verify that by clicking on "add new account" button create s3user form is
     ...  getting opened.
-    [Tags]  Priority_High  TEST-102  S3_test  Somoke_test
+    [Tags]  Priority_High  TEST-102  S3_test  Smoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     Click on add new s3 account button
@@ -196,7 +196,7 @@ TEST-102
 
 TEST-106
     [Documentation]  This test case is to verify that s3 accounts form does not accepts invalid user name.
-    [Tags]  Priority_High  TEST-106  S3_test  Somoke_test
+    [Tags]  Priority_High  TEST-106  S3_test  Smoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     Click on add new s3 account button
@@ -206,7 +206,7 @@ TEST-106
 
 TEST-107
     [Documentation]  This test case is to verify that s3 accounts form does not accepts invalid email id.
-    [Tags]  Priority_High  TEST-107  S3_test  Somoke_test
+    [Tags]  Priority_High  TEST-107  S3_test  Smoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     Click on add new s3 account button
@@ -216,14 +216,14 @@ TEST-107
 
 TEST-109
     [Documentation]  This test case is to verify cancel button functionality on s3 accounts form .
-    [Tags]  Priority_High  TEST-109  S3_test  Somoke_test
+    [Tags]  Priority_High  TEST-109  S3_test  Smoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     check cancel s3 account form feature
 
 TEST-110
     [Documentation]  This test case is to verify that user is able to create new s3 account.
-    [Tags]  Priority_High  TEST-110  S3_test  Somoke_test
+    [Tags]  Priority_High  TEST-110  S3_test  Smoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
@@ -235,7 +235,7 @@ TEST-110
 
 TEST-111
     [Documentation]  This test case is to verify that user is able to delete s3 account.
-    [Tags]  Priority_High  TEST-111  S3_test  Somoke_test
+    [Tags]  Priority_High  TEST-111  S3_test  Smoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
@@ -297,7 +297,7 @@ TEST-116
 
 TEST-1530
     [Documentation]  This test case is to verify that user is able to update s3 account password.
-    [Tags]  Priority_High  TEST-1530  S3_test  Somoke_test
+    [Tags]  Priority_High  TEST-1530  S3_test  Smoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
@@ -381,7 +381,7 @@ TEST-1534
 TEST-4025
     [Documentation]  This test case is to verify that s3 account user is able to login to csm GUI
     ...  user provide miss-match password while updating its user name
-    [Tags]  Priority_High  TEST-4025  S3_test  Somoke_test
+    [Tags]  Priority_High  TEST-4025  S3_test  Smoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
@@ -395,7 +395,7 @@ TEST-4025
 TEST-4027
     [Documentation]  This test case is to verify that s3 account user is able to perform s3 operations.
     ...  user provide miss-match password while updating its user name
-    [Tags]  Priority_High  TEST-4027  S3_test  Somoke_test
+    [Tags]  Priority_High  TEST-4027  S3_test  Smoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
@@ -418,7 +418,7 @@ TEST-5198
 
 TEST-5199
     [Documentation]  This test case is to verify that s3 accounts form does not accepts invalid password.
-    [Tags]  Priority_High  TEST-5199  S3_test  Somoke_test
+    [Tags]  Priority_High  TEST-5199  S3_test  Smoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     Click on add new s3 account button
@@ -429,7 +429,7 @@ TEST-5199
 TEST-5200
     [Documentation]  This test case is to verify that s3 accounts form does not accepts
     ...  miss-match password while creating s3 account.
-    [Tags]  Priority_High  TEST-5200  S3_test  Somoke_test
+    [Tags]  Priority_High  TEST-5200  S3_test  Smoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     sleep  2s
     ${new_password}=  Generate New Password

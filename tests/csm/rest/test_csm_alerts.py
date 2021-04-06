@@ -73,6 +73,7 @@ class TestCsmAlerts():
             assert result, "Teardown: Failed to resolve alert"
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-17185')
     def test_607(self):
         """
@@ -112,6 +113,7 @@ class TestCsmAlerts():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-17183')
     def test_608(self):
         """
@@ -140,6 +142,7 @@ class TestCsmAlerts():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-17184')
     def test_609(self):
         """
@@ -176,6 +179,7 @@ class TestCsmAlerts():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-19207')
     def test_610(self):
         """
@@ -221,6 +225,7 @@ class TestCsmAlerts():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-19208')
     def test_611(self):
         """
@@ -263,6 +268,7 @@ class TestCsmAlerts():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-17178')
     def test_616(self):
         """
@@ -298,6 +304,7 @@ class TestCsmAlerts():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-17179')
     def test_617(self):
         """
@@ -333,6 +340,7 @@ class TestCsmAlerts():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-17180')
     def test_618(self):
         """
@@ -378,6 +386,7 @@ class TestCsmAlerts():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-17181')
     def test_619(self):
         """
@@ -427,6 +436,7 @@ class TestCsmAlerts():
 
     @pytest.mark.tags('TEST-19209')
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     def test_620(self):
         """
         Test that Get request with Acknowledged parameter as false returns correct data.
@@ -460,6 +470,7 @@ class TestCsmAlerts():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-17182')
     def test_621(self):
         """
@@ -496,6 +507,7 @@ class TestCsmAlerts():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-15725')
     def test_1225(self):
         """
@@ -591,6 +603,7 @@ class TestCsmAlerts():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-15726')
     def test_1231(self):
         """
@@ -616,6 +629,7 @@ class TestCsmAlerts():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-16215')
     def test_1448(self):
         """
@@ -673,6 +687,7 @@ class TestCsmAlerts():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-16216')
     def test_1457(self):
         """
@@ -740,6 +755,7 @@ class TestCsmAlerts():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-16937')
     def test_1039(self):
         """

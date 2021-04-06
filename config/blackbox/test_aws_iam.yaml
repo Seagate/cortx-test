@@ -4,7 +4,6 @@ acc_user_mng:
   password: "NxcdYlhvOOic8ahZt9JHNoP0JVNOq2/J3B2RinQd0jY="
   password_reset: False
   user_name: "seagate_user"
-  test_file_path: "/home/testfile"
 iam_user_login:
   user_name_prefix: "iamuser"
 test_2420:

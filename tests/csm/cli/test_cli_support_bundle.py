@@ -85,6 +85,7 @@ class TestCliSupportBundle:
         self.support_bundle_obj.logout_cortx_cli()
         self.LOGGER.info("ENDED : Teardown operations at test function level")
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @CTFailOn(error_handler)
     @pytest.mark.tags("TEST-12845")
@@ -132,6 +133,7 @@ class TestCliSupportBundle:
         self.LOGGER.info(
             "Step 3: Verified logs are generated for each component")
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @CTFailOn(error_handler)
     @pytest.mark.tags("TEST-12843")

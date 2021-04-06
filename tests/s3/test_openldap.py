@@ -369,9 +369,8 @@ class TestOpenLdap:
             remove_file(self.CM_LDAP_CFG["temp_path"])
         self.log.info("ENDED: Teardown operations")
 
-    @pytest.mark.parallel
-    @pytest.mark.s3
-    @pytest.mark.tags("TEST-5498")
+    @pytest.mark.s3_ops
+    @pytest.mark.tags('TEST-7948')
     @CTFailOn(error_handler)
     def test_5066(self):
         """Test to verify & check backup of openldap config directory is done successfully."""
@@ -414,9 +413,8 @@ class TestOpenLdap:
             "ENDED: Test to verify and check backup of openldap "
             "configuration directory is done successfully")
 
-    @pytest.mark.parallel
-    @pytest.mark.s3
-    @pytest.mark.tags("TEST-5498")
+    @pytest.mark.s3_ops
+    @pytest.mark.tags('TEST-7949')
     @CTFailOn(error_handler)
     def test_5067(self):
         """Test to verify and check backup of openldap Data Directories is done successfully."""
@@ -458,9 +456,8 @@ class TestOpenLdap:
         self.log.info(
             "ENDED: Test to verify & check backup of openldap Data Directory is done successfully")
 
-    @pytest.mark.parallel
-    @pytest.mark.s3
-    @pytest.mark.tags("TEST-5498")
+    @pytest.mark.s3_ops
+    @pytest.mark.tags('TEST-7950')
     @CTFailOn(error_handler)
     def test_5068(self):
         """Test to verify & check restore of openldap config directory is done successfully."""
@@ -555,9 +552,8 @@ class TestOpenLdap:
             "ENDED: Test to verify and check restore of openldap "
             "configuration directory is done successfully")
 
-    @pytest.mark.parallel
-    @pytest.mark.s3
-    @pytest.mark.tags("TEST-5498")
+    @pytest.mark.s3_ops
+    @pytest.mark.tags('TEST-7951')
     @CTFailOn(error_handler)
     def test_5069(self):
         """
@@ -666,9 +662,8 @@ class TestOpenLdap:
             "permissions of the configuration directory is changed "
             "to what it was previously before restore.")
 
-    @pytest.mark.parallel
-    @pytest.mark.s3
-    @pytest.mark.tags("TEST-5498")
+    @pytest.mark.s3_ops
+    @pytest.mark.tags('TEST-7952')
     @CTFailOn(error_handler)
     def test_5070(self):
         """Test to verify and check restore of openldap data directories is done successfully."""
@@ -762,9 +757,8 @@ class TestOpenLdap:
             "ENDED: Test to verify and check restore of "
             "openldap data directories is done successfully")
 
-    @pytest.mark.parallel
-    @pytest.mark.s3
-    @pytest.mark.tags("TEST-5498")
+    @pytest.mark.s3_ops
+    @pytest.mark.tags('TEST-7953')
     @CTFailOn(error_handler)
     def test_5071(self):
         """
@@ -868,9 +862,8 @@ class TestOpenLdap:
             "ENDED: Test to verify and check change if ownership and "
             "permissions of the data directory to what it was previously")
 
-    @pytest.mark.parallel
-    @pytest.mark.s3
-    @pytest.mark.tags("TEST-5498")
+    @pytest.mark.s3_ops
+    @pytest.mark.tags('TEST-8020')
     @CTFailOn(error_handler)
     def test_5073(self):
         """
@@ -907,9 +900,8 @@ class TestOpenLdap:
             "ENDED: Test to verify and check if password reset is done successfully using "
             "enc_ldap_passwd_in_cfg.sh script.")
 
-    @pytest.mark.parallel
-    @pytest.mark.s3
-    @pytest.mark.tags("TEST-5498")
+    @pytest.mark.s3_ops
+    @pytest.mark.tags('TEST-8021')
     @CTFailOn(error_handler)
     def test_5074(self):
         """Test to verify & check if authserver properties file is updated post pwd change/reset."""
@@ -960,9 +952,8 @@ class TestOpenLdap:
             "ENDED: Test to verify and check if authserver.properties "
             "file is updated post password change/reset")
 
-    @pytest.mark.parallel
-    @pytest.mark.s3
-    @pytest.mark.tags("TEST-5498")
+    @pytest.mark.s3_ops
+    @pytest.mark.tags('TEST-8022')
     @CTFailOn(error_handler)
     def test_5075(self):
         """
@@ -1015,9 +1006,8 @@ class TestOpenLdap:
             "ENDED: Test to verify and check if password allows special characters"
             " with uppercase/lowercase characters")
 
-    @pytest.mark.parallel
-    @pytest.mark.s3
-    @pytest.mark.tags("TEST-5498")
+    @pytest.mark.s3_ops
+    @pytest.mark.tags('TEST-8023')
     @CTFailOn(error_handler)
     def test_5076(self):
         """Test to verify & check if blank ldap password is accepted during passwd reset/change."""
