@@ -20,6 +20,7 @@ itsdangerous==1.1.0
 Jinja2==2.10.1
 jira
 jmespath==0.9.4
+jproperties==2.1.0
 jsonschema==3.2.0
 locust==1.4.3
 MarkupSafe==1.1.1
@@ -58,4 +59,3 @@ testfixtures~=6.17.0
 urllib3==1.25.3
 Werkzeug==1.0.1
 xmltodict==0.12.0
-jproperties==2.1.0

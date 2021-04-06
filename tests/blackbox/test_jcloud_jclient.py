@@ -34,14 +34,14 @@ import pytest
 from commons.ct_fail_on import CTFailOn
 from commons.exceptions import CTException
 from commons.errorcodes import error_handler, S3_CLIENT_ERROR
+from commons.utils import config_utils
 from commons.utils import system_utils
 from commons.utils import assert_utils
-from commons.utils.config_utils import read_yaml
 from libs.s3 import s3_test_lib
 from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
 
 S3_TEST_OBJ = s3_test_lib.S3TestLib()
-BLACKBOX_CONF = read_yaml("config/blackbox/test_jcloud_jclient.yaml")[1]
+BLACKBOX_CONF = config_utils.read_yaml("config/blackbox/test_jcloud_jclient.yaml")[1]
 
 
 class TestJcloudAndJclient:
@@ -184,20 +184,20 @@ class TestJcloudAndJclient:
         resp = True
         jclient_prop_path = BLACKBOX_CONF["common_cfg"]["jclient_properties_path"]
         jcloud_prop_path = BLACKBOX_CONF["common_cfg"]["jcloud_properties_path"]
-        jclient = system_utils.read_properties_file(jclient_prop_path)
-        jcloud = system_utils.read_properties_file(jcloud_prop_path)
+        jclient = config_utils.read_properties_file(jclient_prop_path)
+        jcloud = config_utils.read_properties_file(jcloud_prop_path)
         if jclient:
             if jclient['iam_endpoint'] != cls.s3_iam:
                 jclient['iam_endpoint'] = cls.s3_iam
             if jclient['s3_endpoint'] != cls.s3_url:
                 jclient['s3_endpoint'] = cls.s3_url
-            resp = system_utils.write_properties_file(jclient_prop_path, jclient)
+            resp = config_utils.write_properties_file(jclient_prop_path, jclient)
         if jcloud:
             if jcloud['iam_endpoint'] != cls.s3_iam:
                 jcloud['iam_endpoint'] = cls.s3_iam
             if jcloud['s3_endpoint'] != cls.s3_url:
                 jcloud['s3_endpoint'] = cls.s3_url
-            resp = system_utils.write_properties_file(jcloud_prop_path, jcloud)
+            resp = config_utils.write_properties_file(jcloud_prop_path, jcloud)
 
         return resp
 

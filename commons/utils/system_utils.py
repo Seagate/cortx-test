@@ -34,7 +34,7 @@ from hashlib import md5
 from paramiko import SSHClient, AutoAddPolicy
 from commons import commands
 from commons import params
-from jproperties import Properties
+
 
 if sys.platform == 'win32':
     try:
@@ -959,46 +959,3 @@ def configure_jclient_cloud(
     run_local_cmd(commands.CMD_KEYTOOL2.format(ca_crt_path))
 
     return bool(".jar" in res_ls)
-
-
-def read_properties_file(fpath: str):
-    """
-    Read properties file and return dict.
-
-    :param fpath: properties file path.
-    :return: dict
-    """
-    try:
-        prop_dict = dict()
-        configs = Properties()
-        with open(fpath, 'rb') as read_prop:
-            configs.load(read_prop)
-        for key, val in configs.items():
-            prop_dict[key] = val.data
-        LOGGER.info(prop_dict)
-
-        return prop_dict
-    except Exception as error:
-        LOGGER.error(error)
-        return None
-
-
-def write_properties_file(fpath: str, prop_dict: dict):
-    """
-    Write data to properties file.
-
-    :param fpath: properties file path.
-    :param prop_dict: dict to write into properties file.
-    :return: bool
-    """
-    try:
-        LOGGER.info("properties dict: %s", prop_dict)
-        configs = Properties()
-        with open(fpath, 'wb') as write_prop:
-            configs.update(prop_dict)
-            configs.store(write_prop)
-
-        return True
-    except Exception as error:
-        LOGGER.error(error)
-        return False
