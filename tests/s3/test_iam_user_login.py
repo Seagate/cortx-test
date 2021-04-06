@@ -20,14 +20,18 @@
 import time
 import logging
 import pytest
+from config import CSM_CFG
 
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.configmanager import get_config_wrapper
-from commons.utils.assert_utils import assert_true, assert_in, assert_false
+from commons.utils.assert_utils import assert_true, assert_in, assert_false, assert_equal
 from libs.s3 import iam_test_lib
 from libs.s3 import LDAP_USERNAME, LDAP_PASSWD, S3H_OBJ
+from libs.s3.cortxcli_test_lib import CortxcliS3AccountOperations, CortxcliS3BucketOperations, \
+    CortxcliCsmUser, CortxcliIamUser
+from libs.s3.cortxcli_test_lib import CortxCliTestLib
 
 IAM_TEST_OBJ = iam_test_lib.IamTestLib()
 USER_CONFIG = get_config_wrapper(fpath="config/s3/test_iam_user_login.yaml")
@@ -36,9 +40,28 @@ USER_CONFIG = get_config_wrapper(fpath="config/s3/test_iam_user_login.yaml")
 class TestUserLoginProfileTests():
     """User Login Profile Test Suite."""
 
+    @classmethod
+    def setup_class(cls):
+        """
+        Setup all the states required for execution of this test suit.
+        """
+        cls.log = logging.getLogger(__name__)
+        cls.log.info("STARTED : Setup operations at test suit level")
+        cls.s3acc_obj = CortxcliS3AccountOperations()
+        cls.s3acc_obj.open_connection()
+        cls.s3bkt_obj = CortxcliS3BucketOperations(session_obj=cls.s3acc_obj.session_obj)
+        cls.csm_user_obj = CortxcliCsmUser(session_obj=cls.s3acc_obj.session_obj)
+        cls.iam_user_obj = CortxcliIamUser(session_obj=cls.s3acc_obj.session_obj)
+        cls.cortx_obj = CortxCliTestLib(session_obj=cls.s3acc_obj.session_obj)
+        # cls.alert_obj = CortxcliAlerts(session_obj=cls.s3acc_obj.session_obj)
+        cls.s3acc_prefix = "cli_s3acc"
+        cls.s3acc_name = cls.s3acc_prefix
+        cls.s3acc_email = "{}@seagate.com"
+        cls.s3acc_password = CSM_CFG["CliConfig"]["s3_account"]["password"]
+        cls.log.info("ENDED : Setup operations at test suit level")
+
     def setup_method(self):
         """Setup method."""
-        self.log = logging.getLogger(__name__)
         self.log.info("STARTED: Setup operations")
         self.ldap_user = LDAP_USERNAME
         self.ldap_pwd = LDAP_PASSWD
@@ -50,6 +73,15 @@ class TestUserLoginProfileTests():
         self.log.info("STARTED: Teardown operations")
         self.delete_accounts_and_users()
         self.log.info("ENDED: Teardown operations")
+
+    @classmethod
+    def teardown_class(cls):
+        """
+        Teardown any state that was previously setup with a setup_class
+        """
+        cls.log.info("STARTED : Teardown operations at test suit level")
+        cls.cortx_obj.close_connection()
+        cls.log.info("ENDED : Teardown operations at test suit level")
 
     def delete_accounts_and_users(self):
         """This function will delete all accounts and users which are getting created
@@ -73,8 +105,12 @@ class TestUserLoginProfileTests():
                     self.log.debug("Deleted user access key")
                 IAM_TEST_OBJ.delete_user(user)
                 self.log.debug("Deleted user : %s", user)
-        all_accounts = IAM_TEST_OBJ.list_accounts_s3iamcli(
-            self.ldap_user, self.ldap_pwd)[1]
+        # all_accounts = IAM_TEST_OBJ.list_accounts_s3iamcli(
+        #     self.ldap_user, self.ldap_pwd)[1]
+        login = self.s3acc_obj.login_cortx_cli(
+            username=self.s3acc_name,
+            password=self.s3acc_password)
+        all_accounts = self.cortx_obj.list_accounts_cortxcli()[1]
         iam_accounts = [acc["AccountName"]
                         for acc in all_accounts if user_cfg["acc_name_prefix"] in acc["AccountName"]]
         self.log.debug("IAM accounts: %s", iam_accounts)
@@ -82,7 +118,11 @@ class TestUserLoginProfileTests():
             self.log.debug("Deleting IAM accounts...")
             for acc in iam_accounts:
                 self.log.debug("Deleting %s account", acc)
-                IAM_TEST_OBJ.reset_access_key_and_delete_account_s3iamcli(acc)
+                #IAM_TEST_OBJ.reset_access_key_and_delete_account_s3iamcli(acc)
+                resp = self.cortx_obj.delete_user()
+                assert_equal(True, resp[0], resp[1])
+                resp = self.cortx_obj.delete_s3account_cortx_cli(acc)
+                assert_equal(True, resp[0], resp[1])
             self.log.debug("Deleted IAM accounts successfully")
 
     def create_user_and_access_key(
@@ -134,22 +174,32 @@ class TestUserLoginProfileTests():
         :return: Tuple containing access and secret keys of an account
         """
         self.log.info("Creating account with name %s", acc_name)
-        resp = IAM_TEST_OBJ.create_account_s3iamcli(
-            acc_name, email_id, self.ldap_user, self.ldap_pwd)
+        # resp = IAM_TEST_OBJ.create_account_s3iamcli(
+        #     acc_name, email_id, self.ldap_user, self.ldap_pwd)
+
+        resp = self.cortx_obj.create_s3account_cortx_cli(
+            account_name=acc_name,
+            account_email=email_id,
+            password=self.s3acc_password)
+
         assert_true(resp[0], resp[1])
         self.log.info("Created account with name %s", acc_name)
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
         self.log.info("Creating a user with name %s", user_name)
-        resp = IAM_TEST_OBJ.create_user_using_s3iamcli(
-            user_name, access_key, secret_key)
+        # resp = IAM_TEST_OBJ.create_user_using_s3iamcli(
+        #     user_name, access_key, secret_key)
+        resp = IAM_TEST_OBJ.create_user_using_cortxcli(
+             user_name, user_password)
         assert_true(resp[0], resp[1])
         self.log.info("Created a user with name %s", user_name)
         if user_profile:
             self.log.info(
                 "Creating user login profile for user %s", user_name)
-            resp = IAM_TEST_OBJ.create_user_login_profile_s3iamcli(
-                user_name, user_password, pwd_reset, access_key=access_key, secret_key=secret_key)
+            # resp = IAM_TEST_OBJ.create_user_login_profile_s3iamcli(
+            #     user_name, user_password, pwd_reset, access_key=access_key, secret_key=secret_key)
+            resp = IAM_TEST_OBJ.create_user_login_profile(
+                user_name, user_password, pwd_reset)
             assert_true(resp[0], resp[1])
             self.log.info(
                 "Created user login profile for user %s", user_name)
@@ -389,11 +439,20 @@ class TestUserLoginProfileTests():
         resp = IAM_TEST_OBJ.create_user_login_profile(
             test_9834_cfg["user_name"], test_9834_cfg["password"])
         assert_true(resp[0], resp[1])
-        resp = IAM_TEST_OBJ.update_user_login_profile_s3iamcli_with_both_reset_options(
-            test_9834_cfg["user_name"],
-            test_9834_cfg["password"],
-            S3H_OBJ.get_local_keys()[0],
-            S3H_OBJ.get_local_keys()[1])
+        # resp = IAM_TEST_OBJ.update_user_login_profile_s3iamcli_with_both_reset_options(
+        #     test_9834_cfg["user_name"],
+        #     test_9834_cfg["password"],
+        #     S3H_OBJ.get_local_keys()[0],
+        #     S3H_OBJ.get_local_keys()[1])
+        # assert_true(resp[0], resp[1])
+
+        resp = IAM_TEST_OBJ.create_user_login_profile(user_name=test_9834_cfg["user_name"],
+                                                      password=test_9834_cfg["password"],
+                                                      password_reset=False)
+        assert_true(resp[0], resp[1])
+        resp = IAM_TEST_OBJ.create_user_login_profile(user_name=test_9834_cfg["user_name"],
+                                                      password=test_9834_cfg["password"],
+                                                      password_reset=True)
         assert_true(resp[0], resp[1])
         self.log.info("ENDED: update login profile for IAM user with both"
                       " options --no-password-reset-required "
@@ -663,11 +722,20 @@ class TestUserLoginProfileTests():
         test_9847_cfg = USER_CONFIG["test_9847"]
         resp = IAM_TEST_OBJ.create_user(test_9847_cfg["user_name"])
         assert_true(resp[0], resp[1])
-        resp = IAM_TEST_OBJ.create_user_login_profile_s3iamcli_with_both_reset_options(
-            test_9847_cfg["user_name"],
-            test_9847_cfg["password"],
-            S3H_OBJ.get_local_keys()[0],
-            S3H_OBJ.get_local_keys()[1])
+        # resp = IAM_TEST_OBJ.create_user_login_profile_s3iamcli_with_both_reset_options(
+        #     test_9847_cfg["user_name"],
+        #     test_9847_cfg["password"],
+        #     S3H_OBJ.get_local_keys()[0],
+        #     S3H_OBJ.get_local_keys()[1])
+
+        resp = IAM_TEST_OBJ.create_user_login_profile(user_name=test_9847_cfg["user_name"],
+                                                      password=test_9847_cfg["password"],
+                                                      password_reset=False)
+        assert_true(resp[0], resp[1])
+        resp = IAM_TEST_OBJ.create_user_login_profile(user_name=test_9847_cfg["user_name"],
+                                                      password=test_9847_cfg["password"],
+                                                      password_reset=True)
+
         assert_true(resp[0], resp[1])
         self.log.info(
             "ENDED: Create login profile for IAM user without mentioning  "
@@ -686,12 +754,19 @@ class TestUserLoginProfileTests():
         test_9848_cfg = USER_CONFIG["test_9848"]
         resp = IAM_TEST_OBJ.create_user(test_9848_cfg["user_name"])
         assert_true(resp[0], resp[1])
-        resp = IAM_TEST_OBJ.create_user_login_profile_s3iamcli_with_both_reset_options(
-            test_9848_cfg["user_name"],
-            test_9848_cfg["password"],
-            S3H_OBJ.get_local_keys()[0],
-            S3H_OBJ.get_local_keys()[1],
-            both_reset_options=test_9848_cfg["both_reset_options"])
+        # resp = IAM_TEST_OBJ.create_user_login_profile_s3iamcli_with_both_reset_options(
+        #     test_9848_cfg["user_name"],
+        #     test_9848_cfg["password"],
+        #     S3H_OBJ.get_local_keys()[0],
+        #     S3H_OBJ.get_local_keys()[1],
+        #     both_reset_options=test_9848_cfg["both_reset_options"])
+        resp = IAM_TEST_OBJ.create_user_login_profile(user_name=test_9848_cfg["user_name"],
+                                                      password=test_9848_cfg["password"],
+                                                      password_reset=False)
+        assert_true(resp[0], resp[1])
+        resp = IAM_TEST_OBJ.create_user_login_profile(user_name=test_9848_cfg["user_name"],
+                                                      password=test_9848_cfg["password"],
+                                                      password_reset=True)
         assert_true(resp[0], resp[1])
         self.log.info(
             "ENDED: Create login profile for IAM user with both options "
@@ -712,10 +787,12 @@ class TestUserLoginProfileTests():
             test_9849_cfg["password"],
             test_9849_cfg["password_reset"])
         assert_true(resp[0], resp[1])
-        resp = IAM_TEST_OBJ.get_user_login_profile_s3iamcli(
-            test_9849_cfg["user_name"],
-            S3H_OBJ.get_local_keys()[0],
-            S3H_OBJ.get_local_keys()[1])
+        # resp = IAM_TEST_OBJ.get_user_login_profile_s3iamcli(
+        #     test_9849_cfg["user_name"],
+        #     S3H_OBJ.get_local_keys()[0],
+        #     S3H_OBJ.get_local_keys()[1])
+        resp = IAM_TEST_OBJ.get_user_login_profile(
+            test_9849_cfg["user_name"])
         assert_true(resp[0], resp[1])
         self.log.info("ENDED: Verify get-login-profile for s3 IAM user")
 
@@ -729,10 +806,11 @@ class TestUserLoginProfileTests():
             "STARTED: Verify get-login-profile for non-existing s3 IAM user")
         test_9850_cfg = USER_CONFIG["test_9850"]
         try:
-            IAM_TEST_OBJ.get_user_login_profile_s3iamcli(
-                test_9850_cfg["user_name"],
-                S3H_OBJ.get_local_keys()[0],
-                S3H_OBJ.get_local_keys()[1])
+            # IAM_TEST_OBJ.get_user_login_profile_s3iamcli(
+            #     test_9850_cfg["user_name"],
+            #     S3H_OBJ.get_local_keys()[0],
+            #     S3H_OBJ.get_local_keys()[1])
+            self.cortx_obj.list_users_cortxcli()
         except CTException as error:
             self.log.debug(error.message)
             assert_in(
@@ -756,10 +834,11 @@ class TestUserLoginProfileTests():
         resp = IAM_TEST_OBJ.create_user(test_9851_cfg["user_name"])
         assert_true(resp[0], resp[1])
         try:
-            IAM_TEST_OBJ.get_user_login_profile_s3iamcli(
-                test_9851_cfg["user_name"],
-                S3H_OBJ.get_local_keys()[0],
-                S3H_OBJ.get_local_keys()[1])
+            # IAM_TEST_OBJ.get_user_login_profile_s3iamcli(
+            #     test_9851_cfg["user_name"],
+            #     S3H_OBJ.get_local_keys()[0],
+            #     S3H_OBJ.get_local_keys()[1])
+            self.cortx_obj.list_users_cortxcli()
         except CTException as error:
             self.log.debug(error.message)
             assert_in(
@@ -1021,47 +1100,58 @@ class TestUserLoginProfileTests():
             "Creating account with name %s and email id %s",
             test_9923_cfg["account_name"],
             email_id)
-        resp = IAM_TEST_OBJ.create_account_s3iamcli(
-            test_9923_cfg["account_name"],
-            email_id,
-            self.ldap_user,
-            self.ldap_pwd)
+        # resp = IAM_TEST_OBJ.create_account_s3iamcli(
+        #     test_9923_cfg["account_name"],
+        #     email_id,
+        #     self.ldap_user,
+        #     self.ldap_pwd)
+        resp = self.cortx_obj.create_account_cortxcli(test_9923_cfg["account_name"],
+                                                     email_id,
+                                                     password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
         self.log.info(
             "Creating account login profile for account %s",
             USER_CONFIG["test_9923"]["account_name"])
-        resp = IAM_TEST_OBJ.create_account_login_profile_s3iamcli(
-            test_9923_cfg["account_name"],
-            test_9923_cfg["account_password"],
-            access_key,
-            secret_key)
-        assert_true(resp[0], resp[1])
+        # resp = IAM_TEST_OBJ.create_account_login_profile_s3iamcli(
+        #     test_9923_cfg["account_name"],
+        #     test_9923_cfg["account_password"],
+        #     access_key,
+        #     secret_key)
+
+        #assert_true(resp[0], resp[1])
         self.log.info(
             "Creating user %s for account %s",
             test_9923_cfg["user_name"],
             test_9923_cfg["account_name"])
-        resp = IAM_TEST_OBJ.create_user_using_s3iamcli(
-            test_9923_cfg["user_name"], access_key, secret_key)
+        # resp = IAM_TEST_OBJ.create_user_using_s3iamcli(
+        #     test_9923_cfg["user_name"], access_key, secret_key)
+        resp = self.cortx_obj.create_user_using_cortxcli(
+            user_name=test_9923_cfg["user_name"],
+            password=test_9923_cfg["user_password"],
+            confirm_password=test_9923_cfg["user_password"])
         assert_true(resp[0], resp[1])
         self.log.info(
             "Creating user login profile for user %s",
             test_9923_cfg["user_name"])
-        resp = IAM_TEST_OBJ.create_user_login_profile_s3iamcli(
-            test_9923_cfg["user_name"],
-            test_9923_cfg["user_password"],
-            test_9923_cfg["password_reset"],
-            access_key=access_key,
-            secret_key=secret_key)
+        resp = self.cortx_obj.list_users_cortxcli()
         assert_true(resp[0], resp[1])
+        # resp = IAM_TEST_OBJ.create_user_login_profile_s3iamcli(
+        #     test_9923_cfg["user_name"],
+        #     test_9923_cfg["user_password"],
+        #     test_9923_cfg["password_reset"],
+        #     access_key=access_key,
+        #     secret_key=secret_key)
+        self.logger.info("Created IAM user %s", test_9923_cfg["user_name"])
+
         self.log.info(
             "Getting temporary credentials for user %s",
             USER_CONFIG["test_9923"]["user_name"])
-        resp = IAM_TEST_OBJ.get_temp_auth_credentials_user(
-            test_9923_cfg["account_name"],
-            test_9923_cfg["user_name"],
-            test_9923_cfg["user_password"])
+        # resp = IAM_TEST_OBJ.get_temp_auth_credentials_user(
+        #     test_9923_cfg["account_name"],
+        #     test_9923_cfg["user_name"],
+        #     test_9923_cfg["user_password"])
         assert_true(resp[0], resp[1])
         self.log.info("ENDED: Get temporary credentials for valid user")
 
@@ -1078,11 +1168,14 @@ class TestUserLoginProfileTests():
             test_9924_cfg["email_id"])
         self.log.info("Creating account with name %s and email id %s",
                       test_9924_cfg["account_name"], email_id)
-        res = IAM_TEST_OBJ.create_account_s3iamcli(
-            test_9924_cfg["account_name"],
-            email_id,
-            self.ldap_user,
-            self.ldap_pwd)
+        # res = IAM_TEST_OBJ.create_account_s3iamcli(
+        #     test_9924_cfg["account_name"],
+        #     email_id,
+        #     self.ldap_user,
+        #     self.ldap_pwd)
+        res = self.cortx_obj.create_account_cortxcli(test_9924_cfg["account_name"],
+                                                     email_id,
+                                                     password=self.s3acc_password)
         assert_true(res[0], res[1])
         self.log.info("Getting temporary credentials for invalid user")
         try:
@@ -1112,18 +1205,25 @@ class TestUserLoginProfileTests():
             test_9925_cfg["email_id"])
         self.log.info("Creating account with name %s and email id %s",
                       test_9925_cfg["account_name"], email_id)
-        res = IAM_TEST_OBJ.create_account_s3iamcli(
-            test_9925_cfg["account_name"],
-            email_id,
-            self.ldap_user,
-            self.ldap_pwd)
+        # res = IAM_TEST_OBJ.create_account_s3iamcli(
+        #     test_9925_cfg["account_name"],
+        #     email_id,
+        #     self.ldap_user,
+        #     self.ldap_pwd)
+        res = self.cortx_obj.create_account_cortxcli(test_9925_cfg["account_name"],
+                                                     email_id,
+                                                     password=self.s3acc_password)
         assert_true(res[0], res[1])
         acc_access_key = res[1]["access_key"]
         acc_secret_key = res[1]["secret_key"]
         self.log.info("Creating user with name %s",
                       USER_CONFIG["test_9925"]["user_name"])
-        res = IAM_TEST_OBJ.create_user_using_s3iamcli(
-            test_9925_cfg["user_name"], acc_access_key, acc_secret_key)
+        # res = IAM_TEST_OBJ.create_user_using_s3iamcli(
+        #     test_9925_cfg["user_name"], acc_access_key, acc_secret_key)
+        res = self.cortx_obj.create_user_using_cortxcli(
+            user_name=test_9925_cfg["user_name"],
+            password=test_9925_cfg["user_password"],
+            confirm_password=test_9925_cfg["user_password"])
         assert_true(res[0], res[1])
         new_iam_obj = iam_test_lib.IamTestLib(
             access_key=acc_access_key,
