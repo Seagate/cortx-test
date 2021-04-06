@@ -1,0 +1,11 @@
+include *
+recursive-include config *
+recursive-include ci_tools *
+recursive-include docs *
+recursive-include robot *
+recursive-include scripts *
+recursive-include templates *
+recursive-include tests *
+recursive-include tools *
+recursive-include unittests *
+global-exclude *.pyc __pycache__
