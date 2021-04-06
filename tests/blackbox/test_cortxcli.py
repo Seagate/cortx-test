@@ -74,10 +74,12 @@ class TestBlackBox:
         cls.log.info("ENDED : Setup operations at test suit level")
 
     @classmethod
-    def create_account(cls, acc_name):
+    def create_account(cls, acc_name, email_id=None):
         """Function will create IAM account."""
-        acc_email = "{}{}".format(
-            acc_name, conf_blackbox["acc_user_mng"]["email_id"])
+        if email_id is None:
+            acc_email = "{}{}".format(acc_name, conf_blackbox["acc_user_mng"]["email_id"])
+        else:
+            acc_email = email_id
         return cls.iam_user_obj.create_s3account_cortx_cli(
             acc_name,
             acc_email,
@@ -127,7 +129,7 @@ class TestBlackBox:
         self.log.info("ENDED: Teardown Operations")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7177")
     @CTFailOn(error_handler)
     def test_2393(self):
         """Create account using s3iamcli."""
@@ -148,7 +150,7 @@ class TestBlackBox:
         self.log.info("ENDED: create account using s3iamcli")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7178")
     @CTFailOn(error_handler)
     def test_2394(self):
         """List account using cortxcli."""
@@ -173,7 +175,7 @@ class TestBlackBox:
         self.log.info("ENDED: List account using s3iamcli")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7179")
     @CTFailOn(error_handler)
     def test_2399(self):
         """Create 'N' No of Accounts."""
@@ -189,10 +191,7 @@ class TestBlackBox:
             account_name = f"{acc_name}{account}{account}{str(int(time.time()))}"
             email_id = f"{acc_name}{account}{account}@seagate.com"
             resp = self.create_account(
-                account_name,
-                email_id,
-                LDAP_USERNAME,
-                LDAP_PASSWD)
+                account_name, email_id)
             assert_true(resp[0], resp[1])
             access_keys.append(resp[1]["access_key"])
             secret_keys.append(resp[1]["secret_key"])
@@ -202,9 +201,6 @@ class TestBlackBox:
         self.log.info(
             "Verifying %s accounts are created by listing accounts",
             conf_blackbox["test_2399"]["total_accounts"])
-        # list_of_accounts = self.iam_user_obj.list_accounts_s3iamcli(
-        #     LDAP_USERNAME,
-        #     LDAP_PASSWD)
         list_of_accounts = self.s3acc_obj.show_s3account_cortx_cli(
             output_format="text")
         assert_true(list_of_accounts[0], list_of_accounts[1])
@@ -217,7 +213,7 @@ class TestBlackBox:
         self.log.info("ENDED: Create 'N' No of Accounts")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7180")
     @CTFailOn(error_handler)
     def test_2396(self):
         """Create account with existing name using cortxcli."""
@@ -246,7 +242,7 @@ class TestBlackBox:
             "ENDED: create account with existing name using s3iamcli")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7181")
     @CTFailOn(error_handler)
     def test_2395(self):
         """Delete Account using cortxcli."""
@@ -259,11 +255,8 @@ class TestBlackBox:
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 1: Created a new account with name %s", acc_name)
-        #access_key = resp[1]["access_key"]
-        #secret_key = resp[1]["secret_key"]
         self.log.info(
             "Step 2: Deleting account with name %s", acc_name)
-        # resp = self.iam_user_obj.delete_account_s3iamcli(acc_name, access_key, secret_key)
         resp = self.s3acc_obj.delete_s3account_cortx_cli(acc_name)
         assert_true(resp[0], resp[1])
         self.log.info(
@@ -272,7 +265,7 @@ class TestBlackBox:
         self.log.info("ENDED: Delete Account using s3iamcli")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7125")
     @CTFailOn(error_handler)
     def test_2430(self):
         """CRUD operations with valid login credentials using cortxcli."""
@@ -345,7 +338,7 @@ class TestBlackBox:
             "ENDED: CRUD operations with valid login credentials using s3iamcli")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7183")
     @CTFailOn(error_handler)
     def test_2400(self):
         """Create user using cortxcli."""
@@ -372,7 +365,7 @@ class TestBlackBox:
         self.log.info("ENDED: create user using s3iamcli")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7184")
     @CTFailOn(error_handler)
     def test_2406(self):
         """Create access key for user using cortxcli."""
@@ -385,19 +378,13 @@ class TestBlackBox:
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
-        new_iam_obj = iam_test_lib.IamTestLib(
-            access_key=access_key,
-            secret_key=secret_key)
-
         new_iam_obj = CortxCliIamUser(
             session_obj=self.s3acc_obj.session_obj)
-
         self.log.info(
             "Step 1: Creating a user with name %s", usr_name)
         resp = new_iam_obj.create_iam_user(usr_name, access_key, secret_key)
         assert_true(resp[0], resp[1])
         self.log.info("Verifying user is created by listing users")
-        #resp = new_iam_obj.list_users_s3iamcli(access_key, secret_key)
         resp = new_iam_obj.list_iam_user()
         self.log.info("Users list %s", resp[0])
         assert_true(resp[0], resp[1])
@@ -411,7 +398,7 @@ class TestBlackBox:
         self.log.info("ENDED: create access key for user using cortxcli")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7185")
     @CTFailOn(error_handler)
     def test_2405(self):
         """Max num of users supported using cortxcli."""
@@ -457,7 +444,7 @@ class TestBlackBox:
         self.log.info("ENDED: max num of users supported using cortxcli")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7186")
     @CTFailOn(error_handler)
     def test_2404(self):
         """Creating user with existing user name using cortxcli."""
@@ -494,7 +481,7 @@ class TestBlackBox:
             "ENDED: creating user with existing user name using cortxcli")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7187")
     @CTFailOn(error_handler)
     def test_2403(self):
         """Delete user using cortxcli."""
@@ -522,7 +509,7 @@ class TestBlackBox:
         self.log.info("ENDED: Delete user using cortxcli")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7188")
     @CTFailOn(error_handler)
     def test_2402(self):
         """Update user using cortxcli."""
@@ -561,7 +548,7 @@ class TestBlackBox:
         self.log.info("ENDED: Update user using cortxcli")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7190")
     @CTFailOn(error_handler)
     def test_2401(self):
         """List user using cortxcli."""
@@ -589,7 +576,7 @@ class TestBlackBox:
         self.log.info("ENDED: list user using cortxcli")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7193")
     @CTFailOn(error_handler)
     def test_2398(self):
         """Login to account with invalid creds and perform s3 crud operations using cortxcli."""
@@ -661,7 +648,7 @@ class TestBlackBox:
             "ENDED: login to account with invalid cred and perform s3 crud ops using cortxcli")
 
     @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-7195")
     @CTFailOn(error_handler)
     def test_2397(self):
         """Login to account with valid credentials and perform s3 crud operations using cortxcli."""
