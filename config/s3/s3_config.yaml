@@ -29,3 +29,5 @@ nfs_path: "cftic2.pun.seagate.com:/cftshare/jclientCloud/"
 jClientCloud_path:
     dest: "scripts/jcloud/"
     source: "/root/jclientCloud/"
+s3_logs: "/var/log/seagate/s3"
+s3_ls_cmd: "ls /var/log/seagate/s3"
