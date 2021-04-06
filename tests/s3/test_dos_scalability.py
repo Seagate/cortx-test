@@ -109,7 +109,7 @@ class TestDosScalability:
         self.log.info("ENDED: Teardown Operations")
 
     @pytest.mark.s3_ops
-    @pytest.mark.tags('TEST-5309')
+    @pytest.mark.tags('TEST-8725')
     @CTFailOn(error_handler)
     def test_scaling_obj_20billion_size_1bytes_5308(self):
         """Verify scaling of number of objects upto 20 billion with minimum object size i.e 1B."""
