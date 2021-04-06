@@ -11,5 +11,10 @@ setup(name="cortxtest",
       packages=find_packages(),
       include_package_data=True,
       python_requires='==3.7',
+      entry_points={
+        'console_scripts': [
+            'testrunner=testrunner__main__:main',
+        ],},
+
 
       )
