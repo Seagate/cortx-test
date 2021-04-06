@@ -21,7 +21,27 @@
 
 from Performance.global_functions import benchmark_config, get_chain
 from Performance.statistics.statistics_functions import fetch_configs_from_file,\
-    get_performance_metrics, get_data, get_average_data
+    get_data, get_average_data
+
+
+def get_performance_metrics(build: str, object_size: str, bench: str, operation: str,
+                            sessions: int = None, buckets: int = None, objects: int = None, version='release', release='R1'):
+    """need to add release and version logic"""
+    uri, db_name, db_collection = get_db_details()
+
+    if sessions:
+        query = {'Build': build, 'Name': bench, 'Object_Size': object_size,
+                 'Operation': operation, 'Sessions': sessions, 'Buckets': buckets, 'Objects': objects}
+    else:
+        query = {'Build': build, 'Name': bench,
+                 'Object_Size': object_size, 'Operation': operation}
+
+    count = count_documents(query=query, uri=uri, db_name=db_name,
+                            collection=db_collection)
+    db_data = find_documents(query=query, uri=uri, db_name=db_name,
+                             collection=db_collection)
+
+    return count, db_data
 
 
 def get_structure_trace(Scatter, operation, metrics, option, x_axis, y_data):

@@ -28,8 +28,8 @@ from Performance.global_functions import benchmark_config, get_dict_from_array
 from Performance.statistics.statistics_functions import fetch_configs_from_file
 
 release = [
-    {'label': 'LR1', 'value': 'LR1'},
-    {'label': 'LR2', 'value': 'LR2'}
+    {'label': 'LR-R1', 'value': '1'},
+    {'label': 'LR-R2', 'value': '2'}
 ]
 
 bucketOps = get_dict_from_array(fetch_configs_from_file(

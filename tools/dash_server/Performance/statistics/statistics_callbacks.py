@@ -31,7 +31,7 @@ from Performance.statistics.statistics_functions import get_s3benchmark_data,\
 from common import app
 from Performance.styles import dict_style_header, dict_style_cell
 from Performance.statistics.statistics_functions import update_hsbench_callbacks, get_dash_table, get_bucketops
-from Performance.global_functions import get_dict_from_array, get_chain
+from Performance.global_functions import get_dict_from_array, get_chain, get_distinct_keys
 
 
 benchmark_config = 'Performance/configs/benchmark.yml'
@@ -51,32 +51,40 @@ bucketops_headings = ['Create Buckets (BINIT)', 'Put Objects (PUT)', 'Listing Ob
 )
 def update_branches_dropdown(release):
     versions = []
-    if release == 'LR1':
+    if release == '1':
         versions = [
-            {'label': 'Cortx-1.0-Beta', 'value': 'beta'},
-            {'label': 'Cortx-1.0', 'value': 'cortx1'},
-            {'label': 'Custom', 'value': 'custom'},
-            {'label': 'Main', 'value': 'main', 'disabled': True},
             {'label': 'Release', 'value': 'release'},
+            {'label': 'Main', 'value': 'main'},
+            {'label': 'Beta', 'value': 'beta'},
         ]
-    elif release == 'LR2':
+    elif release == '2':
         versions = [
-            {'label': 'Cortx-2.0-Beta', 'value': 'beta-2'},
-            {'label': 'Cortx-1.0', 'value': 'cortx1'},
-            {'label': 'Custom', 'value': 'custom', 'disabled': True},
+            {'label': 'Main', 'value': 'main'},
             {'label': 'Release', 'value': 'release'},
+            {'label': 'Stable', 'value': 'stable'},
+            {'label': 'Custom', 'value': 'custom'},
+        ]
+    else:
+        versions = [
+            {'label': 'Main', 'value': 'main'},
+            {'label': 'Release', 'value': 'release'},
+            {'label': 'Stable', 'value': 'stable'},
         ]
     return versions
 
 
 @app.callback(
     Output('perf_build_dropdown', 'options'),
+    Input('perf_release_dropdown', 'value'),
     Input('perf_branch_dropdown', 'value')
 )
-def update_builds_dropdown(release):
+def update_builds_dropdown(release, branch):
+    if release is None or branch is None:
+        raise PreventUpdate
+
     versions = None
     if release:
-        builds = get_chain(release)
+        builds = get_distinct_keys(release, 'Build', {'Branch': branch})
         versions = get_dict_from_array(builds, True)
 
     return versions
@@ -86,11 +94,12 @@ def update_builds_dropdown(release):
     [Output('statistics_s3bench_workload', 'children'),
      Output('statistics_s3bench_table', 'children')],
     [Input('perf_submit_button', 'n_clicks'),
+     Input('perf_release_dropdown', 'value'),
      Input('perf_branch_dropdown', 'value'),
      Input('perf_build_dropdown', 'value'),
      ]
 )
-def s3bench_callback(n_clicks, branch, build):
+def s3bench_callback(n_clicks, release, branch, build):
     if n_clicks is None or branch is None or build is None:
         raise PreventUpdate
 
@@ -103,7 +112,7 @@ def s3bench_callback(n_clicks, branch, build):
     }
 
     for obj in objects:
-        temp = Thread(target=get_s3benchmark_data, args=(build, obj, data))
+        temp = Thread(target=get_s3benchmark_data, args=(release, branch, build, obj, data))
         temp.start()
         threads.append(temp)
 
@@ -139,11 +148,12 @@ def s3bench_callback(n_clicks, branch, build):
 @app.callback(
     Output('statistics_metadata_table', 'children'),
     [Input('perf_submit_button', 'n_clicks'),
+     Input('perf_release_dropdown', 'value'),
      Input('perf_branch_dropdown', 'value'),
      Input('perf_build_dropdown', 'value'),
      ]
 )
-def metadata_callback(n_clicks, branch, build):
+def metadata_callback(n_clicks, release, branch, build):
     if n_clicks is None or branch is None or build is None:
         raise PreventUpdate
 
@@ -155,7 +165,7 @@ def metadata_callback(n_clicks, branch, build):
     }
 
     for obj in objects:
-        temp = Thread(target=get_metadata_latencies, args=(build, obj, data))
+        temp = Thread(target=get_metadata_latencies, args=(release, branch, build, obj, data))
         temp.start()
         threads.append(temp)
 
@@ -191,13 +201,13 @@ def get_cosbench_workload_headings(html, sessions, buckets, objects):
     return html.H5("Workload: {0} Sessions, {1} Buckets, {2} Objects".format(sessions, buckets, objects*buckets))
 
 
-def benchmark_global(bench, workload, branch, build, table_ID):
+def benchmark_global(bench, workload, release, branch, build, table_ID):
     objects = fetch_configs_from_file(benchmark_config, bench, 'object_size')
     data = {
         'Object Sizes': multiple_buckets_headings
     }
 
-    update_hsbench_callbacks(bench, workload, objects, build, Thread, data)
+    update_hsbench_callbacks(bench, workload, objects, release, branch, build, Thread, data)
 
     df_bench = pd.DataFrame(data)
     df_bench = df_bench[['Object Sizes'] + objects]
@@ -225,11 +235,12 @@ def benchmark_global(bench, workload, branch, build, table_ID):
     [Output('statistics_hsbench_workload_1', 'children'),
      Output('statistics_hsbench_table_1', 'children'), ],
     [Input('perf_submit_button', 'n_clicks'),
+     Input('perf_release_dropdown', 'value'),
      Input('perf_branch_dropdown', 'value'),
      Input('perf_build_dropdown', 'value'),
      ]
 )
-def hsbench1_callback(n_clicks, branch, build):
+def hsbench1_callback(n_clicks, release, branch, build):
     if n_clicks is None or branch is None or build is None:
         raise PreventUpdate
 
@@ -237,18 +248,19 @@ def hsbench1_callback(n_clicks, branch, build):
         benchmark_config, 'Hsbench', 'workload-1')
     workload_heading = get_hsbench_workload_headings(
         html, workload['sessions'], workload['buckets'], workload['objects'])
-    return [workload_heading, benchmark_global('Hsbench', workload, branch, build, 'hsbench-table-1')]
+    return [workload_heading, benchmark_global('Hsbench', workload, release, branch, build, 'hsbench-table-1')]
 
 
 @app.callback(
     [Output('statistics_hsbench_workload_2', 'children'),
      Output('statistics_hsbench_table_2', 'children'), ],
     [Input('perf_submit_button', 'n_clicks'),
+     Input('perf_release_dropdown', 'value'),
      Input('perf_branch_dropdown', 'value'),
      Input('perf_build_dropdown', 'value'),
      ]
 )
-def hsbench2_callback(n_clicks, branch, build):
+def hsbench2_callback(n_clicks, release, branch, build):
     if n_clicks is None or branch is None or build is None:
         raise PreventUpdate
 
@@ -256,18 +268,19 @@ def hsbench2_callback(n_clicks, branch, build):
         benchmark_config, 'Hsbench', 'workload-2')
     workload_heading = get_hsbench_workload_headings(
         html, workload['sessions'], workload['buckets'], workload['objects'])
-    return [workload_heading, benchmark_global('Hsbench', workload, branch, build, 'hsbench-table-2')]
+    return [workload_heading, benchmark_global('Hsbench', workload, release, branch, build, 'hsbench-table-2')]
 
 
 @app.callback(
     [Output('statistics_hsbench_workload_3', 'children'),
      Output('statistics_hsbench_table_3', 'children'), ],
     [Input('perf_submit_button', 'n_clicks'),
+     Input('perf_release_dropdown', 'value'),
      Input('perf_branch_dropdown', 'value'),
      Input('perf_build_dropdown', 'value'),
      ]
 )
-def hsbench3_callback(n_clicks, branch, build):
+def hsbench3_callback(n_clicks, release, branch, build):
     if n_clicks is None or branch is None or build is None:
         raise PreventUpdate
 
@@ -275,18 +288,19 @@ def hsbench3_callback(n_clicks, branch, build):
         benchmark_config, 'Hsbench', 'workload-3')
     workload_heading = get_hsbench_workload_headings(
         html, workload['sessions'], workload['buckets'], workload['objects'])
-    return [workload_heading, benchmark_global('Hsbench', workload, branch, build, 'hsbench-table-3')]
+    return [workload_heading, benchmark_global('Hsbench', workload, release, branch, build, 'hsbench-table-3')]
 
 
 @app.callback(
     [Output('statistics_cosbench_workload_1', 'children'),
      Output('statistics_cosbench_table_1', 'children'), ],
     [Input('perf_submit_button', 'n_clicks'),
+     Input('perf_release_dropdown', 'value'),
      Input('perf_branch_dropdown', 'value'),
      Input('perf_build_dropdown', 'value'),
      ]
 )
-def cosbench1_callback(n_clicks, branch, build):
+def cosbench1_callback(n_clicks, release, branch, build):
     if n_clicks is None or branch is None or build is None:
         raise PreventUpdate
 
@@ -294,18 +308,19 @@ def cosbench1_callback(n_clicks, branch, build):
         benchmark_config, 'Cosbench', 'workload-1')
     workload_heading = get_cosbench_workload_headings(
         html, workload['sessions'], workload['buckets'], workload['objects'])
-    return [workload_heading, benchmark_global('Cosbench', workload, branch, build, 'cosbench-table-1')]
+    return [workload_heading, benchmark_global('Cosbench', workload, release, branch, build, 'cosbench-table-1')]
 
 
 @app.callback(
     [Output('statistics_cosbench_workload_2', 'children'),
      Output('statistics_cosbench_table_2', 'children'), ],
     [Input('perf_submit_button', 'n_clicks'),
+     Input('perf_release_dropdown', 'value'),
      Input('perf_branch_dropdown', 'value'),
      Input('perf_build_dropdown', 'value'),
      ]
 )
-def cosbench2_callback(n_clicks, branch, build):
+def cosbench2_callback(n_clicks, release, branch, build):
     if n_clicks is None or branch is None or build is None:
         raise PreventUpdate
 
@@ -313,18 +328,19 @@ def cosbench2_callback(n_clicks, branch, build):
         benchmark_config, 'Cosbench', 'workload-2')
     workload_heading = get_cosbench_workload_headings(
         html, workload['sessions'], workload['buckets'], workload['objects'])
-    return [workload_heading, benchmark_global('Cosbench', workload, branch, build, 'cosbench-table-2')]
+    return [workload_heading, benchmark_global('Cosbench', workload, release, branch, build, 'cosbench-table-2')]
 
 
 @app.callback(
     [Output('statistics_cosbench_workload_3', 'children'),
      Output('statistics_cosbench_table_3', 'children'), ],
     [Input('perf_submit_button', 'n_clicks'),
+     Input('perf_release_dropdown', 'value'),
      Input('perf_branch_dropdown', 'value'),
      Input('perf_build_dropdown', 'value'),
      ]
 )
-def cosbench3_callback(n_clicks, branch, build):
+def cosbench3_callback(n_clicks, release, branch, build):
     if n_clicks is None or branch is None or build is None:
         raise PreventUpdate
 
@@ -332,10 +348,10 @@ def cosbench3_callback(n_clicks, branch, build):
         benchmark_config, 'Cosbench', 'workload-3')
     workload_heading = get_cosbench_workload_headings(
         html, workload['sessions'], workload['buckets'], workload['objects'])
-    return [workload_heading, benchmark_global('Cosbench', workload, branch, build, 'cosbench-table-3')]
+    return [workload_heading, benchmark_global('Cosbench', workload, release, branch, build, 'cosbench-table-3')]
 
 
-def get_bucketops_everything(workload, branch, build, object_size, table_ID):
+def get_bucketops_everything(workload, release, branch, build, object_size, table_ID):
     ops_modes = fetch_configs_from_file(benchmark_config, 'Hsbench', 'modes')
     mode_indices = list(ops_modes.keys())
 
@@ -359,7 +375,7 @@ def get_bucketops_everything(workload, branch, build, object_size, table_ID):
     }
 
     for operation in bucket_ops:
-        temp = Thread(target=get_bucketops, args=(object_size, benchmark_config, build, 'write', mode_indices, operation,
+        temp = Thread(target=get_bucketops, args=(object_size, benchmark_config, release, branch, build, 'write', mode_indices, operation,
                                                   workload['sessions'], workload['buckets'], workload['objects'], data))
         temp.start()
         threads.append(temp)
@@ -384,12 +400,13 @@ def get_bucketops_everything(workload, branch, build, object_size, table_ID):
     [Output('statistics_bucketops_workload_1', 'children'),
      Output('statistics_bucketops_table_1', 'children'), ],
     [Input('perf_submit_button', 'n_clicks'),
+     Input('perf_release_dropdown', 'value'),
      Input('perf_branch_dropdown', 'value'),
      Input('perf_build_dropdown', 'value'),
      Input('bucketops_dropdown', 'value'),
      ]
 )
-def bucketops1_callback(n_clicks, branch, build, operation):
+def bucketops1_callback(n_clicks,release, branch, build, operation):
     if n_clicks is None or branch is None or build is None or operation is None:
         raise PreventUpdate
 
@@ -397,19 +414,20 @@ def bucketops1_callback(n_clicks, branch, build, operation):
         benchmark_config, 'Hsbench', 'workload-1')
     workload_heading = get_hsbench_workload_headings(
         html, workload['sessions'], workload['buckets'], workload['objects'])
-    return [workload_heading, get_bucketops_everything(workload, branch, build, operation, 'bucketops-1')]
+    return [workload_heading, get_bucketops_everything(workload, release, branch, build, operation, 'bucketops-1')]
 
 
 @app.callback(
     [Output('statistics_bucketops_workload_2', 'children'),
      Output('statistics_bucketops_table_2', 'children'), ],
     [Input('perf_submit_button', 'n_clicks'),
+     Input('perf_release_dropdown', 'value'),
      Input('perf_branch_dropdown', 'value'),
      Input('perf_build_dropdown', 'value'),
      Input('bucketops_dropdown', 'value'),
      ]
 )
-def bucketops2_callback(n_clicks, branch, build, operation):
+def bucketops2_callback(n_clicks, release, branch, build, operation):
     if n_clicks is None or branch is None or build is None or operation is None:
         raise PreventUpdate
 
@@ -417,19 +435,20 @@ def bucketops2_callback(n_clicks, branch, build, operation):
         benchmark_config, 'Hsbench', 'workload-2')
     workload_heading = get_hsbench_workload_headings(
         html, workload['sessions'], workload['buckets'], workload['objects'])
-    return [workload_heading, get_bucketops_everything(workload, branch, build, operation, 'bucketops-2')]
+    return [workload_heading, get_bucketops_everything(workload, release, branch, build, operation, 'bucketops-2')]
 
 
 @app.callback(
     [Output('statistics_bucketops_workload_3', 'children'),
      Output('statistics_bucketops_table_3', 'children'), ],
     [Input('perf_submit_button', 'n_clicks'),
+     Input('perf_release_dropdown', 'value'),
      Input('perf_branch_dropdown', 'value'),
      Input('perf_build_dropdown', 'value'),
      Input('bucketops_dropdown', 'value'),
      ]
 )
-def bucketops3_callback(n_clicks, branch, build, operation):
+def bucketops3_callback(n_clicks, release, branch, build, operation):
     if n_clicks is None or branch is None or build is None or operation is None:
         raise PreventUpdate
 
@@ -437,4 +456,4 @@ def bucketops3_callback(n_clicks, branch, build, operation):
         benchmark_config, 'Hsbench', 'workload-3')
     workload_heading = get_hsbench_workload_headings(
         html, workload['sessions'], workload['buckets'], workload['objects'])
-    return [workload_heading, get_bucketops_everything(workload, branch, build, operation, 'bucketops-3')]
+    return [workload_heading, get_bucketops_everything(workload, release, branch, build, operation, 'bucketops-3')]

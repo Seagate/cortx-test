@@ -20,6 +20,9 @@
 # !/usr/bin/python
 
 import yaml
+import sys
+from urllib.parse import quote_plus
+from Performance.mongodb_api import find_distinct_values
 
 config_path = 'Performance/configs/configs.yml'
 benchmark_config = 'Performance/configs/benchmark.yml'
@@ -40,15 +43,14 @@ def get_chain(version):
     return chain
 
 
-def get_db_details():
-    import sys
-    from urllib.parse import quote_plus
+def get_db_details(release=1):
 
     config = makeconfig(config_path)
     try:
         db_hostname = config["PerfDB"]["hostname"]
         db_name = config["PerfDB"]["database"]
-        db_collection = config["PerfDB"]["collection"]
+        db_collection = config["PerfDB"]["collection"]["R{}".format(
+            int(release))]
         db_username = config["PerfDB"]["auth"]["full_access_user"]
         db_password = config["PerfDB"]["auth"]["full_access_password"]
 
@@ -112,3 +114,38 @@ def get_dict_from_array(options, makeReverse, allcaps=False):
         return versions
 
     return versions
+
+
+def get_distinct_keys(release, field_to_query, query):
+    uri, db, col = get_db_details(release)
+    results = find_distinct_values(field_to_query, query, uri, db, col)
+
+    return results
+
+
+def get_no_of_nodes_from_db(branch: str, release: str, build: str, object_size: str, bench: str, operation: str,
+                            sessions: int = None, buckets: int = None, objects: int = None):
+    uri, db_name, db_collection = get_db_details()
+
+    if sessions:
+        query = {'Branch': branch, 'Build': build, 'Name': bench, 'Object_Size': object_size,
+                 'Operation': operation, 'Sessions': sessions, 'Buckets': buckets, 'Objects': objects}
+    else:
+        query = {'Branch': branch, 'Build': build, 'Name': bench,
+                 'Object_Size': object_size, 'Operation': operation}
+
+    # Count_of_Servers: int
+    uri, db_name, db_collection = get_db_details(release)
+
+    db_data = find_documents(query=query, uri=uri, db_name=db_name,
+                             collection=db_collection)
+
+    count = count_documents(query=query, uri=uri, db_name=db_name,
+                            collection=db_collection)
+
+    if count > 0:
+        node_count = db_data[0]['Count_of_Servers']
+    else:
+        node_count = 1
+
+    return node_count
