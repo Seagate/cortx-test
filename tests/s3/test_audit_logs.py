@@ -35,7 +35,7 @@ from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
 from commons.errorcodes import error_handler
 from config import CMN_CFG
-from libs.s3 import S3H_OBJ
+from libs.s3 import S3H_OBJ, S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 
@@ -134,10 +134,10 @@ class TestAuditLogs:
         self.old_value = self.new_val
         self.update_conf_restart_s3(val)
         self.log.info("Deleting test generated files")
-        if system_utils.path_exists(AUDIT_CFG["audit_logs"]["local_path"]):
-            system_utils.remove_file(AUDIT_CFG["audit_logs"]["local_path"])
-        if system_utils.path_exists(self.common_file_path):
-            system_utils.remove_file(self.common_file_path)
+        for fpath in [AUDIT_CFG["audit_logs"]["local_path"], self.common_file_path]:
+            if system_utils.path_exists(fpath):
+                system_utils.remove_file(fpath)
+                self.log.info("removed: %s", fpath)
         self.log.info("ENDED: Teardown operations.")
 
     def update_conf_restart_s3(self, new_value):
@@ -192,7 +192,7 @@ class TestAuditLogs:
             host_name = CMN_CFG["nodes"][node]["host"]
             folder = AUDIT_CFG["audit_logs"]["folder"]
             audit_path = "{}/{}/{}".format(
-                AUDIT_CFG["audit_logs"]["s3_logs"],
+                S3_CFG["s3_logs"],
                 folder,
                 AUDIT_CFG["audit_logs"]["file"])
             self.log.debug(audit_path)

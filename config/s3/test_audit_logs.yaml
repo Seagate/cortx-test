@@ -3,8 +3,6 @@ audit_logs:
     local_path: "/root/s3config.yaml"
     section: "S3_SERVER_CONFIG"
     key: "S3_AUDIT_LOGGER_POLICY"
-    s3_ls_cmd: "ls /var/log/seagate/s3"
-    s3_logs: "/var/log/seagate/s3"
     folder: "audit"
     file: "audit.log"
     pwd: "password"
