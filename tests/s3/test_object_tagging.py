@@ -1246,7 +1246,7 @@ class TestObjectTagging:
                 S3_OBJ_TST["s3_object"]["key"],
                 S3_OBJ_TST["test_9439"]["value"])
         except CTException as error:
-            assert S3_OBJ_TST["test_9439"]["error_message"] in str(
+            assert S3_OBJ_TST["s3_object"]["key_err"] in str(
                 error.message), error.message
         self.log.info("verify PUT object tagging to non-existing object")
 
@@ -1272,7 +1272,7 @@ class TestObjectTagging:
                 S3_OBJ_TST["test_9440"]["bucket_name"],
                 S3_OBJ_TST["s3_object"]["obj_name"])
         except CTException as error:
-            assert S3_OBJ_TST["test_9440"]["error_message"] in str(
+            assert S3_OBJ_TST["s3_object"]["key_err"] in str(
                 error.message), error.message
         self.log.info("verify GET object tagging to non-existing object")
 
@@ -1298,7 +1298,7 @@ class TestObjectTagging:
                 S3_OBJ_TST["test_9441"]["bucket_name"],
                 S3_OBJ_TST["s3_object"]["obj_name"])
         except CTException as error:
-            assert S3_OBJ_TST["test_9441"]["error_message"] in str(
+            assert S3_OBJ_TST["s3_object"]["key_err"] in str(
                 error.message), error.message
         self.log.info("verify DELETE object tagging to non-existing object")
 
@@ -1327,7 +1327,7 @@ class TestObjectTagging:
                 S3_OBJ_TST["s3_object"]["key"],
                 S3_OBJ_TST["test_9442"]["value"])
         except CTException as error:
-            assert S3_OBJ_TST["test_9442"]["error_message"] in str(
+            assert S3_OBJ_TST["s3_object"]["key_err"] in str(
                 error.message), error.message
         self.log.info(
             "Verify put object with tagging support to non-existing object")
@@ -1355,7 +1355,7 @@ class TestObjectTagging:
                 S3_OBJ_TST["test_9443"]["bucket_name"],
                 S3_OBJ_TST["s3_object"]["obj_name"])
         except CTException as error:
-            assert S3_OBJ_TST["test_9443"]["error_message"] in str(
+            assert S3_OBJ_TST["s3_object"]["key_err"] in str(
                 error.message), error.message
         self.log.info(
             "Verify get object with tagging support to non-existing object")

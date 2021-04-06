@@ -269,7 +269,7 @@ class TestObjectACL:
         try:
             S3_ACL_OBJ.get_object_acl(bucket, obj)
         except CTException as error:
-            assert S3_OBJ_TST["test_9853"]["err_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["key_err"] in error.message, error.message
         self.log.info(
             "Step 2: Object ACL resp for non-existing object is: %s", res)
         self.log.info(
@@ -608,7 +608,7 @@ class TestObjectACL:
         try:
             S3_ACL_OBJ.get_object_acl(bucket, obj)
         except CTException as error:
-            assert S3_OBJ_TST["test_9899"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["key_err"] in error.message, error.message
         self.log.info("Step 5: Object ACL resp is : %s", res)
         self.log.info("Clean Up Stage: Deleting all files created locally")
         self.log.info("Clean Up Stage: Done cleaning")
@@ -922,17 +922,17 @@ class TestObjectACL:
             self.random_num)
         obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
-        account_name_1 = S3_OBJ_TST["test_10224"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_10224"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         permission = S3_OBJ_TST["s3_object"]["full_ctrl"]
         result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         canonical_id_1 = result[0]
         self.log.info("Step 1: Completed creating account 1")
-        account_name_2 = S3_OBJ_TST["test_10224"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_10224"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         canonical_id_2 = result[0]
@@ -1005,7 +1005,7 @@ class TestObjectACL:
         try:
             S3_ACL_OBJ.put_object_acp(bucket, obj, acl)
         except CTException as error:
-            assert S3_OBJ_TST["test_10225"]["error_msg"] in error.message, error.message
+            assert S3_OBJ_TST["s3_object"]["key_err"] in error.message, error.message
         self.log.info(
             "Step 3: Put object acl with invalid object operation completed: %s",
             res)
@@ -1132,9 +1132,9 @@ class TestObjectACL:
                            S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         # User Account Variables
-        account_name_1 = S3_OBJ_TST["test_10962"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_10962"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         # Creating User Account 1
         result = self.create_s3iamcli_acc(account_name_1, email_id_1)
@@ -1162,9 +1162,9 @@ class TestObjectACL:
         # Creating 2nd User Account
         # User Account Variables
         self.log.info("Step 3: Creating 2nd Account")
-        account_name_2 = S3_OBJ_TST["test_10962"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_10962"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         s3_acl_obj_2 = result[2]
@@ -1198,9 +1198,9 @@ class TestObjectACL:
                            S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         # User Account Variables
-        account_name_1 = S3_OBJ_TST["test_10963"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_10963"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         # Creating User Account 1
         result = self.create_s3iamcli_acc(account_name_1, email_id_1)
@@ -1223,9 +1223,9 @@ class TestObjectACL:
         assert obj_acl[0], obj_acl[1]
         # Creating 2nd User Account
         # User Account Variables
-        account_name_2 = S3_OBJ_TST["test_10963"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_10963"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         # Creating the 2nd user s3-Object
@@ -1260,9 +1260,9 @@ class TestObjectACL:
         s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         write_acp = S3_OBJ_TST["test_10964"]["acl_permission"]
-        account_name = S3_OBJ_TST["test_10964"]["account_name"].format(
+        account_name = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_10964"]["emailid"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         self.log.info("Step 1: Creating account 2 ")
         result = self.create_s3iamcli_acc(account_name, email_id_1)
@@ -1326,9 +1326,9 @@ class TestObjectACL:
         s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         auth_read = S3_OBJ_TST["test_10965"]["auth_read"]
-        account_name_1 = S3_OBJ_TST["test_10965"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_10965"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
@@ -1359,9 +1359,9 @@ class TestObjectACL:
         self.log.info(
             "Step 3: Get response of the get ACL is : %s", obj_acl)
         # Creating 2nd User Account and setting User Account Variables
-        account_name_2 = S3_OBJ_TST["test_10965"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_10965"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         # Creating the 2nd user s3-Object
@@ -1395,9 +1395,9 @@ class TestObjectACL:
         s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         auth_read = S3_OBJ_TST["test_10966"]["auth_read"]
-        account_name_1 = S3_OBJ_TST["test_10966"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_10966"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
@@ -1433,9 +1433,9 @@ class TestObjectACL:
         self.log.info("Step 4: Verified the acl property of the object")
         # Creating 2nd User Account
         # User Account Variables
-        account_name_2 = S3_OBJ_TST["test_10966"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_10966"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         # Creating the 2nd user s3 Object
@@ -1478,10 +1478,10 @@ class TestObjectACL:
             self.random_num)
         write_acp = S3_OBJ_TST["test_10967"]["write_acp"]
         auth_read = S3_OBJ_TST["test_10967"]["auth_read"]
-        account_name_1 = S3_OBJ_TST["test_10967"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
         error_msg = S3_OBJ_TST["s3_object"]["error_msg"]
-        email_id_1 = S3_OBJ_TST["test_10967"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
@@ -1565,9 +1565,9 @@ class TestObjectACL:
         s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         read_acp = S3_OBJ_TST["test_10968"]["read_acp"]
-        account_name_1 = S3_OBJ_TST["test_10968"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_10968"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         private_acl = S3_OBJ_TST["test_10968"]["private_acl"]
         test_file_path = self.test_file_path
@@ -1599,9 +1599,9 @@ class TestObjectACL:
             "Step 3: Done Verifying the Canned Object ACL property")
         # Creating 2nd User Account
         # User Account Variables
-        account_name_2 = S3_OBJ_TST["test_10968"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_10968"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         self.log.info("Creating account name %s and email_id %s",
                       account_name_2, email_id_2)
@@ -1658,9 +1658,9 @@ class TestObjectACL:
                            S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         # User Account Variables
-        account_name_1 = S3_OBJ_TST["test_10969"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_10969"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         # Creating User Account 1
         self.log.info(
@@ -1690,9 +1690,9 @@ class TestObjectACL:
         self.log.info(
             "Step 4: Successfully Verified the Canned Object ACL property")
         # Creating 2nd User Account User Account Variables
-        account_name_2 = S3_OBJ_TST["test_10969"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_10969"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         self.log.info("Creating account with name %s and email_id %s",
                       account_name_2, email_id_2)
@@ -1753,9 +1753,9 @@ class TestObjectACL:
                            S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         # User Account Variables
-        account_name_1 = S3_OBJ_TST["test_10972"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_10972"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         # Creating User Account 1
         self.log.info(
@@ -1789,9 +1789,9 @@ class TestObjectACL:
         self.log.info(
             "Step 5 : Done overriding put-object-acl with canned acl authenticated-read")
         # Creating 2nd User Account and setting User Account Variables
-        account_name_2 = S3_OBJ_TST["test_10972"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_10972"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         self.log.info("Creating account name %s and email_id %s",
                       account_name_2, email_id_2)
@@ -1835,9 +1835,9 @@ class TestObjectACL:
         assert resp[0], resp[1]
         # Creating User Account 1
         # User Account Variables
-        account_name_1 = S3_OBJ_TST["test_10973"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_10973"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         # Creating User Account 1
         self.log.info(
@@ -1872,9 +1872,9 @@ class TestObjectACL:
         self.log.info(
             "Step 5: Successfully applied put-object-acl with canned acl authenticated-read")
         # Creating 2nd User Account and set User Account Variables
-        account_name_2 = S3_OBJ_TST["test_10973"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_10973"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         self.log.info("Creating account name %s and email_id %s",
                       account_name_2, email_id_2)
@@ -1916,18 +1916,18 @@ class TestObjectACL:
         assert resp[0], resp[1]
         # Creating User Account 1
         # User Account Variables
-        account_name_1 = S3_OBJ_TST["test_10974"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_10974"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         # Creating User Account 1
         self.log.info(
             "Step 1: Creating account 1 with name %s and email_id %s",
             account_name_1, email_id_1)
         # User Account Variables
-        account_name_1 = S3_OBJ_TST["test_10974"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_10974"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         can_id_usr_1 = result[0]
@@ -1937,9 +1937,9 @@ class TestObjectACL:
         self.log.info(
             "Step 2: Creating account 2 with name %s and email_id %s",
             account_name_1, email_id_1)
-        account_name_2 = S3_OBJ_TST["test_10974"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_10974"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         can_id_usr_2 = result[0]
@@ -2027,18 +2027,18 @@ class TestObjectACL:
         assert resp[0], resp[1]
         # Creating User Account 1
         # User Account Variables
-        account_name_1 = S3_OBJ_TST["test_10975"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_10975"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         # Creating User Account 1
         self.log.info(
             "Step 1: Creating account 1 with name %s and email_id %s",
             account_name_1, email_id_1)
         # User Account Variables
-        account_name_1 = S3_OBJ_TST["test_10975"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_10975"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         can_id_usr_1 = result[0]
@@ -2047,9 +2047,9 @@ class TestObjectACL:
         s3_obj_1 = result[1]
         s3_acl_obj_1 = result[2]
         # creating account 2
-        account_name_2 = S3_OBJ_TST["test_10975"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_10975"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         self.log.info(
             "Step 2: Creating account 2 with name %s and email_id %s",
@@ -2680,7 +2680,7 @@ class TestObjectACL:
         self.log.info("Step 3: Getting the object acl")
         res = S3_ACL_OBJ.get_object_acl(bucket_name, obj)
         assert res[0], res[1]
-        assert S3_OBJ_TST["test_10712"]["assert_msg"] in str(
+        assert S3_OBJ_TST["s3_object"]["full_ctrl"] in str(
             res[1]), res[0]
         self.log.info("Step 3: Object response was verified")
         self.log.info(
@@ -2706,9 +2706,9 @@ class TestObjectACL:
         account_name_list = []
 
         self.log.info("step 1: Creating User Account 1 and 2")
-        account_name_1 = S3_OBJ_TST["test_10714"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_10714"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         account_name_list.append(account_name_1)
         self.log.info(
@@ -2717,9 +2717,9 @@ class TestObjectACL:
         result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         s3_obj_1 = result[1]
         s3_acl_obj_1 = result[2]
-        account_name_2 = S3_OBJ_TST["test_10714"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_10714"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         self.log.info(
             "Creating account with name %s and email_id %s",
@@ -2796,9 +2796,9 @@ class TestObjectACL:
             S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         self.log.info("Step 1: Creating User Account 1 and 2")
-        account_name_1 = S3_OBJ_TST["test_10715"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_10715"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         self.log.info(
             "Creating account with name %s and email_id %s",
@@ -2806,9 +2806,9 @@ class TestObjectACL:
         result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         s3obj_user1 = result[1]
         s3acl_user1 = result[2]
-        account_name_2 = S3_OBJ_TST["test_10715"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_10715"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         self.log.info(
             "Creating account with name %s and email_id %s",
@@ -2889,9 +2889,9 @@ class TestObjectACL:
             S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         self.log.info("Step 1: Creating User Account 1")
-        account_name_1 = S3_OBJ_TST["test_10718"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_10718"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         self.log.info(
             "Creating account with name %s and email_id %s",
@@ -2954,9 +2954,9 @@ class TestObjectACL:
             S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         self.log.info("Step 1: Creating User Account 1")
-        account_name_1 = S3_OBJ_TST["test_10719"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_10719"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         self.log.info(
             "Creating account with name %s and email_id %s",
@@ -3006,9 +3006,9 @@ class TestObjectACL:
         """Add canned ACL bucket-owner-full-control along with WRITE ACL grant permission."""
         self.log.info(
             "Add canned ACL bucket-owner-full-control along with WRITE ACL grant permission")
-        account_name = S3_OBJ_TST["test_10721"]["account_name_1"].format(
+        account_name = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email = S3_OBJ_TST["test_10721"]["emailid_1"].format(
+        email = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
@@ -3035,7 +3035,7 @@ class TestObjectACL:
         put_res = s3obj_user.put_object(bucket_name, key, test_file_path)
         assert put_res[0]
         self.log.info("Step 3: Putting object with acl")
-        emailid = S3_OBJ_TST["test_10721"]["emailaddr"]
+        emailid = S3_OBJ_TST["s3_object"]["emailid_1"]
         try:
             acl_obj.put_object_canned_acl(
                 bucket_name,
@@ -3058,9 +3058,9 @@ class TestObjectACL:
         """Add canned ACL bucket-owner-full-control along with READ_ACP ACL grant permission."""
         self.log.info(
             "Add canned ACL bucket-owner-full-control along with READ_ACP ACL grant permission")
-        account_name = S3_OBJ_TST["test_10722"]["account_name_1"].format(
+        account_name = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email = S3_OBJ_TST["test_10722"]["emailid_1"].format(
+        email = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
@@ -3111,9 +3111,9 @@ class TestObjectACL:
         Add canned ACL bucket-owner-full-control along with WRITE_ACP ACL grant permission."""
         self.log.info(
             "Add canned ACL bucket-owner-full-control along with WRITE_ACP ACL grant permission")
-        account_name = S3_OBJ_TST["test_10723"]["account_name_1"].format(
+        account_name = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email = S3_OBJ_TST["test_10723"]["emailid_1"].format(
+        email = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
@@ -3161,9 +3161,9 @@ class TestObjectACL:
         """Add canned ACL bucket-owner-full-control along with FULL_CONTROL ACL grant permission."""
         self.log.info(
             "Add canned ACL bucket-owner-full-control along with FULL_CONTROL ACL grant permission")
-        account_name = S3_OBJ_TST["test_10724"]["account_name_1"].format(
+        account_name = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email = S3_OBJ_TST["test_10724"]["emailid_1"].format(
+        email = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
@@ -3212,9 +3212,9 @@ class TestObjectACL:
         """Add canned ACL bucket-owner-read along with WRITE ACL grant permission."""
         self.log.info(
             "Add canned ACL bucket-owner-read along with WRITE ACL grant permission")
-        account_name = S3_OBJ_TST["test_10726"]["account_name_1"].format(
+        account_name = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email = S3_OBJ_TST["test_10726"]["emailid_1"].format(
+        email = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
@@ -3264,9 +3264,9 @@ class TestObjectACL:
         """Add canned ACL bucket-owner-read along with READ_ACP ACL grant permission."""
         self.log.info(
             "Add canned ACL bucket-owner-read along with READ_ACP ACL grant permission")
-        account_name = S3_OBJ_TST["test_10727"]["account_name_1"].format(
+        account_name = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email = S3_OBJ_TST["test_10727"]["emailid_1"].format(
+        email = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
@@ -3316,9 +3316,9 @@ class TestObjectACL:
         """Add canned ACL bucket-owner-read along with WRITE_ACP ACL grant permission."""
         self.log.info(
             "Add canned ACL bucket-owner-read along with WRITE_ACP ACL grant permission")
-        account_name = S3_OBJ_TST["test_10720"]["account_name_1"].format(
+        account_name = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email = S3_OBJ_TST["test_10720"]["emailid_1"].format(
+        email = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
@@ -3372,9 +3372,9 @@ class TestObjectACL:
         """
         self.log.info(
             "Add canned ACL bucket-owner-read along with FULL_CONTROL ACL grant permission")
-        account_name = S3_OBJ_TST["test_10729"]["account_name_1"].format(
+        account_name = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email = S3_OBJ_TST["test_10729"]["emailid_1"].format(
+        email = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
@@ -3552,7 +3552,7 @@ class TestObjectACL:
         self.log.info(
             "Add canned ACL private in request body along "
             "with FULL_CONTROL ACL grant permission in request body")
-        account_name = S3_OBJ_TST["test_10793"]["account_name_1"].format(
+        account_name = S3_OBJ_TST["test_10794"]["account_name_1"].format(
             self.random_num)
         email_id = S3_OBJ_TST["test_10794"]["emailid_1"].format(
             self.random_num)
@@ -3620,9 +3620,9 @@ class TestObjectACL:
             test_file_path,
             S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
-        account_name_1 = S3_OBJ_TST["test_159"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_159"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         self.log.info(
             "Step 1: Creating account with name %s and email_id %s",
@@ -3630,9 +3630,9 @@ class TestObjectACL:
         result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         acl_obj = result[2]
         s3obj_user = result[1]
-        account_name_2 = S3_OBJ_TST["test_159"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_159"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         self.log.info(
             "Step 1: Creating account 2 with name %s and email_id %s",
@@ -3668,7 +3668,7 @@ class TestObjectACL:
             assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
         self.log.info(
             "Step 4: Put Object failure was handled with error message : %s",
-            S3_OBJ_TST["test_159"]["error_msg"])
+            S3_OBJ_TST["s3_object"]["error_msg"])
         self.log.info(
             "put-object-acl from cross account on the object with private canned-acl permission")
 
@@ -3689,9 +3689,9 @@ class TestObjectACL:
             test_file_path,
             S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
-        account_name_1 = S3_OBJ_TST["test_170"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_170"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         self.log.info(
             "Step 1: Creating account with name %s and email_id %s",
@@ -3699,9 +3699,9 @@ class TestObjectACL:
         result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         acl_obj = result[2]
         s3obj_user = result[1]
-        account_name_2 = S3_OBJ_TST["test_170"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_170"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         self.log.info(
             "Step 1 : Creating account with name %s and email_id %s",
@@ -3759,18 +3759,18 @@ class TestObjectACL:
         assert resp[0], resp[1]
         can_object_acl = S3_OBJ_TST["test_172"]["can_object_acl"]
         usr2_acl = S3_OBJ_TST["s3_object"]["full_ctrl"]
-        account_name_1 = S3_OBJ_TST["test_172"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_172"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         self.log.info(
             "Step 1: Creating account with name %s and email_id %s",
             account_name_1, email_id_1)
         result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         acl_obj = result[2]
-        account_name_2 = S3_OBJ_TST["test_172"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_172"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         self.log.info(
             "Creating account with name %s and email_id %s",
@@ -3860,9 +3860,9 @@ class TestObjectACL:
         assert resp[0], resp[1]
         can_object_acl = S3_OBJ_TST["test_175"]["can_object_acl"]
         self.log.info("Step 1 : Creating User Account 1 and 2")
-        account_name_1 = S3_OBJ_TST["test_175"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_175"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         self.log.info(
             "Creating account with name %s and email_id %s",
@@ -3870,9 +3870,9 @@ class TestObjectACL:
         result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         acl_obj = result[2]
         # Creating 2nd User Account and User Account Variables
-        account_name_2 = S3_OBJ_TST["test_175"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_175"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         self.log.info(
             "Creating account with name %s and email_id %s",
@@ -3958,9 +3958,9 @@ class TestObjectACL:
         s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         auth_read = S3_OBJ_TST["test_453"]["public_read"]
-        account_name_1 = S3_OBJ_TST["test_453"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_453"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
@@ -4020,9 +4020,9 @@ class TestObjectACL:
             "Step 4: Done Get object-acl on above object and verify from account 1")
 
         self.log.info("Step 5 : Switch to Account 2")
-        account_name_2 = S3_OBJ_TST["test_453"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_453"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         s3_tag_obj_2 = result[3]
@@ -4060,9 +4060,9 @@ class TestObjectACL:
         s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         permission = S3_OBJ_TST["s3_object"]["full_ctrl"]
-        account_name_1 = S3_OBJ_TST["test_423"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_423"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
@@ -4108,9 +4108,9 @@ class TestObjectACL:
 
         self.log.info(
             "Step 3: Apply grant FULL_CONTROL permission to account2")
-        account_name_2 = S3_OBJ_TST["test_423"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_423"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         canonical_id_2 = result[0]
@@ -4163,9 +4163,9 @@ class TestObjectACL:
         s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         permission = S3_OBJ_TST["test_421"]["write"]
-        account_name_1 = S3_OBJ_TST["test_421"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_421"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
@@ -4210,9 +4210,9 @@ class TestObjectACL:
         self.log.info("Step 2: Done verify the object tags created")
 
         self.log.info("Step 3: Apply grant WRITE permission to account2")
-        account_name_2 = S3_OBJ_TST["test_421"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_421"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         canonical_id_2 = result[0]
@@ -4265,9 +4265,9 @@ class TestObjectACL:
         s3obj_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
         permission = S3_OBJ_TST["test_419"]["read"]
-        account_name_1 = S3_OBJ_TST["test_419"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_419"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         test_file_path = self.test_file_path
         resp = create_file(test_file_path,
@@ -4311,9 +4311,9 @@ class TestObjectACL:
         self.log.info("Step 2: Done verify the object tags created")
 
         self.log.info("Step 3: Apply grant READ permission to account2")
-        account_name_2 = S3_OBJ_TST["test_419"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_419"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         canonical_id_2 = result[0]
@@ -4409,9 +4409,9 @@ class TestObjectACL:
             test_file_path,
             S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
-        account_name_1 = S3_OBJ_TST["test_169"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_169"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         self.log.info(
             "Step 1: Creating account with name %s and email_id %s",
@@ -4419,9 +4419,9 @@ class TestObjectACL:
         result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         acl_obj = result[2]
         s3obj_user = result[1]
-        account_name_2 = S3_OBJ_TST["test_169"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_169"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         self.log.info(
             "Step 1 : Creating account with name %s and email_id %s",
@@ -4476,9 +4476,9 @@ class TestObjectACL:
             test_file_path,
             S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
-        account_name_1 = S3_OBJ_TST["test_167"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_167"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         self.log.info(
             "Step 1: Creating account with name %s and email_id %s",
@@ -4486,9 +4486,9 @@ class TestObjectACL:
         result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         acl_obj = result[2]
         s3obj_user = result[1]
-        account_name_2 = S3_OBJ_TST["test_167"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_167"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         self.log.info(
             "Step 1 : Creating account with name %s and email_id %s",
@@ -4547,9 +4547,9 @@ class TestObjectACL:
             test_file_path,
             S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
-        account_name_1 = S3_OBJ_TST["test_311"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_311"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         self.log.info(
             "Step 1: Creating account with name %s and email_id %s",
@@ -4557,9 +4557,9 @@ class TestObjectACL:
         result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         acl_obj = result[2]
         s3obj_user = result[1]
-        account_name_2 = S3_OBJ_TST["test_311"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_311"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         self.log.info(
             "Step 1 : Creating account with name %s and email_id %s",
@@ -4610,9 +4610,9 @@ class TestObjectACL:
             self.random_num)
         obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
-        account_name = S3_OBJ_TST["test_286"]["account_name"].format(
+        account_name = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id = S3_OBJ_TST["test_286"]["emailid"].format(
+        email_id = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         permission = S3_OBJ_TST["test_286"]["obj_acl_rdc"]
         result = self.create_s3iamcli_acc(account_name, email_id)
@@ -4647,9 +4647,9 @@ class TestObjectACL:
             self.random_num)
         obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
-        account_name = S3_OBJ_TST["test_285"]["account_name"].format(
+        account_name = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id = S3_OBJ_TST["test_285"]["emailid"].format(
+        email_id = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         self.create_s3iamcli_acc(account_name, email_id)
         self.log.info(
@@ -4683,9 +4683,9 @@ class TestObjectACL:
         grantee_json = test_3453_cfg["new_grantee"]
         obj_permission = test_3453_cfg["grant_permission"]
         self.log.info("Step 1: Creating two accounts...")
-        account_name_1 = S3_OBJ_TST["test_3453"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_3453"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         self.log.info(
             "Creating account with name %s and email_id %s",
@@ -4693,9 +4693,9 @@ class TestObjectACL:
         result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         s3_acl_obj1 = result[2]
         s3_test_obj1 = result[1]
-        account_name_2 = S3_OBJ_TST["test_3453"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_3453"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         email = S3_OBJ_TST["s3_object"]["emailaddr"].format(email_id_2)
         self.log.info(
@@ -4757,9 +4757,9 @@ class TestObjectACL:
         test_3454_cfg = S3_OBJ_TST["test_3454"]
         obj_permission = S3_OBJ_TST["s3_object"]["full_ctrl"]
         self.log.info("Step 1: Creating two accounts...")
-        account_name_1 = S3_OBJ_TST["test_3454"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_3454"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         self.log.info(
             "Creating account with name %s and email_id %s",
@@ -4767,9 +4767,9 @@ class TestObjectACL:
         result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         s3_acl_obj1 = result[2]
         s3_test_obj1 = result[1]
-        account_name_2 = S3_OBJ_TST["test_3454"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_3454"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         self.log.info(
             "Creating account with name %s and email_id %s",
@@ -4821,9 +4821,9 @@ class TestObjectACL:
         obj_permission = S3_OBJ_TST["s3_object"]["full_ctrl"]
         grantee_json = test_3455_cfg["new_grantee"]
         self.log.info("Step 1: Creating three accounts...")
-        account_name_1 = S3_OBJ_TST["test_3455"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_3455"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         self.log.info(
             "Creating account with name %s and email_id %s",
@@ -4831,9 +4831,9 @@ class TestObjectACL:
         result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         s3_acl_obj1 = result[2]
         s3_test_obj1 = result[1]
-        account_name_2 = S3_OBJ_TST["test_3455"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_3455"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         email = S3_OBJ_TST["s3_object"]["emailaddr"].format(email_id_2)
         self.log.info(
@@ -4910,9 +4910,9 @@ class TestObjectACL:
         obj_permission = test_3456_cfg["grant_permission"]
         grantee_json = test_3456_cfg["new_grantee"]
         self.log.info("Step 1: Creating two accounts...")
-        account_name_1 = S3_OBJ_TST["test_3456"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_3456"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         self.log.info(
             "Creating account with name %s and email_id %s",
@@ -4920,9 +4920,9 @@ class TestObjectACL:
         result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         s3_acl_obj1 = result[2]
         s3_test_obj1 = result[1]
-        account_name_2 = S3_OBJ_TST["test_3456"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_3456"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         email = S3_OBJ_TST["s3_object"]["emailaddr"].format(email_id_2)
         self.log.info(
@@ -4993,9 +4993,9 @@ class TestObjectACL:
         obj_permission = test_3457_cfg["grant_permission"]
         grantee_json = test_3457_cfg["new_grantee"]
         self.log.info("Step 1: Creating two accounts...")
-        account_name_1 = S3_OBJ_TST["test_3457"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_3457"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         self.log.info(
             "Creating account with name %s and email_id %s",
@@ -5003,9 +5003,9 @@ class TestObjectACL:
         result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         s3_acl_obj1 = result[2]
         s3_test_obj1 = result[1]
-        account_name_2 = S3_OBJ_TST["test_3457"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_3457"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         email = S3_OBJ_TST["s3_object"]["emailaddr"].format(email_id_2)
         self.log.info(
@@ -5076,9 +5076,9 @@ class TestObjectACL:
         obj_permission = test_3458_cfg["grant_permission"]
         grantee_json = test_3458_cfg["new_grantee"]
         self.log.info("Step 1: Creating two accounts...")
-        account_name_1 = S3_OBJ_TST["test_3458"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_3458"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         self.log.info(
             "Creating account with name %s and email_id %s",
@@ -5086,9 +5086,9 @@ class TestObjectACL:
         result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         s3_acl_obj1 = result[2]
         s3_test_obj1 = result[1]
-        account_name_2 = S3_OBJ_TST["test_3458"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_3458"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         email = S3_OBJ_TST["s3_object"]["emailaddr"].format(email_id_2)
         self.log.info(
@@ -5158,9 +5158,9 @@ class TestObjectACL:
             test_file_path,
             S3_OBJ_TST["s3_object"]["file_size"])
         self.log.info("Step 1: Creating two accounts...")
-        account_name_1 = S3_OBJ_TST["test_3459"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_3459"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         self.log.info(
             "Creating account with name %s and email_id %s",
@@ -5168,9 +5168,9 @@ class TestObjectACL:
         result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         s3_acl_obj1 = result[2]
         s3_test_obj1 = result[1]
-        account_name_2 = S3_OBJ_TST["test_3459"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_3459"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         self.log.info(
             "Creating account with name %s and email_id %s",
@@ -5244,9 +5244,9 @@ class TestObjectACL:
             test_file_path,
             S3_OBJ_TST["s3_object"]["file_size"])
         self.log.info("Step 1: Creating two accounts...")
-        account_name_1 = S3_OBJ_TST["test_3460"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_3460"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         self.log.info(
             "Creating account with name %s and email_id %s",
@@ -5254,9 +5254,9 @@ class TestObjectACL:
         result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         s3_acl_obj1 = result[2]
         s3_test_obj1 = result[1]
-        account_name_2 = S3_OBJ_TST["test_3460"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_3460"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         self.log.info(
             "Creating account with name %s and email_id %s",
@@ -5335,9 +5335,9 @@ class TestObjectACL:
             test_file_path,
             S3_OBJ_TST["s3_object"]["file_size"])
         self.log.info("Step 1: Creating two accounts...")
-        account_name_1 = S3_OBJ_TST["test_3461"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_3461"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         self.log.info(
             "Creating account with name %s and email_id %s",
@@ -5345,9 +5345,9 @@ class TestObjectACL:
         result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         s3_acl_obj1 = result[2]
         s3_test_obj1 = result[1]
-        account_name_2 = S3_OBJ_TST["test_3461"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_3461"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         self.log.info(
             "Creating account with name %s and email_id %s",
@@ -5427,9 +5427,9 @@ class TestObjectACL:
             test_file_path,
             S3_OBJ_TST["s3_object"]["file_size"])
         self.log.info("Step 1: Creating two accounts...")
-        account_name_1 = S3_OBJ_TST["test_3462"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_3462"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         self.log.info(
             "Creating account with name %s and email_id %s",
@@ -5437,9 +5437,9 @@ class TestObjectACL:
         result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         s3_acl_obj1 = result[2]
         s3_test_obj1 = result[1]
-        account_name_2 = S3_OBJ_TST["test_3462"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_3462"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         self.log.info(
             "Creating account with name %s and email_id %s",
@@ -5514,9 +5514,9 @@ class TestObjectACL:
         test_3463_cfg = S3_OBJ_TST["test_3463"]
         obj_permission = test_3463_cfg["grant_permission"]
         self.log.info("Step 1: Creating two accounts...")
-        account_name_1 = S3_OBJ_TST["test_3463"]["account_name_1"].format(
+        account_name_1 = S3_OBJ_TST["s3_object"]["account_name_1"].format(
             self.random_num)
-        email_id_1 = S3_OBJ_TST["test_3463"]["emailid_1"].format(
+        email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         self.log.info(
             "Creating account with name %s and email_id %s",
@@ -5524,9 +5524,9 @@ class TestObjectACL:
         result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         s3_acl_obj1 = result[2]
         s3_test_obj1 = result[1]
-        account_name_2 = S3_OBJ_TST["test_3463"]["account_name_2"].format(
+        account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
-        email_id_2 = S3_OBJ_TST["test_3463"]["emailid_2"].format(
+        email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
         self.log.info(
             "Creating account with name %s and email_id %s",

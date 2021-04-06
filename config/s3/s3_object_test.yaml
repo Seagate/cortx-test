@@ -12,10 +12,13 @@ s3_object:
     mb_count: 5
     obj_name: "testobj"
     key: "testkey"
+    key_err: "NoSuchKey"
+    account_name_1: "my_account_one{}"
+    emailid_1: "my_account_one{}@seagate.com"
+    account_name_2: "my_account_two{}"
+    emailid_2: "my_account_two{}@seagate.com"
 
 # Tests from test_object_acl.py
-test_9853:
-  err_msg: "NoSuchKey"
 test_get_obj_acl_mp:
   file_size: 100
   total_parts: 10
@@ -32,7 +35,6 @@ test_9898:
   f_size: 2048
   run_cmd: "aws configure set default.s3.multipart_chunksize 16MB"
 test_9899:
-  error_msg: "NoSuchKey"
   single_part_sz: 10
   total_parts: 10
   mupart_obj_path: "/home/mp_obj"
@@ -73,17 +75,11 @@ test_10216:
   Type: "CanonicalUser"
   DisplayName: "s3user"
   error_msg: "InvalidACL"
-test_10224:
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
-  account_name_2: "my_account_two{}"
-  emailid_2: "my_account_two{}@seagate.com"
 test_10225:
   account_name: "my_account225{}"
   emailid: "my_account225{}@seagate.com"
   Type: "CanonicalUser"
   DisplayName: "s3user"
-  error_msg: "NoSuchKey"
 test_10227:
   grant_count: 99
   name_initials: "my_account{}{}"
@@ -100,84 +96,38 @@ test_10229:
   Type: "CanonicalUser"
 test_10962:
   acl_permission: "private"
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
-  account_name_2: "my_account_two{}"
-  emailid_2: "my_account_two{}@seagate.com"
 test_10963:
   acl_permission: "private"
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
-  account_name_2: "my_account_two{}"
-  emailid_2: "my_account_two{}@seagate.com"
 test_10964:
   acl_permission: "WRITE_ACP"
   private_acp : "private"
-  account_name: "my_account_one{}"
-  emailid: "my_account_one{}@seagate.com"
 test_10965:
   auth_read: "authenticated-read"
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
-  account_name_2: "my_account_two{}"
-  emailid_2: "my_account_two{}@seagate.com"
 test_10966:
   auth_read: "authenticated-read"
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
-  account_name_2: "my_account_two{}"
-  emailid_2: "my_account_two{}@seagate.com"
 test_10967:
   auth_read: "authenticated-read"
   write_acp: "WRITE_ACP"
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
-  account_name_2: "my_account_two{}"
-  emailid_2: "my_account_two{}@seagate.com"
 test_10968:
   private_acl: "private"
   read_acp: "READ_ACP"
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
-  account_name_2: "my_account_two{}"
-  emailid_2: "my_account_two{}@seagate.com"
 test_10969:
   read_acp: "READ_ACP"
   auth_read: "authenticated-read"
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
-  account_name_2: "my_account_two{}"
-  emailid_2: "my_account_two{}@seagate.com"
 test_10972:
   private_acl: "private"
   auth_read: "authenticated-read"
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
-  account_name_2: "my_account_two{}"
-  emailid_2: "my_account_two{}@seagate.com"
 test_10973:
   private_acl: "private"
   auth_read: "authenticated-read"
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
-  account_name_2: "my_account_two{}"
-  emailid_2: "my_account_two{}@seagate.com"
 test_10974:
   can_object_acl: "bucket-owner-read"
   write_acp: "WRITE"
   id_str: "id="
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
-  account_name_2: "my_account_two{}"
-  emailid_2: "my_account_two{}@seagate.com"
 test_10975:
   can_object_acl: "bucket-owner-full-control"
   write_acp: "WRITE"
   id_str: "id="
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
-  account_name_2: "my_account_two{}"
-  emailid_2: "my_account_two{}@seagate.com"
 test_10781:
   can_object_acl: "bucket-owner-full-control"
   private_acp : "private"
@@ -229,10 +179,6 @@ test_10714:
   write_assert: "WRITE"
   read_assert: "READ"
   id_str: "id="
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
-  account_name_2: "my_account_two{}"
-  emailid_2: "my_account_two{}@seagate.com"
 test_10715:
   auth_read: "authenticated-read"
   bucket_full_control: "bucket-owner-full-control"
@@ -240,58 +186,34 @@ test_10715:
   write_assert: "WRITE"
   read_assert: "READ"
   id_str: "id="
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
-  account_name_2: "my_account_two{}"
-  emailid_2: "my_account_two{}@seagate.com"
 test_10718:
   auth_read: "authenticated-read"
   bucket_full_control: "bucket-owner-full-control"
   acl_bucket_read: "bucket-owner-read"
   private_assert: "private"
   id_str: "id="
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
 test_10719:
   auth_read: "authenticated-read"
   bucket_full_control: "bucket-owner-full-control"
   acl_bucket_read: "bucket-owner-read"
   private_assert: "private"
   id_str: "id="
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
 test_10720:
   bucket_full_control: "bucket-owner-full-control"
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
 test_10721:
   bucket_full_control: "bucket-owner-full-control"
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
 test_10722:
   bucket_full_control: "bucket-owner-full-control"
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
 test_10723:
   bucket_full_control: "bucket-owner-full-control"
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
 test_10724:
   bucket_full_control: "bucket-owner-full-control"
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
 test_10726:
   bucket_full_control: "bucket-owner-read"
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
 test_10727:
   bucket_full_control: "bucket-owner-read"
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
 test_10729:
   bucket_full_control: "bucket-owner-read"
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
 test_10792:
   error_msg: "InvalidACL"
   permission: "private"
@@ -314,96 +236,42 @@ test_10794:
   emailid_1: "my_account_10795{}@seagate.com"
 test_159:
   permission: "private"
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
-  account_name_2: "my_account_two{}"
-  emailid_2: "my_account_two{}@seagate.com"
 test_170:
   can_object_acl: "authenticated-read"
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
-  account_name_2: "my_account_two{}"
-  emailid_2: "my_account_two{}@seagate.com"
 test_172:
   id_str: "id="
   permission_write: "WRITE"
   can_object_acl: "bucket-owner-read"
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
-  account_name_2: "my_account_two{}"
-  emailid_2: "my_account_two{}@seagate.com"
 test_175:
   id_str: "id="
   permission_write: "WRITE"
   can_object_acl: "bucket-owner-full-control"
   bucket_read: "bucket-owner-read"
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
-  account_name_2: "my_account_two{}"
-  emailid_2: "my_account_two{}@seagate.com"
 test_453:
   key: "key453"
   value: "value453"
   public_read: "public-read"
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
-  account_name_2: "my_account_two{}"
-  emailid_2: "my_account_two{}@seagate.com"
 test_423:
   key: "key423"
   value: "value423"
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
-  account_name_2: "my_account_two{}"
-  emailid_2: "my_account_two{}@seagate.com"
 test_421:
   key: "key421"
   value: "value421"
   write: "WRITE"
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
-  account_name_2: "my_account_two{}"
-  emailid_2: "my_account_two{}@seagate.com"
 test_419:
   key: "key419"
   value: "value419"
   read: "READ"
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
-  account_name_2: "my_account_two{}"
-  emailid_2: "my_account_two{}@seagate.com"
 test_410:
     key: "testkey410"
     value: "valuekey410"
 test_169:
   can_object_acl: "public-read-write"
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
-  account_name_2: "my_account_two{}"
-  emailid_2: "my_account_two{}@seagate.com"
 test_167:
   can_object_acl: "public-read"
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
-  account_name_2: "my_account_two{}"
-  emailid_2: "my_account_two{}@seagate.com"
-test_311:
-  account_name_1: "my_account_one{}"
-  emailid_1: "my_account_one{}@seagate.com"
-  account_name_2: "my_account_two{}"
-  emailid_2: "my_account_two{}@seagate.com"
 test_286:
   obj_acl_rdc: "READ_ACP"
-  account_name: "my_account_one{}"
-  emailid: "my_account_one{}@seagate.com"
-test_285:
-  account_name: "my_account_one{}"
-  emailid: "my_account_one{}@seagate.com"
 test_3453:
-  account_name_1: "my_account_1{}"
-  emailid_1: "my_account_1{}@seagate.com"
-  account_name_2: "my_account_2{}"
-  emailid_2: "my_account_2{}@seagate.com"
   grant_permission: "READ"
   new_grantee:
     Grantee:
@@ -412,18 +280,10 @@ test_3453:
       Type: "CanonicalUser"
     Permission: "READ"
 test_3454:
-  account_name_1: "my_account_1{}"
-  emailid_1: "my_account_1{}@seagate.com"
-  account_name_2: "my_account_2{}"
-  emailid_2: "my_account_2{}@seagate.com"
   type: "CanonicalUser"
   sub_can_id: "agsdhgh"
   err_message: "Invalid Argument"
 test_3455:
-  account_name_1: "my_account_1{}"
-  emailid_1: "my_account_1{}@seagate.com"
-  account_name_2: "my_account_2{}"
-  emailid_2: "my_account_2{}@seagate.com"
   account_name_3: "my_account_3{}"
   emailid_3: "my_account_3{}@seagate.com"
   new_grantee:
@@ -433,10 +293,6 @@ test_3455:
       Type: "CanonicalUser"
     Permission: "FULL_CONTROL"
 test_3456:
-  account_name_1: "my_account_1{}"
-  emailid_1: "my_account_1{}@seagate.com"
-  account_name_2: "my_account_2{}"
-  emailid_2: "my_account_2{}@seagate.com"
   grant_permission: "READ_ACP"
   new_grantee:
     Grantee:
@@ -445,10 +301,6 @@ test_3456:
       Type: "CanonicalUser"
     Permission: "READ_ACP"
 test_3457:
-  account_name_1: "my_account_1{}"
-  emailid_1: "my_account_1{}@seagate.com"
-  account_name_2: "my_account_2{}"
-  emailid_2: "my_account_2{}@seagate.com"
   grant_permission: "WRITE_ACP"
   new_grantee:
     Grantee:
@@ -457,10 +309,6 @@ test_3457:
       Type: "CanonicalUser"
     Permission: "WRITE_ACP"
 test_3458:
-  account_name_1: "my_account_1{}"
-  emailid_1: "my_account_1{}@seagate.com"
-  account_name_2: "my_account_2{}"
-  emailid_2: "my_account_2{}@seagate.com"
   grant_permission: "WRITE"
   new_grantee:
     Grantee:
@@ -468,34 +316,13 @@ test_3458:
       ID: "{}"
       Type: "CanonicalUser"
     Permission: "WRITE"
-test_3459:
-  account_name_1: "my_account_1{}"
-  emailid_1: "my_account_1{}@seagate.com"
-  account_name_2: "my_account_2{}"
-  emailid_2: "my_account_2{}@seagate.com"
 test_3460:
-  account_name_1: "my_account_1{}"
-  emailid_1: "my_account_1{}@seagate.com"
-  account_name_2: "my_account_2{}"
-  emailid_2: "my_account_2{}@seagate.com"
   grant_permission: "READ"
 test_3461:
-  account_name_1: "my_account_1{}"
-  emailid_1: "my_account_1{}@seagate.com"
-  account_name_2: "my_account_2{}"
-  emailid_2: "my_account_2{}@seagate.com"
   grant_permission: "READ_ACP"
 test_3462:
-  account_name_1: "my_account_1{}"
-  emailid_1: "my_account_1{}@seagate.com"
-  account_name_2: "my_account_2{}"
-  emailid_2: "my_account_2{}@seagate.com"
   grant_permission: "WRITE_ACP"
 test_3463:
-  account_name_1: "my_account_1{}"
-  emailid_1: "my_account_1{}@seagate.com"
-  account_name_2: "my_account_2{}"
-  emailid_2: "my_account_2{}@seagate.com"
   grant_permission: "WRITE"
 test_3541:
   acl: "bucket-owner-full-control"
@@ -801,20 +628,15 @@ test_9438:
 test_9439:
     bucket_name: "objtag9439"
     value: "testvalue"
-    error_message: "NoSuchKey"
 test_9440:
     bucket_name: "objtag9440"
-    error_message: "NoSuchKey"
 test_9441:
     bucket_name: "objtag9441"
-    error_message: "NoSuchKey"
 test_9442:
     bucket_name: "objtag9442"
     value: "testvalue"
-    error_message: "NoSuchKey"
 test_9443:
     bucket_name: "objtag9443"
-    error_message: "NoSuchKey"
 
 # Tests from test_object_workflow_operations
 test_2208:
