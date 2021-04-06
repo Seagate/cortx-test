@@ -2,7 +2,6 @@ import os
 import subprocess
 import argparse
 import logging
-from multiprocessing import Process
 import datetime
 from commons.utils.jira_utils import JiraTask
 from commons import report_client
@@ -10,7 +9,6 @@ from commons.utils import system_utils
 from commons import params
 from typing import Tuple
 from typing import Optional
-from typing import Any
 import getpass
 
 LOGGER = logging.getLogger(__name__)
@@ -69,13 +67,8 @@ def get_db_credential() -> Tuple[str, Optional[str]]:
         db_pwd = os.environ['DB_PASSWORD']
     except KeyError:
         print("DB credentials not found in environment")
-        try:
-            getattr(CMN_CFG, 'db_user') and getattr(CMN_CFG, 'db_user')
-            db_user, db_pwd = CMN_CFG.db_user, CMN_CFG.db_password
-        except AttributeError as attr_err:
-            LOGGER.exception(str(attr_err))
-            db_user = input("DB username: ")
-            db_pwd = getpass.getpass("DB password: ")
+        db_user = input("DB username: ")
+        db_pwd = getpass.getpass("DB password: ")
         os.environ['DB_USER'] = db_user
         os.environ['DB_PASSWORD'] = db_pwd
     return db_user, db_pwd
@@ -87,7 +80,7 @@ def get_tests_from_te(jira_obj, args, test_type='ALL'):
     test_list, tag = jira_obj.get_test_ids_from_te(str(args.te_ticket), test_type)
     if len(test_list) == 0:
         raise EnvironmentError("Please check TE provided, tests or tag is missing")
-    return test_list, tag
+    return test_list
 
 
 def create_report_payload(test_info, d_u, d_pass):
@@ -171,8 +164,8 @@ def collect_test_info(jira_obj, test):
     return test_name, test_label
 
 def run_robot_cmd(args, te_tag=None, logFile='main.log'):
-    """Form a robot command for execution."""   
-    
+    """Form a robot command for execution."""
+ 
     headless = " -v headless:" + str(args.headless)
     url = " -v url:"+ str(args.csm_url)
     browser = " -v browser:" + str(args.browser)
@@ -182,9 +175,9 @@ def run_robot_cmd(args, te_tag=None, logFile='main.log'):
     directory = " . "
 
     cmd_line = "cd robot; robot --timestampoutputs -d reports"+url+browser+ \
-               username+password+tag+directory+";cd .."
+               username+headless+password+tag+directory+";cd .."
     log = open(logFile, 'a')
-    prc = subprocess.Popen(cmd_line, shell=True,stdout=log, stderr=log)
+    prc = subprocess.Popen(cmd_line,stdout=log, stderr=log)
     prc.communicate()
 
 def getTestStatusAndParseLog(logFile = 'main.log'):
@@ -193,7 +186,7 @@ def getTestStatusAndParseLog(logFile = 'main.log'):
     a) TestStatus: Pass/Fail
     b) Output filepath: XML
     c) Log filepath: xml/html
-    d) Report filepath: xml/html 
+    d) Report filepath: xml/html
     """
     TestStatus = 'PASS'
     outputfilepath = ''
@@ -224,7 +217,7 @@ def trigger_tests_from_te(args):
     """
     jira_id, jira_pwd = get_jira_credential()
     jira_obj = JiraTask(jira_id, jira_pwd)
-    test_list, te_tag = get_tests_from_te(jira_obj, args, args.test_type)
+    test_list = get_tests_from_te(jira_obj, args, args.test_type)
     
     if os.path.exists("main.log"):
         os.remove("main.log")
@@ -253,7 +246,6 @@ def trigger_tests_from_te(args):
 
         # execute test using test id tag
         start_time = datetime.datetime.now()
-        env = os.environ.copy()
         # update jira for status and log file
         test_status = 'EXECUTING'
         jira_obj.update_test_jira_status(args.te_ticket, test, test_status)
@@ -289,16 +281,16 @@ def trigger_tests_from_te(args):
                                                    remote_path=remote_path,
                                                    local_path=test_log)
         if resp[0]:
-            print("Log file is uploaded at location : %s", resp[1]) 
+            print("Log file is uploaded at location : %s", resp[1])
 
         resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
                                                    mnt_dir=params.MOUNT_DIR,
                                                    remote_path=remote_path,
                                                    local_path=test_report)
         if resp[0]:
-            print("Report file is uploaded at location : %s", resp[1])      
+            print("Report file is uploaded at location : %s", resp[1])
 
-        #upload main.log file to NFS share      
+        #upload main.log file to NFS share
         resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
                                                    mnt_dir=params.MOUNT_DIR,
                                                    remote_path=remote_path,
