@@ -634,6 +634,7 @@ class TestAuditLogs:
             "ENDED: Test to Verify Password should not be logged in any of"
             " the audit server logs post any object operation.")
 
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8726')
     @CTFailOn(error_handler)
     def test_5238(self):
@@ -681,6 +682,7 @@ class TestAuditLogs:
             "ENDED : Test- Verify and check if audit logs are generated post S3 Bucket "
             "operations with 'rsyslog-tcp' logger policy")
 
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8727')
     @CTFailOn(error_handler)
     def test_5240(self):
@@ -738,6 +740,7 @@ class TestAuditLogs:
             "ENDED : Test- Verify and check if audit logs are generated post S3 Bucket "
             "operations with 'rsyslog-tcp' logger policy")
 
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8728')
     @CTFailOn(error_handler)
     def test_5246(self):
