@@ -162,7 +162,7 @@ class TestMultipartUpload:
         self.log.info("Uploaded parts into bucket: %s", parts)
         return mpu_id, parts
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-5588')
     @CTFailOn(error_handler)
     def test_multipart_upload_for_file_2061_2065_2066_2069(self):
@@ -204,7 +204,7 @@ class TestMultipartUpload:
         self.log.info(
             "Initiate multipart upload, upload parts, list parts and complete multipart upload")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-5583')
     @CTFailOn(error_handler)
     def test_abort_multipart_upload_2070(self):
@@ -231,7 +231,7 @@ class TestMultipartUpload:
             "Aborted multipart upload with upload ID: %s", mpu_id)
         self.log.info("Abort Multipart upload")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-5589')
     @CTFailOn(error_handler)
     def test_multipart_upload_file_1gb_to_10gb_2062(self):
@@ -270,7 +270,7 @@ class TestMultipartUpload:
         self.log.info(
             "Initiate Multipart upload for file of size of 1GB to 10GB having varying part size")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-5590')
     @CTFailOn(error_handler)
     def test_multipart_upliad_large_file_with_metadata_2063(self):
@@ -299,7 +299,7 @@ class TestMultipartUpload:
         self.log.info(
             "Initiate Multipart upload for large file with meta data")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-5599')
     @CTFailOn(error_handler)
     def test_verify_max_no_parts_listed_using_part_command_2067(self):
@@ -327,7 +327,7 @@ class TestMultipartUpload:
         self.log.info(
             "Verify max no. of parts being listed by using List part command")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-5591')
     @CTFailOn(error_handler)
     def test_list_multipart_upload_2068(self):
@@ -358,7 +358,7 @@ class TestMultipartUpload:
             res[1]["Uploads"])
         self.log.info("List Multipart uploads")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-5597')
     @CTFailOn(error_handler)
     def test_multipart_upload_through_configuration_file_2071(self):
@@ -418,7 +418,7 @@ class TestMultipartUpload:
         self.log.info(
             "Multipart upload through configuration file.(Automatic multipart upload)")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-5584')
     @CTFailOn(error_handler)
     def test_abort_multipart_upload_from_client2_started_from_client1_2073(
@@ -448,7 +448,7 @@ class TestMultipartUpload:
         self.log.info(
             "Abort multipart upload from client 2 if upload has started from client 1")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-5598')
     @CTFailOn(error_handler)
     def test_large_object_multipart_upload_2075(self):
@@ -483,7 +483,7 @@ class TestMultipartUpload:
             "start a large object multipart upload and check if the parts can be"
             " seen from other client and if they can be accessed")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-5586')
     @CTFailOn(error_handler)
     def test_multiprt_upload_having_more_than_10000_parts_2294(self):
@@ -526,7 +526,7 @@ class TestMultipartUpload:
         self.log.info("Cannot upload more than 10000 parts upload")
         self.log.info("Create multipart upload having more than 10,000 parts")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-5594')
     @CTFailOn(error_handler)
     def test_multipart_upload_all_parts_less_than_5mb_2296(self):
@@ -571,7 +571,7 @@ class TestMultipartUpload:
         self.log.info(
             "Multipart upload - create all parts less than 5 MB size, last part can be > 5 MB")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-5596')
     @CTFailOn(error_handler)
     def test_multipart_upload_part_number_should_be_in_range_1_to_10k_2295(
@@ -589,7 +589,7 @@ class TestMultipartUpload:
         self.log.info(
             "Multipart Upload Part numbers should be in range of 1 to 10,000")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-5595')
     @CTFailOn(error_handler)
     def test_multipart_upload_few_part_more_than_5gb_2297(self):
@@ -633,7 +633,7 @@ class TestMultipartUpload:
         self.log.info(
             "Multipart upload - create few parts more than 5 GB size")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-5587')
     @CTFailOn(error_handler)
     def test_create_upto_1k_multipart_uploads_2298(self):
@@ -696,7 +696,7 @@ class TestMultipartUpload:
         self.log.info("Multipart upload completed")
         self.log.info("Create up to 1000 Multipart uploads")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-5585')
     @CTFailOn(error_handler)
     def test_create_more_than_1k_multipart_uploads_2299(self):
@@ -757,7 +757,7 @@ class TestMultipartUpload:
         self.log.info("Cannot list more than 1000 multipart uploads")
         self.log.info("Create more than 1000 Multipart uploads")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-5593')
     @CTFailOn(error_handler)
     def test_multipart_upload_varying_request_numbers_max_concurrent_requests_2300(
@@ -825,7 +825,7 @@ class TestMultipartUpload:
         self.log.info(
             "Multipart upload - by varying request numbers max_concurrent_requests")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-5592')
     @CTFailOn(error_handler)
     def test_multipart_upload_varying_multipart_threshold_2301(self):
@@ -890,7 +890,7 @@ class TestMultipartUpload:
         self.log.info("Applied default multipart_threshold")
         self.log.info("Multipart upload - by varying multipart_threshold")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8723')
     @CTFailOn(error_handler)
     def test_multipart_upload_with_invalid_json_input_631(self):
