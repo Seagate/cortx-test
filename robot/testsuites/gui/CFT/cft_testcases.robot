@@ -32,7 +32,7 @@ ${Sub_tab}  None
 ${username}
 ${password}
 ${Download_File_Path}  \root\Downloads\
-${sw_version}  683
+${sw_version}  891
 
 *** Keywords ***
 
