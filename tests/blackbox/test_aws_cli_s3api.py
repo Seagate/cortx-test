@@ -90,7 +90,7 @@ class TestAwsCliS3Api:
         LOGGER.info("ENDED : Teardown operations at test suit level")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7113")
     @CTFailOn(error_handler)
     def test_2328_create_single_bucket(self):
@@ -103,7 +103,7 @@ class TestAwsCliS3Api:
         LOGGER.info("Successfully create single bucket using awscli")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7114")
     @CTFailOn(error_handler)
     def test_2329_create_multiple_bucket(self):
@@ -119,7 +119,7 @@ class TestAwsCliS3Api:
         LOGGER.info("Failed to create multiple buckets at a time using awscli")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7115")
     @CTFailOn(error_handler)
     def test_2330_list_buckets(self):
@@ -135,7 +135,7 @@ class TestAwsCliS3Api:
         LOGGER.info("Successfully listed buckets using awscli")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7116")
     @CTFailOn(error_handler)
     def test_2331_create_max_buckets(self):
@@ -151,7 +151,7 @@ class TestAwsCliS3Api:
         LOGGER.info("Successfully created max no. of buckets using awscli")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7117")
     @CTFailOn(error_handler)
     def test_2332_delete_empty_bucket(self):
@@ -167,7 +167,7 @@ class TestAwsCliS3Api:
         LOGGER.info("Successfully deleted empty bucket using awscli")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7118")
     @CTFailOn(error_handler)
     def test_2333_delete_non_empty_bucket(self):
@@ -192,7 +192,7 @@ class TestAwsCliS3Api:
         LOGGER.info("Failed to delete bucket having objects in it")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7119")
     @CTFailOn(error_handler)
     def test_2334_head_bucket(self):
@@ -209,7 +209,7 @@ class TestAwsCliS3Api:
         LOGGER.info("Successfully verified head bucket using awscli")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7120")
     @CTFailOn(error_handler)
     def test_2335_bucket_location(self):
@@ -228,7 +228,7 @@ class TestAwsCliS3Api:
         LOGGER.info("Successfully verified bucket location using awscli")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7121")
     @CTFailOn(error_handler)
     def test_2336_create_duplicate_bucket(self):
@@ -246,7 +246,7 @@ class TestAwsCliS3Api:
         LOGGER.info("Failed to create bucket using existing bucket name")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7122")
     @CTFailOn(error_handler)
     def test_2337_delete_bucket_forcefully(self):
@@ -269,7 +269,7 @@ class TestAwsCliS3Api:
         LOGGER.info("Successfully deleted bucket having objects in it")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7123")
     @CTFailOn(error_handler)
     def test_2338_list_objects(self):
@@ -293,7 +293,7 @@ class TestAwsCliS3Api:
         LOGGER.info("Successfully listed objects from bucket using awscli")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7124")
     @CTFailOn(error_handler)
     def test_2339_delete_single_object(self):
@@ -322,7 +322,7 @@ class TestAwsCliS3Api:
         LOGGER.info("Successfully deleted object from bucket using awscli")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7125")
     @CTFailOn(error_handler)
     def test_2340_delete_multiple_objects(self):
@@ -364,7 +364,7 @@ class TestAwsCliS3Api:
             "Successfully deleted multiple objects from bucket using awscli")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7126")
     @CTFailOn(error_handler)
     def test_2341_delete_all_objects(self):
@@ -400,7 +400,7 @@ class TestAwsCliS3Api:
             "Successfully deleted all objects from bucket using awscli")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7127")
     @CTFailOn(error_handler)
     def test_2342_multipart_upload(self):
@@ -483,7 +483,7 @@ class TestAwsCliS3Api:
         LOGGER.info("Successfuly completed multipart upload of a large file")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7128")
     @CTFailOn(error_handler)
     def test_2343_copy_object_to_bucket(self):
@@ -507,7 +507,7 @@ class TestAwsCliS3Api:
         LOGGER.info("Successfully copied objects to bucket using awscli")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7130")
     @CTFailOn(error_handler)
     def test_2344_download_object_from_bucket(self):

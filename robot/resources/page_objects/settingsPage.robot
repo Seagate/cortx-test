@@ -100,7 +100,7 @@ Download PEM File
     Log To Console And Report  ${SSL_URL}${server_file_name}
     Log To Console And Report  ${file_path}
     Log To Console And Report  ${server_file_name}
-    ${file_path}=  download_file_with_name  ${SSL_URL}${server_file_name}  ${file_path}  ${server_file_name}
+    ${file_path}=  download_file  ${SSL_URL}${server_file_name}  ${file_path}  ${server_file_name}
     [Return]  ${file_path}
 
 SSL Upload

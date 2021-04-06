@@ -59,6 +59,7 @@ class TestIamUser():
         self.log.info("Teardown ended")
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10732')
     def test_1133(self):
         """Test that IAM users are not permitted to login
@@ -75,6 +76,7 @@ class TestIamUser():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-14749')
     def test_1041(self):
         """Test that S3 account should have access to create IAM user from back end
@@ -99,6 +101,7 @@ class TestIamUser():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-17189')
     def test_1022(self):
         """

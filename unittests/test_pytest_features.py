@@ -74,33 +74,28 @@ def test_max(capture, logger, formatter):
             f.write(formatter.format(rec) + '\n')
 
 
-@pytest.mark.a
 def test_a1(logger):
     logger.info("info")
 
     assert (1) == (1)
 
 
-@pytest.mark.a
 def test_a2(logger):
     logger.info("info")
 
     assert (1, 2) == (1, 2)
 
 
-@pytest.mark.a
 def test_a3(logger):
     logger.info("info")
     assert (1, 2, 3) == (1, 2, 3)
 
 
-@pytest.mark.b
 def test_b1(logger):
     logger.info("info")
     assert "falcon" == "fal" + "con"
 
 
-@pytest.mark.b
 def test_b2(logger):
     logger.info("info")
     assert "falcon" == f"fal{'con'}"

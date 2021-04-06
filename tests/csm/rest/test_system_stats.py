@@ -46,6 +46,7 @@ class TestSystemStats():
             fpath="config/csm/test_rest_system_stats.yaml")
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-14752')
     def test_4956(self):
         """Test that GET API returns 200 response code
@@ -69,6 +70,7 @@ class TestSystemStats():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-14751')
     def test_4958(self):
         """TA CSM REST Automation: TEST-4958: Test that GET API returns 200
@@ -109,6 +111,7 @@ class TestSystemStats():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-14753')
     def test_4959(self):
         """Test that GET API returns 200 as response code and
@@ -151,6 +154,7 @@ class TestSystemStats():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-13084')
     def test_4961(self):
         """Test that GET API returns 400 and appropriate error response with
@@ -238,6 +242,7 @@ class TestSystemStats():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-16547')
     def test_4962(self):
         """Test that GET API returns 400 for missing mandatory params.
@@ -329,6 +334,7 @@ class TestSystemStats():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-16548')
     def test_4963(self):
         """Test that GET API returns 400 for empty values for params from, to, metric.
@@ -378,6 +384,7 @@ class TestSystemStats():
                                "Status code check failed.")
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-16217')
     def test_4957(self):
         """TA CSM REST Automation: TEST-4957: Test that GET API returns 200
@@ -425,6 +432,7 @@ class TestSystemStats():
             "##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-16218')
     def test_4960(self):
         """TA CSM REST Automation: TEST-4960: Test the GET API returns 200
@@ -466,6 +474,7 @@ class TestSystemStats():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-16545')
     def test_4967(self):
         """Test that GET API returns 400 response code if value of
@@ -499,6 +508,7 @@ class TestSystemStats():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-16546')
     def test_4968(self):
         """Test that GET API returns 403 for unauthorized request of stats
