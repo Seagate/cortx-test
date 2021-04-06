@@ -354,7 +354,7 @@ class TestObjectACL:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-19885")
     @CTFailOn(error_handler)
     def test_get_obj_acl_mp(self):
         """user should able to get Object acl when multipart object is uploaded."""
@@ -3605,7 +3605,7 @@ class TestObjectACL:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-19886")
     @CTFailOn(error_handler)
     def test_put_object_private_canned_acl_159(self):
         """Put-object-acl from cross account on the object with private canned-acl permission."""
@@ -3674,7 +3674,7 @@ class TestObjectACL:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-19887")
     @CTFailOn(error_handler)
     def test_put_object_private_canned_acl_170(self):
         """Put-object-acl from cross account on the object with private canned-acl permission."""
@@ -3741,7 +3741,7 @@ class TestObjectACL:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-19888")
     @CTFailOn(error_handler)
     def test_put_object_owner_read_acl_172(self):
         """Test put-object-acl cross account on the object with bucket-owner-read canned-acl."""
@@ -3838,7 +3838,7 @@ class TestObjectACL:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.tags("")
+    @pytest.mark.tags("TEST-19889")
     @CTFailOn(error_handler)
     def test_full_contorl_canned_acl_permission_175(self):
         """
