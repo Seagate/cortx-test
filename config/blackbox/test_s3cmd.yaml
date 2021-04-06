@@ -46,28 +46,28 @@ test_2308:
   list_bucket: "ls"
 test_2316:
   success_msg: "Bucket '{}/' create"
-  file_creation: "echo “Hello World2316” > {}"
+  file_creation: "echo 'Hello World2316' > {}"
 test_2314:
-  file_creation: "echo “Hello World2314” > {}"
+  file_creation: "echo 'Hello World2314' > {}"
   error_msg: "BucketNotEmpty"
 test_2320:
   success_msg: "Bucket '{}/' create"
-  file_creation: "echo “Hello World2320” > {}"
+  file_creation: "echo 'Hello World2320' > {}"
   del_obj: "del"
   delete_msg: "delete: '{}'"
 test_2321:
   success_msg: "Bucket '{}/' create"
-  file_creation: "echo “Hello World2321” > {}"
+  file_creation: "echo 'Hello World2321' > {}"
   del_obj: "del"
   delete_msg: "delete: '{}'"
 test_2317:
   success_msg: "Bucket '{}/' create"
-  file_creation: "echo “Hello World23186” > {}"
+  file_creation: "echo 'Hello World23186' > {}"
   list_bucket: "ls"
 
 test_2322:
   success_msg: "Bucket '{}/' create"
-  file_creation: "echo “Hello World2322” > {}"
+  file_creation: "echo 'Hello World2322' > {}"
   list_bucket: "ls"
   rm_bkt: "rm"
   force: "--force"
@@ -85,7 +85,7 @@ test_2327:
 
 test_2319:
   success_msg: "Bucket '{}/' create"
-  file_creation: "echo “Hello World2319” > {}"
+  file_creation: "echo 'Hello World2319' > {}"
   get: "get"
   force: "--force"
   success_msg2: "download: '{}'"
@@ -93,7 +93,7 @@ test_2319:
 
 test_2315:
   success_msg: "Bucket '{}/' create"
-  file_creation: "echo “Hello World2315” > {}"
+  file_creation: "echo 'Hello World2315' > {}"
   success_msg_del: "Bucket '{}/' remove"
   list_bucket: "ls"
   rm_bkt: "rb"
@@ -103,5 +103,5 @@ test_2315:
 
 test_2318:
   success_msg: "Bucket '{}/' create"
-  file_creation: "echo “Hello World23186” > {}"
+  file_creation: "echo 'Hello World23186' > {}"
   list_all_buckets: "la"
