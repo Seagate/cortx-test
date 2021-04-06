@@ -22,8 +22,8 @@
 import ast
 import random
 import string
-import pytest
 import os
+import glob
 import pathlib
 import json
 import logging
@@ -31,6 +31,7 @@ import csv
 import time
 import datetime
 import pytest
+import requests
 from datetime import date
 from _pytest.nodes import Item
 from _pytest.runner import CallInfo
@@ -214,6 +215,10 @@ def pytest_addoption(parser):
         "--readmetadata", action="store", default=False,
         help="Read test metadata"
     )
+    parser.addoption(
+        "--db_update", action="store", default=True,
+        help="Decide whether to update reporting DB."
+    )
 
 
 def read_test_list_csv() -> List:
@@ -297,11 +302,11 @@ def create_report_payload(item, call, final_result, d_u, d_pass):
     marks = get_marks_for_test_item(item)
     if final_result == 'FAIL':
         health_chk_res = "TODO"
-        are_logs_collected = True
+        are_logs_collected = False
         log_path = "TODO"
     elif final_result == 'PASS':
         health_chk_res = "NA"
-        are_logs_collected = True
+        are_logs_collected = False
         log_path = "NA"
     data_kwargs = dict(os=os_ver,
                        build=item.config.option.build,
@@ -317,7 +322,7 @@ def create_report_payload(item, call, final_result, d_u, d_pass):
                        nodes_hostnames=item.config.option.nodes,
                        test_exec_id=item.config.option.te_tkt,
                        test_exec_time=call.duration,
-                       test_name= _item_dict['test_name'],
+                       test_name=_item_dict['test_name'],
                        test_id=_item_dict['test_id'],
                        test_id_labels=_item_dict['labels'],
                        test_plan_id=item.config.option.tp_ticket,
@@ -494,22 +499,39 @@ def pytest_runtest_makereport(item, call):
         task = jira_utils.JiraTask(jira_id, jira_pwd)
         test_id = CACHE.lookup(report.nodeid)
         if report.when == 'teardown':
-            if item.rep_setup.failed or item.rep_teardown.failed:
-                task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
-                payload = create_report_payload(item, call, 'FAIL', db_user, db_pass)
-                REPORT_CLIENT.create_db_entry(**payload)
-            elif item.rep_setup.passed and (item.rep_call.failed or item.rep_teardown.failed):
-                task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
-                payload = create_report_payload(item, call, 'FAIL', db_user, db_pass)
-                REPORT_CLIENT.create_db_entry(**payload)
-            elif item.rep_setup.passed and item.rep_call.passed and item.rep_teardown.passed:
-                task.update_test_jira_status(item.config.option.te_tkt, test_id, 'PASS')
-                payload = create_report_payload(item, call, 'PASS', db_user, db_pass)
-                REPORT_CLIENT.create_db_entry(**payload)
-            elif item.rep_setup.skipped and (item.rep_teardown.skipped or item.rep_teardown.passed):
-                # Jira reporting of skipped cases does not contain skipped option
-                # Keeping it todo_status and skipping db update for now
-                pass
+            try:
+                if item.rep_setup.failed or item.rep_teardown.failed:
+                    task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
+                    try:
+                        payload = create_report_payload(item, call, 'FAIL', db_user, db_pass)
+                        REPORT_CLIENT.create_db_entry(**payload)
+                    except requests.exceptions.RequestException as fault:
+                        LOGGER.exception(str(fault))
+                        LOGGER.error("Failed to execute DB update for %s", test_id)
+                elif item.rep_setup.passed and (item.rep_call.failed or item.rep_teardown.failed):
+                    task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
+                    try:
+                        payload = create_report_payload(item, call, 'FAIL', db_user, db_pass)
+                        REPORT_CLIENT.create_db_entry(**payload)
+                    except requests.exceptions.RequestException as fault:
+                        LOGGER.exception(str(fault))
+                        LOGGER.error("Failed to execute DB update for %s", test_id)
+                elif item.rep_setup.passed and item.rep_call.passed and item.rep_teardown.passed:
+                    task.update_test_jira_status(item.config.option.te_tkt, test_id, 'PASS')
+                    try:
+                        payload = create_report_payload(item, call, 'PASS', db_user, db_pass)
+                        REPORT_CLIENT.create_db_entry(**payload)
+                    except requests.exceptions.RequestException as fault:
+                        LOGGER.exception(str(fault))
+                        LOGGER.error("Failed to execute DB update for %s", test_id)
+                elif item.rep_setup.skipped and \
+                        (item.rep_teardown.skipped or item.rep_teardown.passed):
+                    # Jira reporting of skipped cases does not contain skipped option
+                    # Keeping it todo_status and skipping db update for now
+                    task.update_test_jira_status(item.config.option.te_tkt, test_id, 'BLOCKED')
+            except Exception as exception:
+                LOGGER.error("Exception %s occurred in reporting for test %s.",
+                             str(exception), test_id)
 
     if report.when == 'teardown':
         if item.rep_setup.failed or item.rep_teardown.failed:
@@ -535,6 +557,25 @@ def pytest_runtest_makereport(item, call):
             f.write(report.nodeid + extra + "\n")
 
 
+def upload_supporting_logs(test_id: str, remote_path: str, log: str):
+    """
+    Upload all supporting (s3bench) log files to nfs share
+    :param test_id: test number in file name
+    :param remote_path: path on NFS share
+    :param log: log file string e.g. s3bench
+    """
+    support_logs = glob.glob(f"{LOG_DIR}/latest/{test_id}_{log}_*")
+    for support_log in support_logs:
+        resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
+                                                   mnt_dir=params.MOUNT_DIR,
+                                                   remote_path=remote_path,
+                                                   local_path=support_log)
+        if resp[0]:
+            LOGGER.info("Supporting log files are uploaded at location : %s", resp[1])
+        else:
+            LOGGER.error("Failed to supporting log file at location %s", resp[1])
+
+
 def pytest_runtest_logreport(report: "TestReport") -> None:
     """
     Provides an intercept to create a) generate log per test case
@@ -550,8 +591,8 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
             logs = log.split('\n')
             test_id = CACHE.lookup(report.nodeid)
             name = str(test_id) + '_' + report.nodeid.split('::')[1] + '_' \
-                + datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S') \
-                + '.log'
+                   + datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S') \
+                   + '.log'
             test_log = os.path.join(os.getcwd(), LOG_DIR, 'latest', name)
             with open(test_log, 'w') as fp:
                 for rec in logs:
@@ -570,8 +611,8 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
         logs = log.split('\n')
         test_id = CACHE.lookup(report.nodeid)
         name = str(test_id) + '_' + report.nodeid.split('::')[1] + '_' + \
-            datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S') + \
-            '.log'
+               datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S') + \
+               '.log'
         test_log = os.path.join(os.getcwd(), LOG_DIR, 'latest', name)
         with open(test_log, 'w') as fp:
             for rec in logs:
@@ -580,7 +621,9 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
         remote_path = os.path.join(params.NFS_BASE_DIR,
                                    Globals.BUILD, Globals.TP_TKT,
                                    Globals.TE_TKT, test_id,
-                                   date.today().strftime("%b-%d-%Y"))
+                                   datetime.datetime.fromtimestamp(
+                                       time.time()).strftime('%Y-%m-%d_%H:%M:%S')
+                                   )
         resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
                                                    mnt_dir=params.MOUNT_DIR,
                                                    remote_path=remote_path,
@@ -589,7 +632,7 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
             LOGGER.info("Log file is uploaded at location : %s", resp[1])
         else:
             LOGGER.error("Failed to upload log file at location %s", resp[1])
-
+        upload_supporting_logs(test_id, remote_path, "s3bench")
         LOGGER.info("Adding log file path to %s", test_id)
         comment = "Log file path: {}".format(resp[1])
         data = task.get_test_details(test_exe_id=Globals.TE_TKT)
@@ -609,3 +652,4 @@ def generate_random_string():
     :rtype: str
     """
     return ''.join(random.choice(string.ascii_lowercase) for i in range(5))
+

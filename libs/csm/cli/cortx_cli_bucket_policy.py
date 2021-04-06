@@ -42,11 +42,6 @@ class CortxCliS3BktPolicyOperations(CortxCli):
         username=CMN_CFG["nodes"][0]["username"],
         password=CMN_CFG["nodes"][0]["password"])
 
-    node2_helper_obj = Node(
-        hostname=CMN_CFG["nodes"][1]["host"],
-        username=CMN_CFG["nodes"][1]["username"],
-        password=CMN_CFG["nodes"][1]["password"])
-
     def __init__(self, session_obj: object = None):
         """
         This method initializes members of CortxCliS3BktPolicyOperations
@@ -138,7 +133,5 @@ class CortxCliS3BktPolicyOperations(CortxCli):
         with open(local_file_path, "w") as data:
             json.dump(bkt_policy, data, indent=4)
         self.node1_helper_obj.copy_file_to_remote(
-            local_file_path, remote_file_path)
-        self.node2_helper_obj.copy_file_to_remote(
             local_file_path, remote_file_path)
         time.sleep(2)

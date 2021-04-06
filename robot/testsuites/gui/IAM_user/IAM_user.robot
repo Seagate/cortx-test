@@ -56,14 +56,14 @@ Delete S3 Account And Close Browser
 TEST-951
     [Documentation]  Test a form appears on clicking "create user" button on IAM user page
     ...  Reference : https://jts.seagate.com/browse/TEST-951
-    [Tags]  Priority_High  TEST-951
+    [Tags]  Priority_High  TEST-951  IAM_user
     Click Create IAM User Button
     Verify A Form Got Open To Create IAM Users
 
 TEST-953
     [Documentation]  Test the form get closed on clicking "cancel" button on IAM user page
     ...  Reference : https://jts.seagate.com/browse/TEST-951
-    [Tags]  Priority_High  TEST-953
+    [Tags]  Priority_High  TEST-953  IAM_user
     Click Create IAM User Button
     Click on IAM User Cancel Button
     Verify Form To Create IAM Users Got Closed
@@ -71,7 +71,7 @@ TEST-953
 TEST-954
     [Documentation]  Test  tooltip value in IAM user creation
     ...  Reference : https://jts.seagate.com/browse/TEST-954
-    [Tags]  Priority_High  TEST-954
+    [Tags]  Priority_High  TEST-954  IAM_user
     Click Create IAM User Button
     Verify IAM User Username Tooltip
     Verify IAM User Password Tooltip
@@ -79,14 +79,14 @@ TEST-954
 TEST-955
     [Documentation]  Test error msg shown when user enters different password in "password" and "confirm password"
     ...  Reference : https://jts.seagate.com/browse/TEST-955
-    [Tags]  Priority_High  TEST-955
+    [Tags]  Priority_High  TEST-955  IAM_user
     Click Create IAM User Button
     Verify Mismatch IAMuser Password Error
 
 TEST-957
     [Documentation]  Test "create" button should clickable only after all the mandatory fields are filled
     ...  Reference : https://jts.seagate.com/browse/TEST-957
-    [Tags]  Priority_High  TEST-957
+    [Tags]  Priority_High  TEST-957  IAM_user
     Click Create IAM User Button
     sleep  1s
     Verify Create IAMuser Button Must Remain disabled
@@ -94,7 +94,7 @@ TEST-957
 TEST-952
     [Documentation]  Test IAMuser should get successfully created
     ...  Reference : https://jts.seagate.com/browse/TEST-952
-    [Tags]  Priority_High  TEST-952
+    [Tags]  Priority_High  TEST-952  IAM_user
     ${username}=  Generate New User Name
     ${password}=  Generate New Password
     Click Create IAM User Button
@@ -109,7 +109,7 @@ TEST-952
 TEST-956
     [Documentation]  Test duplicate IAMuser should not get created
     ...  Reference : https://jts.seagate.com/browse/TEST-956
-    [Tags]  Priority_High  TEST-956
+    [Tags]  Priority_High  TEST-956  IAM_user
     ${username}=  Generate New User Name
     ${password}=  Generate New Password
     Click Create IAM User Button
@@ -126,13 +126,13 @@ TEST-956
 TEST-958
     [Documentation]  Test that all mandatory fields are marked with asteric sign
     ...  Reference : https://jts.seagate.com/browse/TEST-958
-    [Tags]  Priority_High  TEST-958
+    [Tags]  Priority_High  TEST-958  IAM_user
     Verify All Mandatory Fields In IAMusers Has astreic sign
 
 TEST-962
     [Documentation]  Test that IAMuser should get deleted successfully
     ...  Reference : https://jts.seagate.com/browse/TEST-962
-    [Tags]  Priority_High  TEST-962
+    [Tags]  Priority_High  TEST-962  IAM_user
     ${username}=  Generate New User Name
     ${password}=  Generate New Password
     Click Create IAM User Button
@@ -146,14 +146,14 @@ TEST-962
 TEST-960
     [Documentation]  Test that no data is retained in the fields when you had canceled iam user creation process
     ...  Reference : https://jts.seagate.com/browse/TEST-960
-    [Tags]  Priority_High  TEST-960
+    [Tags]  Priority_High  TEST-960  IAM_user
     Click Create IAM User Button
     Verify No Data Retains After Cancel IAMuser
 
 TEST-961
     [Documentation]  Test username, arn and user id should be present
     ...  Reference : https://jts.seagate.com/browse/TEST-961
-    [Tags]  Priority_High  TEST-961
+    [Tags]  Priority_High  TEST-961  IAM_user
     ${username}=  Generate New User Name
     ${password}=  Generate New Password
     Click Create IAM User Button
@@ -165,7 +165,7 @@ TEST-961
 TEST-17018  # TODO: correct test ID, correct Tag
     [Documentation]  Test a reset password functionality on clicking "edit" button on IAM user page
     ...  Reference : https://jts.seagate.com/browse/TEST-17018
-    [Tags]  Priority_High  TEST-17018  R2
+    [Tags]  Priority_High  TEST-17018  R2  IAM_user
     ${username}=  Generate New User Name
     ${password}=  Generate New Password
     Click Create IAM User Button
@@ -177,13 +177,13 @@ TEST-17018  # TODO: correct test ID, correct Tag
 TEST-13109
     [Documentation]  Verify that two empty tables are shown on IAM users page
     ...  Reference : https://jts.seagate.com/browse/TEST-13109
-    [Tags]  Priority_High  TEST-13109
+    [Tags]  Priority_High  TEST-13109  IAM_user
     Verify Presence of Two Tables
 
 TEST-1021
     [Documentation]  Test that IAM user is not able to log-in and access the CSM GUI.
     ...  Reference : https://jts.seagate.com/browse/TEST-1021
-    [Tags]  Priority_High  TEST-1021
+    [Tags]  Priority_High  TEST-1021  IAM_user
     ${iamusername}=  Generate New User Name
     ${iampassword}=  Generate New Password
     Click Create IAM User Button
@@ -203,7 +203,7 @@ TEST-13110
     [Documentation]  Verify that if IAM user exist, first IAM user is selected by
     ...  default and its access keys are shown in keys table
     ...  Reference : https://jts.seagate.com/browse/TEST-13110
-    [Tags]  Priority_High  TEST-13110
+    [Tags]  Priority_High  TEST-13110  IAM_user
     ${iamusername}=  Generate New User Name
     ${iampassword}=  Generate New Password
     Click Create IAM User Button
@@ -216,7 +216,7 @@ TEST-13110
 TEST-13111
     [Documentation]  Verify that keys table gets updated according to the selected IAM user
     ...  Reference : https://jts.seagate.com/browse/TEST-13111
-    [Tags]  Priority_High  TEST-13111
+    [Tags]  Priority_High  TEST-13111  IAM_user
     ${iamusername1}=  Generate New User Name
     ${iamusername2}=  Generate New User Name
     ${iampassword}=  Generate New Password
@@ -234,7 +234,7 @@ TEST-13111
 TEST-13112
     [Documentation]  Test that s3 account user can generate keys for IAM users
     ...  Reference : https://jts.seagate.com/browse/TEST-13112
-    [Tags]  Priority_High  TEST-13112
+    [Tags]  Priority_High  TEST-13112  IAM_user
     ${iamusername}=  Generate New User Name
     ${iampassword}=  Generate New Password
     Click Create IAM User Button
@@ -249,7 +249,7 @@ TEST-13112
 TEST-13113
     [Documentation]  Test that s3 account user can delete keys for IAM users
     ...  Reference : https://jts.seagate.com/browse/TEST-13113
-    [Tags]  Priority_High  TEST-13113
+    [Tags]  Priority_High  TEST-13113  IAM_user
     ${iamusername}=  Generate New User Name
     ${iampassword}=  Generate New Password
     Click Create IAM User Button
@@ -266,7 +266,7 @@ TEST-13113
 TEST-13114
     [Documentation]  Verify that table for IAM user keys contains data in appropriate format
     ...  Reference : https://jts.seagate.com/browse/TEST-13114
-    [Tags]  Priority_High  TEST-13114
+    [Tags]  Priority_High  TEST-13114  IAM_user
     ${iamusername}=  Generate New User Name
     ${iampassword}=  Generate New Password
     Click Create IAM User Button
@@ -279,7 +279,7 @@ TEST-13115
     [Documentation]  Verify that a table for IAM user's access keys is
     ...  shown below IAM users table with required columns
     ...  Reference : https://jts.seagate.com/browse/TEST-13115
-    [Tags]  Priority_High  TEST-13115
+    [Tags]  Priority_High  TEST-13115  IAM_user
     ${iamusername}=  Generate New User Name
     ${iampassword}=  Generate New Password
     Click Create IAM User Button
@@ -292,7 +292,7 @@ TEST-13115
 TEST-13116
     [Documentation]  Verify that table for IAM user keys contains data in appropriate format
     ...  Reference : https://jts.seagate.com/browse/TEST-13116
-    [Tags]  Priority_High  TEST-13116
+    [Tags]  Priority_High  TEST-13116  IAM_user
     ${iamusername}=  Generate New User Name
     ${iampassword}=  Generate New Password
     Click Create IAM User Button

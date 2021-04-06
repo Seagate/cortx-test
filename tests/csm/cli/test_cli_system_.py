@@ -118,8 +118,10 @@ class TestCliSystem:
             cli_sys_ser.logout_cortx_cli()
             self.log.info("Logged out from CSMCLI console successfully")
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-11742")
+    @pytest.mark.skip(reason="Not applicable for VM")
     @CTFailOn(error_handler)
     def test_7019_verify_node_status(self):
         """
@@ -133,8 +135,10 @@ class TestCliSystem:
         assert_utils.assert_equals('True', table_resp[1][3], resp[1])
         self.log.info("Verified system status using csmcli")
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-12846")
+    @pytest.mark.skip(reason="Not applicable for VM")
     @CTFailOn(error_handler)
     def test_7018_node_operations(self):
         """
@@ -199,8 +203,10 @@ class TestCliSystem:
         self.system_obj_node2.logout_cortx_cli()
         self.node_stop = False
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-15860")
+    @pytest.mark.skip(reason="Not applicable for VM")
     @CTFailOn(error_handler)
     def test_7021_stop_node(self):
         """
@@ -232,8 +238,10 @@ class TestCliSystem:
         self.system_obj_node2.logout_cortx_cli()
         self.node_stop = False
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-16213")
+    @pytest.mark.skip(reason="Not applicable for VM")
     @CTFailOn(error_handler)
     def test_7025_start_node(self):
         """

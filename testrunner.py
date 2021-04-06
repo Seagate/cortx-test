@@ -4,8 +4,10 @@ import argparse
 import csv
 import json
 import logging
+import requests
 from datetime import datetime
 from multiprocessing import Process
+from jira import JIRA
 from core import runner
 from core import kafka_consumer
 from core.locking_server import LockingServer
@@ -15,6 +17,7 @@ from commons.utils import config_utils
 from commons.utils import system_utils
 from commons import params
 from commons import cortxlogging
+from commons import constants as common_cnst
 
 LOGGER = logging.getLogger(__name__)
 
@@ -25,8 +28,9 @@ def parse_args():
                         help="json file name")
     parser.add_argument("-r", "--html_report", type=str, default='report.html',
                         help="html report name")
-    parser.add_argument("-d", "--db_update", type=str, default='n',
-                        help="db update required: y/n")
+    parser.add_argument("-d", "--db_update", type=str_to_bool,
+                        default=True, nargs='?', const=True,
+                        help="Update Reports DB. Can be false in case reports db is down")
     parser.add_argument("-te", "--te_ticket", type=str,
                         help="jira xray test execution id")
     parser.add_argument("-pe", "--parallel_exe", type=str, default=False,
@@ -77,7 +81,7 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
     """Form a pytest command for execution."""
     env['TARGET'] = args.target
     build, build_type = args.build, args.build_type
-    tag = '-m ' + te_tag
+
     run_type = ''
     is_distributed = ''
     try:
@@ -120,9 +124,15 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
         cmd_line = cmd_line + ["--target=" + args.target]
 
     if te_tag:
+        tag = '-m ' + te_tag
         cmd_line = cmd_line + [tag]
+
     read_metadata = "--readmetadata=" + str(True)
     cmd_line = cmd_line + [read_metadata]
+
+    if not args.db_update:
+        cmd_line = cmd_line + ["--db_update=" + str(False)]
+
     cmd_line = cmd_line + ['--build=' + build, '--build_type=' + build_type,
                            '--tp_ticket=' + args.test_plan]
     LOGGER.debug('Running pytest command %s', cmd_line)
@@ -210,13 +220,20 @@ def trigger_unexecuted_tests(args, test_list):
                            env=_env, re_execution=True)
 
 
-def create_test_meta_data_file(args, test_list):
+def create_test_meta_data_file(args, test_list, jira_obj=None):
     """
     Create test meta data file
     """
     tp_meta = dict()  # test plan meta
     jira_id, jira_pwd = runner.get_jira_credential()
-    jira_obj = JiraTask(jira_id, jira_pwd)
+    if not jira_obj:
+        jira_obj = JiraTask(jira_id, jira_pwd)
+    # Any how create Jira object to pass to get_issue_details to save on instance creation.
+    jira_url = "https://jts.seagate.com/"
+    options = {'server': jira_url}
+    auth = (jira_id, jira_pwd)
+    auth_jira = JIRA(options, basic_auth=auth)
+
     # Create test meta file for reporting TR.
     tp_meta_file = os.path.join(os.getcwd(),
                                 params.LOG_DIR_NAME,
@@ -224,10 +241,10 @@ def create_test_meta_data_file(args, test_list):
     with open(tp_meta_file, 'w') as t_meta:
 
         test_meta = list()
-        tp_resp = jira_obj.get_issue_details(args.test_plan)  # test plan id
+        tp_resp = jira_obj.get_issue_details(args.test_plan, auth_jira=auth_jira)  # test plan id
         tp_meta['test_plan_label'] = tp_resp.fields.labels
         tp_meta['environment'] = tp_resp.fields.environment
-        te_resp = jira_obj.get_issue_details(args.te_ticket)  # test execution id
+        te_resp = jira_obj.get_issue_details(args.te_ticket, auth_jira=auth_jira)  # test exec id
         if te_resp.fields.components:
             te_components = te_resp.fields.components[0].name
         tp_meta['te_meta'] = dict(te_id=args.te_ticket,
@@ -237,7 +254,7 @@ def create_test_meta_data_file(args, test_list):
         for test in test_list:
             item = dict()
             item['test_id'] = test
-            resp = jira_obj.get_issue_details(test)
+            resp = jira_obj.get_issue_details(test, auth_jira=auth_jira)
             item['test_name'] = resp.fields.summary
             item['labels'] = resp.fields.labels
             if resp.fields.components:
@@ -261,11 +278,11 @@ def trigger_runner_process(args, kafka_msg, client):
     if kafka_msg.parallel:
         trigger_unexecuted_tests(args, kafka_msg.test_list)
     # Release lock on acquired target.
-    lock_released = lock_task.release_target_lock(args.target, client)
+    lock_released = lock_task.unlock_target(args.target, client)
     if lock_released:
-        print("lock released on target {}".format(args.target))
+        LOGGER.debug("lock released on target {}".format(args.target))
     else:
-        print("Error in releasing lock on target {}".format(args.target))
+        LOGGER.error("Error in releasing lock on target {}".format(args.target))
 
 
 def trigger_tests_from_kafka_msg(args, kafka_msg):
@@ -352,93 +369,21 @@ def trigger_tests_from_te(args):
         run_pytest_cmd(args, te_tag, False, env=_env)
 
 
-def check_for_shared_target(target_list, client):
-    """
-    check for shared target which will be used for parallel execution
-    """
-    lock_task = LockingServer()
-    found_target = ""
-    target = lock_task.check_available_shared_target(target_list)
-    if target != "":
-        print("target found {}".format(target))
-        lock_success = lock_task.take_shared_target_lock(target, client)
-        if lock_success:
-            confirm_lock_success = lock_task.confirm_shared_target_lock(target, client)
-            if confirm_lock_success:
-                found_target = target
-                print("lock acquired {}".format(target))
-    return found_target
-
-
-def check_for_target(target_list, client):
-    """
-    Check for target which will be used for sequential execution.
-    """
-    lock_task = LockingServer()
-    found_target = ""
-    target = lock_task.check_available_target(target_list)
-    if target != "":
-        print("target found {}".format(target))
-        lock_success = lock_task.take_target_lock(target, client)
-        if lock_success:
-            confirm_lock_success = lock_task.confirm_target_lock(target, client)
-            if confirm_lock_success:
-                found_target = target
-                print("lock acquired {}".format(target))
-    return found_target
-
-
-def acquire_target_to_shared(target, client):
-    """
-    acquire target for parallel execution.
-    """
-    lock_task = LockingServer()
-    acquired_target = ""
-    if target != "":
-        print("target found {}".format(target))
-        lock_success = lock_task.take_new_shared_target_lock(target, client)
-        if lock_success:
-            print("shared lock acquired {}".format(target))
-            confirm_lock_success = lock_task.confirm_shared_target_lock(target, client)
-            if confirm_lock_success:
-                acquired_target = target
-                print("shared lock confirmed {}".format(target))
-    return acquired_target
-
-
-def acquire_shared_target(target, client):
-    """
-    check for shared target which will be used for parallel execution
-    """
-    lock_task = LockingServer()
-    found_target = ""
-    if target != "":
-        print("shared target found {}".format(target))
-        lock_success = lock_task.take_shared_target_lock(target, client)
-        if lock_success:
-            print("shared lock acquired {}".format(target))
-            confirm_lock_success = lock_task.confirm_shared_target_lock(target, client)
-            if confirm_lock_success:
-                found_target = target
-                print("shared lock confirmed {}".format(target))
-    return found_target
-
-
-def acquire_target(target, client):
+def acquire_target(target, client, lock_type, convert_to_shared=False):
     """
     Check for target which will be used for sequential execution.
     """
     lock_task = LockingServer()
     found_target = ""
     if target != "":
-        print("target found {}".format(target))
-        lock_success = lock_task.take_target_lock(target, client)
+        LOGGER.debug("target found {}".format(target))
+        lock_success = lock_task.lock_target(target, client, lock_type, convert_to_shared)
         if lock_success:
-            print("lock acquired {}".format(target))
-            confirm_lock_success = lock_task.confirm_target_lock(target, client)
+            LOGGER.debug("lock acquired {}".format(target))
+            confirm_lock_success = lock_task.is_target_locked(target, client, lock_type)
             if confirm_lock_success:
                 found_target = target
-                print("lock confirmed {}".format(target))
+                LOGGER.debug("lock confirmed {}".format(target))
     return found_target
 
 
@@ -452,17 +397,21 @@ def get_available_target(kafka_msg, client):
 
     while acquired_target == "":
         if kafka_msg.parallel:
-            target = lock_task.check_available_shared_target(kafka_msg.target_list)
+            target = lock_task.find_free_target(kafka_msg.target_list, common_cnst.SHARED_LOCK)
             if target == "":
-                seq_target = lock_task.check_available_target(kafka_msg.target_list)
+                seq_target = lock_task.find_free_target(kafka_msg.target_list,
+                                                        common_cnst.EXCLUSIVE_LOCK)
                 if seq_target != "":
-                    acquired_target = acquire_target_to_shared(seq_target, client)
+                    acquired_target = acquire_target(seq_target, client, common_cnst.SHARED_LOCK,
+                                                     True)
             else:
-                acquired_target = acquire_shared_target(target, client)
+                acquired_target = acquire_target(target, client, common_cnst.SHARED_LOCK)
         else:
-            seq_target = lock_task.check_available_target(kafka_msg.target_list)
+            seq_target = lock_task.find_free_target(kafka_msg.target_list,
+                                                    common_cnst.EXCLUSIVE_LOCK)
             if seq_target != "":
-                acquired_target = acquire_target(seq_target, client)
+                acquired_target = acquire_target(seq_target, client,
+                                                 common_cnst.EXCLUSIVE_LOCK)
     return acquired_target
 
 
@@ -474,7 +423,7 @@ def check_kafka_msg_trigger_test(args):
     consumer = kafka_consumer.get_consumer()
     print(consumer)
     received_stop_signal = False
-    lock_task = LockingServer()
+
     while not received_stop_signal:
         try:
             # SIGINT can't be handled when polling, limit timeout to 60 seconds.
@@ -487,6 +436,8 @@ def check_kafka_msg_trigger_test(args):
                 continue
             if kafka_msg.te_ticket == "STOP":
                 received_stop_signal = True
+            elif not len(kafka_msg.test_list):
+                continue
             else:
                 current_time_ms = datetime.utcnow().strftime('%Y-%m-%d_%H:%M:%S.%f')
                 client = system_utils.get_host_name() + "_" + current_time_ms
@@ -505,19 +456,41 @@ def check_kafka_msg_trigger_test(args):
     consumer.close()
 
 
-def get_setup_details():
+def get_setup_details(args):
     if not os.path.exists(params.LOG_DIR_NAME):
         os.mkdir(params.LOG_DIR_NAME)
-    if os.path.exists(params.SETUPS_FPATH):
-        os.remove(params.SETUPS_FPATH)
-    setups = configmanager.get_config_db(setup_query={})
-    config_utils.create_content_json(params.SETUPS_FPATH, setups, ensure_ascii=False)
+    setups = None
+    try:
+        setups = configmanager.get_config_db(setup_query={})
+        if os.path.exists(params.SETUPS_FPATH):
+            os.remove(params.SETUPS_FPATH)
+        config_utils.create_content_json(params.SETUPS_FPATH, setups, ensure_ascii=False)
+    except requests.exceptions.RequestException as fault:
+        LOGGER.exception(str(fault))
+        if args.db_update:
+            raise Exception from fault
+    except Exception as fault:
+        if not os.path.exists(params.SETUPS_FPATH):
+            raise Exception from fault
+        if args.db_update and not setups:
+            LOGGER.warning("Using the cached data from setups.json")
+            # check for existence of target in setups.json
+            exists = False
+            json_data = config_utils.read_content_json(params.SETUPS_FPATH, 'r')
+            for key in json_data:
+                if key == args.target:
+                    exists = True
+                    break
+            if not exists:
+                raise Exception(f'target {args.target} Data does not exists in setups.json')
 
 
 def main(args):
     """Main Entry function using argument parser to parse options and forming pyttest command.
     It renames up the latest folder and parses TE ticket to create detailed test details csv.
     """
+    get_setup_details(args)
+
     if args.json_file:
         json_dict, cmd, run_using = runner.parse_json(args.json_file)
         cmd_line = runner.get_cmd_line(cmd, run_using, args.html_report, args.log_level)
@@ -532,6 +505,5 @@ def main(args):
 if __name__ == '__main__':
     runner.cleanup()
     initialize_loghandler(LOGGER)
-    get_setup_details()
     opts = parse_args()
     main(opts)

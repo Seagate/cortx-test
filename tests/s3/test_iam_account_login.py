@@ -100,7 +100,7 @@ class TestAccountLoginProfile:
             "Step 2: Created login profile for an account %s", acc_name)
         return acc_res, login_res
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5651")
     @CTFailOn(error_handler)
     def test_2805(self):
@@ -131,7 +131,7 @@ class TestAccountLoginProfile:
                     "and details are %s", self.account_name, res[1])
         LOGGER.info("ENDED: Create account login profile for new account")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5650")
     @CTFailOn(error_handler)
     def test_2806(self):
@@ -163,7 +163,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "ENDED: Create account login profile for nonexisting account")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5652")
     @CTFailOn(error_handler)
     def test_2807(self):
@@ -217,7 +217,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "ENDED: Create account login profile for currently deleted account")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5645")
     @CTFailOn(error_handler)
     def test_2808(self):
@@ -256,7 +256,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "ENDED: Create account login profile with password of 0 character")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5644")
     @CTFailOn(error_handler)
     def test_2809(self):
@@ -296,7 +296,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "ENDED: Create account login profile with password of more than 128 characters.")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5643")
     @CTFailOn(error_handler)
     def test_2810(self):
@@ -319,7 +319,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "ENDED: Create account login profile with password of possible combinations")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5642")
     @CTFailOn(error_handler)
     def test_2811(self):
@@ -343,7 +343,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "Create account login profile with password using invalid characters")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5649")
     @CTFailOn(error_handler)
     def test_2812(self):
@@ -362,7 +362,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "Create account login profile with --no-password-reset-required option.")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5648")
     @CTFailOn(error_handler)
     def test_2813(self):
@@ -381,7 +381,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "Create account login profile with --password-reset-required option.")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5641")
     @CTFailOn(error_handler)
     def test_2814(self):
@@ -421,7 +421,7 @@ class TestAccountLoginProfile:
             "ENDED: Create account login profile without mentioning  "
             "--password-reset-required --no-password-reset-required")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5646")
     @CTFailOn(error_handler)
     def test_2815(self):
@@ -461,7 +461,7 @@ class TestAccountLoginProfile:
             "ENDED: Create account login profile with both options "
             "--no-password-reset-required --password-reset-required")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5647")
     @CTFailOn(error_handler)
     def test_2816(self):
@@ -522,7 +522,7 @@ class TestAccountLoginProfile:
             "ENDED: Create account login profile with accesskey"
             " and sercret key of its user")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5629")
     @CTFailOn(error_handler)
     def test_2829(self):
@@ -551,7 +551,7 @@ class TestAccountLoginProfile:
             self.account_name)
         LOGGER.info("ENDED: Get the account login details")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5628")
     @CTFailOn(error_handler)
     def test_2830(self):
@@ -572,7 +572,7 @@ class TestAccountLoginProfile:
             "Step 1: Failed to get account login profile for account not present")
         LOGGER.info("Get the account login details for account not present")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5627")
     @CTFailOn(error_handler)
     def test_2831(self):
@@ -605,7 +605,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "Ended: Get login details for acc which is present but login not created")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5626")
     @CTFailOn(error_handler)
     def test_2832(self):
@@ -643,7 +643,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "ENDED: Get login details for account which is recently got deleted")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5640")
     @CTFailOn(error_handler)
     def test_2833(self):
@@ -710,7 +710,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "ENDED: Get login profile with access key and secret key of its user")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5611")
     @CTFailOn(error_handler)
     def test_2834(self):
@@ -765,7 +765,7 @@ class TestAccountLoginProfile:
         assert_true(res[0], res[1])
         LOGGER.info("ENDED: Update account login profile with password only")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5614")
     @CTFailOn(error_handler)
     def test_2835(self):
@@ -818,7 +818,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "ENDED: Update account login profile with --password-reset-required")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5616")
     @CTFailOn(error_handler)
     def test_2836(self):
@@ -874,7 +874,7 @@ class TestAccountLoginProfile:
             "ENDED: Update account login profile with  "
             "--no-password-reset-required")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5613")
     @CTFailOn(error_handler)
     def test_2837(self):
@@ -931,7 +931,7 @@ class TestAccountLoginProfile:
             "ENDED: Update account login profile with both"
             " --password-reset-required and --no-password-reset-required")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5612")
     @CTFailOn(error_handler)
     def test_2838(self):
@@ -982,7 +982,7 @@ class TestAccountLoginProfile:
             "ENDED: Update account login profile with both password "
             "and reset flag")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5610")
     @CTFailOn(error_handler)
     def test_2839(self):
@@ -1029,7 +1029,7 @@ class TestAccountLoginProfile:
             "ENDED: Update account login profile with both password "
             "and reset flag")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5622")
     @CTFailOn(error_handler)
     def test_2840(self):
@@ -1068,7 +1068,7 @@ class TestAccountLoginProfile:
             "ENDED: Update account login profile for the account"
             " which didn't have the login profile created")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5621")
     @CTFailOn(error_handler)
     def test_2841(self):
@@ -1102,7 +1102,7 @@ class TestAccountLoginProfile:
             "ENDED: Update account login profile for the account "
             "which doesnt exist")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5617")
     @CTFailOn(error_handler)
     def test_2842(self):
@@ -1152,7 +1152,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "ENDED: Update account login profile for the deleted account")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5620")
     @CTFailOn(error_handler)
     def test_2843(self):
@@ -1204,7 +1204,7 @@ class TestAccountLoginProfile:
             "ENDED: Update login profile for acc with new password"
             " as current password.")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5618")
     @CTFailOn(error_handler)
     def test_2844(self):
@@ -1261,7 +1261,7 @@ class TestAccountLoginProfile:
             "password which contains invalid characters.Verify if it accepts "
             "all invalid characters")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5679")
     @CTFailOn(error_handler)
     def test_2845(self):
@@ -1331,7 +1331,7 @@ class TestAccountLoginProfile:
             "ENDED: Update account login profile with access key and "
             "secret key of its user")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5630")
     @CTFailOn(error_handler)
     def test_2882(self):
@@ -1357,7 +1357,7 @@ class TestAccountLoginProfile:
             self.account_name, res)
         LOGGER.info("ENDED: Get temporary credentials for Valid Account")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5634")
     @CTFailOn(error_handler)
     def test_2883(self):
@@ -1380,7 +1380,7 @@ class TestAccountLoginProfile:
             "Step 1: Failed to get temp auth credentials for invalid account")
         LOGGER.info("ENDED: Get temporary credentials for Invalid Account")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5625")
     @CTFailOn(error_handler)
     def test_2884(self):
@@ -1417,7 +1417,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "ENDED: Get the temp Cred for acc which is recently got deleted")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5658")
     @CTFailOn(error_handler)
     def test_2885(self):
@@ -1460,7 +1460,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "ENDED: Verify using valid temp cred to perform s3 operations")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5608")
     @CTFailOn(error_handler)
     def test_2886(self):
@@ -1503,7 +1503,7 @@ class TestAccountLoginProfile:
             "Verify that by using invalid temporary credentials "
             "to perform s3 operations")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5631")
     @CTFailOn(error_handler)
     def test_2887(self):
@@ -1534,7 +1534,7 @@ class TestAccountLoginProfile:
             "ENDED: Get temp cred for the acc which doesn't contain"
             " the acc login prof for that acc")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5632")
     @CTFailOn(error_handler)
     def test_2888(self):
@@ -1564,7 +1564,7 @@ class TestAccountLoginProfile:
             "ENDED: Get temp cred for acc which contains acc "
             "login profile for that acc.")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5605")
     @CTFailOn(error_handler)
     def test_2889(self):
@@ -1621,7 +1621,7 @@ class TestAccountLoginProfile:
             "ENDED: Verify time duration of 20 mins for Get temp"
             " cred for the valid acc")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5606")
     @CTFailOn(error_handler)
     def test_2890(self):
@@ -1656,7 +1656,7 @@ class TestAccountLoginProfile:
             "ENDED: Verify time duration less than 15 mins "
             "for Get temp cred for the valid acc")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5623")
     @CTFailOn(error_handler)
     def test_2891(self):
@@ -1690,7 +1690,7 @@ class TestAccountLoginProfile:
             "ENDED: Give invalid account login profile password for "
             "the get temporary credentials")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5638")
     @CTFailOn(error_handler)
     def test_2892(self):
@@ -1741,7 +1741,7 @@ class TestAccountLoginProfile:
             "ENDED: Get tempauth credentials for the existing user which"
             " is present in that account")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5636")
     @CTFailOn(error_handler)
     def test_2893(self):
@@ -1776,7 +1776,7 @@ class TestAccountLoginProfile:
             "ENDED: Get tempauth credentials for the non-existing user "
             "which is not present in that account")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5639")
     @CTFailOn(error_handler)
     def test_2894(self):
@@ -1830,7 +1830,7 @@ class TestAccountLoginProfile:
             "ENDED: Get tempauth credentials for the existing user which "
             "doesnt contain UserLoginProfile")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5637")
     @CTFailOn(error_handler)
     def test_2895(self):
@@ -1881,7 +1881,7 @@ class TestAccountLoginProfile:
             "ENDED: Get tempauth credentials for the existing user with time "
             "duration which is present in that account")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5635")
     @CTFailOn(error_handler)
     def test_2896(self):

@@ -147,7 +147,7 @@ class TestBlackBox:
         secret_key = resp[1]["AccessKey"]["SecretAccessKey"]
         return access_key, secret_key
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7166")
     @CTFailOn(error_handler)
     def test_update_user_2419(self):
@@ -193,7 +193,7 @@ class TestBlackBox:
         self.log.info("Step 3: Listed users and verified user name is updated")
         self.log.info("ENDED: Update User using aws iam")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7167")
     @CTFailOn(error_handler)
     def test_list_user_2420(self):
@@ -224,7 +224,7 @@ class TestBlackBox:
         self.log.info("Step 2: Listed users and verified user name is present")
         self.log.info("ENDED: list user using aws iam")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7168")
     def test_del_user_2421(self):
         """Delete User using aws iam."""
@@ -253,7 +253,7 @@ class TestBlackBox:
         assert_false(iam_users_list, "false")
         self.log.info("ENDED: Delete User using aws iam")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7169")
     @CTFailOn(error_handler)
     def test_create_100_users_per_account_2422(self):
@@ -282,7 +282,7 @@ class TestBlackBox:
         self.log.info(
             "ENDED: Create 100 Users per account using aws iam")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7170")
     @CTFailOn(error_handler)
     def test_list_accesskeys_2425(self):
@@ -318,7 +318,7 @@ class TestBlackBox:
         assert_true(resp[0], resp[1])
         self.log.info("ENDED: list accesskeys for the user using aws iam")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7171")
     @CTFailOn(error_handler)
     def test_delete_accesskeys_2426(self):
@@ -345,7 +345,7 @@ class TestBlackBox:
         assert_true(user_access_key, user_secret_key)
         self.log.info("ENDED: Delete Accesskey of a user using aws iam %s", resp)
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7172")
     @CTFailOn(error_handler)
     def test_create_accesskey_2424(self):
@@ -382,7 +382,7 @@ class TestBlackBox:
         assert_true(resp[0], resp[1])
         self.log.info("ENDED: Create Access key to the user using aws iam")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7173")
     @CTFailOn(error_handler)
     def test_create_new_user_2418(self):
@@ -414,7 +414,7 @@ class TestBlackBox:
         self.log.info("Step 2: Listed users and verified user name is present")
         self.log.info("ENDED: Create new user for current Account AWS IAM")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7191")
     @CTFailOn(error_handler)
     def test_create_user_existing_name_2423(self):
@@ -452,7 +452,7 @@ class TestBlackBox:
         self.log.info(
             "ENDED: creating user with existing name With AWS IAM client")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7174")
     @CTFailOn(error_handler)
     def test_update_accesskey_2427(self):
@@ -509,7 +509,7 @@ class TestBlackBox:
         self.log.info(
             "ENDED: Update Accesskey of a user with active mode using aws iam")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7175")
     @CTFailOn(error_handler)
     def test_update_accesskey_userinactive_2428(self):
@@ -566,7 +566,7 @@ class TestBlackBox:
         self.log.info(
             "ENDED: update access key of a user with inactive mode using aws iam")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7176")
     @CTFailOn(error_handler)
     def test_create_accesskey_existinguser_2429(self):
