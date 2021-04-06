@@ -181,23 +181,17 @@ class TestJcloudAndJclient:
 
         :return: True
         """
-        resp = True
-        jclient_prop_path = BLACKBOX_CONF["common_cfg"]["jclient_properties_path"]
-        jcloud_prop_path = BLACKBOX_CONF["common_cfg"]["jcloud_properties_path"]
-        jclient = config_utils.read_properties_file(jclient_prop_path)
-        jcloud = config_utils.read_properties_file(jcloud_prop_path)
-        if jclient:
-            if jclient['iam_endpoint'] != cls.s3_iam:
-                jclient['iam_endpoint'] = cls.s3_iam
-            if jclient['s3_endpoint'] != cls.s3_url:
-                jclient['s3_endpoint'] = cls.s3_url
-            resp = config_utils.write_properties_file(jclient_prop_path, jclient)
-        if jcloud:
-            if jcloud['iam_endpoint'] != cls.s3_iam:
-                jcloud['iam_endpoint'] = cls.s3_iam
-            if jcloud['s3_endpoint'] != cls.s3_url:
-                jcloud['s3_endpoint'] = cls.s3_url
-            resp = config_utils.write_properties_file(jcloud_prop_path, jcloud)
+        resp = False
+        for prop_path in [BLACKBOX_CONF["common_cfg"]["jclient_properties_path"],
+                          BLACKBOX_CONF["common_cfg"]["jcloud_properties_path"]]:
+            cls.log.info("Updating: %s", prop_path)
+            prop_dict = config_utils.read_properties_file(prop_path)
+            if prop_dict:
+                if prop_dict['iam_endpoint'] != cls.s3_iam:
+                    prop_dict['iam_endpoint'] = cls.s3_iam
+                if prop_dict['s3_endpoint'] != cls.s3_url:
+                    prop_dict['s3_endpoint'] = cls.s3_url
+                resp = config_utils.write_properties_file(prop_path, prop_dict)
 
         return resp
 
