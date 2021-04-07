@@ -51,8 +51,12 @@ def get_distinct_field_values(field_name):
         ]
         if common.DEBUG_PRINTS:
             print("Fetch {} value  for dropdown : {}".format(field_name, output))
-
         return output
+    elif response.status_code == HTTPStatus.NOT_FOUND:
+        print(f"(get_distinct_field_values) No data found for field:{field_name}")
+    else:
+        print(
+            f"(get_distinct_field_values) Error response {response.status_code} for field:{field_name} ")
     return None
 
 
@@ -83,7 +87,8 @@ column_names = {"buildType": "Build Type", "buildNo": "Build No", "testPlanID": 
 
 
 @app.callback(
-    Output('table_query_result', 'children'),
+    [Output('table_query_result', 'children'),
+     Output('table_query_result_count', 'children')],
     [Input('query_result_button', 'n_clicks'),
      Input('query_branch', 'value'),
      Input('query_build', 'value'),
@@ -134,9 +139,9 @@ def retrieve_query_results(n_clicks, *values):
                         temp_list.append(temp_dict)
                     query_input['$or'] = temp_list
         query = {"query": query_input}
-        query.update(common.credentials)
         if common.DEBUG_PRINTS:
             print("Sending Query (retrieve_query_results):{}".format(query))
+        query.update(common.credentials)
         response = requests.request("GET", common.search_endpoint, headers=common.headers,
                                     data=json.dumps(query))
         # Fields to display
@@ -170,7 +175,7 @@ def retrieve_query_results(n_clicks, *values):
                         data_from_db[db_key].append(document[db_key])
                     else:
                         data_from_db[db_key].append("-")
-
+            no_docs_returned = "Number of Documents returned : " + str(len(table_data))
             df_query_output = pd.DataFrame(data_from_db)
 
             datatable_query_output = dash_table.DataTable(
@@ -218,10 +223,11 @@ def retrieve_query_results(n_clicks, *values):
                     'overflowY': 'auto'
                 }
             )
-            return datatable_query_output
+
+            return datatable_query_output,no_docs_returned
     else:
         pass
-    return []
+    return [],None
 
 
 def build_query(inputs):
@@ -244,7 +250,7 @@ def build_query(inputs):
                     temp_list.append(temp_dict)
                 query_input['$or'] = temp_list
     if common.DEBUG_PRINTS:
-        print("Build query output : {}".format(query_input))
+        print("(query_tab_callbacks)Build query output : {}".format(query_input))
     return query_input
 
 
@@ -287,6 +293,9 @@ def retrieve_query_branch(build, system_type, feature, test_plan, test_execution
             {'label': branch, 'value': branch} for branch in branches
         ]
         return [options]
+    else:
+        print("Response (retrieve_query_branch):{}".format(response.status_code))
+        return []
 
 
 @app.callback(
@@ -327,6 +336,9 @@ def retrieve_query_build(branch, system_type, feature, test_plan, test_execution
             {'label': res_val, 'value': res_val} for res_val in results
         ]
         return [options]
+    else:
+        print("Response (retrieve_query_build):{}".format(response.status_code))
+        return []
 
 
 @app.callback(
@@ -367,6 +379,9 @@ def retrieve_query_system_type(branch, build, feature, test_plan, test_execution
             {'label': res_val, 'value': res_val} for res_val in results
         ]
         return [options]
+    else:
+        print("Response (retrieve_query_system_type):{}".format(response.status_code))
+        return []
 
 
 @app.callback(
@@ -408,6 +423,9 @@ def retrieve_query_feature(branch, build, system_type, test_plan, test_execution
         ]
 
         return [options]
+    else:
+        print("Response (retrieve_query_feature):{}".format(response.status_code))
+        return []
 
 
 @app.callback(
@@ -448,6 +466,9 @@ def retrieve_query_test_plan(branch, build, system_type, test_plan, test_executi
             {'label': res_val, 'value': res_val} for res_val in results
         ]
         return [options]
+    else:
+        print("Response (retrieve_query_test_plan):{}".format(response.status_code))
+        return []
 
 
 @app.callback(
@@ -488,6 +509,9 @@ def retrieve_query_test_execution(branch, build, system_type, feature, test_plan
             {'label': res_val, 'value': res_val} for res_val in results
         ]
         return [options]
+    else:
+        print("Response (retrieve_query_test_execution):{}".format(response.status_code))
+        return []
 
 
 @app.callback(
@@ -528,6 +552,9 @@ def retrieve_query_test_id(branch, build, system_type, feature, test_plan, test_
             {'label': res_val, 'value': res_val} for res_val in results
         ]
         return [options]
+    else:
+        print("Response (retrieve_query_test_id):{}".format(response.status_code))
+        return []
 
 
 @app.callback(
@@ -568,3 +595,6 @@ def retrieve_query_execution_type(branch, build, system_type, feature, test_plan
             {'label': res_val, 'value': res_val} for res_val in results
         ]
         return [options]
+    else:
+        print("Response (retrieve_query_execution_type):{}".format(response.status_code))
+        return []

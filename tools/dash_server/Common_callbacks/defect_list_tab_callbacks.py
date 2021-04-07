@@ -48,6 +48,9 @@ def get_test_executions_from_test_plan(test_plan: str, username: str, password: 
     if response.status_code == HTTPStatus.OK:
         for each in response.json():
             te_ids.append(each["key"])
+    else:
+        print("(get_test_executions_from_test_plan)Error: Request: {} Http Status code : {} "
+              .format(jira_url, response.status_code))
     return te_ids
 
 
@@ -69,7 +72,6 @@ def gen_table_execution_wise_defect(n_clicks, ids):
     error_string = "Invalid test plan/test execution id "
     invalid_id = []
     ids_list = ids.split(",")
-    print("Input id : ", ids_list)
     df_execution_wise_defect = pd.DataFrame(columns=["issue_no", "issue_comp",
                                                      "issue_name", "issue_priority",
                                                      "test_execution"])
@@ -80,7 +82,7 @@ def gen_table_execution_wise_defect(n_clicks, ids):
         try:
             id_details = auth_jira.issue(input_id)
         except Exception as ex:
-            print("Exception received while accessing Jira {}".format(ex))
+            print("(gen_table_execution_wise_defect) Exception during Accessing Jira {}".format(ex))
             invalid_id.append(input_id)
         else:
             if id_details.fields.issuetype.name == 'Test Plan':
@@ -96,7 +98,6 @@ def gen_table_execution_wise_defect(n_clicks, ids):
                 invalid_id.append(input_id)
                 continue
 
-            print("TE ids : ", te_ids)
             for te_id in te_ids:
                 issue_list = []
                 jira_link = 'https://jts.seagate.com/rest/raven/1.0/api/testexec/' + \
@@ -107,7 +108,8 @@ def gen_table_execution_wise_defect(n_clicks, ids):
                 for each in test_execution_data:
                     for defect_no in range(len(each['defects'])):
                         issue_list.append(each['defects'][defect_no]['key'])
-                print("Issue List:", issue_list)
+                if common.DEBUG_PRINTS:
+                    print("Issue List for TE:{} Issue :{}".format(te_id, issue_list))
                 te_df = common.get_issue_details(issue_list)
 
                 for _ in te_df:
@@ -116,8 +118,7 @@ def gen_table_execution_wise_defect(n_clicks, ids):
                 df_execution_wise_defect = df_execution_wise_defect.append(te_df)
 
     if common.DEBUG_PRINTS:
-        print("gen_table_execution_wise_defect : Dataframe returned ")
-        print(df_execution_wise_defect)
+        print("gen_table_execution_wise_defect : Dataframe : {}".format(df_execution_wise_defect))
 
     execution_wise_defect = dash_table.DataTable(
         id="execution_wise_defect",
