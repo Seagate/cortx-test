@@ -20,6 +20,7 @@ itsdangerous==1.1.0
 Jinja2==2.10.1
 jira
 jmespath==0.9.4
+jproperties==2.1.0
 jsonschema==3.2.0
 locust==1.4.3
 MarkupSafe==1.1.1
