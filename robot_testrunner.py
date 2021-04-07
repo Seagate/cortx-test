@@ -165,7 +165,7 @@ def collect_test_info(jira_obj, test):
 
 def run_robot_cmd(args, te_tag=None, logFile='main.log'):
     """Form a robot command for execution."""
- 
+
     headless = " -v headless:" + str(args.headless)
     url = " -v url:"+ str(args.csm_url)
     browser = " -v browser:" + str(args.browser)
@@ -177,7 +177,7 @@ def run_robot_cmd(args, te_tag=None, logFile='main.log'):
     cmd_line = "cd robot; robot --timestampoutputs -d reports"+url+browser+ \
                username+headless+password+tag+directory+";cd .."
     log = open(logFile, 'a')
-    prc = subprocess.Popen(cmd_line,stdout=log, stderr=log)
+    prc = subprocess.Popen(cmd_line,shell=False,tdout=log, stderr=log)
     prc.communicate()
 
 def getTestStatusAndParseLog(logFile = 'main.log'):
@@ -213,7 +213,7 @@ def getTestStatusAndParseLog(logFile = 'main.log'):
 def trigger_tests_from_te(args):
     """
     Get the tests from test execution
-    Trigger those tests using pytest command
+    Trigger those tests using robot command
     """
     jira_id, jira_pwd = get_jira_credential()
     jira_obj = JiraTask(jira_id, jira_pwd)
