@@ -50,6 +50,7 @@ def setup_s3bench(
         run_local_cmd(cfg_obj["cmd_go"])
         # executing go get for s3bench
         run_local_cmd(get_cmd)
+        run_local_cmd(cfg_obj["s3bench_trust"])
         # Clone s3bench to go src
         run_local_cmd(git_url.format(S3_BENCH_PATH))
     return True
