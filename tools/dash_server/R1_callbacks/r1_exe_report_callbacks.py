@@ -36,9 +36,9 @@ from common import app
     [Output('r1_product_heading_exe', 'children'), Output('r1_product_heading_eng', 'children'),
      Output('r1_build_heading_exe', 'children'), Output('r1_build_heading_eng', 'children'),
      Output('r1_date_heading_exe', 'children'), Output('r1_date_heading_eng', 'children')],
-    [Input('submit_button', 'n_clicks'),
-     Input('branch_dropdown', 'value'),
-     Input('build_no_dropdown', 'value'),
+    [Input('submit_button', 'n_clicks')],
+    [State('branch_dropdown', 'value'),
+     State('build_no_dropdown', 'value')
      ]
 )
 def gen_tab_headers(n_clicks, branch, build_no):
@@ -61,9 +61,9 @@ def gen_tab_headers(n_clicks, branch, build_no):
 @app.callback(
     [Output('r1_table_reported_bugs_engg', 'children'),
      Output('r1_table_reported_bugs_exe', 'children')],
-    [Input('submit_button', 'n_clicks'),
-     Input('branch_dropdown', 'value'),
-     Input('build_no_dropdown', 'value')
+    [Input('submit_button', 'n_clicks')],
+    [State('branch_dropdown', 'value'),
+     State('build_no_dropdown', 'value')
      ]
 )
 def gen_table_reported_bugs(n_clicks, branch, build_no):
@@ -124,41 +124,12 @@ def gen_table_reported_bugs(n_clicks, branch, build_no):
     return reported_bugs, reported_bugs
 
 
-def get_previous_build(current_build, version):
-    if version == 'release' and current_build.startswith("release"):
-        current_build = current_build[8::]
-    found = False
-    cursor = r1Api.find({'info': 'build sequence'})
-    current_index = 999999
-    for doc in cursor:
-        for i in range(0, len(doc[version])):
-            if doc[version][i] == current_build:
-                current_index = i
-                found = True
-                break
-
-    if found and current_index > 0:
-        prev = doc[version][current_index - 1]
-        if version == 'beta':
-            return prev
-        try:
-            int(prev)
-            if current_index < 7:
-                return 'release_' + prev
-            return prev
-        except Exception as ex:
-            print("Exception received while checking previous versions {}".format(ex))
-            return prev
-    else:
-        return None
-
-
 @app.callback(
     [Output('r1_table_overall_qa_report_engg', 'children'),
      Output('r1_table_overall_qa_report_exe', 'children')],
-    [Input('submit_button', 'n_clicks'),
-     Input('branch_dropdown', 'value'),
-     Input('build_no_dropdown', 'value'),
+    [Input('submit_button', 'n_clicks')],
+    [State('branch_dropdown', 'value'),
+     State('build_no_dropdown', 'value'),
      ]
 )
 def gen_table_overall_qa_report(n_clicks, branch, build_no):
@@ -182,25 +153,28 @@ def gen_table_overall_qa_report(n_clicks, branch, build_no):
         print("Error current build received : {}".format(ex))
         current_build = ["-", "-", "-", "-", "-", "-"]
 
-    # add logic to retrieve previous build
-    prev_build_no = get_previous_build(build_no, branch)
-
-    try:
-        for result_type in category[1:]:
-            count = r1Api.count_documents({'build': prev_build_no, 'version': branch,
-                                           'deleted': False, 'testResult': result_type})
-            previous_build.append(count)
-        previous_build.insert(0, sum(previous_build))
-        print("Previous build overall_qa_report {}".format(previous_build))
-    except Exception as ex:
-        print("Error Previous build received : {}".format(ex))
-        previous_build = ["-", "-", "-", "-", "-", "-"]
-
     data_overall_qa_report = {"Category": category,
-                              build_no: current_build,
-                              prev_build_no: previous_build}
-    df_overall_qa_report = pd.DataFrame(data_overall_qa_report)
+                              build_no: current_build}
 
+    # add logic to retrieve previous build
+    cursor = r1Api.find({'info': 'build sequence R1'})
+    build_list = cursor[0][branch]
+    if build_list.index(build_no) > 1:
+        prev_build_no = build_list[build_list.index(build_no) - 1]
+        try:
+            for result_type in category[1:]:
+                count = r1Api.count_documents({'build': prev_build_no, 'version': branch,
+                                               'deleted': False, 'testResult': result_type})
+                previous_build.append(count)
+            previous_build.insert(0, sum(previous_build))
+            print("Previous build overall_qa_report {}".format(previous_build))
+        except Exception as ex:
+            print("Error Previous build received : {}".format(ex))
+            previous_build = ["-", "-", "-", "-", "-", "-"]
+
+        data_overall_qa_report[prev_build_no] = previous_build
+
+    df_overall_qa_report = pd.DataFrame(data_overall_qa_report)
     overall_qa_report = dash_table.DataTable(
         id="overall_qa_report",
         columns=[{"name": i, "id": i} for i in df_overall_qa_report.columns],
@@ -221,9 +195,9 @@ def gen_table_overall_qa_report(n_clicks, branch, build_no):
 
 @app.callback(
     Output('r1_table_feature_breakdown_summary', 'children'),
-    [Input('submit_button', 'n_clicks'),
-     Input('branch_dropdown', 'value'),
-     Input('build_no_dropdown', 'value')
+    [Input('submit_button', 'n_clicks')],
+    [State('branch_dropdown', 'value'),
+     State('build_no_dropdown', 'value')
      ]
 )
 def gen_table_feature_breakdown_summary(n_clicks, branch, build_no):
@@ -291,12 +265,11 @@ def gen_table_feature_breakdown_summary(n_clicks, branch, build_no):
     return feature_breakdown_summary
 
 
-# TODO
 @app.callback(
     Output('r1_table_code_maturity', 'children'),
-    [Input('submit_button', 'n_clicks'),
-     Input('branch_dropdown', 'value'),
-     Input('build_no_dropdown', 'value')
+    [Input('submit_button', 'n_clicks')],
+    [State('branch_dropdown', 'value'),
+     State('build_no_dropdown', 'value')
      ]
 )
 def gen_table_code_maturity(n_clicks, branch, build_no):
@@ -305,28 +278,30 @@ def gen_table_code_maturity(n_clicks, branch, build_no):
     """
     if n_clicks is None or branch is None or build_no is None:
         raise PreventUpdate
-    cursor = r1Api.find({'info': 'build sequence'})
-    build_list = cursor[0][branch]
+
     output_list = []
     category = ["TOTAL", "PASS", "FAIL", "ABORTED", "BLOCKED"]
-    if build_no in build_list:
-        output_list.append(build_no)
-        output_list.append(build_list[build_list.index(build_no) - 1])
-        output_list.append(build_list[build_list.index(build_no) - 2])
-    final_list = []  # list of lists
+
+    cursor = r1Api.find({'info': 'build sequence R1'})
+    build_list = cursor[0][branch]
+
+    prev_build_no = build_list[build_list.index(build_no)::-1]
+    output_list = [build_no]
+    output_list.extend(prev_build_no)
+
+    print("Output list :", output_list)
+
+    data_code_maturity = {"Category": category}
+
     for build in output_list:
         temp_list = []
         for each in category[1:]:
             temp_list.append(
                 r1Api.count_documents({'build': build, 'deleted': False, 'testResult': each}))
         temp_list.insert(0, sum(temp_list))
-        final_list.append(temp_list)
+        data_code_maturity[build] = temp_list
 
-    data_code_maturity = {"Category": category,
-                          output_list[0]: final_list[0],
-                          output_list[1]: final_list[1],
-                          output_list[2]: final_list[2],
-                          }
+    print("Data : {}".format(data_code_maturity))
     df_code_maturity = pd.DataFrame(data_code_maturity)
     code_maturity = dash_table.DataTable(
         id="code_maturity",
