@@ -239,6 +239,5 @@ def aggregate(data: list,
     with MongoClient(uri) as client:
         pymongo_db = client[db_name]
         tests = pymongo_db[collection]
-        print(data)
         result = tests.aggregate(data)
         return True, result

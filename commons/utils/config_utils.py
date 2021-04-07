@@ -33,6 +33,7 @@ from configparser import ConfigParser, MissingSectionHeaderError, NoSectionError
 import yaml
 from defusedxml.cElementTree import parse
 from jsonschema import validate
+from jproperties import Properties
 
 import commons.errorcodes as cterr
 from commons.exceptions import CTException
@@ -403,3 +404,46 @@ def verify_json_schema(instance, *schemas):
 
     for schema in schemas:
         validate(instance=instance, schema=schema)
+
+
+def read_properties_file(fpath: str):
+    """
+    Read properties file and return dict.
+
+    :param fpath: properties file path.
+    :return: dict
+    """
+    try:
+        prop_dict = dict()
+        configs = Properties()
+        with open(fpath, 'rb') as read_prop:
+            configs.load(read_prop)
+        for key, val in configs.items():
+            prop_dict[key] = val.data
+        LOG.info(prop_dict)
+
+        return prop_dict
+    except Exception as error:
+        LOG.error(error)
+        return None
+
+
+def write_properties_file(fpath: str, prop_dict: dict):
+    """
+    Write data to properties file.
+
+    :param fpath: properties file path.
+    :param prop_dict: dict to write into properties file.
+    :return: bool
+    """
+    try:
+        LOG.info("properties dict: %s", prop_dict)
+        configs = Properties()
+        with open(fpath, 'wb') as write_prop:
+            configs.update(prop_dict)
+            configs.store(write_prop)
+
+        return True
+    except Exception as error:
+        LOG.error(error)
+        return False

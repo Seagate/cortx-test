@@ -1,7 +1,6 @@
 minio_cfg:
   bkt_name_prefix: "min-bkt"
   success_msg: "Bucket created successfully"
-  file_path: "/tmp/minio_client.txt"
   file_size: 5
   create_bkt_cmd: "./mc mb s3/{0}"
   upload_obj_cmd: "./mc cp {0} s3/{1}"

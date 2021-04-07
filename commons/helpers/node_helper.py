@@ -98,36 +98,6 @@ class Node(Host):
 
         return result
 
-    def configure_jclient_cloud(
-            self,
-            source: str,
-            destination: str,
-            nfs_path: str) -> bool:
-        """
-        Function to configure jclient and cloud jar files
-        :param nfs_path:
-        :param source: path to the source dir where .jar are present.
-        :param destination: destination path where .jar need to be copied
-        """
-        if not os.path.exists(source):
-            os.mkdir(source)
-
-        dir_list = os.listdir(source)
-        if "jcloudclient.jar" not in dir_list or "jclient.jar" not in dir_list:
-            temp_dir = "/home/jjarfiles"
-            os.mkdir(temp_dir)
-            mount_cmd = f"mount.nfs -v {nfs_path} {temp_dir}"
-            umount_cmd = f"umount -v {temp_dir}"
-            self.execute_cmd(mount_cmd)
-            self.execute_cmd(f"yes | cp -rf {temp_dir}*.jar {source}")
-            self.execute_cmd(umount_cmd)
-            os.remove(temp_dir)
-
-        self.execute_cmd(f"yes | cp -rf {source}*.jar {destination}")
-        res_ls = self.execute_cmd(f"ls {destination}")[1]
-
-        return bool(".jar" in res_ls)
-
     def path_exists(self, path: str) -> bool:
         """
         Check if file exists

@@ -59,14 +59,15 @@ def gen_table_comp_summary(n_clicks, branch, build_no, test_system, test_team):
     if n_clicks is None or branch is None or build_no is None:
         raise PreventUpdate
 
-    component_list = ["S3", "Provisioner", "CSM", "RAS", "Motr", "HA"]
-    # **Query for previous build
-    # current build, previous build
-    # TODO
-    build_no_list = [build_no, build_no]
+    component_list = ["S3", "Provisioner", "CSM", "RAS", "Motr", "HA", "Hare"]
+    # Query for previous build
+    prev_build = common.r2_get_previous_builds(branch, build_no)
+    if len(prev_build) == 1:
+        build_no_list = [build_no, prev_build[0]]
+    else:
+        build_no_list = [build_no]
     # list of dictionary
-    builds_details = []
-
+    builds_details = {"Component": component_list}
     for build in build_no_list:
         query = {"buildType": branch, "buildNo": build}
         if test_system is not None:
@@ -74,7 +75,8 @@ def gen_table_comp_summary(n_clicks, branch, build_no, test_system, test_team):
         if test_system is not None:
             query["testTeam"] = test_team
         query_input = {"query": query, "field": "issueIDs"}
-
+        if common.DEBUG_PRINTS:
+            print(f"(gen_table_comp_summary) Query {query_input}")
         query_input.update(common.credentials)
         response = requests.request("GET", common.distinct_endpoint, headers=common.headers,
                                     data=json.dumps(query_input))
@@ -82,16 +84,17 @@ def gen_table_comp_summary(n_clicks, branch, build_no, test_system, test_team):
             json_response = json.loads(response.text)
             issue_list = json_response["result"]
             issue_df = common.get_issue_details(issue_list)
-            build_dict = {}
+            temp_list = []
             for comp in component_list:
-                build_dict[comp] = issue_df[issue_df.issue_comp == comp].shape[0]
-            builds_details.append(build_dict)
-
-    df_comp_summary = pd.DataFrame({
-        "Component": component_list,
-        build_no_list[0]: builds_details[0].values(),
-        build_no_list[1]: builds_details[1].values()
-    })
+                temp_list.append(issue_df[issue_df.issue_comp == comp].shape[0])
+            builds_details[build] = temp_list
+        elif response.status_code == HTTPStatus.NOT_FOUND:
+            print(f"(gen_table_comp_summary) Response code {response.status_code}")
+            builds_details[build] = 0 * len(component_list)
+        else:
+            print(f"(gen_table_comp_summary) Response code {response.status_code}")
+            builds_details[build] = '-' * len(component_list)
+    df_comp_summary = pd.DataFrame(builds_details)
     comp_summary = dash_table.DataTable(
         id="comp_summary",
         columns=[{"name": i, "id": i} for i in df_comp_summary.columns],
@@ -122,7 +125,10 @@ def gen_table_timing_summary(n_clicks, branch, build_no, test_system, test_team)
     if n_clicks is None or branch is None or build_no is None:
         raise PreventUpdate
 
-    build_seq = [build_no, build_no, build_no]
+    previous_build_list = common.r2_get_previous_builds(branch, build_no, 2)
+    previous_build_list.reverse()
+    build_seq = [build_no]
+    build_seq.extend(previous_build_list)
     # timing parameters
     timing_parameters = {
         "nodeRebootTime": "Node Reboot",
@@ -142,30 +148,32 @@ def gen_table_timing_summary(n_clicks, branch, build_no, test_system, test_team)
     for build in build_seq:
         row = []
         for param in timing_parameters.keys():
-
             query = {"buildType": branch, "buildNo": build, param: {"$exists": True}}
             if test_system is not None:
                 query["testPlanLabel"] = test_system
+            if test_team is not None:
+                query["testTeam"] = test_team
 
-            query_input = {"query": query}
-            query_input["projection"] = {param: True}
+            query_input = {"query": query, "projection": {param: True}}
             query_input.update(common.credentials)
-            if command.DEBUG_PRINTS:
-                print("Query :{}".format(query_input))
+            if common.DEBUG_PRINTS:
+                print("(gen_table_timing_summary)Query :{}".format(query_input))
             response = requests.request("GET", common.timing_endpoint, headers=common.headers,
                                         data=json.dumps(query_input))
             if response.status_code == HTTPStatus.OK:
                 json_response = json.loads(response.text)
                 parameter_data = json_response["result"]
                 if parameter_data:
-                    row.append(
-                        common.round_off(
-                            sum(x[param] for x in parameter_data) / len(parameter_data)))
+                    row.append(common.round_off(
+                        sum(x[param] for x in parameter_data) / len(parameter_data)))
                 else:
-                    row.append("NA")
+                    row.append("-")
+            elif response.status_code == HTTPStatus.NOT_FOUND:
+                # print(f"(gen_table_timing_summary) Response code {response.status_code}")
+                row.append("-")
             else:
-                print("Request not successful, error code :{}".format(response.status_code))
-                row.append("NA")
+                print(f"(gen_table_timing_summary) Response code {response.status_code}")
+                row.append("-")
         data_timing_summary[build] = row
 
     df_timing_summary = pd.DataFrame(data_timing_summary)
@@ -287,14 +295,16 @@ def gen_table_detail_reported_bugs(n_clicks, branch, build_no, test_system, test
         "query": {"buildType": branch, "buildNo": build_no, "testPlanLabel": test_system,
                   "testTeam": test_team},
         "field": "issueIDs"}
-
+    if common.DEBUG_PRINTS:
+        print(f"(gen_table_detail_reported_bugs) Query:{query_input}")
     query_input.update(common.credentials)
     response = requests.request("GET", common.distinct_endpoint, headers=common.headers,
                                 data=json.dumps(query_input))
     if response.status_code == HTTPStatus.OK:
         json_response = json.loads(response.text)
         issue_list = json_response["result"]
-        print("Issue list (reported bugs)", issue_list)
+        if common.DEBUG_PRINTS:
+            print("Issue list (reported bugs)", issue_list)
         df_detail_reported_bugs = common.get_issue_details(issue_list)
         detail_reported_bugs = dash_table.DataTable(
             id="detail_reported_bugs",
@@ -307,6 +317,7 @@ def gen_table_detail_reported_bugs(n_clicks, branch, build_no, test_system, test
             style_cell=common.dict_style_cell
         )
     else:
+        print(f"(gen_table_detail_reported_bugs) Response: {response.status_code}")
         detail_reported_bugs = None
 
     return detail_reported_bugs
