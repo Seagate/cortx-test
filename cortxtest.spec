@@ -7,6 +7,7 @@
 %define release 1
 %define python /usr/local/bin/python3.7
 %define pip /usr/local/bin/pip3.7
+%define basedir /cortxtest/cortx-test
 Summary: Python distribution for cortx-text
 Name: %{name}
 Version: %{version}
@@ -36,29 +37,33 @@ exit
 
 %files
 %defattr(-,root,root,-)
-%dir /cortxtest/cortx-test/
-/cortxtest/cortx-test/
+#%dir %{basedir}/
+%{basedir}/
 # executable
-%attr(0777, root, root) /cortxtest/cortx-test/testrunner.py
-%attr(0777, root, root) /cortxtest/cortx-test/drunner.py
-%attr(0777, root, root) /cortxtest/cortx-test/scripts/locust/locust_runner.py
-%attr(0777, root, root) /cortxtest/cortx-test/scripts/s3_bench/s3bench.py
+%attr(0777, root, root) %{basedir}/testrunner.py
+%attr(0777, root, root) %{basedir}/drunner.py
+%attr(0777, root, root) %{basedir}/scripts/locust/locust_runner.py
+%attr(0777, root, root) %{basedir}/scripts/s3_bench/s3bench.py
 
 %build
-cd %{buildroot}/cortxtest/cortx-test/
-%{python} setup.py build
+cd %{buildroot}%{basedir}/
+%{python} setup.py build 
 
 %post
 %{python} -V
 if [ "$?" = "0" ]; then
     echo "python 3.7 is installed"
 else
+    yum clean all
+    rm -f /var/lib/rpm/.rpm.lock
+    rpm --rebuilddb
     yum -y update
     yum history new
+    rm -f /var/lib/rpm/.rpm.lock
+    rpm --rebuilddb
     yum -y groupinstall "Development Tools"
-    yum install xz-devel python-backports-lzma sqlite-devel -y
+    yum install -y xz-devel python-backports-lzma sqlite-devel epel-release
     yum install -y gcc openssl-devel bzip2-devel libffi-devel zlib-devel
-    yum install epel-release
     cd /usr/src
     wget https://www.python.org/ftp/python/3.7.9/Python-3.7.9.tgz
     tar -xzf Python-3.7.9.tgz
@@ -71,18 +76,26 @@ else
 fi
 yum install -y python34-setuptools
 easy_install-3.4 pip
-%{pip} install --upgrade pip
-%{pip} install -r /cortxtest/cortx-test/requirements.txt
-find /cortxtest/cortx-test \( -name '__pycache__' -or -name '*.pyc' \) -delete
 
-ln -s /cortxtest/cortx-test /usr/local/lib/python3.7/site-packages/cortx-test
+%{pip} install --upgrade pip
+%{pip} install wheel
+%{pip} install -r %{basedir}/requirements.txt
+find %{basedir} \( -name '__pycache__' -or -name '*.pyc' \) -delete
+echo "Installing setup.py"
+cd %{basedir}/
+%{python} setup.py install
+echo "developing setup.py"
+%{python} setup.py develop
+rm -rf build/
+
+ln -s %{basedir} /usr/local/lib/python3.7/site-packages/cortx-test
 
 script_list=("scripts/s3_bench/s3bench" "scripts/locust/locust_runner" "testrunner" "drunner")
 short_array=("pys3bench" "runlocust" "testrunner" "drunner")
 for i in "${!script_list[@]}";
 do
     aliasmsg=ALIAS_MSG_${short_array[$i]}
-    aliasmsg="alias ${short_array[$i]}='%{python} /cortxtest/cortx-test/${script_list[$i]}.py'"
+    aliasmsg="alias ${short_array[$i]}='%{python} %{basedir}/${script_list[$i]}.py'"
     alias_msg_array[$i]="$aliasmsg"
 done
 CT_PROFILED=/etc/profile.d/ct.sh
@@ -103,12 +116,8 @@ else
     rm -f "$TMP_CT_PROFILED"
 fi
 source /etc/profile.d/ct.sh
-cd /cortxtest/cortx-test/
-echo "Installing setup.py"
-%{python} setup.py install
-echo "developing setup.py"
-%{python} setup.py develop
 echo "Installation completed"
+
 
 %postun
 if [ "$1" = "0" ]; then
@@ -131,6 +140,7 @@ if [ "$1" = "0" ]; then
     echo 'To complete the uninstall,please re-login to the system'
 fi
 rm -rf /etc/profile.d/ct.sh
+rm -rf %{basedir}/
 
 %clean
 rm -rf %{buildroot}/SOURCES/cortxtest/
