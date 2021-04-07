@@ -170,7 +170,7 @@ class S3CmdTestLib(S3LibCmd):
 
     @staticmethod
     def command_formatter(
-            s3cmd_cnf: str = None,
+            s3cmd_cnf: dict = None,
             operation: str = None,
             cmd_arguments: list = None) -> str:
         """

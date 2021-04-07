@@ -82,11 +82,11 @@ def gen_table_reported_bugs(n_clicks, branch, build_no, test_system, test_team):
     """
     Generate Priority wise and Cortx/Test issue table
     """
-    issue_type = ["Total", "Blocker", "Critical", "Major", "Minor", "Trivial"]
-    test_infra_issue_dict = {"Total": 0, "Blocker": 0, "Critical": 0, "Major": 0, "Minor": 0,
-                             "Trivial": 0}
-    cortx_issue_dict = {"Total": 0, "Blocker": 0, "Critical": 0, "Major": 0, "Minor": 0,
-                        "Trivial": 0}
+    issue_type = [ "Blocker", "Critical", "Major", "Minor", "Trivial","Total"]
+    test_infra_issue_dict = { "Blocker": 0, "Critical": 0, "Major": 0, "Minor": 0,
+                             "Trivial": 0,"Total": 0}
+    cortx_issue_dict = {"Blocker": 0, "Critical": 0, "Major": 0, "Minor": 0,
+                        "Trivial": 0,"Total": 0}
 
     if n_clicks is None or branch is None or build_no is None:
         raise PreventUpdate
@@ -99,6 +99,8 @@ def gen_table_reported_bugs(n_clicks, branch, build_no, test_system, test_team):
         query["testTeam"] = test_team
 
     query_input = {"query": query, "field": "issueIDs"}
+    if common.DEBUG_PRINTS:
+        print(f"(gen_table_reported_bugs) Query {query_input}")
     query_input.update(common.credentials)
 
     response = requests.request("GET", common.distinct_endpoint, headers=common.headers,
@@ -127,7 +129,7 @@ def gen_table_reported_bugs(n_clicks, branch, build_no, test_system, test_team):
             cortx_issue_dict[i_type] = \
                 df_cortx_issue[df_cortx_issue["issue_priority"] == i_type].shape[0]
     else:
-        print("Error in gen table reported bugs : {}".format(response))
+        print(f"(gen_table_reported_bugs)Error response : {response.status_code}")
 
     df_reported_bugs = pd.DataFrame({"Priority": issue_type,
                                      "Test Infra Issues": test_infra_issue_dict.values(),
@@ -166,68 +168,44 @@ def gen_table_overall_qa_report(n_clicks, branch, build_no, test_system, test_te
     if n_clicks is None or branch is None or build_no is None:
         raise PreventUpdate
 
-    query = {"buildType": branch, "buildNo": build_no}
-    if test_system is not None:
-        query["testPlanLabel"] = test_system,
-    if test_team is not None:
-        query["testTeam"] = test_team
+    previous_build_list = common.r2_get_previous_builds(branch, build_no)
+    overall_qa_data = {"Category": ["PASS", "FAIL", "ABORTED", "BLOCKED","TODO","TOTAL"]}
 
-    category = ["TOTAL", "PASS", "FAIL", "ABORTED", "BLOCKED", "TODO"]
-    current_build = []
+    previous_build_list.insert(0, build_no)
+    for build in previous_build_list:
+        build_results = []
+        for category in overall_qa_data["Category"]:
+            if category == "TOTAL":
+                try:
+                    build_results.append(sum(build_results))
+                except TypeError:
+                    build_results.append("-")
+            else:
+                query = {"buildType": branch, "buildNo": build}
+                if test_system is not None:
+                    query["testPlanLabel"] = test_system
+                if test_team is not None:
+                    query["testTeam"] = test_team
+                query["testResult"] = category
+                query_input = {"query": query}
+                if common.DEBUG_PRINTS:
+                    print(f"(gen_table_overall_qa_report) Query : {query_input}")
+                query_input.update(common.credentials)
+                response = requests.request("GET", common.count_endpoint, headers=common.headers,
+                                            data=json.dumps(query_input))
 
-    # Get current build data
-    query_input = {"query": query, "projection": {"testResult": True}}
-    query_input.update(common.credentials)
-    response = requests.request("GET", common.search_endpoint, headers=common.headers,
-                                data=json.dumps(query_input))
-    if response.status_code == HTTPStatus.OK:
-        json_response = json.loads(response.text)
-        for result_type in category[1:]:
-            count = 0
-            for each in json_response["result"]:
-                if str(each["testResult"]).lower() == result_type.lower():
-                    count = count + 1
-            current_build.append(count)
-        current_build.insert(0, sum(current_build))
-        print("Current build overall_qa_report {}".format(current_build))
-    else:
-        print("Error current build received : {}".format(response))
-        current_build = ["-", "-", "-", "-", "-", "-"]
+                if response.status_code == HTTPStatus.OK:
+                    json_response = json.loads(response.text)
+                    build_results.append(json_response["result"])
+                elif response.status_code == HTTPStatus.NOT_FOUND:
+                    # print(f"(gen_table_overall_qa_report) response {response.status_code}")
+                    build_results.append(0)
+                else:
+                    print(f"(gen_table_overall_qa_report) response {response.status_code}")
+                    build_results.append("-")
+        overall_qa_data[build] = build_results
 
-    # Query and change build no to previous build
-    previous_build = common.r2_get_previous_builds(branch, build_no)
-    print("previous build :{}".format(previous_build))
-    if len(previous_build):
-        previous_build_no = previous_build[0]
-        query = {"buildType": previous_build_no, "buildNo": build_no}
-        if test_system is not None:
-            query["testPlanLabel"] = test_system,
-        if test_team is not None:
-            query["testTeam"] = test_team
-        query_input = {"query": query, "projection": {"testResult": True}}
-        query_input.update(common.credentials)
-        response = requests.request("GET", common.search_endpoint, headers=common.headers,
-                                    data=json.dumps(query_input))
-        if response.status_code == HTTPStatus.OK:
-            json_response = json.loads(response.text)
-            for result_type in category[1:]:
-                count = 0
-                for each in json_response["result"]:
-                    if str(each["testResult"]).lower() == result_type.lower():
-                        count = count + 1
-                previous_build.append(count)
-            previous_build.insert(0, sum(previous_build))
-            print("previous build {}".format(previous_build))
-        else:
-            print("Error previous received : {}".format(response))
-            previous_build = ["-", "-", "-", "-", "-", "-"]
-    else:
-        previous_build_no = "-"
-        previous_build = ["-", "-", "-", "-", "-", "-"]
-    data_overall_qa_report = {"Category": category,
-                              build_no: current_build,
-                              previous_build_no: previous_build}
-    df_overall_qa_report = pd.DataFrame(data_overall_qa_report)
+    df_overall_qa_report = pd.DataFrame(overall_qa_data)
 
     overall_qa_report = dash_table.DataTable(
         id="overall_qa_report",
@@ -235,12 +213,12 @@ def gen_table_overall_qa_report(n_clicks, branch, build_no, test_system, test_te
         data=df_overall_qa_report.to_dict('records'),
         style_header=common.dict_style_header,
         style_data_conditional=[{'if': {'row_index': 'odd'}, 'backgroundColor': '#F8F8F8'},
-                                {'if': {'row_index': 0}, 'color': '#3498DB'},
-                                {'if': {'row_index': 1}, 'color': '#229954'},
-                                {'if': {'row_index': 2}, 'color': '#CB4335'},
-                                {'if': {'row_index': 3}, 'color': '#2E4053'},
-                                {'if': {'row_index': 4}, 'color': '#F39C12'},
-                                {'if': {'row_index': 5}, 'color': '#a5a5b5'}
+                                {'if': {'row_index': 0}, 'color': '#229954'},
+                                {'if': {'row_index': 1}, 'color': '#CB4335'},
+                                {'if': {'row_index': 2}, 'color': '#2E4053'},
+                                {'if': {'row_index': 3}, 'color': '#F39C12'},
+                                {'if': {'row_index': 4}, 'color': '#a5a5b5'},
+                                {'if': {'row_index': 5}, 'color': '#3498DB'},
                                 ],
         style_cell=common.dict_style_cell
     )
@@ -271,8 +249,10 @@ def gen_table_feature_breakdown_summary(n_clicks, branch, build_no, test_system,
 
     query_input = {"query": query,
                    "projection": {"testResult": True, "feature": True}}
+    if common.DEBUG_PRINTS:
+        print("(gen_table_feature_breakdown_summary)Query :{}".format(query_input))
     query_input.update(common.credentials)
-    print("Query :{}".format(query_input))
+
     response = requests.request("GET", common.search_endpoint, headers=common.headers,
                                 data=json.dumps(query_input))
     if response.status_code == HTTPStatus.OK:
@@ -341,6 +321,7 @@ def gen_table_feature_breakdown_summary(n_clicks, branch, build_no, test_system,
             style_cell=common.dict_style_cell
         )
     else:
+        print(f"(gen_table_feature_breakdown_summary) response: {response.status_code}")
         feature_breakdown_summary = None
     return feature_breakdown_summary
 
@@ -361,15 +342,11 @@ def gen_table_code_maturity(n_clicks, branch, build_no, test_system, test_team
     if n_clicks is None or branch is None or build_no is None:
         raise PreventUpdate
 
-    query = {"buildType": branch, "buildNo": build_no}
-    if test_system is not None:
-        query["testPlanLabel"] = test_system
-    if test_team is not None:
-        query["testTeam"] = test_team
     previous_build_list = common.r2_get_previous_builds(branch, build_no, 3)
-    data_code_maturity = {}
-    data_code_maturity["Category"] = ["PASS", "FAIL", "ABORTED", "BLOCKED", "TOTAL"]
+    data_code_maturity = {"Category": ["PASS", "FAIL", "ABORTED", "BLOCKED", "TOTAL"]}
+    previous_build_list.reverse()
     previous_build_list.insert(0, build_no)
+
     for build in previous_build_list:
         build_results = []
         for category in data_code_maturity["Category"]:
@@ -379,16 +356,27 @@ def gen_table_code_maturity(n_clicks, branch, build_no, test_system, test_team
                 except TypeError:
                     build_results.append("-")
             else:
+                query = {"buildType": branch, "buildNo": build}
+                if test_system is not None:
+                    query["testPlanLabel"] = test_system
+                if test_team is not None:
+                    query["testTeam"] = test_team
                 query["testResult"] = category
-                query.update(common.credentials)
+                query_input = {"query": query}
+                if common.DEBUG_PRINTS:
+                    print(f"(gen_table_code_maturity) Query : {query_input}")
+                query_input.update(common.credentials)
                 response = requests.request("GET", common.count_endpoint, headers=common.headers,
-                                            data=json.dumps(query))
+                                            data=json.dumps(query_input))
+
                 if response.status_code == HTTPStatus.OK:
                     json_response = json.loads(response.text)
                     build_results.append(json_response["result"])
                 elif response.status_code == HTTPStatus.NOT_FOUND:
+                    # print(f"(gen_table_code_maturity) response : {response.status_code}")
                     build_results.append(0)
                 else:
+                    print(f"(gen_table_code_maturity) response : {response.status_code}")
                     build_results.append("-")
         data_code_maturity[build] = build_results
 
