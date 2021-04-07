@@ -87,7 +87,8 @@ column_names = {"buildType": "Build Type", "buildNo": "Build No", "testPlanID": 
 
 
 @app.callback(
-    Output('table_query_result', 'children'),
+    [Output('table_query_result', 'children'),
+     Output('table_query_result_count', 'children')],
     [Input('query_result_button', 'n_clicks'),
      Input('query_branch', 'value'),
      Input('query_build', 'value'),
@@ -174,7 +175,7 @@ def retrieve_query_results(n_clicks, *values):
                         data_from_db[db_key].append(document[db_key])
                     else:
                         data_from_db[db_key].append("-")
-
+            no_docs_returned = "Number of Documents returned : " + str(len(table_data))
             df_query_output = pd.DataFrame(data_from_db)
 
             datatable_query_output = dash_table.DataTable(
@@ -222,10 +223,11 @@ def retrieve_query_results(n_clicks, *values):
                     'overflowY': 'auto'
                 }
             )
-            return datatable_query_output
+
+            return datatable_query_output,no_docs_returned
     else:
         pass
-    return []
+    return [],None
 
 
 def build_query(inputs):
