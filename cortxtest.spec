@@ -5,6 +5,7 @@
 %define name cortxtest
 %define version 1.0.0
 %define release 1
+%define pyver 3.7.9
 %define python /usr/local/bin/python3.7
 %define pip /usr/local/bin/pip3.7
 %define basedir /cortxtest/cortx-test
@@ -64,13 +65,13 @@ else
     yum install -y xz-devel python-backports-lzma sqlite-devel epel-release
     yum install -y gcc openssl-devel bzip2-devel libffi-devel zlib-devel
     cd /usr/src
-    wget https://www.python.org/ftp/python/3.7.9/Python-3.7.9.tgz
-    tar -xzf Python-3.7.9.tgz
-    cd Python-3.7.9
+    wget https://www.python.org/ftp/python/%{pyver}/Python-%{pyver}.tgz
+    tar -xzf Python-%{pyver}.tgz
+    cd Python-%{pyver}
     make clean
     ./configure --enable-optimizations --with-ssl --enable-loadable-sqlite-extensions
     make altinstall
-    rm -rf /usr/src/Python-3.7.9.tgz
+    rm -rf /usr/src/Python-%{pyver}.tgz
     %{python} -V
 fi
 yum install -y python34-setuptools
@@ -114,7 +115,6 @@ else
     cp "$TMP_CT_PROFILED" "$CT_PROFILED"
     rm -f "$TMP_CT_PROFILED"
 fi
-source /etc/profile.d/ct.sh
 echo "Installation completed"
 
 
