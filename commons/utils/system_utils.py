@@ -894,7 +894,7 @@ def mount_upload_to_server(host_dir: str = None, mnt_dir: str = None,
         shutil.copy(local_path, new_path)
         log_path = os.path.join(host_dir.split(":")[0], remote_path)
     except Exception as error:
-        LOGGER.error(error)
+        LOGGER.warning(error)
         LOGGER.info("Copying file to local path")
         log_path = os.path.join(params.LOCAL_LOG_PATH, remote_path)
         if not os.path.exists(log_path):
