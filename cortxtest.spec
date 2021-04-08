@@ -6,9 +6,10 @@
 %define version 1.0.0
 %define release 1
 %define pyver 3.7.9
-%define python /usr/local/bin/python3.7
-%define pip /usr/local/bin/pip3.7
+%define python /usr/local/bin/python%{pyver%.*}
+%define pip /usr/local/bin/pip%{pyver%.*}
 %define basedir /cortxtest/cortx-test
+
 Summary: Python distribution for cortx-text
 Name: %{name}
 Version: %{version}
@@ -52,7 +53,7 @@ cd %{buildroot}%{basedir}/
 %post
 %{python} -V
 if [ "$?" = "0" ]; then
-    echo "python 3.7 is installed"
+    echo "python %{pyver%.*} is installed"
 else
     yum clean all
     rm -f /var/lib/rpm/.rpm.lock
@@ -75,7 +76,7 @@ else
     %{python} -V
 fi
 yum install -y python34-setuptools
-easy_install-3.4 pip
+easy_install pip
 
 %{pip} install --upgrade pip
 %{pip} install wheel
@@ -88,7 +89,7 @@ echo "developing setup.py"
 %{python} setup.py develop
 rm -rf build/
 
-ln -s %{basedir} /usr/local/lib/python3.7/site-packages/cortx-test
+ln -s %{basedir} /usr/local/lib/python%{pyver%.*}/site-packages/cortx-test
 
 script_list=("scripts/s3_bench/s3bench" "scripts/locust/locust_runner" "testrunner" "drunner")
 short_array=("pys3bench" "runlocust" "testrunner" "drunner")
@@ -120,7 +121,7 @@ echo "Installation completed"
 
 %postun
 if [ "$1" = "0" ]; then
-    unlink /usr/local/lib/python3.7/site-packages/cortx-test
+    unlink /usr/local/lib/python%{pyver%.*}/site-packages/cortx-test
     CT_PROFILED=/etc/profile.d/ct.sh
 	script_list=("scripts/s3_bench/s3bench" "scripts/locust/locust_runner")
     if [ -f "$CT_PROFILED" ]
