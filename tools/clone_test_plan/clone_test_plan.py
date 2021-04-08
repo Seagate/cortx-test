@@ -24,9 +24,10 @@ import sys
 import argparse
 import csv
 from datetime import datetime
-from commons import params
 import jira_api
 
+# cloned test plan csv name
+CLONED_TP_CSV = 'cloned_tp_info.csv'
 
 def main(args):
     """
@@ -68,7 +69,7 @@ def main(args):
         print("Error while adding TEs to TP")
 
     print("New Test Plan: {}".format(new_tp_key))
-    with open(os.path.join(os.getcwd(),  params.CLONED_TP_CSV), 'w', newline='') as tp_info_csv:
+    with open(os.path.join(os.getcwd(),  CLONED_TP_CSV), 'w', newline='') as tp_info_csv:
         writer = csv.writer(tp_info_csv)
         for te in new_te_keys:
             writer.writerow([new_tp_key.strip(), te.strip()])
