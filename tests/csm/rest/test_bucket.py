@@ -48,6 +48,7 @@ class TestS3Bucket():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10764')
     def test_573(self):
         """Initiating the test case for the verifying response of create bucket rest
@@ -59,6 +60,7 @@ class TestS3Bucket():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10765')
     def test_575(self):
         """Initiating the test case for the verifying response of create bucket
@@ -71,6 +73,7 @@ class TestS3Bucket():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10766')
     def test_576(self):
         """Initiating the test case for the verifying response of create bucket
@@ -83,6 +86,7 @@ class TestS3Bucket():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10767')
     def test_577(self):
         """Initiating the test case for the verifying response of create bucket
@@ -103,6 +107,7 @@ class TestS3Bucket():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-14750')
     def test_578(self):
         """Initiating the test to test RESP API to create bucket with bucketname
@@ -151,6 +156,7 @@ class TestS3Bucket():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10768')
     def test_579(self):
         """Initiating the test case for the verifying response of create bucket
@@ -163,6 +169,7 @@ class TestS3Bucket():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10769')
     def test_580(self):
         """Initiating the test case for the verifying response of create bucket
@@ -176,6 +183,7 @@ class TestS3Bucket():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10770')
     def test_581(self):
         """Initiating the test case for the verifying response of create bucket
@@ -188,6 +196,7 @@ class TestS3Bucket():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10771')
     def test_589(self):
         """Initiating the test case for the verifying response of create bucket
@@ -200,6 +209,7 @@ class TestS3Bucket():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10772')
     def test_591(self):
         """Initiating the test case for the verifying response of list bucket rest
@@ -212,6 +222,7 @@ class TestS3Bucket():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10773')
     def test_593(self):
         """Initiating the test case for the verifying response of bucket rest
@@ -225,6 +236,7 @@ class TestS3Bucket():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10774')
     def test_594(self):
         """Initiating the test case for the verifying response of list bucket
@@ -238,6 +250,7 @@ class TestS3Bucket():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10775')
     def test_596(self):
         """Initiating the test case for the verifying response of delete bucket rest
@@ -249,6 +262,7 @@ class TestS3Bucket():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10777')
     def test_597(self):
         """Initiating the test case for the verifying response of delete bucket that does not exist
@@ -260,6 +274,7 @@ class TestS3Bucket():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10776')
     def test_599(self):
         """Initiating the test case for the verifying response of list bucket
@@ -273,6 +288,7 @@ class TestS3Bucket():
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10778')
     def test_601(self):
         """Initiating the test case for the verifying response of delete bucket

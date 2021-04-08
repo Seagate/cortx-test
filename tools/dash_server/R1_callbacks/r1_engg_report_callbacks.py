@@ -19,50 +19,59 @@
 #
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
+
 import dash_bootstrap_components as dbc
+import dash_html_components as html
 import dash_table
 import pandas as pd
 from dash.dependencies import Output, Input, State
 from dash.exceptions import PreventUpdate
-import common
-from common import app
-import mongodbAPIs as r1Api
-import timingAPIs as timingAPIs
+
 import R1_callbacks.r1_perf_tables as r1_perf_tables
-import dash_html_components as html
+import common
+import mongodbAPIs as r1Api
 import perfdbAPIs as perf_api
+import timingAPIs as timingAPIs
+from common import app
 
 
 @app.callback(
     Output('r1_table_comp_summary', 'children'),
-    [Input('submit_button', 'n_clicks'),
-     Input('branch_dropdown', 'value'),
-     Input('build_no_dropdown', 'value'),
-     ]
+    [Input('submit_button', 'n_clicks')],
+    [State('branch_dropdown', 'value'),
+     State('build_no_dropdown', 'value')]
 )
-def gen_table_comp_summary(n_clicks, branch, build_no):
+def gen_table_comp_summary(n_clicks, branch, build_no, ):
     """
-    Returns the component wise issues for current and previous builds.
+    Returns the component wise results for current and previous builds.
     :param n_clicks: Input event
     :param branch: Build branch
     :param build_no: Build Number
     :return:
     """
+
     if n_clicks is None or branch is None or build_no is None:
         raise PreventUpdate
 
     component_list = ["S3", "Provisioner", "CSM", "RAS", "Motr", "HA", "Locust", "Cosbench",
-                      "Data Recovery", "Node Recovery"]
-    cursor = r1Api.find({'info': 'build sequence'})
+                      "Data Recovery", "Node Recovery", "Total"]
+    cursor = r1Api.find({'info': 'build sequence R1'})
     build_list = cursor[0][branch]
-    prev_build_no = build_list[build_list.index(build_no) - 1]
-    build_no_list = [build_no, prev_build_no]
+    if build_list.index(build_no) > 1:
+        prev_build_no = build_list[build_list.index(build_no) - 1]
+    else:
+        prev_build_no = []
+    build_no_list = [build_no]
+    build_no_list.extend(prev_build_no)
     # list of dictionary
-    builds_details = []
+    data = {"Component": component_list}
+    columns_data = [{"name": ["Component", ""], "id": "Component"}]
     for build in build_no_list:
         pass_dict = {}
         fail_dict = {}
         for comp in component_list:
+            if comp == "Total":
+                continue
             pass_dict[comp] = r1Api.count_documents(
                 {'build': build, 'deleted': False, 'testResult': 'PASS',
                  'testExecutionLabels': comp})
@@ -71,26 +80,17 @@ def gen_table_comp_summary(n_clicks, branch, build_no):
                  'testExecutionLabels': comp})
         pass_dict["Total"] = sum(pass_dict.values())
         fail_dict["Total"] = sum(fail_dict.values())
-        builds_details.append(pass_dict.values())
-        builds_details.append(fail_dict.values())
+        tmp_str_pass = build + "_pass"
+        tmp_str_fail = build + "_fail"
+        data[tmp_str_pass] = pass_dict.values()
+        data[tmp_str_fail] = fail_dict.values()
+        columns_data.append({"name": [build, "Pass"], "id": tmp_str_pass})
+        columns_data.append({"name": [build, "Fail"], "id": tmp_str_fail})
 
-    component_list.append("Total")
-    df_comp_summary = pd.DataFrame({
-        "Component": component_list,
-        "current_pass": builds_details[0],
-        "current_fail": builds_details[1],
-        "previous_pass": builds_details[2],
-        "previous_fail": builds_details[3]
-    })
+    df_comp_summary = pd.DataFrame(data)
     comp_summary = dash_table.DataTable(
         id="comp_summary",
-        columns=[
-            {"name": ["Component", ""], "id": "Component"},
-            {"name": [build_no, "Pass"], "id": "current_pass"},
-            {"name": [build_no, "Fail"], "id": "current_fail"},
-            {"name": [prev_build_no, "Pass"], "id": "previous_pass"},
-            {"name": [prev_build_no, "Fail"], "id": "previous_fail"},
-        ],
+        columns=columns_data,
         data=df_comp_summary.to_dict('records'),
         merge_duplicate_headers=True,
         style_header=common.dict_style_header,
@@ -103,10 +103,9 @@ def gen_table_comp_summary(n_clicks, branch, build_no):
 
 @app.callback(
     Output('r1_table_detail_reported_bugs', 'children'),
-    [Input('submit_button', 'n_clicks'),
-     Input('branch_dropdown', 'value'),
-     Input('build_no_dropdown', 'value')
-     ]
+    [Input('submit_button', 'n_clicks')],
+    [State('branch_dropdown', 'value'),
+     State('build_no_dropdown', 'value')]
 )
 def gen_table_detail_reported_bugs(n_clicks, branch, build_no):
     """
@@ -139,10 +138,9 @@ def gen_table_detail_reported_bugs(n_clicks, branch, build_no):
 
 @app.callback(
     Output('r1_table_timing_summary', 'children'),
-    [Input('submit_button', 'n_clicks'),
-     Input('branch_dropdown', 'value'),
-     Input('build_no_dropdown', 'value')
-     ]
+    [Input('submit_button', 'n_clicks')],
+    [State('branch_dropdown', 'value'),
+     State('build_no_dropdown', 'value')]
 )
 def gen_table_timing_summary(n_clicks, branch, build_no):
     """
@@ -157,10 +155,14 @@ def gen_table_timing_summary(n_clicks, branch, build_no):
                    'nodeFailoverTime', 'nodeFailbackTime', 'allServiceStopTime',
                    'allServiceStartTime', 'bucketCreationTime', 'bucketDeletionTime']
 
-    cursor = r1Api.find({'info': 'build sequence'})
+    cursor = r1Api.find({'info': 'build sequence R1'})
     build_list = cursor[0][branch]
-    prev_build_no = build_list[build_list.index(build_no) - 1]
-    build_no_list = [build_no, prev_build_no]
+    if build_list.index(build_no) > 1:
+        prev_build_no = build_list[build_list.index(build_no) - 1]
+        build_no_list = [build_no, prev_build_no]
+    else:
+        prev_build_no = []
+        build_no_list = [build_no]
     timing_data = []
     for build in build_no_list:
         data_list = []
@@ -169,16 +171,18 @@ def gen_table_timing_summary(n_clicks, branch, build_no):
             try:
                 data = sum(cursor) / len(cursor)
             except Exception as ex:
-                print("Exception received while calculating average{}".format(ex))
+                # print("Exception received while calculating average{}".format(ex))
                 data = "-"
             data_list.append(data)
         timing_data.append(data_list)
 
     data_timing_summary = {
         "Task": timing_list,
-        build_no: timing_data[0],
-        prev_build_no: timing_data[1]
+        build_no: timing_data[0]
     }
+    if prev_build_no:
+        data_timing_summary[prev_build_no] = timing_data[1]
+
     df_timing_summary = pd.DataFrame(data_timing_summary)
     timing_summary = dash_table.DataTable(
         id="timing_summary",
@@ -268,7 +272,7 @@ def gen_table_multi_bucket_perf_stats(n_clicks, branch, build_no):
 
     # retrieve overall hsbench data
     data = r1_perf_tables.get_hsbench_data(build_no)
-    hs_bench_text = [["Hsbench", html.Br(), "1 Buckets", html.Br(), "100 Objects", html.Br(),
+    hs_bench_text = [["Hsbench", html.Br(), "1 Buckets", html.Br(), "1000 Objects", html.Br(),
                       "100 Sessions"],
                      ["Hsbench", html.Br(), "10 Buckets", html.Br(), "100 Objects", html.Br(),
                       "100 Sessions"],
@@ -284,7 +288,7 @@ def gen_table_multi_bucket_perf_stats(n_clicks, branch, build_no):
     # Retrieve data for cosbench
     data = r1_perf_tables.get_cosbench_data(build_no)
     cos_bench_text = [
-        ["Cosbench", html.Br(), "1 Buckets", html.Br(), "100 Objects", html.Br(), "100 Sessions"],
+        ["Cosbench", html.Br(), "1 Buckets", html.Br(), "1000 Objects", html.Br(), "100 Sessions"],
         ["Cosbench", html.Br(), "10 Buckets", html.Br(), "100 Objects", html.Br(),
          "100 Sessions"],
         ["Cosbench", html.Br(), "50 Buckets", html.Br(), "100 Objects", html.Br(),
@@ -309,7 +313,6 @@ def gen_table_multi_bucket_perf_stats(n_clicks, branch, build_no):
     return table
 
 
-# callback only for 1 bucket,1000 objects,100 sessions
 @app.callback(
     Output('r1_table_bucket_ops_data', 'children'),
     [Input('submit_button', 'n_clicks'),
@@ -321,7 +324,6 @@ def gen_table_multi_bucket_perf_stats(n_clicks, branch, build_no):
 def get_table_bucket_ops_data(n_clicks, bucket_op, branch, build_no):
     if n_clicks is None or branch is None or build_no is None:
         raise PreventUpdate
-    print("Bucket op", bucket_op)
     if bucket_op is None:
         bucket_op = "AvgLat"
     operations = ['INIT BCLR', 'INIT BDEL', 'BINIT', 'PUT', 'LIST', 'GET', 'DEL', 'BCLR', 'BDEL']
@@ -330,6 +332,9 @@ def get_table_bucket_ops_data(n_clicks, bucket_op, branch, build_no):
     bucket_obj_input = {'First': {'Bucket': 1, 'Object': 1000},  # 100 Sessions by default
                         'Second': {'Bucket': 10, 'Object': 1000},
                         'Third': {'Bucket': 50, 'Object': 5000}, }
+    display_obj_input = {'First': {'Bucket': 1, 'Object': 1000},  # 100 Sessions by default
+                         'Second': {'Bucket': 10, 'Object': 100},
+                         'Third': {'Bucket': 50, 'Object': 100}, }
     html_data = []
     for keys in bucket_obj_input:
         final_dict["Operations"] = operations
@@ -338,19 +343,21 @@ def get_table_bucket_ops_data(n_clicks, bucket_op, branch, build_no):
                      'Buckets': bucket_obj_input[keys]['Bucket'],
                      'Objects': bucket_obj_input[keys]['Object'], 'Sessions': 100}
             cursor = perf_api.find(query)
-            doc = cursor[0]
-            temp_data = []
-            for i in range(0, 9):
-                try:
-                    temp_data.append(r1_perf_tables.round_off(doc['Bucket_Ops'][i][bucket_op]))
-                except Exception as ex:
-                    print("Exception {}".format(ex))
-                    temp_data.append('-')
-            final_dict[ob_size] = temp_data
-
+            try:
+                doc = cursor[0]
+                temp_data = []
+                for i in range(0, 9):
+                    try:
+                        temp_data.append(r1_perf_tables.round_off(doc['Bucket_Ops'][i][bucket_op]))
+                    except Exception as ex:
+                        print("Exception {}".format(ex))
+                        temp_data.append('-')
+                final_dict[ob_size] = temp_data
+            except Exception as ex:
+                final_dict[ob_size] = '-' * 9
         df = pd.DataFrame(final_dict)
-        span_txt = "{} Bucket,{} Objects,100 sessions".format(bucket_obj_input[keys]['Bucket'],
-                                                              bucket_obj_input[keys]['Object'])
+        span_txt = "{} Bucket,{} Objects,100 sessions".format(display_obj_input[keys]['Bucket'],
+                                                              display_obj_input[keys]['Object'])
         html_data.extend(common.get_df_to_rows(df, span_txt, 9))
 
     col_name = ["Buckets", "Operations"]

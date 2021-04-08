@@ -170,7 +170,7 @@ class TestBucketACL():
         self.log.info("ENDED: Teardown Operations")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5717")
     @CTFailOn(error_handler)
     def test_verify_get_bucket_acl_3012(self):
@@ -191,7 +191,7 @@ class TestBucketACL():
         self.log.info("verify Get Bucket ACL of existing Bucket")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5719")
     @CTFailOn(error_handler)
     def test_verify_get_bucket_acl_3013(self):
@@ -206,7 +206,7 @@ class TestBucketACL():
         self.log.info("verify Get Bucket ACL of non existing Bucket")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5712")
     @CTFailOn(error_handler)
     def test_verify_get_bucket_acl_3014(self):
@@ -227,7 +227,7 @@ class TestBucketACL():
         self.log.info("verify Get Bucket ACL of an empty Bucket")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5718")
     @CTFailOn(error_handler)
     def test_verify_get_bucket_acl_3015(self):
@@ -258,7 +258,7 @@ class TestBucketACL():
             "verify Get Bucket ACL of an existing Bucket having objects")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5713")
     @CTFailOn(error_handler)
     def test_verify_get_bucket_acl_3016(self):
@@ -272,7 +272,7 @@ class TestBucketACL():
         self.log.info("Verify Get Bucket ACL without Bucket name")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5720")
     @CTFailOn(error_handler)
     def test_delete_and_verify_bucket_acl_3017(self):
@@ -293,7 +293,7 @@ class TestBucketACL():
         self.log.info("Delete Bucket and verify Bucket ACL")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5716")
     @CTFailOn(error_handler)
     def test_verify_get_bucket_acl_3018(self):
@@ -334,7 +334,7 @@ class TestBucketACL():
             "verify Get Bucket ACL of existing Bucket with associated Account credentials")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5715")
     @CTFailOn(error_handler)
     def test_verify_get_bucket_acl_3019(self):
@@ -375,7 +375,7 @@ class TestBucketACL():
             "verify Get Bucket ACL of existing Bucket with different Account credentials")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5714")
     @CTFailOn(error_handler)
     def test_verify_get_bucket_acl_3020(self):
@@ -426,7 +426,7 @@ class TestBucketACL():
             "verify Get Bucket ACL of existing Bucket with IAM User credentials")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5728")
     @CTFailOn(error_handler)
     def test_add_canned_acl_bucket_3527(self):
@@ -440,7 +440,7 @@ class TestBucketACL():
             "Add canned ACL bucket-owner-full-control along with READ ACL grant permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5727")
     @CTFailOn(error_handler)
     def test_add_canned_acl_bucket_3528(self):
@@ -454,7 +454,7 @@ class TestBucketACL():
             "Add canned ACL bucket-owner-read along with READ ACL grant permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5736")
     @CTFailOn(error_handler)
     def test_add_canned_acl_private_3529(self):
@@ -468,7 +468,7 @@ class TestBucketACL():
             "Add canned ACL 'private' along with 'READ' ACL grant permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5737")
     @CTFailOn(error_handler)
     def test_add_canned_acl_private_3530(self):
@@ -482,7 +482,7 @@ class TestBucketACL():
             "Add canned ACL 'private' along with 'FULL_CONTROL' ACL grant permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5732")
     @CTFailOn(error_handler)
     def test_add_canned_acl_public_read_3531(self):
@@ -496,7 +496,7 @@ class TestBucketACL():
             "Add canned ACL 'public-read' along with 'READ_ACP' ACL grant permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5731")
     @CTFailOn(error_handler)
     def test_add_canned_acl_public_read_3532(self):
@@ -510,7 +510,7 @@ class TestBucketACL():
             "Add canned ACL 'public-read' along with 'WRITE_ACP' ACL grant permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5729")
     @CTFailOn(error_handler)
     def test_add_canned_acl_public_read_write_3533(self):
@@ -524,7 +524,7 @@ class TestBucketACL():
             "Add canned ACL 'public-read-write' along with 'WRITE_ACP' ACL grant permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5730")
     @CTFailOn(error_handler)
     def test_add_canned_acl_public_read_write_3534(self):
@@ -538,7 +538,7 @@ class TestBucketACL():
             "Add canned ACL 'public-read-write' along with 'FULL_CONTROL' ACL grant permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5739")
     @CTFailOn(error_handler)
     def test_add_canned_acl_authenticate_read_3535(self):
@@ -552,7 +552,7 @@ class TestBucketACL():
             "Add canned ACL 'authenticate-read' along with 'READ' ACL grant permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5738")
     @CTFailOn(error_handler)
     def test_add_canned_acl_authenticate_read_3536(self):
@@ -566,7 +566,7 @@ class TestBucketACL():
             "Add canned ACL 'authenticate-read' along with 'READ_ACP' ACL grant permission")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5735")
     @CTFailOn(error_handler)
     def test_add_canned_acl_private_3537(self):
@@ -631,7 +631,7 @@ class TestBucketACL():
             " ACL grant permission as request body")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5733")
     @CTFailOn(error_handler)
     def test_add_canned_acl_private_3538(self):
@@ -698,7 +698,7 @@ class TestBucketACL():
             " ACL grant permission in request header")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5734")
     @CTFailOn(error_handler)
     def test_add_canned_acl_private_3539(self):
@@ -776,7 +776,7 @@ class TestBucketACL():
             " ACL grant permission in request body")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5726")
     @CTFailOn(error_handler)
     def test_add_canned_acl_authenticated_read_3577(self):
@@ -849,7 +849,7 @@ class TestBucketACL():
             "head-bucket from account2 on a bucket. Bucket belongs to account1")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5724")
     @CTFailOn(error_handler)
     def test_apply_private_canned_acl_3578(self):
@@ -923,7 +923,7 @@ class TestBucketACL():
             "head-bucket from account2 on a bucket. Bucket belongs to account1")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5722")
     @CTFailOn(error_handler)
     def test_grant_read_permission_acl_3579(self):
@@ -1004,7 +1004,7 @@ class TestBucketACL():
             "from account2 on a bucket. Bucket belongs to account1")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5721")
     @CTFailOn(error_handler)
     def test_perform_head_bucket_acl_3580(self):
@@ -1022,7 +1022,7 @@ class TestBucketACL():
         self.log.info("Perform a head bucket on a bucket")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5723")
     @CTFailOn(error_handler)
     def test_create_verify_default_acl_3581(self):
@@ -1044,7 +1044,7 @@ class TestBucketACL():
         self.log.info("Create a bucket and verify default ACL")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8027")
     @CTFailOn(error_handler)
     def test_put_get_bucket_acl_312(self):
@@ -1069,7 +1069,7 @@ class TestBucketACL():
             "ENDED: put bucket in account1 and get-bucket-acl for that bucket")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8029")
     @CTFailOn(error_handler)
     def test_put_get_bucket_acl_313(self):
@@ -1103,7 +1103,7 @@ class TestBucketACL():
             "ENDED:acc1: put bucket, acc2: no permissions or canned acl, get-bucket-acl details")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8030")
     @CTFailOn(error_handler)
     def test_put_get_bucket_acl_431(self):
@@ -1138,7 +1138,7 @@ class TestBucketACL():
             "ENDED:acc1 -put bucket, acc2- give read-acp permissions,acc1- get-bucket-acl")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8712")
     @CTFailOn(error_handler)
     def test_full_control_acl_6423(self):

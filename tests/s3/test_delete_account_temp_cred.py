@@ -155,7 +155,7 @@ class TestDeleteAccountTempCred():
         LOGGER.info("Deleted accounts successfully")
         LOGGER.info("ENDED: Teardown operations")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-6208")
     @CTFailOn(error_handler)
     def test_4518(self):
@@ -182,7 +182,7 @@ class TestDeleteAccountTempCred():
         LOGGER.info("Step 6: Verified that account is deleted successfully")
         LOGGER.info("ENDED: Delete account with valid temp credentials")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-6207")
     @CTFailOn(error_handler)
     def test_4519(self):
@@ -208,7 +208,7 @@ class TestDeleteAccountTempCred():
             test_4519_cfg["err_message"])
         LOGGER.info("ENDED: Delete account with invalid temp credentials")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-6206")
     @CTFailOn(error_handler)
     def test_4520(self):
@@ -236,7 +236,7 @@ class TestDeleteAccountTempCred():
         LOGGER.info(
             "ENDED: Delete non existing account with temp credentials.")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-6205")
     @CTFailOn(error_handler)
     def test_4521(self):
@@ -274,7 +274,7 @@ class TestDeleteAccountTempCred():
         LOGGER.info(
             "ENDED: Delete account after 20 mins using temp credentials with expire time limit.")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-6204")
     @CTFailOn(error_handler)
     def test_4522(self):
@@ -322,7 +322,7 @@ class TestDeleteAccountTempCred():
         LOGGER.info(
             "ENDED: Perform S3 operations using deleted account temp credentials")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-6203")
     @CTFailOn(error_handler)
     def test_4523(self):
@@ -372,7 +372,7 @@ class TestDeleteAccountTempCred():
         LOGGER.info(
             "ENDED: Delete account using temp cred where that account recently got deleted")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-6202")
     @CTFailOn(error_handler)
     def test_4525(self):
@@ -405,7 +405,7 @@ class TestDeleteAccountTempCred():
         LOGGER.info(
             "ENDED: Perform S3 operations using expired temp credentials")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-6201")
     @CTFailOn(error_handler)
     def test_4526(self):
@@ -433,7 +433,7 @@ class TestDeleteAccountTempCred():
         LOGGER.info(
             "ENDED: Delete account after 1 hour using temp credentials with expire time limit.")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-6200")
     @CTFailOn(error_handler)
     def test_4692(self):

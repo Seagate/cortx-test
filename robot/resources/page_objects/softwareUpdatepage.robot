@@ -27,7 +27,6 @@ Download SW ISO File
     [Documentation]  This keyword download SW ISO File
     [Arguments]  ${version}  ${file_path}
     ${url}=  Get Url for Software Download  ${version}
-    ${file_path}=  catenate  SEPARATOR=\  ${file_path}  swfile.iso
+    ${file_path}=  download_file  ${url}  ${file_path}  swfile.iso
     Log To Console And Report  ${file_path}
-    download file  ${url}  ${file_path}
     [Return]  ${file_path}

@@ -43,6 +43,7 @@ class TestSystemCapacity():
                                     CMN_CFG["nodes"][0]["password"])
 
     @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-15200')
     def test_4202(self):
         """Test REST API for GET request with default arguments return 200 and json response
