@@ -141,6 +141,8 @@ query_database = dbc.Card(
             html.Br(),
             html.Div(forth_row),
             html.Br(),
+            html.Div(id="table_query_result_count", className='text-center',
+                        style={'color': '#001a33', 'margin': 20, 'font-size': 18}),
             dcc.Loading(html.Div(id="table_query_result"))
         ]
     )

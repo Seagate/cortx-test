@@ -1,7 +1,7 @@
 *** Settings ***
 Documentation    This suite verifies the testcases for csm user creation
 Resource   ${EXECDIR}/resources/page_objects/alertPage.robot
-Resource   ${EXECDIR}/resources/page_objects/dashboard.robot
+Resource   ${EXECDIR}/resources/page_objects/dashboardPage.robot
 Resource   ${EXECDIR}/resources/page_objects/loginPage.robot
 Resource   ${EXECDIR}/resources/page_objects/preboardingPage.robot
 Resource   ${EXECDIR}/resources/page_objects/s3accountPage.robot
@@ -28,7 +28,7 @@ ${password}
 *** Keywords ***
 
 Create and login with CSM manage user
-    [Documentation]  This keyword is to create and login with csm monitor user
+    [Documentation]  This keyword is to create and login with csm manage user
     ${new_user_name}=  Generate New User Name
     ${new_password}=  Generate New Password
     Navigate To Page  ${page name}
@@ -48,14 +48,6 @@ TEST-1220
     Navigate To Page  DASHBOARD_MENU_ID
     Sleep  1s
     Verify that CSM manage user can not access setting menu
-    Re-login  ${username}  ${password}  ${page_name}
-    Delete CSM User  ${new_user_name}
-
-TEST-1226
-    [Documentation]  Test manager user can not edit or delete s3 account.
-    [Tags]  Priority_High  user_role  TEST-1226
-    ${new_user_name}  ${new_password}=  Create and login with CSM manage user
-    Verify Absence of Edit And Delete Button on S3account
     Re-login  ${username}  ${password}  ${page_name}
     Delete CSM User  ${new_user_name}
 
@@ -117,3 +109,35 @@ TEST-1217
     wait for page or element to load  2s
     Navigate To Page    MANAGE_MENU_ID
     Delete CSM User  ${new_csm_user_name}
+
+TEST-18327
+    [Documentation]  Test that csm user with Manage rights is able to reset the s3 account users password through CSM GUI.
+    ...  Reference : https://jts.seagate.com/browse/TEST-18327
+    [Tags]  Priority_High  TEST-18327  S3_test  Smoke_test
+    ${new_user_name}  ${new_password}=  Create and login with CSM manage user
+    wait for page or element to load  2s
+    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    sleep  2s
+    ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
+    sleep  5s
+    Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
+    CSM GUI Logout
+    Enter Username And Password  ${S3_account_name}  ${S3_password}
+    Click Sigin Button
+    sleep  2s
+    Validate CSM Login Success  ${s3_account_name}
+    CSM GUI Logout
+    wait for page or element to load  2s
+    Enter Username And Password  ${new_user_name}  ${new_password}
+    Click Sigin Button
+    wait for page or element to load  2s
+    Validate CSM Login Success  ${new_user_name}
+    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    ${S3_new_password}=  Generate New Password
+    Edit S3 User Password  ${S3_account_name}  ${S3_new_password}  ${S3_new_password}
+    Delete S3 Account  ${S3_account_name}  ${S3_new_password}  True
+    Enter Username And Password  ${username}  ${password}
+    Click Sigin Button
+    wait for page or element to load  2s
+    Navigate To Page    MANAGE_MENU_ID
+    Delete CSM User  ${new_user_name}
