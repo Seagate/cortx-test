@@ -14,7 +14,7 @@ Click On Cancel Button
 
 Click On Confirm Button
     [Documentation]  Perform click operation on confirm pop up button
-    Sleep  5s
+    wait for page or element to load  5s
     Wait Until Element Is Visible  ${NEW_USER_CONFIRM_OK_BUTTON_ID}  timeout=60
     Click button    ${NEW_USER_CONFIRM_OK_BUTTON_ID}
 
@@ -59,7 +59,7 @@ Create New CSM User
 Verify New User
     [Documentation]  Functionality to validate correc user name
     [Arguments]  ${user_name}
-    Sleep  6s  #  Reloading take some initial time
+    wait for page or element to load  6s  #  Reloading take some initial time
     ${users_list}=  Read Table Data  ${CSM_TABLE_ELEMENTS_XPATH}
     List Should Contain Value  ${users_list}  ${user_name}
 
@@ -132,14 +132,14 @@ Verify Mismatch Password Error
 Verify Absence of Edit And Delete Button on S3account
     [Documentation]  Verify Absence of Edit And Delete Button on S3account
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    Sleep  5s  # Took time to load s3 accounts
+    wait for page or element to load  5s
     Page Should Not Contain Element  ${EDIT_S3_ACCOUNT_OPTION_ID}
     Page Should Not Contain Element  ${DELETE_S3_ACCOUNT_ID}
 
 Verify Absence of Reset Passwrod Button on S3account
     [Documentation]  Verify Absence of Reset Passwrod Button Button on S3account
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    Sleep  5s  # Took time to load s3 accounts
+    wait for page or element to load  5s
     Page Should Not Contain Element  ${EDIT_S3_ACCOUNT_OPTION_ID}
 
 Verify Absence of Admin User Section
@@ -150,7 +150,7 @@ Verify Absence of Admin User Section
 Verify Absence of Delete Button on CSM users
     [Documentation]  Verify Absence of delete icon
     Navigate To Page    MANAGE_MENU_ID  ADMINISTRATIVE_USER_TAB_ID
-    Sleep  3s  # Took time to load CSM accounts
+    wait for page or element to load  3s  # Took time to load CSM accounts
     Page Should Not Contain Button  ${DELETE_USER_BTN_ID}
 
 Verify Only Valid Password Get Added
@@ -207,7 +207,7 @@ Verify Deleted User
 
 Verify Presence of Pagination
     [Documentation]  Functionality to validate correc user name
-    Sleep  1s
+    wait for page or element to load  2s
     Page Should Contain Element  ${PAGINATION_BAR_XPATH}
 
 Read Pagination Options
@@ -248,7 +248,7 @@ Verify Admin User Should Not Contain Delete Icon
 Verify IAM User Section Not Present
     [Documentation]  Functionality to verify IAM User Section Not Present
     Navigate To Page  MANAGE_MENU_ID
-    Sleep  3s
+    wait for page or element to load  3s
     Page Should Not Contain Element  ${IAM_USER_TAB_ID}
 
 Edit CSM User Details
@@ -277,9 +277,11 @@ Edit S3 User Password
     Click on edit s3 account option
     update s3 account password  ${password}  ${confirm_password}
     Click on update s3 account button
-    sleep  5s
+    wait for page or element to load  5s
     wait until element is visible  ${LOG_OUT_ID}  timeout=20
     CSM GUI Logout
+    Reload Page
+    wait for page or element to load  3s
     Run Keywords
     ...  Enter Username And Password    ${s3_account_name}  ${password}
     ...  AND
@@ -298,5 +300,5 @@ Verify that user can not access Lyve Pilot menu
 Verify bucket Section Not Present
     [Documentation]  Functionality to verify bucket User Section Not Present.
     Navigate To Page  MANAGE_MENU_ID
-    Sleep  3s
+    wait for page or element to load  3s
     Page Should Not Contain Element  ${BUCKETS_TAB_ID}
