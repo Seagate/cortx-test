@@ -127,6 +127,7 @@ class TestCliIAMUser:
         cls.iam_obj.close_connection()
         cls.LOGGER.info("Deleted s3 account %s", cls.s3acc_name)
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10858")
     def test_867_create_iam_user(self):
@@ -143,6 +144,7 @@ class TestCliIAMUser:
         self.LOGGER.info("Created iam user with name %s", self.iam_password)
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10861")
     def test_875_delete_iam_user(self):
@@ -162,6 +164,7 @@ class TestCliIAMUser:
         self.LOGGER.info("Deleted iam user with name %s", self.user_name)
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10852")
     def test_873_create_duplicate_user(self):
@@ -189,6 +192,7 @@ class TestCliIAMUser:
         self.LOGGER.info("Verified that duplicate user was not created")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10851")
     def test_870_display_help(self):
@@ -203,6 +207,7 @@ class TestCliIAMUser:
         self.LOGGER.info("Displayed help information for s3iamusers create")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10854")
     def test_871_create_invalid_user(self):
@@ -224,6 +229,7 @@ class TestCliIAMUser:
             "Verified that iam user was not created with invalid name")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10855")
     def test_872_missing_username_param(self):
@@ -244,6 +250,7 @@ class TestCliIAMUser:
             "Verified that error was displayed with missing user name parameter")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10856")
     def test_874_invalid_pwd(self, generate_random_string):
@@ -265,6 +272,7 @@ class TestCliIAMUser:
             "Verified that iam user is not created with invalid password")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10859")
     def test_6453_mismatch_pwd(self):
@@ -286,6 +294,7 @@ class TestCliIAMUser:
             "Verified that user is not created in case of mismatch password")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10860")
     def test_876_delete_non_exist_user(self):
@@ -304,6 +313,7 @@ class TestCliIAMUser:
             "Verified that delete non existing IAM user is failed")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10862")
     def test_1145_login_with_iam_user(self):
@@ -339,6 +349,7 @@ class TestCliIAMUser:
             "Verified that iam user is not able to login cortxcli")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10863")
     def test_878_list_user(self):
@@ -371,6 +382,7 @@ class TestCliIAMUser:
             "Verified show command is able to list user in all format(json,xml,table)")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10864")
     def test_1152_user_logout(self):
@@ -390,6 +402,7 @@ class TestCliIAMUser:
             password=self.acc_password)
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10865")
     def test_1149_invalid_password(self, generate_random_string):
@@ -431,6 +444,7 @@ class TestCliIAMUser:
             "Verified that appropriate error should be returned when user enters invalid password")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10866")
     def test_1148_invalid_username(self):
@@ -457,6 +471,7 @@ class TestCliIAMUser:
             "Verified that appropriate error should be returned when user enters invalid username")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10868")
     def test_1154_logged_out_with_ctrl_c(self):
@@ -479,6 +494,7 @@ class TestCliIAMUser:
             "Keyboard interrupt signal has been sent to running process ")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10867")
     def test_1150_login_with_valid_user(self):

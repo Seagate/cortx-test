@@ -20,13 +20,17 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 
-import sys
 import configparser
+import json
+import sys
+from http import HTTPStatus
+
 import dash
 import dash_bootstrap_components as dbc
-from jira import JIRA
-import pandas as pd
 import dash_html_components as html
+import pandas as pd
+import requests
+from jira import JIRA
 
 external_stylesheets = [dbc.themes.COSMO]
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP],
@@ -44,7 +48,9 @@ config.read('config.ini')
 try:
     search_endpoint = config["REST"]["search_endpoint"]
     distinct_endpoint = config["REST"]["distinct_endpoint"]
-
+    timing_endpoint = config["REST"]["timing_endpoint"]
+    aggregate_endpoint = config["REST"]["aggregate_endpoint"]
+    count_endpoint = config["REST"]["count_endpoint"]
     headers = {
         'Content-Type': 'application/json'
     }
@@ -58,8 +64,8 @@ except KeyError:
     sys.exit(1)
 
 versions = [
-    {'label': 'LR1', 'value': 'LR1'},
-    {'label': 'LR2', 'value': 'LR2'}
+    {'label': 'LR-R1', 'value': 'LR1'},
+    {'label': 'LR-R2', 'value': 'LR2'}
 ]
 
 # common style
@@ -105,7 +111,7 @@ def get_issue_details(issue_list):
     return res_dataframe
 
 
-def get_data_to_html_rows(data,col_names, row_span_text, no_of_rows_to_span):
+def get_data_to_html_rows(data, col_names, row_span_text, no_of_rows_to_span):
     """
     Generate hmtl rows of the given data
     As row span feature is not supported in datatable,
@@ -146,3 +152,32 @@ def get_df_to_rows(dataframe, row_span_text, no_of_rows_to_span):
             row.append(html.Td(children=value))
         rows.append(html.Tr(row))
     return rows
+
+
+def r2_get_previous_builds(branch, build_no, no_of_prev_builds=1):
+    query_input = {
+        "aggregate": [{"$group": {"_id": {"buildNo": "$buildNo", "buildType": "$buildType"},
+
+                                  "testStartTime": {"$min": "$testStartTime"}}}]}
+    query_input.update(credentials)
+    print("r2_get_previous_builds query :{}".format(query_input))
+    response = requests.request("GET", aggregate_endpoint, headers=headers,
+                                data=json.dumps(query_input))
+    build_list = []
+    if response.status_code == HTTPStatus.OK:
+        json_response = json.loads(response.text)
+        for each in sorted(json_response["result"], key=lambda k: k["testStartTime"]):
+            if each["_id"]["buildType"] == branch:
+                build_list.append(each["_id"]["buildNo"])
+        print("Sorted build list {}".format(build_list))
+        if build_no in build_list:
+            index = build_list.index(build_no)
+            if no_of_prev_builds > index:
+                prev_list = build_list[:index]
+            else:
+                prev_list = build_list[index - no_of_prev_builds:index]
+        else:
+            prev_list = []
+    else:
+        print("r2_get_previous_builds error code :{}".format(response.status_code))
+    return prev_list

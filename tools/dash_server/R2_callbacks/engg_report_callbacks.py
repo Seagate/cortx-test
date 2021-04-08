@@ -23,13 +23,13 @@
 import json
 from http import HTTPStatus
 
-import dash_bootstrap_components as dbc
-import dash_html_components as html
 import dash_table
 import pandas as pd
 import requests
-from dash.dependencies import Output, Input
+from dash.dependencies import Output, Input, State
 from dash.exceptions import PreventUpdate
+from pymongo.network import command
+
 import common
 from common import app
 
@@ -40,12 +40,11 @@ from common import app
 
 @app.callback(
     Output('table_comp_summary', 'children'),
-    [Input('submit_button', 'n_clicks'),
-     Input('branch_dropdown', 'value'),
-     Input('build_no_dropdown', 'value'),
-     Input('test_system_dropdown', 'value'),
-     Input('test_team_dropdown', 'value'),
-     ]
+    Input('submit_button', 'n_clicks'),
+    [State('branch_dropdown', 'value'),
+     State('build_no_dropdown', 'value'),
+     State('test_system_dropdown', 'value'),
+     State('test_team_dropdown', 'value')]
 )
 def gen_table_comp_summary(n_clicks, branch, build_no, test_system, test_team):
     """
@@ -57,23 +56,27 @@ def gen_table_comp_summary(n_clicks, branch, build_no, test_system, test_team):
     :param test_team: Testing team
     :return:
     """
-    if n_clicks is None or branch is None or build_no is None or \
-            test_system is None or test_team is None:
+    if n_clicks is None or branch is None or build_no is None:
         raise PreventUpdate
 
-    component_list = ["S3", "Provisioner", "CSM", "RAS", "Motr", "HA"]
-    # **Query for previous build
-    # current build, previous build
-    build_no_list = [build_no, build_no]
+    component_list = ["S3", "Provisioner", "CSM", "RAS", "Motr", "HA", "Hare"]
+    # Query for previous build
+    prev_build = common.r2_get_previous_builds(branch, build_no)
+    if len(prev_build) == 1:
+        build_no_list = [build_no, prev_build[0]]
+    else:
+        build_no_list = [build_no]
     # list of dictionary
-    builds_details = []
-
+    builds_details = {"Component": component_list}
     for build in build_no_list:
-        query_input = {
-            "query": {"buildType": branch, "buildNo": build, "testPlanLabel": test_system,
-                      "testTeam": test_team},
-            "field": "issueIDs"}
-
+        query = {"buildType": branch, "buildNo": build}
+        if test_system is not None:
+            query["testPlanLabel"] = test_system
+        if test_system is not None:
+            query["testTeam"] = test_team
+        query_input = {"query": query, "field": "issueIDs"}
+        if common.DEBUG_PRINTS:
+            print(f"(gen_table_comp_summary) Query {query_input}")
         query_input.update(common.credentials)
         response = requests.request("GET", common.distinct_endpoint, headers=common.headers,
                                     data=json.dumps(query_input))
@@ -81,16 +84,17 @@ def gen_table_comp_summary(n_clicks, branch, build_no, test_system, test_team):
             json_response = json.loads(response.text)
             issue_list = json_response["result"]
             issue_df = common.get_issue_details(issue_list)
-            build_dict = {}
+            temp_list = []
             for comp in component_list:
-                build_dict[comp] = issue_df[issue_df.issue_comp == comp].shape[0]
-            builds_details.append(build_dict)
-
-    df_comp_summary = pd.DataFrame({
-        "Component": component_list,
-        "Current Build": builds_details[0].values(),
-        "Previous Build ": builds_details[1].values()
-    })
+                temp_list.append(issue_df[issue_df.issue_comp == comp].shape[0])
+            builds_details[build] = temp_list
+        elif response.status_code == HTTPStatus.NOT_FOUND:
+            print(f"(gen_table_comp_summary) Response code {response.status_code}")
+            builds_details[build] = 0 * len(component_list)
+        else:
+            print(f"(gen_table_comp_summary) Response code {response.status_code}")
+            builds_details[build] = '-' * len(component_list)
+    df_comp_summary = pd.DataFrame(builds_details)
     comp_summary = dash_table.DataTable(
         id="comp_summary",
         columns=[{"name": i, "id": i} for i in df_comp_summary.columns],
@@ -106,25 +110,72 @@ def gen_table_comp_summary(n_clicks, branch, build_no, test_system, test_team):
 
 @app.callback(
     Output('table_timing_summary', 'children'),
-    [Input('submit_button', 'n_clicks')]
+    Input('submit_button', 'n_clicks'),
+    [State('branch_dropdown', 'value'),
+     State('build_no_dropdown', 'value'),
+     State('test_system_dropdown', 'value'),
+     State('test_team_dropdown', 'value')]
 )
-def gen_table_timing_summary(n_clicks):
+def gen_table_timing_summary(n_clicks, branch, build_no, test_system, test_team):
     """
     Returns the timing details for the build
     :param n_clicks: Input Event
     :return:
     """
-    if n_clicks is None:
+    if n_clicks is None or branch is None or build_no is None:
         raise PreventUpdate
-    data_timing_summary = {
-        "Task": ["Update", "Deployment", "Boxing", "Unboxing", "Onboarding", "Firmware Update",
-                 "Bucket Creation",
-                 "Bucket Deletion"],
-        "Current Build": ["1", "2", "3", "4", "5", "6", "7", "8"],
-        "Prev Build": ["1", "2", "3", "4", "5", "6", "7", "8"],
-        "Prev Build 1": ["1", "2", "3", "4", "5", "6", "7", "8"],
-        "Prev Build 2": ["1", "2", "3", "4", "5", "6", "7", "8"],
+
+    previous_build_list = common.r2_get_previous_builds(branch, build_no, 2)
+    previous_build_list.reverse()
+    build_seq = [build_no]
+    build_seq.extend(previous_build_list)
+    # timing parameters
+    timing_parameters = {
+        "nodeRebootTime": "Node Reboot",
+        "allServicesStartTime": "Start All Services",
+        "allServicesStopTime": "Stop All Services",
+        "nodeFailoverTime": "Node Failover",
+        "nodeFailbackTime": "Node Failback",
+        "bucketCreationTime": "Bucket Creation",
+        "bucketDeletionTime": "Bucket Deletion",
+        "softwareUpdateTime": "Software Update",
+        "firmwareUpdateTime": "Firmware Update",
+        "startNodeTime": "Start Node",
+        "stopNodeTime": "Stop Node"
     }
+    data_timing_summary = {"Task": timing_parameters.values()}
+
+    for build in build_seq:
+        row = []
+        for param in timing_parameters.keys():
+            query = {"buildType": branch, "buildNo": build, param: {"$exists": True}}
+            if test_system is not None:
+                query["testPlanLabel"] = test_system
+            if test_team is not None:
+                query["testTeam"] = test_team
+
+            query_input = {"query": query, "projection": {param: True}}
+            query_input.update(common.credentials)
+            if common.DEBUG_PRINTS:
+                print("(gen_table_timing_summary)Query :{}".format(query_input))
+            response = requests.request("GET", common.timing_endpoint, headers=common.headers,
+                                        data=json.dumps(query_input))
+            if response.status_code == HTTPStatus.OK:
+                json_response = json.loads(response.text)
+                parameter_data = json_response["result"]
+                if parameter_data:
+                    row.append(common.round_off(
+                        sum(x[param] for x in parameter_data) / len(parameter_data)))
+                else:
+                    row.append("-")
+            elif response.status_code == HTTPStatus.NOT_FOUND:
+                # print(f"(gen_table_timing_summary) Response code {response.status_code}")
+                row.append("-")
+            else:
+                print(f"(gen_table_timing_summary) Response code {response.status_code}")
+                row.append("-")
+        data_timing_summary[build] = row
+
     df_timing_summary = pd.DataFrame(data_timing_summary)
     timing_summary = dash_table.DataTable(
         id="timing_summary",
@@ -141,90 +192,79 @@ def gen_table_timing_summary(n_clicks):
 
 @app.callback(
     Output('table_detailed_s3_bucket_perf', 'children'),
-    [Input('submit_button', 'n_clicks')]
+    Input('submit_button', 'n_clicks'),
+    [State('branch_dropdown', 'value'),
+     State('build_no_dropdown', 'value'),
+     State('test_system_dropdown', 'value'),
+     State('test_team_dropdown', 'value')]
 )
-def gen_table_detailed_s3_bucket_perf(n_clicks):
+def gen_table_detailed_s3_bucket_perf(n_clicks, branch, build_no, test_system, test_team):
     """
     Single Bucket Performance Statistics (Average) using S3Bench (Detailed)
     :param n_clicks:
     :return:
     """
-    if n_clicks is None:
+    if n_clicks is None or branch is None or build_no is None:
         raise PreventUpdate
-    data_detailed_s3_bucket_perf = {
-        "Statistics": ["Write Throughput(MBps)", "Read Throughput(MBps)", "Write Latency(ms)",
-                       "Read Latency(ms)",
-                       "Write IOPS", "Read IOPS", "Write TTFB(ms)", "Read TTFB(ms)"],
-        "4KB": ["1", "2", "3", "4", "5", "6", "7", "8"],
-        "100KB": ["1", "2", "3", "4", "5", "6", "7", "8"],
-        "1MB": ["1", "2", "3", "4", "5", "6", "7", "8"],
-        "5MB": ["1", "2", "3", "4", "5", "6", "7", "8"],
-        "36MB": ["1", "2", "3", "4", "5", "6", "7", "8"],
-        "64MB": ["1", "2", "3", "4", "5", "6", "7", "8"],
-        "128MB": ["1", "2", "3", "4", "5", "6", "7", "8"],
-        "256MB": ["1", "2", "3", "4", "5", "6", "7", "8"],
-    }
-    df_detailed_s3_bucket_perf = pd.DataFrame(data_detailed_s3_bucket_perf)
-    detailed_s3_bucket_perf = dash_table.DataTable(
-        id="detailed_s3_bucket_perf",
-        columns=[{"name": i, "id": i} for i in df_detailed_s3_bucket_perf.columns],
-        data=df_detailed_s3_bucket_perf.to_dict('records'),
-        style_header=common.dict_style_header,
-        style_data_conditional=[{'if': {'row_index': 'odd'}, 'backgroundColor': '#F8F8F8'},
-                                {'if': {'column_id': "Statistics"}, 'backgroundColor': "#b9b9bd"}
-                                ],
-        style_cell=common.dict_style_cell
-    )
-    return detailed_s3_bucket_perf
+    if test_system is not None:
+        # Add to query
+        pass
+    if test_team is not None:
+        # Add to query
+        pass
+
+    return "No data available for R2"
 
 
 @app.callback(
     Output('table_metadata_latency', 'children'),
-    [Input('submit_button', 'n_clicks')]
+    Input('submit_button', 'n_clicks'),
+    [State('branch_dropdown', 'value'),
+     State('build_no_dropdown', 'value'),
+     State('test_system_dropdown', 'value'),
+     State('test_team_dropdown', 'value')]
 )
-def gen_table_metadata_latency(n_clicks):
+def gen_table_metadata_latency(n_clicks, branch, build_no, test_system, test_team):
     """
     Returns  table for Metadata Latency
     :param n_clicks:
     :return:
     """
-    if n_clicks is None:
+    if n_clicks is None or branch is None or build_no is None:
         raise PreventUpdate
-    data_metadata_latency = {
-        "Operation Latency": ["Add/Edit Object Tags", "Read Object Tags", "Read Object Metadata"],
-        "Response Time(ms)": ["1", "2", "3"],
-    }
-    df_metadata_latency = pd.DataFrame(data_metadata_latency)
-    metadata_latency = dash_table.DataTable(
-        id="metadata_latency",
-        columns=[{"name": i, "id": i} for i in df_metadata_latency.columns],
-        data=df_metadata_latency.to_dict('records'),
-        style_header=common.dict_style_header,
-        style_data_conditional=[{'if': {'row_index': 'odd'}, 'backgroundColor': '#F8F8F8'},
-                                {'if': {'column_id': "Operation Latency"},
-                                 'backgroundColor': "#b9b9bd"}
-                                ],
-        style_cell=common.dict_style_cell
-    )
-    return metadata_latency
-
-
+    if test_system is not None:
+        # Add to query
+        pass
+    if test_team is not None:
+        # Add to query
+        pass
+    return "No data available for R2"
 
 
 @app.callback(
     Output('table_multi_bucket_perf_stats', 'children'),
-    [Input('submit_button', 'n_clicks')]
+    Input('submit_button', 'n_clicks'),
+    [State('branch_dropdown', 'value'),
+     State('build_no_dropdown', 'value'),
+     State('test_system_dropdown', 'value'),
+     State('test_team_dropdown', 'value')]
 )
-def gen_table_multi_bucket_perf_stats(n_clicks):
+def gen_table_multi_bucket_perf_stats(n_clicks, branch, build_no, test_system, test_team):
     """
     Multiple Buckets Performance Statistics(Average) using HSBench and COSBench
     :param n_clicks: Input Event
     :return:
     """
 
-    if n_clicks is None:
+    if n_clicks is None or branch is None or build_no is None:
         raise PreventUpdate
 
+    if test_system is not None:
+        # Add to query
+        pass
+    if test_team is not None:
+        # Add to query
+        pass
     return "No data available for R2"
 
 
@@ -255,14 +295,16 @@ def gen_table_detail_reported_bugs(n_clicks, branch, build_no, test_system, test
         "query": {"buildType": branch, "buildNo": build_no, "testPlanLabel": test_system,
                   "testTeam": test_team},
         "field": "issueIDs"}
-
+    if common.DEBUG_PRINTS:
+        print(f"(gen_table_detail_reported_bugs) Query:{query_input}")
     query_input.update(common.credentials)
     response = requests.request("GET", common.distinct_endpoint, headers=common.headers,
                                 data=json.dumps(query_input))
     if response.status_code == HTTPStatus.OK:
         json_response = json.loads(response.text)
         issue_list = json_response["result"]
-        print("Issue list (reported bugs)", issue_list)
+        if common.DEBUG_PRINTS:
+            print("Issue list (reported bugs)", issue_list)
         df_detail_reported_bugs = common.get_issue_details(issue_list)
         detail_reported_bugs = dash_table.DataTable(
             id="detail_reported_bugs",
@@ -275,6 +317,7 @@ def gen_table_detail_reported_bugs(n_clicks, branch, build_no, test_system, test
             style_cell=common.dict_style_cell
         )
     else:
+        print(f"(gen_table_detail_reported_bugs) Response: {response.status_code}")
         detail_reported_bugs = None
 
     return detail_reported_bugs

@@ -22,7 +22,7 @@
 import json
 from http import HTTPStatus
 import requests
-from dash.dependencies import Output, Input
+from dash.dependencies import Output, Input, State
 from dash.exceptions import PreventUpdate
 import common
 from common import app
@@ -41,20 +41,18 @@ def fetch_branch_for_dropdown(value):
     """
     if not value:
         raise PreventUpdate
-
     if value == "LR1":
         # Hardcoded values used for R1
         output = [
             {'label': 'Cortx-1.0-Beta', 'value': 'beta'},
-            {'label': 'Release', 'value': 'release'},
-            {'label': 'Cortx-1.0', 'value': 'cortx1'},
+            {'label': 'Cortx-1.0', 'value': 'cortx-1-*'},
         ]
         if common.DEBUG_PRINTS:
             print("Fetch branch for dropdown : {}".format(output))
         return [output]
     else:
         # fetch for R2
-        query_input = {"field": "buildType", "query": {}}
+        query_input = {"field": "buildType", "query": {"latest": True}}
         query_input.update(common.credentials)
         response = requests.request("GET", common.distinct_endpoint, headers=common.headers,
                                     data=json.dumps(query_input))
@@ -72,10 +70,10 @@ def fetch_branch_for_dropdown(value):
 
 @app.callback(
     [Output('build_no_dropdown', 'options')],
-    [Input('version_dropdown', 'value'),
-     Input('branch_dropdown', 'value')],
+    [Input('branch_dropdown', 'value')],
+    [State('version_dropdown', 'value')],
 )
-def fetch_build_for_dropdown(version, branch):
+def fetch_build_for_dropdown(branch, version):
     """
     Fetch the build no based on the branch/version
     :param version: R1/R2
@@ -86,7 +84,7 @@ def fetch_build_for_dropdown(version, branch):
         raise PreventUpdate
 
     if version == "LR1":
-        cursor = r1Api.find({'info': 'build sequence'})
+        cursor = r1Api.find({'info': 'build sequence R1'})
         list1 = cursor[0][branch]
         result = [ele for ele in reversed(list1)]
         output = [
@@ -94,7 +92,7 @@ def fetch_build_for_dropdown(version, branch):
         ]
         return [output]
     else:
-        query_input = {"query": {"buildType": branch}, "field": "buildNo"}
+        query_input = {"query": {"buildType": branch, "latest": True}, "field": "buildNo"}
         query_input.update(common.credentials)
         response = requests.request("GET", common.distinct_endpoint, headers=common.headers,
                                     data=json.dumps(query_input))
@@ -113,8 +111,8 @@ def fetch_build_for_dropdown(version, branch):
 @app.callback(
     [Output('test_system_dropdown', 'options')],
     [Input('version_dropdown', 'value'),
-    Input('branch_dropdown', 'value'),
-    Input('build_no_dropdown', 'value')]
+     Input('branch_dropdown', 'value'),
+     Input('build_no_dropdown', 'value')]
 )
 def fetch_test_system_for_dropdown(version, branch, build_no):
     """
@@ -132,7 +130,7 @@ def fetch_test_system_for_dropdown(version, branch, build_no):
         raise PreventUpdate
     else:
         # testPlanLabel corresponds to the system type: for ex: isolated, near full system
-        query_input = {"query": {"buildType": branch, "buildNo": build_no},
+        query_input = {"query": {"buildType": branch, "buildNo": build_no, "latest": True},
                        "field": "testPlanLabel"}
         query_input.update(common.credentials)
         response = requests.request("GET", common.distinct_endpoint, headers=common.headers,
@@ -150,9 +148,9 @@ def fetch_test_system_for_dropdown(version, branch, build_no):
 @app.callback(
     [Output('test_team_dropdown', 'options')],
     [Input('version_dropdown', 'value'),
-    Input('branch_dropdown', 'value'),
-    Input('build_no_dropdown', 'value'),
-    Input('test_system_dropdown', 'value')]
+     Input('branch_dropdown', 'value'),
+     Input('build_no_dropdown', 'value'),
+     Input('test_system_dropdown', 'value')]
 )
 def fetch_team_for_dropdown(version, branch, build_no, system_type):
     """
@@ -172,7 +170,8 @@ def fetch_team_for_dropdown(version, branch, build_no, system_type):
     else:
         # testPlanLabel corresponds to the system type: for ex: isolated, near full system
         query_input = {
-            "query": {"buildType": branch, "buildNo": build_no, "testPlanLabel": system_type},
+            "query": {"buildType": branch, "buildNo": build_no, "testPlanLabel": system_type,
+                      "latest": True},
             "field": "testTeam"}
         query_input.update(common.credentials)
         response = requests.request("GET", common.distinct_endpoint, headers=common.headers,

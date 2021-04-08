@@ -28,14 +28,11 @@ import pytest
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
-from commons.utils.config_utils import read_yaml
+from config import S3_OBJ_TST
 from commons.utils.system_utils import create_file, remove_file, path_exists, make_dirs, cleanup_dir
 from libs.s3 import s3_test_lib
 
 S3_TEST_OBJ = s3_test_lib.S3TestLib()
-OBJ_METADATA_CONF = read_yaml(
-    "config/s3/test_object_metadata_operations.yaml")[1]
-
 
 class TestObjectMetadataOperations:
     """"Object Metadata Operations Testsuite."""
@@ -132,35 +129,35 @@ class TestObjectMetadataOperations:
                 "Retrieved metadata of an object %s", obj_name)
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5482")
     @CTFailOn(error_handler)
     def test_object_key_alphanumeric_chars_1983(self):
         """Create object key with alphanumeric characters."""
         self.log.info("Create object key with alphanumeric characters")
         self.create_bucket_put_list_object(
-            OBJ_METADATA_CONF["test_8543"]["bucket_name"],
-            OBJ_METADATA_CONF["test_8543"]["obj_name"],
+            S3_OBJ_TST["test_8543"]["bucket_name"],
+            S3_OBJ_TST["test_8543"]["obj_name"],
             self.file_path,
-            OBJ_METADATA_CONF["object_metadata"]["mb_count"])
+            S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info("Create object key with alphanumeric characters")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5478")
     @CTFailOn(error_handler)
     def test_object_valid_special_chars_1984(self):
         """Create object key with valid special characters."""
         self.log.info("Create object key with valid special characters")
         self.create_bucket_put_list_object(
-            OBJ_METADATA_CONF["test_8544"]["bucket_name"],
-            OBJ_METADATA_CONF["test_8544"]["obj_name"],
+            S3_OBJ_TST["test_8544"]["bucket_name"],
+            S3_OBJ_TST["test_8544"]["obj_name"],
             self.file_path,
-            OBJ_METADATA_CONF["object_metadata"]["mb_count"])
+            S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info("Create object key with valid special characters")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5480")
     @CTFailOn(error_handler)
     def test_key_alphanumeric_valid_special_chars_1985(self):
@@ -168,15 +165,15 @@ class TestObjectMetadataOperations:
         self.log.info(
             "Create object key with combinations of alphanumeric and valid special characters")
         self.create_bucket_put_list_object(
-            OBJ_METADATA_CONF["test_8545"]["bucket_name"],
-            OBJ_METADATA_CONF["test_8545"]["obj_name"],
+            S3_OBJ_TST["test_8545"]["bucket_name"],
+            S3_OBJ_TST["test_8545"]["obj_name"],
             self.file_path,
-            OBJ_METADATA_CONF["object_metadata"]["mb_count"])
+            S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info(
             "Create object key with combinations of alphanumeric and valid special characters")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5479")
     @CTFailOn(error_handler)
     def test_key_existing_object_key_1986(self):
@@ -184,19 +181,19 @@ class TestObjectMetadataOperations:
         self.log.info(
             "Create object key with existing object key in the same bucket")
         self.create_bucket_put_list_object(
-            OBJ_METADATA_CONF["test_8546"]["bucket_name"],
-            OBJ_METADATA_CONF["test_8546"]["obj_name"],
+            S3_OBJ_TST["test_8546"]["bucket_name"],
+            S3_OBJ_TST["test_8546"]["obj_name"],
             self.file_path,
-            OBJ_METADATA_CONF["object_metadata"]["mb_count"],
-            m_key=OBJ_METADATA_CONF["test_8546"]["key"],
-            m_value=OBJ_METADATA_CONF["test_8546"]["value"])
+            S3_OBJ_TST["s3_object"]["mb_count"],
+            m_key=S3_OBJ_TST["test_8546"]["key"],
+            m_value=S3_OBJ_TST["test_8546"]["value"])
         create_file(
             self.new_file_path,
-            OBJ_METADATA_CONF["object_metadata"]["mb_count"])
+            S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info("Uploading an object with same key and new content")
         resp = S3_TEST_OBJ.object_upload(
-            OBJ_METADATA_CONF["test_8546"]["bucket_name"],
-            OBJ_METADATA_CONF["test_8546"]["obj_name"],
+            S3_OBJ_TST["test_8546"]["bucket_name"],
+            S3_OBJ_TST["test_8546"]["obj_name"],
             self.new_file_path)
         assert resp[0], resp[1]
         assert resp[1] == self.new_file_path, resp[1]
@@ -204,9 +201,9 @@ class TestObjectMetadataOperations:
             "Verified that object is uploaded with same key and new content")
         self.log.info("Listing objects from a bucket")
         resp = S3_TEST_OBJ.object_list(
-            OBJ_METADATA_CONF["test_8546"]["bucket_name"])
+            S3_OBJ_TST["test_8546"]["bucket_name"])
         assert resp[0], resp[1]
-        assert OBJ_METADATA_CONF["test_8546"]["obj_name"] in resp[1], resp[1]
+        assert S3_OBJ_TST["test_8546"]["obj_name"] in resp[1], resp[1]
         self.log.info("Objects are listed from a bucket")
         self.log.info("Cleanup activity")
         if os.path.exists(self.new_file_path):
@@ -215,7 +212,7 @@ class TestObjectMetadataOperations:
             "Create object key with existing object key in the same bucket")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5487")
     @CTFailOn(error_handler)
     def test_key_1024byte_long_1987(self):
@@ -227,16 +224,16 @@ class TestObjectMetadataOperations:
                     string.ascii_uppercase,
                     string.ascii_lowercase,
                     string.digits),
-                k=OBJ_METADATA_CONF["test_8547"]["obj_key_length"]))
+                k=S3_OBJ_TST["test_8547"]["obj_key_length"]))
         self.create_bucket_put_list_object(
-            OBJ_METADATA_CONF["test_8547"]["bucket_name"],
+            S3_OBJ_TST["test_8547"]["bucket_name"],
             obj_key,
             self.file_path,
-            OBJ_METADATA_CONF["object_metadata"]["mb_count"])
+            S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info("Create object key 1024 byte long")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5483")
     @CTFailOn(error_handler)
     def test_key_with_numeric_1989(self):
@@ -244,15 +241,15 @@ class TestObjectMetadataOperations:
         self.log.info(
             "Create object key name with numbers only in the name and no other characters")
         self.create_bucket_put_list_object(
-            OBJ_METADATA_CONF["test_8549"]["bucket_name"],
-            OBJ_METADATA_CONF["test_8549"]["obj_name"],
+            S3_OBJ_TST["test_8549"]["bucket_name"],
+            S3_OBJ_TST["test_8549"]["obj_name"],
             self.file_path,
-            OBJ_METADATA_CONF["object_metadata"]["mb_count"])
+            S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info(
             "Create object key name with numbers only in the name and no other characters")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5486")
     @CTFailOn(error_handler)
     def test_keysize_morethan_1024bytes_1990(self):
@@ -260,38 +257,38 @@ class TestObjectMetadataOperations:
         self.log.info("Create object key greater than 1024 byte long")
         self.log.info(
             "Creating a bucket with name %s",
-            OBJ_METADATA_CONF["test_8550"]["bucket_name"])
+            S3_OBJ_TST["test_8550"]["bucket_name"])
         resp = S3_TEST_OBJ.create_bucket(
-            OBJ_METADATA_CONF["test_8550"]["bucket_name"])
+            S3_OBJ_TST["test_8550"]["bucket_name"])
         assert resp[0], resp[1]
-        assert resp[1] == OBJ_METADATA_CONF["test_8550"]["bucket_name"], resp[1]
+        assert resp[1] == S3_OBJ_TST["test_8550"]["bucket_name"], resp[1]
         self.log.info(
             "Created a bucket with name %s",
-            OBJ_METADATA_CONF["test_8550"]["bucket_name"])
+            S3_OBJ_TST["test_8550"]["bucket_name"])
         create_file(
             self.file_path,
-            OBJ_METADATA_CONF["object_metadata"]["mb_count"])
+            S3_OBJ_TST["s3_object"]["mb_count"])
         count_limit = random.choice(
             range(
-                OBJ_METADATA_CONF["test_8550"]["start_range"],
-                OBJ_METADATA_CONF["test_8550"]["stop_range"]))
+                S3_OBJ_TST["test_8550"]["start_range"],
+                S3_OBJ_TST["test_8550"]["stop_range"]))
         obj_key = "".join(
             random.choices(
                 string.ascii_lowercase,
                 k=count_limit))
         self.log.info("Uploading an object to a bucket %s",
-                         OBJ_METADATA_CONF["test_8550"]["bucket_name"])
+                         S3_OBJ_TST["test_8550"]["bucket_name"])
         try:
             S3_TEST_OBJ.put_object(
-                OBJ_METADATA_CONF["test_8550"]["bucket_name"],
+                S3_OBJ_TST["test_8550"]["bucket_name"],
                 obj_key,
                 self.file_path)
         except CTException as error:
-            assert OBJ_METADATA_CONF["test_8550"]["error_message"] in error.message, error.message
+            assert S3_OBJ_TST["test_8550"]["error_message"] in error.message, error.message
         self.log.info("Create object key greater than 1024 byte long")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7636")
     @CTFailOn(error_handler)
     def test_keyname_delimiters_prefixes_1991(self):
@@ -303,16 +300,16 @@ class TestObjectMetadataOperations:
             "Create object-key name with delimiters to "
             "enable or use the concept of hierarchy and folders")
         self.create_bucket_put_list_object(
-            OBJ_METADATA_CONF["test_8551"]["bucket_name"],
-            OBJ_METADATA_CONF["test_8551"]["obj_name"],
+            S3_OBJ_TST["test_8551"]["bucket_name"],
+            S3_OBJ_TST["test_8551"]["obj_name"],
             self.file_path,
-            OBJ_METADATA_CONF["object_metadata"]["mb_count"])
+            S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info(
             "Create object key name with delimiters to "
             "enable or use the concept of hierarchy and folders")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5484")
     @CTFailOn(error_handler)
     def test_key_chars_require_special_handling_1992(self):
@@ -322,22 +319,22 @@ class TestObjectMetadataOperations:
         object_list = []
         self.log.info(
             "Creating a bucket with name %s",
-            OBJ_METADATA_CONF["test_8552"]["bucket_name"])
+            S3_OBJ_TST["test_8552"]["bucket_name"])
         resp = S3_TEST_OBJ.create_bucket(
-            OBJ_METADATA_CONF["test_8552"]["bucket_name"])
+            S3_OBJ_TST["test_8552"]["bucket_name"])
         assert resp[0], resp[1]
-        assert resp[1] == OBJ_METADATA_CONF["test_8552"]["bucket_name"], resp[1]
+        assert resp[1] == S3_OBJ_TST["test_8552"]["bucket_name"], resp[1]
         self.log.info(
             "Created a bucket with name %s",
-            OBJ_METADATA_CONF["test_8552"]["bucket_name"])
+            S3_OBJ_TST["test_8552"]["bucket_name"])
         create_file(
             self.file_path,
-            OBJ_METADATA_CONF["object_metadata"]["mb_count"])
-        for each_obj in OBJ_METADATA_CONF["test_8552"]["obj_list"]:
+            S3_OBJ_TST["s3_object"]["mb_count"])
+        for each_obj in S3_OBJ_TST["test_8552"]["obj_list"]:
             self.log.info(
                 "Uploading an oject %s to a bucket", each_obj)
             resp = S3_TEST_OBJ.put_object(
-                OBJ_METADATA_CONF["test_8552"]["bucket_name"],
+                S3_OBJ_TST["test_8552"]["bucket_name"],
                 each_obj,
                 self.file_path)
             assert resp[0], resp[1]
@@ -346,20 +343,20 @@ class TestObjectMetadataOperations:
                 "Uploaded an object %s to a bucket", each_obj)
         self.log.info(
             "Verifying objects are uploaded to a bucket %s",
-            OBJ_METADATA_CONF["test_8552"]["bucket_name"])
+            S3_OBJ_TST["test_8552"]["bucket_name"])
         resp = S3_TEST_OBJ.object_list(
-            OBJ_METADATA_CONF["test_8552"]["bucket_name"])
+            S3_OBJ_TST["test_8552"]["bucket_name"])
         assert resp[0], resp[1]
         for each_obj in object_list:
             assert each_obj in resp[1], resp[1]
         self.log.info(
             "Verified that objects are uploaded to a bucket %s",
-            OBJ_METADATA_CONF["test_8552"]["bucket_name"])
+            S3_OBJ_TST["test_8552"]["bucket_name"])
         self.log.info(
             "Create object key name with Characters That Might Require Special Handling")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5485")
     @CTFailOn(error_handler)
     def test_keyname_chars_avoidlist_1993(self):
@@ -369,22 +366,22 @@ class TestObjectMetadataOperations:
         object_list = []
         self.log.info(
             "Creating a bucket with name %s",
-            OBJ_METADATA_CONF["test_8553"]["bucket_name"])
+            S3_OBJ_TST["test_8553"]["bucket_name"])
         resp = S3_TEST_OBJ.create_bucket(
-            OBJ_METADATA_CONF["test_8553"]["bucket_name"])
+            S3_OBJ_TST["test_8553"]["bucket_name"])
         assert resp[0], resp[1]
-        assert resp[1] == OBJ_METADATA_CONF["test_8553"]["bucket_name"], resp[1]
+        assert resp[1] == S3_OBJ_TST["test_8553"]["bucket_name"], resp[1]
         self.log.info(
             "Created a bucket with name %s",
-            OBJ_METADATA_CONF["test_8553"]["bucket_name"])
+            S3_OBJ_TST["test_8553"]["bucket_name"])
         create_file(
             self.file_path,
-            OBJ_METADATA_CONF["object_metadata"]["mb_count"])
-        for each_obj in OBJ_METADATA_CONF["test_8553"]["obj_list"]:
+            S3_OBJ_TST["s3_object"]["mb_count"])
+        for each_obj in S3_OBJ_TST["test_8553"]["obj_list"]:
             self.log.info(
                 "Uploading an oject %s to a bucket", each_obj)
             resp = S3_TEST_OBJ.put_object(
-                OBJ_METADATA_CONF["test_8553"]["bucket_name"],
+                S3_OBJ_TST["test_8553"]["bucket_name"],
                 each_obj,
                 self.file_path)
             assert resp[0], resp[1]
@@ -393,20 +390,20 @@ class TestObjectMetadataOperations:
                 "Uploaded an object %s to a bucket", each_obj)
         self.log.info(
             "Verifying objects are uploaded to a bucket %s",
-            OBJ_METADATA_CONF["test_8553"]["bucket_name"])
+            S3_OBJ_TST["test_8553"]["bucket_name"])
         resp = S3_TEST_OBJ.object_list(
-            OBJ_METADATA_CONF["test_8553"]["bucket_name"])
+            S3_OBJ_TST["test_8553"]["bucket_name"])
         assert resp[0], resp[1]
         for each_obj in object_list:
             assert each_obj in resp[1], resp[1]
         self.log.info(
             "Verified that objects are uploaded to a bucket %s",
-            OBJ_METADATA_CONF["test_8553"]["bucket_name"])
+            S3_OBJ_TST["test_8553"]["bucket_name"])
         self.log.info(
             "Create object key name from Characters to Avoid list")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5488")
     @CTFailOn(error_handler)
     def test_metadata_with_adding_new_object_1994(self):
@@ -414,17 +411,17 @@ class TestObjectMetadataOperations:
         self.log.info(
             "Add user defined metadata while adding the new object to the bucket")
         self.create_bucket_put_list_object(
-            OBJ_METADATA_CONF["test_8554"]["bucket_name"],
-            OBJ_METADATA_CONF["test_8554"]["obj_name"],
+            S3_OBJ_TST["test_8554"]["bucket_name"],
+            S3_OBJ_TST["test_8554"]["obj_name"],
             self.file_path,
-            OBJ_METADATA_CONF["object_metadata"]["mb_count"],
-            m_key=OBJ_METADATA_CONF["test_8554"]["key"],
-            m_value=OBJ_METADATA_CONF["test_8554"]["value"])
+            S3_OBJ_TST["s3_object"]["mb_count"],
+            m_key=S3_OBJ_TST["test_8554"]["key"],
+            m_value=S3_OBJ_TST["test_8554"]["value"])
         self.log.info(
             "Add user defined metadata while adding the new object to the bucket")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5489")
     @CTFailOn(error_handler)
     def test_update_metadat_while_copying_1995(self):
@@ -436,38 +433,38 @@ class TestObjectMetadataOperations:
             "Add or update user defined metadata while "
             "copying/ updating an existing object to the bucket")
         self.create_bucket_put_list_object(
-            OBJ_METADATA_CONF["test_8555"]["bucket_name"],
-            OBJ_METADATA_CONF["test_8555"]["obj_name"],
+            S3_OBJ_TST["test_8555"]["bucket_name"],
+            S3_OBJ_TST["test_8555"]["obj_name"],
             self.file_path,
-            OBJ_METADATA_CONF["object_metadata"]["mb_count"],
-            m_key=OBJ_METADATA_CONF["test_8555"]["key"],
-            m_value=OBJ_METADATA_CONF["test_8555"]["value"])
+            S3_OBJ_TST["s3_object"]["mb_count"],
+            m_key=S3_OBJ_TST["test_8555"]["key"],
+            m_value=S3_OBJ_TST["test_8555"]["value"])
         create_file(
             self.new_file_path,
-            OBJ_METADATA_CONF["object_metadata"]["mb_count"])
+            S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info(
             "Updating user defined metadata while adding new object")
         resp = S3_TEST_OBJ.put_object(
-            OBJ_METADATA_CONF["test_8555"]["bucket_name"],
-            OBJ_METADATA_CONF["test_8555"]["new_obj"],
+            S3_OBJ_TST["test_8555"]["bucket_name"],
+            S3_OBJ_TST["test_8555"]["new_obj"],
             self.new_file_path,
-            m_key=OBJ_METADATA_CONF["test_8555"]["new_key"],
-            m_value=OBJ_METADATA_CONF["test_8555"]["new_value"])
+            m_key=S3_OBJ_TST["test_8555"]["new_key"],
+            m_value=S3_OBJ_TST["test_8555"]["new_value"])
         assert resp[0], resp[1]
         self.log.info("Updated user defined metadata")
         self.log.info("Listing object from a bucket %s",
-                         OBJ_METADATA_CONF["test_8555"]["bucket_name"])
+                         S3_OBJ_TST["test_8555"]["bucket_name"])
         resp = S3_TEST_OBJ.object_list(
-            OBJ_METADATA_CONF["test_8555"]["bucket_name"])
+            S3_OBJ_TST["test_8555"]["bucket_name"])
         assert resp[0], resp[1]
-        assert OBJ_METADATA_CONF["test_8555"]["new_obj"] in resp[1], resp[1]
+        assert S3_OBJ_TST["test_8555"]["new_obj"] in resp[1], resp[1]
         self.log.info("Objects are listed from a bucket")
         self.log.info("Retrieving updated object info")
         resp = S3_TEST_OBJ.object_info(
-            OBJ_METADATA_CONF["test_8555"]["bucket_name"],
-            OBJ_METADATA_CONF["test_8555"]["new_obj"])
+            S3_OBJ_TST["test_8555"]["bucket_name"],
+            S3_OBJ_TST["test_8555"]["new_obj"])
         assert resp[0], resp[1]
-        assert OBJ_METADATA_CONF["test_8555"]["new_key"] in resp[1]["Metadata"], resp[1]
+        assert S3_OBJ_TST["test_8555"]["new_key"] in resp[1]["Metadata"], resp[1]
         self.log.info("Retrieved updated object info")
         self.log.info("Cleanup activity")
         if os.path.exists(self.new_file_path):
@@ -477,7 +474,7 @@ class TestObjectMetadataOperations:
             "copying/ updating an existing object to the bucket")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5476")
     @CTFailOn(error_handler)
     def test_update_metadata_upto2kb_1997(self):
@@ -489,25 +486,25 @@ class TestObjectMetadataOperations:
                     string.ascii_uppercase,
                     string.ascii_lowercase,
                     string.digits),
-                k=OBJ_METADATA_CONF["test_8557"]["byte_count"]))
+                k=S3_OBJ_TST["test_8557"]["byte_count"]))
         m_val = "".join(
             random.choices(
                 "{0}{1}{2}".format(
                     string.ascii_uppercase,
                     string.ascii_lowercase,
                     string.digits),
-                k=OBJ_METADATA_CONF["test_8557"]["byte_count"]))
+                k=S3_OBJ_TST["test_8557"]["byte_count"]))
         self.create_bucket_put_list_object(
-            OBJ_METADATA_CONF["test_8557"]["bucket_name"],
-            OBJ_METADATA_CONF["test_8557"]["obj_name"],
+            S3_OBJ_TST["test_8557"]["bucket_name"],
+            S3_OBJ_TST["test_8557"]["obj_name"],
             self.file_path,
-            OBJ_METADATA_CONF["object_metadata"]["mb_count"],
+            S3_OBJ_TST["s3_object"]["mb_count"],
             m_key=m_key,
             m_value=m_val)
         self.log.info("Update user defined metadata upto 2KB")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5477")
     @CTFailOn(error_handler)
     def test_metadata_morethan2kb_1998(self):
@@ -515,21 +512,21 @@ class TestObjectMetadataOperations:
         self.log.info("Update user defined metadata greater than 2 KB")
         self.log.info(
             "Creating a bucket with name %s",
-            OBJ_METADATA_CONF["test_8558"]["bucket_name"])
+            S3_OBJ_TST["test_8558"]["bucket_name"])
         resp = S3_TEST_OBJ.create_bucket(
-            OBJ_METADATA_CONF["test_8558"]["bucket_name"])
+            S3_OBJ_TST["test_8558"]["bucket_name"])
         assert resp[0], resp[1]
-        assert resp[1] == OBJ_METADATA_CONF["test_8558"]["bucket_name"], resp[1]
+        assert resp[1] == S3_OBJ_TST["test_8558"]["bucket_name"], resp[1]
         self.log.info(
             "Created a bucket with name %s",
-            OBJ_METADATA_CONF["test_8558"]["bucket_name"])
+            S3_OBJ_TST["test_8558"]["bucket_name"])
         create_file(
             self.file_path,
-            OBJ_METADATA_CONF["object_metadata"]["mb_count"])
+            S3_OBJ_TST["s3_object"]["mb_count"])
         count_limit = random.choice(
             range(
-                OBJ_METADATA_CONF["test_8558"]["start_range"],
-                OBJ_METADATA_CONF["test_8558"]["stop_range"]))
+                S3_OBJ_TST["test_8558"]["start_range"],
+                S3_OBJ_TST["test_8558"]["stop_range"]))
         m_key = "".join(
             random.choices("{0}{1}{2}".format(
                 string.ascii_uppercase,
@@ -542,20 +539,20 @@ class TestObjectMetadataOperations:
                 string.digits), k=count_limit))
         self.log.info(
             "Uploading an object to a bucket %s with metadata size greater than 2KB",
-            OBJ_METADATA_CONF["test_8558"]["bucket_name"])
+            S3_OBJ_TST["test_8558"]["bucket_name"])
         try:
             S3_TEST_OBJ.put_object(
-                OBJ_METADATA_CONF["test_8558"]["bucket_name"],
-                OBJ_METADATA_CONF["test_8558"]["obj_name"],
+                S3_OBJ_TST["test_8558"]["bucket_name"],
+                S3_OBJ_TST["test_8558"]["obj_name"],
                 self.file_path,
                 m_key=m_key,
                 m_value=m_val)
         except CTException as error:
-            assert OBJ_METADATA_CONF["test_8558"]["error_message"] in error.message, error.message
+            assert S3_OBJ_TST["test_8558"]["error_message"] in error.message, error.message
         self.log.info("Update user defined metadata greater than 2 KB")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5474")
     @CTFailOn(error_handler)
     def test_max_objects_2287(self):
@@ -563,52 +560,52 @@ class TestObjectMetadataOperations:
         self.log.info("Verification of max. no. of objects user can upload")
         self.log.info(
             "Creating a bucket with name %s",
-            OBJ_METADATA_CONF["test_8913"]["bucket_name"])
+            S3_OBJ_TST["test_8913"]["bucket_name"])
         resp = S3_TEST_OBJ.create_bucket(
-            OBJ_METADATA_CONF["test_8913"]["bucket_name"])
+            S3_OBJ_TST["test_8913"]["bucket_name"])
         assert resp[0], resp[1]
-        assert resp[1] == OBJ_METADATA_CONF["test_8913"]["bucket_name"], resp[1]
+        assert resp[1] == S3_OBJ_TST["test_8913"]["bucket_name"], resp[1]
         self.log.info(
             "Created a bucket with name %s",
-            OBJ_METADATA_CONF["test_8913"]["bucket_name"])
+            S3_OBJ_TST["test_8913"]["bucket_name"])
         create_file(
             self.file_path,
-            OBJ_METADATA_CONF["object_metadata"]["mb_count"])
+            S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info("Uploading objects to a bucket %s",
-                         OBJ_METADATA_CONF["test_8913"]["bucket_name"])
-        for count in range(OBJ_METADATA_CONF["test_8913"]["obj_count"]):
+                         S3_OBJ_TST["test_8913"]["bucket_name"])
+        for count in range(S3_OBJ_TST["test_8913"]["obj_count"]):
             obj_name = "{0}{1}".format(
-                OBJ_METADATA_CONF["test_8913"]["obj_name"], str(count))
+                S3_OBJ_TST["test_8913"]["obj_name"], str(count))
             resp = S3_TEST_OBJ.object_upload(
-                OBJ_METADATA_CONF["test_8913"]["bucket_name"],
+                S3_OBJ_TST["test_8913"]["bucket_name"],
                 obj_name,
                 self.file_path)
             assert resp[0], resp[1]
         self.log.info("Objects are uploaded to a bucket %s",
-                         OBJ_METADATA_CONF["test_8913"]["bucket_name"])
+                         S3_OBJ_TST["test_8913"]["bucket_name"])
         self.log.info(
             "Verifying objects are uploaded to a bucket %s",
-            OBJ_METADATA_CONF["test_8913"]["bucket_name"])
+            S3_OBJ_TST["test_8913"]["bucket_name"])
         resp = S3_TEST_OBJ.object_list(
-            OBJ_METADATA_CONF["test_8913"]["bucket_name"])
+            S3_OBJ_TST["test_8913"]["bucket_name"])
         assert resp[0], resp[1]
         assert len(
-            resp[1]) == OBJ_METADATA_CONF["test_8913"]["obj_count"], resp[1]
+            resp[1]) == S3_OBJ_TST["test_8913"]["obj_count"], resp[1]
         self.log.info(
             "Verified that %s objects are uploaded to a bucket",
-            OBJ_METADATA_CONF["test_8913"]["obj_count"])
+            S3_OBJ_TST["test_8913"]["obj_count"])
         self.log.info("Verification of max. no. of objects user can upload")
 
     @pytest.mark.parallel
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5475")
     @CTFailOn(error_handler)
     def test_max_object_size_2292(self):
         """Verification of max size of object, user can upload."""
         self.log.info("Verification of max size of object, user can upload")
         self.create_bucket_put_list_object(
-            OBJ_METADATA_CONF["test_8918"]["bucket_name"],
-            OBJ_METADATA_CONF["test_8918"]["obj_name"],
+            S3_OBJ_TST["test_8918"]["bucket_name"],
+            S3_OBJ_TST["test_8918"]["obj_name"],
             self.file_path,
-            OBJ_METADATA_CONF["test_8918"]["mb_count"])
+            S3_OBJ_TST["test_8918"]["mb_count"])
         self.log.info("Verification of max size of object, user can upload")
