@@ -12,7 +12,7 @@ Summary: Python distribution for cortx-text
 Name: %{name}
 Version: %{version}
 Release: %{release}
-License: Seagate
+License: Apache 2.0
 Group: Development/Libraries
 Packager: Divya Kachhwaha
 BuildRoot: /root/rpmbuild/
@@ -37,7 +37,6 @@ exit
 
 %files
 %defattr(-,root,root,-)
-#%dir %{basedir}/
 %{basedir}/
 # executable
 %attr(0777, root, root) %{basedir}/testrunner.py
