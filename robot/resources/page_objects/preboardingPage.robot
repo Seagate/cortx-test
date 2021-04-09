@@ -20,6 +20,7 @@ Click License Button
 
 Click LicenseCancle Button
     [Documentation]  On EULA Pop Up, click on Cancel Button
+    wait until element is visible  ${license_cancle_button_id}  timeout=20
     click button    ${license_cancle_button_id}
 
 Click LicenseCancle Image
@@ -106,3 +107,102 @@ check csm admin user status
     ...  Log To Console And Report  Admin user created
     ...  ELSE IF  "${current_url}" == "${url}preboarding/adminuser"  check admin user already exists
     ...  ELSE  Log To Console And Report  Admin user created Failed
+
+Validate EULA Data
+    [Documentation]  This keyword will validate the content of the EULA
+    wait until element is visible  ${elua_button_id}  timeout=20
+    Click Element  ${elua_button_id}
+    ${data}=  get text  ${EULA_CONTENT_MSG_XPATH}
+    Log To Console And Report  ${data}
+    Should Not Be Empty  ${data}
+
+Verify User Has Naviagted to Admin User Create Page
+    [Documentation]  This keyword will verify user is in admin page
+    Validate ELUA Success
+    Page Should Contain Element  ${ADMIN_USER_FIELD_ID}
+    Page Should Contain Element  ${ADMIN_USER_EMAIL_ID_FIELD_ID}
+    Page Should Contain Element  ${ADMIN_PASSWORD_FIELD_ID}
+    Page Should Contain Element  ${ADMIN_CONFIRM_PASSWORD_FIELD_ID}
+    Page Should Contain Element  ${APPLY_AND_CONTINUE_BUTTON_ID}
+
+Verify User Has Not Naviagted to Admin User Create Page
+    [Documentation]  This keyword will verify user is in EULA page
+    wait until element is visible  ${elua_button_id}  timeout=20
+    Click Element  ${elua_button_id}
+    Click LicenseCancle Button
+    Page Should Contain Element  ${elua_button_id}
+
+Verify Miss-Match Password Error Message
+    [Documentation]  This keyword will verify missmatch error msg for Admin user
+    ${password}=  Generate New Password
+    wait until element is visible  ${ADMIN_PASSWORD_FIELD_ID}  timeout=20
+    Input Text  ${ADMIN_PASSWORD_FIELD_ID}  ${password}
+    ${new_passowrd}=  CATENATE  ${password}  new
+    wait until element is visible  ${ADMIN_CONFIRM_PASSWORD_FIELD_ID}  timeout=20
+    Input Text  ${ADMIN_CONFIRM_PASSWORD_FIELD_ID}  ${new_passowrd}
+    ${value}=  get text  ${ADMIN_USER_MISSMATCH_PASSWORD_MSG_ID}
+    Log To Console And Report  ${value}
+    Should be Equal  ${MISSMATCH_PASSWORD_MESSAGE}  ${value}
+
+Validate Password for Admin User
+    [Documentation]  Functionality to validate pawwsord and error msg
+    FOR    ${value}    IN    @{INVALID_PASSWORDS_LIST}
+      Log To Console And Report  Inserting values ${value}
+      wait until element is visible  ${ADMIN_PASSWORD_FIELD_ID}  timeout=20
+      Input Text  ${ADMIN_PASSWORD_FIELD_ID}  ${value}
+      Page Should Contain Element  ${ADMIN_USER_INVALID_PASSWORD_MSG_ID}
+      ${text_msg}=  get text  ${ADMIN_USER_INVALID_PASSWORD_MSG_ID}
+      should be equal  ${text_msg}  ${invalid password msg}
+      Reload Page
+    END
+
+Validate Usernames for Admin User
+    [Documentation]  Functionality to validate username and error msg
+    FOR    ${value}    IN    @{INVALID_LOCAL_USER}
+      Log To Console And Report  Inserting values ${value}
+      wait until element is visible  ${ADMIN_USER_FIELD_ID}  timeout=20
+      Input Text  ${ADMIN_USER_FIELD_ID}  ${value}
+      Page Should Contain Element  ${ADMIN_USER_INVALID_USERNAME_MSG_ID}
+      ${text_msg}=  get text  ${ADMIN_USER_INVALID_USERNAME_MSG_ID}
+      should be equal  ${text_msg}  ${INVALID_USER_TYPE_MESSAGE}
+      Reload Page
+    END
+
+Verify elements for Admin User
+    [Documentation]  This keyword will verify username, password, email
+    ...  and confirm password fields
+    ${validate_data}=  Create Dictionary  ${ADMIN_USER_FIELD_ID}=text
+    ...  ${ADMIN_USER_EMAIL_ID_FIELD_ID}=email
+    ...  ${ADMIN_PASSWORD_FIELD_ID}=password
+    ...  ${ADMIN_CONFIRM_PASSWORD_FIELD_ID}=password
+    FOR    ${key}    IN    @{validate_data.keys()}
+      ${type}=  Get Element Attribute  ${key}  type
+      Log To Console And Report  ${type}
+      Should be equal  ${type}  ${validate_data['${key}']}
+    END
+
+Verify mandatory elements of Admin User have asterisk mark
+    [Documentation]  This keyword will verify all mandatory fields have asterisk symbol(*) mark
+    ${mandatory_fields}=  Create List  ${ADMIN_USER_USERNAME_LABEL_ID}
+    ...  ${ADMIN_USER_PASSWORD_LABEL_ID}
+    ...  ${ADMIN_USER_CONFIRM_PASSWORD_LABEL_ID}
+    FOR    ${value}    IN    @{mandatory_fields}
+      ${text}=  Get Text  ${value}
+      Log To Console And Report  ${text}
+      Should Contain  ${text}  *
+    END
+
+Verify Admin User Creation Page Should have tooltip
+    [Documentation]  This keyword will verify Admin user page must have tooltip
+    wait for page or element to load  2s
+    Click Element  ${ADMIN_USER_TOOLTIP_ICON_ID}
+    Page Should Contain Element  ${ADMIN_USER_PAGE_TOOLTIP_ID}
+    Click Element  ${ADMIN_USER_PASSWORD_TOOLTIP_ICON_ID}
+    Page Should Contain Element  ${ADMIN_USER_PAGE_TOOLTIP_ID}
+
+Validate Admin User Tooltip
+    [Documentation]  This keyword will verify Admin user tooltip must have correct info
+    wait until element is visible  ${ADMIN_USER_FIELD_ID}  timeout=20
+    Click Element  ${ADMIN_USER_TOOLTIP_ICON_ID}
+    Verify message  ADMIN_USER_PAGE_TOOLTIP_ID  ${ADMIN_USER_TOOLTIP_MSG_ID}
+
