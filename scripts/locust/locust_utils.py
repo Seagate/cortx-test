@@ -27,6 +27,8 @@ import os
 import logging
 import random
 import boto3
+from boto3.exceptions import S3UploadFailedError, ResourceNotExistsError
+from botocore.exceptions import ClientError
 from botocore.client import Config
 from locust import events
 from scripts.locust import LOCUST_CFG
@@ -109,7 +111,7 @@ class LocustUtils:
                     response_time=self.total_time(start_time),
                     response_length=10
                 )
-            except BaseException as error:
+            except ClientError as error:
                 LOGGER.error("Create bucket failed with error: %s", error)
                 events.request_failure.fire(
                     request_type="put",
@@ -139,7 +141,7 @@ class LocustUtils:
                     response_time=self.total_time(start_time),
                     response_length=10,
                 )
-            except BaseException as error:
+            except ClientError as error:
                 LOGGER.error("Delete bucket failed with error: %s", error)
                 events.request_failure.fire(
                     request_type="delete",
@@ -173,7 +175,7 @@ class LocustUtils:
                 response_time=self.total_time(start_time),
                 response_length=10
             )
-        except BaseException as error:
+        except (ClientError, S3UploadFailedError, FileNotFoundError)as error:
             LOGGER.error("Upload object failed with error: %s", error)
             events.request_failure.fire(
                 request_type="put",
@@ -214,7 +216,7 @@ class LocustUtils:
                     response_time=self.total_time(start_time),
                     response_length=10
                 )
-        except BaseException as error:
+        except ClientError as error:
             LOGGER.error("Download object failed with error: %s", error)
             events.request_failure.fire(
                 request_type="get",
@@ -246,7 +248,7 @@ class LocustUtils:
                     response_time=self.total_time(start_time),
                     response_length=10
                 )
-        except BaseException as error:
+        except ResourceNotExistsError as error:
             LOGGER.error("Delete object failed with error: %s", error)
             events.request_failure.fire(
                 request_type="delete",
