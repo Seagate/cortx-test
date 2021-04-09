@@ -156,7 +156,7 @@ def run(opts: dict) -> None:
     test_plan = opts.test_plan
     topic = params.TEST_EXEC_TOPIC
     # collect the test universe
-    run_pytest_collect_only_cmd()
+    run_pytest_collect_only_cmd(opts)
 
     tp_meta = dict()  # test plan meta
     jira_id, jira_pwd = runner.get_jira_credential()
@@ -341,20 +341,22 @@ def create_log_dir_if_not_exists():
     return log_home
 
 
-def run_pytest_collect_only_cmd(te_tag=None):
+def run_pytest_collect_only_cmd(opts, te_tag=None):
     """Form a pytest command to collect tests in TE ticket.
     Target default to automation as a nominal value for collection.
     """
+    env = os.environ.copy()
+    env['TARGET'] = opts.targets[0] #needs dummy target
     tag = '-m ' + te_tag if te_tag else None
     collect_only = '--collect-only'
     local = '--local=True'
-    target = '--target=automation'
+    target = '--target=' + env['TARGET']
     if tag:
         cmd_line = ["pytest", collect_only, local, tag]
     else:
         cmd_line = ["pytest", collect_only, local]
     cmd_line = cmd_line + [target]
-    prc = subprocess.Popen(cmd_line)
+    prc = subprocess.Popen(cmd_line, env=env)
     prc.communicate()
 
 
