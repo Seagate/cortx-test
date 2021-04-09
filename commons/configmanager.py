@@ -22,7 +22,6 @@
 
 import os
 import logging
-import functools
 from urllib.parse import quote_plus
 import yaml
 from pymongo import MongoClient
@@ -31,32 +30,6 @@ from commons import pswdmanager
 from commons.params import SETUPS_FPATH, DB_HOSTNAME, DB_NAME, SYS_INFO_COLLECTION
 
 LOG = logging.getLogger(__name__)
-
-
-def update_lb(func):
-    """
-    Decorator func to update common config runtime.
-    :return: caller func data
-    """
-
-    @functools.wraps(func)
-    def wrapper_func1(**kwargs):
-        data = func(**kwargs)
-        if kwargs.get('target'):
-            setup_query = {"setupname": kwargs['target']}
-            setup_details = get_config_db(
-                setup_query=setup_query)[kwargs.get("target")]
-            if "lb" in setup_details.keys() and setup_details.get(
-                    'lb') not in [None, '', "FQDN without protocol(http/s)"]:
-                if "s3_loadbalancer" in data.keys():
-                    data["s3_loadbalancer"]["s3_url"] = f"https://{data.get('lb')}"
-                    data["s3_loadbalancer"]["iam_url"] = f"https://{data.get('lb')}:9443"
-                elif "s3_url" in data.keys():
-                    data["s3_url"] = f"https://{setup_details.get('lb')}"
-                    data["iam_url"] = f"https://{setup_details.get('lb')}:9443"
-        return data
-
-    return wrapper_func1
 
 
 def get_config_yaml(fpath: str) -> dict:
@@ -125,7 +98,6 @@ def update_config_db(setup_query: dict, data: dict) -> dict:
     return rdata
 
 
-@update_lb
 def get_config_wrapper(**kwargs):
     """Get the configuration from the database as well as yaml and merge.
     It is expected that duplicate data should not be present between DB and yaml

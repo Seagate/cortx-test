@@ -23,7 +23,6 @@ import os
 import sys
 import re
 from typing import List
-from commons.utils import config_utils
 from commons import configmanager
 from commons.params import COMMON_CONFIG, CSM_CONFIG, S3_CONFIG
 from commons.params import RAS_CONFIG_PATH
