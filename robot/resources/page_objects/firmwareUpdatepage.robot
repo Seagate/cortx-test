@@ -19,7 +19,6 @@ Click On Start Firmware Update Button
 Download Firmware Binary
     [Documentation]  This keyword download Firmware Binary File
     [Arguments]  ${file_path}
-    ${file_path}=  catenate  SEPARATOR=\  ${file_path}  fwfile.bin
+    ${file_path}=  download_file  ${FW_UPDATE_URL}  ${file_path}  fwfile.bin
     Log To Console And Report  ${file_path}
-    download file  ${FW_UPDATE_URL}  ${file_path}
     [Return]  ${file_path}

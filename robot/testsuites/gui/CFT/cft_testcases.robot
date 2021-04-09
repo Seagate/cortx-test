@@ -32,7 +32,7 @@ ${Sub_tab}  None
 ${username}
 ${password}
 ${Download_File_Path}  \root\Downloads\
-${sw_version}  683
+${sw_version}  891
 
 *** Keywords ***
 
@@ -58,18 +58,6 @@ Delete user
 
 *** Test Cases ***
 
-TEST-1226
-    [Documentation]  Test that CSM user with role manager cannot update or delete s3 accounts
-    ...  Reference : https://jts.seagate.com/browse/TEST-1226
-    [Tags]  Priority_High  CFT_test  TEST-1226
-    ${user_type}    Set Variable    manage
-    ${test_id}    Set Variable    TEST-1226
-    Create and login with CSM user  ${user_type}  ${test_id}
-    Navigate To Page    MANAGE_MENU_ID
-    Verify Absence of Edit And Delete Button on S3account
-    Capture Page Screenshot  ${test_id}_absence_of_edit_and_delete_button_on_s3account.png
-    Re-login  ${username}  ${password}  MANAGE_MENU_ID
-    Delete user  ${user_type}  ${test_id}
 
 TEST-1213
     [Documentation]  Test that CSM user with role manager has access to dashboard and perform actions on alerts

@@ -21,16 +21,11 @@ import time
 import os
 import logging
 import pytest
-from libs.s3 import S3H_OBJ
-from libs.s3 import CM_CFG, S3_CFG
-from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
-from libs.s3.iam_test_lib import IamTestLib
-from libs.s3.s3_acl_test_lib import S3AclTestLib
-from libs.s3.s3_test_lib import S3TestLib
 from commons.constants import const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.utils.config_utils import read_yaml
+from commons.utils import system_utils
 from commons.utils.system_utils import remove_file
 from commons.utils.system_utils import run_remote_cmd
 from commons.utils.system_utils import run_local_cmd
@@ -40,6 +35,12 @@ from commons.utils.assert_utils import assert_equal
 from commons.utils.assert_utils import assert_is_not_none
 from commons.utils.assert_utils import assert_not_in
 from commons.helpers.health_helper import Health
+from libs.s3 import CM_CFG, S3_CFG
+from libs.s3 import S3H_OBJ
+from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
+from libs.s3.iam_test_lib import IamTestLib
+from libs.s3.s3_acl_test_lib import S3AclTestLib
+from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench as s3bench_obj
 
 IAM_TEST_OBJ = IamTestLib()
@@ -77,7 +78,32 @@ class TestDataPathValidation:
         cls.s3_url = S3_CFG["s3_url"]
         cls.health_obj = Health(hostname=cls.host, username=cls.uname,
                                 password=cls.passwd)
+        cls.test_file = "bkt-dp.txt"
+        cls.test_dir_path = os.path.join(
+            os.getcwd(), "testdata", "TestDataPathValidation")
+        cls.file_path = os.path.join(cls.test_dir_path, cls.test_file)
+        if not system_utils.path_exists(cls.test_dir_path):
+            system_utils.make_dirs(cls.test_dir_path)
+            cls.log.info("Created path: %s", cls.test_dir_path)
+        cls.log.info("Test file path: %s", cls.file_path)
+        cls.log.info(
+            "Step : Install and Configure S3bench tool and validate the testcase.")
+        res = s3bench_obj.setup_s3bench()
+        assert_true(res, res)
         cls.log.info("ENDED: Setup operations")
+
+    @classmethod
+    def teardown_class(cls):
+        """
+        Function will be invoked after completion of all test case.
+
+        It will clean up resources which are getting created during test suite setup.
+        """
+        cls.log.info("STARTED: teardown test suite operations.")
+        if system_utils.path_exists(cls.test_dir_path):
+            system_utils.remove_dirs(cls.test_dir_path)
+        cls.log.info("Cleanup test directory: %s", cls.test_dir_path)
+        cls.log.info("ENDED: teardown test suite operations.")
 
     def setup_method(self):
         """
@@ -88,6 +114,9 @@ class TestDataPathValidation:
         self.log.info("STARTED: Setup operations")
         self.random_id = str(time.time())
         self.log_file = []
+        if not system_utils.path_exists(self.test_dir_path):
+            system_utils.cleanup_dir(self.test_dir_path)
+            self.log.info("Created path: %s", self.test_dir_path)
         self.log.info("ENDED: Setup operations")
 
     def teardown_method(self):
@@ -98,14 +127,16 @@ class TestDataPathValidation:
         test execution such as S3 buckets and the objects present into that bucket.
         """
         self.log.info("STARTED: Teardown operations")
-        resp = S3H_OBJ.bucket_list()
+        resp = S3_OBJ.bucket_list()
         pref_list = [
             each_bucket for each_bucket in resp[1] if each_bucket.startswith(
                 DATA_PATH_CFG["data_path"]["bkt_name_prefix"])]
         for bucket in pref_list:
             ACL_OBJ.put_bucket_acl(
                 bucket, acl=DATA_PATH_CFG["data_path"]["bkt_permission"])
-        S3H_OBJ.delete_multiple_buckets(pref_list)
+        if pref_list:
+            resp = S3_OBJ.delete_multiple_buckets(pref_list)
+            assert_true(resp[0], resp[1])
         self.log.info("Deleting IAM accounts")
         acc_list = IAM_TEST_OBJ.list_accounts_s3iamcli(
             self.ldap_user, self.ldap_pwd)[1]
@@ -114,14 +145,16 @@ class TestDataPathValidation:
                    for acc in acc_list if self.account_name in acc["AccountName"]]
         self.log.info(all_acc)
         for acc_name in all_acc:
-            IAM_TEST_OBJ.reset_access_key_and_delete_account_s3iamcli(acc_name)
+            resp = IAM_TEST_OBJ.reset_access_key_and_delete_account_s3iamcli(
+                acc_name)
+            assert_true(resp[0], resp[1])
         self.log.info("Deleted IAM accounts successfully")
         self.log.info("Deleting files created during execution")
         for file in self.log_file:
             if os.path.exists(file):
                 remove_file(file)
-        if os.path.exists(DATA_PATH_CFG["data_path"]["file_path"]):
-            os.remove(DATA_PATH_CFG["data_path"]["file_path"])
+        if os.path.exists(self.file_path):
+            os.remove(self.file_path)
         self.log.info("Created files deleted")
         self.log.info("ENDED: Teardown operations")
 
@@ -137,7 +170,8 @@ class TestDataPathValidation:
                                     str(int(time.time())))
         self.log.info("Step 2: Creating a bucket with name : %s", bucket_name)
         res = S3_OBJ.create_bucket(bucket_name)
-        assert_in(bucket_name, res[1], res[1])
+        assert_true(res[0], res)
+        assert_in(bucket_name, res[1], res)
         return bucket_name
 
     def put_object(self, test_conf, bucket_name, bs=1):
@@ -154,12 +188,12 @@ class TestDataPathValidation:
         self.log.info(
             "Step 3:Upload object of size : %d", test_conf["obj_size"])
         cmd = "dd if=/dev/zero of={} bs={} count={}".format(
-            DATA_PATH_CFG["data_path"]["file_path"], bs, test_conf["obj_size"])
+            self.file_path, bs, test_conf["obj_size"])
         self.log.info(cmd)
         run_local_cmd(cmd)
         res = S3_OBJ.put_object(bucket_name,
-                                 test_conf["object_name"],
-                                 DATA_PATH_CFG["data_path"]["file_path"])
+                                test_conf["object_name"],
+                                self.file_path)
         assert_true(res[0], res[1])
 
     def run_s3bench(self, test_conf, bucket):
@@ -185,13 +219,11 @@ class TestDataPathValidation:
             DATA_PATH_CFG["data_path"]["samples"],
             test_conf["obj_prefix"],
             DATA_PATH_CFG["data_path"]["obj_size"])
-        run_local_cmd(
-            "cd {}".format(
-                DATA_PATH_CFG["data_path"]["s3bench_path"]))
         resp = run_local_cmd(cmd)
         self.log.debug(resp)
-        assert_is_not_none(resp[0], resp)
-        resp_split = resp[0].split("\n")
+        assert_true(resp[0], resp[1])
+        assert_is_not_none(resp[1], resp)
+        resp_split = resp[1].split("\\n")
         resp_filtered = [i for i in resp_split if 'Number of Errors' in i]
         for response in resp_filtered:
             self.log.debug(response)
@@ -427,15 +459,15 @@ class TestDataPathValidation:
             "gradually increasing requests.")
         self.log.info("Step 3: checking system stability")
         res = self.health_obj.is_motr_online()
-        assert_true(res[0], res[1])
+        assert_true(res, f"Failed to check is_motr_online: resp: {res}")
         cmd_msg = DATA_PATH_CFG["data_path"]["cmd_msg"]
-        commands = const.CRASH_COMMANDS
-        for node, cmd in zip(self.nodes, commands):
-            res_cmd = run_remote_cmd(cmd,
-                                     node,
-                                     CM_CFG["nodes"][node]["username"],
-                                     CM_CFG["nodes"][node]["password"])
-            assert_not_in(cmd_msg, res_cmd, res_cmd)
+        for cmd in const.CRASH_COMMANDS[0]:
+            for nid in range(len(self.nodes)):
+                res_cmd = run_remote_cmd(cmd,
+                                         CM_CFG["nodes"][nid]["host"],
+                                         CM_CFG["nodes"][nid]["username"],
+                                         CM_CFG["nodes"][nid]["password"])
+                assert_not_in(cmd_msg, res_cmd, res_cmd)
         self.log.info("Step 3: checked system stability")
         self.log.info(
             "ENDED: Test gradual increase of concurrent client sessions"
@@ -453,9 +485,9 @@ class TestDataPathValidation:
         bucket_name = "{}{}".format(
             test_cfg["bucket_name"], time.time())
         self.log.info("Step 1: Create bucket with name %s.", bucket_name)
-        resp = S3H_OBJ.create_bucket(bucket_name)
+        resp = S3_OBJ.create_bucket(bucket_name)
         assert_true(resp[0], resp[1])
-        resp = S3H_OBJ.bucket_list()
+        resp = S3_OBJ.bucket_list()
         assert_in(bucket_name, resp[1], resp[1])
         self.log.info("Step 1: Successfully created bucket.")
         self.log.info(
@@ -481,16 +513,18 @@ class TestDataPathValidation:
             "Step 2: completed concurrent I/O with multiple client and increasing"
             " request on single bucket.")
         self.log.info("Step 3: checking system stability")
-        res = S3H_OBJ.is_mero_online()
-        assert_true(res[0], res[1])
+        res = self.health_obj.is_motr_online()
+        assert_true(res, f"Failed to check is_motr_online: resp: {res}")
         cmd_msg = DATA_PATH_CFG["data_path"]["cmd_msg"]
-        commands = const.CRASH_COMMANDS
-        for node, cmd in zip(self.nodes, commands):
-            res_cmd = run_remote_cmd(cmd,
-                                     node,
-                                     CM_CFG["nodes"][node]["username"],
-                                     CM_CFG["nodes"][node]["password"])
-            assert_not_in(cmd_msg, res_cmd, res_cmd)
+        self.log.info("Crash commands: %s", const.CRASH_COMMANDS[0])
+        for cmd in const.CRASH_COMMANDS[0]:
+            self.log.info(cmd)
+            for nid in range(len(self.nodes)):
+                res_cmd = run_remote_cmd(cmd,
+                                         CM_CFG["nodes"][nid]["host"],
+                                         CM_CFG["nodes"][nid]["username"],
+                                         CM_CFG["nodes"][nid]["password"])
+                assert_not_in(cmd_msg, res_cmd, res_cmd)
         self.log.info("Step 3: checked system stability")
         self.log.info(
             "ENDED: Test gradual increase of concurrent client sessions"
@@ -510,10 +544,10 @@ class TestDataPathValidation:
         for bkt in range(test_cfg["bkt_count"]):
             bucket_name = "{}{}".format(
                 test_cfg["bucket_name"], time.time())
-            resp = S3H_OBJ.create_bucket(bucket_name)
+            resp = S3_OBJ.create_bucket(bucket_name)
             assert_true(resp[0], resp[1])
             bkt_list.append(bucket_name)
-        resp = S3H_OBJ.bucket_list()
+        resp = S3_OBJ.bucket_list()
         assert_in(bkt_list[0], resp[1], resp[1])
         self.log.info("Step 1: Successfully created buckets: %s.", bkt_list)
         self.log.info(
@@ -539,16 +573,16 @@ class TestDataPathValidation:
             "Step 2: Completed concurrent I/O with increasing client and"
             " request on multiple buckets.")
         self.log.info("Step 3: checking system stability")
-        res = S3H_OBJ.is_mero_online()
-        assert_true(res[0], res[1])
+        res = self.health_obj.is_motr_online()
+        assert_true(res, f"Failed to check is_motr_online: resp: {res}")
         cmd_msg = DATA_PATH_CFG["data_path"]["cmd_msg"]
-        commands = const.CRASH_COMMANDS
-        for node, cmd in zip(self.nodes, commands):
-            res_cmd = run_remote_cmd(cmd,
-                                     node,
-                                     CM_CFG["nodes"][node]["username"],
-                                     CM_CFG["nodes"][node]["password"])
-            assert_not_in(cmd_msg, res_cmd, res_cmd)
+        for cmd in const.CRASH_COMMANDS[0]:
+            for nid in range(len(self.nodes)):
+                res_cmd = run_remote_cmd(cmd,
+                                         CM_CFG["nodes"][nid]["host"],
+                                         CM_CFG["nodes"][nid]["username"],
+                                         CM_CFG["nodes"][nid]["password"])
+                assert_not_in(cmd_msg, res_cmd, res_cmd)
         self.log.info("Step 3: checked system stability")
         self.log.info(
             "ENDED: Test gradual increase of concurrent client sessions"
@@ -568,10 +602,10 @@ class TestDataPathValidation:
         for bkt in range(test_cfg["bkt_count"]):
             bucket_name = "{}{}".format(
                 test_cfg["bucket_name"], time.time())
-            resp = S3H_OBJ.create_bucket(bucket_name)
+            resp = S3_OBJ.create_bucket(bucket_name)
             assert_true(resp[0], resp[1])
             bkt_list.append(bucket_name)
-        resp = S3H_OBJ.bucket_list()
+        resp = S3_OBJ.bucket_list()
         assert_in(bkt_list[0], resp[1], resp[1])
         self.log.info("Step 1: Successfully created bucket.")
         self.log.info(
@@ -595,16 +629,16 @@ class TestDataPathValidation:
         self.log.info(
             "Step 2: Start concurrent I/O with increasing client and request.")
         self.log.info("Step 3: checking system stability")
-        res = S3H_OBJ.is_mero_online()
-        assert_true(res[0], res[1])
+        res = self.health_obj.is_motr_online()
+        assert_true(res, f"Failed to check is_motr_online: resp: {res}")
         cmd_msg = DATA_PATH_CFG["data_path"]["cmd_msg"]
-        commands = const.CRASH_COMMANDS
-        for node, cmd in zip(self.nodes, commands):
-            res_cmd = run_remote_cmd(cmd,
-                                     node,
-                                     CM_CFG["nodes"][node]["username"],
-                                     CM_CFG["nodes"][node]["password"])
-            assert_not_in(cmd_msg, res_cmd, res_cmd)
+        for cmd in const.CRASH_COMMANDS[0]:
+            for nid in range(len(self.nodes)):
+                res_cmd = run_remote_cmd(cmd,
+                                         CM_CFG["nodes"][nid]["host"],
+                                         CM_CFG["nodes"][nid]["username"],
+                                         CM_CFG["nodes"][nid]["password"])
+                assert_not_in(cmd_msg, res_cmd, res_cmd)
         self.log.info("Step 3: checked system stability")
         self.log.info(
             "ENDED: Test gradual increase of concurrent client sessions"

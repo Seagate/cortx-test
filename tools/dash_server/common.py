@@ -64,8 +64,8 @@ except KeyError:
     sys.exit(1)
 
 versions = [
-    {'label': 'LR1', 'value': 'LR1'},
-    {'label': 'LR2', 'value': 'LR2'}
+    {'label': 'LR-R1', 'value': 'LR1'},
+    {'label': 'LR-R2', 'value': 'LR2'}
 ]
 
 # common style

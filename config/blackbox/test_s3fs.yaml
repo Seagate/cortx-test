@@ -11,7 +11,7 @@ common_cfg:
   dir_name: "/mnt/s3fstest{}"
   new_dir_name: "s3fstest1{}"
   dir_to_rm: "/mnt/s3fstest"
-  df_cmd: "df -h"
+  cmd_check_mount: "mount | grep {}"
   rm_file_cmd: "rm -rf"
   unmount_cmd: "umount"
   dd_cmd: "dd"

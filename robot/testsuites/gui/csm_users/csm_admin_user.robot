@@ -1,6 +1,7 @@
 *** Settings ***
 Documentation    This suite verifies the testcases for csm user creation
 Resource   ${EXECDIR}/resources/page_objects/loginPage.robot
+Resource   ${EXECDIR}/resources/page_objects/s3accountPage.robot
 Resource   ${EXECDIR}/resources/page_objects/settingsPage.robot
 Resource   ${EXECDIR}/resources/page_objects/userSettingsLocalPage.robot
 Resource   ${EXECDIR}/resources/page_objects/preboardingPage.robot
@@ -89,22 +90,6 @@ TEST-1863
     Navigate To Page  ${page name}
     Click On Add User Button
     Verify Mismatch Password Error
-
-TEST-1838
-    [Documentation]  Test that monitor user can't able to delete any user
-    ...  Reference : https://jts.seagate.com/browse/TEST-1838
-    [Tags]  Priority_High
-    ${new_user_name}=  Generate New User Name
-    ${new_password}=  Generate New Password
-    Navigate To Page  ${page name}
-    #  Checking for manage
-    Create New CSM User  ${new_user_name}  ${new_password}  monitor
-    Click On Confirm Button
-    Verify New User  ${new_user_name}
-    Re-login  ${new_user_name}  ${new_password}  ${page name}
-    Verify No Delete Button Present
-    Re-login  ${username}  ${password}  ${page name}
-    Delete CSM User  ${new_user_name}
 
 TEST-1842
     [Documentation]  Test that root user must present when user navigate to manage page
@@ -288,6 +273,30 @@ TEST-5389
     Sleep  5s
     Verify Setting menu item
     Verify Setting menu navigating
+
+TEST-18326
+    [Documentation]  Test that csm Admin user is able to reset the s3 account users password through CSM GUI
+    ...  Reference : https://jts.seagate.com/browse/TEST-18326
+    [Tags]  Priority_High  TEST-18326  S3_test  Smoke_test
+    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    sleep  2s
+    ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
+    sleep  5s
+    Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
+    CSM GUI Logout
+    Enter Username And Password  ${S3_account_name}  ${S3_password}
+    Click Sigin Button
+    sleep  2s
+    Validate CSM Login Success  ${s3_account_name}
+    CSM GUI Logout
+    wait for page or element to load  2s
+    Enter Username And Password  ${username}  ${password}
+    Click Sigin Button
+    wait for page or element to load  2s
+    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    ${S3_new_password}=  Generate New Password
+    Edit S3 User Password  ${S3_account_name}  ${S3_new_password}  ${S3_new_password}
+    Delete S3 Account  ${S3_account_name}  ${S3_new_password}  True
 
 TEST-4871
     [Documentation]  Test that SSl certificate get uploaded on SSl certificate upload page	
