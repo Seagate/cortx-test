@@ -99,8 +99,8 @@ def decrypt_all_passwd(data: dict) -> dict:
                 return data
 
 
-def get_secrets(fpath="secrets.json", secret_ids=None) -> dict:
-    """Fetch the secrets from environment or database
+def get_secrets(fpath="/root/cortx/cortx-test/secrets.json", secret_ids=None) -> dict:
+    """Fetch the secrefrom environment or database
 
     :param fpath: local json file path for reading secrets
     :param secret_ids: keys to be read from json file / environment

@@ -1,4 +1,8 @@
 include *
+include README.md
+include LICENSE
+include requirements.txt
+graft ci_tools
 recursive-include config *
 recursive-include ci_tools *
 recursive-include docs *

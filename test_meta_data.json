@@ -1,0 +1,1 @@
+{"test_plan_label": ["regular"], "environment": "stable_136", "te_meta": {"te_id": "TEST-18714", "te_label": ["csmrest"], "te_components": "Automation"}, "test_meta": [{"test_id": "TEST-10720", "test_name": "Initiating the test case to verify List CSM user.", "labels": ["CSM_REST", "CSM_USER", "EOS_TA", "QA"], "component": "Automation"}]}

@@ -507,5 +507,4 @@ if __name__ == '__main__':
     runner.cleanup()
     initialize_loghandler(LOGGER)
     opts = parse_args()
-
     main(opts)

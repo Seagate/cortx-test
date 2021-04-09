@@ -20,5 +20,7 @@ setup(name="cortxtest",
       packages=find_packages(),
       include_package_data=True,
       python_requires='==3.7',
+      scripts=['try.py','commons/try2.py','testrunner.py','drunner.py'],
       install_requires=reqs,
+      #package_data={'cortxtest': ['config/common_config.yaml']},
       )
