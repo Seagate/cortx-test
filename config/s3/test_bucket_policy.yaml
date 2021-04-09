@@ -1,24 +1,3 @@
-bucket_policy:
-  bkt_name_prefix: "bktpolicy"
-  obj_name_prefix: "obj_policy"
-  acc_name_prefix: "accpolicy"
-  user_name_prefix: "userpolicy"
-  file_path: "/home/bkt_policy.txt"
-  folder_path: "/home/policy"
-  file_path_2: "/home/policy/bkt_policy1.txt"
-  acl_permission: "private"
-  file_size: 10
-  account_name: "accpolicy_account"
-  user_name: "userpolicy_user"
-  email_id: "@seagate.com"
-  id_str: "id={}"
-  range_val: 2
-test_254:
-  bucket_name: "bktpolicy-254"
-  error_message: "NoSuchBucketPolicy"
-test_260:
-  bucket_name: "bktpolicy-260"
-  error_message: "NoSuchBucket"
 test_261:
   bucket_name: "bktpolicy-261"
   bucket_policy:
@@ -34,7 +13,6 @@ test_261:
 test_262:
   bucket_name: "bktpolicy-262"
   account_name: "bktpolicy_acc"
-  email_id: "@seagate.com"
   bucket_policy:
     Statement:
       - Effect: "Allow"
@@ -286,10 +264,6 @@ test_558:
         Action: "s3:DeleteObject"
         Resource: "arn:aws:s3:::bktpolicy-558/*"
 
-test_560:
-  bucket_name: "bktpolicy-560"
-  error_message: "NoSuchBucket"
-
 test_562:
   bucket_name: "bktpolicy-562"
   error_message: "expected string"
@@ -303,10 +277,6 @@ test_562:
         Principal: "*"
         Action: "s3:DeleteObject"
         Resource: "arn:aws:s3:::bktpolicy-562/*"
-
-test_563:
-  bucket_name: "bktpolicy-563"
-  error_message: "NoSuchBucketPolicy"
 
 test_566:
   bucket_name: "bkt-policybkt-5661"
@@ -453,6 +423,7 @@ test_693:
         Action: "s3:DeleteObject"
         Resource: "arn:aws:s3:::bktpolicy-693/*"
   error_message: "Invalid principal in policy"
+
 test_694:
   bucket_name: "bktpolicy-694"
   object_name_2: "objkey694_2"
