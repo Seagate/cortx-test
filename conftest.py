@@ -52,7 +52,6 @@ from core.runner import get_jira_credential
 from core.runner import get_db_credential
 from commons import params
 
-# commenting this until db_user code is integrated from config import CMN_CFG
 
 FAILURES_FILE = "failures.txt"
 LOG_DIR = 'log'
