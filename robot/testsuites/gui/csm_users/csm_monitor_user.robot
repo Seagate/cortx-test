@@ -3,7 +3,7 @@ Documentation    This suite verifies the testcases for csm user creation
 Resource    ${EXECDIR}/resources/page_objects/loginPage.robot
 Resource    ${EXECDIR}/resources/page_objects/userSettingsLocalPage.robot
 Resource    ${EXECDIR}/resources/page_objects/alertPage.robot
-Resource    ${EXECDIR}/resources/page_objects/dashboard.robot
+Resource    ${EXECDIR}/resources/page_objects/dashboardPage.robot
 Resource    ${EXECDIR}/resources/page_objects/preboardingPage.robot
 
 Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}  ${username}  ${password}
@@ -69,8 +69,19 @@ TEST-1239
     [Documentation]  Test that CSM user with role monitor cannot create, delete Any CSM users.
     [Tags]  Priority_High  user_role  TEST-1239
     ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
-    Verify that monitor user is not able to create delete csm user
     wait for page or element to load  2s
+    Verify that monitor user is not able to create delete csm user
+    Re-login  ${username}  ${password}  ${page_name}
+    Delete CSM User  ${new_user_name}
+
+TEST-1838
+    [Documentation]  Test that monitor user can't able to delete any user
+    ...  Reference : https://jts.seagate.com/browse/TEST-1838
+    [Tags]  Priority_High  TEST-1838
+    ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
+    wait for page or element to load  2s
+    Verify Absence of Edit And Delete Button on S3account
+    Verify Absence of Delete Button on CSM users
     Re-login  ${username}  ${password}  ${page_name}
     Delete CSM User  ${new_user_name}
 
@@ -121,9 +132,9 @@ TEST-1222
     [Documentation]  Test that monitor user cannot view, create, update or delete IAM users.
     [Tags]  Priority_High  user_role  TEST-1222
     ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
+    wait for page or element to load  2s
     Verify IAM User Section Not Present
     Verify bucket Section Not Present
-    wait for page or element to load  2s
     Re-login  ${username}  ${password}  ${page_name}
     Delete CSM User  ${new_user_name}
 
@@ -131,7 +142,17 @@ TEST-1221
     [Documentation]  Test that CSM user with role monitor can view s3 accounts
     [Tags]  Priority_High  user_role  TEST-1221
     ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
-    Verify Absence of Edit And Delete Button on S3account
     wait for page or element to load  2s
+    Verify Absence of Edit And Delete Button on S3account
+    Re-login  ${username}  ${password}  ${page_name}
+    Delete CSM User  ${new_user_name}
+
+TEST-18329
+    [Documentation]  Test that csm user with monitor role is not able to reset is passwrod of s3 account user through csm GUI.
+    ...  Reference : https://jts.seagate.com/browse/TEST-18329
+    [Tags]  Priority_High  user_role  TEST-18329
+    ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
+    wait for page or element to load  2s
+    Verify Absence of Reset Passwrod Button on S3account
     Re-login  ${username}  ${password}  ${page_name}
     Delete CSM User  ${new_user_name}
