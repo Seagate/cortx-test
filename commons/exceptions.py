@@ -43,7 +43,7 @@ class CTException(Exception):
         """
         super().__init__()
         if not isinstance(ct_error, errcodes.CTError):
-            raise TypeError("'ct_error' has to be of type 'CTError'!")
+            raise ct_error from AssertionError
 
         self.ct_error = ct_error
         self.message = msg
