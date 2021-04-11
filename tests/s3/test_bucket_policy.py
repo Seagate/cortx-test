@@ -231,7 +231,7 @@ class TestBucketPolicy:
                 obj_name_prefix, str(int(time.time())), i)
             resp = S3_OBJ.put_object(
                 bucket_name,
-                obj_name,
+                "objkey_test",
                 self.file_path)
             assert resp[0], resp[1]
             self.log.info("Created object %s", obj_name)
@@ -628,7 +628,7 @@ class TestBucketPolicy:
                 if acl or grant_read or grant_full_control or grant_read_acp or grant_write_acp:
                     S3_OBJ.put_object_with_acl(
                         bucket_name=bucket_name,
-                        key=obj_name,
+                        key="objkey_test",
                         file_path=self.file_path_2,
                         acl=acl,
                         grant_full_control=grant_full_control,
@@ -638,7 +638,7 @@ class TestBucketPolicy:
                 else:
                     S3_OBJ.put_object(
                         bucket_name,
-                        obj_name,
+                        "objkey_test",
                         self.file_path_2)
             except CTException as error:
                 self.log.error(error.message)
@@ -650,7 +650,7 @@ class TestBucketPolicy:
             if acl or grant_read or grant_full_control or grant_read_acp or grant_write_acp:
                 resp = S3_OBJ.put_object_with_acl(
                     bucket_name=bucket_name,
-                    key=obj_name,
+                    key="objkey_test",
                     file_path=self.file_path_2,
                     acl=acl,
                     grant_full_control=grant_full_control,
@@ -659,7 +659,7 @@ class TestBucketPolicy:
                     grant_write_acp=grant_write_acp)
             else:
                 resp = S3_OBJ.put_object(
-                    bucket_name, obj_name, self.file_path_2)
+                    bucket_name, "objkey_test", self.file_path_2)
             assert resp[0], resp[1]
             self.log.info(
                 "Put object into bucket %s successfully",
@@ -3594,10 +3594,10 @@ class TestBucketPolicy:
             "Step 3: Applying policy on a bucket %s", self.bucket_name)
         bucket_policy["Statement"][0]["Principal"]["AWS"][0] = \
             bucket_policy["Statement"][0]["Principal"]["AWS"][0].format(account_id,
-                                                                                        user_name)
+                                                                        user_name)
         bucket_policy["Statement"][1]["Principal"]["AWS"][0] = \
             bucket_policy["Statement"][1]["Principal"]["AWS"][0].format(account_id,
-                                                                                        user_name)
+                                                                        user_name)
         bkt_policy_json = json.dumps(bucket_policy)
         resp = s3_policy_obj.put_bucket_policy(
             self.bucket_name, bkt_policy_json)
@@ -3920,7 +3920,7 @@ class TestBucketPolicy:
             "another account given write permission on bucket")
         test_367_cfg = BKT_POLICY_CONF["test_367"]
         test_367_cfg["bucket_policy"]["Statement"][0]["Resource"] = \
-        test_367_cfg["bucket_policy"]["Statement"][0][
+            test_367_cfg["bucket_policy"]["Statement"][0][
             "Resource"].format(self.bucket_name)
         test_367_cfg["bucket_policy"]["Statement"][1]["Resource"] = \
             test_367_cfg["bucket_policy"]["Statement"][1][
@@ -4021,7 +4021,7 @@ class TestBucketPolicy:
         test_370_cfg = BKT_POLICY_CONF["test_370"]
         for i in range(2):
             test_370_cfg["bucket_policy"]["Statement"][i]["Resource"] = \
-            test_370_cfg["bucket_policy"]["Statement"][i][
+                test_370_cfg["bucket_policy"]["Statement"][i][
                 "Resource"].format(self.bucket_name)
         result_2 = self.create_s3iamcli_acc(
             self.account_name_2, self.email_id_2)
@@ -4094,7 +4094,7 @@ class TestBucketPolicy:
         bucket_policy = BKT_POLICY_CONF["test_372"]["bucket_policy"]
         for i in range(2):
             bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
+                "Resource"].format(self.bucket_name)
         result_2 = self.create_s3iamcli_acc(
             self.account_name_2, self.email_id_2)
         S3_BKT_POLICY_OBJ_2 = result_2[3]
@@ -4643,13 +4643,13 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: verify get-bucket-policy for the bucket which is having read permissions for account2")
         bucket_policy = BKT_POLICY_CONF["test_270"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
+        for i in range(2):
+            bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
+                "Resource"].format(self.bucket_name)
         self.log.info(
             "Creating two account with name prefix as %s",
-            test_cfg["account_name"])
-        resp = IAM_OBJ.create_multiple_accounts(
-            test_cfg["acc_count"], test_cfg["account_name"])
+            self.account_name)
+        resp = IAM_OBJ.create_multiple_accounts(2, self.account_name)
         assert resp[0], resp[1]
         canonical_id_user_1 = resp[1][0][1]["canonical_id"]
         access_key_u1 = resp[1][0][1]["access_key"]
@@ -4664,19 +4664,19 @@ class TestBucketPolicy:
         self.s3test_obj_1 = s3_test_lib.S3TestLib(
             access_key=access_key_u1, secret_key=secret_key_u1)
         self.log.info(
-            "Created account2 with name %s", test_cfg["account_name"])
+            "Created account2 with name %s", self.account_name)
         self.log.info("Step 1 : Creating bucket with name {} and setting read "
-                      "permission to account2".format(test_cfg["bucket_name"]))
+                      "permission to account2".format(self.bucket_name))
         resp = s3acltest_obj_1.create_bucket_with_acl(
-            bucket_name=test_cfg["bucket_name"],
-            grant_full_control=test_cfg["id_str"].format(canonical_id_user_1),
-            grant_read=test_cfg["id_str"].format(canonical_id_user_2))
+            bucket_name=self.bucket_name,
+            grant_full_control="id={}".format(canonical_id_user_1),
+            grant_read="id={}".format(canonical_id_user_2))
         assert resp[0], resp[1]
         self.log.info("Step 1 : Created bucket with name {} and set read "
-                      "permission to account2".format(test_cfg["bucket_name"]))
+                      "permission to account2".format(self.bucket_name))
         self.log.info(
             "Step 2: Verifying get bucket acl with account1")
-        resp = s3acltest_obj_1.get_bucket_acl(test_cfg["bucket_name"])
+        resp = s3acltest_obj_1.get_bucket_acl(self.bucket_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 2: Verified get bucket acl for account1")
@@ -4684,13 +4684,13 @@ class TestBucketPolicy:
             "Step 3: Applying bucket policy: %s", bucket_policy)
         bkt_policy_json = json.dumps(bucket_policy)
         resp = s3_policy_usr_obj.put_bucket_policy(
-            test_cfg["bucket_name"], bkt_policy_json)
+            self.bucket_name, bkt_policy_json)
         assert resp[0], resp[1]
         self.log.info(
-            "Step 3: Applied bucket policy to %s", test_cfg["bucket_name"])
+            "Step 3: Applied bucket policy to %s", self.bucket_name)
         self.log.info(
             "Step 4: Get bucket policy using account1")
-        resp = s3_policy_usr_obj.get_bucket_policy(test_cfg["bucket_name"])
+        resp = s3_policy_usr_obj.get_bucket_policy(self.bucket_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 4: Verified get bucket policy for account1")
@@ -4699,10 +4699,10 @@ class TestBucketPolicy:
         s3_policy_usr2_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
             access_key=access_key_u2, secret_key=secret_key_u2)
         try:
-            s3_policy_usr2_obj.get_bucket_policy(test_cfg["bucket_name"])
+            s3_policy_usr2_obj.get_bucket_policy(self.bucket_name)
         except CTException as error:
             self.log.error(error.message)
-            assert test_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
             self.log.info(
                 "Step 5: Get bucket policy with account2 login is failed with error %s",
                 error.message)
@@ -4719,12 +4719,10 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Do not apply policy from account 1 and give read permission to account2"
             " and verify get-bucket-policy")
-        test_cfg = BKT_POLICY_CONF["test_270"]
         self.log.info(
             "Creating two account with name prefix as %s",
-            test_cfg["account_name"])
-        resp = IAM_OBJ.create_multiple_accounts(
-            test_cfg["acc_count"], test_cfg["account_name"])
+            self.account_name)
+        resp = IAM_OBJ.create_multiple_accounts(2, self.account_name)
         assert resp[0], resp[1]
         canonical_id_user_1 = resp[1][0][1]["canonical_id"]
         access_key_u1 = resp[1][0][1]["access_key"]
@@ -4737,19 +4735,19 @@ class TestBucketPolicy:
         self.s3test_obj_1 = s3_test_lib.S3TestLib(
             access_key=access_key_u1, secret_key=secret_key_u1)
         self.log.info(
-            "Created account2 with name %s", test_cfg["account_name"])
+            "Created account2 with name %s", self.account_name)
         self.log.info("Step 1 : Creating bucket with name {} and setting read "
-                      "permission to account2".format(test_cfg["bucket_name"]))
+                      "permission to account2".format(self.bucket_name))
         resp = s3acltest_obj_1.create_bucket_with_acl(
-            bucket_name=test_cfg["bucket_name"],
-            grant_full_control=test_cfg["id_str"].format(canonical_id_user_1),
-            grant_read=test_cfg["id_str"].format(canonical_id_user_2))
+            bucket_name=self.bucket_name,
+            grant_full_control="id={}".format(canonical_id_user_1),
+            grant_read="id={}".format(canonical_id_user_2))
         assert resp[0], resp[1]
         self.log.info("Step 1 : Created bucket with name {} and set read "
-                      "permission to account2".format(test_cfg["bucket_name"]))
+                      "permission to account2".format(self.bucket_name))
         self.log.info(
             "Step 2: Verifying get bucket acl with account1")
-        resp = s3acltest_obj_1.get_bucket_acl(test_cfg["bucket_name"])
+        resp = s3acltest_obj_1.get_bucket_acl(self.bucket_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 2: Verified get bucket acl for account1")
@@ -4758,10 +4756,10 @@ class TestBucketPolicy:
         s3_policy_usr2_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
             access_key=access_key_u2, secret_key=secret_key_u2)
         try:
-            s3_policy_usr2_obj.get_bucket_policy(test_cfg["bucket_name"])
+            s3_policy_usr2_obj.get_bucket_policy(self.bucket_name)
         except CTException as error:
             self.log.error(error.message)
-            assert test_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
             self.log.info(
                 "Step 3: Get bucket policy with account2 login is failed with error %s",
                 error.message)
@@ -4947,7 +4945,8 @@ class TestBucketPolicy:
         bucket_policy["Statement"][0]["Sid"] = \
             bucket_policy["Statement"][0]["Sid"].format(
                 policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"] = bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
+        bucket_policy["Statement"][0]["Principal"]["AWS"] = bucket_policy[
+            "Statement"][0]["Principal"]["AWS"].format(account_id)
         self.log.info(bucket_policy)
         self.log.info("Created a json for bucket policy")
         self.put_get_bkt_policy(
@@ -4989,6 +4988,8 @@ class TestBucketPolicy:
             "STARTED: Create Bucket Policy using 'StringEquals' Condition Operator,"
             " key 's3:x-amz-grant-write',Effect Allow and Action 's3:ListBucket'")
         bucket_policy = BKT_POLICY_CONF["test_4183"]["bucket_policy"]
+        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
+            "Resource"].format(self.bucket_name)
         self.create_bucket_put_objects(
             self.bucket_name,
             11,
@@ -5037,7 +5038,7 @@ class TestBucketPolicy:
         bucket_policy = BKT_POLICY_CONF["test_1069"]["bucket_policy"]
         for i in range(2):
             bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
-            "Resource"].format(self.bucket_name)
+                "Resource"].format(self.bucket_name)
         self.create_bucket_put_obj_with_dir(
             self.bucket_name,
             "obj_policy",
@@ -5061,7 +5062,7 @@ class TestBucketPolicy:
         bucket_policy = BKT_POLICY_CONF["test_1075"]["bucket_policy"]
         for i in range(2):
             bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
-            "Resource"].format(self.bucket_name)
+                "Resource"].format(self.bucket_name)
         self.create_bucket_put_obj_with_dir(
             self.bucket_name,
             "obj_policy",
@@ -5069,7 +5070,8 @@ class TestBucketPolicy:
         acc_details = self.create_s3iamcli_acc(
             self.account_name, self.email_id)
         account_id = acc_details[6]
-        bucket_policy["Statement"][0]["Principal"]["AWS"] = "bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
+        bucket_policy["Statement"][0]["Principal"]["AWS"] = bucket_policy[
+            "Statement"][0]["Principal"]["AWS"].format(account_id)
         self.put_invalid_policy(
             self.bucket_name,
             bucket_policy,
@@ -5077,9 +5079,9 @@ class TestBucketPolicy:
         self.log.info(
             "ENDED: Test invalid User name in the bucket policy json")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-7694")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-7694")
+    @CTFailOn(error_handler)
     def test_4502(self):
         """
         Test Bucket Policy using Condition Operator "DateEquals", key "aws:CurrentTime",
@@ -5088,28 +5090,27 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateEquals', "
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format")
-        random_id=str(time.time())
-        test_4502_cfg=BKT_POLICY_CONF["test_4502"]
-        date_time=date.today().strftime(test_4502_cfg["date_format"])
-        result=self.create_s3iamcli_acc(
-            test_4502_cfg["account_name"].format(random_id),
-            test_4502_cfg["emailid"].format(random_id))
-        s3_obj_2=result[1]
-        account_id=result[6]
-        resp=system_utils.create_file(
+        test_4502_cfg = BKT_POLICY_CONF["test_4502"]
+        test_4502_cfg["bucket_policy"]["Statement"][0]["Resource"] = test_4502_cfg[
+            "bucket_policy"]["Statement"][0]["Resource"].format(self.bucket_name)
+        date_time = date.today().strftime("%Y-%m-%d")
+        result = self.create_s3iamcli_acc(self.account_name, self.email_id)
+        s3_obj_2 = result[1]
+        account_id = result[6]
+        resp = system_utils.create_file(
             self.file_path,
             10)
         assert resp[0], resp[1]
-        for effect in test_4502_cfg["effect_lst"]:
+        for effect in ["Allow", "Deny"]:
             self.put_bkt_policy_with_date_format(
                 account_id, date_time, effect, s3_obj_2, test_4502_cfg)
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateEquals', "
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-7695")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-7695")
+    @CTFailOn(error_handler)
     def test_4504(self):
         """
         Test Bucket Policy using Condition Operator 'DateNotEquals',
@@ -5118,28 +5119,26 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateNotEquals', "
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
-        random_id=str(time.time())
-        test_4504_cfg=BKT_POLICY_CONF["test_4504"]
-        date_time=datetime.now().strftime(test_4504_cfg["date_format"])
-        result=self.create_s3iamcli_acc(
-            test_4504_cfg["account_name"].format(random_id),
-            test_4504_cfg["emailid"].format(random_id))
-        s3_obj_2=result[1]
-        account_id=result[6]
-        resp=system_utils.create_file(
+        test_4504_cfg = BKT_POLICY_CONF["test_4504"]
+        test_4504_cfg["bucket_name"] = self.bucket_name
+        date_time = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        result = self.create_s3iamcli_acc(self.account_name, self.email_id)
+        s3_obj_2 = result[1]
+        account_id = result[6]
+        resp = system_utils.create_file(
             self.file_path,
             10)
         assert resp[0], resp[1]
-        for effect in test_4504_cfg["effect_lst"]:
+        for effect in ["Allow", "Deny"]:
             self.put_bkt_policy_with_date_format(
                 account_id, date_time, effect, s3_obj_2, test_4504_cfg)
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateNotEquals', "
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-7696")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-7696")
+    @CTFailOn(error_handler)
     def test_4505(self):
         """
         Test Bucket Policy using Condition Operator 'DateLessThan',
@@ -5148,28 +5147,27 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateLessThan', "
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
-        random_id=str(time.time())
-        test_4505_cfg=BKT_POLICY_CONF["test_4505"]
-        date_time=datetime.now().strftime(test_4505_cfg["date_format"])
-        result=self.create_s3iamcli_acc(
-            test_4505_cfg["account_name"].format(random_id),
-            test_4505_cfg["emailid"].format(random_id))
-        s3_obj_2=result[1]
-        account_id=result[6]
-        resp=system_utils.create_file(
+        random_id = str(time.time())
+        test_4505_cfg = BKT_POLICY_CONF["test_4505"]
+        test_4505_cfg["bucket_name"] = self.bucket_name
+        date_time = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        result = self.create_s3iamcli_acc(self.account_name, self.email_id)
+        s3_obj_2 = result[1]
+        account_id = result[6]
+        resp = system_utils.create_file(
             self.file_path,
             10)
         assert resp[0], resp[1]
-        for effect in test_4505_cfg["effect_lst"]:
+        for effect in ["Allow", "Deny"]:
             self.put_bkt_policy_with_date_format(
                 account_id, date_time, effect, s3_obj_2, test_4505_cfg)
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateLessThan', "
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-7697")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-7697")
+    @CTFailOn(error_handler)
     def test_4506(self):
         """
         Test Bucket Policy using Condition Operator 'DateLessThanEquals',
@@ -5178,28 +5176,27 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateLessThanEquals', "
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format")
-        random_id=str(time.time())
-        test_4506_cfg=BKT_POLICY_CONF["test_4506"]
-        date_time=datetime.now().strftime(test_4506_cfg["date_format"])
-        result=self.create_s3iamcli_acc(
-            test_4506_cfg["account_name"].format(random_id),
-            test_4506_cfg["emailid"].format(random_id))
-        s3_obj_2=result[1]
-        account_id=result[6]
-        resp=system_utils.create_file(
+        random_id = str(time.time())
+        test_4506_cfg = BKT_POLICY_CONF["test_4506"]
+        test_4506_cfg["bucket_name"] = self.bucket_name
+        date_time = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        result = self.create_s3iamcli_acc(self.account_name, self.email_id)
+        s3_obj_2 = result[1]
+        account_id = result[6]
+        resp = system_utils.create_file(
             self.file_path,
             10)
         assert resp[0], resp[1]
-        for effect in test_4506_cfg["effect_lst"]:
+        for effect in ["Allow", "Deny"]:
             self.put_bkt_policy_with_date_format(account_id, date_time, effect,
                                                  s3_obj_2, test_4506_cfg)
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateLessThanEquals', "
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-7698")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-7698")
+    @CTFailOn(error_handler)
     def test_4507(self):
         """
         Test Bucket Policy using Condition Operator 'DateGreaterThan',
@@ -5208,28 +5205,27 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateGreaterThan', "
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
-        random_id=str(time.time())
-        test_4507_cfg=BKT_POLICY_CONF["test_4507"]
-        date_time=datetime.now().strftime(test_4507_cfg["date_format"])
-        result=self.create_s3iamcli_acc(
-            test_4507_cfg["account_name"].format(random_id),
-            test_4507_cfg["emailid"].format(random_id))
-        s3_obj_2=result[1]
-        account_id=result[6]
-        resp=system_utils.create_file(
+        random_id = str(time.time())
+        test_4507_cfg = BKT_POLICY_CONF["test_4507"]
+        test_4507_cfg["bucket_name"] = self.bucket_name
+        date_time = datetime.now().strftime("%Y-%m-%d")
+        result = self.create_s3iamcli_acc(self.account_name, self.email_id)
+        s3_obj_2 = result[1]
+        account_id = result[6]
+        resp = system_utils.create_file(
             self.file_path,
             10)
         assert resp[0], resp[1]
-        for effect in test_4507_cfg["effect_lst"]:
+        for effect in ["Allow", "Deny"]:
             self.put_bkt_policy_with_date_format(
                 account_id, date_time, effect, s3_obj_2, test_4507_cfg)
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateGreaterThan', "
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-7699")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-7699")
+    @CTFailOn(error_handler)
     def test_4508(self):
         """
         Test Bucket Policy using Condition Operator 'DateGreaterThanEquals', "
@@ -5238,28 +5234,26 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateGreaterThanEquals', "
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format")
-        random_id=str(time.time())
-        test_4508_cfg=BKT_POLICY_CONF["test_4508"]
-        date_time=datetime.now().strftime(test_4508_cfg["date_format"])
-        result=self.create_s3iamcli_acc(
-            test_4508_cfg["account_name"].format(random_id),
-            test_4508_cfg["emailid"].format(random_id))
-        s3_obj_2=result[1]
-        account_id=result[6]
-        resp=system_utils.create_file(
+        random_id = str(time.time())
+        test_4508_cfg = BKT_POLICY_CONF["test_4508"]
+        date_time = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        result = self.create_s3iamcli_acc(self.account_name, self.email_id)
+        s3_obj_2 = result[1]
+        account_id = result[6]
+        resp = system_utils.create_file(
             self.file_path,
             10)
         assert resp[0], resp[1]
-        for effect in test_4508_cfg["effect_lst"]:
+        for effect in ["Allow", "Deny"]:
             self.put_bkt_policy_with_date_format(
                 account_id, date_time, effect, s3_obj_2, test_4508_cfg)
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateGreaterThanEquals', "
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-7700")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-7700")
+    @CTFailOn(error_handler)
     def test_4509(self):
         """
         Test Bucket Policy using Condition Operator "DateEquals", key "aws:CurrentTime",
@@ -5268,25 +5262,25 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateEquals', "
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format")
-        test_cfg=BKT_POLICY_CONF["test_4509"]
-        date_time=date.today().strftime(test_cfg["date_format"])
-        result=self.create_s3iamcli_acc(self.account_name, self.email_id)
-        s3_obj_2=result[1]
-        account_id=result[6]
-        resp=system_utils.create_file(
+        test_cfg = BKT_POLICY_CONF["test_4509"]
+        date_time = date.today().strftime("%Y")
+        result = self.create_s3iamcli_acc(self.account_name, self.email_id)
+        s3_obj_2 = result[1]
+        account_id = result[6]
+        resp = system_utils.create_file(
             self.file_path,
             10)
         assert resp[0], resp[1]
-        for effect in test_cfg["effect_lst"]:
+        for effect in ["Allow", "Deny"]:
             self.put_bkt_policy_with_date_format(
                 account_id, date_time, effect, s3_obj_2, test_cfg)
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateEquals', "
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-7701")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-7701")
+    @CTFailOn(error_handler)
     def test_4510(self):
         """
         Test Bucket Policy using Condition Operator 'DateNotEquals',
@@ -5295,25 +5289,25 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateNotEquals', "
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
-        test_cfg=BKT_POLICY_CONF["test_4510"]
-        date_time=date.today().strftime(test_cfg["date_format"])
-        result=self.create_s3iamcli_acc(self.account_name, self.email_id)
-        s3_obj_2=result[1]
-        account_id=result[6]
-        resp=system_utils.create_file(
+        test_cfg = BKT_POLICY_CONF["test_4510"]
+        date_time = date.today().strftime("%%Y-%m")
+        result = self.create_s3iamcli_acc(self.account_name, self.email_id)
+        s3_obj_2 = result[1]
+        account_id = result[6]
+        resp = system_utils.create_file(
             self.file_path,
             10)
         assert resp[0], resp[1]
-        for effect in test_cfg["effect_lst"]:
+        for effect in ["Allow", "Deny"]:
             self.put_bkt_policy_with_date_format(
                 account_id, date_time, effect, s3_obj_2, test_cfg)
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateNotEquals', "
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-7702")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-7702")
+    @CTFailOn(error_handler)
     def test_4511(self):
         """
         Test Bucket Policy using Condition Operator 'DateLessThan',
@@ -5322,25 +5316,25 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateLessThan', "
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
-        test_cfg=BKT_POLICY_CONF["test_4511"]
-        date_time=date.today().strftime(test_cfg["date_format"])
-        result=self.create_s3iamcli_acc(self.account_name, self.email_id)
-        s3_obj_2=result[1]
-        account_id=result[6]
-        resp=system_utils.create_file(
+        test_cfg = BKT_POLICY_CONF["test_4511"]
+        date_time = date.today().strftime("%Y-%m-%d")
+        result = self.create_s3iamcli_acc(self.account_name, self.email_id)
+        s3_obj_2 = result[1]
+        account_id = result[6]
+        resp = system_utils.create_file(
             self.file_path,
             10)
         assert resp[0], resp[1]
-        for effect in test_cfg["effect_lst"]:
+        for effect in ["Allow", "Deny"]:
             self.put_bkt_policy_with_date_format(
                 account_id, date_time, effect, s3_obj_2, test_cfg)
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateLessThan', "
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-7703")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-7703")
+    @CTFailOn(error_handler)
     def test_4512(self):
         """
         Test Bucket Policy using Condition Operator 'DateGreaterThan',
@@ -5349,25 +5343,25 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateGreaterThan', "
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
-        test_cfg=BKT_POLICY_CONF["test_4512"]
-        date_time=date.today().strftime(test_cfg["date_format"])
-        result=self.create_s3iamcli_acc(self.account_name, self.email_id)
-        s3_obj_2=result[1]
-        account_id=result[6]
-        resp=system_utils.create_file(
+        test_cfg = BKT_POLICY_CONF["test_4512"]
+        date_time = date.today().strftime("%Y")
+        result = self.create_s3iamcli_acc(self.account_name, self.email_id)
+        s3_obj_2 = result[1]
+        account_id = result[6]
+        resp = system_utils.create_file(
             self.file_path,
             10)
         assert resp[0], resp[1]
-        for effect in test_cfg["effect_lst"]:
+        for effect in ["Allow", "Deny"]:
             self.put_bkt_policy_with_date_format(
                 account_id, date_time, effect, s3_obj_2, test_cfg)
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateGreaterThan', "
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-7704")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-7704")
+    @CTFailOn(error_handler)
     def test_4513(self):
         """
         Test Bucket Policy using Condition Operator 'DateNotEquals',
@@ -5376,25 +5370,25 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateNotEquals', "
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
-        random_id=str(time.time())
-        test_cfg=BKT_POLICY_CONF["test_4513"]
-        result=self.create_s3iamcli_acc(self.account_name, self.email_id)
-        s3_obj_2=result[1]
-        account_id=result[6]
-        resp=system_utils.create_file(
+        random_id = str(time.time())
+        test_cfg = BKT_POLICY_CONF["test_4513"]
+        result = self.create_s3iamcli_acc(self.account_name, self.email_id)
+        s3_obj_2 = result[1]
+        account_id = result[6]
+        resp = system_utils.create_file(
             self.file_path,
             10)
         assert resp[0], resp[1]
-        for effect in test_cfg["effect_lst"]:
+        for effect in ["Allow", "Deny"]:
             self.put_bkt_policy_with_date_format(
                 account_id, random_id, effect, s3_obj_2, test_cfg)
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateNotEquals', "
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-7705")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-7705")
+    @CTFailOn(error_handler)
     def test_4514(self):
         """
         Test Bucket Policy using Condition Operator 'DateLessThan',
@@ -5403,25 +5397,25 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateLessThan', "
             "key 'aws:EpochTime', Effect 'Deny', Action 'PutObject' and Date format")
-        random_id=str(time.time())
-        test_cfg=BKT_POLICY_CONF["test_4514"]
-        result=self.create_s3iamcli_acc(self.account_name, self.email_id)
-        s3_obj_2=result[1]
-        account_id=result[6]
-        resp=system_utils.create_file(
+        random_id = str(time.time())
+        test_cfg = BKT_POLICY_CONF["test_4514"]
+        result = self.create_s3iamcli_acc(self.account_name, self.email_id)
+        s3_obj_2 = result[1]
+        account_id = result[6]
+        resp = system_utils.create_file(
             self.file_path,
             10)
         assert resp[0], resp[1]
-        for effect in test_cfg["effect_lst"]:
+        for effect in ["Allow", "Deny"]:
             self.put_bkt_policy_with_date_format(
                 account_id, random_id, effect, s3_obj_2, test_cfg)
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateLessThan', "
             "key 'aws:EpochTime', Effect 'Deny', Action 'PutObject' and Date format")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-7706")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-7706")
+    @CTFailOn(error_handler)
     def test_4515(self):
         """
         Test Bucket Policy using Condition Operator 'DateLessThanEquals',
@@ -5430,25 +5424,25 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateLessThanEquals', "
             "key 'aws:EpochTime', Effect 'Allow', Action 'PutObject' and Date format")
-        date_time=str(time.time()).split(".")[0]
-        test_cfg=BKT_POLICY_CONF["test_4515"]
-        result=self.create_s3iamcli_acc(self.account_name, self.email_id)
-        s3_obj_2=result[1]
-        account_id=result[6]
-        resp=system_utils.create_file(
+        date_time = str(time.time()).split(".")[0]
+        test_cfg = BKT_POLICY_CONF["test_4515"]
+        result = self.create_s3iamcli_acc(self.account_name, self.email_id)
+        s3_obj_2 = result[1]
+        account_id = result[6]
+        resp = system_utils.create_file(
             self.file_path,
             10)
         assert resp[0], resp[1]
-        for effect in test_cfg["effect_lst"]:
+        for effect in ["Allow", "Deny"]:
             self.put_bkt_policy_with_date_format(
                 account_id, date_time, effect, s3_obj_2, test_cfg)
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateLessThanEquals', "
             "key 'aws:EpochTime', Effect 'Allow', Action 'PutObject' and Date format")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-7707")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-7707")
+    @CTFailOn(error_handler)
     def test_4516(self):
         """
         Test Bucket Policy using Condition Operator 'DateGreaterThan',
@@ -5458,25 +5452,25 @@ _date
         self.log.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateGreaterThan', "
             "key 'aws:EpochTime', Effect 'Deny', Action 'PutObject' and Date format")
-        random_id=str(time.time())
-        test_cfg=BKT_POLICY_CONF["test_4507"]
-        result=self.create_s3iamcli_acc(self.account_name, self.email_id)
-        s3_obj_2=result[1]
-        account_id=result[6]
-        resp=system_utils.create_file(
+        random_id = str(time.time())
+        test_cfg = BKT_POLICY_CONF["test_4507"]
+        result = self.create_s3iamcli_acc(self.account_name, self.email_id)
+        s3_obj_2 = result[1]
+        account_id = result[6]
+        resp = system_utils.create_file(
             self.file_path,
             10)
         assert resp[0], resp[1]
-        for effect in test_cfg["effect_lst"]:
+        for effect in ["Allow", "Deny"]:
             self.put_bkt_policy_with_date_format(
                 account_id, random_id, effect, s3_obj_2, test_cfg)
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateGreaterThan', "
             "key 'aws:EpochTime', Effect 'Deny', Action 'PutObject' and Date format")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-7708")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-7708")
+    @CTFailOn(error_handler)
     def test_4517(self):
         """
         Test Bucket Policy using Condition Operator 'DateGreaterThanEquals', "
@@ -5485,25 +5479,25 @@ _date
         self.log.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateGreaterThanEquals', "
             "key 'aws:EpochTime', Effect 'Allow', Action 'PutObject' and Date format")
-        date_time=time.time()
-        test_cfg=BKT_POLICY_CONF["test_4508"]
-        result=self.create_s3iamcli_acc(self.account_name, self.email_id)
-        s3_obj_2=result[1]
-        account_id=result[6]
-        resp=system_utils.create_file(
+        date_time = time.time()
+        test_cfg = BKT_POLICY_CONF["test_4508"]
+        result = self.create_s3iamcli_acc(self.account_name, self.email_id)
+        s3_obj_2 = result[1]
+        account_id = result[6]
+        resp = system_utils.create_file(
             self.file_path,
             10)
         assert resp[0], resp[1]
-        for effect in test_cfg["effect_lst"]:
+        for effect in ["Allow", "Deny"]:
             self.put_bkt_policy_with_date_format(
                 account_id, date_time, effect, s3_obj_2, test_cfg)
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateGreaterThanEquals', "
             "key 'aws:EpochTime', Effect 'Allow', Action 'PutObject' and Date format")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-6929")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-6929")
+    @CTFailOn(error_handler)
     def test_5770(self):
         """
         Test Bucket Policy using Condition Operator 'DateGreaterThanIfExists',
@@ -5512,24 +5506,24 @@ _date
         self.log.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateGreaterThanIfExists', "
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format.")
-        test_cfg=BKT_POLICY_CONF["test_5770"]
-        date_time=date.today().strftime(test_cfg["date_format"])
-        result=self.create_s3iamcli_acc(self.account_name, self.email_id)
-        s3_obj_2=result[1]
-        account_id=result[6]
-        resp=system_utils.create_file(
+        test_cfg = BKT_POLICY_CONF["test_5770"]
+        date_time = date.today().strftime("%Y-%m-%d")
+        result = self.create_s3iamcli_acc(self.account_name, self.email_id)
+        s3_obj_2 = result[1]
+        account_id = result[6]
+        resp = system_utils.create_file(
             self.file_path,
             10)
         assert resp[0], resp[1]
         self.put_bkt_policy_with_date_format(
-            account_id, date_time, test_cfg["effect"], s3_obj_2, test_cfg)
+            account_id, date_time, "Deny", s3_obj_2, test_cfg)
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateGreaterThanIfExists', "
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format.")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-6930")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-6930")
+    @CTFailOn(error_handler)
     def test_5831(self):
         """
         Test Bucket Policy using Condition Operator 'DateNotEqualsIfExists',
@@ -5538,24 +5532,24 @@ _date
         self.log.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateNotEqualsIfExists', "
             "key 'aws:EpochTime', Effect 'Deny' and Action 'PutObject'.")
-        date_time=str(time.time()).split(".")[0]
-        test_cfg=BKT_POLICY_CONF["test_5831"]
-        result=self.create_s3iamcli_acc(self.account_name, self.email_id)
-        s3_obj_2=result[1]
-        account_id=result[6]
-        resp=system_utils.create_file(
+        date_time = str(time.time()).split(".")[0]
+        test_cfg = BKT_POLICY_CONF["test_5831"]
+        result = self.create_s3iamcli_acc(self.account_name, self.email_id)
+        s3_obj_2 = result[1]
+        account_id = result[6]
+        resp = system_utils.create_file(
             self.file_path,
             10)
         assert resp[0], resp[1]
         self.put_bkt_policy_with_date_format(
-            account_id, date_time, test_cfg["effect"], s3_obj_2, test_cfg)
+            account_id, date_time, "Deny", s3_obj_2, test_cfg)
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateNotEqualsIfExists', "
             "key 'aws:EpochTime', Effect 'Deny' and Action 'PutObject'.")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-6931")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-6931")
+    @CTFailOn(error_handler)
     def test_5832(self):
         """
         Test Bucket Policy using Condition Operator 'DateLessThanIfExists',
@@ -5564,24 +5558,24 @@ _date
         self.log.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateLessThanIfExists', "
             "key 'aws:EpochTime', Effect 'Deny' and Action 'PutObject'.")
-        date_time=str(time.time()).split(".")[0]
-        test_cfg=BKT_POLICY_CONF["test_5832"]
-        result=self.create_s3iamcli_acc(self.account_name, self.email_id)
-        s3_obj_2=result[1]
-        account_id=result[6]
-        resp=system_utils.create_file(
+        date_time = str(time.time()).split(".")[0]
+        test_cfg = BKT_POLICY_CONF["test_5832"]
+        result = self.create_s3iamcli_acc(self.account_name, self.email_id)
+        s3_obj_2 = result[1]
+        account_id = result[6]
+        resp = system_utils.create_file(
             self.file_path,
             10)
         assert resp[0], resp[1]
         self.put_bkt_policy_with_date_format(
-            account_id, date_time, test_cfg["effect"], s3_obj_2, test_cfg)
+            account_id, date_time, "Deny", s3_obj_2, test_cfg)
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateLessThanIfExists', "
             "key 'aws:EpochTime', Effect 'Deny' and Action 'PutObject'.")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-6932")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-6932")
+    @CTFailOn(error_handler)
     def test_5778(self):
         """
         Test Bucket Policy using Condition Operator 'DateGreaterThanEqualsIfExists',
@@ -5590,24 +5584,24 @@ _date
         self.log.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateGreaterThanEqualsIfExists', "
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format.")
-        test_cfg=BKT_POLICY_CONF["test_5778"]
-        date_time=datetime.now().strftime(test_cfg["date_format"])
-        result=self.create_s3iamcli_acc(self.account_name, self.email_id)
-        s3_obj_2=result[1]
-        account_id=result[6]
-        resp=system_utils.create_file(
+        test_cfg = BKT_POLICY_CONF["test_5778"]
+        date_time = datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+        result = self.create_s3iamcli_acc(self.account_name, self.email_id)
+        s3_obj_2 = result[1]
+        account_id = result[6]
+        resp = system_utils.create_file(
             self.file_path,
             10)
         assert resp[0], resp[1]
         self.put_bkt_policy_with_date_format(
-            account_id, date_time, test_cfg["effect"], s3_obj_2, test_cfg)
+            account_id, date_time, "Allow", s3_obj_2, test_cfg)
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateGreaterThanEqualsIfExists', "
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format.")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-6933")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-6933")
+    @CTFailOn(error_handler)
     def test_5740(self):
         """
         Test Bucket Policy using Condition Operator 'DateEqualsIfExists',
@@ -5616,24 +5610,24 @@ _date
         self.log.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateEqualsIfExists', "
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format.")
-        test_cfg=BKT_POLICY_CONF["test_5740"]
-        date_time=date.today().strftime(test_cfg["date_format"])
-        result=self.create_s3iamcli_acc(self.account_name, self.email_id)
-        s3_obj_2=result[1]
-        account_id=result[6]
-        resp=system_utils.create_file(
+        test_cfg = BKT_POLICY_CONF["test_5740"]
+        date_time = date.today().strftime("%Y-%m-%d")
+        result = self.create_s3iamcli_acc(self.account_name, self.email_id)
+        s3_obj_2 = result[1]
+        account_id = result[6]
+        resp = system_utils.create_file(
             self.file_path,
             10)
         assert resp[0], resp[1]
         self.put_bkt_policy_with_date_format(
-            account_id, date_time, test_cfg["effect"], s3_obj_2, test_cfg)
+            account_id, date_time, "Allow", s3_obj_2, test_cfg)
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateEqualsIfExists', "
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format.")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-6934")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-6934")
+    @CTFailOn(error_handler)
     def test_5751(self):
         """
         Test Bucket Policy using Condition Operator 'DateNotEqualsIfExists',
@@ -5642,24 +5636,24 @@ _date
         self.log.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateNotEqualsIfExists', "
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format.")
-        test_cfg=BKT_POLICY_CONF["test_5751"]
-        date_time=date.today().strftime(test_cfg["date_format"])
-        result=self.create_s3iamcli_acc(self.account_name, self.email_id)
-        s3_obj_2=result[1]
-        account_id=result[6]
-        resp=system_utils.create_file(
+        test_cfg = BKT_POLICY_CONF["test_5751"]
+        date_time = date.today().strftime("%Y-%m-%dT%H:%M:%SZ")
+        result = self.create_s3iamcli_acc(self.account_name, self.email_id)
+        s3_obj_2 = result[1]
+        account_id = result[6]
+        resp = system_utils.create_file(
             self.file_path,
             10)
         assert resp[0], resp[1]
         self.put_bkt_policy_with_date_format(
-            account_id, date_time, test_cfg["effect"], s3_obj_2, test_cfg)
+            account_id, date_time, "Deny", s3_obj_2, test_cfg)
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateNotEqualsIfExists', "
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format.")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-6935")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-6935")
+    @CTFailOn(error_handler)
     def test_5773(self):
         """
         Test Bucket Policy using Condition Operator 'DateLessThanIfExist',
@@ -5668,24 +5662,24 @@ _date
         self.log.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateLessThanIfExist', "
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format.")
-        test_cfg=BKT_POLICY_CONF["test_5773"]
-        date_time=date.today().strftime(test_cfg["date_format"])
-        result=self.create_s3iamcli_acc(self.account_name, self.email_id)
-        s3_obj_2=result[1]
-        account_id=result[6]
-        resp=system_utils.create_file(
+        test_cfg = BKT_POLICY_CONF["test_5773"]
+        date_time = date.today().strftime("%Y-%m-%d")
+        result = self.create_s3iamcli_acc(self.account_name, self.email_id)
+        s3_obj_2 = result[1]
+        account_id = result[6]
+        resp = system_utils.create_file(
             self.file_path,
             10)
         assert resp[0], resp[1]
         self.put_bkt_policy_with_date_format(
-            account_id, date_time, test_cfg["effect"], s3_obj_2, test_cfg)
+            account_id, date_time, "Deny", s3_obj_2, test_cfg)
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateLessThanIfExist', "
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format.")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-6938")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-6938")
+    @CTFailOn(error_handler)
     def test_5764(self):
         """
         Test Bucket Policy using Condition Operator 'DateLessThanEqualsIfExists',
@@ -5694,11 +5688,11 @@ _date
         self.log.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateLessThanEqualsIfExists', "
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format.")
-        bucket_policy=BKT_POLICY_CONF["test_5764"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"]=bucket_policy["Statement"][0][
+        bucket_policy = BKT_POLICY_CONF["test_5764"]["bucket_policy"]
+        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
-        date_time_res = datetime.now() + timedelta(test_cfg["delta_time"])
-        date_time = date_time_res.strftime(test_cfg["date_format"])
+        date_time_res = datetime.now() + timedelta(1)
+        date_time = date_time_res.strftime("%Y-%m-%dT%H:%M:%SZ")
         result = self.create_s3iamcli_acc(self.account_name, self.email_id)
         s3_obj_2 = result[1]
         account_id = result[6]
@@ -5707,12 +5701,12 @@ _date
             10)
         assert resp[0], resp[1]
 
-        bkt_json_policy=eval(json.dumps(bucket_policy))
-        dt_condition=bkt_json_policy["Statement"][0]["Condition"]
-        condition_key=list(
-            dt_condition[test_cfg["date_condition"]].keys())[0]
-        bkt_json_policy["Statement"][0]["Principal"]["AWS"]=account_id
-        bkt_json_policy["Statement"][0]["Condition"][test_cfg["date_condition"]
+        bkt_json_policy = eval(json.dumps(bucket_policy))
+        dt_condition = bkt_json_policy["Statement"][0]["Condition"]
+        condition_key = list(
+            dt_condition["DateLessThanEqualsIfExists"].keys())[0]
+        bkt_json_policy["Statement"][0]["Principal"]["AWS"] = account_id
+        bkt_json_policy["Statement"][0]["Condition"]["DateLessThanEqualsIfExists"
                                                      ][condition_key] = date_time
         bkt_json_policy["Statement"][0]["Resource"] = bkt_json_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
@@ -5720,7 +5714,7 @@ _date
         assert resp[0], resp[1]
         self.put_get_bkt_policy(self.bucket_name, bkt_json_policy)
         resp = s3_obj_2.put_object(
-            self.bucket_name, test_cfg["object_name"],
+            self.bucket_name, "objkey_test",
             self.file_path)
         assert resp[0], resp[1]
         self.log.info("Uploading object to s3 bucket with second account")
@@ -5728,9 +5722,9 @@ _date
             "ENDED: Test Bucket Policy using Condition Operator 'DateLessThanEqualsIfExists', "
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format.")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-6939")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-6939")
+    @CTFailOn(error_handler)
     def test_5758(self):
         """
         Test Bucket Policy using Condition Operator 'DateLessThanIfExists',
@@ -5739,24 +5733,24 @@ _date
         self.log.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateLessThanIfExists', "
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format.")
-        test_cfg=BKT_POLICY_CONF["test_5758"]
-        date_time=date.today().strftime(test_cfg["date_format"])
-        result=self.create_s3iamcli_acc(self.account_name, self.email_id)
-        s3_obj_2=result[1]
-        account_id=result[6]
-        resp=system_utils.create_file(
+        test_cfg = BKT_POLICY_CONF["test_5758"]
+        date_time = date.today().strftime("%Y-%m-%dT%H:%M:%S")
+        result = self.create_s3iamcli_acc(self.account_name, self.email_id)
+        s3_obj_2 = result[1]
+        account_id = result[6]
+        resp = system_utils.create_file(
             self.file_path,
             10)
         assert resp[0], resp[1]
         self.put_bkt_policy_with_date_format(
-            account_id, date_time, test_cfg["effect"], s3_obj_2, test_cfg)
+            account_id, date_time, "Deny", s3_obj_2, test_cfg)
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateLessThanIfExists', "
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format.")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-6970")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-6970")
+    @CTFailOn(error_handler)
     def test_5925(self):
         """
         Test Bucket Policy using Condition Operator 'DateLessThanEqualsIfExists',
@@ -5765,10 +5759,10 @@ _date
         self.log.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateLessThanEqualsIfExists', "
             "key 'aws:EpochTime', Effect 'Allow', Action 'PutObject'.")
-        date_time_res=datetime.now() + timedelta(test_cfg["year"])
-        date_time=int(date_time_res.timestamp())
-        bucket_policy=BKT_POLICY_CONF["test_5925"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"]=bucket_policy["Statement"][0][
+        date_time_res = datetime.now() + timedelta(1)
+        date_time = int(date_time_res.timestamp())
+        bucket_policy = BKT_POLICY_CONF["test_5925"]["bucket_policy"]
+        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         self.create_bucket_validate(self.bucket_name)
         result = self.create_s3iamcli_acc(self.account_name, self.email_id)
@@ -5778,24 +5772,22 @@ _date
         policy_sid = f"Stmt{uuid.uuid4()}"
         self.log.info(
             "Creating a json with DateLessThanEqualsIfExists condition")
-        bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
-        bucket_policy["Statement"][0]["Sid"]=bucket_policy["Statement"][0]["Sid"].format(
+        bucket_policy["Id"] = bucket_policy["Id"].format(policy_id)
+        bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0]["Sid"].format(
             policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"]=
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
-        bucket_policy["Statement"][0]["Condition"]["DateLessThanEqualsIfExists"]["aws:EpochTime"]=
+        bucket_policy["Statement"][0]["Principal"]["AWS"] = \
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
+        bucket_policy["Statement"][0]["Condition"]["DateLessThanEqualsIfExists"]["aws:EpochTime"] = \
             bucket_policy["Statement"][0]["Condition"]["DateLessThanEqualsIfExists"][
                 "aws:EpochTime"].format(date_time)
         self.log.info(
             "Created a json with DateLessThanEqualsIfExists condition")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
         self.log.info("Uploading an object from account 2")
-        system_utils.create_file(self.file_path,
-                                 10)
-        resp=s3_obj_2.put_object(
+        system_utils.create_file(self.file_path, 10)
+        resp = s3_obj_2.put_object(
             self.bucket_name,
-            test_cfg["object_name"],
+            "objkey_test",
             self.file_path)
         assert resp[0], resp[1]
         self.log.info("Object is uploaded from account 2")
@@ -5803,9 +5795,9 @@ _date
             "ENDED: Test Bucket Policy using Condition Operator 'DateLessThanEqualsIfExists', "
             "key 'aws:EpochTime', Effect 'Allow', Action 'PutObject'.")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-6971")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-6971")
+    @CTFailOn(error_handler)
     def test_5926(self):
         """
         Test Bucket Policy using Condition Operator 'DateGreaterThanIfExists',
@@ -5814,24 +5806,24 @@ _date
         self.log.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateGreaterThanIfExists', "
             "key 'aws:EpochTime', Effect 'Deny', Action 'PutObject'.")
-        date_time=str(time.time()).split(".")[0]
-        test_cfg=BKT_POLICY_CONF["test_5926"]
-        result=self.create_s3iamcli_acc(self.account_name, self.email_id)
-        s3_obj_2=result[1]
-        account_id=result[6]
-        resp=system_utils.create_file(
+        date_time = str(time.time()).split(".")[0]
+        test_cfg = BKT_POLICY_CONF["test_5926"]
+        result = self.create_s3iamcli_acc(self.account_name, self.email_id)
+        s3_obj_2 = result[1]
+        account_id = result[6]
+        resp = system_utils.create_file(
             self.file_path,
             10)
         assert resp[0], resp[1]
         self.put_bkt_policy_with_date_format(
-            account_id, date_time, test_cfg["effect"], s3_obj_2, test_cfg)
+            account_id, date_time, "Deny", s3_obj_2, test_cfg)
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateGreaterThanIfExists', "
             "key 'aws:EpochTime', Effect 'Deny', Action 'PutObject'.")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-6972")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-6972")
+    @CTFailOn(error_handler)
     def test_5937(self):
         """
         Test Bucket Policy using Condition Operator 'DateGreaterThanEqualsIfExists',
@@ -5840,24 +5832,24 @@ _date
         self.log.info(
             "STARTED: Test Bucket Policy using Condition Operator 'DateGreaterThanEqualsIfExists', "
             "key 'aws:EpochTime', Effect 'Allow', Action 'PutObject'.")
-        date_time=str(time.time()).split(".")[0]
-        test_cfg=BKT_POLICY_CONF["test_5937"]
-        result=self.create_s3iamcli_acc(self.account_name, self.email_id)
-        s3_obj_2=result[1]
-        account_id=result[6]
-        resp=system_utils.create_file(
+        date_time = str(time.time()).split(".")[0]
+        test_cfg = BKT_POLICY_CONF["test_5937"]
+        result = self.create_s3iamcli_acc(self.account_name, self.email_id)
+        s3_obj_2 = result[1]
+        account_id = result[6]
+        resp = system_utils.create_file(
             self.file_path,
             10)
         assert resp[0], resp[1]
         self.put_bkt_policy_with_date_format(
-            account_id, date_time, test_cfg["effect"], s3_obj_2, test_cfg)
+            account_id, date_time, "Allow", s3_obj_2, test_cfg)
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateGreaterThanEqualsIfExists', "
             "key 'aws:EpochTime', Effect 'Allow', Action 'PutObject'.")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-7709")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-7709")
+    @CTFailOn(error_handler)
     def test_1902(self):
         """
         Create Bucket Policy using "StringEquals" Condition Operator,
@@ -5866,42 +5858,41 @@ _date
         self.log.info(
             "STARTED: Create Bucket Policy using StringEquals Condition Operator, "
             "key 's3:x-amz-acl' and value public-read")
-        bucket_policy=BKT_POLICY_CONF["test_1902"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"]=bucket_policy["Statement"][0][
+        bucket_policy = BKT_POLICY_CONF["test_1902"]["bucket_policy"]
+        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
-        obj_name = test_cfg["object_name"]
         result = self.create_s3iamcli_acc(self.account_name, self.email_id)
         S3_OBJ_2 = result[1]
         ACL_OBJ_2 = result[2]
         account_id = result[6]
         resp = S3_OBJ.create_bucket_put_object(
             self.bucket_name,
-            obj_name,
+            "objkey_test",
             self.file_path,
             10)
         assert resp[0], resp[1]
-        bkt_json_policy=eval(json.dumps(bucket_policy))
-        bkt_json_policy["Statement"][0]["Principal"]["AWS"]=account_id
-        bkt_json_policy["Statement"][0]["Resource"]=bkt_json_policy["Statement"][0][
+        bkt_json_policy = eval(json.dumps(bucket_policy))
+        bkt_json_policy["Statement"][0]["Principal"]["AWS"] = account_id
+        bkt_json_policy["Statement"][0]["Resource"] = bkt_json_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         self.put_get_bkt_policy(self.bucket_name, bkt_json_policy)
         self.log.info(
             "Step 1: Upload object using second account account with "
             "and without acl permission")
-        resp=ACL_OBJ_2.put_object_with_acl(
+        resp = ACL_OBJ_2.put_object_with_acl(
             self.bucket_name,
-            test_cfg["object_name_2"],
+            "objkey_test_2",
             self.file_path,
-            acl = test_cfg["obj_permission"])
+            acl="public-read")
         assert resp[0], resp[1]
         try:
             S3_OBJ_2.put_object(
                 self.bucket_name,
-                test_cfg["object_name_2"],
+                "objkey_test_2",
                 self.file_path)
         except CTException as error:
             self.log.error(error.message)
-            assert test_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
             self.log.info(
                 "Step 1: Uploading object to a bucket failed with error %s",
                 error.message)
@@ -5909,55 +5900,52 @@ _date
             "ENDED: Create Bucket Policy using StringEquals Condition Operator, "
             "key 's3:x-amz-acl' and value public-read")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-7710")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-7710")
+    @CTFailOn(error_handler)
     def test_1903(self):
         """
         Create Bucket Policy using "StringEquals" Condition Operator,
         key "s3:x-amz-acl" and value "bucket-owner-full-control"
-
         """
         self.log.info(
             "STARTED: Create Bucket Policy using StringEquals Condition Operator, "
             "key 's3:x-amz-acl' and value bucket-owner-full-control")
-        bucket_policy=BKT_POLICY_CONF["test_1903"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"]=bucket_policy["Statement"][0][
+        bucket_policy = BKT_POLICY_CONF["test_1903"]["bucket_policy"]
+        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
-        obj_name = test_cfg["object_name"]
         result = self.create_s3iamcli_acc(self.account_name, self.email_id)
         S3_OBJ_2 = result[1]
         ACL_OBJ_2 = result[2]
         account_id = result[6]
         resp = S3_OBJ.create_bucket_put_object(
             self.bucket_name,
-            obj_name,
+            "objkey_test",
             self.file_path,
             10)
         assert resp[0], resp[1]
-        bkt_json_policy=eval(json.dumps(bucket_policy))
-        bkt_json_policy["Statement"][0]["Principal"]["AWS"]=account_id
-        bkt_json_policy["Statement"][0]["Resource"]=
-            bkt_json_policy["Statement"][0]["Resource"].format(
-                self.bucket_name)
+        bkt_json_policy = eval(json.dumps(bucket_policy))
+        bkt_json_policy["Statement"][0]["Principal"]["AWS"] = account_id
+        bkt_json_policy["Statement"][0]["Resource"] = bkt_json_policy["Statement"][0]["Resource"].format(
+            self.bucket_name)
         self.put_get_bkt_policy(self.bucket_name, bkt_json_policy)
         self.log.info(
             "Step 1: Upload object using second account account with "
             "and without acl permission")
-        resp=ACL_OBJ_2.put_object_with_acl(
+        resp = ACL_OBJ_2.put_object_with_acl(
             self.bucket_name,
-            test_cfg["object_name_2"],
+            "objkey_test_2",
             self.file_path,
-            acl = test_cfg["obj_permission"])
+            acl="bucket-owner-full-control")
         assert resp[0], resp[1]
         try:
             S3_OBJ_2.put_object(
                 self.bucket_name,
-                test_cfg["object_name_2"],
+                "objkey_test_2",
                 self.file_path)
         except CTException as error:
             self.log.error(error.message)
-            assert test_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
             self.log.info(
                 "Step 1: Uploading object to a bucket failed with error %s",
                 error.message)
@@ -5965,9 +5953,9 @@ _date
             "ENDED: Create Bucket Policy using StringEquals Condition Operator, "
             "key 's3:x-amz-acl' and value bucket-owner-full-control")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-7711")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-7711")
+    @CTFailOn(error_handler)
     def test_1904(self):
         """
         Create Bucket Policy using 'StringEquals' Condition Operator,
@@ -5977,10 +5965,9 @@ _date
         self.log.info(
             "STARTED: Create Bucket Policy using 'StringEquals' Condition Operator, "
             "key 's3:x-amz-grant-full-control'")
-        bucket_policy=BKT_POLICY_CONF["test_1904"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"]=bucket_policy["Statement"][0][
+        bucket_policy = BKT_POLICY_CONF["test_1904"]["bucket_policy"]
+        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
-        obj_name = test_cfg["object_name"]
         result = self.create_s3iamcli_acc(self.account_name, self.email_id)
         S3_OBJ_2 = result[1]
         ACL_OBJ_2 = result[2]
@@ -5988,37 +5975,35 @@ _date
         canonical_id_2 = result[0]
         resp = S3_OBJ.create_bucket_put_object(
             self.bucket_name,
-            obj_name,
+            "objkey_test",
             self.file_path,
             10)
         assert resp[0], resp[1]
-        bkt_json_policy=eval(json.dumps(bucket_policy))
-        bkt_json_policy["Statement"][0]["Principal"]["AWS"]=account_id_2
-        bkt_json_policy["Statement"][0]["Resource"]=
-            bkt_json_policy["Statement"][0]["Resource"].format(
-                self.bucket_name)
+        bkt_json_policy = eval(json.dumps(bucket_policy))
+        bkt_json_policy["Statement"][0]["Principal"]["AWS"] = account_id_2
+        bkt_json_policy["Statement"][0]["Resource"] = bkt_json_policy["Statement"][0]["Resource"].format(
+            self.bucket_name)
         bkt_json_policy["Statement"][0]["Condition"]["StringEquals"][
-            "s3:x-amz-grant-full-control"]=
-            bkt_json_policy["Statement"][0]["Condition"]["StringEquals"][
+            "s3:x-amz-grant-full-control"] = bkt_json_policy["Statement"][0]["Condition"]["StringEquals"][
                 "s3:x-amz-grant-full-control"].format(canonical_id_2)
         self.put_get_bkt_policy(self.bucket_name, bkt_json_policy)
         self.log.info(
             "Step 1: Upload object using second account account with "
             "and without acl permission")
-        resp=ACL_OBJ_2.put_object_with_acl(
+        resp = ACL_OBJ_2.put_object_with_acl(
             self.bucket_name,
-            test_cfg["object_name_2"],
+            "objkey_test_2",
             self.file_path,
-            grant_full_control = test_cfg["id_str"].format(canonical_id_2))
+            grant_full_control="id={}".format(canonical_id_2))
         assert resp[0], resp[1]
         try:
             S3_OBJ_2.put_object(
                 self.bucket_name,
-                test_cfg["object_name_2"],
+                "objkey_test_2",
                 self.file_path)
         except CTException as error:
             self.log.error(error.message)
-            assert test_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
             self.log.info(
                 "Step 1: Uploading object to a bucket failed with error %s",
                 error.message)
@@ -6026,9 +6011,9 @@ _date
             "ENDED: Create Bucket Policy using 'StringEquals' Condition Operator, "
             "key 's3:x-amz-grant-full-control'")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-7712")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-7712")
+    @CTFailOn(error_handler)
     def test_1908(self):
         """
         Create Bucket Policy using 'StringEquals' Condition Operator,
@@ -6037,10 +6022,9 @@ _date
         self.log.info(
             "STARTED: Create Bucket Policy using 'StringEquals' Condition Operator, "
             "key 's3:x-amz-grant-write-acp'")
-        bucket_policy=BKT_POLICY_CONF["test_1908"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"]=bucket_policy["Statement"][0][
+        bucket_policy = BKT_POLICY_CONF["test_1908"]["bucket_policy"]
+        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
-        obj_name = test_cfg["object_name"]
         result = self.create_s3iamcli_acc(self.account_name, self.email_id)
         S3_OBJ_2 = result[1]
         ACL_OBJ_2 = result[2]
@@ -6048,36 +6032,34 @@ _date
         canonical_id_2 = result[0]
         resp = S3_OBJ.create_bucket_put_object(
             self.bucket_name,
-            obj_name,
+            "objkey_test",
             self.file_path,
             10)
         assert resp[0], resp[1]
-        bkt_json_policy=eval(json.dumps(bucket_policy))
-        bkt_json_policy["Statement"][0]["Principal"]["AWS"]=account_id_2
-        bkt_json_policy["Statement"][0]["Resource"]=
-            bkt_json_policy["Statement"][0]["Resource"].format(
-                self.bucket_name)
-        bkt_json_policy["Statement"][0]["Condition"]["StringEquals"]["s3:x-amz-grant-write-acp"]=
-            bkt_json_policy["Statement"][0]["Condition"]["StringEquals"][
-                "s3:x-amz-grant-write-acp"].format(canonical_id_2)
+        bkt_json_policy = eval(json.dumps(bucket_policy))
+        bkt_json_policy["Statement"][0]["Principal"]["AWS"] = account_id_2
+        bkt_json_policy["Statement"][0]["Resource"] = bkt_json_policy["Statement"][0]["Resource"].format(
+            self.bucket_name)
+        bkt_json_policy["Statement"][0]["Condition"]["StringEquals"]["s3:x-amz-grant-write-acp"] = bkt_json_policy[
+            "Statement"][0]["Condition"]["StringEquals"]["s3:x-amz-grant-write-acp"].format(canonical_id_2)
         self.put_get_bkt_policy(self.bucket_name, bkt_json_policy)
         self.log.info(
             "Step 1: Upload object using second account account with "
             "and without acl permission")
-        resp=ACL_OBJ_2.put_object_with_acl(
+        resp = ACL_OBJ_2.put_object_with_acl(
             self.bucket_name,
-            test_cfg["object_name_2"],
+            "objkey_test_2",
             self.file_path,
-            grant_write_acp = test_cfg["id_str"].format(canonical_id_2))
+            grant_write_acp="id={}".format(canonical_id_2))
         assert resp[0], resp[1]
         try:
             S3_OBJ_2.put_object(
                 self.bucket_name,
-                test_cfg["object_name_2"],
+                "objkey_test_2",
                 self.file_path)
         except CTException as error:
             self.log.error(error.message)
-            assert test_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
             self.log.info(
                 "Step 1: Uploading object to a bucket failed with error %s",
                 error.message)
@@ -6085,9 +6067,9 @@ _date
             "ENDED: Create Bucket Policy using 'StringEquals' Condition Operator, "
             "key 's3:x-amz-grant-write-acp'")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-6979")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-6979")
+    @CTFailOn(error_handler)
     def test_4937(self):
         """
         Create Bucket Policy using NumericLessThanIfExists Condition, key "s3:max-keys" and Effect Allow
@@ -6096,37 +6078,36 @@ _date
         self.log.info(
             "STARTED: Create Bucket Policy using NumericLessThanIfExists"
             " Condition, key 's3:max-keys' and Effect Allow")
-        bucket_policy=BKT_POLICY_CONF["test_4937"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"]=bucket_policy["Statement"][0][
+        bucket_policy = BKT_POLICY_CONF["test_4937"]["bucket_policy"]
+        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_4937_cfg["s3_obj_count"],
+            11,
             self.obj_name_prefix)
-        acc_details=IAM_OBJ.create_multiple_accounts(
-            test_4937_cfg["iam_acc_count"],
-            name_prefix = self.acc_name_prefix)
-        account1_id=acc_details[1][0][1]["Account_Id"]
-        S3_OBJ1=s3_test_lib.S3TestLib(
-            access_key = acc_details[1][0][1]["access_key"],
-            secret_key = acc_details[1][0][1]["secret_key"])
-        S3_OBJ2=s3_test_lib.S3TestLib(
-            access_key = acc_details[1][1][1]["access_key"],
-            secret_key = acc_details[1][1][1]["secret_key"])
+        acc_details = IAM_OBJ.create_multiple_accounts(
+            2, name_prefix=self.acc_name_prefix)
+        account1_id = acc_details[1][0][1]["Account_Id"]
+        S3_OBJ1 = s3_test_lib.S3TestLib(
+            access_key=acc_details[1][0][1]["access_key"],
+            secret_key=acc_details[1][0][1]["secret_key"])
+        S3_OBJ2 = s3_test_lib.S3TestLib(
+            access_key=acc_details[1][1][1]["access_key"],
+            secret_key=acc_details[1][1][1]["secret_key"])
         self.log.info("Creating a json for bucket policy")
-        policy_id=f"Policy{uuid.uuid4()}"
-        policy_sid=f"Stmt{uuid.uuid4()}"
-        bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
-        bucket_policy["Statement"][0]["Sid"]=bucket_policy["Statement"][0]["Sid"].format(
+        policy_id = f"Policy{uuid.uuid4()}"
+        policy_sid = f"Stmt{uuid.uuid4()}"
+        bucket_policy["Id"] = bucket_policy["Id"].format(policy_id)
+        bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0]["Sid"].format(
             policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"]=
+        bucket_policy["Statement"][0]["Principal"]["AWS"] = \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(
                 account1_id)
         self.log.info(bucket_policy)
         self.log.info("Created a json for bucket policy")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
-        max_key_list=test_4937_cfg["max_keys"]
-        err_message=test_4937_cfg["err_message"]
+        max_key_list = [1, 2, 3, 4]
+        err_message = "AccessDenied"
         self.list_obj_with_max_keys_and_diff_acnt(
             self.bucket_name, S3_OBJ1, max_key_list[0])
         self.list_obj_with_max_keys_and_diff_acnt(
@@ -6147,9 +6128,9 @@ _date
             "ENDED: Create Bucket Policy using NumericLessThanIfExists"
             " Condition, key 's3:max-keys' and Effect Allow")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-6980")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-6980")
+    @CTFailOn(error_handler)
     def test_4939(self):
         """
         Create Bucket Policy using NumericLessThanIfExists Condition, key "s3:max-keys" and Effect Deny
@@ -6158,30 +6139,28 @@ _date
         self.log.info(
             "STARTED: Create Bucket Policy using NumericLessThanIfExists"
             " Condition, key 's3:max-keys' and Effect Deny")
-        bucket_policy=BKT_POLICY_CONF["test_4939"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"]=bucket_policy["Statement"][0][
+        bucket_policy = BKT_POLICY_CONF["test_4939"]["bucket_policy"]
+        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         self.create_bucket_put_objects(
-            self.bucket_name,
-            test_4939_cfg["s3_obj_count"],
+            self.bucket_name, 11,
             self.obj_name_prefix)
-        acc_details=IAM_OBJ.create_multiple_accounts(
-            test_4939_cfg["iam_acc_count"],
-            name_prefix = self.acc_name_prefix)
-        account1_id=acc_details[1][0][1]["Account_Id"]
-        S3_OBJ1=s3_test_lib.S3TestLib(
-            access_key = acc_details[1][0][1]["access_key"],
-            secret_key = acc_details[1][0][1]["secret_key"])
-        S3_OBJ2=s3_test_lib.S3TestLib(
-            access_key = acc_details[1][1][1]["access_key"],
-            secret_key = acc_details[1][1][1]["secret_key"])
+        acc_details = IAM_OBJ.create_multiple_accounts(
+            2, name_prefix=self.acc_name_prefix)
+        account1_id = acc_details[1][0][1]["Account_Id"]
+        S3_OBJ1 = s3_test_lib.S3TestLib(
+            access_key=acc_details[1][0][1]["access_key"],
+            secret_key=acc_details[1][0][1]["secret_key"])
+        S3_OBJ2 = s3_test_lib.S3TestLib(
+            access_key=acc_details[1][1][1]["access_key"],
+            secret_key=acc_details[1][1][1]["secret_key"])
         self.log.info("Creating a json for bucket policy")
-        policy_id=f"Policy{uuid.uuid4()}"
-        policy_sid=f"Stmt{uuid.uuid4()}"
-        bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
-        bucket_policy["Statement"][0]["Sid"]=bucket_policy["Statement"][0]["Sid"].format(
+        policy_id = f"Policy{uuid.uuid4()}"
+        policy_sid = f"Stmt{uuid.uuid4()}"
+        bucket_policy["Id"] = bucket_policy["Id"].format(policy_id)
+        bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0]["Sid"].format(
             policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"]=
+        bucket_policy["Statement"][0]["Principal"]["AWS"] = \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(
                 account1_id)
         self.log.info(bucket_policy)
@@ -6189,8 +6168,8 @@ _date
         self.put_get_bkt_policy(
             self.bucket_name,
             bucket_policy)
-        max_key_list=test_4939_cfg["max_keys"]
-        err_message=test_4939_cfg["err_message"]
+        max_key_list = [1, 2, 3, 4]
+        err_message = "AccessDenied"
         self.list_obj_with_max_keys_and_diff_acnt(
             self.bucket_name, S3_OBJ1, max_key_list[0], err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
@@ -6212,9 +6191,9 @@ _date
             "ENDED: Create Bucket Policy using NumericLessThanIfExists"
             " Condition, key 's3:max-keys' and Effect Deny")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-6981")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-6981")
+    @CTFailOn(error_handler)
     def test_4940(self):
         """
         Create Bucket Policy using NumericGreaterThanIfExists Condition, key "s3:max-keys" and Effect Allow
@@ -6223,37 +6202,37 @@ _date
         self.log.info(
             "STARTED: Create Bucket Policy using NumericGreaterThanIfExists"
             " Condition, key 's3:max-keys' and Effect Allow")
-        bucket_policy=BKT_POLICY_CONF["test_4940"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"]=bucket_policy["Statement"][0][
+        bucket_policy = BKT_POLICY_CONF["test_4940"]["bucket_policy"]
+        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_4940_cfg["s3_obj_count"],
+            11,
             self.obj_name_prefix)
-        acc_details=IAM_OBJ.create_multiple_accounts(
-            test_4940_cfg["iam_acc_count"],
-            name_prefix = self.acc_name_prefix)
-        account1_id=acc_details[1][0][1]["Account_Id"]
-        S3_OBJ1=s3_test_lib.S3TestLib(
-            access_key = acc_details[1][0][1]["access_key"],
-            secret_key = acc_details[1][0][1]["secret_key"])
-        S3_OBJ2=s3_test_lib.S3TestLib(
-            access_key = acc_details[1][1][1]["access_key"],
-            secret_key = acc_details[1][1][1]["secret_key"])
+        acc_details = IAM_OBJ.create_multiple_accounts(
+            2,
+            name_prefix=self.acc_name_prefix)
+        account1_id = acc_details[1][0][1]["Account_Id"]
+        S3_OBJ1 = s3_test_lib.S3TestLib(
+            access_key=acc_details[1][0][1]["access_key"],
+            secret_key=acc_details[1][0][1]["secret_key"])
+        S3_OBJ2 = s3_test_lib.S3TestLib(
+            access_key=acc_details[1][1][1]["access_key"],
+            secret_key=acc_details[1][1][1]["secret_key"])
         self.log.info("Creating a json for bucket policy")
-        policy_id=f"Policy{uuid.uuid4()}"
-        policy_sid=f"Stmt{uuid.uuid4()}"
-        bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
-        bucket_policy["Statement"][0]["Sid"]=bucket_policy["Statement"][0]["Sid"].format(
+        policy_id = f"Policy{uuid.uuid4()}"
+        policy_sid = f"Stmt{uuid.uuid4()}"
+        bucket_policy["Id"] = bucket_policy["Id"].format(policy_id)
+        bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0]["Sid"].format(
             policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"]=
+        bucket_policy["Statement"][0]["Principal"]["AWS"] = \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(
                 account1_id)
         self.log.info(bucket_policy)
         self.log.info("Created a json for bucket policy")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
-        max_key_list=test_4940_cfg["max_keys"]
-        err_message=test_4940_cfg["err_message"]
+        max_key_list = [1, 2, 3, 4]
+        err_message = "AccessDenied"
         self.list_obj_with_max_keys_and_diff_acnt(
             self.bucket_name, S3_OBJ1, max_key_list[2], err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
@@ -6274,9 +6253,9 @@ _date
             "ENDED: Create Bucket Policy using NumericGreaterThanIfExists"
             " Condition, key 's3:max-keys' and Effect Allow")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-6982")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-6982")
+    @CTFailOn(error_handler)
     def test_4941(self):
         """
         Create Bucket Policy using NumericGreaterThanIfExists Condition, key "s3:max-keys" and Effect Deny
@@ -6285,37 +6264,37 @@ _date
         self.log.info(
             "STARTED: Create Bucket Policy using NumericGreaterThanIfExists"
             " Condition, key 's3:max-keys' and Effect Deny")
-        bucket_policy=BKT_POLICY_CONF["test_4941"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"]=bucket_policy["Statement"][0][
+        bucket_policy = BKT_POLICY_CONF["test_4941"]["bucket_policy"]
+        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_4941_cfg["s3_obj_count"],
+            11,
             self.obj_name_prefix)
-        acc_details=IAM_OBJ.create_multiple_accounts(
-            test_4941_cfg["iam_acc_count"],
-            name_prefix = self.acc_name_prefix)
-        account1_id=acc_details[1][0][1]["Account_Id"]
-        S3_OBJ1=s3_test_lib.S3TestLib(
-            access_key = acc_details[1][0][1]["access_key"],
-            secret_key = acc_details[1][0][1]["secret_key"])
-        S3_OBJ2=s3_test_lib.S3TestLib(
-            access_key = acc_details[1][1][1]["access_key"],
-            secret_key = acc_details[1][1][1]["secret_key"])
+        acc_details = IAM_OBJ.create_multiple_accounts(
+            2,
+            name_prefix=self.acc_name_prefix)
+        account1_id = acc_details[1][0][1]["Account_Id"]
+        S3_OBJ1 = s3_test_lib.S3TestLib(
+            access_key=acc_details[1][0][1]["access_key"],
+            secret_key=acc_details[1][0][1]["secret_key"])
+        S3_OBJ2 = s3_test_lib.S3TestLib(
+            access_key=acc_details[1][1][1]["access_key"],
+            secret_key=acc_details[1][1][1]["secret_key"])
         self.log.info("Creating a json for bucket policy")
-        policy_id=f"Policy{uuid.uuid4()}"
-        policy_sid=f"Stmt{uuid.uuid4()}"
-        bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
-        bucket_policy["Statement"][0]["Sid"]=bucket_policy["Statement"][0]["Sid"].format(
+        policy_id = f"Policy{uuid.uuid4()}"
+        policy_sid = f"Stmt{uuid.uuid4()}"
+        bucket_policy["Id"] = bucket_policy["Id"].format(policy_id)
+        bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0]["Sid"].format(
             policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"]=
+        bucket_policy["Statement"][0]["Principal"]["AWS"] = \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(
                 account1_id)
         self.log.info(bucket_policy)
         self.log.info("Created a json for bucket policy")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
-        max_key_list=test_4941_cfg["max_keys"]
-        err_message=test_4941_cfg["err_message"]
+        max_key_list = [1, 2, 3, 4]
+        err_message = "AccessDenied"
         self.list_obj_with_max_keys_and_diff_acnt(
             self.bucket_name, S3_OBJ1, max_key_list[0], err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
@@ -6337,9 +6316,9 @@ _date
             "ENDED: Create Bucket Policy using NumericGreaterThanIfExists"
             " Condition, key 's3:max-keys' and Effect Deny")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-6983")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-6983")
+    @CTFailOn(error_handler)
     def test_4942(self):
         """
         Create Bucket Policy using NumericEquals Condition Operator, key "s3:max-keys" and Effect Allow
@@ -6348,36 +6327,35 @@ _date
         self.log.info(
             "STARTED: Create Bucket Policy using NumericEquals"
             " Condition Operator, key 's3:max-keys' and Effect Allow")
-        test_4942_cfg=BKT_POLICY_CONF["test_4942"]
-        bucket_policy=test_4942_cfg["bucket_policy"]
+        bucket_policy = BKT_POLICY_CONF["test_4942"]["bucket_policy"]
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_4942_cfg["s3_obj_count"],
+            11,
             self.obj_name_prefix)
-        acc_details=IAM_OBJ.create_multiple_accounts(
-            test_4942_cfg["iam_acc_count"],
-            name_prefix = self.acc_name_prefix)
-        account1_id=acc_details[1][0][1]["Account_Id"]
-        S3_OBJ1=s3_test_lib.S3TestLib(
-            access_key = acc_details[1][0][1]["access_key"],
-            secret_key = acc_details[1][0][1]["secret_key"])
-        S3_OBJ2=s3_test_lib.S3TestLib(
-            access_key = acc_details[1][1][1]["access_key"],
-            secret_key = acc_details[1][1][1]["secret_key"])
+        acc_details = IAM_OBJ.create_multiple_accounts(
+            2,
+            name_prefix=self.acc_name_prefix)
+        account1_id = acc_details[1][0][1]["Account_Id"]
+        S3_OBJ1 = s3_test_lib.S3TestLib(
+            access_key=acc_details[1][0][1]["access_key"],
+            secret_key=acc_details[1][0][1]["secret_key"])
+        S3_OBJ2 = s3_test_lib.S3TestLib(
+            access_key=acc_details[1][1][1]["access_key"],
+            secret_key=acc_details[1][1][1]["secret_key"])
         self.log.info("Creating a json for bucket policy")
-        policy_id=f"Policy{uuid.uuid4()}"
-        policy_sid=f"Stmt{uuid.uuid4()}"
-        bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
-        bucket_policy["Statement"][0]["Sid"]=bucket_policy["Statement"][0]["Sid"].format(
+        policy_id = f"Policy{uuid.uuid4()}"
+        policy_sid = f"Stmt{uuid.uuid4()}"
+        bucket_policy["Id"] = bucket_policy["Id"].format(policy_id)
+        bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0]["Sid"].format(
             policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"]=
+        bucket_policy["Statement"][0]["Principal"]["AWS"] = \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(
                 account1_id)
         self.log.info(bucket_policy)
         self.log.info("Created a json for bucket policy")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
-        max_key_list=test_4942_cfg["max_keys"]
-        err_message=test_4942_cfg["err_message"]
+        max_key_list = [1, 2, 3, 4]
+        err_message = "AccessDenied"
         self.list_obj_with_max_keys_and_diff_acnt(
             self.bucket_name, S3_OBJ1, max_key_list[0], err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
@@ -6398,9 +6376,9 @@ _date
             "ENDED: Create Bucket Policy using NumericEquals"
             " Condition Operator, key 's3:max-keys' and Effect Allow")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-6984")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-6984")
+    @CTFailOn(error_handler)
     def test_4943(self):
         """
         Create Bucket Policy using NumericNotEqualsIfExists Condition,
@@ -6410,37 +6388,37 @@ _date
         self.log.info(
             "STARTED: Create Bucket Policy using NumericNotEqualsIfExists"
             " Condition, key 's3:max-keys' and Effect Deny")
-        bucket_policy=BKT_POLICY_CONF["test_4943"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"]=bucket_policy["Statement"][0][
+        bucket_policy = BKT_POLICY_CONF["test_4943"]["bucket_policy"]
+        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_4943_cfg["s3_obj_count"],
+            11,
             self.obj_name_prefix)
-        acc_details=IAM_OBJ.create_multiple_accounts(
-            test_4943_cfg["iam_acc_count"],
-            name_prefix = self.acc_name_prefix)
-        account1_id=acc_details[1][0][1]["Account_Id"]
-        S3_OBJ1=s3_test_lib.S3TestLib(
-            access_key = acc_details[1][0][1]["access_key"],
-            secret_key = acc_details[1][0][1]["secret_key"])
-        S3_OBJ2=s3_test_lib.S3TestLib(
-            access_key = acc_details[1][1][1]["access_key"],
-            secret_key = acc_details[1][1][1]["secret_key"])
+        acc_details = IAM_OBJ.create_multiple_accounts(
+            2,
+            name_prefix=self.acc_name_prefix)
+        account1_id = acc_details[1][0][1]["Account_Id"]
+        S3_OBJ1 = s3_test_lib.S3TestLib(
+            access_key=acc_details[1][0][1]["access_key"],
+            secret_key=acc_details[1][0][1]["secret_key"])
+        S3_OBJ2 = s3_test_lib.S3TestLib(
+            access_key=acc_details[1][1][1]["access_key"],
+            secret_key=acc_details[1][1][1]["secret_key"])
         self.log.info("Creating a json for bucket policy")
-        policy_id=f"Policy{uuid.uuid4()}"
-        policy_sid=f"Stmt{uuid.uuid4()}"
-        bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
-        bucket_policy["Statement"][0]["Sid"]=bucket_policy["Statement"][0]["Sid"].format(
+        policy_id = f"Policy{uuid.uuid4()}"
+        policy_sid = f"Stmt{uuid.uuid4()}"
+        bucket_policy["Id"] = bucket_policy["Id"].format(policy_id)
+        bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0]["Sid"].format(
             policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"]=
+        bucket_policy["Statement"][0]["Principal"]["AWS"] = \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(
                 account1_id)
         self.log.info(bucket_policy)
         self.log.info("Created a json for bucket policy")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
-        max_key_list=test_4943_cfg["max_keys"]
-        err_message=test_4943_cfg["err_message"]
+        max_key_list = [1, 2, 3, 4]
+        err_message = "AccessDenied"
         self.list_obj_with_max_keys_and_diff_acnt(
             self.bucket_name, S3_OBJ1, max_key_list[0], err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
@@ -6462,9 +6440,9 @@ _date
             "ENDED: Create Bucket Policy using NumericNotEqualsIfExists"
             " Condition, key 's3:max-keys' and Effect Deny")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-6985")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-6985")
+    @CTFailOn(error_handler)
     def test_4944(self):
         """
         Create Bucket Policy using NumericLessThanEqualsIfExists
@@ -6474,37 +6452,37 @@ _date
         self.log.info(
             "STARTED: Create Bucket Policy using NumericLessThanEqualsIfExists"
             " Condition, key 's3:max-keys' and Effect Allow")
-        bucket_policy=BKT_POLICY_CONF["test_4944"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"]=bucket_policy["Statement"][0][
+        bucket_policy = BKT_POLICY_CONF["test_4944"]["bucket_policy"]
+        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_4944_cfg["s3_obj_count"],
+            11,
             self.obj_name_prefix)
-        acc_details=IAM_OBJ.create_multiple_accounts(
-            test_4944_cfg["iam_acc_count"],
-            name_prefix = self.acc_name_prefix)
-        account1_id=acc_details[1][0][1]["Account_Id"]
-        S3_OBJ1=s3_test_lib.S3TestLib(
-            access_key = acc_details[1][0][1]["access_key"],
-            secret_key = acc_details[1][0][1]["secret_key"])
-        S3_OBJ2=s3_test_lib.S3TestLib(
-            access_key = acc_details[1][1][1]["access_key"],
-            secret_key = acc_details[1][1][1]["secret_key"])
+        acc_details = IAM_OBJ.create_multiple_accounts(
+            2,
+            name_prefix=self.acc_name_prefix)
+        account1_id = acc_details[1][0][1]["Account_Id"]
+        S3_OBJ1 = s3_test_lib.S3TestLib(
+            access_key=acc_details[1][0][1]["access_key"],
+            secret_key=acc_details[1][0][1]["secret_key"])
+        S3_OBJ2 = s3_test_lib.S3TestLib(
+            access_key=acc_details[1][1][1]["access_key"],
+            secret_key=acc_details[1][1][1]["secret_key"])
         self.log.info("Creating a json for bucket policy")
-        policy_id=f"Policy{uuid.uuid4()}"
-        policy_sid=f"Stmt{uuid.uuid4()}"
-        bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
-        bucket_policy["Statement"][0]["Sid"]=bucket_policy["Statement"][0]["Sid"].format(
+        policy_id = f"Policy{uuid.uuid4()}"
+        policy_sid = f"Stmt{uuid.uuid4()}"
+        bucket_policy["Id"] = bucket_policy["Id"].format(policy_id)
+        bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0]["Sid"].format(
             policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"]=
+        bucket_policy["Statement"][0]["Principal"]["AWS"] = \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(
                 account1_id)
         self.log.info(bucket_policy)
         self.log.info("Created a json for bucket policy")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
-        max_key_list=test_4944_cfg["max_keys"]
-        err_message=test_4944_cfg["err_message"]
+        max_key_list = [1, 2, 3, 4]
+        err_message = "AccessDenied"
         self.list_obj_with_max_keys_and_diff_acnt(
             self.bucket_name, S3_OBJ1, max_key_list[0])
         self.list_obj_with_max_keys_and_diff_acnt(
@@ -6525,9 +6503,9 @@ _date
             "ENDED: Create Bucket Policy using NumericLessThanEqualsIfExists"
             " Condition, key 's3:max-keys' and Effect Allow")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-6986")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-6986")
+    @CTFailOn(error_handler)
     def test_4945(self):
         """
         Create Bucket Policy using NumericGreaterThanEqualsIfExists Condition, key "s3:max-keys" and Effect Deny
@@ -6536,37 +6514,37 @@ _date
         self.log.info(
             "STARTED: Create Bucket Policy using NumericGreaterThanEqualsIfExists"
             " Condition, key 's3:max-keys' and Effect Deny")
-        bucket_policy=BKT_POLICY_CONF["test_4945"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"]=bucket_policy["Statement"][0][
+        bucket_policy = BKT_POLICY_CONF["test_4945"]["bucket_policy"]
+        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_4945_cfg["s3_obj_count"],
+            11,
             self.obj_name_prefix)
-        acc_details=IAM_OBJ.create_multiple_accounts(
-            test_4945_cfg["iam_acc_count"],
-            name_prefix = self.acc_name_prefix)
-        account1_id=acc_details[1][0][1]["Account_Id"]
-        S3_OBJ1=s3_test_lib.S3TestLib(
-            access_key = acc_details[1][0][1]["access_key"],
-            secret_key = acc_details[1][0][1]["secret_key"])
-        S3_OBJ2=s3_test_lib.S3TestLib(
-            access_key = acc_details[1][1][1]["access_key"],
-            secret_key = acc_details[1][1][1]["secret_key"])
+        acc_details = IAM_OBJ.create_multiple_accounts(
+            2,
+            name_prefix=self.acc_name_prefix)
+        account1_id = acc_details[1][0][1]["Account_Id"]
+        S3_OBJ1 = s3_test_lib.S3TestLib(
+            access_key=acc_details[1][0][1]["access_key"],
+            secret_key=acc_details[1][0][1]["secret_key"])
+        S3_OBJ2 = s3_test_lib.S3TestLib(
+            access_key=acc_details[1][1][1]["access_key"],
+            secret_key=acc_details[1][1][1]["secret_key"])
         self.log.info("Creating a json for bucket policy")
-        policy_id=f"Policy{uuid.uuid4()}"
-        policy_sid=f"Stmt{uuid.uuid4()}"
-        bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
-        bucket_policy["Statement"][0]["Sid"]=bucket_policy["Statement"][0]["Sid"].format(
+        policy_id = f"Policy{uuid.uuid4()}"
+        policy_sid = f"Stmt{uuid.uuid4()}"
+        bucket_policy["Id"] = bucket_policy["Id"].format(policy_id)
+        bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0]["Sid"].format(
             policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"]=
+        bucket_policy["Statement"][0]["Principal"]["AWS"] = \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(
                 account1_id)
         self.log.info(bucket_policy)
         self.log.info("Created a json for bucket policy")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
-        max_key_list=test_4945_cfg["max_keys"]
-        err_message=test_4945_cfg["err_message"]
+        max_key_list = [1, 2, 3, 4]
+        err_message = "AccessDenied"
         self.list_obj_with_max_keys_and_diff_acnt(
             self.bucket_name, S3_OBJ1, max_key_list[0], err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
@@ -6588,9 +6566,9 @@ _date
             "ENDED: Create Bucket Policy using NumericGreaterThanEqualsIfExists"
             " Condition, key 's3:max-keys' and Effect Deny")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-6973")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-6973")
+    @CTFailOn(error_handler)
     def test_5449(self):
         """
         Test Create Bucket Policy using StringEqualsIfExists
@@ -6600,29 +6578,28 @@ _date
         self.log.info(
             "STARTED: Test Create Bucket Policy using StringEqualsIfExists "
             "Condition, key s3:prefix and Effect Allow")
-        bucket_policy=BKT_POLICY_CONF["test_5449"]["bucket_policy"]
-        obj_prefix=self.obj_name_prefix
-        err_message=test_5449_cfg["error_message"]
-
+        bucket_policy = BKT_POLICY_CONF["test_5449"]["bucket_policy"]
+        obj_prefix = self.obj_name_prefix
+        err_message = "AccessDenied"
         self.create_bucket_put_objects(
-            self.bucket_name, test_5449_cfg["obj_count"], obj_prefix)
-        acc_details=IAM_OBJ.create_multiple_accounts(
-            test_5449_cfg["acc_count"], self.acc_name_prefix)
-        account1_id=acc_details[1][0][1]["Account_Id"]
-        S3_OBJ1=s3_test_lib.S3TestLib(
-            access_key = acc_details[1][0][1]["access_key"],
-            secret_key = acc_details[1][0][1]["secret_key"])
-        S3_OBJ2=s3_test_lib.S3TestLib(
-            access_key = acc_details[1][1][1]["access_key"],
-            secret_key = acc_details[1][1][1]["secret_key"])
+            self.bucket_name, 2, obj_prefix)
+        acc_details = IAM_OBJ.create_multiple_accounts(
+            2, self.acc_name_prefix)
+        account1_id = acc_details[1][0][1]["Account_Id"]
+        S3_OBJ1 = s3_test_lib.S3TestLib(
+            access_key=acc_details[1][0][1]["access_key"],
+            secret_key=acc_details[1][0][1]["secret_key"])
+        S3_OBJ2 = s3_test_lib.S3TestLib(
+            access_key=acc_details[1][1][1]["access_key"],
+            secret_key=acc_details[1][1][1]["secret_key"])
         self.log.info(
             "Creating a json with StringEqualsIfExists condition")
-        policy_id=f"Policy{uuid.uuid4()}"
-        policy_sid=f"Stmt{uuid.uuid4()}"
-        bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
-        bucket_policy["Statement"][0]["Sid"]=bucket_policy["Statement"][0][
+        policy_id = f"Policy{uuid.uuid4()}"
+        policy_sid = f"Stmt{uuid.uuid4()}"
+        bucket_policy["Id"] = bucket_policy["Id"].format(policy_id)
+        bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0][
             "Sid"].format(policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"]=
+        bucket_policy["Statement"][0]["Principal"]["AWS"] = \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(
                 account1_id)
         self.log.info(
@@ -6645,9 +6622,9 @@ _date
             "ENDED: Test Create Bucket Policy using StringEqualsIfExists"
             " Condition, key s3:prefix and Effect Allow")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-6974")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-6974")
+    @CTFailOn(error_handler)
     def test_5471(self):
         """
         Test Create Bucket Policy using StringNotEqualsIfExists
@@ -6657,29 +6634,31 @@ _date
         self.log.info(
             "STARTED: Test Create Bucket Policy using StringNotEqualsIfExists "
             "Condition Operator, key s3:prefix and Effect Deny")
-        bucket_policy=BKT_POLICY_CONF["test_5471"]["bucket_policy"]
-        obj_prefix=self.obj_name_prefix
-        err_message=test_5471_cfg["error_message"]
+        bucket_policy = BKT_POLICY_CONF["test_5471"]["bucket_policy"]
+        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
+            "Resource"].format(self.bucket_name)
+        obj_prefix = self.obj_name_prefix
+        err_message = "AccessDenied"
         self.create_bucket_put_objects(
-            self.bucket_name, test_5471_cfg["obj_count"], obj_prefix)
-        acc_details=IAM_OBJ.create_multiple_accounts(
-            test_5471_cfg["acc_count"], self.acc_name_prefix)
-        account1_id=acc_details[1][0][1]["Account_Id"]
-        S3_OBJ1=s3_test_lib.S3TestLib(
-            access_key = acc_details[1][0][1]["access_key"],
-            secret_key = acc_details[1][0][1]["secret_key"])
-        S3_OBJ2=s3_test_lib.S3TestLib(
-            access_key = acc_details[1][1][1]["access_key"],
-            secret_key = acc_details[1][1][1]["secret_key"])
+            self.bucket_name, 2, obj_prefix)
+        acc_details = IAM_OBJ.create_multiple_accounts(
+            2, self.acc_name_prefix)
+        account1_id = acc_details[1][0][1]["Account_Id"]
+        S3_OBJ1 = s3_test_lib.S3TestLib(
+            access_key=acc_details[1][0][1]["access_key"],
+            secret_key=acc_details[1][0][1]["secret_key"])
+        S3_OBJ2 = s3_test_lib.S3TestLib(
+            access_key=acc_details[1][1][1]["access_key"],
+            secret_key=acc_details[1][1][1]["secret_key"])
         self.log.info(
             "Creating a json with StringEqualsIfExists condition")
-        policy_id=f"Policy{uuid.uuid4()}"
-        policy_sid=f"Stmt{uuid.uuid4()}"
-        bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
-        bucket_policy["Statement"][0]["Sid"]=
+        policy_id = f"Policy{uuid.uuid4()}"
+        policy_sid = f"Stmt{uuid.uuid4()}"
+        bucket_policy["Id"] = bucket_policy["Id"].format(policy_id)
+        bucket_policy["Statement"][0]["Sid"] = \
             bucket_policy["Statement"][0][
                 "Sid"].format(policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"]=
+        bucket_policy["Statement"][0]["Principal"]["AWS"] = \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(
                 account1_id)
         self.log.info(
@@ -6706,42 +6685,41 @@ _date
             "ENDED: Test Create Bucket Policy using StringNotEqualsIfExists "
             "Condition Operator, key s3:prefix and Effect Deny")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-6975")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-6975")
+    @CTFailOn(error_handler)
     def test_5473(self):
         """
         Test Create Bucket Policy using StringNotEqualsIfExists
         Condition Operator, key "s3:prefix" and Effect Allow
-
         """
         self.log.info(
             "STARTED: Test Create Bucket Policy using StringNotEqualsIfExists "
             "Condition Operator, key s3:prefix and Effect Allow")
-        bucket_policy=BKT_POLICY_CONF["test_5473"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"]=bucket_policy["Statement"][0][
+        bucket_policy = BKT_POLICY_CONF["test_5473"]["bucket_policy"]
+        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
-        err_message = test_5473_cfg["error_message"]
+        err_message = "AccessDenied"
         self.create_bucket_put_objects(
-            self.bucket_name, test_5473_cfg["obj_count"], obj_prefix)
-        acc_details=IAM_OBJ.create_multiple_accounts(
-            test_5473_cfg["acc_count"], self.acc_name_prefix)
-        account1_id=acc_details[1][0][1]["Account_Id"]
-        S3_OBJ1=s3_test_lib.S3TestLib(
-            access_key = acc_details[1][0][1]["access_key"],
-            secret_key = acc_details[1][0][1]["secret_key"])
-        S3_OBJ2=s3_test_lib.S3TestLib(
-            access_key = acc_details[1][1][1]["access_key"],
-            secret_key = acc_details[1][1][1]["secret_key"])
+            self.bucket_name, 11, obj_prefix)
+        acc_details = IAM_OBJ.create_multiple_accounts(
+            2, self.acc_name_prefix)
+        account1_id = acc_details[1][0][1]["Account_Id"]
+        S3_OBJ1 = s3_test_lib.S3TestLib(
+            access_key=acc_details[1][0][1]["access_key"],
+            secret_key=acc_details[1][0][1]["secret_key"])
+        S3_OBJ2 = s3_test_lib.S3TestLib(
+            access_key=acc_details[1][1][1]["access_key"],
+            secret_key=acc_details[1][1][1]["secret_key"])
         self.log.info(
             "Creating a json with StringEqualsIfExists condition")
-        policy_id=f"Policy{uuid.uuid4()}"
-        policy_sid=f"Stmt{uuid.uuid4()}"
-        bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
-        bucket_policy["Statement"][0]["Sid"]=bucket_policy["Statement"][0][
+        policy_id = f"Policy{uuid.uuid4()}"
+        policy_sid = f"Stmt{uuid.uuid4()}"
+        bucket_policy["Id"] = bucket_policy["Id"].format(policy_id)
+        bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0][
             "Sid"].format(policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"]=
+        bucket_policy["Statement"][0]["Principal"]["AWS"] = \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(
                 account1_id)
         self.log.info(
@@ -6767,9 +6745,9 @@ _date
             "ENDED: Test Create Bucket Policy using StringNotEqualsIfExists "
             "Condition Operator, key s3:prefix and Effect Allow")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-6976")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-6976")
+    @CTFailOn(error_handler)
     def test_5481(self):
         """
         Test Create Bucket Policy using StringEqualsIfExists
@@ -6779,30 +6757,30 @@ _date
         self.log.info(
             "STARTED: Test Create Bucket Policy using StringEqualsIfExists "
             "Condition Operator, key s3:prefix and Effect Deny")
-        bucket_policy=BKT_POLICY_CONF["test_5481"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"]=bucket_policy["Statement"][0][
+        bucket_policy = BKT_POLICY_CONF["test_5481"]["bucket_policy"]
+        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
-        err_message = test_5481_cfg["error_message"]
+        err_message = "AccessDenied"
         self.create_bucket_put_objects(
-            self.bucket_name, test_5481_cfg["obj_count"], obj_prefix)
-        acc_details=IAM_OBJ.create_multiple_accounts(
-            test_5481_cfg["acc_count"], self.acc_name_prefix)
-        account1_id=acc_details[1][0][1]["Account_Id"]
-        S3_OBJ1=s3_test_lib.S3TestLib(
-            access_key = acc_details[1][0][1]["access_key"],
-            secret_key = acc_details[1][0][1]["secret_key"])
-        S3_OBJ2=s3_test_lib.S3TestLib(
-            access_key = acc_details[1][1][1]["access_key"],
-            secret_key = acc_details[1][1][1]["secret_key"])
+            self.bucket_name, 11, obj_prefix)
+        acc_details = IAM_OBJ.create_multiple_accounts(
+            2, self.acc_name_prefix)
+        account1_id = acc_details[1][0][1]["Account_Id"]
+        S3_OBJ1 = s3_test_lib.S3TestLib(
+            access_key=acc_details[1][0][1]["access_key"],
+            secret_key=acc_details[1][0][1]["secret_key"])
+        S3_OBJ2 = s3_test_lib.S3TestLib(
+            access_key=acc_details[1][1][1]["access_key"],
+            secret_key=acc_details[1][1][1]["secret_key"])
         self.log.info(
             "Creating a json with StringEqualsIfExists condition")
-        policy_id=f"Policy{uuid.uuid4()}"
-        policy_sid=f"Stmt{uuid.uuid4()}"
-        bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
-        bucket_policy["Statement"][0]["Sid"]=bucket_policy["Statement"][0]["Sid"].format(
+        policy_id = f"Policy{uuid.uuid4()}"
+        policy_sid = f"Stmt{uuid.uuid4()}"
+        bucket_policy["Id"] = bucket_policy["Id"].format(policy_id)
+        bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0]["Sid"].format(
             policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"]=
+        bucket_policy["Statement"][0]["Principal"]["AWS"] = \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(
                 account1_id)
         self.log.info(
@@ -6829,9 +6807,9 @@ _date
             "ENDED: Test Create Bucket Policy using StringEqualsIfExists "
             "Condition Operator, key s3:prefix and Effect Deny")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-6977")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-6977")
+    @CTFailOn(error_handler)
     def test_5490(self):
         """
         Test Create Bucket Policy using "StringEqualsIfExists" Condition Operator,
@@ -6841,29 +6819,29 @@ _date
         self.log.info(
             "STARTED: Test Create Bucket Policy using StringEqualsIfExists "
             "Condition Operator, key s3:x-amz-grant-write,Effect Allow and Action s3:ListBucket")
-        bucket_policy=BKT_POLICY_CONF["test_5490"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"]=bucket_policy["Statement"][0][
+        bucket_policy = BKT_POLICY_CONF["test_5490"]["bucket_policy"]
+        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         account_name = "{0}{1}".format(
             "accpolicy_account", str(
                 time.time()))
-        email_id="{0}{1}".format(account_name,
+        email_id = "{0}{1}".format(account_name,
                                    "@seagate.com")
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_5490_cfg["obj_count"],
+            11,
             self.obj_name_prefix)
-        acc_details=self.create_s3iamcli_acc(
+        acc_details = self.create_s3iamcli_acc(
             self.account_name, self.email_id)
-        account_id=acc_details[6]
+        account_id = acc_details[6]
         self.log.info(
             "Creating a json with StringEqualsIfExists condition")
-        policy_id=f"Policy{uuid.uuid4()}"
-        policy_sid=f"Stmt{uuid.uuid4()}"
-        bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
-        bucket_policy["Statement"][0]["Sid"]=bucket_policy["Statement"][0][
+        policy_id = f"Policy{uuid.uuid4()}"
+        policy_sid = f"Stmt{uuid.uuid4()}"
+        bucket_policy["Id"] = bucket_policy["Id"].format(policy_id)
+        bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0][
             "Sid"].format(policy_sid)
-        bucket_policy["Statement"][0]["Condition"]["StringEqualsIfExists"]["s3:x-amz-grant-write"]=
+        bucket_policy["Statement"][0]["Condition"]["StringEqualsIfExists"]["s3:x-amz-grant-write"] =\
             bucket_policy["Statement"][0]["Condition"]["StringEqualsIfExists"][
                 "s3:x-amz-grant-write"].format(account_id)
         self.log.info(
@@ -6871,14 +6849,14 @@ _date
         self.put_invalid_policy(
             self.bucket_name,
             bucket_policy,
-            test_5490_cfg["error_message"])
+            "Action does not apply to any resource(s) in statement")
         self.log.info(
             "ENDED: Test Create Bucket Policy using StringEqualsIfExists "
             "Condition Operator, key s3:x-amz-grant-write,Effect Allow and Action s3:ListBucket")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-18450")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-18450")
+    @CTFailOn(error_handler)
     def test_6550(self):
         """
         Test Bucket Policy having Single Condition with Single Key and Multiple Values
@@ -6887,63 +6865,65 @@ _date
         self.log.info(
             "STARTED: Test Bucket Policy having Single Condition"
             " with Single Key and Multiple Values")
-        bucket_policy=BKT_POLICY_CONF["test_6550"]["bucket_policy"]
-        obj_prefix=self.obj_name_prefix
-        err_message=test_6550_cfg["error_message"]
-        object_lst=[]
+        bucket_policy = BKT_POLICY_CONF["test_6550"]["bucket_policy"]
+        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
+            "Resource"].format(self.bucket_name)
+        obj_prefix = self.obj_name_prefix
+        err_message = "AccessDenied"
+        object_lst = []
         self.log.info(
             "Step 1 : Create a bucket and upload objects in the bucket")
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_6550_cfg["obj_count"],
+            2,
             obj_prefix,
             object_lst)
-        acc_details=IAM_OBJ.create_multiple_accounts(
-            test_6550_cfg["acc_count"], self.acc_name_prefix)
-        account1_id=acc_details[1][0][1]["Account_Id"]
-        S3_OBJ1=s3_acl_test_lib.S3AclTestLib(
-            access_key = acc_details[1][0][1]["access_key"],
-            secret_key = acc_details[1][0][1]["secret_key"])
-        S3_OBJ2=s3_test_lib.S3TestLib(
-            access_key = acc_details[1][0][1]["access_key"],
-            secret_key = acc_details[1][0][1]["secret_key"])
+        acc_details = IAM_OBJ.create_multiple_accounts(
+            1, self.acc_name_prefix)
+        account1_id = acc_details[1][0][1]["Account_Id"]
+        S3_OBJ1 = s3_acl_test_lib.S3AclTestLib(
+            access_key=acc_details[1][0][1]["access_key"],
+            secret_key=acc_details[1][0][1]["secret_key"])
+        S3_OBJ2 = s3_test_lib.S3TestLib(
+            access_key=acc_details[1][0][1]["access_key"],
+            secret_key=acc_details[1][0][1]["secret_key"])
         self.log.info(
             "Step 2 : Create a json file for  a Bucket Policy having Single Condition "
             "with Multiple Keys and each Key having single Value. Action -")
-        policy_id=f"Policy{uuid.uuid4()}"
-        policy_sid=f"Stmt{uuid.uuid4()}"
-        bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
-        bucket_policy["Statement"][0]["Sid"]=bucket_policy["Statement"][0]["Sid"].format(
+        policy_id = f"Policy{uuid.uuid4()}"
+        policy_sid = f"Stmt{uuid.uuid4()}"
+        bucket_policy["Id"] = bucket_policy["Id"].format(policy_id)
+        bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0]["Sid"].format(
             policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"]=
+        bucket_policy["Statement"][0]["Principal"]["AWS"] = \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(
                 account1_id)
         self.log.info(
             "Step 3:Put the bucket policy on the bucket and Get Bucket Policy.")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
-        resp=system_utils.create_file(
+        resp = system_utils.create_file(
             self.file_path,
             10)
         assert resp[0], resp[1]
         self.log.info("Step 4 : Verify the Bucket Policy from cross account")
-        resp=S3_OBJ1.put_object_with_acl(
+        resp = S3_OBJ1.put_object_with_acl(
             self.bucket_name,
             object_lst[0],
             self.file_path,
-            acl = test_6550_cfg["obj_permission1"])
+            acl="bucket-owner-read")
         assert resp[0], resp[1]
-        resp=S3_OBJ1.put_object_with_acl(
+        resp = S3_OBJ1.put_object_with_acl(
             self.bucket_name,
             object_lst[0],
             self.file_path,
-            acl = test_6550_cfg["obj_permission2"])
+            acl="bucket-owner-full-control")
         assert resp[0], resp[1]
         try:
             S3_OBJ1.put_object_with_acl(
                 self.bucket_name,
                 object_lst[0],
                 self.file_path,
-                acl = test_6550_cfg["obj_permission3"])
+                acl="public-read")
         except CTException as error:
             assert err_message in error.message, error.message
         try:
@@ -6957,9 +6937,9 @@ _date
             "ENDED: Test Bucket Policy having Single Condition"
             " with Single Key and Multiple Values")
 
-    @ pytest.mark.s3_ops
-    @ pytest.mark.tags("TEST-18451")
-    @ CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-18451")
+    @CTFailOn(error_handler)
     def test_6553(self):
         """
         Test Bucket Policy Single Condition, Multiple Keys having Single Value for each Key
@@ -6967,68 +6947,68 @@ _date
         self.log.info(
             "STARTED: Test Bucket Policy Single Condition, "
             "Multiple Keys having Single Value for each Key")
-        bucket_policy=BKT_POLICY_CONF["test_6553"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"]=bucket_policy["Statement"][0][
+        bucket_policy = BKT_POLICY_CONF["test_6553"]["bucket_policy"]
+        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
-        err_message = test_6553_cfg["error_message"]
+        err_message = "AccessDenied"
         object_lst = []
         self.log.info(
             "Step 1 : Create a bucket and upload objects in the bucket")
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_6553_cfg["obj_count"],
+            2,
             obj_prefix,
             object_lst)
 
-        account_name2="{}{}".format(self.acc_name_prefix, str(
+        account_name2 = "{}{}".format(self.acc_name_prefix, str(
             time.time()))
-        email2="{}{}".format(account_name2, self.email_id)
-        resp1=IAM_OBJ.create_account_s3iamcli(
+        email2 = "{}{}".format(account_name2, self.email_id)
+        resp1 = IAM_OBJ.create_account_s3iamcli(
             account_name2, email2,
             self.ldap_user,
             self.ldap_pwd)
-        account_id2=resp1[1]["Account_Id"]
-        canonical_id_2=resp1[1]["canonical_id"]
+        account_id2 = resp1[1]["Account_Id"]
+        canonical_id_2 = resp1[1]["canonical_id"]
         self.log.debug(
             "Account2 Id: %s, Cannonical_id_2: %s",
             account_id2,
             canonical_id_2)
-        access_key=resp1[1]["access_key"]
-        secret_key=resp1[1]["secret_key"]
-        S3_OBJ1=s3_acl_test_lib.S3AclTestLib(
-            access_key = access_key,
-            secret_key = secret_key)
-        S3_OBJ2=s3_test_lib.S3TestLib(
-            access_key = access_key,
-            secret_key = secret_key)
+        access_key = resp1[1]["access_key"]
+        secret_key = resp1[1]["secret_key"]
+        S3_OBJ1 = s3_acl_test_lib.S3AclTestLib(
+            access_key=access_key,
+            secret_key=secret_key)
+        S3_OBJ2 = s3_test_lib.S3TestLib(
+            access_key=access_key,
+            secret_key=secret_key)
 
-        account_name3="{}{}".format(self.acc_name_prefix, str(
+        account_name3 = "{}{}".format(self.acc_name_prefix, str(
             time.time()))
-        email3="{}{}".format(account_name3, self.email_id)
-        resp2=IAM_OBJ.create_account_s3iamcli(
+        email3 = "{}{}".format(account_name3, self.email_id)
+        resp2 = IAM_OBJ.create_account_s3iamcli(
             account_name3, email3,
             self.ldap_user,
             self.ldap_pwd)
-        canonical_id_3=resp2[1]["canonical_id"]
+        canonical_id_3 = resp2[1]["canonical_id"]
         self.log.debug("Cannonical_id_3: %s", canonical_id_3)
 
         self.log.info(
             "Step 2 : Create a json file for  a Bucket Policy having Single Condition with "
             "Multiple Keys and each Key having single Value")
-        policy_id=f"Policy{uuid.uuid4()}"
-        policy_sid=f"Stmt{uuid.uuid4()}"
-        bucket_policy["Id"]=bucket_policy["Id"].format(policy_id)
-        bucket_policy["Statement"][0]["Sid"]=bucket_policy["Statement"][0]["Sid"].format(
+        policy_id = f"Policy{uuid.uuid4()}"
+        policy_sid = f"Stmt{uuid.uuid4()}"
+        bucket_policy["Id"] = bucket_policy["Id"].format(policy_id)
+        bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0]["Sid"].format(
             policy_sid)
-        bucket_policy["Statement"][0]["Principal"]["AWS"]=
+        bucket_policy["Statement"][0]["Principal"]["AWS"] = \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(
                 account_id2)
 
-        bucket_policy["Statement"][0]["Condition"]["StringEquals"]["s3:x-amz-grant-full-control"]=
+        bucket_policy["Statement"][0]["Condition"]["StringEquals"]["s3:x-amz-grant-full-control"] = \
             bucket_policy["Statement"][0]["Condition"]["StringEquals"][
                 "s3:x-amz-grant-full-control"].format(canonical_id_2)
-        bucket_policy["Statement"][0]["Condition"]["StringEquals"]["s3:x-amz-grant-read"]=
+        bucket_policy["Statement"][0]["Condition"]["StringEquals"]["s3:x-amz-grant-read"] = \
             bucket_policy["Statement"][0]["Condition"]["StringEquals"][
                 "s3:x-amz-grant-read"].format(canonical_id_3)
 
@@ -7036,20 +7016,20 @@ _date
             "Step 3:Put the bucket policy on the bucket and Get Bucket Policy.")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
         self.log.info("Verify the Bucket Policy from cross account")
-        resp=system_utils.create_file(
+        resp = system_utils.create_file(
             self.file_path,
             10)
         assert resp[0], resp[1]
         self.log.info("Step 4 : Verify the Bucket Policy from cross account")
         self.log.info(
             "Put object with ACL : grant_full_control and grant_read")
-        resp=ACL_OBJ.put_object_with_acl2(self.bucket_name,
+        resp = ACL_OBJ.put_object_with_acl2(self.bucket_name,
                                             "{}{}".format(
                                                 object_lst[0], str(time.time())),
                                             self.file_path,
-                                            grant_full_control = "ID={}".format(
+                                            grant_full_control="ID={}".format(
                                                 canonical_id_2),
-                                            grant_read = "ID={}".format(canonical_id_3))
+                                            grant_read="ID={}".format(canonical_id_3))
         assert resp[0], resp[1]
         try:
             S3_OBJ2.put_object(
@@ -7094,7 +7074,7 @@ _date
         self.log.info("Step 1: Creating bucket and put multiple objects")
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_cfg["obj_count"],
+            4,
             self.obj_name_prefix)
         self.log.info("Step 1: Created bucket with multiple objects")
         account_name = "{0}{1}".format(self.account_name, str(
@@ -7125,12 +7105,12 @@ _date
             "Step 3: Put and get bucket policy from {} bucket successful".format(
                 self.bucket_name))
         self.log.info("Step 4: Verify the Bucket Policy from cross account")
-        acl_permission = test_cfg["permission"]
+        acl_permission = "bucket-owner-read"
         self.log.info(
             "Case 1 put object with acl permission as {} with new account".format(acl_permission))
         self.put_object_with_acl_cross_acnt(
             self.bucket_name, s3test_acl_obj, self.obj_name_prefix,
-            acl=acl_permission, err_message=test_cfg["error_message"])
+            acl=acl_permission, err_message="AccessDenied")
         self.log.info(
             "Case 2 put object without acl permission with new account")
         self.put_object_with_acl_cross_acnt(
@@ -7155,7 +7135,7 @@ _date
         self.log.info("Step 1: Creating bucket and put multiple objects")
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_cfg["obj_count"],
+            4,
             self.obj_name_prefix)
         self.log.info("Step 1: Created bucket with multiple objects")
         account_name = "{0}{1}".format(self.account_name, str(
@@ -7186,7 +7166,7 @@ _date
             "Step 3: Put and get bucket policy from {} bucket successful".format(
                 self.bucket_name))
         self.log.info("Step 4: Verify the Bucket Policy from cross account")
-        acl_permission = test_cfg["permission"]
+        acl_permission = "bucket-owner-read"
         self.log.info(
             "Case 1 put object with acl permission as {} with new account".format(acl_permission))
         self.put_object_with_acl_cross_acnt(
@@ -7198,7 +7178,7 @@ _date
             self.bucket_name,
             S3_OBJ,
             self.obj_name_prefix,
-            err_message=test_cfg["error_message"])
+            err_message="AccessDenied")
         self.log.info("Step 4: Verified the Bucket Policy from cross account")
         self.log.info(
             "ENDED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-acl' and Value 'False'")
@@ -7220,7 +7200,7 @@ _date
         self.log.info("Step 1: Creating bucket and put multiple objects")
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_cfg["obj_count"],
+            4,
             self.obj_name_prefix)
         self.log.info("Step 1: Created bucket with multiple objects")
         account_name = "{0}{1}".format(self.account_name, str(
@@ -7251,7 +7231,7 @@ _date
             "Step 3: Put and get bucket policy from %s bucket successful",
             self.bucket_name)
         self.log.info("Step 4: Verify the Bucket Policy from cross account")
-        acl_permission = test_cfg["permission"]
+        acl_permission = "bucket-owner-read"
         self.log.info(
             "Case 1 put object with acl permission as %s with new account",
             acl_permission)
@@ -7284,7 +7264,7 @@ _date
         self.log.info("Step 1: Creating bucket with multiple objects")
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_cfg["obj_count"],
+            4,
             self.obj_name_prefix)
         self.log.info("Step 1: Created bucket with multiple objects")
         account_name = "{0}{1}".format(self.account_name, str(
@@ -7348,7 +7328,7 @@ _date
         self.log.info("Step 1: Creating bucket with multiple objects")
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_cfg["obj_count"],
+            4,
             self.obj_name_prefix)
         self.log.info("Step 1: Created bucket with multiple objects")
         account_name = "{0}{1}".format(self.account_name, str(
@@ -7402,7 +7382,7 @@ _date
         self.log.info("Step 1: Creating bucket with multiple objects")
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_cfg["obj_count"],
+            4,
             self.obj_name_prefix)
         self.log.info("Step 1: Created bucket with multiple objects")
         account_name = "{0}{1}".format(self.account_name, str(
@@ -7455,8 +7435,8 @@ _date
             "Resource"].format(self.bucket_name)
         self.log.info("Step 1: Creating bucket with multiple objects")
         self.create_bucket_put_objects(
-            bucket_name,
-            test_cfg["obj_count"],
+            self.bucket_name,
+            4,
             self.obj_name_prefix)
         self.log.info("Step 1: Created bucket with multiple objects")
         account_name = "{0}{1}".format(self.account_name, str(
@@ -7480,22 +7460,24 @@ _date
             "Step 2: Created a json with Null Condition operator: %s",
             bucket_policy)
         self.log.info(
-            "Step 3: Put and get bucket policy from {} bucket".format(bucket_name))
-        self.put_get_bkt_policy(bucket_name, bucket_policy)
+            "Step 3: Put and get bucket policy from {} bucket".format(
+                self.bucket_name))
+        self.put_get_bkt_policy(self.bucket_name, bucket_policy)
         self.log.info(
-            "Step 3: Put and get bucket policy from {} bucket successful".format(bucket_name))
+            "Step 3: Put and get bucket policy from {} bucket successful".format(
+                self.bucket_name))
         self.log.info("Step 4: Verify the Bucket Policy from cross account")
         canonical_id = acc_details[0]
         self.log.info(
             "Case 1 put object with grant read acp permission for new account "
             "having id as %s", canonical_id)
         self.put_object_with_acl_cross_acnt(
-            bucket_name, s3test_acl_obj, self.obj_name_prefix,
+            self.bucket_name, s3test_acl_obj, self.obj_name_prefix,
             grant_read_acp=self.id_str.format(canonical_id),
-            err_message=test_cfg["error_message"])
+            err_message="AccessDenied")
         self.log.info("Case 2 put object without grant permission")
         self.put_object_with_acl_cross_acnt(
-            bucket_name, S3_OBJ, self.obj_name_prefix)
+            self.bucket_name, S3_OBJ, self.obj_name_prefix)
         self.log.info("Step 4: Verified the Bucket Policy from cross account")
         self.log.info(
             "ENDED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-read-acp'"
@@ -7517,8 +7499,8 @@ _date
             "Resource"].format(self.bucket_name)
         self.log.info("Step 1: Creating bucket with multiple objects")
         self.create_bucket_put_objects(
-            bucket_name,
-            test_cfg["obj_count"],
+            self.bucket_name,
+            4,
             self.obj_name_prefix)
         self.log.info("Step 1: Created bucket with multiple objects")
         account_name = "{0}{1}".format(self.account_name, str(
@@ -7542,22 +7524,24 @@ _date
             "Step 2: Created a json with Null Condition operator: %s",
             bucket_policy)
         self.log.info(
-            "Step 3: Put and get bucket policy from {} bucket".format(bucket_name))
-        self.put_get_bkt_policy(bucket_name, bucket_policy)
+            "Step 3: Put and get bucket policy from {} bucket".format(
+                self.bucket_name))
+        self.put_get_bkt_policy(self.bucket_name, bucket_policy)
         self.log.info(
-            "Step 3: Put and get bucket policy from {} bucket successful".format(bucket_name))
+            "Step 3: Put and get bucket policy from {} bucket successful".format(
+                self.bucket_name))
         self.log.info("Step 4: Verify the Bucket Policy from cross account")
         canonical_id = acc_details[0]
         self.log.info(
             "Case 1 put object with grant read acp permission for new account "
             "having id as %s", canonical_id)
         self.put_object_with_acl_cross_acnt(
-            bucket_name, s3test_acl_obj, self.obj_name_prefix,
+            self.bucket_name, s3test_acl_obj, self.obj_name_prefix,
             grant_read_acp=self.id_str.format(canonical_id))
         self.log.info("Case 2 put object without grant permission")
         self.put_object_with_acl_cross_acnt(
-            bucket_name, S3_OBJ, self.obj_name_prefix,
-            err_message=test_cfg["error_message"])
+            self.bucket_name, S3_OBJ, self.obj_name_prefix,
+            err_message="AccessDenied")
         self.log.info("Step 4: Verified the Bucket Policy from cross account")
         self.log.info(
             "ENDED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-read-acp'"
@@ -7580,7 +7564,7 @@ _date
         self.log.info("Step 1: Creating bucket with multiple objects")
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_cfg["obj_count"],
+            4,
             self.obj_name_prefix)
         self.log.info("Step 1: Created bucket with multiple objects")
         account_name = "{0}{1}".format(self.account_name, str(
@@ -7643,7 +7627,7 @@ _date
         self.log.info("Step 1: Creating bucket with multiple objects")
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_cfg["obj_count"],
+            4,
             self.obj_name_prefix)
         self.log.info("Step 1: Created bucket with multiple objects")
         account_name = "{0}{1}".format(self.account_name, str(
@@ -7681,7 +7665,7 @@ _date
         self.put_object_with_acl_cross_acnt(
             self.bucket_name, s3test_acl_obj, self.obj_name_prefix,
             grant_write_acp=self.id_str.format(canonical_id),
-            err_message=test_cfg["error_message"])
+            err_message="AccessDenied")
         self.log.info("Case 2 put object without grant permission")
         self.put_object_with_acl_cross_acnt(
             self.bucket_name, S3_OBJ, self.obj_name_prefix)
@@ -7707,7 +7691,7 @@ _date
         self.log.info("Step 1: Creating bucket with multiple objects")
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_cfg["obj_count"],
+            4,
             self.obj_name_prefix)
         self.log.info("Step 1: Created bucket with multiple objects")
         account_name = "{0}{1}".format(self.account_name, str(
@@ -7748,7 +7732,7 @@ _date
         self.log.info("Case 2 put object without grant permission")
         self.put_object_with_acl_cross_acnt(
             self.bucket_name, S3_OBJ, self.obj_name_prefix,
-            err_message=test_cfg["error_message"])
+            err_message="AccessDenied")
         self.log.info("Step 4: Verified the Bucket Policy from cross account")
         self.log.info(
             "ENDED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-write-acp'"
@@ -7771,7 +7755,7 @@ _date
         self.log.info("Step 1: Creating bucket with multiple objects")
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_cfg["obj_count"],
+            4,
             self.obj_name_prefix)
         self.log.info("Step 1: Created bucket with multiple objects")
         account_name = "{0}{1}".format(self.account_name, str(
@@ -7834,12 +7818,9 @@ _date
         self.log.info("Step 1: Creating bucket with multiple objects")
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_cfg["obj_count"],
+            4,
             self.obj_name_prefix)
         self.log.info("Step 1: Created bucket with multiple objects")
-        account_name = "{0}{1}".format(self.account_name, str(
-            time.time()))
-        email_id = "{0}{1}".format(account_name, self.email_id)
         acc_details = self.create_s3iamcli_acc(
             self.account_name, self.email_id)
         s3test_acl_obj = acc_details[2]
@@ -7872,7 +7853,7 @@ _date
         self.put_object_with_acl_cross_acnt(
             self.bucket_name, s3test_acl_obj, self.obj_name_prefix,
             grant_full_control=self.id_str.format(canonical_id),
-            err_message=test_cfg["error_message"])
+            err_message="AccessDenied")
         self.log.info("Case 2 put object without grant permission")
         self.put_object_with_acl_cross_acnt(
             self.bucket_name, S3_OBJ, self.obj_name_prefix)
@@ -7891,13 +7872,11 @@ _date
         self.log.info(
             "STARTED: Test when blank file is provided for put bucket policy")
         bucket_policy = BKT_POLICY_CONF["test_5921"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
         self.create_bucket_validate(self.bucket_name)
         self.put_invalid_policy(
             self.bucket_name,
-            test_5921_cfg["bucket_policy"],
-            test_5921_cfg["error_message"])
+            bucket_policy,
+            "This policy contains invalid Json")
         self.log.info(
             "ENDED: Test when blank file is provided for put bucket policy")
 
@@ -7931,7 +7910,7 @@ _date
         self.create_bucket_put_obj_with_dir(
             self.bucket_name,
             self.obj_name_prefix,
-            test_5211_cfg["object_name_2"])
+            "objkey5211_2")
         self.log.info("Step 1: Creating bucket policy with user id")
         bucket_policy_1["Statement"][0]["Principal"]["AWS"] = \
             bucket_policy_1["Statement"][0]["Principal"][
@@ -8012,7 +7991,7 @@ _date
         self.create_bucket_put_obj_with_dir(
             self.bucket_name,
             self.obj_name_prefix,
-            test_5210_cfg["object_name_2"])
+            "objkey5210_2")
         self.log.info(
             "Step 2: Creating bucket policy on a bucket to account1 User and account2 User")
         bucket_policy["Statement"][0]["Principal"]["AWS"][0] = \
@@ -8044,10 +8023,10 @@ _date
             s3_bucket_usr2_obj.get_bucket_policy(self.bucket_name)
         except CTException as error:
             self.log.error(error.message)
-            assert test_5210_cfg["error_message"] in error.message, error.message
+            assert "MethodNotAllowed" in error.message, error.message
             self.log.info(
                 "Step 4: Retrieving policy of a bucket using user of account 2 is failed with error %s",
-                test_5210_cfg["error_message"])
+                "MethodNotAllowed")
         self.log.info(
             "ENDED: Test Give own and cross account user permission "
             "specifying userid in principal and allow GetBucketPolicy.")
@@ -8062,8 +8041,6 @@ _date
         self.log.info(
             "STARTED: Test give own user permission specifying user id in principal and allow GetBucketPolicy.")
         bucket_policy = BKT_POLICY_CONF["test_5206"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
         user_name_1 = "{0}{1}".format(self.user_name, str(
             time.time()))
         resp = IAM_OBJ.create_user_access_key(user_name_1)
@@ -8074,7 +8051,7 @@ _date
         self.create_bucket_put_obj_with_dir(
             self.bucket_name,
             self.obj_name_prefix,
-            test_5206_cfg["object_name_2"])
+            "objkey5206_2")
         self.log.info(
             "Step 1: Creating bucket policy on a bucket to account1 user")
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
@@ -8112,7 +8089,7 @@ _date
         user_name = "{0}{1}".format(self.user_name, str(
             time.time()))
         acc_details = IAM_OBJ.create_multiple_accounts(
-            test_5212_cfg["acc_count"], self.acc_name_prefix)
+            2, self.acc_name_prefix)
         assert acc_details[0], acc_details[1]
         access_key_1 = acc_details[1][0][1]["access_key"]
         secret_key_1 = acc_details[1][0][1]["secret_key"]
@@ -8153,7 +8130,7 @@ _date
             self.file_size)
         resp = s3_obj_acc_1.put_object(
             self.bucket_name,
-            test_5212_cfg["object_name_2"],
+            "objkey5212_2",
             self.file_path_2)
         assert resp[0], resp[1]
         self.log.info(
@@ -8202,20 +8179,20 @@ _date
                 self.bucket_name, bkt_policy_json_2)
         except CTException as error:
             self.log.info(error.message)
-            assert test_5212_cfg["error_message"] in error.message, error.message
+            assert "MethodNotAllowed" in error.message, error.message
             self.log.info(
                 "Step 6: Applying the bucket policy using user of account 2 is failed with error %s",
-                test_5212_cfg["error_message"])
+                "MethodNotAllowed")
         self.log.info(
             "Step 7: Retrieving policy of a bucket using user of account 2")
         try:
             s3_bkt_policy_usr2.get_bucket_policy(self.bucket_name)
         except CTException as error:
             self.log.error(error.message)
-            assert test_5212_cfg["error_message"] in error.message, error.message
+            assert "MethodNotAllowed" in error.message, error.message
             self.log.info(
                 "Step 7: Retrieving policy of a bucket using user of account 2 is failed with error %s",
-                test_5212_cfg["error_message"])
+                "MethodNotAllowed")
         self.log.info(
             "ENDED: Test Give cross account user permission for "
             "Get/PutBucketPolicy and deny the bucket owner account for Get/PutBucketPolicy .")
@@ -8252,7 +8229,7 @@ _date
         self.create_bucket_put_obj_with_dir(
             self.bucket_name,
             self.obj_name_prefix,
-            test_5214_cfg["object_name_2"])
+            "objkey5214_2")
         self.log.info("Step 1: Creating bucket policy with user id")
         bucket_policy_1["Statement"][0]["Principal"]["AWS"] = \
             bucket_policy_1["Statement"][0]["Principal"][
@@ -8286,20 +8263,20 @@ _date
                 self.bucket_name, bkt_policy_json_1)
         except CTException as error:
             self.log.error(error.message)
-            assert test_5214_cfg["error_message"] in error.message, error.message
+            assert "MethodNotAllowed" in error.message, error.message
             self.log.info(
                 "Step 4: Applying bucket policy using account 2 credential is failed with error %s",
-                test_5214_cfg["error_message"])
+                "MethodNotAllowed")
         self.log.info(
             "Step 5: Retrieving policy of a bucket using account 2 credential")
         try:
             s3_bkt_policy_2.get_bucket_policy(self.bucket_name)
         except CTException as error:
-            assert test_5214_cfg["error_message"] in error.message, error.message
+            assert "MethodNotAllowed" in error.message, error.message
             self.log.error(error.message)
             self.log.info(
                 "Step 5: Retrieving policy of a bucket using account 2 credential is failed with error %s",
-                test_5214_cfg["error_message"])
+                "MethodNotAllowed")
         self.log.info(
             "Step 6: Retrieving acl of a bucket using account 2 credential")
         resp = s3_bkt_acl_2.get_bucket_acl(self.bucket_name)
@@ -8327,10 +8304,6 @@ _date
             time.time()))
         user_name_2 = "{0}{1}".format(self.user_name, str(
             time.time()))
-        account_name = "{0}{1}".format(
-            self.account_name, str(
-                time.time()))
-        email_id = "{0}{1}".format(account_name, self.email_id)
         acc_details = self.create_s3iamcli_acc(
             self.account_name, self.email_id)
         access_key_2 = acc_details[4]
@@ -8352,7 +8325,7 @@ _date
         self.create_bucket_put_obj_with_dir(
             self.bucket_name,
             self.obj_name_prefix,
-            test_5215_cfg["object_name_2"])
+            "objkey5215_2")
         self.log.info(
             "Step 2: Creating a policy on a bucket to account 1 User")
         bucket_policy_1["Statement"][0]["Principal"]["AWS"] = \
@@ -8393,20 +8366,20 @@ _date
                 self.bucket_name, bkt_policy_json_1)
         except CTException as error:
             self.log.error(error.message)
-            assert test_5215_cfg["error_message"] in error.message, error.message
+            assert "MethodNotAllowed" in error.message, error.message
             self.log.info(
                 "Step 5: Applying policy on a bucket using user of account 2  is failed with error %s",
-                test_5215_cfg["error_message"])
+                "MethodNotAllowed")
         self.log.info(
             "Step 6: Retrieving policy of a bucket using user of account 2")
         try:
             s3_bkt_policy_usr2.get_bucket_policy(self.bucket_name)
         except CTException as error:
             self.log.error(error.message)
-            assert test_5215_cfg["error_message"] in error.message, error.message
+            assert "MethodNotAllowed" in error.message, error.message
             self.log.info(
                 "Step 6: Retrieving policy of a bucket using user of account 2 is failed with error %s",
-                test_5215_cfg["error_message"])
+                "MethodNotAllowed")
         self.log.info(
             "Step 7: Applying read acp permission on a bucket %s",
             self.bucket_name)
@@ -8416,13 +8389,13 @@ _date
         try:
             s3_bkt_acl_usr2.put_bucket_acl(
                 self.bucket_name,
-                grant_read_acp=test_5215_cfg["id_str"].format(can_id))
+                grant_read_acp="id={}".format(can_id))
         except CTException as error:
             self.log.error(error.message)
-            assert test_5215_cfg["error_message_1"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
             self.log.info(
                 "Step 7: Applying read acp permission on a bucket is failed with error %s",
-                test_5215_cfg["error_message_1"])
+                "AccessDenied")
         self.log.info(
             "ENDED: Test Give user permission for PutBucketPolicy and "
             "from user allow Get/PutBucketPolicy,PutBucketAcl permission to cross account user.")
@@ -8443,7 +8416,7 @@ _date
             "Resource"].format(self.bucket_name)
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_6771_cfg["obj_count"],
+            2,
             self.obj_name_prefix)
         acc_details = self.create_s3iamcli_acc(
             self.account_name, self.email_id)
@@ -8465,9 +8438,9 @@ _date
             "Case 1: Uploading object with grant full control using account 2")
         resp = s3_bkt_acl_acc2.put_object_with_acl(
             self.bucket_name,
-            test_6771_cfg["object_name"],
+            "objkey_6771",
             self.file_path,
-            grant_full_control=test_6771_cfg["id_str"].format(canonical_id))
+            grant_full_control="id={}".format(canonical_id))
         assert resp[0], resp[1]
         self.log.info(
             "Case 1: Uploaded object with grant full control using account 2")
@@ -8475,14 +8448,14 @@ _date
         try:
             S3_OBJ_acc2.put_object(
                 self.bucket_name,
-                test_6771_cfg["object_name"],
+                "objkey_6771",
                 self.file_path)
         except CTException as error:
             self.log.error(error.message)
-            assert test_6771_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
             self.log.info(
                 "Case 2: Uploading object with account 2 is failed with error %s",
-                test_6771_cfg["error_message"])
+                "AccessDenied")
         self.log.info("Step 2: Verified the Bucket Policy from cross account")
         self.log.info(
             "ENDED: Test Bucket Policy having Null Condition operator Key "
@@ -8504,7 +8477,7 @@ _date
             "Resource"].format(self.bucket_name)
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_6772_cfg["obj_count"],
+            2,
             self.obj_name_prefix)
         acc_details = self.create_s3iamcli_acc(
             self.account_name, self.email_id)
@@ -8526,16 +8499,16 @@ _date
             "Case 1: Uploading an object with grant full control using account 2")
         resp = s3_bkt_acl_acc2.put_object_with_acl(
             self.bucket_name,
-            test_6772_cfg["object_name"],
+            "objkey_6772",
             self.file_path,
-            grant_full_control=test_6772_cfg["id_str"].format(canonical_id))
+            grant_full_control="id={}".format(canonical_id))
         assert resp[0], resp[1]
         self.log.info(
             "Case 1: Uploaded an object with grant full control using account 2")
         self.log.info("Case 2: Uploading an object using account 2")
         resp = S3_OBJ_acc2.put_object(
             self.bucket_name,
-            test_6772_cfg["object_name"],
+            "objkey_6772",
             self.file_path)
         assert resp[0], resp[1]
         self.log.info("Case 2: Uploaded an object using account 2")
@@ -8558,7 +8531,7 @@ _date
             "Resource"].format(self.bucket_name)
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_6773_cfg["obj_count"],
+            2,
             self.obj_name_prefix)
         acc_details = self.create_s3iamcli_acc(
             self.account_name, self.email_id)
@@ -8578,11 +8551,11 @@ _date
         self.list_obj_with_max_keys_and_diff_acnt(
             self.bucket_name,
             S3_OBJ_acc2,
-            test_6773_cfg["max_keys"],
-            test_6773_cfg["error_message"])
+            2,
+            "AccessDenied")
         self.log.info(
             "Case 1: Listing objects with max keys from account 2 is failed with error %s",
-            test_6773_cfg["error_message"])
+            "AccessDenied")
         self.log.info("Case 2: Listing objects with account 2")
         resp = S3_OBJ_acc2.object_list(self.bucket_name)
         assert resp[0], resp[1]
@@ -8600,15 +8573,14 @@ _date
         """
         self.log.info(
             "STARTED: Test Bucket Policy having Null Condition operator Key s3:max-keys and Value False")
-        test_6774_cfg = BKT_POLICY_CONF["test_6774"]
         timestamp = time.time()
-        bucket_policy = test_6774_cfg["bucket_policy"]
+        bucket_policy = BKT_POLICY_CONF["test_6774"]["bucket_policy"]
         account_name = "{0}{1}".format(
             self.account_name, str(timestamp))
         email_id = "{0}{1}".format(account_name, self.email_id)
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_6774_cfg["obj_count"],
+            2,
             self.obj_name_prefix)
         acc_details = self.create_s3iamcli_acc(
             self.account_name, self.email_id)
@@ -8626,7 +8598,7 @@ _date
         self.log.info("Step 2: Verifying the Bucket Policy from cross account")
         self.log.info("Case 1: Listing objects with max keys from account 2")
         self.list_obj_with_max_keys_and_diff_acnt(
-            self.bucket_name, S3_OBJ_acc2, test_6774_cfg["max_keys"])
+            self.bucket_name, S3_OBJ_acc2, 2)
         self.log.info(
             "Case 1: Objects are listed with max keys from account 2")
         self.log.info("Case 2: Listing objects with account 2")
@@ -8634,10 +8606,10 @@ _date
             S3_OBJ_acc2.object_list(self.bucket_name)
         except CTException as error:
             self.log.error(error.message)
-            assert test_6774_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
             self.log.info(
                 "Case 2: Listing objects from account 2 is failed with error %s",
-                test_6774_cfg["error_message"])
+                "AccessDenied")
         self.log.info("Step 2: Verified the Bucket Policy from cross account")
         self.log.info(
             "ENDED: Test Bucket Policy having Null Condition operator Key s3:max-keys and Value False")
@@ -8656,7 +8628,7 @@ _date
             "Resource"].format(self.bucket_name)
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_6775_cfg["obj_count"],
+            2,
             self.obj_name_prefix)
         acc_details = self.create_s3iamcli_acc(
             self.account_name, self.email_id)
@@ -8674,7 +8646,7 @@ _date
         self.log.info("Step 2: Verifying the Bucket Policy from cross account")
         self.log.info("Case 1: Listing objects with max keys from account 2")
         self.list_obj_with_max_keys_and_diff_acnt(
-            self.bucket_name, S3_OBJ_acc2, test_6775_cfg["max_keys"])
+            self.bucket_name, S3_OBJ_acc2, 1)
         self.log.info(
             "Case 1: Objects are listed with max keys from account 2")
         self.log.info("Case 2: Listing objects with account 2")
@@ -8701,8 +8673,8 @@ _date
             "Step 1: Creating a bucket and uploading objects to a bucket")
         self.create_bucket_put_obj_with_dir(
             self.bucket_name,
-            test_6776_cfg["obj_key_1"],
-            test_6776_cfg["obj_key_2"])
+            "/bkt_policy/policy1",
+            "/bkt_policy/policy2")
         system_utils.create_file(
             self.file_path,
             10)
@@ -8731,11 +8703,11 @@ _date
         self.list_obj_with_prefix_using_diff_accnt(
             self.bucket_name,
             S3_OBJ_acc2,
-            test_6776_cfg["obj_prefix"],
-            test_6776_cfg["error_message"])
+            "bkt_policy",
+            "AccessDenied")
         self.log.info(
             "Case 1: Listing objects with prefix from account 2 is failed with error %s",
-            test_6776_cfg["error_message"])
+            "AccessDenied")
         self.log.info("Case 2: Listing object using account 2")
         resp = S3_OBJ_acc2.object_list(self.bucket_name)
         assert resp[0], resp[1]
@@ -8760,8 +8732,8 @@ _date
             "Step 1: Creating a bucket and uploading objects to a bucket")
         self.create_bucket_put_obj_with_dir(
             self.bucket_name,
-            test_6777_cfg["obj_key_1"],
-            test_6777_cfg["obj_key_2"])
+            "bktpolicy/policy1",
+            "bktpolicy/policy2")
         system_utils.create_file(
             self.file_path,
             10)
@@ -8788,17 +8760,17 @@ _date
         self.log.info("Step 3: Verifying the Bucket Policy from cross account")
         self.log.info("Case 1: Listing objects with prefix from account 2")
         self.list_obj_with_prefix_using_diff_accnt(
-            self.bucket_name, S3_OBJ_acc2, test_6777_cfg["obj_prefix"])
+            self.bucket_name, S3_OBJ_acc2, "bktpolicy")
         self.log.info("Case 1: Objects are listed with prefix from account 2")
         self.log.info("Case 2: Listing object using account 2")
         try:
             S3_OBJ_acc2.object_list(self.bucket_name)
         except CTException as error:
             self.log.error(error.message)
-            assert test_6777_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
             self.log.info(
                 "Case 2: Listing objects from account 2 is failed with error %s",
-                test_6777_cfg["error_message"])
+                "AccessDenied")
         self.log.info("Step 3: Verified the Bucket Policy from cross account")
         self.log.info(
             "ENDED: Test Bucket Policy having Null Condition operator Key s3:prefix and Value False")
@@ -8819,8 +8791,8 @@ _date
             "Step 1: Creating a bucket and uploading objects to a bucket")
         self.create_bucket_put_obj_with_dir(
             self.bucket_name,
-            test_6779_cfg["obj_key_1"],
-            test_6779_cfg["obj_key_2"])
+            "bktpolicy/policy1",
+            "bktpolicy/policy2")
         system_utils.create_file(
             self.file_path,
             10)
@@ -8847,7 +8819,7 @@ _date
         self.log.info("Step 3: Verifying the Bucket Policy from cross account")
         self.log.info("Case 1: Listing objects with prefix using account 2")
         self.list_obj_with_prefix_using_diff_accnt(
-            self.bucket_name, S3_OBJ_acc2, test_6779_cfg["obj_prefix"])
+            self.bucket_name, S3_OBJ_acc2, "bktpolicy")
         self.log.info("Case 1: Objects are listed with prefix using account 2")
         self.log.info("Case 2: Listing object using account 2")
         resp = S3_OBJ_acc2.object_list(self.bucket_name)
@@ -8871,7 +8843,7 @@ _date
             "Resource"].format(self.bucket_name)
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_6783_cfg["obj_count"],
+            3,
             self.obj_name_prefix)
         acc_details = self.create_s3iamcli_acc(
             self.account_name, self.email_id)
@@ -8894,10 +8866,10 @@ _date
                 self.file_path)
         except CTException as error:
             self.log.error(error.message)
-            assert test_6783_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
             self.log.info(
                 "Step 2: Uploading object with account 2 is failed with error %s",
-                test_6783_cfg["error_message"])
+                "AccessDenied")
         self.log.info(
             "ENDED: Test Bucket Policy having Null Condition operator Key s3:x-amz-content-sha256 and Value True")
 
@@ -8917,7 +8889,7 @@ _date
             "Resource"].format(self.bucket_name)
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_6787_cfg["obj_count"],
+            3,
             self.obj_name_prefix)
         acc_details = self.create_s3iamcli_acc(
             self.account_name, self.email_id)
@@ -8959,7 +8931,7 @@ _date
             "Resource"].format(self.bucket_name)
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_6788_cfg["obj_count"],
+            3,
             self.obj_name_prefix)
         acc_details = self.create_s3iamcli_acc(
             self.account_name, self.email_id)
@@ -9000,7 +8972,7 @@ _date
             "Resource"].format(self.bucket_name)
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_6790_cfg["obj_count"],
+            3,
             self.obj_name_prefix)
         acc_details = self.create_s3iamcli_acc(
             self.account_name, self.email_id)
@@ -9023,14 +8995,14 @@ _date
                 self.bucket_name,
                 self.obj_name_prefix,
                 self.file_path,
-                test_6790_cfg["storage_class"])
+                "STANDARD")
         except CTException as error:
             self.log.error(error.message)
-            assert test_6790_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
             self.log.info(
                 "Case 1: Uploading an object with storage class "
                 "STANDARD using account 2 is failed with error %s",
-                test_6790_cfg["error_message"])
+                "AccessDenied")
         self.log.info("Case 2: Uploading an object with account 2")
         resp = S3_OBJ_acc2.put_object(
             self.bucket_name,
@@ -9058,7 +9030,7 @@ _date
             "Resource"].format(self.bucket_name)
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_6791_cfg["obj_count"],
+            3,
             self.obj_name_prefix)
         acc_details = self.create_s3iamcli_acc(
             self.account_name, self.email_id)
@@ -9080,7 +9052,7 @@ _date
             self.bucket_name,
             self.obj_name_prefix,
             self.file_path,
-            test_6791_cfg["storage_class"])
+            "STANDARD")
         assert resp[0], resp[1]
         self.log.info(
             "Case 1: Uploaded an object with storage class STANDARD using account 2")
@@ -9092,10 +9064,10 @@ _date
                 self.file_path)
         except CTException as error:
             self.log.error(error.message)
-            assert test_6791_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
         self.log.info(
             "Case 2: Uploading an object with account 2 is failed with error %s",
-            test_6791_cfg["error_message"])
+            "AccessDenied")
         self.log.info("Step 2: Verified the Bucket Policy from cross account")
         self.log.info(
             "ENDED: Test Bucket Policy having Null Condition "
@@ -9117,7 +9089,7 @@ _date
             "Resource"].format(self.bucket_name)
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_6792_cfg["obj_count"],
+            3,
             self.obj_name_prefix)
         acc_details = self.create_s3iamcli_acc(
             self.account_name, self.email_id)
@@ -9139,7 +9111,7 @@ _date
             self.bucket_name,
             self.obj_name_prefix,
             self.file_path,
-            test_6792_cfg["storage_class"])
+            "STANDARD")
         assert resp[0], resp[1]
         self.log.info(
             "Case 1: Uploaded an object with storage class STANDARD using account 2")
@@ -9197,7 +9169,7 @@ _date
         for i in range(self.range_val):
             obj_name = "{0}{1}{2}".format(obj_prefix, random_id, str(i))
             resp = S3_OBJ.put_object(
-                self.bucket_name, obj_name, self.file_path)
+                self.bucket_name, "objkey_test", self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
         self.log.info(
@@ -9219,13 +9191,13 @@ _date
                 self.bucket_name,
                 key=object_names[0],
                 file_path=self.file_path,
-                grant_write_acp=test_6762_cfg["id_str"].format(canonical_id_user_1))
+                grant_write_acp="ID={}".format(canonical_id_user_1))
         except CTException as error:
             self.log.error(error.message)
-            assert test_6762_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
         self.log.info(
             "Case 1: Uploading an object with account 2 is failed with error %s",
-            test_6762_cfg["error_message"])
+            "AccessDenied")
         self.log.info(
             "Case 1: Uploaded an object with storage class --grant-write using account 2")
         self.log.info("Case 2: Uploading an object with account 2")
@@ -9236,10 +9208,10 @@ _date
                 self.file_path)
         except CTException as error:
             self.log.error(error.message)
-            assert test_6762_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
         self.log.info(
             "Case 2: Uploading an object with account 2 is failed with error %s",
-            test_6762_cfg["error_message"])
+            "AccessDenied")
         self.log.info("Case 2: Uploaded an object with account 2")
         self.log.info("Step 2: Verified the Bucket Policy from cross account")
         self.log.info("set put_bucket_acl to private as part of teardown.")
@@ -9287,7 +9259,7 @@ _date
         for i in range(self.range_val):
             obj_name = "{0}{1}{2}".format(obj_prefix, random_id, str(i))
             resp = S3_OBJ.put_object(
-                self.bucket_name, obj_name, self.file_path)
+                self.bucket_name, "objkey_test", self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
         self.log.info(
@@ -9309,13 +9281,13 @@ _date
                 self.bucket_name,
                 key=object_names[0],
                 file_path=self.file_path,
-                grant_read=test_6707_cfg["id_str"].format(canonical_id_user_1))
+                grant_read="ID={}".format(canonical_id_user_1))
         except CTException as error:
             self.log.error(error.message)
-            assert test_6707_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
         self.log.info(
             "Case 1: Uploading an object with account 2 is failed with error %s",
-            test_6707_cfg["error_message"])
+            "AccessDenied")
         self.log.info(
             "Case 1: Uploaded an object with storage class --grant-read using account 2")
         self.log.info("Case 2: Uploading an object with account 2")
@@ -9369,7 +9341,7 @@ _date
         for i in range(self.range_val):
             obj_name = "{0}{1}{2}".format(obj_prefix, random_id, str(i))
             resp = S3_OBJ.put_object(
-                self.bucket_name, obj_name, self.file_path)
+                self.bucket_name, "objkey_test", self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
         self.log.info(
@@ -9390,7 +9362,7 @@ _date
             self.bucket_name,
             key=object_names[0],
             file_path=self.file_path,
-            grant_read=test_6708_cfg["id_str"].format(canonical_id_user_1))
+            grant_read="ID={}".format(canonical_id_user_1))
         assert resp[0], resp[1]
         self.log.info(
             "Case 1: Uploaded an object with storage class --grant-read using account 2")
@@ -9402,10 +9374,10 @@ _date
                 self.file_path)
         except CTException as error:
             self.log.error(error.message)
-            assert test_6708_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
         self.log.info(
             "Case 1: Uploading an object with account 2 is failed with error %s",
-            test_6708_cfg["error_message"])
+            "AccessDenied")
         self.log.info("Case 2: Uploaded an object with account 2")
         self.log.info("Step 2: Verified the Bucket Policy from cross account")
         self.log.info("set put_bucket_acl to private as part of teardown.")
@@ -9451,7 +9423,7 @@ _date
         for i in range(self.range_val):
             obj_name = "{0}{1}{2}".format(obj_prefix, random_id, str(i))
             resp = S3_OBJ.put_object(
-                self.bucket_name, obj_name, self.file_path)
+                self.bucket_name, "objkey_test", self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
         self.log.info(
@@ -9473,13 +9445,13 @@ _date
                 self.bucket_name,
                 key=object_names[0],
                 file_path=self.file_path,
-                acl=test_7051_cfg["bucket-owner-read"])
+                acl="bucket-owner-read")
         except CTException as error:
             self.log.error(error.message)
-            assert test_7051_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
         self.log.info(
             "Case 1: Uploading an object with --acl bucket-owner-read is failed with error %s",
-            test_7051_cfg["error_message"])
+            "AccessDenied")
         self.log.info(
             "Case 1: Uploaded an object with --acl bucket-owner-read using account 2")
         self.log.info(
@@ -9489,13 +9461,13 @@ _date
                 self.bucket_name,
                 key=object_names[0],
                 file_path=self.file_path,
-                acl=test_7051_cfg["bucket-owner-full-control"])
+                acl="bucket-owner-full-control")
         except CTException as error:
             self.log.error(error.message)
-            assert test_7051_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
         self.log.info(
             "Case 2: Uploading an object with --acl bucket-owner-full-control is failed with error %s",
-            test_7051_cfg["error_message"])
+            "AccessDenied")
         self.log.info(
             "Case 2: Uploaded an object with --acl bucket-owner-full-control using account 2")
         self.log.info("Case 3: Uploading an object with account 2")
@@ -9506,10 +9478,10 @@ _date
                 self.file_path)
         except CTException as error:
             self.log.error(error.message)
-            assert test_7051_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
         self.log.info(
             "Case 3: Uploading an object with account 2 is failed with error %s",
-            test_7051_cfg["error_message"])
+            "AccessDenied")
         self.log.info("Case 3: Uploaded an object with account 2")
         self.log.info(
             "Case 4: Uploading an object with invalid value 'xyz' using account 2")
@@ -9518,10 +9490,10 @@ _date
                 self.bucket_name,
                 key=object_names[0],
                 file_path=self.file_path,
-                acl=test_7051_cfg["invalid_value"])
+                acl="xyz")
         except CTException as error:
             self.log.error(error.message)
-            assert test_7051_cfg["error_message_2"] in error.message, error.message
+            assert "BadRequest" in error.message, error.message
         self.log.info(
             "Case 4: Uploaded an object with invalid value 'xyz' using account 2")
         self.log.info("Step 2: Verified the Bucket Policy from cross account")
@@ -9566,7 +9538,7 @@ _date
         for i in range(self.range_val):
             obj_name = "{0}{1}{2}".format(obj_prefix, random_id, str(i))
             resp = S3_OBJ.put_object(
-                self.bucket_name, obj_name, self.file_path)
+                self.bucket_name, "objkey_test", self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
         self.log.info(
@@ -9587,10 +9559,10 @@ _date
                 self.bucket_name, bkt_policy_json)
         except CTException as error:
             self.log.error(error.message)
-            assert test_7052_cfg["error_message"] in error.message, error.message
+            assert "invalid condition key" in error.message, error.message
         self.log.info(
             "step 2: Put Bucket Policy is failed with error %s",
-            test_7052_cfg["error_message"])
+            "invalid condition key")
         self.log.info(
             "Step 2: Verified the Put Bucket Policy from cross account")
         self.log.info("set put_bucket_acl to private as part of teardown.")
@@ -9635,7 +9607,7 @@ _date
         for i in range(self.range_val):
             obj_name = "{0}{1}{2}".format(obj_prefix, random_id, str(i))
             resp = S3_OBJ.put_object(
-                self.bucket_name, obj_name, self.file_path)
+                self.bucket_name, "objkey_test", self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
         self.log.info(
@@ -9657,13 +9629,13 @@ _date
                 self.bucket_name,
                 key=object_names[0],
                 file_path=self.file_path,
-                acl=test_7054_cfg["bucket-owner-read"])
+                acl="bucket-owner-read")
         except CTException as error:
             self.log.error(error.message)
-            assert test_7054_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
         self.log.info(
             "Case 1: Uploading an object with --acl bucket-owner-read is failed with error %s",
-            test_7054_cfg["error_message"])
+            "AccessDenied")
         self.log.info(
             "Case 1: Uploaded an object with --acl bucket-owner-read using account 2")
         self.log.info(
@@ -9673,13 +9645,13 @@ _date
                 self.bucket_name,
                 key=object_names[0],
                 file_path=self.file_path,
-                acl=test_7054_cfg["bucket-owner-full-control"])
+                acl="bucket-owner-full-control")
         except CTException as error:
             self.log.error(error.message)
-            assert test_7054_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
         self.log.info(
             "Case 2: Uploading an object with --acl bucket-owner-full-control is failed with error %s",
-            test_7054_cfg["error_message"])
+            "AccessDenied")
         self.log.info(
             "Case 2: Uploaded an object with --acl bucket-owner-full-control using account 2")
         self.log.info("Case 3: Uploading an object with account 2")
@@ -9690,10 +9662,10 @@ _date
                 self.file_path)
         except CTException as error:
             self.log.error(error.message)
-            assert test_7054_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
         self.log.info(
             "Case 3: Uploading an object with account 2 is failed with error %s",
-            test_7054_cfg["error_message"])
+            "AccessDenied")
         self.log.info("Case 3: Uploaded an object with account 2")
         self.log.info("Step 2: Verified the Bucket Policy from cross account")
         self.log.info("set put_bucket_acl to private as part of teardown.")
@@ -9738,7 +9710,7 @@ _date
         for i in range(self.range_val):
             obj_name = "{0}{1}{2}".format(obj_prefix, random_id, str(i))
             resp = S3_OBJ.put_object(
-                self.bucket_name, obj_name, self.file_path)
+                self.bucket_name, "objkey_test", self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
         self.log.info(
@@ -9760,13 +9732,13 @@ _date
                 self.bucket_name,
                 key=object_names[0],
                 file_path=self.file_path,
-                acl=test_7055_cfg["bucket-owner-read"])
+                acl="bucket-owner-read")
         except CTException as error:
             self.log.error(error.message)
-            assert test_7055_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
         self.log.info(
             "Case 1: Uploading an object with --acl bucket-owner-read is failed with error %s",
-            test_7055_cfg["error_message"])
+            "AccessDenied")
         self.log.info(
             "Case 1: Uploaded an object with --acl bucket-owner-read using account 2")
         self.log.info(
@@ -9776,13 +9748,13 @@ _date
                 self.bucket_name,
                 key=object_names[0],
                 file_path=self.file_path,
-                acl=test_7055_cfg["public-read"])
+                acl="public-read")
         except CTException as error:
             self.log.error(error.message)
-            assert test_7055_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
         self.log.info(
             "Case 2: Uploading an object with --acl bucket-owner-full-control is failed with error %s",
-            test_7055_cfg["error_message"])
+            "AccessDenied")
         self.log.info(
             "Case 2: Uploaded an object with --acl bucket-owner-full-control using account 2")
         self.log.info("Case 3: Uploading an object with account 2")
@@ -9793,10 +9765,10 @@ _date
                 self.file_path)
         except CTException as error:
             self.log.error(error.message)
-            assert test_7055_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
         self.log.info(
             "Case 3: Uploading an object with account 2 is failed with error %s",
-            test_7055_cfg["error_message"])
+            "AccessDenied")
         self.log.info("Case 3: Uploaded an object with account 2")
         self.log.info("Step 2: Verified the Bucket Policy from cross account")
         self.log.info("set put_bucket_acl to private as part of teardown.")
@@ -9817,7 +9789,6 @@ _date
         """
         self.log.info(
             "STARTED: Test Create Bucket Policy using StringEqualsIgnoreCase Condition Operator, key 's3:prefix' and Effect Allow")
-        random_id = str(time.time())
         bucket_policy = BKT_POLICY_CONF["test_7056"]["bucket_policy"]
         obj_prefix = self.obj_name_prefix
         self.log.info("Create new account.")
@@ -9830,7 +9801,7 @@ _date
             "Step 1: Create a bucket and upload object in the bucket.")
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_7056_cfg["obj_count"],
+            2,
             "obj_policy")
         prefix_upper = "obj_policy".upper(
         )
@@ -9903,7 +9874,7 @@ _date
             "Step 1: Create a bucket and upload object in the bucket.")
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_7057_cfg["obj_count"],
+            1,
             "obj_policy")
         prefix_upper = "obj_policy".upper(
         )
@@ -9936,10 +9907,10 @@ _date
                 prefix="obj_policy")
         except CTException as error:
             self.log.error(error.message)
-            assert test_7057_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
         self.log.info(
             "Case 1: List objects with account 2 is failed with error %s",
-            test_7057_cfg["error_message"])
+            "AccessDenied")
         self.log.info(
             "Case 1: Listed objects with prefix using account 2")
         self.log.info(
@@ -9950,10 +9921,10 @@ _date
                 prefix=prefix_upper)
         except CTException as error:
             self.log.error(error.message)
-            assert test_7057_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
         self.log.info(
             "Case 2: List objects with upper prefix is failed with error %s",
-            test_7057_cfg["error_message"])
+            "AccessDenied")
         self.log.info(
             "Case 2: Listed objects with upper prefix using account 2")
         self.log.info("Step 3: Verified the Bucket Policy from cross account")
@@ -9999,7 +9970,7 @@ _date
         for i in range(self.range_val):
             obj_name = "{0}{1}{2}".format(obj_prefix, random_id, str(i))
             resp = S3_OBJ.put_object(
-                self.bucket_name, obj_name, self.file_path)
+                self.bucket_name, "objkey_test", self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
         self.log.info(
@@ -10020,7 +9991,7 @@ _date
             self.bucket_name,
             key=object_names[0],
             file_path=self.file_path,
-            acl=test_7058_cfg["bucket-owner-full-control"])
+            acl="bucket-owner-full-control")
         assert resp[0], resp[1]
         self.log.info(
             "Case 1: Uploaded an object with --acl bucket-owner-full-control using account 2")
@@ -10071,7 +10042,7 @@ _date
         for i in range(self.range_val):
             obj_name = "{0}{1}{2}".format(obj_prefix, random_id, str(i))
             resp = S3_OBJ.put_object(
-                self.bucket_name, obj_name, self.file_path)
+                self.bucket_name, "objkey_test", self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
         self.log.info(
@@ -10093,13 +10064,13 @@ _date
                 self.bucket_name,
                 key=object_names[0],
                 file_path=self.file_path,
-                acl=test_7059_cfg["bucket-owner-full-control"])
+                acl="bucket-owner-full-control")
         except CTException as error:
             self.log.error(error.message)
-            assert test_7059_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
         self.log.info(
             "Case 1: Put objects is failed with error %s",
-            test_7059_cfg["error_message"])
+            "AccessDenied")
         self.log.info(
             "Case 1: Uploading an object with --acl bucket-owner-full-control using account 2")
         self.log.info("Step 3: Verified the Bucket Policy from cross account")
@@ -10146,7 +10117,7 @@ _date
         for i in range(self.range_val):
             obj_name = "{0}{1}{2}".format(obj_prefix, random_id, str(i))
             resp = S3_OBJ.put_object(
-                self.bucket_name, obj_name, self.file_path)
+                self.bucket_name, "objkey_test", self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
         self.log.info(
@@ -10157,7 +10128,7 @@ _date
             bucket_policy['Statement'][0]['Principal'][
                 'CanonicalUser'].format(str(canonical_id_user_1))
         bucket_policy['Statement'][0]['Resource'] = bucket_policy['Statement'][0][
-            'Resource'].format(object_names[0])
+            'Resource'].format(self.bucket_name, object_names[0])
         self.log.info(
             "Step 2: Created a policy json and Allow PutObjectACL api on bucket in the policy to account2.- run from default account")
         self.log.info(
@@ -10174,7 +10145,7 @@ _date
             bucket_name=self.bucket_name,
             key=object_names[0],
             file_path=self.file_path,
-            grant_read_acp=test_5134_cfg["id_str"].format(canonical_id_user_1))
+            grant_read_acp="id={}".format(canonical_id_user_1))
         assert resp[0], resp[1]
         self.log.info(
             "Step 5 & 6: Account switch"
@@ -10191,7 +10162,7 @@ _date
             bucket_name=self.bucket_name,
             key=object_names[0],
             file_path=self.file_path,
-            grant_read_acp=test_5134_cfg["id_str"].format(canonical_id_user_1))
+            grant_read_acp="id={}".format(canonical_id_user_1))
         assert resp[0], resp[1]
         self.log.info("Step 8: Put object ACL. - run from default")
         self.log.info("set put_bucket_acl to private as part of teardown.")
@@ -10219,17 +10190,17 @@ _date
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
-        err_message = test_7053_cfg["error_message"]
+        err_message = "AccessDenied"
         object_lst = []
         self.log.info(
             "Step 1 : Create a bucket and upload objects in the bucket")
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_7053_cfg["obj_count"],
+            2,
             obj_prefix,
             object_lst)
         acc_details = IAM_OBJ.create_multiple_accounts(
-            test_7053_cfg["acc_count"], self.acc_name_prefix)
+            1, self.acc_name_prefix)
         account1_id = acc_details[1][0][1]["Account_Id"]
         S3_OBJ1 = s3_acl_test_lib.S3AclTestLib(
             access_key=acc_details[1][0][1]["access_key"],
@@ -10258,14 +10229,14 @@ _date
             self.bucket_name,
             object_lst[0],
             self.file_path,
-            acl=test_7053_cfg["obj_permission1"])
+            acl="bucket-owner-read")
         assert resp[0], resp[1]
         try:
             S3_OBJ1.put_object_with_acl(
                 self.bucket_name,
                 object_lst[0],
                 self.file_path,
-                acl=test_7053_cfg["obj_permission2"])
+                acl="bucket-owner-full-control")
         except CTException as error:
             assert err_message in error.message, error.message
         try:
@@ -10293,18 +10264,18 @@ _date
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
-        err_message = test_6554_cfg["error_message"]
+        err_message = "AccessDenied"
         object_lst = []
         self.log.info(
             "Step 1 : Create a bucket and upload objects in the bucket")
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_6554_cfg["obj_count"],
+            2,
             obj_prefix,
             object_lst)
 
         acc_details = IAM_OBJ.create_multiple_accounts(
-            test_6554_cfg["acc_count"], self.acc_name_prefix)
+            5, self.acc_name_prefix)
         account2_id = acc_details[1][0][1]["Account_Id"]
         account2_cid = acc_details[1][0][1]["canonical_id"]
         account3_cid = acc_details[1][1][1]["canonical_id"]
@@ -10436,7 +10407,7 @@ _date
         for i in range(self.range_val):
             obj_name = "{0}{1}{2}".format(obj_prefix, random_id, str(i))
             resp = S3_OBJ.put_object(
-                self.bucket_name, obj_name, self.file_path)
+                self.bucket_name, "objkey_test", self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
         self.log.info(
@@ -10447,7 +10418,7 @@ _date
             bucket_policy['Statement'][0]['Principal'][
                 'CanonicalUser'].format(str(canonical_id_user_1))
         bucket_policy['Statement'][0]['Resource'] = bucket_policy['Statement'][0][
-            'Resource'].format(object_names[0])
+            'Resource'].format(self.bucket_name, object_names[0])
         self.log.info(
             "Step 2: Created a policy json and Allow GetObject api on bucket in the policy to account2.- run from default account")
         self.log.info(
@@ -10463,7 +10434,7 @@ _date
         resp = self.s3test_obj_1.object_download(
             self.bucket_name,
             object_names[0],
-            test_5136_cfg["obj_name_download"])
+            "test1_d{}.txt")
         assert resp[0], resp[1]
         self.log.info(
             "Step 5 & 6: Account switch"
@@ -10475,7 +10446,7 @@ _date
             bucket_name=self.bucket_name,
             key=object_names[0],
             file_path=self.file_path,
-            grant_read_acp=test_5136_cfg["id_str"].format(canonical_id_user_1))
+            grant_read_acp="id={}".format(canonical_id_user_1))
         assert resp[0], resp[1]
         self.log.info(
             "Step 7 & 8: Account switch"
@@ -10493,7 +10464,7 @@ _date
         resp = self.s3test_obj_1.object_download(
             self.bucket_name,
             object_names[0],
-            test_5136_cfg["obj_name_download"])
+            "test1_d{}.txt")
         assert resp[0], resp[1]
         self.log.info(
             "Step 10 & 11: Account switch"
@@ -10523,18 +10494,18 @@ _date
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
-        err_message = test_6555_cfg["error_message"]
+        err_message = "AccessDenied"
         object_lst = []
         self.log.info(
             "Step 1 : Create a bucket and upload objects in the bucket")
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_6555_cfg["obj_count"],
+            2,
             obj_prefix,
             object_lst)
 
         acc_details = IAM_OBJ.create_multiple_accounts(
-            test_6555_cfg["acc_count"], self.acc_name_prefix)
+            8, self.acc_name_prefix)
         account2_id = acc_details[1][0][1]["Account_Id"]
         account2_cid = acc_details[1][0][1]["canonical_id"]
         account3_cid = acc_details[1][1][1]["canonical_id"]
@@ -10658,8 +10629,6 @@ _date
         )
         random_id = str(time.time())
         bucket_policy = BKT_POLICY_CONF["test_5138"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
         self.log.info("Create new account.")
         result_1 = self.create_s3iamcli_acc(
@@ -10680,7 +10649,7 @@ _date
         for i in range(self.range_val):
             obj_name = "{0}{1}{2}".format(obj_prefix, random_id, str(i))
             resp = S3_OBJ.put_object(
-                self.bucket_name, obj_name, self.file_path)
+                self.bucket_name, "objkey_test", self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
         self.log.info(
@@ -10691,7 +10660,7 @@ _date
             bucket_policy['Statement'][0]['Principal'][
                 'CanonicalUser'].format(str(canonical_id_user_1))
         bucket_policy['Statement'][0]['Resource'] = bucket_policy['Statement'][0][
-            'Resource'].format(object_names[0])
+            'Resource'].format(self.bucket_name, object_names[0])
         self.log.info(
             "Step 2: Created a policy json and Allow GetObjectAcl api on bucket in the policy to account2.- run from default account")
         self.log.info(
@@ -10717,7 +10686,7 @@ _date
             bucket_name=self.bucket_name,
             key=object_names[0],
             file_path=self.file_path,
-            grant_write_acp=test_5138_cfg["id_str"].format(canonical_id_user_1))
+            grant_write_acp="id={}".format(canonical_id_user_1))
         assert resp[0], resp[1]
         self.log.info(
             "Step 7 & 8: Account switch"
@@ -10781,7 +10750,7 @@ _date
         for i in range(self.range_val):
             obj_name = "{0}{1}{2}".format(obj_prefix, random_id, str(i))
             resp = S3_OBJ.put_object(
-                self.bucket_name, obj_name, self.file_path)
+                self.bucket_name, "objkey_test", self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
         self.log.info(
@@ -10792,7 +10761,7 @@ _date
             bucket_name=self.bucket_name,
             key=object_names[0],
             file_path=self.file_path,
-            grant_write_acp=test_5121_cfg["id_str"].format(canonical_id_user_1))
+            grant_write_acp="is={}".format(canonical_id_user_1))
         assert resp[0], resp[1]
         self.log.info(
             "Step 2: Apply WRITE_ACP ACL on the object to account2. - run from default account")
@@ -10809,17 +10778,19 @@ _date
             bucket_name=self.bucket_name,
             key=object_names[0],
             file_path=self.file_path,
-            grant_write_acp=test_5121_cfg["id_str"].format(canonical_id_user_1))
+            grant_write_acp="id={}".format(canonical_id_user_1))
         assert resp[0], resp[1]
         self.log.info("Step 4 & 5: Put object ACL. - run from account1")
         self.log.info(
             "Step 6 & 7: Account switch"
-            " Create a policy json and Deny PutObjectAcl api on object in policy to account2.- run from default account")
+            " Create a policy json and Deny PutObjectAcl api on object in policy to account2."
+            "- run from default account")
         bucket_policy['Statement'][0]['Principal']['CanonicalUser'] = \
             bucket_policy['Statement'][0]['Principal'][
                 'CanonicalUser'].format(str(canonical_id_user_1))
         self.log.info(
-            "Step 6 & 7: Created a policy json and Deny PutObjectAcl api on object in policy to account2.- run from default account")
+            "Step 6 & 7: Created a policy json and Deny PutObjectAcl api on object in policy "
+            "to account2.- run from default account")
         self.log.info(
             "Step 8 & 9: Apply the  policy on the bucket .Check the output,"
             "Check the bucket policy to verify the applied policy - run from default account")
@@ -10834,10 +10805,10 @@ _date
                 bucket_name=self.bucket_name,
                 key=object_names[0],
                 file_path=self.file_path,
-                grant_write_acp=test_5121_cfg["id_str"].format(canonical_id_user_1))
+                grant_write_acp="id={}".format(canonical_id_user_1))
         except CTException as error:
             self.log.error(error.message)
-            assert test_5121_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
         self.log.info("Step 10 & 11: Account switch "
                       "put object ACL - run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
@@ -10847,8 +10818,8 @@ _date
         S3_OBJ.delete_bucket(self.bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
-            "ENDED: Test apply WRITE_ACP ACL on the object and deny PutobjectAcl on object api in policy ."
-        )
+            "ENDED: Test apply WRITE_ACP ACL on the object and deny PutobjectAcl "
+            "on object api in policy .")
 
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-18454")
@@ -10864,18 +10835,17 @@ _date
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
-        err_message = test_6555_cfg["error_message"]
+        err_message = "MalformedPolicy"
         object_lst = []
         self.log.info(
             "Step 1 : Create a bucket and upload objects in the bucket")
         self.create_bucket_put_objects(
             self.bucket_name,
-            test_6555_cfg["obj_count"],
+            2,
             obj_prefix,
             object_lst)
 
-        acc_details = IAM_OBJ.create_multiple_accounts(
-            test_6555_cfg["acc_count"], self.acc_name_prefix)
+        acc_details = IAM_OBJ.create_multiple_accounts(2, self.acc_name_prefix)
         account2_id = acc_details[1][0][1]["Account_Id"]
         account2_cid = acc_details[1][0][1]["canonical_id"]
         account3_cid = acc_details[1][1][1]["canonical_id"]
@@ -10938,7 +10908,7 @@ _date
         for i in range(self.range_val):
             obj_name = "{0}{1}{2}".format(obj_prefix, random_id, str(i))
             resp = S3_OBJ.put_object(
-                self.bucket_name, obj_name, self.file_path)
+                self.bucket_name, "objkey_test", self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
         self.log.info(
@@ -10949,7 +10919,7 @@ _date
             bucket_name=self.bucket_name,
             key=object_names[0],
             file_path=self.file_path,
-            grant_read=test_5118_cfg["id_str"].format(canonical_id_user_1))
+            grant_read="id={}".format(canonical_id_user_1))
         assert resp[0], resp[1]
         self.log.info(
             "Step 2: Applied READ ACL on the object to account2. - run from default account")
@@ -10965,7 +10935,7 @@ _date
         resp = self.s3test_obj_1.object_download(
             self.bucket_name,
             object_names[0],
-            test_5118_cfg["obj_name_download"])
+            "test1_d.txt")
         assert resp[0], resp[1]
         self.log.info("Step 4 & 5: Account switch"
                       " Get object. - run from account1")
@@ -10991,10 +10961,10 @@ _date
             self.s3test_obj_1.object_download(
                 self.bucket_name,
                 object_names[0],
-                test_5118_cfg["obj_name_download"])
+                "test1_d.txt")
         except CTException as error:
             self.log.error(error.message)
-            assert test_5118_cfg["error_message"] in error.message, error.message
+            assert "Forbidden" in error.message, error.message
         self.log.info("Step 10 & 11: Account switch"
                       "Get object.  - run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
@@ -11023,8 +10993,6 @@ _date
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
         self.log.info("Create new account.")
-        account_name_1 = test_5115_cfg["account_name_1"].format(random_id)
-        email_id_1 = test_5115_cfg["emailid_1"].format(random_id)
         result_1 = self.create_s3iamcli_acc(
             self.account_name_1, self.email_id_1)
         canonical_id_user_1 = result_1[0]
@@ -11034,14 +11002,14 @@ _date
         self.log.info(
             "Step 1: Create a bucket and upload object in the bucket. - run from default account")
         self.create_bucket_put_objects(
-            self.bucket_name, test_5115_cfg["obj_count"], obj_prefix)
+            self.bucket_name, 2, obj_prefix)
         self.log.info(
             "Step 1: Created bucket and uploaded object in the bucket. - run from default account")
         self.log.info(
             "Step 2: Apply READ_ACP ACL on the bucket to account2. - run from default account")
         resp = ACL_OBJ.put_bucket_acl(
             bucket_name=self.bucket_name,
-            grant_read_acp=test_5115_cfg["id_str"].format(canonical_id_user_1))
+            grant_read_acp="id={}".format(canonical_id_user_1))
         assert resp[0], resp[1]
         self.log.info(
             "Step 2: Applied READ_ACP ACL on the bucket to account2. - run from default account")
@@ -11078,7 +11046,7 @@ _date
             ACL_OBJ_1.get_bucket_acl(self.bucket_name)
         except CTException as error:
             self.log.error(error.message)
-            assert test_5115_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
         self.log.info(
             "Step 10 & 11: Get ACL of the bucket  -run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
@@ -11115,14 +11083,14 @@ _date
         self.log.info(
             "Step 1: Create a bucket and upload object in the bucket. - run from default account")
         self.create_bucket_put_objects(
-            self.bucket_name, test_5114_cfg["obj_count"], obj_prefix)
+            self.bucket_name, 2, obj_prefix)
         self.log.info(
             "Step 1: Created bucket and uploaded object in the bucket. - run from default account")
         self.log.info(
             "Step 2: Apply READ_ACP ACL on the bucket to account2. - run from default account")
         resp = ACL_OBJ.put_bucket_acl(
             bucket_name=self.bucket_name,
-            grant_write=test_5114_cfg["id_str"].format(canonical_id_user_1))
+            grant_write="id={}".format(canonical_id_user_1))
         assert resp[0], resp[1]
         self.log.info(
             "Step 2: Applied READ_ACP ACL on the bucket to account2. - run from default account")
@@ -11136,7 +11104,7 @@ _date
                       "Put object in the bucket . - run from account1")
         obj_name = "{0}{1}".format(obj_prefix, str(int(time.time())))
         resp = self.s3test_obj_1.put_object(
-            self.bucket_name, obj_name, self.file_path)
+            self.bucket_name, "objkey_test", self.file_path)
         assert resp[0], resp[1]
         self.log.info(
             "Step 4 & 5: Put object in the bucket . - run from account1")
@@ -11160,10 +11128,10 @@ _date
                       "Put object in the bucket -run from account1")
         try:
             self.s3test_obj_1.put_object(
-                self.bucket_name, obj_name, self.file_path)
+                self.bucket_name, "objkey_test", self.file_path)
         except CTException as error:
             self.log.error(error.message)
-            assert test_5114_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
         self.log.info(
             "Step 10 & 11: Put object in the bucket  -run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
@@ -11200,14 +11168,14 @@ _date
         self.log.info(
             "Step 1: Create a bucket and upload object in the bucket. - run from default account")
         self.create_bucket_put_objects(
-            self.bucket_name, test_5110_cfg["obj_count"], obj_prefix)
+            self.bucket_name, 2, obj_prefix)
         self.log.info(
             "Step 1: Created bucket and uploaded object in the bucket. - run from default account")
         self.log.info(
             "Step 2: Apply READ_ACP ACL on the bucket to account2. - run from default account")
         resp = ACL_OBJ.put_bucket_acl(
             bucket_name=self.bucket_name,
-            grant_read=test_5110_cfg["id_str"].format(canonical_id_user_1))
+            grant_read="id={}".format(canonical_id_user_1))
         assert resp[0], resp[1]
         self.log.info(
             "Step 2: Applied READ_ACP ACL on the bucket to account2. - run from default account")
@@ -11244,7 +11212,7 @@ _date
             self.s3test_obj_1.object_list(self.bucket_name)
         except CTException as error:
             self.log.error(error.message)
-            assert test_5110_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
         self.log.info("Step 10 & 11: Account switch "
                       "List objects from the bucket  -run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
@@ -11281,14 +11249,14 @@ _date
         self.log.info(
             "Step 1: Create a bucket and upload object in the bucket. - run from default account")
         self.create_bucket_put_objects(
-            self.bucket_name, test_5116_cfg["obj_count"], obj_prefix)
+            self.bucket_name, 2, obj_prefix)
         self.log.info(
             "Step 1: Created bucket and uploaded object in the bucket. - run from default account")
         self.log.info(
             "Step 2: Apply READ_ACP ACL on the bucket to account2. - run from default account")
         resp = ACL_OBJ.put_bucket_acl(
             bucket_name=self.bucket_name,
-            grant_write_acp=test_5116_cfg["id_str"].format(canonical_id_user_1))
+            grant_write_acp="id={}".format(canonical_id_user_1))
         assert resp[0], resp[1]
         self.log.info(
             "Step 2: Applied READ_ACP ACL on the bucket to account2. - run from default account")
@@ -11302,19 +11270,21 @@ _date
                       "Put ACL on the bucket . - run from account1")
         resp = ACL_OBJ_1.put_bucket_acl(
             bucket_name=self.bucket_name,
-            grant_write_acp=test_5116_cfg["id_str"].format(canonical_id_user_1))
+            grant_write_acp="id={}".format(canonical_id_user_1))
         assert resp[0], resp[1]
         self.log.info("Step 4 & 5: Account switch "
                       "Put ACL on the bucket . - run from account1")
         self.log.info(
             "Step 6 & 7: Account switch"
-            "Create a policy json and Deny PutBucketAcl api on bucket in the policy to account2.- run from default account")
+            "Create a policy json and Deny PutBucketAcl api on bucket in the policy to account2."
+            "- run from default account")
         bucket_policy['Statement'][0]['Principal']['CanonicalUser'] = \
             bucket_policy['Statement'][0]['Principal']['CanonicalUser'].format(
                 str(canonical_id_user_1))
         self.log.info(
             "Step 6 & 7: Account switch "
-            "Created a policy json and Deny PutBucketAcl api on bucket in the policy to account2.- run from default account")
+            "Created a policy json and Deny PutBucketAcl api on bucket in the policy to account2."
+            "- run from default account")
         self.log.info(
             "Step 8 & 9: Apply the  policy on the bucket .Check the output,"
             "Check the bucket policy to verify the applied policy - run from default account")
@@ -11327,10 +11297,10 @@ _date
         try:
             ACL_OBJ_1.put_bucket_acl(
                 bucket_name=self.bucket_name,
-                grant_write_acp=test_5116_cfg["id_str"].format(canonical_id_user_1))
+                grant_write_acp="id={}".format(canonical_id_user_1))
         except CTException as error:
             self.log.error(error.message)
-            assert test_5116_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
         self.log.info("Step 10 & 11: Account switch"
                       "Put ACL of the bucket  -run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
@@ -11367,14 +11337,14 @@ _date
         self.log.info(
             "Step 1: Create a bucket and upload object in the bucket. - run from default account")
         self.create_bucket_put_objects(
-            self.bucket_name, test_5117_cfg["obj_count"], obj_prefix)
+            self.bucket_name, 2, obj_prefix)
         self.log.info(
             "Step 1: Created bucket and uploaded object in the bucket. - run from default account")
         self.log.info(
             "Step 2: Apply FULL_CONTROL ACL on the bucket to account2. - run from default account")
         resp = ACL_OBJ.put_bucket_acl(
             bucket_name=self.bucket_name,
-            grant_full_control=test_5117_cfg["id_str"].format(canonical_id_user_1))
+            grant_full_control="id={}".format(canonical_id_user_1))
         assert resp[0], resp[1]
         self.log.info(
             "Step 2: Applied FULL_CONTROL ACL on the bucket to account2. - run from default account")
@@ -11392,13 +11362,15 @@ _date
                       "Get ACL of the bucket . - run from account1")
         self.log.info(
             "Step 6 & 7: Account switch "
-            "Create a policy json and Deny GetBucketAcl api on bucket in the policy to account2.- run from default account")
+            "Create a policy json and Deny GetBucketAcl api on bucket in the policy to account2."
+            "- run from default account")
         bucket_policy['Statement'][0]['Principal']['CanonicalUser'] = \
             bucket_policy['Statement'][0]['Principal'][
                 'CanonicalUser'].format(str(canonical_id_user_1))
         self.log.info(
             "Step 6 & 7: Account switch "
-            "Created a policy json and Deny GetBucketAcl api on bucket in the policy to account2.- run from default account")
+            "Created a policy json and Deny GetBucketAcl api on bucket in the policy to account2."
+            "- run from default account")
         self.log.info(
             "Step 8 & 9: Apply the  policy on the bucket .Check the output,"
             "Check the bucket policy to verify the applied policy - run from default account")
@@ -11412,7 +11384,7 @@ _date
             ACL_OBJ_1.get_bucket_acl(self.bucket_name)
         except CTException as error:
             self.log.error(error.message)
-            assert test_5117_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
         self.log.info("Step 10 & 11: Account switch "
                       "Get ACL of the bucket  - run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
@@ -11436,12 +11408,9 @@ _date
             "STARTED: Test apply READ_ACP ACL on the object and deny GetobjectAcl on object api in policy ."
         )
         random_id = str(time.time())
-        test_5120_cfg = BKT_POLICY_CONF["test_5120"]
         obj_prefix = self.obj_name_prefix
-        bucket_policy = test_5120_cfg["bucket_policy"]
+        bucket_policy = BKT_POLICY_CONF["test_5120"]["bucket_policy"]
         self.log.info("Create new account.")
-        account_name_1 = test_5120_cfg["account_name_1"].format(random_id)
-        email_id_1 = test_5120_cfg["emailid_1"].format(random_id)
         result_1 = self.create_s3iamcli_acc(
             self.account_name_1, self.email_id_1)
         canonical_id_user_1 = result_1[0]
@@ -11460,7 +11429,7 @@ _date
             obj_name = "{0}{1}{2}".format(
                 obj_prefix, str(int(time.time())), str(i))
             resp = S3_OBJ.put_object(
-                self.bucket_name, obj_name, self.file_path)
+                self.bucket_name, "objkey_test", self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
         self.log.info(
@@ -11471,7 +11440,7 @@ _date
             bucket_name=self.bucket_name,
             key=object_names[0],
             file_path=self.file_path,
-            grant_read_acp=test_5120_cfg["id_str"].format(canonical_id_user_1))
+            grant_read_acp="id={}".format(canonical_id_user_1))
         assert resp[0], resp[1]
         self.log.info(
             "Step 2: Applied READ_ACP ACL on the bucket to account2. - run from default account")
@@ -11491,13 +11460,15 @@ _date
                       "Get object ACL. - run from account1")
         self.log.info(
             "Step 6 & 7: Account switch"
-            "Create a policy json and Deny GetObjectAcl api on object in policy to account2.- run from default account")
+            "Create a policy json and Deny GetObjectAcl api on object in policy to account2.-"
+            " run from default account")
         bucket_policy['Statement'][0]['Principal']['CanonicalUser'] = \
             bucket_policy['Statement'][0]['Principal'][
                 'CanonicalUser'].format(str(canonical_id_user_1))
         self.log.info(
             "Step 6 & 7: Account switch"
-            " Created a policy json and Deny GetObjectAcl api on object in policy to account2.- run from default account")
+            " Created a policy json and Deny GetObjectAcl api on object in policy to account2.-"
+            " run from default account")
         self.log.info(
             "Step 8 & 9: Apply the  policy on the bucket .Check the output,"
             "Check the bucket policy to verify the applied policy - run from default account")
@@ -11512,7 +11483,7 @@ _date
                                      object_key=object_names[0])
         except CTException as error:
             self.log.error(error.message)
-            assert test_5120_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
         self.log.info("Step 10 & 11: Account switch"
                       "Get object ACL - run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
@@ -11522,8 +11493,8 @@ _date
         S3_OBJ.delete_bucket(self.bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
-            "ENDED: Test apply READ_ACP ACL on the object and deny GetobjectAcl on object api in policy ."
-        )
+            "ENDED: Test apply READ_ACP ACL on the object and deny GetobjectAcl on object api"
+            " in policy .")
 
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7945")
@@ -11535,9 +11506,8 @@ _date
         self.log.info(
             "STARTED: Test apply FULL_CONTROL ACL on the object and deny GetobjectAcl on object api in policy ."
         )
-        random_id = str(time.time())
         bucket_policy = BKT_POLICY_CONF["test_5122"]["bucket_policy"]
-        obj_prefix = self.obj_name_prefi
+        obj_prefix = self.obj_name_prefix
         self.log.info("Create new account.")
         result_1 = self.create_s3iamcli_acc(
             self.account_name_1, self.email_id_1)
@@ -11557,7 +11527,7 @@ _date
             obj_name = "{0}{1}{2}".format(
                 obj_prefix, str(int(time.time())), str(i))
             resp = S3_OBJ.put_object(
-                self.bucket_name, obj_name, self.file_path)
+                self.bucket_name, "objkey_test", self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
         self.log.info(
@@ -11568,7 +11538,7 @@ _date
             bucket_name=self.bucket_name,
             key=object_names[0],
             file_path=self.file_path,
-            grant_full_control=test_5122_cfg["id_str"].format(canonical_id_user_1))
+            grant_full_control="id={}".format(canonical_id_user_1))
         assert resp[0], resp[1]
         self.log.info(
             "Step 2: Apply FULL_CONTROL ACL on the object to account2. - run from default account")
@@ -11588,13 +11558,15 @@ _date
                       "Get object ACL. - run from account1")
         self.log.info(
             "Step 6 & 7: Account switch"
-            "Create a policy json and Deny GetObjectAcl api on object in policy to account2.- run from default account")
+            "Create a policy json and Deny GetObjectAcl api on object in policy to account2.-"
+            " run from default account")
         bucket_policy['Statement'][0]['Principal']['CanonicalUser'] = \
             bucket_policy['Statement'][0]['Principal'][
                 'CanonicalUser'].format(str(canonical_id_user_1))
         self.log.info(
             "Step 6 & 7: Account switch"
-            "Created a policy json and Denid GetObjectAcl api on object in policy to account2.- run from default account")
+            "Created a policy json and Denid GetObjectAcl api on object in policy to account2.-"
+            " run from default account")
         self.log.info(
             "Step 8 & 9: Apply the  policy on the bucket .Check the output,"
             "Check the bucket policy to verify the applied policy - run from default account")
@@ -11609,7 +11581,7 @@ _date
                                      object_key=object_names[0])
         except CTException as error:
             self.log.error(error.message)
-            assert test_5122_cfg["error_message"] in error.message, error.message
+            assert "AccessDenied" in error.message, error.message
         self.log.info("Step 10 & 11: Account switch "
                       "Get object ACL - run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
@@ -11619,8 +11591,8 @@ _date
         S3_OBJ.delete_bucket(self.bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
-            "ENDED: Test apply FULL_CONTROL ACL on the object and deny GetobjectAcl on object api in policy ."
-        )
+            "ENDED: Test apply FULL_CONTROL ACL on the object and deny GetobjectAcl on object "
+            "api in policy .")
 
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7946")
@@ -11645,16 +11617,18 @@ _date
         self.log.info(
             "Step 1: Create a bucket and upload object in the bucket. - run from default account")
         self.create_bucket_put_objects(
-            self.bucket_name, test_5123_cfg["obj_count"], obj_prefix)
+            self.bucket_name, 2, obj_prefix)
         self.log.info(
             "Step 1: Created bucket and uploaded object in the bucket. - run from default account")
         self.log.info(
-            "Step 2: Create a policy json and allow ListBucket api on bucket in the policy to account2.- run from default account")
+            "Step 2: Create a policy json and allow ListBucket api on bucket in the policy "
+            "to account2.- run from default account")
         bucket_policy['Statement'][0]['Principal']['CanonicalUser'] = \
             bucket_policy['Statement'][0]['Principal'][
                 'CanonicalUser'].format(str(canonical_id_user_1))
         self.log.info(
-            "Step 2: Created a policy json and allow ListBucket api on bucket in the policy to account2.- run from default account")
+            "Step 2: Created a policy json and allow ListBucket api on bucket in the policy "
+            "to account2.- run from default account")
         self.log.info(
             "Step 3 & 4: Apply the  policy on the bucket .Check the output,"
             "Check the bucket policy to verify the applied policy - run from default account")
@@ -11672,7 +11646,7 @@ _date
             "Apply WRITE ACL on the bucket to account2. - run from default account")
         resp = ACL_OBJ.put_bucket_acl(
             bucket_name=self.bucket_name,
-            grant_write=test_5123_cfg["id_str"].format(canonical_id_user_1))
+            grant_write="id={}".format(canonical_id_user_1))
         assert resp[0], resp[1]
         self.log.info(
             "Step 7 & 8: Account switch"
@@ -11725,16 +11699,18 @@ _date
         self.log.info(
             "Step 1: Create a bucket and upload object in the bucket. - run from default account")
         self.create_bucket_put_objects(
-            self.bucket_name, test_5126_cfg["obj_count"], obj_prefix)
+            self.bucket_name, 2, obj_prefix)
         self.log.info(
             "Step 1: Created bucket and uploaded object in the bucket. - run from default account")
         self.log.info(
-            "Step 2: Create a policy json and allow PutBucketAcl api on bucket in the policy to account2.- run from default account")
+            "Step 2: Create a policy json and allow PutBucketAcl api on bucket in the policy "
+            "to account2.- run from default account")
         bucket_policy['Statement'][0]['Principal']['CanonicalUser'] = \
             bucket_policy['Statement'][0]['Principal']['CanonicalUser'].format(
                 str(canonical_id_user_1))
         self.log.info(
-            "Step 2: Create a policy json and allow PutBucketAcl api on bucket in the policy to account2.- run from default account")
+            "Step 2: Create a policy json and allow PutBucketAcl api on bucket in the policy "
+            "to account2.- run from default account")
         self.log.info(
             "Step 3 & 4: Apply the  policy on the bucket .Check the output,"
             "Check the bucket policy to verify the applied policy - run from default account")
@@ -11747,7 +11723,7 @@ _date
             "Apply READ_ACP ACL on the bucket to account2. - run from account1")
         resp = ACL_OBJ_1.put_bucket_acl(
             bucket_name=self.bucket_name,
-            grant_read_acp=test_5126_cfg["id_str"].format(canonical_id_user_1))
+            grant_read_acp="id={}".format(canonical_id_user_1))
         assert resp[0], resp[1]
         self.log.info(
             "Step 5 & 6: Account switch "
@@ -11761,7 +11737,7 @@ _date
         self.log.info("Step 8: Put bucket ACL - run from account1")
         resp = ACL_OBJ_1.put_bucket_acl(
             bucket_name=self.bucket_name,
-            grant_read_acp=test_5126_cfg["id_str"].format(canonical_id_user_1))
+            grant_read_acp="id={}".format(canonical_id_user_1))
         assert resp[0], resp[1]
         self.log.info("Step 8: Put bucket ACL - run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
@@ -11798,7 +11774,7 @@ _date
         self.log.info(
             "Step 1: Create a bucket and upload object in the bucket. - run from default account")
         self.create_bucket_put_objects(
-            self.bucket_name, test_5124_cfg["obj_count"], obj_prefix)
+            self.bucket_name, 2, obj_prefix)
         self.log.info(
             "Step 1: Created bucket and uploaded object in the bucket. - run from default account")
         self.log.info(
@@ -11819,7 +11795,7 @@ _date
             "upload new objects in the bucket. - run from account1")
         obj_name = "{0}{1}".format(obj_prefix, str(int(time.time())))
         resp = self.s3test_obj_1.put_object(
-            self.bucket_name, obj_name, self.file_path)
+            self.bucket_name, "objkey_test", self.file_path)
         assert resp[0], resp[1]
         self.log.info(
             "uploaded new object in the bucket. - run from account1")
@@ -11828,7 +11804,7 @@ _date
             "Apply READ ACL on the bucket to account2. - run from default account")
         resp = ACL_OBJ.put_bucket_acl(
             bucket_name=self.bucket_name,
-            grant_read=test_5124_cfg["id_str"].format(canonical_id_user_1))
+            grant_read="id={}".format(canonical_id_user_1))
         assert resp[0], resp[1]
         self.log.info(
             "Step 7 & 8: Account switch"
@@ -11842,7 +11818,7 @@ _date
         self.log.info("Step 10 & 11: Account switch"
                       "Put object in the bucket . - run from account1")
         resp = self.s3test_obj_1.put_object(
-            self.bucket_name, obj_name, self.file_path)
+            self.bucket_name, "objkey_test", self.file_path)
         assert resp[0], resp[1]
         self.log.info(
             "Step 10 & 11: Put object in the bucket . - run from account1")
@@ -11880,7 +11856,7 @@ _date
         self.log.info(
             "Step 1: Create a bucket and upload object in the bucket. - run from default account")
         self.create_bucket_put_objects(
-            self.bucket_name, test_5125_cfg["obj_count"], obj_prefix)
+            self.bucket_name, 2, obj_prefix)
         self.log.info(
             "Step 1: Created bucket and uploaded object in the bucket. - run from default account")
         self.log.info(
@@ -11910,7 +11886,7 @@ _date
             "Apply WRITE_ACP ACL on the bucket to account2. - run from default account")
         resp = ACL_OBJ.put_bucket_acl(
             bucket_name=self.bucket_name,
-            grant_write_acp=test_5125_cfg["id_str"].format(canonical_id_user_1))
+            grant_write_acp="id={}".format(canonical_id_user_1))
         assert resp[0], resp[1]
         self.log.info(
             "Step 7 & 8: Account switch"
@@ -11950,8 +11926,6 @@ _date
         )
         obj_prefix = self.obj_name_prefix
         bucket_policy = BKT_POLICY_CONF["test_5137"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
         self.log.info("Create new account.")
         result_1 = self.create_s3iamcli_acc(
             self.account_name_1, self.email_id_1)
@@ -11972,20 +11946,22 @@ _date
             obj_name = "{0}{1}{2}".format(
                 obj_prefix, str(int(time.time())), str(i))
             resp = S3_OBJ.put_object(
-                self.bucket_name, obj_name, self.file_path)
+                self.bucket_name, "objkey_test", self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
         self.log.info(
             "Step 1: Created bucket and uploaded object in the bucket. - run from default account")
         self.log.info(
-            "Step 2: Create a policy json and Allow GetObjectAcl api on object in the policy to account2.- run from default account")
+            "Step 2: Create a policy json and Allow GetObjectAcl api on object in the policy"
+            " to account2.- run from default account")
         bucket_policy['Statement'][0]['Principal']['CanonicalUser'] = \
             bucket_policy['Statement'][0]['Principal'][
                 'CanonicalUser'].format(str(canonical_id_user_1))
         bucket_policy['Statement'][0]['Resource'] = bucket_policy['Statement'][0][
-            'Resource'].format(object_names[0])
+            'Resource'].format(self.bucket_name, object_names[0])
         self.log.info(
-            "Step 2: Created a policy json and Allow GetObjectAcl api on bucket in the policy to account2.- run from default account")
+            "Step 2: Created a policy json and Allow GetObjectAcl api on bucket in the policy"
+            " to account2.- run from default account")
         self.log.info(
             "Step 3 & 4: Apply the  policy on the bucket .Check the output,"
             "Check the bucket policy to verify the applied policy - run from default account")
@@ -12052,6 +12028,8 @@ _date
         )
         obj_prefix = self.obj_name_prefix
         bucket_policy = BKT_POLICY_CONF["test_6967"]["bucket_policy"]
+        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
+            "Resource"].format(self.bucket_name)
         self.log.info("Create new account.")
         result_1 = self.create_s3iamcli_acc(
             self.account_name_1, self.email_id_1)
@@ -12106,6 +12084,8 @@ _date
         )
         obj_prefix = self.obj_name_prefix
         bucket_policy = BKT_POLICY_CONF["test_6969"]["bucket_policy"]
+        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
+            "Resource"].format(self.bucket_name)
         self.log.info("Create new account.")
         result_1 = self.create_s3iamcli_acc(
             self.account_name_1, self.email_id_1)
@@ -12234,6 +12214,8 @@ _date
         )
         obj_prefix = self.obj_name_prefix
         bucket_policy = BKT_POLICY_CONF["test_6992"]["bucket_policy"]
+        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
+            "Resource"].format(self.bucket_name)
         self.log.info("Create new account.")
         result_1 = self.create_s3iamcli_acc(
             self.account_name_1, self.email_id_1)
@@ -12297,8 +12279,6 @@ _date
         )
         obj_prefix = self.obj_name_prefix
         bucket_policy = BKT_POLICY_CONF["test_6999"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
         self.log.info("Create new account.")
         result_1 = self.create_s3iamcli_acc(
             self.account_name_1, self.email_id_1)
@@ -12318,20 +12298,22 @@ _date
             obj_name = "{0}{1}{2}".format(
                 obj_prefix, str(int(time.time())), str(i))
             resp = S3_OBJ.put_object(
-                self.bucket_name, obj_name, self.file_path)
+                self.bucket_name, "objkey_test", self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
         self.log.info(
             "Step 1: Created bucket and uploaded object in the bucket. - run from default account")
         self.log.info(
-            "Step 2: Create a policy json and Allow GetObjectAcl api on object in the policy to account2.- run from default account")
+            "Step 2: Create a policy json and Allow GetObjectAcl api on object in the policy"
+            " to account2.- run from default account")
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id_1)
         bucket_policy['Statement'][0]['Resource'] = bucket_policy['Statement'][0][
-            'Resource'].format(object_names[0])
+            'Resource'].format(self.bucket_name, object_names[0])
         self.log.info(bucket_policy)
         self.log.info(
-            "Step 2: Created a policy json and Allow GetObjectAcl api on bucket in the policy to account2.- run from default account")
+            "Step 2: Created a policy json and Allow GetObjectAcl api on bucket in the policy"
+            " to account2.- run from default account")
         self.log.info(
             "Step 3 & 4: Apply the  policy on the bucket .Check the output,"
             "Check the bucket policy to verify the applied policy - run from default account")
@@ -12392,7 +12374,7 @@ _date
             obj_name = "{0}{1}{2}".format(
                 obj_prefix, str(int(time.time())), str(i))
             resp = S3_OBJ.put_object(
-                self.bucket_name, obj_name, self.file_path)
+                self.bucket_name, "objkey_test", self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
         self.log.info(
@@ -12402,7 +12384,7 @@ _date
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id_1)
         bucket_policy['Statement'][0]['Resource'] = bucket_policy['Statement'][0][
-            'Resource'].format(object_names[0])
+            'Resource'].format(self.bucket_name, object_names[0])
         self.log.info(bucket_policy)
         self.log.info(
             "Step 2: Created a policy json.- run from default account")
@@ -12445,6 +12427,8 @@ _date
         random_id = str(time.time())
         obj_prefix = self.obj_name_prefix
         bucket_policy = BKT_POLICY_CONF["test_6968"]["bucket_policy"]
+        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
+            "Resource"].format(self.bucket_name)
         self.log.info("Create new account.")
         result_1 = self.create_s3iamcli_acc(
             self.account_name_1, self.email_id_1)
@@ -12511,6 +12495,8 @@ _date
         random_id = str(time.time())
         obj_prefix = self.obj_name_prefix
         bucket_policy = BKT_POLICY_CONF["test_6978"]["bucket_policy"]
+        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
+            "Resource"].format(self.bucket_name)
         self.log.info("Create new account.")
         result_1 = self.create_s3iamcli_acc(
             self.account_name_1, self.email_id_1)
@@ -12579,6 +12565,8 @@ _date
         )
         random_id = str(time.time())
         bucket_policy = BKT_POLICY_CONF["test_6987"]["bucket_policy"]
+        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
+            "Resource"].format(self.bucket_name)
         self.log.info("Create new account.")
         result_1 = self.create_s3iamcli_acc(
             self.account_name_1, self.email_id_1)
@@ -12636,6 +12624,8 @@ _date
         )
         random_id = str(time.time())
         bucket_policy = BKT_POLICY_CONF["test_6988"]["bucket_policy"]
+        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
+            "Resource"].format(self.bucket_name)
         self.log.info("Create new account.")
         result_1 = self.create_s3iamcli_acc(
             self.account_name_1, self.email_id_1)
@@ -12704,8 +12694,9 @@ _date
         self.log.info(
             "STARTED: Test bucket policy authorization on bucket with API DeleteBucketPolicy."
         )
-        random_id = str(time.time())
         bucket_policy = BKT_POLICY_CONF["test_6990"]["bucket_policy"]
+        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
+            "Resource"].format(self.bucket_name)
         self.log.info("Create new account.")
         result_1 = self.create_s3iamcli_acc(
             self.account_name_1, self.email_id_1)
@@ -12788,7 +12779,7 @@ _date
         for i in range(self.range_val):
             obj_name = "{0}{1}{2}".format(obj_prefix, random_id, str(i))
             resp = S3_OBJ.put_object(
-                self.bucket_name, obj_name, self.file_path)
+                self.bucket_name, "objkey_test", self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
         self.log.info(
@@ -12798,7 +12789,7 @@ _date
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id_1)
         bucket_policy['Statement'][0]['Resource'] = bucket_policy['Statement'][0][
-            'Resource'].format(object_names[0])
+            'Resource'].format(self.bucket_name, object_names[0])
         self.log.info(bucket_policy)
         self.log.info(
             "Step 2: Created a policy json - run from default account")
@@ -12844,6 +12835,8 @@ _date
         self.log.info(
             "STARTED: Test Create Bucket Policy using StringNotEquals Condition Operator and Deny Action")
         bucket_policy = BKT_POLICY_CONF["test_1295"]["bucket_policy"]
+        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
+            "Resource"].format(self.bucket_name)
         self.log.info("Step 1: Creating a bucket and uploading objects to it")
         self.create_bucket_put_objects(
             self.bucket_name,
@@ -12902,6 +12895,8 @@ _date
         self.log.info(
             "STARTED: Test Create Bucket Policy using StringEquals Condition Operator and Deny Action")
         bucket_policy = BKT_POLICY_CONF["test_1297"]["bucket_policy"]
+        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
+            "Resource"].format(self.bucket_name)
         self.log.info("Step 1: Creating a bucket and uploading objects to it")
         self.create_bucket_put_objects(
             self.bucket_name,
@@ -12948,6 +12943,8 @@ _date
         self.log.info(
             "STARTED: Test principal arn combination with account-id and user as root.")
         bucket_policy = BKT_POLICY_CONF["test_4598"]["bucket_policy"]
+        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
+            "Resource"].format(self.bucket_name)
         obj_count = 2
         acc_name = "accpolicy4598"
         email_id = f"{acc_name}{self.email_id}"
@@ -12993,10 +12990,6 @@ _date
             self.obj_name_prefix,
             object_lst)
         self.log.info("Step 1: Created bucket with multiple objects")
-        account_name = "{0}{1}".format(
-            self.account_name, str(
-                self.timestamp))
-        email_id = "{0}{1}".format(account_name, self.email_id)
         acc_details = self.create_s3iamcli_acc(
             self.account_name, self.email_id)
         S3_OBJ_acc2 = acc_details[1]
@@ -13504,6 +13497,8 @@ _date
             "STARTED: Test bucket policy authorization on bucket with API DeleteBucket")
         random_id = str(time.time())
         bucket_policy = BKT_POLICY_CONF["test_6966"]["bucket_policy"]
+        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
+            "Resource"].format(self.bucket_name)
         self.log.info("Create new account.")
         result_1 = self.create_s3iamcli_acc(
             self.account_name_1, self.email_id_1)
@@ -13551,6 +13546,8 @@ _date
         random_id = str(time.time())
         obj_prefix = self.obj_name_prefix
         bucket_policy = BKT_POLICY_CONF["test_6923"]["bucket_policy"]
+        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
+            "Resource"].format(self.bucket_name)
         self.log.info("Create new account.")
         result_1 = self.create_s3iamcli_acc(
             self.account_name_1, self.email_id_1)
