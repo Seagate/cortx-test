@@ -5,7 +5,7 @@ ARG GIT_TOKEN
 #ARG ACCESS_KEY
 #ARG SECRET_KEY
 RUN yum update -y
-RUN yum install -y gcc openssl-devel bzip2-devel libffi-devel zlib-devel wget
+RUN yum install -y gcc openssl-devel bzip2-devel libffi-devel zlib-devel wget make
 RUN cd /usr/src && wget https://www.python.org/ftp/python/3.7.9/Python-3.7.9.tgz && tar xzf Python-3.7.9.tgz && rm Python-3.7.9.tgz
 RUN cd /usr/src/Python-3.7.9 && ./configure --enable-optimizations
 RUN cd /usr/src/Python-3.7.9 && make altinstall
