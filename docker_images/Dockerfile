@@ -23,7 +23,7 @@ RUN pip3 install awscli
 #RUN pip3 install awscli-plugin-endpoint
 #RUN aws configure set plugins.endpoint awscli_plugin_endpoint
 #RUN aws configure set s3.endpoint_url https://s3.seagate.com
-COPY /root/secrets.json .
-COPY /root/ca.crt /etc/ssl/stx-s3-clients/s3/
+#COPY /root/secrets.json .
+#COPY /root/ca.crt /etc/ssl/stx-s3-clients/s3/
 #RUN aws configure set ca_bundle /etc/ssl/stx-s3-clients/s3/ca.crt
 # CMD ["pytest", "--collect-only", "--target", "automation"]
