@@ -54,7 +54,7 @@ S3_TAG_OBJ = s3_tagging_test_lib.S3TaggingTestLib()
 S3_MULTIPART_OBJ = s3_multipart_test_lib.S3MultipartTestLib()
 S3_BKT_POLICY_OBJ = s3_bucket_policy_test_lib.S3BucketPolicyTestLib()
 
-BKT_POLICY_CONF = read_yaml("config/s3/test_bucket_policy.yaml")[1]
+BKT_POLICY_CONF = read_yaml("config/s3/s3_bucket_test.yaml")[1]
 
 
 class TestBucketPolicy:
@@ -83,11 +83,9 @@ class TestBucketPolicy:
         cls.s3test_obj_1 = None
         cls.ldap_user = LDAP_USERNAME
         cls.ldap_pwd = LDAP_PASSWD
-        cls.test_file = "bkt_policy.txt"
-        cls.test_file1 = "bkt_policy1.txt"
+        cls.test_file = "bkt_policy{}.txt"
+        cls.test_file1 = "bkt_policy1{}.txt"
         cls.folder_path = os.path.join(TEST_DATA_FOLDER, "TestBucketPolicy")
-        cls.file_path = os.path.join(TEST_DATA_FOLDER, cls.test_file)
-        cls.file_path_2 = os.path.join(cls.folder_path, cls.test_file1)
         if not system_utils.path_exists(cls.folder_path):
             system_utils.make_dirs(cls.folder_path)
         cls.log.info(f"Test data path: %s", cls.folder_path)
@@ -127,6 +125,10 @@ class TestBucketPolicy:
         self.email_id_2 = "accpolicy_two{}@seagate.com".format(
             str(time.time()))
         self.id_str = "ID={}"
+        self.file_path = os.path.join(
+            TEST_DATA_FOLDER, self.test_file.format(str(time.time())))
+        self.file_path_2 = os.path.join(
+            self.folder_path, self.test_file1.format(str(time.time())))
         self.log.info("ENDED: Setup operations.")
 
     def teardown_method(self):
@@ -188,14 +190,9 @@ class TestBucketPolicy:
             self.log.info(
                 "Deleted the IAM users and access keys from default account")
         self.log.info("Deleting the file created locally for object")
-        if system_utils.path_exists(self.file_path):
-            system_utils.remove_file(
-                self.file_path)
-        self.log.info("Local file was deleted")
-        self.log.info("Deleting the directory created locally for object")
-        if system_utils.path_exists(self.folder_path):
-            shutil.rmtree(self.folder_path)
-        self.log.info("Local directory was deleted")
+        for fpath in [self.file_path, self.file_path_2]:
+            if system_utils.path_exists(fpath):
+                system_utils.remove_file(fpath)
         self.log.info("ENDED: Teardown Operations")
 
     def create_bucket_put_objects(
@@ -770,10 +767,10 @@ class TestBucketPolicy:
         self.log.info("Step 1 : Bucket is created with name %s",
                       self.bucket_name)
         bucket_policy = BKT_POLICY_CONF["test_261"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0]["Resource"].format(
-            self.bucket_name)
-        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1]["Resource"].format(
-            self.bucket_name)
+        for i in range(2):
+            bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
+                "Resource"].format(
+                self.bucket_name)
         bkt_json_policy = json.dumps(bucket_policy)
         self.log.info(
             "Step 2 : Performing put bucket policy on bucket %s",
@@ -820,10 +817,9 @@ class TestBucketPolicy:
         self.log.info("Step 1 : Created a bucket with name %s",
                       self.bucket_name)
         bucket_policy = BKT_POLICY_CONF["test_262"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
-        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-            "Resource"].format(self.bucket_name)
+        for i in range(2):
+            bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
+                "Resource"].format(self.bucket_name)
         bkt_json_policy = json.dumps(bucket_policy)
         self.log.info(
             "Step 2 : Performing put bucket policy on  bucket %s",
@@ -921,10 +917,9 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Test resource arn combination with bucket name and all objects.")
         bucket_policy = BKT_POLICY_CONF["test_644"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
-        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-            "Resource"].format(self.bucket_name)
+        for i in range(2):
+            bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
+                "Resource"].format(self.bucket_name)
         self.create_bucket_put_obj_with_dir(
             self.bucket_name,
             "obj_policy",
@@ -1075,10 +1070,9 @@ class TestBucketPolicy:
             "STARTED: Test resource arn combination "
             "with missing required component/value as per arn format")
         bucket_policy = BKT_POLICY_CONF["test_682"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
-        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-            "Resource"].format(self.bucket_name)
+        for i in range(2):
+            bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
+                "Resource"].format(self.bucket_name)
         self.create_bucket_put_obj_with_dir(
             self.bucket_name,
             "obj_policy",
@@ -1099,10 +1093,9 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Test resource arn combination with multiple arns")
         bucket_policy = BKT_POLICY_CONF["test_688"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"]["AWS"][0] = bucket_policy["Statement"][0][
-            "Resource"]["AWS"][0].format(self.bucket_name)
-        bucket_policy["Statement"][0]["Resource"]["AWS"][1] = bucket_policy["Statement"][0][
-            "Resource"]["AWS"][1].format(self.bucket_name)
+        for i in range(2):
+            bucket_policy["Statement"][0]["Resource"]["AWS"][i] = bucket_policy["Statement"][0][
+                "Resource"]["AWS"][i].format(self.bucket_name)
         bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
             "Resource"].format(self.bucket_name)
         self.create_bucket_put_obj_with_dir(
@@ -1440,10 +1433,9 @@ class TestBucketPolicy:
         """
         self.log.info("STARTED: Apply Delete-bucket-policy on existing bucket")
         bucket_policy = BKT_POLICY_CONF["test_558"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
-        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-            "Resource"].format(self.bucket_name)
+        for i in range(2):
+            bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
+                "Resource"].format(self.bucket_name)
         self.create_bucket_validate(self.bucket_name)
         self.log.info("Step 2: Apply the bucket policy on the bucket")
         bkt_json_policy = json.dumps(bucket_policy)
@@ -1497,10 +1489,9 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Apply Delete-bucket-policy without specifying bucket name")
         bucket_policy = BKT_POLICY_CONF["test_562"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
-        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-            "Resource"].format(self.bucket_name)
+        for i in range(2):
+            bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
+                "Resource"].format(self.bucket_name)
         self.create_bucket_validate(self.bucket_name)
         self.log.info("Step 2: Apply the bucket policy on the bucket")
         bkt_json_policy = json.dumps(bucket_policy)
@@ -1772,10 +1763,9 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Apply Delete-bucket-policy from another account with no permissions")
         bucket_policy = BKT_POLICY_CONF["test_583"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
-        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-            "Resource"].format(self.bucket_name)
+        for i in range(2):
+            bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
+                "Resource"].format(self.bucket_name)
         result_2 = self.create_s3iamcli_acc(
             self.account_name_2, self.email_id_2)
         S3_BKT_POLICY_OBJ_2 = result_2[3]
@@ -1823,10 +1813,9 @@ class TestBucketPolicy:
             " with authenticated-read permission on bucket")
         random_id = str(time.time())
         bucket_policy = BKT_POLICY_CONF["test_584"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
-        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-            "Resource"].format(self.bucket_name)
+        for i in range(2):
+            bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
+                "Resource"].format(self.bucket_name)
         result_2 = self.create_s3iamcli_acc(
             self.account_name_2, self.email_id_2)
         S3_BKT_POLICY_OBJ_2 = result_2[3]
@@ -1892,10 +1881,9 @@ class TestBucketPolicy:
             "objkey693_2")
         self.log.info(
             "Performing put bucket policy on a bucket %s", self.bucket_name)
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
-        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-            "Resource"].format(self.bucket_name)
+        for i in range(2):
+            bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
+                "Resource"].format(self.bucket_name)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(user_name)
         self.put_invalid_policy(
@@ -1923,10 +1911,9 @@ class TestBucketPolicy:
             "objkey694_2")
         self.log.info(
             "Performing put bucket policy on a bucket %s", self.bucket_name)
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
-        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-            "Resource"].format(self.bucket_name)
+        for i in range(2):
+            bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
+                "Resource"].format(self.bucket_name)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = bucket_policy["Statement"][0][
             "Principal"]["AWS"].format(account_id)
         bkt_json_policy = bucket_policy
@@ -1963,10 +1950,9 @@ class TestBucketPolicy:
             "objkey716_2")
         self.log.info(
             "Performing put bucket policy on a bucket %s", self.bucket_name)
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
-        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-            "Resource"].format(self.bucket_name)
+        for i in range(2):
+            bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
+                "Resource"].format(self.bucket_name)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
             bucket_policy["Statement"][0]["Principal"]["AWS"]. \
             format(account_id, user_name)
@@ -1987,10 +1973,9 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Test principal arn combination with wildcard * for all accounts.")
         bucket_policy = BKT_POLICY_CONF["test_718"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
-        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-            "Resource"].format(self.bucket_name)
+        for i in range(2):
+            bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
+                "Resource"].format(self.bucket_name)
         self.create_bucket_put_obj_with_dir(
             self.bucket_name,
             "obj_policy",
@@ -2011,10 +1996,9 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Test principal arn combination with wildcard * for all users in account")
         bucket_policy = BKT_POLICY_CONF["test_719"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
-        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-            "Resource"].format(self.bucket_name)
+        for i in range(2):
+            bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
+                "Resource"].format(self.bucket_name)
         create_account = self.create_s3iamcli_acc(
             self.account_name, self.email_id)
         account_id = create_account[6]
@@ -2044,10 +2028,9 @@ class TestBucketPolicy:
             "STARTED: Test principal arn specifying wildcard "
             "in the portion of the ARN that specifies the resource type")
         bucket_policy = BKT_POLICY_CONF["test_720"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
-        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-            "Resource"].format(self.bucket_name)
+        for i in range(2):
+            bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
+                "Resource"].format(self.bucket_name)
         create_account = self.create_s3iamcli_acc(
             self.account_name, self.email_id)
         account_id = create_account[6]
@@ -2075,10 +2058,9 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Test arn specifying invalid text in place of arn")
         bucket_policy = BKT_POLICY_CONF["test_721"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
-        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-            "Resource"].format(self.bucket_name)
+        for i in range(2):
+            bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
+                "Resource"].format(self.bucket_name)
         user_name = "{0}{1}".format(
             "userpolicy_user", str(
                 time.time()))
@@ -2116,10 +2098,9 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Test arn specifying invalid text for partition value")
         bucket_policy = BKT_POLICY_CONF["test_722"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
-        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-            "Resource"].format(self.bucket_name)
+        for i in range(2):
+            bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
+                "Resource"].format(self.bucket_name)
         user_name = "{0}{1}".format(
             "userpolicy_user", str(
                 time.time()))
@@ -2157,10 +2138,9 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Test arn specifying invalid text for service value.")
         bucket_policy = BKT_POLICY_CONF["test_723"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
-        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-            "Resource"].format(self.bucket_name)
+        for i in range(2):
+            bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
+                "Resource"].format(self.bucket_name)
         user_name = "{0}{1}".format(
             "userpolicy_user", str(
                 time.time()))
@@ -2198,10 +2178,9 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Test arn specifying invalid text for region value .")
         bucket_policy = BKT_POLICY_CONF["test_724"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
-        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-            "Resource"].format(self.bucket_name)
+        for i in range(2):
+            bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
+                "Resource"].format(self.bucket_name)
         user_name = "{0}{1}".format(
             "userpolicy_user", str(
                 time.time()))
@@ -2239,10 +2218,9 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Test arn specifying component/value as per arn format at inchanged position.")
         bucket_policy = BKT_POLICY_CONF["test_725"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
-        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-            "Resource"].format(self.bucket_name)
+        for i in range(2):
+            bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
+                "Resource"].format(self.bucket_name)
         user_name = "{0}{1}".format(
             "userpolicy_user", str(
                 time.time()))
@@ -2281,10 +2259,9 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Test extra spaces in key fields and values in bucket policy json")
         bucket_policy = BKT_POLICY_CONF["test_551"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
-        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-            "Resource"].format(self.bucket_name)
+        for i in range(2):
+            bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
+                "Resource"].format(self.bucket_name)
         self.create_bucket_validate(self.bucket_name)
         self.log.info("Step 2,3 : Put Bucket policy with missing field")
         self.put_invalid_policy(self.bucket_name,
@@ -2303,10 +2280,9 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Test invalid field in bucket policy json")
         bucket_policy = BKT_POLICY_CONF["test_549"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
-        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-            "Resource"].format(self.bucket_name)
+        for i in range(2):
+            bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
+                "Resource"].format(self.bucket_name)
         self.create_bucket_validate(self.bucket_name)
         self.log.info("Step 2,3 : Put Bucket policy with invalid field")
         self.put_invalid_policy(self.bucket_name,
@@ -2325,10 +2301,9 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Test the case sensitivity of key fields in bucket policy json")
         bucket_policy = BKT_POLICY_CONF["test_545"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
-        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-            "Resource"].format(self.bucket_name)
+        for i in range(2):
+            bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
+                "Resource"].format(self.bucket_name)
         self.create_bucket_validate(self.bucket_name)
         self.log.info(
             "Step 2,3 : Put Bucket policy with case sensitivity of key fields")
@@ -2348,10 +2323,9 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Test invalid values in the key fields in bucket policy json")
         bucket_policy = BKT_POLICY_CONF["test_555"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
-        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-            "Resource"].format(self.bucket_name)
+        for i in range(2):
+            bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
+                "Resource"].format(self.bucket_name)
         self.create_bucket_validate(self.bucket_name)
         self.log.info("Step 2,3 : Put Bucket policy with invalid values")
         self.put_invalid_policy(self.bucket_name,
@@ -2370,10 +2344,9 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Test blank values for the key fields in bucket policy json.")
         bucket_policy = BKT_POLICY_CONF["test_553"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
-        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-            "Resource"].format(self.bucket_name)
+        for i in range(2):
+            bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
+                "Resource"].format(self.bucket_name)
         self.create_bucket_validate(self.bucket_name)
         self.log.info(
             "Step 2,3 : Put Bucket policy with blank values for the key fields")
@@ -3261,10 +3234,9 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Test bucket policy with Effect Allow and Deny using invalid user id")
         bucket_policy = BKT_POLICY_CONF["test_1190"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
-        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-            "Resource"].format(self.bucket_name)
+        for i in range(2):
+            bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
+                "Resource"].format(self.bucket_name)
         create_account = self.create_s3iamcli_acc(
             self.account_name, self.email_id)
         account_id = create_account[6]
@@ -3357,10 +3329,9 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Test bucket policy with Effect Allow and Deny using invalid Account id")
         bucket_policy = BKT_POLICY_CONF["test_1191"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
-        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-            "Resource"].format(self.bucket_name)
+        for i in range(2):
+            bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
+                "Resource"].format(self.bucket_name)
         self.log.info(
             "Step 1 : Creating a bucket with name %s", self.bucket_name)
         resp = S3_OBJ.create_bucket(self.bucket_name)
@@ -3555,10 +3526,9 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Test bucket policy with Effect Allow and Deny using user id")
         bucket_policy = BKT_POLICY_CONF["test_1187"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
-        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-            "Resource"].format(self.bucket_name)
+        for i in range(2):
+            bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
+                "Resource"].format(self.bucket_name)
         resp = self.create_s3iamcli_acc(self.account_name, self.email_id)
         s3_obj = resp[1]
         s3_policy_obj = resp[3]
@@ -3727,10 +3697,9 @@ class TestBucketPolicy:
         """
         self.log.info("STARTED: Apply put-bucket-policy on existing bucket")
         bucket_policy = BKT_POLICY_CONF["test_360"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
-        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-            "Resource"].format(self.bucket_name)
+        for i in range(2):
+            bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
+                "Resource"].format(self.bucket_name)
         self.log.info(
             "Step 1 : Creating a bucket with name %s", self.bucket_name)
         resp = S3_OBJ.create_bucket(self.bucket_name)
@@ -3759,10 +3728,9 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Apply put-bucket-policy on non existing bucket")
         bucket_policy = BKT_POLICY_CONF["test_362"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
-        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-            "Resource"].format(self.bucket_name)
+        for i in range(2):
+            bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
+                "Resource"].format(self.bucket_name)
         self.log.info(
             "Step 2: Apply the bucket policy on the non-existing bucket")
         bkt_json_policy = json.dumps(bucket_policy)
@@ -3791,10 +3759,9 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Apply put-bucket-policy without specifying bucket name")
         bucket_policy = BKT_POLICY_CONF["test_363"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
-        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-            "Resource"].format(self.bucket_name)
+        for i in range(2):
+            bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
+                "Resource"].format(self.bucket_name)
         bkt_json_policy = json.dumps(bucket_policy)
         self.log.info("Step 1: Put Bucket policy without bucket name")
         try:
@@ -3886,10 +3853,9 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Apply put-bucket-policy from another account given read permission on bucket")
         test_366_cfg = BKT_POLICY_CONF["test_366"]
-        test_366_cfg["bucket_policy"]["Statement"][0]["Resource"] = test_366_cfg["bucket_policy"]["Statement"][0][
-            "Resource"].format(self.bucket_name)
-        test_366_cfg["bucket_policy"]["Statement"][1]["Resource"] = \
-            test_366_cfg["bucket_policy"]["Statement"][1][
+        for i in range(2):
+            test_366_cfg["bucket_policy"]["Statement"][i]["Resource"] = test_366_cfg[
+                "bucket_policy"]["Statement"][i][
                 "Resource"].format(self.bucket_name)
         result_2 = self.create_s3iamcli_acc(
             self.account_name_2, self.email_id_2)
@@ -3919,11 +3885,9 @@ class TestBucketPolicy:
             "STARTED: Apply put-bucket-policy from "
             "another account given write permission on bucket")
         test_367_cfg = BKT_POLICY_CONF["test_367"]
-        test_367_cfg["bucket_policy"]["Statement"][0]["Resource"] = \
-            test_367_cfg["bucket_policy"]["Statement"][0][
-            "Resource"].format(self.bucket_name)
-        test_367_cfg["bucket_policy"]["Statement"][1]["Resource"] = \
-            test_367_cfg["bucket_policy"]["Statement"][1][
+        for i in range(2):
+            test_367_cfg["bucket_policy"]["Statement"][i]["Resource"] = \
+                test_367_cfg["bucket_policy"]["Statement"][i][
                 "Resource"].format(self.bucket_name)
         result_2 = self.create_s3iamcli_acc(
             self.account_name_2, self.email_id_2)
@@ -3984,11 +3948,9 @@ class TestBucketPolicy:
             "STARTED: Apply put-bucket-policy from "
             "another account given write-acp permission on bucket")
         test_369_cfg = BKT_POLICY_CONF["test_369"]
-        test_369_cfg["bucket_policy"]["Statement"][0]["Resource"] = \
-            test_369_cfg["bucket_policy"]["Statement"][0][
-                "Resource"].format(self.bucket_name)
-        test_369_cfg["bucket_policy"]["Statement"][1]["Resource"] = \
-            test_369_cfg["bucket_policy"]["Statement"][1][
+        for i in range(2):
+            test_369_cfg["bucket_policy"]["Statement"][i]["Resource"] = \
+                test_369_cfg["bucket_policy"]["Statement"][i][
                 "Resource"].format(self.bucket_name)
         result_2 = self.create_s3iamcli_acc(
             self.account_name_2, self.email_id_2)
@@ -4384,10 +4346,9 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Test bucket policy statement Effect Allow and Deny combinations using json")
         bucket_policy = BKT_POLICY_CONF["test_1114"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
-        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-            "Resource"].format(self.bucket_name)
+        for i in range(2):
+            bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
+                "Resource"].format(self.bucket_name)
         user_name = "{0}{1}".format(
             "userpolicy_user", str(
                 time.time()))
@@ -4434,10 +4395,9 @@ class TestBucketPolicy:
             "STARTED: Test * Wildcard for all s3apis in action field of "
             "statement of the json file with combination effect Allow and Deny")
         bucket_policy = BKT_POLICY_CONF["test_1169"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
-        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-            "Resource"].format(self.bucket_name)
+        for i in range(2):
+            bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
+                "Resource"].format(self.bucket_name)
         user_name = "{0}{1}".format(
             "userpolicy_user", str(
                 time.time()))
@@ -4554,12 +4514,9 @@ class TestBucketPolicy:
             "STARTED: Test bucket policy statement Effect Allow, "
             "Deny and None combinations using json")
         bucket_policy = BKT_POLICY_CONF["test_1116"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(self.bucket_name)
-        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-            "Resource"].format(self.bucket_name)
-        bucket_policy["Statement"][2]["Resource"] = bucket_policy["Statement"][2][
-            "Resource"].format(self.bucket_name)
+        for i in range(3):
+            bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
+                "Resource"].format(self.bucket_name)
         self.create_bucket_validate(self.bucket_name)
         self.log.info(
             "Step 2: Applying policy on a bucket %s", self.bucket_name)
