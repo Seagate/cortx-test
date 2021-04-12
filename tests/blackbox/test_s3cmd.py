@@ -31,6 +31,7 @@ import time
 import logging
 import pytest
 
+from commons.constants import const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.utils.config_utils import read_yaml, get_config
@@ -60,6 +61,10 @@ class TestS3cmdClient:
         """
         cls.log = logging.getLogger(__name__)
         cls.log.info("STARTED: setup test suite operations.")
+        resp = system_utils.is_rpm_installed(const.S3CMD)
+        assert_true(resp[0], resp[1])
+        resp = system_utils.path_exists(S3_CFG["s3cfg_path"])
+        assert_true(resp, "config path not exists: {}".format(S3_CFG["s3cfg_path"]))
         cls.common_cfg = S3CMD_CNF["common_cfg"]
         s3cmd_access = get_config(
             S3_CFG["s3cfg_path"], "default", "access_key")

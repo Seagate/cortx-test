@@ -28,9 +28,11 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.configmanager import get_config_wrapper
+from commons.utils import system_utils
 from commons.utils.assert_utils import \
     assert_true, assert_false, assert_in, assert_equal
 from libs.s3 import iam_test_lib
+from libs.s3 import S3_CFG
 from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
 
 IAM_OBJ = iam_test_lib.IamTestLib()
@@ -50,6 +52,8 @@ class TestBlackBox:
         cls.log = logging.getLogger(__name__)
         cls.cfg = IAM_CFG["acc_user_mng"]
         cls.log.info("STARTED: setup test suite operations.")
+        resp = system_utils.path_exists(S3_CFG["aws_config_path"])
+        assert_true(resp, "config path not exists: {}".format(S3_CFG["aws_config_path"]))
         cls.new_access_key = None
         cls.new_secret_key = None
         cls.random_str = None

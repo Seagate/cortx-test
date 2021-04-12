@@ -30,6 +30,7 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.utils import assert_utils
 from commons.utils import system_utils
+from libs.s3 import S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
 
 S3T_OBJ = S3TestLib()
@@ -45,6 +46,9 @@ class TestAwsCliS3Api:
         """
         cls.log = logging.getLogger(__name__)
         cls.log.info("STARTED : Setup operations at test suit level")
+        resp = system_utils.path_exists(S3_CFG["aws_config_path"])
+        assert_utils.assert_true(resp, "config path not exists: {}".format(S3_CFG[
+                                                                               "aws_config_path"]))
         cls.bucket_prefix = "blackboxs3bkt"
         cls.object_name = "blackboxs3obj"
         cls.file_name = "blackboxs3file"
