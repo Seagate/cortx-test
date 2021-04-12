@@ -137,7 +137,7 @@ def error_handler(
         # Mark test error in result
         LOGGER.info(error_code)
         LOGGER.info(error_desc)
-        raise Exception(str(exception_detail))
+        raise exception_detail from Exception
     LOGGER.error("Test FAILURE")
     LOGGER.info(error_code)
     LOGGER.info(error_desc)

@@ -41,7 +41,6 @@ Login To S3 Account
     set suite variable    ${S3_account_name}
     set suite variable    ${s3password}
 
-
 Delete S3 Account And Close Browser
     [Documentation]  This key word is for test case teardown which delete s3 account and close browsers
     [Tags]  Priority_High  S3_test
@@ -162,10 +161,10 @@ TEST-961
     Delete IAMuser  ${username}
     wait for page or element to load  # Need to reload the uses
 
-TEST-17018  # TODO: correct test ID, correct Tag
-    [Documentation]  Test a reset password functionality on clicking "edit" button on IAM user page
-    ...  Reference : https://jts.seagate.com/browse/TEST-17018
-    [Tags]  Priority_High  TEST-17018  R2  IAM_user
+TEST-18197
+    [Documentation]  Test that S3 account user is able to reset password of it's Child IAM user
+    ...  Reference : https://jts.seagate.com/browse/TEST-18197
+    [Tags]  Priority_High  TEST-18197  R2  IAM_user
     ${username}=  Generate New User Name
     ${password}=  Generate New Password
     Click Create IAM User Button
@@ -303,4 +302,3 @@ TEST-13116
     Verify Generate Access Key Button Must Remain Disable
     Delete IAMuser  ${iamusername}
     wait for page or element to load  # Need to reload the uses
-
