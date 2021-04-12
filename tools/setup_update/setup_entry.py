@@ -20,6 +20,8 @@
 #
 """
 Script can be used to insert / update setup in the DB
+Sample command: python tools/setup_update/setup_entry.py --dbuser <username> --dbpassword <password> 
+--new_entry <True/ False>
 """
 import os
 import logging
@@ -27,6 +29,7 @@ from urllib.parse import quote_plus
 import json
 from pymongo import MongoClient
 import argparse
+import ast
 
 parser = argparse.ArgumentParser(description='Update the setup entry')
 parser.add_argument('--fpath',
@@ -37,7 +40,7 @@ parser.add_argument('--dbuser',
 parser.add_argument('--dbpassword',
                     help='database password')
 parser.add_argument('--new_entry',
-                    default=True,
+                    default="True",
                     help='True for new entry , False for update')
 args = parser.parse_args()
 
@@ -53,7 +56,7 @@ DBPSWD = args.dbpassword
 
 
 def insert_new_setup():
-    new_entry_check = args.new_entry
+    new_entry_check = ast.literal_eval(args.new_entry.capitalize())
     LOG = logging.getLogger(__name__)
     with open(FPATH, 'rb') as json_file:
         data = json.loads(json_file.read())
