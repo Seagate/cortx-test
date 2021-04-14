@@ -52,7 +52,6 @@ from core.runner import get_jira_credential
 from core.runner import get_db_credential
 from commons import params
 
-# commenting this until db_user code is integrated from config import CMN_CFG
 
 FAILURES_FILE = "failures.txt"
 LOG_DIR = 'log'
@@ -502,28 +501,31 @@ def pytest_runtest_makereport(item, call):
             try:
                 if item.rep_setup.failed or item.rep_teardown.failed:
                     task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
-                    try:
-                        payload = create_report_payload(item, call, 'FAIL', db_user, db_pass)
-                        REPORT_CLIENT.create_db_entry(**payload)
-                    except requests.exceptions.RequestException as fault:
-                        LOGGER.exception(str(fault))
-                        LOGGER.error("Failed to execute DB update for %s", test_id)
+                    if item.config.option.db_update:
+                        try:
+                            payload = create_report_payload(item, call, 'FAIL', db_user, db_pass)
+                            REPORT_CLIENT.create_db_entry(**payload)
+                        except requests.exceptions.RequestException as fault:
+                            LOGGER.exception(str(fault))
+                            LOGGER.error("Failed to execute DB update for %s", test_id)
                 elif item.rep_setup.passed and (item.rep_call.failed or item.rep_teardown.failed):
                     task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
-                    try:
-                        payload = create_report_payload(item, call, 'FAIL', db_user, db_pass)
-                        REPORT_CLIENT.create_db_entry(**payload)
-                    except requests.exceptions.RequestException as fault:
-                        LOGGER.exception(str(fault))
-                        LOGGER.error("Failed to execute DB update for %s", test_id)
+                    if item.config.option.db_update:
+                        try:
+                            payload = create_report_payload(item, call, 'FAIL', db_user, db_pass)
+                            REPORT_CLIENT.create_db_entry(**payload)
+                        except requests.exceptions.RequestException as fault:
+                            LOGGER.exception(str(fault))
+                            LOGGER.error("Failed to execute DB update for %s", test_id)
                 elif item.rep_setup.passed and item.rep_call.passed and item.rep_teardown.passed:
                     task.update_test_jira_status(item.config.option.te_tkt, test_id, 'PASS')
-                    try:
-                        payload = create_report_payload(item, call, 'PASS', db_user, db_pass)
-                        REPORT_CLIENT.create_db_entry(**payload)
-                    except requests.exceptions.RequestException as fault:
-                        LOGGER.exception(str(fault))
-                        LOGGER.error("Failed to execute DB update for %s", test_id)
+                    if item.config.option.db_update:
+                        try:
+                            payload = create_report_payload(item, call, 'PASS', db_user, db_pass)
+                            REPORT_CLIENT.create_db_entry(**payload)
+                        except requests.exceptions.RequestException as fault:
+                            LOGGER.exception(str(fault))
+                            LOGGER.error("Failed to execute DB update for %s", test_id)
                 elif item.rep_setup.skipped and \
                         (item.rep_teardown.skipped or item.rep_teardown.passed):
                     # Jira reporting of skipped cases does not contain skipped option
@@ -532,7 +534,6 @@ def pytest_runtest_makereport(item, call):
             except Exception as exception:
                 LOGGER.error("Exception %s occurred in reporting for test %s.",
                              str(exception), test_id)
-
     if report.when == 'teardown':
         if item.rep_setup.failed or item.rep_teardown.failed:
             current_file = fail_file
@@ -555,7 +556,6 @@ def pytest_runtest_makereport(item, call):
             else:
                 extra = ""
             f.write(report.nodeid + extra + "\n")
-
 
 def upload_supporting_logs(test_id: str, remote_path: str, log: str):
     """
