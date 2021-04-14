@@ -145,7 +145,7 @@ Verify Miss-Match Password Error Message
     Should be Equal  ${MISSMATCH_PASSWORD_MESSAGE}  ${value}
 
 Validate Password for Admin User
-    [Documentation]  Functionality to validate pawwsord and error msg
+    [Documentation]  Functionality to validate password and error msg
     FOR    ${value}    IN    @{INVALID_PASSWORDS_LIST}
       Log To Console And Report  Inserting values ${value}
       wait until element is visible  ${ADMIN_PASSWORD_FIELD_ID}  timeout=20
@@ -168,7 +168,7 @@ Validate Usernames for Admin User
       Reload Page
     END
 
-Verify elements for Admin User
+Verify fields for Admin User creation
     [Documentation]  This keyword will verify username, password, email
     ...  and confirm password fields
     ${validate_data}=  Create Dictionary  ${ADMIN_USER_FIELD_ID}=text
@@ -181,7 +181,7 @@ Verify elements for Admin User
       Should be equal  ${type}  ${validate_data['${key}']}
     END
 
-Verify mandatory elements of Admin User have asterisk mark
+Verify mandatory fields for Admin User
     [Documentation]  This keyword will verify all mandatory fields have asterisk symbol(*) mark
     ${mandatory_fields}=  Create List  ${ADMIN_USER_USERNAME_LABEL_ID}
     ...  ${ADMIN_USER_PASSWORD_LABEL_ID}

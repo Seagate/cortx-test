@@ -79,14 +79,14 @@ TEST-3605
     ...  Reference : https://jts.seagate.com/browse/TEST-3605
     [Tags]  TEST-3605
     Validate ELUA Success
-    Verify elements for Admin User
+    Verify fields for Admin User creation
 
 TEST-3606
     [Documentation]  Test admin user crate Form all mandatory fields have astreak(*) mark
     ...  Reference : https://jts.seagate.com/browse/TEST-3606
     [Tags]  TEST-3606
     Validate ELUA Success
-    Verify mandatory elements of Admin User have asterisk mark
+    Verify mandatory fields for Admin User
 
 TEST-11425
     [Documentation]  Test that Admin page should have tooltips
