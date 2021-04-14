@@ -18,6 +18,7 @@ RUN git checkout dev
 RUN yum install -y python3-devel
 RUN yum install -y librdkafka
 RUN yum install -y nfs-utils
+RUN python -m pip install pip
 RUN python -m pip install --upgrade pip
 RUN python -m pip install --ignore-installed -r requirements.txt
 RUN python -m pip install awscli
