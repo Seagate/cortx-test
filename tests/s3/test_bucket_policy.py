@@ -73,6 +73,7 @@ class TestBucketPolicy:
         cls.obj_name_prefix = "obj_policy"
         cls.acc_name_prefix = "accpolicy"
         cls.user_name_prefix = "userpolicy"
+        cls.object_name = "objkey_test"
         cls.acl_permission = "private"
         cls.file_size = 10
         cls.account_name = "accpolicy_account"
@@ -112,6 +113,7 @@ class TestBucketPolicy:
         teardown for cleanup
         """
         self.log.info("STARTED: Setup operations.")
+        self.account_list = []
         self.timestamp = time.time()
         self.bucket_name = "bktpolicy-{}".format(str(time.time()))
         self.object_name = "objpolicy-{}".format(str(time.time()))
@@ -157,11 +159,8 @@ class TestBucketPolicy:
             LDAP_USERNAME,
             LDAP_PASSWD)[1]
         iam_accounts = [acc["AccountName"]
-                        for acc in all_accounts if (
-                        self.account_name == acc["AccountName"] or
-                        self.account_name_1 == acc["AccountName"] or
-                        self.account_name_2 == acc["AccountName"])]
-        self.log.info(iam_accounts)
+                        for acc in all_accounts if acc["AccountName"] in self.account_list]
+        self.log.info("Account lists to delete: %s", iam_accounts)
         if iam_accounts:
             for acc in iam_accounts:
                 self.log.debug("Deleting %s account", acc)
@@ -230,7 +229,7 @@ class TestBucketPolicy:
                 obj_name_prefix, str(int(time.time())), i)
             resp = S3_OBJ.put_object(
                 bucket_name,
-                "objkey_test",
+                obj_name,
                 self.file_path)
             assert resp[0], resp[1]
             self.log.info("Created object %s", obj_name)
@@ -256,6 +255,7 @@ class TestBucketPolicy:
             LDAP_USERNAME,
             LDAP_PASSWD)
         assert create_account[0], create_account[1]
+        self.account_list.append(account_name)
         access_key = create_account[1]["access_key"]
         secret_key = create_account[1]["secret_key"]
         canonical_id = create_account[1]["canonical_id"]
@@ -488,7 +488,6 @@ class TestBucketPolicy:
         :param  effect: Policy element "Effect" either (Allow/Deny)
         :param  s3_test_ob: s3 test class object of another account
         :param  test_config: test-case yaml config values
-        :return: None
         """
         bkt_json_policy = eval(json.dumps(test_config["bucket_policy"]))
         dt_condition = bkt_json_policy["Statement"][0]["Condition"]
@@ -630,7 +629,7 @@ class TestBucketPolicy:
                 if acl or grant_read or grant_full_control or grant_read_acp or grant_write_acp:
                     S3_OBJ.put_object_with_acl(
                         bucket_name=bucket_name,
-                        key="objkey_test",
+                        key=obj_name,
                         file_path=self.file_path_2,
                         acl=acl,
                         grant_full_control=grant_full_control,
@@ -640,7 +639,7 @@ class TestBucketPolicy:
                 else:
                     S3_OBJ.put_object(
                         bucket_name,
-                        "objkey_test",
+                        obj_name,
                         self.file_path_2)
             except CTException as error:
                 self.log.error(error.message)
@@ -652,7 +651,7 @@ class TestBucketPolicy:
             if acl or grant_read or grant_full_control or grant_read_acp or grant_write_acp:
                 resp = S3_OBJ.put_object_with_acl(
                     bucket_name=bucket_name,
-                    key="objkey_test",
+                    key=obj_name,
                     file_path=self.file_path_2,
                     acl=acl,
                     grant_full_control=grant_full_control,
@@ -661,7 +660,7 @@ class TestBucketPolicy:
                     grant_write_acp=grant_write_acp)
             else:
                 resp = S3_OBJ.put_object(
-                    bucket_name, "objkey_test", self.file_path_2)
+                    bucket_name, obj_name, self.file_path_2)
             assert resp[0], resp[1]
             self.log.info(
                 "Put object into bucket %s successfully",
@@ -2558,7 +2557,10 @@ class TestBucketPolicy:
         self.log.info("Step 2: Creating multiple accounts")
         resp = IAM_OBJ.create_multiple_accounts(
             2,
-            "accpolicy")
+            self.acc_name_prefix)
+        self.log.info(resp)
+        for i in range(2):
+            self.account_list.append(resp[1][i][1]["account_name"])
         acc_id_1 = resp[1][0][1]["Account_Id"]
         access_key_1 = resp[1][0][1]["access_key"]
         secret_key_1 = resp[1][0][1]["secret_key"]
@@ -4607,7 +4609,9 @@ class TestBucketPolicy:
         self.log.info(
             "Creating two account with name prefix as %s",
             self.account_name)
-        resp = IAM_OBJ.create_multiple_accounts(2, self.account_name)
+        resp = IAM_OBJ.create_multiple_accounts(2, self.acc_name_prefix)
+        for i in range(2):
+            self.account_list.append(resp[1][i][1]["account_name"])
         assert resp[0], resp[1]
         canonical_id_user_1 = resp[1][0][1]["canonical_id"]
         access_key_u1 = resp[1][0][1]["access_key"]
@@ -4680,7 +4684,9 @@ class TestBucketPolicy:
         self.log.info(
             "Creating two account with name prefix as %s",
             self.account_name)
-        resp = IAM_OBJ.create_multiple_accounts(2, self.account_name)
+        resp = IAM_OBJ.create_multiple_accounts(2, self.acc_name_prefix)
+        for i in range(2):
+            self.account_list.append(resp[1][i][1]["account_name"])
         assert resp[0], resp[1]
         canonical_id_user_1 = resp[1][0][1]["canonical_id"]
         access_key_u1 = resp[1][0][1]["access_key"]
@@ -5672,7 +5678,7 @@ _date
         assert resp[0], resp[1]
         self.put_get_bkt_policy(self.bucket_name, bkt_json_policy)
         resp = s3_obj_2.put_object(
-            self.bucket_name, "objkey_test",
+            self.bucket_name, self.object_name,
             self.file_path)
         assert resp[0], resp[1]
         self.log.info("Uploading object to s3 bucket with second account")
@@ -5745,7 +5751,7 @@ _date
         system_utils.create_file(self.file_path, 10)
         resp = s3_obj_2.put_object(
             self.bucket_name,
-            "objkey_test",
+            self.object_name,
             self.file_path)
         assert resp[0], resp[1]
         self.log.info("Object is uploaded from account 2")
@@ -5825,7 +5831,7 @@ _date
         account_id = result[6]
         resp = S3_OBJ.create_bucket_put_object(
             self.bucket_name,
-            "objkey_test",
+            self.object_name,
             self.file_path,
             10)
         assert resp[0], resp[1]
@@ -5878,7 +5884,7 @@ _date
         account_id = result[6]
         resp = S3_OBJ.create_bucket_put_object(
             self.bucket_name,
-            "objkey_test",
+            self.object_name,
             self.file_path,
             10)
         assert resp[0], resp[1]
@@ -5933,7 +5939,7 @@ _date
         canonical_id_2 = result[0]
         resp = S3_OBJ.create_bucket_put_object(
             self.bucket_name,
-            "objkey_test",
+            self.object_name,
             self.file_path,
             10)
         assert resp[0], resp[1]
@@ -5990,7 +5996,7 @@ _date
         canonical_id_2 = result[0]
         resp = S3_OBJ.create_bucket_put_object(
             self.bucket_name,
-            "objkey_test",
+            self.object_name,
             self.file_path,
             10)
         assert resp[0], resp[1]
@@ -6045,6 +6051,8 @@ _date
             self.obj_name_prefix)
         acc_details = IAM_OBJ.create_multiple_accounts(
             2, name_prefix=self.acc_name_prefix)
+        for i in range(2):
+            self.account_list.append(acc_details[1][i][1]["account_name"])
         account1_id = acc_details[1][0][1]["Account_Id"]
         S3_OBJ1 = s3_test_lib.S3TestLib(
             access_key=acc_details[1][0][1]["access_key"],
@@ -6105,6 +6113,8 @@ _date
             self.obj_name_prefix)
         acc_details = IAM_OBJ.create_multiple_accounts(
             2, name_prefix=self.acc_name_prefix)
+        for i in range(2):
+            self.account_list.append(acc_details[1][i][1]["account_name"])
         account1_id = acc_details[1][0][1]["Account_Id"]
         S3_OBJ1 = s3_test_lib.S3TestLib(
             access_key=acc_details[1][0][1]["access_key"],
@@ -6170,6 +6180,8 @@ _date
         acc_details = IAM_OBJ.create_multiple_accounts(
             2,
             name_prefix=self.acc_name_prefix)
+        for i in range(2):
+            self.account_list.append(acc_details[1][i][1]["account_name"])
         account1_id = acc_details[1][0][1]["Account_Id"]
         S3_OBJ1 = s3_test_lib.S3TestLib(
             access_key=acc_details[1][0][1]["access_key"],
@@ -6232,6 +6244,8 @@ _date
         acc_details = IAM_OBJ.create_multiple_accounts(
             2,
             name_prefix=self.acc_name_prefix)
+        for i in range(2):
+            self.account_list.append(acc_details[1][i][1]["account_name"])
         account1_id = acc_details[1][0][1]["Account_Id"]
         S3_OBJ1 = s3_test_lib.S3TestLib(
             access_key=acc_details[1][0][1]["access_key"],
@@ -6295,6 +6309,8 @@ _date
         acc_details = IAM_OBJ.create_multiple_accounts(
             2,
             name_prefix=self.acc_name_prefix)
+        for i in range(2):
+            self.account_list.append(acc_details[1][i][1]["account_name"])
         account1_id = acc_details[1][0][1]["Account_Id"]
         S3_OBJ1 = s3_test_lib.S3TestLib(
             access_key=acc_details[1][0][1]["access_key"],
@@ -6358,6 +6374,8 @@ _date
         acc_details = IAM_OBJ.create_multiple_accounts(
             2,
             name_prefix=self.acc_name_prefix)
+        for i in range(2):
+            self.account_list.append(acc_details[1][i][1]["account_name"])
         account1_id = acc_details[1][0][1]["Account_Id"]
         S3_OBJ1 = s3_test_lib.S3TestLib(
             access_key=acc_details[1][0][1]["access_key"],
@@ -6422,6 +6440,8 @@ _date
         acc_details = IAM_OBJ.create_multiple_accounts(
             2,
             name_prefix=self.acc_name_prefix)
+        for i in range(2):
+            self.account_list.append(acc_details[1][i][1]["account_name"])
         account1_id = acc_details[1][0][1]["Account_Id"]
         S3_OBJ1 = s3_test_lib.S3TestLib(
             access_key=acc_details[1][0][1]["access_key"],
@@ -6484,6 +6504,8 @@ _date
         acc_details = IAM_OBJ.create_multiple_accounts(
             2,
             name_prefix=self.acc_name_prefix)
+        for i in range(2):
+            self.account_list.append(acc_details[1][i][1]["account_name"])
         account1_id = acc_details[1][0][1]["Account_Id"]
         S3_OBJ1 = s3_test_lib.S3TestLib(
             access_key=acc_details[1][0][1]["access_key"],
@@ -6547,6 +6569,8 @@ _date
             self.bucket_name, 2, obj_prefix)
         acc_details = IAM_OBJ.create_multiple_accounts(
             2, self.acc_name_prefix)
+        for i in range(2):
+            self.account_list.append(acc_details[1][i][1]["account_name"])
         account1_id = acc_details[1][0][1]["Account_Id"]
         S3_OBJ1 = s3_test_lib.S3TestLib(
             access_key=acc_details[1][0][1]["access_key"],
@@ -6608,6 +6632,8 @@ _date
             self.bucket_name, 2, obj_prefix)
         acc_details = IAM_OBJ.create_multiple_accounts(
             2, self.acc_name_prefix)
+        for i in range(2):
+            self.account_list.append(acc_details[1][i][1]["account_name"])
         account1_id = acc_details[1][0][1]["Account_Id"]
         S3_OBJ1 = s3_test_lib.S3TestLib(
             access_key=acc_details[1][0][1]["access_key"],
@@ -6670,6 +6696,8 @@ _date
             self.bucket_name, 11, obj_prefix)
         acc_details = IAM_OBJ.create_multiple_accounts(
             2, self.acc_name_prefix)
+        for i in range(2):
+            self.account_list.append(acc_details[1][i][1]["account_name"])
         account1_id = acc_details[1][0][1]["Account_Id"]
         S3_OBJ1 = s3_test_lib.S3TestLib(
             access_key=acc_details[1][0][1]["access_key"],
@@ -6731,6 +6759,8 @@ _date
             self.bucket_name, 11, obj_prefix)
         acc_details = IAM_OBJ.create_multiple_accounts(
             2, self.acc_name_prefix)
+        for i in range(2):
+            self.account_list.append(acc_details[1][i][1]["account_name"])
         account1_id = acc_details[1][0][1]["Account_Id"]
         S3_OBJ1 = s3_test_lib.S3TestLib(
             access_key=acc_details[1][0][1]["access_key"],
@@ -6840,6 +6870,7 @@ _date
             object_lst)
         acc_details = IAM_OBJ.create_multiple_accounts(
             1, self.acc_name_prefix)
+        self.account_list.append(acc_details[1][0][1]["account_name"])
         account1_id = acc_details[1][0][1]["Account_Id"]
         S3_OBJ1 = s3_acl_test_lib.S3AclTestLib(
             access_key=acc_details[1][0][1]["access_key"],
@@ -8009,6 +8040,8 @@ _date
             time.time()))
         acc_details = IAM_OBJ.create_multiple_accounts(
             2, self.acc_name_prefix)
+        for i in range(2):
+            self.account_list.append(acc_details[1][i][1]["account_name"])
         assert acc_details[0], acc_details[1]
         access_key_1 = acc_details[1][0][1]["access_key"]
         secret_key_1 = acc_details[1][0][1]["secret_key"]
@@ -10112,6 +10145,7 @@ _date
             object_lst)
         acc_details = IAM_OBJ.create_multiple_accounts(
             1, self.acc_name_prefix)
+        self.account_list.append(acc_details[1][0][1]["account_name"])
         account1_id = acc_details[1][0][1]["Account_Id"]
         S3_OBJ1 = s3_acl_test_lib.S3AclTestLib(
             access_key=acc_details[1][0][1]["access_key"],
@@ -10184,9 +10218,10 @@ _date
             2,
             obj_prefix,
             object_lst)
-
         acc_details = IAM_OBJ.create_multiple_accounts(
             5, self.acc_name_prefix)
+        for i in range(5):
+            self.account_list.append(acc_details[1][i][1]["account_name"])
         account2_id = acc_details[1][0][1]["Account_Id"]
         account2_cid = acc_details[1][0][1]["canonical_id"]
         account3_cid = acc_details[1][1][1]["canonical_id"]
@@ -10417,6 +10452,8 @@ _date
 
         acc_details = IAM_OBJ.create_multiple_accounts(
             8, self.acc_name_prefix)
+        for i in range(8):
+            self.account_list.append(acc_details[1][i][1]["account_name"])
         account2_id = acc_details[1][0][1]["Account_Id"]
         account2_cid = acc_details[1][0][1]["canonical_id"]
         account3_cid = acc_details[1][1][1]["canonical_id"]
@@ -10757,8 +10794,9 @@ _date
             2,
             obj_prefix,
             object_lst)
-
         acc_details = IAM_OBJ.create_multiple_accounts(2, self.acc_name_prefix)
+        for i in range(2):
+            self.account_list.append(acc_details[1][i][1]["account_name"])
         account2_id = acc_details[1][0][1]["Account_Id"]
         account2_cid = acc_details[1][0][1]["canonical_id"]
         account3_cid = acc_details[1][1][1]["canonical_id"]
@@ -11017,7 +11055,7 @@ _date
                       "Put object in the bucket . - run from account1")
         obj_name = "{0}{1}".format(obj_prefix, str(int(time.time())))
         resp = self.s3test_obj_1.put_object(
-            self.bucket_name, "objkey_test", self.file_path)
+            self.bucket_name, self.object_name, self.file_path)
         assert resp[0], resp[1]
         self.log.info(
             "Step 4 & 5: Put object in the bucket . - run from account1")
@@ -11041,7 +11079,7 @@ _date
                       "Put object in the bucket -run from account1")
         try:
             self.s3test_obj_1.put_object(
-                self.bucket_name, "objkey_test", self.file_path)
+                self.bucket_name, self.object_name, self.file_path)
         except CTException as error:
             self.log.error(error.message)
             assert "AccessDenied" in error.message, error.message
@@ -11715,7 +11753,7 @@ _date
             "upload new objects in the bucket. - run from account1")
         obj_name = "{0}{1}".format(obj_prefix, str(int(time.time())))
         resp = self.s3test_obj_1.put_object(
-            self.bucket_name, "objkey_test", self.file_path)
+            self.bucket_name, self.object_name, self.file_path)
         assert resp[0], resp[1]
         self.log.info(
             "uploaded new object in the bucket. - run from account1")
@@ -11738,7 +11776,7 @@ _date
         self.log.info("Step 10 & 11: Account switch"
                       "Put object in the bucket . - run from account1")
         resp = self.s3test_obj_1.put_object(
-            self.bucket_name, "objkey_test", self.file_path)
+            self.bucket_name, self.object_name, self.file_path)
         assert resp[0], resp[1]
         self.log.info(
             "Step 10 & 11: Put object in the bucket . - run from account1")
