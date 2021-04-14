@@ -59,9 +59,12 @@ DUPLICATE_IAM_USER_ERROR_MSG = "The request was rejected because it attempted to
 # Alerts
 TEST_COMMENT = "Test Comment"
 
-# Preboarding
+# Pre-boarding
 ADMIN_USER_ALREADY_EXISTS_MESSAGE = "Admin user already exists"
-EMAIL_DOMAIN =  "@seagate.com"
+EMAIL_DOMAIN = "@seagate.com"
+ADMIN_USER_TOOLTIP_MSG_ID = "The username must be of minimum 4 characters and maximum 56 characters." \
+    " The username must be alphanumeric and can contain underscore (_) and dash (-)."\
+    " The username must not be 'root' or 'Root'."
 
 # Buckets
 BUCKET_NAME_POLICY_TEXT = "The bucket name must be of minimum 4 characters and maximum 56 characters." \
