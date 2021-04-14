@@ -27,9 +27,12 @@ import os
 import logging
 import random
 import boto3
+from boto3.exceptions import S3UploadFailedError, ResourceNotExistsError
+from botocore.exceptions import ClientError
 from botocore.client import Config
 from locust import events
 from scripts.locust import LOCUST_CFG
+from commons.utils import system_utils
 
 LOGGER = logging.getLogger(__name__)
 
@@ -108,7 +111,7 @@ class LocustUtils:
                     response_time=self.total_time(start_time),
                     response_length=10
                 )
-            except BaseException as error:
+            except ClientError as error:
                 LOGGER.error("Create bucket failed with error: %s", error)
                 events.request_failure.fire(
                     request_type="put",
@@ -138,7 +141,7 @@ class LocustUtils:
                     response_time=self.total_time(start_time),
                     response_length=10,
                 )
-            except BaseException as error:
+            except ClientError as error:
                 LOGGER.error("Delete bucket failed with error: %s", error)
                 events.request_failure.fire(
                     request_type="delete",
@@ -154,9 +157,9 @@ class LocustUtils:
         :param bucket_name: Name of the bucket
         :param object_size: Size of the object
         """
-        if os.path.exists(OBJ_NAME):
+        if system_utils.path_exists(OBJ_NAME):
             try:
-                os.remove(OBJ_NAME)
+                system_utils.remove_file(OBJ_NAME)
             except OSError as error:
                 LOGGER.error(error)
         self.create_file(object_size)
@@ -172,7 +175,7 @@ class LocustUtils:
                 response_time=self.total_time(start_time),
                 response_length=10
             )
-        except BaseException as error:
+        except (ClientError, S3UploadFailedError, FileNotFoundError)as error:
             LOGGER.error("Upload object failed with error: %s", error)
             events.request_failure.fire(
                 request_type="put",
@@ -187,21 +190,21 @@ class LocustUtils:
         Method to download any random object from the given bucket
         :param bucket_name: Name of the bucket
         """
-        bucket = self.s3_resource.Bucket(bucket_name)
-        objects = [obj.key for obj in bucket.objects.all()]
-        if len(objects) > 1:
-            start_time = time.time()
-            if os.path.exists(GET_OBJ_PATH):
-                try:
-                    os.remove(GET_OBJ_PATH)
-                except OSError as error:
-                    LOGGER.error(error)
-            obj_name = random.choice(objects)
-            LOGGER.info(
-                "Starting downloading the object %s form bucket %s",
-                obj_name,
-                bucket)
-            try:
+        start_time = time.time()
+        try:
+            bucket = self.s3_resource.Bucket(bucket_name)
+            objects = [obj.key for obj in bucket.objects.all()]
+            if len(objects) > 1:
+                if system_utils.path_exists(GET_OBJ_PATH):
+                    try:
+                        system_utils.remove_file(GET_OBJ_PATH)
+                    except OSError as error:
+                        LOGGER.error(error)
+                obj_name = random.choice(objects)
+                LOGGER.info(
+                    "Starting downloading the object %s form bucket %s",
+                    obj_name,
+                    bucket)
                 bucket.download_file(obj_name, GET_OBJ_PATH)
                 LOGGER.info(
                     "The %s has been downloaded successfully at %s ",
@@ -213,31 +216,31 @@ class LocustUtils:
                     response_time=self.total_time(start_time),
                     response_length=10
                 )
-            except BaseException as error:
-                LOGGER.error("Download object failed with error: %s", error)
-                events.request_failure.fire(
-                    request_type="get",
-                    name="download_object",
-                    response_time=self.total_time(start_time),
-                    response_length=10,
-                    exception=error
-                )
+        except ClientError as error:
+            LOGGER.error("Download object failed with error: %s", error)
+            events.request_failure.fire(
+                request_type="get",
+                name="download_object",
+                response_time=self.total_time(start_time),
+                response_length=10,
+                exception=error
+            )
 
     def delete_object(self, bucket_name: str):
         """
         Method to delete any random object from given bucket
         :param bucket_name: Name of the bucket
         """
-        bucket = self.s3_resource.Bucket(bucket_name)
-        objects = [obj.key for obj in bucket.objects.all()]
-        if len(objects) > 1:
-            start_time = time.time()
-            obj_name = random.choice(objects)
-            LOGGER.info(
-                "Deleting object %s from the bucket %s",
-                obj_name,
-                bucket)
-            try:
+        start_time = time.time()
+        try:
+            bucket = self.s3_resource.Bucket(bucket_name)
+            objects = [obj.key for obj in bucket.objects.all()]
+            if len(objects) > 1:
+                obj_name = random.choice(objects)
+                LOGGER.info(
+                    "Deleting object %s from the bucket %s",
+                    obj_name,
+                    bucket)
                 self.s3_resource.Object(bucket_name, obj_name).delete()
                 events.request_success.fire(
                     request_type="delete",
@@ -245,12 +248,12 @@ class LocustUtils:
                     response_time=self.total_time(start_time),
                     response_length=10
                 )
-            except BaseException as error:
-                LOGGER.error("Delete object failed with error: %s", error)
-                events.request_failure.fire(
-                    request_type="delete",
-                    name="delete_object",
-                    response_time=self.total_time(start_time),
-                    response_length=10,
-                    exception=error
-                )
+        except ResourceNotExistsError as error:
+            LOGGER.error("Delete object failed with error: %s", error)
+            events.request_failure.fire(
+                request_type="delete",
+                name="delete_object",
+                response_time=self.total_time(start_time),
+                response_length=10,
+                exception=error
+            )
