@@ -18,10 +18,10 @@ RUN git checkout dev
 RUN yum install -y python3-devel
 RUN yum install -y librdkafka
 RUN yum install -y nfs-utils
-RUN python -m pip install pip
-RUN python -m pip install --upgrade pip
-RUN python -m pip install --ignore-installed -r requirements.txt
-RUN python -m pip install awscli
+RUN python3.7 -m pip install pip
+RUN python3.7 -m pip install --upgrade pip
+RUN python3.7 -m pip install --ignore-installed -r requirements.txt
+RUN python3.7 -m pip install awscli
 #RUN aws configure set aws_access_key_id $ACCESS_KEY
 #RUN aws configure set aws_secret_access_key $SECRET_KEY
 #RUN aws configure set default.region US
