@@ -53,8 +53,10 @@ class LocustUtils:
         secret_key = os.getenv(
             'AWS_SECRET_ACCESS_KEY',
             LOCUST_CFG['default']['SECRET_KEY'])
-        endpoint_url = LOCUST_CFG['default']['ENDPOINT_URL']
-        s3_cert_path = LOCUST_CFG['default']['S3_CERT_PATH']
+        endpoint_url = os.getenv(
+            'ENDPOINT_URL',LOCUST_CFG['default']['ENDPOINT_URL'])
+        s3_cert_path = os.getenv(
+            'CA_CERT',LOCUST_CFG['default']['S3_CERT_PATH'])
         max_pool_connections = int(
             LOCUST_CFG['default']['MAX_POOL_CONNECTIONS'])
         self.bucket_list = list()
@@ -233,14 +235,15 @@ class LocustUtils:
                 "Download object is not possible as key is not present on %s",
                 bucket_name)
         except ClientError as error:
-            LOGGER.error("Download object failed with error: %s", error)
-            events.request_failure.fire(
-                request_type="get",
-                name="download_object",
-                response_time=self.total_time(start_time),
-                response_length=10,
-                exception=error
-            )
+            if "HeadObject operation: Not Found" not in error.args[0]:
+                LOGGER.error("Download object failed with error: %s", error)
+                events.request_failure.fire(
+                    request_type="get",
+                    name="download_object",
+                    response_time=self.total_time(start_time),
+                    response_length=10,
+                    exception=error
+                )
 
     def delete_object(self, bucket_name: str):
         """
@@ -265,6 +268,9 @@ class LocustUtils:
                         response_time=self.total_time(start_time),
                         response_length=10
                     )
+                    LOGGER.info(
+                        "%s object deleted succesfully from the bucket %s",
+                        obj_name, bucket)
                 else:
                     LOGGER.info(
                         "The %s has been already deleted successfully from %s",

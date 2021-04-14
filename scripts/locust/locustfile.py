@@ -83,4 +83,3 @@ class LocustUser(HttpUser):
         for local_obj in (
                 locust_utils.OBJ_NAME, locust_utils.GET_OBJ_PATH):
             UTILS_OBJ.delete_local_obj(local_obj)
-
