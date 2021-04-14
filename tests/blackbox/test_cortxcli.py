@@ -128,7 +128,7 @@ class TestBlackBox:
                 self.log.info("Deleted %s account", acc)
         self.log.info("ENDED: Teardown Operations")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7177")
     @CTFailOn(error_handler)
     def test_2393(self):
@@ -149,7 +149,7 @@ class TestBlackBox:
             "Step 2: Verified that new account is created successfully")
         self.log.info("ENDED: create account using s3iamcli")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7178")
     @CTFailOn(error_handler)
     def test_2394(self):
@@ -174,7 +174,7 @@ class TestBlackBox:
             "Step 2: Verified that new account is created successfully")
         self.log.info("ENDED: List account using s3iamcli")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7179")
     @CTFailOn(error_handler)
     def test_2399(self):
@@ -212,7 +212,7 @@ class TestBlackBox:
             conf_blackbox["test_2399"]["total_accounts"])
         self.log.info("ENDED: Create 'N' No of Accounts")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7180")
     @CTFailOn(error_handler)
     def test_2396(self):
@@ -241,7 +241,7 @@ class TestBlackBox:
         self.log.info(
             "ENDED: create account with existing name using s3iamcli")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7181")
     @CTFailOn(error_handler)
     def test_2395(self):
@@ -264,7 +264,7 @@ class TestBlackBox:
             conf_blackbox["acc_user_mng"]["account_name"])
         self.log.info("ENDED: Delete Account using s3iamcli")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7125")
     @CTFailOn(error_handler)
     def test_2430(self):
@@ -337,7 +337,7 @@ class TestBlackBox:
         self.log.info(
             "ENDED: CRUD operations with valid login credentials using s3iamcli")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7183")
     @CTFailOn(error_handler)
     def test_2400(self):
@@ -364,7 +364,7 @@ class TestBlackBox:
         self.log.info("Step 2: Listed users and verified user is created")
         self.log.info("ENDED: create user using s3iamcli")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7184")
     @CTFailOn(error_handler)
     def test_2406(self):
@@ -397,7 +397,7 @@ class TestBlackBox:
         self.log.info("Step 2: Created access key for the user")
         self.log.info("ENDED: create access key for user using cortxcli")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7185")
     @CTFailOn(error_handler)
     def test_2405(self):
@@ -443,7 +443,7 @@ class TestBlackBox:
                       conf_blackbox["test_2405"]["total_users"])
         self.log.info("ENDED: max num of users supported using cortxcli")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7186")
     @CTFailOn(error_handler)
     def test_2404(self):
@@ -480,7 +480,7 @@ class TestBlackBox:
         self.log.info(
             "ENDED: creating user with existing user name using cortxcli")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7187")
     @CTFailOn(error_handler)
     def test_2403(self):
@@ -508,7 +508,7 @@ class TestBlackBox:
         self.log.info("Step 2: Deleted user successfully")
         self.log.info("ENDED: Delete user using cortxcli")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7188")
     @CTFailOn(error_handler)
     def test_2402(self):
@@ -547,7 +547,7 @@ class TestBlackBox:
         self.log.info("Step 3: Listed users and verified user name is updated")
         self.log.info("ENDED: Update user using cortxcli")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7190")
     @CTFailOn(error_handler)
     def test_2401(self):
@@ -575,7 +575,7 @@ class TestBlackBox:
             "Step 2: Listed users and verified user details are listed")
         self.log.info("ENDED: list user using cortxcli")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7193")
     @CTFailOn(error_handler)
     def test_2398(self):
@@ -647,7 +647,7 @@ class TestBlackBox:
         self.log.info(
             "ENDED: login to account with invalid cred and perform s3 crud ops using cortxcli")
 
-    @pytest.mark.s3
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7195")
     @CTFailOn(error_handler)
     def test_2397(self):
@@ -720,8 +720,8 @@ class TestBlackBox:
         self.log.info(
             "ENDED: login to account with valid creds and perform s3 crud ops using cortxcli")
 
-    @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-7196")
     @CTFailOn(error_handler)
     def test_2410(self):
         """Delete accesskey using cortxcli."""
@@ -773,8 +773,8 @@ class TestBlackBox:
         self.log.info("Step 6: Listed access key of the user successfully")
         self.log.info("ENDED: delete accesskey using cortxcli")
 
-    @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-7197")
     @CTFailOn(error_handler)
     def test_2409(self):
         """Update accesskey with inactive mode using cortxcli."""
@@ -832,8 +832,8 @@ class TestBlackBox:
         self.log.info(
             "ENDED: update accesskey with inactive mode using cortxcli")
 
-    @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-7198")
     @CTFailOn(error_handler)
     def test_2407(self):
         """List accesskey for User using cortxcli."""
@@ -880,8 +880,8 @@ class TestBlackBox:
         self.log.info("Step 5: Listed access key of the user successfully")
         self.log.info("ENDED: list accesskey for User using cortxcli")
 
-    @pytest.mark.s3
-    @pytest.mark.tags("")
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-7192")
     @CTFailOn(error_handler)
     def test_2408(self):
         """Update accesskey with active mode using cortxcli."""

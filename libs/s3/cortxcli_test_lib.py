@@ -88,10 +88,10 @@ class CortxcliAlerts(CortxCliAlerts):
 
 
 class CortxCliTestLib(CortxcliS3AccountOperations,
-                    CortxcliS3BucketOperations,
-                    CortxcliIamUser,
-                    CortxcliCsmUser,
-                    IamTestLib):
+                      CortxcliS3BucketOperations,
+                      CortxcliIamUser,
+                      CortxcliCsmUser,
+                      IamTestLib):
     """Class for performing cortxcli operations."""
 
     def __init__(
@@ -517,33 +517,20 @@ class CortxCliTestLib(CortxcliS3AccountOperations,
         :param account_name: Name of the account.
         :return: (Boolean, response)
         """
-        # LOGGER.info(
-        #     "Reset account access key and delete that account")
-        # response = self.reset_account_access_key_cortxcli(account_name)
-        # LOGGER.debug(response)
-        # if not response[0]:
-        #     return False, response
-        # access_key = response[1]["AccessKeyId"]
-        # secret_key = response[1]["SecretKey"]
-        # LOGGER.debug(access_key, secret_key)
         result = self.delete_account_cortxcli(
             account_name=account_name)
 
         return result
 
-    def change_user_password(self,
-                             user_name: str = None,
-                             password: str = None,
-                             password_reset: bool = False) -> tuple:
+    def change_user_password_boto3(self,
+                                   user_name: str = None,
+                                   password: str = None,
+                                   password_reset: bool = False) -> tuple:
         """
         Change password for IAM user.
 
         :return: change user password response.
         """
-        # Checking, cortxcli reset password
-        # s3iamusers reset_password
-        # Check boto3, update_user_login_profile
-
         return self.update_user_login_profile_boto3(user_name,
                                                     password,
                                                     password_reset=password_reset)
@@ -555,7 +542,7 @@ class CortxCliTestLib(CortxcliS3AccountOperations,
             **kwargs) -> tuple:
         """
         This function will update password for specified s3 account to new_password using CORTX CLI.
-        :param account_name: Name of the s3 account whose password is to be update
+        :param iamuser_name:
         :param new_password: New password for s3 account
         :keyword reset_password: Y/n
         :return: True/False and Response returned by CORTX CLI
@@ -576,8 +563,8 @@ class CortxCliTestLib(CortxcliS3AccountOperations,
                         return True, response
                 return False, response
 
-
-    def create_iamuser_access_key(self, user_name: str = None) -> tuple:
+    @staticmethod
+    def create_iamuser_access_key(user_name: str = None) -> tuple:
         """
         Creating access key for given user.
 
@@ -589,7 +576,6 @@ class CortxCliTestLib(CortxcliS3AccountOperations,
         LOGGER.info(response)
         return status, response
 
-
     def create_bucket_cortx_cli(
             self,
             bucket_name: str) -> tuple:
@@ -599,7 +585,7 @@ class CortxCliTestLib(CortxcliS3AccountOperations,
         :return: True/False and response returned by CORTX CLI
         """
         try:
-            response = super().create_bucket_cortx_cli()
+            response = super().create_bucket_cortx_cli(bucket_name)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          CortxCliTestLib.create_bucket_cortx_cli.__name__,
