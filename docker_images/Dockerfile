@@ -15,9 +15,7 @@ RUN yum install -y git
 RUN git clone https://$GIT_TOKEN@github.com/Seagate/cortx-test.git
 WORKDIR /cortx-test
 RUN git checkout dev
-RUN yum install -y python3-devel
-RUN yum install -y librdkafka
-RUN yum install -y nfs-utils
+RUN yum install -y python3-devel librdkafka nfs-utils python3-tkinter
 RUN python3.7 -m pip install pip
 RUN python3.7 -m pip install --upgrade pip
 RUN python3.7 -m pip install pysqlite3
