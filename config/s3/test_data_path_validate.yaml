@@ -4,10 +4,7 @@ data_path:
     bkt_permission: "private"
     email_suffix: "@seagate.com"
     cmd_msg: "core."
-    s3bench_path: "/root/go/bin"
-    endpoint: "https://s3.seagate.com"
-    s3bench_cmd: "go run s3bench -accessKey={} -accessSecret={} -bucket={} -endpoint={} -numClients={} -numSamples={} -objectNamePrefix={} -objectSize={}"
-    obj_size: 1024
+    obj_size: 4Kb
     clients: 100
     samples: 100
 

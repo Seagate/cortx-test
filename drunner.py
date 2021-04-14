@@ -179,7 +179,7 @@ def run(opts: dict) -> None:
     rev_tag_map = dict()  # mark: dict(parallel=set(), sequential=set())}
     skip_marks = ("dataprovider", "test", "run", "skip", "usefixtures",
                   "filterwarnings", "skipif", "xfail", "parametrize")
-    base_components_marks = ('csm', 's3', 'ha', 'ras', 'stress', 'combinational')
+    base_components_marks = ('csm', 's3_ops', 'ha', 'ras', 'stress', 'combinational')
     skip_test = list()
     selected_tag_map = dict()
     meta_file = os.path.join(log_home, 'te_meta.json')
