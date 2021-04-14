@@ -38,29 +38,45 @@ LOGGER = logging.getLogger(__name__)
 
 
 class CortxcliS3AccountOperations(CortxCliS3AccountOperations):
-    """Overriding class for S3 Account Operations."""
+    """Overriding class for S3 Account Operations.
+
+    This is a subclass to use functionality of S3 Account Operations.
+    Class is open for extension.
+    """
 
     def __init__(
             self, session_obj: object = None):
-        """Constructor."""
+        """Constructor for s3 account operations."""
         super().__init__(session_obj=session_obj)
 
 
 class CortxcliS3BucketOperations(CortxCliS3BucketOperations):
-    """Overriding class for cortxcli s3 bucket operations."""
+    """Overriding class for cortxcli s3 bucket operations.
+
+    This class is used to have s3 Bucket Operations.
+    """
 
     def __init__(
             self, session_obj: object = None):
-        """Constructor."""
+        """Constructor for s3 bucket operations.
+
+        :param object session_obj: session object of host connection if already established.
+        """
         super().__init__(session_obj=session_obj)
 
 
 class CortxcliIamUser(CortxCliIamUser):
-    """Overriding class for cortxcli Iam User."""
+    """Overriding class for cortxcli Iam User.
+
+    class is open for future Implementation and Extension.
+    """
 
     def __init__(
             self, session_obj: object = None):
-        """Constructor."""
+        """Constructor for Iam user operations.
+
+        :param object session_obj: session object of host connection if already established
+        """
         super().__init__(session_obj=session_obj)
 
 
@@ -69,18 +85,24 @@ class CortxcliCsmUser(CortxCliCsmUser):
 
     def __init__(
             self, session_obj: object = None):
-        """Constructor."""
+        """Constructor for csm user.
+
+        :param object session_obj: session object of host connection if already established
+        """
         super().__init__(session_obj=session_obj)
 
 
 class CortxcliAlerts(CortxCliAlerts):
-    """Methods for performing operations on alerts using cortxcli."""
+    """Methods for performing operations on alerts using cortxcli.
+
+    Class is open for future Implementation and extension
+    """
 
     def __init__(self, session_obj: object = None):
         """
         Method initializes members of CortxCliAlerts.
 
-        :param object session_obj: session object of host connection if already established
+        :param object session_obj: session object of host connection if already established.
         """
         super().__init__(session_obj=session_obj)
 
@@ -94,7 +116,10 @@ class CortxCliTestLib(CortxcliS3AccountOperations,
 
     def __init__(
             self, session_obj: object = None):
-        """Constructor."""
+        """Constructor for cortxcli test library.
+
+        :param object session_obj: session object of host connection if already established.
+        """
         super().__init__(session_obj=session_obj)
 
     def login_cortx_cli(
@@ -243,7 +268,7 @@ class CortxCliTestLib(CortxcliS3AccountOperations,
         :keyword reset_password: Y/n
         :return: True/False and Response returned by CORTX CLI
         """
-        # inhirit from csm cli
+        # inherit from csm cli
         try:
             response = super(
                 CortxCliTestLib,
@@ -259,43 +284,6 @@ class CortxCliTestLib(CortxcliS3AccountOperations,
             raise CTException(err.S3_ERROR, error.args[0])
 
         return response
-
-    def get_s3account_details_cortxcli(
-            self,
-            account_name=None,
-            account_email=None,
-            password=None,
-            response=None):
-        """
-        Method will create s3 account using cortxcli and returns access and secret key.
-
-        :param response:
-        :param str account_name: Name of s3 account user to be created.
-        :param str account_email: Account email for account creation.
-        :param str password: Password to create s3 account user.
-        :return: (True/False, Response)
-        :rtype: tuple
-        """
-        acc_details = dict()
-        if response is None:
-            response = self.create_s3account_cortx_cli(
-                account_name=account_name,
-                account_email=account_email,
-                password=password)[1]
-
-        if account_name in response:
-            response = self.split_table_response(response)[0]
-            acc_details["account_name"] = response[1]
-            acc_details["account_email"] = response[2]
-            acc_details["account_id"] = response[3]
-            acc_details["canonical_id"] = response[4]
-            acc_details["access_key"] = response[5]
-            acc_details["secret_key"] = response[6]
-            LOGGER.info("Account Details: %s", acc_details)
-            self.logout_cortx_cli()
-            return True, acc_details
-
-        return False, response
 
     def create_get_s3account_details_cortxcli(
             self,

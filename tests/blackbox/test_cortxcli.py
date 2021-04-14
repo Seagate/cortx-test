@@ -46,7 +46,7 @@ iam_obj = iam_test_lib.IamTestLib()
 conf_blackbox = read_yaml("config/blackbox/test_cortxcli.yaml")[1]
 
 
-class TestBlackBox:
+class TestCortxcli:
     """Blackbox Testsuite."""
 
     iam_user_obj = None
