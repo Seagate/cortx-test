@@ -33,8 +33,6 @@ from libs.csm.cli.cli_csm_user import CortxCliCsmUser
 from libs.csm.cli.cli_alerts_lib import CortxCliAlerts
 from libs.s3.iam_test_lib import IamTestLib
 
-# from libs.s3.iam_core_lib import IamLib
-# from config import CMN_CFG
 
 LOGGER = logging.getLogger(__name__)
 

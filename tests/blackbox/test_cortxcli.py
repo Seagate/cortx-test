@@ -26,6 +26,7 @@ import pytest
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
+from commons.utils import assert_utils
 from commons.utils.config_utils import read_yaml
 from commons.utils.system_utils import create_file
 from commons.utils.assert_utils import assert_true, assert_equal, assert_greater_equal, assert_in
@@ -38,11 +39,9 @@ from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
 from libs.csm.cli.cortxcli_iam_user import CortxCliIamUser
 
 from libs.s3 import s3_test_lib, iam_test_lib
-from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
 
 s3_test_obj = s3_test_lib.S3TestLib()
 iam_obj = iam_test_lib.IamTestLib()
-
 
 conf_blackbox = read_yaml("config/blackbox/test_cortxcli.yaml")[1]
 
@@ -74,7 +73,7 @@ class TestBlackBox:
         cls.log.info("ENDED : Setup operations at test suit level")
 
     @classmethod
-    def create_account(cls, acc_name, email_id=None):
+    def create_account(cls, acc_name, email_id=None, acc_password=None):
         """Function will create IAM account."""
         if email_id is None:
             acc_email = "{}{}".format(acc_name, conf_blackbox["acc_user_mng"]["email_id"])
@@ -83,8 +82,22 @@ class TestBlackBox:
         return cls.iam_user_obj.create_s3account_cortx_cli(
             acc_name,
             acc_email,
-            LDAP_USERNAME,
-            LDAP_PASSWD)
+            acc_password)
+
+    def setup_method(self):
+        """
+        Setup all the states required for execution of each test case in this test suite.
+
+        It is performing below operations as pre-requisites
+            - Initializes common variables
+            - Login to CORTX CLI as admin user
+        """
+        self.log.info("STARTED : Setup operations at test function level")
+        self.s3acc_name = "{}_{}".format(self.s3acc_name, int(time.time()))
+        self.s3acc_email = self.s3acc_email.format(self.s3acc_name)
+        login = self.s3acc_obj.login_cortx_cli()
+        assert_utils.assert_equals(True, login[0], login[1])
+        self.log.info("ENDED : Setup operations at test function level")
 
     def teardown_method(self):
         """
@@ -133,12 +146,12 @@ class TestBlackBox:
     @CTFailOn(error_handler)
     def test_2393(self):
         """Create account using s3iamcli."""
-        self.log.info("STARTED: create account using s3iamcli")
+        self.log.info("STARTED: create account using cortxcli")
         acc_name = "{}{}".format(conf_blackbox["acc_user_mng"]["account_name"],
                                  str(int(time.time())))
         self.log.info(
             "Step 1: Creating a new account with name %s", acc_name)
-        resp = self.create_account(acc_name)
+        resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 1: Created a new account with name %s", acc_name)
@@ -159,7 +172,7 @@ class TestBlackBox:
                                  str(int(time.time())))
         self.log.info(
             "Step 1: Creating a new account with name %s", acc_name)
-        resp = self.create_account(acc_name)
+        resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 1: Created a new account with name %s", acc_name)
@@ -191,7 +204,7 @@ class TestBlackBox:
             account_name = f"{acc_name}{account}{account}{str(int(time.time()))}"
             email_id = f"{acc_name}{account}{account}@seagate.com"
             resp = self.create_account(
-                account_name, email_id)
+                account_name, email_id, self.s3acc_password)
             assert_true(resp[0], resp[1])
             access_keys.append(resp[1]["access_key"])
             secret_keys.append(resp[1]["secret_key"])
@@ -223,14 +236,14 @@ class TestBlackBox:
                                  str(int(time.time())))
         self.log.info(
             "Step 1: Creating a new account with name %s", acc_name)
-        resp = self.create_account(acc_name)
+        resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 1: Created a new account with name %s", acc_name)
         self.log.info(
             "Step 2: Creating another account with existing account name")
         try:
-            self.create_account(acc_name)
+            self.create_account(acc_name, acc_password=self.s3acc_password)
         except CTException as error:
             assert_in(
                 conf_blackbox["test_2396"]["err_message"],
@@ -251,7 +264,7 @@ class TestBlackBox:
                                  str(int(time.time())))
         self.log.info(
             "Step 1: Creating a new account with name %s", acc_name)
-        resp = self.create_account(acc_name)
+        resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 1: Created a new account with name %s", acc_name)
@@ -276,7 +289,7 @@ class TestBlackBox:
                                  str(int(time.time())))
         usr_name = "{}{}".format(
             conf_blackbox["acc_user_mng"]["user_name"], str(int(time.time())))
-        resp = self.create_account(acc_name)
+        resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
@@ -348,7 +361,7 @@ class TestBlackBox:
                                  str(int(time.time())))
         usr_name = "{}{}".format(
             conf_blackbox["acc_user_mng"]["user_name"], str(int(time.time())))
-        resp = self.create_account(acc_name)
+        resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
@@ -374,7 +387,7 @@ class TestBlackBox:
                                  str(int(time.time())))
         usr_name = "{}{}".format(
             conf_blackbox["acc_user_mng"]["user_name"], str(int(time.time())))
-        resp = self.create_account(acc_name)
+        resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
@@ -408,7 +421,7 @@ class TestBlackBox:
                                  str(int(time.time())))
         usr_name = "{}{}".format(
             conf_blackbox["acc_user_mng"]["user_name"], str(int(time.time())))
-        resp = self.create_account(acc_name)
+        resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
@@ -455,7 +468,7 @@ class TestBlackBox:
                                  str(int(time.time())))
         usr_name = "{}{}".format(
             conf_blackbox["acc_user_mng"]["user_name"], str(int(time.time())))
-        resp = self.create_account(acc_name)
+        resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
@@ -491,7 +504,7 @@ class TestBlackBox:
                                  str(int(time.time())))
         usr_name = "{}{}".format(
             conf_blackbox["acc_user_mng"]["user_name"], str(int(time.time())))
-        resp = self.create_account(acc_name)
+        resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
@@ -519,7 +532,7 @@ class TestBlackBox:
                                  str(int(time.time())))
         usr_name = "{}{}".format(
             conf_blackbox["acc_user_mng"]["user_name"], str(int(time.time())))
-        resp = self.create_account(acc_name)
+        resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
@@ -558,7 +571,7 @@ class TestBlackBox:
                                  str(int(time.time())))
         usr_name = "{}{}".format(
             conf_blackbox["acc_user_mng"]["user_name"], str(int(time.time())))
-        resp = self.create_account(acc_name)
+        resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
@@ -585,7 +598,7 @@ class TestBlackBox:
         self.log.info("Step 1: Create new account")
         acc_name = "{}{}".format(conf_blackbox["acc_user_mng"]["account_name"],
                                  str(int(time.time())))
-        resp = self.create_account(acc_name)
+        resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         self.log.info("Step 1: Created new account")
         # Dummy access and secret keys
@@ -659,7 +672,7 @@ class TestBlackBox:
                                  str(int(time.time())))
         usr_name = "{}{}".format(
             conf_blackbox["acc_user_mng"]["user_name"], str(int(time.time())))
-        resp = self.create_account(acc_name)
+        resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
@@ -732,7 +745,7 @@ class TestBlackBox:
             conf_blackbox["acc_user_mng"]["user_name"], str(int(time.time())))
         self.log.info(
             "Step 1: Creating a new account with name %s", acc_name)
-        resp = self.create_account(acc_name)
+        resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
@@ -787,7 +800,7 @@ class TestBlackBox:
             conf_blackbox["acc_user_mng"]["user_name"], str(int(time.time())))
         self.log.info(
             "Step 1: Creating a new account with name %s", acc_name)
-        resp = self.create_account(acc_name)
+        resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
@@ -845,13 +858,10 @@ class TestBlackBox:
         self.log.info(
             "Step 1: Creating a new account with name %s",
             conf_blackbox["acc_user_mng"]["account_name"])
-        resp = self.create_account(acc_name)
+        resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
-        # self.iam_user_obj = iam_test_lib.IamTestLib(
-        #     access_key=access_key,
-        #     secret_key=secret_key)
         self.log.info(
             "Step 1: Created a new account with name %s", acc_name)
         self.log.info(
@@ -894,13 +904,10 @@ class TestBlackBox:
             conf_blackbox["acc_user_mng"]["user_name"], str(int(time.time())))
         self.log.info(
             "Step 1: Creating a new account with name %s", acc_name)
-        resp = self.create_account(acc_name)
+        resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
-        # self.iam_user_obj = iam_test_lib.IamTestLib(
-        #     access_key=access_key,
-        #     secret_key=secret_key)
         self.log.info(
             "Step 1: Created a new account with name %s", acc_name)
         self.log.info(
