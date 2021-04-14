@@ -88,9 +88,10 @@ class CortxcliAlerts(CortxCliAlerts):
 
 
 class CortxCliTestLib(CortxcliS3AccountOperations,
-                      CortxcliIamUser,
-                      CortxcliCsmUser,
-                      IamTestLib):
+                    CortxcliS3BucketOperations,
+                    CortxcliIamUser,
+                    CortxcliCsmUser,
+                    IamTestLib):
     """Class for performing cortxcli operations."""
 
     def __init__(
@@ -543,8 +544,9 @@ class CortxCliTestLib(CortxcliS3AccountOperations,
         # s3iamusers reset_password
         # Check boto3, update_user_login_profile
 
-        return self.update_user_login_profile_boto3(
-            user_name, password, password_reset=password_reset)
+        return self.update_user_login_profile_boto3(user_name,
+                                                    password,
+                                                    password_reset=password_reset)
 
     def reset_iamuser_password(
             self,
@@ -572,5 +574,36 @@ class CortxCliTestLib(CortxcliS3AccountOperations,
                     if iamuser_name in response:
                         LOGGER.info("Response returned: \n%s", response)
                         return True, response
+                return False, response
 
-        return False, response
+
+    def create_iamuser_access_key(self, user_name: str = None) -> tuple:
+        """
+        Creating access key for given user.
+
+        :param user_name: Name of the user.
+        :return: (Boolean, response).
+        """
+        LOGGER.info("Creating %s user access key.", user_name)
+        status, response = IamTestLib.create_access_key(user_name)
+        LOGGER.info(response)
+        return status, response
+
+
+    def create_bucket_cortx_cli(
+            self,
+            bucket_name: str) -> tuple:
+        """
+        This function will create a bucket using CORTX CLI
+        :param bucket_name: New bucket's name
+        :return: True/False and response returned by CORTX CLI
+        """
+        try:
+            response = super().create_bucket_cortx_cli()
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         CortxCliTestLib.create_bucket_cortx_cli.__name__,
+                         error)
+            raise CTException(err.S3_ERROR, error.args[0])
+
+        return response
