@@ -21,6 +21,10 @@ RUN python3.7 -m pip install --upgrade pip
 RUN python3.7 -m pip install pysqlite3
 RUN python3.7 -m pip install --ignore-installed -r requirements.txt
 RUN python3.7 -m pip install awscli
+COPY secrets.json .
+COPY ca.crt /etc/ssl/stx-s3-clients/s3/
+
+
 #RUN aws configure set aws_access_key_id $ACCESS_KEY
 #RUN aws configure set aws_secret_access_key $SECRET_KEY
 #RUN aws configure set default.region US
@@ -28,7 +32,5 @@ RUN python3.7 -m pip install awscli
 #RUN pip3 install awscli-plugin-endpoint
 #RUN aws configure set plugins.endpoint awscli_plugin_endpoint
 #RUN aws configure set s3.endpoint_url https://s3.seagate.com
-COPY secrets.json .
-COPY ca.crt /etc/ssl/stx-s3-clients/s3/
 #RUN aws configure set ca_bundle /etc/ssl/stx-s3-clients/s3/ca.crt
 # CMD ["pytest", "--collect-only", "--target", "automation"]
