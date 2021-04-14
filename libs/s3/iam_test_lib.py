@@ -618,6 +618,7 @@ class IamTestLib(IamLib, S3IamCli):
                          IamTestLib.create_account_s3iamcli.__name__,
                          result)
             raise CTException(err.S3_CLIENT_ERROR, result)
+        acc_dict['account_name'] = account_name
 
         return status, acc_dict
 
