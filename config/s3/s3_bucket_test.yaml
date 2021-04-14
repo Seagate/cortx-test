@@ -181,7 +181,7 @@ test_1294:
         Resource: "arn:aws:s3:::{}"
         Condition:
           StringEquals:
-            s3:prefix: "home"
+            s3:prefix: "obj"
 
 test_1296:
   bucket_policy:
@@ -192,7 +192,7 @@ test_1296:
         Resource: "arn:aws:s3:::{}"
         Condition:
           StringNotEquals:
-            s3:prefix: "home"
+            s3:prefix: "obj"
             s3:max-keys: 10
 
 test_558:
@@ -265,7 +265,6 @@ test_570:
 test_574:
   bucket_name: "bktpolicybkt-5741"
   error_message: "AccessDenied"
-  id_str: "id={}"
   bucket_policy:
     Statement:
       - Effect: "Allow"
@@ -280,7 +279,6 @@ test_574:
 test_582:
   bucket_name: "bktpolicybkt-5821"
   error_message: "AccessDenied"
-  id_str: "id={}"
   bucket_policy:
     Statement:
       - Effect: "Allow"
@@ -1079,7 +1077,7 @@ test_4156:
         Resource: "arn:aws:s3:::{}"
         Condition:
           StringEquals:
-            s3:prefix: "obj_policy"
+            s3:prefix: "obj"
         Principal:
           AWS: "{}"
 
@@ -1095,7 +1093,7 @@ test_4161:
         Resource: "arn:aws:s3:::{}"
         Condition:
           StringNotEquals:
-            s3:prefix: "obj_policy"
+            s3:prefix: "obj"
         Principal:
           AWS: "{}"
 
@@ -1111,7 +1109,7 @@ test_4173:
         Resource: "arn:aws:s3:::{}"
         Condition:
           StringEquals:
-            s3:prefix: "obj_policy"
+            s3:prefix: "obj"
         Principal:
           AWS: "{}"
 
@@ -1147,7 +1145,6 @@ test_4183:
         Principal: "*"
 
 test_4502:
-  object_name: "objkey_test"
   error_message: "AccessDenied"
   date_condition: "DateEquals"
   bucket_policy:
@@ -1161,7 +1158,6 @@ test_4502:
         Principal:
           AWS: ""
 test_4504:
-  effect_lst : ["Allow", "Deny"]
   error_message: "AccessDenied"
   date_condition: "DateNotEquals"
   bucket_policy:
@@ -1536,7 +1532,7 @@ test_5925:
         Action:
           - "s3:PutObject"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-5925/*"
+        Resource: "arn:aws:s3:::{}/*"
         Condition:
           DateLessThanEqualsIfExists:
             aws:EpochTime: "{}"
@@ -1579,7 +1575,7 @@ test_4937:
         Action:
           - "s3:ListBucket"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-4937"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           NumericLessThanIfExists:
             s3:max-keys: "3"
@@ -1595,7 +1591,7 @@ test_4939:
         Action:
           - "s3:ListBucket"
         Effect: "Deny"
-        Resource: "arn:aws:s3:::bktpolicy-4939"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           NumericLessThanIfExists:
             s3:max-keys: "3"
@@ -1611,7 +1607,7 @@ test_4940:
         Action:
           - "s3:ListBucket"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-4940"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           NumericGreaterThanIfExists:
             s3:max-keys: "3"
@@ -1627,7 +1623,7 @@ test_4941:
         Action:
           - "s3:ListBucket"
         Effect: "Deny"
-        Resource: "arn:aws:s3:::bktpolicy-4941"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           NumericGreaterThanIfExists:
             s3:max-keys: "3"
@@ -1643,7 +1639,7 @@ test_4942:
         Action:
           - "s3:ListBucket"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-4942"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           NumericEqualsIfExists:
             s3:max-keys: "3"
@@ -1659,7 +1655,7 @@ test_4943:
         Action:
           - "s3:ListBucket"
         Effect: "Deny"
-        Resource: "arn:aws:s3:::bktpolicy-4943"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           NumericNotEqualsIfExists:
             s3:max-keys: "3"
@@ -1691,7 +1687,7 @@ test_4945:
         Action:
           - "s3:ListBucket"
         Effect: "Deny"
-        Resource: "arn:aws:s3:::bktpolicy-4945"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           NumericGreaterThanEqualsIfExists:
             s3:max-keys: "3"
@@ -1707,10 +1703,10 @@ test_5449:
         Action:
           - "s3:ListBucket"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-5449"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           StringEqualsIfExists:
-            s3:prefix: "obj_policy"
+            s3:prefix: "{}"
         Principal:
           AWS: "{}"
 
@@ -2877,7 +2873,6 @@ test_7002:
         Action:
           - "s3:PutObjectAcl"
         Resource: "arn:aws:s3:::{0}/{1}"
-  id_str: "id={0}"
 
 test_7009:
   bucket_policy:
