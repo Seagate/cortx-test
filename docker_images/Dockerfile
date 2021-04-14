@@ -5,9 +5,9 @@ ARG GIT_TOKEN
 #ARG ACCESS_KEY
 #ARG SECRET_KEY
 RUN yum update -y
-RUN yum install -y gcc openssl-devel bzip2-devel libffi-devel zlib-devel wget make
+RUN yum install -y gcc openssl-devel bzip2-devel libffi-devel zlib-devel wget make sqlite-devel
 RUN cd /usr/src && wget https://www.python.org/ftp/python/3.7.9/Python-3.7.9.tgz && tar xzf Python-3.7.9.tgz && rm Python-3.7.9.tgz
-RUN cd /usr/src/Python-3.7.9 && ./configure --prefix=/usr --enable-optimizations --enable-shared
+RUN cd /usr/src/Python-3.7.9 && ./configure --prefix=/usr --enable-optimizations --enable-shared --enable-loadable-sqlite-extensions
 RUN cd /usr/src/Python-3.7.9 && make altinstall
 RUN echo 'alias python="/usr/bin/python3.7"' >> ~/.bashrc
 RUN echo 'alias python3="/usr/bin/python3.7"' >> ~/.bashrc
@@ -20,6 +20,7 @@ RUN yum install -y librdkafka
 RUN yum install -y nfs-utils
 RUN python3.7 -m pip install pip
 RUN python3.7 -m pip install --upgrade pip
+RUN python3.7 -m pip install pysqlite3
 RUN python3.7 -m pip install --ignore-installed -r requirements.txt
 RUN python3.7 -m pip install awscli
 #RUN aws configure set aws_access_key_id $ACCESS_KEY
