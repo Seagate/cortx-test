@@ -39,7 +39,7 @@ from commons.utils.assert_utils import assert_true, assert_false, assert_in, ass
 from commons.utils import system_utils
 from commons.helpers.node_helper import Node
 from config import CMN_CFG
-from libs.s3 import S3_CFG
+from config import S3_CFG
 from libs.s3.s3_cmd_test_lib import S3CmdTestLib
 from libs.s3. s3_test_lib import S3TestLib
 from libs.s3 import SECRET_KEY, ACCESS_KEY, S3H_OBJ

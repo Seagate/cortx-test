@@ -30,7 +30,7 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.utils import assert_utils
 from commons.utils import system_utils
-from libs.s3 import S3_CFG
+from config import S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
 
 S3T_OBJ = S3TestLib()

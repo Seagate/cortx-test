@@ -31,15 +31,15 @@ from commons.configmanager import get_config_wrapper
 from commons.utils import system_utils
 from commons.utils.assert_utils import \
     assert_true, assert_false, assert_in, assert_equal
+from config import S3_CFG
 from libs.s3 import iam_test_lib
-from libs.s3 import S3_CFG
 from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
 
 IAM_OBJ = iam_test_lib.IamTestLib()
 IAM_CFG = get_config_wrapper(fpath="config/blackbox/test_aws_iam.yaml")
 
 
-class TestBlackBox:
+class TestAwsIam:
     """Blackbox Testsuite for aws iam tool."""
 
     @classmethod
