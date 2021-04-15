@@ -45,7 +45,7 @@ ras_sspl_alert:
   sspl_key: "sensor-key"
   service:
     sspl_service: "sspl-ll"
-    rabitmq_service: "rabbitmq-server"
+    kafka_service: "kafka"
   sspl_resource_id: "sspl-master"
   mc_debug_port: 7900
   telnet_sleep_val: 120
