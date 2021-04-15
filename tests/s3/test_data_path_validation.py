@@ -23,6 +23,7 @@ import logging
 import pytest
 
 from commons.constants import const
+from commons.commands import CMD_S3BENCH
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.utils.config_utils import read_yaml
@@ -37,7 +38,7 @@ from commons.utils.assert_utils import assert_is_not_none
 from commons.utils.assert_utils import assert_not_in
 from commons.helpers.health_helper import Health
 from libs.s3 import CM_CFG
-from libs.s3 import S3H_OBJ
+from libs.s3 import S3H_OBJ, S3_CFG
 from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
 from libs.s3.iam_test_lib import IamTestLib
 from libs.s3.s3_acl_test_lib import S3AclTestLib
@@ -188,10 +189,12 @@ class TestDataPathValidation:
         """
         self.log.info(
             "Step 3:Upload object of size : %d", test_conf["obj_size"])
-        cmd = "dd if=/dev/zero of={} bs={} count={}".format(
-            self.file_path, bs, test_conf["obj_size"])
-        self.log.info(cmd)
-        run_local_cmd(cmd)
+        resp = system_utils.create_file(
+            fpath=self.file_path,
+            count=bs,
+            b_size=test_conf["obj_size"])
+        self.log.info(resp)
+        assert_true(resp[0], resp[1])
         res = S3_OBJ.put_object(bucket_name,
                                 test_conf["object_name"],
                                 self.file_path)
@@ -211,11 +214,11 @@ class TestDataPathValidation:
         """
         self.log.info("concurrent users TC using S3bench")
         access_key, secret_key = S3H_OBJ.get_local_keys()
-        cmd = DATA_PATH_CFG["data_path"]["s3bench_cmd"].format(
+        cmd = CMD_S3BENCH.format(
             access_key,
             secret_key,
             bucket,
-            DATA_PATH_CFG["data_path"]["endpoint"],
+            S3_CFG["s3_url"],
             DATA_PATH_CFG["data_path"]["clients"],
             DATA_PATH_CFG["data_path"]["samples"],
             test_conf["obj_prefix"],
@@ -446,7 +449,7 @@ class TestDataPathValidation:
                 access_key=access_key,
                 secret_key=secret_key,
                 bucket=bucket_name,
-                end_point=DATA_PATH_CFG["data_path"]["endpoint"],
+                end_point=S3_CFG["s3_url"],
                 num_clients=test_cfg["num_clients"],
                 num_sample=request_load,
                 obj_name_pref=test_cfg["obj_name"],
@@ -501,7 +504,7 @@ class TestDataPathValidation:
                 access_key=access_key,
                 secret_key=secret_key,
                 bucket=bucket_name,
-                end_point=DATA_PATH_CFG["data_path"]["endpoint"],
+                end_point=S3_CFG["s3_url"],
                 num_clients=client,
                 num_sample=request_load,
                 obj_name_pref=test_cfg["obj_name"],
@@ -561,7 +564,7 @@ class TestDataPathValidation:
                 access_key=access_key,
                 secret_key=secret_key,
                 bucket=bkt,
-                end_point=DATA_PATH_CFG["data_path"]["endpoint"],
+                end_point=S3_CFG["s3_url"],
                 num_clients=client,
                 num_sample=request_load,
                 obj_name_pref=test_cfg["obj_name"],
@@ -618,7 +621,7 @@ class TestDataPathValidation:
                 access_key=access_key,
                 secret_key=secret_key,
                 bucket=bkt,
-                end_point=DATA_PATH_CFG["data_path"]["endpoint"],
+                end_point=S3_CFG["s3_url"],
                 num_clients=client,
                 num_sample=request_load,
                 obj_name_pref=test_cfg["obj_name"],
