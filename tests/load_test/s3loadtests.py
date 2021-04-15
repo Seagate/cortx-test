@@ -100,7 +100,7 @@ class TestS3Load:
             assert_utils.assert_false(res, "Few IO failed due to some reason")
 
     @pytest.mark.tags("EOS-19533")
-    def test_small_obj_max_session_19533(self):
+    def test_single_bkt_small_obj_max_session_19533(self):
         """
         Load test with single bucket, fixed small size objects and max supported concurrent sessions.
         """
@@ -117,7 +117,7 @@ class TestS3Load:
             assert_utils.assert_false(res, "Few IO failed due to some reason")
 
     @pytest.mark.tags("EOS-19534")
-    def test_small_obj_max_session_19534(self):
+    def test_small_obj_multi_bkt_max_session_19534(self):
         """
         Load test with multiple buckets, small size objects and max supported concurrent sessions.
         """
@@ -134,7 +134,7 @@ class TestS3Load:
             assert_utils.assert_false(res, "Few IO failed due to some reason")
 
     @pytest.mark.tags("EOS-19537")
-    def test_small_obj_max_session_19537(self):
+    def test_small_obj_increase_session_19537(self):
         """
         Load test with small size objects and gradually increasing users per hr.
         """
@@ -154,10 +154,9 @@ class TestS3Load:
             assert_utils.assert_false(res, "Few IO failed due to some reason")
 
     @pytest.mark.tags("EOS-19538")
-    def test_small_obj_max_session_19538(self):
+    def test_small_obj_sudden_spike_session_19538(self):
         """
         Load test with small size objects and sudden spike in users count.
-        locust_runner scripts/locust/locustfile.py --u 300 --t 12h
         :return:
         """
         os.environ["MAX_POOL_CONNECTIONS"] = str(100)
