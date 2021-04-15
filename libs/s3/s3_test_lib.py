@@ -152,6 +152,30 @@ class S3TestLib(S3Lib):
 
         return True, response
 
+    def copy_object(self,
+                    source_bucket: str = None,
+                    source_object: str = None,
+                    dest_bucket: str = None,
+                    dest_object: str = None) -> tuple:
+        """
+        Creates a copy of an object that is already stored in Seagate S3.
+
+        :param source_bucket: The name of the source bucket.
+        :param source_object: The name of the source object.
+        :param dest_bucket: The name of the destination bucket.
+        :param dest_object: The name of the destination object.
+        :return: True, dict.
+        """
+        try:
+            response = super().copy_object(source_bucket, source_object, dest_bucket, dest_object)
+        except BaseException as error:
+            LOGGER.error("Error in %s: %s",
+                         S3TestLib.copy_object.__name__,
+                         error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
+        return True, response
+
     def object_upload(
             self,
             bucket_name: str = None,

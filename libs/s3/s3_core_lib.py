@@ -133,6 +133,29 @@ class S3Lib:
 
         return response
 
+    def copy_object(self,
+                    source_bucket: str = None,
+                    source_object: str = None,
+                    dest_bucket: str = None,
+                    dest_object: str = None) -> dict:
+        """
+        Creates a copy of an object that is already stored in Seagate S3.
+
+        :param source_bucket: The name of the source bucket.
+        :param source_object: The name of the source object.
+        :param dest_bucket: The name of the destination bucket.
+        :param dest_object: The name of the destination object.
+        :return: response dict.
+        """
+        response = self.s3_client.copy_object(
+            Bucket=dest_bucket,
+            CopySource='/{}/{}'.format(source_bucket, source_object),
+            Key=dest_object,
+        )
+        LOGGER.debug(response)
+
+        return response
+
     def object_upload(self,
                       bucket_name: str = None,
                       object_name: str = None,
