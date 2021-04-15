@@ -31,40 +31,48 @@ def create_new_test_exe(te, jira_id, jira_pwd, tp_info):
     create new test execution using existing te
     """
     print("Create new test execution from {}".format(te))
-    test_exe_details = get_issue_details(te, jira_id, jira_pwd)
-
-    summary = test_exe_details.fields.summary
-    # description = test_plan_details.fields.description
-    description = "Test Execution for Build : {}, Build type: {}, Setup type: {}".format(
-        tp_info['build'], tp_info['build_type'], tp_info['setup_type'])
-    components = []
-    for i in range(len(test_exe_details.fields.components)):
-        d = dict()
-        d['name'] = test_exe_details.fields.components[i].name
-        components.append(d)
-
-    labels = test_exe_details.fields.labels
-    env_field = tp_info['build_type'] + "_" + tp_info['build']
-    test_eve_labels = test_exe_details.fields.customfield_21006
-
-    tp_dict = {'project':'TEST',
-               'summary':summary,
-               'description':description,
-               'issuetype':{'name':'Test Execution'},
-               'components':components,
-               'labels':labels,
-               'environment':env_field,
-               'customfield_21006':test_eve_labels}
-    try:
-        jira_url = "https://jts.seagate.com/"
-        options = {'server':jira_url}
-        auth_jira = JIRA(options, basic_auth=(jira_id, jira_pwd))
-        new_issue = auth_jira.create_issue(fields=tp_dict)
-    except Exception as e:
-        sys.exit('Test execution creation failed with exception {}'.format(e))
+    is_gui_te = False
+    test_list = get_test_ids_from_te(te, jira_id, jira_pwd)
+    if len(test_list) == 0:
+        print("Skipping creating new TE as existing TE has no tests")
+        return '', is_gui_te
     else:
-        print("Test Execution created Successfully {}".format(new_issue))
-        return new_issue.key
+        test_exe_details = get_issue_details(te, jira_id, jira_pwd)
+
+        summary = test_exe_details.fields.summary
+        # description = test_plan_details.fields.description
+        description = "Test Execution for Build : {}, Build type: {}, Setup type: {}".format(
+            tp_info['build'], tp_info['build_type'], tp_info['setup_type'])
+        components = []
+        for i in range(len(test_exe_details.fields.components)):
+            d = dict()
+            d['name'] = test_exe_details.fields.components[i].name
+            components.append(d)
+
+        labels = test_exe_details.fields.labels
+        env_field = tp_info['build_type'] + "_" + tp_info['build']
+        test_eve_labels = test_exe_details.fields.customfield_21006
+        if 'csm_gui' in test_eve_labels:
+            is_gui_te = True
+
+        tp_dict = {'project':'TEST',
+                   'summary':summary,
+                   'description':description,
+                   'issuetype':{'name':'Test Execution'},
+                   'components':components,
+                   'labels':labels,
+                   'environment':env_field,
+                   'customfield_21006':test_eve_labels}
+        try:
+            jira_url = "https://jts.seagate.com/"
+            options = {'server':jira_url}
+            auth_jira = JIRA(options, basic_auth=(jira_id, jira_pwd))
+            new_issue = auth_jira.create_issue(fields=tp_dict)
+        except Exception as e:
+            sys.exit('Test execution creation failed with exception {}'.format(e))
+        else:
+            print("Test Execution created Successfully {}".format(new_issue))
+            return new_issue.key, is_gui_te
 
 
 def create_new_test_plan(test_plan, jira_id, jira_pwd, tp_info):
@@ -134,38 +142,39 @@ def add_tests_to_te_tp(existing_te, new_te, new_tp, jira_id, jira_password):
     """
     test_list = get_test_ids_from_te(existing_te, jira_id, jira_password)
     if len(test_list) == 0:
-        sys.exit("Received no tests from te")
-    print("adding {} tests to test execution {}".format(len(test_list), new_te))
-    response = requests.post(
-        "https://jts.seagate.com/rest/raven/1.0/api/testexec/" + new_te + "/test",
-        headers={'Content-Type':'application/json'}, json={"add":test_list},
-        auth=(jira_id, jira_password))
+        return False
+    else:
+        print("adding {} tests to test execution {}".format(len(test_list), new_te))
+        response = requests.post(
+            "https://jts.seagate.com/rest/raven/1.0/api/testexec/" + new_te + "/test",
+            headers={'Content-Type':'application/json'}, json={"add":test_list},
+            auth=(jira_id, jira_password))
 
-    print(response.status_code)
-    if response.status_code == HTTPStatus.UNAUTHORIZED:
-        print('JIRA Unauthorized access')
-        return False
-    elif response.status_code == HTTPStatus.SERVICE_UNAVAILABLE:
-        print('JIRA Service Unavailable')
-        return False
-    elif response.status_code != HTTPStatus.OK:
-        print('Error while adding tests to test execution')
-        return False
+        print(response.status_code)
+        if response.status_code == HTTPStatus.UNAUTHORIZED:
+            print('JIRA Unauthorized access')
+            return False
+        elif response.status_code == HTTPStatus.SERVICE_UNAVAILABLE:
+            print('JIRA Service Unavailable')
+            return False
+        elif response.status_code != HTTPStatus.OK:
+            print('Error while adding tests to test execution')
+            return False
 
-    print("adding {} tests to test plan {}".format(len(test_list), new_tp))
-    response = requests.post(
-        "https://jts.seagate.com/rest/raven/1.0/api/testplan/" + new_tp + "/test",
-        headers={'Content-Type':'application/json'}, json={"add":test_list},
-        auth=(jira_id, jira_password))
-    print(response.status_code)
-    if response.status_code == HTTPStatus.OK:
-        return True
-    elif response.status_code == HTTPStatus.UNAUTHORIZED:
-        print('JIRA Unauthorized access')
-        return False
-    elif response.status_code == HTTPStatus.SERVICE_UNAVAILABLE:
-        print('JIRA Service Unavailable')
-        return False
+        print("adding {} tests to test plan {}".format(len(test_list), new_tp))
+        response = requests.post(
+            "https://jts.seagate.com/rest/raven/1.0/api/testplan/" + new_tp + "/test",
+            headers={'Content-Type':'application/json'}, json={"add":test_list},
+            auth=(jira_id, jira_password))
+        print(response.status_code)
+        if response.status_code == HTTPStatus.OK:
+            return True
+        elif response.status_code == HTTPStatus.UNAUTHORIZED:
+            print('JIRA Unauthorized access')
+            return False
+        elif response.status_code == HTTPStatus.SERVICE_UNAVAILABLE:
+            print('JIRA Service Unavailable')
+            return False
 
 
 def get_test_executions_from_test_plan(test_plan, username, password):
