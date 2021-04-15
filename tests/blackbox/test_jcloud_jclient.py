@@ -37,8 +37,9 @@ from commons.errorcodes import error_handler, S3_CLIENT_ERROR
 from commons.utils import config_utils
 from commons.utils import system_utils
 from commons.utils import assert_utils
+from config import S3_CFG
 from libs.s3 import s3_test_lib
-from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
+from libs.s3 import ACCESS_KEY, SECRET_KEY
 
 S3_TEST_OBJ = s3_test_lib.S3TestLib()
 BLACKBOX_CONF = config_utils.read_yaml("config/blackbox/test_jcloud_jclient.yaml")[1]

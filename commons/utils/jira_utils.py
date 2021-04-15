@@ -231,29 +231,37 @@ class JiraTask:
         try:
             jira_url = "https://jts.seagate.com/rest/raven/1.0/api/testexec/{}/test".format(test_exe_id)
             response = requests.get(jira_url, auth=(self.jira_id, self.jira_password))
-            if response.status_code == HTTPStatus.BAD_REQUEST:
-                page_not_zero = 1
-                page_cnt = 1
-                while page_not_zero:
-                    jira_url = "https://jts.seagate.com/rest/raven/1.0/api/testexec/{}/test?page={}" \
-                        .format(test_exe_id, page_cnt)
-                    try:
-                        response = requests.get(jira_url, auth=(self.jira_id, self.jira_password))
-                        data = response.json()
-                        test_info.append(data)
-                    except Exception as e:
-                        print(e)
-                    else:
-                        if len(data) == 0:
-                            page_not_zero = 0
+            if response is not None:
+                if response.status_code != HTTPStatus.OK:
+                    page_not_zero = 1
+                    page_cnt = 1
+                    while page_not_zero:
+                        jira_url = "https://jts.seagate.com/rest/raven/1.0/api/testexec/{}/test?page={}" \
+                            .format(test_exe_id, page_cnt)
+                        try:
+                            response = requests.get(jira_url, auth=(self.jira_id, self.jira_password))
+                            data = response.json()
+                            test_info.append(data)
+                        except Exception as e:
+                            LOGGER.error('Exception in get_test_details: %s', e)
                         else:
-                            page_cnt = page_cnt + 1
-            else:
-                data = response.json()
-                test_info.append(data)
+                            if len(data) == 0:
+                                page_not_zero = 0
+                            else:
+                                page_cnt = page_cnt + 1
+                else:
+                    data = response.json()
+                    test_info.append(data)
             return test_info
-        except requests.exceptions.RequestException:
-            print(traceback.print_exc())
+        except requests.exceptions.RequestException as re:
+            LOGGER.error('Request exception in get_test_details %s', re)
+            return test_info
+        except ValueError as ve:
+            LOGGER.error('Value exception in get_test_details %s', ve)
+            return test_info
+        except Exception as e:
+            LOGGER.error('Exception in get_test_details: %s', e)
+            return test_info
 
     def update_execution_details(self, data: list, test_id: str, comment: str)\
             -> bool:
