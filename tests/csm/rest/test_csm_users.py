@@ -26,7 +26,7 @@ import logging
 import pytest
 from commons import configmanager
 from commons.constants import Rest as const
-from commons.utils import assert_utils
+from commons.utils import assert_utils, config_utils
 from commons import cortxlogging
 from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 from libs.csm.rest.csm_rest_s3user import RestS3user
