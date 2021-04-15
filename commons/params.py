@@ -37,6 +37,8 @@ RAS_CONFIG_PATH = "config/ras_config.yaml"
 SSPL_TEST_CONFIG_PATH = "config/ras_test.yaml"
 PROV_TEST_CONFIG_PATH = "config/prov_test.yaml"
 COMMON_DESTRUCTIVE_CONFIG_PATH = "config/common_destructive.yaml"
+DI_CONFIG_PATH = os.path.join(CONFIG_DIR, 'di_config.yaml')
+DATA_PATH_CONFIG_PATH = os.path.join(CONFIG_DIR, 's3/test_data_path_validate.yaml')
 
 JIRA_TEST_LIST = 'test_lists.csv'
 
@@ -78,4 +80,24 @@ LOCAL_LOG_PATH = "/root/pytest_logs"
 JENKINS_URL = "http://eos-jenkins.mero.colo.seagate.com/job/QA/"
 
 REPORT_SRV = "http://cftic2.pun.seagate.com:5000/"
+
+#DI Params
+DI_LOG_FILE = 'diframework.log'
+NWORKERS = 32
+NGREENLETS = 32
+NUSERS = 10
+#DATAGEN_HOME = '/var/log/datagen/'
+DATAGEN_HOME = 'c:\\var\\log\\datagen'
+DATASET_FILES = "/var/log/datagen/createdfile.txt"
+USER_JSON = '_usersdata'
+UPLOADED_FILES = "uploadInfo.csv"
+deleteOpFileName = "deleteInfo.csv"
+comDeleteOpFileName = "combinedDeleteInfo.csv"
+uploadDoneFile = UPLOADED_FILES
+uploadFinishedFileName = "upload_done.txt"
+FailedFiles = "FailedFiles.csv"
+FailedFilesServerError = "FailedFilesServerError.csv"
+destructiveTestResult = "/root/result_summary.csv"
+deletePercentage = 10
+DOWNLOAD_HOME = '/var/log/'
 

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# !/usr/bin/python
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -16,9 +18,8 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-# -*- coding: utf-8 -*-
-# !/usr/bin/python
 
+"""Data Integrity test library"""
 import queue
 import threading
 import time
@@ -34,8 +35,8 @@ import base64
 import datetime
 import json
 import gevent
+import boto3
 
-from logging.handlers import SysLogHandler
 from fabric import Connection
 from fabric import Config
 from fabric import ThreadingGroup, SerialGroup
@@ -47,42 +48,86 @@ from gevent.queue import Queue, Empty
 from gevent.queue import JoinableQueue
 from gevent.lock import BoundedSemaphore
 from libs.di import di_params
-
-NWORKERS = 32
-NGREENLETS = 32
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+from libs.di.di_mgmt_ops import ManagementOPs
+from commons.exceptions import TestException
 
 
-def init_loghandler(log):
-    log.setLevel(logging.DEBUG)
-    fh = logging.FileHandler(os.path.join(os.getcwd(), di_params.LOG_FILE), mode='w')
-    fh.setLevel(logging.DEBUG)
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    fh.setFormatter(formatter)
-    ch.setFormatter(formatter)
-    log.addHandler(fh)
-    log.addHandler(ch)
+IAM_UTYPE = 1
+S3_ACC_UTYPE = 2
+s3connections = list()
+
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(logging.DEBUG)
+
+diusers = {"user1":["AKIAvVRBu_qhRc2eOpMJwXOBjQ","cT1tEIKo8SztEBpqHF5OroZkqda7kpph7DFQfZAz"],
+         "user2":["AKIAwxH4rqnwRqmXoX5HzyV8xA","C5dBsRcL73wLyLEZr858nymh2h70abFvxINNSkRa"],
+         "user3":["AKIAql9gSmpcQnGyuHbiziTzng","Ow6mYLCji2nBMCrMZDzG7/u2tu9WX0FjFI0ihOlG"],
+         "user4":["AKIA3iswZrw0R7mKtHJZizImKg","TcvKJRfJnYS8H4f53B2g0urn/8+7uFG44vStPiwt"],
+         "user5":["AKIAZxC27C5kSRKomFywnCUE_A","OLkz+6+eyV1IsXA2HBx6wtmRdihW0o/wktoCLCZf"],
+         "user6":["AKIA1s420Uw3RnWuRH_jU5YL9g","JUq17VoBHInxd2Oftec592v/nVuNXlT185KsPc/N"],
+         "user7":["AKIAvzZoU96eQPucwPCYvD7kWw","D7A+mEI/hu+0EAe02dZYbPZFD9BcmBPvdB5yaRRy"],
+         "user8":["AKIAdLhZ3gGSSCW3Ul1ECrjq2g","OKGEDDWS4D+ohrOf0w8nYcgCXGZ0GE2WTVL6zAOC"],
+         "user9":["AKIA5Hx6gvLNTCuOAc7k6MYQ0w","+xx/Y6IJWDQEGLzclUIwNVeSa3DfX09jGbbhi+M+"],
+         "user10":["AKIARmsEWm0NTvi2NJ5HD4sIzw","TlIjEvDS2Q4LoEXbESqhyJ/CdC531f5Za4Bbwcmy"]}
 
 
-class WorkQ(queue.Queue):
-    def __init__(self, func, maxsize):
-        self.lock_req = maxsize != 0
-        self.func = func
-        self.semaphore = threading.Semaphore(maxsize)
-        queue.Queue.__init__(self, maxsize)
+def create_users(utype=S3_ACC_UTYPE, nusers=10):
+    """Creates account users with default user name prefix.
+    user_prefix should be supported later.
+    """
+    try:
+        if utype == S3_ACC_UTYPE:
+            users = ManagementOPs.create_account_users(nusers=nusers)
+        elif utype == IAM_UTYPE:
+            users = ManagementOPs.create_iam_users(nusers=nusers)
+        return users
+    except Exception as fault:
+        LOGGER.error(f"An error {fault} occurred in creating users of type {utype}")
+        raise fault
 
-    def put(self, item):
-        if self.lock_req:
-            self.semaphore.acquire()
-        queue.Queue.put(self, item)
 
-    def task_done(self):
-        if self.lock_req:
-            self.semaphore.release()
-        queue.Queue.task_done(self)
+def create_buckets(user_dict, s3_prefix, nbuckets):
+    """Create buckets with default name prefix."""
+    if not user_dict:
+        raise TestException('User dict is empty')
+    try:
+        user_name = user_dict.get('name')
+        access_key = user_dict.get('access_key')
+        secret_key = user_dict.get('secret_key')
+        timestamp = time.strftime("%Y%m%d-%H%M%S")
+        buckets = [user_name + '-' + timestamp + '-bucket' + str(i) for i in range(nbuckets)]
+
+        try:
+            s3 = boto3.resource('s3', aws_access_key_id=access_key,
+                                aws_secret_access_key=secret_key,
+                                endpoint_url="https://s3.seagate.com")
+        except Exception as e:
+            LOGGER.info(f'could not create s3 object for '
+                        f'user {user_name} with access key {access_key} '
+                        f'secret key {secret_key} exception:{e}')
+            return
+
+        for bucket in buckets:
+            try:
+                file1 = open(di_params.DATASET_FILES,"r")
+                obj_file_paths = file1.readlines()
+            except Exception as e:
+                LOGGER.info(f'could not access file {di_params.DATASET_FILES} exception:{e}')
+                return
+            else:
+                LOGGER.info(f'able to access file {di_params.DATASET_FILES}')
+
+            try:
+
+                s3.create_bucket(Bucket=bucket)
+            except Exception as e:
+                LOGGER.info(f'could not create create bucket {bucket} exception:{e}')
+            else:
+                LOGGER.info(f'create bucket {bucket} Done')
+
+    except Exception as fault:
+        LOGGER.error(f"An error {fault} occurred in creating users of type {utype}")
+        raise fault
 
 
 class Workers(object):
@@ -188,24 +233,6 @@ class NodeOps():
         conn.run(cmd, pty=False)
 
 
-class SysLogger:
-
-    FACILITY = {'kern': 0, 'user': 1, 'mail': 2, 'daemon': 3,
-                'auth': 4, 'syslog': 5, 'lpr': 6, 'news': 7,
-                'uucp': 8, 'cron': 9, 'authpriv': 10, 'ftp': 11,
-                'local0': 16, 'local1': 17, 'local2': 18, 'local3': 19,
-                'local4': 20, 'local5': 21, 'local6': 22, 'local7': 23,
-    }
-
-    LEVEL = {'emerg': 0, 'alert':1, 'crit': 2, 'err': 3,
-             'warning': 4, 'notice': 5, 'info': 6, 'debug': 7
-    }
-
-    @classmethod
-    def log(cls, logger, address, msg):
-        host, port = address
-        logger.addHandler(SysLogHandler(address=(host, port), facility=cls.FACILITY.get('user')))
-        logging.info(f"{msg}")
 
 
 def create_iter_content_json(home, data):

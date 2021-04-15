@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -17,55 +18,30 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-#!/usr/bin/env python3
+"""Management operations needed during the DI tests."""
+
 import os
 import random
-import sys
-import queue
-import threading
 import logging
 import csv
-import fcntl
-import hashlib
-import multiprocessing as mp
 import boto3
-import re
-import json
-import time
-import errno
 from pathlib import Path
-from string import Template
-from jsonschema import validate
-from eos_test.s3 import iam_test_lib
-from eos_test.s3 import iam_core_lib
-from eos_test.di import di_lib
-from eos_test.di.di_lib import init_loghandler
-#from eos_test.csm.rest.csm_rest_core_lib import RestClient
-#from eos_test.csm.rest import constants as const
+from config import CMN_CFG
+from config import S3_CFG
+from config import DI_CFG
+from libs.s3 import iam_core_lib
+from libs.s3.iam_core_lib import S3IamCli
+from libs.s3 import iam_test_lib
+from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
 
-CM_CFG = di_lib.read_yaml("config/common_config.yaml")
-S3_CFG = di_lib.read_yaml("config/s3/s3_config.yaml")
-DI_CFG = di_lib.read_yaml("config/di/di_config.yaml")
 
 logger = logging.getLogger(__name__)
 
 
-users = {"user1":["AKIAmtbCV5W4ShaEpS_vkf6ctg","GDYm8JSyRHHd5WSWKJ5ATg9nPE8f9hbuMNI2KRpm"],
-         "user2":["AKIAz8u06dSFTjSpOYyNAjQKDQ","fOmgD2CeJkLyox59ipab58FI5i5a+WZNfVsiGIKo"],
-         "user3":["AKIAAXDoYwa5TK6YvWblkeKh1Q","9TsqOZRXH11X+6zn5556BBABc9jcAM0yCZqbj24q"],
-         "user4":["AKIA8SJZDP5KSxNZDtQNj5x4dA","7oXQ5KWFaK6CxeX6sH1jx2A7I7Dzkl1iNaUbSiHI"],
-         "user5":["AKIAwisYTwy_QQSmcPQOzxfsjw","VCB6n+/4LgvhAXVo4gUikt66hg7iCpSdOVsNdSvW"],
-         "user6":["AKIAuIhQYM6VSGCx6VG01yUfBA","N+Xl68Orwurc++aZBdS7dbXKvri+R/3vR0bAnJTj"],
-         "user7":["AKIAW9MuqGhiTNOCjhjyvgNq8g","wfRSzvww+8GWyOoksIy/W8/wQAcsRHsvlz109use"],
-         "user8":["AKIAaZ4tTS4ZSAANFsaNzsKySw","fd/1ZYhnESGCw4DIw3W/WA+xU3HhG5eQl/pEEsrQ"],
-         "user9":["AKIA7meXEoemSpSNkQwyJ0KNDQ","kiQ1HiIwnWMq0EdeGQfW4ixB/wjseKKt1Q6k9xs9"],
-         "user10":["AKIA4F9Z3gLsTBeFqAzqXgG5Xw","teFxABFnyVOjpwSPhuvEP90w14MngM3vLmnpPD7X"]}
-
-
-class ManagementOPs(object):
+class ManagementOPs:
 
     email_suffix = "@seagate.com"
-    user_prefix = 'tuser'
+    user_prefix = 'di_user'
 
     @classmethod
     def create_iam_users(cls, nusers=10):
@@ -78,10 +54,10 @@ class ManagementOPs(object):
         user = 's3' + cls.user_prefix + str(random.randint(100, 1000))
         email = user + cls.email_suffix
         # Create S3 account user
-        cli = iam_core_lib.S3IamCli()
+        cli = S3IamCli()
         resp = cli.create_account_s3iamcli(email,
-                                           DI_CFG['ldap_username'],
-                                           DI_CFG['ldap_passwd'])
+                                           CMN_CFG["ldap"]["username"],
+                                           CMN_CFG["ldap"]["password"])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
 
@@ -105,10 +81,11 @@ class ManagementOPs(object):
         return users
 
     @classmethod
-    def create_account_users(cls, nusers=10):
+    def create_account_users(cls, nusers=10, use_cortx_cli=True):
         """
         Creates s3 account users to upload DI test data. This function uses S3IamCli
         to create users.
+        :param use_cortx_cli:
         :param nusers: number of users to create
         :return:
         """
@@ -120,28 +97,66 @@ class ManagementOPs(object):
             email = user + cls.email_suffix
             udict.update({'user_name': user})
             udict.update({'emailid': email})
-            # Create S3 account
-            cli = iam_test_lib.IamTestLib()
-            try:
-                resp = cli.create_account_s3iamcli(user, email,
-                                                   DI_CFG['ldap_username'],
-                                                   DI_CFG['ldap_passwd'])
 
-            except Exception as ctpe:
-                # check if s3 account already exists and get keys
-                ret = cli.list_accounts_s3iamcli(DI_CFG['ldap_username'], DI_CFG['ldap_passwd'])
-                accounts = ret[1]
-                for account in accounts:
-                    if account.get('AccountName') == user:
-                        udict.update({'accesskey': account["access_key"]})
-                        udict.update({'secretkey': account["secret_key"]})
+            if not use_cortx_cli:
+                # Create S3 account
+                cli = iam_test_lib.IamTestLib()
+                try:
+                    resp = cli.create_account_s3iamcli(user, email,
+                                                       CMN_CFG["ldap"]["username"],
+                                                       CMN_CFG["ldap"]["username"])
+
+                except Exception as ctpe:
+                    logger.error("Exception")
+                    # check if s3 account already exists and get keys
+                    ret = cli.list_accounts_s3iamcli(DI_CFG['ldap_username'], DI_CFG['ldap_passwd'])
+                    accounts = ret[1]
+                    for account in accounts:
+                        if account.get('AccountName') == user:
+                            udict.update({'accesskey': account["access_key"]})
+                            udict.update({'secretkey': account["secret_key"]})
+                else:
+                    udict.update({'accesskey': resp[1]["access_key"]})
+                    udict.update({'secretkey': resp[1]["secret_key"]})
             else:
-                udict.update({'accesskey': resp[1]["access_key"]})
-                udict.update({'secretkey': resp[1]["secret_key"]})
+                logger.info("Creating Cortx CLI users with ")
+                s3acc_obj = CortxCliS3AccountOperations()
+                s3acc_obj.open_connection()
+
+
+                s3acc_obj.logout_cortx_cli()
+
+                self.s3acc_obj.logout_cortx_cli()
+
 
             users.update({user: udict})
         return users
 
+    @classmethod
+    def create_buckets(cls, nbuckets):
+        """
+        Creates random buckets for each user. This api
+        caches buckets for continuous crud operations on
+        them.
+        :param nbuckets:
+        :return:
+        """
+        users = dict()
+
+        # Create S3 account
+        cli = iam_core_lib.S3IamCli()
+        resp = cli.create_account_s3iamcli(CMN_CFG['emailid'],
+                                           CMN_CFG['ldap_username'],
+                                           CMN_CFG['ldap_passwd'])
+        access_key = resp[1]["access_key"]
+        secret_key = resp[1]["secret_key"]
+
+        buckets = {"user{}".format(i): list() for i in range(1, nbuckets + 1)}
+
+        # create 10 buckets per user
+        for k in users:
+            bkts = [cli.create_bucket('{}bucket{}'.format(k, i)) for i in range(1, nbuckets + 1)]
+            buckets[k] = bkts
 
     @classmethod
     def crud_csm_users(cls):
@@ -225,9 +240,9 @@ class ManagementOPs(object):
 
         # Create S3 account
         cli = iam_core_lib.S3IamCli()
-        resp = cli.create_account_s3iamcli(CM_CFG['emailid'],
-                                           CM_CFG['ldap_username'],
-                                           CM_CFG['ldap_passwd'])
+        resp = cli.create_account_s3iamcli(CMN_CFG['emailid'],
+                                           CMN_CFG['ldap_username'],
+                                           CMN_CFG['ldap_passwd'])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
 

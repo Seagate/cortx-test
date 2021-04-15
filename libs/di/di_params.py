@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# !/usr/bin/python
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -16,36 +18,25 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-# -*- coding: utf-8 -*-
-# !/usr/bin/python
-LOG_FILE = 'diframework.log'
 
+LOG_FILE = 'diframework.log'
+NWORKERS = 32
+NGREENLETS = 32
 NUSERS = 10
 
-USER_JSON = '_usersdata'
-
-UPLOADED_FILES = "uploadInfo.csv"
-
 DATAGEN_HOME = '/var/log/datagen/'
-
 DATASET_FILES = "/var/log/datagen/createdfile.txt"
-
+USER_JSON = '_usersdata'
+UPLOADED_FILES = "uploadInfo.csv"
 deleteOpFileName = "deleteInfo.csv"
-
 comDeleteOpFileName = "combinedDeleteInfo.csv"
-
 uploadDoneFile = UPLOADED_FILES
-
 uploadFinishedFileName = "upload_done.txt"
-
 FailedFiles = "FailedFiles.csv"
-
 FailedFilesServerError = "FailedFilesServerError.csv"
-
 destructiveTestResult = "/root/result_summary.csv"
 
 deletePercentage = 10
-
 DOWNLOAD_HOME = '/var/log/'
 
 #avocado commands

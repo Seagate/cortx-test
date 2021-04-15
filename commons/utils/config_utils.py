@@ -56,6 +56,11 @@ def read_yaml(fpath: str) -> tuple:
             except yaml.YAMLError as exc:
                 err_msg = "Failed to parse: {}\n{}".format(fpath, str(exc))
                 LOG.error(err_msg)
+                try:
+                    data = yaml.load(fin.read(), Loader=yaml.Loader)
+                except yaml.YAMLError as exc:
+                    err_msg = "Failed to parse: {}\n{}".format(fpath, str(exc))
+                    LOG.error(err_msg)
                 return False, exc
 
     else:
@@ -99,6 +104,7 @@ def create_content_json(path: str, data: object, ensure_ascii=True) -> str:
     """
     Function to create json file.
 
+    :param ensure_ascii:
     :param path: json file path is to be created.
     :param data: Data to write in json file
     :return: path of the file.
@@ -113,6 +119,7 @@ def read_content_json(fpath: str, mode='r') -> dict:
     """
     Function to read json file.
 
+    :param mode:
     :param fpath: Path of the json file
     :return: Data of the json file
     """

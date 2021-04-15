@@ -22,6 +22,7 @@
 import os
 import sys
 import re
+import munch
 from typing import List
 from commons.utils import config_utils
 from commons import configmanager
@@ -31,7 +32,8 @@ from commons.params import RAS_CONFIG_PATH
 from commons.params import SSPL_TEST_CONFIG_PATH
 from commons.params import COMMON_DESTRUCTIVE_CONFIG_PATH
 from commons.params import PROV_TEST_CONFIG_PATH
-
+from commons.params import DI_CONFIG_PATH
+from commons.params import DATA_PATH_CONFIG_PATH
 
 def split_args(sys_cmd: List):
     """split args and make it compliant."""
@@ -77,3 +79,12 @@ RAS_VAL = configmanager.get_config_wrapper(fpath=RAS_CONFIG_PATH,
 CMN_DESTRUCTIVE_CFG = configmanager.get_config_wrapper(fpath=COMMON_DESTRUCTIVE_CONFIG_PATH)
 RAS_TEST_CFG = configmanager.get_config_wrapper(fpath=SSPL_TEST_CONFIG_PATH)
 PROV_CFG = configmanager.get_config_wrapper(fpath=PROV_TEST_CONFIG_PATH)
+
+DI_CFG = configmanager.get_config_wrapper(fpath=DI_CONFIG_PATH, target=target)
+DATA_PATH_CFG = configmanager.get_config_wrapper(fpath=DATA_PATH_CONFIG_PATH, target=target)
+
+
+# munchified configs. These can be used by dot "." operator.
+
+di_cfg = munch.munchify(DI_CFG)
+cmn_cfg = munch.munchify(CMN_CFG)

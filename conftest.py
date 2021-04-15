@@ -32,6 +32,7 @@ import time
 import datetime
 import pytest
 import requests
+import xdist
 from datetime import date
 from _pytest.nodes import Item
 from _pytest.runner import CallInfo
@@ -51,7 +52,6 @@ from core.runner import LRUCache
 from core.runner import get_jira_credential
 from core.runner import get_db_credential
 from commons import params
-
 
 FAILURES_FILE = "failures.txt"
 LOG_DIR = 'log'
@@ -218,6 +218,10 @@ def pytest_addoption(parser):
         "--db_update", action="store", default=True,
         help="Decide whether to update reporting DB."
     )
+    parser.addoption(
+        "--data_integrity_chk", action="store", default=False,
+        help="Decide whether to perform DI Check or not for a I/O test case."
+    )
 
 
 def read_test_list_csv() -> List:
@@ -301,11 +305,11 @@ def create_report_payload(item, call, final_result, d_u, d_pass):
     marks = get_marks_for_test_item(item)
     if final_result == 'FAIL':
         health_chk_res = "TODO"
-        are_logs_collected = False
+        are_logs_collected = True
         log_path = "TODO"
     elif final_result == 'PASS':
         health_chk_res = "NA"
-        are_logs_collected = False
+        are_logs_collected = True
         log_path = "NA"
     data_kwargs = dict(os=os_ver,
                        build=item.config.option.build,
@@ -652,4 +656,3 @@ def generate_random_string():
     :rtype: str
     """
     return ''.join(random.choice(string.ascii_lowercase) for i in range(5))
-

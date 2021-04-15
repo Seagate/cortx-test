@@ -50,6 +50,9 @@ def parse_args():
     parser.add_argument("-f", "--force_serial_run", type=str_to_bool,
                         default=False, nargs='?', const=True,
                         help="Force sequential run if you face problems with parallel run")
+    parser.add_argument("-i", "--data_integrity_chk", type=str_to_bool,
+                        default=False, help="Helps set DI check enabled so that tests "
+                                            "perform additional checksum check")
     return parser.parse_args()
 
 
@@ -132,6 +135,9 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
 
     if not args.db_update:
         cmd_line = cmd_line + ["--db_update=" + str(False)]
+
+    if args.data_integrity_chk:  # redo for kafka tests remove when drunner is supported.
+        cmd_line = cmd_line + ["--data_integrity_chk=" + str(True)]
 
     cmd_line = cmd_line + ['--build=' + build, '--build_type=' + build_type,
                            '--tp_ticket=' + args.test_plan]
