@@ -367,59 +367,6 @@ class CortxCliTestLib(CortxcliS3AccountOperations,
         """
         return self.get_user_login_profile(user_name)
 
-    @staticmethod
-    def create_account_login_profile_cortxcli(
-            acc_name: str = None,
-            password: str = None,
-            access_key: str = None,
-            secret_key: str = None,
-            password_reset: bool = False) -> tuple:
-        """
-        Create account login profile using cortxcli.
-
-        :param acc_name: s3 account name.
-        :param password: s3 password.
-        :param access_key: s3 access key.
-        :param secret_key: s3 secret key.
-        :param password_reset: password reset True/False.
-        :return: create account login profile s3iamcli response.
-        """
-        # Not Supported in cortxcli, check boto3
-
-    @staticmethod
-    def update_account_login_profile_cortxcli(
-            acc_name: str = None,
-            password: str = None,
-            access_key: str = None,
-            secret_key: str = None,
-            password_reset: bool = False) -> tuple:
-        """
-        Update account login profile using s3iamcli.
-
-        :param acc_name: s3 account name.
-        :param password: s3 password.
-        :param access_key: s3 access key.
-        :param secret_key: s3 secret key.
-        :param password_reset: password reset True/False.
-        :return: update account login profile cortxcli response.
-        """
-        # Not Supported in cortxcli, check boto3
-
-    @staticmethod
-    def get_account_login_profile_cortxcli(
-            acc_name: str = None,
-            access_key: str = None,
-            secret_key: str = None) -> tuple:
-        """
-        Get account login profile using cortxcli.
-
-        :param acc_name: s3 account name.
-        :param access_key: s3 access key.
-        :param secret_key: s3 secret key.
-        :return: get account login profile s3iamcli response.
-        """
-        # Not Supported in cortxcli, check boto3
-
     def update_user_login_profile_boto3(
             self,
             user_name: str = None,
@@ -454,46 +401,6 @@ class CortxCliTestLib(CortxcliS3AccountOperations,
             user_name=user_name,
             password=password,
             password_reset=password_reset)[1]
-
-    def reset_account_access_key_cortxcli(
-            self, account_name: str = None, ) -> tuple:
-        """
-        Method to reset account access key.
-
-        :param account_name: s3 account name.
-        :return: reset account access key cortxcli response.
-
-        """
-
-    def get_temp_auth_credentials_account(self,
-                                          account_name: str = None,
-                                          account_password: str = None,
-                                          duration: int = None) -> tuple:
-        """
-        Retrieving the temporary auth credentials for the given account.
-
-        :param account_name: s3 account name.
-        :param account_password: s3 account password.
-        :param duration:
-        :return: get temp auth credentials account response.
-        """
-        # Not Supported
-
-    def get_temp_auth_credentials_user(self,
-                                       account_name: str = None,
-                                       user_name: str = None,
-                                       password: str = None,
-                                       duration: int = None) -> tuple:
-        """
-        Retrieving the temporary auth credentials for the given user.
-
-        :param account_name: s3 account name.
-        :param user_name: s3 user name.
-        :param password: s3 password.
-        :param duration:
-        :return: get temp auth credentials user response.
-        """
-        # Not supported
 
     def reset_access_key_and_delete_account_cortxcli(
             self, account_name: str = None) -> tuple:
