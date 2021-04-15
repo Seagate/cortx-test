@@ -27,7 +27,6 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils import assert_utils
-from commons.utils.config_utils import read_yaml
 from commons.utils.system_utils import create_file
 from commons.utils.assert_utils import assert_true, assert_equal, assert_greater_equal, assert_in
 from config import CSM_CFG
@@ -43,20 +42,25 @@ from libs.s3 import s3_test_lib, iam_test_lib
 s3_test_obj = s3_test_lib.S3TestLib()
 iam_obj = iam_test_lib.IamTestLib()
 
-conf_blackbox = read_yaml("config/blackbox/test_cortxcli.yaml")[1]
-
 
 class TestCortxcli:
-    """Blackbox Testsuite."""
+    """Cortxcli Blackbox Testsuite."""
 
     iam_user_obj = None
-    cfg = conf_blackbox["acc_user_mng"]
-
+    s3bucket_name = None
+    s3obj_name = None
     @classmethod
     def setup_class(cls):
         """Setup all the states required for execution of this test suit."""
         cls.log = logging.getLogger(__name__)
         cls.log.info("STARTED : Setup operations at test suit level")
+        cls.file_size = 1
+        cls.error = "InvalidAccessKeyId"
+        cls.err_message = "EntityAlreadyExists"
+        cls.account_name = "seagate_account"
+        cls.user_name = "seagate_user"
+        cls.total_users = 100
+        cls.test_file_path = "/root/testfile"
         cls.s3acc_obj = CortxCliS3AccountOperations()
         cls.s3acc_obj.open_connection()
         cls.s3bkt_obj = CortxCliS3BucketOperations(
@@ -76,7 +80,7 @@ class TestCortxcli:
     def create_account(cls, acc_name, email_id=None, acc_password=None):
         """Function will create IAM account."""
         if email_id is None:
-            acc_email = "{}{}".format(acc_name, conf_blackbox["acc_user_mng"]["email_id"])
+            acc_email = "{}{}".format(acc_name, cls.s3acc_email)
         else:
             acc_email = email_id
         return cls.iam_user_obj.create_s3account_cortx_cli(
@@ -95,6 +99,10 @@ class TestCortxcli:
         self.log.info("STARTED : Setup operations at test function level")
         self.s3acc_name = "{}_{}".format(self.s3acc_name, int(time.time()))
         self.s3acc_email = self.s3acc_email.format(self.s3acc_name)
+        self.s3bucket_name = "{}_{}_{}".format(
+            self.s3acc_prefix, "bucket", int(time.time()))
+        self.s3obj_name = "{}_{}_{}".format(
+            self.s3acc_prefix, "object", int(time.time()))
         login = self.s3acc_obj.login_cortx_cli()
         assert_utils.assert_equals(True, login[0], login[1])
         self.log.info("ENDED : Setup operations at test function level")
@@ -110,7 +118,7 @@ class TestCortxcli:
         all_users = self.iam_user_obj.list_iam_user()[1]
         users_list = [user["UserName"]
                       for user in all_users if
-                      self.cfg["user_name"] in user["UserName"]]
+                      self.user_name in user["UserName"]]
         self.log.info("IAM users: %s", users_list)
         if users_list:
             self.log.info("Deleting IAM users...")
@@ -125,14 +133,10 @@ class TestCortxcli:
                     self.log.info("Deleted user access key")
                 self.iam_user_obj.delete_iam_user(user)
         self.log.info("Deleted users successfully")
-        account_name = self.cfg["account_name"]
         acc_list = self.s3acc_obj.show_s3account_cortx_cli(output_format="json")[
             1]
-        # acc_list = self.iam_user_obj.list_accounts_s3iamcli(
-        #     LDAP_USERNAME,
-        #     LDAP_PASSWD)[1]
         all_acc = [acc["AccountName"]
-                   for acc in acc_list if account_name in acc["AccountName"]]
+                   for acc in acc_list if self.account_name in acc["AccountName"]]
         if all_acc:
             self.log.info("Accounts to delete: %s", all_acc)
             for acc in all_acc:
@@ -145,9 +149,9 @@ class TestCortxcli:
     @pytest.mark.tags("TEST-7177")
     @CTFailOn(error_handler)
     def test_2393(self):
-        """Create account using s3iamcli."""
+        """Create account using cortxcli."""
         self.log.info("STARTED: create account using cortxcli")
-        acc_name = "{}{}".format(conf_blackbox["acc_user_mng"]["account_name"],
+        acc_name = "{}{}".format(self.account_name,
                                  str(int(time.time())))
         self.log.info(
             "Step 1: Creating a new account with name %s", acc_name)
@@ -160,15 +164,15 @@ class TestCortxcli:
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Verified that new account is created successfully")
-        self.log.info("ENDED: create account using s3iamcli")
+        self.log.info("ENDED: create account using cortxcli")
 
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7178")
     @CTFailOn(error_handler)
     def test_2394(self):
         """List account using cortxcli."""
-        self.log.info("STARTED: List account using s3iamcli")
-        acc_name = "{}{}".format(conf_blackbox["acc_user_mng"]["account_name"],
+        self.log.info("STARTED: List account using cortxcli")
+        acc_name = "{}{}".format(self.account_name,
                                  str(int(time.time())))
         self.log.info(
             "Step 1: Creating a new account with name %s", acc_name)
@@ -193,14 +197,14 @@ class TestCortxcli:
     def test_2399(self):
         """Create 'N' No of Accounts."""
         self.log.info("STARTED: Create 'N' No of Accounts")
+        total_accounts = 50
         self.log.info(
-            "Step 1: Creating %s accounts",
-            conf_blackbox["test_2399"]["total_accounts"])
+            "Step 1: Creating %s accounts", total_accounts)
         account_list = []
         access_keys = []
         secret_keys = []
-        acc_name = conf_blackbox["acc_user_mng"]["account_name"]
-        for account in range(conf_blackbox["test_2399"]["total_accounts"]):
+        acc_name = self.account_name
+        for account in range(total_accounts):
             account_name = f"{acc_name}{account}{account}{str(int(time.time()))}"
             email_id = f"{acc_name}{account}{account}@seagate.com"
             resp = self.create_account(
@@ -210,19 +214,19 @@ class TestCortxcli:
             secret_keys.append(resp[1]["secret_key"])
             account_list.append(account_name)
         self.log.info("Step 1: Created %s accounts",
-                      conf_blackbox["test_2399"]["total_accounts"])
+                      total_accounts)
         self.log.info(
             "Verifying %s accounts are created by listing accounts",
-            conf_blackbox["test_2399"]["total_accounts"])
+            total_accounts)
         list_of_accounts = self.s3acc_obj.show_s3account_cortx_cli(
             output_format="text")
         assert_true(list_of_accounts[0], list_of_accounts[1])
         new_accounts = [acc["AccountName"] for acc in list_of_accounts[1]]
-        for account in range(conf_blackbox["test_2399"]["total_accounts"]):
+        for account in range(total_accounts):
             assert_in(account_list[account], new_accounts)
         self.log.info(
             "Verified %s accounts are created by listing accounts",
-            conf_blackbox["test_2399"]["total_accounts"])
+            total_accounts)
         self.log.info("ENDED: Create 'N' No of Accounts")
 
     @pytest.mark.s3_ops
@@ -231,8 +235,9 @@ class TestCortxcli:
     def test_2396(self):
         """Create account with existing name using cortxcli."""
         self.log.info(
-            "STARTED: create account with existing name using s3iamcli")
-        acc_name = "{}{}".format(conf_blackbox["acc_user_mng"]["account_name"],
+            "STARTED: create account with existing name using cortxcli")
+        err_message = "EntityAlreadyExists"
+        acc_name = "{}{}".format(self.account_name,
                                  str(int(time.time())))
         self.log.info(
             "Step 1: Creating a new account with name %s", acc_name)
@@ -246,21 +251,21 @@ class TestCortxcli:
             self.create_account(acc_name, acc_password=self.s3acc_password)
         except CTException as error:
             assert_in(
-                conf_blackbox["test_2396"]["err_message"],
+                err_message,
                 error.message,
                 error.message)
         self.log.info(
             "Step 2: Created another account with existing account name")
         self.log.info(
-            "ENDED: create account with existing name using s3iamcli")
+            "ENDED: create account with existing name using cortxcli")
 
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7181")
     @CTFailOn(error_handler)
     def test_2395(self):
         """Delete Account using cortxcli."""
-        self.log.info("STARTED: Delete Account using s3iamcli")
-        acc_name = "{}{}".format(conf_blackbox["acc_user_mng"]["account_name"],
+        self.log.info("STARTED: Delete Account using cortxcli")
+        acc_name = "{}{}".format(self.account_name,
                                  str(int(time.time())))
         self.log.info(
             "Step 1: Creating a new account with name %s", acc_name)
@@ -274,8 +279,8 @@ class TestCortxcli:
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Deleted account with name %s successfully",
-            conf_blackbox["acc_user_mng"]["account_name"])
-        self.log.info("ENDED: Delete Account using s3iamcli")
+            self.account_name)
+        self.log.info("ENDED: Delete Account using cortxcli")
 
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7125")
@@ -283,12 +288,13 @@ class TestCortxcli:
     def test_2430(self):
         """CRUD operations with valid login credentials using cortxcli."""
         self.log.info(
-            "STARTED: CRUD operations with valid login credentials using s3iamcli")
+            "STARTED: CRUD operations with valid login credentials using cortxcli")
         self.log.info("Step 1: Create new account and new user in it")
-        acc_name = "{}{}".format(conf_blackbox["acc_user_mng"]["account_name"],
+        file_size = 1
+        acc_name = "{}{}".format(self.account_name,
                                  str(int(time.time())))
         usr_name = "{}{}".format(
-            conf_blackbox["acc_user_mng"]["user_name"], str(int(time.time())))
+            self.user_name, str(int(time.time())))
         resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
@@ -311,56 +317,52 @@ class TestCortxcli:
             secret_key=user_secret_key)
         self.log.info(
             "Step 3: Performing CRUD operations using valid user's credentials")
-        bucket_name = "".join(
-            [conf_blackbox["test_2430"]["bucket_name"], str(int(time.time()))])
-        self.log.info("Creating a bucket with name %s", bucket_name)
-        resp = s3_user_obj.create_bucket(bucket_name)
+        self.log.info("Creating a bucket with name %s", self.s3bucket_name)
+        resp = s3_user_obj.create_bucket(self.s3bucket_name)
         assert_true(resp[0], resp[1])
         self.log.info(
-            "Bucket with name %s is created successfully", bucket_name)
-        obj_name = conf_blackbox["test_2430"]["obj_name"]
-        create_file(conf_blackbox["acc_user_mng"]["test_file_path"],
-                    conf_blackbox["test_2430"]["file_size"])
+            "Bucket with name %s is created successfully", self.s3bucket_name)
+        create_file(self.test_file_path, file_size)
         self.log.info(
             "Putting object %s to bucket %s",
-            obj_name, bucket_name)
+            self.s3obj_name, self.s3bucket_name)
         resp = s3_user_obj.put_object(
-            bucket_name,
-            obj_name,
-            conf_blackbox["acc_user_mng"]["test_file_path"])
+            self.s3bucket_name,
+            self.s3obj_name,
+            self.test_file_path)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Object %s successfully put to bucket %s",
-            obj_name, bucket_name)
-        self.log.info("Downloading object from bucket %s", bucket_name)
+            self.s3obj_name, self.s3bucket_name)
+        self.log.info("Downloading object from bucket %s", self.s3bucket_name)
         resp = s3_user_obj.object_download(
-            bucket_name, obj_name, conf_blackbox["acc_user_mng"]["test_file_path"])
+            self.s3bucket_name, self.s3obj_name, self.test_file_path)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1],
-            conf_blackbox["acc_user_mng"]["test_file_path"],
+            self.test_file_path,
             resp[1])
         self.log.info(
-            "Downloading object from bucket %s successfully", bucket_name)
+            "Downloading object from bucket %s successfully", self.s3bucket_name)
         self.log.info(
             "Step 3: Performed CRUD operations using valid user's credentials")
         # Cleanup activity
-        resp = s3_user_obj.delete_bucket(bucket_name, force=True)
+        resp = s3_user_obj.delete_bucket(self.s3bucket_name, force=True)
         assert_true(resp[0], resp[1])
         self.log.info(
-            "ENDED: CRUD operations with valid login credentials using s3iamcli")
+            "ENDED: CRUD operations with valid login credentials using cortxcli")
 
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7183")
     @CTFailOn(error_handler)
     def test_2400(self):
         """Create user using cortxcli."""
-        self.log.info("STARTED: create user using s3iamcli")
+        self.log.info("STARTED: create user using cortxcli")
         self.log.info("Step 1: Create new account and new user in it")
-        acc_name = "{}{}".format(conf_blackbox["acc_user_mng"]["account_name"],
+        acc_name = "{}{}".format(self.account_name,
                                  str(int(time.time())))
         usr_name = "{}{}".format(
-            conf_blackbox["acc_user_mng"]["user_name"], str(int(time.time())))
+            self.user_name, str(int(time.time())))
         resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
@@ -375,7 +377,7 @@ class TestCortxcli:
         assert_true(resp[0], resp[1])
         assert_in(usr_name, resp[1], resp[1])
         self.log.info("Step 2: Listed users and verified user is created")
-        self.log.info("ENDED: create user using s3iamcli")
+        self.log.info("ENDED: create user using cortxcli")
 
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7184")
@@ -383,10 +385,10 @@ class TestCortxcli:
     def test_2406(self):
         """Create access key for user using cortxcli."""
         self.log.info("STARTED: create access key for user using cortxcli")
-        acc_name = "{}{}".format(conf_blackbox["acc_user_mng"]["account_name"],
+        acc_name = "{}{}".format(self.account_name,
                                  str(int(time.time())))
         usr_name = "{}{}".format(
-            conf_blackbox["acc_user_mng"]["user_name"], str(int(time.time())))
+            self.user_name, str(int(time.time())))
         resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
@@ -417,28 +419,26 @@ class TestCortxcli:
         """Max num of users supported using cortxcli."""
         self.log.info("STARTED: max num of users supported using cortxcli")
         self.log.info("Step 1: Create new account")
-        acc_name = "{}{}".format(conf_blackbox["acc_user_mng"]["account_name"],
+        total_users = 100
+        acc_name = "{}{}".format(self.account_name,
                                  str(int(time.time())))
         usr_name = "{}{}".format(
-            conf_blackbox["acc_user_mng"]["user_name"], str(int(time.time())))
+            self.user_name, str(int(time.time())))
         resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
         self.log.info("Step 1: Created new account successfully")
-        self.log.info("Step 2: Creating %s users",
-                      conf_blackbox["test_2405"]["total_users"])
-        for user in range(conf_blackbox["test_2405"]["total_users"]):
+        self.log.info("Step 2: Creating %s users", total_users)
+        for user in range(total_users):
             my_user_name = f"{usr_name}{user}"
             self.log.info("Creating user with name %s", my_user_name)
             resp = self.iam_user_obj.create_iam_user(
                 my_user_name, access_key, secret_key)
             assert_true(resp[0], resp[1])
             self.log.info("Created user with name %s", my_user_name)
-        self.log.info("Step 2: Created %s users",
-                      conf_blackbox["test_2405"]["total_users"])
-        self.log.info("Verifying %s users are created",
-                      conf_blackbox["test_2405"]["total_users"])
+        self.log.info("Step 2: Created %s users", total_users)
+        self.log.info("Verifying %s users are created", total_users)
         new_iam_obj = iam_test_lib.IamTestLib(
             access_key=access_key, secret_key=secret_key)
         list_of_users = new_iam_obj.list_users_s3iamcli(
@@ -448,12 +448,10 @@ class TestCortxcli:
         assert_true(resp[0], resp[1])
         assert_greater_equal(
             (len(list_of_users)),
-            conf_blackbox["test_2405"]["total_users"],
+            self.total_users,
             list_of_users[1])
-        self.log.info("Verified %s users are created",
-                      conf_blackbox["test_2405"]["total_users"])
-        self.log.info("Step 3: Deleting %s users",
-                      conf_blackbox["test_2405"]["total_users"])
+        self.log.info("Verified %s users are created", total_users)
+        self.log.info("Step 3: Deleting %s users", total_users)
         self.log.info("ENDED: max num of users supported using cortxcli")
 
     @pytest.mark.s3_ops
@@ -464,10 +462,11 @@ class TestCortxcli:
         self.log.info(
             "STARTED: creating user with existing user name using cortxcli")
         self.log.info("Step 1: Create new account")
-        acc_name = "{}{}".format(conf_blackbox["acc_user_mng"]["account_name"],
+        err_message = "EntityAlreadyExists"
+        acc_name = "{}{}".format(self.account_name,
                                  str(int(time.time())))
         usr_name = "{}{}".format(
-            conf_blackbox["acc_user_mng"]["user_name"], str(int(time.time())))
+            self.user_name, str(int(time.time())))
         resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
@@ -484,10 +483,9 @@ class TestCortxcli:
         try:
             self.iam_user_obj.create_iam_user(usr_name, access_key, secret_key)
         except CTException as error:
-            assert_in(
-                conf_blackbox["test_2404"]["err_message"],
-                error.message,
-                error.message)
+            assert_in(err_message,
+                      error.message,
+                      error.message)
         self.log.info(
             "Step 2: Could not create user with existing name %s", usr_name)
         self.log.info(
@@ -500,10 +498,10 @@ class TestCortxcli:
         """Delete user using cortxcli."""
         self.log.info("STARTED: Delete user using cortxcli")
         self.log.info("Step 1: Create new account and new user in it")
-        acc_name = "{}{}".format(conf_blackbox["acc_user_mng"]["account_name"],
+        acc_name = "{}{}".format(self.account_name,
                                  str(int(time.time())))
         usr_name = "{}{}".format(
-            conf_blackbox["acc_user_mng"]["user_name"], str(int(time.time())))
+            self.user_name, str(int(time.time())))
         resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
@@ -528,10 +526,11 @@ class TestCortxcli:
         """Update user using cortxcli."""
         self.log.info("STARTED: Update user using cortxcli")
         self.log.info("Step 1: Create new account and new user in it")
-        acc_name = "{}{}".format(conf_blackbox["acc_user_mng"]["account_name"],
+        new_user_name = "testuser2402"
+        acc_name = "{}{}".format(self.account_name,
                                  str(int(time.time())))
         usr_name = "{}{}".format(
-            conf_blackbox["acc_user_mng"]["user_name"], str(int(time.time())))
+            self.user_name, str(int(time.time())))
         resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
@@ -544,7 +543,6 @@ class TestCortxcli:
         new_iam_obj = iam_test_lib.IamTestLib(
             access_key=access_key,
             secret_key=secret_key)
-        new_user_name = conf_blackbox["test_2402"]["new_user_name"]
         resp = new_iam_obj.update_user(new_user_name, usr_name)
         assert_true(resp[0], resp[1])
         self.log.info("Step 2: Updated user name of already existing user")
@@ -554,7 +552,7 @@ class TestCortxcli:
         resp = self.iam_user_obj.list_iam_user()
         assert_true(resp[0], resp[1])
         assert_in(
-            conf_blackbox["test_2402"]["new_user_name"],
+            new_user_name,
             resp[1],
             resp[1])
         self.log.info("Step 3: Listed users and verified user name is updated")
@@ -567,10 +565,10 @@ class TestCortxcli:
         """List user using cortxcli."""
         self.log.info("STARTED: list user using cortxcli")
         self.log.info("Step 1: Create new account and new user in it")
-        acc_name = "{}{}".format(conf_blackbox["acc_user_mng"]["account_name"],
+        acc_name = "{}{}".format(self.account_name,
                                  str(int(time.time())))
         usr_name = "{}{}".format(
-            conf_blackbox["acc_user_mng"]["user_name"], str(int(time.time())))
+            self.user_name, str(int(time.time())))
         resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
@@ -596,44 +594,43 @@ class TestCortxcli:
         self.log.info(
             "STARTED: login to account with invalid cred and perform s3 crud ops using cortxcli")
         self.log.info("Step 1: Create new account")
-        acc_name = "{}{}".format(conf_blackbox["acc_user_mng"]["account_name"],
+        err_message = "InvalidAccessKeyId"
+        download_obj_err = "Forbidden"
+        file_size = 1
+        # Dummy access and secret keys
+        user_access_key = "alfjkalfjiecnk@#&kafjkancsmnc"
+        user_secret_key = "*HSLKJMDqpowdapofmamcamc"
+        acc_name = "{}{}".format(self.account_name,
                                  str(int(time.time())))
         resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         self.log.info("Step 1: Created new account")
-        # Dummy access and secret keys
-        user_access_key = conf_blackbox["test_2398"]["user_access_key"]
-        user_secret_key = conf_blackbox["test_2398"]["user_secret_key"]
         s3_user_obj = s3_test_lib.S3TestLib(
             access_key=user_access_key,
             secret_key=user_secret_key)
         self.log.info(
             "Step 2: Performing operations with invalid user's credentials")
-        bucket_name = "".join(
-            [conf_blackbox["test_2398"]["bucket_name"], str(int(time.time()))])
-        self.log.info("Creating a bucket with name %s", bucket_name)
-        err_message = conf_blackbox["test_2398"]["error"]
+        self.log.info("Creating a bucket with name %s", self.s3bucket_name)
         try:
-            s3_user_obj.create_bucket(bucket_name)
+            s3_user_obj.create_bucket(self.s3bucket_name)
         except CTException as error:
             assert_in(
                 err_message,
                 error.message,
                 error.message)
         self.log.info(
-            "Bucket with name %s is not created", bucket_name)
-        obj_name = conf_blackbox["test_2398"]["obj_name"]
+            "Bucket with name %s is not created", self.s3bucket_name)
         self.log.info(
             "Putting object %s to bucket %s",
-            obj_name, bucket_name)
+            self.s3obj_name, self.s3bucket_name)
         try:
             create_file(
-                conf_blackbox["acc_user_mng"]["test_file_path"],
-                conf_blackbox["test_2398"]["file_size"])
+                self.test_file_path,
+                file_size)
             s3_user_obj.put_object(
-                bucket_name,
-                obj_name,
-                conf_blackbox["acc_user_mng"]["test_file_path"])
+                self.s3bucket_name,
+                self.s3obj_name,
+                self.test_file_path)
         except CTException as error:
             assert_in(
                 err_message,
@@ -641,20 +638,20 @@ class TestCortxcli:
                 error.message)
         self.log.info(
             "Could not put object %s to bucket %s",
-            obj_name, bucket_name)
-        self.log.info("Downloading object from bucket %s", bucket_name)
+            self.s3obj_name, self.s3bucket_name)
+        self.log.info("Downloading object from bucket %s", self.s3bucket_name)
         try:
             s3_user_obj.object_download(
-                bucket_name,
-                obj_name,
-                conf_blackbox["acc_user_mng"]["test_file_path"])
+                self.s3bucket_name,
+                self.s3obj_name,
+                self.test_file_path)
         except CTException as error:
             assert_in(
-                conf_blackbox["test_2398"]["download_obj_err"],
+                download_obj_err,
                 error.message,
                 error.message)
         self.log.info(
-            "Could not download object from bucket %s", bucket_name)
+            "Could not download object from bucket %s", self.s3bucket_name)
         self.log.info(
             "Step 2: Performed CRUD operations with invalid user's credentials")
         self.log.info(
@@ -668,10 +665,11 @@ class TestCortxcli:
         self.log.info(
             "STARTED: login to account with valid creds and perform s3 crud ops using cortxcli")
         self.log.info("Step 1: Create new account and new user in it")
-        acc_name = "{}{}".format(conf_blackbox["acc_user_mng"]["account_name"],
+        file_size = 1
+        acc_name = "{}{}".format(self.account_name,
                                  str(int(time.time())))
         usr_name = "{}{}".format(
-            conf_blackbox["acc_user_mng"]["user_name"], str(int(time.time())))
+            self.user_name, str(int(time.time())))
         resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
@@ -694,41 +692,37 @@ class TestCortxcli:
             secret_key=user_secret_key)
         self.log.info(
             "Step 3: Performing CRUD operations using valid user's credentials")
-        bucket_name = "".join(
-            [conf_blackbox["test_2397"]["bucket_name"], str(int(time.time()))])
-        self.log.info("Creating a bucket with name %s", bucket_name)
-        resp = s3_user_obj.create_bucket(bucket_name)
+        self.log.info("Creating a bucket with name %s", self.s3bucket_name)
+        resp = s3_user_obj.create_bucket(self.s3bucket_name)
         assert_true(resp[0], resp[1])
         self.log.info(
-            "Bucket with name %s is created successfully", bucket_name)
-        obj_name = conf_blackbox["test_2397"]["obj_name"]
-        create_file(conf_blackbox["acc_user_mng"]["test_file_path"],
-                    conf_blackbox["test_2397"]["file_size"])
+            "Bucket with name %s is created successfully", self.s3bucket_name)
+        create_file(self.test_file_path, file_size)
         self.log.info(
             "Putting object %s to bucket %s",
-            obj_name, bucket_name)
+            self.s3obj_name, self.s3bucket_name)
         resp = s3_user_obj.put_object(
-            bucket_name,
-            obj_name,
-            conf_blackbox["acc_user_mng"]["test_file_path"])
+            self.s3bucket_name,
+            self.s3obj_name,
+            self.test_file_path)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Object %s successfully put to bucket %s",
-            obj_name, bucket_name)
-        self.log.info("Downloading object from bucket %s", bucket_name)
+            self.s3obj_name, self.s3bucket_name)
+        self.log.info("Downloading object from bucket %s", self.s3bucket_name)
         resp = s3_user_obj.object_download(
-            bucket_name, obj_name, conf_blackbox["acc_user_mng"]["test_file_path"])
+            self.s3bucket_name, self.s3obj_name, self.test_file_path)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1],
-            conf_blackbox["acc_user_mng"]["test_file_path"],
+            self.test_file_path,
             resp[1])
         self.log.info(
-            "Downloading object from bucket %s successfully", bucket_name)
+            "Downloading object from bucket %s successfully", self.s3bucket_name)
         self.log.info(
             "Step 3: Performed CRUD operations using valid user's credentials")
         # Cleanup activity
-        resp = s3_user_obj.delete_bucket(bucket_name, force=True)
+        resp = s3_user_obj.delete_bucket(self.s3bucket_name, force=True)
         assert_true(resp[0], resp[1])
         self.log.info(
             "ENDED: login to account with valid creds and perform s3 crud ops using cortxcli")
@@ -739,10 +733,10 @@ class TestCortxcli:
     def test_2410(self):
         """Delete accesskey using cortxcli."""
         self.log.info("STARTED: delete accesskey using cortxcli")
-        acc_name = "{}{}".format(conf_blackbox["acc_user_mng"]["account_name"],
+        acc_name = "{}{}".format(self.account_name,
                                  str(int(time.time())))
         usr_name = "{}{}".format(
-            conf_blackbox["acc_user_mng"]["user_name"], str(int(time.time())))
+            self.user_name, str(int(time.time())))
         self.log.info(
             "Step 1: Creating a new account with name %s", acc_name)
         resp = self.create_account(acc_name, acc_password=self.s3acc_password)
@@ -791,13 +785,13 @@ class TestCortxcli:
     @CTFailOn(error_handler)
     def test_2409(self):
         """Update accesskey with inactive mode using cortxcli."""
-        test_2409_cfg = conf_blackbox["test_2409"]
+        status = "InActive"
         self.log.info(
             "STARTED: update accesskey with inactive mode using cortxcli")
-        acc_name = "{}{}".format(conf_blackbox["acc_user_mng"]["account_name"],
+        acc_name = "{}{}".format(self.account_name,
                                  str(int(time.time())))
         usr_name = "{}{}".format(
-            conf_blackbox["acc_user_mng"]["user_name"], str(int(time.time())))
+            self.user_name, str(int(time.time())))
         self.log.info(
             "Step 1: Creating a new account with name %s", acc_name)
         resp = self.create_account(acc_name, acc_password=self.s3acc_password)
@@ -829,7 +823,7 @@ class TestCortxcli:
         self.log.info("Step 5: Updating access key of user")
         resp = iam_obj.update_access_key(
             access_key_to_update,
-            test_2409_cfg["status"],
+            status,
             usr_name)
         assert_true(resp[0], resp[1])
         self.log.info("Step 5: Updated access key of user")
@@ -839,7 +833,7 @@ class TestCortxcli:
         new_access_key = resp[1]["AccessKeyMetadata"][0]["AccessKeyId"]
         status = resp[1]["AccessKeyMetadata"][0]["Status"]
         assert_equal(new_access_key, access_key_to_update, resp[1])
-        assert_equal(status, test_2409_cfg["status"], resp[1])
+        assert_equal(status, status, resp[1])
         self.log.info(
             "Step 6: Verified that access key of user is updated successfully")
         self.log.info(
@@ -851,13 +845,13 @@ class TestCortxcli:
     def test_2407(self):
         """List accesskey for User using cortxcli."""
         self.log.info("STARTED: list accesskey for User using cortxcli")
-        acc_name = "{}{}".format(conf_blackbox["acc_user_mng"]["account_name"],
+        acc_name = "{}{}".format(self.account_name,
                                  str(int(time.time())))
         usr_name = "{}{}".format(
-            conf_blackbox["acc_user_mng"]["user_name"], str(int(time.time())))
+            self.user_name, str(int(time.time())))
         self.log.info(
             "Step 1: Creating a new account with name %s",
-            conf_blackbox["acc_user_mng"]["account_name"])
+            self.account_name)
         resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
@@ -895,13 +889,13 @@ class TestCortxcli:
     @CTFailOn(error_handler)
     def test_2408(self):
         """Update accesskey with active mode using cortxcli."""
-        test_2408_cfg = conf_blackbox["test_2408"]
+        status = "Active"
         self.log.info(
             "STARTED: update accesskey with active mode using cortxcli")
-        acc_name = "{}{}".format(conf_blackbox["acc_user_mng"]["account_name"],
+        acc_name = "{}{}".format(self.account_name,
                                  str(int(time.time())))
         usr_name = "{}{}".format(
-            conf_blackbox["acc_user_mng"]["user_name"], str(int(time.time())))
+            self.user_name, str(int(time.time())))
         self.log.info(
             "Step 1: Creating a new account with name %s", acc_name)
         resp = self.create_account(acc_name, acc_password=self.s3acc_password)
@@ -930,7 +924,7 @@ class TestCortxcli:
         self.log.info("Step 5: Updating access key of user")
         resp = iam_obj.update_access_key(
             access_key_to_update,
-            test_2408_cfg["status"],
+            status,
             usr_name)
         assert_true(resp[0], resp[1])
         self.log.info("Step 5: Updated access key of user")
@@ -940,7 +934,7 @@ class TestCortxcli:
         new_access_key = resp[1]["AccessKeyMetadata"][0]["AccessKeyId"]
         status = resp[1]["AccessKeyMetadata"][0]["Status"]
         assert_equal(new_access_key, access_key_to_update, resp[1])
-        assert_equal(status, test_2408_cfg["status"], resp[1])
+        assert_equal(status, status, resp[1])
         self.log.info(
             "Step 6: Verified that access key of user is updated successfully")
         self.log.info(
