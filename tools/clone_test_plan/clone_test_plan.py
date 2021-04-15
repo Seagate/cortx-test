@@ -52,27 +52,31 @@ def main(args):
     print("test executions of existing test plan {}".format(te_keys))
 
     new_te_keys = []
+    gui_te = ''
     for te in te_keys:
         # create new te
-        new_te_id = jira_api.create_new_test_exe(te, jira_id, jira_pwd, tp_info)
-        new_te_keys.append(new_te_id)
-        response = jira_api.add_tests_to_te_tp(te, new_te_id, new_tp_key, jira_id, jira_pwd)
-        if response:
-            print("Tests added to TE {} and TP {}".format(new_te_id,new_tp_key))
-        else:
-            print("Error while adding tests to TE {} and TP {}".format(new_te_id,new_tp_key))
-
-    response = jira_api.add_te_to_tp(new_te_keys, new_tp_key, jira_id, jira_pwd)
-    if response:
-        print("TEs are added to TP")
-    else:
-        print("Error while adding TEs to TP")
+        new_te_id, is_gui_te = jira_api.create_new_test_exe(te, jira_id, jira_pwd, tp_info)
+        if new_te_id != '':
+            response = jira_api.add_tests_to_te_tp(te, new_te_id, new_tp_key, jira_id, jira_pwd)
+            if response:
+                print("Tests added to TE {} and TP {}".format(new_te_id,new_tp_key))
+                new_te_keys.append(new_te_id)
+                if is_gui_te:
+                    gui_te = new_te_id
+                response_add = jira_api.add_te_to_tp(new_te_keys, new_tp_key, jira_id, jira_pwd)
+                if response_add:
+                    print("TEs are added to TP")
+                else:
+                    print("Error while adding TEs to TP")
+            else:
+                print("Error while adding tests to TE {} and TP {}".format(new_te_id,new_tp_key))
 
     print("New Test Plan: {}".format(new_tp_key))
     with open(os.path.join(os.getcwd(),  CLONED_TP_CSV), 'w', newline='') as tp_info_csv:
         writer = csv.writer(tp_info_csv)
         for te in new_te_keys:
-            writer.writerow([new_tp_key.strip(), te.strip()])
+            if te != gui_te:
+                writer.writerow([new_tp_key.strip(), te.strip()])
 
     if args.comment_jira:
         current_time_ms = datetime.utcnow().strftime('%Y-%m-%d_%H:%M:%S.%f')

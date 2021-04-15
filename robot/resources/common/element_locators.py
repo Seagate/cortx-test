@@ -133,6 +133,16 @@ ADMIN_PASSWORD_FIELD_ID = 'adminPassword'
 ADMIN_CONFIRM_PASSWORD_FIELD_ID = 'confirmAdminPassword'
 APPLY_AND_CONTINUE_BUTTON_ID = 'admin-createadminuser'
 ADMIN_USER_ALREADY_EXISTS_ID = 'admin-invalidmsg'
+EULA_CONTENT_MSG_XPATH = "//p[@data-v-1ad3de5e]"
+ADMIN_USER_MISSMATCH_PASSWORD_MSG_ID = "admin-confirmpass-notmatch"
+ADMIN_USER_INVALID_PASSWORD_MSG_ID = "admin-password-invalid"
+ADMIN_USER_INVALID_USERNAME_MSG_ID = "admin-username-invalid"
+ADMIN_USER_USERNAME_LABEL_ID = "lblAdminUsername"
+ADMIN_USER_PASSWORD_LABEL_ID = "lblAdminPassword"
+ADMIN_USER_CONFIRM_PASSWORD_LABEL_ID = "lblConfirmAdminPassword"
+ADMIN_USER_PAGE_TOOLTIP_ID = "tooltip-msg"
+ADMIN_USER_TOOLTIP_ICON_ID = "Username*"
+ADMIN_USER_PASSWORD_TOOLTIP_ICON_ID = "Username*"
 
 #  CSM User section
 CSM_USERS_TABLE_XPATH = '//*[@id="localuser-tabledata"]//table'

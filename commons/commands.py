@@ -338,9 +338,9 @@ CMD_RM_REPO1 = "rm -rf /etc/yum.repos.d/*cortx_iso*.repo"
 CMD_YUM_CLEAN = "yum clean all"
 CMD_RM_YUM = "rm -rf /var/cache/yum/"
 CMD_DEPLOY_SINGLE_NODE = "sshpass -p \"{0}\" provisioner auto_deploy_vm srvnode-1:{1} " \
-                     "--logfile --logfile-filename /var/log/seagate/provisioner/setup.log " \
-                     "--source rpm --config-path {2} --dist-type bundle " \
-                     "--target-build {3}"
+                         "--logfile --logfile-filename /var/log/seagate/provisioner/setup.log " \
+                         "--source rpm --config-path {2} --dist-type bundle " \
+                         "--target-build {3}"
 CMD_START_CLSTR = "cortx cluster start"
 CMD_RD_LOG = "cat {0}"
 
@@ -359,7 +359,7 @@ CMD_AWSCLI_INCLUDE_FLAG = "--include '{}'"
 CMD_AWSCLI_CREATE_MULTIPART_UPLOAD = "aws s3api create-multipart-upload --bucket {0} --key {1}"
 CMD_AWSCLI_LIST_MULTIPART_UPLOADS = "aws s3api list-multipart-uploads --bucket {0}"
 CMD_AWSCLI_UPLOAD_PARTS = "aws s3api upload-part --bucket {0} --key {1} --part-number {2} " \
-                        "--body {3} --upload-id {4}"
+                          "--body {3} --upload-id {4}"
 CMD_AWSCLI_LIST_PARTS = "aws s3api list-parts --bucket {0} --key {1} --upload-id {2}"
 CMD_AWSCLI_COMPLETE_MULTIPART = "aws s3api complete-multipart-upload --multipart-upload file://{0} " \
                                 "--bucket {1} --key {2} --upload-id {3}"
@@ -369,3 +369,7 @@ CMD_AWSCLI_DOWNLOAD_OBJECT = "aws s3 cp s3://{0}/{1} {2}"
 CMD_KEYTOOL1 = "`keytool -delete -alias s3server -keystore /etc/pki/java/cacerts -storepass changeit >/dev/null`"
 # ca.crt path.
 CMD_KEYTOOL2 = "`keytool -import -trustcacerts -alias s3server -noprompt -file {} -keystore /etc/pki/java/cacerts -storepass changeit`"
+
+# S3 bench
+CMD_S3BENCH = "go run s3bench -accessKey={} -accessSecret={} -bucket={} -endpoint={} " \
+              "-numClients={} -numSamples={} -objectNamePrefix={} -objectSize={}"
