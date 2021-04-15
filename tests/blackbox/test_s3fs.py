@@ -23,12 +23,14 @@ import time
 import logging
 import pytest
 
+from commons.constants import const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
+from commons.utils import system_utils
 from commons.utils.config_utils import read_yaml
 from commons.utils.system_utils import execute_cmd
 from commons.utils.assert_utils import assert_true, assert_in
-from libs.s3 import S3_CFG
+from config import S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3 import ACCESS_KEY, SECRET_KEY, S3H_OBJ
 
@@ -49,6 +51,15 @@ class TestS3fs:
         """
         cls.log = logging.getLogger(__name__)
         cls.log.info("STARTED: setup test suite operations.")
+        resp = system_utils.is_rpm_installed(const.S3FS)
+        assert_true(resp[0], resp[1])
+        access, secret = ACCESS_KEY, SECRET_KEY
+        res = execute_cmd(f"cat {S3_CFG['s3fs_path']}")
+        if f"{access}:{secret}" != res[1]:
+            cls.log.info("Setting access and secret key for s3fs.")
+            resp = S3H_OBJ.configure_s3fs(access, secret)
+            assert_true(resp, f"Failed to update keys in {S3_CFG['s3fs_path']}")
+        cls.log.info("ENDED: setup test suite operations.")
 
     def setup_method(self):
         """
@@ -58,12 +69,8 @@ class TestS3fs:
         """
         self.log.info("STARTED: Setup operations")
         self.url = S3FS_COMMON_CFG["url"].format(S3_CFG["s3_url"])
-        access, secret = ACCESS_KEY, SECRET_KEY
-        res = execute_cmd(f"cat {S3_CFG['s3fs_path']}")
-        if f"{access}:{secret}" != res[1]:
-            self.log.info("Setting access and secret key for s3fs.")
-            resp = S3H_OBJ.configure_s3fs(access, secret)
-            assert_true(resp, f"Failed to update keys in {S3_CFG['s3fs_path']}")
+        resp = system_utils.path_exists(S3_CFG['s3fs_path'])
+        assert_true(resp, "config path not exists: {}".format(S3_CFG['s3fs_path']))
         self.log.info("ENDED: Setup operations")
 
     def teardown_method(self):

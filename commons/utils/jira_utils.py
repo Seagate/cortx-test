@@ -232,7 +232,7 @@ class JiraTask:
             jira_url = "https://jts.seagate.com/rest/raven/1.0/api/testexec/{}/test".format(test_exe_id)
             response = requests.get(jira_url, auth=(self.jira_id, self.jira_password))
             if response is not None:
-                if response.status_code == HTTPStatus.BAD_REQUEST:
+                if response.status_code != HTTPStatus.OK:
                     page_not_zero = 1
                     page_cnt = 1
                     while page_not_zero:
@@ -243,7 +243,7 @@ class JiraTask:
                             data = response.json()
                             test_info.append(data)
                         except Exception as e:
-                            print(e)
+                            LOGGER.error('Exception in get_test_details: %s', e)
                         else:
                             if len(data) == 0:
                                 page_not_zero = 0
@@ -253,8 +253,15 @@ class JiraTask:
                     data = response.json()
                     test_info.append(data)
             return test_info
-        except requests.exceptions.RequestException:
-            print(traceback.print_exc())
+        except requests.exceptions.RequestException as re:
+            LOGGER.error('Request exception in get_test_details %s', re)
+            return test_info
+        except ValueError as ve:
+            LOGGER.error('Value exception in get_test_details %s', ve)
+            return test_info
+        except Exception as e:
+            LOGGER.error('Exception in get_test_details: %s', e)
+            return test_info
 
     def update_execution_details(self, data: list, test_id: str, comment: str)\
             -> bool:

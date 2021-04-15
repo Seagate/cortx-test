@@ -31,6 +31,7 @@ import time
 import logging
 import pytest
 
+from commons.constants import const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.utils.config_utils import read_yaml, get_config, update_config_ini
@@ -38,7 +39,7 @@ from commons.utils.assert_utils import assert_true, assert_false, assert_in, ass
 from commons.utils import system_utils
 from commons.helpers.node_helper import Node
 from config import CMN_CFG
-from libs.s3 import S3_CFG
+from config import S3_CFG
 from libs.s3.s3_cmd_test_lib import S3CmdTestLib
 from libs.s3. s3_test_lib import S3TestLib
 from libs.s3 import SECRET_KEY, ACCESS_KEY, S3H_OBJ
@@ -62,6 +63,10 @@ class TestS3cmdClient:
         """
         cls.log = logging.getLogger(__name__)
         cls.log.info("STARTED: setup test suite operations.")
+        resp = system_utils.is_rpm_installed(const.S3CMD)
+        assert_true(resp[0], resp[1])
+        resp = system_utils.path_exists(S3_CFG["s3cfg_path"])
+        assert_true(resp, "config path not exists: {}".format(S3_CFG["s3cfg_path"]))
         cls.common_cfg = S3CMD_CNF["common_cfg"]
         cls.node_helper_obj = Node(
             hostname=CMN_CFG["nodes"][0]["host"],

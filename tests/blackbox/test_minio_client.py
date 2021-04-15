@@ -52,6 +52,16 @@ class TestMinioClient:
         """
         cls.log = logging.getLogger(__name__)
         cls.log.info("STARTED: setup test suite operations.")
+        resp = system_utils.configre_minio_cloud(minio_repo=S3_CFG["minio_repo"],
+                                                 endpoint_url=S3_CFG["s3_url"],
+                                                 s3_cert_path=S3_CFG["s3_cert_path"],
+                                                 minio_cert_path_list=S3_CFG["minio_crt_path_list"],
+                                                 access=ACCESS_KEY,
+                                                 secret=SECRET_KEY
+                                                 )
+        assert_utils.assert_true(resp, "failed to setup minio: {}".format(resp))
+        resp = system_utils.path_exists(S3_CFG["minio_path"])
+        assert_utils.assert_true(resp, "minio config not exists: {}".format(S3_CFG["minio_path"]))
         cls.minio_cnf = MINIO_CFG["minio_cfg"]
         cls.file_path = cls.minio_cnf["file_path"]
         cls.path = S3_CFG["minio_path"]
