@@ -57,7 +57,6 @@ class TestOSLevelMonitoring:
                             password=cls.passwd)
         cls.health_obj = Health(hostname=cls.host, username=cls.uname,
                                 password=cls.passwd)
-
         cls.csm_alert_obj = SystemAlerts(cls.node_obj)
         # Enable this flag for starting RMQ channel
         cls.start_msg_bus = cls.cm_cfg["start_msg_bus"]
