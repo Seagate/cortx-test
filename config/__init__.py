@@ -43,16 +43,15 @@ def split_args(sys_cmd: List):
             eq_splitted.extend([item])
     return eq_splitted
 
-
 pytest_args = sys.argv
 proc_name = os.path.split(pytest_args[0])[-1]
 target_filter = re.compile(".*--target")
 pytest_args = split_args(pytest_args)  # sanitize
-
 if proc_name == 'pytest' and '--local' in pytest_args and '--target' in pytest_args:
     # This condition will execute when args ore in format ['--target','<target name'>]
     if pytest_args[pytest_args.index("--local") + 1]:
         target = pytest_args[pytest_args.index("--target") + 1]
+    os.environ["TARGET"]=target
 elif proc_name == 'pytest' and '--target' in pytest_args and '--local' not in pytest_args:
     # This condition will execute for non local test runner execution
     target = pytest_args[pytest_args.index("--target") + 1].lower()
@@ -62,8 +61,11 @@ elif proc_name == 'pytest' and '--target' in pytest_args:
 elif proc_name == 'pytest' and os.getenv('TARGET') is not None:  # test runner process
     # This condition will execute when target is passed from environment
     target = os.environ["TARGET"]
+elif proc_name not in ["testrunner.py", "testrunner"]:
+    target = os.environ.get("TARGET")
 else:
     target = None
+
 
 CMN_CFG = configmanager.get_config_wrapper(fpath=COMMON_CONFIG, target=target)
 CSM_REST_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG, config_key="Restcall",
