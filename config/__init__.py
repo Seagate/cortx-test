@@ -50,6 +50,7 @@ if proc_name == 'pytest' and '--local' in pytest_args and '--target' in pytest_a
     # This condition will execute when args ore in format ['--target','<target name'>]
     if pytest_args[pytest_args.index("--local") + 1]:
         target = pytest_args[pytest_args.index("--target") + 1]
+    os.environ["TARGET"]=target
 elif proc_name == 'pytest' and '--target' in pytest_args and '--local' not in pytest_args:
     # This condition will execute for non local test runner execution
     target = pytest_args[pytest_args.index("--target") + 1].lower()
