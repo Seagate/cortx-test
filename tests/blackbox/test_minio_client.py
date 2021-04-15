@@ -27,7 +27,6 @@ import pytest
 
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
-from commons.utils.config_utils import read_content_json, create_content_json
 from commons.utils import config_utils
 from commons.utils import system_utils
 from commons.utils import assert_utils
