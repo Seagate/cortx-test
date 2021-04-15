@@ -659,10 +659,9 @@ def generate_random_string():
     return ''.join(random.choice(string.ascii_lowercase) for i in range(5))
 
 
-# @pytest.fixture
 def dns_rr_counter():
     import threading
-    with threading.Lock() as lck:
+    with threading.Lock():
         pytest.dns_rr_counter += 1
         return pytest.dns_rr_counter
 

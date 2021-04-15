@@ -87,7 +87,7 @@ def update_config_db(setup_query: dict, data: dict) -> dict:
     """update the setup details in the database
 
     :param setup_query: Query for setup eg: {"setupname":"automation"}
-    :param data: Data tu be updated in db
+    :param data: Data to be updated in db
     :return [type]: dict data
     """
     sys_coll = _get_collection_obj()
