@@ -169,6 +169,33 @@ class RASCoreLib:
 
         return response
 
+    def start_message_bus_reader_cmd(self, **kwargs) -> bool:
+        """
+        Function will check for the disk space alert for sspl.
+
+        :param str sspl_exchange: sspl exchange string
+        :param str sspl_key: sspl key string
+        :return: Command response along with status(True/False)
+        :rtype: bool
+        """
+        file_path = cmn_cons.MSG_BUS_READER_PATH
+        local_path_rabittmq = cmn_cons.MSG_BUS_READER_PATH
+        sspl_pass = kwargs.get("sspl_pass")
+        LOGGER.debug("Copying file to %s", self.host)
+        self.node_utils.copy_file_to_remote(
+            local_path=local_path_rabittmq, remote_path=file_path)
+        copy_res = self.node_utils.path_exists(file_path)
+        if not copy_res:
+            LOGGER.debug('Failed to copy the file')
+            return copy_res
+        self.change_file_mode(path=file_path)
+
+        cmd = common_commands.START_MSG_BUS_READER_CMD.format()
+        LOGGER.debug("MSG Bus Reader command: %s", cmd)
+        response = self.run_cmd_on_screen(cmd=cmd)
+
+        return response
+
     def check_status_file(self) -> Tuple[Union[List[str], str, bytes]]:
         """
         Function checks the state.txt file of sspl service and sets the

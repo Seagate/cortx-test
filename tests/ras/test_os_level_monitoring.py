@@ -55,7 +55,7 @@ class TestSSPL:
         cls.uname = CMN_CFG["nodes"][0]["username"]
         cls.passwd = CMN_CFG["nodes"][0]["password"]
         cls.sspl_stop = cls.changed_level = cls.selinux_enabled = False
-        cls.default_cpu_usage = cls.default_mem_usage = True
+        # cls.default_cpu_usage = cls.default_mem_usage = True
 
         cls.ras_test_obj = RASTestLib(host=cls.host, username=cls.uname,
                                       password=cls.passwd)
@@ -69,7 +69,7 @@ class TestSSPL:
         #     enclosure_user=CMN_CFG["enclosure"]["enclosure_user"],
         #     enclosure_pwd=CMN_CFG["enclosure"]["enclosure_pwd"])
 
-        cls.alert_api_obj = GenerateAlertLib()
+        # cls.alert_api_obj = GenerateAlertLib()
         cls.csm_alert_obj = SystemAlerts(cls.node_obj)
         # Enable this flag for starting RMQ channel
         cls.start_msg_bus = cls.cm_cfg["start_msg_bus"]
@@ -134,7 +134,7 @@ class TestSSPL:
                 self.cm_cfg["sspl_exch"], self.cm_cfg["sspl_key"])
             assert resp, "Failed to start RMQ channel"
             LOGGER.info(
-                "Successfully started rabbitmq_reader.py script on node")
+                "Successfully started read_message_bus.py script on node")
 
         LOGGER.info("Starting collection of sspl.log")
         res = self.ras_test_obj.sspl_log_collect()
@@ -156,25 +156,6 @@ class TestSSPL:
             assert resp, "Failed to enable sspl-master"
 
         LOGGER.info("Restoring values to default in consul")
-        LOGGER.info("Updating disk usage threshold value")
-        res = self.ras_test_obj.update_threshold_values(
-            cons.KV_STORE_DISK_USAGE, self.cm_cfg["sspl_config"]["sspl_du_key"],
-            self.cm_cfg["sspl_config"]["sspl_du_dval"])
-        assert res
-
-        if not self.default_cpu_usage:
-            LOGGER.info("Updating default cpu usage threshold value")
-            res = self.ras_test_obj.update_threshold_values(
-                cons.KV_STORE_DISK_USAGE, cons.CPU_USAGE_KEY,
-                self.cm_cfg["default_cpu_usage"])
-            assert res
-
-        if not self.default_mem_usage:
-            LOGGER.info("Updating default memory usage threshold value")
-            res = self.ras_test_obj.update_threshold_values(
-                cons.KV_STORE_DISK_USAGE, cons.MEM_USAGE_KEY,
-                self.cm_cfg["default_mem_usage"])
-            assert res
 
         if self.changed_level:
             kv_store_path = cons.LOG_STORE_PATH
@@ -184,17 +165,6 @@ class TestSSPL:
                 common_cfg["sspl_log_dval"],
                 update=True)
             assert res
-
-        if os.path.exists(self.cm_cfg["file"]["telnet_xml"]):
-            LOGGER.info("Remove telnet file")
-            os.remove(self.cm_cfg["file"]["telnet_xml"])
-
-        if self.node_obj.path_exists(
-                RAS_VAL["ras_sspl_alert"]["file"]["disk_usage_temp_file"]):
-            LOGGER.info("Remove temp disk usage file")
-            self.node_obj.remove_file(
-                filename=RAS_VAL["ras_sspl_alert"]["file"]
-                ["disk_usage_temp_file"])
 
         LOGGER.info("Terminating the process of reading sspl.log")
         self.ras_test_obj.kill_remote_process("/sspl/sspl.log")
@@ -213,9 +183,9 @@ class TestSSPL:
             "Removing file %s", self.cm_cfg["file"]["sspl_log_file"])
         self.node_obj.remove_file(filename=self.cm_cfg["file"]["sspl_log_file"])
 
-        if self.start_rmq:
-            LOGGER.info("Terminating the process rabbitmq_reader.py")
-            self.ras_test_obj.kill_remote_process("rabbitmq_reader.py")
+        if self.start_msg_bus:
+            LOGGER.info("Terminating the process read_message_bus.py")
+            self.ras_test_obj.kill_remote_process("read_message_bus.py")
             files = [self.cm_cfg["file"]["alert_log_file"],
                      self.cm_cfg["file"]["extracted_alert_file"],
                      self.cm_cfg["file"]["screen_log"]]
@@ -247,3 +217,4 @@ class TestSSPL:
                         self.host)
 
         LOGGER.info("Successfully performed Teardown operation")
+
