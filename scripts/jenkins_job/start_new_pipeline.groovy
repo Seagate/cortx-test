@@ -23,7 +23,7 @@ pipeline {
 
 						withCredentials([usernamePassword(credentialsId: 'rel_sanity_github_auto', passwordVariable: 'password', usernameVariable: 'username')]) {
 						sshCommand remote: remote, command: 'rm -rf ~/workspace/cortx_test'
-						sshCommand  command: 'git clone -b eos-19246-new-pipeline https://github.com/sonalk0209/cortx-test.git'
+						sshCommand  command: 'git clone -b eos-19246-new-pipeline https://$username:$password@github.com/$username/cortx-test.git'
 						}
 
 						def mytext = """set -e
