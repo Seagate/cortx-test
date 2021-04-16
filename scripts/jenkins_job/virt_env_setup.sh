@@ -20,6 +20,6 @@ python -V
 pip3 install --upgrade pip
 
 #Python libraries which will be installed over pip inside the virtualenv
-pip3 --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org install -r ../../requirements.txt -i https://pypi.python.org/simple/.
+pip3 --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org install -r requirements.txt -i https://pypi.python.org/simple/.
 
 echo "Virtual environment ${VENV_DIR} has been created"
