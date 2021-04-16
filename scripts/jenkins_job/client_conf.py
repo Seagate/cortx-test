@@ -38,47 +38,30 @@ def create_db_entry(hostname, username, password, ip_addr):
     json_file = "/root/workspace/cortx-test/tools/setup_update/setup_entry.json"
     new_setupname = hostname.split(".")[0]
     LOGGER.info("Creating DB entry for setup: {}".format(new_setupname))
-    '''
-    old_setup_entry = "\"setupname\":\"T2\","
-    new_setup_entry = "\"setupname\":\"{}\","
-    old_host_entry = "\"hostname\": \"node 0 hostname\","
-    new_host_entry = "\"hostname\": \"{}\","
-    old_host_user = "\"username\": \"node 0 username\","
-    new_host_user = "\"username\": \"{}\","
-    old_host_passwd = "\"password\": \"node 0 password\""
-    new_host_passwd = "\"password\": \"{}\""
 
-    with open(json_file, 'r+') as file:
-        newlines = []
-        for line in file.readlines():
-            if old_setup_entry in line:
-                newlines.append(line.replace(old_setup_entry, new_setup_entry).format(new_setupname))
-            if old_host_entry in line:
-                newlines.append(line.replace(old_host_entry, new_host_entry).format(hostname))
-            if old_host_user in line:
-                newlines.append(line.replace(old_host_user, new_host_user).format(username))
-            if old_host_passwd in line:
-                newlines.append(line.replace(old_host_passwd, new_host_passwd).format(password))
-    with open(json_file, "w") as file:
-        for line in newlines:
-            file.writelines(line)
-    '''
     with open(json_file, 'r') as file:
         json_data = json.load(file)
-        for item in json_data:
-            if item['setupname'] in ["T2"]:
-                item['setupname'] = new_setupname
-            if item['hostname'] in ["node 0 hostname"]:
-                item['hostname'] = hostname
-            if item['username'] in ["node 0 username"]:
-                item['username'] = username
-            if item['password'] in ["node 0 password"]:
-                item['password'] = password
-            if item['ip'] in ["node 0 ip"]:
-                item['password'] = ip_addr
+
+    for item in json_data:
+        if item == "setupname":
+           json_data[item] = new_setupname
+    json_data_nodes = json_data["nodes"]
+    for item in json_data_nodes:
+        if item['host'] == "eos-node-0":
+            item['host'] = "eosnode-1"
+        if item['hostname'] == "node 0 hostname":
+            item['hostname'] = hostname
+        if item['username'] == "node 0 username":
+            item['username'] = username
+        if item['password'] == "node 0 password":
+            item['password'] = password
+        if item['ip'] == "node 0 ip":
+            item['ip'] = ip_addr
+
+    print("new file data: {}".format(json_data))
     with open(json_file, 'w') as file:
         json.dump(json_data, file)
-
+    
 
 def set_s3_endpoints(cluster_ip):
     """
@@ -119,14 +102,15 @@ def main():
     cmd = "mkdir -p /etc/ssl/stx-s3-clients/s3/"
     nd_obj_client.execute_cmd(cmd, read_lines=True)
     remote_path= "/opt/seagate/cortx/provisioner/srv/components/s3clients/files/ca.crt"
-    local_path= "/etc/ssl/stx-s3-clients/s3/"
-    if not os.path.exists("/etc/ssl/stx-s3-clients/s3/ca.crt"):
-        nd_obj_host.copy_file_to_local(remote_path=remote_path, local_path=local_path)
+    local_path= "/etc/ssl/stx-s3-clients/s3/ca.crt"
+    if os.path.exists(local_path):
+        cmd = "rm -f {}".format(local_path)
+        nd_obj_client.execute_cmd(cmd, read_lines=True)
+    nd_obj_host.copy_file_to_local(remote_path=remote_path, local_path=local_path)
     set_s3_endpoints(clstr_ip)
     create_db_entry(host, uname, host_passwd, mgmnt_ip)
     cmd = "python3.7 /root/workspace/cortx_test/tools/setup_update/setup_entry.py --dbuser datawrite --dbpassword seagate@123"
     nd_obj_client.execute_cmd(cmd, read_lines=True)
-    
 
 if __name__ == "__main__":
     main()
