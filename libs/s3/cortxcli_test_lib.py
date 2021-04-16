@@ -30,7 +30,6 @@ from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
 from libs.csm.cli.cortx_cli_s3_buckets import CortxCliS3BucketOperations
 from libs.csm.cli.cortxcli_iam_user import CortxCliIamUser
 from libs.csm.cli.cli_csm_user import CortxCliCsmUser
-from libs.csm.cli.cli_alerts_lib import CortxCliAlerts
 from libs.s3.iam_test_lib import IamTestLib
 
 
@@ -88,21 +87,6 @@ class CortxcliCsmUser(CortxCliCsmUser):
         """Constructor for csm user.
 
         :param object session_obj: session object of host connection if already established
-        """
-        super().__init__(session_obj=session_obj)
-
-
-class CortxcliAlerts(CortxCliAlerts):
-    """Methods for performing operations on alerts using cortxcli.
-
-    Class is open for future Implementation and extension
-    """
-
-    def __init__(self, session_obj: object = None):
-        """
-        Method initializes members of CortxCliAlerts.
-
-        :param object session_obj: session object of host connection if already established.
         """
         super().__init__(session_obj=session_obj)
 
@@ -213,9 +197,7 @@ class CortxCliTestLib(CortxcliS3AccountOperations,
         try:
             status, response = super().create_s3account_cortx_cli(
                 account_name, account_email, password, **kwargs)
-            if status:
-                status, response = self.get_s3account_details_cortxcli(
-                    response)
+
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          CortxCliTestLib.create_account_cortxcli.__name__,
