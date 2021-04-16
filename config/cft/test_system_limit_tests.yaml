@@ -38,3 +38,8 @@ test_16911:
   s3_count: 0
   iam_count: 0
   bucket_count: 0
+
+test_20274:
+  bucket_name: "mp-bkt-test20274"
+  object_name: "mp-obj-test20274"
+  list_multipart_uploads_limit: 1000
