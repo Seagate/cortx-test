@@ -38,6 +38,7 @@ from commons.exceptions import CTException
 from commons.utils.config_utils import read_yaml
 from commons.utils import assert_utils
 from commons.utils import system_utils
+from config import S3_BKT_TST as BKT_POLICY_CONF
 from libs.s3 import s3_bucket_policy_test_lib
 from libs.s3 import s3_test_lib
 from libs.s3 import iam_test_lib
@@ -53,8 +54,6 @@ NO_AUTH_OBJ = s3_test_lib.S3LibNoAuth()
 S3_TAG_OBJ = s3_tagging_test_lib.S3TaggingTestLib()
 S3_MULTIPART_OBJ = s3_multipart_test_lib.S3MultipartTestLib()
 S3_BKT_POLICY_OBJ = s3_bucket_policy_test_lib.S3BucketPolicyTestLib()
-
-BKT_POLICY_CONF = read_yaml("config/s3/s3_bucket_test.yaml")[1]
 
 
 class TestBucketPolicy:
