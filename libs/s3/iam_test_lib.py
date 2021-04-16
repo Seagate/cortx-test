@@ -334,7 +334,6 @@ class IamTestLib(IamLib, S3IamCli):
         try:
             LOGGER.info("Get %s user login profile details", user_name)
             user_dict = {}
-            # login_profile = self.iam_resource.LoginProfile(user_name)
             login_profile = super().get_user_login_profile(user_name)
             user_dict['user_name'] = login_profile.user_name
             user_dict['create_date'] = login_profile.create_date.strftime(
