@@ -43,8 +43,8 @@ class CortxCliS3AccessKeys(CortxCli):
     def create_s3access_key(self,
                             user_name: str) -> tuple:
         """
-        This function will create s3 access ket with specified name using CORTX CLI.
-        :param user_name: Name of user for which access key should be created.
+        This function will create s3 access key for IAM user using CORTX CLI.
+        :param user_name: Name of S3 IAM user for which access key should be created.
         :return: True/False and Response returned by CORTX CLI
         """
 
