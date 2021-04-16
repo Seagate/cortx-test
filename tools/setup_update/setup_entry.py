@@ -21,7 +21,7 @@
 """
 Script can be used to insert / update setup in the DB
 Update the json with the entries you want to make and run below command.
-Sample command: python tools/setup_update/setup_entry.py --dbuser <username> --dbpassword <password> 
+Sample command: python tools/setup_update/setup_entry.py --dbuser <username> --dbpassword <password>
 --new_entry <True/ False>
 """
 import os
