@@ -233,7 +233,6 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    # @pytest.mark.skip(reason="Test failing when running in parallel")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-17864')
@@ -423,7 +422,7 @@ class TestCsmUser():
             login_as="s3account_user")
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
-
+    
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -461,7 +460,6 @@ class TestCsmUser():
         """
         Test that GET API returns 200 response code and appropriate json data
         for valid username input.
-
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -512,7 +510,6 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    # @pytest.mark.skip(reason="Skipping the test as it changes admin password")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10797')
@@ -781,6 +778,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-12018')
@@ -852,6 +850,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.skip("Changing root password")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-12024')
@@ -2036,6 +2035,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.skip("CHANGING ADMIN PASSWORD")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-15862')
@@ -2271,9 +2271,9 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @ pytest.mark.csmrest
-    @ pytest.mark.parallel
-    @ pytest.mark.tags('TEST-16550')
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-16550')
     def test_1227(self):
         """
         Test that CSM user with role manager cannot perform any REST API request
@@ -2374,9 +2374,9 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @ pytest.mark.csmrest
-    @ pytest.mark.parallel
-    @ pytest.mark.tags('TEST-16551')
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-16551')
     def test_1040(self):
         """
         Test that S3 account should not have access to create csm user from backend
@@ -2398,9 +2398,9 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @ pytest.mark.csmrest
-    @ pytest.mark.parallel
-    @ pytest.mark.tags('TEST-16552')
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-16552')
     def test_1172(self):
         """
         Test that the error messages related to the Log-in should not display
@@ -2443,9 +2443,9 @@ class TestCsmUser():
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
-    @ pytest.mark.csmrest
-    @ pytest.mark.parallel
-    @ pytest.mark.tags('TEST-16936')
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-16936')
     def test_7362(self):
         """
         Test that CSM user with monitor role cannot perform POST, PATCH and
@@ -2532,9 +2532,10 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @ pytest.mark.csmrest
-    @ pytest.mark.parallel
-    @ pytest.mark.tags('TEST-16935')
+
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-16935')
     def test_7361(self):
         """
         Test that CSM user with role manager cannot perform DELETE and PATCH
@@ -2617,9 +2618,9 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @ pytest.mark.csmrest
-    @ pytest.mark.parallel
-    @ pytest.mark.tags('TEST-17191')
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-17191')
     def test_7360(self):
         """
         Test that CSM user with role manager cannot perform REST API request on
