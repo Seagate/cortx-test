@@ -28,17 +28,23 @@ pipeline {
 							//sshCommand remote: remote, command: 'echo -e "Host seagit.okla.seagate.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config'
 							sshCommand  command: 'eval "$(ssh-agent)"; ssh-agent $(ssh-add /root/.ssh/my-key); git clone -b eos-19246-new-pipeline https://github.com/Seagate/cortx-test.git'
 						}
+						requirements, vir
+						source venv/bin/activate
+						//python3.7 setup.py install
+                        //python3.7 setup.py develop
+						setup
 						//sshCommand remote: remote, command: 'cd /root/eos-test; python3.6 scripts/DevOPs/setup_client.py > setup_client.log'
 						def mytext = """set -e
 
 set -v
 cd /root/eos-test
-source venv/bin/activate
+#source venv/bin/activate
 export ADMIN_USR="${ADMIN_USR}"
 export ADMIN_PWD="${ADMIN_PWD}"
 export HOST_PASS="${HOST_PASS}"
 //python3.7 setup.py install
 //python3.7 setup.py develop
+client_conf
 mkdir -p cortx_logs
 ln -sf /root/workspace/cortx-test/log/latest/ cortx_logs/
 python -m unittest scripts.DevOPs.csm_boarding.CSMBoarding.test_preboarding

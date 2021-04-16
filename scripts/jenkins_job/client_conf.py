@@ -24,19 +24,21 @@ Setup file for client configuration for executing the R2 regression.
 
 import os
 import logging
+import json
 from commons.helpers.node_helper import Node
 
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
 
-def create_db_entry(hostname, username, password):
+def create_db_entry(hostname, username, password, ip_addr):
     """
     Creation of new host entry in database.
     """
-    json_file = "/root/SonalK/workspace/cortx-test/tools/setup_update/setup_entry.json"
+    json_file = "/root/workspace/cortx-test/tools/setup_update/setup_entry.json"
     new_setupname = hostname.split(".")[0]
-    new_setupname = new_setupname.append("RelSanity")
+    LOGGER.info("Creating DB entry for setup: {}".format(new_setupname))
+    '''
     old_setup_entry = "\"setupname\":\"T2\","
     new_setup_entry = "\"setupname\":\"{}\","
     old_host_entry = "\"hostname\": \"node 0 hostname\","
@@ -60,6 +62,22 @@ def create_db_entry(hostname, username, password):
     with open(json_file, "w") as file:
         for line in newlines:
             file.writelines(line)
+    '''
+    with open(json_file, 'r') as file:
+        json_data = json.load(file)
+        for item in json_data:
+            if item['setupname'] in ["T2"]:
+                item['setupname'] = new_setupname
+            if item['hostname'] in ["node 0 hostname"]:
+                item['hostname'] = hostname
+            if item['username'] in ["node 0 username"]:
+                item['username'] = username
+            if item['password'] in ["node 0 password"]:
+                item['password'] = password
+            if item['ip'] in ["node 0 ip"]:
+                item['password'] = ip_addr
+    with open(json_file, 'w') as file:
+        json.dump(json_data, file)
 
 
 def set_s3_endpoints(cluster_ip):
@@ -105,13 +123,10 @@ def main():
     if not os.path.exists("/etc/ssl/stx-s3-clients/s3/ca.crt"):
         nd_obj_host.copy_file_to_local(remote_path=remote_path, local_path=local_path)
     set_s3_endpoints(clstr_ip)
-    create_db_entry(host, uname, host_passwd)
-    cmd = "python3.7 tools/setup_update/setup_entry.py --dbuser datawrite --dbpassword seagate@123"
+    create_db_entry(host, uname, host_passwd, mgmnt_ip)
+    cmd = "python3.7 /root/workspace/cortx_test/tools/setup_update/setup_entry.py --dbuser datawrite --dbpassword seagate@123"
     nd_obj_client.execute_cmd(cmd, read_lines=True)
-    cur_dir = os.getcwd()
-    virtual_env = "venv"
-    cmd = "sh scripts/jenkins_job/virt_env_setup.sh {} {}".format(cur_dir, virtual_env)
-    nd_obj_client.execute_cmd(cmd, read_lines=True)
+    
 
 if __name__ == "__main__":
     main()

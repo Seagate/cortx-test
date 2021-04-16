@@ -23,5 +23,3 @@ pip3 install --upgrade pip
 pip3 --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org install -r ../../requirements.txt -i https://pypi.python.org/simple/.
 
 echo "Virtual environment ${VENV_DIR} has been created"
-#Prints the avocado version installed inside venv
-avocado -v
