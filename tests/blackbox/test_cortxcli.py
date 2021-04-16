@@ -49,6 +49,7 @@ class TestCortxcli:
     iam_user_obj = None
     s3bucket_name = None
     s3obj_name = None
+
     @classmethod
     def setup_class(cls):
         """Setup all the states required for execution of this test suit."""
@@ -97,12 +98,12 @@ class TestCortxcli:
             - Login to CORTX CLI as admin user
         """
         self.log.info("STARTED : Setup operations at test function level")
-        self.s3acc_name = "{}_{}".format(self.s3acc_name, int(time.time()))
+        self.s3acc_name = "{}_{}".format(self.s3acc_name, int(time.perf_counter()))
         self.s3acc_email = self.s3acc_email.format(self.s3acc_name)
         self.s3bucket_name = "{}_{}_{}".format(
-            self.s3acc_prefix, "bucket", int(time.time()))
+            self.s3acc_prefix, "bucket", int(time.perf_counter()))
         self.s3obj_name = "{}_{}_{}".format(
-            self.s3acc_prefix, "object", int(time.time()))
+            self.s3acc_prefix, "object", int(time.perf_counter()))
         login = self.s3acc_obj.login_cortx_cli()
         assert_utils.assert_equals(True, login[0], login[1])
         self.log.info("ENDED : Setup operations at test function level")
@@ -118,7 +119,7 @@ class TestCortxcli:
         all_users = self.iam_user_obj.list_iam_user()[1]
         users_list = [user["UserName"]
                       for user in all_users if
-                      self.user_name in user["UserName"]]
+                      self.user_name is user["UserName"]]
         self.log.info("IAM users: %s", users_list)
         if users_list:
             self.log.info("Deleting IAM users...")
@@ -152,7 +153,7 @@ class TestCortxcli:
         """Create account using cortxcli."""
         self.log.info("STARTED: create account using cortxcli")
         acc_name = "{}{}".format(self.account_name,
-                                 str(int(time.time())))
+                                 str(int(time.perf_counter())))
         self.log.info(
             "Step 1: Creating a new account with name %s", acc_name)
         resp = self.create_account(acc_name, acc_password=self.s3acc_password)
@@ -173,7 +174,7 @@ class TestCortxcli:
         """List account using cortxcli."""
         self.log.info("STARTED: List account using cortxcli")
         acc_name = "{}{}".format(self.account_name,
-                                 str(int(time.time())))
+                                 str(int(time.perf_counter())))
         self.log.info(
             "Step 1: Creating a new account with name %s", acc_name)
         resp = self.create_account(acc_name, acc_password=self.s3acc_password)
@@ -205,7 +206,7 @@ class TestCortxcli:
         secret_keys = []
         acc_name = self.account_name
         for account in range(total_accounts):
-            account_name = f"{acc_name}{account}{account}{str(int(time.time()))}"
+            account_name = f"{acc_name}{account}{account}{str(int(time.perf_counter()))}"
             email_id = f"{acc_name}{account}{account}@seagate.com"
             resp = self.create_account(
                 account_name, email_id, self.s3acc_password)
@@ -238,7 +239,7 @@ class TestCortxcli:
             "STARTED: create account with existing name using cortxcli")
         err_message = "EntityAlreadyExists"
         acc_name = "{}{}".format(self.account_name,
-                                 str(int(time.time())))
+                                 str(int(time.perf_counter())))
         self.log.info(
             "Step 1: Creating a new account with name %s", acc_name)
         resp = self.create_account(acc_name, acc_password=self.s3acc_password)
@@ -266,7 +267,7 @@ class TestCortxcli:
         """Delete Account using cortxcli."""
         self.log.info("STARTED: Delete Account using cortxcli")
         acc_name = "{}{}".format(self.account_name,
-                                 str(int(time.time())))
+                                 str(int(time.perf_counter())))
         self.log.info(
             "Step 1: Creating a new account with name %s", acc_name)
         resp = self.create_account(acc_name, acc_password=self.s3acc_password)
@@ -292,9 +293,9 @@ class TestCortxcli:
         self.log.info("Step 1: Create new account and new user in it")
         file_size = 1
         acc_name = "{}{}".format(self.account_name,
-                                 str(int(time.time())))
+                                 str(int(time.perf_counter())))
         usr_name = "{}{}".format(
-            self.user_name, str(int(time.time())))
+            self.user_name, str(int(time.perf_counter())))
         resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
@@ -360,9 +361,9 @@ class TestCortxcli:
         self.log.info("STARTED: create user using cortxcli")
         self.log.info("Step 1: Create new account and new user in it")
         acc_name = "{}{}".format(self.account_name,
-                                 str(int(time.time())))
+                                 str(int(time.perf_counter())))
         usr_name = "{}{}".format(
-            self.user_name, str(int(time.time())))
+            self.user_name, str(int(time.perf_counter())))
         resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
@@ -386,9 +387,9 @@ class TestCortxcli:
         """Create access key for user using cortxcli."""
         self.log.info("STARTED: create access key for user using cortxcli")
         acc_name = "{}{}".format(self.account_name,
-                                 str(int(time.time())))
+                                 str(int(time.perf_counter())))
         usr_name = "{}{}".format(
-            self.user_name, str(int(time.time())))
+            self.user_name, str(int(time.perf_counter())))
         resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
@@ -421,9 +422,9 @@ class TestCortxcli:
         self.log.info("Step 1: Create new account")
         total_users = 100
         acc_name = "{}{}".format(self.account_name,
-                                 str(int(time.time())))
+                                 str(int(time.perf_counter())))
         usr_name = "{}{}".format(
-            self.user_name, str(int(time.time())))
+            self.user_name, str(int(time.perf_counter())))
         resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
@@ -464,9 +465,9 @@ class TestCortxcli:
         self.log.info("Step 1: Create new account")
         err_message = "EntityAlreadyExists"
         acc_name = "{}{}".format(self.account_name,
-                                 str(int(time.time())))
+                                 str(int(time.perf_counter())))
         usr_name = "{}{}".format(
-            self.user_name, str(int(time.time())))
+            self.user_name, str(int(time.perf_counter())))
         resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
@@ -499,9 +500,9 @@ class TestCortxcli:
         self.log.info("STARTED: Delete user using cortxcli")
         self.log.info("Step 1: Create new account and new user in it")
         acc_name = "{}{}".format(self.account_name,
-                                 str(int(time.time())))
+                                 str(int(time.perf_counter())))
         usr_name = "{}{}".format(
-            self.user_name, str(int(time.time())))
+            self.user_name, str(int(time.perf_counter())))
         resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
@@ -528,9 +529,9 @@ class TestCortxcli:
         self.log.info("Step 1: Create new account and new user in it")
         new_user_name = "testuser2402"
         acc_name = "{}{}".format(self.account_name,
-                                 str(int(time.time())))
+                                 str(int(time.perf_counter())))
         usr_name = "{}{}".format(
-            self.user_name, str(int(time.time())))
+            self.user_name, str(int(time.perf_counter())))
         resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
@@ -566,9 +567,9 @@ class TestCortxcli:
         self.log.info("STARTED: list user using cortxcli")
         self.log.info("Step 1: Create new account and new user in it")
         acc_name = "{}{}".format(self.account_name,
-                                 str(int(time.time())))
+                                 str(int(time.perf_counter())))
         usr_name = "{}{}".format(
-            self.user_name, str(int(time.time())))
+            self.user_name, str(int(time.perf_counter())))
         resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
@@ -601,7 +602,7 @@ class TestCortxcli:
         user_access_key = ACCESS_KEY
         user_secret_key = SECRET_KEY
         acc_name = "{}{}".format(self.account_name,
-                                 str(int(time.time())))
+                                 str(int(time.perf_counter())))
         resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         self.log.info("Step 1: Created new account")
@@ -667,9 +668,9 @@ class TestCortxcli:
         self.log.info("Step 1: Create new account and new user in it")
         file_size = 1
         acc_name = "{}{}".format(self.account_name,
-                                 str(int(time.time())))
+                                 str(int(time.perf_counter())))
         usr_name = "{}{}".format(
-            self.user_name, str(int(time.time())))
+            self.user_name, str(int(time.perf_counter())))
         resp = self.create_account(acc_name, acc_password=self.s3acc_password)
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
@@ -734,9 +735,9 @@ class TestCortxcli:
         """Delete accesskey using cortxcli."""
         self.log.info("STARTED: delete accesskey using cortxcli")
         acc_name = "{}{}".format(self.account_name,
-                                 str(int(time.time())))
+                                 str(int(time.perf_counter())))
         usr_name = "{}{}".format(
-            self.user_name, str(int(time.time())))
+            self.user_name, str(int(time.perf_counter())))
         self.log.info(
             "Step 1: Creating a new account with name %s", acc_name)
         resp = self.create_account(acc_name, acc_password=self.s3acc_password)
@@ -789,9 +790,9 @@ class TestCortxcli:
         self.log.info(
             "STARTED: update accesskey with inactive mode using cortxcli")
         acc_name = "{}{}".format(self.account_name,
-                                 str(int(time.time())))
+                                 str(int(time.perf_counter())))
         usr_name = "{}{}".format(
-            self.user_name, str(int(time.time())))
+            self.user_name, str(int(time.perf_counter())))
         self.log.info(
             "Step 1: Creating a new account with name %s", acc_name)
         resp = self.create_account(acc_name, acc_password=self.s3acc_password)
@@ -846,9 +847,9 @@ class TestCortxcli:
         """List accesskey for User using cortxcli."""
         self.log.info("STARTED: list accesskey for User using cortxcli")
         acc_name = "{}{}".format(self.account_name,
-                                 str(int(time.time())))
+                                 str(int(time.perf_counter())))
         usr_name = "{}{}".format(
-            self.user_name, str(int(time.time())))
+            self.user_name, str(int(time.perf_counter())))
         self.log.info(
             "Step 1: Creating a new account with name %s",
             self.account_name)
@@ -893,9 +894,9 @@ class TestCortxcli:
         self.log.info(
             "STARTED: update accesskey with active mode using cortxcli")
         acc_name = "{}{}".format(self.account_name,
-                                 str(int(time.time())))
+                                 str(int(time.perf_counter())))
         usr_name = "{}{}".format(
-            self.user_name, str(int(time.time())))
+            self.user_name, str(int(time.perf_counter())))
         self.log.info(
             "Step 1: Creating a new account with name %s", acc_name)
         resp = self.create_account(acc_name, acc_password=self.s3acc_password)
