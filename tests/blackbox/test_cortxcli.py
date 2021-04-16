@@ -38,7 +38,7 @@ from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
 from libs.csm.cli.cortxcli_iam_user import CortxCliIamUser
 
 from libs.s3 import s3_test_lib, iam_test_lib
-
+from libs.s3 import ACCESS_KEY, SECRET_KEY
 s3_test_obj = s3_test_lib.S3TestLib()
 iam_obj = iam_test_lib.IamTestLib()
 
@@ -598,8 +598,8 @@ class TestCortxcli:
         download_obj_err = "Forbidden"
         file_size = 1
         # Dummy access and secret keys
-        user_access_key = "alfjkalfjiecnk@#&kafjkancsmnc"
-        user_secret_key = "*HSLKJMDqpowdapofmamcamc"
+        user_access_key = ACCESS_KEY
+        user_secret_key = SECRET_KEY
         acc_name = "{}{}".format(self.account_name,
                                  str(int(time.time())))
         resp = self.create_account(acc_name, acc_password=self.s3acc_password)
