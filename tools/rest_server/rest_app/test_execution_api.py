@@ -137,14 +137,26 @@ class Create(Resource):
         del json_data["db_username"]
         del json_data["db_password"]
 
-        add_result = mongodbapi.add_document(json_data, uri, read_config.db_name,
-                                             read_config.results_collection)
-        if add_result[0]:
-            ret = flask.Response(status=HTTPStatus.OK,
-                                 response=f"Entry created. ID {add_result[1].inserted_id}")
+        filter_fields = {}
+        for each in ["testPlanID", "testExecutionID", "testID"]:
+            filter_fields[each] = json_data[each]
+        filter_fields["latest"] = True
+        update_field = {"$set": {"latest": False}}
+        update_result = mongodbapi.update_documents(filter_fields, update_field,
+                                                    uri, read_config.db_name,
+                                                    read_config.results_collection)
+
+        if update_result[0]:
+            add_result = mongodbapi.add_document(json_data, uri, read_config.db_name,
+                                                 read_config.results_collection)
+            if add_result[0]:
+                ret = flask.Response(status=HTTPStatus.OK,
+                                     response=f"Entry created. ID {add_result[1].inserted_id}")
+            else:
+                ret = flask.Response(status=add_result[1][0], response=add_result[1][1])
+            return ret
         else:
-            ret = flask.Response(status=add_result[1][0], response=add_result[1][1])
-        return ret
+            return flask.Response(status=update_result[1][0], response=update_result[1][1])
 
 
 @api.route("/update", doc={"description": "Update test execution entries in MongoDB"})
