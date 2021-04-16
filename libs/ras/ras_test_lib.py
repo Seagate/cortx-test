@@ -87,6 +87,32 @@ class RASTestLib(RASCoreLib):
                          RASTestLib.start_rabbitmq_reader_cmd.__name__, error)
             raise CTException(err.RAS_ERROR, error.args[0])
 
+    def start_message_bus_reader_cmd(self, sspl_exchange: str, sspl_key: str,
+                                     **kwargs) -> bool:
+        """
+        Function will check for the disk space alert for sspl.
+
+        :param str sspl_exchange: sspl exchange string
+        :param str sspl_key: sspl key string
+        :keyword sspl_pass: sspl_pass
+        :return: Command response along with status(True/False)
+        :rtype: bool
+        """
+        sspl_pass = kwargs.get("sspl_pass") if kwargs.get("sspl_pass") else \
+            self.sspl_pass
+        try:
+            LOGGER.info("Start to read message bus on node %s ", self.host)
+            cmd_output = super().start_message_bus_reader_cmd(sspl_exchange,
+                                                              sspl_key,
+                                                              sspl_pass=sspl_pass)
+            LOGGER.debug(cmd_output)
+            return cmd_output
+        except BaseException as error:
+            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                         RASTestLib.start_rabbitmq_reader_cmd.__name__, error)
+            raise CTException(err.RAS_ERROR, error.args[0])
+
+
     def check_sspl_event_generated(self) -> Tuple[bool, Any]:
         """
         Check for relevant events are generated on RabbitMQ Channel for the
