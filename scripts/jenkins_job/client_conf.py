@@ -61,7 +61,6 @@ def create_db_entry(hostname, username, password, ip_addr):
     print("new file data: {}".format(json_data))
     with open(json_file, 'w') as file:
         json.dump(json_data, file)
-    
 
 def set_s3_endpoints(cluster_ip):
     """
@@ -78,8 +77,6 @@ def set_s3_endpoints(cluster_ip):
                     break
         else:
             fp.write("{} s3.seagate.com iam.seagate.com".format(cluster_ip))
-
-
 
 def main():
     host = os.getenv("HOSTNAME")
@@ -109,7 +106,7 @@ def main():
     nd_obj_host.copy_file_to_local(remote_path=remote_path, local_path=local_path)
     set_s3_endpoints(clstr_ip)
     create_db_entry(host, uname, host_passwd, mgmnt_ip)
-    cmd = "python3.7 /root/workspace/cortx_test/tools/setup_update/setup_entry.py --dbuser datawrite --dbpassword seagate@123"
+    cmd = "python3.7 /root/workspace/cortx-test/tools/setup_update/setup_entry.py --dbuser datawrite --dbpassword seagate@123"
     nd_obj_client.execute_cmd(cmd, read_lines=True)
 
 if __name__ == "__main__":
