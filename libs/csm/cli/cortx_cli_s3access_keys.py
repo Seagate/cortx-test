@@ -61,15 +61,20 @@ class CortxCliS3AccessKeys(CortxCli):
         return False, response
 
     def delete_s3access_key(self,
-                            access_key: str) -> tuple:
+                            access_key: str,
+                            user_name: str = None) -> tuple:
         """
         This function will delete given s3 access key.
         :param access_key: Access of user
+        :param user_name: Name of user for which access key should be deleted.
         :return: True/False and Response returned by CORTX CLI
         """
 
         command = " ".join(
             [commands.CMD_DELETE_ACCESS_KEY, access_key])
+        if user_name:
+            command = " ".join(
+                [commands.CMD_DELETE_ACCESS_KEY, access_key, user_name])
         LOGGER.info("Deleting s3accesskey %s", access_key)
         response = self.execute_cli_commands(cmd=command)[1]
         if "[Y/n]" in response:
@@ -83,7 +88,7 @@ class CortxCliS3AccessKeys(CortxCli):
     def show_s3access_key(
             self,
             user_name: str,
-            output_format: str = None) -> str:
+            output_format: str = "json") -> str:
         """
         This function will list access keys of given user.
         :param user_name: Name of user
@@ -91,11 +96,8 @@ class CortxCliS3AccessKeys(CortxCli):
                        (possible values: table/xml/json)
         :return: Response returned by CORTX CLI
         """
-
-        command = " ".join(
-            [commands.CMD_SHOW_ACCESS_KEY, user_name])
-        if output_format:
-            command = "{0} -f {1}".format(command, output_format)
+        command = "{0} {1} -f {2}".format(
+            commands.CMD_SHOW_ACCESS_KEY, user_name, output_format)
         LOGGER.info("Listing s3accesskey of user %s", user_name)
         response = self.execute_cli_commands(cmd=command)[1]
         if output_format == "json":
