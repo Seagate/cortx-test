@@ -37,18 +37,9 @@ from commons.utils import assert_utils
 from commons.utils.system_utils import create_file, remove_dir, remove_file
 from libs.s3 import s3_bucket_policy_test_lib, s3_test_lib, iam_test_lib
 from libs.s3 import s3_tagging_test_lib, s3_multipart_test_lib, s3_acl_test_lib
-from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
+from libs.s3 import LDAP_USERNAME, LDAP_PASSWD, S3_CFG
 
 ASRTOBJ = assert_utils
-S3_OBJ = s3_test_lib.S3TestLib()
-IAM_OBJ = iam_test_lib.IamTestLib()
-ACL_OBJ = s3_acl_test_lib.S3AclTestLib()
-NO_AUTH_OBJ = s3_test_lib.S3LibNoAuth()
-S3_TAG_OBJ = s3_tagging_test_lib.S3TaggingTestLib()
-S3_MULTIPART_OBJ = s3_multipart_test_lib.S3MultipartTestLib()
-S3_BKT_POLICY_OBJ = s3_bucket_policy_test_lib.S3BucketPolicyTestLib()
-
-
 BKT_POLICY_CONF = read_yaml("config/s3/test_bucket_policy.yaml")[1]
 
 
@@ -66,6 +57,14 @@ class TestBucketPolicy:
         """
         self.log = logging.getLogger(__name__)
         self.log.info("STARTED: Setup operations.")
+        self.s3_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
+        self.iam_obj = iam_test_lib.IamTestLib(endpoint_url=S3_CFG["iam_url"])
+        self.acl_obj = s3_acl_test_lib.S3AclTestLib(endpoint_url=S3_CFG["s3_url"])
+        self.no_auth_obj = s3_test_lib.S3LibNoAuth(endpoint_url=S3_CFG["s3_url"])
+        self.s3_tag_obj = s3_tagging_test_lib.S3TaggingTestLib(endpoint_url=S3_CFG["s3_url"])
+        self.s3_mp_obj = s3_multipart_test_lib.S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
+        self.s3_bkt_policy_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
+            endpoint_url=S3_CFG["s3_url"])
         self.s3test_obj_1 = None
         self.timestamp = time.time()
         self.ldap_user = LDAP_USERNAME
@@ -96,14 +95,14 @@ class TestBucketPolicy:
             res_bkt = self.s3test_obj_1.bucket_list()
             for bkt in res_bkt[1]:
                 self.s3test_obj_1.delete_bucket(bkt)
-        bucket_list = S3_OBJ.bucket_list()[1]
+        bucket_list = self.s3_obj.bucket_list()[1]
         pref_list = [
             each_bucket for each_bucket in bucket_list if each_bucket.startswith(
                 BKT_POLICY_CONF["bucket_policy"]["bkt_name_prefix"])]
-        S3_OBJ.delete_multiple_buckets(pref_list)
+        self.s3_obj.delete_multiple_buckets(pref_list)
         self.log.info("All the buckets/objects deleted successfully")
         self.log.info("Deleting the IAM accounts and users")
-        all_accounts = IAM_OBJ.list_accounts_s3iamcli(
+        all_accounts = self.iam_obj.list_accounts_s3iamcli(
             self.ldap_user,
             self.ldap_pwd)[1]
         iam_accounts = [acc["AccountName"]
@@ -113,31 +112,32 @@ class TestBucketPolicy:
         if iam_accounts:
             for acc in iam_accounts:
                 self.log.debug("Deleting %s account", acc)
-                resp = IAM_OBJ.reset_account_access_key_s3iamcli(
+                resp = self.iam_obj.reset_account_access_key_s3iamcli(
                     acc,
                     self.ldap_user,
                     self.ldap_pwd)
                 access_key = resp[1]["AccessKeyId"]
                 secret_key = resp[1]["SecretKey"]
-                s3_obj_temp = s3_test_lib.S3TestLib(access_key, secret_key)
+                s3_obj_temp = s3_test_lib.S3TestLib(
+                    endpoint_url=S3_CFG["s3_url"], access_key=access_key, secret_key=secret_key)
                 self.log.info("Deleting buckets in %s account if any", acc)
                 bucket_list = s3_obj_temp.bucket_list()[1]
                 self.log.info(bucket_list)
                 s3_obj_acl = s3_acl_test_lib.S3AclTestLib(
-                    access_key, secret_key)
+                    endpoint_url=S3_CFG["s3_url"], access_key=access_key, secret_key=secret_key)
                 for bucket in bucket_list:
                     s3_obj_acl.put_bucket_acl(bucket, acl="private")
                 s3_obj_temp.delete_all_buckets()
-                IAM_OBJ.reset_access_key_and_delete_account_s3iamcli(acc)
+                self.iam_obj.reset_access_key_and_delete_account_s3iamcli(acc)
                 self.log.debug("Deleted %s account", acc)
-        user_list = IAM_OBJ.list_users()[1]
+        user_list = self.iam_obj.list_users()[1]
         iam_users = [
             user["UserName"] for user in user_list if user["UserName"].startswith(
                 BKT_POLICY_CONF["bucket_policy"]["user_name_prefix"])]
         if iam_users:
             self.log.info(
                 "Deleting the IAM users and access keys from default account")
-            IAM_OBJ.delete_users_with_access_key(iam_users)
+            self.iam_obj.delete_users_with_access_key(iam_users)
             self.log.info(
                 "Deleted the IAM users and access keys from default account")
         self.log.info("Deleting the file created locally for object")
@@ -177,12 +177,12 @@ class TestBucketPolicy:
         self.log.info(
             "Creating a bucket with name %s and uploading %d objects",
             bucket_name, object_count)
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         for i in range(object_count):
             obj_name = "{}{}{}".format(
                 obj_name_prefix, str(int(time.time())), i)
-            resp = S3_OBJ.put_object(
+            resp = self.s3_obj.put_object(
                 bucket_name,
                 obj_name,
                 self.file_path)
@@ -204,7 +204,7 @@ class TestBucketPolicy:
         self.log.info(
             "Step : Creating account with name %s and email_id %s",
             account_name, email_id)
-        create_account = IAM_OBJ.create_account_s3iamcli(
+        create_account = self.iam_obj.create_account_s3iamcli(
             account_name,
             email_id,
             self.ldap_user,
@@ -216,18 +216,18 @@ class TestBucketPolicy:
         account_id = create_account[1]["Account_Id"]
         self.log.info("Step Successfully created the s3iamcli account")
         s3_obj = s3_test_lib.S3TestLib(
-            access_key=access_key, secret_key=secret_key)
-        ACL_OBJ = s3_acl_test_lib.S3AclTestLib(
-            access_key=access_key, secret_key=secret_key)
-        S3_BKT_POLICY_OBJ = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
-            access_key=access_key, secret_key=secret_key)
+            endpoint_url=S3_CFG["s3_url"], access_key=access_key, secret_key=secret_key)
+        self.acl_obj = s3_acl_test_lib.S3AclTestLib(
+            endpoint_url=S3_CFG["s3_url"], access_key=access_key, secret_key=secret_key)
+        self.s3_bkt_policy_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
+            endpoint_url=S3_CFG["s3_url"], access_key=access_key, secret_key=secret_key)
         s3_bkt_tag_obj = s3_tagging_test_lib.S3TaggingTestLib(
-            access_key=access_key, secret_key=secret_key)
-        S3_MULTIPART_OBJ = s3_multipart_test_lib.S3MultipartTestLib(
-            access_key=access_key, secret_key=secret_key)
+            endpoint_url=S3_CFG["s3_url"], access_key=access_key, secret_key=secret_key)
+        self.s3_mp_obj = s3_multipart_test_lib.S3MultipartTestLib(
+            endpoint_url=S3_CFG["s3_url"], access_key=access_key, secret_key=secret_key)
 
-        return canonical_id, s3_obj, ACL_OBJ, S3_BKT_POLICY_OBJ, \
-            access_key, secret_key, account_id, s3_bkt_tag_obj, S3_MULTIPART_OBJ
+        return canonical_id, s3_obj, self.acl_obj, self.s3_bkt_policy_obj, \
+            access_key, secret_key, account_id, s3_bkt_tag_obj, self.s3_mp_obj
 
     def delete_bucket_policy_with_err_msg(self,
                                           bucket_name: str,
@@ -293,7 +293,7 @@ class TestBucketPolicy:
         :return: None
         """
         self.log.info("Creating a bucket with name %s", bucket_name)
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         ASRTOBJ.assert_equals(resp[1], bucket_name, resp[1])
         self.log.info("Bucket is created with name %s", bucket_name)
@@ -303,7 +303,7 @@ class TestBucketPolicy:
             self.file_path,
             BKT_POLICY_CONF["bucket_policy"]["file_size"])
         assert resp[0], resp[1]
-        resp = S3_OBJ.put_object(
+        resp = self.s3_obj.put_object(
             bucket_name,
             obj_name_1,
             self.file_path)
@@ -320,7 +320,7 @@ class TestBucketPolicy:
             self.file_path_2,
             BKT_POLICY_CONF["bucket_policy"]["file_size"])
         assert resp[0], resp[1]
-        resp = S3_OBJ.put_object(
+        resp = self.s3_obj.put_object(
             bucket_name,
             obj_name_2,
             self.file_path_2)
@@ -337,7 +337,7 @@ class TestBucketPolicy:
         :return: None
         """
         self.log.info("Step 1 : Creating a bucket with name %s", bucket_name)
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         ASRTOBJ.assert_equals(resp[1], bucket_name, resp[1])
         self.log.info("Step 1 : Bucket is created with name %s", bucket_name)
@@ -357,7 +357,7 @@ class TestBucketPolicy:
         :return: None
         """
         self.log.info("Getting the bucket acl")
-        resp = ACL_OBJ.get_bucket_acl(bucket_name)
+        resp = self.acl_obj.get_bucket_acl(bucket_name)
         assert resp[0], resp[1]
         ASRTOBJ.assert_equals(resp[1][1][0]["Permission"],
                               test_bckt_cfg["bucket_permission"], resp[1])
@@ -374,7 +374,7 @@ class TestBucketPolicy:
         self.log.info(
             "Put Bucket policy from second account will result into"
             "failure with error : %s", test_bckt_cfg["error_message"])
-        resp = ACL_OBJ.put_bucket_acl(
+        resp = self.acl_obj.put_bucket_acl(
             bucket_name, acl=BKT_POLICY_CONF["bucket_policy"]["acl_permission"])
         assert resp[0], resp[1]
 
@@ -388,12 +388,12 @@ class TestBucketPolicy:
         """
         self.log.info("Applying policy to a bucket %s", bucket_name)
         bkt_policy_json = json.dumps(bucket_policy)
-        resp = S3_BKT_POLICY_OBJ.put_bucket_policy(
+        resp = self.s3_bkt_policy_obj.put_bucket_policy(
             bucket_name, bkt_policy_json)
         assert resp[0], resp[1]
         self.log.info("Policy is applied to a bucket %s", bucket_name)
         self.log.info("Retrieving policy of a bucket %s", bucket_name)
-        resp = S3_BKT_POLICY_OBJ.get_bucket_policy(bucket_name)
+        resp = self.s3_bkt_policy_obj.get_bucket_policy(bucket_name)
         assert resp[0], resp[1]
         self.log.debug(resp[1]["Policy"])
         ASRTOBJ.assert_equals(resp[1]["Policy"], bkt_policy_json, resp[1])
@@ -415,7 +415,7 @@ class TestBucketPolicy:
         self.log.info("Applying invalid policy on a bucket %s", bucket_name)
         bkt_json_policy = json.dumps(bucket_policy)
         try:
-            S3_BKT_POLICY_OBJ.put_bucket_policy(bucket_name,
+            self.s3_bkt_policy_obj.put_bucket_policy(bucket_name,
                                                 bkt_json_policy)
         except CTException as error:
             self.log.error(error.message)
@@ -455,7 +455,7 @@ class TestBucketPolicy:
         bucket_name = "{}{}".format(test_config["bucket_name"], effect.lower())
         bkt_json_policy["Statement"][0]["Resource"] = \
             bkt_json_policy["Statement"][0]["Resource"].format(bucket_name)
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         self.put_get_bkt_policy(bucket_name, bkt_json_policy)
         self.log.info("Uploading object to s3 bucket with second account")
@@ -668,7 +668,7 @@ class TestBucketPolicy:
             "Step 2 : Retrieving policy of a bucket %s",
             BKT_POLICY_CONF["test_254"]["bucket_name"])
         try:
-            S3_BKT_POLICY_OBJ.get_bucket_policy(
+            self.s3_bkt_policy_obj.get_bucket_policy(
                 BKT_POLICY_CONF["test_254"]["bucket_name"])
         except CTException as error:
             self.log.error(error.message)
@@ -691,7 +691,7 @@ class TestBucketPolicy:
         self.log.info(
             "Step 1 : Retrieving policy of non existing bucket")
         try:
-            S3_BKT_POLICY_OBJ.get_bucket_policy(
+            self.s3_bkt_policy_obj.get_bucket_policy(
                 BKT_POLICY_CONF["test_260"]["bucket_name"])
         except CTException as error:
             self.log.error(error.message)
@@ -714,7 +714,7 @@ class TestBucketPolicy:
             "bucket which is having policy for that bucket")
         self.log.info("Step 1 : Creating a bucket with name %s",
                       BKT_POLICY_CONF["test_261"]["bucket_name"])
-        resp = S3_OBJ.create_bucket(
+        resp = self.s3_obj.create_bucket(
             BKT_POLICY_CONF["test_261"]["bucket_name"])
         assert resp[0], resp[1]
         ASRTOBJ.assert_equals(resp[1],
@@ -727,7 +727,7 @@ class TestBucketPolicy:
         self.log.info(
             "Step 2 : Performing put bucket policy on bucket %s",
             BKT_POLICY_CONF["test_261"]["bucket_name"])
-        resp = S3_BKT_POLICY_OBJ.put_bucket_policy(
+        resp = self.s3_bkt_policy_obj.put_bucket_policy(
             BKT_POLICY_CONF["test_261"]["bucket_name"], bkt_json_policy)
         assert resp[0], resp[1]
         self.log.info(
@@ -736,7 +736,7 @@ class TestBucketPolicy:
         self.log.info(
             "Step 3 : Retrieving policy of a bucket %s",
             BKT_POLICY_CONF["test_261"]["bucket_name"])
-        resp = S3_BKT_POLICY_OBJ.get_bucket_policy(
+        resp = self.s3_bkt_policy_obj.get_bucket_policy(
             BKT_POLICY_CONF["test_261"]["bucket_name"])
         assert resp[0], resp[1]
         ASRTOBJ.assert_equals(resp[1]["Policy"], bkt_json_policy, resp[1])
@@ -759,7 +759,7 @@ class TestBucketPolicy:
             "canned ACL to account2 and verify get-bucket-policy")
         self.log.info("Step 1 : Creating a  bucket with name %s",
                       BKT_POLICY_CONF["test_262"]["bucket_name"])
-        resp = S3_OBJ.create_bucket(
+        resp = self.s3_obj.create_bucket(
             BKT_POLICY_CONF["test_262"]["bucket_name"])
         ASRTOBJ.assert_equals(
             resp[1],
@@ -773,7 +773,7 @@ class TestBucketPolicy:
         self.log.info(
             "Step 2 : Performing put bucket policy on  bucket %s",
             BKT_POLICY_CONF["test_262"]["bucket_name"])
-        resp = S3_BKT_POLICY_OBJ.put_bucket_policy(
+        resp = self.s3_bkt_policy_obj.put_bucket_policy(
             BKT_POLICY_CONF["test_262"]["bucket_name"], bkt_json_policy)
         assert resp[0], resp[1]
         self.log.info(
@@ -790,7 +790,7 @@ class TestBucketPolicy:
             "Creating another account with name %s and email %s",
             account_name,
             email_id)
-        resp = IAM_OBJ.create_account_s3iamcli(
+        resp = self.iam_obj.create_account_s3iamcli(
             account_name,
             email_id,
             self.ldap_user,
@@ -799,6 +799,7 @@ class TestBucketPolicy:
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
         s3_obj_2 = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=access_key,
             secret_key=secret_key)
         self.log.info(
@@ -813,7 +814,7 @@ class TestBucketPolicy:
             "Step 3 : Get bucket policy with another account is failed")
         # Cleanup activity
         self.log.info("Deleting an account %s", account_name)
-        resp = IAM_OBJ.delete_account_s3iamcli(
+        resp = self.iam_obj.delete_account_s3iamcli(
             account_name, access_key, secret_key, force=True)
         assert resp[0], resp[1]
         self.log.info("Account %s is deleted", account_name)
@@ -1125,12 +1126,12 @@ class TestBucketPolicy:
             "NumericLessThan Condition Operator")
         self.log.info(
             "Step 2: Apply the bucket policy on the bucket and check the output")
-        resp = S3_BKT_POLICY_OBJ.put_bucket_policy(
+        resp = self.s3_bkt_policy_obj.put_bucket_policy(
             bucket_name, bkt_json_policy)
         assert resp[0], resp[1]
         self.log.info("Step 2: Bucket policy on the bucket was applied")
         self.log.info("Step 3: Verify bucket policy")
-        resp = S3_BKT_POLICY_OBJ.get_bucket_policy(bucket_name)
+        resp = self.s3_bkt_policy_obj.get_bucket_policy(bucket_name)
         assert resp[0], resp[1]
         bucket_policy = list(eval(resp[1]["Policy"])[
             "Statement"][0]["Condition"].keys())
@@ -1168,12 +1169,12 @@ class TestBucketPolicy:
             "NumericLessThanEquals Condition Operator")
         self.log.info(
             "Step 2: Apply the bucket policy on the bucket and check the output")
-        resp = S3_BKT_POLICY_OBJ.put_bucket_policy(
+        resp = self.s3_bkt_policy_obj.put_bucket_policy(
             bucket_name, bkt_json_policy)
         assert resp[0], resp[1]
         self.log.info("Step 2: Bucket policy on the bucket was applied")
         self.log.info("Step 3: Verify bucket policy")
-        resp = S3_BKT_POLICY_OBJ.get_bucket_policy(bucket_name)
+        resp = self.s3_bkt_policy_obj.get_bucket_policy(bucket_name)
         assert resp[0], resp[1]
         bucket_policy = list(eval(resp[1]["Policy"])[
             "Statement"][0]["Condition"].keys())
@@ -1210,12 +1211,12 @@ class TestBucketPolicy:
             "NumericGreaterThan Condition Operator")
         self.log.info(
             "Step 2: Apply the bucket policy on the bucket and check the output")
-        resp = S3_BKT_POLICY_OBJ.put_bucket_policy(
+        resp = self.s3_bkt_policy_obj.put_bucket_policy(
             bucket_name, bkt_json_policy)
         assert resp[0], resp[1]
         self.log.info("Step 2: Bucket policy was applied successfully")
         self.log.info("Step 3: Verify bucket policy")
-        resp = S3_BKT_POLICY_OBJ.get_bucket_policy(bucket_name)
+        resp = self.s3_bkt_policy_obj.get_bucket_policy(bucket_name)
         assert resp[0], resp[1]
         bucket_policy = list(eval(resp[1]["Policy"])[
             "Statement"][0]["Condition"].keys())
@@ -1244,12 +1245,12 @@ class TestBucketPolicy:
             BKT_POLICY_CONF["bucket_policy"]["obj_name_prefix"])
         self.log.info("Step 1: Apply the bucket policy on the bucket")
         bkt_json_policy = json.dumps(test_1308_cfg["bucket_policy"])
-        resp = S3_BKT_POLICY_OBJ.put_bucket_policy(
+        resp = self.s3_bkt_policy_obj.put_bucket_policy(
             bucket_name, bkt_json_policy)
         assert resp[0], resp[1]
         self.log.info("Step 1: Bucket policy was applied successfully")
         self.log.info("Step 2: Verify bucket policy")
-        resp = S3_BKT_POLICY_OBJ.get_bucket_policy(bucket_name)
+        resp = self.s3_bkt_policy_obj.get_bucket_policy(bucket_name)
         assert resp[0], resp[1]
         bucket_policy = list(eval(resp[1]["Policy"])[
             "Statement"][0]["Condition"].keys())
@@ -1279,12 +1280,12 @@ class TestBucketPolicy:
             object_lst)
         self.log.info("Step 1: Apply the bucket policy on the bucket")
         bkt_json_policy = json.dumps(test_1294_cfg["bucket_policy"])
-        resp = S3_BKT_POLICY_OBJ.put_bucket_policy(
+        resp = self.s3_bkt_policy_obj.put_bucket_policy(
             bucket_name, bkt_json_policy)
         assert resp[0], resp[1]
         self.log.info("Step 1: Bucket policy was applied successfully")
         self.log.info("Step 2: Verify bucket policy")
-        resp = S3_BKT_POLICY_OBJ.get_bucket_policy(bucket_name)
+        resp = self.s3_bkt_policy_obj.get_bucket_policy(bucket_name)
         assert resp[0], resp[1]
         bucket_policy = list(eval(resp[1]["Policy"])
                              ["Statement"][0]["Condition"].keys())
@@ -1295,7 +1296,7 @@ class TestBucketPolicy:
         self.log.info("Step 2: Bucket policy was verified successfully")
         self.log.info(
             "Step 3: Verify the Bucket Policy with prefix and from Bucket owner account")
-        resp = S3_OBJ.list_objects_with_prefix(
+        resp = self.s3_obj.list_objects_with_prefix(
             bucket_name, test_1294_cfg["prefix"])
         prefix_obj_lst = list(resp[1])
         assert resp[0], resp[1]
@@ -1326,12 +1327,12 @@ class TestBucketPolicy:
             object_lst)
         self.log.info("Step 1: Apply the bucket policy on the bucket")
         bkt_json_policy = json.dumps(test_1296_cfg["bucket_policy"])
-        resp = S3_BKT_POLICY_OBJ.put_bucket_policy(
+        resp = self.s3_bkt_policy_obj.put_bucket_policy(
             bucket_name, bkt_json_policy)
         assert resp[0], resp[1]
         self.log.info("Step 1: Bucket policy was applied successfully")
         self.log.info("Step 2: Verify bucket policy")
-        resp = S3_BKT_POLICY_OBJ.get_bucket_policy(bucket_name)
+        resp = self.s3_bkt_policy_obj.get_bucket_policy(bucket_name)
         assert resp[0], resp[1]
         bucket_policy = list(eval(resp[1]["Policy"])
                              ["Statement"][0]["Condition"].keys())
@@ -1342,7 +1343,7 @@ class TestBucketPolicy:
         self.log.info("Step 2: Bucket policy was verified successfully")
         self.log.info(
             "Step 3: Verify the Bucket Policy with prefix and from Bucket owner account")
-        resp = S3_OBJ.list_objects_with_prefix(
+        resp = self.s3_obj.list_objects_with_prefix(
             bucket_name, test_1296_cfg["prefix"])
         prefix_obj_lst = list(resp[1])
         assert resp[0], resp[1]
@@ -1353,7 +1354,7 @@ class TestBucketPolicy:
         self.log.info("Step 3: Verified the Bucket Policy with prefix")
         self.log.info(
             "Step 4: Verify the Bucket Policy without prefix from Bucket owner")
-        resp = S3_OBJ.object_list(bucket_name)
+        resp = self.s3_obj.object_list(bucket_name)
         prefix_obj_lst = list(resp[1])
         assert resp[0], resp[1]
         ASRTOBJ.assert_equals(
@@ -1377,20 +1378,20 @@ class TestBucketPolicy:
         self.create_bucket_validate(bucket_name)
         self.log.info("Step 2: Apply the bucket policy on the bucket")
         bkt_json_policy = json.dumps(test_558_cfg["bucket_policy"])
-        resp = S3_BKT_POLICY_OBJ.put_bucket_policy(
+        resp = self.s3_bkt_policy_obj.put_bucket_policy(
             bucket_name, bkt_json_policy)
         assert resp[0], resp[1]
         self.log.info("Step 2: Bucket policy was applied successfully")
         self.log.info("Step 3: Verify bucket policy")
-        resp = S3_BKT_POLICY_OBJ.get_bucket_policy(bucket_name)
+        resp = self.s3_bkt_policy_obj.get_bucket_policy(bucket_name)
         assert resp[0], resp[1]
         self.log.info("Step 3: Bucket policy was verified successfully")
         self.log.info("Step 4: Delete bucket policy")
-        resp = S3_BKT_POLICY_OBJ.delete_bucket_policy(bucket_name)
+        resp = self.s3_bkt_policy_obj.delete_bucket_policy(bucket_name)
         assert resp[0], resp[1]
         self.log.info("Step 4: Bucket policy was deleted successfully")
         try:
-            S3_BKT_POLICY_OBJ.get_bucket_policy(bucket_name)
+            self.s3_bkt_policy_obj.get_bucket_policy(bucket_name)
         except CTException as error:
             assert test_558_cfg["error_message"] in error.message, error.message
         self.log.info("ENDED: Apply Delete-bucket-policy on existing bucket")
@@ -1409,7 +1410,7 @@ class TestBucketPolicy:
         self.log.info(
             "Step 1: Delete bucket policy for the bucket which is not there")
         try:
-            S3_BKT_POLICY_OBJ.delete_bucket_policy(bucket_name)
+            self.s3_bkt_policy_obj.delete_bucket_policy(bucket_name)
         except CTException as error:
             assert err_msg in error.message, error.message
         self.log.info(
@@ -1432,19 +1433,19 @@ class TestBucketPolicy:
         self.create_bucket_validate(bucket_name)
         self.log.info("Step 2: Apply the bucket policy on the bucket")
         bkt_json_policy = json.dumps(test_562_cfg["bucket_policy"])
-        resp = S3_BKT_POLICY_OBJ.put_bucket_policy(
+        resp = self.s3_bkt_policy_obj.put_bucket_policy(
             bucket_name, bkt_json_policy)
         assert resp[0], resp[1]
         self.log.info("Step 2: Bucket policy was applied successfully")
         self.log.info("Step 3: Verify bucket policy")
-        resp = S3_BKT_POLICY_OBJ.get_bucket_policy(bucket_name)
+        resp = self.s3_bkt_policy_obj.get_bucket_policy(bucket_name)
         assert resp[0], resp[1]
         self.log.info("Step 3: Bucket policy was verified successfully")
         self.log.info(
             "Step 4: Delete bucket policy without giving any bucket name")
         try:
             bucket_name = None
-            S3_BKT_POLICY_OBJ.delete_bucket_policy(bucket_name)
+            self.s3_bkt_policy_obj.delete_bucket_policy(bucket_name)
         except CTException as error:
             assert test_562_cfg["error_message"] in error.message, error.message
         self.log.info(
@@ -1466,12 +1467,12 @@ class TestBucketPolicy:
         bucket_name = BKT_POLICY_CONF["test_563"]["bucket_name"]
         self.create_bucket_validate(bucket_name)
         self.log.info("Step 2: List all the bucket")
-        resp = S3_OBJ.bucket_list()
+        resp = self.s3_obj.bucket_list()
         assert resp[0], resp[1]
         self.log.info("Step 2: All the bucket listed")
         self.log.info("Step 3: Delete bucket policy")
         try:
-            S3_BKT_POLICY_OBJ.delete_bucket_policy(bucket_name)
+            self.s3_bkt_policy_obj.delete_bucket_policy(bucket_name)
         except CTException as error:
             assert BKT_POLICY_CONF["test_563"]["error_message"] in error.message, error.message
         self.log.info(
@@ -1496,20 +1497,20 @@ class TestBucketPolicy:
         email_id_1 = test_566_cfg["emailid_1"].format(random_id)
         result_1 = self.create_s3iamcli_acc(account_name_1, email_id_1)
         canonical_id_user_1 = result_1[0]
-        ACL_OBJ_1 = result_1[2]
-        S3_BKT_POLICY_OBJ_1 = result_1[3]
+        self.acl_obj_1 = result_1[2]
+        self.s3_bkt_policy_obj_1 = result_1[3]
         account_name_2 = test_566_cfg["account_name_2"].format(random_id)
         email_id_2 = test_566_cfg["emailid_2"].format(random_id)
         result_2 = self.create_s3iamcli_acc(account_name_2, email_id_2)
         canonical_id_user_2 = result_2[0]
-        S3_BKT_POLICY_OBJ_2 = result_2[3]
+        self.s3_bkt_policy_obj_2 = result_2[3]
         self.log.info(
             "Step 1 : Create a new bucket and give grant_read permissions to account 2")
-        resp = ACL_OBJ_1.create_bucket_with_acl(
+        resp = self.acl_obj_1.create_bucket_with_acl(
             bucket_name=bucket_name,
             grant_full_control=test_566_cfg["id_str"].format(canonical_id_user_1))
         assert resp[0], resp[1]
-        resp = ACL_OBJ_1.put_bucket_acl(
+        resp = self.acl_obj_1.put_bucket_acl(
             bucket_name=bucket_name,
             grant_read=test_566_cfg["id_str"].format(canonical_id_user_2))
         assert resp[0], resp[1]
@@ -1518,9 +1519,9 @@ class TestBucketPolicy:
         self.delete_bucket_policy_with_err_msg(
             bucket_name,
             result_1[1],
-            ACL_OBJ_1,
-            S3_BKT_POLICY_OBJ_1,
-            S3_BKT_POLICY_OBJ_2,
+            self.acl_obj_1,
+            self.s3_bkt_policy_obj_1,
+            self.s3_bkt_policy_obj_2,
             test_566_cfg)
         self.log.info(
             "ENDED: Apply Delete-bucket-policy from another account given read permission on bucket")
@@ -1541,20 +1542,20 @@ class TestBucketPolicy:
         email_id_1 = test_569_cfg["emailid_1"].format(random_id)
         result_1 = self.create_s3iamcli_acc(account_name_1, email_id_1)
         canonical_id_user_1 = result_1[0]
-        S3_BKT_POLICY_OBJ_1 = result_1[3]
-        ACL_OBJ_1 = result_1[2]
+        self.s3_bkt_policy_obj_1 = result_1[3]
+        self.acl_obj_1 = result_1[2]
         account_name_2 = test_569_cfg["account_name_2"].format(random_id)
         email_id_2 = test_569_cfg["emailid_2"].format(random_id)
         result_2 = self.create_s3iamcli_acc(account_name_2, email_id_2)
         canonical_id_user_2 = result_2[0]
-        S3_BKT_POLICY_OBJ_2 = result_2[3]
+        self.s3_bkt_policy_obj_2 = result_2[3]
         self.log.info(
             "Step 1 : Create a new bucket and give write permissions to account 2")
-        resp = ACL_OBJ_1.create_bucket_with_acl(
+        resp = self.acl_obj_1.create_bucket_with_acl(
             bucket_name=bucket_name,
             grant_full_control=test_569_cfg["id_str"].format(canonical_id_user_1))
         assert resp[0], resp[1]
-        resp = ACL_OBJ_1.put_bucket_acl(
+        resp = self.acl_obj_1.put_bucket_acl(
             bucket_name=bucket_name,
             grant_write=test_569_cfg["id_str"].format(canonical_id_user_2))
         assert resp[0], resp[1]
@@ -1563,9 +1564,9 @@ class TestBucketPolicy:
         self.delete_bucket_policy_with_err_msg(
             bucket_name,
             result_1[1],
-            ACL_OBJ_1,
-            S3_BKT_POLICY_OBJ_1,
-            S3_BKT_POLICY_OBJ_2,
+            self.acl_obj_1,
+            self.s3_bkt_policy_obj_1,
+            self.s3_bkt_policy_obj_2,
             test_569_cfg)
         self.log.info(
             "ENDED: Apply Delete-bucket-policy from another account given write permission on bucket")
@@ -1586,20 +1587,20 @@ class TestBucketPolicy:
         email_id_1 = test_570_cfg["emailid_1"].format(random_id)
         result_1 = self.create_s3iamcli_acc(account_name_1, email_id_1)
         canonical_id_user_1 = result_1[0]
-        S3_BKT_POLICY_OBJ_1 = result_1[3]
-        ACL_OBJ_1 = result_1[2]
+        self.s3_bkt_policy_obj_1 = result_1[3]
+        self.acl_obj_1 = result_1[2]
         account_name_2 = test_570_cfg["account_name_2"].format(random_id)
         email_id_2 = test_570_cfg["emailid_2"].format(random_id)
         result_2 = self.create_s3iamcli_acc(account_name_2, email_id_2)
         canonical_id_user_2 = result_2[0]
-        S3_BKT_POLICY_OBJ_2 = result_2[3]
+        self.s3_bkt_policy_obj_2 = result_2[3]
         self.log.info(
             "Step 1 : Create a new bucket and give write-acp permissions to account 2")
-        resp = ACL_OBJ_1.create_bucket_with_acl(
+        resp = self.acl_obj_1.create_bucket_with_acl(
             bucket_name=bucket_name,
             grant_full_control=test_570_cfg["id_str"].format(canonical_id_user_1))
         assert resp[0], resp[1]
-        resp = ACL_OBJ_1.put_bucket_acl(
+        resp = self.acl_obj_1.put_bucket_acl(
             bucket_name=bucket_name,
             grant_read_acp=test_570_cfg["id_str"].format(canonical_id_user_2))
         assert resp[0], resp[1]
@@ -1608,9 +1609,9 @@ class TestBucketPolicy:
         self.delete_bucket_policy_with_err_msg(
             bucket_name,
             result_1[1],
-            ACL_OBJ_1,
-            S3_BKT_POLICY_OBJ_1,
-            S3_BKT_POLICY_OBJ_2,
+            self.acl_obj_1,
+            self.s3_bkt_policy_obj_1,
+            self.s3_bkt_policy_obj_2,
             test_570_cfg)
         self.log.info(
             "ENDED: Apply Delete-bucket-policy from another account given read-acp permission on bucket")
@@ -1631,20 +1632,20 @@ class TestBucketPolicy:
         email_id_1 = test_574_cfg["emailid_1"].format(random_id)
         result_1 = self.create_s3iamcli_acc(account_name_1, email_id_1)
         canonical_id_user_1 = result_1[0]
-        S3_BKT_POLICY_OBJ_1 = result_1[3]
-        ACL_OBJ_1 = result_1[2]
+        self.s3_bkt_policy_obj_1 = result_1[3]
+        self.acl_obj_1 = result_1[2]
         account_name_2 = test_574_cfg["account_name_2"].format(random_id)
         email_id_2 = test_574_cfg["emailid_2"].format(random_id)
         result_2 = self.create_s3iamcli_acc(account_name_2, email_id_2)
         canonical_id_user_2 = result_2[0]
-        S3_BKT_POLICY_OBJ_2 = result_2[3]
+        self.s3_bkt_policy_obj_2 = result_2[3]
         self.log.info(
             "Step 1 : Create a new bucket and give write-acp permissions to account 2")
-        resp = ACL_OBJ_1.create_bucket_with_acl(
+        resp = self.acl_obj_1.create_bucket_with_acl(
             bucket_name=bucket_name,
             grant_full_control=test_574_cfg["id_str"].format(canonical_id_user_1))
         assert resp[0], resp[1]
-        resp = ACL_OBJ_1.put_bucket_acl(
+        resp = self.acl_obj_1.put_bucket_acl(
             bucket_name=bucket_name,
             grant_write_acp=test_574_cfg["id_str"].format(canonical_id_user_2))
         assert resp[0], resp[1]
@@ -1653,9 +1654,9 @@ class TestBucketPolicy:
         self.delete_bucket_policy_with_err_msg(
             bucket_name,
             result_1[1],
-            ACL_OBJ_1,
-            S3_BKT_POLICY_OBJ_1,
-            S3_BKT_POLICY_OBJ_2,
+            self.acl_obj_1,
+            self.s3_bkt_policy_obj_1,
+            self.s3_bkt_policy_obj_2,
             test_574_cfg)
         self.log.info(
             "ENDED: Apply Delete-bucket-policy from "
@@ -1678,20 +1679,20 @@ class TestBucketPolicy:
         email_id_1 = test_582_cfg["emailid_1"].format(random_id)
         result_1 = self.create_s3iamcli_acc(account_name_1, email_id_1)
         canonical_id_user_1 = result_1[0]
-        S3_BKT_POLICY_OBJ_1 = result_1[3]
-        ACL_OBJ_1 = result_1[2]
+        self.s3_bkt_policy_obj_1 = result_1[3]
+        self.acl_obj_1 = result_1[2]
         account_name_2 = test_582_cfg["account_name_2"].format(random_id)
         email_id_2 = test_582_cfg["emailid_2"].format(random_id)
         result_2 = self.create_s3iamcli_acc(account_name_2, email_id_2)
         canonical_id_user_2 = result_2[0]
-        S3_BKT_POLICY_OBJ_2 = result_2[3]
+        self.s3_bkt_policy_obj_2 = result_2[3]
         self.log.info(
             "Step 1 : Create a new bucket and give full-control permissions to account 2")
-        resp = ACL_OBJ_1.create_bucket_with_acl(
+        resp = self.acl_obj_1.create_bucket_with_acl(
             bucket_name=bucket_name,
             grant_full_control=test_582_cfg["id_str"].format(canonical_id_user_1))
         assert resp[0], resp[1]
-        resp = ACL_OBJ_1.put_bucket_acl(
+        resp = self.acl_obj_1.put_bucket_acl(
             bucket_name=bucket_name,
             grant_full_control=test_582_cfg["id_str"].format(canonical_id_user_2))
         assert resp[0], resp[1]
@@ -1700,9 +1701,9 @@ class TestBucketPolicy:
         self.delete_bucket_policy_with_err_msg(
             bucket_name,
             result_1[1],
-            ACL_OBJ_1,
-            S3_BKT_POLICY_OBJ_1,
-            S3_BKT_POLICY_OBJ_2,
+            self.acl_obj_1,
+            self.s3_bkt_policy_obj_1,
+            self.s3_bkt_policy_obj_2,
             test_582_cfg)
         self.log.info(
             "ENDED: Apply Delete-bucket-policy from "
@@ -1723,34 +1724,34 @@ class TestBucketPolicy:
         account_name_2 = test_583_cfg["account_name_2"].format(random_id)
         email_id_2 = test_583_cfg["emailid_2"].format(random_id)
         result_2 = self.create_s3iamcli_acc(account_name_2, email_id_2)
-        S3_BKT_POLICY_OBJ_2 = result_2[3]
+        self.s3_bkt_policy_obj_2 = result_2[3]
         self.log.info("Step 1 : Create a new bucket")
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         self.log.info("Step 1 : Bucket was created")
         self.log.info("Step 2: Get bucket acl")
-        resp = ACL_OBJ.get_bucket_acl(bucket_name)
+        resp = self.acl_obj.get_bucket_acl(bucket_name)
         assert resp[0], resp[1]
         self.log.info("Step 2: Bucket ACL was verified")
         self.log.info("Step 3: Apply put bucket policy on the bucket")
         bkt_json_policy = json.dumps(test_583_cfg["bucket_policy"])
-        resp = S3_BKT_POLICY_OBJ.put_bucket_policy(
+        resp = self.s3_bkt_policy_obj.put_bucket_policy(
             bucket_name, bkt_json_policy)
         assert resp[0], resp[1]
         self.log.info("Step 3: Bucket policy was applied on the bucket")
         self.log.info(
             "Step 4: Verify the bucket policy from Bucket owner account")
-        resp = S3_BKT_POLICY_OBJ.get_bucket_policy(bucket_name)
+        resp = self.s3_bkt_policy_obj.get_bucket_policy(bucket_name)
         assert resp[0], resp[1]
         self.log.info("Step 4: Bucket policy was verified")
         self.log.info(
             "Step 5: Login to account2 and delete bucket policy for the bucket "
             "which is present in account1")
         try:
-            S3_BKT_POLICY_OBJ_2.delete_bucket_policy(bucket_name)
+            self.s3_bkt_policy_obj_2.delete_bucket_policy(bucket_name)
         except CTException as error:
             assert test_583_cfg["error_message"] in error.message, error.message
-        S3_OBJ.delete_bucket(bucket_name)
+        self.s3_obj.delete_bucket(bucket_name)
         self.log.info(
             "Step 5: Delete bucket policy should through error message")
         self.log.info(
@@ -1772,36 +1773,36 @@ class TestBucketPolicy:
         account_name_2 = test_584_cfg["account_name_2"].format(random_id)
         email_id_2 = test_584_cfg["emailid_2"].format(random_id)
         result_2 = self.create_s3iamcli_acc(account_name_2, email_id_2)
-        S3_BKT_POLICY_OBJ_2 = result_2[3]
+        self.s3_bkt_policy_obj_2 = result_2[3]
         self.log.info(
             "Step 1 : Create a new bucket with authenticated read permission")
-        resp = ACL_OBJ.create_bucket_with_acl(
+        resp = self.acl_obj.create_bucket_with_acl(
             bucket_name=bucket_name, acl=test_584_cfg["acl_permission"])
         assert resp[0], resp[1]
         self.log.info("Step 1 : Bucket was created")
         self.log.info("Step 2: Retrieving bucket acl attributes")
-        resp = ACL_OBJ.get_bucket_acl(bucket_name)
+        resp = self.acl_obj.get_bucket_acl(bucket_name)
         assert resp[0], resp[1]
         self.log.info("Step 2: Bucket ACL was verified")
         self.log.info("Step 3: Apply put bucket policy on the bucket")
         bkt_json_policy = json.dumps(test_584_cfg["bucket_policy"])
-        resp = S3_BKT_POLICY_OBJ.put_bucket_policy(
+        resp = self.s3_bkt_policy_obj.put_bucket_policy(
             bucket_name, bkt_json_policy)
         assert resp[0], resp[1]
         self.log.info("Step 3: Bucket policy was applied on the bucket")
         self.log.info(
             "Step 4: Verify the bucket policy from Bucket owner account")
-        resp = S3_BKT_POLICY_OBJ.get_bucket_policy(bucket_name)
+        resp = self.s3_bkt_policy_obj.get_bucket_policy(bucket_name)
         assert resp[0], resp[1]
         self.log.info("Step 4: Bucket policy was verified")
         self.log.info(
             "Step 5: Login to account2 and delete bucket policy for the bucket "
             "which is present in account1")
         try:
-            S3_BKT_POLICY_OBJ_2.delete_bucket_policy(bucket_name)
+            self.s3_bkt_policy_obj_2.delete_bucket_policy(bucket_name)
         except CTException as error:
             assert test_584_cfg["error_message"] in error.message, error.message
-        S3_OBJ.delete_bucket(bucket_name)
+        self.s3_obj.delete_bucket(bucket_name)
         self.log.info(
             "Step 5: Delete bucket policy should through error message")
         self.log.info(
@@ -1831,7 +1832,7 @@ class TestBucketPolicy:
         access_key = create_account[4]
         secret_key = create_account[5]
         self.log.info("Creating a user with name %s", user_name)
-        resp = IAM_OBJ.create_user_using_s3iamcli(
+        resp = self.iam_obj.create_user_using_s3iamcli(
             user_name, access_key, secret_key)
         assert resp[0], resp[1]
         self.log.info("User is created with name %s", user_name)
@@ -1904,7 +1905,7 @@ class TestBucketPolicy:
         account_id = create_account[6]
         self.log.info(
             "Creating a user %s from another account", user_name)
-        resp = IAM_OBJ.create_user(user_name)
+        resp = self.iam_obj.create_user(user_name)
         assert resp[0], resp[1]
         self.log.info("User is created with name %s", user_name)
         self.create_bucket_put_obj_with_dir(
@@ -2032,7 +2033,7 @@ class TestBucketPolicy:
         secret_key = create_account[5]
         account_id = create_account[6]
         self.log.info("Creating a user with name %s", user_name)
-        resp = IAM_OBJ.create_user_using_s3iamcli(
+        resp = self.iam_obj.create_user_using_s3iamcli(
             user_name, access_key, secret_key)
         assert resp[0], resp[1]
         self.log.info("User is created with name %s", user_name)
@@ -2074,7 +2075,7 @@ class TestBucketPolicy:
         secret_key = create_account[5]
         account_id = create_account[6]
         self.log.info("Creating a user with name %s", user_name)
-        resp = IAM_OBJ.create_user_using_s3iamcli(
+        resp = self.iam_obj.create_user_using_s3iamcli(
             user_name, access_key, secret_key)
         assert resp[0], resp[1]
         self.log.info("User is created with name %s", user_name)
@@ -2115,7 +2116,7 @@ class TestBucketPolicy:
         secret_key = create_account[5]
         account_id = create_account[6]
         self.log.info("Creating a user with name %s", user_name)
-        resp = IAM_OBJ.create_user_using_s3iamcli(
+        resp = self.iam_obj.create_user_using_s3iamcli(
             user_name, access_key, secret_key)
         assert resp[0], resp[1]
         self.log.info("User is created with name %s", user_name)
@@ -2157,7 +2158,7 @@ class TestBucketPolicy:
         secret_key = create_account[5]
         account_id = create_account[6]
         self.log.info("Creating a user with name %s", user_name)
-        resp = IAM_OBJ.create_user_using_s3iamcli(
+        resp = self.iam_obj.create_user_using_s3iamcli(
             user_name, access_key, secret_key)
         assert resp[0], resp[1]
         self.log.info("User is created with name %s", user_name)
@@ -2199,7 +2200,7 @@ class TestBucketPolicy:
         secret_key = create_account[5]
         account_id = create_account[6]
         self.log.info("Creating a user with name %s", user_name)
-        resp = IAM_OBJ.create_user_using_s3iamcli(
+        resp = self.iam_obj.create_user_using_s3iamcli(
             user_name, access_key, secret_key)
         assert resp[0], resp[1]
         self.log.info("User is created with name %s", user_name)
@@ -2415,7 +2416,7 @@ class TestBucketPolicy:
         bucket_name = bkt_cnf_1078["bucket_name"]
         create_account = self.create_s3iamcli_acc(account_name, email_id)
         s3_obj = create_account[1]
-        ACL_OBJ = create_account[2]
+        self.acl_obj = create_account[2]
         self.create_bucket_put_obj_with_dir(
             bucket_name,
             BKT_POLICY_CONF["bucket_policy"]["obj_name_prefix"],
@@ -2428,7 +2429,7 @@ class TestBucketPolicy:
             bucket_name,
             BKT_POLICY_CONF["bucket_policy"]["obj_name_prefix"])
         assert resp[0], resp[1]
-        resp = ACL_OBJ.get_object_acl(
+        resp = self.acl_obj.get_object_acl(
             bucket_name, bkt_cnf_1078["object_name_2"])
         assert resp[0], resp[1]
         self.log.info(
@@ -2502,7 +2503,7 @@ class TestBucketPolicy:
         self.log.info(
             "Step 1: Created a bucket and objects are uploaded using account 1")
         self.log.info("Step 2: Creating multiple accounts")
-        resp = IAM_OBJ.create_multiple_accounts(
+        resp = self.iam_obj.create_multiple_accounts(
             bkt_cnf_717["acc_count"],
             BKT_POLICY_CONF["bucket_policy"]["acc_name_prefix"])
         acc_id_1 = resp[1][0][1]["Account_Id"]
@@ -2515,9 +2516,9 @@ class TestBucketPolicy:
         self.log.info("Step 2: Multiple accounts are created")
         self.log.info("Step 3: Creating users in different accounts")
         iam_obj_acc_2 = iam_test_lib.IamTestLib(
-            access_key=access_key_1, secret_key=secret_key_1)
+            endpoint_url=S3_CFG["iam_url"], access_key=access_key_1, secret_key=secret_key_1)
         iam_obj_acc_3 = iam_test_lib.IamTestLib(
-            access_key=access_key_2, secret_key=secret_key_2)
+            endpoint_url=S3_CFG["iam_url"], access_key=access_key_2, secret_key=secret_key_2)
         resp = iam_obj_acc_2.create_user_using_s3iamcli(
             user_name_1, access_key=access_key_1, secret_key=secret_key_1)
         assert resp[0], resp[1]
@@ -2541,7 +2542,7 @@ class TestBucketPolicy:
         usr_access_key = resp[1]["AccessKey"]["AccessKeyId"]
         usr_secret_key = resp[1]["AccessKey"]["SecretAccessKey"]
         s3_obj_usr_2 = s3_test_lib.S3TestLib(
-            access_key=usr_access_key, secret_key=usr_secret_key)
+            endpoint_url=S3_CFG["s3_url"], access_key=usr_access_key, secret_key=usr_secret_key)
         try:
             s3_obj_usr_2.get_object(
                 bucket_name, BKT_POLICY_CONF["bucket_policy"]["obj_name_prefix"])
@@ -2553,7 +2554,7 @@ class TestBucketPolicy:
             bkt_cnf_717["error_message"])
         self.log.info("Step 6: Retrieving object using account 3")
         s3_obj_acc_3 = s3_test_lib.S3TestLib(
-            access_key=access_key_2, secret_key=secret_key_2)
+            endpoint_url=S3_CFG["s3_url"], access_key=access_key_2, secret_key=secret_key_2)
         resp = s3_obj_acc_3.get_object(
             bucket_name, BKT_POLICY_CONF["bucket_policy"]["obj_name_prefix"])
         assert resp[0], resp[1]
@@ -2563,7 +2564,7 @@ class TestBucketPolicy:
         usr_access_key = resp[1]["AccessKey"]["AccessKeyId"]
         usr_secret_key = resp[1]["AccessKey"]["SecretAccessKey"]
         s3_obj_usr_3 = s3_test_lib.S3TestLib(
-            access_key=usr_access_key, secret_key=usr_secret_key)
+            endpoint_url=S3_CFG["s3_url"], access_key=usr_access_key, secret_key=usr_secret_key)
         try:
             s3_obj_usr_3.get_object(
                 bucket_name, BKT_POLICY_CONF["bucket_policy"]["obj_name_prefix"])
@@ -2609,7 +2610,7 @@ class TestBucketPolicy:
         self.log.info(
             "Step 2: Creating a user with name %s in account 2", user_name)
         iam_obj_acc_2 = iam_test_lib.IamTestLib(
-            access_key=access_key, secret_key=secret_key)
+            endpoint_url=S3_CFG["iam_url"], access_key=access_key, secret_key=secret_key)
         resp = iam_obj_acc_2.create_user_using_s3iamcli(
             user_name, access_key, secret_key)
         assert resp[0], resp[1]
@@ -2623,7 +2624,7 @@ class TestBucketPolicy:
         self.put_get_bkt_policy(bucket_name, bkt_cnf_692["bucket_policy"])
         self.log.info(
             "Step 4: Retrieving object from a bucket using account 1")
-        resp = S3_OBJ.get_object(
+        resp = self.s3_obj.get_object(
             bucket_name, BKT_POLICY_CONF["bucket_policy"]["obj_name_prefix"])
         assert resp[0], resp[1]
         self.log.info("Step 4: Retrieved object from a bucket using account 1")
@@ -2632,7 +2633,7 @@ class TestBucketPolicy:
         usr_access_key = resp[1]["AccessKey"]["AccessKeyId"]
         usr_secret_key = resp[1]["AccessKey"]["SecretAccessKey"]
         s3_obj_usr_2 = s3_test_lib.S3TestLib(
-            access_key=usr_access_key, secret_key=usr_secret_key)
+            endpoint_url=S3_CFG["s3_url"], access_key=usr_access_key, secret_key=usr_secret_key)
         try:
             s3_obj_usr_2.get_object(
                 bucket_name, BKT_POLICY_CONF["bucket_policy"]["obj_name_prefix"])
@@ -2679,7 +2680,7 @@ class TestBucketPolicy:
         self.log.info(
             "Step 2: Creating a user with name %s in account 2", user_name)
         iam_obj_acc_2 = iam_test_lib.IamTestLib(
-            access_key=access_key, secret_key=secret_key)
+            endpoint_url=S3_CFG["iam_url"], access_key=access_key, secret_key=secret_key)
         resp = iam_obj_acc_2.create_user_using_s3iamcli(
             user_name, access_key, secret_key)
         assert resp[0], resp[1]
@@ -2700,7 +2701,7 @@ class TestBucketPolicy:
         usr_access_key = resp[1]["AccessKey"]["AccessKeyId"]
         usr_secret_key = resp[1]["AccessKey"]["SecretAccessKey"]
         s3_obj_usr_2 = s3_test_lib.S3TestLib(
-            access_key=usr_access_key, secret_key=usr_secret_key)
+            endpoint_url=S3_CFG["s3_url"], access_key=usr_access_key, secret_key=usr_secret_key)
         try:
             s3_obj_usr_2.get_object(
                 bucket_name, BKT_POLICY_CONF["bucket_policy"]["obj_name_prefix"])
@@ -2733,7 +2734,7 @@ class TestBucketPolicy:
         email_id = test_4134_cfg["emailid"].format(random_id)
         create_account = self.create_s3iamcli_acc(account_name, email_id)
         account_id = create_account[6]
-        S3_OBJ_2 = create_account[1]
+        self.s3_obj_2 = create_account[1]
         self.log.info(
             "Step 1 : Creating a json string for bucket policy specifying using "
             "NumericLessThan Condition Operator Effect Allow")
@@ -2744,12 +2745,12 @@ class TestBucketPolicy:
             "Step 1 : Created a json string for bucket policy specifying using "
             "NumericLessThan Condition Operator")
         self.log.info("Step 2: Apply the bucket policy on the bucket")
-        resp = S3_BKT_POLICY_OBJ.put_bucket_policy(
+        resp = self.s3_bkt_policy_obj.put_bucket_policy(
             bucket_name, json.dumps(bkt_json_policy))
         assert resp[0], resp[1]
         self.log.info("Step 2: Bucket policy was applied successfully")
         self.log.info("Step 3: Verify bucket policy")
-        resp = S3_BKT_POLICY_OBJ.get_bucket_policy(bucket_name)
+        resp = self.s3_bkt_policy_obj.get_bucket_policy(bucket_name)
         assert resp[0], resp[1]
         bucket_policy = list(eval(resp[1]["Policy"])[
             "Statement"][0]["Condition"].keys())
@@ -2760,7 +2761,7 @@ class TestBucketPolicy:
         self.log.info("Step 3: Bucket policy was verified successfully")
         self.log.info(
             "Step 4: Verify the list object from another account")
-        resp = S3_OBJ_2.list_objects_with_prefix(
+        resp = self.s3_obj_2.list_objects_with_prefix(
             bucket_name, maxkeys=test_4134_cfg["maxkeys"])
         assert resp[0], resp[1]
         self.log.info(
@@ -2789,7 +2790,7 @@ class TestBucketPolicy:
         email_id = test_4136_cfg["emailid"].format(random_id)
         create_account = self.create_s3iamcli_acc(account_name, email_id)
         account_id = create_account[6]
-        S3_OBJ_2 = create_account[1]
+        self.s3_obj_2 = create_account[1]
         self.log.info(
             "Step 1 : Creating a json string for bucket policy specifying using "
             "NumericLessThan Condition Operator and Effect Deny")
@@ -2800,12 +2801,12 @@ class TestBucketPolicy:
             "Step 1 : Created a json string for bucket policy specifying using "
             "NumericLessThan Condition Operator")
         self.log.info("Step 2: Apply the bucket policy on the bucket")
-        resp = S3_BKT_POLICY_OBJ.put_bucket_policy(
+        resp = self.s3_bkt_policy_obj.put_bucket_policy(
             bucket_name, json.dumps(bkt_json_policy))
         assert resp[0], resp[1]
         self.log.info("Step 2: Bucket policy was applied successfully")
         self.log.info("Step 3: Verify bucket policy")
-        resp = S3_BKT_POLICY_OBJ.get_bucket_policy(bucket_name)
+        resp = self.s3_bkt_policy_obj.get_bucket_policy(bucket_name)
         assert resp[0], resp[1]
         bucket_policy = list(eval(resp[1]["Policy"])[
             "Statement"][0]["Condition"].keys())
@@ -2817,7 +2818,7 @@ class TestBucketPolicy:
         self.log.info(
             "Step 4: Verify the list object from another account")
         try:
-            S3_OBJ_2.list_objects_with_prefix(
+            self.s3_obj_2.list_objects_with_prefix(
                 bucket_name, maxkeys=test_4136_cfg["maxkeys"])
         except CTException as error:
             self.log.error(error.message)
@@ -2849,7 +2850,7 @@ class TestBucketPolicy:
         email_id = test_4143_cfg["emailid"].format(random_id)
         create_account = self.create_s3iamcli_acc(account_name, email_id)
         account_id = create_account[6]
-        S3_OBJ_2 = create_account[1]
+        self.s3_obj_2 = create_account[1]
         self.log.info(
             "Step 1 : Creating a json string for bucket policy specifying using "
             "NumericGreaterThan Condition Operator Effect Allow")
@@ -2860,12 +2861,12 @@ class TestBucketPolicy:
             "Step 1 : Created a json string for bucket policy specifying using "
             "NumericGreaterThan Condition Operator")
         self.log.info("Step 2: Apply the bucket policy on the bucket")
-        resp = S3_BKT_POLICY_OBJ.put_bucket_policy(
+        resp = self.s3_bkt_policy_obj.put_bucket_policy(
             bucket_name, json.dumps(bkt_json_policy))
         assert resp[0], resp[1]
         self.log.info("Step 2: Bucket policy was applied successfully")
         self.log.info("Step 3: Verify bucket policy")
-        resp = S3_BKT_POLICY_OBJ.get_bucket_policy(bucket_name)
+        resp = self.s3_bkt_policy_obj.get_bucket_policy(bucket_name)
         assert resp[0], resp[1]
         bucket_policy = list(eval(resp[1]["Policy"])[
             "Statement"][0]["Condition"].keys())
@@ -2876,7 +2877,7 @@ class TestBucketPolicy:
         self.log.info("Step 3: Bucket policy was verified successfully")
         self.log.info(
             "Step 4: Verify the list object from another account")
-        resp = S3_OBJ_2.list_objects_with_prefix(
+        resp = self.s3_obj_2.list_objects_with_prefix(
             bucket_name, maxkeys=test_4143_cfg["maxkeys"])
         assert resp[0], resp[1]
         self.log.info(
@@ -2905,7 +2906,7 @@ class TestBucketPolicy:
         email_id = test_4144_cfg["emailid"].format(random_id)
         create_account = self.create_s3iamcli_acc(account_name, email_id)
         account_id = create_account[6]
-        S3_OBJ_2 = create_account[1]
+        self.s3_obj_2 = create_account[1]
         self.log.info(
             "Step 1 : Creating a json string for bucket policy specifying using "
             "NumericGreaterThan Condition Operator and Effect Deny")
@@ -2916,12 +2917,12 @@ class TestBucketPolicy:
             "Step 1 : Created a json string for bucket policy specifying using "
             "NumericGreaterThan Condition Operator")
         self.log.info("Step 2: Apply the bucket policy on the bucket")
-        resp = S3_BKT_POLICY_OBJ.put_bucket_policy(
+        resp = self.s3_bkt_policy_obj.put_bucket_policy(
             bucket_name, json.dumps(bkt_json_policy))
         assert resp[0], resp[1]
         self.log.info("Step 2: Bucket policy was applied successfully")
         self.log.info("Step 3: Verify bucket policy")
-        resp = S3_BKT_POLICY_OBJ.get_bucket_policy(bucket_name)
+        resp = self.s3_bkt_policy_obj.get_bucket_policy(bucket_name)
         assert resp[0], resp[1]
         bucket_policy = list(eval(resp[1]["Policy"])[
             "Statement"][0]["Condition"].keys())
@@ -2933,7 +2934,7 @@ class TestBucketPolicy:
         self.log.info(
             "Step 4: Verify the list object from another account")
         try:
-            S3_OBJ_2.list_objects_with_prefix(
+            self.s3_obj_2.list_objects_with_prefix(
                 bucket_name, maxkeys=test_4144_cfg["maxkeys"])
         except CTException as error:
             self.log.error(error.message)
@@ -2965,7 +2966,7 @@ class TestBucketPolicy:
         email_id = test_4145_cfg["emailid"].format(random_id)
         create_account = self.create_s3iamcli_acc(account_name, email_id)
         account_id = create_account[6]
-        S3_OBJ_2 = create_account[1]
+        self.s3_obj_2 = create_account[1]
         self.log.info(
             "Step 1 : Creating a json for bucket policy specifying using "
             "NumericEquals Condition Operator Effect Allow")
@@ -2976,12 +2977,12 @@ class TestBucketPolicy:
             "Step 1 : Created a json string for bucket policy specifying using "
             "NumericEquals Condition Operator")
         self.log.info("Step 2: Apply the bucket policy on the bucket")
-        resp = S3_BKT_POLICY_OBJ.put_bucket_policy(
+        resp = self.s3_bkt_policy_obj.put_bucket_policy(
             bucket_name, json.dumps(bkt_json_policy))
         assert resp[0], resp[1]
         self.log.info("Step 2: Bucket policy was applied successfully")
         self.log.info("Step 3: Verify bucket policy")
-        resp = S3_BKT_POLICY_OBJ.get_bucket_policy(bucket_name)
+        resp = self.s3_bkt_policy_obj.get_bucket_policy(bucket_name)
         assert resp[0], resp[1]
         bucket_policy = list(eval(resp[1]["Policy"])[
             "Statement"][0]["Condition"].keys())
@@ -2992,7 +2993,7 @@ class TestBucketPolicy:
         self.log.info("Step 3: Bucket policy was verified successfully")
         self.log.info(
             "Step 4: Verify the list object from another account")
-        resp = S3_OBJ_2.list_objects_with_prefix(
+        resp = self.s3_obj_2.list_objects_with_prefix(
             bucket_name, maxkeys=test_4145_cfg["maxkeys"])
         assert resp[0], resp[1]
         self.log.info(
@@ -3021,7 +3022,7 @@ class TestBucketPolicy:
         email_id = test_4146_cfg["emailid"].format(random_id)
         create_account = self.create_s3iamcli_acc(account_name, email_id)
         account_id = create_account[6]
-        S3_OBJ_2 = create_account[1]
+        self.s3_obj_2 = create_account[1]
         self.log.info(
             "Step 1 : Creating a json for bucket policy specifying using "
             "NumericNotEquals Condition Operator and Effect Deny")
@@ -3032,12 +3033,12 @@ class TestBucketPolicy:
             "Step 1 : Created a json string for bucket policy specifying using "
             "NumericNotEquals Condition Operator")
         self.log.info("Step 2: Apply the bucket policy on the bucket")
-        resp = S3_BKT_POLICY_OBJ.put_bucket_policy(
+        resp = self.s3_bkt_policy_obj.put_bucket_policy(
             bucket_name, json.dumps(bkt_json_policy))
         assert resp[0], resp[1]
         self.log.info("Step 2: Bucket policy was applied successfully")
         self.log.info("Step 3: Verify bucket policy")
-        resp = S3_BKT_POLICY_OBJ.get_bucket_policy(bucket_name)
+        resp = self.s3_bkt_policy_obj.get_bucket_policy(bucket_name)
         assert resp[0], resp[1]
         bucket_policy = list(eval(resp[1]["Policy"])[
             "Statement"][0]["Condition"].keys())
@@ -3049,7 +3050,7 @@ class TestBucketPolicy:
         self.log.info(
             "Step 4: Verify the list object from another account")
         try:
-            S3_OBJ_2.list_objects_with_prefix(
+            self.s3_obj_2.list_objects_with_prefix(
                 bucket_name, maxkeys=test_4146_cfg["maxkeys"])
         except CTException as error:
             self.log.error(error.message)
@@ -3081,7 +3082,7 @@ class TestBucketPolicy:
         email_id = test_4147_cfg["emailid"].format(random_id)
         create_account = self.create_s3iamcli_acc(account_name, email_id)
         account_id = create_account[6]
-        S3_OBJ_2 = create_account[1]
+        self.s3_obj_2 = create_account[1]
         self.log.info(
             "Step 1 : Creating a json for bucket policy specifying using "
             "NumericEquals Condition Operator Effect Allow")
@@ -3092,12 +3093,12 @@ class TestBucketPolicy:
             "Step 1 : Created a json string for bucket policy specifying using "
             "NumericLessThanEquals Condition Operator")
         self.log.info("Step 2: Apply the bucket policy on the bucket")
-        resp = S3_BKT_POLICY_OBJ.put_bucket_policy(
+        resp = self.s3_bkt_policy_obj.put_bucket_policy(
             bucket_name, json.dumps(bkt_json_policy))
         assert resp[0], resp[1]
         self.log.info("Step 2: Bucket policy was applied successfully")
         self.log.info("Step 3: Verify bucket policy")
-        resp = S3_BKT_POLICY_OBJ.get_bucket_policy(bucket_name)
+        resp = self.s3_bkt_policy_obj.get_bucket_policy(bucket_name)
         assert resp[0], resp[1]
         bucket_policy = list(eval(resp[1]["Policy"])[
             "Statement"][0]["Condition"].keys())
@@ -3108,7 +3109,7 @@ class TestBucketPolicy:
         self.log.info("Step 3: Bucket policy was verified successfully")
         self.log.info(
             "Step 4: Verify the list object from another account")
-        resp = S3_OBJ_2.list_objects_with_prefix(
+        resp = self.s3_obj_2.list_objects_with_prefix(
             bucket_name, maxkeys=test_4147_cfg["maxkeys"])
         assert resp[0], resp[1]
         self.log.info(
@@ -3138,7 +3139,7 @@ class TestBucketPolicy:
         email_id = test_4148_cfg["emailid"].format(random_id)
         create_account = self.create_s3iamcli_acc(account_name, email_id)
         account_id = create_account[6]
-        S3_OBJ_2 = create_account[1]
+        self.s3_obj_2 = create_account[1]
         self.log.info(
             "Step 1 : Creating a json for bucket policy specifying using "
             "NumericGreaterThanEquals Condition Operator and Effect Deny")
@@ -3149,12 +3150,12 @@ class TestBucketPolicy:
             "Step 1 : Created a json string for bucket policy specifying using "
             "NumericNotEquals Condition Operator")
         self.log.info("Step 2: Apply the bucket policy on the bucket")
-        resp = S3_BKT_POLICY_OBJ.put_bucket_policy(
+        resp = self.s3_bkt_policy_obj.put_bucket_policy(
             bucket_name, json.dumps(bkt_json_policy))
         assert resp[0], resp[1]
         self.log.info("Step 2: Bucket policy was applied successfully")
         self.log.info("Step 3: Verify bucket policy")
-        resp = S3_BKT_POLICY_OBJ.get_bucket_policy(bucket_name)
+        resp = self.s3_bkt_policy_obj.get_bucket_policy(bucket_name)
         assert resp[0], resp[1]
         bucket_policy = list(eval(resp[1]["Policy"])[
             "Statement"][0]["Condition"].keys())
@@ -3166,7 +3167,7 @@ class TestBucketPolicy:
         self.log.info(
             "Step 4: Verify the list of objects from another account")
         try:
-            S3_OBJ_2.list_objects_with_prefix(
+            self.s3_obj_2.list_objects_with_prefix(
                 bucket_name, maxkeys=test_4148_cfg["maxkeys"])
         except CTException as error:
             self.log.error(error.message)
@@ -3198,7 +3199,7 @@ class TestBucketPolicy:
         account_id = create_account[6]
         self.log.info(
             "Step 1 : Creating a bucket with name %s", bucket_name)
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         ASRTOBJ.assert_equals(resp[1], bucket_name, resp[1])
         self.log.info(
@@ -3213,7 +3214,7 @@ class TestBucketPolicy:
             format(account_id)
         bkt_policy_json = json.dumps(bkt_cnf_1190["bucket_policy"])
         try:
-            S3_BKT_POLICY_OBJ.put_bucket_policy(bucket_name, bkt_policy_json)
+            self.s3_bkt_policy_obj.put_bucket_policy(bucket_name, bkt_policy_json)
         except CTException as error:
             self.log.error(error.message)
             assert bkt_cnf_1190["error_message"] in error.message, error.message
@@ -3240,18 +3241,18 @@ class TestBucketPolicy:
                 time.time()))
         self.log.info(
             "Step 1 : Creating a bucket with name %s", bucket_name)
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         ASRTOBJ.assert_equals(resp[1], bucket_name, resp[1])
         self.log.info(
             "Step 1 : Bucket is created with name %s", bucket_name)
         self.put_get_bkt_policy(bucket_name, bkt_cnf_1180["bucket_policy"])
-        resp = IAM_OBJ.create_user_access_key(user_name)
+        resp = self.iam_obj.create_user_access_key(user_name)
         assert resp[0], resp[1]
         usr_access_key = resp[1][0]["Keys"][1]["AccessKey"]["AccessKeyId"]
         usr_secret_key = resp[1][0]["Keys"][1]["AccessKey"]["SecretAccessKey"]
         s3_policy_usr_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
-            access_key=usr_access_key, secret_key=usr_secret_key)
+            endpoint_url=S3_CFG["s3_url"], access_key=usr_access_key, secret_key=usr_secret_key)
         self.log.info("Step 2: Deleting bucket policy with users credentials")
         resp = s3_policy_usr_obj.delete_bucket_policy(bucket_name)
         assert resp[0], resp[1]
@@ -3261,7 +3262,7 @@ class TestBucketPolicy:
             "Step 3: Verifying that bucket policy is deleted from a bucket %s",
             bucket_name)
         try:
-            S3_BKT_POLICY_OBJ.get_bucket_policy(bucket_name)
+            self.s3_bkt_policy_obj.get_bucket_policy(bucket_name)
         except CTException as error:
             self.log.error(error.message)
             assert bkt_cnf_1180["error_message"] in error.message, error.message
@@ -3284,7 +3285,7 @@ class TestBucketPolicy:
         bucket_name = bkt_cnf_1191["bucket_name"]
         self.log.info(
             "Step 1 : Creating a bucket with name %s", bucket_name)
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         ASRTOBJ.assert_equals(resp[1], bucket_name, resp[1])
         self.log.info(
@@ -3293,7 +3294,7 @@ class TestBucketPolicy:
             "Step 2: Applying policy on a bucket %s", bucket_name)
         bkt_policy_json = json.dumps(bkt_cnf_1191["bucket_policy"])
         try:
-            S3_BKT_POLICY_OBJ.put_bucket_policy(bucket_name, bkt_policy_json)
+            self.s3_bkt_policy_obj.put_bucket_policy(bucket_name, bkt_policy_json)
         except CTException as error:
             self.log.error(error.message)
             assert bkt_cnf_1191["error_message"] in error.message, error.message
@@ -3314,7 +3315,7 @@ class TestBucketPolicy:
         bucket_name = bkt_cnf_1184["bucket_name"]
         self.log.info(
             "Step 1 : Creating a bucket with name %s", bucket_name)
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         ASRTOBJ.assert_equals(resp[1], bucket_name, resp[1])
         self.log.info(
@@ -3323,7 +3324,7 @@ class TestBucketPolicy:
             "Step 2: Applying policy on a bucket %s", bucket_name)
         bkt_policy_json = json.dumps(bkt_cnf_1184["bucket_policy"])
         try:
-            S3_BKT_POLICY_OBJ.put_bucket_policy(bucket_name, bkt_policy_json)
+            self.s3_bkt_policy_obj.put_bucket_policy(bucket_name, bkt_policy_json)
         except CTException as error:
             self.log.error(error.message)
             assert bkt_cnf_1184["error_message"] in error.message, error.message
@@ -3353,7 +3354,7 @@ class TestBucketPolicy:
         s3_bkt_policy = resp[3]
         self.log.info(
             "Step 1 : Creating a bucket with name %s", bucket_name)
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         ASRTOBJ.assert_equals(resp[1], bucket_name, resp[1])
         self.log.info(
@@ -3391,18 +3392,18 @@ class TestBucketPolicy:
                 time.time()))
         self.log.info(
             "Step 1 : Creating a bucket with name %s", bucket_name)
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         ASRTOBJ.assert_equals(resp[1], bucket_name, resp[1])
         self.log.info(
             "Step 1 : Bucket is created with name %s", bucket_name)
         self.put_get_bkt_policy(bucket_name, bkt_cnf_1182["bucket_policy"])
-        resp = IAM_OBJ.create_user_access_key(user_name)
+        resp = self.iam_obj.create_user_access_key(user_name)
         assert resp[0], resp[1]
         usr_access_key = resp[1][0]["Keys"][1]["AccessKey"]["AccessKeyId"]
         usr_secret_key = resp[1][0]["Keys"][1]["AccessKey"]["SecretAccessKey"]
         s3_policy_usr_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
-            access_key=usr_access_key, secret_key=usr_secret_key)
+            endpoint_url=S3_CFG["s3_url"], access_key=usr_access_key, secret_key=usr_secret_key)
         self.log.info("Step 2: Deleting bucket policy with users credentials")
         try:
             s3_policy_usr_obj.delete_bucket_policy(bucket_name)
@@ -3430,18 +3431,18 @@ class TestBucketPolicy:
                 time.time()))
         self.log.info(
             "Step 1 : Creating a bucket with name %s", bucket_name)
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         ASRTOBJ.assert_equals(resp[1], bucket_name, resp[1])
         self.log.info(
             "Step 1 : Bucket is created with name %s", bucket_name)
         self.put_get_bkt_policy(bucket_name, bkt_cnf_1110["bucket_policy_1"])
-        resp = IAM_OBJ.create_user_access_key(user_name)
+        resp = self.iam_obj.create_user_access_key(user_name)
         assert resp[0], resp[1]
         usr_access_key = resp[1][0]["Keys"][1]["AccessKey"]["AccessKeyId"]
         usr_secret_key = resp[1][0]["Keys"][1]["AccessKey"]["SecretAccessKey"]
         s3_policy_usr_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
-            access_key=usr_access_key, secret_key=usr_secret_key)
+            endpoint_url=S3_CFG["s3_url"], access_key=usr_access_key, secret_key=usr_secret_key)
         self.log.info(
             "Step 2: Applying policy on a bucket with users credentials")
         bkt_policy_json = json.dumps(bkt_cnf_1110["bucket_policy_2"])
@@ -3477,7 +3478,7 @@ class TestBucketPolicy:
         secret_key = resp[5]
         account_id = resp[6]
         iam_new_obj = iam_test_lib.IamTestLib(
-            access_key=access_key, secret_key=secret_key)
+            endpoint_url=S3_CFG["iam_url"], access_key=access_key, secret_key=secret_key)
         bucket_name = bkt_cnf_1187["bucket_name"]
         user_name = "{0}{1}".format(
             BKT_POLICY_CONF["bucket_policy"]["user_name"], str(
@@ -3500,7 +3501,7 @@ class TestBucketPolicy:
         usr_access_key = resp[1]["AccessKey"]["AccessKeyId"]
         usr_secret_key = resp[1]["AccessKey"]["SecretAccessKey"]
         s3_policy_usr_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
-            access_key=usr_access_key, secret_key=usr_secret_key)
+            endpoint_url=S3_CFG["s3_url"], access_key=usr_access_key, secret_key=usr_secret_key)
         self.log.info("Step 2: Created an user and credentials for that user")
         self.log.info(
             "Step 3: Applying policy on a bucket %s", bucket_name)
@@ -3561,18 +3562,18 @@ class TestBucketPolicy:
                 time.time()))
         self.log.info(
             "Step 1 : Creating a bucket with name %s", bucket_name)
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         ASRTOBJ.assert_equals(resp[1], bucket_name, resp[1])
         self.log.info(
             "Step 1 : Bucket is created with name %s", bucket_name)
         self.put_get_bkt_policy(bucket_name, bkt_cnf_1166["bucket_policy"])
-        resp = IAM_OBJ.create_user_access_key(user_name)
+        resp = self.iam_obj.create_user_access_key(user_name)
         assert resp[0], resp[1]
         usr_access_key = resp[1][0]["Keys"][1]["AccessKey"]["AccessKeyId"]
         usr_secret_key = resp[1][0]["Keys"][1]["AccessKey"]["SecretAccessKey"]
         s3_policy_usr_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
-            access_key=usr_access_key, secret_key=usr_secret_key)
+            endpoint_url=S3_CFG["s3_url"], access_key=usr_access_key, secret_key=usr_secret_key)
         self.log.info(
             "Step 2: Retrieving policy of a bucket using users cedentials")
         resp = s3_policy_usr_obj.get_bucket_policy(bucket_name)
@@ -3604,7 +3605,7 @@ class TestBucketPolicy:
         s3_policy_obj = resp[3]
         self.log.info(
             "Step 1 : Creating a bucket with name %s", bucket_name)
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         ASRTOBJ.assert_equals(resp[1], bucket_name, resp[1])
         self.log.info(
@@ -3638,14 +3639,14 @@ class TestBucketPolicy:
         bucket_name = test_360_cfg["bucket_name"]
         self.log.info(
             "Step 1 : Creating a bucket with name %s", bucket_name)
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 1 : Bucket is created with name %s", bucket_name)
         self.log.info(
             "Step 2: Apply the bucket policy on the bucket with valid json string")
         bkt_json_policy = json.dumps(test_360_cfg["bucket_policy"])
-        resp = S3_BKT_POLICY_OBJ.put_bucket_policy(
+        resp = self.s3_bkt_policy_obj.put_bucket_policy(
             bucket_name, bkt_json_policy)
         assert resp[0], resp[1]
         self.log.info(
@@ -3669,7 +3670,7 @@ class TestBucketPolicy:
             "Step 2: Apply the bucket policy on the non-existing bucket")
         bkt_json_policy = json.dumps(test_362_cfg["bucket_policy"])
         try:
-            S3_BKT_POLICY_OBJ.put_bucket_policy(
+            self.s3_bkt_policy_obj.put_bucket_policy(
                 bucket_name, bkt_json_policy)
         except CTException as error:
             self.log.error(error.message)
@@ -3697,7 +3698,7 @@ class TestBucketPolicy:
         self.log.info("Step 1: Put Bucket policy without bucket name")
         try:
             bucket_name = None
-            S3_BKT_POLICY_OBJ.put_bucket_policy(
+            self.s3_bkt_policy_obj.put_bucket_policy(
                 bucket_name, bkt_json_policy)
         except CTException as error:
             self.log.error(error.message)
@@ -3722,7 +3723,7 @@ class TestBucketPolicy:
         bucket_name = test_364_cfg["bucket_name"]
         self.log.info(
             "Step 1 : Creating a bucket with name %s", bucket_name)
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 1 : Bucket is created with name %s", bucket_name)
@@ -3730,7 +3731,7 @@ class TestBucketPolicy:
             "Step 2: Apply the bucket policy on the bucket with invalid json string")
         try:
             json_policy = None
-            S3_BKT_POLICY_OBJ.put_bucket_policy(
+            self.s3_bkt_policy_obj.put_bucket_policy(
                 bucket_name, json_policy)
         except CTException as error:
             self.log.error(error.message)
@@ -3755,7 +3756,7 @@ class TestBucketPolicy:
         bucket_name = test_365_cfg["bucket_name"]
         self.log.info(
             "Step 1 : Creating a bucket with name %s", bucket_name)
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 1 : Bucket is created with name %s", bucket_name)
@@ -3763,7 +3764,7 @@ class TestBucketPolicy:
             "Step 2: Apply the bucket policy on the bucket with invalid json string")
         bkt_json_policy = json.dumps(test_365_cfg["bucket_policy"])
         try:
-            S3_BKT_POLICY_OBJ.put_bucket_policy(
+            self.s3_bkt_policy_obj.put_bucket_policy(
                 bucket_name, json.loads(bkt_json_policy))
         except CTException as error:
             self.log.error(error.message)
@@ -3791,16 +3792,16 @@ class TestBucketPolicy:
         account_name_2 = test_366_cfg["account_name_2"].format(random_id)
         email_id_2 = test_366_cfg["emailid_2"].format(random_id)
         result_2 = self.create_s3iamcli_acc(account_name_2, email_id_2)
-        S3_BKT_POLICY_OBJ_2 = result_2[3]
+        self.s3_bkt_policy_obj_2 = result_2[3]
         canonical_id_user_2 = result_2[0]
         self.log.info(
             "Step 1 : Create a new bucket assign read bucket permission to account2")
-        resp = ACL_OBJ.create_bucket_with_acl(
+        resp = self.acl_obj.create_bucket_with_acl(
             bucket_name, grant_read=test_366_cfg["id_str"].format(canonical_id_user_2))
         assert resp[0], resp[1]
         self.log.info("Step 1 : Bucket was created with read permission")
         self.put_bucket_policy_with_err(
-            bucket_name, test_366_cfg, S3_BKT_POLICY_OBJ_2)
+            bucket_name, test_366_cfg, self.s3_bkt_policy_obj_2)
         self.log.info(
             "ENDED: Apply put-bucket-policy from another account given read permission on bucket")
 
@@ -3821,16 +3822,16 @@ class TestBucketPolicy:
         account_name_2 = test_367_cfg["account_name_2"].format(random_id)
         email_id_2 = test_367_cfg["emailid_2"].format(random_id)
         result_2 = self.create_s3iamcli_acc(account_name_2, email_id_2)
-        S3_BKT_POLICY_OBJ_2 = result_2[3]
+        self.s3_bkt_policy_obj_2 = result_2[3]
         canonical_id_user_2 = result_2[0]
         self.log.info(
             "Step 1 : Create a new bucket assign write bucket permission to account2")
-        resp = ACL_OBJ.create_bucket_with_acl(
+        resp = self.acl_obj.create_bucket_with_acl(
             bucket_name, grant_write=test_367_cfg["id_str"].format(canonical_id_user_2))
         assert resp[0], resp[1]
         self.log.info("Step 1 : Bucket was created with write permission")
         self.put_bucket_policy_with_err(
-            bucket_name, test_367_cfg, S3_BKT_POLICY_OBJ_2)
+            bucket_name, test_367_cfg, self.s3_bkt_policy_obj_2)
         self.log.info(
             "ENDED: Apply put-bucket-policy from another account given write permission on bucket")
 
@@ -3850,16 +3851,16 @@ class TestBucketPolicy:
         account_name_2 = test_368_cfg["account_name_2"].format(random_id)
         email_id_2 = test_368_cfg["emailid_2"].format(random_id)
         result_2 = self.create_s3iamcli_acc(account_name_2, email_id_2)
-        S3_BKT_POLICY_OBJ_2 = result_2[3]
+        self.s3_bkt_policy_obj_2 = result_2[3]
         canonical_id_user_2 = result_2[0]
         self.log.info(
             "Step 1 : Create a new bucket assign read-acp bucket permission to account2")
-        resp = ACL_OBJ.create_bucket_with_acl(
+        resp = self.acl_obj.create_bucket_with_acl(
             bucket_name, grant_read_acp=test_368_cfg["id_str"].format(canonical_id_user_2))
         assert resp[0], resp[1]
         self.log.info("Step 1 : Bucket was created with read-acp permission")
         self.put_bucket_policy_with_err(
-            bucket_name, test_368_cfg, S3_BKT_POLICY_OBJ_2)
+            bucket_name, test_368_cfg, self.s3_bkt_policy_obj_2)
         self.log.info(
             "ENDED: Apply put-bucket-policy from "
             "another account given read-acp permission on bucket")
@@ -3881,16 +3882,16 @@ class TestBucketPolicy:
         account_name_2 = test_369_cfg["account_name_2"].format(random_id)
         email_id_2 = test_369_cfg["emailid_2"].format(random_id)
         result_2 = self.create_s3iamcli_acc(account_name_2, email_id_2)
-        S3_BKT_POLICY_OBJ_2 = result_2[3]
+        self.s3_bkt_policy_obj_2 = result_2[3]
         canonical_id_user_2 = result_2[0]
         self.log.info(
             "Step 1 : Create a new bucket assign write-acp bucket permission to account2")
-        resp = ACL_OBJ.create_bucket_with_acl(
+        resp = self.acl_obj.create_bucket_with_acl(
             bucket_name, grant_write_acp=test_369_cfg["id_str"].format(canonical_id_user_2))
         assert resp[0], resp[1]
         self.log.info("Step 1 : Bucket was created with write-acp permission")
         self.put_bucket_policy_with_err(
-            bucket_name, test_369_cfg, S3_BKT_POLICY_OBJ_2)
+            bucket_name, test_369_cfg, self.s3_bkt_policy_obj_2)
         self.log.info(
             "ENDED: Apply put-bucket-policy from another "
             "account given write-acp permission on bucket")
@@ -3912,18 +3913,18 @@ class TestBucketPolicy:
         account_name_2 = test_370_cfg["account_name_2"].format(random_id)
         email_id_2 = test_370_cfg["emailid_2"].format(random_id)
         result_2 = self.create_s3iamcli_acc(account_name_2, email_id_2)
-        S3_BKT_POLICY_OBJ_2 = result_2[3]
+        self.s3_bkt_policy_obj_2 = result_2[3]
         canonical_id_user_2 = result_2[0]
         self.log.info(
             "Step 1 : Create a new bucket assign full-control bucket permission to account2")
-        resp = ACL_OBJ.create_bucket_with_acl(
+        resp = self.acl_obj.create_bucket_with_acl(
             bucket_name,
             grant_full_control=test_370_cfg["id_str"].format(canonical_id_user_2))
         assert resp[0], resp[1]
         self.log.info(
             "Step 1 : Bucket was created with full-control permission")
         self.put_bucket_policy_with_err(
-            bucket_name, test_370_cfg, S3_BKT_POLICY_OBJ_2)
+            bucket_name, test_370_cfg, self.s3_bkt_policy_obj_2)
         self.log.info(
             "ENDED: Apply put-bucket-policy from "
             "another account given full-control permission on bucket")
@@ -3944,16 +3945,16 @@ class TestBucketPolicy:
         account_name_2 = test_371_cfg["account_name_2"].format(random_id)
         email_id_2 = test_371_cfg["emailid_2"].format(random_id)
         result_2 = self.create_s3iamcli_acc(account_name_2, email_id_2)
-        S3_BKT_POLICY_OBJ_2 = result_2[3]
+        self.s3_bkt_policy_obj_2 = result_2[3]
         self.log.info("Step 1 : Create a new bucket")
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         self.log.info("Step 1 : Bucket was created")
         self.log.info(
             "Step 2: Apply put bucket policy on the bucket using account 2")
         bkt_json_policy = json.dumps(test_371_cfg["bucket_policy"])
         try:
-            S3_BKT_POLICY_OBJ_2.put_bucket_policy(
+            self.s3_bkt_policy_obj_2.put_bucket_policy(
                 bucket_name, bkt_json_policy)
         except CTException as error:
             self.log.error(error.message)
@@ -3961,7 +3962,7 @@ class TestBucketPolicy:
         self.log.info(
             "Step 2: Put Bucket policy from second account failing with error: %s",
             test_371_cfg["error_message"])
-        resp = ACL_OBJ.put_bucket_acl(
+        resp = self.acl_obj.put_bucket_acl(
             bucket_name, acl=BKT_POLICY_CONF["bucket_policy"]["acl_permission"])
         assert resp[0], resp[1]
         self.log.info(
@@ -3984,23 +3985,23 @@ class TestBucketPolicy:
         account_name_2 = test_372_cfg["account_name_2"].format(random_id)
         email_id_2 = test_372_cfg["emailid_2"].format(random_id)
         result_2 = self.create_s3iamcli_acc(account_name_2, email_id_2)
-        S3_BKT_POLICY_OBJ_2 = result_2[3]
+        self.s3_bkt_policy_obj_2 = result_2[3]
         self.log.info("Step 1 : Create a new bucket assign"
                       " authenticated-read bucket permission to account2")
-        resp = ACL_OBJ.create_bucket_with_acl(
+        resp = self.acl_obj.create_bucket_with_acl(
             bucket_name, acl=test_372_cfg["bucket_permission"])
         assert resp[0], resp[1]
         self.log.info(
             "Step 1 : Bucket was created with authenticated-read permission")
         self.log.info("Step 2: Get bucket acl")
-        resp = ACL_OBJ.get_bucket_acl(bucket_name)
+        resp = self.acl_obj.get_bucket_acl(bucket_name)
         assert resp[0], resp[1]
         self.log.info("Step 2: Bucket ACL was verified")
         self.log.info(
             "Step 2: Apply put bucket policy on the bucket using account 2")
         bkt_json_policy = json.dumps(test_372_cfg["bucket_policy"])
         try:
-            S3_BKT_POLICY_OBJ_2.put_bucket_policy(
+            self.s3_bkt_policy_obj_2.put_bucket_policy(
                 bucket_name, bkt_json_policy)
         except CTException as error:
             self.log.error(error.message)
@@ -4008,7 +4009,7 @@ class TestBucketPolicy:
         self.log.info(
             "Step 2: Put Bucket policy from second account failing with error: %s",
             test_372_cfg["error_message"])
-        resp = ACL_OBJ.put_bucket_acl(
+        resp = self.acl_obj.put_bucket_acl(
             bucket_name, acl=BKT_POLICY_CONF["bucket_policy"]["acl_permission"])
         assert resp[0], resp[1]
         self.log.info(
@@ -4030,25 +4031,25 @@ class TestBucketPolicy:
         bucket_name = test_373_cfg["bucket_name"]
         self.create_bucket_validate(bucket_name)
         self.log.info("Step 1: Applying public-read acl to a bucket")
-        resp = ACL_OBJ.put_bucket_acl(
+        resp = self.acl_obj.put_bucket_acl(
             bucket_name, acl=test_373_cfg["bucket_permission"])
         assert resp[0], resp[1]
         self.log.info("Step 1: Applied public-read acl to a bucket")
         self.log.info("Step 2: Retrieving acl of a bucket")
-        resp = ACL_OBJ.get_bucket_acl(bucket_name)
+        resp = self.acl_obj.get_bucket_acl(bucket_name)
         assert resp[0], resp[1]
         self.log.info("Step 2: Retrieved acl of a bucket")
         self.log.info("Step 3: Applying policy on a bucket")
         bkt_policy_json = json.dumps(test_373_cfg["bucket_policy"])
         try:
-            NO_AUTH_OBJ.put_bucket_policy(bucket_name, bkt_policy_json)
+            self.no_auth_obj.put_bucket_policy(bucket_name, bkt_policy_json)
         except CTException as error:
             self.log.error(error.message)
             assert test_373_cfg["error_message"] in error.message, error.message
             self.log.info(
                 "Step 3: Applying policy on a bucket is failed with error %s",
                 error.message)
-        resp = ACL_OBJ.put_bucket_acl(
+        resp = self.acl_obj.put_bucket_acl(
             bucket_name, acl=BKT_POLICY_CONF["bucket_policy"]["acl_permission"])
         assert resp[0], resp[1]
         self.log.info(
@@ -4071,25 +4072,25 @@ class TestBucketPolicy:
         bucket_name = test_374_cfg["bucket_name"]
         self.create_bucket_validate(bucket_name)
         self.log.info("Step 1. Applying public-read-write acl to a bucket")
-        resp = ACL_OBJ.put_bucket_acl(
+        resp = self.acl_obj.put_bucket_acl(
             bucket_name, acl=test_374_cfg["bucket_permission"])
         assert resp[0], resp[1]
         self.log.info("Step 1. Applied public-read-write acl to a bucket")
         self.log.info("Step 2: Retrieving acl of a bucket")
-        resp = ACL_OBJ.get_bucket_acl(bucket_name)
+        resp = self.acl_obj.get_bucket_acl(bucket_name)
         assert resp[0], resp[1]
         self.log.info("Step 2: Retrieved acl of a bucket")
         self.log.info("Step 3: Applying policy on a bucket")
         bkt_policy_json = json.dumps(test_374_cfg["bucket_policy"])
         try:
-            NO_AUTH_OBJ.put_bucket_policy(bucket_name, bkt_policy_json)
+            self.no_auth_obj.put_bucket_policy(bucket_name, bkt_policy_json)
         except CTException as error:
             self.log.error(error.message)
             assert test_374_cfg["error_message"] in error.message, error.message
             self.log.info(
                 "Step 3: Applying policy on a bucket is failed with error %s",
                 error.message)
-        resp = ACL_OBJ.put_bucket_acl(
+        resp = self.acl_obj.put_bucket_acl(
             bucket_name, acl=BKT_POLICY_CONF["bucket_policy"]["acl_permission"])
         assert resp[0], resp[1]
         self.log.info(
@@ -4198,12 +4199,12 @@ class TestBucketPolicy:
                 time.time()))
         self.create_bucket_validate(bucket_name)
         self.put_get_bkt_policy(bucket_name, bkt_cnf_1185["bucket_policy"])
-        resp = IAM_OBJ.create_user_access_key(user_name)
+        resp = self.iam_obj.create_user_access_key(user_name)
         assert resp[0], resp[1]
         usr_access_key = resp[1][0]["Keys"][1]["AccessKey"]["AccessKeyId"]
         usr_secret_key = resp[1][0]["Keys"][1]["AccessKey"]["SecretAccessKey"]
         s3_policy_usr_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
-            access_key=usr_access_key, secret_key=usr_secret_key)
+            endpoint_url=S3_CFG["s3_url"], access_key=usr_access_key, secret_key=usr_secret_key)
         self.log.info("Step 2: Deleting bucket policy with users credentials")
         try:
             s3_policy_usr_obj.delete_bucket_policy(bucket_name)
@@ -4231,12 +4232,12 @@ class TestBucketPolicy:
                 time.time()))
         self.create_bucket_validate(bucket_name)
         self.put_get_bkt_policy(bucket_name, bkt_cnf_1186["bucket_policy"])
-        resp = IAM_OBJ.create_user_access_key(user_name)
+        resp = self.iam_obj.create_user_access_key(user_name)
         assert resp[0], resp[1]
         usr_access_key = resp[1][0]["Keys"][1]["AccessKey"]["AccessKeyId"]
         usr_secret_key = resp[1][0]["Keys"][1]["AccessKey"]["SecretAccessKey"]
         s3_policy_usr_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
-            access_key=usr_access_key, secret_key=usr_secret_key)
+            endpoint_url=S3_CFG["s3_url"], access_key=usr_access_key, secret_key=usr_secret_key)
         self.log.info("Step 2: Deleting bucket policy with users credentials")
         resp = s3_policy_usr_obj.delete_bucket_policy(bucket_name)
         assert resp[0], resp[1]
@@ -4246,7 +4247,7 @@ class TestBucketPolicy:
             "Step 3: Verifying that bucket policy is deleted from a bucket %s",
             bucket_name)
         try:
-            S3_BKT_POLICY_OBJ.get_bucket_policy(bucket_name)
+            self.s3_bkt_policy_obj.get_bucket_policy(bucket_name)
         except CTException as error:
             self.log.error(error.message)
             assert bkt_cnf_1186["error_message"] in error.message, error.message
@@ -4271,12 +4272,12 @@ class TestBucketPolicy:
                 time.time()))
         self.create_bucket_validate(bucket_name)
         self.put_get_bkt_policy(bucket_name, bkt_cnf_1114["bucket_policy"])
-        resp = IAM_OBJ.create_user_access_key(user_name)
+        resp = self.iam_obj.create_user_access_key(user_name)
         assert resp[0], resp[1]
         usr_access_key = resp[1][0]["Keys"][1]["AccessKey"]["AccessKeyId"]
         usr_secret_key = resp[1][0]["Keys"][1]["AccessKey"]["SecretAccessKey"]
         s3_policy_usr_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
-            access_key=usr_access_key, secret_key=usr_secret_key)
+            endpoint_url=S3_CFG["s3_url"], access_key=usr_access_key, secret_key=usr_secret_key)
         self.log.info(
             "Step 2: Retrieving bucket policy with users credentials")
         resp = s3_policy_usr_obj.get_bucket_policy(bucket_name)
@@ -4315,12 +4316,12 @@ class TestBucketPolicy:
                 time.time()))
         self.create_bucket_validate(bucket_name)
         self.put_get_bkt_policy(bucket_name, bkt_cnf_1169["bucket_policy"])
-        resp = IAM_OBJ.create_user_access_key(user_name)
+        resp = self.iam_obj.create_user_access_key(user_name)
         assert resp[0], resp[1]
         usr_access_key = resp[1][0]["Keys"][1]["AccessKey"]["AccessKeyId"]
         usr_secret_key = resp[1][0]["Keys"][1]["AccessKey"]["SecretAccessKey"]
         s3_policy_usr_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
-            access_key=usr_access_key, secret_key=usr_secret_key)
+            endpoint_url=S3_CFG["s3_url"], access_key=usr_access_key, secret_key=usr_secret_key)
         self.log.info("Step 2: Applying bucket policy with users credentials")
         bkt_policy_json = json.dumps(bkt_cnf_1169["bucket_policy"])
         resp = s3_policy_usr_obj.put_bucket_policy(
@@ -4360,12 +4361,12 @@ class TestBucketPolicy:
                 time.time()))
         self.create_bucket_validate(bucket_name)
         self.put_get_bkt_policy(bucket_name, bkt_cnf_1167["bucket_policy"])
-        resp = IAM_OBJ.create_user_access_key(user_name)
+        resp = self.iam_obj.create_user_access_key(user_name)
         assert resp[0], resp[1]
         usr_access_key = resp[1][0]["Keys"][1]["AccessKey"]["AccessKeyId"]
         usr_secret_key = resp[1][0]["Keys"][1]["AccessKey"]["SecretAccessKey"]
         s3_policy_usr_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
-            access_key=usr_access_key, secret_key=usr_secret_key)
+            endpoint_url=S3_CFG["s3_url"], access_key=usr_access_key, secret_key=usr_secret_key)
         self.log.info(
             "Step 2: Retrieving bucket policy with users credentials")
         try:
@@ -4377,7 +4378,7 @@ class TestBucketPolicy:
                 "Step 2: Retrieving bucket policy with users "
                 "credentials is failed with error %s", error.message)
         # Cleanup activity
-        S3_BKT_POLICY_OBJ.delete_bucket_policy(bucket_name)
+        self.s3_bkt_policy_obj.delete_bucket_policy(bucket_name)
         self.log.info(
             "ENDED: Test * Wildcard for all s3apis in action field "
             "of statement of the json file with effect Deny")
@@ -4398,7 +4399,7 @@ class TestBucketPolicy:
             bucket_name)
         bkt_policy_json = json.dumps(bkt_cnf_1113["bucket_policy"])
         try:
-            S3_BKT_POLICY_OBJ.put_bucket_policy(bucket_name, bkt_policy_json)
+            self.s3_bkt_policy_obj.put_bucket_policy(bucket_name, bkt_policy_json)
         except CTException as error:
             self.log.error(error.message)
             assert bkt_cnf_1113["error_message"] in error.message, error.message
@@ -4425,7 +4426,7 @@ class TestBucketPolicy:
             "Step 2: Applying policy on a bucket %s", bucket_name)
         bkt_policy_json = json.dumps(bkt_cnf_1116["bucket_policy"])
         try:
-            S3_BKT_POLICY_OBJ.put_bucket_policy(bucket_name, bkt_policy_json)
+            self.s3_bkt_policy_obj.put_bucket_policy(bucket_name, bkt_policy_json)
         except CTException as error:
             self.log.error(error.message)
             assert bkt_cnf_1116["error_message"] in error.message, error.message
@@ -4451,11 +4452,12 @@ class TestBucketPolicy:
                 time.time()))
         self.create_bucket_validate(bucket_name)
         self.put_get_bkt_policy(bucket_name, bkt_cnf_1109["bucket_policy_1"])
-        resp = IAM_OBJ.create_user_access_key(user_name)
+        resp = self.iam_obj.create_user_access_key(user_name)
         assert resp[0], resp[1]
         usr_access_key = resp[1][0]["Keys"][1]["AccessKey"]["AccessKeyId"]
         usr_secret_key = resp[1][0]["Keys"][1]["AccessKey"]["SecretAccessKey"]
         s3_policy_usr_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=usr_access_key, secret_key=usr_secret_key)
         self.log.info(
             "Step 2: Applying bucket policy with users credentials")
@@ -4478,7 +4480,7 @@ class TestBucketPolicy:
                 "credentials is failed with error %s", error.message)
         self.log.info(
             "Step 4: Retrieving policy of a bucket with accounts credentials")
-        resp = S3_BKT_POLICY_OBJ.get_bucket_policy(bucket_name)
+        resp = self.s3_bkt_policy_obj.get_bucket_policy(bucket_name)
         assert resp[0], resp[1]
         ASRTOBJ.assert_equals(resp[1]["Policy"], bkt_policy_json, resp[1])
         self.log.info(
@@ -4499,7 +4501,7 @@ class TestBucketPolicy:
         self.log.info(
             "Creating two account with name prefix as %s",
             test_cfg["account_name"])
-        resp = IAM_OBJ.create_multiple_accounts(
+        resp = self.iam_obj.create_multiple_accounts(
             test_cfg["acc_count"], test_cfg["account_name"])
         assert resp[0], resp[1]
         canonical_id_user_1 = resp[1][0][1]["canonical_id"]
@@ -4509,11 +4511,11 @@ class TestBucketPolicy:
         access_key_u2 = resp[1][1][1]["access_key"]
         secret_key_u2 = resp[1][1][1]["secret_key"]
         s3_policy_usr_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
-            access_key=access_key_u1, secret_key=secret_key_u1)
+            endpoint_url=S3_CFG["s3_url"], access_key=access_key_u1, secret_key=secret_key_u1)
         s3acltest_obj_1 = s3_acl_test_lib.S3AclTestLib(
-            access_key=access_key_u1, secret_key=secret_key_u1)
+            endpoint_url=S3_CFG["s3_url"], access_key=access_key_u1, secret_key=secret_key_u1)
         self.s3test_obj_1 = s3_test_lib.S3TestLib(
-            access_key=access_key_u1, secret_key=secret_key_u1)
+            endpoint_url=S3_CFG["s3_url"], access_key=access_key_u1, secret_key=secret_key_u1)
         self.log.info(
             "Created account2 with name %s", test_cfg["account_name"])
         self.log.info("Step 1 : Creating bucket with name {} and setting read "
@@ -4548,7 +4550,7 @@ class TestBucketPolicy:
         self.log.info(
             "Step 5: Get bucket policy using account2")
         s3_policy_usr2_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
-            access_key=access_key_u2, secret_key=secret_key_u2)
+            endpoint_url=S3_CFG["s3_url"], access_key=access_key_u2, secret_key=secret_key_u2)
         try:
             s3_policy_usr2_obj.get_bucket_policy(test_cfg["bucket_name"])
         except CTException as error:
@@ -4574,7 +4576,7 @@ class TestBucketPolicy:
         self.log.info(
             "Creating two account with name prefix as %s",
             test_cfg["account_name"])
-        resp = IAM_OBJ.create_multiple_accounts(
+        resp = self.iam_obj.create_multiple_accounts(
             test_cfg["acc_count"], test_cfg["account_name"])
         assert resp[0], resp[1]
         canonical_id_user_1 = resp[1][0][1]["canonical_id"]
@@ -4584,9 +4586,9 @@ class TestBucketPolicy:
         access_key_u2 = resp[1][1][1]["access_key"]
         secret_key_u2 = resp[1][1][1]["secret_key"]
         s3acltest_obj_1 = s3_acl_test_lib.S3AclTestLib(
-            access_key=access_key_u1, secret_key=secret_key_u1)
+            endpoint_url=S3_CFG["s3_url"], access_key=access_key_u1, secret_key=secret_key_u1)
         self.s3test_obj_1 = s3_test_lib.S3TestLib(
-            access_key=access_key_u1, secret_key=secret_key_u1)
+            endpoint_url=S3_CFG["s3_url"], access_key=access_key_u1, secret_key=secret_key_u1)
         self.log.info(
             "Created account2 with name %s", test_cfg["account_name"])
         self.log.info("Step 1 : Creating bucket with name {} and setting read "
@@ -4607,7 +4609,7 @@ class TestBucketPolicy:
         self.log.info(
             "Step 3: Get bucket policy using account2")
         s3_policy_usr2_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
-            access_key=access_key_u2, secret_key=secret_key_u2)
+            endpoint_url=S3_CFG["s3_url"], access_key=access_key_u2, secret_key=secret_key_u2)
         try:
             s3_policy_usr2_obj.get_bucket_policy(test_cfg["bucket_name"])
         except CTException as error:
@@ -5638,7 +5640,7 @@ _date
         bucket_name = test_cfg["bucket_name"]
         bkt_json_policy["Statement"][0]["Resource"] = bkt_json_policy["Statement"][0][
             "Resource"].format(bucket_name)
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         self.put_get_bkt_policy(bucket_name, bkt_json_policy)
         resp = s3_obj_2.put_object(
@@ -5809,10 +5811,10 @@ _date
         result = self.create_s3iamcli_acc(
             test_cfg["account_name"].format(random_id),
             test_cfg["emailid"].format(random_id))
-        S3_OBJ_2 = result[1]
-        ACL_OBJ_2 = result[2]
+        self.s3_obj_2 = result[1]
+        self.acl_obj_2 = result[2]
         account_id = result[6]
-        resp = S3_OBJ.create_bucket_put_object(
+        resp = self.s3_obj.create_bucket_put_object(
             bucket_name,
             obj_name,
             self.file_path,
@@ -5826,14 +5828,14 @@ _date
         self.log.info(
             "Step 1: Upload object using second account account with "
             "and without acl permission")
-        resp = ACL_OBJ_2.put_object_with_acl(
+        resp = self.acl_obj_2.put_object_with_acl(
             bucket_name,
             test_cfg["object_name_2"],
             self.file_path,
             acl=test_cfg["obj_permission"])
         assert resp[0], resp[1]
         try:
-            S3_OBJ_2.put_object(
+            self.s3_obj_2.put_object(
                 bucket_name,
                 test_cfg["object_name_2"],
                 self.file_path)
@@ -5866,10 +5868,10 @@ _date
         result = self.create_s3iamcli_acc(
             test_cfg["account_name"].format(random_id),
             test_cfg["emailid"].format(random_id))
-        S3_OBJ_2 = result[1]
-        ACL_OBJ_2 = result[2]
+        self.s3_obj_2 = result[1]
+        self.acl_obj_2 = result[2]
         account_id = result[6]
-        resp = S3_OBJ.create_bucket_put_object(
+        resp = self.s3_obj.create_bucket_put_object(
             bucket_name,
             obj_name,
             self.file_path,
@@ -5883,14 +5885,14 @@ _date
         self.log.info(
             "Step 1: Upload object using second account account with "
             "and without acl permission")
-        resp = ACL_OBJ_2.put_object_with_acl(
+        resp = self.acl_obj_2.put_object_with_acl(
             bucket_name,
             test_cfg["object_name_2"],
             self.file_path,
             acl=test_cfg["obj_permission"])
         assert resp[0], resp[1]
         try:
-            S3_OBJ_2.put_object(
+            self.s3_obj_2.put_object(
                 bucket_name,
                 test_cfg["object_name_2"],
                 self.file_path)
@@ -5923,11 +5925,11 @@ _date
         result = self.create_s3iamcli_acc(
             test_cfg["account_name"].format(random_id),
             test_cfg["emailid"].format(random_id))
-        S3_OBJ_2 = result[1]
-        ACL_OBJ_2 = result[2]
+        self.s3_obj_2 = result[1]
+        self.acl_obj_2 = result[2]
         account_id_2 = result[6]
         canonical_id_2 = result[0]
-        resp = S3_OBJ.create_bucket_put_object(
+        resp = self.s3_obj.create_bucket_put_object(
             bucket_name,
             obj_name,
             self.file_path,
@@ -5945,14 +5947,14 @@ _date
         self.log.info(
             "Step 1: Upload object using second account account with "
             "and without acl permission")
-        resp = ACL_OBJ_2.put_object_with_acl(
+        resp = self.acl_obj_2.put_object_with_acl(
             bucket_name,
             test_cfg["object_name_2"],
             self.file_path,
             grant_full_control=test_cfg["id_str"].format(canonical_id_2))
         assert resp[0], resp[1]
         try:
-            S3_OBJ_2.put_object(
+            self.s3_obj_2.put_object(
                 bucket_name,
                 test_cfg["object_name_2"],
                 self.file_path)
@@ -5985,11 +5987,11 @@ _date
         result = self.create_s3iamcli_acc(
             test_cfg["account_name"].format(random_id),
             test_cfg["emailid"].format(random_id))
-        S3_OBJ_2 = result[1]
-        ACL_OBJ_2 = result[2]
+        self.s3_obj_2 = result[1]
+        self.acl_obj_2 = result[2]
         account_id_2 = result[6]
         canonical_id_2 = result[0]
-        resp = S3_OBJ.create_bucket_put_object(
+        resp = self.s3_obj.create_bucket_put_object(
             bucket_name,
             obj_name,
             self.file_path,
@@ -6006,14 +6008,14 @@ _date
         self.log.info(
             "Step 1: Upload object using second account account with "
             "and without acl permission")
-        resp = ACL_OBJ_2.put_object_with_acl(
+        resp = self.acl_obj_2.put_object_with_acl(
             bucket_name,
             test_cfg["object_name_2"],
             self.file_path,
             grant_write_acp=test_cfg["id_str"].format(canonical_id_2))
         assert resp[0], resp[1]
         try:
-            S3_OBJ_2.put_object(
+            self.s3_obj_2.put_object(
                 bucket_name,
                 test_cfg["object_name_2"],
                 self.file_path)
@@ -6046,14 +6048,16 @@ _date
             bucket_name,
             test_4937_cfg["s3_obj_count"],
             bkt_policy_cfg["obj_name_prefix"])
-        acc_details = IAM_OBJ.create_multiple_accounts(
+        acc_details = self.iam_obj.create_multiple_accounts(
             test_4937_cfg["iam_acc_count"],
             name_prefix=bkt_policy_cfg["acc_name_prefix"])
         account1_id = acc_details[1][0][1]["Account_Id"]
-        S3_OBJ1 = s3_test_lib.S3TestLib(
+        self.s3_obj1 = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=acc_details[1][0][1]["access_key"],
             secret_key=acc_details[1][0][1]["secret_key"])
-        S3_OBJ2 = s3_test_lib.S3TestLib(
+        self.s3_obj2 = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=acc_details[1][1][1]["access_key"],
             secret_key=acc_details[1][1][1]["secret_key"])
         self.log.info("Creating a json for bucket policy")
@@ -6070,21 +6074,21 @@ _date
         max_key_list = test_4937_cfg["max_keys"]
         err_message = test_4937_cfg["err_message"]
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ1, max_key_list[0])
+            bucket_name, self.s3_obj1, max_key_list[0])
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ1, max_key_list[2], err_message)
-        self.list_objects_with_diff_acnt(bucket_name, S3_OBJ1)
+            bucket_name, self.s3_obj1, max_key_list[2], err_message)
+        self.list_objects_with_diff_acnt(bucket_name, self.s3_obj1)
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ2, max_key_list[0], err_message)
+            bucket_name, self.s3_obj2, max_key_list[0], err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ2, max_key_list[3], err_message)
+            bucket_name, self.s3_obj2, max_key_list[3], err_message)
         self.list_objects_with_diff_acnt(
-            bucket_name, S3_OBJ2, err_message)
+            bucket_name, self.s3_obj2, err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ, max_key_list[0])
+            bucket_name, self.s3_obj, max_key_list[0])
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ, max_key_list[3])
-        self.list_objects_with_diff_acnt(bucket_name, S3_OBJ)
+            bucket_name, self.s3_obj, max_key_list[3])
+        self.list_objects_with_diff_acnt(bucket_name, self.s3_obj)
         self.log.info(
             "ENDED: Create Bucket Policy using NumericLessThanIfExists"
             " Condition, key 's3:max-keys' and Effect Allow")
@@ -6108,14 +6112,16 @@ _date
             bucket_name,
             test_4939_cfg["s3_obj_count"],
             bkt_policy_cfg["obj_name_prefix"])
-        acc_details = IAM_OBJ.create_multiple_accounts(
+        acc_details = self.iam_obj.create_multiple_accounts(
             test_4939_cfg["iam_acc_count"],
             name_prefix=bkt_policy_cfg["acc_name_prefix"])
         account1_id = acc_details[1][0][1]["Account_Id"]
-        S3_OBJ1 = s3_test_lib.S3TestLib(
+        self.s3_obj1 = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=acc_details[1][0][1]["access_key"],
             secret_key=acc_details[1][0][1]["secret_key"])
-        S3_OBJ2 = s3_test_lib.S3TestLib(
+        self.s3_obj2 = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=acc_details[1][1][1]["access_key"],
             secret_key=acc_details[1][1][1]["secret_key"])
         self.log.info("Creating a json for bucket policy")
@@ -6134,22 +6140,22 @@ _date
         max_key_list = test_4939_cfg["max_keys"]
         err_message = test_4939_cfg["err_message"]
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ1, max_key_list[0], err_message)
+            bucket_name, self.s3_obj1, max_key_list[0], err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ1, max_key_list[2], err_message)
+            bucket_name, self.s3_obj1, max_key_list[2], err_message)
         self.list_objects_with_diff_acnt(
-            bucket_name, S3_OBJ1, err_message)
+            bucket_name, self.s3_obj1, err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ2, max_key_list[0], err_message)
+            bucket_name, self.s3_obj2, max_key_list[0], err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ2, max_key_list[3], err_message)
+            bucket_name, self.s3_obj2, max_key_list[3], err_message)
         self.list_objects_with_diff_acnt(
-            bucket_name, S3_OBJ2, err_message)
+            bucket_name, self.s3_obj2, err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ, max_key_list[0])
+            bucket_name, self.s3_obj, max_key_list[0])
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ, max_key_list[3])
-        self.list_objects_with_diff_acnt(bucket_name, S3_OBJ)
+            bucket_name, self.s3_obj, max_key_list[3])
+        self.list_objects_with_diff_acnt(bucket_name, self.s3_obj)
         self.log.info(
             "ENDED: Create Bucket Policy using NumericLessThanIfExists"
             " Condition, key 's3:max-keys' and Effect Deny")
@@ -6173,14 +6179,16 @@ _date
             bucket_name,
             test_4940_cfg["s3_obj_count"],
             bkt_policy_cfg["obj_name_prefix"])
-        acc_details = IAM_OBJ.create_multiple_accounts(
+        acc_details = self.iam_obj.create_multiple_accounts(
             test_4940_cfg["iam_acc_count"],
             name_prefix=bkt_policy_cfg["acc_name_prefix"])
         account1_id = acc_details[1][0][1]["Account_Id"]
-        S3_OBJ1 = s3_test_lib.S3TestLib(
+        self.s3_obj1 = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=acc_details[1][0][1]["access_key"],
             secret_key=acc_details[1][0][1]["secret_key"])
-        S3_OBJ2 = s3_test_lib.S3TestLib(
+        self.s3_obj2 = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=acc_details[1][1][1]["access_key"],
             secret_key=acc_details[1][1][1]["secret_key"])
         self.log.info("Creating a json for bucket policy")
@@ -6197,21 +6205,21 @@ _date
         max_key_list = test_4940_cfg["max_keys"]
         err_message = test_4940_cfg["err_message"]
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ1, max_key_list[2], err_message)
+            bucket_name, self.s3_obj1, max_key_list[2], err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ1, max_key_list[3])
-        self.list_objects_with_diff_acnt(bucket_name, S3_OBJ1)
+            bucket_name, self.s3_obj1, max_key_list[3])
+        self.list_objects_with_diff_acnt(bucket_name, self.s3_obj1)
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ2, max_key_list[0], err_message)
+            bucket_name, self.s3_obj2, max_key_list[0], err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ2, max_key_list[3], err_message)
+            bucket_name, self.s3_obj2, max_key_list[3], err_message)
         self.list_objects_with_diff_acnt(
-            bucket_name, S3_OBJ2, err_message)
+            bucket_name, self.s3_obj2, err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ, max_key_list[0])
+            bucket_name, self.s3_obj, max_key_list[0])
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ, max_key_list[3])
-        self.list_objects_with_diff_acnt(bucket_name, S3_OBJ)
+            bucket_name, self.s3_obj, max_key_list[3])
+        self.list_objects_with_diff_acnt(bucket_name, self.s3_obj)
         self.log.info(
             "ENDED: Create Bucket Policy using NumericGreaterThanIfExists"
             " Condition, key 's3:max-keys' and Effect Allow")
@@ -6235,14 +6243,16 @@ _date
             bucket_name,
             test_4941_cfg["s3_obj_count"],
             bkt_policy_cfg["obj_name_prefix"])
-        acc_details = IAM_OBJ.create_multiple_accounts(
+        acc_details = self.iam_obj.create_multiple_accounts(
             test_4941_cfg["iam_acc_count"],
             name_prefix=bkt_policy_cfg["acc_name_prefix"])
         account1_id = acc_details[1][0][1]["Account_Id"]
-        S3_OBJ1 = s3_test_lib.S3TestLib(
+        self.s3_obj1 = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=acc_details[1][0][1]["access_key"],
             secret_key=acc_details[1][0][1]["secret_key"])
-        S3_OBJ2 = s3_test_lib.S3TestLib(
+        self.s3_obj2 = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=acc_details[1][1][1]["access_key"],
             secret_key=acc_details[1][1][1]["secret_key"])
         self.log.info("Creating a json for bucket policy")
@@ -6259,22 +6269,22 @@ _date
         max_key_list = test_4941_cfg["max_keys"]
         err_message = test_4941_cfg["err_message"]
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ1, max_key_list[0], err_message)
+            bucket_name, self.s3_obj1, max_key_list[0], err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ1, max_key_list[3], err_message)
+            bucket_name, self.s3_obj1, max_key_list[3], err_message)
         self.list_objects_with_diff_acnt(
-            bucket_name, S3_OBJ1, err_message)
+            bucket_name, self.s3_obj1, err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ2, max_key_list[0], err_message)
+            bucket_name, self.s3_obj2, max_key_list[0], err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ2, max_key_list[3], err_message)
+            bucket_name, self.s3_obj2, max_key_list[3], err_message)
         self.list_objects_with_diff_acnt(
-            bucket_name, S3_OBJ2, err_message)
+            bucket_name, self.s3_obj2, err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ, max_key_list[0])
+            bucket_name, self.s3_obj, max_key_list[0])
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ, max_key_list[3])
-        self.list_objects_with_diff_acnt(bucket_name, S3_OBJ)
+            bucket_name, self.s3_obj, max_key_list[3])
+        self.list_objects_with_diff_acnt(bucket_name, self.s3_obj)
         self.log.info(
             "ENDED: Create Bucket Policy using NumericGreaterThanIfExists"
             " Condition, key 's3:max-keys' and Effect Deny")
@@ -6298,14 +6308,16 @@ _date
             bucket_name,
             test_4942_cfg["s3_obj_count"],
             bkt_policy_cfg["obj_name_prefix"])
-        acc_details = IAM_OBJ.create_multiple_accounts(
+        acc_details = self.iam_obj.create_multiple_accounts(
             test_4942_cfg["iam_acc_count"],
             name_prefix=bkt_policy_cfg["acc_name_prefix"])
         account1_id = acc_details[1][0][1]["Account_Id"]
-        S3_OBJ1 = s3_test_lib.S3TestLib(
+        self.s3_obj1 = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=acc_details[1][0][1]["access_key"],
             secret_key=acc_details[1][0][1]["secret_key"])
-        S3_OBJ2 = s3_test_lib.S3TestLib(
+        self.s3_obj2 = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=acc_details[1][1][1]["access_key"],
             secret_key=acc_details[1][1][1]["secret_key"])
         self.log.info("Creating a json for bucket policy")
@@ -6322,21 +6334,21 @@ _date
         max_key_list = test_4942_cfg["max_keys"]
         err_message = test_4942_cfg["err_message"]
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ1, max_key_list[0], err_message)
+            bucket_name, self.s3_obj1, max_key_list[0], err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ1, max_key_list[2])
-        self.list_objects_with_diff_acnt(bucket_name, S3_OBJ1)
+            bucket_name, self.s3_obj1, max_key_list[2])
+        self.list_objects_with_diff_acnt(bucket_name, self.s3_obj1)
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ2, max_key_list[0], err_message)
+            bucket_name, self.s3_obj2, max_key_list[0], err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ2, max_key_list[2], err_message)
+            bucket_name, self.s3_obj2, max_key_list[2], err_message)
         self.list_objects_with_diff_acnt(
-            bucket_name, S3_OBJ2, err_message)
+            bucket_name, self.s3_obj2, err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ, max_key_list[0])
+            bucket_name, self.s3_obj, max_key_list[0])
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ, max_key_list[2])
-        self.list_objects_with_diff_acnt(bucket_name, S3_OBJ)
+            bucket_name, self.s3_obj, max_key_list[2])
+        self.list_objects_with_diff_acnt(bucket_name, self.s3_obj)
         self.log.info(
             "ENDED: Create Bucket Policy using NumericEquals"
             " Condition Operator, key 's3:max-keys' and Effect Allow")
@@ -6361,14 +6373,15 @@ _date
             bucket_name,
             test_4943_cfg["s3_obj_count"],
             bkt_policy_cfg["obj_name_prefix"])
-        acc_details = IAM_OBJ.create_multiple_accounts(
+        acc_details = self.iam_obj.create_multiple_accounts(
             test_4943_cfg["iam_acc_count"],
             name_prefix=bkt_policy_cfg["acc_name_prefix"])
         account1_id = acc_details[1][0][1]["Account_Id"]
-        S3_OBJ1 = s3_test_lib.S3TestLib(
+        self.s3_obj1 = s3_test_lib.S3TestLib(
             access_key=acc_details[1][0][1]["access_key"],
             secret_key=acc_details[1][0][1]["secret_key"])
-        S3_OBJ2 = s3_test_lib.S3TestLib(
+        self.s3_obj2 = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=acc_details[1][1][1]["access_key"],
             secret_key=acc_details[1][1][1]["secret_key"])
         self.log.info("Creating a json for bucket policy")
@@ -6385,22 +6398,22 @@ _date
         max_key_list = test_4943_cfg["max_keys"]
         err_message = test_4943_cfg["err_message"]
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ1, max_key_list[0], err_message)
+            bucket_name, self.s3_obj1, max_key_list[0], err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ1, max_key_list[2], err_message)
+            bucket_name, self.s3_obj1, max_key_list[2], err_message)
         self.list_objects_with_diff_acnt(
-            bucket_name, S3_OBJ1, err_message)
+            bucket_name, self.s3_obj1, err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ2, max_key_list[0], err_message)
+            bucket_name, self.s3_obj2, max_key_list[0], err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ2, max_key_list[2], err_message)
+            bucket_name, self.s3_obj2, max_key_list[2], err_message)
         self.list_objects_with_diff_acnt(
-            bucket_name, S3_OBJ2, err_message)
+            bucket_name, self.s3_obj2, err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ, max_key_list[0])
+            bucket_name, self.s3_obj, max_key_list[0])
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ, max_key_list[2])
-        self.list_objects_with_diff_acnt(bucket_name, S3_OBJ)
+            bucket_name, self.s3_obj, max_key_list[2])
+        self.list_objects_with_diff_acnt(bucket_name, self.s3_obj)
         self.log.info(
             "ENDED: Create Bucket Policy using NumericNotEqualsIfExists"
             " Condition, key 's3:max-keys' and Effect Deny")
@@ -6425,14 +6438,16 @@ _date
             bucket_name,
             test_4944_cfg["s3_obj_count"],
             bkt_policy_cfg["obj_name_prefix"])
-        acc_details = IAM_OBJ.create_multiple_accounts(
+        acc_details = self.iam_obj.create_multiple_accounts(
             test_4944_cfg["iam_acc_count"],
             name_prefix=bkt_policy_cfg["acc_name_prefix"])
         account1_id = acc_details[1][0][1]["Account_Id"]
-        S3_OBJ1 = s3_test_lib.S3TestLib(
+        self.s3_obj1 = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=acc_details[1][0][1]["access_key"],
             secret_key=acc_details[1][0][1]["secret_key"])
-        S3_OBJ2 = s3_test_lib.S3TestLib(
+        self.s3_obj2 = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=acc_details[1][1][1]["access_key"],
             secret_key=acc_details[1][1][1]["secret_key"])
         self.log.info("Creating a json for bucket policy")
@@ -6449,21 +6464,21 @@ _date
         max_key_list = test_4944_cfg["max_keys"]
         err_message = test_4944_cfg["err_message"]
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ1, max_key_list[0])
+            bucket_name, self.s3_obj1, max_key_list[0])
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ1, max_key_list[2])
-        self.list_objects_with_diff_acnt(bucket_name, S3_OBJ1)
+            bucket_name, self.s3_obj1, max_key_list[2])
+        self.list_objects_with_diff_acnt(bucket_name, self.s3_obj1)
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ2, max_key_list[0], err_message)
+            bucket_name, self.s3_obj2, max_key_list[0], err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ2, max_key_list[2], err_message)
+            bucket_name, self.s3_obj2, max_key_list[2], err_message)
         self.list_objects_with_diff_acnt(
-            bucket_name, S3_OBJ2, err_message)
+            bucket_name, self.s3_obj2, err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ, max_key_list[0])
+            bucket_name, self.s3_obj, max_key_list[0])
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ, max_key_list[2])
-        self.list_objects_with_diff_acnt(bucket_name, S3_OBJ)
+            bucket_name, self.s3_obj, max_key_list[2])
+        self.list_objects_with_diff_acnt(bucket_name, self.s3_obj)
         self.log.info(
             "ENDED: Create Bucket Policy using NumericLessThanEqualsIfExists"
             " Condition, key 's3:max-keys' and Effect Allow")
@@ -6487,14 +6502,16 @@ _date
             bucket_name,
             test_4945_cfg["s3_obj_count"],
             bkt_policy_cfg["obj_name_prefix"])
-        acc_details = IAM_OBJ.create_multiple_accounts(
+        acc_details = self.iam_obj.create_multiple_accounts(
             test_4945_cfg["iam_acc_count"],
             name_prefix=bkt_policy_cfg["acc_name_prefix"])
         account1_id = acc_details[1][0][1]["Account_Id"]
-        S3_OBJ1 = s3_test_lib.S3TestLib(
+        self.s3_obj1 = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=acc_details[1][0][1]["access_key"],
             secret_key=acc_details[1][0][1]["secret_key"])
-        S3_OBJ2 = s3_test_lib.S3TestLib(
+        self.s3_obj2 = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=acc_details[1][1][1]["access_key"],
             secret_key=acc_details[1][1][1]["secret_key"])
         self.log.info("Creating a json for bucket policy")
@@ -6511,22 +6528,22 @@ _date
         max_key_list = test_4945_cfg["max_keys"]
         err_message = test_4945_cfg["err_message"]
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ1, max_key_list[0], err_message)
+            bucket_name, self.s3_obj1, max_key_list[0], err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ1, max_key_list[3], err_message)
+            bucket_name, self.s3_obj1, max_key_list[3], err_message)
         self.list_objects_with_diff_acnt(
-            bucket_name, S3_OBJ1, err_message)
+            bucket_name, self.s3_obj1, err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ2, max_key_list[0], err_message)
+            bucket_name, self.s3_obj2, max_key_list[0], err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ2, max_key_list[2], err_message)
+            bucket_name, self.s3_obj2, max_key_list[2], err_message)
         self.list_objects_with_diff_acnt(
-            bucket_name, S3_OBJ2, err_message)
+            bucket_name, self.s3_obj2, err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ, max_key_list[0])
+            bucket_name, self.s3_obj, max_key_list[0])
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ, max_key_list[2])
-        self.list_objects_with_diff_acnt(bucket_name, S3_OBJ)
+            bucket_name, self.s3_obj, max_key_list[2])
+        self.list_objects_with_diff_acnt(bucket_name, self.s3_obj)
         self.log.info(
             "ENDED: Create Bucket Policy using NumericGreaterThanEqualsIfExists"
             " Condition, key 's3:max-keys' and Effect Deny")
@@ -6551,13 +6568,15 @@ _date
         bucket_policy = test_5449_cfg["bucket_policy"]
         self.create_bucket_put_objects(
             bucket_name, test_5449_cfg["obj_count"], obj_prefix)
-        acc_details = IAM_OBJ.create_multiple_accounts(
+        acc_details = self.iam_obj.create_multiple_accounts(
             test_5449_cfg["acc_count"], bkt_policy_cfg["acc_name_prefix"])
         account1_id = acc_details[1][0][1]["Account_Id"]
-        S3_OBJ1 = s3_test_lib.S3TestLib(
+        self.s3_obj1 = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=acc_details[1][0][1]["access_key"],
             secret_key=acc_details[1][0][1]["secret_key"])
-        S3_OBJ2 = s3_test_lib.S3TestLib(
+        self.s3_obj2 = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=acc_details[1][1][1]["access_key"],
             secret_key=acc_details[1][1][1]["secret_key"])
         self.log.info(
@@ -6573,18 +6592,18 @@ _date
             "Created a json with StringEqualsIfExists condition")
         self.put_get_bkt_policy(bucket_name, bucket_policy)
         self.list_obj_with_prefix_using_diff_accnt(
-            bucket_name, S3_OBJ, obj_prefix)
-        self.list_objects_with_diff_acnt(bucket_name, S3_OBJ)
+            bucket_name, self.s3_obj, obj_prefix)
+        self.list_objects_with_diff_acnt(bucket_name, self.s3_obj)
         self.list_obj_with_prefix_using_diff_accnt(
-            bucket_name, S3_OBJ1, obj_prefix)
-        self.list_objects_with_diff_acnt(bucket_name, S3_OBJ1)
+            bucket_name, self.s3_obj1, obj_prefix)
+        self.list_objects_with_diff_acnt(bucket_name, self.s3_obj1)
         self.list_obj_with_prefix_using_diff_accnt(
             bucket_name,
-            S3_OBJ2,
+            self.s3_obj2,
             obj_prefix,
             err_message)
         self.list_objects_with_diff_acnt(
-            bucket_name, S3_OBJ2, err_message)
+            bucket_name, self.s3_obj2, err_message)
         self.log.info(
             "ENDED: Test Create Bucket Policy using StringEqualsIfExists"
             " Condition, key s3:prefix and Effect Allow")
@@ -6609,13 +6628,15 @@ _date
         bucket_policy = test_5471_cfg["bucket_policy"]
         self.create_bucket_put_objects(
             bucket_name, test_5471_cfg["obj_count"], obj_prefix)
-        acc_details = IAM_OBJ.create_multiple_accounts(
+        acc_details = self.iam_obj.create_multiple_accounts(
             test_5471_cfg["acc_count"], bkt_policy_cfg["acc_name_prefix"])
         account1_id = acc_details[1][0][1]["Account_Id"]
-        S3_OBJ1 = s3_test_lib.S3TestLib(
+        self.s3_obj1 = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=acc_details[1][0][1]["access_key"],
             secret_key=acc_details[1][0][1]["secret_key"])
-        S3_OBJ2 = s3_test_lib.S3TestLib(
+        self.s3_obj2 = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=acc_details[1][1][1]["access_key"],
             secret_key=acc_details[1][1][1]["secret_key"])
         self.log.info(
@@ -6632,22 +6653,22 @@ _date
             "Created a json with StringEqualsIfExists condition")
         self.put_get_bkt_policy(bucket_name, bucket_policy)
         self.list_obj_with_prefix_using_diff_accnt(
-            bucket_name, S3_OBJ, obj_prefix)
-        self.list_objects_with_diff_acnt(bucket_name, S3_OBJ)
+            bucket_name, self.s3_obj, obj_prefix)
+        self.list_objects_with_diff_acnt(bucket_name, self.s3_obj)
         self.list_obj_with_prefix_using_diff_accnt(
             bucket_name,
-            S3_OBJ1,
+            self.s3_obj1,
             obj_prefix,
             err_message)
         self.list_objects_with_diff_acnt(
-            bucket_name, S3_OBJ1, err_message)
+            bucket_name, self.s3_obj1, err_message)
         self.list_obj_with_prefix_using_diff_accnt(
             bucket_name,
-            S3_OBJ2,
+            self.s3_obj2,
             obj_prefix,
             err_message)
         self.list_objects_with_diff_acnt(
-            bucket_name, S3_OBJ2, err_message)
+            bucket_name, self.s3_obj2, err_message)
         self.log.info(
             "ENDED: Test Create Bucket Policy using StringNotEqualsIfExists "
             "Condition Operator, key s3:prefix and Effect Deny")
@@ -6672,13 +6693,15 @@ _date
         bucket_policy = test_5473_cfg["bucket_policy"]
         self.create_bucket_put_objects(
             bucket_name, test_5473_cfg["obj_count"], obj_prefix)
-        acc_details = IAM_OBJ.create_multiple_accounts(
+        acc_details = self.iam_obj.create_multiple_accounts(
             test_5473_cfg["acc_count"], bkt_policy_cfg["acc_name_prefix"])
         account1_id = acc_details[1][0][1]["Account_Id"]
-        S3_OBJ1 = s3_test_lib.S3TestLib(
+        self.s3_obj1 = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=acc_details[1][0][1]["access_key"],
             secret_key=acc_details[1][0][1]["secret_key"])
-        S3_OBJ2 = s3_test_lib.S3TestLib(
+        self.s3_obj2 = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=acc_details[1][1][1]["access_key"],
             secret_key=acc_details[1][1][1]["secret_key"])
         self.log.info(
@@ -6694,21 +6717,21 @@ _date
             "Created a json with StringEqualsIfExists condition")
         self.put_get_bkt_policy(bucket_name, bucket_policy)
         self.list_obj_with_prefix_using_diff_accnt(
-            bucket_name, S3_OBJ, obj_prefix)
-        self.list_objects_with_diff_acnt(bucket_name, S3_OBJ)
+            bucket_name, self.s3_obj, obj_prefix)
+        self.list_objects_with_diff_acnt(bucket_name, self.s3_obj)
         self.list_obj_with_prefix_using_diff_accnt(
             bucket_name,
-            S3_OBJ1,
+            self.s3_obj1,
             obj_prefix,
             err_message)
-        self.list_objects_with_diff_acnt(bucket_name, S3_OBJ1)
+        self.list_objects_with_diff_acnt(bucket_name, self.s3_obj1)
         self.list_obj_with_prefix_using_diff_accnt(
             bucket_name,
-            S3_OBJ2,
+            self.s3_obj2,
             obj_prefix,
             err_message)
         self.list_objects_with_diff_acnt(
-            bucket_name, S3_OBJ2, err_message)
+            bucket_name, self.s3_obj2, err_message)
         self.log.info(
             "ENDED: Test Create Bucket Policy using StringNotEqualsIfExists "
             "Condition Operator, key s3:prefix and Effect Allow")
@@ -6733,13 +6756,15 @@ _date
         bucket_policy = test_5481_cfg["bucket_policy"]
         self.create_bucket_put_objects(
             bucket_name, test_5481_cfg["obj_count"], obj_prefix)
-        acc_details = IAM_OBJ.create_multiple_accounts(
+        acc_details = self.iam_obj.create_multiple_accounts(
             test_5481_cfg["acc_count"], bkt_policy_cfg["acc_name_prefix"])
         account1_id = acc_details[1][0][1]["Account_Id"]
-        S3_OBJ1 = s3_test_lib.S3TestLib(
+        self.s3_obj1 = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=acc_details[1][0][1]["access_key"],
             secret_key=acc_details[1][0][1]["secret_key"])
-        S3_OBJ2 = s3_test_lib.S3TestLib(
+        self.s3_obj2 = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=acc_details[1][1][1]["access_key"],
             secret_key=acc_details[1][1][1]["secret_key"])
         self.log.info(
@@ -6755,22 +6780,22 @@ _date
             "Created a json with StringEqualsIfExists condition")
         self.put_get_bkt_policy(bucket_name, bucket_policy)
         self.list_obj_with_prefix_using_diff_accnt(
-            bucket_name, S3_OBJ, obj_prefix)
-        self.list_objects_with_diff_acnt(bucket_name, S3_OBJ)
+            bucket_name, self.s3_obj, obj_prefix)
+        self.list_objects_with_diff_acnt(bucket_name, self.s3_obj)
         self.list_obj_with_prefix_using_diff_accnt(
             bucket_name,
-            S3_OBJ1,
+            self.s3_obj1,
             obj_prefix,
             err_message)
         self.list_objects_with_diff_acnt(
-            bucket_name, S3_OBJ1, err_message)
+            bucket_name, self.s3_obj1, err_message)
         self.list_obj_with_prefix_using_diff_accnt(
             bucket_name,
-            S3_OBJ2,
+            self.s3_obj2,
             obj_prefix,
             err_message)
         self.list_objects_with_diff_acnt(
-            bucket_name, S3_OBJ2, err_message)
+            bucket_name, self.s3_obj2, err_message)
         self.log.info(
             "ENDED: Test Create Bucket Policy using StringEqualsIfExists "
             "Condition Operator, key s3:prefix and Effect Deny")
@@ -6844,13 +6869,15 @@ _date
             "Step 1 : Create a bucket and upload objects in the bucket")
         self.create_bucket_put_objects(
             bucket_name, test_6550_cfg["obj_count"], obj_prefix, object_lst)
-        acc_details = IAM_OBJ.create_multiple_accounts(
+        acc_details = self.iam_obj.create_multiple_accounts(
             test_6550_cfg["acc_count"], bkt_policy_cfg["acc_name_prefix"])
         account1_id = acc_details[1][0][1]["Account_Id"]
-        S3_OBJ1 = s3_acl_test_lib.S3AclTestLib(
+        self.s3_obj1 = s3_acl_test_lib.S3AclTestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=acc_details[1][0][1]["access_key"],
             secret_key=acc_details[1][0][1]["secret_key"])
-        S3_OBJ2 = s3_test_lib.S3TestLib(
+        self.s3_obj2 = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=acc_details[1][0][1]["access_key"],
             secret_key=acc_details[1][0][1]["secret_key"])
         self.log.info(
@@ -6871,20 +6898,20 @@ _date
             BKT_POLICY_CONF["bucket_policy"]["file_size"])
         assert resp[0], resp[1]
         self.log.info("Step 4 : Verify the Bucket Policy from cross account")
-        resp = S3_OBJ1.put_object_with_acl(
+        resp = self.s3_obj1.put_object_with_acl(
             bucket_name,
             object_lst[0],
             self.file_path,
             acl=test_6550_cfg["obj_permission1"])
         assert resp[0], resp[1]
-        resp = S3_OBJ1.put_object_with_acl(
+        resp = self.s3_obj1.put_object_with_acl(
             bucket_name,
             object_lst[0],
             self.file_path,
             acl=test_6550_cfg["obj_permission2"])
         assert resp[0], resp[1]
         try:
-            S3_OBJ1.put_object_with_acl(
+            self.s3_obj1.put_object_with_acl(
                 bucket_name,
                 object_lst[0],
                 self.file_path,
@@ -6892,7 +6919,7 @@ _date
         except CTException as error:
             assert err_message in error.message, error.message
         try:
-            S3_OBJ2.put_object(
+            self.s3_obj2.put_object(
                 bucket_name,
                 object_lst[0],
                 self.file_path)
@@ -6928,7 +6955,7 @@ _date
         account_name2 = "{}{}".format(bkt_policy_cfg["acc_name_prefix"], str(
             time.time()))
         email2 = "{}{}".format(account_name2, bkt_policy_cfg["email_id"])
-        resp1 = IAM_OBJ.create_account_s3iamcli(
+        resp1 = self.iam_obj.create_account_s3iamcli(
             account_name2, email2,
             self.ldap_user,
             self.ldap_pwd)
@@ -6940,17 +6967,19 @@ _date
             canonical_id_2)
         access_key = resp1[1]["access_key"]
         secret_key = resp1[1]["secret_key"]
-        S3_OBJ1 = s3_acl_test_lib.S3AclTestLib(
+        self.s3_obj1 = s3_acl_test_lib.S3AclTestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=access_key,
             secret_key=secret_key)
-        S3_OBJ2 = s3_test_lib.S3TestLib(
+        self.s3_obj2 = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=access_key,
             secret_key=secret_key)
 
         account_name3 = "{}{}".format(bkt_policy_cfg["acc_name_prefix"], str(
             time.time()))
         email3 = "{}{}".format(account_name3, bkt_policy_cfg["email_id"])
-        resp2 = IAM_OBJ.create_account_s3iamcli(
+        resp2 = self.iam_obj.create_account_s3iamcli(
             account_name3, email3,
             self.ldap_user,
             self.ldap_pwd)
@@ -6986,21 +7015,21 @@ _date
         self.log.info("Step 4 : Verify the Bucket Policy from cross account")
         self.log.info(
             "Put object with ACL : grant_full_control and grant_read")
-        resp = ACL_OBJ.put_object_with_acl2(bucket_name,
+        resp = self.acl_obj.put_object_with_acl2(bucket_name,
                                             "{}{}".format(object_lst[0], str(time.time())),
                                             self.file_path,
                                             grant_full_control="ID={}".format(canonical_id_2),
                                             grant_read="ID={}".format(canonical_id_3))
         assert resp[0], resp[1]
         try:
-            S3_OBJ2.put_object(
+            self.s3_obj2.put_object(
                 bucket_name,
                 object_lst[0],
                 self.file_path)
         except CTException as error:
             assert err_message in error.message, error.message
         try:
-            S3_OBJ1.put_object_with_acl(
+            self.s3_obj1.put_object_with_acl(
                 bucket_name,
                 object_lst[0],
                 self.file_path,
@@ -7008,7 +7037,7 @@ _date
         except CTException as error:
             assert err_message in error.message, error.message
         try:
-            S3_OBJ1.put_object_with_acl(
+            self.s3_obj1.put_object_with_acl(
                 bucket_name,
                 object_lst[0],
                 self.file_path,
@@ -7044,7 +7073,7 @@ _date
         email_id = "{0}{1}".format(account_name, bkt_policy_cfg["email_id"])
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
         s3test_acl_obj = acc_details[2]
-        S3_OBJ = acc_details[1]
+        self.s3_obj = acc_details[1]
         account_id = acc_details[6]
         self.log.info(
             "Step 2:Create a json for a Bucket Policy having Null Condition operator")
@@ -7073,7 +7102,7 @@ _date
         self.log.info(
             "Case 2 put object without acl permission with new account")
         self.put_object_with_acl_cross_acnt(
-            bucket_name, S3_OBJ, bkt_policy_cfg["obj_name_prefix"])
+            bucket_name, self.s3_obj, bkt_policy_cfg["obj_name_prefix"])
         self.log.info("Step 4: Verified the Bucket Policy from cross account")
         self.log.info(
             "ENDED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-acl' and Value 'True'")
@@ -7103,7 +7132,7 @@ _date
         email_id = "{0}{1}".format(account_name, bkt_policy_cfg["email_id"])
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
         s3test_acl_obj = acc_details[2]
-        S3_OBJ = acc_details[1]
+        self.s3_obj = acc_details[1]
         account_id = acc_details[6]
         self.log.info(
             "Step 2: Create a json for a Bucket Policy having Null Condition operator")
@@ -7133,7 +7162,7 @@ _date
             "Case 2 put object without acl permission with new account")
         self.put_object_with_acl_cross_acnt(
             bucket_name,
-            S3_OBJ,
+            self.s3_obj,
             bkt_policy_cfg["obj_name_prefix"],
             err_message=test_cfg["error_message"])
         self.log.info("Step 4: Verified the Bucket Policy from cross account")
@@ -7166,7 +7195,7 @@ _date
         email_id = "{0}{1}".format(account_name, bkt_policy_cfg["email_id"])
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
         s3test_acl_obj = acc_details[2]
-        S3_OBJ = acc_details[1]
+        self.s3_obj = acc_details[1]
         account_id = acc_details[6]
         self.log.info(
             "Step 2: Create a json for a Bucket Policy having Null Condition operator")
@@ -7197,7 +7226,7 @@ _date
         self.log.info(
             "Case 2 put object without acl permission with new account")
         self.put_object_with_acl_cross_acnt(
-            bucket_name, S3_OBJ, bkt_policy_cfg["obj_name_prefix"])
+            bucket_name, self.s3_obj, bkt_policy_cfg["obj_name_prefix"])
         self.log.info("Step 4: Verified the Bucket Policy from cross account")
         self.log.info(
             "ENDED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-acl'"
@@ -7229,7 +7258,7 @@ _date
         email_id = "{0}{1}".format(account_name, bkt_policy_cfg["email_id"])
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
         s3test_acl_obj = acc_details[2]
-        S3_OBJ = acc_details[1]
+        self.s3_obj = acc_details[1]
         conanical_id = acc_details[0]
         account_id = acc_details[6]
         self.log.info(
@@ -7259,7 +7288,7 @@ _date
             grant_read=grant_read)
         self.log.info("Case 2 put object without grant read permission")
         self.put_object_with_acl_cross_acnt(
-            bucket_name, S3_OBJ, bkt_policy_cfg["obj_name_prefix"])
+            bucket_name, self.s3_obj, bkt_policy_cfg["obj_name_prefix"])
         self.log.info("Step 4: Verified the Bucket Policy from cross account")
         self.log.info(
             "ENDED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-read'"
@@ -7290,7 +7319,7 @@ _date
             time.time()))
         email_id = "{0}{1}".format(account_name, bkt_policy_cfg["email_id"])
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
-        S3_OBJ = acc_details[1]
+        self.s3_obj = acc_details[1]
         account_id = acc_details[6]
         self.log.info(
             "Step 2: Create a json for a Bucket Policy having Null Condition operator")
@@ -7311,7 +7340,7 @@ _date
             "Step 3: Put and get bucket policy from {} bucket successful".format(bucket_name))
         self.log.info("Step 4: Verify the Bucket Policy from cross account")
         self.put_object_with_acl_cross_acnt(
-            bucket_name, S3_OBJ, bkt_policy_cfg["obj_name_prefix"])
+            bucket_name, self.s3_obj, bkt_policy_cfg["obj_name_prefix"])
         self.log.info("Step 4: Verified the Bucket Policy from cross account")
         self.log.info(
             "ENDED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-write'"
@@ -7342,7 +7371,7 @@ _date
             time.time()))
         email_id = "{0}{1}".format(account_name, bkt_policy_cfg["email_id"])
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
-        S3_OBJ = acc_details[1]
+        self.s3_obj = acc_details[1]
         account_id = acc_details[6]
         self.log.info(
             "Step 2: Create a json for a Bucket Policy having Null Condition operator")
@@ -7363,7 +7392,7 @@ _date
             "Step 3: Put and get bucket policy from {} bucket successful".format(bucket_name))
         self.log.info("Step 4: Verify the Bucket Policy from cross account")
         self.put_object_with_acl_cross_acnt(
-            bucket_name, S3_OBJ, bkt_policy_cfg["obj_name_prefix"])
+            bucket_name, self.s3_obj, bkt_policy_cfg["obj_name_prefix"])
         self.log.info("Step 4: Verified the Bucket Policy from cross account")
         self.log.info(
             "ENDED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-write'"
@@ -7395,7 +7424,7 @@ _date
         email_id = "{0}{1}".format(account_name, bkt_policy_cfg["email_id"])
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
         s3test_acl_obj = acc_details[2]
-        S3_OBJ = acc_details[1]
+        self.s3_obj = acc_details[1]
         account_id = acc_details[6]
         self.log.info(
             "Step 2: Create a json for a Bucket Policy having Null Condition operator")
@@ -7425,7 +7454,7 @@ _date
             err_message=test_cfg["error_message"])
         self.log.info("Case 2 put object without grant permission")
         self.put_object_with_acl_cross_acnt(
-            bucket_name, S3_OBJ, bkt_policy_cfg["obj_name_prefix"])
+            bucket_name, self.s3_obj, bkt_policy_cfg["obj_name_prefix"])
         self.log.info("Step 4: Verified the Bucket Policy from cross account")
         self.log.info(
             "ENDED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-read-acp'"
@@ -7457,7 +7486,7 @@ _date
         email_id = "{0}{1}".format(account_name, bkt_policy_cfg["email_id"])
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
         s3test_acl_obj = acc_details[2]
-        S3_OBJ = acc_details[1]
+        self.s3_obj = acc_details[1]
         account_id = acc_details[6]
         self.log.info(
             "Step 2: Create a json for a Bucket Policy having Null Condition operator")
@@ -7486,7 +7515,7 @@ _date
             grant_read_acp=bkt_policy_cfg["id_str"].format(canonical_id))
         self.log.info("Case 2 put object without grant permission")
         self.put_object_with_acl_cross_acnt(
-            bucket_name, S3_OBJ, bkt_policy_cfg["obj_name_prefix"],
+            bucket_name, self.s3_obj, bkt_policy_cfg["obj_name_prefix"],
             err_message=test_cfg["error_message"])
         self.log.info("Step 4: Verified the Bucket Policy from cross account")
         self.log.info(
@@ -7519,7 +7548,7 @@ _date
         email_id = "{0}{1}".format(account_name, bkt_policy_cfg["email_id"])
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
         s3test_acl_obj = acc_details[2]
-        S3_OBJ = acc_details[1]
+        self.s3_obj = acc_details[1]
         account_id = acc_details[6]
         self.log.info(
             "Step 2: Create a json for a Bucket Policy having Null Condition operator")
@@ -7548,7 +7577,7 @@ _date
             grant_read_acp=bkt_policy_cfg["id_str"].format(canonical_id))
         self.log.info("Case 2 put object without grant permission")
         self.put_object_with_acl_cross_acnt(
-            bucket_name, S3_OBJ, bkt_policy_cfg["obj_name_prefix"])
+            bucket_name, self.s3_obj, bkt_policy_cfg["obj_name_prefix"])
         self.log.info("Step 4: Verified the Bucket Policy from cross account")
         self.log.info(
             "ENDED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-read-acp'"
@@ -7580,7 +7609,7 @@ _date
         email_id = "{0}{1}".format(account_name, bkt_policy_cfg["email_id"])
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
         s3test_acl_obj = acc_details[2]
-        S3_OBJ = acc_details[1]
+        self.s3_obj = acc_details[1]
         account_id = acc_details[6]
         self.log.info(
             "Step 2: Create a json for a Bucket Policy having Null Condition operator")
@@ -7610,7 +7639,7 @@ _date
             err_message=test_cfg["error_message"])
         self.log.info("Case 2 put object without grant permission")
         self.put_object_with_acl_cross_acnt(
-            bucket_name, S3_OBJ, bkt_policy_cfg["obj_name_prefix"])
+            bucket_name, self.s3_obj, bkt_policy_cfg["obj_name_prefix"])
         self.log.info("Step 4: Verified the Bucket Policy from cross account")
         self.log.info(
             "ENDED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-write-acp'"
@@ -7642,7 +7671,7 @@ _date
         email_id = "{0}{1}".format(account_name, bkt_policy_cfg["email_id"])
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
         s3test_acl_obj = acc_details[2]
-        S3_OBJ = acc_details[1]
+        self.s3_obj = acc_details[1]
         account_id = acc_details[6]
         self.log.info(
             "Step 2: Create a json for a Bucket Policy having Null Condition operator")
@@ -7671,7 +7700,7 @@ _date
             grant_write_acp=bkt_policy_cfg["id_str"].format(canonical_id))
         self.log.info("Case 2 put object without grant permission")
         self.put_object_with_acl_cross_acnt(
-            bucket_name, S3_OBJ, bkt_policy_cfg["obj_name_prefix"],
+            bucket_name, self.s3_obj, bkt_policy_cfg["obj_name_prefix"],
             err_message=test_cfg["error_message"])
         self.log.info("Step 4: Verified the Bucket Policy from cross account")
         self.log.info(
@@ -7704,7 +7733,7 @@ _date
         email_id = "{0}{1}".format(account_name, bkt_policy_cfg["email_id"])
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
         s3test_acl_obj = acc_details[2]
-        S3_OBJ = acc_details[1]
+        self.s3_obj = acc_details[1]
         account_id = acc_details[6]
         self.log.info(
             "Step 2: Create a json for a Bucket Policy having Null Condition operator")
@@ -7733,7 +7762,7 @@ _date
             grant_write_acp=bkt_policy_cfg["id_str"].format(canonical_id))
         self.log.info("Case 2 put object without grant permission")
         self.put_object_with_acl_cross_acnt(
-            bucket_name, S3_OBJ, bkt_policy_cfg["obj_name_prefix"])
+            bucket_name, self.s3_obj, bkt_policy_cfg["obj_name_prefix"])
         self.log.info("Step 4: Verified the Bucket Policy from cross account")
         self.log.info(
             "ENDED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-write-acp'"
@@ -7765,7 +7794,7 @@ _date
         email_id = "{0}{1}".format(account_name, bkt_policy_cfg["email_id"])
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
         s3test_acl_obj = acc_details[2]
-        S3_OBJ = acc_details[1]
+        self.s3_obj = acc_details[1]
         account_id = acc_details[6]
         self.log.info(
             "Step 2: Create a json for a Bucket Policy having Null Condition operator")
@@ -7795,7 +7824,7 @@ _date
             err_message=test_cfg["error_message"])
         self.log.info("Case 2 put object without grant permission")
         self.put_object_with_acl_cross_acnt(
-            bucket_name, S3_OBJ, bkt_policy_cfg["obj_name_prefix"])
+            bucket_name, self.s3_obj, bkt_policy_cfg["obj_name_prefix"])
         self.log.info("Step 4: Verified the Bucket Policy from cross account")
         self.log.info(
             "ENDED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-full-control'"
@@ -7844,7 +7873,7 @@ _date
         email_id = "{0}{1}".format(account_name, bkt_policy_cfg["email_id"])
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
         account_id = acc_details[6]
-        resp = IAM_OBJ.create_user_access_key(user_name)
+        resp = self.iam_obj.create_user_access_key(user_name)
         assert resp[0], resp[1]
         usr_access_key = resp[1][0]["Keys"][1]["AccessKey"]["AccessKeyId"]
         usr_secret_key = resp[1][0]["Keys"][1]["AccessKey"]["SecretAccessKey"]
@@ -7873,7 +7902,7 @@ _date
             "Step 2: Created policy for account 1 using account id")
         self.log.info("Step 3: Applying bucket policy using users credential")
         s3_policy_usr_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
-            access_key=usr_access_key, secret_key=usr_secret_key)
+            endpoint_url=S3_CFG["s3_url"], access_key=usr_access_key, secret_key=usr_secret_key)
         resp = s3_policy_usr_obj.put_bucket_policy(
             bucket_name, bkt_policy_json_2)
         assert resp[0], resp[1]
@@ -7881,14 +7910,14 @@ _date
         self.log.info(
             "Step 4: Applying bucket policy using account 1 credential")
         bkt_policy_json_1 = json.dumps(bucket_policy_1)
-        resp = S3_BKT_POLICY_OBJ.put_bucket_policy(
+        resp = self.s3_bkt_policy_obj.put_bucket_policy(
             bucket_name, bkt_policy_json_1)
         assert resp[0], resp[1]
         self.log.info(
             "Step 4: Applied policy of a bucket using account 1 credential")
         self.log.info(
             "Step 5: Retrieving policy of a bucket using account 1 credential")
-        resp = S3_BKT_POLICY_OBJ.get_bucket_policy(bucket_name)
+        resp = self.s3_bkt_policy_obj.get_bucket_policy(bucket_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 5: Retrieved policy of a bucket using account 2 credential")
@@ -7921,13 +7950,14 @@ _date
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
         access_key_2 = acc_details[4]
         secret_key_2 = acc_details[5]
-        resp = IAM_OBJ.create_user_access_key(user_name_1)
+        resp = self.iam_obj.create_user_access_key(user_name_1)
         assert resp[0], resp[1]
         usr_access_key = resp[1][0]["Keys"][1]["AccessKey"]["AccessKeyId"]
         usr_secret_key = resp[1][0]["Keys"][1]["AccessKey"]["SecretAccessKey"]
         user_id_1 = resp[1][0]["User"][1]["User"]["UserId"]
         self.log.info("Step 1: Creating user using account 2 credential")
         s3_policy_acc2_obj = iam_test_lib.IamTestLib(
+            endpoint_url=S3_CFG["iam_url"],
             access_key=access_key_2, secret_key=secret_key_2)
         resp = s3_policy_acc2_obj.create_user_using_s3iamcli(
             user_name_2, access_key=access_key_2, secret_key=secret_key_2)
@@ -7954,7 +7984,7 @@ _date
         self.log.info(
             "Step 3: Retrieving policy of a bucket using user of account 1")
         s3_policy_usr1_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
-            access_key=usr_access_key, secret_key=usr_secret_key)
+            endpoint_url=S3_CFG["s3_url"], access_key=usr_access_key, secret_key=usr_secret_key)
         resp = s3_policy_usr1_obj.get_bucket_policy(bucket_name)
         assert resp[0], resp[1]
         self.log.info(
@@ -7963,6 +7993,7 @@ _date
             "Step 4: Retrieving policy of a bucket using user of account 2")
         resp = s3_policy_acc2_obj.create_access_key(user_name_2)
         s3_bucket_usr2_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=resp[1]["AccessKey"]["AccessKeyId"],
             secret_key=resp[1]["AccessKey"]["SecretAccessKey"])
         try:
@@ -7992,7 +8023,7 @@ _date
         bucket_policy = test_5206_cfg["bucket_policy"]
         user_name_1 = "{0}{1}".format(bkt_policy_cfg["user_name"], str(
             time.time()))
-        resp = IAM_OBJ.create_user_access_key(user_name_1)
+        resp = self.iam_obj.create_user_access_key(user_name_1)
         assert resp[0], resp[1]
         usr_access_key = resp[1][0]["Keys"][1]["AccessKey"]["AccessKeyId"]
         usr_secret_key = resp[1][0]["Keys"][1]["AccessKey"]["SecretAccessKey"]
@@ -8014,7 +8045,7 @@ _date
         self.log.info(
             "Step 2: Retrieving policy of a bucket using user of account 1")
         s3_policy_usr1_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
-            access_key=usr_access_key, secret_key=usr_secret_key)
+            endpoint_url=S3_CFG["s3_url"], access_key=usr_access_key, secret_key=usr_secret_key)
         resp = s3_policy_usr1_obj.get_bucket_policy(bucket_name)
         assert resp[0], resp[1]
         self.log.info(
@@ -8040,7 +8071,7 @@ _date
         bucket_policy_2 = test_5212_cfg["bucket_policy_2"]
         user_name = "{0}{1}".format(bkt_policy_cfg["user_name"], str(
             time.time()))
-        acc_details = IAM_OBJ.create_multiple_accounts(
+        acc_details = self.iam_obj.create_multiple_accounts(
             test_5212_cfg["acc_count"], bkt_policy_cfg["acc_name_prefix"])
         assert acc_details[0], acc_details[1]
         access_key_1 = acc_details[1][0][1]["access_key"]
@@ -8050,7 +8081,7 @@ _date
         secret_key_2 = acc_details[1][1][1]["secret_key"]
         self.log.info("Creating user in account 2")
         iam_obj_acc_2 = iam_test_lib.IamTestLib(
-            access_key=access_key_2, secret_key=secret_key_2)
+            endpoint_url=S3_CFG["iam_url"], access_key=access_key_2, secret_key=secret_key_2)
         resp = iam_obj_acc_2.create_user_using_s3iamcli(
             user_name, access_key=access_key_2, secret_key=secret_key_2)
         assert resp[0], resp[1]
@@ -8059,7 +8090,7 @@ _date
         self.log.info(
             "Step 1: Creating a bucket and uploading objects in a bucket using account 1")
         s3_obj_acc_1 = s3_test_lib.S3TestLib(
-            access_key=access_key_1, secret_key=secret_key_1)
+            endpoint_url=S3_CFG["s3_url"], access_key=access_key_1, secret_key=secret_key_1)
         resp = s3_obj_acc_1.create_bucket(bucket_name)
         assert resp[0], resp[1]
         ASRTOBJ.assert_equals(resp[1], bucket_name, resp[1])
@@ -8098,7 +8129,7 @@ _date
         self.log.info(
             "Step 3: Applying policy on a bucket %s", bucket_name)
         s3_bkt_policy_acc1 = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
-            access_key=access_key_1, secret_key=secret_key_1)
+            endpoint_url=S3_CFG["s3_url"], access_key=access_key_1, secret_key=secret_key_1)
         resp = s3_bkt_policy_acc1.put_bucket_policy(
             bucket_name, bkt_policy_json_1)
         assert resp[0], resp[1]
@@ -8123,6 +8154,7 @@ _date
             "Step 6: Applying the bucket policy using user of account 2")
         resp = iam_obj_acc_2.create_access_key(user_name)
         s3_bkt_policy_usr2 = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=resp[1]["AccessKey"]["AccessKeyId"],
             secret_key=resp[1]["AccessKey"]["SecretAccessKey"])
         try:
@@ -8174,7 +8206,7 @@ _date
         account_id = acc_details[6]
         s3_bkt_policy_2 = acc_details[3]
         s3_bkt_acl_2 = acc_details[2]
-        resp = IAM_OBJ.create_user_access_key(user_name)
+        resp = self.iam_obj.create_user_access_key(user_name)
         assert resp[0], resp[1]
         usr_access_key = resp[1][0]["Keys"][1]["AccessKey"]["AccessKeyId"]
         usr_secret_key = resp[1][0]["Keys"][1]["AccessKey"]["SecretAccessKey"]
@@ -8203,7 +8235,7 @@ _date
             "Step 2: Created another policy on a bucket to account 2 using account id")
         self.log.info("Step 3: Applying bucket policy using users credential")
         s3_policy_usr_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
-            access_key=usr_access_key, secret_key=usr_secret_key)
+            endpoint_url=S3_CFG["s3_url"], access_key=usr_access_key, secret_key=usr_secret_key)
         resp = s3_policy_usr_obj.put_bucket_policy(
             bucket_name, bkt_policy_json_2)
         assert resp[0], resp[1]
@@ -8267,14 +8299,14 @@ _date
         access_key_2 = acc_details[4]
         secret_key_2 = acc_details[5]
         can_id = acc_details[0]
-        resp = IAM_OBJ.create_user_access_key(user_name_1)
+        resp = self.iam_obj.create_user_access_key(user_name_1)
         assert resp[0], resp[1]
         usr_access_key = resp[1][0]["Keys"][1]["AccessKey"]["AccessKeyId"]
         usr_secret_key = resp[1][0]["Keys"][1]["AccessKey"]["SecretAccessKey"]
         user_id_1 = resp[1][0]["User"][1]["User"]["UserId"]
         self.log.info("Step 1: Creating user using account 2 credential")
         iam_acc2_obj = iam_test_lib.IamTestLib(
-            access_key=access_key_2, secret_key=secret_key_2)
+            endpoint_url=S3_CFG["iam_url"], access_key=access_key_2, secret_key=secret_key_2)
         resp = iam_acc2_obj.create_user_using_s3iamcli(
             user_name_2, access_key=access_key_2, secret_key=secret_key_2)
         assert resp[0]
@@ -8307,7 +8339,7 @@ _date
         self.log.info(
             "Step 4: Applying policy on a bucket using user of account 1")
         s3_policy_usr1_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
-            access_key=usr_access_key, secret_key=usr_secret_key)
+            endpoint_url=S3_CFG["s3_url"], access_key=usr_access_key, secret_key=usr_secret_key)
         resp = s3_policy_usr1_obj.put_bucket_policy(
             bucket_name, bkt_policy_json_2)
         assert resp[0], resp[1]
@@ -8317,7 +8349,7 @@ _date
             "Step 5: Applying policy on a bucket using user of account 2")
         resp = iam_acc2_obj.create_access_key(user_name_2)
         s3_bkt_policy_usr2 = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
-            access_key=resp[1]["AccessKey"]["AccessKeyId"],
+            endpoint_url=S3_CFG["s3_url"], access_key=resp[1]["AccessKey"]["AccessKeyId"],
             secret_key=resp[1]["AccessKey"]["SecretAccessKey"])
         try:
             s3_bkt_policy_usr2.put_bucket_policy(
@@ -8341,6 +8373,7 @@ _date
         self.log.info(
             "Step 7: Applying read acp permission on a bucket %s", bucket_name)
         s3_bkt_acl_usr2 = s3_acl_test_lib.S3AclTestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=resp[1]["AccessKey"]["AccessKeyId"],
             secret_key=resp[1]["AccessKey"]["SecretAccessKey"])
         try:
@@ -8383,7 +8416,7 @@ _date
         account_id = acc_details[6]
         canonical_id = acc_details[0]
         s3_bkt_acl_acc2 = acc_details[2]
-        S3_OBJ_acc2 = acc_details[1]
+        self.s3_obj_acc2 = acc_details[1]
         self.log.info(
             "Step 1: Creating a json with Null Condition operator")
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
@@ -8406,7 +8439,7 @@ _date
             "Case 1: Uploaded object with grant full control using account 2")
         self.log.info("Case 2: Uploading object with account 2")
         try:
-            S3_OBJ_acc2.put_object(
+            self.s3_obj_acc2.put_object(
                 bucket_name,
                 test_6771_cfg["object_name"],
                 self.file_path)
@@ -8448,7 +8481,7 @@ _date
         account_id = acc_details[6]
         canonical_id = acc_details[0]
         s3_bkt_acl_acc2 = acc_details[2]
-        S3_OBJ_acc2 = acc_details[1]
+        self.s3_obj_acc2 = acc_details[1]
         self.log.info(
             "Step 1: Creating a json with Null Condition operator")
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
@@ -8470,7 +8503,7 @@ _date
         self.log.info(
             "Case 1: Uploaded an object with grant full control using account 2")
         self.log.info("Case 2: Uploading an object using account 2")
-        resp = S3_OBJ_acc2.put_object(
+        resp = self.s3_obj_acc2.put_object(
             bucket_name,
             test_6772_cfg["object_name"],
             self.file_path)
@@ -8504,7 +8537,7 @@ _date
             bkt_policy_cfg["obj_name_prefix"])
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
         account_id = acc_details[6]
-        S3_OBJ_acc2 = acc_details[1]
+        self.s3_obj_acc2 = acc_details[1]
         self.log.info(
             "Step 1: Creating a json with Null Condition operator")
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
@@ -8518,14 +8551,14 @@ _date
         self.log.info("Case 1: Listing objects with max keys from account 2")
         self.list_obj_with_max_keys_and_diff_acnt(
             bucket_name,
-            S3_OBJ_acc2,
+            self.s3_obj_acc2,
             test_6773_cfg["max_keys"],
             test_6773_cfg["error_message"])
         self.log.info(
             "Case 1: Listing objects with max keys from account 2 is failed with error %s",
             test_6773_cfg["error_message"])
         self.log.info("Case 2: Listing objects with account 2")
-        resp = S3_OBJ_acc2.object_list(bucket_name)
+        resp = self.s3_obj_acc2.object_list(bucket_name)
         assert resp[0], resp[1]
         self.log.info("Case 2: Objects are listed from account 2")
         self.log.info("Step 2: Verified the Bucket Policy from cross account")
@@ -8555,7 +8588,7 @@ _date
             bkt_policy_cfg["obj_name_prefix"])
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
         account_id = acc_details[6]
-        S3_OBJ_acc2 = acc_details[1]
+        self.s3_obj_acc2 = acc_details[1]
         self.log.info(
             "Step 1: Creating a json with Null Condition operator")
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
@@ -8568,12 +8601,12 @@ _date
         self.log.info("Step 2: Verifying the Bucket Policy from cross account")
         self.log.info("Case 1: Listing objects with max keys from account 2")
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ_acc2, test_6774_cfg["max_keys"])
+            bucket_name, self.s3_obj_acc2, test_6774_cfg["max_keys"])
         self.log.info(
             "Case 1: Objects are listed with max keys from account 2")
         self.log.info("Case 2: Listing objects with account 2")
         try:
-            S3_OBJ_acc2.object_list(bucket_name)
+            self.s3_obj_acc2.object_list(bucket_name)
         except CTException as error:
             self.log.error(error.message)
             assert test_6774_cfg["error_message"] in error.message, error.message
@@ -8607,7 +8640,7 @@ _date
             bkt_policy_cfg["obj_name_prefix"])
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
         account_id = acc_details[6]
-        S3_OBJ_acc2 = acc_details[1]
+        self.s3_obj_acc2 = acc_details[1]
         self.log.info(
             "Step 1: Creating a json with Null Condition operator")
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
@@ -8620,11 +8653,11 @@ _date
         self.log.info("Step 2: Verifying the Bucket Policy from cross account")
         self.log.info("Case 1: Listing objects with max keys from account 2")
         self.list_obj_with_max_keys_and_diff_acnt(
-            bucket_name, S3_OBJ_acc2, test_6775_cfg["max_keys"])
+            bucket_name, self.s3_obj_acc2, test_6775_cfg["max_keys"])
         self.log.info(
             "Case 1: Objects are listed with max keys from account 2")
         self.log.info("Case 2: Listing objects with account 2")
-        resp = S3_OBJ_acc2.object_list(bucket_name)
+        resp = self.s3_obj_acc2.object_list(bucket_name)
         assert resp[0], resp[1]
         self.log.info("Case 2: Objects are listed from account 2")
         self.log.info("Step 2: Verified the Bucket Policy from cross account")
@@ -8657,7 +8690,7 @@ _date
         create_file(
             self.file_path,
             BKT_POLICY_CONF["bucket_policy"]["file_size"])
-        resp = S3_OBJ.put_object(
+        resp = self.s3_obj.put_object(
             bucket_name,
             bkt_policy_cfg["obj_name_prefix"],
             self.file_path)
@@ -8666,7 +8699,7 @@ _date
             "Step 1: Created a bucket and objects are uploaded to a bucket")
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
         account_id = acc_details[6]
-        S3_OBJ_acc2 = acc_details[1]
+        self.s3_obj_acc2 = acc_details[1]
         self.log.info(
             "Step 2: Creating a json with Null Condition operator")
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
@@ -8680,14 +8713,14 @@ _date
         self.log.info("Case 1: Listing objects with prefix from account 2")
         self.list_obj_with_prefix_using_diff_accnt(
             bucket_name,
-            S3_OBJ_acc2,
+            self.s3_obj_acc2,
             test_6776_cfg["obj_prefix"],
             test_6776_cfg["error_message"])
         self.log.info(
             "Case 1: Listing objects with prefix from account 2 is failed with error %s",
             test_6776_cfg["error_message"])
         self.log.info("Case 2: Listing object using account 2")
-        resp = S3_OBJ_acc2.object_list(bucket_name)
+        resp = self.s3_obj_acc2.object_list(bucket_name)
         assert resp[0], resp[1]
         self.log.info("Case 2: Objects are listed using account 2")
         self.log.info("Step 3: Verified the Bucket Policy from cross account")
@@ -8720,7 +8753,7 @@ _date
         create_file(
             self.file_path,
             BKT_POLICY_CONF["bucket_policy"]["file_size"])
-        resp = S3_OBJ.put_object(
+        resp = self.s3_obj.put_object(
             bucket_name,
             bkt_policy_cfg["obj_name_prefix"],
             self.file_path)
@@ -8729,7 +8762,7 @@ _date
             "Step 1: Created a bucket and objects are uploaded to a bucket")
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
         account_id = acc_details[6]
-        S3_OBJ_acc2 = acc_details[1]
+        self.s3_obj_acc2 = acc_details[1]
         self.log.info(
             "Step 2: Creating a json with Null Condition operator")
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
@@ -8742,11 +8775,11 @@ _date
         self.log.info("Step 3: Verifying the Bucket Policy from cross account")
         self.log.info("Case 1: Listing objects with prefix from account 2")
         self.list_obj_with_prefix_using_diff_accnt(
-            bucket_name, S3_OBJ_acc2, test_6777_cfg["obj_prefix"])
+            bucket_name, self.s3_obj_acc2, test_6777_cfg["obj_prefix"])
         self.log.info("Case 1: Objects are listed with prefix from account 2")
         self.log.info("Case 2: Listing object using account 2")
         try:
-            S3_OBJ_acc2.object_list(bucket_name)
+            self.s3_obj_acc2.object_list(bucket_name)
         except CTException as error:
             self.log.error(error.message)
             assert test_6777_cfg["error_message"] in error.message, error.message
@@ -8783,7 +8816,7 @@ _date
         create_file(
             self.file_path,
             BKT_POLICY_CONF["bucket_policy"]["file_size"])
-        resp = S3_OBJ.put_object(
+        resp = self.s3_obj.put_object(
             bucket_name,
             bkt_policy_cfg["obj_name_prefix"],
             self.file_path)
@@ -8792,7 +8825,7 @@ _date
             "Step 1: Created a bucket and objects are uploaded to a bucket")
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
         account_id = acc_details[6]
-        S3_OBJ_acc2 = acc_details[1]
+        self.s3_obj_acc2 = acc_details[1]
         self.log.info(
             "Step 2: Creating a json with Null Condition operator")
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
@@ -8805,10 +8838,10 @@ _date
         self.log.info("Step 3: Verifying the Bucket Policy from cross account")
         self.log.info("Case 1: Listing objects with prefix using account 2")
         self.list_obj_with_prefix_using_diff_accnt(
-            bucket_name, S3_OBJ_acc2, test_6779_cfg["obj_prefix"])
+            bucket_name, self.s3_obj_acc2, test_6779_cfg["obj_prefix"])
         self.log.info("Case 1: Objects are listed with prefix using account 2")
         self.log.info("Case 2: Listing object using account 2")
-        resp = S3_OBJ_acc2.object_list(bucket_name)
+        resp = self.s3_obj_acc2.object_list(bucket_name)
         assert resp[0], resp[1]
         self.log.info("Case 2: Objects are listed from account 2")
         self.log.info("Step 3: Verified the Bucket Policy from cross account")
@@ -8838,7 +8871,7 @@ _date
             bkt_policy_cfg["obj_name_prefix"])
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
         account_id = acc_details[6]
-        S3_OBJ_acc2 = acc_details[1]
+        self.s3_obj_acc2 = acc_details[1]
         self.log.info(
             "Step 1: Creating a json with Null Condition operator")
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
@@ -8850,7 +8883,7 @@ _date
         self.put_get_bkt_policy(bucket_name, bucket_policy)
         self.log.info("Step 2: Uploading an object using account 2")
         try:
-            S3_OBJ_acc2.put_object(
+            self.s3_obj_acc2.put_object(
                 bucket_name,
                 bkt_policy_cfg["obj_name_prefix"],
                 self.file_path)
@@ -8888,7 +8921,7 @@ _date
             bkt_policy_cfg["obj_name_prefix"])
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
         account_id = acc_details[6]
-        S3_OBJ_acc2 = acc_details[1]
+        self.s3_obj_acc2 = acc_details[1]
         self.log.info(
             "Step 1: Creating a json with Null Condition operator")
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
@@ -8899,7 +8932,7 @@ _date
             "Step 1: Created a json with Null Condition operator")
         self.put_get_bkt_policy(bucket_name, bucket_policy)
         self.log.info("Step 2: Uploading an object using account 2")
-        resp = S3_OBJ_acc2.put_object(
+        resp = self.s3_obj_acc2.put_object(
             bucket_name,
             bkt_policy_cfg["obj_name_prefix"],
             self.file_path)
@@ -8934,7 +8967,7 @@ _date
             bkt_policy_cfg["obj_name_prefix"])
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
         account_id = acc_details[6]
-        S3_OBJ_acc2 = acc_details[1]
+        self.s3_obj_acc2 = acc_details[1]
         self.log.info(
             "Step 1: Creating a json with Null Condition operator")
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
@@ -8945,7 +8978,7 @@ _date
             "Step 1: Created a json with Null Condition operator")
         self.put_get_bkt_policy(bucket_name, bucket_policy)
         self.log.info("Step 2: Uploading an object using account 2")
-        resp = S3_OBJ_acc2.put_object(
+        resp = self.s3_obj_acc2.put_object(
             bucket_name,
             bkt_policy_cfg["obj_name_prefix"],
             self.file_path)
@@ -8979,7 +9012,7 @@ _date
             bkt_policy_cfg["obj_name_prefix"])
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
         account_id = acc_details[6]
-        S3_OBJ_acc2 = acc_details[1]
+        self.s3_obj_acc2 = acc_details[1]
         self.log.info(
             "Step 1: Creating a json with Null Condition operator")
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
@@ -8993,7 +9026,7 @@ _date
         self.log.info(
             "Case 1: Uploading an object with storage class STANDARD using account 2")
         try:
-            S3_OBJ_acc2.put_object_with_storage_class(
+            self.s3_obj_acc2.put_object_with_storage_class(
                 bucket_name,
                 bkt_policy_cfg["obj_name_prefix"],
                 self.file_path,
@@ -9006,7 +9039,7 @@ _date
                 "STANDARD using account 2 is failed with error %s",
                 test_6790_cfg["error_message"])
         self.log.info("Case 2: Uploading an object with account 2")
-        resp = S3_OBJ_acc2.put_object(
+        resp = self.s3_obj_acc2.put_object(
             bucket_name,
             bkt_policy_cfg["obj_name_prefix"],
             self.file_path)
@@ -9041,7 +9074,7 @@ _date
             bkt_policy_cfg["obj_name_prefix"])
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
         account_id = acc_details[6]
-        S3_OBJ_acc2 = acc_details[1]
+        self.s3_obj_acc2 = acc_details[1]
         self.log.info(
             "Step 1: Creating a json with Null Condition operator")
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
@@ -9054,7 +9087,7 @@ _date
         self.log.info("Step 2: Verifying the Bucket Policy from cross account")
         self.log.info(
             "Case 1: Uploading an object with storage class STANDARD using account 2")
-        resp = S3_OBJ_acc2.put_object_with_storage_class(
+        resp = self.s3_obj_acc2.put_object_with_storage_class(
             bucket_name,
             bkt_policy_cfg["obj_name_prefix"],
             self.file_path,
@@ -9064,7 +9097,7 @@ _date
             "Case 1: Uploaded an object with storage class STANDARD using account 2")
         self.log.info("Case 2: Uploading an object with account 2")
         try:
-            S3_OBJ_acc2.put_object(
+            self.s3_obj_acc2.put_object(
                 bucket_name,
                 bkt_policy_cfg["obj_name_prefix"],
                 self.file_path)
@@ -9102,7 +9135,7 @@ _date
             bkt_policy_cfg["obj_name_prefix"])
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
         account_id = acc_details[6]
-        S3_OBJ_acc2 = acc_details[1]
+        self.s3_obj_acc2 = acc_details[1]
         self.log.info(
             "Step 1: Creating a json with Null Condition operator")
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
@@ -9115,7 +9148,7 @@ _date
         self.log.info("Step 2: Verifying the Bucket Policy from cross account")
         self.log.info(
             "Case 1: Uploading an object with storage class STANDARD using account 2")
-        resp = S3_OBJ_acc2.put_object_with_storage_class(
+        resp = self.s3_obj_acc2.put_object_with_storage_class(
             bucket_name,
             bkt_policy_cfg["obj_name_prefix"],
             self.file_path,
@@ -9124,7 +9157,7 @@ _date
         self.log.info(
             "Case 1: Uploaded an object with storage class STANDARD using account 2")
         self.log.info("Case 2: Uploading an object with account 2")
-        resp = S3_OBJ_acc2.put_object(
+        resp = self.s3_obj_acc2.put_object(
             bucket_name,
             bkt_policy_cfg["obj_name_prefix"],
             self.file_path)
@@ -9132,10 +9165,10 @@ _date
         self.log.info("Case 2: Uploaded an object with account 2")
         self.log.info("Step 2: Verified the Bucket Policy from cross account")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-storage-class' and Values ['True', 'False']")
@@ -9160,13 +9193,13 @@ _date
         email_id_1 = test_6762_cfg["emailid_1"].format(random_id)
         result_1 = self.create_s3iamcli_acc(account_name_1, email_id_1)
         canonical_id_user_1 = result_1[0]
-        ACL_OBJ_1 = result_1[2]
+        self.acl_obj_1 = result_1[2]
         account_id_1 = result_1[6]
         self.s3test_obj_1 = result_1[1]
         self.log.info("New account created.")
         self.log.info(
             "Step 1: Create a bucket and upload object in the bucket.")
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         resp = create_file(
             self.file_path,
@@ -9175,7 +9208,7 @@ _date
         object_names = []
         for i in range(bkt_policy_cfg["range_val"]):
             obj_name = "{0}{1}{2}".format(obj_prefix, random_id, str(i))
-            resp = S3_OBJ.put_object(
+            resp = self.s3_obj.put_object(
                 bucket_name, obj_name, self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
@@ -9194,7 +9227,7 @@ _date
         self.log.info(
             "Case 1: Uploading an object with storage class --grant-write using account 2")
         try:
-            ACL_OBJ_1.put_object_with_acl(
+            self.acl_obj_1.put_object_with_acl(
                 bucket_name,
                 key=object_names[0],
                 file_path=self.file_path,
@@ -9222,10 +9255,10 @@ _date
         self.log.info("Case 2: Uploaded an object with account 2")
         self.log.info("Step 2: Verified the Bucket Policy from cross account")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-write' and Value 'False'")
@@ -9250,13 +9283,13 @@ _date
         email_id_1 = test_6707_cfg["emailid_1"].format(random_id)
         result_1 = self.create_s3iamcli_acc(account_name_1, email_id_1)
         canonical_id_user_1 = result_1[0]
-        ACL_OBJ_1 = result_1[2]
+        self.acl_obj_1 = result_1[2]
         account_id_1 = result_1[6]
         self.s3test_obj_1 = result_1[1]
         self.log.info("New account created.")
         self.log.info(
             "Step 1: Create a bucket and upload object in the bucket.")
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         resp = create_file(
             self.file_path,
@@ -9265,7 +9298,7 @@ _date
         object_names = []
         for i in range(bkt_policy_cfg["range_val"]):
             obj_name = "{0}{1}{2}".format(obj_prefix, random_id, str(i))
-            resp = S3_OBJ.put_object(
+            resp = self.s3_obj.put_object(
                 bucket_name, obj_name, self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
@@ -9284,7 +9317,7 @@ _date
         self.log.info(
             "Case 1: Uploading an object with storage class --grant-read using account 2")
         try:
-            ACL_OBJ_1.put_object_with_acl(
+            self.acl_obj_1.put_object_with_acl(
                 bucket_name,
                 key=object_names[0],
                 file_path=self.file_path,
@@ -9306,10 +9339,10 @@ _date
         self.log.info("Case 2: Uploaded an object with account 2")
         self.log.info("Step 2: Verified the Bucket Policy from cross account")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-read' and Value 'True'")
@@ -9334,13 +9367,13 @@ _date
         email_id_1 = test_6708_cfg["emailid_1"].format(random_id)
         result_1 = self.create_s3iamcli_acc(account_name_1, email_id_1)
         canonical_id_user_1 = result_1[0]
-        ACL_OBJ_1 = result_1[2]
+        self.acl_obj_1 = result_1[2]
         account_id_1 = result_1[6]
         self.s3test_obj_1 = result_1[1]
         self.log.info("New account created.")
         self.log.info(
             "Step 1: Create a bucket and upload object in the bucket.")
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         resp = create_file(
             self.file_path,
@@ -9349,7 +9382,7 @@ _date
         object_names = []
         for i in range(bkt_policy_cfg["range_val"]):
             obj_name = "{0}{1}{2}".format(obj_prefix, random_id, str(i))
-            resp = S3_OBJ.put_object(
+            resp = self.s3_obj.put_object(
                 bucket_name, obj_name, self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
@@ -9367,7 +9400,7 @@ _date
         self.log.info("Step 2: Verifying the Bucket Policy from cross account")
         self.log.info(
             "Case 1: Uploading an object with storage class --grant-read using account 2")
-        resp = ACL_OBJ_1.put_object_with_acl(
+        resp = self.acl_obj_1.put_object_with_acl(
             bucket_name,
             key=object_names[0],
             file_path=self.file_path,
@@ -9390,10 +9423,10 @@ _date
         self.log.info("Case 2: Uploaded an object with account 2")
         self.log.info("Step 2: Verified the Bucket Policy from cross account")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-read' and Value 'False'")
@@ -9418,13 +9451,13 @@ _date
         email_id_1 = test_7051_cfg["emailid_1"].format(random_id)
         result_1 = self.create_s3iamcli_acc(account_name_1, email_id_1)
         canonical_id_user_1 = result_1[0]
-        ACL_OBJ_1 = result_1[2]
+        self.acl_obj_1 = result_1[2]
         account_id_1 = result_1[6]
         self.s3test_obj_1 = result_1[1]
         self.log.info("New account created.")
         self.log.info(
             "Step 1: Create a bucket and upload object in the bucket.")
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         resp = create_file(
             self.file_path,
@@ -9433,7 +9466,7 @@ _date
         object_names = []
         for i in range(bkt_policy_cfg["range_val"]):
             obj_name = "{0}{1}{2}".format(obj_prefix, random_id, str(i))
-            resp = S3_OBJ.put_object(
+            resp = self.s3_obj.put_object(
                 bucket_name, obj_name, self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
@@ -9452,7 +9485,7 @@ _date
         self.log.info(
             "Case 1: Uploading an object with --acl bucket-owner-read using account 2")
         try:
-            ACL_OBJ_1.put_object_with_acl(
+            self.acl_obj_1.put_object_with_acl(
                 bucket_name,
                 key=object_names[0],
                 file_path=self.file_path,
@@ -9468,7 +9501,7 @@ _date
         self.log.info(
             "Case 2: Uploading an object with --acl bucket-owner-full-control using account 2")
         try:
-            ACL_OBJ_1.put_object_with_acl(
+            self.acl_obj_1.put_object_with_acl(
                 bucket_name,
                 key=object_names[0],
                 file_path=self.file_path,
@@ -9497,7 +9530,7 @@ _date
         self.log.info(
             "Case 4: Uploading an object with invalid value 'xyz' using account 2")
         try:
-            ACL_OBJ_1.put_object_with_acl(
+            self.acl_obj_1.put_object_with_acl(
                 bucket_name,
                 key=object_names[0],
                 file_path=self.file_path,
@@ -9509,10 +9542,10 @@ _date
             "Case 4: Uploaded an object with invalid value 'xyz' using account 2")
         self.log.info("Step 2: Verified the Bucket Policy from cross account")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test Verify Bucket Policy having Valid Condition Key and Invalid Value")
@@ -9541,7 +9574,7 @@ _date
         self.log.info("New account created.")
         self.log.info(
             "Step 1: Create a bucket and upload object in the bucket.")
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         resp = create_file(
             self.file_path,
@@ -9550,7 +9583,7 @@ _date
         object_names = []
         for i in range(bkt_policy_cfg["range_val"]):
             obj_name = "{0}{1}{2}".format(obj_prefix, random_id, str(i))
-            resp = S3_OBJ.put_object(
+            resp = self.s3_obj.put_object(
                 bucket_name, obj_name, self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
@@ -9568,7 +9601,7 @@ _date
             "Step 2: Verifying the Put Bucket Policy from cross account")
         try:
             bkt_policy_json = json.dumps(bucket_policy)
-            S3_BKT_POLICY_OBJ.put_bucket_policy(
+            self.s3_bkt_policy_obj.put_bucket_policy(
                 bucket_name, bkt_policy_json)
         except CTException as error:
             self.log.error(error.message)
@@ -9579,10 +9612,10 @@ _date
         self.log.info(
             "Step 2: Verified the Put Bucket Policy from cross account")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test Verify Bucket Policy having Invalid Condition Key")
@@ -9606,13 +9639,13 @@ _date
         account_name_1 = test_7054_cfg["account_name_1"].format(random_id)
         email_id_1 = test_7054_cfg["emailid_1"].format(random_id)
         result_1 = self.create_s3iamcli_acc(account_name_1, email_id_1)
-        ACL_OBJ_1 = result_1[2]
+        self.acl_obj_1 = result_1[2]
         account_id_1 = result_1[6]
         self.s3test_obj_1 = result_1[1]
         self.log.info("New account created.")
         self.log.info(
             "Step 1: Create a bucket and upload object in the bucket.")
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         resp = create_file(
             self.file_path,
@@ -9621,7 +9654,7 @@ _date
         object_names = []
         for i in range(bkt_policy_cfg["range_val"]):
             obj_name = "{0}{1}{2}".format(obj_prefix, random_id, str(i))
-            resp = S3_OBJ.put_object(
+            resp = self.s3_obj.put_object(
                 bucket_name, obj_name, self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
@@ -9640,7 +9673,7 @@ _date
         self.log.info(
             "Case 1: Uploading an object with --acl bucket-owner-read using account 2")
         try:
-            ACL_OBJ_1.put_object_with_acl(
+            self.acl_obj_1.put_object_with_acl(
                 bucket_name,
                 key=object_names[0],
                 file_path=self.file_path,
@@ -9656,7 +9689,7 @@ _date
         self.log.info(
             "Case 2: Uploading an object with --acl bucket-owner-full-control using account 2")
         try:
-            ACL_OBJ_1.put_object_with_acl(
+            self.acl_obj_1.put_object_with_acl(
                 bucket_name,
                 key=object_names[0],
                 file_path=self.file_path,
@@ -9684,10 +9717,10 @@ _date
         self.log.info("Case 3: Uploaded an object with account 2")
         self.log.info("Step 2: Verified the Bucket Policy from cross account")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test Verify Bucket Policy multiple conflicting Condition types(operators)")
@@ -9711,13 +9744,13 @@ _date
         account_name_1 = test_7055_cfg["account_name_1"].format(random_id)
         email_id_1 = test_7055_cfg["emailid_1"].format(random_id)
         result_1 = self.create_s3iamcli_acc(account_name_1, email_id_1)
-        ACL_OBJ_1 = result_1[2]
+        self.acl_obj_1 = result_1[2]
         account_id_1 = result_1[6]
         self.s3test_obj_1 = result_1[1]
         self.log.info("New account created.")
         self.log.info(
             "Step 1: Create a bucket and upload object in the bucket.")
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         resp = create_file(
             self.file_path,
@@ -9726,7 +9759,7 @@ _date
         object_names = []
         for i in range(bkt_policy_cfg["range_val"]):
             obj_name = "{0}{1}{2}".format(obj_prefix, random_id, str(i))
-            resp = S3_OBJ.put_object(
+            resp = self.s3_obj.put_object(
                 bucket_name, obj_name, self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
@@ -9745,7 +9778,7 @@ _date
         self.log.info(
             "Case 1: Uploading an object with --acl bucket-owner-read using account 2")
         try:
-            ACL_OBJ_1.put_object_with_acl(
+            self.acl_obj_1.put_object_with_acl(
                 bucket_name,
                 key=object_names[0],
                 file_path=self.file_path,
@@ -9761,7 +9794,7 @@ _date
         self.log.info(
             "Case 2: Uploading an object with --acl bucket-owner-full-control using account 2")
         try:
-            ACL_OBJ_1.put_object_with_acl(
+            self.acl_obj_1.put_object_with_acl(
                 bucket_name,
                 key=object_names[0],
                 file_path=self.file_path,
@@ -9789,10 +9822,10 @@ _date
         self.log.info("Case 3: Uploaded an object with account 2")
         self.log.info("Step 2: Verified the Bucket Policy from cross account")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test Verify Bucket Policy Condition Values are case sensitive")
@@ -9828,7 +9861,7 @@ _date
         prefix_upper = BKT_POLICY_CONF["bucket_policy"]["obj_name_prefix"].upper(
         )
         obj_name_upper = "{}/{}".format(prefix_upper, str(int(time.time())))
-        resp = S3_OBJ.put_object(
+        resp = self.s3_obj.put_object(
             bucket_name,
             obj_name_upper,
             self.file_path)
@@ -9866,10 +9899,10 @@ _date
             "Case 2: Listed objects with upper prefix using account 2")
         self.log.info("Step 3: Verified the Bucket Policy from cross account")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test Create Bucket Policy using StringEqualsIgnoreCase Condition Operator, key 's3:prefix' and Effect Allow")
@@ -9905,7 +9938,7 @@ _date
         prefix_upper = BKT_POLICY_CONF["bucket_policy"]["obj_name_prefix"].upper(
         )
         obj_name_upper = "{}/{}".format(prefix_upper, str(int(time.time())))
-        resp = S3_OBJ.put_object(
+        resp = self.s3_obj.put_object(
             bucket_name,
             obj_name_upper,
             self.file_path)
@@ -9955,10 +9988,10 @@ _date
             "Case 2: Listed objects with upper prefix using account 2")
         self.log.info("Step 3: Verified the Bucket Policy from cross account")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test Create Bucket Policy using StringNotEqualsIgnoreCase Condition Operator, key 's3:prefix' and Effect Allow")
@@ -9982,13 +10015,13 @@ _date
         account_name_1 = test_7058_cfg["account_name_1"].format(random_id)
         email_id_1 = test_7058_cfg["emailid_1"].format(random_id)
         result_1 = self.create_s3iamcli_acc(account_name_1, email_id_1)
-        ACL_OBJ_1 = result_1[2]
+        self.acl_obj_1 = result_1[2]
         account_id_1 = result_1[6]
         self.s3test_obj_1 = result_1[1]
         self.log.info("New account created.")
         self.log.info(
             "Step 1: Create a bucket and upload object in the bucket.")
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         resp = create_file(
             self.file_path,
@@ -9997,7 +10030,7 @@ _date
         object_names = []
         for i in range(bkt_policy_cfg["range_val"]):
             obj_name = "{0}{1}{2}".format(obj_prefix, random_id, str(i))
-            resp = S3_OBJ.put_object(
+            resp = self.s3_obj.put_object(
                 bucket_name, obj_name, self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
@@ -10015,7 +10048,7 @@ _date
         self.log.info("Step 3: Verifying the Bucket Policy from cross account")
         self.log.info(
             "Case 1: Uploading an object with --acl bucket-owner-full-control using account 2")
-        resp = ACL_OBJ_1.put_object_with_acl(
+        resp = self.acl_obj_1.put_object_with_acl(
             bucket_name,
             key=object_names[0],
             file_path=self.file_path,
@@ -10025,10 +10058,10 @@ _date
             "Case 1: Uploaded an object with --acl bucket-owner-full-control using account 2")
         self.log.info("Step 3: Verified the Bucket Policy from cross account")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test Create Bucket Policy using StringLike Condition Operator, key 's3:x-amz-acl'")
@@ -10052,13 +10085,13 @@ _date
         account_name_1 = test_7059_cfg["account_name_1"].format(random_id)
         email_id_1 = test_7059_cfg["emailid_1"].format(random_id)
         result_1 = self.create_s3iamcli_acc(account_name_1, email_id_1)
-        ACL_OBJ_1 = result_1[2]
+        self.acl_obj_1 = result_1[2]
         account_id_1 = result_1[6]
         self.s3test_obj_1 = result_1[1]
         self.log.info("New account created.")
         self.log.info(
             "Step 1: Create a bucket and upload object in the bucket.")
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         resp = create_file(
             self.file_path,
@@ -10071,7 +10104,7 @@ _date
         assert resp[0], resp[1]
         for i in range(bkt_policy_cfg["range_val"]):
             obj_name = "{0}{1}{2}".format(obj_prefix, random_id, str(i))
-            resp = S3_OBJ.put_object(
+            resp = self.s3_obj.put_object(
                 bucket_name, obj_name, self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
@@ -10090,7 +10123,7 @@ _date
         self.log.info(
             "Case 1: Uploading an object with --acl bucket-owner-full-control using account 2")
         try:
-            ACL_OBJ_1.put_object_with_acl(
+            self.acl_obj_1.put_object_with_acl(
                 bucket_name,
                 key=object_names[0],
                 file_path=self.file_path,
@@ -10105,10 +10138,10 @@ _date
             "Case 1: Uploading an object with --acl bucket-owner-full-control using account 2")
         self.log.info("Step 3: Verified the Bucket Policy from cross account")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test Create Bucket Policy using StringNotLike Condition Operator, key 's3:x-amz-acl'")
@@ -10134,12 +10167,12 @@ _date
         email_id_1 = test_5134_cfg["emailid_1"].format(random_id)
         result_1 = self.create_s3iamcli_acc(account_name_1, email_id_1)
         canonical_id_user_1 = result_1[0]
-        ACL_OBJ_1 = result_1[2]
+        self.acl_obj_1 = result_1[2]
         self.s3test_obj_1 = result_1[1]
         self.log.info("New account created.")
         self.log.info(
             "Step 1: Create a bucket and upload object in the bucket. - run from default account")
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         resp = create_file(
             self.file_path,
@@ -10148,7 +10181,7 @@ _date
         object_names = []
         for i in range(bkt_policy_cfg["range_val"]):
             obj_name = "{0}{1}{2}".format(obj_prefix, random_id, str(i))
-            resp = S3_OBJ.put_object(
+            resp = self.s3_obj.put_object(
                 bucket_name, obj_name, self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
@@ -10173,7 +10206,7 @@ _date
         self.log.info(
             "Step 5 & 6: Account switch"
             "Apply READ_ACP ACL on the object to account2. - run from default")
-        resp = ACL_OBJ.put_object_with_acl(
+        resp = self.acl_obj.put_object_with_acl(
             bucket_name=bucket_name,
             key=object_names[0],
             file_path=self.file_path,
@@ -10184,13 +10217,13 @@ _date
             "Applied READ_ACP ACL on the object to account2. - run from default")
         self.log.info(
             "Step 7: Check the object ACL to verify the applied ACL.  - run from account1")
-        resp = ACL_OBJ_1.get_object_acl(bucket=bucket_name,
+        resp = self.acl_obj_1.get_object_acl(bucket=bucket_name,
                                         object_key=object_names[0])
         assert resp[0], resp[1]
         self.log.info(
             "Step 7: Checked the object ACL to verify the applied ACL.  - run from default")
         self.log.info("Step 8: Put object ACL. - run from default")
-        resp = ACL_OBJ.put_object_with_acl(
+        resp = self.acl_obj.put_object_with_acl(
             bucket_name=bucket_name,
             key=object_names[0],
             file_path=self.file_path,
@@ -10198,10 +10231,10 @@ _date
         assert resp[0], resp[1]
         self.log.info("Step 8: Put object ACL. - run from default")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test apply allow PutObjectAcl api on object in policy and READ_ACP ACL on the object."
@@ -10229,13 +10262,15 @@ _date
             "Step 1 : Create a bucket and upload objects in the bucket")
         self.create_bucket_put_objects(
             bucket_name, test_7053_cfg["obj_count"], obj_prefix, object_lst)
-        acc_details = IAM_OBJ.create_multiple_accounts(
+        acc_details = self.iam_obj.create_multiple_accounts(
             test_7053_cfg["acc_count"], bkt_policy_cfg["acc_name_prefix"])
         account1_id = acc_details[1][0][1]["Account_Id"]
-        S3_OBJ1 = s3_acl_test_lib.S3AclTestLib(
+        self.s3_obj1 = s3_acl_test_lib.S3AclTestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=acc_details[1][0][1]["access_key"],
             secret_key=acc_details[1][0][1]["secret_key"])
-        S3_OBJ2 = s3_test_lib.S3TestLib(
+        self.s3_obj2 = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=acc_details[1][0][1]["access_key"],
             secret_key=acc_details[1][0][1]["secret_key"])
         self.log.info(
@@ -10255,14 +10290,14 @@ _date
             self.file_path,
             BKT_POLICY_CONF["bucket_policy"]["file_size"])
         assert resp[0], resp[1]
-        resp = S3_OBJ1.put_object_with_acl(
+        resp = self.s3_obj1.put_object_with_acl(
             bucket_name,
             object_lst[0],
             self.file_path,
             acl=test_7053_cfg["obj_permission1"])
         assert resp[0], resp[1]
         try:
-            S3_OBJ1.put_object_with_acl(
+            self.s3_obj1.put_object_with_acl(
                 bucket_name,
                 object_lst[0],
                 self.file_path,
@@ -10270,7 +10305,7 @@ _date
         except CTException as error:
             assert err_message in error.message, error.message
         try:
-            S3_OBJ2.put_object(
+            self.s3_obj2.put_object(
                 bucket_name,
                 object_lst[0],
                 self.file_path)
@@ -10302,17 +10337,19 @@ _date
         self.create_bucket_put_objects(
             bucket_name, test_6554_cfg["obj_count"], obj_prefix, object_lst)
 
-        acc_details = IAM_OBJ.create_multiple_accounts(
+        acc_details = self.iam_obj.create_multiple_accounts(
             test_6554_cfg["acc_count"], bkt_policy_cfg["acc_name_prefix"])
         account2_id = acc_details[1][0][1]["Account_Id"]
         account2_cid = acc_details[1][0][1]["canonical_id"]
         account3_cid = acc_details[1][1][1]["canonical_id"]
         account4_cid = acc_details[1][2][1]["canonical_id"]
         account5_cid = acc_details[1][3][1]["canonical_id"]
-        S3_OBJ1 = s3_acl_test_lib.S3AclTestLib(
+        self.s3_obj1 = s3_acl_test_lib.S3AclTestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=acc_details[1][0][1]["access_key"],
             secret_key=acc_details[1][0][1]["secret_key"])
-        S3_OBJ2 = s3_test_lib.S3TestLib(
+        self.s3_obj2 = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=acc_details[1][0][1]["access_key"],
             secret_key=acc_details[1][0][1]["secret_key"])
 
@@ -10341,7 +10378,7 @@ _date
         assert resp[0], resp[1]
         self.log.info(
             "Put object with ACL : grant_full_control and grant_read")
-        resp = ACL_OBJ.put_object_with_acl2(bucket_name,
+        resp = self.acl_obj.put_object_with_acl2(bucket_name,
                                             "{}{}".format(object_lst[0], str(time.time())),
                                             self.file_path,
                                             grant_full_control="id={}".format(account3_cid),
@@ -10349,7 +10386,7 @@ _date
         assert resp[0], resp[1]
         self.log.info(
             "Put object with ACL : grant_full_control and grant_read")
-        resp = ACL_OBJ.put_object_with_acl2(bucket_name,
+        resp = self.acl_obj.put_object_with_acl2(bucket_name,
                                             "{}{}".format(object_lst[0], str(time.time())),
                                             self.file_path,
                                             grant_full_control="id={}".format(account2_cid),
@@ -10358,7 +10395,7 @@ _date
         try:
             self.log.info(
                 "Put object with ACL : grant_full_control and grant_read")
-            S3_OBJ1.put_object_with_acl2(bucket_name,
+            self.s3_obj1.put_object_with_acl2(bucket_name,
                                          "{}{}".format(object_lst[0], str(time.time())),
                                          self.file_path,
                                          grant_full_control="id={}".format(account5_cid),
@@ -10366,7 +10403,7 @@ _date
         except CTException as error:
             assert err_message in error.message, error.message
         try:
-            S3_OBJ1.put_object_with_acl2(bucket_name,
+            self.s3_obj1.put_object_with_acl2(bucket_name,
                                          "{}{}".format(object_lst[0], str(time.time())),
                                          self.file_path,
                                          grant_full_control="id={}".format(account5_cid),
@@ -10374,19 +10411,19 @@ _date
         except CTException as error:
             assert err_message in error.message, error.message
         try:
-            S3_OBJ1.put_object_with_acl(bucket_name,
+            self.s3_obj1.put_object_with_acl(bucket_name,
                                         "{}{}".format(object_lst[0], str(time.time())),
                                         self.file_path,
                                         grant_full_control="id={}".format(account3_cid))
         except CTException as error:
             assert err_message in error.message, error.message
         try:
-            S3_OBJ1.put_object_with_acl(bucket_name, "{}{}".format(object_lst[0], str(
+            self.s3_obj1.put_object_with_acl(bucket_name, "{}{}".format(object_lst[0], str(
                 time.time())), self.file_path, grant_read="id={}".format(account5_cid))
         except CTException as error:
             assert err_message in error.message, error.message
         try:
-            S3_OBJ2.put_object(
+            self.s3_obj2.put_object(
                 bucket_name,
                 object_lst[0],
                 self.file_path)
@@ -10417,12 +10454,12 @@ _date
         email_id_1 = test_5136_cfg["emailid_1"].format(random_id)
         result_1 = self.create_s3iamcli_acc(account_name_1, email_id_1)
         canonical_id_user_1 = result_1[0]
-        ACL_OBJ_1 = result_1[2]
+        self.acl_obj_1 = result_1[2]
         self.s3test_obj_1 = result_1[1]
         self.log.info("New account created.")
         self.log.info(
             "Step 1: Create a bucket and upload object in the bucket. - run from default account")
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         resp = create_file(
             self.file_path,
@@ -10435,7 +10472,7 @@ _date
         object_names = []
         for i in range(bkt_policy_cfg["range_val"]):
             obj_name = "{0}{1}{2}".format(obj_prefix, random_id, str(i))
-            resp = S3_OBJ.put_object(
+            resp = self.s3_obj.put_object(
                 bucket_name, obj_name, self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
@@ -10471,7 +10508,7 @@ _date
         self.log.info(
             "Step 7 & 8: Account switch"
             "Apply READ_ACP ACL on the object to account2. - run from default account")
-        resp = ACL_OBJ.put_object_with_acl(
+        resp = self.acl_obj.put_object_with_acl(
             bucket_name=bucket_name,
             key=object_names[0],
             file_path=self.file_path,
@@ -10482,7 +10519,7 @@ _date
             "Applied READ_ACP ACL on the object to account2. - run from default account")
         self.log.info(
             "Step 9: Check the object ACL to verify the applied ACL.  - run from default account")
-        resp = ACL_OBJ.get_object_acl(bucket=bucket_name,
+        resp = self.acl_obj.get_object_acl(bucket=bucket_name,
                                       object_key=object_names[0])
         assert resp[0], resp[1]
         self.log.info(
@@ -10499,10 +10536,10 @@ _date
             "Step 10 & 11: Account switch"
             "Get object. - run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test apply allow GetObject api on object in policy and READ_ACP ACL on the object ."
@@ -10531,7 +10568,7 @@ _date
         self.create_bucket_put_objects(
             bucket_name, test_6555_cfg["obj_count"], obj_prefix, object_lst)
 
-        acc_details = IAM_OBJ.create_multiple_accounts(
+        acc_details = self.iam_obj.create_multiple_accounts(
             test_6555_cfg["acc_count"], bkt_policy_cfg["acc_name_prefix"])
         account2_id = acc_details[1][0][1]["Account_Id"]
         account2_cid = acc_details[1][0][1]["canonical_id"]
@@ -10542,10 +10579,12 @@ _date
         account7_cid = acc_details[1][5][1]["canonical_id"]
         account8_cid = acc_details[1][6][1]["canonical_id"]
         account9_cid = acc_details[1][7][1]["canonical_id"]
-        S3_OBJ1 = s3_acl_test_lib.S3AclTestLib(
+        self.s3_obj1 = s3_acl_test_lib.S3AclTestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=acc_details[1][0][1]["access_key"],
             secret_key=acc_details[1][0][1]["secret_key"])
-        S3_OBJ2 = s3_test_lib.S3TestLib(
+        self.s3_obj2 = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=acc_details[1][0][1]["access_key"],
             secret_key=acc_details[1][0][1]["secret_key"])
 
@@ -10581,20 +10620,20 @@ _date
         assert resp[0], resp[1]
         self.log.info(
             "Put object with ACL : grant_full_control and grant_read")
-        resp = ACL_OBJ.put_object_with_acl2(bucket_name,
+        resp = self.acl_obj.put_object_with_acl2(bucket_name,
                                             "{}{}".format(object_lst[0], str(time.time())),
                                             self.file_path,
                                             grant_full_control="id={}".format(account2_cid),
                                             grant_read="id={}".format(account4_cid))
         assert resp[0], resp[1]
-        resp = ACL_OBJ.put_object_with_acl2(bucket_name,
+        resp = self.acl_obj.put_object_with_acl2(bucket_name,
                                             "{}{}".format(object_lst[0], str(time.time())),
                                             self.file_path,
                                             grant_full_control="id={}".format(account3_cid),
                                             grant_read="id={}".format(account5_cid))
         assert resp[0], resp[1]
         try:
-            S3_OBJ1.put_object_with_acl2(bucket_name,
+            self.s3_obj1.put_object_with_acl2(bucket_name,
                                          "{}{}".format(object_lst[0], str(time.time())),
                                          self.file_path,
                                          grant_full_control="id={}".format(account6_cid),
@@ -10602,7 +10641,7 @@ _date
         except CTException as error:
             assert err_message in error.message, error.message
         try:
-            S3_OBJ1.put_object_with_acl2(bucket_name,
+            self.s3_obj1.put_object_with_acl2(bucket_name,
                                          "{}{}".format(object_lst[0], str(time.time())),
                                          self.file_path,
                                          grant_full_control="id={}".format(account2_cid),
@@ -10610,31 +10649,31 @@ _date
         except CTException as error:
             assert err_message in error.message, error.message
         try:
-            S3_OBJ1.put_object_with_acl(bucket_name,
+            self.s3_obj1.put_object_with_acl(bucket_name,
                                         "{}{}".format(object_lst[0], str(time.time())),
                                         self.file_path,
                                         grant_full_control="id={}".format(account3_cid))
         except CTException as error:
             assert err_message in error.message, error.message
         try:
-            S3_OBJ1.put_object_with_acl(bucket_name, "{}{}".format(object_lst[0], str(
+            self.s3_obj1.put_object_with_acl(bucket_name, "{}{}".format(object_lst[0], str(
                 time.time())), self.file_path, grant_read="id={}".format(account5_cid))
         except CTException as error:
             assert err_message in error.message, error.message
         try:
-            S3_OBJ1.put_object_with_acl(bucket_name,
+            self.s3_obj1.put_object_with_acl(bucket_name,
                                         "{}{}".format(object_lst[0], str(time.time())),
                                         self.file_path,
                                         grant_full_control="id={}".format(account4_cid))
         except CTException as error:
             assert err_message in error.message, error.message
         try:
-            S3_OBJ1.put_object_with_acl(bucket_name, "{}{}".format(object_lst[0], str(
+            self.s3_obj1.put_object_with_acl(bucket_name, "{}{}".format(object_lst[0], str(
                 time.time())), self.file_path, grant_read="id={}".format(account2_cid))
         except CTException as error:
             assert err_message in error.message, error.message
         try:
-            S3_OBJ2.put_object(
+            self.s3_obj2.put_object(
                 bucket_name,
                 object_lst[0],
                 self.file_path)
@@ -10665,12 +10704,12 @@ _date
         email_id_1 = test_5138_cfg["emailid_1"].format(random_id)
         result_1 = self.create_s3iamcli_acc(account_name_1, email_id_1)
         canonical_id_user_1 = result_1[0]
-        ACL_OBJ_1 = result_1[2]
+        self.acl_obj_1 = result_1[2]
         self.s3test_obj_1 = result_1[1]
         self.log.info("New account created.")
         self.log.info(
             "Step 1: Create a bucket and upload object in the bucket. - run from default account")
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         resp = create_file(
             self.file_path,
@@ -10679,7 +10718,7 @@ _date
         object_names = []
         for i in range(bkt_policy_cfg["range_val"]):
             obj_name = "{0}{1}{2}".format(obj_prefix, random_id, str(i))
-            resp = S3_OBJ.put_object(
+            resp = self.s3_obj.put_object(
                 bucket_name, obj_name, self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
@@ -10704,7 +10743,7 @@ _date
         self.log.info(
             "Step 5 & 6: Account switch"
             "Get object ACL. - run from account1")
-        resp = ACL_OBJ_1.get_object_acl(bucket=bucket_name,
+        resp = self.acl_obj_1.get_object_acl(bucket=bucket_name,
                                         object_key=object_names[0])
         assert resp[0], resp[1]
         self.log.info(
@@ -10713,7 +10752,7 @@ _date
         self.log.info(
             "Step 7 & 8: Account switch"
             "Apply WRITE_ACP ACL on the object to account2. - run from default account")
-        resp = ACL_OBJ.put_object_with_acl(
+        resp = self.acl_obj.put_object_with_acl(
             bucket_name=bucket_name,
             key=object_names[0],
             file_path=self.file_path,
@@ -10724,7 +10763,7 @@ _date
             "Applied WRITE_ACP ACL on the object to account2. - run from default account")
         self.log.info(
             "Step 9: Check the object ACL to verify the applied ACL.  - run from default account")
-        resp = ACL_OBJ.get_object_acl(bucket=bucket_name,
+        resp = self.acl_obj.get_object_acl(bucket=bucket_name,
                                       object_key=object_names[0])
         assert resp[0], resp[1]
         self.log.info(
@@ -10732,17 +10771,17 @@ _date
         self.log.info(
             "Step 10 & 11: Account switch"
             "Get object ACL. - run from account1")
-        resp = ACL_OBJ_1.get_object_acl(bucket=bucket_name,
+        resp = self.acl_obj_1.get_object_acl(bucket=bucket_name,
                                         object_key=object_names[0])
         assert resp[0], resp[1]
         self.log.info(
             "Step 10 & 11: Account switch"
             "Get object ACL. - run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test apply allow GetobjectAcl api on object in policy and WRITE_ACP ACL on the object."
@@ -10769,11 +10808,11 @@ _date
         email_id_1 = test_5121_cfg["emailid_1"].format(random_id)
         result_1 = self.create_s3iamcli_acc(account_name_1, email_id_1)
         canonical_id_user_1 = result_1[0]
-        ACL_OBJ_1 = result_1[2]
+        self.acl_obj_1 = result_1[2]
         self.log.info("New account created.")
         self.log.info(
             "Step 1: Create a bucket and upload object in the bucket. - run from default account")
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         resp = create_file(
             self.file_path,
@@ -10782,7 +10821,7 @@ _date
         object_names = []
         for i in range(bkt_policy_cfg["range_val"]):
             obj_name = "{0}{1}{2}".format(obj_prefix, random_id, str(i))
-            resp = S3_OBJ.put_object(
+            resp = self.s3_obj.put_object(
                 bucket_name, obj_name, self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
@@ -10790,7 +10829,7 @@ _date
             "Step 1: Created bucket and uploaded object in the bucket. - run from default account")
         self.log.info(
             "Step 2: Apply WRITE_ACP ACL on the object to account2. - run from default account")
-        resp = ACL_OBJ.put_object_with_acl(
+        resp = self.acl_obj.put_object_with_acl(
             bucket_name=bucket_name,
             key=object_names[0],
             file_path=self.file_path,
@@ -10800,14 +10839,14 @@ _date
             "Step 2: Apply WRITE_ACP ACL on the object to account2. - run from default account")
         self.log.info(
             "Step 3: Check the object ACL to verify the applied ACL.  - run from default account")
-        resp = ACL_OBJ.get_object_acl(bucket=bucket_name,
+        resp = self.acl_obj.get_object_acl(bucket=bucket_name,
                                       object_key=object_names[0])
         assert resp[0], resp[1]
         self.log.info(
             "Step 3: Checked the object ACL to verify the applied ACL.  - run from default account")
         self.log.info("Step 4 & 5: Account switch"
                       "Put object ACL. - run from account1")
-        resp = ACL_OBJ.put_object_with_acl(
+        resp = self.acl_obj.put_object_with_acl(
             bucket_name=bucket_name,
             key=object_names[0],
             file_path=self.file_path,
@@ -10832,7 +10871,7 @@ _date
         self.log.info("Step 10 & 11: Account switch"
                       "Put object ACL - run from account1")
         try:
-            ACL_OBJ_1.put_object_with_acl(
+            self.acl_obj_1.put_object_with_acl(
                 bucket_name=bucket_name,
                 key=object_names[0],
                 file_path=self.file_path,
@@ -10843,10 +10882,10 @@ _date
         self.log.info("Step 10 & 11: Account switch "
                       "put object ACL - run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test apply WRITE_ACP ACL on the object and deny PutobjectAcl on object api in policy ."
@@ -10874,7 +10913,7 @@ _date
         self.create_bucket_put_objects(
             bucket_name, test_6555_cfg["obj_count"], obj_prefix, object_lst)
 
-        acc_details = IAM_OBJ.create_multiple_accounts(
+        acc_details = self.iam_obj.create_multiple_accounts(
             test_6555_cfg["acc_count"], bkt_policy_cfg["acc_name_prefix"])
         account2_id = acc_details[1][0][1]["Account_Id"]
         account2_cid = acc_details[1][0][1]["canonical_id"]
@@ -10897,7 +10936,7 @@ _date
         self.log.info(
             "Step 3 : Put policy on the bucket")
         try:
-            S3_BKT_POLICY_OBJ.put_bucket_policy(bucket_name, bkt_policy_json)
+            self.s3_bkt_policy_obj.put_bucket_policy(bucket_name, bkt_policy_json)
         except CTException as error:
             assert err_message in error.message, error.message
         self.log.info(
@@ -10925,11 +10964,11 @@ _date
         result_1 = self.create_s3iamcli_acc(account_name_1, email_id_1)
         canonical_id_user_1 = result_1[0]
         self.s3test_obj_1 = result_1[1]
-        ACL_OBJ_1 = result_1[2]
+        self.acl_obj_1 = result_1[2]
         self.log.info("New account created.")
         self.log.info(
             "Step 1: Create a bucket and upload object in the bucket. - run from default account")
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         resp = create_file(
             self.file_path,
@@ -10938,7 +10977,7 @@ _date
         object_names = []
         for i in range(bkt_policy_cfg["range_val"]):
             obj_name = "{0}{1}{2}".format(obj_prefix, random_id, str(i))
-            resp = S3_OBJ.put_object(
+            resp = self.s3_obj.put_object(
                 bucket_name, obj_name, self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
@@ -10946,7 +10985,7 @@ _date
             "Step 1: Created bucket and uploaded object in the bucket. - run from default account")
         self.log.info(
             "Step 2: Apply READ ACL on the object to account2. - run from default account")
-        resp = ACL_OBJ.put_object_with_acl(
+        resp = self.acl_obj.put_object_with_acl(
             bucket_name=bucket_name,
             key=object_names[0],
             file_path=self.file_path,
@@ -10956,7 +10995,7 @@ _date
             "Step 2: Applied READ ACL on the object to account2. - run from default account")
         self.log.info(
             "Step 3: Check the object ACL to verify the applied ACL.  - run from default account")
-        resp = ACL_OBJ.get_object_acl(bucket=bucket_name,
+        resp = self.acl_obj.get_object_acl(bucket=bucket_name,
                                       object_key=object_names[0])
         assert resp[0], resp[1]
         self.log.info(
@@ -10999,10 +11038,10 @@ _date
         self.log.info("Step 10 & 11: Account switch"
                       "Get object.  - run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test apply READ ACL on the object and deny GetObject api on object in policy ."
@@ -11029,7 +11068,7 @@ _date
         email_id_1 = test_5115_cfg["emailid_1"].format(random_id)
         result_1 = self.create_s3iamcli_acc(account_name_1, email_id_1)
         canonical_id_user_1 = result_1[0]
-        ACL_OBJ_1 = result_1[2]
+        self.acl_obj_1 = result_1[2]
         self.s3test_obj_1 = result_1[1]
         self.log.info("New account created.")
         self.log.info(
@@ -11040,7 +11079,7 @@ _date
             "Step 1: Created bucket and uploaded object in the bucket. - run from default account")
         self.log.info(
             "Step 2: Apply READ_ACP ACL on the bucket to account2. - run from default account")
-        resp = ACL_OBJ.put_bucket_acl(
+        resp = self.acl_obj.put_bucket_acl(
             bucket_name=bucket_name,
             grant_read_acp=test_5115_cfg["id_str"].format(canonical_id_user_1))
         assert resp[0], resp[1]
@@ -11048,13 +11087,13 @@ _date
             "Step 2: Applied READ_ACP ACL on the bucket to account2. - run from default account")
         self.log.info(
             "Step 3: Check the bucket ACL to verify the applied ACL.  - run from default account")
-        resp = ACL_OBJ.get_bucket_acl(bucket_name)
+        resp = self.acl_obj.get_bucket_acl(bucket_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 3: Checked the bucket ACL to verify the applied ACL.  - run from default account")
         self.log.info("Step 4 & 5: Account switch"
                       "Get ACL of the bucket . - run from account1")
-        resp = ACL_OBJ_1.get_bucket_acl(bucket_name)
+        resp = self.acl_obj_1.get_bucket_acl(bucket_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 4 & 5: Got ACL of the bucket . - run from account1")
@@ -11076,17 +11115,17 @@ _date
         self.log.info("Step 10 & 11: Account switch "
                       "Get ACL of the bucket -run from account1")
         try:
-            ACL_OBJ_1.get_bucket_acl(bucket_name)
+            self.acl_obj_1.get_bucket_acl(bucket_name)
         except CTException as error:
             self.log.error(error.message)
             assert test_5115_cfg["error_message"] in error.message, error.message
         self.log.info(
             "Step 10 & 11: Get ACL of the bucket  -run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test apply READ_ACP ACL on the bucket and deny GetBucketAcl on bucket api in policy."
@@ -11123,7 +11162,7 @@ _date
             "Step 1: Created bucket and uploaded object in the bucket. - run from default account")
         self.log.info(
             "Step 2: Apply READ_ACP ACL on the bucket to account2. - run from default account")
-        resp = ACL_OBJ.put_bucket_acl(
+        resp = self.acl_obj.put_bucket_acl(
             bucket_name=bucket_name,
             grant_write=test_5114_cfg["id_str"].format(canonical_id_user_1))
         assert resp[0], resp[1]
@@ -11131,7 +11170,7 @@ _date
             "Step 2: Applied READ_ACP ACL on the bucket to account2. - run from default account")
         self.log.info(
             "Step 3: Check the bucket ACL to verify the applied ACL.  - run from default account")
-        resp = ACL_OBJ.get_bucket_acl(bucket_name)
+        resp = self.acl_obj.get_bucket_acl(bucket_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 3: Checked the bucket ACL to verify the applied ACL.  - run from default account")
@@ -11170,10 +11209,10 @@ _date
         self.log.info(
             "Step 10 & 11: Put object in the bucket  -run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test apply WRITE ACL on the bucket and deny PutObject api on bucket in policy."
@@ -11210,7 +11249,7 @@ _date
             "Step 1: Created bucket and uploaded object in the bucket. - run from default account")
         self.log.info(
             "Step 2: Apply READ_ACP ACL on the bucket to account2. - run from default account")
-        resp = ACL_OBJ.put_bucket_acl(
+        resp = self.acl_obj.put_bucket_acl(
             bucket_name=bucket_name,
             grant_read=test_5110_cfg["id_str"].format(canonical_id_user_1))
         assert resp[0], resp[1]
@@ -11218,7 +11257,7 @@ _date
             "Step 2: Applied READ_ACP ACL on the bucket to account2. - run from default account")
         self.log.info(
             "Step 3: Check the bucket ACL to verify the applied ACL.  - run from default account")
-        resp = ACL_OBJ.get_bucket_acl(bucket_name)
+        resp = self.acl_obj.get_bucket_acl(bucket_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 3: Checked the bucket ACL to verify the applied ACL.  - run from default account")
@@ -11253,10 +11292,10 @@ _date
         self.log.info("Step 10 & 11: Account switch "
                       "List objects from the bucket  -run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test apply READ ACL on the bucket and deny ListBucket api on bucket in policy."
@@ -11285,7 +11324,7 @@ _date
         email_id_1 = test_5116_cfg["emailid_1"].format(random_id)
         result_1 = self.create_s3iamcli_acc(account_name_1, email_id_1)
         canonical_id_user_1 = result_1[0]
-        ACL_OBJ_1 = result_1[2]
+        self.acl_obj_1 = result_1[2]
         self.log.info("New account created.")
         self.log.info(
             "Step 1: Create a bucket and upload object in the bucket. - run from default account")
@@ -11295,7 +11334,7 @@ _date
             "Step 1: Created bucket and uploaded object in the bucket. - run from default account")
         self.log.info(
             "Step 2: Apply READ_ACP ACL on the bucket to account2. - run from default account")
-        resp = ACL_OBJ.put_bucket_acl(
+        resp = self.acl_obj.put_bucket_acl(
             bucket_name=bucket_name,
             grant_write_acp=test_5116_cfg["id_str"].format(canonical_id_user_1))
         assert resp[0], resp[1]
@@ -11303,13 +11342,13 @@ _date
             "Step 2: Applied READ_ACP ACL on the bucket to account2. - run from default account")
         self.log.info(
             "Step 3: Check the bucket ACL to verify the applied ACL.  - run from default account")
-        resp = ACL_OBJ.get_bucket_acl(bucket_name)
+        resp = self.acl_obj.get_bucket_acl(bucket_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 3: Checked the bucket ACL to verify the applied ACL.  - run from default account")
         self.log.info("Step 4 & 5: Account switch"
                       "Put ACL on the bucket . - run from account1")
-        resp = ACL_OBJ_1.put_bucket_acl(
+        resp = self.acl_obj_1.put_bucket_acl(
             bucket_name=bucket_name,
             grant_write_acp=test_5116_cfg["id_str"].format(canonical_id_user_1))
         assert resp[0], resp[1]
@@ -11333,7 +11372,7 @@ _date
         self.log.info("Step 10 & 11: Account switch"
                       "Put ACL of the bucket -run from account1")
         try:
-            ACL_OBJ_1.put_bucket_acl(
+            self.acl_obj_1.put_bucket_acl(
                 bucket_name=bucket_name,
                 grant_write_acp=test_5116_cfg["id_str"].format(canonical_id_user_1))
         except CTException as error:
@@ -11342,10 +11381,10 @@ _date
         self.log.info("Step 10 & 11: Account switch"
                       "Put ACL of the bucket  -run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test apply WRITE_ACP ACL on the bucket and deny PutBucketAcl on bucket api in policy."
@@ -11372,7 +11411,7 @@ _date
         email_id_1 = test_5117_cfg["emailid_1"].format(random_id)
         result_1 = self.create_s3iamcli_acc(account_name_1, email_id_1)
         canonical_id_user_1 = result_1[0]
-        ACL_OBJ_1 = result_1[2]
+        self.acl_obj_1 = result_1[2]
         self.log.info("New account created.")
         self.log.info(
             "Step 1: Create a bucket and upload object in the bucket. - run from default account")
@@ -11382,7 +11421,7 @@ _date
             "Step 1: Created bucket and uploaded object in the bucket. - run from default account")
         self.log.info(
             "Step 2: Apply FULL_CONTROL ACL on the bucket to account2. - run from default account")
-        resp = ACL_OBJ.put_bucket_acl(
+        resp = self.acl_obj.put_bucket_acl(
             bucket_name=bucket_name,
             grant_full_control=test_5117_cfg["id_str"].format(canonical_id_user_1))
         assert resp[0], resp[1]
@@ -11390,13 +11429,13 @@ _date
             "Step 2: Applied FULL_CONTROL ACL on the bucket to account2. - run from default account")
         self.log.info(
             "Step 3: Check the bucket ACL to verify the applied ACL.  - run from default account")
-        resp = ACL_OBJ.get_bucket_acl(bucket_name)
+        resp = self.acl_obj.get_bucket_acl(bucket_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 3: Checked the bucket ACL to verify the applied ACL.  - run from default account")
         self.log.info("Step 4 & 5: Account switch "
                       "Get ACL of the bucket . - run from account1")
-        resp = ACL_OBJ_1.get_bucket_acl(bucket_name)
+        resp = self.acl_obj_1.get_bucket_acl(bucket_name)
         assert resp[0], resp[1]
         self.log.info("Step 4 & 5: Account switch"
                       "Get ACL of the bucket . - run from account1")
@@ -11419,17 +11458,17 @@ _date
         self.log.info("Step 10 & 11: Account switch "
                       "Get ACL of the bucket - run from account1")
         try:
-            ACL_OBJ_1.get_bucket_acl(bucket_name)
+            self.acl_obj_1.get_bucket_acl(bucket_name)
         except CTException as error:
             self.log.error(error.message)
             assert test_5117_cfg["error_message"] in error.message, error.message
         self.log.info("Step 10 & 11: Account switch "
                       "Get ACL of the bucket  - run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test apply FULL_CONTROL ACL on the bucket and deny GetBucketAcl on bucket api in policy ."
@@ -11456,11 +11495,11 @@ _date
         email_id_1 = test_5120_cfg["emailid_1"].format(random_id)
         result_1 = self.create_s3iamcli_acc(account_name_1, email_id_1)
         canonical_id_user_1 = result_1[0]
-        ACL_OBJ_1 = result_1[2]
+        self.acl_obj_1 = result_1[2]
         self.log.info("New account created.")
         self.log.info(
             "Step 1: Create a bucket and upload object in the bucket. - run from default account")
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         resp = create_file(
             self.file_path,
@@ -11470,7 +11509,7 @@ _date
         for i in range(bkt_policy_cfg["range_val"]):
             obj_name = "{0}{1}{2}".format(
                 obj_prefix, str(int(time.time())), str(i))
-            resp = S3_OBJ.put_object(
+            resp = self.s3_obj.put_object(
                 bucket_name, obj_name, self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
@@ -11478,7 +11517,7 @@ _date
             "Step 1: Created bucket and uploaded object in the bucket. - run from default account")
         self.log.info(
             "Step 2: Apply READ_ACP ACL on the bucket to account2. - run from default account")
-        resp = ACL_OBJ.put_object_with_acl(
+        resp = self.acl_obj.put_object_with_acl(
             bucket_name=bucket_name,
             key=object_names[0],
             file_path=self.file_path,
@@ -11488,14 +11527,14 @@ _date
             "Step 2: Applied READ_ACP ACL on the bucket to account2. - run from default account")
         self.log.info(
             "Step 3: Check the object ACL to verify the applied ACL.  - run from default account")
-        resp = ACL_OBJ.get_object_acl(bucket=bucket_name,
+        resp = self.acl_obj.get_object_acl(bucket=bucket_name,
                                       object_key=object_names[0])
         assert resp[0], resp[1]
         self.log.info(
             "Step 3: Checked the object ACL to verify the applied ACL.  - run from default account")
         self.log.info("Step 4 & 5: Account switch"
                       "Get object ACL. - run from account1")
-        resp = ACL_OBJ_1.get_object_acl(bucket=bucket_name,
+        resp = self.acl_obj_1.get_object_acl(bucket=bucket_name,
                                         object_key=object_names[0])
         assert resp[0], resp[1]
         self.log.info("Step 4 & 5: Account switch "
@@ -11519,7 +11558,7 @@ _date
         self.log.info("Step 10 & 11: Account switch "
                       "Get object ACL - run from account1")
         try:
-            ACL_OBJ_1.get_object_acl(bucket=bucket_name,
+            self.acl_obj_1.get_object_acl(bucket=bucket_name,
                                      object_key=object_names[0])
         except CTException as error:
             self.log.error(error.message)
@@ -11527,10 +11566,10 @@ _date
         self.log.info("Step 10 & 11: Account switch"
                       "Get object ACL - run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test apply READ_ACP ACL on the object and deny GetobjectAcl on object api in policy ."
@@ -11557,11 +11596,11 @@ _date
         email_id_1 = test_5122_cfg["emailid_1"].format(random_id)
         result_1 = self.create_s3iamcli_acc(account_name_1, email_id_1)
         canonical_id_user_1 = result_1[0]
-        ACL_OBJ_1 = result_1[2]
+        self.acl_obj_1 = result_1[2]
         self.log.info("New account created.")
         self.log.info(
             "Step 1: Create a bucket and upload object in the bucket. - run from default account")
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         resp = create_file(
             self.file_path,
@@ -11571,7 +11610,7 @@ _date
         for i in range(bkt_policy_cfg["range_val"]):
             obj_name = "{0}{1}{2}".format(
                 obj_prefix, str(int(time.time())), str(i))
-            resp = S3_OBJ.put_object(
+            resp = self.s3_obj.put_object(
                 bucket_name, obj_name, self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
@@ -11579,7 +11618,7 @@ _date
             "Step 1: Created bucket and uploaded object in the bucket. - run from default account")
         self.log.info(
             "Step 2: Apply FULL_CONTROL ACL on the object to account2. - run from default account")
-        resp = ACL_OBJ.put_object_with_acl(
+        resp = self.acl_obj.put_object_with_acl(
             bucket_name=bucket_name,
             key=object_names[0],
             file_path=self.file_path,
@@ -11589,14 +11628,14 @@ _date
             "Step 2: Apply FULL_CONTROL ACL on the object to account2. - run from default account")
         self.log.info(
             "Step 3: Check the object ACL to verify the applied ACL.  - run from default account")
-        resp = ACL_OBJ.get_object_acl(bucket=bucket_name,
+        resp = self.acl_obj.get_object_acl(bucket=bucket_name,
                                       object_key=object_names[0])
         assert resp[0], resp[1]
         self.log.info(
             "Step 3: Checked the object ACL to verify the applied ACL.  - run from default account")
         self.log.info("Step 4 & 5: Account switch "
                       "Get object ACL. - run from account1")
-        resp = ACL_OBJ_1.get_object_acl(bucket=bucket_name,
+        resp = self.acl_obj_1.get_object_acl(bucket=bucket_name,
                                         object_key=object_names[0])
         assert resp[0], resp[1]
         self.log.info("Step 4 & 5: Account switch"
@@ -11620,7 +11659,7 @@ _date
         self.log.info("Step 10 & 11: Account switch "
                       "Get object ACL - run from account1")
         try:
-            ACL_OBJ_1.get_object_acl(bucket=bucket_name,
+            self.acl_obj_1.get_object_acl(bucket=bucket_name,
                                      object_key=object_names[0])
         except CTException as error:
             self.log.error(error.message)
@@ -11628,10 +11667,10 @@ _date
         self.log.info("Step 10 & 11: Account switch "
                       "Get object ACL - run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test apply FULL_CONTROL ACL on the object and deny GetobjectAcl on object api in policy ."
@@ -11688,7 +11727,7 @@ _date
         self.log.info(
             "Step 7 & 8: Account switch"
             "Apply WRITE ACL on the bucket to account2. - run from default account")
-        resp = ACL_OBJ.put_bucket_acl(
+        resp = self.acl_obj.put_bucket_acl(
             bucket_name=bucket_name,
             grant_write=test_5123_cfg["id_str"].format(canonical_id_user_1))
         assert resp[0], resp[1]
@@ -11697,7 +11736,7 @@ _date
             "Applied WRITE ACL on the bucket to account2. - run from default account")
         self.log.info(
             "Step 9: Check the bucket ACL to verify and applied ACL. - run from default account")
-        resp = ACL_OBJ.get_bucket_acl(bucket_name)
+        resp = self.acl_obj.get_bucket_acl(bucket_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 9: Check the bucket ACL to verify and applied ACL. - run from default account")
@@ -11707,10 +11746,10 @@ _date
         self.log.info("Step 10 & 11: Account switch"
                       "List objects from the bucket - run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test apply allow ListBucket api on bucket in policy and WRITE ACL on the bucket."
@@ -11739,9 +11778,9 @@ _date
         email_id_1 = test_5126_cfg["emailid_1"].format(random_id)
         result_1 = self.create_s3iamcli_acc(account_name_1, email_id_1)
         canonical_id_user_1 = result_1[0]
-        ACL_OBJ_1 = result_1[2]
+        self.acl_obj_1 = result_1[2]
         self.s3test_obj_1 = result_1[1]
-        S3_BKT_POLICY_OBJ_1 = result_1[3]
+        self.s3_bkt_policy_obj_1 = result_1[3]
         self.log.info("New account created.")
         self.log.info(
             "Step 1: Create a bucket and upload object in the bucket. - run from default account")
@@ -11765,7 +11804,7 @@ _date
         self.log.info(
             "Step 5 & 6: Account switch"
             "Apply READ_ACP ACL on the bucket to account2. - run from account1")
-        resp = ACL_OBJ_1.put_bucket_acl(
+        resp = self.acl_obj_1.put_bucket_acl(
             bucket_name=bucket_name,
             grant_read_acp=test_5126_cfg["id_str"].format(canonical_id_user_1))
         assert resp[0], resp[1]
@@ -11774,21 +11813,21 @@ _date
             "Applied READ_ACP ACL on the bucket to account2. - run from account1")
         self.log.info(
             "Step 7: Check the bucket ACL to verify and applied ACL. - run from account1")
-        resp = ACL_OBJ_1.get_bucket_acl(bucket_name)
+        resp = self.acl_obj_1.get_bucket_acl(bucket_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 7: Check the bucket ACL to verify and applied ACL. - run from account1")
         self.log.info("Step 8: Put bucket ACL - run from account1")
-        resp = ACL_OBJ_1.put_bucket_acl(
+        resp = self.acl_obj_1.put_bucket_acl(
             bucket_name=bucket_name,
             grant_read_acp=test_5126_cfg["id_str"].format(canonical_id_user_1))
         assert resp[0], resp[1]
         self.log.info("Step 8: Put bucket ACL - run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test apply allow PutBucketAcl api on bucket in policy and READ_ACP ACL on the bucket."
@@ -11815,7 +11854,7 @@ _date
         email_id_1 = test_5124_cfg["emailid_1"].format(random_id)
         result_1 = self.create_s3iamcli_acc(account_name_1, email_id_1)
         canonical_id_user_1 = result_1[0]
-        ACL_OBJ_1 = result_1[2]
+        self.acl_obj_1 = result_1[2]
         self.s3test_obj_1 = result_1[1]
         self.log.info("New account created.")
         self.log.info(
@@ -11849,7 +11888,7 @@ _date
         self.log.info(
             "Step 7 & 8: Account switch"
             "Apply READ ACL on the bucket to account2. - run from default account")
-        resp = ACL_OBJ.put_bucket_acl(
+        resp = self.acl_obj.put_bucket_acl(
             bucket_name=bucket_name,
             grant_read=test_5124_cfg["id_str"].format(canonical_id_user_1))
         assert resp[0], resp[1]
@@ -11858,7 +11897,7 @@ _date
             "Applied READ ACL on the bucket to account2. - run from default account")
         self.log.info(
             "Step 9: Check the bucket ACL to verify the applied ACL. - run from default account")
-        resp = ACL_OBJ.get_bucket_acl(bucket_name)
+        resp = self.acl_obj.get_bucket_acl(bucket_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 9: Check the bucket ACL to verify the applied ACL. - run from default account")
@@ -11870,10 +11909,10 @@ _date
         self.log.info(
             "Step 10 & 11: Put object in the bucket . - run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test apply allow PutObject api on bucket in policy and READ ACL on the bucket."
@@ -11900,7 +11939,7 @@ _date
         email_id_1 = test_5125_cfg["emailid_1"].format(random_id)
         result_1 = self.create_s3iamcli_acc(account_name_1, email_id_1)
         canonical_id_user_1 = result_1[0]
-        ACL_OBJ_1 = result_1[2]
+        self.acl_obj_1 = result_1[2]
         self.s3test_obj_1 = result_1[1]
         self.log.info("New account created.")
         self.log.info(
@@ -11926,7 +11965,7 @@ _date
         self.log.info(
             "Step 5 & 6: Account switch"
             "Get ACL's of the bucket - run from account1")
-        resp = ACL_OBJ_1.get_bucket_acl(bucket_name)
+        resp = self.acl_obj_1.get_bucket_acl(bucket_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 5 & 6: Account switch"
@@ -11934,7 +11973,7 @@ _date
         self.log.info(
             "Step 7 & 8: Account switch"
             "Apply WRITE_ACP ACL on the bucket to account2. - run from default account")
-        resp = ACL_OBJ.put_bucket_acl(
+        resp = self.acl_obj.put_bucket_acl(
             bucket_name=bucket_name,
             grant_write_acp=test_5125_cfg["id_str"].format(canonical_id_user_1))
         assert resp[0], resp[1]
@@ -11943,22 +11982,22 @@ _date
             "Applied WRITE_ACP ACL on the bucket to account2. - run from default account")
         self.log.info(
             "Step 9: Check the bucket ACL to verify the applied ACL. - run from default account")
-        resp = ACL_OBJ.get_bucket_acl(bucket_name)
+        resp = self.acl_obj.get_bucket_acl(bucket_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 9: Check the bucket ACL to verify the applied ACL. - run from default account")
         self.log.info("Step 10 & 11: Account switch"
                       "Get bucket ACL. - run from account1")
-        resp = ACL_OBJ_1.get_bucket_acl(bucket_name)
+        resp = self.acl_obj_1.get_bucket_acl(bucket_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 10 & 11:  Account switch"
             "Get bucket ACL - run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test apply allow GetBucketAcl api on bucket in policy and WRITE_ACP ACL on the bucket."
@@ -11985,12 +12024,12 @@ _date
         email_id_1 = test_5137_cfg["emailid_1"].format(random_id)
         result_1 = self.create_s3iamcli_acc(account_name_1, email_id_1)
         canonical_id_user_1 = result_1[0]
-        ACL_OBJ_1 = result_1[2]
+        self.acl_obj_1 = result_1[2]
         self.s3test_obj_1 = result_1[1]
         self.log.info("New account created.")
         self.log.info(
             "Step 1: Create a bucket and upload object in the bucket. - run from default account")
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         resp = create_file(
             self.file_path,
@@ -12000,7 +12039,7 @@ _date
         for i in range(bkt_policy_cfg["range_val"]):
             obj_name = "{0}{1}{2}".format(
                 obj_prefix, str(int(time.time())), str(i))
-            resp = S3_OBJ.put_object(
+            resp = self.s3_obj.put_object(
                 bucket_name, obj_name, self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
@@ -12025,7 +12064,7 @@ _date
         self.log.info(
             "Step 5 & 6: Account switch"
             "Get object ACL. - run from account1")
-        resp = ACL_OBJ_1.get_object_acl(bucket=bucket_name,
+        resp = self.acl_obj_1.get_object_acl(bucket=bucket_name,
                                         object_key=object_names[0])
         assert resp[0], resp[1]
         self.log.info(
@@ -12034,7 +12073,7 @@ _date
         self.log.info(
             "Step 7 & 8: Account switch"
             "Apply READ ACL on the object to account2. - run from default account")
-        resp = ACL_OBJ.put_object_with_acl(
+        resp = self.acl_obj.put_object_with_acl(
             bucket_name=bucket_name,
             key=object_names[0],
             file_path=self.file_path,
@@ -12045,7 +12084,7 @@ _date
             "Applied READ ACL on the object to account2. - run from default account")
         self.log.info(
             "Step 9: Check the object ACL to verify the applied ACL.  - run from default account")
-        resp = ACL_OBJ.get_object_acl(bucket=bucket_name,
+        resp = self.acl_obj.get_object_acl(bucket=bucket_name,
                                       object_key=object_names[0])
         assert resp[0], resp[1]
         self.log.info(
@@ -12053,17 +12092,17 @@ _date
         self.log.info(
             "Step 10 & 11: Account switch"
             "Get object ACL. - run from account1")
-        resp = ACL_OBJ_1.get_object_acl(bucket=bucket_name,
+        resp = self.acl_obj_1.get_object_acl(bucket=bucket_name,
                                         object_key=object_names[0])
         assert resp[0], resp[1]
         self.log.info(
             "Step 10 & 11: Account switch"
             "Get object ACL. - run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test apply allow GetobjectAcl api on object in policy and READ ACL on the object."
@@ -12118,10 +12157,10 @@ _date
         self.log.info("Step 5 & 6: "
                       "Listed object in the bucket . - run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test bucket policy authorization on bucket with API ListBucket"
@@ -12148,7 +12187,7 @@ _date
         account_name_1 = test_6969_cfg["account_name_1"].format(random_id)
         email_id_1 = test_6969_cfg["emailid_1"].format(random_id)
         result_1 = self.create_s3iamcli_acc(account_name_1, email_id_1)
-        ACL_OBJ_1 = result_1[2]
+        self.acl_obj_1 = result_1[2]
         account_id_1 = result_1[6]
         canonical_id_user_1 = result_1[0]
         self.s3test_obj_1 = result_1[1]
@@ -12175,21 +12214,21 @@ _date
             "Checked the bucket policy to verify the applied policy - run from default account")
         self.log.info("Step 5 & 6: Account switch"
                       "Put ACL on account1 bucket . - run from account1")
-        resp = ACL_OBJ_1.put_bucket_acl(
+        resp = self.acl_obj_1.put_bucket_acl(
             bucket_name=bucket_name,
             grant_read_acp=bkt_policy_cfg["id_str"].format(canonical_id_user_1))
         assert resp[0], resp[1]
         self.log.info("Step 5 & 6: Account switch "
                       "Put ACL on account1 bucket . - run from account1")
         self.log.info("Step 7: Get acl of bucket - run from account1")
-        resp = ACL_OBJ_1.get_bucket_acl(bucket_name)
+        resp = self.acl_obj_1.get_bucket_acl(bucket_name)
         assert resp[0], resp[1]
         self.log.info("Step 7: Get acl of bucket - run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test bucket policy authorization on bucket with API PutBucketAcl ."
@@ -12216,7 +12255,7 @@ _date
         email_id_1 = test_6991_cfg["emailid_1"].format(random_id)
         result_1 = self.create_s3iamcli_acc(account_name_1, email_id_1)
         account_id_1 = result_1[6]
-        S3_BKT_POLICY_OBJ_1 = result_1[3]
+        self.s3_bkt_policy_obj_1 = result_1[3]
         self.s3test_obj_1 = result_1[1]
         self.log.info("New account created.")
         self.log.info(
@@ -12243,7 +12282,7 @@ _date
             "Step 5 & 6: Account switch "
             "Put bucket policy of account1 bucket - run from account1")
         try:
-            S3_BKT_POLICY_OBJ_1.put_bucket_policy(
+            self.s3_bkt_policy_obj_1.put_bucket_policy(
                 bucket_name, bucket_policy)
         except CTException as error:
             self.log.error(error.message)
@@ -12255,10 +12294,10 @@ _date
             "Step 5 & 6: Account switch "
             "Put bucket policy of account1 bucket - run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test bucket policy authorization on bucket with API PutBucketPolicy"
@@ -12285,7 +12324,7 @@ _date
         email_id_1 = test_6992_cfg["emailid_1"].format(random_id)
         result_1 = self.create_s3iamcli_acc(account_name_1, email_id_1)
         account_id_1 = result_1[6]
-        S3_BKT_POLICY_OBJ_1 = result_1[3]
+        self.s3_bkt_policy_obj_1 = result_1[3]
         self.s3test_obj_1 = result_1[1]
         self.log.info("New account created.")
         self.log.info(
@@ -12312,7 +12351,7 @@ _date
             "Step 5 & 6: Account switch "
             "Put bucket policy of account1 bucket - run from account1")
         try:
-            S3_BKT_POLICY_OBJ_1.get_bucket_policy(bucket_name)
+            self.s3_bkt_policy_obj_1.get_bucket_policy(bucket_name)
         except CTException as error:
             self.log.error(error.message)
             assert test_6992_cfg["error_message"] in error.message, error.message
@@ -12323,10 +12362,10 @@ _date
             "Step 5 & 6: Account switch "
             "Put bucket policy of account1 bucket - run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test bucket policy authorization on bucket with API GetBucketPolicy."
@@ -12357,7 +12396,7 @@ _date
         self.log.info("New account created.")
         self.log.info(
             "Step 1: Create a bucket and upload object in the bucket. - run from default account")
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         resp = create_file(
             self.file_path,
@@ -12367,7 +12406,7 @@ _date
         for i in range(bkt_policy_cfg["range_val"]):
             obj_name = "{0}{1}{2}".format(
                 obj_prefix, str(int(time.time())), str(i))
-            resp = S3_OBJ.put_object(
+            resp = self.s3_obj.put_object(
                 bucket_name, obj_name, self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
@@ -12401,10 +12440,10 @@ _date
             "Step 5 & 6: Account switch"
             "Get object of default account bucket - run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test bucket policy authorization on object with API GetObject ."
@@ -12432,11 +12471,11 @@ _date
         result_1 = self.create_s3iamcli_acc(account_name_1, email_id_1)
         account_id_1 = result_1[6]
         self.s3test_obj_1 = result_1[1]
-        ACL_OBJ_1 = result_1[2]
+        self.acl_obj_1 = result_1[2]
         self.log.info("New account created.")
         self.log.info(
             "Step 1: Create a bucket and upload object in the bucket. - run from default account")
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         resp = create_file(
             self.file_path,
@@ -12446,7 +12485,7 @@ _date
         for i in range(bkt_policy_cfg["range_val"]):
             obj_name = "{0}{1}{2}".format(
                 obj_prefix, str(int(time.time())), str(i))
-            resp = S3_OBJ.put_object(
+            resp = self.s3_obj.put_object(
                 bucket_name, obj_name, self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
@@ -12471,17 +12510,17 @@ _date
         self.log.info(
             "Step 5 & 6: Account switch"
             "Get object acl of default account bucket. - run from account1")
-        resp = ACL_OBJ_1.get_object_acl(bucket=bucket_name,
+        resp = self.acl_obj_1.get_object_acl(bucket=bucket_name,
                                         object_key=object_names[0])
         assert resp[0], resp[1]
         self.log.info(
             "Step 5 & 6: Account switch"
             "Get object acl of default account bucket - run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test bucket policy authorization on object with API GetObjectAcl ."
@@ -12509,18 +12548,18 @@ _date
         result_1 = self.create_s3iamcli_acc(account_name_1, email_id_1)
         account_id_1 = result_1[6]
         self.s3test_obj_1 = result_1[1]
-        S3_MULTIPART_OBJ_1 = result_1[8]
+        self.s3_mp_obj_1 = result_1[8]
         self.log.info("New account created.")
         self.log.info(
             "Step 1: Create a bucket - run from default account")
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 1: Created bucket - run from default account")
         obj_name = "{0}{1}".format(obj_prefix, random_id)
         self.log.info(
             "Step 2: Create a multipart upload on the bucket - run from default account")
-        resp = S3_MULTIPART_OBJ.create_multipart_upload(bucket_name, obj_name)
+        resp = self.s3_mp_obj.create_multipart_upload(bucket_name, obj_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 2: Created a multipart upload on the bucket - run from default account")
@@ -12541,16 +12580,16 @@ _date
         self.log.info(
             "Step 6 & 7: Account switch"
             "List bucket multipart - run from account1")
-        resp = S3_MULTIPART_OBJ_1.list_multipart_uploads(bucket_name)
+        resp = self.s3_mp_obj_1.list_multipart_uploads(bucket_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 6 & 7: Account switch"
             "Listed bucket multipart - run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test bucket policy authorization on bucket with API ListBucketMultipartUploads."
@@ -12582,13 +12621,13 @@ _date
         self.log.info("New account created.")
         self.log.info(
             "Step 1: Create a bucket - run from default account")
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 1: Created bucket - run from default account")
         self.log.info(
             "Step 2: Put bucket tagging - run from default account")
-        resp = S3_TAG_OBJ.set_bucket_tag(bucket_name,
+        resp = self.s3_tag_obj.set_bucket_tag(bucket_name,
                                          key=test_6978_cfg["key"],
                                          value=test_6978_cfg["value"])
         assert resp[0], resp[1]
@@ -12620,10 +12659,10 @@ _date
             "Step 6 & 7: Account switch"
             "Get bucket tagging - run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test bucket policy authorization on bucket with API GetBucketTagging."
@@ -12654,7 +12693,7 @@ _date
         self.log.info("New account created.")
         self.log.info(
             "Step 1: Create a bucket - run from default account")
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 1: Created bucket - run from default account")
@@ -12681,10 +12720,10 @@ _date
             "Step 5 & 6: Account switch"
             "Get bucket location - run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test bucket policy authorization on bucket with API GetBucketLocation."
@@ -12715,7 +12754,7 @@ _date
         self.log.info("New account created.")
         self.log.info(
             "Step 1: Create a bucket - run from default account")
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 1: Created bucket - run from default account")
@@ -12746,7 +12785,7 @@ _date
         self.log.info(
             "Step 7 & 8: Account switch"
             "Get bucket tagging - run from default")
-        resp = S3_TAG_OBJ.get_bucket_tagging(bucket_name)
+        resp = self.s3_tag_obj.get_bucket_tagging(bucket_name)
         assert resp[test_6988_cfg["tagset"]][0][
             test_6988_cfg["key_val"]] == test_6988_cfg["key1_validate"], resp
         assert resp[test_6988_cfg["tagset"]][0][
@@ -12755,10 +12794,10 @@ _date
             "Step 7 & 8: Account switch"
             "Get bucket tagging - run from default")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test bucket policy authorization on bucket with API PutBucketTagging ."
@@ -12785,11 +12824,11 @@ _date
         result_1 = self.create_s3iamcli_acc(account_name_1, email_id_1)
         account_id_1 = result_1[6]
         self.s3test_obj_1 = result_1[1]
-        S3_BKT_POLICY_OBJ_1 = result_1[3]
+        self.s3_bkt_policy_obj_1 = result_1[3]
         self.log.info("New account created.")
         self.log.info(
             "Step 1: Create a bucket - run from default account")
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 1: Created bucket - run from default account")
@@ -12811,7 +12850,7 @@ _date
             "Step 5 & 6: Account switch"
             "Delete bucket policy - run from account1")
         try:
-            S3_BKT_POLICY_OBJ_1.delete_bucket_policy(bucket_name)
+            self.s3_bkt_policy_obj_1.delete_bucket_policy(bucket_name)
         except CTException as error:
             self.log.error(error.message)
             assert test_6990_cfg["error_message"] in error.message, error.message
@@ -12822,10 +12861,10 @@ _date
             "Step 5 & 6: Account switch"
             "Delete bucket policy - run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test bucket policy authorization on bucket with API DeleteBucketPolicy."
@@ -12856,7 +12895,7 @@ _date
         self.log.info("New account created.")
         self.log.info(
             "Step 1: Create a bucket and upload object in the bucket. - run from default account")
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         resp = create_file(
             self.file_path,
@@ -12865,7 +12904,7 @@ _date
         object_names = []
         for i in range(bkt_policy_cfg["range_val"]):
             obj_name = "{0}{1}{2}".format(obj_prefix, random_id, str(i))
-            resp = S3_OBJ.put_object(
+            resp = self.s3_obj.put_object(
                 bucket_name, obj_name, self.file_path)
             assert resp[0], resp[1]
             object_names.append(obj_name)
@@ -12897,16 +12936,16 @@ _date
                       "Delete object - run from account1")
         self.log.info("Step 7 & 8: Account switch "
                       "List object - run from default")
-        resp = S3_OBJ.list_objects_with_prefix(
+        resp = self.s3_obj.list_objects_with_prefix(
             bucket_name, prefix=BKT_POLICY_CONF["bucket_policy"]["obj_name_prefix"])
         assert resp[0], resp[1]
         self.log.info("Step 7 & 8: Account switch "
                       "List object - run from default")
         self.log.info("set put_bucket_acl to private as part of teardown.")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
-        S3_OBJ.delete_bucket(bucket_name, force=True)
+        self.s3_obj.delete_bucket(bucket_name, force=True)
         self.log.info("set put_bucket_acl to private as part of teardown.")
         self.log.info(
             "ENDED: Test bucket policy authorization on object with API DeleteObject ."
@@ -12945,14 +12984,14 @@ _date
         self.put_get_bkt_policy(bucket_name, bucket_policy)
         self.log.info("Step 3: Listing objects of bucket with prefix")
         try:
-            resp = S3_OBJ.list_objects_with_prefix(
+            resp = self.s3_obj.list_objects_with_prefix(
                 bucket_name, prefix=bkt_policy_cfg["obj_name_prefix"])
             assert resp[0], resp[1]
             self.log.info(
                 "Step 3: Listed objects of bucket with prefix successfully")
             self.log.info("Step 4: Listing objects of bucket without prefix")
             try:
-                S3_OBJ.object_list(bucket_name)
+                self.s3_obj.object_list(bucket_name)
             except CTException as error:
                 self.log.error(error.message)
                 assert test_1295_cfg["err_message"] in error.message, error.message
@@ -12964,7 +13003,7 @@ _date
         finally:
             self.log.info(
                 "Step 5: Deleting a bucket policy for bucket %s", bucket_name)
-            resp = S3_BKT_POLICY_OBJ.delete_bucket_policy(bucket_name)
+            resp = self.s3_bkt_policy_obj.delete_bucket_policy(bucket_name)
             assert resp[0], resp[1]
             self.log.info(
                 "Step 5: Deleted a bucket policy for bucket %s", bucket_name)
@@ -13004,7 +13043,7 @@ _date
         self.put_get_bkt_policy(bucket_name, bucket_policy)
         self.log.info("Step 3: Listing objects of bucket with prefix")
         try:
-            S3_OBJ.list_objects_with_prefix(
+            self.s3_obj.list_objects_with_prefix(
                 bucket_name, prefix=bkt_policy_cfg["obj_name_prefix"])
         except CTException as error:
             self.log.error(error.message)
@@ -13013,7 +13052,7 @@ _date
             "Step 3: Listed objects of bucket with prefix failed with %s",
             test_1297_cfg["err_message"])
         self.log.info("Step 4: Listing objects of bucket without prefix")
-        resp = S3_OBJ.object_list(bucket_name)
+        resp = self.s3_obj.object_list(bucket_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 4: Listing objects of bucket without prefix successfully")
@@ -13050,7 +13089,7 @@ _date
         self.log.info("Step 3: Applying bucket policy on a bucket")
         bkt_policy_json = json.dumps(bucket_policy)
         try:
-            S3_BKT_POLICY_OBJ.put_bucket_policy(bucket_name, bkt_policy_json)
+            self.s3_bkt_policy_obj.put_bucket_policy(bucket_name, bkt_policy_json)
         except CTException as error:
             self.log.error(error.message)
             assert test_4598_cfg["err_message"] in error.message, error.message
@@ -13085,7 +13124,7 @@ _date
                 self.timestamp))
         email_id = "{0}{1}".format(account_name, bkt_policy_cfg["email_id"])
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
-        S3_OBJ_acc2 = acc_details[1]
+        self.s3_obj_acc2 = acc_details[1]
         account_id = acc_details[6]
         self.log.info(
             "Step 2: Creating a json to allow PutObject for account 2")
@@ -13097,7 +13136,7 @@ _date
             "Step 2: Created a json to allow PutObject for account 2")
         self.put_get_bkt_policy(bucket_name, bucket_policy)
         self.log.info("Step 3: Uploading an object using account 2")
-        resp = S3_OBJ_acc2.put_object(
+        resp = self.s3_obj_acc2.put_object(
             bucket_name, object_lst[0], self.file_path)
         assert resp[0], resp[1]
         self.log.info("Step 3: Uploaded an object using account 2")
@@ -13129,7 +13168,7 @@ _date
                 self.timestamp))
         email_id = "{0}{1}".format(account_name, bkt_policy_cfg["email_id"])
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
-        ACL_OBJ_acc2 = acc_details[2]
+        self.acl_obj_acc2 = acc_details[2]
         account_id = acc_details[6]
         canonical_id = acc_details[0]
         self.log.info(
@@ -13142,7 +13181,7 @@ _date
             "Step 2: Created a json to allow PutObjectAcl for account 2")
         self.put_get_bkt_policy(bucket_name, bucket_policy)
         self.log.info("Step 3: Give grant_read_acp permissions to account 2")
-        resp = ACL_OBJ_acc2.put_object_canned_acl(
+        resp = self.acl_obj_acc2.put_object_canned_acl(
             bucket_name,
             object_lst[0],
             grant_read_acp=test_cfg["id_str"].format(canonical_id))
@@ -13150,7 +13189,7 @@ _date
         self.log.info(
             "Step 3: grant_read_acp permission has been given to account 2")
         self.log.info("Step 4: Retrieving object acl using account 2")
-        resp = ACL_OBJ_acc2.get_object_acl(bucket_name, object_lst[0])
+        resp = self.acl_obj_acc2.get_object_acl(bucket_name, object_lst[0])
         assert resp[0], resp[1]
         self.log.info("Step 4: Retrieved object acl using account 2")
         self.log.info(
@@ -13181,7 +13220,7 @@ _date
                 self.timestamp))
         email_id = "{0}{1}".format(account_name, bkt_policy_cfg["email_id"])
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
-        S3_TAG_OBJ_acc2 = acc_details[7]
+        self.s3_tag_obj_acc2 = acc_details[7]
         account_id = acc_details[6]
         self.log.info(
             "Step 2: Creating a json to allow PutObjectTagging for account 2")
@@ -13193,12 +13232,12 @@ _date
             "Step 2: Created a json to allow PutObjectTagging for account 2")
         self.put_get_bkt_policy(bucket_name, bucket_policy)
         self.log.info("Step 3: Setting tag to an object from account 2")
-        resp = S3_TAG_OBJ_acc2.set_object_tag(
+        resp = self.s3_tag_obj_acc2.set_object_tag(
             bucket_name, object_lst[0], test_cfg["key"], test_cfg["value"])
         assert resp[0], resp[1]
         self.log.info("Step 3: Tag was set to an object from account 2")
         self.log.info("Step 4: Retrieving tag of an object using account 1")
-        resp = S3_TAG_OBJ.get_object_tags(bucket_name, object_lst[0])
+        resp = self.s3_tag_obj.get_object_tags(bucket_name, object_lst[0])
         assert resp[0], resp[1]
         self.log.info("Step 4: Retrieved tag of an object using account 1")
         self.log.info(
@@ -13229,10 +13268,10 @@ _date
                 self.timestamp))
         email_id = "{0}{1}".format(account_name, bkt_policy_cfg["email_id"])
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
-        S3_TAG_OBJ_acc2 = acc_details[7]
+        self.s3_tag_obj_acc2 = acc_details[7]
         account_id = acc_details[6]
         self.log.info("Step 2: Setting tag to an object")
-        resp = S3_TAG_OBJ.set_object_tag(
+        resp = self.s3_tag_obj.set_object_tag(
             bucket_name,
             object_lst[0],
             test_cfg["key"],
@@ -13249,7 +13288,7 @@ _date
             "Step 3: Created a json to allow GetObjectTagging for account 2")
         self.put_get_bkt_policy(bucket_name, bucket_policy)
         self.log.info("Step 4: Retrieving tag of an object using account 2")
-        resp = S3_TAG_OBJ_acc2.get_object_tags(bucket_name, object_lst[0])
+        resp = self.s3_tag_obj_acc2.get_object_tags(bucket_name, object_lst[0])
         assert resp[0], resp[1]
         self.log.info("Step 4: Retrieved tag of an object using account 2")
         self.log.info(
@@ -13276,14 +13315,14 @@ _date
         account_id = acc_details[6]
         s3_mp_obj_acc2 = acc_details[8]
         self.log.info("Step 1: Initiating multipart upload")
-        res = S3_MULTIPART_OBJ.create_multipart_upload(
+        res = self.s3_mp_obj.create_multipart_upload(
             bucket_name, test_cfg["object_name"])
         assert res[0], res[1]
         mpu_id = res[1]["UploadId"]
         self.log.info(
             "Step 1: Multipart Upload initiated with mpu_id %s", mpu_id)
         self.log.info("Step 2: Uploading parts into bucket")
-        resp = S3_MULTIPART_OBJ.upload_parts(
+        resp = self.s3_mp_obj.upload_parts(
             mpu_id,
             bucket_name,
             test_cfg["object_name"],
@@ -13339,7 +13378,7 @@ _date
         account_id = acc_details[6]
         s3_mp_obj_acc2 = acc_details[8]
         self.log.info("Step 1: Initiating multipart upload")
-        res = S3_MULTIPART_OBJ.create_multipart_upload(
+        res = self.s3_mp_obj.create_multipart_upload(
             bucket_name, test_cfg["object_name"])
         assert res[0], res[1]
         mpu_id = res[1]["UploadId"]
@@ -13361,7 +13400,7 @@ _date
         self.log.info("Step 3: Aborted multipart upload using account 2")
         self.log.info(
             "Step 4: Verifying multipart got aborted by listing multipart upload using account 1")
-        resp = S3_MULTIPART_OBJ.list_multipart_uploads(bucket_name)
+        resp = self.s3_mp_obj.list_multipart_uploads(bucket_name)
         assert mpu_id not in resp[1], resp[1]
         self.log.info("Step 4: Verified that multipart got aborted")
         self.log.info(
@@ -13393,7 +13432,7 @@ _date
                 self.timestamp))
         email_id = "{0}{1}".format(account_name, bkt_policy_cfg["email_id"])
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
-        S3_OBJ_acc2 = acc_details[1]
+        self.s3_obj_acc2 = acc_details[1]
         account_id = acc_details[6]
         self.log.info(
             "Step 2: Creating a json to allow HeadBucket for account 2")
@@ -13420,7 +13459,7 @@ _date
         self.log.info(
             "Step 4: Performing head bucket on a bucket %s using account 2",
             bucket_name)
-        resp = S3_OBJ_acc2.head_bucket(bucket_name)
+        resp = self.s3_obj_acc2.head_bucket(bucket_name)
         assert resp[0], resp[1]
         ASRTOBJ.assert_equals(resp[1]["BucketName"], bucket_name, resp)
         self.log.info(
@@ -13455,7 +13494,7 @@ _date
                 self.timestamp))
         email_id = "{0}{1}".format(account_name, bkt_policy_cfg["email_id"])
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
-        S3_OBJ_acc2 = acc_details[1]
+        self.s3_obj_acc2 = acc_details[1]
         account_id = acc_details[6]
         self.log.info(
             "Step 2: Creating a json to allow HeadObject for account 2")
@@ -13481,7 +13520,7 @@ _date
 
         self.put_get_bkt_policy(bucket_name, bucket_policy_2)
         self.log.info("Step 4: Performing head object using account 2")
-        resp = S3_OBJ_acc2.object_info(bucket_name, object_lst[0])
+        resp = self.s3_obj_acc2.object_info(bucket_name, object_lst[0])
         assert resp[0], resp[1]
         self.log.info("Step 4: Performed head object using account 2")
         self.log.info(
@@ -13506,7 +13545,7 @@ _date
                 self.timestamp))
         email_id = "{0}{1}".format(account_name, bkt_policy_cfg["email_id"])
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
-        S3_TAG_OBJ_acc2 = acc_details[7]
+        self.s3_tag_obj_acc2 = acc_details[7]
         account_id = acc_details[6]
         self.log.info(
             "Step 2: Creating a json to allow DeleteBucketTagging for account 2")
@@ -13532,13 +13571,13 @@ _date
         self.put_get_bkt_policy(bucket_name, bucket_policy_2)
         self.log.info(
             "Step 4: Set bucket tagging to a bucket %s", bucket_name)
-        resp = S3_TAG_OBJ.set_bucket_tag(
+        resp = self.s3_tag_obj.set_bucket_tag(
             bucket_name, test_cfg["key"], test_cfg["value"])
         assert resp[0], resp[1]
         self.log.info(
             "Step 4: Tag was set to a bucket %s", bucket_name)
         self.log.info("Step 5: Deleting bucket tagging using account 2")
-        resp = S3_TAG_OBJ_acc2.delete_bucket_tagging(bucket_name)
+        resp = self.s3_tag_obj_acc2.delete_bucket_tagging(bucket_name)
         assert resp[0], resp[1]
         self.log.info("Step 5: Deleted bucket tagging using account 2")
         self.log.info(
@@ -13569,7 +13608,7 @@ _date
                 self.timestamp))
         email_id = "{0}{1}".format(account_name, bkt_policy_cfg["email_id"])
         acc_details = self.create_s3iamcli_acc(account_name, email_id)
-        S3_TAG_OBJ_acc2 = acc_details[7]
+        self.s3_tag_obj_acc2 = acc_details[7]
         account_id = acc_details[6]
         self.log.info(
             "Step 2: Creating a json to allow DeleteObjectTagging for account 2")
@@ -13581,7 +13620,7 @@ _date
             "Step 2: Created a json to allow DeleteObjectTagging for account 2")
         self.put_get_bkt_policy(bucket_name, bucket_policy)
         self.log.info("Step 3: Setting tag to an object")
-        resp = S3_TAG_OBJ.set_object_tag(
+        resp = self.s3_tag_obj.set_object_tag(
             bucket_name,
             object_lst[0],
             test_cfg["key"],
@@ -13589,7 +13628,7 @@ _date
         assert resp[0], resp[1]
         self.log.info("Step 3: Tag was set to an object")
         self.log.info("Step 4: Deleting tag of an object using account 2")
-        resp = S3_TAG_OBJ_acc2.delete_object_tagging(
+        resp = self.s3_tag_obj_acc2.delete_object_tagging(
             bucket_name, object_lst[0])
         assert resp[0], resp[1]
         self.log.info("Step 4: Deleted tag of an object using account 2")
@@ -13618,7 +13657,7 @@ _date
         self.log.info("New account created.")
         self.log.info(
             "Step 1: Creating a bucket  - run from default account")
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 1: Created bucket - run from default account")
@@ -13666,7 +13705,7 @@ _date
         result_1 = self.create_s3iamcli_acc(account_name_1, email_id_1)
         account_id_1 = result_1[6]
         self.s3test_obj_1 = result_1[1]
-        S3_OBJ_acl_1 = result_1[2]
+        self.s3_obj_acl_1 = result_1[2]
         self.log.info("New account created.")
         self.log.info(
             "Step 1: Create a bucket and upload object in the bucket. - run from default account")
@@ -13690,13 +13729,13 @@ _date
             "Checked the bucket policy to verify the applied policy - run from default account")
         self.log.info("Step 5 & 6: Account switch "
                       "Get bucket ACL. - run from account1")
-        resp = S3_OBJ_acl_1.get_bucket_acl(bucket_name)
+        resp = self.s3_obj_acl_1.get_bucket_acl(bucket_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 5 & 6: "
             "Get bucket ACL response was success. - run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             bucket_name,
             acl=bkt_policy_cfg["acl_permission"])
         self.log.info("set put_bucket_acl to private as part of teardown")

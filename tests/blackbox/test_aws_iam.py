@@ -35,7 +35,6 @@ from config import S3_CFG
 from libs.s3 import iam_test_lib
 from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
 
-IAM_OBJ = iam_test_lib.IamTestLib()
 IAM_CFG = get_config_wrapper(fpath="config/blackbox/test_aws_iam.yaml")
 
 
@@ -62,6 +61,7 @@ class TestAwsIam:
     def setup_method(self):
         """Function to perform the setup ops for each test."""
         self.random_str = str(int(time.time()))
+        self.iam_obj = iam_test_lib.IamTestLib(endpoint_url=S3_CFG['iam_url'])
 
     def teardown_method(self):
         """
@@ -72,7 +72,7 @@ class TestAwsIam:
         """
         self.log.info("STARTED: Teardown Operations")
         user_cfg = IAM_CFG["iam_user_login"]
-        all_users = IAM_OBJ.list_users()[1]
+        all_users = self.iam_obj.list_users()[1]
         iam_users_list = [user["UserName"]
                           for user in all_users if
                           user_cfg["user_name_prefix"] in user["UserName"]]
@@ -80,18 +80,18 @@ class TestAwsIam:
         if iam_users_list:
             self.log.debug("Deleting IAM users...")
             for user in iam_users_list:
-                res = IAM_OBJ.list_access_keys(user)
+                res = self.iam_obj.list_access_keys(user)
                 if res[0]:
                     self.log.debug("Deleting user access key...")
                     keys_meta = res[1]["AccessKeyMetadata"]
                     for key in keys_meta:
-                        IAM_OBJ.delete_access_key(
+                        self.iam_obj.delete_access_key(
                             user, key["AccessKeyId"])
                     self.log.debug("Deleted user access key")
-                IAM_OBJ.delete_user(user)
+                self.iam_obj.delete_user(user)
                 self.log.debug("Deleted user : %s", user)
         account_name = self.cfg["account_name"]
-        acc_list = IAM_OBJ.list_accounts_s3iamcli(
+        acc_list = self.iam_obj.list_accounts_s3iamcli(
             LDAP_USERNAME,
             LDAP_PASSWD)[1]
         all_acc = [acc["AccountName"]
@@ -100,7 +100,7 @@ class TestAwsIam:
             self.log.info("Accounts to delete: %s", all_acc)
             for acc in all_acc:
                 self.log.info("Deleting %s account", acc)
-                IAM_OBJ.reset_access_key_and_delete_account_s3iamcli(acc)
+                self.iam_obj.reset_access_key_and_delete_account_s3iamcli(acc)
                 self.log.info("Deleted %s account", acc)
         self.log.info("ENDED: Teardown Operations")
 
@@ -110,7 +110,7 @@ class TestAwsIam:
             IAM_CFG["acc_user_mng"]["account_name"], str(int(time.time())))
         acc_email = "{}{}".format(acc_name, IAM_CFG["acc_user_mng"]["email_id"])
         self.log.info("Account name: %s, Account email: %s", acc_name, acc_email)
-        return IAM_OBJ.create_account_s3iamcli(
+        return self.iam_obj.create_account_s3iamcli(
             acc_name,
             acc_email,
             LDAP_USERNAME,
@@ -163,6 +163,7 @@ class TestAwsIam:
         secret_key = resp[1]["secret_key"]
         test_2419_cfg = IAM_CFG["test_2419"]
         new_iam_obj = iam_test_lib.IamTestLib(
+            endpoint_url=S3_CFG['iam_url'],
             access_key=access_key,
             secret_key=secret_key)
         user_nm = test_2419_cfg["user_name"].format(self.random_str)
@@ -209,6 +210,7 @@ class TestAwsIam:
         secret_key = resp[1]["secret_key"]
         test_2420_cfg = IAM_CFG["test_2420"]
         new_iam_obj = iam_test_lib.IamTestLib(
+            endpoint_url=S3_CFG['iam_url'],
             access_key=access_key,
             secret_key=secret_key)
         resp = new_iam_obj.create_user(test_2420_cfg["user_name"])
@@ -238,6 +240,7 @@ class TestAwsIam:
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
         new_iam_obj = iam_test_lib.IamTestLib(
+            endpoint_url=S3_CFG['iam_url'],
             access_key=access_key,
             secret_key=secret_key)
         test_2421_cfg = IAM_CFG["test_2421"]
@@ -267,6 +270,7 @@ class TestAwsIam:
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
         new_iam_obj = iam_test_lib.IamTestLib(
+            endpoint_url=S3_CFG['iam_url'],
             access_key=access_key,
             secret_key=secret_key)
         test_2422_cfg = IAM_CFG["test_2422"]
@@ -297,6 +301,7 @@ class TestAwsIam:
         self.new_access_key = resp[1]["access_key"]
         self.new_secret_key = resp[1]["secret_key"]
         new_iam_obj = iam_test_lib.IamTestLib(
+            endpoint_url=S3_CFG['iam_url'],
             access_key=self.new_access_key,
             secret_key=self.new_secret_key)
         test_2425_cfg = IAM_CFG["test_2425"]
@@ -333,6 +338,7 @@ class TestAwsIam:
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
         new_iam_obj = iam_test_lib.IamTestLib(
+            endpoint_url=S3_CFG['iam_url'],
             access_key=access_key,
             secret_key=secret_key)
         test_2426_cfg = IAM_CFG["test_2426"]
@@ -360,6 +366,7 @@ class TestAwsIam:
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
         new_iam_obj = iam_test_lib.IamTestLib(
+            endpoint_url=S3_CFG['iam_url'],
             access_key=access_key,
             secret_key=secret_key)
         test_2424_cfg = IAM_CFG["test_2424"]
@@ -398,6 +405,7 @@ class TestAwsIam:
         secret_key = resp[1]["secret_key"]
         test_2418_cfg = IAM_CFG["test_2418"]
         new_iam_obj = iam_test_lib.IamTestLib(
+            endpoint_url=S3_CFG['iam_url'],
             access_key=access_key,
             secret_key=secret_key)
         user_nm = test_2418_cfg["user_name"].format(self.random_str)
@@ -431,7 +439,7 @@ class TestAwsIam:
         self.log.info(
             "Step 1: Creating user with name %s",
             IAM_CFG["acc_user_mng"]["user_name"])
-        resp = IAM_OBJ.create_user_using_s3iamcli(
+        resp = self.iam_obj.create_user_using_s3iamcli(
             IAM_CFG["acc_user_mng"]["user_name"], access_key, secret_key)
         assert_true(resp[0], resp[1])
         self.log.info(
@@ -441,7 +449,7 @@ class TestAwsIam:
             "Step 2: Creating user with existing name %s",
             IAM_CFG["acc_user_mng"]["user_name"])
         try:
-            IAM_OBJ.create_user(
+            self.iam_obj.create_user(
                 IAM_CFG["acc_user_mng"]["user_name"])
         except CTException as error:
             assert_in(
@@ -470,6 +478,7 @@ class TestAwsIam:
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
         iam_obj = iam_test_lib.IamTestLib(
+            endpoint_url=S3_CFG['iam_url'],
             access_key=access_key,
             secret_key=secret_key)
         self.log.info(
@@ -527,6 +536,7 @@ class TestAwsIam:
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
         iam_obj = iam_test_lib.IamTestLib(
+            endpoint_url=S3_CFG['iam_url'],
             access_key=access_key,
             secret_key=secret_key)
         self.log.info(
@@ -582,6 +592,7 @@ class TestAwsIam:
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
         new_iam_obj = iam_test_lib.IamTestLib(
+            endpoint_url=S3_CFG['iam_url'],
             access_key=access_key,
             secret_key=secret_key)
         test_2429_cfg = IAM_CFG["test_2429"]

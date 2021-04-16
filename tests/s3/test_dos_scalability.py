@@ -36,7 +36,6 @@ from scripts.s3_bench import s3bench as s3b_obj
 from libs.s3 import S3H_OBJ, CM_CFG, S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
 
-S3_OBJ = S3TestLib()
 SCAL_CFG = read_yaml("config/s3/test_dos_scalability.yaml")[1]
 
 
@@ -75,6 +74,7 @@ class TestDosScalability:
         Define few variable, will be used while executing test and for cleanup.
         """
         self.log.info("STARTED: Setup operations")
+        self.s3_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
         self.log.info("Step: hctl status should show all services as STARTED")
         status, resp = S3H_OBJ.check_s3services_online()
         assert_true(status, resp)
@@ -94,12 +94,12 @@ class TestDosScalability:
         self.log.info("STARTED: Teardown operations")
         self.log.info(
             "Deleting all buckets/objects created during TC execution")
-        bucket_list = S3_OBJ.bucket_list()[1]
+        bucket_list = self.s3_obj.bucket_list()[1]
         pref_list = [
             each_bucket for each_bucket in bucket_list if each_bucket.startswith(
                 SCAL_CFG["test_scalability"]["bkt_name_prefix"])]
         if pref_list:
-            S3_OBJ.delete_multiple_buckets(pref_list)
+            self.s3_obj.delete_multiple_buckets(pref_list)
         self.log.info("All the buckets/objects deleted successfully")
         self.log.info("Deleting files created during execution")
         for file in self.log_file:
@@ -124,7 +124,7 @@ class TestDosScalability:
             "Step 2: Executed s3bench run with objects upto 20billion and obj size 1B.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
-        res = S3_OBJ.create_bucket(bucket_name)
+        res = self.s3_obj.create_bucket(bucket_name)
         assert_true(res[0], res[1])
         for _ in range(test_cfg["loop"]):
             res = s3b_obj.s3bench(
@@ -164,7 +164,7 @@ class TestDosScalability:
             "Step 2: Perform with {test_cfg['num_clients']} constant s3 operations.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
-        res = S3_OBJ.create_bucket(bucket_name)
+        res = self.s3_obj.create_bucket(bucket_name)
         assert_true(res[0], res[1])
         for _ in range(test_cfg["loop"]):
             res = s3b_obj.s3bench(
@@ -211,7 +211,7 @@ class TestDosScalability:
             "Step 2: Perform with {test_cfg['num_clients']} constant s3 operations.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
-        res = S3_OBJ.create_bucket(bucket_name)
+        res = self.s3_obj.create_bucket(bucket_name)
         assert_true(res[0], res[1])
         for _ in range(test_cfg["loop"]):
             res = s3b_obj.s3bench(
@@ -259,7 +259,7 @@ class TestDosScalability:
             "Step 2: Perform with {test_cfg['num_clients']} constant s3 operations.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
-        res = S3_OBJ.create_bucket(bucket_name)
+        res = self.s3_obj.create_bucket(bucket_name)
         assert_true(res[0], res[1])
         for _ in range(test_cfg["loop"]):
             res = s3b_obj.s3bench(
@@ -306,7 +306,7 @@ class TestDosScalability:
         self.log.info("Step 2: Perform with n constant s3 operations.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
-        res = S3_OBJ.create_bucket(bucket_name)
+        res = self.s3_obj.create_bucket(bucket_name)
         assert_true(res[0], res[1])
         count = 0
         for client in test_cfg["nclients"]:
@@ -364,7 +364,7 @@ class TestDosScalability:
         self.log.info("Step 2: Perform with n constant s3 operations.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
         bucket_name = test_cfg["bucket_name"].format(self.random_id)
-        res = S3_OBJ.create_bucket(bucket_name)
+        res = self.s3_obj.create_bucket(bucket_name)
         assert_true(res[0], res[1])
         for client in test_cfg["nclients"]:
             res = s3b_obj.s3bench(

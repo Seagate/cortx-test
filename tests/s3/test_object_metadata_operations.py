@@ -30,9 +30,8 @@ from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from config import S3_OBJ_TST
 from commons.utils.system_utils import create_file, remove_file, path_exists, make_dirs, cleanup_dir
-from libs.s3 import s3_test_lib
+from libs.s3 import s3_test_lib, S3_CFG
 
-S3_TEST_OBJ = s3_test_lib.S3TestLib()
 
 class TestObjectMetadataOperations:
     """"Object Metadata Operations Testsuite."""
@@ -56,6 +55,7 @@ class TestObjectMetadataOperations:
 
         It will perform all prerequisite test steps if any.
         """
+        self.s3_test_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
         if not path_exists(self.folder_path):
             resp = make_dirs(self.folder_path)
             self.log.info("Created path: %s", resp)
@@ -70,11 +70,11 @@ class TestObjectMetadataOperations:
                 "cleaned path: %s, resp: %s",
                 self.folder_path,
                 resp)
-        bucket_list = S3_TEST_OBJ.bucket_list()
+        bucket_list = self.s3_test_obj.bucket_list()
         pref_list = [
             each_bucket for each_bucket in bucket_list[1] if each_bucket.startswith(
                 self.bkt_name_prefix)]
-        S3_TEST_OBJ.delete_multiple_buckets(pref_list)
+        self.s3_test_obj.delete_multiple_buckets(pref_list)
         if os.path.exists(self.file_path):
             remove_file(
                 self.file_path)
@@ -101,20 +101,20 @@ class TestObjectMetadataOperations:
         m_key = kwargs.get("m_key", None)
         m_value = kwargs.get("m_value", None)
         self.log.info("Creating a bucket %s", bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(bucket_name)
+        resp = self.s3_test_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         self.log.info("Created a bucket %s", bucket_name)
         create_file(file_path, mb_count)
         self.log.info(
             "Uploading an object %s to bucket %s",
             obj_name, bucket_name)
-        resp = S3_TEST_OBJ.put_object(
+        resp = self.s3_test_obj.put_object(
             bucket_name, obj_name, file_path, m_key=m_key, m_value=m_value)
         assert resp[0], resp[1]
         self.log.info(
             "Uploaded an object %s to bucket %s", obj_name, bucket_name)
         self.log.info("Listing objects from a bucket %s", bucket_name)
-        resp = S3_TEST_OBJ.object_list(bucket_name)
+        resp = self.s3_test_obj.object_list(bucket_name)
         assert resp[0], resp[1]
         assert obj_name in resp[1], resp[1]
         self.log.info(
@@ -122,7 +122,7 @@ class TestObjectMetadataOperations:
         if m_key:
             self.log.info(
                 "Retrieving metadata of an object %s", obj_name)
-            resp = S3_TEST_OBJ.object_info(bucket_name, obj_name)
+            resp = self.s3_test_obj.object_info(bucket_name, obj_name)
             assert resp[0], resp[1]
             assert m_key in resp[1]["Metadata"], resp[1]
             self.log.info(
@@ -191,7 +191,7 @@ class TestObjectMetadataOperations:
             self.new_file_path,
             S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info("Uploading an object with same key and new content")
-        resp = S3_TEST_OBJ.object_upload(
+        resp = self.s3_test_obj.object_upload(
             S3_OBJ_TST["test_8546"]["bucket_name"],
             S3_OBJ_TST["test_8546"]["obj_name"],
             self.new_file_path)
@@ -200,7 +200,7 @@ class TestObjectMetadataOperations:
         self.log.info(
             "Verified that object is uploaded with same key and new content")
         self.log.info("Listing objects from a bucket")
-        resp = S3_TEST_OBJ.object_list(
+        resp = self.s3_test_obj.object_list(
             S3_OBJ_TST["test_8546"]["bucket_name"])
         assert resp[0], resp[1]
         assert S3_OBJ_TST["test_8546"]["obj_name"] in resp[1], resp[1]
@@ -258,7 +258,7 @@ class TestObjectMetadataOperations:
         self.log.info(
             "Creating a bucket with name %s",
             S3_OBJ_TST["test_8550"]["bucket_name"])
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             S3_OBJ_TST["test_8550"]["bucket_name"])
         assert resp[0], resp[1]
         assert resp[1] == S3_OBJ_TST["test_8550"]["bucket_name"], resp[1]
@@ -279,7 +279,7 @@ class TestObjectMetadataOperations:
         self.log.info("Uploading an object to a bucket %s",
                          S3_OBJ_TST["test_8550"]["bucket_name"])
         try:
-            S3_TEST_OBJ.put_object(
+            self.s3_test_obj.put_object(
                 S3_OBJ_TST["test_8550"]["bucket_name"],
                 obj_key,
                 self.file_path)
@@ -320,7 +320,7 @@ class TestObjectMetadataOperations:
         self.log.info(
             "Creating a bucket with name %s",
             S3_OBJ_TST["test_8552"]["bucket_name"])
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             S3_OBJ_TST["test_8552"]["bucket_name"])
         assert resp[0], resp[1]
         assert resp[1] == S3_OBJ_TST["test_8552"]["bucket_name"], resp[1]
@@ -333,7 +333,7 @@ class TestObjectMetadataOperations:
         for each_obj in S3_OBJ_TST["test_8552"]["obj_list"]:
             self.log.info(
                 "Uploading an oject %s to a bucket", each_obj)
-            resp = S3_TEST_OBJ.put_object(
+            resp = self.s3_test_obj.put_object(
                 S3_OBJ_TST["test_8552"]["bucket_name"],
                 each_obj,
                 self.file_path)
@@ -344,7 +344,7 @@ class TestObjectMetadataOperations:
         self.log.info(
             "Verifying objects are uploaded to a bucket %s",
             S3_OBJ_TST["test_8552"]["bucket_name"])
-        resp = S3_TEST_OBJ.object_list(
+        resp = self.s3_test_obj.object_list(
             S3_OBJ_TST["test_8552"]["bucket_name"])
         assert resp[0], resp[1]
         for each_obj in object_list:
@@ -367,7 +367,7 @@ class TestObjectMetadataOperations:
         self.log.info(
             "Creating a bucket with name %s",
             S3_OBJ_TST["test_8553"]["bucket_name"])
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             S3_OBJ_TST["test_8553"]["bucket_name"])
         assert resp[0], resp[1]
         assert resp[1] == S3_OBJ_TST["test_8553"]["bucket_name"], resp[1]
@@ -380,7 +380,7 @@ class TestObjectMetadataOperations:
         for each_obj in S3_OBJ_TST["test_8553"]["obj_list"]:
             self.log.info(
                 "Uploading an oject %s to a bucket", each_obj)
-            resp = S3_TEST_OBJ.put_object(
+            resp = self.s3_test_obj.put_object(
                 S3_OBJ_TST["test_8553"]["bucket_name"],
                 each_obj,
                 self.file_path)
@@ -391,7 +391,7 @@ class TestObjectMetadataOperations:
         self.log.info(
             "Verifying objects are uploaded to a bucket %s",
             S3_OBJ_TST["test_8553"]["bucket_name"])
-        resp = S3_TEST_OBJ.object_list(
+        resp = self.s3_test_obj.object_list(
             S3_OBJ_TST["test_8553"]["bucket_name"])
         assert resp[0], resp[1]
         for each_obj in object_list:
@@ -444,7 +444,7 @@ class TestObjectMetadataOperations:
             S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info(
             "Updating user defined metadata while adding new object")
-        resp = S3_TEST_OBJ.put_object(
+        resp = self.s3_test_obj.put_object(
             S3_OBJ_TST["test_8555"]["bucket_name"],
             S3_OBJ_TST["test_8555"]["new_obj"],
             self.new_file_path,
@@ -454,13 +454,13 @@ class TestObjectMetadataOperations:
         self.log.info("Updated user defined metadata")
         self.log.info("Listing object from a bucket %s",
                          S3_OBJ_TST["test_8555"]["bucket_name"])
-        resp = S3_TEST_OBJ.object_list(
+        resp = self.s3_test_obj.object_list(
             S3_OBJ_TST["test_8555"]["bucket_name"])
         assert resp[0], resp[1]
         assert S3_OBJ_TST["test_8555"]["new_obj"] in resp[1], resp[1]
         self.log.info("Objects are listed from a bucket")
         self.log.info("Retrieving updated object info")
-        resp = S3_TEST_OBJ.object_info(
+        resp = self.s3_test_obj.object_info(
             S3_OBJ_TST["test_8555"]["bucket_name"],
             S3_OBJ_TST["test_8555"]["new_obj"])
         assert resp[0], resp[1]
@@ -513,7 +513,7 @@ class TestObjectMetadataOperations:
         self.log.info(
             "Creating a bucket with name %s",
             S3_OBJ_TST["test_8558"]["bucket_name"])
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             S3_OBJ_TST["test_8558"]["bucket_name"])
         assert resp[0], resp[1]
         assert resp[1] == S3_OBJ_TST["test_8558"]["bucket_name"], resp[1]
@@ -541,7 +541,7 @@ class TestObjectMetadataOperations:
             "Uploading an object to a bucket %s with metadata size greater than 2KB",
             S3_OBJ_TST["test_8558"]["bucket_name"])
         try:
-            S3_TEST_OBJ.put_object(
+            self.s3_test_obj.put_object(
                 S3_OBJ_TST["test_8558"]["bucket_name"],
                 S3_OBJ_TST["test_8558"]["obj_name"],
                 self.file_path,
@@ -561,7 +561,7 @@ class TestObjectMetadataOperations:
         self.log.info(
             "Creating a bucket with name %s",
             S3_OBJ_TST["test_8913"]["bucket_name"])
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             S3_OBJ_TST["test_8913"]["bucket_name"])
         assert resp[0], resp[1]
         assert resp[1] == S3_OBJ_TST["test_8913"]["bucket_name"], resp[1]
@@ -576,7 +576,7 @@ class TestObjectMetadataOperations:
         for count in range(S3_OBJ_TST["test_8913"]["obj_count"]):
             obj_name = "{0}{1}".format(
                 S3_OBJ_TST["test_8913"]["obj_name"], str(count))
-            resp = S3_TEST_OBJ.object_upload(
+            resp = self.s3_test_obj.object_upload(
                 S3_OBJ_TST["test_8913"]["bucket_name"],
                 obj_name,
                 self.file_path)
@@ -586,7 +586,7 @@ class TestObjectMetadataOperations:
         self.log.info(
             "Verifying objects are uploaded to a bucket %s",
             S3_OBJ_TST["test_8913"]["bucket_name"])
-        resp = S3_TEST_OBJ.object_list(
+        resp = self.s3_test_obj.object_list(
             S3_OBJ_TST["test_8913"]["bucket_name"])
         assert resp[0], resp[1]
         assert len(

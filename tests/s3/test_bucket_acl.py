@@ -34,11 +34,7 @@ from commons.utils import assert_utils
 from commons.utils.system_utils import create_file, make_dirs, cleanup_dir, path_exists
 from commons.utils.system_utils import remove_dirs
 from libs.s3 import s3_test_lib, iam_test_lib, s3_acl_test_lib
-from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
-
-S3_OBJ = s3_test_lib.S3TestLib()
-IAM_OBJ = iam_test_lib.IamTestLib()
-ACL_OBJ = s3_acl_test_lib.S3AclTestLib()
+from libs.s3 import LDAP_USERNAME, LDAP_PASSWD, S3_CFG
 
 BKT_ACL_CONFIG = read_yaml("config/s3/test_bucket_acl.yaml")[1]
 
@@ -90,7 +86,7 @@ class TestBucketACL():
         """Helper method for creating bucket with acl."""
         account_name = "{}{}".format(self.account_name, str(int(time.time())))
         email_id = "{}{}".format(str(int(time.time())), self.email_id)
-        resp = IAM_OBJ.create_account_s3iamcli(
+        resp = self.iam_obj.create_account_s3iamcli(
             account_name, email_id, self.ldap_user, self.ldap_pwd)
         assert resp[0], resp[1]
         access_key = resp[1]["access_key"]
@@ -99,7 +95,7 @@ class TestBucketACL():
         bucket_name = "{}{}".format(
             bucket, str(int(time.time())))
         s3_obj_acl = s3_acl_test_lib.S3AclTestLib(
-            access_key=access_key, secret_key=secret_key)
+            endpoint_url=S3_CFG["s3_url"], access_key=access_key, secret_key=secret_key)
         try:
             s3_obj_acl.create_bucket_with_acl(
                 bucket_name=bucket_name,
@@ -115,7 +111,9 @@ class TestBucketACL():
         Description: It will perform all prerequisite test steps if any.
         """
         self.log.info("STARTED: Setup Operations")
-
+        self.s3_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
+        self.iam_obj = iam_test_lib.IamTestLib(endpoint_url=S3_CFG["iam_url"])
+        self.acl_obj = s3_acl_test_lib.S3AclTestLib(endpoint_url=S3_CFG["s3_url"])
         if not path_exists(self.test_dir_path):
             resp = make_dirs(self.test_dir_path)
             self.log.info("Created path: %s", resp)
@@ -132,40 +130,41 @@ class TestBucketACL():
                 self.test_dir_path,
                 resp)
         self.log.info("Deleting buckets in default account")
-        resp = S3_OBJ.bucket_list()
+        resp = self.s3_obj.bucket_list()
         pref_list = [
             each_bucket for each_bucket in resp[1] if each_bucket.startswith(
                 BKT_ACL_CONFIG["bucket_acl"]["bkt_name_prefix"])]
         for bucket in pref_list:
-            ACL_OBJ.put_bucket_acl(
+            self.acl_obj.put_bucket_acl(
                 bucket, acl=BKT_ACL_CONFIG["bucket_acl"]["bkt_permission"])
-        S3_OBJ.delete_multiple_buckets(pref_list)
+        self.s3_obj.delete_multiple_buckets(pref_list)
         self.log.info("Deleted buckets in default account")
         self.log.info(
             "Deleting IAM accounts with prefix: %s", self.account_name)
-        acc_list = IAM_OBJ.list_accounts_s3iamcli(
+        acc_list = self.iam_obj.list_accounts_s3iamcli(
             self.ldap_user, self.ldap_pwd)[1]
         all_acc = [acc["AccountName"]
                    for acc in acc_list if self.account_name in acc["AccountName"]]
         self.log.info(all_acc)
         for acc_name in all_acc:
-            resp = IAM_OBJ.reset_account_access_key_s3iamcli(
+            resp = self.iam_obj.reset_account_access_key_s3iamcli(
                 acc_name,
                 self.ldap_user,
                 self.ldap_pwd)
             access_key = resp[1]["AccessKeyId"]
             secret_key = resp[1]["SecretKey"]
-            s3_obj_temp = s3_test_lib.S3TestLib(access_key, secret_key)
+            s3_obj_temp = s3_test_lib.S3TestLib(
+                endpoint_url=S3_CFG["s3_url"], access_key=access_key, secret_key=secret_key)
             self.log.info(
                 "Deleting buckets in %s account if any", acc_name)
             bucket_list = s3_obj_temp.bucket_list()[1]
             self.log.info(bucket_list)
             s3_obj_acl = s3_acl_test_lib.S3AclTestLib(
-                access_key, secret_key)
+                endpoint_url=S3_CFG["s3_url"], access_key=access_key, secret_key=secret_key)
             for bucket in bucket_list:
                 s3_obj_acl.put_bucket_acl(bucket, acl="private")
             s3_obj_temp.delete_all_buckets()
-            IAM_OBJ.reset_access_key_and_delete_account_s3iamcli(acc_name)
+            self.iam_obj.reset_access_key_and_delete_account_s3iamcli(acc_name)
         self.log.info("Deleted IAM accounts successfully")
         self.log.info("ENDED: Teardown Operations")
 
@@ -180,9 +179,9 @@ class TestBucketACL():
             BKT_ACL_CONFIG["bucket_acl"]["bkt_name_prefix"],
             BKT_ACL_CONFIG["test_10008"]["bucket_name"])
         bucket_permission = BKT_ACL_CONFIG["test_10008"]["bucket_permission"]
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
-        resp = ACL_OBJ.get_bucket_acl(bucket_name)
+        resp = self.acl_obj.get_bucket_acl(bucket_name)
         assert resp[0], resp[1]
         assert_utils.assert_equals(
             resp[1][1][0]["Permission"],
@@ -199,7 +198,7 @@ class TestBucketACL():
         self.log.info("verify Get Bucket ACL of non existing Bucket")
         bucket_name = BKT_ACL_CONFIG["test_10009"]["bucket_name"]
         try:
-            ACL_OBJ.get_bucket_acl(bucket_name)
+            self.acl_obj.get_bucket_acl(bucket_name)
         except CTException as error:
             assert BKT_ACL_CONFIG["test_10009"]["err_message"] in str(
                 error.message), error.message
@@ -216,9 +215,9 @@ class TestBucketACL():
             BKT_ACL_CONFIG["bucket_acl"]["bkt_name_prefix"],
             BKT_ACL_CONFIG["test_10010"]["bucket_name"])
         bucket_permission = BKT_ACL_CONFIG["test_10010"]["bucket_permission"]
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
-        resp = ACL_OBJ.get_bucket_acl(bucket_name)
+        resp = self.acl_obj.get_bucket_acl(bucket_name)
         assert resp[0], resp[1]
         assert_utils.assert_equals(
             resp[1][1][0]["Permission"],
@@ -238,17 +237,17 @@ class TestBucketACL():
             BKT_ACL_CONFIG["bucket_acl"]["bkt_name_prefix"],
             BKT_ACL_CONFIG["test_10011"]["bucket_name"])
         bucket_permission = BKT_ACL_CONFIG["test_10011"]["bucket_permission"]
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         self.log.info(resp)
         assert_utils.assert_equals(resp[1], bucket_name, resp[1])
         create_file(self.test_file_path,
                     BKT_ACL_CONFIG["test_10011"]["file_size"])
-        resp = S3_OBJ.object_upload(bucket_name,
+        resp = self.s3_obj.object_upload(bucket_name,
                                     self.test_file,
                                     self.test_file_path)
         assert resp[0], resp[1]
-        resp = ACL_OBJ.get_bucket_acl(bucket_name)
+        resp = self.acl_obj.get_bucket_acl(bucket_name)
         assert resp[0], resp[1]
         assert_utils.assert_equals(
             resp[1][1][0]["Permission"],
@@ -265,7 +264,7 @@ class TestBucketACL():
         """Verify Get Bucket ACL without Bucket name."""
         self.log.info("Verify Get Bucket ACL without Bucket name")
         try:
-            ACL_OBJ.get_bucket_acl(None)
+            self.acl_obj.get_bucket_acl(None)
         except CTException as error:
             assert BKT_ACL_CONFIG["test_10012"]["err_message"] in str(
                 error.message), error.message
@@ -281,12 +280,12 @@ class TestBucketACL():
         bucket_name = "{}{}".format(
             BKT_ACL_CONFIG["bucket_acl"]["bkt_name_prefix"],
             BKT_ACL_CONFIG["test_10013"]["bucket_name"])
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
-        resp = S3_OBJ.delete_bucket(bucket_name)
+        resp = self.s3_obj.delete_bucket(bucket_name)
         assert resp[0], resp[1]
         try:
-            ACL_OBJ.get_bucket_acl(bucket_name)
+            self.acl_obj.get_bucket_acl(bucket_name)
         except CTException as error:
             assert BKT_ACL_CONFIG["test_10013"]["err_message"] in str(
                 error.message), error.message
@@ -302,7 +301,7 @@ class TestBucketACL():
             "verify Get Bucket ACL of existing Bucket with associated Account credentials")
         acc_name = "{}{}".format(self.account_name, str(int(time.time())))
         email = "{}{}".format(str(int(time.time())), self.email_id, )
-        resp = IAM_OBJ.create_account_s3iamcli(acc_name,
+        resp = self.iam_obj.create_account_s3iamcli(acc_name,
                                                email,
                                                self.ldap_user, self.ldap_pwd)
         assert resp[0], resp[1]
@@ -316,14 +315,14 @@ class TestBucketACL():
                     time.time())))
         bucket_permission = BKT_ACL_CONFIG["test_10014"]["bucket_permission"]
         s3_obj_acl = s3_test_lib.S3TestLib(
-            access_key=access_key, secret_key=secret_key)
+            endpoint_url=S3_CFG["s3_url"], access_key=access_key, secret_key=secret_key)
         resp = s3_obj_acl.create_bucket(bucket_name)
         assert resp[0], resp[1]
 
         resp = s3_obj_acl.bucket_list()
         assert resp[0], resp[1]
         assert bucket_name in str(resp[1]), resp[1]
-        resp = ACL_OBJ.get_bucket_acl_using_iam_credentials(
+        resp = self.acl_obj.get_bucket_acl_using_iam_credentials(
             access_key, secret_key, bucket_name)
         assert resp[0], resp[1]
         assert_utils.assert_equals(
@@ -348,7 +347,7 @@ class TestBucketACL():
         for account, email in zip(accounts, emails):
             account = "{}{}".format(account, str(int(time.time())))
             email = "{}{}".format(str(int(time.time())), email)
-            resp = IAM_OBJ.create_account_s3iamcli(
+            resp = self.iam_obj.create_account_s3iamcli(
                 account, email, self.ldap_user, self.ldap_pwd)
             assert resp[0], resp[1]
             access_keys.append(resp[1]["access_key"])
@@ -357,6 +356,7 @@ class TestBucketACL():
             BKT_ACL_CONFIG["test_10015"]["bucket_name"], str(int(time.time())))
         err_message = BKT_ACL_CONFIG["test_10015"]["err_message"]
         s3_obj_acl = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=access_keys[0],
             secret_key=secret_keys[0])
         resp = s3_obj_acl.create_bucket(bucket_name)
@@ -365,7 +365,7 @@ class TestBucketACL():
         assert resp[0], resp[1]
         assert bucket_name in resp[1], resp[1]
         try:
-            ACL_OBJ.get_bucket_acl_using_iam_credentials(
+            self.acl_obj.get_bucket_acl_using_iam_credentials(
                 access_keys[1], secret_keys[1], bucket_name)
         except CTException as error:
             assert err_message in str(error.message), error.message
@@ -387,7 +387,7 @@ class TestBucketACL():
         secret_keys = []
         for account, email in zip(
                 BKT_ACL_CONFIG["test_10016"]["accounts"], BKT_ACL_CONFIG["test_10016"]["emails"]):
-            resp = IAM_OBJ.create_account_s3iamcli(
+            resp = self.iam_obj.create_account_s3iamcli(
                 f"{account}{str(int(time.time()))}",
                 f"{str(int(time.time()))}{email}",
                 self.ldap_user,
@@ -399,6 +399,7 @@ class TestBucketACL():
             BKT_ACL_CONFIG["test_10016"]["bucket_name"], str(int(time.time())))
         err_message = BKT_ACL_CONFIG["test_10016"]["err_message"]
         s3_obj_acl = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=access_keys[0],
             secret_key=secret_keys[0])
         resp = s3_obj_acl.create_bucket(bucket_name)
@@ -407,6 +408,7 @@ class TestBucketACL():
         assert resp[0], resp[1]
         assert bucket_name in resp[1], resp[1]
         iam_obj_acl = iam_test_lib.IamTestLib(
+            endpoint_url=S3_CFG["iam_url"],
             access_key=access_keys[1],
             secret_key=secret_keys[1])
         resp = iam_obj_acl.create_user(user_name)
@@ -416,7 +418,7 @@ class TestBucketACL():
         access_key_user = resp[1]["AccessKey"]["AccessKeyId"]
         secret_key_user = resp[1]["AccessKey"]["SecretAccessKey"]
         try:
-            ACL_OBJ.get_bucket_acl_using_iam_credentials(
+            self.acl_obj.get_bucket_acl_using_iam_credentials(
                 access_key_user, secret_key_user, bucket_name)
         except CTException as error:
             assert err_message in str(error.message), error.message
@@ -585,12 +587,12 @@ class TestBucketACL():
             str(int(time.time())), BKT_ACL_CONFIG["test_10776"]["bucket_name"])
         acc_str = "AccountName = {0}".format(account_name)
         acc_list = []
-        resp = IAM_OBJ.list_accounts_s3iamcli(self.ldap_user, self.ldap_pwd)
+        resp = self.iam_obj.list_accounts_s3iamcli(self.ldap_user, self.ldap_pwd)
         if acc_str in resp[1]:
             acc_list.append(account_name)
         if acc_list:
-            IAM_OBJ.delete_multiple_accounts(acc_list)
-        resp = IAM_OBJ.create_account_s3iamcli(
+            self.iam_obj.delete_multiple_accounts(acc_list)
+        resp = self.iam_obj.create_account_s3iamcli(
             account_name,
             email_id,
             self.ldap_user,
@@ -599,9 +601,9 @@ class TestBucketACL():
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
         s3_test = s3_test_lib.S3TestLib(
-            access_key=access_key, secret_key=secret_key)
+            endpoint_url=S3_CFG["s3_url"], access_key=access_key, secret_key=secret_key)
         s3_obj_acl = s3_acl_test_lib.S3AclTestLib(
-            access_key=access_key, secret_key=secret_key)
+            endpoint_url=S3_CFG["s3_url"], access_key=access_key, secret_key=secret_key)
         resp = s3_test.create_bucket(bucket_name)
         assert resp[0], resp[1]
         assert_utils.assert_equals(resp[1], bucket_name, resp[1])
@@ -623,7 +625,7 @@ class TestBucketACL():
         resp = s3_test.delete_bucket(bucket_name)
         assert resp[0], resp[1]
         self.log.info("Deleting an account %s", account_name)
-        resp = IAM_OBJ.delete_account_s3iamcli(
+        resp = self.iam_obj.delete_account_s3iamcli(
             account_name, access_key, secret_key)
         assert resp[0], resp[1]
         self.log.info(
@@ -650,12 +652,12 @@ class TestBucketACL():
             str(int(time.time())), BKT_ACL_CONFIG["test_10777"]["bucket_name"])
         acc_str = "AccountName = {0}".format(account_name)
         acc_list = []
-        resp = IAM_OBJ.list_accounts_s3iamcli(self.ldap_user, self.ldap_pwd)
+        resp = self.iam_obj.list_accounts_s3iamcli(self.ldap_user, self.ldap_pwd)
         if acc_str in resp[1]:
             acc_list.append(account_name)
         if acc_list:
-            IAM_OBJ.delete_multiple_accounts(acc_list)
-        resp = IAM_OBJ.create_account_s3iamcli(
+            self.iam_obj.delete_multiple_accounts(acc_list)
+        resp = self.iam_obj.create_account_s3iamcli(
             account_name,
             email_id,
             self.ldap_user,
@@ -664,8 +666,9 @@ class TestBucketACL():
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
         s3_test = s3_test_lib.S3TestLib(
-            access_key=access_key, secret_key=secret_key)
+            endpoint_url=S3_CFG["s3_url"], access_key=access_key, secret_key=secret_key)
         s3_obj_acl = s3_acl_test_lib.S3AclTestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=access_key, secret_key=secret_key)
 
         resp = s3_test.create_bucket(bucket_name)
@@ -690,7 +693,7 @@ class TestBucketACL():
         resp = s3_test.delete_bucket(bucket_name, force=True)
         assert resp[0], resp[1]
         self.log.info("Deleting an account %s", account_name)
-        resp = IAM_OBJ.delete_account_s3iamcli(
+        resp = self.iam_obj.delete_account_s3iamcli(
             account_name, access_key, secret_key)
         assert resp[0], resp[1]
         self.log.info(
@@ -717,12 +720,12 @@ class TestBucketACL():
         bucket_name = "{}{}".format(
             str(int(time.time())), BKT_ACL_CONFIG["test_10778"]["bucket_name"])
         acc_list = []
-        resp = IAM_OBJ.list_accounts_s3iamcli(self.ldap_user, self.ldap_pwd)
+        resp = self.iam_obj.list_accounts_s3iamcli(self.ldap_user, self.ldap_pwd)
         if f"AccountName = {account_name}" in resp[1]:
             acc_list.append(account_name)
         if acc_list:
-            IAM_OBJ.delete_multiple_accounts(acc_list)
-        resp = IAM_OBJ.create_account_s3iamcli(
+            self.iam_obj.delete_multiple_accounts(acc_list)
+        resp = self.iam_obj.create_account_s3iamcli(
             account_name,
             email_id,
             self.ldap_user,
@@ -732,9 +735,9 @@ class TestBucketACL():
         secret_key = resp[1]["secret_key"]
         canonical_id = resp[1]["canonical_id"]
         s3_test = s3_test_lib.S3TestLib(
-            access_key=access_key, secret_key=secret_key)
+            endpoint_url=S3_CFG["s3_url"], access_key=access_key, secret_key=secret_key)
         s3_obj_acl = s3_acl_test_lib.S3AclTestLib(
-            access_key=access_key, secret_key=secret_key)
+            endpoint_url=S3_CFG["s3_url"], access_key=access_key, secret_key=secret_key)
         resp = s3_test.create_bucket(bucket_name=bucket_name)
         assert resp[0], resp[1]
         assert_utils.assert_equals(resp[1], bucket_name, resp[1])
@@ -768,7 +771,7 @@ class TestBucketACL():
         resp = s3_test.delete_bucket(bucket_name)
         assert resp[0], resp[1]
         self.log.info("Deleting an account %s", account_name)
-        resp = IAM_OBJ.delete_account_s3iamcli(
+        resp = self.iam_obj.delete_account_s3iamcli(
             account_name, access_key, secret_key)
         assert resp[0], resp[1]
         self.log.info(
@@ -797,7 +800,7 @@ class TestBucketACL():
             account = "{}{}".format(account, str(int(time.time())))
             account_name.append(account)
             email = "{}{}".format(str(int(time.time())), email)
-            resp = IAM_OBJ.create_account_s3iamcli(account, email,
+            resp = self.iam_obj.create_account_s3iamcli(account, email,
                                                    self.ldap_user,
                                                    self.ldap_pwd)
             assert resp[0], resp[1]
@@ -808,12 +811,15 @@ class TestBucketACL():
             BKT_ACL_CONFIG["test_10837"]["bucket_name"], str(int(time.time())))
 
         s3_obj1 = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=access_keys[0],
             secret_key=secret_keys[0])
         acl_obj1 = s3_acl_test_lib.S3AclTestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=access_keys[0],
             secret_key=secret_keys[0])
         s3_obj2 = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=access_keys[1],
             secret_key=secret_keys[1])
 
@@ -843,7 +849,7 @@ class TestBucketACL():
         self.log.info("Deleting bucket")
         s3_obj1.delete_bucket(bucket_name, force=True)
         self.log.info("Deleting multiple accounts")
-        IAM_OBJ.delete_multiple_accounts(account_name)
+        self.iam_obj.delete_multiple_accounts(account_name)
         self.log.info(
             "Apply authenticated-read canned ACL to account2 and execute "
             "head-bucket from account2 on a bucket. Bucket belongs to account1")
@@ -872,7 +878,7 @@ class TestBucketACL():
             account = "{}{}".format(account, str(int(time.time())))
             account_name.append(account)
             email = "{}{}".format(str(int(time.time())), email)
-            resp = IAM_OBJ.create_account_s3iamcli(account, email,
+            resp = self.iam_obj.create_account_s3iamcli(account, email,
                                                    self.ldap_user,
                                                    self.ldap_pwd)
             assert resp[0], resp[1]
@@ -883,12 +889,15 @@ class TestBucketACL():
             BKT_ACL_CONFIG["test_10838"]["bucket_name"], str(int(time.time())))
 
         s3_obj1 = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=access_keys[0],
             secret_key=secret_keys[0])
         acl_obj1 = s3_acl_test_lib.S3AclTestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=access_keys[0],
             secret_key=secret_keys[0])
         s3_obj2 = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=access_keys[1],
             secret_key=secret_keys[1])
 
@@ -917,7 +926,7 @@ class TestBucketACL():
         self.log.info("Deleting bucket")
         s3_obj1.delete_bucket(bucket_name, force=True)
         self.log.info("Deleting multiple accounts")
-        IAM_OBJ.delete_multiple_accounts(account_name)
+        self.iam_obj.delete_multiple_accounts(account_name)
         self.log.info(
             "Apply private canned ACL to account2 and execute "
             "head-bucket from account2 on a bucket. Bucket belongs to account1")
@@ -944,7 +953,7 @@ class TestBucketACL():
             account = "{}{}".format(account, str(int(time.time())))
             account_name.append(account)
             email = "{}{}".format(str(int(time.time())), email)
-            resp = IAM_OBJ.create_account_s3iamcli(account, email,
+            resp = self.iam_obj.create_account_s3iamcli(account, email,
                                                    self.ldap_user,
                                                    self.ldap_pwd)
             assert resp[0], resp[1]
@@ -954,12 +963,15 @@ class TestBucketACL():
         bucket_name = "{}{}".format(
             BKT_ACL_CONFIG["test_10839"]["bucket_name"], str(int(time.time())))
         s3_obj1 = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=access_keys[0],
             secret_key=secret_keys[0])
         acl_obj1 = s3_acl_test_lib.S3AclTestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=access_keys[0],
             secret_key=secret_keys[0])
         s3_obj2 = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=access_keys[1],
             secret_key=secret_keys[1])
 
@@ -998,7 +1010,7 @@ class TestBucketACL():
         self.log.info("Deleting bucket")
         s3_obj1.delete_bucket(bucket_name, force=True)
         self.log.info("Deleting multiple accounts")
-        IAM_OBJ.delete_multiple_accounts(account_name)
+        self.iam_obj.delete_multiple_accounts(account_name)
         self.log.info(
             "Grant read permission to account2 and execute head-bucket "
             "from account2 on a bucket. Bucket belongs to account1")
@@ -1013,10 +1025,10 @@ class TestBucketACL():
         bucket_name = "{}{}".format(
             BKT_ACL_CONFIG["bucket_acl"]["bkt_name_prefix"],
             BKT_ACL_CONFIG["test_10840"]["bucket_name"])
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         assert_utils.assert_equals(resp[1], bucket_name, resp[1])
-        resp = S3_OBJ.head_bucket(bucket_name)
+        resp = self.s3_obj.head_bucket(bucket_name)
         assert resp[0], resp[1]
         assert_utils.assert_equals(resp[1]["BucketName"], bucket_name, resp[1])
         self.log.info("Perform a head bucket on a bucket")
@@ -1032,10 +1044,10 @@ class TestBucketACL():
             BKT_ACL_CONFIG["bucket_acl"]["bkt_name_prefix"],
             BKT_ACL_CONFIG["test_10841"]["bucket_name"])
         bucket_permission = BKT_ACL_CONFIG["test_10841"]["bucket_permission"]
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         assert_utils.assert_equals(resp[1], bucket_name, resp[1])
-        resp = ACL_OBJ.get_bucket_acl(bucket_name)
+        resp = self.acl_obj.get_bucket_acl(bucket_name)
         assert resp[0], resp[1]
         assert_utils.assert_equals(
             resp[1][1][0]["Permission"],
@@ -1058,11 +1070,11 @@ class TestBucketACL():
             BKT_ACL_CONFIG["bucket_acl"]["bkt_name_prefix"],
             test_cfg["bucket_name"].format(self.random_id))
         self.log.info("Step 1: Creating bucket: %s", bkt_name)
-        resp = S3_OBJ.create_bucket(bkt_name)
+        resp = self.s3_obj.create_bucket(bkt_name)
         assert resp[0], resp[1]
         self.log.info("Step 1: Bucket: %s created", bkt_name)
         self.log.info("Step 2: Retrieving bucket acl attributes")
-        resp = ACL_OBJ.get_bucket_acl(bkt_name)
+        resp = self.acl_obj.get_bucket_acl(bkt_name)
         assert resp[0], resp[1]
         self.log.info("Step 2: Bucket ACL was verified")
         self.log.info(
@@ -1083,10 +1095,10 @@ class TestBucketACL():
         acc_name_2 = test_cfg["account_name"].format(self.random_id)
         emailid_2 = test_cfg["email_id"].format(self.random_id)
         self.log.info("Step 1: Creating bucket: %s", bkt_name)
-        resp = S3_OBJ.create_bucket(bkt_name)
+        resp = self.s3_obj.create_bucket(bkt_name)
         assert resp[0], resp[1]
         self.log.info("Step 1: Bucket : %s created", bkt_name)
-        create_acc = IAM_OBJ.create_s3iamcli_acc(acc_name_2, emailid_2)
+        create_acc = self.iam_obj.create_s3iamcli_acc(acc_name_2, emailid_2)
         assert create_acc[0], create_acc[1]
         acl_test_2 = create_acc[1][2]
         self.log.info(
@@ -1117,15 +1129,15 @@ class TestBucketACL():
         acc_name_2 = test_cfg["account_name"].format(self.random_id)
         emailid_2 = test_cfg["email_id"].format(self.random_id)
         self.log.info("Step 1: Creating bucket: %s", bkt_name)
-        resp = S3_OBJ.create_bucket(bkt_name)
+        resp = self.s3_obj.create_bucket(bkt_name)
         assert resp[0], resp[1]
         self.log.info("Step 1: Bucket : %s is created", bkt_name)
-        create_acc = IAM_OBJ.create_s3iamcli_acc(acc_name_2, emailid_2)
+        create_acc = self.iam_obj.create_s3iamcli_acc(acc_name_2, emailid_2)
         assert create_acc[0], create_acc[1]
         cannonical_id = create_acc[1][0]
         acl_test_2 = create_acc[1][2]
         self.log.info("Step 2: Performing authenticated read acp")
-        resp = ACL_OBJ.put_bucket_acl(
+        resp = self.acl_obj.put_bucket_acl(
             bkt_name, grant_read_acp=test_cfg["id_str"].format(cannonical_id))
         assert resp[0], resp[1]
         self.log.info(
@@ -1149,38 +1161,38 @@ class TestBucketACL():
         bkt_name = "{0}{1}".format(
             BKT_ACL_CONFIG["bucket_acl"]["bkt_name_prefix"],
             test_cfg["bucket_name"].format(self.random_id))
-        create_acc = IAM_OBJ.create_s3iamcli_acc(
+        create_acc = self.iam_obj.create_s3iamcli_acc(
             self.account_name, self.email_id)
         assert create_acc[0], create_acc[1]
         cannonical_id = create_acc[1][0]
         self.log.info("Step 1: Creating bucket with name %s", bkt_name)
-        resp = S3_OBJ.create_bucket(bkt_name)
+        resp = self.s3_obj.create_bucket(bkt_name)
         assert resp[0], resp[1]
         self.log.info("Step 1: Created a bucket with name %s", bkt_name)
         self.log.info("Step 2: Verifying that bucket is created")
-        resp = S3_OBJ.bucket_list()
+        resp = self.s3_obj.bucket_list()
         assert resp[0], resp[1]
         assert bkt_name in resp[1]
         self.log.info("Step 2: Verified that bucket is created")
         self.log.info(
             "Step 3:Performing put bucket acl for bucket %s for full control",
             bkt_name)
-        resp = ACL_OBJ.put_bucket_acl(
+        resp = self.acl_obj.put_bucket_acl(
             bkt_name, grant_full_control=test_cfg["id_str"].format(cannonical_id))
         assert resp[0], resp[1]
         self.log.info(
             "Step 3:Performed put bucket, bucket %s for account 2",
             bkt_name)
         self.log.info("Step 4: Retrieving acl of a bucket %s", bkt_name)
-        resp = ACL_OBJ.get_bucket_acl(bkt_name)
+        resp = self.acl_obj.get_bucket_acl(bkt_name)
         assert resp[0], resp[1]
         self.log.info("Step 4: Retrieved acl of a bucket %s", bkt_name)
         self.log.info("Step 5: Deleting a bucket %s", bkt_name)
-        resp = S3_OBJ.delete_bucket(bkt_name)
+        resp = self.s3_obj.delete_bucket(bkt_name)
         assert resp[0], resp[1]
         self.log.info("Step 5: Deleted a bucket %s", bkt_name)
         self.log.info("Step 6: Verifying that bucket is deleted")
-        resp = S3_OBJ.bucket_list()
+        resp = self.s3_obj.bucket_list()
         assert resp[0], resp[1]
         assert bkt_name not in resp[1], resp[1]
         self.log.info("Step 6: Verified that bucket is deleted")

@@ -44,9 +44,7 @@ from libs.s3.s3_acl_test_lib import S3AclTestLib
 from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench as s3bench_obj
 
-IAM_TEST_OBJ = IamTestLib()
-ACL_OBJ = S3AclTestLib()
-S3_OBJ = S3TestLib()
+
 DATA_PATH_CFG = read_yaml("config/s3/test_data_path_validate.yaml")[1]
 
 
@@ -113,6 +111,10 @@ class TestDataPathValidation:
         Description: It will perform prerequisite test steps if any
         """
         self.log.info("STARTED: Setup operations")
+        self.s3_url = S3_CFG["s3_url"]
+        self.iam_test_obj = IamTestLib(endpoint_url=S3_CFG["s3_url"])
+        self.acl_obj = S3AclTestLib(endpoint_url=S3_CFG["s3_url"])
+        self.s3_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
         self.random_id = str(time.time())
         self.log_file = []
         if not system_utils.path_exists(self.test_dir_path):
@@ -128,25 +130,25 @@ class TestDataPathValidation:
         test execution such as S3 buckets and the objects present into that bucket.
         """
         self.log.info("STARTED: Teardown operations")
-        resp = S3_OBJ.bucket_list()
+        resp = self.s3_obj.bucket_list()
         pref_list = [
             each_bucket for each_bucket in resp[1] if each_bucket.startswith(
                 DATA_PATH_CFG["data_path"]["bkt_name_prefix"])]
         for bucket in pref_list:
-            ACL_OBJ.put_bucket_acl(
+            self.acl_obj.put_bucket_acl(
                 bucket, acl=DATA_PATH_CFG["data_path"]["bkt_permission"])
         if pref_list:
-            resp = S3_OBJ.delete_multiple_buckets(pref_list)
+            resp = self.s3_obj.delete_multiple_buckets(pref_list)
             assert_true(resp[0], resp[1])
         self.log.info("Deleting IAM accounts")
-        acc_list = IAM_TEST_OBJ.list_accounts_s3iamcli(
+        acc_list = self.iam_test_obj.list_accounts_s3iamcli(
             self.ldap_user, self.ldap_pwd)[1]
         self.log.info(acc_list)
         all_acc = [acc["AccountName"]
                    for acc in acc_list if self.account_name in acc["AccountName"]]
         self.log.info(all_acc)
         for acc_name in all_acc:
-            resp = IAM_TEST_OBJ.reset_access_key_and_delete_account_s3iamcli(
+            resp = self.iam_test_obj.reset_access_key_and_delete_account_s3iamcli(
                 acc_name)
             assert_true(resp[0], resp[1])
         self.log.info("Deleted IAM accounts successfully")
@@ -170,7 +172,7 @@ class TestDataPathValidation:
         bucket_name = "{}{}".format(test_conf["bucket_name"],
                                     str(int(time.time())))
         self.log.info("Step 2: Creating a bucket with name : %s", bucket_name)
-        res = S3_OBJ.create_bucket(bucket_name)
+        res = self.s3_obj.create_bucket(bucket_name)
         assert_true(res[0], res)
         assert_in(bucket_name, res[1], res)
         return bucket_name
@@ -194,7 +196,7 @@ class TestDataPathValidation:
             b_size=test_conf["obj_size"])
         self.log.info(resp)
         assert_true(resp[0], resp[1])
-        res = S3_OBJ.put_object(bucket_name,
+        res = self.s3_obj.put_object(bucket_name,
                                 test_conf["object_name"],
                                 self.file_path)
         assert_true(res[0], res[1])
@@ -433,9 +435,9 @@ class TestDataPathValidation:
         bucket_name = "{}{}".format(
             test_cfg["bucket_name"], time.time())
         self.log.info("Step 1: Create bucket with name %s.", bucket_name)
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert_true(resp[0], resp[1])
-        resp = S3_OBJ.bucket_list()
+        resp = self.s3_obj.bucket_list()
         assert_in(bucket_name, resp[1], resp[1])
         self.log.info("Step 1: Successfully created bucket.")
         self.log.info(
@@ -488,9 +490,9 @@ class TestDataPathValidation:
         bucket_name = "{}{}".format(
             test_cfg["bucket_name"], time.time())
         self.log.info("Step 1: Create bucket with name %s.", bucket_name)
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert_true(resp[0], resp[1])
-        resp = S3_OBJ.bucket_list()
+        resp = self.s3_obj.bucket_list()
         assert_in(bucket_name, resp[1], resp[1])
         self.log.info("Step 1: Successfully created bucket.")
         self.log.info(
@@ -547,10 +549,10 @@ class TestDataPathValidation:
         for bkt in range(test_cfg["bkt_count"]):
             bucket_name = "{}{}".format(
                 test_cfg["bucket_name"], time.time())
-            resp = S3_OBJ.create_bucket(bucket_name)
+            resp = self.s3_obj.create_bucket(bucket_name)
             assert_true(resp[0], resp[1])
             bkt_list.append(bucket_name)
-        resp = S3_OBJ.bucket_list()
+        resp = self.s3_obj.bucket_list()
         assert_in(bkt_list[0], resp[1], resp[1])
         self.log.info("Step 1: Successfully created buckets: %s.", bkt_list)
         self.log.info(
@@ -605,10 +607,10 @@ class TestDataPathValidation:
         for bkt in range(test_cfg["bkt_count"]):
             bucket_name = "{}{}".format(
                 test_cfg["bucket_name"], time.time())
-            resp = S3_OBJ.create_bucket(bucket_name)
+            resp = self.s3_obj.create_bucket(bucket_name)
             assert_true(resp[0], resp[1])
             bkt_list.append(bucket_name)
-        resp = S3_OBJ.bucket_list()
+        resp = self.s3_obj.bucket_list()
         assert_in(bkt_list[0], resp[1], resp[1])
         self.log.info("Step 1: Successfully created bucket.")
         self.log.info(

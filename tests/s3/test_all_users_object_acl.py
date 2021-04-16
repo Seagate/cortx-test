@@ -29,13 +29,8 @@ from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils.config_utils import read_yaml
 from commons.utils.system_utils import make_dirs, cleanup_dir, path_exists
+from config import S3_CFG
 from libs.s3 import s3_test_lib, iam_test_lib, s3_acl_test_lib
-
-
-S3_TEST_OBJ = s3_test_lib.S3TestLib()
-ACL_OBJ = s3_acl_test_lib.S3AclTestLib()
-NO_AUTH_OBJ = s3_test_lib.S3LibNoAuth()
-IAM_TEST_OBJ = iam_test_lib.IamTestLib()
 
 ALL_USERS_CONF = read_yaml("config/s3/test_all_users_object_acl.yaml")[1]
 
@@ -67,31 +62,31 @@ class TestAllUsers:
     def put_object_acl(self, acl):
         """helper method to put object acl and verify it."""
         if acl == "grant_read":
-            resp = ACL_OBJ.put_object_canned_acl(
+            resp = self.acl_obj.put_object_canned_acl(
                 self.bucket_name,
                 self.obj_name,
                 grant_read=self.all_user_cfg["group_uri"])
             assert resp[0], resp[1]
         elif acl == "grant_write":
-            resp = ACL_OBJ.put_object_canned_acl(
+            resp = self.acl_obj.put_object_canned_acl(
                 self.bucket_name,
                 self.obj_name,
                 grant_write=self.all_user_cfg["group_uri"])
             assert resp[0], resp[1]
         elif acl == "grant_full_control":
-            resp = ACL_OBJ.put_object_canned_acl(
+            resp = self.acl_obj.put_object_canned_acl(
                 self.bucket_name,
                 self.obj_name,
                 grant_full_control=self.all_user_cfg["group_uri"])
             assert resp[0], resp[1]
         elif acl == "grant_read_acp":
-            resp = ACL_OBJ.put_object_canned_acl(
+            resp = self.acl_obj.put_object_canned_acl(
                 self.bucket_name,
                 self.obj_name,
                 grant_read_acp=self.all_user_cfg["group_uri"])
             assert resp[0], resp[1]
         elif acl == "grant_write_acp":
-            resp = ACL_OBJ.put_object_canned_acl(
+            resp = self.acl_obj.put_object_canned_acl(
                 self.bucket_name,
                 self.obj_name,
                 grant_write_acp=self.all_user_cfg["group_uri"])
@@ -100,7 +95,7 @@ class TestAllUsers:
     def verify_obj_acl_edit(self, permission):
         """helper method to verify object's acl is changed."""
         self.log.info("Step 2: Verifying that object's acl is changed")
-        resp = ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)
+        resp = self.acl_obj.get_object_acl(self.bucket_name, self.obj_name)
         assert resp[0], resp[1]
         assert permission == resp[1]["Grants"][0]["Permission"], resp[1]
         self.log.info("Step 2: Verified that object's acl is changed")
@@ -113,6 +108,10 @@ class TestAllUsers:
         It will create a bucket and upload an object to that bucket.
         """
         self.log.info("STARTED: Setup operations")
+        self.s3_test_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
+        self.acl_obj = s3_acl_test_lib.S3AclTestLib(endpoint_url=S3_CFG["s3_url"])
+        self.no_auth_obj = s3_test_lib.S3LibNoAuth(endpoint_url=S3_CFG["s3_url"])
+        self.iam_test_obj = iam_test_lib.IamTestLib(endpoint_url=S3_CFG["iam_url"])
         if not path_exists(self.test_dir_path):
             resp = make_dirs(self.test_dir_path)
             self.log.info("Created path: %s", resp)
@@ -122,10 +121,10 @@ class TestAllUsers:
             self.all_user_cfg["obj_name"], str(int(time.time())))
         self.log.info("Creating a bucket and putting an object into bucket")
         try:
-            S3_TEST_OBJ.delete_bucket(bucket_name=self.bucket_name, force=True)
+            self.s3_test_obj.delete_bucket(bucket_name=self.bucket_name, force=True)
         except Exception as berr:
             self.log.warning(berr)
-        resp = S3_TEST_OBJ.create_bucket_put_object(
+        resp = self.s3_test_obj.create_bucket_put_object(
             self.bucket_name,
             self.obj_name,
             self.test_file_path,
@@ -134,7 +133,7 @@ class TestAllUsers:
         self.log.info(
             "Created a bucket and put an object into bucket successfully")
         self.log.info("Setting bucket ACL to FULL_CONTROL for all users")
-        resp = ACL_OBJ.put_bucket_acl(
+        resp = self.acl_obj.put_bucket_acl(
             self.bucket_name,
             grant_full_control=self.all_user_cfg["group_uri"])
         assert resp[0], resp[1]
@@ -156,16 +155,16 @@ class TestAllUsers:
                 "cleaned path: %s, resp: %s",
                 self.test_dir_path,
                 resp)
-        bucket_list = S3_TEST_OBJ.bucket_list()[1]
+        bucket_list = self.s3_test_obj.bucket_list()[1]
         all_users_buckets = [
             bucket for bucket in bucket_list if ALL_USERS_CONF["all_users_obj_acl"]["bucket_name"]
             in bucket]
         self.log.info("Deleting buckets...")
         for bucket in all_users_buckets:
-            ACL_OBJ.put_bucket_acl(
+            self.acl_obj.put_bucket_acl(
                 bucket, grant_full_control=ALL_USERS_CONF["all_users_obj_acl"]["group_uri"])
         if all_users_buckets:
-            S3_TEST_OBJ.delete_multiple_buckets(all_users_buckets)
+            self.s3_test_obj.delete_multiple_buckets(all_users_buckets)
         self.log.info("Deleted buckets.")
         self.log.info("ENDED: Teardown operations")
 
@@ -189,7 +188,7 @@ class TestAllUsers:
         self.verify_obj_acl_edit(test_695_cfg["permission"])
         self.log.info(
             "Step 3: Uploading same object into bucket using unsigned account")
-        resp = NO_AUTH_OBJ.put_object(
+        resp = self.no_auth_obj.put_object(
             self.bucket_name,
             self.obj_name,
             self.test_file_path)
@@ -220,7 +219,7 @@ class TestAllUsers:
         self.verify_obj_acl_edit(test_697_cfg["permission"])
         self.log.info(
             "Step 3: Deleting an object from bucket using unsigned account")
-        resp = NO_AUTH_OBJ.delete_object(self.bucket_name, self.obj_name)
+        resp = self.no_auth_obj.delete_object(self.bucket_name, self.obj_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 3: Deleted an object from bucket using unsigned account successfully")
@@ -249,7 +248,7 @@ class TestAllUsers:
         self.log.info(
             "Step 3: Reading an object ACL from bucket using unsigned account")
         try:
-            NO_AUTH_OBJ.get_object_acl(self.bucket_name, self.obj_name)
+            self.no_auth_obj.get_object_acl(self.bucket_name, self.obj_name)
         except CTException as error:
             self.log.error(error.message)
             assert test_698_cfg["err_message"] in error.message, error.message
@@ -281,7 +280,7 @@ class TestAllUsers:
         self.log.info(
             "Step 3: Updating an object ACL from bucket using unsigned account")
         try:
-            NO_AUTH_OBJ.put_object_canned_acl(
+            self.no_auth_obj.put_object_canned_acl(
                 self.bucket_name, self.obj_name, acl=test_699_cfg["acl"])
         except CTException as error:
             self.log.error(error.message)
@@ -314,7 +313,7 @@ class TestAllUsers:
         self.verify_obj_acl_edit(test_700_cfg["permission"])
         self.log.info(
             "Step 3: Putting an object with same name to bucket using unsigned account")
-        resp = NO_AUTH_OBJ.put_object(
+        resp = self.no_auth_obj.put_object(
             self.bucket_name,
             self.obj_name,
             self.test_file_path)
@@ -346,7 +345,7 @@ class TestAllUsers:
         self.verify_obj_acl_edit(test_701_cfg["permission"])
         self.log.info(
             "Step 3: Deleting an object from a bucket using unsigned account")
-        resp = NO_AUTH_OBJ.delete_object(self.bucket_name, self.obj_name)
+        resp = self.no_auth_obj.delete_object(self.bucket_name, self.obj_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 3: Deleted an object from a bucket using unsigned account successfully")
@@ -376,7 +375,7 @@ class TestAllUsers:
         self.log.info(
             "Step 3: Reading an object acl from a bucket using unsigned account")
         try:
-            NO_AUTH_OBJ.get_object_acl(self.bucket_name, self.obj_name)
+            self.no_auth_obj.get_object_acl(self.bucket_name, self.obj_name)
         except CTException as error:
             self.log.error(error.message)
             assert test_702_cfg["err_message"] in error.message, error.message
@@ -406,7 +405,7 @@ class TestAllUsers:
         self.log.info(
             "Step 3: Updating an object ACL using unsigned account")
         try:
-            NO_AUTH_OBJ.put_object_canned_acl(
+            self.no_auth_obj.put_object_canned_acl(
                 self.bucket_name, self.obj_name, acl=test_703_cfg["acl"])
         except CTException as error:
             self.log.error(error.message)
@@ -437,7 +436,7 @@ class TestAllUsers:
         self.verify_obj_acl_edit(test_704_cfg["permission"])
         self.log.info(
             "Step 3: Putting an object with same name in bucket using unsigned account")
-        resp = NO_AUTH_OBJ.put_object(
+        resp = self.no_auth_obj.put_object(
             self.bucket_name,
             self.obj_name,
             self.test_file_path)
@@ -468,7 +467,7 @@ class TestAllUsers:
         self.verify_obj_acl_edit(test_757_cfg["permission"])
         self.log.info(
             "Step 3: Reading an object which is uploaded to bucket using unsigned account")
-        resp = NO_AUTH_OBJ.get_object(
+        resp = self.no_auth_obj.get_object(
             self.bucket_name,
             self.obj_name)
         assert resp[0], resp[1]
@@ -500,7 +499,7 @@ class TestAllUsers:
         self.log.info(
             "Step 3: Reading an object from a bucket using unsigned account")
         try:
-            NO_AUTH_OBJ.get_object(
+            self.no_auth_obj.get_object(
                 self.bucket_name,
                 self.obj_name)
         except CTException as error:
@@ -536,7 +535,7 @@ class TestAllUsers:
         self.log.info(
             "Step 3: Reading an object from a bucket using unsigned account")
         try:
-            NO_AUTH_OBJ.get_object(
+            self.no_auth_obj.get_object(
                 self.bucket_name,
                 self.obj_name)
         except CTException as error:
@@ -571,7 +570,7 @@ class TestAllUsers:
         self.verify_obj_acl_edit(test_706_cfg["permission"])
         self.log.info(
             "Step 3: Reading acl of object from a bucket using unsigned account")
-        resp = NO_AUTH_OBJ.get_object_acl(
+        resp = self.no_auth_obj.get_object_acl(
             self.bucket_name,
             self.obj_name)
         assert resp[0], resp[1]
@@ -602,7 +601,7 @@ class TestAllUsers:
         self.log.info(
             "Step 3: Updating an object ACL using unsigned account")
         try:
-            NO_AUTH_OBJ.put_object_canned_acl(
+            self.no_auth_obj.put_object_canned_acl(
                 self.bucket_name, self.obj_name, acl=test_707_cfg["acl"])
         except CTException as error:
             self.log.error(error.message)
@@ -633,7 +632,7 @@ class TestAllUsers:
         self.verify_obj_acl_edit(test_708_cfg["permission"])
         self.log.info(
             "Step 3: Upload same object to bucket using unsigned account")
-        resp = NO_AUTH_OBJ.put_object(
+        resp = self.no_auth_obj.put_object(
             self.bucket_name,
             self.obj_name,
             self.test_file_path)
@@ -665,7 +664,7 @@ class TestAllUsers:
         self.log.info(
             "Step 3: Get object using unsigned account")
         try:
-            NO_AUTH_OBJ.get_object(
+            self.no_auth_obj.get_object(
                 self.bucket_name,
                 self.obj_name)
         except CTException as error:
@@ -698,7 +697,7 @@ class TestAllUsers:
         self.log.info(
             "Step 3: Reading acl of object from a bucket using unsigned account")
         try:
-            NO_AUTH_OBJ.get_object_acl(
+            self.no_auth_obj.get_object_acl(
                 self.bucket_name,
                 self.obj_name)
         except CTException as error:
@@ -757,7 +756,7 @@ class TestAllUsers:
         self.verify_obj_acl_edit(test_712_cfg["permission"])
         self.log.info(
             "Step 3: upload same object in that bucket using unsigned account")
-        resp = NO_AUTH_OBJ.put_object(
+        resp = self.no_auth_obj.put_object(
             self.bucket_name,
             self.obj_name,
             self.test_file_path)
@@ -788,7 +787,7 @@ class TestAllUsers:
         self.verify_obj_acl_edit(test_713_cfg["permission"])
         self.log.info(
             "Step 3: Get object from that bucket using unsigned account")
-        resp = NO_AUTH_OBJ.get_object(
+        resp = self.no_auth_obj.get_object(
             self.bucket_name,
             self.obj_name)
         assert resp[0], resp[1]
@@ -818,7 +817,7 @@ class TestAllUsers:
         self.verify_obj_acl_edit(test_714_cfg["permission"])
         self.log.info(
             "Step 3: Get object acl from that bucket using unsigned account")
-        resp = ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)
+        resp = self.acl_obj.get_object_acl(self.bucket_name, self.obj_name)
         assert resp[0], resp[1]
         assert test_714_cfg["permission"] == resp[1]["Grants"][0]["Permission"], resp[1]
         self.log.info(
@@ -851,7 +850,7 @@ class TestAllUsers:
         self.log.info(
             "Step 3: Changed object's acl to FULL_CONTROL for all users")
         self.log.info("Step 4: Verifying that object's acl is changed")
-        resp = ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)
+        resp = self.acl_obj.get_object_acl(self.bucket_name, self.obj_name)
         assert resp[0], resp[1]
         assert test_715_cfg["new_permission"] == resp[1]["Grants"][0]["Permission"], resp[1]
         self.log.info("Step 4: Verified that object's acl is changed")

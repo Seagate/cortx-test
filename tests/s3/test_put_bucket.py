@@ -32,10 +32,6 @@ from libs.s3 import S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_test_lib import S3LibNoAuth
 
-S3T_OBJ = S3TestLib()
-NO_AUTH_OBJ = S3LibNoAuth(s3_cert_path=S3_CFG["s3_cert_path"])
-NO_AUTH_OBJ_WITHOUT_CERT = S3LibNoAuth(s3_cert_path=None)
-
 
 class TestPutBucket:
     """PUT Bucket Test suite."""
@@ -59,6 +55,9 @@ class TestPutBucket:
         It will perform prerequisite test steps if any.
         """
         self.log.info("STARTED: Test setup operations.")
+        self.s3t_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
+        self.no_auth_obj = S3LibNoAuth(endpoint_url=S3_CFG["s3_url"], s3_cert_path=S3_CFG["s3_cert_path"])
+        self.no_auth_obj_without_cert = S3LibNoAuth(endpoint_url=S3_CFG["s3_url"], s3_cert_path=None)
         self.bucket_name = "-".join(["putbk", str(time.time())])
         self.log.info("ENDED: Test setup operations.")
 
@@ -70,10 +69,10 @@ class TestPutBucket:
         which are getting created during test execution .
         """
         self.log.info("STARTED: Test teardown operations.")
-        status, bktlist = S3T_OBJ.bucket_list()
+        status, bktlist = self.s3t_obj.bucket_list()
         assert_utils.assert_true(status, bktlist)
         if self.bucket_name in bktlist:
-            resp = S3T_OBJ.delete_bucket(self.bucket_name, force=True)
+            resp = self.s3t_obj.delete_bucket(self.bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("ENDED: Test teardown operations.")
 
@@ -87,7 +86,7 @@ class TestPutBucket:
         self.log.info("Step 1: Creating bucket without authorization header.")
         self.log.info("Bucket name: %s", bucket_name)
         try:
-            resp = NO_AUTH_OBJ.create_bucket(bucket_name)
+            resp = self.no_auth_obj.create_bucket(bucket_name)
             self.log.info(resp)
             assert_utils.assert_false(resp[0], resp[1])
             assert_utils.assert_not_equal(
@@ -100,7 +99,7 @@ class TestPutBucket:
                 error.message)
         self.log.info("Step 2: Listing buckets without authorization header")
         try:
-            resp = NO_AUTH_OBJ.bucket_list()
+            resp = self.no_auth_obj.bucket_list()
             self.log.info(resp)
             assert_utils.assert_false(resp[0], resp[1])
             assert_utils.assert_not_in(bucket_name, resp[1], resp)
@@ -165,7 +164,7 @@ class TestPutBucket:
         self.log.info(
             "Step 1: Creating bucket without authorization header and without ca.cert")
         try:
-            resp = NO_AUTH_OBJ_WITHOUT_CERT.create_bucket(self.bucket_name)
+            resp = self.no_auth_obj_without_cert.create_bucket(self.bucket_name)
             self.log.info(resp)
             assert_utils.assert_false(resp[0], resp[1])
             assert_utils.assert_not_equal(
@@ -178,7 +177,7 @@ class TestPutBucket:
                 error.message)
         self.log.info("Step 2: Listing buckets without authorization header")
         try:
-            resp = NO_AUTH_OBJ_WITHOUT_CERT.bucket_list()
+            resp = self.no_auth_obj_without_cert.bucket_list()
             self.log.info(resp)
             assert_utils.assert_false(resp[0], resp[1])
             assert_utils.assert_not_in(self.bucket_name, resp[1], resp)

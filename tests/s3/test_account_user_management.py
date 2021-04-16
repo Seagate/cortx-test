@@ -32,12 +32,9 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils.system_utils import create_file, remove_file
-from libs.s3 import S3H_OBJ, LDAP_USERNAME, LDAP_PASSWD
+from libs.s3 import S3H_OBJ, LDAP_USERNAME, LDAP_PASSWD, S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.iam_test_lib import IamTestLib
-
-IAM_OBJ = IamTestLib()
-S3_OBJ = S3TestLib()
 
 TEST_CFG = get_config_wrapper(fpath="config/s3/test_account_user_management.yaml")
 
@@ -95,27 +92,29 @@ class TestAccountUserManagement:
         """
         # Delete created user with prefix.
         self.log.info("STARTED: Test setup operations.")
+        self.iam_obj = IamTestLib(endpoint_url=S3_CFG["iam_url"])
+        self.s3_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
         self.log.info(
             "Delete created user with prefix: %s",
             self.acc_user_config["user_name"])
-        usr_list = IAM_OBJ.list_users()[1]
+        usr_list = self.iam_obj.list_users()[1]
         self.log.debug("Listing users: %s", usr_list)
         all_usrs = [usr["UserName"]
                     for usr in usr_list if self.acc_user_config["user_name"] in usr["UserName"]]
         if all_usrs:
-            IAM_OBJ.delete_users_with_access_key(all_usrs)
+            self.iam_obj.delete_users_with_access_key(all_usrs)
         # Delete account created with prefix.
         self.log.info(
             "Delete created account with prefix: %s",
             self.acc_user_config["user_name"])
-        acc_list = IAM_OBJ.list_accounts_s3iamcli(
+        acc_list = self.iam_obj.list_accounts_s3iamcli(
             self.ldap_user,
             self.ldap_passwd)[1]
         self.log.debug("Listing account %s", acc_list)
         all_acc = [acc["AccountName"]
                    for acc in acc_list if self.acc_user_config["user_name"] in acc["AccountName"]]
         if all_acc:
-            IAM_OBJ.delete_multiple_accounts(all_acc)
+            self.iam_obj.delete_multiple_accounts(all_acc)
         self.log.info("ENDED: Test setup operations.")
 
     def teardown_method(self):
@@ -127,27 +126,27 @@ class TestAccountUserManagement:
         """
         self.log.info("STARTED: Test teardown Operations.")
         users_list = [user["UserName"]
-                      for user in IAM_OBJ.list_users()[1]
+                      for user in self.iam_obj.list_users()[1]
                       if self.acc_user_config["user_name"] in user["UserName"]]
         self.log.info("IAM users: %s", str(users_list))
         if users_list:
             self.log.info("Deleting IAM users...")
             for user in users_list:
-                res = IAM_OBJ.list_access_keys(user)
+                res = self.iam_obj.list_access_keys(user)
                 if res[0]:
                     self.log.info("Deleting user access key...")
                     for key in res[1]["AccessKeyMetadata"]:
-                        IAM_OBJ.delete_access_key(
+                        self.iam_obj.delete_access_key(
                             user, key["AccessKeyId"])
                     self.log.info("Deleted user access key.")
                 try:
                     self.log.info("Deleting a user: %s", str(user))
-                    resp = IAM_OBJ.delete_user(user)
+                    resp = self.iam_obj.delete_user(user)
                     self.log.info(resp)
                 except CTException as error:
                     self.log.error(error)
         self.log.info("Deleted users successfully.")
-        acc_list = IAM_OBJ.list_accounts_s3iamcli(
+        acc_list = self.iam_obj.list_accounts_s3iamcli(
             self.ldap_user, self.ldap_passwd)[1]
         all_acc = [acc["AccountName"]
                    for acc in acc_list if self.acc_user_config["account_name"] in acc["AccountName"]
@@ -157,12 +156,12 @@ class TestAccountUserManagement:
             for acc in all_acc:
                 try:
                     self.log.info("Deleting %s account", str(acc))
-                    resp = IAM_OBJ.reset_account_access_key_s3iamcli(
+                    resp = self.iam_obj.reset_account_access_key_s3iamcli(
                         acc, self.ldap_user, self.ldap_passwd)
                     access_key = resp[1]["AccessKeyId"]
                     secret_key = resp[1]["SecretKey"]
                     s3_temp_obj = S3TestLib(
-                        access_key=access_key, secret_key=secret_key)
+                        endpoint_url=S3_CFG["s3_url"], access_key=access_key, secret_key=secret_key)
                     test_buckets = s3_temp_obj.bucket_list()[1]
                     if test_buckets:
                         self.log.info("Deleting all buckets...")
@@ -172,7 +171,7 @@ class TestAccountUserManagement:
                         assert resp[0], resp[1]
                         self.log.info("Deleted all buckets")
                     self.log.info("Deleting IAM accounts...")
-                    resp = IAM_OBJ.reset_access_key_and_delete_account_s3iamcli(
+                    resp = self.iam_obj.reset_access_key_and_delete_account_s3iamcli(
                         acc)
                     self.log.info(
                         "reset access_key, delete account, response: %s", resp)
@@ -184,7 +183,7 @@ class TestAccountUserManagement:
 
     def create_account(self, account_name):
         """Create s3 account using s3iamcli."""
-        response = IAM_OBJ.create_account_s3iamcli(
+        response = self.iam_obj.create_account_s3iamcli(
             account_name,
             self.acc_user_config["email_id"].format(account_name),
             self.ldap_user,
@@ -226,7 +225,7 @@ class TestAccountUserManagement:
         assert resp[0], resp[1]
         self.log.info(
             "Step 2: Listing account to verify new account is created")
-        list_of_accounts = IAM_OBJ.list_accounts_s3iamcli(
+        list_of_accounts = self.iam_obj.list_accounts_s3iamcli(
             self.ldap_user, self.ldap_passwd)
         assert list_of_accounts[0], list_of_accounts[1]
         new_accounts = [acc["AccountName"] for acc in list_of_accounts[1]]
@@ -250,7 +249,7 @@ class TestAccountUserManagement:
         secret_key = resp[1]["secret_key"]
         self.log.info(
             "Step 2: Deleting account with name %s", str(account_name))
-        resp = IAM_OBJ.delete_account_s3iamcli(
+        resp = self.iam_obj.delete_account_s3iamcli(
             account_name, access_key, secret_key)
         assert resp[0], resp[1]
         self.log.info("END: Tested Delete Account.")
@@ -273,7 +272,7 @@ class TestAccountUserManagement:
             email_id = f"{acc_name}{cnt}{cnt}@seagate.com"
             self.log.info("account name: %s", str(account_name))
             self.log.info("email id: %s", str(email_id))
-            resp = IAM_OBJ.create_account_s3iamcli(
+            resp = self.iam_obj.create_account_s3iamcli(
                 account_name, email_id, self.ldap_user, self.ldap_passwd)
             assert resp[0], resp[1]
             access_keys.append(resp[1]["access_key"])
@@ -284,7 +283,7 @@ class TestAccountUserManagement:
         self.log.info(
             "Step 2: Verifying %s accounts are created by listing accounts",
             str(total_account))
-        list_of_accounts = IAM_OBJ.list_accounts_s3iamcli(
+        list_of_accounts = self.iam_obj.list_accounts_s3iamcli(
             self.ldap_user, self.ldap_passwd)
         assert list_of_accounts[0], list_of_accounts[1]
         new_accounts = [acc["AccountName"] for acc in list_of_accounts[1]]
@@ -341,19 +340,21 @@ class TestAccountUserManagement:
         secret_key = resp[1]["secret_key"]
         self.log.info("access key: %s", str(access_key))
         self.log.info("secret key: %s", str(secret_key))
-        resp = IAM_OBJ.create_user_using_s3iamcli(
+        resp = self.iam_obj.create_user_using_s3iamcli(
             user_name, access_key, secret_key)
         self.log.info(resp)
         assert resp[0], resp[1]
         self.log.info("Created new account and new user in it")
         self.log.info("Step 2: Create access key for newly created user")
-        new_s3h_obj = IamTestLib(access_key=access_key, secret_key=secret_key)
+        new_s3h_obj = IamTestLib(
+            endpoint_url=S3_CFG["iam_url"], access_key=access_key, secret_key=secret_key)
         resp = new_s3h_obj.create_access_key(user_name)
         self.log.info(resp)
         assert resp[0], resp[1]
         user_access_key = resp[1]["AccessKey"]["AccessKeyId"]
         user_secret_key = resp[1]["AccessKey"]["SecretAccessKey"]
         s3_user_obj = S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=user_access_key,
             secret_key=user_secret_key)
         self.log.info(
@@ -412,7 +413,7 @@ class TestAccountUserManagement:
         assert resp[0], resp[1]
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
-        resp = IAM_OBJ.create_user_using_s3iamcli(
+        resp = self.iam_obj.create_user_using_s3iamcli(
             user_name, access_key, secret_key)
         self.log.info(resp)
         assert resp[0], resp[1]
@@ -423,6 +424,7 @@ class TestAccountUserManagement:
         self.log.info("user_access_key: %s and user_secret_key: %s",
                       str(user_access_key), str(user_secret_key))
         s3_user_obj = S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=user_access_key,
             secret_key=user_secret_key)
         self.log.info(
@@ -483,13 +485,13 @@ class TestAccountUserManagement:
         secret_key = resp[1]["secret_key"]
         self.log.info("access key: %s", str(access_key))
         self.log.info("secret key: %s", str(secret_key))
-        resp = IAM_OBJ.create_user_using_s3iamcli(
+        resp = self.iam_obj.create_user_using_s3iamcli(
             user_name, access_key, secret_key)
         self.log.info(resp)
         assert resp[0], resp[1]
         self.log.info("Created new account and new user in it.")
         self.log.info("Step 2: Listing users and verifying user is created.")
-        resp = IAM_OBJ.list_users_s3iamcli(access_key, secret_key)
+        resp = self.iam_obj.list_users_s3iamcli(access_key, secret_key)
         self.log.info(resp)
         self.log.info("Users_List %s", str(resp[1]))
         assert resp[0], resp[1]
@@ -511,13 +513,14 @@ class TestAccountUserManagement:
         assert resp[0], resp[1]
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
-        resp = IAM_OBJ.create_user_using_s3iamcli(
+        resp = self.iam_obj.create_user_using_s3iamcli(
             user_name, access_key, secret_key)
         self.log.info(resp)
         assert resp[0], resp[1]
         self.log.info("Step 1: Created new account and new user in it")
         self.log.info("Step 2: Updating user name of already existing user")
-        new_s3h_obj = IamTestLib(access_key=access_key, secret_key=secret_key)
+        new_s3h_obj = IamTestLib(
+            endpoint_url=S3_CFG["iam_url"], access_key=access_key, secret_key=secret_key)
         new_user_name = TEST_CFG["test_8676"]["new_user_name"]
         resp = new_s3h_obj.update_user(new_user_name, user_name)
         self.log.info(resp)
@@ -525,7 +528,7 @@ class TestAccountUserManagement:
         self.log.info("Updated user name of already existing user")
         self.log.info(
             "Step 3: Listing users and verifying user name is updated.")
-        resp = IAM_OBJ.list_users_s3iamcli(access_key, secret_key)
+        resp = self.iam_obj.list_users_s3iamcli(access_key, secret_key)
         self.log.info(resp)
         assert resp[0], resp[1]
         assert TEST_CFG["test_8676"]["new_user_name"] in resp[1], resp[1]
@@ -546,13 +549,13 @@ class TestAccountUserManagement:
         assert resp[0], resp[1]
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
-        resp = IAM_OBJ.create_user_using_s3iamcli(
+        resp = self.iam_obj.create_user_using_s3iamcli(
             user_name, access_key, secret_key)
         assert resp[0], resp[1]
         self.log.info("Step 1: Created new account and new user in it")
         self.log.info(
             "Step 2: Listing users and verifying user details are listed")
-        resp = IAM_OBJ.list_users_s3iamcli(access_key, secret_key)
+        resp = self.iam_obj.list_users_s3iamcli(access_key, secret_key)
         assert resp[0], resp[1]
         assert user_name in resp[1], resp[1]
         self.log.info("Listed users and verified user details are listed")
@@ -572,12 +575,13 @@ class TestAccountUserManagement:
         assert resp[0], resp[1]
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
-        resp = IAM_OBJ.create_user_using_s3iamcli(
+        resp = self.iam_obj.create_user_using_s3iamcli(
             user_name, access_key, secret_key)
         assert resp[0], resp[1]
         self.log.info("Created new account and new user in it")
         self.log.info("Step 2: Deleting user")
-        new_s3h_obj = IamTestLib(access_key=access_key, secret_key=secret_key)
+        new_s3h_obj = IamTestLib(
+            endpoint_url=S3_CFG["iam_url"], access_key=access_key, secret_key=secret_key)
         resp = new_s3h_obj.delete_user(user_name)
         assert resp[0], resp[1]
         self.log.info("Step 2: Deleted user successfully")
@@ -603,13 +607,14 @@ class TestAccountUserManagement:
         for cnt in range(total_users):
             my_user_name = f"{user_name}{cnt}"
             self.log.info("Creating user with name %s", str(my_user_name))
-            resp = IAM_OBJ.create_user_using_s3iamcli(
+            resp = self.iam_obj.create_user_using_s3iamcli(
                 my_user_name, access_key, secret_key)
             assert resp[0], resp[1]
             self.log.info("Created user with name %s", str(my_user_name))
         self.log.info("Step 2: Created %s users", str(total_users))
         self.log.info("Verifying %s users are created", total_users)
-        new_s3h_obj = IamTestLib(access_key=access_key, secret_key=secret_key)
+        new_s3h_obj = IamTestLib(
+            endpoint_url=S3_CFG["iam_url"], access_key=access_key, secret_key=secret_key)
         list_of_users = new_s3h_obj.list_users()[1]
         self.log.info(list_of_users)
         self.log.info("Number of users : %s", str(len(list_of_users)))
@@ -627,13 +632,13 @@ class TestAccountUserManagement:
         self.log.info("START: creating user with existing name.")
         user_name = f'{self.acc_user_config["user_name"]}_{str(int(time.time()))}'
         self.log.info("Step 1: Creating user with name %s", str(user_name))
-        resp = IAM_OBJ.create_user(user_name)
+        resp = self.iam_obj.create_user(user_name)
         assert resp[0], resp[1]
         self.log.info("Created user with name %s", str(user_name))
         self.log.info(
             "Step 2: Creating user with existing name %s", str(user_name))
         try:
-            resp = IAM_OBJ.create_user(user_name)
+            resp = self.iam_obj.create_user(user_name)
             self.log.info(resp)
             assert not resp[0], resp[1]
         except CTException as error:
@@ -651,17 +656,17 @@ class TestAccountUserManagement:
         self.log.info("START: Create Access key to the user")
         user_name = f'{self.acc_user_config["user_name"]}_{str(int(time.time()))}'
         self.log.info("Step 1: Creating a user with name %s", str(user_name))
-        resp = IAM_OBJ.create_user(user_name)
+        resp = self.iam_obj.create_user(user_name)
         assert resp[0], resp[1]
         self.log.info("Verifying user is created by listing users")
-        resp = IAM_OBJ.list_users()
+        resp = self.iam_obj.list_users()
         self.log.info("Users list %s", str(resp[1]))
         assert resp[0], resp[1]
         assert user_name in str(resp[1]), resp[1]
         self.log.info("Verified that user is created by listing users")
         self.log.info("Created a user with name %s", str(user_name))
         self.log.info("Step 2: Creating access key for the user")
-        resp = IAM_OBJ.create_access_key(user_name)
+        resp = self.iam_obj.create_access_key(user_name)
         assert resp[0], resp[1]
         self.log.info("Step 2: Created access key for the user")
         self.log.info("END: Create Access key to the user")
@@ -675,16 +680,16 @@ class TestAccountUserManagement:
         self.log.info("START: List accesskeys for the user")
         user_name = f'{self.acc_user_config["user_name"]}_{str(int(time.time()))}'
         self.log.info("Step 1: Creating a user with name %s", str(user_name))
-        resp = IAM_OBJ.create_user(user_name)
+        resp = self.iam_obj.create_user(user_name)
         assert resp[0], resp[1]
         self.log.info("Created a user with name %s", str(user_name))
         self.log.info("Step 2: Creating access key for the user")
-        resp = IAM_OBJ.create_access_key(user_name)
+        resp = self.iam_obj.create_access_key(user_name)
         assert resp[0], resp[1]
         user_access_key = resp[1]["AccessKey"]["AccessKeyId"]
         self.log.info("Created access key for the user")
         self.log.info("Step 3: Listing access key of the user")
-        resp = IAM_OBJ.list_access_keys(user_name)
+        resp = self.iam_obj.list_access_keys(user_name)
         assert resp[0], resp[1]
         resp_access_key = resp[1]["AccessKeyMetadata"][0]["AccessKeyId"]
         assert user_access_key == resp_access_key, resp[1]
@@ -700,20 +705,20 @@ class TestAccountUserManagement:
         self.log.info("START: Delete Accesskey of a users")
         user_name = f'{self.acc_user_config["user_name"]}_{str(int(time.time()))}'
         self.log.info("Step 1: Creating a user with name %s", str(user_name))
-        resp = IAM_OBJ.create_user(user_name)
+        resp = self.iam_obj.create_user(user_name)
         assert resp[0], resp[1]
         self.log.info("Created a user with name %s", str(user_name))
         self.log.info("Step 2: Creating access key for the user")
-        resp = IAM_OBJ.create_access_key(user_name)
+        resp = self.iam_obj.create_access_key(user_name)
         assert resp[0], resp[1]
         user_access_key = resp[1]["AccessKey"]["AccessKeyId"]
         self.log.info("Created access key for the user")
         self.log.info("Step 3: Deleting access key of the user")
-        resp = IAM_OBJ.delete_access_key(user_name, user_access_key)
+        resp = self.iam_obj.delete_access_key(user_name, user_access_key)
         assert resp[0], resp[1]
         self.log.info("Deleted access key of the user")
         self.log.info("Step 4: Listing access key of the user")
-        resp = IAM_OBJ.list_access_keys(user_name)
+        resp = self.iam_obj.list_access_keys(user_name)
         assert resp[0], resp[1]
         # Verifying list is empty.
         assert not resp[1]["AccessKeyMetadata"], resp[1]["AccessKeyMetadata"]
@@ -731,20 +736,20 @@ class TestAccountUserManagement:
         self.log.info("Update Accesskey of a user")
         user_name = f'{self.acc_user_config["user_name"]}_{str(int(time.time()))}'
         self.log.info("Step 1: Creating a user with name %s", str(user_name))
-        resp = IAM_OBJ.create_user(user_name)
+        resp = self.iam_obj.create_user(user_name)
         assert resp[0], resp[1]
         self.log.info("Created a user with name %s", str(user_name))
         self.log.info("Step 2: Creating access key for the user")
-        resp = IAM_OBJ.create_access_key(user_name)
+        resp = self.iam_obj.create_access_key(user_name)
         access_key_to_update = resp[1]["AccessKey"]["AccessKeyId"]
         assert resp[0], resp[1]
         self.log.info("Step 3: Updating access key of user")
-        resp = IAM_OBJ.update_access_key(
+        resp = self.iam_obj.update_access_key(
             access_key_to_update, test_8684_cfg["status"], user_name)
         assert resp[0], resp[1]
         self.log.info("Updated access key of user")
         self.log.info("Step 4: Verifying that access key of user is updated")
-        resp = IAM_OBJ.list_access_keys(user_name)
+        resp = self.iam_obj.list_access_keys(user_name)
         assert resp[0], resp[1]
         new_access_key = resp[1]["AccessKeyMetadata"][0]["AccessKeyId"]
         status = resp[1]["AccessKeyMetadata"][0]["Status"]
@@ -765,20 +770,20 @@ class TestAccountUserManagement:
         self.log.info("update accesskey of a user with inactive mode")
         user_name = f'{self.acc_user_config["user_name"]}_{str(int(time.time()))}'
         self.log.info("Step 1: Creating a user with name %s", str(user_name))
-        resp = IAM_OBJ.create_user(user_name)
+        resp = self.iam_obj.create_user(user_name)
         assert resp[0], resp[1]
         self.log.info("Created a user with name %s", str(user_name))
         self.log.info("Step 2: Creating access key for the user")
-        resp = IAM_OBJ.create_access_key(user_name)
+        resp = self.iam_obj.create_access_key(user_name)
         access_key_to_update = resp[1]["AccessKey"]["AccessKeyId"]
         assert resp[0], resp[1]
         self.log.info("Step 3: Updating access key of user")
-        resp = IAM_OBJ.update_access_key(
+        resp = self.iam_obj.update_access_key(
             access_key_to_update, test_8685_cfg["status"], user_name)
         assert resp[0], resp[1]
         self.log.info("Updated access key of user")
         self.log.info("Step 4: Verifying that access key of user is updated")
-        resp = IAM_OBJ.list_access_keys(user_name)
+        resp = self.iam_obj.list_access_keys(user_name)
         assert resp[0], resp[1]
         new_access_key = resp[1]["AccessKeyMetadata"][0]["AccessKeyId"]
         status = resp[1]["AccessKeyMetadata"][0]["Status"]
@@ -799,13 +804,13 @@ class TestAccountUserManagement:
         self.log.info("create max accesskey with existing user name")
         user_name = f'{self.acc_user_config["user_name"]}_{str(int(time.time()))}'
         self.log.info("Step 1: Creating a user with name %s", str(user_name))
-        resp = IAM_OBJ.create_user(user_name)
+        resp = self.iam_obj.create_user(user_name)
         assert resp[0], resp[1]
         self.log.info("Created a user with name %s", str(user_name))
         self.log.info("Step 2: Creating %s access keys for user %s",
                       test_8686_cfg["max_access_keys"], user_name)
         for _ in range(test_8686_cfg["max_access_keys"]):
-            resp = IAM_OBJ.create_access_key(user_name)
+            resp = self.iam_obj.create_access_key(user_name)
             assert resp[0], resp[1]
         self.log.info("END: create max accesskey with existing user name")
 
@@ -820,18 +825,18 @@ class TestAccountUserManagement:
         self.log.info("update login profile")
         user_name = f'{self.acc_user_config["user_name"]}_{str(int(time.time()))}'
         self.log.info("Step 1: Creating a user with name %s", str(user_name))
-        resp = IAM_OBJ.create_user(user_name)
+        resp = self.iam_obj.create_user(user_name)
         assert resp[0], resp[1]
         self.log.info("Created a user with name %s", str(user_name))
         self.log.info(
             "Step 2: Creating login profile for user %s", str(user_name))
-        resp = IAM_OBJ.create_user_login_profile(
+        resp = self.iam_obj.create_user_login_profile(
             user_name, test_8687_cfg["password"], test_8687_cfg["password_reset"])
         assert resp[0], resp[1]
         self.log.info("Created login profile for user %s", str(user_name))
         self.log.info(
             "Step 3: Updating login profile for user %s", str(user_name))
-        resp = IAM_OBJ.update_user_login_profile(
+        resp = self.iam_obj.update_user_login_profile(
             user_name,
             test_8687_cfg["new_password"],
             test_8687_cfg["password_reset"])
@@ -890,26 +895,26 @@ class TestAccountUserManagement:
         test_8691_cfg = TEST_CFG["test_8691"]
         user_name = f'{self.acc_user_config["user_name"]}_{str(int(time.time()))}'
         self.log.info("Step 1: Creating a user with name %s", str(user_name))
-        resp = IAM_OBJ.create_user(user_name)
+        resp = self.iam_obj.create_user(user_name)
         assert resp[0], resp[1]
         self.log.info("Created a user with name %s", str(user_name))
         self.log.info(
             "Step 2: Creating login profile for user %s", str(user_name))
-        resp = IAM_OBJ.create_user_login_profile(
+        resp = self.iam_obj.create_user_login_profile(
             user_name, test_8691_cfg["password"], test_8691_cfg["pwd_reset"])
         self.log.info(resp)
         assert resp[0], resp[1]
         self.log.info("Created login profile for user %s", str(user_name))
         self.log.info(
             "Step 3: Creating access key for user %s", str(user_name))
-        resp = IAM_OBJ.create_access_key(user_name)
+        resp = self.iam_obj.create_access_key(user_name)
         self.log.info(resp)
         assert resp[0], resp[1]
         self.log.info("Created access key for user %s", str(user_name))
         access_key = resp[1]["AccessKey"]["AccessKeyId"]
         secret_key = resp[1]["AccessKey"]["SecretAccessKey"]
         self.log.info("Step 4: Changing password for %s user", str(user_name))
-        resp = IAM_OBJ.change_user_password(
+        resp = self.iam_obj.change_user_password(
             test_8691_cfg["password"],
             test_8691_cfg["new_password"],
             access_key,
@@ -939,7 +944,7 @@ class TestAccountUserManagement:
         account_id = resp[1]["Account_Id"]
         self.log.info("Created a new account with name %s", str(account_name))
         self.log.info("Step 2: Creating a user with name %s", str(user_name))
-        resp = IAM_OBJ.create_user_using_s3iamcli(
+        resp = self.iam_obj.create_user_using_s3iamcli(
             user_name, access_key, secret_key)
         assert resp[0], resp[1]
         self.log.info("Created a user with name %s", str(user_name))
