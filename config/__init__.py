@@ -34,6 +34,7 @@ from commons.params import COMMON_DESTRUCTIVE_CONFIG_PATH
 from commons.params import PROV_TEST_CONFIG_PATH
 from commons.params import DI_CONFIG_PATH
 from commons.params import DATA_PATH_CONFIG_PATH
+from commons.params import S3_BKT_TEST_CONFIG
 
 
 def split_args(sys_cmd: List):
@@ -69,12 +70,15 @@ elif proc_name not in ["testrunner.py", "testrunner"]:
 else:
     target = None
 
+
 CMN_CFG = configmanager.get_config_wrapper(fpath=COMMON_CONFIG, target=target)
 CSM_REST_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG, config_key="Restcall",
                                                 target=target, target_key="csm")
 CSM_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG)
 S3_CFG = configmanager.get_config_wrapper(fpath=S3_CONFIG, target=target, target_key="s3")
 S3_OBJ_TST = configmanager.get_config_wrapper(fpath=S3_OBJ_TEST_CONFIG, target=target, target_key="s3")
+S3_BKT_TST = configmanager.get_config_wrapper(fpath=S3_BKT_TEST_CONFIG, target=target,
+                                            target_key="s3")
 RAS_VAL = configmanager.get_config_wrapper(fpath=RAS_CONFIG_PATH,
                                            target=target, target_key="csm")
 CMN_DESTRUCTIVE_CFG = configmanager.get_config_wrapper(fpath=COMMON_DESTRUCTIVE_CONFIG_PATH)
