@@ -19,7 +19,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-"""Multithreaded and greenlet Upload tasks. Upload files and data blobs."""
+"""Multithreaded and greenlet based Upload tasks. Upload files and data blobs."""
 
 import os
 import sys
@@ -37,16 +37,22 @@ import time
 import errno
 from pathlib import Path
 from boto3.s3.transfer import TransferConfig
-from libs.di import di_lib
-from libs.di.di_lib import Workers
-from libs.di import di_params
-from libs.di.di_mgmt_ops import ManagementOPs
 from commons.cortxlogging import init_loghandler
+from commons.utils import config_utils
+from commons.worker import Workers
+from commons.worker import WorkQ
+from commons import params
+from libs.di import di_params
+from libs.di import di_base
+from libs.di import di_lib
+from libs.di import data_man
+from libs.di.di_mgmt_ops import ManagementOPs
 from config import CMN_CFG
 from config import S3_CFG
+from commons.params import SCRIPT_HOME
+from commons.params import USER_JSON
 
 
-SCRIPT_HOME = os.getcwd()
 uploadObjects = []
 logger = logging.getLogger(__name__)
 
@@ -54,9 +60,10 @@ logger = logging.getLogger(__name__)
 class Uploader:
     """Simulates Uploads client upto 10k."""
     tsfrConfig = TransferConfig(multipart_threshold=1024 * 1024 * 16,
-                                max_concurrency=10,
+                                max_concurrency=320,
                                 multipart_chunksize=1024 * 1024 * 16,
                                 use_threads=True)
+    change_manager = None
 
     @staticmethod
     def upload(user, keys, buckets):
@@ -66,18 +73,10 @@ class Uploader:
         secret_key = keys[1]
         #timestamp = time.strftime("%Y%m%d-%H%M%S")
         #buckets = [user_name + '-' + timestamp + '-bucket' + str(i) for i in range(nbuckets)]
-        s3connections = list()
-        for ix in range(di_lib.NWORKERS):
-            try:
-                s3 = boto3.resource('s3', aws_access_key_id=access_key,
-                                    aws_secret_access_key=secret_key,
-                                    endpoint_url="https://s3.seagate.com")
-            except Exception as e:
-                logger.info(f'could not create s3 object for user {user_name} with '
-                            f'access key {access_key} secret key {secret_key} exception:{e}')
-                return
-            else:
-                s3connections.append(s3)
+        Uploader.change_manager = data_man.DataManager(user=user)
+        s3connections = di_base.init_s3_conn(user_name=user_name,
+                                             keys=keys,
+                                             nworkers=di_params.NWORKERS)
         pool_len = len(s3connections)
         for bucket in buckets:
             try:
@@ -98,7 +97,7 @@ class Uploader:
             #     logger.info(f'create bucket {bucket} Done')
             #
             workers = Workers()
-            workers.wStartWorkers(func=Uploader._upload)
+            workers.start_workers(func=Uploader._upload)
 
             for ix, each_line in enumerate(obj_file_paths):
                 reg = '\(\'(.+)\''
@@ -113,10 +112,10 @@ class Uploader:
                     kwargs['pool_len'] = pool_len
                     kwargs['match'] = m
                     workQ.put(kwargs)
-                    workers.wEnque(workQ)
+                    workers.wenque(workQ)
                     logger.info(f"Enqueued item {ix} for download and checksum compare")
             logger.info(f"processed items {ix} to upload for user {user}")
-            workers.wEndWorkers()
+            workers.end_workers()
             logger.info('Upload Workers shutdown completed successfully')
         if len(uploadObjects) > 0:
             with open(di_params.UPLOADED_FILES, 'a', newline='') as fp:
@@ -136,8 +135,10 @@ class Uploader:
         each_file_path = di_params.DATAGEN_HOME + m.group(1)
         s3 = s3connections[random.randint(0, pool_len - 1)]
         try:
-            s3.meta.client.upload_file(str(each_file_path), bucket, os.path.basename(each_file_path))
-            #                           Config=Uploader.tsfrConfig)
+            s3.meta.client.upload_file(str(each_file_path),
+                                       bucket,
+                                       os.path.basename(each_file_path),
+                                       Config=Uploader.tsfrConfig)
             print(f'uploaded file {each_file_path} for user {user_name}')
         except Exception as e:
             logger.info(f'{each_file_path} in bucket {bucket} Upload caught exception: {e}')
@@ -148,6 +149,12 @@ class Uploader:
             obj_name = os.path.basename(each_file_path)
             row_data = [user_name, bucket, obj_name, md5sum]
             uploadObjects.append(row_data)
+            Uploader.change_manager.add_files_to_bucket(user_name,
+                                                        bucket,
+                                                        obj_name,
+                                                        md5sum,
+                                                        size
+                                                        )
 
     @staticmethod
     def start(users):
@@ -160,8 +167,9 @@ class Uploader:
             os.remove(di_params.UPLOADED_FILES)
         except Exception as e:
             logger.info(f'file not able to remove: {e}')
-
-        di_lib.create_iter_content_json(SCRIPT_HOME, users)
+        users_home = params.LOG_DIR
+        users_path = os.path.join(users_home, USER_JSON)
+        config_utils.create_content_json(users_path, users, ensure_ascii=False)
 
         jobs = []
         for user,keys in users.items():
@@ -172,6 +180,5 @@ class Uploader:
         for p in jobs:
             p.join()
         logger.info('Upload Done for all users')
-        #with open(di_params.uploadFinishedFileName, 'w') as f:
-        #    pass
-
+        with open(di_params.uploadFinishedFileName, 'w') as lck:
+            pass

@@ -36,8 +36,8 @@ from commons import worker
 from libs.di import di_params
 from libs.di.di_mgmt_ops import ManagementOPs
 from commons.utils import config_utils
+from commons import params
 
-SCRIPT_HOME = os.getcwd()
 logger = logging.getLogger(__name__)
 uploadObjects = []
 
@@ -126,7 +126,8 @@ class Uploader(object):
         except Exception as e:
             logger.info(f'file not able to remove: {e}')
 
-        config_utils.create_iter_content_json(SCRIPT_HOME, users)
+        users_path = os.path.join(params.LOG_DIR, params.USER_JSON)
+        config_utils.create_content_json(users_path, users)
 
         jobs = []
         for user, keys in users.items():
@@ -155,7 +156,7 @@ class DIChecker(object):
             try:
                 s3 = boto3.resource('s3', aws_access_key_id=access_key,
                                     aws_secret_access_key=secret_key,
-                                    endpoint_url="https://s3.seagate.com")
+                                    endpoint_url=di_params.S3_ENDPOINT)
             except Exception as e:
                 logger.error(
                     f'could not create s3 object for user {user_name} with access '

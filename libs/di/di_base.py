@@ -27,6 +27,7 @@ from logging.handlers import SysLogHandler
 from config import DATA_PATH_CFG
 from commons.utils import assert_utils
 from commons.utils.system_utils import run_local_cmd
+from libs.di.di_params import S3_ENDPOINT
 logger = logging.getLogger(__name__)
 
 
@@ -49,21 +50,36 @@ class SysLogger:
         logging.info(f"{msg}")
 
 
+def init_s3_connections(users):
+    s3Objects = dict()
+
+    for user, keys in users.items():
+        user_name = user
+        access_key = keys[0]
+        secret_key = keys[1]
+        s3Objects[user_name] = _init_s3_conn(access_key, s3Objects, secret_key, user_name)
+    return s3Objects
+
+
 def init_s3_conn(user_name, keys, nworkers):
     access_key = keys[0]
     secret_key = keys[1]
     pool = list()
     for ix in range(nworkers + 1):
-        try:
-            s3 = boto3.resource('s3', aws_access_key_id=access_key, aws_secret_access_key=secret_key,
-                                endpoint_url="https://s3.seagate.com")
-        except Exception as e:
-            logger.error(
-                f'could not create s3 object for user {user_name} with access key {access_key} secret key {secret_key} exception:{e}')
-
-        else:
-            pool.append(s3)
+        pool.append(_init_s3_conn(access_key, pool, secret_key, user_name))
     return pool
+
+
+def _init_s3_conn(access_key, pool, secret_key, user_name):
+    s3 = None
+    try:
+        s3 = boto3.resource('s3', aws_access_key_id=access_key, aws_secret_access_key=secret_key,
+                            endpoint_url=S3_ENDPOINT)
+    except Exception as e:
+        logger.error(
+            f'could not create s3 object for user {user_name} with '
+            f'access key {access_key} secret key {secret_key} exception:{e}')
+    return s3
 
 
 def run_s3bench(test_conf, bucket, keys):

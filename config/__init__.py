@@ -35,6 +35,7 @@ from commons.params import PROV_TEST_CONFIG_PATH
 from commons.params import DI_CONFIG_PATH
 from commons.params import DATA_PATH_CONFIG_PATH
 
+
 def split_args(sys_cmd: List):
     """split args and make it compliant."""
     eq_splitted = list()
@@ -53,7 +54,7 @@ if proc_name == 'pytest' and '--local' in pytest_args and '--target' in pytest_a
     # This condition will execute when args ore in format ['--target','<target name'>]
     if pytest_args[pytest_args.index("--local") + 1]:
         target = pytest_args[pytest_args.index("--target") + 1]
-    os.environ["TARGET"]=target
+    os.environ["TARGET"] = target
 elif proc_name == 'pytest' and '--target' in pytest_args and '--local' not in pytest_args:
     # This condition will execute for non local test runner execution
     target = pytest_args[pytest_args.index("--target") + 1].lower()
@@ -67,7 +68,6 @@ elif proc_name not in ["testrunner.py", "testrunner"]:
     target = os.environ.get("TARGET")
 else:
     target = None
-
 
 CMN_CFG = configmanager.get_config_wrapper(fpath=COMMON_CONFIG, target=target)
 CSM_REST_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG, config_key="Restcall",
@@ -83,7 +83,6 @@ PROV_CFG = configmanager.get_config_wrapper(fpath=PROV_TEST_CONFIG_PATH)
 
 DI_CFG = configmanager.get_config_wrapper(fpath=DI_CONFIG_PATH, target=target)
 DATA_PATH_CFG = configmanager.get_config_wrapper(fpath=DATA_PATH_CONFIG_PATH, target=target)
-
 
 # munchified configs. These can be used by dot "." operator.
 

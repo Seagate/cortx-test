@@ -83,6 +83,13 @@ class DataManager(object):
             return self._change_tracker[user][bid]
         return None
 
+    def add_files_to_bucket(self, user, bucket, file_obj, checksum, size, ver=None):
+        if self._change_tracker != {} and bid is not None:
+            if bid not in self._change_tracker:
+                self._change_tracker[bid] = []
+            return self._change_tracker[user][bid]
+        return None
+
     def persist_cache(self, ch, user):
         tch = copy.deepcopy(ch)
         if not user:

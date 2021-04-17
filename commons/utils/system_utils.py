@@ -28,6 +28,7 @@ import random
 import shutil
 import socket
 import builtins
+import errno
 from typing import Tuple
 from subprocess import Popen, PIPE
 from hashlib import md5
@@ -382,6 +383,14 @@ def make_dirs(dpath: str, mode: int = None) -> str:
         return str(error)
 
     return dpath
+
+
+def mkdirs(pth):
+    try:
+        os.makedirs(pth, exist_ok=True)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
 
 
 def remove_dir(dpath: str) -> bool:

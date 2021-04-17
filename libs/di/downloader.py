@@ -31,41 +31,20 @@ import hashlib
 from pathlib import Path
 from commons import params
 from commons import worker
+from commons.utils import system_utils
+from config import SCRIPT_HOME
+from libs.di import di_base
+from libs.di import di_params
+from libs.di.di_mgmt_ops import ManagementOPs
+from libs.di import uploader
 
 LOGGER = logging.getLogger(__name__)
 
 
 class DataIntegrityValidator:
-
-    s3ObjectList = dict()
-    failedFiles = list()
-    failedFilesServerError = list()
-
-    @classmethod
-    def init_s3_conn(cls, users):
-        for user, keys in users.items():
-            user_name = user
-            access_key = keys[0]
-            secret_key = keys[1]
-            try:
-                s3 = boto3.resource('s3',
-                                    aws_access_key_id=access_key,
-                                    aws_secret_access_key=secret_key,
-                                    endpoint_url="https://s3.seagate.com")
-            except Exception as e:
-                LOGGER.error(
-                    f'could not create s3 object for user {user_name} with '
-                    f'access key {access_key} secret key {secret_key} exception:{e}')
-
-            cls.s3ObjectList[user_name] = s3
-
-    @staticmethod
-    def mkdirs(pth):
-        try:
-            os.makedirs(pth)
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise
+    s3_objects = dict()
+    failed_files = list()
+    failed_filesServerError = list()
 
     @staticmethod
     def download_and_compare_chksum(kwargs):
@@ -84,12 +63,12 @@ class DataIntegrityValidator:
             objpth = os.path.join(cwd, user, objectpath)
             try:
                 if not os.path.exists(basepath):
-                    DataIntegrityValidator.mkdirs(basepath)
+                    system_utils.mkdirs(basepath)
             except Exception as e:
                 LOGGER.error(f"Error while creating directory for user {user}")
 
             try:
-                s3 = DataIntegrityValidator.s3ObjectList[user]
+                s3 = DataIntegrityValidator.s3_objects[user]
             except Exception as fault:
                 print(fault)
                 LOGGER.error(f'No S3 Connection for user {kwargs} in S3 sessions list {fault}')
@@ -101,7 +80,7 @@ class DataIntegrityValidator:
             except Exception as e:
                 print(e)
                 LOGGER.error(f'Final object download failed for {kwargs} with exception {e}')
-                DataIntegrityValidator.failedFilesServerError.append(kwargs)
+                DataIntegrityValidator.failed_files_server_error.append(kwargs)
             else:
                 print("Downloaded file '{}' from '{}'".format(objectpath, bucket))
                 filepath = objpth
@@ -125,14 +104,18 @@ class DataIntegrityValidator:
                         os.system(rmLocalObject)
 
                 if objcsum == csum.strip():
-                    LOGGER.info("download object checksum {} matches provided checksum {} for file {}".format(csum, objcsum, objectpath))
+                    LOGGER.info(
+                        "download object checksum {} matches provided checksum {} for file {}".format(csum, objcsum,
+                                                                                                      objectpath))
                 else:
-                    LOGGER.error("download object checksum {} does not matches provided checksum {} for file {}".format(csum, objcsum, objectpath))
-                    DataIntegrityValidator.failedFiles.append(kwargs)
+                    LOGGER.error(
+                        "download object checksum {} does not matches provided checksum {} for file {}".format(csum,
+                                                                                                               objcsum,
+                                                                                                               objectpath))
+                    DataIntegrityValidator.failed_files.append(kwargs)
         except Exception as fault:
             LOGGER.exception(fault)
             LOGGER.error(f'Exception occurred for item {kwargs} with exception {fault}')
-
 
     @classmethod
     def verify_data_integrity(cls, users):
@@ -143,8 +126,9 @@ class DataIntegrityValidator:
         :return:
         """
         workers = worker.Workers()
-        workers.wStartWorkers()
-        cls.init_s3_conn()
+        workers.start_workers()
+        # cls.init_s3_conn()
+        cls.s3_objects = di_base.init_s3_connections(users=users)
         deletedFiles = list()
         uploadedFiles = list()
         deletedDict = dict()
@@ -172,8 +156,10 @@ class DataIntegrityValidator:
 
         for i in range(1, params.NUSERS + 1):
             try:
-                if not os.path.exists(os.path.join(params.DOWNLOAD_HOME, ManagementOPs.user_prefix + str(i))):
-                    cls.mkdirs(os.path.join(params.DOWNLOAD_HOME, ManagementOPs.user_prefix + str(i)))
+                if not os.path.exists(os.path.join(params.DOWNLOAD_HOME,
+                                                   ManagementOPs.user_prefix + str(i))):
+                    system_utils.mkdirs(os.path.join(params.DOWNLOAD_HOME,
+                                                     ManagementOPs.user_prefix + str(i)))
             except Exception as e:
                 LOGGER.error(f"Error while creating directory for user {i}")
 
@@ -190,39 +176,43 @@ class DataIntegrityValidator:
             kwargs['accesskey'] = users.get(ent[0])[0]
             kwargs['secret'] = users.get(ent[0])[1]
             workQ.put(kwargs)
-            workers.wEnque(workQ)
+            workers.wenque(workQ)
             LOGGER.info(f"Enqueued item {ix} for download and checksum compare")
-            #if workQ is not None:
+            # if workQ is not None:
             #    workQ.join()
-            #workQ = None
+            # workQ = None
         LOGGER.info(f"processed items {ix} for data integrity check")
 
-        summary['failed_files'] = len(cls.failedFiles) + len(cls.failedFilesServerError)
+        summary['failed_files'] = len(cls.failed_files) + len(cls.failed_files_server_error)
         summary['uploaded_files'] = ix
-        summary['checksum_verified'] =  summary['uploaded_files'] - summary['deleted_files']
+        summary['checksum_verified'] = summary['uploaded_files'] - summary['deleted_files']
 
-        if len(cls.failedFiles) > 0:
-            keys = cls.failedFiles[0].keys()
-            with open(params.FailedFiles, 'w', newline='') as fp:
+        if len(cls.failed_files) > 0:
+            keys = cls.failed_files[0].keys()
+            with open(params.failed_files, 'w', newline='') as fp:
                 wr = csv.DictWriter(fp, keys)
-                wr.writerows(cls.failedFiles)
+                wr.writerows(cls.failed_files)
 
-        for item in cls.failedFiles:
+        for item in cls.failed_files:
             LOGGER.error(f'checksum mismatch for {item}')
 
-        for item in cls.failedFilesServerError:
+        for item in cls.failed_files_server_error:
             LOGGER.error(f'Server Error for {item}')
 
-        if len(cls.failedFilesServerError) > 0:
-            keys = cls.failedFilesServerError[0].keys()
+        if len(cls.failed_files_server_error) > 0:
+            keys = cls.failed_files_server_error[0].keys()
             with open(params.FailedFilesServerError, 'w', newline='') as fp:
                 wr = csv.DictWriter(fp, keys)
-                wr.writerows(cls.failedFilesServerError)
+                wr.writerows(cls.failed_files_server_error)
 
-        workers.wEndWorkers()
+        workers.end_workers()
         LOGGER.info('Workers shutdown completed successfully')
-        LOGGER.info("Test run summary Uploaded files {}  Deleted Files {} ".format(summary['uploaded_files'], summary['deleted_files']))
-        LOGGER.info("Failed files were {}  and Checksum verified for Files {} ".format(summary['failed_files'], summary['checksum_verified']))
+        LOGGER.info("Test run summary Uploaded files {}  "
+                    "Deleted Files {} ".format(summary['uploaded_files'],
+                                               summary['deleted_files']))
+        LOGGER.info("Failed files were {}  and "
+                    "Checksum verified for Files {} ".format(summary['failed_files'],
+                                                             summary['checksum_verified']))
 
 
 def FileSHA1(blobfile, blobsize, readcallback):
@@ -241,7 +231,7 @@ def FileSHA1(blobfile, blobsize, readcallback):
 
 
 if __name__ == '__main__':
-    uploader = Uploader()
+    uploader = uploader.Uploader()
     uploader.start()
-    downloader = DIChecker()
+    downloader = DataIntegrityValidator()
     downloader.verify_data_integrity()

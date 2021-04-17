@@ -130,71 +130,6 @@ def create_buckets(user_dict, s3_prefix, nbuckets):
         raise fault
 
 
-class Workers(object):
-    """ A thread pool for I/O bound tasks """
-    def wStartWorkers(self, nworkers=NWORKERS, func=None):
-        self.w_workQ = WorkQ(func, nworkers)     # queue.Queue()
-        self.w_workers = []
-        for i in range(nworkers):
-            w = Thread(target=self.wWorker)
-            w.start()
-            self.w_workers.append(w)
-
-    def wWorker(self):
-        while True:
-            wq = self.w_workQ.get()
-            if wq is None:
-                self.w_workQ.task_done()
-                break
-            wi = wq.get()
-            wq.func(wi)
-            wq.task_done()
-            self.w_workQ.task_done()
-
-    def wEnque(self, item):
-        self.w_workQ.put(item)
-
-    def wEndWorkers(self):
-        for i in range(len(self.w_workers)):
-            self.w_workQ.put(None)
-        self.w_workQ.join()
-        logger.info('shutdown all workers')
-        logger.info('Joining all threads to main thread')
-        for i in range(len(self.w_workers)):
-            self.w_workers[i].join()
-
-
-class YamlError(Exception):
-    def __init__(self, name, message=""):
-        self.message = message
-        self.name = name
-        super().__init__(self.message)
-
-    def __str__(self):
-        return '{} has an invalid yaml syntax'.format(self.name)
-
-
-def read_yaml(fpath):
-    """Read yaml file and return dictionary/list of the content"""
-    cwd = os.getcwd()
-    fpath = os.path.join(cwd, fpath)
-    if os.path.isfile(fpath):
-        with open(fpath) as fin:
-            try:
-                data = yaml.safe_load(fin)
-            except yaml.YAMLError as exc:
-                try:
-                    data = yaml.load(fin.read(), Loader=yaml.Loader)
-                except yaml.YAMLError as exc:
-                    err_msg = "Failed to parse: {}\n{}".format(fpath, str(exc))
-                    raise YamlError(fpath, 'YAML file syntax error')
-
-    else:
-        err_msg = "Specified file doesn't exist: {}".format(fpath)
-        raise YamlError(fpath, 'YAML file missing')
-    return data
-
-
 class NodeOps():
 
     def init_Connection(self, host, user, password):
@@ -232,21 +167,6 @@ class NodeOps():
     def run_command(self, conn, cmd, options=None):
         conn.run(cmd, pty=False)
 
-
-
-
-def create_iter_content_json(home, data):
-    pth = os.path.join(home, di_params.USER_JSON)
-    with open(pth, 'w') as outfile:
-        json.dump(data, outfile, ensure_ascii=False)
-
-
-def read_iter_content_json(home, file=di_params.USER_JSON):
-    pth = os.path.join(home, file)
-    data = None
-    with open(pth, 'rb') as json_file:
-        data = json.loads(json_file.read())
-    return data
 
 
 def sigint_handler(signum, frame):
