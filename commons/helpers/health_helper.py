@@ -27,6 +27,7 @@ import re
 from typing import Tuple, List, Any
 from commons.helpers.host import Host
 from commons import commands
+from commons.utils.system_utils import check_ping
 
 LOG = logging.getLogger(__name__)
 
@@ -267,11 +268,11 @@ class Health(Host):
         """
         hctl_command = commands.HCTL_STATUS_CMD_JSON
         LOG.info("Executing Command %s on node %s",
-            hctl_command, self.hostname)
-        result = self.execute_cmd(hctl_command,read_lines=False)
+                 hctl_command, self.hostname)
+        result = self.execute_cmd(hctl_command, read_lines=False)
         result = result.decode("utf-8")
         LOG.info("Response of the command %s:\n %s ",
-            hctl_command, result)
+                 hctl_command, result)
         result = json.loads(result)
 
         return result
@@ -284,9 +285,9 @@ class Health(Host):
         response = self.hctl_status_json()
         LOG.info("HCTL response : \n%s", response)
         avail_cap = response['filesystem']['stats']['fs_avail_disk']
-        LOG.info("Available Capacity : %s",avail_cap)
+        LOG.info("Available Capacity : %s", avail_cap)
         total_cap = response['filesystem']['stats']['fs_total_disk']
-        LOG.info("Total Capacity : %s",total_cap)
+        LOG.info("Total Capacity : %s", total_cap)
         used_cap = total_cap - avail_cap
         LOG.info("Used Capacity : %s", used_cap)
         return total_cap, avail_cap, used_cap
@@ -333,3 +334,32 @@ class Health(Host):
             return False, resp
 
         return True, resp
+
+    def check_node_health(self) -> tuple:
+        """
+        Check the node health and return True if all services up and running.
+
+        :return: True or False
+        """
+        LOG.info(f"Checking online status of {self.hostname} node")
+        response = check_ping(self.hostname)
+        if not response:
+            return response, "Node {} is offline.".format(self.hostname)
+        LOG.info(f"Checking hctl status for {self.hostname} node")
+        response = self.execute_cmd(cmd=commands.MOTR_STATUS_CMD, read_lines=True)
+        services = ["hax", "confd", "ioservice", "s3server"]
+        LOG.info("Checking service: %s up and running", services)
+        for line in response[1]:
+            if any([True if service in line else False for service in services]):
+                if not line.strip().startswith("[started]"):
+                    LOG.error("service down: %s", line)
+                    return False, response[0]
+        if "Cluster is not running" in ",".join(response[1]) or not response[0]:
+            return False, response[1]
+        LOG.info(f"Checking pcs status for {self.hostname} node")
+        response = self.execute_cmd(cmd=commands.PCS_STATUS_CMD, read_lines=True)
+        if "cluster is not currently running on this node" in ",".join(response[1]) or response[0]:
+            LOG.info("cluster is not currently running on this node: ", self.hostname)
+            return False, response[1]
+
+        return False, "cluster {} up and running.".format(self.hostname)
