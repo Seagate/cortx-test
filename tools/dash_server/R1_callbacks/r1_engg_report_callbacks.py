@@ -132,7 +132,6 @@ def gen_table_detail_reported_bugs(n_clicks, branch, build_no):
         else:
             col.append({"name": str(i).upper(), "id": i})
 
-
     detail_reported_bugs = dash_table.DataTable(
         id="detail_reported_bugs",
         columns=col,

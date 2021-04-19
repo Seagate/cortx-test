@@ -73,6 +73,12 @@ input_options = dbc.Row(
             style={'width': '200px', 'verticalAlign': 'middle', "margin-right": "15px",
                    "margin-top": "10px"},
         ),
+        dcc.Dropdown(
+            id='test_system_dropdown',
+            placeholder="Test System Type",
+            style={'width': '200px', 'verticalAlign': 'middle', "margin-right": "15px",
+                   "margin-top": "10px"},
+        ),
 
         dbc.Button("Get!", id="submit_button", n_clicks=0, color="success",
                    style={'height': '36px', 'margin-top': '20px'}),
@@ -81,24 +87,18 @@ input_options = dbc.Row(
 )
 input_optional_options = dbc.Row(
     [
-        dcc.Dropdown(
-            id='test_system_dropdown',
-            placeholder="Test System Type(Opt)",
-            style={'width': '200px', 'verticalAlign': 'middle', "margin-right": "15px",
-                   "margin-top": "10px"},
-        ),
-        dcc.Dropdown(
-            id='test_plans_dropdown',
-            placeholder="Test Plan No (Opt)",
-            style={'width': '200px', 'verticalAlign': 'middle', "margin-right": "15px",
-                   "margin-top": "10px"},
-        ),
-        dcc.Dropdown(
+    dcc.Dropdown(
             id='test_team_dropdown',
             placeholder="Test Component(Opt)",
             style={'width': '200px', 'verticalAlign': 'middle', "margin-right": "15px",
                    "margin-top": "10px"},
         ),
+        dcc.Dropdown(
+            id='test_plan_dropdown',
+            placeholder="Test Plan No (Opt)",
+            style={'width': '200px', 'verticalAlign': 'middle', "margin-right": "15px",
+                   "margin-top": "10px"},
+        )
     ],
     justify='center',
     id="toggle_visibility"
@@ -221,7 +221,7 @@ navbar = dbc.Navbar(
                                        target="_blank",
                                        ),
                             width="auto", className="my-auto"),
-                    dbc.Col(dbc.Button("CFT Sharepoint", color="light", size="lg",
+                    dbc.Col(dbc.Button("CFT Confluence", color="light", size="lg",
                                        outline=True,
                                        href=cft_sharepoint,
                                        target="_blank"),

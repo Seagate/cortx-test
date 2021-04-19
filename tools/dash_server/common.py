@@ -187,3 +187,17 @@ def add_link(row):
     temp = "https://jts.seagate.com/browse/"+row
     l = "[{0}]({1})".format(row,temp)
     return l
+
+
+def get_testplan_ID(query):
+    temp_query = {"query": query, "field": "testPlanID"}
+    temp_query.update(credentials)
+    response = requests.request("GET", distinct_endpoint, headers=headers,
+                                data=json.dumps(temp_query))
+    if response.status_code == HTTPStatus.OK:
+        json_response = json.loads(response.text)
+        tps = json_response["result"]
+        tps.sort(reverse=True)
+        return tps[0]
+    else:
+        return None
