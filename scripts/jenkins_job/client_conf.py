@@ -139,6 +139,7 @@ def main():
             "--dbuser datawrite --dbpassword seagate@123")
     print("Setting up chrome")
     setup_chrome()
+    run_cmd("cp /root/secrets.json .")
 
 if __name__ == "__main__":
     main()
