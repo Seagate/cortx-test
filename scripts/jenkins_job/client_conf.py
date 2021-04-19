@@ -26,6 +26,8 @@ import os
 import logging
 import json
 import subprocess
+import shutil
+from zipfile import ZipFile
 from commons.helpers.node_helper import Node
 
 
@@ -52,7 +54,7 @@ def create_db_entry(hostname, username, password, ip_addr):
     """
     Creation of new host entry in database.
     """
-    json_file = "/root/workspace/cortx-test/tools/setup_update/setup_entry.json"
+    json_file = "tools/setup_update/setup_entry.json"
     new_setupname = hostname.split(".")[0]
     LOGGER.info("Creating DB entry for setup: {}".format(new_setupname))
 
@@ -95,12 +97,25 @@ def set_s3_endpoints(cluster_ip):
         else:
             fp.write("{} s3.seagate.com iam.seagate.com".format(cluster_ip))
 
+def setup_chrome(host_obj):
+    """
+    Method to install chrome and chromedriver
+    :return:
+    """
+    host_obj.execute_cmd(cmd="wget https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm")
+    host_obj.execute_cmd(cmd="yum install -y google-chrome-stable_current_x86_64.rpm")
+    host_obj.execute_cmd(cmd="wget https://chromedriver.storage.googleapis.com/89.0.4389.23/chromedriver_linux64.zip")
+    with ZipFile('chromedriver_linux64.zip', 'r') as zipObj:
+        # Extract all the contents of zip file in current directory
+        zipObj.extractall()
+    os.chmod("chromedriver", 0o777)
+    bin_path = os.path.join("venv", "bin")
+    shutil.copy("chromedriver", bin_path)
+
 def main():
     host = os.getenv("HOSTNAME")
-    client = "ssc-vm-3053.colo.seagate.com"
     uname = "root"
     host_passwd = os.getenv("HOST_PASS")
-    client_passwd = "seagate"
     nd_obj_host = Node(hostname=host, username=uname, password=host_passwd)
     # Get the cluster and mgnt IPs
     cmd = "cat /etc/hosts"
@@ -120,8 +135,9 @@ def main():
     nd_obj_host.copy_file_to_local(remote_path=remote_path, local_path=local_path)
     set_s3_endpoints(clstr_ip)
     create_db_entry(host, uname, host_passwd, mgmnt_ip)
-    run_cmd("python3.7 /root/workspace/cortx-test/tools/setup_update/setup_entry.py "
+    run_cmd("python3.7 tools/setup_update/setup_entry.py "
             "--dbuser datawrite --dbpassword seagate@123")
+    setup_chrome(nd_obj_host)
 
 if __name__ == "__main__":
     main()
