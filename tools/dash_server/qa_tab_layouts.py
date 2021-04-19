@@ -64,7 +64,7 @@ r1_exec_report_content = dbc.Card(
             html.P(html.H5(id="r1_build_heading_exe"), className="card-text", ),
             html.P(html.H5(id="r1_date_heading_exe"), className="card-text", ),
             html.P("Reported Bugs", style=common.dict_style_table_caption),
-            html.Div(id="r1_table_reported_bugs_exe"),
+            dcc.Loading(html.Div(id="r1_table_reported_bugs_exe")),
             html.P("Overall QA Report", style=common.dict_style_table_caption),
             html.Div(id="r1_table_overall_qa_report_exe"),
             html.P("Feature Breakdown Summary", style=common.dict_style_table_caption),
@@ -88,7 +88,7 @@ r1_engg_report_content = dbc.Card(
             html.P(html.H5(id="r1_build_heading_eng"), className="card-text", ),
             html.P(html.H5(id="r1_date_heading_eng"), className="card-text"),
             html.P("Reported Bugs", style=common.dict_style_table_caption),
-            html.Div(id="r1_table_reported_bugs_engg"),
+            dcc.Loading(html.Div(id="r1_table_reported_bugs_engg")),
             html.P("Overall QA Report", style=common.dict_style_table_caption),
             html.Div(id="r1_table_overall_qa_report_engg"),
             html.P("Component Level Tests Summary", style=common.dict_style_table_caption),
@@ -107,7 +107,7 @@ r1_engg_report_content = dbc.Card(
             html.Div(dbc.Table(bucketops_caption),style = {'textAlign': 'center'}),
             html.Div(id = "r1_table_bucket_ops_data"),
             html.P("Detail Reported Bugs", style=common.dict_style_table_caption),
-            html.Div(id="r1_table_detail_reported_bugs")
+            dcc.Loading(html.Div(id="r1_table_detail_reported_bugs"))
         ]
     ),
     className="flex-sm-fill nav-link active",
@@ -122,7 +122,7 @@ r2_exec_report_content = dbc.Card(
             html.P(html.H5(id="build_heading_exe"), className="card-text", ),
             html.P(html.H5(id="date_heading_exe"), className="card-text", ),
             html.P("Reported Bugs", style=common.dict_style_table_caption),
-            html.Div(id="table_reported_bugs_exe"),
+            dcc.Loading(html.Div(id="table_reported_bugs_exe")),
             html.P("Overall QA Report", style=common.dict_style_table_caption),
             html.Div(id="table_overall_qa_report_exe"),
             html.P("Feature Breakdown Summary", style=common.dict_style_table_caption),
@@ -146,7 +146,7 @@ r2_engg_report_content = dbc.Card(
             html.P(html.H5(id="build_heading_eng"), className="card-text", ),
             html.P(html.H5(id="date_heading_eng"), className="card-text"),
             html.P("Reported Bugs", style=common.dict_style_table_caption),
-            html.Div(id="table_reported_bugs_engg"),
+            dcc.Loading(html.Div(id="table_reported_bugs_engg")),
             html.P("Overall QA Report", style=common.dict_style_table_caption),
             html.Div(id="table_overall_qa_report_engg"),
             html.P("Component Level Issues Summary", style=common.dict_style_table_caption),
@@ -163,7 +163,7 @@ r2_engg_report_content = dbc.Card(
                    style=common.dict_style_table_caption),
             html.Div(id="table_multi_bucket_perf_stats"),
             html.P("Detail Reported Bugs", style=common.dict_style_table_caption),
-            html.Div(id="table_detail_reported_bugs")
+            dcc.Loading(html.Div(id="table_detail_reported_bugs"))
         ]
     ),
     className="flex-sm-fill nav-link active",
