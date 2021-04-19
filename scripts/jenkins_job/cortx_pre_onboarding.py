@@ -28,7 +28,7 @@ class CSMBoarding(unittest.TestCase):
         chrome_options.add_argument('--headless')
         self.driver = webdriver.Chrome(options=chrome_options)
         self.driver.implicitly_wait(30)
-        self.csm_mgmt_ip = os.getenv('CSM_MGMT_IP')
+        self.csm_mgmt_ip = os.getenv('HOSTNAME')
         self.admin_user = os.getenv('ADMIN_USR', config['preboarding']['username'])
         self.admin_pwd = os.getenv('ADMIN_PWD', config['preboarding']['password'])
         self.host_passwd = os.getenv('HOST_PASS')
