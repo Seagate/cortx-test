@@ -23,7 +23,7 @@
 import logging
 from typing import Tuple
 from libs.csm.cli.cortx_cli import CortxCli
-from commons.commands import CREATE_IAM_USER, DELETE_IAM_USER, LIST_IAM_USER
+from commons.commands import CREATE_IAM_USER, DELETE_IAM_USER, LIST_IAM_USER, CMD_RESET_IAM_PWD
 
 LOG = logging.getLogger(__name__)
 
@@ -135,3 +135,54 @@ class CortxCliIamUser(CortxCli):
             return False, output
 
         return True, output
+
+    def delete_all_iam_users(self) -> dict:
+        """
+        This function deletes all iam users present under an s3 account
+        :return: Deleted and non-deleted iam users
+        :rtype: (dict)
+        """
+        LOG.info("Listing all the iam users")
+        resp_json = self.list_iam_user(output_format="json")
+        response_dict = {"Deleted": [], "CouldNotDelete": []}
+        if resp_json[0]:
+            for iam_user in resp_json[1]["iam_users"]:
+                LOG.info("Deleting the iam users {}".format(iam_user))
+                resp = self.delete_iam_user(
+                    iam_user["user_name"])
+                if "IAM User Deleted" in resp[1]:
+                    response_dict["Deleted"].append(iam_user)
+                else:
+                    response_dict["CouldNotDelete"].append(iam_user)
+            if response_dict["CouldNotDelete"]:
+                LOG.error("Failed to delete iam users")
+                return response_dict
+            return response_dict
+
+    def reset_iamuser_password(
+            self,
+            iamuser_name: str,
+            new_password: str,
+            **kwargs) -> tuple:
+        """
+        This function will update password for specified s3
+        iam user to new_password using CORTX CLI.
+        :param iamuser_name: IAM user name for which password should be updated
+        :param new_password: New password for IAM user
+        :keyword reset_password: Y/n
+        :return: True/False and Response returned by CORTX CLI
+        """
+        reset_password = kwargs.get("reset_password", "Y")
+        reset_pwd_cmd = CMD_RESET_IAM_PWD.format(iamuser_name)
+        LOG.info("Resetting s3 account password to %s", new_password)
+        response = self.execute_cli_commands(cmd=reset_pwd_cmd)[1]
+        if "Password:" in response:
+            response = self.execute_cli_commands(cmd=new_password)[1]
+            if "Confirm Password:" in response:
+                response = self.execute_cli_commands(cmd=new_password)[1]
+                if "[Y/n]" in response:
+                    response = self.execute_cli_commands(cmd=reset_password)[1]
+                    if iamuser_name in response:
+                        LOG.info("Response returned: \n%s", response)
+                        return True, response
+                return False, response
