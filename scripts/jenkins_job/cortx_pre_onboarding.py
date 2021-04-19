@@ -31,9 +31,10 @@ class CSMBoarding(unittest.TestCase):
         self.csm_mgmt_ip = os.getenv('CSM_MGMT_IP')
         self.admin_user = os.getenv('ADMIN_USR', config['preboarding']['username'])
         self.admin_pwd = os.getenv('ADMIN_PWD', config['preboarding']['password'])
+        self.host_passwd = os.getenv('HOST_PASS')
         self.create_admin_user = True
         check_admin_user_cmd = "cat /etc/passwd | grep admin"
-        nd_obj = Node(hostname=self.csm_mgmt_ip, username=self.admin_user, password=self.admin_pwd)
+        nd_obj = Node(hostname=self.csm_mgmt_ip, username="root", password=self.host_passwd)
         response = nd_obj.execute_cmd(cmd=check_admin_user_cmd)
         if "/opt/seagate/users/admin" in str(response):
             self.create_admin_user = False
