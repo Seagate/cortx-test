@@ -10,11 +10,9 @@ RUN cd /usr/src/Python-3.7.9 && make altinstall
 RUN echo 'alias python="/usr/bin/python3.7"' >> ~/.bashrc
 RUN echo 'alias python3="/usr/bin/python3.7"' >> ~/.bashrc
 RUN yum install -y git
-RUN git clone https://$GIT_TOKEN@github.com/Seagate/cortx-test.git
+RUN git clone --branch dev https://$GIT_TOKEN@github.com/Seagate/cortx-test.git
 WORKDIR /cortx-test
-RUN git checkout dev
 RUN yum install -y python3-devel librdkafka nfs-utils python3-tkinter
-RUN python3.7 -m pip install pip
 RUN python3.7 -m pip install --upgrade pip
 RUN python3.7 -m pip install pysqlite3
 RUN python3.7 -m pip install --ignore-installed -r requirements.txt
