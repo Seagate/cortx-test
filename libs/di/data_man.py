@@ -28,10 +28,10 @@ It should be used for validation when data is stored with the cortx-test
 framework. It acts as a hash cache storing the server state on client side.
 
  The structure of the client hash cache is as shown below
-
- { user=user1,
-  email=user1@seagate.com,
-  buckets=[ {bucket=test-1,
+{
+ user1={ user=user1,
+        email=user1@seagate.com,
+        buckets=[ {bucket=test-1,
             s3prefix='',
             files=[{name=a.txt, chksum=abcd, seed=1, size=1024, },  {b.txt},]
             }
@@ -41,13 +41,27 @@ framework. It acts as a hash cache storing the server state on client side.
             s3prefix='',
             files=[{name=a.txt, chksum=abcd, seed=1, size=1024, },  {b.txt},]
             }
-         ]
- }
-
+            ]
+        }
+}
 """
+import os
 import copy
+import logging
 import threading
+import ijson
+import traceback
 import multiprocessing
+from commons import params
+from commons.utils import system_utils
+from commons.utils import config_utils
+from commons.exceptions import TestException
+# Container level
+C_LEVEL_TOP = 1
+C_LEVEL_USER = 2
+C_LEVEL_BUCKET = 3
+
+logger = logging.getLogger(__name__)
 
 
 class DataManager(object):
@@ -55,54 +69,142 @@ class DataManager(object):
 
     def __init__(self, user):
         self.buckets = list()
-        self._change_tracker = dict()
+        self.change_tracker = dict()
         self.user = user
         self.state = dict()
-        self.change_id = -1
-        self.count = -1
-        self.lock = threading.Lock()
-        self.writelock = threading.Lock()
+        self.rlock = threading.Lock()
+        self.wlock = threading.Lock()
+        self.plock = multiprocessing.Lock()
 
-    def get_all_buckets_for_user(self, user):
+    def prepare_file_data(self, user):
+        """Read data before saving."""
+        p_home = params.META_DATA_HOME
+        if not os.path.exists(p_home):
+            try:
+                system_utils.mkdirs(p_home)
+            except (OSError, Exception) as fault:
+                logger.exception(str(fault), exc_info=fault.__traceback__)
+                raise
+
+        fpath = os.path.join(p_home, user + params.USER_META_JSON)
+
+        if not os.path.exists(fpath):
+            file_path = config_utils.create_content_json(fpath, {}, ensure_ascii=True)
+            logger.info(f'Created metadata file for user {user}')
+        return fpath
+
+    def store_file_data(self, data, user):
+        """Store data in user meta json file.
+        The data needs to comply with the json structure.
+        """
+        p_home = params.META_DATA_HOME
+        fpath = os.path.join(p_home, user + params.USER_META_JSON)
+        if not os.path.exists(fpath):
+            raise TestException('It is expected that the json path should be created by now')
+        config_utils.create_content_json(fpath, data, ensure_ascii=True)
+
+    def get_all_buckets_data_for_user(self, user):
         if user is None:
             raise ValueError('user is mandatory')
-        if self._change_tracker != {}:
-            if user not in self._change_tracker:
-                self._change_tracker[user] = []
+
+        fpath = self.prepare_file_data(user)
+        #with open(fpath, 'rb') as fp:
+        #    data = ijson.items(fp, 'buckets.item')
+        data = config_utils.read_content_json(fpath=fpath)
+        if data:
+            if user != data['name']:
                 return None
-            if not self._change_tracker[user]:
+            if not data['buckets']:
                 return None
-            return self._change_tracker[user][len(self._change_tracker[user]) - 1]
+            return data['buckets']
         else:
             return None
 
-    def get_files_within_bucket(self, user, bid=None, ver=None):
-        if self._change_tracker != {} and bid is not None:
-            if bid not in self._change_tracker:
-                self._change_tracker[bid] = []
-            return self._change_tracker[user][bid]
+    def get_files_within_bucket(self, bkt_container, bucket):
+        if bucket is not None and bkt_container:
+            if not bkt_container['files']:
+                return None
+            return bkt_container['files']
         return None
 
-    def add_files_to_bucket(self, user, bucket, file_obj, checksum, size, ver=None):
-        if self._change_tracker != {} and bid is not None:
-            if bid not in self._change_tracker:
-                self._change_tracker[bid] = []
-            return self._change_tracker[user][bid]
+    def get_file_within_bucket(self, name, bkt_container, bucket):
+        """Find file within a bucket and return None if not.
+        Returns the same dict object within bucket container.
+        """
+        if bucket is not None and bkt_container:
+            for _file_dict in bkt_container['files']:
+                if _file_dict['name'] == name:
+                    return _file_dict
         return None
 
-    def persist_cache(self, ch, user):
-        tch = copy.deepcopy(ch)
-        if not user:
+    def get_container(self, level=C_LEVEL_BUCKET):
+        """Create bucket level container to store bucket's data.
+            bucket container has name=<>, s3prefix='', files
+            user container has name=<>, email='', buckets
+        """
+        container = None
+        if level == C_LEVEL_BUCKET:
+            container = dict(name='', s3prefix='', files=list())
+        elif level == C_LEVEL_USER:
+            container = dict(name='', email='', buckets=list())
+        elif level == C_LEVEL_TOP:
+            container = dict()
+        return container
+
+    def _check_bucket_exists_in_buckets(self, bucket):
+        """Protected API."""
+        return True if bucket in self.buckets else False
+
+    def _get_bucket_container_from_buckets(self, bucket, user):
+        """Protected get bucket container API."""
+        if user is None:
             raise ValueError('user is mandatory')
-        if user not in self._change_tracker:
-            self._change_tracker[user] = []
-        self._change_tracker[user].append((tch,))
+        fpath = self.prepare_file_data(user)
+        data = config_utils.read_content_json(fpath=fpath)
+        if data:
+            if user != data['name'] or not data['buckets']:
+                return self.get_container(level=C_LEVEL_BUCKET), False
+            for bkt in data['buckets']:
+                if bkt['name'] == bucket:
+                    return bkt, True
+        return self.get_container(level=C_LEVEL_BUCKET), False  # anyway return an empty container
+
+    def add_file_to_bucket(self, user, bucket, file_dict):
+        """The updates within process will be in-memory and then persisted to json."""
+        file_obj, checksum = file_dict['file_obj'], file_dict['checksum']
+        size, seed, mtime = file_dict['size'], file_dict['seed']. file_dict['mtime']
+        data = dict()
+        if bucket is not None:
+            with self.wlock:
+                fpath = self.prepare_file_data(user)
+                data = config_utils.read_content_json(fpath=fpath)
+                if not data or user != data['name']:
+                    data = self.get_container(level=C_LEVEL_USER)
+                bkt_container, flag = self._get_bucket_container_from_buckets(bucket, user)
+
+                #files = self.get_files_within_bucket(bkt_container, user, bucket)
+                fdict = self.get_file_within_bucket(self, file_obj, bkt_container, bucket)
+                if not fdict:
+                    '''name=a.txt, chksum=abcd, seed=1, size=1024'''
+                    fdict = dict(name=file_obj, checksum=checksum,
+                                 sz=size, seed=seed, mtime=mtime)
+                    bkt_container['files'].append(fdict)
+                else:
+                    fdict['checksum'] = checksum
+                    fdict['sz'] = size
+                    fdict['seed'] = seed
+                    fdict['mtime'] = mtime
+
+                if not flag:
+                    data['buckets'].append(bkt_container)
+
+                self.store_file_data(data, user)
 
     def delete_file_from_bucket(self):
-        pass
+        raise NotImplementedError('coming soon')
 
     def update_file_in_bucket(self):
-        pass
+        raise NotImplementedError('Currently add file takes care of it')
 
     def get_stored_file_entry(self, uid, file_name):
         if self._change_tracker and uid is not None:

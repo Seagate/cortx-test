@@ -24,7 +24,6 @@ import os
 
 LOG_FILE = 'cortx-test.log'
 
-USER_JSON = '_usersdata'
 SCRIPT_HOME = os.getcwd()  # Fetches you CWD of the pytest or runner process.
 CONFIG_DIR = 'config'
 LOG_DIR_NAME = 'log'
@@ -56,6 +55,7 @@ JIRA_TEST_COLLECTION = 'test_collection.csv'
 JIRA_SELECTED_TESTS = 'selected_test_lists.csv'
 
 JIRA_DIST_TEST_LIST = 'dist_test_lists.csv'
+
 # Kafka Config Params
 # Schema Registry (http(s)://host[:port]
 SCHEMA_REGISTRY = "http://cftic2.pun.seagate.com:8081"
@@ -92,10 +92,13 @@ DI_LOG_FILE = 'diframework.log'
 NWORKERS = 32
 NGREENLETS = 32
 NUSERS = 10
-#DATAGEN_HOME = '/var/log/datagen/'
-DATAGEN_HOME = 'c:\\var\\log\\datagen'
+DATAGEN_HOME = '/var/log/datagen/'
+#DATAGEN_HOME = 'c:\\var\\log\\datagen'
+META_DATA_HOME = os.path.join(LOG_DIR, 'meta_data')
+
 DATASET_FILES = "/var/log/datagen/createdfile.txt"
 USER_JSON = '_usersdata'
+USER_META_JSON = '_user_metadata'
 UPLOADED_FILES = "uploadInfo.csv"
 deleteOpFileName = "deleteInfo.csv"
 comDeleteOpFileName = "combinedDeleteInfo.csv"

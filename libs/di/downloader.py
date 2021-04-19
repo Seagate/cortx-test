@@ -32,7 +32,7 @@ from pathlib import Path
 from commons import params
 from commons import worker
 from commons.utils import system_utils
-from config import SCRIPT_HOME
+from commons.params import SCRIPT_HOME
 from libs.di import di_base
 from libs.di import di_params
 from libs.di.di_mgmt_ops import ManagementOPs
