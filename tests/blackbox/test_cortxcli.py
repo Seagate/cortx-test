@@ -120,6 +120,7 @@ class TestCortxcli:
         for acc in accounts:
             self.s3acc_obj.login_cortx_cli(
                 username=acc, password=self.s3acc_password)
+            #self.s3bkt_obj.delete_all_buckets_cortx_cli()
             self.s3acc_obj.delete_s3account_cortx_cli(account_name=acc)
             self.s3acc_obj.logout_cortx_cli()
         self.log.info("ENDED : Teardown operations at test function level")
@@ -896,7 +897,7 @@ class TestCortxcli:
     # @pytest.mark.tags("TEST-7193")
     # @CTFailOn(error_handler)
     # def test_2398(self):
-    #     """Login to account with invalid creds and perform s3 crud operations using cortxcli."""
+    #     """Check Login to account with invalid creds and perform s3 crud operations using cortxcli."""
     #     self.log.info(
     #         "STARTED: login to account with invalid cred and perform s3 crud ops using cortxcli")
     #     self.log.info("Step 1: Create new account")
@@ -996,9 +997,9 @@ class TestCortxcli:
     #     # user_access_key = resp[1]["AccessKey"]["AccessKeyId"]
     #     # user_secret_key = resp[1]["AccessKey"]["SecretAccessKey"]
     #     self.log.info("Step 2: Created access key for newly created user")
-    #     # s3_user_obj = s3_test_lib.S3TestLib(
-    #     #     access_key=user_access_key,
-    #     #     secret_key=user_secret_key)
+    #     s3_user_obj = s3_test_lib.S3TestLib(
+    #         access_key=user_access_key,
+    #         secret_key=user_secret_key)
     #     self.log.info(
     #         "Step 3: Performing CRUD operations using valid user's credentials")
     #     self.log.info("Creating a bucket with name %s", self.s3bucket_name)
