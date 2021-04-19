@@ -51,11 +51,14 @@ import logging
 import threading
 import ijson
 import traceback
+import time
+import random
 import multiprocessing
 from commons import params
 from commons.utils import system_utils
 from commons.utils import config_utils
 from commons.exceptions import TestException
+
 # Container level
 C_LEVEL_TOP = 1
 C_LEVEL_USER = 2
@@ -67,10 +70,9 @@ logger = logging.getLogger(__name__)
 class DataManager(object):
     """ Save objects meta data that went to storage for each test."""
 
-    def __init__(self, user):
+    def __init__(self):
         self.buckets = list()
         self.change_tracker = dict()
-        self.user = user
         self.state = dict()
         self.rlock = threading.Lock()
         self.wlock = threading.Lock()
@@ -108,7 +110,7 @@ class DataManager(object):
             raise ValueError('user is mandatory')
 
         fpath = self.prepare_file_data(user)
-        #with open(fpath, 'rb') as fp:
+        # with open(fpath, 'rb') as fp:
         #    data = ijson.items(fp, 'buckets.item')
         data = config_utils.read_content_json(fpath=fpath)
         if data:
@@ -137,7 +139,7 @@ class DataManager(object):
                     return _file_dict
         return None
 
-    def get_container(self, level=C_LEVEL_BUCKET):
+    def get_container(self, level=C_LEVEL_BUCKET, **kwargs):
         """Create bucket level container to store bucket's data.
             bucket container has name=<>, s3prefix='', files
             user container has name=<>, email='', buckets
@@ -163,16 +165,21 @@ class DataManager(object):
         data = config_utils.read_content_json(fpath=fpath)
         if data:
             if user != data['name'] or not data['buckets']:
-                return self.get_container(level=C_LEVEL_BUCKET), False
+                container = self.get_container(level=C_LEVEL_BUCKET)
+                container['name'] = bucket
+                return container, False
             for bkt in data['buckets']:
                 if bkt['name'] == bucket:
                     return bkt, True
-        return self.get_container(level=C_LEVEL_BUCKET), False  # anyway return an empty container
+        #means create a container for caller
+        container = self.get_container(level=C_LEVEL_BUCKET)
+        container['name'] = bucket
+        return container, False  # anyway return an empty container
 
     def add_file_to_bucket(self, user, bucket, file_dict):
         """The updates within process will be in-memory and then persisted to json."""
-        file_obj, checksum = file_dict['file_obj'], file_dict['checksum']
-        size, seed, mtime = file_dict['size'], file_dict['seed']. file_dict['mtime']
+        file_obj, checksum = file_dict['name'], file_dict['checksum']
+        size, seed, mtime = file_dict['size'], file_dict['seed'], file_dict['mtime']
         data = dict()
         if bucket is not None:
             with self.wlock:
@@ -180,10 +187,11 @@ class DataManager(object):
                 data = config_utils.read_content_json(fpath=fpath)
                 if not data or user != data['name']:
                     data = self.get_container(level=C_LEVEL_USER)
+                    data['name'] = user
                 bkt_container, flag = self._get_bucket_container_from_buckets(bucket, user)
 
-                #files = self.get_files_within_bucket(bkt_container, user, bucket)
-                fdict = self.get_file_within_bucket(self, file_obj, bkt_container, bucket)
+                # files = self.get_files_within_bucket(bkt_container, user, bucket)
+                fdict = self.get_file_within_bucket(file_obj, bkt_container, bucket)
                 if not fdict:
                     '''name=a.txt, chksum=abcd, seed=1, size=1024'''
                     fdict = dict(name=file_obj, checksum=checksum,
@@ -223,3 +231,59 @@ class DataManager(object):
     def get_versions_of_object(self, user):
         """Will be applicable in future."""
         raise NotImplementedError('Versioning not supported on Object Store.')
+
+
+def dummy_test(change_manager, user, keys, file_dicts, nbuckets):
+    access_key = 'keys[0]'
+    secret_key = 'keys[1]'
+    timestamp = time.strftime("%Y%m%d-%H%M%S")
+    print(f'starting thread {threading.current_thread().getName()}')
+    buckets = [user + '-bucket' + str(i) for i in range(nbuckets)]
+    for bucket in buckets:
+        try:
+            change_manager.add_file_to_bucket(user, bucket, file_dicts)
+        except Exception as e:
+            logger.info(f'exception occurred')
+
+
+if __name__ == '__main__':
+    logger.info('Starting tests')
+    jobs = []
+    nbuckets = 4
+    users = {"user1": ["AKIAvVRBu_qhRc2eOpMJwXOBjQ", "cT1tEIKo8SztEBpqHF5OroZkqda7kpph7DFQfZAz"],
+             "user2": ["AKIAwxH4rqnwRqmXoX5HzyV8xA", "C5dBsRcL73wLyLEZr858nymh2h70abFvxINNSkRa"],
+             "user3": ["AKIAql9gSmpcQnGyuHbiziTzng", "Ow6mYLCji2nBMCrMZDzG7/u2tu9WX0FjFI0ihOlG"],
+             "user4": ["AKIA3iswZrw0R7mKtHJZizImKg", "TcvKJRfJnYS8H4f53B2g0urn/8+7uFG44vStPiwt"],
+             "user5": ["AKIAZxC27C5kSRKomFywnCUE_A", "OLkz+6+eyV1IsXA2HBx6wtmRdihW0o/wktoCLCZf"],
+             "user6": ["AKIA1s420Uw3RnWuRH_jU5YL9g", "JUq17VoBHInxd2Oftec592v/nVuNXlT185KsPc/N"],
+             "user7": ["AKIAvzZoU96eQPucwPCYvD7kWw", "D7A+mEI/hu+0EAe02dZYbPZFD9BcmBPvdB5yaRRy"],
+             "user8": ["AKIAdLhZ3gGSSCW3Ul1ECrjq2g", "OKGEDDWS4D+ohrOf0w8nYcgCXGZ0GE2WTVL6zAOC"],
+             "user9": ["AKIA5Hx6gvLNTCuOAc7k6MYQ0w", "+xx/Y6IJWDQEGLzclUIwNVeSa3DfX09jGbbhi+M+"],
+             "user10": ["AKIARmsEWm0NTvi2NJ5HD4sIzw", "TlIjEvDS2Q4LoEXbESqhyJ/CdC531f5Za4Bbwcmy"]
+             }
+
+    objects = [{'name': 'a.txt', 'checksum': 'abcd', 'seed': 1, 'size': 1024, 'mtime':"1"},
+               {'name': 'b.txt', 'checksum': 'efgh', 'seed': 11, 'size': 1024, 'mtime':"1"},
+               {'name': 'c.txt', 'checksum': 'ijkl', 'seed': 111, 'size': 1024, 'mtime':"1"},
+               {'name': 'd.txt', 'checksum': 'mnop', 'seed': 1111, 'size': 1024, 'mtime':"1"},
+               {'name': 'a.txt', 'checksum': 'mabcd', 'seed': 1, 'size': 1024, 'mtime':"1"},
+               {'name': 'b.txt', 'checksum': 'mefgh', 'seed': 11, 'size': 1024, 'mtime':"1"},
+               {'name': 'c.txt', 'checksum': 'mijkl', 'seed': 111, 'size': 1024, 'mtime':"1"},
+               {'name': 'd.txt', 'checksum': 'mmnop', 'seed': 1111, 'size': 1024, 'mtime':"1"}]
+
+    change_manager = DataManager()
+    i = 0
+    while i < 2:
+        for user, keys in users.items():
+
+            p = threading.Thread(target=dummy_test,
+                                 args=(change_manager, user, keys,
+                                       objects[random.randint(0, 7)], nbuckets))
+            jobs.append(p)
+        i += 1
+    for p in jobs:
+        p.start()
+    for p in jobs:
+        p.join()
+
+    logger.info('Upload Done for all users')
