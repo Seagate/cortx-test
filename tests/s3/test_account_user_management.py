@@ -33,11 +33,10 @@ from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.helpers import node_helper
 from commons.utils import assert_utils
-from commons.utils.config_utils import read_yaml
 from commons.utils.system_utils import create_file, remove_file
 from config import CMN_CFG
 from config import CSM_CFG
-from libs.s3 import S3H_OBJ, LDAP_USERNAME, LDAP_PASSWD
+from libs.s3 import S3H_OBJ
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.iam_test_lib import IamTestLib
 from libs.s3.cortxcli_test_lib import CortxcliS3AccountOperations, CortxcliIamUser
@@ -70,8 +69,6 @@ class TestAccountUserManagement:
         cls.log.info("STARTED: setup test suite operations.")
         cls.acc_user_config = TEST_CFG["acc_user_mng"]
         cls.ca_cert_path = const.CA_CERT_PATH
-        cls.ldap_user = LDAP_USERNAME
-        cls.ldap_passwd = LDAP_PASSWD
         cls.test_file = "testfile"
         cls.test_dir_path = os.path.join(os.getcwd(), "testdata")
         cls.test_file_path = os.path.join(cls.test_dir_path, cls.test_file)
@@ -81,10 +78,10 @@ class TestAccountUserManagement:
         cls.log.info("Test file path: %s", cls.test_file_path)
         cls.log.info("STARTED: Test setup operations.")
         cls.log.info("Certificate path: %s", cls.ca_cert_path)
-        cls.log.info(
-            "LDAP credentials: User: %s, pass: %s",
-            cls.ldap_user,
-            cls.ldap_passwd)
+        # cls.log.info(
+        #     "LDAP credentials: User: %s, pass: %s",
+        #     cls.ldap_user,
+        #     cls.ldap_passwd)
         cls.log.info("---------------------------------------------------")
         cls.iam_password = CSM_CFG["CliConfig"]["iam_user"]["password"]
         cls.acc_password = CSM_CFG["CliConfig"]["s3_account"]["password"]
@@ -211,7 +208,8 @@ class TestAccountUserManagement:
         self.log.info("Deleted users successfully.")
         acc_list = self.cortx_obj.list_accounts_cortxcli()[1]
         all_acc = [acc["AccountName"]
-                   for acc in acc_list if self.acc_user_config["account_name"] in acc["AccountName"]]
+                   for acc in acc_list if
+                   self.acc_user_config["account_name"] in acc["AccountName"]]
         if all_acc:
             self.log.info("Accounts to delete: %s", str(all_acc))
             for acc in all_acc:
@@ -232,7 +230,6 @@ class TestAccountUserManagement:
                         assert resp[0], resp[1]
                         self.log.info("Deleted all buckets")
                     self.log.info("Deleting IAM accounts...")
-                    # resp = IAM_OBJ.reset_access_key_and_delete_account_s3iamcli(acc)
                     resp = self.cortx_obj.delete_account_cortxcli(acc)
                     self.log.info(
                         "reset access_key, delete account, response: %s", resp)
@@ -386,14 +383,14 @@ class TestAccountUserManagement:
             str(user_name))
         resp = self.create_account(account_name, self.s3acc_email)
         assert resp[0], resp[1]
-        resp = self.cortx_obj.create_user_using_cortxcli(
+        resp = self.cortx_obj.create_user_cortxcli(
             user_name, password=self.iam_password, confirm_password=self.iam_password)
         self.log.info(resp)
         assert resp[0], resp[1]
         self.log.info("Created new account and new user in it")
         self.log.info("Step 2: Create access key for newly created user")
         # new_s3h_obj = IamTestLib(access_key=access_key, secret_key=secret_key)
-        resp = self.cortx_obj.create_iamuser_access_key(user_name)
+        resp = self.cortx_obj.create_s3user_access_key_cortx_cli(user_name)
         self.log.info(resp)
         assert resp[0], resp[1]
         user_access_key = resp[1]["AccessKey"]["AccessKeyId"]
@@ -455,7 +452,7 @@ class TestAccountUserManagement:
             str(account_name))
         resp = self.create_account(account_name)
         assert resp[0], resp[1]
-        resp = self.cortx_obj.create_user_using_cortxcli(user_name)
+        resp = self.cortx_obj.create_user_cortxcli(user_name)
         self.log.info(resp)
         assert resp[0], resp[1]
         self.log.info("Step 1: Created new account and new user in it.")
@@ -525,7 +522,7 @@ class TestAccountUserManagement:
         secret_key = resp[1]["secret_key"]
         self.log.info("access key: %s", str(access_key))
         self.log.info("secret key: %s", str(secret_key))
-        resp = self.cortx_obj.create_user_using_cortxcli(user_name)
+        resp = self.cortx_obj.create_user_cortxcli(user_name)
         self.log.info(resp)
         assert resp[0], resp[1]
         self.log.info("Created new account and new user in it.")
@@ -552,7 +549,7 @@ class TestAccountUserManagement:
         assert resp[0], resp[1]
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
-        resp = self.cortx_obj.create_user_using_cortxcli(user_name)
+        resp = self.cortx_obj.create_user_cortxcli(user_name)
         self.log.info(resp)
         assert resp[0], resp[1]
         self.log.info("Step 1: Created new account and new user in it")
@@ -584,7 +581,7 @@ class TestAccountUserManagement:
         user_name = f'{self.acc_user_config["user_name"]}_{str(int(time.time()))}'
         resp = self.create_account(account_name)
         assert resp[0], resp[1]
-        resp = self.cortx_obj.create_user_using_cortxcli(user_name)
+        resp = self.cortx_obj.create_user_cortxcli(user_name)
         assert resp[0], resp[1]
         self.log.info("Step 1: Created new account and new user in it")
         self.log.info(
@@ -609,7 +606,7 @@ class TestAccountUserManagement:
         assert resp[0], resp[1]
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
-        resp = self.cortx_obj.create_user_using_cortxcli(user_name)
+        resp = self.cortx_obj.create_user_cortxcli(user_name)
         assert resp[0], resp[1]
         self.log.info("Created new account and new user in it")
         self.log.info("Step 2: Deleting user")
@@ -639,7 +636,7 @@ class TestAccountUserManagement:
         for cnt in range(total_users):
             my_user_name = f"{user_name}{cnt}"
             self.log.info("Creating user with name %s", str(my_user_name))
-            resp = self.cortx_obj.create_user_using_cortxcli(my_user_name)
+            resp = self.cortx_obj.create_user_cortxcli(my_user_name)
             assert resp[0], resp[1]
             self.log.info("Created user with name %s", str(my_user_name))
         self.log.info("Step 2: Created %s users", str(total_users))
@@ -972,7 +969,7 @@ class TestAccountUserManagement:
         account_id = resp[1]["Account_Id"]
         self.log.info("Created a new account with name %s", str(account_name))
         self.log.info("Step 2: Creating a user with name %s", str(user_name))
-        resp = self.cortx_obj.create_user_using_cortxcli(user_name)
+        resp = self.cortx_obj.create_user_cortxcli(user_name)
         assert resp[0], resp[1]
         self.log.info("Created a user with name %s", str(user_name))
         self.log.info(
