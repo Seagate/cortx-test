@@ -27,7 +27,7 @@ import yaml
 from pymongo import MongoClient
 from commons.utils import config_utils
 from commons import pswdmanager
-from commons.params import SETUPS_FPATH, DB_HOSTNAME, DB_NAME, SYS_INFO_COLLECTION
+from commons.params import SETUPS_FPATH, DB_HOSTNAME, DB_NAME, SYS_INFO_COLLECTION, SETUP_DEFAULTS
 
 LOG = logging.getLogger(__name__)
 
@@ -45,7 +45,6 @@ def get_config_yaml(fpath: str) -> dict:
         pswdmanager.decrypt_all_passwd(data)
     return data
 
-
 def get_config_db(setup_query: dict, drop_id: bool=True):
     """Reads the configuration from the database
 
@@ -60,8 +59,10 @@ def get_config_db(setup_query: dict, drop_id: bool=True):
             LOG.debug("IDs fields from MongoDB will be dropped")
             doc.pop('_id')
         if "setupname" in doc.keys():
+            setup_detail = config_utils.read_content_json(SETUP_DEFAULTS)
+            setup_detail.update(doc)
             LOG.debug("Reading the -- %s --setup details", doc['setupname'])
-            docs.update({doc['setupname']: doc})
+            docs.update({doc['setupname']: setup_detail})
     return docs
 
 
@@ -116,10 +117,10 @@ def get_config_wrapper(**kwargs):
     if "target" in kwargs and kwargs['target'] is not None:
         target = kwargs['target']
         flag = True
-        if os.path.exists(SETUPS_FPATH):
+        try:
             LOG.debug("Reading config from setups.json for setup: %s", target)
             setup_details = config_utils.read_content_json(SETUPS_FPATH, mode='rb')[target]
-        else:
+        except (KeyError, FileNotFoundError):
             setup_query = {"setupname": kwargs['target']}
             LOG.debug("Reading config from DB for setup: %s", target)
             setup_details = get_config_db(setup_query=setup_query)[target]
