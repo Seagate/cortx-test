@@ -233,11 +233,6 @@ def assert_greater_equal(actual, matcher, reason=""):
     assert actual >= matcher, reason if reason else matcher
 
 
-
-def assert_greater_equal(actual, matcher, reason=""):
-    assert actual >= matcher, reason if reason else matcher
-
-
 def assert_is_not_none(actual,reason=""):
     """ AssertIsNotNone Implementation."""
     assert actual != None, reason
