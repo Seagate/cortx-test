@@ -468,12 +468,17 @@ def check_kafka_msg_trigger_test(args):
 def get_setup_details(args):
     if not os.path.exists(params.LOG_DIR_NAME):
         os.mkdir(params.LOG_DIR_NAME)
+        LOGGER.info("Log directory created...")
     setups = None
     try:
+        LOGGER.info("Fetching setups details from database...")
         setups = configmanager.get_config_db(setup_query={})
+        LOGGER.info(setups)
         if os.path.exists(params.SETUPS_FPATH):
             os.remove(params.SETUPS_FPATH)
+            LOGGER.info("Removed the stale setups.json file...")
         config_utils.create_content_json(params.SETUPS_FPATH, setups, ensure_ascii=False)
+        LOGGER.info("Updated setups.json can be found under log directory...")
     except requests.exceptions.RequestException as fault:
         LOGGER.exception(str(fault))
         if args.db_update:

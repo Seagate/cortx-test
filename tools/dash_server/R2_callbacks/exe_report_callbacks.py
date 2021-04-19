@@ -40,20 +40,38 @@ from common import app
     Input('submit_button', 'n_clicks'),
     [State('branch_dropdown', 'value'),
      State('build_no_dropdown', 'value'),
+     State('test_system_dropdown', 'value'),
+     State('test_plan_dropdown', 'value'),
+     State('test_team_dropdown', 'value')
      ]
 )
-def gen_tab_headers(n_clicks, branch, build_no):
+def gen_tab_headers(n_clicks, branch, build_no, test_system, test_plan, test_team):
     """
     Generate Report headers with details.
     """
-    if n_clicks is None or branch is None or build_no is None:
+    if n_clicks is None or branch is None or build_no is None or test_system is None:
         raise PreventUpdate
     product_heading = "Product : Lyve Rack 2"
     build_heading = "Build : " + str(build_no)
     date = "Date : "
     start_of_execution = "-"
+
+    # Retrieve latest testplan for CortxQA for that specific build
+    query = {"buildType": branch, "buildNo": build_no, "testPlanLabel": test_system, "latest": True}
+    if test_team is None:
+        query["testTeam"] = "CortxQA"
+    else:
+        query["testTeam"] = test_team
+
+    if test_plan is None:
+        tp = common.get_testplan_ID(query)
+        if tp is not None:
+            query["testPlanID"] = tp
+    else:
+        query["testPlanID"] = test_plan
+
     query_input = {
-        "query": {"buildType": branch, "buildNo": build_no},
+        "query": query,
         "projection": {"testStartTime": True},
         "sort": {"testStartTime": 1}
     }
@@ -75,28 +93,36 @@ def gen_tab_headers(n_clicks, branch, build_no):
     [State('branch_dropdown', 'value'),
      State('build_no_dropdown', 'value'),
      State('test_system_dropdown', 'value'),
+     State('test_plan_dropdown', 'value'),
      State('test_team_dropdown', 'value'),
      ]
 )
-def gen_table_reported_bugs(n_clicks, branch, build_no, test_system, test_team):
+def gen_table_reported_bugs(n_clicks, branch, build_no, test_system, test_plan, test_team):
     """
     Generate Priority wise and Cortx/Test issue table
     """
-    issue_type = [ "Blocker", "Critical", "Major", "Minor", "Trivial","Total"]
-    test_infra_issue_dict = { "Blocker": 0, "Critical": 0, "Major": 0, "Minor": 0,
-                             "Trivial": 0,"Total": 0}
+    issue_type = ["Blocker", "Critical", "Major", "Minor", "Trivial", "Total"]
+    test_infra_issue_dict = {"Blocker": 0, "Critical": 0, "Major": 0, "Minor": 0,
+                             "Trivial": 0, "Total": 0}
     cortx_issue_dict = {"Blocker": 0, "Critical": 0, "Major": 0, "Minor": 0,
-                        "Trivial": 0,"Total": 0}
+                        "Trivial": 0, "Total": 0}
 
-    if n_clicks is None or branch is None or build_no is None:
+    if n_clicks is None or branch is None or build_no is None or test_system is None:
         raise PreventUpdate
 
-    query = {"buildType": branch, "buildNo": build_no}
+    query = {"buildType": branch, "buildNo": build_no, "testPlanLabel": test_system}
 
-    if test_system is not None:
-        query["testPlanLabel"] = test_system
-    if test_team is not None:
+    if test_team is None:
+        query["testTeam"] = "CortxQA"
+    else:
         query["testTeam"] = test_team
+
+    if test_plan is None:
+        tp = common.get_testplan_ID(query)
+        if tp is not None:
+            query["testPlanID"] = tp
+    else:
+        query["testPlanID"] = test_plan
 
     query_input = {"query": query, "field": "issueIDs"}
     if common.DEBUG_PRINTS:
@@ -159,21 +185,37 @@ def gen_table_reported_bugs(n_clicks, branch, build_no, test_system, test_team):
     [State('branch_dropdown', 'value'),
      State('build_no_dropdown', 'value'),
      State('test_system_dropdown', 'value'),
+     State('test_plan_dropdown', 'value'),
      State('test_team_dropdown', 'value')]
 )
-def gen_table_overall_qa_report(n_clicks, branch, build_no, test_system, test_team):
+def gen_table_overall_qa_report(n_clicks, branch, build_no, test_system, test_plan, test_team):
     """
     Generate Overall test reports along with the previous build reports
     """
-    if n_clicks is None or branch is None or build_no is None:
+    if n_clicks is None or branch is None or build_no is None or test_system is None:
         raise PreventUpdate
 
     previous_build_list = common.r2_get_previous_builds(branch, build_no)
-    overall_qa_data = {"Category": ["PASS", "FAIL", "ABORTED", "BLOCKED","TODO","TOTAL"]}
+    overall_qa_data = {"Category": ["PASS", "FAIL", "ABORTED", "BLOCKED", "TOTAL"]}
 
     previous_build_list.insert(0, build_no)
     for build in previous_build_list:
         build_results = []
+        # check latest testplan for that build
+        query = {"buildType": branch, "buildNo": build, "testPlanLabel": test_system}
+        if test_team is None:
+            query["testTeam"] = "CortxQA"
+        else:
+            query["testTeam"] = test_team
+
+        if test_plan is None or build != build_no:
+            tp = common.get_testplan_ID(query)
+            if tp is not None:
+                query["testPlanID"] = tp
+        else:
+            query["testPlanID"] = test_plan
+
+        # Query results per category
         for category in overall_qa_data["Category"]:
             if category == "TOTAL":
                 try:
@@ -181,11 +223,6 @@ def gen_table_overall_qa_report(n_clicks, branch, build_no, test_system, test_te
                 except TypeError:
                     build_results.append("-")
             else:
-                query = {"buildType": branch, "buildNo": build}
-                if test_system is not None:
-                    query["testPlanLabel"] = test_system
-                if test_team is not None:
-                    query["testTeam"] = test_team
                 query["testResult"] = category
                 query_input = {"query": query}
                 if common.DEBUG_PRINTS:
@@ -231,21 +268,30 @@ def gen_table_overall_qa_report(n_clicks, branch, build_no, test_system, test_te
     [State('branch_dropdown', 'value'),
      State('build_no_dropdown', 'value'),
      State('test_system_dropdown', 'value'),
+     State('test_plan_dropdown', 'value'),
      State('test_team_dropdown', 'value'),
      ]
 )
-def gen_table_feature_breakdown_summary(n_clicks, branch, build_no, test_system, test_team):
+def gen_table_feature_breakdown_summary(n_clicks, branch, build_no, test_system, test_plan,
+                                        test_team):
     """
     Generate feature wise breakdown of test results.
     """
-    if n_clicks is None or branch is None or build_no is None:
+    if n_clicks is None or branch is None or build_no is None or test_system is None:
         raise PreventUpdate
 
-    query = {"buildType": branch, "buildNo": build_no}
-    if test_system is not None:
-        query["testPlanLabel"] = test_system
-    if test_team is not None:
+    query = {"buildType": branch, "buildNo": build_no, "testPlanLabel": test_system}
+    if test_team is None:
+        query["testTeam"] = "CortxQA"
+    else:
         query["testTeam"] = test_team
+
+    if test_plan is None:
+        tp = common.get_testplan_ID(query)
+        if tp is not None:
+            query["testPlanID"] = tp
+    else:
+        query["testPlanID"] = test_plan
 
     query_input = {"query": query,
                    "projection": {"testResult": True, "feature": True}}
@@ -332,14 +378,14 @@ def gen_table_feature_breakdown_summary(n_clicks, branch, build_no, test_system,
     [State('branch_dropdown', 'value'),
      State('build_no_dropdown', 'value'),
      State('test_system_dropdown', 'value'),
+     State('test_plan_dropdown', 'value'),
      State('test_team_dropdown', 'value'),
      ])
-def gen_table_code_maturity(n_clicks, branch, build_no, test_system, test_team
-                            ):
+def gen_table_code_maturity(n_clicks, branch, build_no, test_system, test_plan, test_team):
     """
     Code Maturity with reference to the previous builds
     """
-    if n_clicks is None or branch is None or build_no is None:
+    if n_clicks is None or branch is None or build_no is None or test_system is None:
         raise PreventUpdate
 
     previous_build_list = common.r2_get_previous_builds(branch, build_no, 3)
@@ -349,6 +395,19 @@ def gen_table_code_maturity(n_clicks, branch, build_no, test_system, test_team
 
     for build in previous_build_list:
         build_results = []
+        query = {"buildType": branch, "buildNo": build, "testPlanLabel": test_system}
+        if test_team is None:
+            query["testTeam"] = "CortxQA"
+        else:
+            query["testTeam"] = test_team
+
+        if test_plan is None or build != build_no :
+            tp = common.get_testplan_ID(query)
+            if tp is not None:
+                query["testPlanID"] = tp
+        else:
+            query["testPlanID"] = test_plan
+
         for category in data_code_maturity["Category"]:
             if category == "TOTAL":
                 try:
@@ -356,11 +415,7 @@ def gen_table_code_maturity(n_clicks, branch, build_no, test_system, test_team
                 except TypeError:
                     build_results.append("-")
             else:
-                query = {"buildType": branch, "buildNo": build}
-                if test_system is not None:
-                    query["testPlanLabel"] = test_system
-                if test_team is not None:
-                    query["testTeam"] = test_team
+
                 query["testResult"] = category
                 query_input = {"query": query}
                 if common.DEBUG_PRINTS:
@@ -398,13 +453,15 @@ def gen_table_code_maturity(n_clicks, branch, build_no, test_system, test_team
     Output('table_s3_bucket_perf', 'children'),
     Input('submit_button', 'n_clicks'),
     [State('branch_dropdown', 'value'),
-     State('build_no_dropdown', 'value')]
+     State('build_no_dropdown', 'value'),
+     State('test_system_dropdown', 'value'),
+     ]
 )
-def gen_table_s3_bucket_perf(n_clicks, branch, build_no):
+def gen_table_s3_bucket_perf(n_clicks, branch, build_no,test_system):
     """
     Single Bucket Performance Statistics using S3bench
     """
-    if n_clicks is None or branch is None or build_no is None:
+    if n_clicks is None or branch is None or build_no is None or test_system is None:
         raise PreventUpdate
 
     return "No data available for R2"

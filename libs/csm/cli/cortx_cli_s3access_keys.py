@@ -40,14 +40,14 @@ class CortxCliS3AccessKeys(CortxCli):
         """
         super().__init__(session_obj=session_obj)
 
-    def create_s3access_key(self,
-                            user_name: str) -> tuple:
+    def create_s3_iam_access_key(self,
+                                 user_name: str) -> tuple:
         """
         This function will create s3 access key for IAM user using CORTX CLI.
         :param user_name: Name of S3 IAM user for which access key should be created.
-        :return: True/False and Response returned by CORTX CLI
+        :return: True/False and dictionary
         """
-
+        response_dict = {}
         command = " ".join(
             [commands.CMD_CREATE_ACCESS_KEY, user_name])
         LOGGER.info("Creating s3accesskey for user %s", user_name)
@@ -56,9 +56,12 @@ class CortxCliS3AccessKeys(CortxCli):
             response = self.execute_cli_commands(cmd="Y")[1]
             if "Access Key" in response:
                 LOGGER.info("Response returned: \n%s", response)
-                return True, response
+                response = self.split_table_response(response)
+                response_dict["access_key"] = response[0][1]
+                response_dict["secret_key"] = response[0][2]
+                return True, response_dict
 
-        return False, response
+        return False, response_dict
 
     def delete_s3access_key(self,
                             access_key: str,
