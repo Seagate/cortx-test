@@ -89,3 +89,27 @@ class CortxCliS3BucketOperations(CortxCli):
             return True, response
 
         return False, response
+
+    def delete_all_buckets_cortx_cli(self) -> dict:
+        """
+        This function deletes all buckets present under an s3 account
+        :return: deleted and non-deleted buckets
+        :rtype: (dict)
+        """
+        LOGGER.info("Listing all the buckets")
+        resp_json = self.list_buckets_cortx_cli(op_format="json")
+        bucket_list = self.format_str_to_dict(
+            resp_json[1])["buckets"]
+        response_dict = {"Deleted": [], "CouldNotDelete": []}
+        for bucket in bucket_list:
+            LOGGER.info("Deleting the bucket {}".format(bucket))
+            resp = self.delete_bucket_cortx_cli(
+                bucket["name"])
+            if "Bucket deleted" in resp[1]:
+                response_dict["Deleted"].append(bucket)
+            else:
+                response_dict["CouldNotDelete"].append(bucket)
+        if response_dict["CouldNotDelete"]:
+            LOGGER.error("Failed to delete all buckets")
+            return response_dict
+        return response_dict
