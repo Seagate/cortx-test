@@ -31,7 +31,7 @@ from commons.utils import system_utils
 from commons.utils.system_utils import remove_file
 from commons.utils.system_utils import run_remote_cmd
 from commons.utils.system_utils import run_local_cmd
-from commons.utils.assert_utils import assert_true
+from commons.utils.assert_utils import assert_true, assert_equals
 from commons.utils.assert_utils import assert_in
 from commons.utils.assert_utils import assert_equal
 from commons.utils.assert_utils import assert_is_not_none
@@ -138,18 +138,6 @@ class TestDataPathValidation:
         if pref_list:
             resp = S3_OBJ.delete_multiple_buckets(pref_list)
             assert_true(resp[0], resp[1])
-        self.log.info("Deleting IAM accounts")
-        acc_list = IAM_TEST_OBJ.list_accounts_s3iamcli(
-            self.ldap_user, self.ldap_pwd)[1]
-        self.log.info(acc_list)
-        all_acc = [acc["AccountName"]
-                   for acc in acc_list if self.account_name in acc["AccountName"]]
-        self.log.info(all_acc)
-        for acc_name in all_acc:
-            resp = IAM_TEST_OBJ.reset_access_key_and_delete_account_s3iamcli(
-                acc_name)
-            assert_true(resp[0], resp[1])
-        self.log.info("Deleted IAM accounts successfully")
         self.log.info("Deleting files created during execution")
         for file in self.log_file:
             if os.path.exists(file):
