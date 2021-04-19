@@ -117,17 +117,31 @@ def gen_table_execution_wise_defect(n_clicks, ids):
                     te_df["test_plan"] = tp_id
                 df_execution_wise_defect = df_execution_wise_defect.append(te_df)
 
+    df_execution_wise_defect["issue_no"] = df_execution_wise_defect["issue_no"].apply(common.add_link)
     if common.DEBUG_PRINTS:
         print("gen_table_execution_wise_defect : Dataframe : {}".format(df_execution_wise_defect))
+    col = []
+    for i in df_execution_wise_defect.columns:
+        if i == "issue_no":
+            col.append(
+                {"name": str(i).upper(), "id": i, "type": 'text', "presentation": "markdown"})
+        else:
+            col.append({"name": str(i).upper(), "id": i})
 
     execution_wise_defect = dash_table.DataTable(
         id="execution_wise_defect",
-        columns=[{"name": str(i).upper(), "id": i} for i in df_execution_wise_defect.columns],
+        columns=col,
         data=df_execution_wise_defect.to_dict('records'),
         style_header=common.dict_style_header,
         style_data_conditional=[{'if': {'row_index': 'odd'}, 'backgroundColor': '#F8F8F8'}
                                 ],
-        style_cell=common.dict_style_cell
+        style_cell=common.dict_style_cell,
+        style_table={
+            'width': '100%',
+            'overflowX': 'scroll',
+            'height': '50%',
+            'overflowY': 'auto'
+        }
     )
     if len(invalid_id) > 0:
         error_string = error_string + str(invalid_id)
