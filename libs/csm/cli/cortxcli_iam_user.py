@@ -23,7 +23,8 @@
 import logging
 from typing import Tuple
 from libs.csm.cli.cortx_cli import CortxCli
-from commons.commands import CREATE_IAM_USER, DELETE_IAM_USER, LIST_IAM_USER, CMD_RESET_IAM_PWD
+from commons.commands import CREATE_IAM_USER, DELETE_IAM_USER, \
+    LIST_IAM_USER, CMD_RESET_IAM_PWD
 
 LOG = logging.getLogger(__name__)
 
