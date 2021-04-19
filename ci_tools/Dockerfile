@@ -15,6 +15,6 @@ WORKDIR /cortx-test
 RUN yum install -y python3-devel librdkafka nfs-utils python3-tkinter
 RUN python3.7 -m pip install --upgrade pip
 RUN python3.7 -m pip install pysqlite3
-RUN python3.7 -m pip install -r requirements.txt
+RUN python3.7 -m pip install --ignore-installed -r requirements.txt
 RUN python3.7 -m pip install awscli
 COPY secrets.json .
