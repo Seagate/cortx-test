@@ -26,7 +26,8 @@ import pytest
 
 from commons.utils import assert_utils
 from scripts.locust import locust_runner
-from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
+from config import S3_CFG
+from libs.s3 import ACCESS_KEY, SECRET_KEY
 
 
 class TestS3Load:
@@ -82,23 +83,7 @@ class TestS3Load:
         self.log.info("STARTED: Teardown operations.")
         self.log.info("ENDED: Teardown operations.")
 
-    @pytest.mark.tags("EOS-19526")
-    def test_small_obj_max_session_19526(self):
-        """
-        Load test with small size objects and max supported concurrent sessions.
-        """
-        os.environ["MAX_POOL_CONNECTIONS"] = str(100)
-        os.environ["BUCKET_COUNT"] = str(30)
-        os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(25000)
-        res = locust_runner.run_locust(
-            host=self.host_url, locust_file="scripts/locust/locustfile.py",
-            users=30, duration="15m")
-        self.log.info(res)
-        log_file = res[1]["log-file"]
-        if os.path.exists(log_file):
-            res = locust_runner.check_log_file(log_file, error="InternalError")
-            assert_utils.assert_false(res, "Few IO failed due to some reason")
-
+    @pytest.mark.s3_load_test
     @pytest.mark.tags("EOS-19533")
     def test_single_bkt_small_obj_max_session_19533(self):
         """
@@ -116,6 +101,25 @@ class TestS3Load:
             res = locust_runner.check_log_file(log_file, error="InternalError")
             assert_utils.assert_false(res, "Few IO failed due to some reason")
 
+    @pytest.mark.s3_load_test
+    @pytest.mark.tags("EOS-19526")
+    def test_small_obj_max_session_19526(self):
+        """
+        Load test with small size objects and max supported concurrent sessions.
+        """
+        os.environ["MAX_POOL_CONNECTIONS"] = str(100)
+        os.environ["BUCKET_COUNT"] = str(30)
+        os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(25000)
+        res = locust_runner.run_locust(
+            host=self.host_url, locust_file="scripts/locust/locustfile.py",
+            users=30, duration="15m")
+        self.log.info(res)
+        log_file = res[1]["log-file"]
+        if os.path.exists(log_file):
+            res = locust_runner.check_log_file(log_file, error="InternalError")
+            assert_utils.assert_false(res, "Few IO failed due to some reason")
+
+    @pytest.mark.s3_load_test
     @pytest.mark.tags("EOS-19534")
     def test_small_obj_multi_bkt_max_session_19534(self):
         """
@@ -133,6 +137,7 @@ class TestS3Load:
             res = locust_runner.check_log_file(log_file, error="InternalError")
             assert_utils.assert_false(res, "Few IO failed due to some reason")
 
+    @pytest.mark.s3_load_test
     @pytest.mark.tags("EOS-19537")
     def test_small_obj_increase_session_19537(self):
         """
@@ -153,11 +158,11 @@ class TestS3Load:
             res = locust_runner.check_log_file(log_file, error="InternalError")
             assert_utils.assert_false(res, "Few IO failed due to some reason")
 
+    @pytest.mark.s3_load_test
     @pytest.mark.tags("EOS-19538")
     def test_small_obj_sudden_spike_session_19538(self):
         """
         Load test with small size objects and sudden spike in users count.
-        :return:
         """
         os.environ["MAX_POOL_CONNECTIONS"] = str(100)
         os.environ["BUCKET_COUNT"] = str(10)
