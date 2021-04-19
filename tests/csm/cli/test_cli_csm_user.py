@@ -54,7 +54,8 @@ class TestCliCSMUser:
         cls.CSM_ALERT = CortxCliAlerts()
         cls.IAM_USER = CortxCliIamUser()
         cls.BKT_OPS = CortxCliS3BucketOperations()
-        cls.S3_ACC = CortxCliS3AccountOperations(session_obj=cls.CSM_USER.session_obj)
+        cls.S3_ACC = CortxCliS3AccountOperations(
+            session_obj=cls.CSM_USER.session_obj)
         cls.GENERATE_ALERT_OBJ = GenerateAlertLib()
         cls.csm_user_pwd = CSM_CFG["CliConfig"]["csm_user"]["password"]
         cls.acc_password = CSM_CFG["CliConfig"]["s3_account"]["password"]
@@ -626,7 +627,8 @@ class TestCliCSMUser:
         self.LOGGER.info("Created csm user with name %s", self.user_name)
         self.LOGGER.info(
             "Verifying CSM User is not deleted on entering 'no' on confirmation question")
-        resp = self.CSM_USER.delete_csm_user(user_name=self.user_name, confirm="n")
+        resp = self.CSM_USER.delete_csm_user(
+            user_name=self.user_name, confirm="n")
         assert_utils.assert_equals(resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "cortxcli")
         self.LOGGER.info(
@@ -1095,7 +1097,8 @@ class TestCliCSMUser:
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(resp[1], "Invalid choice")
 
-        resp = self.S3_ACC.delete_s3account_cortx_cli(account_name=self.s3acc_name)
+        resp = self.S3_ACC.delete_s3account_cortx_cli(
+            account_name=self.s3acc_name)
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(resp[1], "Invalid choice")
         self.S3_ACC.logout_cortx_cli()
@@ -1526,7 +1529,6 @@ class TestCliCSMUser:
     def test_1850(self):
         """
         Test that csm user with monitor role cannot update alert using CLI
-        :avocado: tags=csm_user
         """
         self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
         self.LOGGER.info("Creating csm user with name %s", self.user_name)
@@ -1578,7 +1580,6 @@ class TestCliCSMUser:
     def test_7424(self):
         """
         Test that root user should able to modify self password through CSM-CLI
-        :avocado: tags=csm_user
         """
         self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
         self.LOGGER.info("Updating root password")
@@ -1688,7 +1689,8 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         self.LOGGER.info("Creating bucket with csm manage role")
-        resp = self.BKT_OPS.create_bucket_cortx_cli(bucket_name=self.bucket_name)
+        resp = self.BKT_OPS.create_bucket_cortx_cli(
+            bucket_name=self.bucket_name)
         assert_utils.assert_equals(
             resp[0], False, resp)
         assert_utils.assert_exact_string(resp[1], "invalid choice")
@@ -1697,7 +1699,8 @@ class TestCliCSMUser:
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(resp[1], "invalid choice")
         self.LOGGER.info("Deleting bucket with csm manage role")
-        resp = self.BKT_OPS.delete_bucket_cortx_cli(bucket_name=self.bucket_name)
+        resp = self.BKT_OPS.delete_bucket_cortx_cli(
+            bucket_name=self.bucket_name)
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(resp[1], "invalid choice")
         self.BKT_OPS.logout_cortx_cli()
@@ -1738,4 +1741,177 @@ class TestCliCSMUser:
         self.S3_ACC.logout_cortx_cli()
         self.CSM_USER.login_cortx_cli()
         self.LOGGER.info("Listed csm user with monitor role")
+        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-19811")
+    def test_reset_csm_user_pwd_by_admin(self):
+        """
+        verify admin user can change password of csm user(monitor/manage)
+        """
+        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        user_name_list = []
+        user_name2 = "auto_csm_user{0}".format(
+            random.randint(0, 10))
+        user_name_list.append(self.user_name)
+        user_name_list.append(user_name2)
+        new_password = "Seagate@567"
+        self.LOGGER.info("Creating csm users with manage and monitor role")
+        for each in zip(user_name_list, ["manage", "monitor"]):
+            resp = self.CSM_USER.create_csm_user_cli(
+                csm_user_name=each[0],
+                email_id=self.email_id,
+                password=self.csm_user_pwd,
+                confirm_password=self.csm_user_pwd,
+                role=each[1])
+            assert_utils.assert_equals(resp[0], True, resp[1])
+            assert_utils.assert_exact_string(resp[1], "User created")
+        self.LOGGER.info("Created csm users with manage and monitor role")
+        self.LOGGER.info("Resetting password of csm users")
+        for each_user in user_name_list:
+            resp = self.CSM_USER.reset_root_user_password(
+                user_name=each_user,
+                current_password=self.csm_user_pwd,
+                new_password=new_password,
+                confirm_password=new_password)
+            assert_utils.assert_equals(resp[0], True, resp[1])
+        self.LOGGER.info("Password has been changed for csm users")
+        self.LOGGER.info("Login to CSM user using new password")
+        for each_user in user_name_list:
+            self.CSM_USER.logout_cortx_cli()
+            err_msg = "Login is failed for CSM user %s", each_user
+            resp = self.CSM_USER.login_cortx_cli(
+                username=each_user, password=new_password)
+            assert_utils.assert_equals(resp[0], True, err_msg)
+        self.CSM_USER.login_cortx_cli()
+        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-19869")
+    def test_reset_admin_pwd(self):
+        """
+        Admin user is able to modify self password
+        """
+        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.LOGGER.info(
+            "Performing list CSM user before updating admin password")
+        resp = self.CSM_USER.list_csm_users(op_format="json")
+        assert_utils.assert_equals(resp[0], True, resp)
+        if resp[1]["users"]:
+            user_list_1 = [each["username"] for each in resp[1]["users"]]
+        self.LOGGER.info("Updating root password")
+        self.new_pwd = "Seagate@1"
+        resp = self.CSM_USER.reset_root_user_password(
+            user_name=CMN_CFG["csm"]["admin_user"],
+            current_password=CMN_CFG["csm"]["admin_pass"],
+            new_password=self.new_pwd,
+            confirm_password=self.new_pwd)
+        assert_utils.assert_equals(resp[0], True, resp)
+        assert_utils.assert_exact_string(resp[1], "Password Updated.")
+        self.CSM_USER.logout_cortx_cli()
+        self.LOGGER.info("Updated root password")
+        self.LOGGER.info(
+            "Verifying root user is able to login with new password")
+        resp = self.CSM_USER.login_cortx_cli(
+            username=CMN_CFG["csm"]["admin_user"],
+            password=self.new_pwd)
+        assert_utils.assert_equals(resp[0], True, resp)
+        self.LOGGER.info(
+            "Verified root user is able to login with new password")
+        self.LOGGER.info(
+            "Performing list CSM user after updating admin password")
+        resp = self.CSM_USER.list_csm_users(op_format="json")
+        assert_utils.assert_equals(resp[0], True, resp)
+        if resp[1]["users"]:
+            user_list_2 = [each["username"] for each in resp[1]["users"]]
+        self.LOGGER.info("Verifying no data loss due to password update")
+        assert_utils.assert_list_equal(user_list_1, user_list_2)
+        self.update_password = True
+        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-19871")
+    def test_reset_self_pwd_by_csm_user(self):
+        """
+        Verify CSM user can change password of self(manage or monitor) user
+        """
+        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        user_name_list = []
+        user_name2 = "auto_csm_user{0}".format(
+            random.randint(0, 10))
+        user_name_list.append(self.user_name)
+        user_name_list.append(user_name2)
+        new_password = "Seagate@567"
+        self.LOGGER.info("Creating csm users with manage and monitor role")
+        for each in zip(user_name_list, ["manage", "monitor"]):
+            resp = self.CSM_USER.create_csm_user_cli(
+                csm_user_name=each[0],
+                email_id=self.email_id,
+                password=self.csm_user_pwd,
+                confirm_password=self.csm_user_pwd,
+                role=each[1])
+            assert_utils.assert_equals(resp[0], True, resp[1])
+            assert_utils.assert_exact_string(resp[1], "User created")
+        self.LOGGER.info("Created csm users with manage and monitor role")
+        self.LOGGER.info("Resetting password of csm users")
+        self.CSM_USER.logout_cortx_cli()
+        resp = self.CSM_USER.login_cortx_cli(
+            username=self.user_name, password=self.csm_user_pwd)
+        assert_utils.assert_equals(resp[0], True, resp[1])
+        resp = self.CSM_USER.reset_root_user_password(
+            user_name=self.user_name,
+            current_password=self.csm_user_pwd,
+            new_password=new_password,
+            confirm_password=new_password)
+        assert_utils.assert_equals(resp[0], True, resp[1])
+        self.CSM_USER.logout_cortx_cli()
+        self.LOGGER.info("Password has been changed for csm users")
+        self.LOGGER.info("Login to CSM user using new password")
+        resp = self.CSM_USER.login_cortx_cli(
+            username=self.user_name, password=new_password)
+        assert_utils.assert_equals(resp[0], True, resp[1])
+        self.CSM_USER.logout_cortx_cli()
+        self.LOGGER.info("Login successfull using new password")
+        self.CSM_USER.login_cortx_cli()
+        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-19879")
+    def test_reset_admin_pwd_by_csm_user(self):
+        """
+        Verify CSM user can not change password of admin user
+        """
+        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        new_password = "Seagate@567"
+        self.LOGGER.info("Creating csm users with manage role")
+        resp = self.CSM_USER.create_csm_user_cli(
+            csm_user_name=self.user_name,
+            email_id=self.email_id,
+            password=self.csm_user_pwd,
+            confirm_password=self.csm_user_pwd,
+            role="manage")
+        assert_utils.assert_equals(resp[0], True, resp[1])
+        assert_utils.assert_exact_string(resp[1], "User created")
+        self.LOGGER.info("Created csm users with manage and monitor role")
+        self.LOGGER.info("Resetting password of admin by csm user")
+        self.CSM_USER.logout_cortx_cli()
+        resp = self.CSM_USER.login_cortx_cli(
+            username=self.user_name, password=self.csm_user_pwd)
+        assert_utils.assert_equals(resp[0], True, resp[1])
+        resp = self.CSM_USER.reset_root_user_password(
+            user_name=CMN_CFG["csm"]["admin_user"],
+            current_password=CMN_CFG["csm"]["admin_pass"],
+            new_password=new_password,
+            confirm_password=new_password)
+        assert_utils.assert_equals(resp[0], False, resp[1])
+        assert_utils.assert_exact_string(
+            resp[1], "Non admin user cannot change other user")
+        self.CSM_USER.logout_cortx_cli()
+        self.CSM_USER.login_cortx_cli()
+        self.LOGGER.info(
+            "Resetting password of admin by csm user is failed with error")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
