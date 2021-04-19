@@ -48,7 +48,6 @@ deactivate
 		stage('TEST_EXECUTION') {
 			steps{
 			    sh label: '', script: '''source venv/bin/activate
-TGT_NAME=`echo "$HOSTNAME" | sed  's/\..*//'`
 sh scripts/jenkins_job/run_pytest.sh
 deactivate
 '''
