@@ -306,16 +306,27 @@ def gen_table_detail_reported_bugs(n_clicks, branch, build_no, test_system, test
         if common.DEBUG_PRINTS:
             print("Issue list (reported bugs)", issue_list)
         df_detail_reported_bugs = common.get_issue_details(issue_list)
+        df_detail_reported_bugs["issue_no"] = df_detail_reported_bugs["issue_no"].\
+            apply(common.add_link)
+
+        col = []
+        for i in df_detail_reported_bugs.columns:
+            if i == "issue_no":
+                col.append(
+                    {"name": str(i).upper(), "id": i, "type": 'text', "presentation": "markdown"})
+            else:
+                col.append({"name": str(i).upper(), "id": i})
+
         detail_reported_bugs = dash_table.DataTable(
             id="detail_reported_bugs",
-            columns=[{"name": str(i).upper(), "id": i} for i in
-                     df_detail_reported_bugs.columns],
+            columns=col,
             data=df_detail_reported_bugs.to_dict('records'),
             style_header=common.dict_style_header,
             style_data_conditional=[{'if': {'row_index': 'odd'}, 'backgroundColor': '#F8F8F8'}
                                     ],
             style_cell=common.dict_style_cell
         )
+
     else:
         print(f"(gen_table_detail_reported_bugs) Response: {response.status_code}")
         detail_reported_bugs = None

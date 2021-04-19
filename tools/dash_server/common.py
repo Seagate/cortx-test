@@ -181,3 +181,9 @@ def r2_get_previous_builds(branch, build_no, no_of_prev_builds=1):
     else:
         print("r2_get_previous_builds error code :{}".format(response.status_code))
     return prev_list
+
+
+def add_link(row):
+    temp = "https://jts.seagate.com/browse/"+row
+    l = "[{0}]({1})".format(row,temp)
+    return l
