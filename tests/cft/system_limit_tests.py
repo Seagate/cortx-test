@@ -565,23 +565,25 @@ class TestS3IOSystemLimits:
     def test_list_multipart_upload_20274(self):
         """List 1000 Multipart uploads."""
         test = "test_20274"
+        bucket_name = "mp-bkt-test20274"
+        object_name = "mp-obj-test20274"
         test_config = self.cft_test_cfg[test]
-        self.log.info("Creating a bucket with name : %s", test_config["bucket_name"])
-        res = S3_TEST_OBJ.create_bucket(test_config["bucket_name"])
+        self.log.info("Creating a bucket with name : %s", bucket_name)
+        res = S3_TEST_OBJ.create_bucket(bucket_name)
         assert_utils.assert_true(res[0], res[1])
-        assert_utils.assert_equal(res[1], test_config["bucket_name"], res[1])
-        self.log.info("Created a bucket with name : %s", test_config["bucket_name"])
+        assert_utils.assert_equal(res[1], bucket_name, res[1])
+        self.log.info("Created a bucket with name : %s", bucket_name)
         self.log.info("Initiating multipart uploads")
         mpu_ids = []
         for i in range(test_config["list_multipart_uploads_limit"]):
-            res = S3_MP_TEST_OBJ.create_multipart_upload(test_config["bucket_name"],
-                                                         test_config["object_name"]+str(i))
+            res = S3_MP_TEST_OBJ.create_multipart_upload(bucket_name,
+                                                         object_name+str(i))
             assert_utils.assert_true(res[0], res[1])
             mpu_id = res[1]["UploadId"]
             self.log.info("Multipart Upload initiated with mpu_id %s", mpu_id)
             mpu_ids.append(mpu_id)
         self.log.info("Listing multipart uploads")
-        res = S3_MP_TEST_OBJ.list_multipart_uploads(test_config["bucket_name"])
+        res = S3_MP_TEST_OBJ.list_multipart_uploads(bucket_name)
         for mpu_id in mpu_ids:
             assert_utils.assert_in(mpu_id, str(res[1]),
                                    f"mpu ID {mpu_id} is not present in {res[1]}")
@@ -589,10 +591,11 @@ class TestS3IOSystemLimits:
         self.log.info("Aborting multipart uploads")
         for i in range(test_config["list_multipart_uploads_limit"]):
             mpu_id = mpu_ids[i]
-            res = S3_MP_TEST_OBJ.abort_multipart_upload(test_config["bucket_name"],
-                                                        test_config["object_name"]+str(i), mpu_id)
+            res = S3_MP_TEST_OBJ.abort_multipart_upload(bucket_name,
+                                                        object_name+str(i), mpu_id)
             assert_utils.assert_true(res[0], res[1])
         self.log.info("Aborted multipart upload")
         self.log.info("Deleting Bucket")
-        S3_TEST_OBJ.delete_bucket(test_config["bucket_name"], force=True)
+        resp = S3_TEST_OBJ.delete_bucket(bucket_name, force=True)
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Deleted Bucket")

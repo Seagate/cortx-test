@@ -594,13 +594,16 @@ class TestMultipartUpload:
             mp_config["bucket_name"],
             mp_config["object_name"])
         part_list = res[1]["Parts"]
-        assert len(part_list) == mp_config["max_list_parts"], \
+        assert_utils.assert_equal(
+            len(part_list), mp_config["max_list_parts"],
             "Listed {0} parts, Expected {1} " \
-            "parts".format(len(part_list), mp_config["max_list_parts"])
+            "parts".format(len(part_list), mp_config["max_list_parts"]))
         max_part_number = mp_config["total_parts"]
+        part_numbers = list(range(1, max_part_number + 1))
         for part in part_list:
-            assert part["PartNumber"] in list(range(1, max_part_number + 1)), \
-                f"Below listed part is outside of range 1 to {max_part_number}\n {part}"
+            assert_utils.assert_in(
+                part["PartNumber"], part_numbers,
+                f"Below listed part is outside of range 1 to {max_part_number}\n {part}")
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-5595')
