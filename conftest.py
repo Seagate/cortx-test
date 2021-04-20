@@ -52,6 +52,7 @@ from core.runner import LRUCache
 from core.runner import get_jira_credential
 from core.runner import get_db_credential
 from commons import params
+from config import CMN_CFG
 
 FAILURES_FILE = "failures.txt"
 LOG_DIR = 'log'
@@ -303,14 +304,16 @@ def create_report_payload(item, call, final_result, d_u, d_pass):
     os_ver = system_utils.get_os_version()
     _item_dict = get_test_metadata_from_tp_meta(item)
     marks = get_marks_for_test_item(item)
+    are_logs_collected = True
     if final_result == 'FAIL':
         health_chk_res = "TODO"
-        are_logs_collected = True
         log_path = "TODO"
-    elif final_result == 'PASS':
+    elif final_result in ['PASS', 'BLOCKED']:
         health_chk_res = "NA"
-        are_logs_collected = True
         log_path = "NA"
+
+    nodes = len(CMN_CFG['nodes'])  # number of target hosts
+    nodes_hostnames = [n['hostname'] for n in CMN_CFG['nodes']]
     data_kwargs = dict(os=os_ver,
                        build=item.config.option.build,
                        build_type=item.config.option.build_type,
@@ -321,8 +324,8 @@ def create_report_payload(item, call, final_result, d_u, d_pass):
                        log_path=log_path,
                        testPlanLabel=_item_dict['tp_label'],  # get from TP    tp.fields.labels
                        testExecutionLabel=_item_dict['te_label'],  # get from TE  te.fields.labels
-                       nodes=len(item.config.option.nodes),  # number of target hosts
-                       nodes_hostnames=item.config.option.nodes,
+                       nodes=nodes,
+                       nodes_hostnames=nodes_hostnames,
                        test_exec_id=item.config.option.te_tkt,
                        test_exec_time=call.duration,
                        test_name=_item_dict['test_name'],
@@ -333,9 +336,10 @@ def create_report_payload(item, call, final_result, d_u, d_pass):
                        start_time=time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(call.start)),
                        tags=marks,  # in mem te_meta
                        test_team=_item_dict['te_component'],  # TE te.fields.components[0].name
-                       test_type='Pytest',  # TE Avocado/CFT/Locust/S3bench/ Pytest
+                       test_type='Pytest',  # TE Avocado/CFT/Locust/S3bench/Pytest
                        latest=True,
-                       feature='Test',  # feature Should be read from master test plan board.
+                       # feature Should be read from master test plan board.
+                       feature=_item_dict.get('test_domain', 'None'),
                        db_username=d_u,
                        db_password=d_pass
                        )
@@ -533,8 +537,16 @@ def pytest_runtest_makereport(item, call):
                 elif item.rep_setup.skipped and \
                         (item.rep_teardown.skipped or item.rep_teardown.passed):
                     # Jira reporting of skipped cases does not contain skipped option
-                    # Keeping it todo_status and skipping db update for now
+                    # Reporting it blocked and updating db.
                     task.update_test_jira_status(item.config.option.te_tkt, test_id, 'BLOCKED')
+                    if item.config.option.db_update:
+                        try:
+                            payload = create_report_payload(item, call, 'BLOCKED', db_user, db_pass)
+                            REPORT_CLIENT.create_db_entry(**payload)
+                        except requests.exceptions.RequestException as fault:
+                            LOGGER.exception(str(fault))
+                            LOGGER.error("Failed to execute DB update for %s", test_id)
+
             except Exception as exception:
                 LOGGER.error("Exception %s occurred in reporting for test %s.",
                              str(exception), test_id)
@@ -560,6 +572,7 @@ def pytest_runtest_makereport(item, call):
             else:
                 extra = ""
             f.write(report.nodeid + extra + "\n")
+
 
 def upload_supporting_logs(test_id: str, remote_path: str, log: str):
     """
