@@ -124,7 +124,7 @@ class TestMultipartUpload:
             self.aws_config_path)
         self.log.info("Deleting a backup directory...")
         if path_exists(self.config_backup_path):
-            remove_file(self.config_backup_path)
+            remove_dirs(self.config_backup_path)
         if path_exists(self.mp_obj_path):
             remove_file(self.mp_obj_path)
         self.log.info("Deleted a backup directory")
