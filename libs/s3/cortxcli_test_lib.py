@@ -74,7 +74,7 @@ class CortxcliS3AccountOperations(CortxCliS3AccountOperations):
                 acc_details["access_key"] = response[5]
                 acc_details["secret_key"] = response[6]
                 LOGGER.info("Account Details: %s", acc_details)
-                return True, acc_details
+                response = acc_details
 
         except Exception as error:
             LOGGER.error("Error in %s: %s",
@@ -255,7 +255,7 @@ class CortxcliS3AccessKeys(CortxCliS3AccessKeys):
         :return: True/False and response returned by CORTX CLI
         """
         try:
-            status, response = super().create_s3access_key(user_name)
+            status, response = super().create_s3_iam_access_key(user_name)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          CortxcliS3AccessKeys.create_s3user_access_key_cortx_cli.__name__,
