@@ -103,10 +103,10 @@ class TestCliCSMUser:
         self.logger.info("STARTED : Teardown operations for test function")
         if self.update_password:
             resp = self.CSM_USER.reset_root_user_password(
-                user_name=CMN_CFG["csm"]["admin_user"],
+                user_name=CMN_CFG["csm"]["csm_admin_user"]["username"],
                 current_password=self.new_pwd,
-                new_password=CMN_CFG["csm"]["admin_pass"],
-                confirm_password=CMN_CFG["csm"]["admin_pass"])
+                new_password=CMN_CFG["csm"]["csm_admin_user"]["password"],
+                confirm_password=CMN_CFG["csm"]["csm_admin_user"]["password"])
             assert_utils.assert_equals(resp[0], True, resp)
             self.CSM_USER.login_cortx_cli()
         resp = self.CSM_USER.list_csm_users(op_format="json")
@@ -1582,8 +1582,8 @@ class TestCliCSMUser:
         self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
         self.logger.info("Updating root password")
         resp = self.CSM_USER.reset_root_user_password(
-            user_name=CMN_CFG["csm"]["admin_user"],
-            current_password=CMN_CFG["csm"]["admin_pass"],
+            user_name=CMN_CFG["csm"]["csm_admin_user"]["username"],
+            current_password=CMN_CFG["csm"]["csm_admin_user"]["password"],
             new_password=self.new_pwd,
             confirm_password=self.new_pwd)
         assert_utils.assert_equals(resp[0], True, resp)
@@ -1593,7 +1593,7 @@ class TestCliCSMUser:
         self.logger.info(
             "Verifying root user is able to login with new password")
         resp = self.CSM_USER.login_cortx_cli(
-            username=CMN_CFG["csm"]["admin_user"],
+            username=CMN_CFG["csm"]["csm_admin_user"]["username"],
             password=self.new_pwd)
         assert_utils.assert_equals(resp[0], True, resp)
         self.logger.info(
@@ -1799,8 +1799,8 @@ class TestCliCSMUser:
             user_list_1 = [each["username"] for each in resp[1]["users"]]
         self.logger.info("Updating root password")
         resp = self.CSM_USER.reset_root_user_password(
-            user_name=CMN_CFG["csm"]["admin_user"],
-            current_password=CMN_CFG["csm"]["admin_pass"],
+            user_name=CMN_CFG["csm"]["csm_admin_user"]["username"],
+            current_password=CMN_CFG["csm"]["csm_admin_user"]["password"],
             new_password=self.new_pwd,
             confirm_password=self.new_pwd)
         assert_utils.assert_equals(resp[0], True, resp)
@@ -1810,9 +1810,10 @@ class TestCliCSMUser:
         self.logger.info(
             "Verifying root user is able to login with new password")
         resp = self.CSM_USER.login_cortx_cli(
-            username=CMN_CFG["csm"]["admin_user"],
+            username=CMN_CFG["csm"]["csm_admin_user"]["username"],
             password=self.new_pwd)
         assert_utils.assert_equals(resp[0], True, resp)
+        self.update_password = True
         self.logger.info(
             "Verified root user is able to login with new password")
         self.logger.info(
@@ -1823,7 +1824,6 @@ class TestCliCSMUser:
             user_list_2 = [each["username"] for each in resp[1]["users"]]
         self.logger.info("Verifying no data loss due to password update")
         assert_utils.assert_list_equal(user_list_1, user_list_2)
-        self.update_password = True
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -1868,7 +1868,7 @@ class TestCliCSMUser:
             username=self.user_name, password=self.new_pwd)
         assert_utils.assert_equals(resp[0], True, resp[1])
         self.CSM_USER.logout_cortx_cli()
-        self.logger.info("Login successfull using new password")
+        self.logger.info("Login successful using new password")
         self.CSM_USER.login_cortx_cli()
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
@@ -1896,8 +1896,8 @@ class TestCliCSMUser:
             username=self.user_name, password=self.csm_user_pwd)
         assert_utils.assert_equals(resp[0], True, resp[1])
         resp = self.CSM_USER.reset_root_user_password(
-            user_name=CMN_CFG["csm"]["admin_user"],
-            current_password=CMN_CFG["csm"]["admin_pass"],
+            user_name=CMN_CFG["csm"]["csm_admin_user"]["username"],
+            current_password=CMN_CFG["csm"]["csm_admin_user"]["password"],
             new_password=self.new_pwd,
             confirm_password=self.new_pwd)
         assert_utils.assert_equals(resp[0], False, resp[1])
