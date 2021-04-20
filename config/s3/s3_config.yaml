@@ -13,7 +13,6 @@ create_account_delay: 5
 create_user_access_key_delay: 5
 delete_account_delay: 5
 reset_account_access_key_delay: 5
-minio_path: "/root/.mc/config.json"
 aws_cred_section: "default"
 aws_path: "/root/.aws/credentials"
 aws_config_path: "/root/.aws/config"
@@ -31,3 +30,8 @@ jClientCloud_path:
     source: "/root/jclientCloud/"
 s3_logs: "/var/log/seagate/s3"
 s3_ls_cmd: "ls /var/log/seagate/s3"
+minio_repo: "https://dl.min.io/client/mc/release/linux-amd64/mc"
+minio_path: "/root/.mc/config.json"
+minio_crt_path_list:
+    - "/root/.mc/certs/CAs/ca.crt"
+    - "/root/.mc/certs/s3.seagate.com.crt"
