@@ -48,7 +48,7 @@ deactivate
 		stage('TEST_EXECUTION') {
 			steps{
 			    sh label: '', script: '''source venv/bin/activate
-sh scripts/jenkins_job/run_pytest.sh
+#sh scripts/jenkins_job/run_tests.sh
 deactivate
 '''
 			}
@@ -57,8 +57,8 @@ deactivate
 	post {
 		always {
 			catchError(stageResult: 'FAILURE') {
-				junit allowEmptyResults: true, testResults: 'log/latest/results.xml'
-				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL.template"}', subject: '$PROJECT_NAME on Build # $CORTX_BUILD - $BUILD_STATUS!', to: 'nitesh.mahajan@seagate.com, dhananjay.dandapat@seagate.com, sonal.kalbende@seagate.com'
+			    #junit allowEmptyResults: true, testResults: 'log/latest/results.xml'
+				#emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL.template"}', subject: '$PROJECT_NAME on Build # $CORTX_BUILD - $BUILD_STATUS!', to: 'nitesh.mahajan@seagate.com, dhananjay.dandapat@seagate.com, sonal.kalbende@seagate.com'
 			}
 		}
 	}
