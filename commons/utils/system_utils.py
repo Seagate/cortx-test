@@ -471,11 +471,16 @@ def create_file(
     """
     cmd = commands.CREATE_FILE.format(dev, fpath, b_size, count)
     LOGGER.debug(cmd)
-    result = run_local_cmd(cmd, flg=True)
-    LOGGER.debug("output = %s", str(result))
-    result = (os.path.exists(fpath), result[1])
+    proc = Popen(cmd, shell=True, stderr=PIPE, stdout=PIPE, encoding="utf-8")
+    output, error = proc.communicate()
+    LOGGER.debug("output = %s", str(output))
+    LOGGER.debug("error = %s", str(error))
+    if proc.returncode != 0:
+        if os.path.isfile(fpath):
+            os.remove(fpath)
+        raise IOError(f"Unable to create file. command: {cmd}, error: {error}")
 
-    return result
+    return os.path.exists(fpath), ", ".join([output, error])
 
 
 def create_multiple_size_files(
