@@ -29,7 +29,7 @@ from commons.exceptions import CTException
 from commons.utils import assert_utils
 from commons.utils.system_utils import create_file
 from commons.utils.assert_utils import assert_true, assert_equal, assert_greater_equal, assert_in
-from config import CSM_CFG
+from config import CSM_CFG, S3_CFG
 
 from libs.csm.cli.cli_alerts_lib import CortxCliAlerts
 from libs.csm.cli.cli_csm_user import CortxCliCsmUser
@@ -39,8 +39,6 @@ from libs.csm.cli.cortxcli_iam_user import CortxCliIamUser
 
 from libs.s3 import s3_test_lib, iam_test_lib
 from libs.s3 import ACCESS_KEY, SECRET_KEY
-s3_test_obj = s3_test_lib.S3TestLib()
-iam_obj = iam_test_lib.IamTestLib()
 
 
 class TestCortxcli:
@@ -98,6 +96,7 @@ class TestCortxcli:
             - Login to CORTX CLI as admin user
         """
         self.log.info("STARTED : Setup operations at test function level")
+        self.iam_obj = iam_test_lib.IamTestLib(endpoint_url=S3_CFG["iam_url"])
         self.s3acc_name = "{}_{}".format(self.s3acc_name, int(time.perf_counter()))
         self.s3acc_email = self.s3acc_email.format(self.s3acc_name)
         self.s3bucket_name = "{}_{}_{}".format(
@@ -124,12 +123,12 @@ class TestCortxcli:
         if users_list:
             self.log.info("Deleting IAM users...")
             for user in users_list:
-                res = iam_obj.list_access_keys(user)
+                res = self.iam_obj.list_access_keys(user)
                 if res[0]:
                     self.log.info("Deleting user access key...")
                     keys_meta = res[1]["AccessKeyMetadata"]
                     for key in keys_meta:
-                        iam_obj.delete_access_key(
+                        self.iam_obj.delete_access_key(
                             user, key["AccessKeyId"])
                     self.log.info("Deleted user access key")
                 self.iam_user_obj.delete_iam_user(user)
@@ -142,7 +141,7 @@ class TestCortxcli:
             self.log.info("Accounts to delete: %s", all_acc)
             for acc in all_acc:
                 self.log.info("Deleting %s account", acc)
-                iam_obj.reset_access_key_and_delete_account_s3iamcli(acc)
+                self.iam_obj.reset_access_key_and_delete_account_s3iamcli(acc)
                 self.log.info("Deleted %s account", acc)
         self.log.info("ENDED: Teardown Operations")
 
@@ -306,6 +305,7 @@ class TestCortxcli:
         self.log.info("Step 1: Created new account and new user in it")
         self.log.info("Step 2: Create access key for newly created user")
         new_iam_obj = iam_test_lib.IamTestLib(
+            endpoint_url=S3_CFG["iam_url"],
             access_key=access_key,
             secret_key=secret_key)
         resp = new_iam_obj.create_access_key(usr_name)
@@ -314,6 +314,7 @@ class TestCortxcli:
         user_secret_key = resp[1]["AccessKey"]["SecretAccessKey"]
         self.log.info("Step 2: Created access key for newly created user")
         s3_user_obj = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=user_access_key,
             secret_key=user_secret_key)
         self.log.info(
@@ -408,7 +409,7 @@ class TestCortxcli:
         self.log.info(
             "Step 1: Created a user with name %s", usr_name)
         self.log.info("Step 2: Creating access key for the user")
-        resp = iam_obj.create_access_key(usr_name)
+        resp = self.iam_obj.create_access_key(usr_name)
         assert_true(resp[0], resp[1])
         self.log.info("Step 2: Created access key for the user")
         self.log.info("ENDED: create access key for user using cortxcli")
@@ -441,7 +442,7 @@ class TestCortxcli:
         self.log.info("Step 2: Created %s users", total_users)
         self.log.info("Verifying %s users are created", total_users)
         new_iam_obj = iam_test_lib.IamTestLib(
-            access_key=access_key, secret_key=secret_key)
+            endpoint_url=S3_CFG["iam_url"], access_key=access_key, secret_key=secret_key)
         list_of_users = new_iam_obj.list_users_s3iamcli(
             access_key, secret_key)[1]
         self.log.info(list_of_users)
@@ -513,6 +514,7 @@ class TestCortxcli:
         self.log.info("Step 1: Created new account and new user in it")
         self.log.info("Step 2: Deleting user")
         new_iam_obj = iam_test_lib.IamTestLib(
+            endpoint_url=S3_CFG["iam_url"],
             access_key=access_key,
             secret_key=secret_key)
         resp = new_iam_obj.delete_user(usr_name)
@@ -542,6 +544,7 @@ class TestCortxcli:
         self.log.info("Step 1: Created new account and new user in it")
         self.log.info("Step 2: Updating user name of already existing user")
         new_iam_obj = iam_test_lib.IamTestLib(
+            endpoint_url=S3_CFG["iam_url"],
             access_key=access_key,
             secret_key=secret_key)
         resp = new_iam_obj.update_user(new_user_name, usr_name)
@@ -607,6 +610,7 @@ class TestCortxcli:
         assert_true(resp[0], resp[1])
         self.log.info("Step 1: Created new account")
         s3_user_obj = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=user_access_key,
             secret_key=user_secret_key)
         self.log.info(
@@ -681,6 +685,7 @@ class TestCortxcli:
         self.log.info("Step 1: Created new account and new user in it")
         self.log.info("Step 2: Create access key for newly created user")
         new_iam_obj = iam_test_lib.IamTestLib(
+            endpoint_url=S3_CFG["iam_url"],
             access_key=access_key,
             secret_key=secret_key)
         resp = new_iam_obj.create_access_key(usr_name)
@@ -689,6 +694,7 @@ class TestCortxcli:
         user_secret_key = resp[1]["AccessKey"]["SecretAccessKey"]
         self.log.info("Step 2: Created access key for newly created user")
         s3_user_obj = s3_test_lib.S3TestLib(
+            endpoint_url=S3_CFG["s3_url"],
             access_key=user_access_key,
             secret_key=user_secret_key)
         self.log.info(
@@ -763,17 +769,17 @@ class TestCortxcli:
         self.log.info(
             "Step 3: Created a user with name %s", usr_name)
         self.log.info("Step 4: Creating access key for the user")
-        resp = iam_obj.create_access_key(usr_name)
+        resp = self.iam_obj.create_access_key(usr_name)
         assert_true(resp[0], resp[1])
         user_access_key = resp[1]["AccessKey"]["AccessKeyId"]
         self.log.info("Step 4: Created access key for the user")
         self.log.info("Step 5: Deleting access key of the user")
-        resp = iam_obj.delete_access_key(
+        resp = self.iam_obj.delete_access_key(
             usr_name, user_access_key)
         assert_true(resp[0], resp[1])
         self.log.info("Step 5: Deleted access key of the user")
         self.log.info("Step 6: Listing access key of the user")
-        resp = iam_obj.list_access_keys(usr_name)
+        resp = self.iam_obj.list_access_keys(usr_name)
         assert_true(resp[0], resp[1])
         # Verifying list is empty
         assert_true(len(resp[1]["AccessKeyMetadata"])
@@ -818,18 +824,18 @@ class TestCortxcli:
         self.log.info(
             "Step 3: Created a user with name %s", usr_name)
         self.log.info("Step 4: Creating access key for the user")
-        resp = iam_obj.create_access_key(usr_name)
+        resp = self.iam_obj.create_access_key(usr_name)
         access_key_to_update = resp[1]["AccessKey"]["AccessKeyId"]
         assert_true(resp[0], resp[1])
         self.log.info("Step 5: Updating access key of user")
-        resp = iam_obj.update_access_key(
+        resp = self.iam_obj.update_access_key(
             access_key_to_update,
             status,
             usr_name)
         assert_true(resp[0], resp[1])
         self.log.info("Step 5: Updated access key of user")
         self.log.info("Step 6: Verifying that access key of user is updated")
-        resp = iam_obj.list_access_keys(usr_name)
+        resp = self.iam_obj.list_access_keys(usr_name)
         assert_true(resp[0], resp[1])
         new_access_key = resp[1]["AccessKeyMetadata"][0]["AccessKeyId"]
         status = resp[1]["AccessKeyMetadata"][0]["Status"]
@@ -873,12 +879,12 @@ class TestCortxcli:
         self.log.info(
             "Step 3: Created a user with name %s", usr_name)
         self.log.info("Step 4: Creating access key for the user")
-        resp = iam_obj.create_access_key(usr_name)
+        resp = self.iam_obj.create_access_key(usr_name)
         assert_true(resp[0], resp[1])
         user_access_key = resp[1]["AccessKey"]["AccessKeyId"]
         self.log.info("Step 4: Created access key for the user")
         self.log.info("Step 5: Listing access key of the user")
-        resp = iam_obj.list_access_keys(usr_name)
+        resp = self.iam_obj.list_access_keys(usr_name)
         assert_true(resp[0], resp[1])
         resp_access_key = resp[1]["AccessKeyMetadata"][0]["AccessKeyId"]
         assert_equal(user_access_key, resp_access_key, resp[1])
@@ -919,18 +925,18 @@ class TestCortxcli:
         self.log.info(
             "Step 3: Created a user with name %s", usr_name)
         self.log.info("Step 4: Creating access key for the user")
-        resp = iam_obj.create_access_key(usr_name)
+        resp = self.iam_obj.create_access_key(usr_name)
         access_key_to_update = resp[1]["AccessKey"]["AccessKeyId"]
         assert_true(resp[0], resp[1])
         self.log.info("Step 5: Updating access key of user")
-        resp = iam_obj.update_access_key(
+        resp = self.iam_obj.update_access_key(
             access_key_to_update,
             status,
             usr_name)
         assert_true(resp[0], resp[1])
         self.log.info("Step 5: Updated access key of user")
         self.log.info("Step 6: Verifying that access key of user is updated")
-        resp = iam_obj.list_access_keys(usr_name)
+        resp = self.iam_obj.list_access_keys(usr_name)
         assert_true(resp[0], resp[1])
         new_access_key = resp[1]["AccessKeyMetadata"][0]["AccessKeyId"]
         status = resp[1]["AccessKeyMetadata"][0]["Status"]
