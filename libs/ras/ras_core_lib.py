@@ -180,7 +180,6 @@ class RASCoreLib:
         """
         file_path = cmn_cons.MSG_BUS_READER_PATH
         local_path_rabittmq = cmn_cons.MSG_BUS_READER_PATH
-        sspl_pass = kwargs.get("sspl_pass")
         LOGGER.debug("Copying file to %s", self.host)
         self.node_utils.copy_file_to_remote(
             local_path=local_path_rabittmq, remote_path=file_path)

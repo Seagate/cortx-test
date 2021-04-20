@@ -983,6 +983,7 @@ def systemctl_cmd(
         status, result = run_remote_cmd(cmd=cmd, hostname=hostname,
                                         username=username,
                                         password=password, read_lines=True)
+        print("Status: %s", status)
         out.append(result)
         resp = list(chain.from_iterable(out))
 
