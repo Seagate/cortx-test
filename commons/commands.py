@@ -314,6 +314,11 @@ CMD_SYSTEM_STATUS = "system status"
 CMD_SYSTEM_START = "system start"
 CMD_SYSTEM_STOP = "system stop"
 CMD_SYSTEM_SHUTDOWN = "system shutdown"
+CMD_CREATE_ACCESS_KEY = "s3accesskeys create -iu"
+CMD_DELETE_ACCESS_KEY = "s3accesskeys delete"
+CMD_SHOW_ACCESS_KEY = "s3accesskeys show -iu"
+CMD_UPDATE_ACCESS_KEY = "s3accesskeys update"
+CMD_RESET_IAM_PWD = "s3iamusers reset_password {}"
 
 # Linux System Commands
 CMD_MKDIR = "mkdir -p {}"

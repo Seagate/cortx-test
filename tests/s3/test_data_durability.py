@@ -31,7 +31,7 @@ from commons.utils import system_utils
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.helpers.host import Host
-from libs.s3 import S3H_OBJ, CMN_CFG, S3_CFG
+from libs.s3 import S3H_OBJ, CM_CFG, S3_CFG
 from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.iam_test_lib import IamTestLib
@@ -55,9 +55,9 @@ class TestDataDurability:
         cls.file_size = 5
         cls.object_name = "obj_data_durability"
         cls.sleep_time = 4
-        cls.host_ip = CMN_CFG["nodes"][0]["host"]
-        cls.uname = CMN_CFG["nodes"][0]["username"]
-        cls.passwd = CMN_CFG["nodes"][0]["password"]
+        cls.host_ip = CM_CFG["nodes"][0]["host"]
+        cls.uname = CM_CFG["nodes"][0]["username"]
+        cls.passwd = CM_CFG["nodes"][0]["password"]
         cls.ldap_user = LDAP_USERNAME
         cls.ldap_pwd = LDAP_PASSWD
         cls.test_dir_path = os.path.join(
