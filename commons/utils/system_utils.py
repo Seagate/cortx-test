@@ -664,34 +664,28 @@ def is_machine_clean() -> Tuple[bool, bool]:
 
 
 def is_rpm_installed(
-        *remoteargs,
         expected_rpm: str,
         remote: bool = False,
         **remoteKwargs) -> tuple:
     """
     This function checks that expected rpm is currently installed or not.
+
+    :param remote: If True command executed on remote machine.
     :param expected_rpm: rpm to check.
+    :param remoteKwargs: host details if remote execute is true.
     :return: True if rpm is installed, false otherwise.
     """
-    rpm_installed = False
-    cmd = commands.LST_RPM_CMD
-    LOGGER.debug("command : %s", cmd)
-    cmd_output = execute_cmd(cmd, remote, *remoteargs, **remoteKwargs)
-    if cmd_output[1]:
-        LOGGER.debug("RPM not found")
-        rpm_installed = False
-        return rpm_installed, "RPM not found"
+    if not expected_rpm:
+        return False, "Please, provide valid expected rpm: {}".format(expected_rpm)
 
-    LOGGER.debug(cmd_output[1])
-    rpm_list = [rpm.split("\n")[0] for rpm in cmd_output[1]]
-    LOGGER.debug("Installed RPM: %s", str(rpm_list))
-    for rpm in rpm_list:
-        if rpm in expected_rpm:
-            rpm_installed = True
-            LOGGER.debug("RPM %s already installed", expected_rpm)
-            break
+    cmd = commands.RPM_GREP_CMD.format(expected_rpm)
+    LOGGER.debug("command: %s", cmd)
+    cmd_output = execute_cmd(cmd=cmd, remote=remote, **remoteKwargs)
+    LOGGER.debug(cmd_output)
+    if not (cmd_output[0] or expected_rpm in cmd_output[1]):
+        return False, cmd_output[1]
 
-    return rpm_installed, "Expected RPM installed"
+    return True, cmd_output[1]
 
 
 def install_new_cli_rpm(
@@ -969,7 +963,13 @@ def systemctl_cmd(
         username: str,
         password: str) -> list:
     """
-    send/execute command on remote node.
+    send/execute systemctl command on remote node.
+    :param command: systemctl command to be executed
+    :param services: list of services on which systemctl command is to be
+    executed
+    :param hostname: hostname of the system on which command is to be executed
+    :param username: username of the host
+    :param password: password of the host
     """
     valid_commands = {"start", "stop",
                       "reload", "enable", "disable", "status", "is-active"}
@@ -987,3 +987,37 @@ def systemctl_cmd(
         resp = list(chain.from_iterable(out))
 
     return resp
+
+
+def configre_minio_cloud(minio_repo=None,
+                         endpoint_url=None,
+                         s3_cert_path=None,
+                         minio_cert_path_list=None,
+                         **kwargs):
+    """
+    Installing minio client in current machine.
+
+    :param minio_repo: minio repo path.
+    :param endpoint_url: s3 endpoint url.
+    :param s3_cert_path: s3 certificate path.
+    :param minio_cert_path_list: minio path list to be updated.
+    :param kwargs: access, secret keys.
+    :return: True if setup completed or false.
+    """
+    try:
+        LOGGER.info("Installing minio client in current machine.")
+        ACCESS = kwargs.get("access", None)
+        SECRET = kwargs.get("secret", None)
+        run_local_cmd("wget {}".format(minio_repo))
+        run_local_cmd("chmod +x {}".format(os.path.basename(minio_repo)))
+        run_local_cmd("./{} config host add s3 {} {} {} --api S3v4".format(os.path.basename(
+            minio_repo), endpoint_url, ACCESS, SECRET))
+        for crt_path in minio_cert_path_list:
+            if not os.path.exists(crt_path):
+                run_local_cmd("yes | cp -r {} {}".format(s3_cert_path, crt_path))
+        LOGGER.info("Installed minio client in current machine.")
+
+        return True
+    except Exception as error:
+        LOGGER.error(str(error))
+        return False

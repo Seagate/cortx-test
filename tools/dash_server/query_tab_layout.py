@@ -29,7 +29,6 @@ from Common_callbacks import query_tab_callbacks as qtc
 test_results_options = [
     {'label': '  PASS  ', 'value': 'PASS'},
     {'label': '  FAIL  ', 'value': 'FAIL'},
-    {'label': '  TODO  ', 'value': 'TODO'},
     {'label': '  BLOCKED  ', 'value': 'BLOCKED'},
     {'label': '  ABORTED  ', 'value': 'ABORTED'},
 ]

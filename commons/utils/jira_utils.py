@@ -4,8 +4,11 @@ JIRA Access Utility Class
 import json
 import traceback
 import requests
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 import datetime
 import logging
+import time
 from jira import JIRA
 from jira import JIRAError
 from jira import Issue
@@ -23,6 +26,16 @@ class JiraTask:
             'content-type': "application/json",
             'accept': "application/json",
         }
+        self.retry_strategy = Retry(
+            total=10,
+            backoff_factor=2,
+            status_forcelist=[429, 500, 502, 503, 504, 400, 404, 408],
+            method_whitelist=["HEAD", "GET", "OPTIONS"]
+        )
+        self.adapter = HTTPAdapter(max_retries=self.retry_strategy)
+        self.http = requests.Session()
+        self.http.mount("https://", self.adapter)
+        self.http.mount("http://", self.adapter)
 
     def get_test_ids_from_te(self, test_exe_id, status='ALL'):
         """
@@ -30,30 +43,14 @@ class JiraTask:
         """
         test_list = []
         te_tag = ""
-        try:
-            jira_url = 'https://jts.seagate.com/rest/raven/1.0/testruns?testExecKey=' + test_exe_id
-            response = requests.get(jira_url, auth=(self.jira_id, self.jira_password))
-            if response.status_code != HTTPStatus.OK:
-                print("Response code/text from Jira is {} and {}".format(response.status_code,
-                                                                         str(response)))
-        except requests.exceptions.RequestException as req_exec:
-            print(traceback.print_exc())
-            LOGGER.error('An error %s occurred in fetching test run.', req_exec)
 
-        if response.status_code == HTTPStatus.UNAUTHORIZED:
-            print('JIRA Unauthorized access')
-            LOGGER.error('JIRA Unauthorized access.')
-            return test_list, te_tag
-        elif response.status_code == HTTPStatus.SERVICE_UNAVAILABLE:
-            print('JIRA Service Unavailable')
-            LOGGER.error('JIRA Service Unavailable.')
-            return test_list, te_tag
-        elif response.status_code != HTTPStatus.OK:
-            # Retry to fetch te in case of 400 bad gateway.
-            # This error comes in case of length of list of test cases in a te are gt than 500.
-            print("Trying to request Jira again")
-            jira_url = "https://jts.seagate.com/"
-            options = {'server': jira_url}
+        jira_url = "https://jts.seagate.com/"
+        options = {'server': jira_url}
+        retries_cnt = 5
+        incremental_timeout_sec = 60
+        req_success = False
+        retry_attempt = 0
+        while (not req_success) and retries_cnt:
             try:
                 auth_jira = JIRA(options, basic_auth=self.auth)
                 te = auth_jira.issue(test_exe_id)
@@ -62,47 +59,48 @@ class JiraTask:
                     if te_tags:
                         te_tag = te_tags[0]
                         te_tag = te_tag.lower()
+                    req_success = True
             except (JIRAError, requests.exceptions.RequestException) as fault:
                 print('Error occurred in getting te tag')
-                LOGGER.error('Error occurred in getting te_tag from %s', test_exe_id)
-        elif response.status_code == HTTPStatus.OK:
-            data = response.json()
-            if len(data[0]['testEnvironments']) > 0:
-                te_tag = data[0]['testEnvironments'][0]
-                te_tag = te_tag.lower()
-        page_not_zero = 1
-        page_cnt = 1
-        while page_not_zero:
-            jira_url = "https://jts.seagate.com/rest/raven/1.0/api/testexec/{}/test?page={}&limit=50" \
-                .format(test_exe_id, page_cnt)
+                LOGGER.error(f'Error occurred {fault} in getting te_tag from {test_exe_id}')
+                retries_cnt = retries_cnt - 1
+                retry_attempt = retry_attempt + 1
+                time.sleep(incremental_timeout_sec * retry_attempt)
 
-            try:
-                response = requests.request("GET", jira_url, data=None, auth=(self.jira_id, self.jira_password),
-                                            headers=self.headers, params=None)
-                data = response.json()
-            except Exception as fault:
-                print(fault)
-                LOGGER.error('An error %s occurred in fetching tests from TE.', fault)
-            else:
-                if len(data) == 0:
-                    page_not_zero = 0
+        if te_tag != "":
+            page_not_zero = 1
+            page_cnt = 1
+            while page_not_zero:
+                jira_url = "https://jts.seagate.com/rest/raven/1.0/api/testexec/{}/test?" \
+                           "page={}&limit=50".format(test_exe_id, page_cnt)
+                try:
+                    response = self.http.get(jira_url, data=None,
+                                             auth=(self.jira_id, self.jira_password),
+                                             headers=self.headers, params=None)
+                    data = response.json()
+                except Exception as fault:
+                    print(fault)
+                    LOGGER.error('An error %s occurred in fetching tests from TE.', fault)
                 else:
-                    page_cnt = page_cnt + 1
-                    for test in data:
-                        if status == 'ALL':
-                            test_list.append(test['key'])
-                        elif status == 'FAIL':
-                            if str(test['status']) == 'FAIL':
+                    if len(data) == 0:
+                        page_not_zero = 0
+                    else:
+                        page_cnt = page_cnt + 1
+                        for test in data:
+                            if status == 'ALL':
                                 test_list.append(test['key'])
-                        elif status == 'TODO':
-                            if str(test['status']) == 'TODO':
-                                test_list.append(test['key'])
-                        elif status == 'PASS':
-                            if str(test['status']) == 'PASS':
-                                test_list.append(test['key'])
-                        elif status == 'ABORTED':
-                            if str(test['status']) == 'ABORTED':
-                                test_list.append(test['key'])
+                            elif status == 'FAIL':
+                                if str(test['status']) == 'FAIL':
+                                    test_list.append(test['key'])
+                            elif status == 'TODO':
+                                if str(test['status']) == 'TODO':
+                                    test_list.append(test['key'])
+                            elif status == 'PASS':
+                                if str(test['status']) == 'PASS':
+                                    test_list.append(test['key'])
+                            elif status == 'ABORTED':
+                                if str(test['status']) == 'ABORTED':
+                                    test_list.append(test['key'])
         return test_list, te_tag
 
     def get_test_list_from_te(self, test_exe_id, status='ALL'):
@@ -194,11 +192,14 @@ class JiraTask:
                     },
             }
         """
-        if not auth_jira or not isinstance(auth_jira, JIRA):
-            jira_url = "https://jts.seagate.com/"
-            options = {'server': jira_url}
-            auth_jira = JIRA(options, basic_auth=self.auth)
-        return auth_jira.issue(issue_id)
+        try:
+            if not auth_jira or not isinstance(auth_jira, JIRA):
+                jira_url = "https://jts.seagate.com/"
+                options = {'server': jira_url}
+                auth_jira = JIRA(options, basic_auth=self.auth)
+            return auth_jira.issue(issue_id)
+        except (JIRAError, requests.exceptions.RequestException) as fault:
+            LOGGER.error(f'Error occurred {fault} in getting test details for {issue_id}')
 
     def update_test_jira_status(self, test_exe_id, test_id, test_status, log_path=''):
         """
@@ -218,7 +219,8 @@ class JiraTask:
         state['tests'].append(status)
         data = json.dumps(state)
         jira_url = "https://jts.seagate.com/" + "/rest/raven/1.0/import/execution"
-        response = requests.request("POST", jira_url, data=data, auth=(self.jira_id, self.jira_password),
+        response = requests.request("POST", jira_url, data=data,
+                                    auth=(self.jira_id, self.jira_password),
                                     headers=self.headers,
                                     params=None)
         return response
@@ -229,21 +231,25 @@ class JiraTask:
         """
         test_info = list()
         try:
-            jira_url = "https://jts.seagate.com/rest/raven/1.0/api/testexec/{}/test".format(test_exe_id)
+            jira_url = "https://jts.seagate.com/rest/raven/1.0/api/testexec/{}/test".format(
+                test_exe_id)
             response = requests.get(jira_url, auth=(self.jira_id, self.jira_password))
             if response is not None:
-                if response.status_code == HTTPStatus.BAD_REQUEST:
+                if response.status_code != HTTPStatus.OK:
                     page_not_zero = 1
                     page_cnt = 1
-                    while page_not_zero:
-                        jira_url = "https://jts.seagate.com/rest/raven/1.0/api/testexec/{}/test?page={}" \
-                            .format(test_exe_id, page_cnt)
+                    timeout_sec = 180
+                    timeout_start = time.time()
+                    while page_not_zero and (time.time() < timeout_start + timeout_sec):
+                        jira_url = "https://jts.seagate.com/rest/raven/1.0/api/testexec/{}/" \
+                                   "test?page={}".format(test_exe_id, page_cnt)
                         try:
-                            response = requests.get(jira_url, auth=(self.jira_id, self.jira_password))
+                            response = requests.get(jira_url,
+                                                    auth=(self.jira_id, self.jira_password))
                             data = response.json()
                             test_info.append(data)
                         except Exception as e:
-                            print(e)
+                            LOGGER.error('Exception in get_test_details: %s', e)
                         else:
                             if len(data) == 0:
                                 page_not_zero = 0
@@ -253,8 +259,15 @@ class JiraTask:
                     data = response.json()
                     test_info.append(data)
             return test_info
-        except requests.exceptions.RequestException:
-            print(traceback.print_exc())
+        except requests.exceptions.RequestException as re:
+            LOGGER.error('Request exception in get_test_details %s', re)
+            return test_info
+        except ValueError as ve:
+            LOGGER.error('Value exception in get_test_details %s', ve)
+            return test_info
+        except Exception as e:
+            LOGGER.error('Exception in get_test_details: %s', e)
+            return test_info
 
     def update_execution_details(self, data: list, test_id: str, comment: str)\
             -> bool:

@@ -94,6 +94,8 @@ const.AUTHSERVER_FILE = "/opt/seagate/cortx/auth/resources/authserver.properties
 const.SCRIPT_PATH = "cd /opt/seagate/cortx/auth/scripts"
 const.CRASH_COMMANDS = ["ls -l /var/crash", "ls -lR /var/motr | grep core"],
 const.AUTHSERVER_LOG_PATH = "/var/log/seagate/auth/server/app.log"
+const.S3CMD = "s3cmd"
+const.S3FS = "s3fs-fuse"
 
 
 class Rest:

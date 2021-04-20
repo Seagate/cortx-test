@@ -31,6 +31,7 @@ from commons.params import RAS_CONFIG_PATH
 from commons.params import SSPL_TEST_CONFIG_PATH
 from commons.params import COMMON_DESTRUCTIVE_CONFIG_PATH
 from commons.params import PROV_TEST_CONFIG_PATH
+from commons.params import S3_BKT_TEST_CONFIG
 
 
 def split_args(sys_cmd: List):
@@ -51,6 +52,7 @@ if proc_name == 'pytest' and '--local' in pytest_args and '--target' in pytest_a
     # This condition will execute when args ore in format ['--target','<target name'>]
     if pytest_args[pytest_args.index("--local") + 1]:
         target = pytest_args[pytest_args.index("--target") + 1]
+    os.environ["TARGET"]=target
 elif proc_name == 'pytest' and '--target' in pytest_args and '--local' not in pytest_args:
     # This condition will execute for non local test runner execution
     target = pytest_args[pytest_args.index("--target") + 1].lower()
@@ -72,6 +74,8 @@ CSM_REST_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG, config_key="Re
 CSM_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG)
 S3_CFG = configmanager.get_config_wrapper(fpath=S3_CONFIG, target=target, target_key="s3")
 S3_OBJ_TST = configmanager.get_config_wrapper(fpath=S3_OBJ_TEST_CONFIG, target=target, target_key="s3")
+S3_BKT_TST = configmanager.get_config_wrapper(fpath=S3_BKT_TEST_CONFIG, target=target,
+                                            target_key="s3")
 RAS_VAL = configmanager.get_config_wrapper(fpath=RAS_CONFIG_PATH,
                                            target=target, target_key="csm")
 CMN_DESTRUCTIVE_CFG = configmanager.get_config_wrapper(fpath=COMMON_DESTRUCTIVE_CONFIG_PATH)
