@@ -43,17 +43,11 @@ DI_CONFIG_PATH = os.path.join(CONFIG_DIR, 'di_config.yaml')
 DATA_PATH_CONFIG_PATH = os.path.join(CONFIG_DIR, 's3/test_data_path_validate.yaml')
 
 TEST_DATA_PATH = os.path.join(os.getcwd(), TEST_DATA_FOLDER)
-
 JIRA_TEST_LIST = 'test_lists.csv'
-
 CSM_CONFIG_PATH = os.path.join(CONFIG_DIR, 'csm', 'csm_config.yaml')
-
 JIRA_TEST_META_JSON = 'test_meta_data.json'
-
 JIRA_TEST_COLLECTION = 'test_collection.csv'
-
 JIRA_SELECTED_TESTS = 'selected_test_lists.csv'
-
 JIRA_DIST_TEST_LIST = 'dist_test_lists.csv'
 
 # Kafka Config Params
@@ -87,26 +81,24 @@ JENKINS_URL = "http://eos-jenkins.mero.colo.seagate.com/job/QA/"
 REPORT_SRV = "http://cftic2.pun.seagate.com:5000/"
 SETUP_DEFAULTS = "tools/setup_update/setup_entry.json"
 
-#DI Params
+# DI Params
 DI_LOG_FILE = 'diframework.log'
 NWORKERS = 32
 NGREENLETS = 32
 NUSERS = 10
 DATAGEN_HOME = '/var/log/datagen/'
-#DATAGEN_HOME = 'c:\\var\\log\\datagen'
 META_DATA_HOME = os.path.join(LOG_DIR, 'meta_data')
-
+S3_ENDPOINT = "https://s3.seagate.com"
 DATASET_FILES = "/var/log/datagen/createdfile.txt"
 USER_JSON = '_usersdata'
 USER_META_JSON = '_user_metadata'
 UPLOADED_FILES = "uploadInfo.csv"
-deleteOpFileName = "deleteInfo.csv"
-comDeleteOpFileName = "combinedDeleteInfo.csv"
-uploadDoneFile = UPLOADED_FILES
-uploadFinishedFileName = "upload_done.txt"
-FailedFiles = "FailedFiles.csv"
-FailedFilesServerError = "FailedFilesServerError.csv"
-destructiveTestResult = "/root/result_summary.csv"
-deletePercentage = 10
+DELETE_OP_FILE_NAME = "deleteInfo.csv"
+COM_DELETE_OP_FILENAME = "combinedDeleteInfo.csv"
+UPLOAD_DONE_FILE = UPLOADED_FILES
+UPLOAD_FINISHED_FILENAME = "upload_done.txt"
+FAILED_FILES = "FailedFiles.csv"
+FAILED_FILES_SERVER_ERROR = "FailedFilesServerError.csv"
+DESTRUCTIVE_TEST_RESULT = "/root/result_summary.csv"
+DELETE_PERCENTAGE = 10
 DOWNLOAD_HOME = '/var/log/'
-

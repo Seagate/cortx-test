@@ -271,6 +271,8 @@ def create_test_meta_data_file(args, test_list, jira_obj=None):
             else:
                 component = list()
             item['component'] = component
+            domain = resp.fields.customfield_21087.value if resp.fields.customfield_21087 else 'None'
+            item['test_domain'] = domain
             test_meta.append(item)
         tp_meta['test_meta'] = test_meta
         json.dump(tp_meta, t_meta, ensure_ascii=False)
@@ -473,7 +475,7 @@ def get_setup_details(args):
     try:
         LOGGER.info("Fetching setups details from database...")
         setups = configmanager.get_config_db(setup_query={})
-        LOGGER.info(setups)
+        LOGGER.debug(setups)
         if os.path.exists(params.SETUPS_FPATH):
             os.remove(params.SETUPS_FPATH)
             LOGGER.info("Removed the stale setups.json file...")

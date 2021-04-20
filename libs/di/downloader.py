@@ -34,7 +34,6 @@ from commons import worker
 from commons.utils import system_utils
 from commons.params import SCRIPT_HOME
 from libs.di import di_base
-from libs.di import di_params
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.di import uploader
 
@@ -142,8 +141,8 @@ class DataIntegrityValidator:
             LOGGER.info("uploaded data not found, exiting script")
             exit(1)
 
-        if os.path.exists(params.deleteOpFileName):
-            with open(params.deleteOpFileName, newline='') as f:
+        if os.path.exists(params.DELETE_OP_FILE_NAME):
+            with open(params.DELETE_OP_FILE_NAME, newline='') as f:
                 reader = csv.reader(f)
                 deletedFiles = list(reader)
         summary['deleted_files'] = len(deletedFiles)

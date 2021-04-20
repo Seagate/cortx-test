@@ -171,7 +171,7 @@ class DataManager(object):
             for bkt in data['buckets']:
                 if bkt['name'] == bucket:
                     return bkt, True
-        #means create a container for caller
+        # means create a container for caller
         container = self.get_container(level=C_LEVEL_BUCKET)
         container['name'] = bucket
         return container, False  # anyway return an empty container
@@ -262,20 +262,19 @@ if __name__ == '__main__':
              "user10": ["AKIARmsEWm0NTvi2NJ5HD4sIzw", "TlIjEvDS2Q4LoEXbESqhyJ/CdC531f5Za4Bbwcmy"]
              }
 
-    objects = [{'name': 'a.txt', 'checksum': 'abcd', 'seed': 1, 'size': 1024, 'mtime':"1"},
-               {'name': 'b.txt', 'checksum': 'efgh', 'seed': 11, 'size': 1024, 'mtime':"1"},
-               {'name': 'c.txt', 'checksum': 'ijkl', 'seed': 111, 'size': 1024, 'mtime':"1"},
-               {'name': 'd.txt', 'checksum': 'mnop', 'seed': 1111, 'size': 1024, 'mtime':"1"},
-               {'name': 'a.txt', 'checksum': 'mabcd', 'seed': 1, 'size': 1024, 'mtime':"1"},
-               {'name': 'b.txt', 'checksum': 'mefgh', 'seed': 11, 'size': 1024, 'mtime':"1"},
-               {'name': 'c.txt', 'checksum': 'mijkl', 'seed': 111, 'size': 1024, 'mtime':"1"},
-               {'name': 'd.txt', 'checksum': 'mmnop', 'seed': 1111, 'size': 1024, 'mtime':"1"}]
+    objects = [{'name': 'a.txt', 'checksum': 'abcd', 'seed': 1, 'size': 1024, 'mtime': "1"},
+               {'name': 'b.txt', 'checksum': 'efgh', 'seed': 11, 'size': 1024, 'mtime': "1"},
+               {'name': 'c.txt', 'checksum': 'ijkl', 'seed': 111, 'size': 1024, 'mtime': "1"},
+               {'name': 'd.txt', 'checksum': 'mnop', 'seed': 1111, 'size': 1024, 'mtime': "1"},
+               {'name': 'a.txt', 'checksum': 'mabcd', 'seed': 1, 'size': 1024, 'mtime': "1"},
+               {'name': 'b.txt', 'checksum': 'mefgh', 'seed': 11, 'size': 1024, 'mtime': "1"},
+               {'name': 'c.txt', 'checksum': 'mijkl', 'seed': 111, 'size': 1024, 'mtime': "1"},
+               {'name': 'd.txt', 'checksum': 'mmnop', 'seed': 1111, 'size': 1024, 'mtime': "1"}]
 
     change_manager = DataManager()
     i = 0
     while i < 2:
         for user, keys in users.items():
-
             p = threading.Thread(target=dummy_test,
                                  args=(change_manager, user, keys,
                                        objects[random.randint(0, 7)], nbuckets))

@@ -42,7 +42,6 @@ from commons.utils import config_utils
 from commons.worker import Workers
 from commons.worker import WorkQ
 from commons import params
-from libs.di import di_params
 from libs.di import di_base
 from libs.di import di_lib
 from libs.di import data_man
@@ -76,17 +75,17 @@ class Uploader:
         Uploader.change_manager = data_man.DataManager(user=user)
         s3connections = di_base.init_s3_conn(user_name=user_name,
                                              keys=keys,
-                                             nworkers=di_params.NWORKERS)
+                                             nworkers=params.NWORKERS)
         pool_len = len(s3connections)
         for bucket in buckets:
             try:
-                file1 = open(di_params.DATASET_FILES,"r")
+                file1 = open(params.DATASET_FILES,"r")
                 obj_file_paths = file1.readlines()
             except Exception as e:
-                logger.info(f'could not access file {di_params.DATASET_FILES} exception:{e}')
+                logger.info(f'could not access file {params.DATASET_FILES} exception:{e}')
                 return
             else:
-                logger.info(f'able to access file {di_params.DATASET_FILES}')
+                logger.info(f'able to access file {params.DATASET_FILES}')
 
             # try:
             #
@@ -118,7 +117,7 @@ class Uploader:
             workers.end_workers()
             logger.info('Upload Workers shutdown completed successfully')
         if len(uploadObjects) > 0:
-            with open(di_params.UPLOADED_FILES, 'a', newline='') as fp:
+            with open(params.UPLOADED_FILES, 'a', newline='') as fp:
                 wr = csv.writer(fp, quoting=csv.QUOTE_NONE, delimiter=',', quotechar='',escapechar='\\')
                 fcntl.flock(fp, fcntl.LOCK_EX)
                 wr.writerows(uploadObjects)
@@ -132,7 +131,7 @@ class Uploader:
         s3connections = kwargs['s3connections']
         pool_len = kwargs['pool_len']
         user_name = kwargs['user']
-        each_file_path = di_params.DATAGEN_HOME + m.group(1)
+        each_file_path = params.DATAGEN_HOME + m.group(1)
         s3 = s3connections[random.randint(0, pool_len - 1)]
         try:
             s3.meta.client.upload_file(str(each_file_path),
@@ -160,11 +159,11 @@ class Uploader:
     def start(users):
         logger.info('Starting uploads')
         try:
-            os.remove(di_params.uploadFinishedFileName)
+            os.remove(params.UPLOAD_FINISHED_FILENAME)
         except Exception as e:
             logger.info(f'file not able to remove: {e}')
         try:
-            os.remove(di_params.UPLOADED_FILES)
+            os.remove(params.UPLOADED_FILES)
         except Exception as e:
             logger.info(f'file not able to remove: {e}')
         users_home = params.LOG_DIR
@@ -180,5 +179,5 @@ class Uploader:
         for p in jobs:
             p.join()
         logger.info('Upload Done for all users')
-        with open(di_params.uploadFinishedFileName, 'w') as lck:
+        with open(params.UPLOAD_FINISHED_FILENAME, 'w') as lck:
             pass

@@ -50,25 +50,14 @@ from gevent.lock import BoundedSemaphore
 from libs.di import di_params
 from libs.di.di_mgmt_ops import ManagementOPs
 from commons.exceptions import TestException
-
-
+from commons import params
+from commons.utils import assert_utils
 IAM_UTYPE = 1
 S3_ACC_UTYPE = 2
 s3connections = list()
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
-
-diusers = {"user1":["AKIAvVRBu_qhRc2eOpMJwXOBjQ","cT1tEIKo8SztEBpqHF5OroZkqda7kpph7DFQfZAz"],
-         "user2":["AKIAwxH4rqnwRqmXoX5HzyV8xA","C5dBsRcL73wLyLEZr858nymh2h70abFvxINNSkRa"],
-         "user3":["AKIAql9gSmpcQnGyuHbiziTzng","Ow6mYLCji2nBMCrMZDzG7/u2tu9WX0FjFI0ihOlG"],
-         "user4":["AKIA3iswZrw0R7mKtHJZizImKg","TcvKJRfJnYS8H4f53B2g0urn/8+7uFG44vStPiwt"],
-         "user5":["AKIAZxC27C5kSRKomFywnCUE_A","OLkz+6+eyV1IsXA2HBx6wtmRdihW0o/wktoCLCZf"],
-         "user6":["AKIA1s420Uw3RnWuRH_jU5YL9g","JUq17VoBHInxd2Oftec592v/nVuNXlT185KsPc/N"],
-         "user7":["AKIAvzZoU96eQPucwPCYvD7kWw","D7A+mEI/hu+0EAe02dZYbPZFD9BcmBPvdB5yaRRy"],
-         "user8":["AKIAdLhZ3gGSSCW3Ul1ECrjq2g","OKGEDDWS4D+ohrOf0w8nYcgCXGZ0GE2WTVL6zAOC"],
-         "user9":["AKIA5Hx6gvLNTCuOAc7k6MYQ0w","+xx/Y6IJWDQEGLzclUIwNVeSa3DfX09jGbbhi+M+"],
-         "user10":["AKIARmsEWm0NTvi2NJ5HD4sIzw","TlIjEvDS2Q4LoEXbESqhyJ/CdC531f5Za4Bbwcmy"]}
 
 
 def create_users(utype=S3_ACC_UTYPE, nusers=10):
@@ -100,7 +89,7 @@ def create_buckets(user_dict, s3_prefix, nbuckets):
         try:
             s3 = boto3.resource('s3', aws_access_key_id=access_key,
                                 aws_secret_access_key=secret_key,
-                                endpoint_url="https://s3.seagate.com")
+                                endpoint_url=params.S3_ENDPOINT)
         except Exception as e:
             LOGGER.info(f'could not create s3 object for '
                         f'user {user_name} with access key {access_key} '
@@ -130,14 +119,18 @@ def create_buckets(user_dict, s3_prefix, nbuckets):
         raise fault
 
 
-class NodeOps():
+class NodeOps:
 
-    def init_Connection(self, host, user, password):
+    def __init__(self):
+        self.connection = None
+        self.ctg = None
+
+    def init_Connection(self, host: str, user: str, password: str) -> str:
         self.connection = Connection(host, user=user, connect_kwargs={'password': password},
                                       config=Config(overrides={'sudo': {'password': password}}))
 
-        assert 'Linux' in self.connection.run('uname -s', pty=False).stdout,\
-            "Node {} not reachable".format(host)
+        assert_utils.assert_true('Linux' in self.connection.run('uname -s', pty=False).stdout,
+                                 "Node {} not reachable".format(host))
         self.ctg = SerialGroup.from_connections(self.connections)
 
     def start_service(self, c, services):
@@ -146,7 +139,7 @@ class NodeOps():
             csts = self.status(c, svc)
             if csts[c.host] != "Running":
                 coutput = c.run(command + svc, pty=False)
-                logger.info("Starting: %s " % c.host)
+                LOGGER.info("Starting: %s " % c.host)
 
     def status(self, cn, svc_list):
         for svc in svc_list:
@@ -162,108 +155,17 @@ class NodeOps():
             coutput = c.run(core_command + svc)
             time.sleep(2)
             csts = self.status(c, services)
-            logger.info(c.host, csts[c.host])
+            LOGGER.info(c.host, csts[c.host])
 
     def run_command(self, conn, cmd, options=None):
         conn.run(cmd, pty=False)
 
 
-
 def sigint_handler(signum, frame):
     print('SIGINT handler called with signal ', signum)
-    logger.info('Signal handler called with signal {}, exiting process'.format(signum))
+    LOGGER.info('Signal handler called with signal {}, exiting process'.format(signum))
     sys.exit(0)
 
 
-class GWorkQ(JoinableQueue):
-    def __init__(self, func, maxsize):
-        self.lock_req = maxsize != 0
-        self.func = func
-        self.semaphore = BoundedSemaphore(maxsize)
-        JoinableQueue.__init__(self, maxsize)
-
-    def put(self, item):
-        if self.lock_req:
-            self.semaphore.acquire()
-        JoinableQueue.put(self, item)
-
-    def task_done(self):
-        if self.lock_req:
-            self.semaphore.release()
-        JoinableQueue.task_done(self)
-
-
-class GWorker:
-    """ A greenlet pool for I/O bound tasks """
-
-    def __init__(self, ngreenlets=32):
-        self.w_workQ = Queue(maxsize=ngreenlets)     # Gevent Queue or GWorkQ with dummy function
-        self.qlen = ngreenlets
-
-    def start(self):
-        def run_user(user):
-            """
-            Main function for User greenlet. It's important that this function takes the user
-            instance as an argument, since we use greenlet_instance.args[0] to retrieve a reference to the
-            User instance.
-            """
-            user.gWorker()
-
-        gevent.joinall([
-            gevent.spawn(self.boss),
-            gevent.spawn(run_user, self),
-            gevent.spawn(run_user, self),
-            gevent.spawn(run_user, self),
-            gevent.spawn(run_user, self),
-            gevent.spawn(run_user, self),
-            gevent.spawn(run_user, self),
-            gevent.spawn(run_user, self),
-            gevent.spawn(run_user, self),
-            ])
-
-    # todo remove from lib
-    def boss(self):
-        """
-        Boss will wait to hand out work until a individual worker is
-        free since the maxsize of the task queue is 3.
-        """
-        for i in range(1,10):
-            self.w_workQ.put(i)
-        print('Assigned all work in iteration 1')
-
-        for i in range(10,100):
-            self.w_workQ.put(i)
-        print('Assigned all work in iteration 2')
-
-    def gWorker(self):
-        try:
-            while True:
-                #wq = self.w_workQ.get(1)
-                # if wq is None:
-                #     self.w_workQ.task_done()
-                #     break
-                #wi = wq.get()
-                #wq.func(wi)
-                wi = self.w_workQ.get(1)
-                print('Worker got task %s' % (wi))
-                #wq.task_done()
-                #self.w_workQ.task_done()
-                gevent.sleep(0)
-        except Empty:
-            print('Bye!')
-            logger.info('shutdown gworker')
-
-    def wEnque(self, item):
-        self.w_workQ.put(item)
-
-    def wEndWorkers(self):
-        for i in range(1):
-            self.w_workQ.put(None)
-        self.w_workQ.join()
-        logger.info('shutdown greenlet worker')
-
-
 if __name__ == '__main__':
-    w = GWorker()
-    w.start()
-
+    pass

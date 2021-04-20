@@ -123,11 +123,7 @@ class ManagementOPs:
                 s3acc_obj = CortxCliS3AccountOperations()
                 s3acc_obj.open_connection()
 
-
                 s3acc_obj.logout_cortx_cli()
-
-                self.s3acc_obj.logout_cortx_cli()
-
 
             users.update({user: udict})
         return users

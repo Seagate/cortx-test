@@ -24,7 +24,7 @@ NWORKERS = 32
 NGREENLETS = 32
 NUSERS = 10
 
-S3_ENDPOINT = "https://s3.seagate.com"
+
 DATAGEN_HOME = '/var/log/datagen/'
 DATASET_FILES = "/var/log/datagen/createdfile.txt"
 USER_JSON = '_usersdata'
