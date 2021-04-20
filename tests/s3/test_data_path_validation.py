@@ -31,7 +31,7 @@ from commons.utils import system_utils
 from commons.utils.system_utils import remove_file
 from commons.utils.system_utils import run_remote_cmd
 from commons.utils.system_utils import run_local_cmd
-from commons.utils.assert_utils import assert_true, assert_equals
+from commons.utils.assert_utils import assert_true
 from commons.utils.assert_utils import assert_in
 from commons.utils.assert_utils import assert_equal
 from commons.utils.assert_utils import assert_is_not_none
