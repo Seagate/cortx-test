@@ -5,3 +5,4 @@ selenium==3.141.0
 setuptools==39.0.1
 urllib3==1.26.2
 requests==2.25.1
+pyOpenSSL==20.0.1 

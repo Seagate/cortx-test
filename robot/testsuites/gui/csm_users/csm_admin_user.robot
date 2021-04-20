@@ -26,6 +26,29 @@ ${password}
 ${Download_File_Path}  \root\Downloads\
 ${server_file_name}  s3server.pem
 
+*** Keywords ***
+
+SSL certificate expiration alert Verification
+    [Documentation]  This keyword is used to test SSL related alerts for  diffrent expiry days
+    [Arguments]  ${days}
+    Navigate To Page  SETTINGS_ID  SETTINGS_SSL_BUTTON_ID
+    Sleep  20s
+    ${installation_status_init} =  Format String  not_installed
+    ${installation_status_success} =  Format String  installation_successful
+    ${file_path}=  SSL Gennerate and Upload  ${days}  ${Download_File_Path}
+    ${file_name}=  Set Variable  stx_${days}.pem
+    Verify SSL status  ${installation_status_init}  ${file_name}
+    # # These following lines should be executed in case you have the proper machine
+    # Install uploaded SSL
+    # Sleep  5 minutes  #will re-start all service
+    # Close Browser
+    # CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
+    # Sleep  20s  # Took time to load dashboard after install
+    # Reload Page
+    # Sleep  10s  # Took time to load dashboard after install
+    # Verify SSL status  ${installation_status_success}  ${file_name}
+    ## TODO : find the alert and verifiy
+
 *** Test Cases ***
 
 TEST-5326
@@ -309,7 +332,7 @@ TEST-4871
     Verify SSL status  ${installation_status_init}  ${server_file_name}
 
 TEST-9045
-    [Documentation]  Test that user should able to see latest changes on settings page : SSL certificate	
+    [Documentation]  Test that user should able to see latest changes on settings page : SSL certificate
     ...  Reference : https://jts.seagate.com/browse/TEST-9045
     [Tags]  Priority_High  CFT_Test  TEST-9045
     ${installation_status_init} =  Format String  not_installed
@@ -327,3 +350,11 @@ TEST-9045
     # Reload Page
     # Sleep  10s  # Took time to load dashboard after install
     # Verify SSL status  ${installation_status_success}  ${server_file_name}
+
+TEST-11152
+    [Documentation]  Test that IEM alerts should be generated for number of days mentioned in /etc/csm/csm.conf prior to SSL certificate expiration
+    ...  Reference : https://jts.seagate.com/browse/TEST-9045
+    [Tags]  Priority_High  CFT_Test  TEST-11152
+    SSL certificate expiration alert Verification  30
+    SSL certificate expiration alert Verification  5
+    SSL certificate expiration alert Verification  1
