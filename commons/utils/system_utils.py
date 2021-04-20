@@ -32,6 +32,7 @@ import errno
 import string
 from typing import Tuple
 from subprocess import Popen, PIPE
+from itertools import chain
 from hashlib import md5
 from paramiko import SSHClient, AutoAddPolicy
 from commons import commands
