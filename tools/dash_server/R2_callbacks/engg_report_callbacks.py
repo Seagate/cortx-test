@@ -44,9 +44,10 @@ from common import app
     [State('branch_dropdown', 'value'),
      State('build_no_dropdown', 'value'),
      State('test_system_dropdown', 'value'),
+     State('test_plan_dropdown', 'value'),
      State('test_team_dropdown', 'value')]
 )
-def gen_table_comp_summary(n_clicks, branch, build_no, test_system, test_team):
+def gen_table_comp_summary(n_clicks, branch, build_no, test_system,test_plan, test_team):
     """
     Returns the component wise issues for current and previous builds.
     :param n_clicks: Input event
@@ -56,7 +57,7 @@ def gen_table_comp_summary(n_clicks, branch, build_no, test_system, test_team):
     :param test_team: Testing team
     :return:
     """
-    if n_clicks is None or branch is None or build_no is None:
+    if n_clicks is None or branch is None or build_no is None or test_system is None:
         raise PreventUpdate
 
     component_list = ["S3", "Provisioner", "CSM", "RAS", "Motr", "HA", "Hare"]
@@ -69,12 +70,20 @@ def gen_table_comp_summary(n_clicks, branch, build_no, test_system, test_team):
     # list of dictionary
     builds_details = {"Component": component_list}
     for build in build_no_list:
-        query = {"buildType": branch, "buildNo": build}
-        if test_system is not None:
-            query["testPlanLabel"] = test_system
-        if test_system is not None:
+        query = {"buildType": branch, "buildNo": build, "testPlanLabel":test_system}
+        if test_team is None:
+            query["testTeam"] = "CortxQA"
+        else:
             query["testTeam"] = test_team
+
+        if test_plan is None or build != build_no:
+            tp = common.get_testplan_ID(query)
+            if tp is not None:
+                query["testPlanID"] = tp
+        else:
+            query["testPlanID"] = test_plan
         query_input = {"query": query, "field": "issueIDs"}
+
         if common.DEBUG_PRINTS:
             print(f"(gen_table_comp_summary) Query {query_input}")
         query_input.update(common.credentials)
@@ -114,15 +123,16 @@ def gen_table_comp_summary(n_clicks, branch, build_no, test_system, test_team):
     [State('branch_dropdown', 'value'),
      State('build_no_dropdown', 'value'),
      State('test_system_dropdown', 'value'),
+     State('test_plan_dropdown', 'value'),
      State('test_team_dropdown', 'value')]
 )
-def gen_table_timing_summary(n_clicks, branch, build_no, test_system, test_team):
+def gen_table_timing_summary(n_clicks, branch, build_no, test_system,test_plan, test_team):
     """
     Returns the timing details for the build
     :param n_clicks: Input Event
     :return:
     """
-    if n_clicks is None or branch is None or build_no is None:
+    if n_clicks is None or branch is None or build_no is None or test_system is None:
         raise PreventUpdate
 
     previous_build_list = common.r2_get_previous_builds(branch, build_no, 2)
@@ -148,11 +158,18 @@ def gen_table_timing_summary(n_clicks, branch, build_no, test_system, test_team)
     for build in build_seq:
         row = []
         for param in timing_parameters.keys():
-            query = {"buildType": branch, "buildNo": build, param: {"$exists": True}}
-            if test_system is not None:
-                query["testPlanLabel"] = test_system
-            if test_team is not None:
+            query = {"buildType": branch, "buildNo": build,"testPlanLabel":test_system, param: {"$exists": True}}
+            if test_team is None:
+                query["testTeam"] = "CortxQA"
+            else:
                 query["testTeam"] = test_team
+
+            if test_plan is None:
+                tp = common.get_testplan_ID(query)
+                if tp is not None:
+                    query["testPlanID"] = tp
+            else:
+                query["testPlanID"] = test_plan
 
             query_input = {"query": query, "projection": {param: True}}
             query_input.update(common.credentials)
@@ -172,7 +189,7 @@ def gen_table_timing_summary(n_clicks, branch, build_no, test_system, test_team)
                 # print(f"(gen_table_timing_summary) Response code {response.status_code}")
                 row.append("-")
             else:
-                print(f"(gen_table_timing_summary) Response code {response.status_code}")
+                #print(f"(gen_table_timing_summary) Response code {response.status_code}")
                 row.append("-")
         data_timing_summary[build] = row
 
@@ -196,23 +213,16 @@ def gen_table_timing_summary(n_clicks, branch, build_no, test_system, test_team)
     [State('branch_dropdown', 'value'),
      State('build_no_dropdown', 'value'),
      State('test_system_dropdown', 'value'),
-     State('test_team_dropdown', 'value')]
+    ]
 )
-def gen_table_detailed_s3_bucket_perf(n_clicks, branch, build_no, test_system, test_team):
+def gen_table_detailed_s3_bucket_perf(n_clicks, branch, build_no, test_system):
     """
     Single Bucket Performance Statistics (Average) using S3Bench (Detailed)
     :param n_clicks:
     :return:
     """
-    if n_clicks is None or branch is None or build_no is None:
+    if n_clicks is None or branch is None or build_no is None or test_system is None:
         raise PreventUpdate
-    if test_system is not None:
-        # Add to query
-        pass
-    if test_team is not None:
-        # Add to query
-        pass
-
     return "No data available for R2"
 
 
@@ -222,22 +232,16 @@ def gen_table_detailed_s3_bucket_perf(n_clicks, branch, build_no, test_system, t
     [State('branch_dropdown', 'value'),
      State('build_no_dropdown', 'value'),
      State('test_system_dropdown', 'value'),
-     State('test_team_dropdown', 'value')]
+    ]
 )
-def gen_table_metadata_latency(n_clicks, branch, build_no, test_system, test_team):
+def gen_table_metadata_latency(n_clicks, branch, build_no, test_system):
     """
     Returns  table for Metadata Latency
     :param n_clicks:
     :return:
     """
-    if n_clicks is None or branch is None or build_no is None:
+    if n_clicks is None or branch is None or build_no is None or test_system is None:
         raise PreventUpdate
-    if test_system is not None:
-        # Add to query
-        pass
-    if test_team is not None:
-        # Add to query
-        pass
     return "No data available for R2"
 
 
@@ -247,37 +251,32 @@ def gen_table_metadata_latency(n_clicks, branch, build_no, test_system, test_tea
     [State('branch_dropdown', 'value'),
      State('build_no_dropdown', 'value'),
      State('test_system_dropdown', 'value'),
-     State('test_team_dropdown', 'value')]
+     ]
 )
-def gen_table_multi_bucket_perf_stats(n_clicks, branch, build_no, test_system, test_team):
+def gen_table_multi_bucket_perf_stats(n_clicks, branch, build_no, test_system):
     """
     Multiple Buckets Performance Statistics(Average) using HSBench and COSBench
     :param n_clicks: Input Event
     :return:
     """
 
-    if n_clicks is None or branch is None or build_no is None:
+    if n_clicks is None or branch is None or build_no is None or test_system is None:
         raise PreventUpdate
 
-    if test_system is not None:
-        # Add to query
-        pass
-    if test_team is not None:
-        # Add to query
-        pass
     return "No data available for R2"
 
 
 @app.callback(
     Output('table_detail_reported_bugs', 'children'),
-    [Input('submit_button', 'n_clicks'),
-     Input('branch_dropdown', 'value'),
-     Input('build_no_dropdown', 'value'),
-     Input('test_system_dropdown', 'value'),
-     Input('test_team_dropdown', 'value'),
+    [Input('submit_button', 'n_clicks')],
+    [State('branch_dropdown', 'value'),
+     State('build_no_dropdown', 'value'),
+     State('test_system_dropdown', 'value'),
+     State('test_plan_dropdown', 'value'),
+     State('test_team_dropdown', 'value'),
      ]
 )
-def gen_table_detail_reported_bugs(n_clicks, branch, build_no, test_system, test_team):
+def gen_table_detail_reported_bugs(n_clicks, branch, build_no, test_system,test_plan,test_team):
     """
     Table : List all the bugs for the specified inputs.
     :param n_clicks:Input Event
@@ -288,13 +287,23 @@ def gen_table_detail_reported_bugs(n_clicks, branch, build_no, test_system, test
     :return:
     """
     if n_clicks is None or branch is None or build_no is None or \
-            test_system is None or test_team is None:
+            test_system is None:
         raise PreventUpdate
 
-    query_input = {
-        "query": {"buildType": branch, "buildNo": build_no, "testPlanLabel": test_system,
-                  "testTeam": test_team},
-        "field": "issueIDs"}
+    query = {"buildType": branch, "buildNo": build_no, "testPlanLabel": test_system}
+    if test_team is None:
+        query["testTeam"] = "CortxQA"
+    else:
+        query["testTeam"] = test_team
+
+    if test_plan is None:
+        tp = common.get_testplan_ID(query)
+        if tp is not None:
+            query["testPlanID"] = tp
+    else:
+        query["testPlanID"] = test_plan
+
+    query_input = {"query":query,"field": "issueIDs"}
     if common.DEBUG_PRINTS:
         print(f"(gen_table_detail_reported_bugs) Query:{query_input}")
     query_input.update(common.credentials)
@@ -306,16 +315,27 @@ def gen_table_detail_reported_bugs(n_clicks, branch, build_no, test_system, test
         if common.DEBUG_PRINTS:
             print("Issue list (reported bugs)", issue_list)
         df_detail_reported_bugs = common.get_issue_details(issue_list)
+        df_detail_reported_bugs["issue_no"] = df_detail_reported_bugs["issue_no"].\
+            apply(common.add_link)
+
+        col = []
+        for i in df_detail_reported_bugs.columns:
+            if i == "issue_no":
+                col.append(
+                    {"name": str(i).upper(), "id": i, "type": 'text', "presentation": "markdown"})
+            else:
+                col.append({"name": str(i).upper(), "id": i})
+
         detail_reported_bugs = dash_table.DataTable(
             id="detail_reported_bugs",
-            columns=[{"name": str(i).upper(), "id": i} for i in
-                     df_detail_reported_bugs.columns],
+            columns=col,
             data=df_detail_reported_bugs.to_dict('records'),
             style_header=common.dict_style_header,
             style_data_conditional=[{'if': {'row_index': 'odd'}, 'backgroundColor': '#F8F8F8'}
                                     ],
             style_cell=common.dict_style_cell
         )
+
     else:
         print(f"(gen_table_detail_reported_bugs) Response: {response.status_code}")
         detail_reported_bugs = None

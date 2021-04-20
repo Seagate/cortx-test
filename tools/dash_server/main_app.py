@@ -73,6 +73,12 @@ input_options = dbc.Row(
             style={'width': '200px', 'verticalAlign': 'middle', "margin-right": "15px",
                    "margin-top": "10px"},
         ),
+        dcc.Dropdown(
+            id='test_system_dropdown',
+            placeholder="Test System Type",
+            style={'width': '200px', 'verticalAlign': 'middle', "margin-right": "15px",
+                   "margin-top": "10px"},
+        ),
 
         dbc.Button("Get!", id="submit_button", n_clicks=0, color="success",
                    style={'height': '36px', 'margin-top': '20px'}),
@@ -81,19 +87,18 @@ input_options = dbc.Row(
 )
 input_optional_options = dbc.Row(
     [
-        dcc.Dropdown(
-            id='test_system_dropdown',
-            placeholder="Test System Type(Opt)",
-            style={'width': '200px', 'verticalAlign': 'middle', "margin-right": "15px",
-                   "margin-top": "10px"},
-        ),
-
-        dcc.Dropdown(
+    dcc.Dropdown(
             id='test_team_dropdown',
             placeholder="Test Component(Opt)",
             style={'width': '200px', 'verticalAlign': 'middle', "margin-right": "15px",
                    "margin-top": "10px"},
         ),
+        dcc.Dropdown(
+            id='test_plan_dropdown',
+            placeholder="Test Plan No (Opt)",
+            style={'width': '200px', 'verticalAlign': 'middle', "margin-right": "15px",
+                   "margin-top": "10px"},
+        )
     ],
     justify='center',
     id="toggle_visibility"
@@ -166,15 +171,13 @@ qa_page = html.Div(
     ]
 )
 
-perf_page = html.Div("Performance Page")
-
 query_tabs = dbc.Tabs(
     [
         dbc.Tab(query_tl.query_database, label='Query Database', style=dict_style_sub_tab,
-                label_style=dict_style_sub_label),
+                label_style=dict_style_sub_label, tab_id="tab_query_db"),
         dbc.Tab(tl.defect_list_per_tp_content, label='Defect List for Test Plans/Test Executions',
                 style=dict_style_sub_tab,
-                label_style=dict_style_sub_label)
+                label_style=dict_style_sub_label, tab_id="tab_query_tp")
 
     ],
     className="nav nav nav-pills nav-fill nav-pills flex-column flex-sm-row",
@@ -184,9 +187,9 @@ query_page = html.Div(query_tabs)
 
 main_tabs = dbc.Tabs(
     [
-        dbc.Tab(qa_page, label="QA  REPORTS", style=dict_style_tab, label_style=dict_style_label,
+        dbc.Tab(qa_page, label="QA  Reports", style=dict_style_tab, label_style=dict_style_label,
                 active_label_style={'background-color': '#13ECB4', 'color': '#000000'}),
-        dbc.Tab(query_page, label="QUERY  QA  DATA ", style=dict_style_tab,
+        dbc.Tab(query_page, label="Query  QA  Data ", style=dict_style_tab,
                 label_style=dict_style_label,
                 active_label_style={'background-color': '#13ECB4', 'color': '#000000'}),
         dbc.Tab(perf_stats_page, label="Performance Statistics", style=dict_style_tab,
@@ -201,15 +204,14 @@ main_tabs = dbc.Tabs(
 )
 
 cortx_sharepoint = "https://seagatetechnology.sharepoint.com/sites/gteamdrv1/tdrive1224"
-cft_sharepoint = "https://seagatetechnology.sharepoint.com/:f:/r/sites/gteamdrv1/tdrive1224/" \
-                 "Shared%20Documents/CFT_IntegrationTeam?csf=1&web=1&e=9Wgzsx"
+cft_sharepoint = "https://seagate-systems.atlassian.net/wiki/spaces/CFT/overview"
 navbar = dbc.Navbar(
     [
         html.A(
             dbc.Row(
                 [
                     dbc.Col(html.Img(src=app.get_asset_url("seagate.png"), height="100px")),
-                    dbc.Col(dbc.NavbarBrand("CORTX QA Dashboard",
+                    dbc.Col(dbc.NavbarBrand("CORTX Companion",
                                             style={'font-size': 40, 'textAlign': 'center',
                                                    'width': '800px'}),
                             className='my-auto'),
@@ -219,7 +221,7 @@ navbar = dbc.Navbar(
                                        target="_blank",
                                        ),
                             width="auto", className="my-auto"),
-                    dbc.Col(dbc.Button("CFT Sharepoint", color="light", size="lg",
+                    dbc.Col(dbc.Button("CFT Confluence", color="light", size="lg",
                                        outline=True,
                                        href=cft_sharepoint,
                                        target="_blank"),
