@@ -83,7 +83,7 @@ class TestBucketLocation:
         self.log.info(
             "Step 1 : Creating a bucket with name %s",
             self.bucket_name)
-        resp = S3_OBJ.create_bucket(
+        resp = self.s3_obj.create_bucket(
             self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
@@ -96,7 +96,7 @@ class TestBucketLocation:
         self.log.info(
             "Step 2 : Retrieving bucket location on existing bucket %s",
             self.bucket_name)
-        resp = S3_OBJ.bucket_location(
+        resp = self.s3_obj.bucket_location(
             self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
@@ -121,8 +121,7 @@ class TestBucketLocation:
             "Step 1 : Check the bucket location on non existing bucket %s ",
             self.bucket_name)
         try:
-            resp = S3_OBJ.bucket_location(
-                self.bucket_name)
+            resp = self.s3_obj.bucket_location(self.bucket_name)
             self.log.info(resp)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
@@ -244,6 +243,7 @@ class TestBucketLocation:
         secret_key = resp[1]["secret_key"]
         self.account_list.append(self.account_name1)
         s3_obj_2 = s3_test_lib.S3TestLib(
+        s3_obj_2 = s3_test_lib.S3TestLib(endpoint_url=S3_CFG['s3_url'],
             access_key=access_key, secret_key=secret_key)
         self.log.info(
             "Step 2 : Created second account to retrieve bucket location")

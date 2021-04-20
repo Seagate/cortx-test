@@ -424,6 +424,8 @@ def pytest_configure_node(node):
             Globals.JIRA_UPDATE = False
     node.workerinput['shared_dir'] = node.config.shared_directory
 
+    pytest.dns_rr_counter = 0
+
 
 def pytest_sessionstart(session: Session) -> None:
     """Called after the ``Session`` object has been created and before performing collection
@@ -971,3 +973,41 @@ def filter_report_session_finish(session):
                     "classname"].split(".")[-1]
 
             logfile.write(ET.tostring(root[0], encoding="unicode"))
+
+def dns_rr_counter():
+    import threading
+    with threading.Lock():
+        pytest.dns_rr_counter += 1
+        return pytest.dns_rr_counter
+
+
+@pytest.fixture(autouse=True)
+def get_db_cfg(request):
+    from config import CMN_CFG, S3_CFG
+    if request.config.getoption('--target'):
+        setup_query = {"setupname": request.config.getoption('--target')}
+        from commons.configmanager import get_config_db
+        setup_details = get_config_db(
+            setup_query=setup_query)[request.config.getoption("--target")]
+        if "lb" in setup_details.keys() and setup_details.get(
+                'lb') not in [None, '', "FQDN without protocol(http/s)"]:
+            if "s3_loadbalancer" in CMN_CFG.keys():
+                CMN_CFG["s3_loadbalancer"]["s3_url"] = f"https://{setup_details.get('lb')}"
+                CMN_CFG["s3_loadbalancer"]["iam_url"] = f"https://{setup_details.get('lb')}:9443"
+            if "s3_url" in S3_CFG.keys():
+                S3_CFG["s3_url"] = f"https://{setup_details.get('lb')}"
+                S3_CFG["iam_url"] = f"https://{setup_details.get('lb')}:9443"
+        if "s3_dns" in setup_details.keys() and setup_details.get('s3_dns'):
+            if request.config.getoption("--nodes"):
+                node_count = len(request.config.getoption("--nodes"))
+            else:
+                node_count = len(setup_details["nodes"])
+            node_index = dns_rr_counter()
+            counter = int(node_index) % node_count
+            res_url = system_utils.get_s3_url(setup_details, counter)
+            if "s3_loadbalancer" in CMN_CFG.keys():
+                CMN_CFG["s3_loadbalancer"]["s3_url"] = res_url["s3_url"]
+                CMN_CFG["s3_loadbalancer"]["iam_url"] = res_url["iam_url"]
+            if "s3_url" in S3_CFG.keys():
+                S3_CFG["s3_url"] = res_url["s3_url"]
+                S3_CFG["iam_url"] = res_url["iam_url"]
