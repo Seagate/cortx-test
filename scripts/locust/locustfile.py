@@ -80,3 +80,6 @@ class LocustUser(HttpUser):
     @events.test_stop.add_listener
     def on_test_stop(**kwargs):
         UTILS_OBJ.delete_buckets(BUCKET_LIST)
+        for local_obj in (
+                locust_utils.OBJ_NAME, locust_utils.GET_OBJ_PATH):
+            UTILS_OBJ.delete_local_obj(local_obj)

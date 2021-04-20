@@ -76,6 +76,9 @@ class LocustUser(HttpUser):
     def on_test_stop(**kwargs):
         LOGGER.info("Starting test cleanup.")
         UTILS_OBJ.delete_buckets(BUCKET_LIST)
+        for local_obj in (
+                locust_utils.OBJ_NAME, locust_utils.GET_OBJ_PATH):
+            UTILS_OBJ.delete_local_obj(local_obj)
         LOGGER.info("Log path: %s", kwargs.get('--logfile'))
         LOGGER.info("HTML path: %s", kwargs.get('--html'))
 
