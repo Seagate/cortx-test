@@ -34,7 +34,7 @@ import pytest
 from commons.constants import const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
-from commons.utils.config_utils import read_yaml, get_config
+from commons.utils.config_utils import read_yaml, get_config, update_config_ini
 from commons.utils.assert_utils import assert_true, assert_false, assert_in, assert_not_in
 from commons.utils import system_utils
 from commons.helpers.node_helper import Node
@@ -50,7 +50,9 @@ S3CMD_CNF = read_yaml("config/blackbox/test_s3cmd.yaml")[1]
 
 
 class TestS3cmdClient:
-    """Blackbox s3cmd testsuite"""
+    """
+    Blackbox S3CMD Test Suite.
+    """
 
     @classmethod
     def setup_class(cls):
@@ -66,6 +68,17 @@ class TestS3cmdClient:
         resp = system_utils.path_exists(S3_CFG["s3cfg_path"])
         assert_true(resp, "config path not exists: {}".format(S3_CFG["s3cfg_path"]))
         cls.common_cfg = S3CMD_CNF["common_cfg"]
+        cls.node_helper_obj = Node(
+            hostname=CMN_CFG["nodes"][0]["host"],
+            username=CMN_CFG["nodes"][0]["username"],
+            password=CMN_CFG["nodes"][0]["password"])
+        s3cmd_host = get_config(
+            S3_CFG["s3cfg_path"], "default", "host_base")
+        if s3cmd_host != S3_CFG["s3_url"].split("/")[-1]:
+            for ky in ["host_base", "host_bucket"]:
+                update_config_ini(
+                    S3_CFG["s3cfg_path"], "default", ky, S3_CFG["s3_url"].split("/")[-1])
+
         s3cmd_access = get_config(
             S3_CFG["s3cfg_path"], "default", "access_key")
         s3cmd_secret = get_config(

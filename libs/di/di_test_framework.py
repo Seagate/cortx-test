@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -17,9 +18,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-#!/usr/bin/env python3
 import os
-import sys
 import queue
 import random
 import logging
@@ -29,14 +28,12 @@ import hashlib
 import multiprocessing as mp
 import boto3
 import re
-import json
 import time
 import errno
 from pathlib import Path
 from boto3.s3.transfer import TransferConfig
 from libs.di import di_lib
 from libs.di.di_lib import Workers
-from libs.di.di_lib import init_loghandler
 from libs.di import di_params
 from libs.di.di_mgmt_ops import ManagementOPs
 
@@ -76,7 +73,7 @@ class Uploader(object):
         for ix in range(di_lib.NWORKERS):
             try:
                 s3 = boto3.resource('s3', aws_access_key_id=access_key, aws_secret_access_key=secret_key,
-                                    endpoint_url="https://s3.seagate.com")
+                                    endpoint_url=CM_CFG["s3_loadbalancer"]["s3_url"])
             except Exception as e:
                 logger.info(f'could not create s3 object for user {user_name} with access key {access_key} secret key {secret_key} exception:{e}')
                 return
@@ -194,7 +191,7 @@ class DIChecker(object):
             secret_key = keys[1]
             try:
                 s3 = boto3.resource('s3', aws_access_key_id=access_key, aws_secret_access_key=secret_key,
-                                    endpoint_url="https://s3.seagate.com")
+                                    endpoint_url=CM_CFG["s3_loadbalancer"]["s3_url"])
             except Exception as e:
                 logger.error(
                     f'could not create s3 object for user {user_name} with access key {access_key} secret key {secret_key} exception:{e}')

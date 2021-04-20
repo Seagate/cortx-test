@@ -21,7 +21,6 @@ import time
 import os
 import logging
 import pytest
-
 from commons.constants import const
 from commons.commands import CMD_S3BENCH
 from commons.ct_fail_on import CTFailOn
@@ -37,8 +36,8 @@ from commons.utils.assert_utils import assert_equal
 from commons.utils.assert_utils import assert_is_not_none
 from commons.utils.assert_utils import assert_not_in
 from commons.helpers.health_helper import Health
-from libs.s3 import CM_CFG
-from libs.s3 import S3H_OBJ, S3_CFG
+from libs.s3 import CM_CFG, S3_CFG
+from libs.s3 import S3H_OBJ
 from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
 from libs.s3.iam_test_lib import IamTestLib
 from libs.s3.s3_acl_test_lib import S3AclTestLib
@@ -77,6 +76,7 @@ class TestDataPathValidation:
         cls.host = CM_CFG["nodes"][0]["host"]
         cls.uname = CM_CFG["nodes"][0]["username"]
         cls.passwd = CM_CFG["nodes"][0]["password"]
+        cls.s3_url = S3_CFG["s3_url"]
         cls.health_obj = Health(hostname=cls.host, username=cls.uname,
                                 password=cls.passwd)
         cls.test_file = "bkt-dp.txt"
@@ -173,7 +173,6 @@ class TestDataPathValidation:
         res = S3_OBJ.create_bucket(bucket_name)
         assert_true(res[0], res)
         assert_in(bucket_name, res[1], res)
-
         return bucket_name
 
     def put_object(self, test_conf, bucket_name, bs=1):

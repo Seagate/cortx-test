@@ -35,6 +35,7 @@ from libs.s3 import S3H_OBJ, ACCESS_KEY, SECRET_KEY
 from config import S3_CFG
 
 S3T_OBJ = s3_test_lib.S3TestLib()
+
 MINIO_CFG = config_utils.read_yaml("config/blackbox/test_minio_client.yaml")[1]
 
 
@@ -61,11 +62,18 @@ class TestMinioClient:
         resp = system_utils.path_exists(S3_CFG["minio_path"])
         assert_utils.assert_true(resp, "minio config not exists: {}".format(S3_CFG["minio_path"]))
         cls.minio_cnf = MINIO_CFG["minio_cfg"]
+        cls.file_path = cls.minio_cnf["file_path"]
+        cls.path = S3_CFG["minio_path"]
         cls.file_size = cls.minio_cnf["file_size"]
         cls.timestamp = str(time.time())
         minio_dict = config_utils.read_content_json(
             S3_CFG["minio_path"], mode='rb')
-        cls.log.info(minio_dict)
+        cls.log.debug("Miniio tool config content %s", minio_dict)
+        if minio_dict["aliases"]["s3"]["url"] != S3_CFG["s3_url"]:
+            minio_dict["aliases"]["s3"]["url"] = S3_CFG["s3_url"]
+            config_utils.create_content_json(
+                path=cls.path, data=minio_dict, ensure_ascii=False)
+
         if (ACCESS_KEY != minio_dict["aliases"]["s3"]["accessKey"]
                 or SECRET_KEY != minio_dict["aliases"]["s3"]["secretKey"]):
             resp = S3H_OBJ.configure_minio(ACCESS_KEY, SECRET_KEY)

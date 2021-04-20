@@ -16,7 +16,6 @@ s3:
   file_path: "/tmp/dest-obj.txt"
 
 s3bench:
-  url: "https://s3.seagate.com"
   bucket_name: "dstrctv-bkt-mnf1"
   numClients: 300
   numSamples: 800
@@ -98,7 +97,6 @@ show_disks:
 debug: False
 
 s3bench_min_objsize:
-  url: "https://s3.seagate.com"
   bucket_name: "dstrctv-bkt-mnf1"
   numClients: 300
   numSamples: 800

@@ -40,7 +40,7 @@ S3FS_COMMON_CFG = S3FS_CNF["common_cfg"]
 
 
 class TestS3fs:
-    """Blackbox s3fs testsuite."""
+    """ Blackbox S3FS Test Suite."""
 
     @classmethod
     def setup_class(cls):
@@ -68,6 +68,7 @@ class TestS3fs:
         It will perform prerequisite test steps if any
         """
         self.log.info("STARTED: Setup operations")
+        self.url = S3FS_COMMON_CFG["url"].format(S3_CFG["s3_url"])
         resp = system_utils.path_exists(S3_CFG['s3fs_path'])
         assert_true(resp, "config path not exists: {}".format(S3_CFG['s3fs_path']))
         self.log.info("ENDED: Setup operations")
@@ -136,7 +137,7 @@ class TestS3fs:
         operation = " ".join([bucket_name, dir_name])
         cmd_arguments = [
             S3FS_COMMON_CFG["passwd_file"],
-            S3FS_COMMON_CFG["url"],
+            self.url,
             S3FS_COMMON_CFG["path_style"],
             S3FS_COMMON_CFG["dbglevel"]]
         command = self.create_cmd(

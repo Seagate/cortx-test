@@ -4,7 +4,7 @@ common_cfg:
   bucket_name: "s3fsbucket-{}"
   bkt_name_prefix: "s3fsbucket-"
   passwd_file: "-o passwd_file=/etc/passwd-s3fs"
-  url: "-o url=https://s3.seagate.com/"
+  url: "-o url={}"
   path_style: "-o use_path_request_style"
   dbglevel: "-o dbglevel=info"
   make_dir_cmd: "mkdir"
