@@ -30,6 +30,7 @@ import socket
 import builtins
 from typing import Tuple
 from subprocess import Popen, PIPE
+from itertools import chain
 from hashlib import md5
 from paramiko import SSHClient, AutoAddPolicy
 from commons import commands
@@ -959,3 +960,30 @@ def configure_jclient_cloud(
     run_local_cmd(commands.CMD_KEYTOOL2.format(ca_crt_path))
 
     return bool(".jar" in res_ls)
+
+
+def systemctl_cmd(
+        command: str,
+        services: list,
+        hostname: str,
+        username: str,
+        password: str) -> list:
+    """
+    send/execute command on remote node.
+    """
+    valid_commands = {"start", "stop",
+                      "reload", "enable", "disable", "status", "is-active"}
+    if command not in valid_commands:
+        raise ValueError(
+            "command parameter must be one of %r." % valid_commands)
+    out = []
+    for service in services:
+        print("Performing %s on service %s...", command, service)
+        cmd = commands.SYSTEM_CTL_CMD.format(command, service)
+        status, result = run_remote_cmd(cmd=cmd, hostname=hostname,
+                                        username=username,
+                                        password=password, read_lines=True)
+        out.append(result)
+        resp = list(chain.from_iterable(out))
+
+    return resp
