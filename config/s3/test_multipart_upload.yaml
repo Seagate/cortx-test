@@ -102,6 +102,7 @@ test_8923:
     object_name: "mp-obj-test8923"
     file_size: 50000
     total_parts: 10000
+    max_list_parts: 1000 # Limit for maximum number of parts returned for a list parts request
 
 test_8924:
     bucket_name: "mp-bkt-test8924"
