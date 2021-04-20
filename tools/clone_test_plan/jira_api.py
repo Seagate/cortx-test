@@ -82,7 +82,8 @@ def create_new_test_plan(test_plan, jira_id, jira_pwd, tp_info):
     print("Create new test plan from existing {}".format(test_plan))
     test_plan_details = get_issue_details(test_plan, jira_id, jira_pwd)
 
-    summary = test_plan_details.fields.summary
+    #summary = test_plan_details.fields.summary
+
     # description = test_plan_details.fields.description
     description = "Test Plan for Build : {}, Build type: {}, Setup type: {}".format(
         tp_info['build'], tp_info['build_type'], tp_info['setup_type'])
@@ -95,6 +96,19 @@ def create_new_test_plan(test_plan, jira_id, jira_pwd, tp_info):
     # labels = test_plan_details.fields.labels
     labels = [tp_info['setup_type']]
     env_field = tp_info['build_type'] + "_" + tp_info['build']
+    summary = 'TP LR2 ' + str(env_field)
+
+    fix_versions = []
+    fix_dict = dict()
+    for i in range(len(test_plan_details.fields.fixVersions)):
+        fix_dict['name'] = test_plan_details.fields.fixVersions[i].name
+        fix_versions.append(fix_dict)
+
+    affect_ver = []
+    affect_ver_dict = dict()
+    for i in range(len(test_plan_details.fields.fixVersions)):
+        affect_ver_dict['name'] = test_plan_details.fields.versions[i].name
+        affect_ver.append(affect_ver_dict)
 
     tp_dict = {'project':'TEST',
                'summary':summary,
@@ -102,7 +116,9 @@ def create_new_test_plan(test_plan, jira_id, jira_pwd, tp_info):
                'issuetype':{'name':'Test Plan'},
                'components':components,
                'labels':labels,
-               'environment':env_field}
+               'environment':env_field,
+               'fixVersions': fix_versions,
+               'versions': affect_ver}
     try:
         jira_url = "https://jts.seagate.com/"
         options = {'server':jira_url}
