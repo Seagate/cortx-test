@@ -59,7 +59,12 @@ def decompress(buf):
 
 class DataGenerator:
     """Data generator for I/O testing.
-    Usage TODO
+    Usage:
+    d = DataGenerator(c_ratio=2, d_ratio=2)
+    seed = d.get_random_seed()
+    buf, csum = d.generate(1024 * 1024, seed=seed)
+    print(csum)
+    d.save_buf_to_file(buf, 1024 * 1024, "test-1")
     """
 
     def __init__(self,
@@ -93,7 +98,7 @@ class DataGenerator:
             if self.compression_ratio > 1:
                 compressibility = int(100 - (1 / self.compression_ratio * 100))
                 buf = self.__get_data(size, compressibility, seed)
-        buf = buf.encode('utf-8')[:size] # hack until better solution is found.
+        buf = buf.encode('utf-8')[:size]  # hack until better solution is found.
         csum.update(buf)
         sum = csum.hexdigest()
         return buf, sum
@@ -125,12 +130,6 @@ class DataGenerator:
             buf = self.encrypt_buf(buf)
             buf = buf[0: int((size * (1.0 - compressibility / 100.0)))]
             return buf
-
-    def getBlockBufFromInt(self, size, seed):
-        obj = AES.new('This is a key123', AES.MODE_CBC, 'This is an IV456')
-        _buf = ''
-        _buf = obj.encrypt(seed * size)
-        return _buf[:size]
 
     def encrypt_buf(self, buf):
         blksz = 16
