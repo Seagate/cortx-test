@@ -50,7 +50,7 @@ def run_cmd(cmd):
     #print("output = {}".format(result))
     return result
 
-def create_db_entry(hostname, username, password, ip_addr):
+def create_db_entry(hostname, username, password, ip_addr, admin_user, admin_passwd):
     """
     Creation of new host entry in database.
     """
@@ -76,6 +76,12 @@ def create_db_entry(hostname, username, password, ip_addr):
             item['password'] = password
         if item['ip'] == "node 0 ip":
             item['ip'] = ip_addr
+    json_data_csm = json_data["csm"]
+    for item in json_data_csm:
+        if item == "mgmt_vip":
+            json_data_csm[item] = ip_addr
+        if item == "csm_admin_user":
+            json_data_csm[item].update(username=admin_user, password=admin_passwd)
 
     print("new file data: {}".format(json_data))
     with open(json_file, 'w') as file:
@@ -116,6 +122,8 @@ def main():
     host = os.getenv("HOSTNAME")
     uname = "root"
     host_passwd = os.getenv("HOST_PASS")
+    admin_user = os.getenv("ADMIN_USR")
+    admin_passwd = os.getenv("ADMIN_PWD")
     nd_obj_host = Node(hostname=host, username=uname, password=host_passwd)
     # Get the cluster and mgnt IPs
     cmd = "cat /etc/hosts"
@@ -134,7 +142,7 @@ def main():
         run_cmd("rm -f {}".format(local_path))
     nd_obj_host.copy_file_to_local(remote_path=remote_path, local_path=local_path)
     set_s3_endpoints(clstr_ip)
-    create_db_entry(host, uname, host_passwd, mgmnt_ip)
+    create_db_entry(host, uname, host_passwd, mgmnt_ip, admin_user, admin_passwd)
     run_cmd("python3.7 tools/setup_update/setup_entry.py "
             "--dbuser datawrite --dbpassword seagate@123")
     print("Setting up chrome")

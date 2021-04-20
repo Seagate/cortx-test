@@ -3,6 +3,7 @@ import configparser
 import os
 import unittest
 import time
+import paramiko
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -11,7 +12,6 @@ from selenium.common.exceptions import NoSuchElementException
 from scripts.jenkins_job import gui_element_locators as loc
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from commons.helpers.node_helper import Node
 
 config_file = 'scripts/jenkins_job/config.ini'
 config = configparser.ConfigParser()
@@ -32,10 +32,11 @@ class CSMBoarding(unittest.TestCase):
         self.admin_user = os.getenv('ADMIN_USR', config['preboarding']['username'])
         self.admin_pwd = os.getenv('ADMIN_PWD', config['preboarding']['password'])
         self.host_passwd = os.getenv('HOST_PASS')
+        self.usr = "root"
         self.create_admin_user = True
         check_admin_user_cmd = "cat /etc/passwd | grep admin"
-        nd_obj = Node(hostname=self.csm_mgmt_ip, username="root", password=self.host_passwd)
-        response = nd_obj.execute_cmd(cmd=check_admin_user_cmd)
+        response = self.remote_execution(
+            host=self.csm_mgmt_ip, user=self.usr, password=self.host_passwd, cmd=check_admin_user_cmd)
         if "/opt/seagate/users/admin" in str(response):
             self.create_admin_user = False
 
@@ -128,6 +129,32 @@ class CSMBoarding(unittest.TestCase):
         except NoSuchElementException as e:
             return False
         return True
+
+    def remote_execution(self, host, user, password, cmd, read_lines=False):
+        """
+        Execute any command on remote machine/VM
+        :param host: Host IP
+        :param user: Host user name
+        :param password: Host password
+        :param cmd: command user wants to execute on host
+        :param read_lines: Response will be return using readlines() else using read()
+        :return: response
+        """
+        try:
+            client = paramiko.SSHClient()
+            client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            client.connect(hostname=host, username=user, password=password)
+            stdin, stdout, stderr = client.exec_command(cmd)
+            if read_lines:
+                result = stdout.readlines()
+            else:
+                result = str(stdout.read())
+            client.close()
+            print(f"Response: {result}, Error: {stderr.readlines()}")
+            return result
+        except BaseException as error:
+            print(error)
+            return error
 
 if __name__ == "__main__":
     unittest.main()
