@@ -1963,3 +1963,4 @@ class TestCliCSMUser:
         self.logger.info(
             "Verified csm user is not able to change roles for root user")
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+
