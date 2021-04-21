@@ -19,6 +19,9 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 import logging
+import os
+import random
+import string
 import time
 
 import pytest
@@ -27,7 +30,10 @@ from commons import configmanager
 from commons.constants import Rest as Const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
+from commons.exceptions import CTException
+from commons.params import TEST_DATA_PATH
 from commons.utils import assert_utils
+from commons.utils import system_utils
 from config import CSM_CFG
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_bucket import RestS3Bucket
@@ -73,6 +79,41 @@ class TestS3IOSystemLimits:
         cls.iam_user_obj = RestIamUser()
         cls.s3_bucket_obj = RestS3Bucket()
         cls.cms_rest_test_obj = RestTestLib()
+        cls.test_dir_path = os.path.join(TEST_DATA_PATH, "LimitTest")
+        cls.test_file = "testfile{}.txt"
+
+    def setup_method(self):
+        if not system_utils.path_exists(self.test_dir_path):
+            resp = system_utils.make_dirs(self.test_dir_path)
+            self.log.info("Created path: %s", resp)
+        self.test_file_path = os.path.join(
+            self.test_dir_path,
+            self.test_file.format(str(int(time.time()))))
+
+    def teardown_method(self):
+        self.log.info("STARTED: Teardown Operations")
+        if system_utils.path_exists(self.test_file_path):
+            resp = system_utils.remove_file(self.test_file_path)
+            assert_utils.assert_true(resp[0], resp[1])
+            self.log.info(
+                "removed path: %s, resp: %s",
+                self.test_file_path,
+                resp)
+
+    def teardown_class(self):
+        if system_utils.path_exists(self.test_dir_path):
+            resp = system_utils.remove_dirs(self.test_dir_path)
+            assert_utils.assert_true(resp, f"Unable to remove {self.test_dir_path}")
+            self.log.info(
+                "removed path: %s, resp: %s",
+                self.test_dir_path,
+                resp)
+
+    @staticmethod
+    def random_metadata_generator(
+            size=6,
+            chars=string.ascii_uppercase + string.digits + string.ascii_lowercase):
+        return ''.join(random.choice(chars) for _ in range(size))
 
     def create_csm_accounts(self, count):
         """
@@ -336,7 +377,7 @@ class TestS3IOSystemLimits:
         """
         # List buckets for all s3 users
         created_s3users = self.created_s3_users
-        assert len(created_s3users) >= self.cft_test_cfg[test]["s3_count"],\
+        assert len(created_s3users) >= self.cft_test_cfg[test]["s3_count"], \
             f"Created s3 user count != listed s3 user count "
 
         for s3_acc in created_s3users:
@@ -404,7 +445,7 @@ class TestS3IOSystemLimits:
 
         # list 498 s3 account
         created_s3users = self.get_created_s3_users()
-        assert len(created_s3users) >= self.cft_test_cfg[test]["s3_count"],\
+        assert len(created_s3users) >= self.cft_test_cfg[test]["s3_count"], \
             f"Created s3 user count != listed s3 user count "
 
         # update 498 s3 account
@@ -441,7 +482,7 @@ class TestS3IOSystemLimits:
             s3 = each_s3["account_name"]
             self.log.info(f"Getting IAMs for {s3}")
             iam_account = self.get_iam_accounts(s3, self.s3_original_password)
-            assert len(iam_account) >= self.cft_test_cfg[test]["iam_count"],\
+            assert len(iam_account) >= self.cft_test_cfg[test]["iam_count"], \
                 f"Created iam user count != listed iam user count for s3 user {s3}"
 
         # Delete everything
@@ -577,7 +618,7 @@ class TestS3IOSystemLimits:
         mpu_ids = []
         for i in range(test_config["list_multipart_uploads_limit"]):
             res = S3_MP_TEST_OBJ.create_multipart_upload(bucket_name,
-                                                         object_name+str(i))
+                                                         object_name + str(i))
             assert_utils.assert_true(res[0], res[1])
             mpu_id = res[1]["UploadId"]
             self.log.info("Multipart Upload initiated with mpu_id %s", mpu_id)
@@ -592,10 +633,65 @@ class TestS3IOSystemLimits:
         for i in range(test_config["list_multipart_uploads_limit"]):
             mpu_id = mpu_ids[i]
             res = S3_MP_TEST_OBJ.abort_multipart_upload(bucket_name,
-                                                        object_name+str(i), mpu_id)
+                                                        object_name + str(i), mpu_id)
             assert_utils.assert_true(res[0], res[1])
         self.log.info("Aborted multipart upload")
         self.log.info("Deleting Bucket")
         resp = S3_TEST_OBJ.delete_bucket(bucket_name, force=True)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Deleted Bucket")
+
+    @pytest.mark.tags("TEST-20271")
+    @CTFailOn(error_handler)
+    def test_object_user_metadata_limit_20271(self):
+        """Tests user metadata limit for an object"""
+        test = "test_20271"
+        test_config = self.cft_test_cfg[test]
+        bucket_name = f"mp-bkt-test{str(int(time.time()))}"
+        metadata_limit = test_config["metadata_limit"]
+        res = S3_TEST_OBJ.create_bucket(bucket_name)
+        assert_utils.assert_true(res[0], res[1])
+        self.log.info(f"Bucket is created: {bucket_name}")
+
+        metadata_size = [random.randint(500, metadata_limit-1),
+                         metadata_limit,
+                         random.randint(metadata_limit+1, 4000)]
+        for metadata in metadata_size:
+            object_name = "mp-obj-test20271" + str(metadata)
+            m_key = self.random_metadata_generator(10)
+            m_value = self.random_metadata_generator(metadata-10)
+
+            obj_size = random.randint(5, 20)
+
+            self.log.info(f"Creating a object: {object_name} size: {obj_size}")
+            self.log.info(f"Metadata m_key: {m_key} m_value: {m_value}")
+            system_utils.create_file(self.test_file, obj_size)
+            try:
+                res = S3_TEST_OBJ.put_object(bucket_name, object_name, self.test_file,
+                                             m_key=m_key, m_value=m_value)
+            except CTException as error:
+                if metadata > metadata_limit:
+                    self.log.info(error.message)
+                    assert_utils.assert_in("MetadataTooLarge", error.message, error.message)
+                else:
+                    self.log.error(f"Unable to upload object even if "
+                                   f"metadata size is {metadata} < {metadata_limit}")
+            else:
+                if metadata <= metadata_limit:
+                    assert_utils.assert_true(res[0], res[1])
+                    self.log.info(f"Object is uploaded: {object_name}")
+                    self.log.info(f"Doing Head object: {object_name}")
+                    res = S3_TEST_OBJ.object_info(bucket_name, object_name)
+                    assert_utils.assert_true(res[0], res[1])
+                    assert_utils.assert_in("Metadata", res[1], res[1])
+                    assert_utils.assert_in(m_key, res[1]["Metadata"], res[1]["Metadata"])
+                    assert_utils.assert_equals(m_value,
+                                               res[1]["Metadata"][m_key],
+                                               res[1]["Metadata"][m_key])
+                else:
+                    self.log.error(f"Could not see exception while uploading object with "
+                                   f"metadata size of {metadata} > {metadata_limit}")
+
+        self.log.info(f"Deleting bucket {bucket_name}")
+        res = S3_TEST_OBJ.delete_bucket(bucket_name, True)
+        assert_utils.assert_true(res[0], res[1])
