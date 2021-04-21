@@ -32,13 +32,12 @@ import pytest
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
-from commons.utils import assert_utils
 from commons.utils.system_utils import create_file, remove_file
-from config import S3_OBJ_TST, S3_CFG
+from config import S3_OBJ_TST
 from libs.s3 import s3_test_lib, s3_acl_test_lib, s3_tagging_test_lib
 from libs.s3 import iam_test_lib, s3_multipart_test_lib
 from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
-from libs.s3.cortxcli_test_lib import CortxcliS3BucketOperations, CortxcliS3AccountOperations, CortxCliTestLib
+
 
 S3_OBJ = s3_test_lib.S3TestLib()
 IAM_TEST_OBJ = iam_test_lib.IamTestLib()
@@ -65,24 +64,6 @@ class TestObjectACL:
         cls.log.info("Test file path: %s", cls.test_file_path)
         cls.ldap_user = LDAP_USERNAME
         cls.ldap_password = LDAP_PASSWD
-        cls.s3bkt_obj = CortxcliS3BucketOperations()
-        cls.s3bkt_obj.open_connection()
-        cls.s3acc_obj = CortxcliS3AccountOperations(session_obj=cls.s3bkt_obj.session_obj)
-        cls.cortx_obj = CortxCliTestLib(session_obj=cls.s3bkt_obj.session_obj)
-        cls.bucket_prefix = "clis3bkt"
-        cls.s3acc_prefix = "clis3bkt_acc"
-        cls.s3acc_name = "{}_{}".format(cls.s3acc_prefix, int(time.time()))
-        cls.s3acc_email = "{}@seagate.com".format(cls.s3acc_name)
-        cls.s3acc_password = S3_CFG["CliConfig"]["s3_account"]["password"]
-        cls.bucket_name = None
-        login = cls.s3acc_obj.login_cortx_cli()
-        assert_utils.assert_equals(True, login[0], login[1])
-        response = cls.s3acc_obj.create_s3account_cortx_cli(
-            account_name=cls.s3acc_name,
-            account_email=cls.s3acc_email,
-            password=cls.s3acc_password)
-        assert_utils.assert_equals(True, response[0], response[1])
-        cls.s3acc_obj.logout_cortx_cli()
 
     def setup_method(self):
         """
@@ -110,29 +91,44 @@ class TestObjectACL:
         Delete buckets and objects uploaded to that bucket.
         """
         self.log.info("STARTED: TearDown Operations")
-        login = cls.s3acc_obj.login_cortx_cli()
-        assert_utils.assert_equals(True, login[0], login[1])
-        accounts = cls.s3acc_obj.show_s3account_cortx_cli(output_format="json")[1]
-        accounts = cls.s3acc_obj.format_str_to_dict(
-            input_str=accounts)["s3_accounts"]
-        accounts = [acc["account_name"]
-                    for acc in accounts if cls.s3acc_prefix in acc["account_name"]]
-        cls.s3acc_obj.logout_cortx_cli()
-        for acc in accounts:
-            login = cls.s3acc_obj.login_cortx_cli(
-                username=acc, password=cls.s3acc_password)
-            assert_utils.assert_equals(True, login[0], login[1])
-            buckets = cls.s3bkt_obj.list_buckets_cortx_cli(op_format="json")[1]
-            buckets = cls.s3bkt_obj.format_str_to_dict(
-                input_str=buckets)["buckets"]
-            buckets = [bkt["name"] for bkt in buckets if cls.bucket_prefix in bkt["name"]]
-            for bkt in buckets:
-                resp = cls.s3bkt_obj.delete_bucket_cortx_cli(bkt)
-                assert_utils.assert_equals(True, resp[0], resp[1])
-            response = cls.s3acc_obj.delete_s3account_cortx_cli(account_name=acc)
-            assert_utils.assert_equals(True, response[0], response[1])
-            cls.s3acc_obj.logout_cortx_cli()
-        cls.s3bkt_obj.close_connection()
+        bucket_init = S3_OBJ_TST["s3_object"]["bucket_name"][:-2]
+        bucket_list = S3_OBJ.bucket_list()[1]
+        if os.path.exists(self.test_file_path):
+            remove_file(self.test_file_path)
+        all_users_buckets = [
+            bucket for bucket in bucket_list if bucket_init in bucket]
+        self.log.debug(
+            "All the buckets for deletion are : %s", all_users_buckets)
+        if all_users_buckets:
+            S3_OBJ.delete_multiple_buckets(all_users_buckets)
+        all_accounts = IAM_TEST_OBJ.list_accounts_s3iamcli(
+            self.ldap_user,
+            self.ldap_password)[1]
+        self.log.info("setup %s", all_accounts)
+        iam_accounts = [acc["AccountName"]
+                        for acc in all_accounts if
+                        S3_OBJ_TST["s3_object"]["acc_name_prefix"] in acc["AccountName"]]
+        self.log.debug(iam_accounts)
+        if iam_accounts:
+            for acc in iam_accounts:
+                self.log.debug("Deleting %s account", acc)
+                resp = IAM_TEST_OBJ.reset_account_access_key_s3iamcli(
+                    acc,
+                    self.ldap_user,
+                    self.ldap_password)
+                access_key = resp[1]["AccessKeyId"]
+                secret_key = resp[1]["SecretKey"]
+                s3_obj_temp = s3_test_lib.S3TestLib(access_key, secret_key)
+                bucket_list = s3_obj_temp.bucket_list()[1]
+                s3_obj_acl = s3_acl_test_lib.S3AclTestLib(
+                    access_key, secret_key)
+                for bucket in bucket_list:
+                    s3_obj_acl.put_bucket_acl(bucket, acl="private")
+                if bucket_list:
+                    s3_obj_temp.delete_all_buckets()
+                if acc:
+                    IAM_TEST_OBJ.reset_access_key_and_delete_account_s3iamcli(acc)
+                self.log.info("Deleted IAM accounts successfully")
         self.log.info("ENDED: TearDown Operations")
 
     @classmethod
@@ -145,31 +141,6 @@ class TestObjectACL:
         cls.log.info("STARTED: teardown test suite operations.")
         if os.path.exists(cls.test_dir_path):
             shutil.rmtree(cls.test_dir_path)
-
-        login = cls.s3acc_obj.login_cortx_cli()
-        assert_utils.assert_equals(True, login[0], login[1])
-        accounts = cls.s3acc_obj.show_s3account_cortx_cli(output_format="json")[1]
-        accounts = cls.s3acc_obj.format_str_to_dict(
-            input_str=accounts)["s3_accounts"]
-        accounts = [acc["account_name"]
-                    for acc in accounts if cls.s3acc_prefix in acc["account_name"]]
-        cls.s3acc_obj.logout_cortx_cli()
-        for acc in accounts:
-            login = cls.s3acc_obj.login_cortx_cli(
-                username=acc, password=cls.s3acc_password)
-            assert_utils.assert_equals(True, login[0], login[1])
-            buckets = cls.s3bkt_obj.list_buckets_cortx_cli(op_format="json")[1]
-            buckets = cls.s3bkt_obj.format_str_to_dict(
-                input_str=buckets)["buckets"]
-            buckets = [bkt["name"] for bkt in buckets if cls.bucket_prefix in bkt["name"]]
-            for bkt in buckets:
-                resp = cls.s3bkt_obj.delete_bucket_cortx_cli(bkt)
-                assert_utils.assert_equals(True, resp[0], resp[1])
-            response = cls.s3acc_obj.delete_s3account_cortx_cli(account_name=acc)
-            assert_utils.assert_equals(True, response[0], response[1])
-            cls.s3acc_obj.logout_cortx_cli()
-        cls.s3bkt_obj.close_connection()
-
         cls.log.info("Cleanup test directory: %s", cls.test_dir_path)
         cls.log.info("ENDED: teardown test suite operations.")
 
@@ -196,7 +167,7 @@ class TestObjectACL:
         assert res[0], res[1]
         self.log.info("Step : Object is created: %s", obj)
 
-    def create_cortxcli_acc(self, account_name, email_id):
+    def create_s3iamcli_acc(self, account_name, email_id):
         """
         Function to create IAM Account using s3iamcli tool.
 
@@ -207,12 +178,8 @@ class TestObjectACL:
         self.log.info(
             "Step : Creating account with name %s and email_id %s",
             account_name, email_id)
-        # create_account = IAM_TEST_OBJ.create_account_s3iamcli(
-        #     account_name, email_id, self.ldap_user, self.ldap_password)
-
-        create_account = self.cortx_obj.create_account_cortxcli(
-            account_name, email_id, self.s3acc_password)
-
+        create_account = IAM_TEST_OBJ.create_account_s3iamcli(
+            account_name, email_id, self.ldap_user, self.ldap_password)
         assert create_account[0], create_account[1]
         access_key = create_account[1]["access_key"]
         secret_key = create_account[1]["secret_key"]
@@ -242,7 +209,7 @@ class TestObjectACL:
         emailid_2 = test_cfg["emailid"].format(self.random_num)
         self.log.info("Creating account with name %s and email_id %s",
                       account_name_2, emailid_2)
-        result = self.create_cortxcli_acc(account_name_2, emailid_2)
+        result = self.create_s3iamcli_acc(account_name_2, emailid_2)
         json_policy = test_cfg["grantee_json"]
         json_policy["Grantee"]["ID"] = result[0]
         json_policy["Grantee"]["DisplayName"] = account_name_2
@@ -666,7 +633,7 @@ class TestObjectACL:
         email_id = S3_OBJ_TST["test_10208"]["emailid"].format(
             self.random_num)
         permission = S3_OBJ_TST["s3_object"]["full_ctrl"]
-        result = self.create_cortxcli_acc(account_name, email_id)
+        result = self.create_s3iamcli_acc(account_name, email_id)
         canonical_id = result[0]
         self.create_bucket_obj(bucket, obj)
         self.log.info("Step 4: Added grantee to the object %s", obj)
@@ -698,7 +665,7 @@ class TestObjectACL:
         email_id = S3_OBJ_TST["test_10209"]["emailid"].format(
             self.random_num)
         permission = S3_OBJ_TST["s3_object"]["full_ctrl"]
-        result = self.create_cortxcli_acc(account_name, email_id)
+        result = self.create_s3iamcli_acc(account_name, email_id)
         canonical_id = result[0]
         self.create_bucket_obj(bucket, obj)
         self.log.info("Step 4: Added grantee to the object %s", obj)
@@ -758,7 +725,7 @@ class TestObjectACL:
         email_id = S3_OBJ_TST["test_10211"]["emailid"].format(
             self.random_num)
         permission = S3_OBJ_TST["test_10211"]["obj_acl_rd"]
-        result = self.create_cortxcli_acc(account_name, email_id)
+        result = self.create_s3iamcli_acc(account_name, email_id)
         canonical_id = result[0]
         self.log.info("Step 1: Completed creating account")
         self.create_bucket_obj(bucket, obj)
@@ -793,7 +760,7 @@ class TestObjectACL:
         email_id = S3_OBJ_TST["test_10212"]["emailid"].format(
             self.random_num)
         permission = S3_OBJ_TST["test_10212"]["obj_acl_wr"]
-        result = self.create_cortxcli_acc(account_name, email_id)
+        result = self.create_s3iamcli_acc(account_name, email_id)
         canonical_id = result[0]
         self.create_bucket_obj(bucket, obj)
         self.log.info("Step 1: Set write permission to object %s", obj)
@@ -827,7 +794,7 @@ class TestObjectACL:
         email_id = S3_OBJ_TST["test_10213"]["emailid"].format(
             self.random_num)
         permission = S3_OBJ_TST["test_10213"]["obj_acl_rdc"]
-        result = self.create_cortxcli_acc(account_name, email_id)
+        result = self.create_s3iamcli_acc(account_name, email_id)
         canonical_id = result[0]
         self.create_bucket_obj(bucket, obj)
         self.log.info(
@@ -862,7 +829,7 @@ class TestObjectACL:
         email_id = S3_OBJ_TST["test_10214"]["emailid"].format(
             self.random_num)
         permission = S3_OBJ_TST["test_10214"]["obj_acl_wrc"]
-        result = self.create_cortxcli_acc(account_name, email_id)
+        result = self.create_s3iamcli_acc(account_name, email_id)
         canonical_id = result[0]
         self.create_bucket_obj(bucket, obj)
         self.log.info(
@@ -896,7 +863,7 @@ class TestObjectACL:
         email_id = S3_OBJ_TST["test_10215"]["emailid"].format(
             self.random_num)
         permission = S3_OBJ_TST["test_10215"]["obj_acl_rdwr"]
-        result = self.create_cortxcli_acc(account_name, email_id)
+        result = self.create_s3iamcli_acc(account_name, email_id)
         canonical_id = result[0]
         self.create_bucket_obj(bucket, obj)
         try:
@@ -925,7 +892,7 @@ class TestObjectACL:
         email_id = S3_OBJ_TST["test_10216"]["emailid"].format(
             self.random_num)
         permission = S3_OBJ_TST["test_10216"]["obj_acl_rdwr"]
-        result = self.create_cortxcli_acc(account_name, email_id)
+        result = self.create_s3iamcli_acc(account_name, email_id)
         canonical_id = result[0]
         self.create_bucket_obj(bucket, obj)
         self.log.info("Step 1: Put permission with invalid XML structure")
@@ -960,14 +927,14 @@ class TestObjectACL:
         email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         permission = S3_OBJ_TST["s3_object"]["full_ctrl"]
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         canonical_id_1 = result[0]
         self.log.info("Step 1: Completed creating account 1")
         account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
         email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
-        result = self.create_cortxcli_acc(account_name_2, email_id_2)
+        result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         canonical_id_2 = result[0]
         self.log.info("Step 2: Completed creating account 2")
         self.create_bucket_obj(bucket, obj)
@@ -1016,7 +983,7 @@ class TestObjectACL:
         email_id = S3_OBJ_TST["test_10225"]["emailid"].format(
             self.random_num)
         permission = S3_OBJ_TST["s3_object"]["full_ctrl"]
-        result = self.create_cortxcli_acc(account_name, email_id)
+        result = self.create_s3iamcli_acc(account_name, email_id)
         canonical_id = result[0]
         self.log.info("Step 1: Completed creating account")
         self.log.info("Step 2: Creating bucket %s", bucket)
@@ -1065,7 +1032,7 @@ class TestObjectACL:
             account_name = name_initial.format(str(time.time()), str(each))
             email_id = name_initial.format(
                 str(time.time()), S3_OBJ_TST["test_10227"]["name_postfix"])
-            result = self.create_cortxcli_acc(account_name, email_id)
+            result = self.create_s3iamcli_acc(account_name, email_id)
             can_id = result[0]
             op_val = S3_ACL_OBJ.add_grantee(bucket, obj, can_id, permission)
             assert op_val[0], op_val[1]
@@ -1096,7 +1063,7 @@ class TestObjectACL:
             account_name = name_initial.format(str(time.time()), str(each))
             email_id = name_initial.format(
                 str(time.time()), S3_OBJ_TST["test_10228"]["name_postfix"])
-            result = self.create_cortxcli_acc(account_name, email_id)
+            result = self.create_s3iamcli_acc(account_name, email_id)
             can_id = result[0]
             op_val = S3_ACL_OBJ.add_grantee(bucket, obj, can_id, permission)
             assert op_val[0], op_val[1]
@@ -1107,7 +1074,7 @@ class TestObjectACL:
                 str(time.time()), str(self.random_num))
             email = name_initial.format(
                 str(time.time()), S3_OBJ_TST["test_10228"]["name_postfix"])
-            result = self.create_cortxcli_acc(acc_name, email)
+            result = self.create_s3iamcli_acc(acc_name, email)
             canonical_id = result[0]
             try:
                 S3_ACL_OBJ.add_grantee(
@@ -1170,7 +1137,7 @@ class TestObjectACL:
         email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         # Creating User Account 1
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         # Creating the new s3 and ACL Object
         s3_obj_1 = result[1]
         s3_acl_obj_1 = result[2]
@@ -1199,7 +1166,7 @@ class TestObjectACL:
             self.random_num)
         email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
-        result = self.create_cortxcli_acc(account_name_2, email_id_2)
+        result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         s3_acl_obj_2 = result[2]
         self.log.info("Step 3: Created second account")
         # Creating the 2nd user s3 Object
@@ -1236,7 +1203,7 @@ class TestObjectACL:
         email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         # Creating User Account 1
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         # Creating the new s3 Object
         s3_obj_1 = result[1]
         s3_acl_obj_1 = result[2]
@@ -1260,7 +1227,7 @@ class TestObjectACL:
             self.random_num)
         email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
-        result = self.create_cortxcli_acc(account_name_2, email_id_2)
+        result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         # Creating the 2nd user s3-Object
         self.log.info("Getting object from user 2")
         s3_acl_obj_2 = result[2]
@@ -1298,7 +1265,7 @@ class TestObjectACL:
         email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         self.log.info("Step 1: Creating account 2 ")
-        result = self.create_cortxcli_acc(account_name, email_id_1)
+        result = self.create_s3iamcli_acc(account_name, email_id_1)
         canonical_id = result[0]
         self.log.info("Step 1: Completed Creating account 2 completed")
         self.create_bucket_obj(bucket_name, s3obj_name)
@@ -1369,7 +1336,7 @@ class TestObjectACL:
         assert resp[0], resp[1]
         # Creating User Account 1
         self.log.info("Step 1: Creating User Account 1")
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         self.log.info("Step 1: Successfully Created account 1")
         # Creating the new s3 Object
         s3_obj_1 = result[1]
@@ -1396,7 +1363,7 @@ class TestObjectACL:
             self.random_num)
         email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
-        result = self.create_cortxcli_acc(account_name_2, email_id_2)
+        result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         # Creating the 2nd user s3-Object
         self.log.info("Getting object from user 2")
         s3_acl_obj_2 = result[2]
@@ -1437,7 +1404,7 @@ class TestObjectACL:
                            S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         # Creating User Account 1
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         # Creating the new s3 Object
         s3_obj_1 = result[1]
         s3_acl_obj_1 = result[2]
@@ -1470,7 +1437,7 @@ class TestObjectACL:
             self.random_num)
         email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
-        result = self.create_cortxcli_acc(account_name_2, email_id_2)
+        result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         # Creating the 2nd user s3 Object
         s3_acl_obj_2 = result[2]
         # Getting the Object from Account 2
@@ -1521,7 +1488,7 @@ class TestObjectACL:
                            S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         # Creating User Account 2
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         self.log.info(
             "Step 2: Creating Bucket and putting object into it using Account 1")
         self.log.info("Creating bucket %s", bucket_name)
@@ -1608,7 +1575,7 @@ class TestObjectACL:
                            S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         # Creating User Account 1
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         # Creating the new s3 Object
         s3_obj_1 = result[1]
         s3_acl_obj_1 = result[2]
@@ -1638,7 +1605,7 @@ class TestObjectACL:
             self.random_num)
         self.log.info("Creating account name %s and email_id %s",
                       account_name_2, email_id_2)
-        result = self.create_cortxcli_acc(account_name_2, email_id_2)
+        result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         # Creating the 2nd user s3 Object
         self.log.info("Getting object from user 2")
         s3_acl_obj_2 = result[2]
@@ -1699,7 +1666,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account 1 with name %s and email_id %s",
             account_name_1, email_id_1)
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         self.log.info("Step 1: Successfully Created account 1")
         canonical_id_1 = result[0]
         # Creating the new s3 Object
@@ -1729,7 +1696,7 @@ class TestObjectACL:
             self.random_num)
         self.log.info("Creating account with name %s and email_id %s",
                       account_name_2, email_id_2)
-        result = self.create_cortxcli_acc(account_name_2, email_id_2)
+        result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         canonical_id_2 = result[0]
         # Creating the 2nd user s3 Object
         s3_acl_obj_2 = result[2]
@@ -1794,7 +1761,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account 1 with name %s and email_id %s",
             account_name_1, email_id_1)
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         self.log.info("Step 1: Successfully Created account 1")
         # Creating the new s3 Object
         s3_obj_1 = result[1]
@@ -1828,7 +1795,7 @@ class TestObjectACL:
             self.random_num)
         self.log.info("Creating account name %s and email_id %s",
                       account_name_2, email_id_2)
-        result = self.create_cortxcli_acc(account_name_2, email_id_2)
+        result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         # Creating the 2nd user s3 Object
         self.log.info("Getting object from user 2")
         s3_acl_obj_2 = result[2]
@@ -1877,7 +1844,7 @@ class TestObjectACL:
             "Step 1: Creating account 1 with name %s and email_id %s",
             account_name_1,
             email_id_1)
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         self.log.info("Step 1: Completed Creating account 1")
         # Creating the new s3 Object
         s3_obj_1 = result[1]
@@ -1911,7 +1878,7 @@ class TestObjectACL:
             self.random_num)
         self.log.info("Creating account name %s and email_id %s",
                       account_name_2, email_id_2)
-        result = self.create_cortxcli_acc(account_name_2, email_id_2)
+        result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         # Creating the 2nd user s3 Object
         s3_acl_obj_2 = result[2]
         self.log.info("Step 6: Getting object ACL from user 2")
@@ -1962,7 +1929,7 @@ class TestObjectACL:
             self.random_num)
         email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         can_id_usr_1 = result[0]
         # Creating the new s3 Object
         s3_obj_1 = result[1]
@@ -1974,7 +1941,7 @@ class TestObjectACL:
             self.random_num)
         email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
-        result = self.create_cortxcli_acc(account_name_2, email_id_2)
+        result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         can_id_usr_2 = result[0]
         self.log.info("Step 2: Successfully Created account 2")
         s3obj_user2 = result[2]
@@ -2073,7 +2040,7 @@ class TestObjectACL:
             self.random_num)
         email_id_1 = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         can_id_usr_1 = result[0]
 
         # Creating the new s3 Object
@@ -2087,7 +2054,7 @@ class TestObjectACL:
         self.log.info(
             "Step 2: Creating account 2 with name %s and email_id %s",
             account_name_2, email_id_2)
-        result = self.create_cortxcli_acc(account_name_2, email_id_2)
+        result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         can_id_usr_2 = result[0]
         self.log.info("Step 2: Successfully Created account 2")
         s3obj_user2 = result[2]
@@ -2172,7 +2139,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1 : Creating account with name %s and email %s",
             account_name, email)
-        result = self.create_cortxcli_acc(account_name, email)
+        result = self.create_s3iamcli_acc(account_name, email)
         self.log.info(
             "Step 2: Creating bucket using %s account credentials",
             account_name)
@@ -2221,7 +2188,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
             account_name, email)
-        result = self.create_cortxcli_acc(account_name, email)
+        result = self.create_s3iamcli_acc(account_name, email)
         self.log.info("Step 1: Successfully created the account")
         self.log.info(
             "Step 2 :Creating bucket using %s account credentials",
@@ -2269,7 +2236,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
             account_name, email)
-        result = self.create_cortxcli_acc(account_name, email)
+        result = self.create_s3iamcli_acc(account_name, email)
         self.log.info("Step 1: Completed creating account")
         self.log.info(
             "Step 2: Creating bucket using %s account credentials",
@@ -2319,7 +2286,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
             account_name, email)
-        result = self.create_cortxcli_acc(account_name, email)
+        result = self.create_s3iamcli_acc(account_name, email)
         self.log.info("Step 1: Completed creating account")
         self.log.info(
             "Step 2: Creating bucket using %s account credentials",
@@ -2369,7 +2336,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
             account_name, email)
-        result = self.create_cortxcli_acc(account_name, email)
+        result = self.create_s3iamcli_acc(account_name, email)
         self.log.info("Step 1: Completed creating account")
         self.log.info(
             "Step 2: Creating bucket using %s account credentials",
@@ -2419,7 +2386,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
             account_name, email)
-        result = self.create_cortxcli_acc(account_name, email)
+        result = self.create_s3iamcli_acc(account_name, email)
         self.log.info("Step 1: Completed creating account")
         self.log.info(
             "Step 2:Creating bucket using %s account credentials",
@@ -2469,7 +2436,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
             account_name, email)
-        result = self.create_cortxcli_acc(account_name, email)
+        result = self.create_s3iamcli_acc(account_name, email)
         self.log.info("Step 1: Completed creating account")
         self.log.info(
             "Step 2:Creating bucket using %s account credentials",
@@ -2517,7 +2484,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
             account_name, email)
-        result = self.create_cortxcli_acc(account_name, email)
+        result = self.create_s3iamcli_acc(account_name, email)
         self.log.info("Step 1: Completed creating account")
         self.log.info(
             "Step 2:Creating bucket using %s account credentials",
@@ -2563,7 +2530,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
             account_name, email)
-        result = self.create_cortxcli_acc(account_name, email)
+        result = self.create_s3iamcli_acc(account_name, email)
         self.log.info(
             "Step 2: Creating bucket using %s account credentials",
             account_name)
@@ -2612,7 +2579,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
             account_name, email)
-        result = self.create_cortxcli_acc(account_name, email)
+        result = self.create_s3iamcli_acc(account_name, email)
         self.log.info("Step 1: Account was Created Successfully")
         self.log.info(
             "Step 2: Creating bucket using %s account credentials",
@@ -2747,7 +2714,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_1, email_id_1)
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         s3_obj_1 = result[1]
         s3_acl_obj_1 = result[2]
         account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
@@ -2757,7 +2724,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_2, email_id_2)
-        result = self.create_cortxcli_acc(account_name_2, email_id_2)
+        result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         canonical_id_user_2 = result[0]
         s3obj_user2 = result[2]
         self.log.info("Step 1: Done creating account 1 and 2")
@@ -2836,7 +2803,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_1, email_id_1)
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         s3obj_user1 = result[1]
         s3acl_user1 = result[2]
         account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
@@ -2846,7 +2813,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_2, email_id_2)
-        result = self.create_cortxcli_acc(account_name_2, email_id_2)
+        result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         canonical_id_user_2 = result[0]
         s3obj_user2 = result[2]
         self.log.info("Step 1: Completed Creating User Accounts 1 and 2")
@@ -2929,7 +2896,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_1, email_id_1)
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         s3obj_user = result[1]
         s3acl_user = result[2]
         self.log.info("Step 1: Completed Creating User Accounts 1")
@@ -2995,7 +2962,7 @@ class TestObjectACL:
             "Creating account with name %s and email_id %s",
             account_name_1,
             email_id_1)
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         s3obj_user = result[1]
         s3acl_user = result[2]
         self.log.info("Step 1: Completed Creating User Accounts 1")
@@ -3055,7 +3022,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
             account_name, email)
-        result = self.create_cortxcli_acc(account_name, email)
+        result = self.create_s3iamcli_acc(account_name, email)
         self.log.info("Step 1: Account was created")
         acl_obj = result[2]
         s3obj_user = result[1]
@@ -3107,7 +3074,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
             account_name, email)
-        result = self.create_cortxcli_acc(account_name, email)
+        result = self.create_s3iamcli_acc(account_name, email)
         acl_obj = result[2]
         s3obj_user = result[1]
         self.log.info("Step 1: Account was created successfully")
@@ -3158,7 +3125,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
             account_name, email)
-        result = self.create_cortxcli_acc(account_name, email)
+        result = self.create_s3iamcli_acc(account_name, email)
         acl_obj = result[2]
         s3obj_user = result[1]
         self.log.info("Step 1: Account was created successfully")
@@ -3208,7 +3175,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
             account_name, email)
-        result = self.create_cortxcli_acc(account_name, email)
+        result = self.create_s3iamcli_acc(account_name, email)
         acl_obj = result[2]
         s3obj_user = result[1]
         self.log.info("Step 1: Successfully account was created")
@@ -3261,7 +3228,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
             account_name, email)
-        result = self.create_cortxcli_acc(account_name, email)
+        result = self.create_s3iamcli_acc(account_name, email)
         acl_obj = result[2]
         s3obj_user = result[1]
         self.log.info("Step 1: Account was created successfully")
@@ -3313,7 +3280,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
             account_name, email)
-        result = self.create_cortxcli_acc(account_name, email)
+        result = self.create_s3iamcli_acc(account_name, email)
         acl_obj = result[2]
         s3obj_user = result[1]
         self.log.info("Step 1: Account was created successfully")
@@ -3365,7 +3332,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
             account_name, email)
-        result = self.create_cortxcli_acc(account_name, email)
+        result = self.create_s3iamcli_acc(account_name, email)
         acl_obj = result[2]
         s3obj_user = result[1]
         self.log.info("Step 1: Account was created successfully")
@@ -3419,7 +3386,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
             account_name, email)
-        result = self.create_cortxcli_acc(account_name, email)
+        result = self.create_s3iamcli_acc(account_name, email)
         acl_obj = result[2]
         s3obj_user = result[1]
         self.log.info("Step 1: Account was created successfully")
@@ -3474,7 +3441,7 @@ class TestObjectACL:
             self.random_num)
         obj = S3_OBJ_TST["s3_object"]["object_name"].format(
             self.random_num)
-        result = self.create_cortxcli_acc(account_name, email_id)
+        result = self.create_s3iamcli_acc(account_name, email_id)
         canonical_id = result[0]
         acl_obj = result[2]
         s3obj_user = result[1]
@@ -3533,7 +3500,7 @@ class TestObjectACL:
             test_file_path,
             S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
-        result = self.create_cortxcli_acc(account_name, email_id)
+        result = self.create_s3iamcli_acc(account_name, email_id)
         canonical_id = result[0]
         bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             self.random_num)
@@ -3601,7 +3568,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email_id %s",
             account_name, email_id)
-        result = self.create_cortxcli_acc(account_name, email_id)
+        result = self.create_s3iamcli_acc(account_name, email_id)
         canonical_id = result[0]
         self.log.info("Step 1: Account was created")
         self.log.info("Step 2: Creating bucket %s", bucket)
@@ -3660,7 +3627,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email_id %s",
             account_name_1, email_id_1)
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         acl_obj = result[2]
         s3obj_user = result[1]
         account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
@@ -3670,7 +3637,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account 2 with name %s and email_id %s",
             account_name_2, email_id_2)
-        result = self.create_cortxcli_acc(account_name_2, email_id_2)
+        result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         s3obj_user2 = result[2]
         self.log.info("Step 1: Successfully created account 1 and 2")
         self.log.info("Step 2: Create Bucket with Account 1")
@@ -3729,7 +3696,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email_id %s",
             account_name_1, email_id_1)
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         acl_obj = result[2]
         s3obj_user = result[1]
         account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
@@ -3739,7 +3706,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1 : Creating account with name %s and email_id %s",
             account_name_2, email_id_2)
-        result = self.create_cortxcli_acc(account_name_2, email_id_2)
+        result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         s3obj_user2 = result[2]
         self.log.info("Step 1: Accounts was created successfully")
         buck_resp = s3obj_user.create_bucket(bucket_name)
@@ -3799,7 +3766,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email_id %s",
             account_name_1, email_id_1)
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         acl_obj = result[2]
         account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
             self.random_num)
@@ -3808,7 +3775,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_2, email_id_2)
-        result = self.create_cortxcli_acc(account_name_2, email_id_2)
+        result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         s3obj_user2 = result[2]
         self.log.info("Step 1: Account were created successfully")
         self.log.info("Step 2: Create Bucket with Account 1")
@@ -3900,7 +3867,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_1, email_id_1)
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         acl_obj = result[2]
         # Creating 2nd User Account and User Account Variables
         account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
@@ -3910,7 +3877,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_2, email_id_2)
-        result = self.create_cortxcli_acc(account_name_2, email_id_2)
+        result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         can_id_2 = result[0]
         s3obj_user2 = result[2]
         self.log.info("Step 1 : Successfully accounts were created")
@@ -4002,7 +3969,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Create tags on existing object using s3api put-object-tagging from account1")
         # Creating User Account 1
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         self.log.info("Successfully Created account 1")
         # Creating the new s3 Object
         s3_obj_1 = result[1]
@@ -4057,7 +4024,7 @@ class TestObjectACL:
             self.random_num)
         email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
-        result = self.create_cortxcli_acc(account_name_2, email_id_2)
+        result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         s3_tag_obj_2 = result[3]
         self.log.info("Step 5 : Done Switch to Account 2")
 
@@ -4104,7 +4071,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Create tags on existing object using s3api put-object-tagging from account1")
         # Creating User Account 1
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         self.log.info("Successfully Created account 1")
         # Creating the new s3 Object
         s3_obj_1 = result[1]
@@ -4145,7 +4112,7 @@ class TestObjectACL:
             self.random_num)
         email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
-        result = self.create_cortxcli_acc(account_name_2, email_id_2)
+        result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         canonical_id_2 = result[0]
         s3_tag_obj_2 = result[3]
         res = s3_acl_obj_1.add_grantee(bucket_name, s3obj_name,
@@ -4207,7 +4174,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Create tags on existing object using s3api put-object-tagging from account1")
         # Creating User Account 1
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         self.log.info("Successfully Created account 1")
         # Creating the new s3 Object
         s3_obj_1 = result[1]
@@ -4247,7 +4214,7 @@ class TestObjectACL:
             self.random_num)
         email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
-        result = self.create_cortxcli_acc(account_name_2, email_id_2)
+        result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         canonical_id_2 = result[0]
         s3_tag_obj_2 = result[3]
         res = s3_acl_obj_1.add_grantee(bucket_name, s3obj_name,
@@ -4309,7 +4276,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Create tags on existing object using s3api put-object-tagging from account1")
         # Creating User Account 1
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         self.log.info("Successfully Created account 1")
         # Creating the new s3 Object
         s3_obj_1 = result[1]
@@ -4348,7 +4315,7 @@ class TestObjectACL:
             self.random_num)
         email_id_2 = S3_OBJ_TST["s3_object"]["emailid_2"].format(
             self.random_num)
-        result = self.create_cortxcli_acc(account_name_2, email_id_2)
+        result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         canonical_id_2 = result[0]
         s3_tag_obj_2 = result[3]
         res = s3_acl_obj_1.add_grantee(bucket_name, s3obj_name,
@@ -4449,7 +4416,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email_id %s",
             account_name_1, email_id_1)
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         acl_obj = result[2]
         s3obj_user = result[1]
         account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
@@ -4459,7 +4426,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1 : Creating account with name %s and email_id %s",
             account_name_2, email_id_2)
-        result = self.create_cortxcli_acc(account_name_2, email_id_2)
+        result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         s3obj_user2 = result[2]
         self.log.info("Step 1: Accounts was created successfully")
         buck_resp = s3obj_user.create_bucket(bucket_name)
@@ -4516,7 +4483,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email_id %s",
             account_name_1, email_id_1)
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         acl_obj = result[2]
         s3obj_user = result[1]
         account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
@@ -4526,7 +4493,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1 : Creating account with name %s and email_id %s",
             account_name_2, email_id_2)
-        result = self.create_cortxcli_acc(account_name_2, email_id_2)
+        result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         s3obj_user2 = result[2]
         self.log.info("Step 1: Accounts was created successfully")
         buck_resp = s3obj_user.create_bucket(bucket_name)
@@ -4587,7 +4554,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email_id %s",
             account_name_1, email_id_1)
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         acl_obj = result[2]
         s3obj_user = result[1]
         account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
@@ -4597,7 +4564,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1 : Creating account with name %s and email_id %s",
             account_name_2, email_id_2)
-        result = self.create_cortxcli_acc(account_name_2, email_id_2)
+        result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         s3obj_user2 = result[2]
         self.log.info("Step 1: Accounts was created successfully")
         buck_resp = s3obj_user.create_bucket(bucket_name)
@@ -4648,7 +4615,7 @@ class TestObjectACL:
         email_id = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
         permission = S3_OBJ_TST["test_286"]["obj_acl_rdc"]
-        result = self.create_cortxcli_acc(account_name, email_id)
+        result = self.create_s3iamcli_acc(account_name, email_id)
         canonical_id = result[0]
         acl_obj_2 = result[2]
         self.create_bucket_obj(bucket, obj)
@@ -4684,7 +4651,7 @@ class TestObjectACL:
             self.random_num)
         email_id = S3_OBJ_TST["s3_object"]["emailid_1"].format(
             self.random_num)
-        self.create_cortxcli_acc(account_name, email_id)
+        self.create_s3iamcli_acc(account_name, email_id)
         self.log.info(
             "Step 1: Put object %s", obj)
         self.create_bucket_obj(bucket, obj)
@@ -4723,7 +4690,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_1, email_id_1)
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         s3_acl_obj1 = result[2]
         s3_test_obj1 = result[1]
         account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
@@ -4734,7 +4701,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_2, email_id_2)
-        result = self.create_cortxcli_acc(account_name_2, email_id_2)
+        result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         canonical_id, s3_test_obj2, s3_acl_obj2, _ = result
         self.log.info("Step 1: Created two accounts successfully")
         self.create_bucket_obj(bucket_name, s3obj_name, s3_test_obj1)
@@ -4797,7 +4764,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_1, email_id_1)
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         s3_acl_obj1 = result[2]
         s3_test_obj1 = result[1]
         account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
@@ -4807,7 +4774,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_2, email_id_2)
-        result = self.create_cortxcli_acc(account_name_2, email_id_2)
+        result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         canonical_id = result[0]
         self.log.info("Step 1: Created two accounts successfully")
         self.create_bucket_obj(bucket_name, s3obj_name, s3_test_obj1)
@@ -4861,7 +4828,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_1, email_id_1)
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         s3_acl_obj1 = result[2]
         s3_test_obj1 = result[1]
         account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
@@ -4872,13 +4839,13 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_2, email_id_2)
-        result = self.create_cortxcli_acc(account_name_2, email_id_2)
+        result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         canonical_id, s3_test_obj2, s3_acl_obj2, _ = result
         account_name_3 = S3_OBJ_TST["test_3455"]["account_name_3"].format(
             self.random_num)
         email_id_3 = S3_OBJ_TST["test_3455"]["emailid_3"].format(
             self.random_num)
-        result = self.create_cortxcli_acc(account_name_3, email_id_3)
+        result = self.create_s3iamcli_acc(account_name_3, email_id_3)
         s3_test_obj3 = result[1]
         self.log.info("Step 1: Created three accounts successfully")
         self.create_bucket_obj(bucket_name, s3obj_name, s3_test_obj1)
@@ -4950,7 +4917,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_1, email_id_1)
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         s3_acl_obj1 = result[2]
         s3_test_obj1 = result[1]
         account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
@@ -4961,7 +4928,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_2, email_id_2)
-        result = self.create_cortxcli_acc(account_name_2, email_id_2)
+        result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         canonical_id, s3_test_obj2, s3_acl_obj2, _ = result
         self.log.info("Step 1: Created two accounts successfully")
         self.create_bucket_obj(bucket_name, s3obj_name, s3_test_obj1)
@@ -5033,7 +5000,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_1, email_id_1)
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         s3_acl_obj1 = result[2]
         s3_test_obj1 = result[1]
         account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
@@ -5044,7 +5011,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_2, email_id_2)
-        result = self.create_cortxcli_acc(account_name_2, email_id_2)
+        result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         canonical_id, s3_test_obj2, s3_acl_obj2, _ = result
         self.log.info("Step 1: Created two accounts successfully")
         self.create_bucket_obj(bucket_name, s3obj_name, s3_test_obj1)
@@ -5116,7 +5083,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_1, email_id_1)
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         s3_acl_obj1 = result[2]
         s3_test_obj1 = result[1]
         account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
@@ -5127,7 +5094,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_2, email_id_2)
-        result = self.create_cortxcli_acc(account_name_2, email_id_2)
+        result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         canonical_id, s3_test_obj2, s3_acl_obj2, _ = result
         self.log.info("Step 1: Created two accounts successfully")
         self.create_bucket_obj(bucket_name, s3obj_name, s3_test_obj1)
@@ -5197,7 +5164,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_1, email_id_1)
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         s3_acl_obj1 = result[2]
         s3_test_obj1 = result[1]
         account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
@@ -5207,7 +5174,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_2, email_id_2)
-        result = self.create_cortxcli_acc(account_name_2, email_id_2)
+        result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         s3_test_obj2 = result[1]
         s3_acl_obj2 = result[2]
         self.log.info("Step 1: Created two accounts successfully")
@@ -5283,7 +5250,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_1, email_id_1)
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         s3_acl_obj1 = result[2]
         s3_test_obj1 = result[1]
         account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
@@ -5293,7 +5260,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_2, email_id_2)
-        result = self.create_cortxcli_acc(account_name_2, email_id_2)
+        result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         s3_test_obj2 = result[1]
         s3_acl_obj2 = result[2]
         self.log.info("Step 1: Created two accounts successfully")
@@ -5374,7 +5341,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_1, email_id_1)
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         s3_acl_obj1 = result[2]
         s3_test_obj1 = result[1]
         account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
@@ -5384,7 +5351,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_2, email_id_2)
-        result = self.create_cortxcli_acc(account_name_2, email_id_2)
+        result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         s3_test_obj2 = result[1]
         s3_acl_obj2 = result[2]
         self.log.info("Step 1: Created two accounts successfully")
@@ -5466,7 +5433,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_1, email_id_1)
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         s3_acl_obj1 = result[2]
         s3_test_obj1 = result[1]
         account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
@@ -5476,7 +5443,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_2, email_id_2)
-        result = self.create_cortxcli_acc(account_name_2, email_id_2)
+        result = self.create_s3iamcli_acc(account_name_2, email_id_2)
         s3_test_obj2 = result[1]
         s3_acl_obj2 = result[2]
         self.log.info("Step 1: Created two accounts successfully")
@@ -5553,7 +5520,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_1, email_id_1)
-        result = self.create_cortxcli_acc(account_name_1, email_id_1)
+        result = self.create_s3iamcli_acc(account_name_1, email_id_1)
         s3_acl_obj1 = result[2]
         s3_test_obj1 = result[1]
         account_name_2 = S3_OBJ_TST["s3_object"]["account_name_2"].format(
@@ -5563,7 +5530,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             account_name_2, email_id_2)
-        self.create_cortxcli_acc(account_name_2, email_id_2)
+        self.create_s3iamcli_acc(account_name_2, email_id_2)
         self.log.info("Step 1: Created two accounts successfully")
         self.create_bucket_obj(bucket_name, s3obj_name, s3_test_obj1)
         self.log.info(
@@ -5681,7 +5648,7 @@ class TestObjectACL:
             "Creating account with name %s and email_id %s",
             account_name,
             email_id)
-        result = self.create_cortxcli_acc(account_name, email_id)
+        result = self.create_s3iamcli_acc(account_name, email_id)
         json_policy = test_cfg["json_policy"]
         json_policy["Owner"]["ID"] = result[0]
         json_policy["Owner"]["DisplayName"] = account_name
@@ -5739,7 +5706,7 @@ class TestObjectACL:
         emild_id = test_cfg["emailid"].format(self.random_num)
         self.log.info("Creating account with name %s and email_id %s",
                       account_name, emild_id)
-        result = self.create_cortxcli_acc(account_name, emild_id)
+        result = self.create_s3iamcli_acc(account_name, emild_id)
         s3_obj_2 = result[1]
         self.create_bucket_obj(bkt_name, obj_name, S3_OBJ)
         self.log.info("Step 2: Get object using account 2")
@@ -5890,7 +5857,7 @@ class TestObjectACL:
             "Creating account with name %s and email_id %s",
             account_name_2,
             emailid_2)
-        result = self.create_cortxcli_acc(account_name_2, emailid_2)
+        result = self.create_s3iamcli_acc(account_name_2, emailid_2)
         s3_obj_2 = result[1]
         self.log.info("Step 1: Put canned ACL for the Existing Object")
         resp = S3_ACL_OBJ.get_object_acl(bkt_name, obj_name)
