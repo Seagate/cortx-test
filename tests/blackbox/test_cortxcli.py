@@ -38,11 +38,7 @@ from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
 from libs.csm.cli.cortxcli_iam_user import CortxCliIamUser
 from libs.csm.cli.cortx_cli_s3access_keys import CortxCliS3AccessKeys
 
-from libs.s3 import s3_test_lib, iam_test_lib
-
-s3_test_obj = s3_test_lib.S3TestLib()
-iam_obj = iam_test_lib.IamTestLib()
-
+from libs.s3 import s3_test_lib
 
 class TestCortxcli:
     """Cortxcli Blackbox Testsuite."""
