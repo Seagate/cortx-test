@@ -39,9 +39,10 @@ ras_sspl_alert:
   ldap_user: "sgiamadmin"
   ldap_pwd: "ldapadmin"
   sleep_val: 120
-  after_service_restart_sleep_val: 190
-  third_party_service_short_timeout: 5
-  third_party_service_long_timeout: 200
+  sspl_timeout: 190
+  os_lvl_monitor_timeouts:
+    alert_timeout: 5
+    intrmdt_state: 200
   ipmitool_sdr_cmd: "ipmitool sdr list"
   sspl_exch: "sspl-out"
   sspl_key: "sensor-key"

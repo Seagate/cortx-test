@@ -66,6 +66,9 @@ class TestOSLevelMonitoring:
 
     def setup_method(self):
         """Setup operations per test."""
+        services = RAS_TEST_CFG["third_party_services"]
+        common_cfg = RAS_VAL["ras_sspl_alert"]
+
         LOGGER.info("Running setup_method")
         self.starttime = time.time()
         LOGGER.info("Retaining the original/default config")
@@ -89,7 +92,7 @@ class TestOSLevelMonitoring:
         LOGGER.info("Restarting sspl service")
         resp = self.health_obj.restart_pcs_resource(self.cm_cfg["sspl_resource_id"])
         assert resp, "Failed to restart sspl-ll"
-        time.sleep(self.cm_cfg["after_service_restart_sleep_val"])
+        time.sleep(self.cm_cfg["sspl_timeout"])
         LOGGER.info(
             "Verifying the status of sspl and kafka service is online")
 
@@ -119,6 +122,21 @@ class TestOSLevelMonitoring:
         res = self.ras_test_obj.sspl_log_collect()
         assert res[0], res[1]
         LOGGER.info("Started collection of sspl logs")
+
+        LOGGER.info("Check that all the 3rd party services are active")
+        resp = systemctl_cmd(command="is-active", services=services,
+                             hostname=self.host, username=self.uname,
+                             password=self.passwd)
+        stat_list = list(
+            filter(lambda j: resp[j] != "active", range(0, len(resp))))
+        inactive_list = []
+        if stat_list:
+            for i in stat_list:
+                inactive_list.append(services[i])
+            assert False, f"{inactive_list} services are not in active state"
+        LOGGER.info("All 3rd party services are in active state.")
+
+        self.timeouts = common_cfg["os_lvl_monitor_timeouts"]
 
         LOGGER.info("Successfully performed Setup operations")
 
@@ -204,23 +222,9 @@ class TestOSLevelMonitoring:
         """
         Multiple 3rd party services monitoring and management
         """
-        common_cfg = RAS_VAL["ras_sspl_alert"]
-        services = RAS_TEST_CFG["third_party_services"]
-
-        LOGGER.info("Step 1: Check that all the 3rd party services are active")
-        resp = systemctl_cmd(command="is-active", services=services,
-                             hostname=self.host, username=self.uname,
-                             password=self.passwd)
-        stat_list = list(filter(lambda j: resp[j] != "active", range(0, len(resp))))
-        inactive_list = []
-        if stat_list:
-            for i in stat_list:
-                inactive_list.append(services[i])
-            assert False, f"{inactive_list} services are not in active state"
-
-        LOGGER.info("Step 2: Start IOs")
+        LOGGER.info("Step 1: Start IOs")
         # TODO
-        LOGGER.info("Step 3: Stopping multiple randomly selected services")
+        LOGGER.info("Step 2: Stopping multiple randomly selected services")
         num_services = random.randint(0, 5)
         random_services = random.sample(RAS_TEST_CFG["third_party_services"],
                                         num_services)
@@ -238,14 +242,14 @@ class TestOSLevelMonitoring:
                 active_list.append(random_services[i])
             assert False, f"Failed to put {active_list} services in " \
                           f"stopped/inactive state"
-        LOGGER.info(f"Step 3: Successfully stopped {random_services}")
+        LOGGER.info(f"Step 2: Successfully stopped {random_services}")
 
-        time.sleep(common_cfg["third_party_service_short_timeout"])
-        LOGGER.info("Step 4: Check if fault alert is generated for "
+        time.sleep(self.timeouts["alert_timeout"])
+        LOGGER.info("Step 3: Check if fault alert is generated for "
                     "%s services", random_services)
         # TODO
 
-        LOGGER.info("Step 5: Starting %s", random_services)
+        LOGGER.info("Step 4: Starting %s", random_services)
         self.node_obj.send_systemctl_cmd("start", services=random_services)
         LOGGER.info("Checking that %s services are in active state", random_services)
         resp = systemctl_cmd(command="is-active", services=random_services,
@@ -258,14 +262,14 @@ class TestOSLevelMonitoring:
                 inactive_list.append(random_services[i])
             assert False, f"Failed to put {inactive_list} services in " \
                           f"active state"
-        LOGGER.info("Step 5: Successfully started %s", random_services)
+        LOGGER.info("Step 4: Successfully started %s", random_services)
 
-        time.sleep(common_cfg["third_party_service_short_timeout"])
-        LOGGER.info("Step 6: Check if fault_resolved alert is generated for "
+        time.sleep(self.timeouts["alert_timeout"])
+        LOGGER.info("Step 5: Check if fault_resolved alert is generated for "
                     "%s services", random_services)
         # TODO
 
-        LOGGER.info(f"Step 7: Check IO state")
+        LOGGER.info(f"Step 6: Check IO state")
         # TODO
-        LOGGER.info(f"Step 8: Stop IOs")
+        LOGGER.info(f"Step 7: Stop IOs")
         # TODO

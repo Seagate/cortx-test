@@ -108,7 +108,7 @@ class TestSSPLSecondary:
 
         LOGGER.info("Restarting sspl service")
         self.health_obj2.restart_pcs_resource(self.cm_cfg["sspl_resource_id"])
-        time.sleep(self.cm_cfg["after_service_restart_sleep_val"])
+        time.sleep(self.cm_cfg["sspl_timeout"])
         LOGGER.info(
             "Verifying the status of sspl and rabittmq service is online")
 
