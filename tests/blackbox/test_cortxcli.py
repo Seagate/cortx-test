@@ -47,6 +47,8 @@ iam_obj = iam_test_lib.IamTestLib()
 class TestCortxcli:
     """Cortxcli Blackbox Testsuite."""
 
+    log = None
+    s3acc_obj = None
     iam_user_obj = None
     s3bucket_name = None
     s3obj_name = None
@@ -631,7 +633,7 @@ class TestCortxcli:
         self.log.info(
             "Step 1: Created a user with name %s", self.s3user_name)
         self.log.info("Step 2: Creating access key for the user")
-        resp = self.accesskeys_obj.create_s3access_key(self.s3user_name)
+        resp = self.accesskeys_obj.create_s3_iam_access_key(self.s3user_name)
         assert_true(resp[0], resp[1])
         self.log.info("Step 2: Created access key for the user")
         self.log.info("Step 3: Deleting access key of the user")
@@ -696,7 +698,7 @@ class TestCortxcli:
         self.log.info(
             "Step 3: Created a user with name %s", self.s3user_name)
         self.log.info("Step 3: Creating access key for the user")
-        resp = self.accesskeys_obj.create_s3access_key(self.s3user_name)
+        resp = self.accesskeys_obj.create_s3_iam_access_key(self.s3user_name)
         assert_true(resp[0], resp[1])
         self.log.info("Step 3: Created access key for the user")
         self.log.info("Get Created Access Key")
