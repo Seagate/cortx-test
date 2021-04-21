@@ -119,7 +119,6 @@ class TestCortxcli:
         for acc in accounts:
             self.s3acc_obj.login_cortx_cli(
                 username=acc, password=self.s3acc_password)
-            self.s3bkt_obj.delete_all_buckets_cortx_cli()
             self.iam_user_obj.delete_all_iam_users()
             self.s3acc_obj.delete_s3account_cortx_cli(account_name=acc)
             self.s3acc_obj.logout_cortx_cli()

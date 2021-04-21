@@ -32,7 +32,7 @@ from libs.csm.cli.cortxcli_iam_user import CortxCliIamUser
 from libs.csm.cli.cli_csm_user import CortxCliCsmUser
 from libs.csm.cli.cortx_cli_s3access_keys import CortxCliS3AccessKeys
 from libs.s3.iam_test_lib import IamTestLib
-
+from config import S3_CFG
 LOGGER = logging.getLogger(__name__)
 
 
@@ -51,7 +51,7 @@ class CortxcliS3AccountOperations(CortxCliS3AccountOperations):
     def create_account_cortxcli(self,
                                 account_name: str,
                                 account_email: str,
-                                password: str,
+                                password: str = S3_CFG["CliConfig"]["s3_account"]["password"],
                                 **kwargs) -> tuple:
         """
         Creating new account using  cortxcli.
@@ -61,8 +61,10 @@ class CortxcliS3AccountOperations(CortxCliS3AccountOperations):
         :param account_name: s3 account name.
         :return: create account cortxcli response.
         """
+
         acc_details = dict()
         try:
+            self.login_cortx_cli()
             status, response = super().create_s3account_cortx_cli(
                 account_name, account_email, password, **kwargs)
             if account_name in response:
@@ -75,13 +77,13 @@ class CortxcliS3AccountOperations(CortxCliS3AccountOperations):
                 acc_details["secret_key"] = response[6]
                 LOGGER.info("Account Details: %s", acc_details)
                 response = acc_details
-
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          CortxcliS3AccountOperations.create_account_cortxcli.__name__,
                          error)
             raise CTException(err.S3_ERROR, error.args[0])
-
+        finally:
+            self.logout_cortx_cli()
         return status, response
 
     def list_accounts_cortxcli(self) -> tuple:
@@ -100,21 +102,27 @@ class CortxcliS3AccountOperations(CortxCliS3AccountOperations):
 
         return response
 
-    def delete_account_cortxcli(self, account_name: str = None) -> tuple:
+    def delete_account_cortxcli(self,
+                                account_name: str,
+                                password: str = S3_CFG["CliConfig"]["s3_account"]["password"]) -> tuple:
         """
         Deleting account using cortxcli.
 
         :param account_name: s3 account name.
         :return:
         """
+
         try:
+            self.login_cortx_cli(username=account_name, password=password)
             response = super().delete_s3account_cortx_cli(account_name)
+
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          CortxcliS3AccountOperations.delete_account_cortxcli.__name__,
                          error)
             raise CTException(err.S3_ERROR, error.args[0])
-
+        finally:
+            self.logout_cortx_cli()
         return response
 
     def reset_s3account_password(
@@ -405,7 +413,11 @@ class CortxCliTestLib(CortxcliS3AccountOperations,
                       CortxcliCsmUser,
                       CortxcliS3AccessKeys,
                       IamTestLib):
-    """Class for performing cortxcli operations."""
+    """Class for performing cortxcli operations.
+
+        Create session in Tests/setup_method to consume resources of this library.
+        i.e. class_obj.open_connection()
+    """
 
     def __init__(
             self, session_obj: object = None):
