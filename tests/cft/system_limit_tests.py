@@ -25,6 +25,9 @@ import pytest
 
 from commons import configmanager
 from commons.constants import Rest as Const
+from commons.ct_fail_on import CTFailOn
+from commons.errorcodes import error_handler
+from commons.utils import assert_utils
 from config import CSM_CFG
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_bucket import RestS3Bucket
@@ -33,6 +36,11 @@ from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 from libs.csm.rest.csm_rest_iamuser import RestIamUser
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
+from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
+from libs.s3.s3_test_lib import S3TestLib
+
+S3_TEST_OBJ = S3TestLib()
+S3_MP_TEST_OBJ = S3MultipartTestLib()
 
 
 class TestS3IOSystemLimits:
@@ -551,3 +559,43 @@ class TestS3IOSystemLimits:
 
         # Delete everything
         self.destroy(s3_password=self.csm_original_password)
+
+    @pytest.mark.tags('TEST-20274')
+    @CTFailOn(error_handler)
+    def test_list_multipart_upload_20274(self):
+        """List 1000 Multipart uploads."""
+        test = "test_20274"
+        bucket_name = "mp-bkt-test20274"
+        object_name = "mp-obj-test20274"
+        test_config = self.cft_test_cfg[test]
+        self.log.info("Creating a bucket with name : %s", bucket_name)
+        res = S3_TEST_OBJ.create_bucket(bucket_name)
+        assert_utils.assert_true(res[0], res[1])
+        assert_utils.assert_equal(res[1], bucket_name, res[1])
+        self.log.info("Created a bucket with name : %s", bucket_name)
+        self.log.info("Initiating multipart uploads")
+        mpu_ids = []
+        for i in range(test_config["list_multipart_uploads_limit"]):
+            res = S3_MP_TEST_OBJ.create_multipart_upload(bucket_name,
+                                                         object_name+str(i))
+            assert_utils.assert_true(res[0], res[1])
+            mpu_id = res[1]["UploadId"]
+            self.log.info("Multipart Upload initiated with mpu_id %s", mpu_id)
+            mpu_ids.append(mpu_id)
+        self.log.info("Listing multipart uploads")
+        res = S3_MP_TEST_OBJ.list_multipart_uploads(bucket_name)
+        for mpu_id in mpu_ids:
+            assert_utils.assert_in(mpu_id, str(res[1]),
+                                   f"mpu ID {mpu_id} is not present in {res[1]}")
+        self.log.info("Test cleanup")
+        self.log.info("Aborting multipart uploads")
+        for i in range(test_config["list_multipart_uploads_limit"]):
+            mpu_id = mpu_ids[i]
+            res = S3_MP_TEST_OBJ.abort_multipart_upload(bucket_name,
+                                                        object_name+str(i), mpu_id)
+            assert_utils.assert_true(res[0], res[1])
+        self.log.info("Aborted multipart upload")
+        self.log.info("Deleting Bucket")
+        resp = S3_TEST_OBJ.delete_bucket(bucket_name, force=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Deleted Bucket")

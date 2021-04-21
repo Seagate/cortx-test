@@ -25,8 +25,8 @@
 {
     "primary_enclosure_ip": "10.0.0.2",
     "secondary_enclosure_ip": "10.0.0.3",
-    "username": "",
-    "password": ""
+    "enclosure_user": "",
+    "enclosure_pwd": ""
 },
 
 "pdu":{
