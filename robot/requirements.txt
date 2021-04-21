@@ -47,6 +47,7 @@ pytest-xdist==2.2.0
 python-dateutil==2.8.0
 pyyaml==5.1.2
 pyzmq==18.0.2
+pyOpenSSL==20.0.1
 robotframework==3.2.2
 robotframework-pythonlibcore==2.1.0
 robotframework-seleniumlibrary==4.5.0
@@ -61,4 +62,3 @@ testfixtures~=6.17.0
 urllib3==1.26.2
 Werkzeug==0.15.5
 xmltodict==0.12.0
-

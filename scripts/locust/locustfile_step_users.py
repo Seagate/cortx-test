@@ -20,13 +20,14 @@
 #
 """
 Locust tasks set for put object, get object and delete object from bucket
+with step users and constant object size
 """
-
 import os
+import math
 import logging
-import secrets
-from locust import HttpUser
+from locust import LoadTestShape
 from locust import events
+from locust import HttpUser
 from locust import task, constant
 from scripts.locust import locust_utils
 from scripts.locust import LOCUST_CFG
@@ -37,14 +38,10 @@ BUCKET_COUNT = int(
     os.getenv(
         'BUCKET_COUNT',
         LOCUST_CFG['default']['BUCKET_COUNT']))
-MIN_OBJECT_SIZE = int(
+OBJECT_SIZE = int(
     os.getenv(
-        'MIN_OBJECT_SIZE',
-        LOCUST_CFG['default']['MIN_OBJECT_SIZE']))
-MAX_OBJECT_SIZE = int(
-    os.getenv(
-        'MAX_OBJECT_SIZE',
-        LOCUST_CFG['default']['MAX_OBJECT_SIZE']))
+        'OBJECT_SIZE',
+        LOCUST_CFG['default']['OBJECT_SIZE']))
 BUCKET_LIST = UTILS_OBJ.bucket_list
 
 
@@ -54,18 +51,16 @@ class LocustUser(HttpUser):
     """
     wait_time = constant(1)
     utils = UTILS_OBJ
-    secure_range = secrets.SystemRandom()
 
     @events.test_start.add_listener
     def on_test_start(**kwargs):
-        LOGGER.info("Starting test setup")
+        LOGGER.info("Starting test setup with %s %s", kwargs.get('--u'), kwargs.get('--t'))
         UTILS_OBJ.create_buckets(BUCKET_COUNT)
 
     @task(1)
     def put_object(self):
-        object_size = self.secure_range.randint(MIN_OBJECT_SIZE, MAX_OBJECT_SIZE)
         for bucket in BUCKET_LIST:
-            self.utils.put_object(bucket, object_size)
+            self.utils.put_object(bucket, OBJECT_SIZE)
 
     @task(1)
     def get_object(self):
@@ -79,7 +74,38 @@ class LocustUser(HttpUser):
 
     @events.test_stop.add_listener
     def on_test_stop(**kwargs):
+        LOGGER.info("Starting test cleanup.")
         UTILS_OBJ.delete_buckets(BUCKET_LIST)
         for local_obj in (
                 locust_utils.OBJ_NAME, locust_utils.GET_OBJ_PATH):
             UTILS_OBJ.delete_local_obj(local_obj)
+        LOGGER.info("Log path: %s", kwargs.get('--logfile'))
+        LOGGER.info("HTML path: %s", kwargs.get('--html'))
+
+
+class StepLoadShape(LoadTestShape):
+    """
+    A step load shape
+    Keyword arguments:
+        step_time -- Time between steps
+        step_load -- User increase amount at each step
+        spawn_rate -- Users to stop/start per second at every step
+        time_limit -- Time limit in seconds
+    """
+
+    step_time = int(os.getenv('STEP_TIME', LOCUST_CFG['default']['STEP_TIME']))
+    step_load = int(os.getenv('STEP_LOAD', LOCUST_CFG['default']['STEP_LOAD']))
+    spawn_rate = int(
+        os.getenv(
+            'SPAWN_RATE',
+            LOCUST_CFG['default']['HATCH_RATE']))
+    time_limit = int(os.getenv('DURATION', step_time * 2))
+
+    def tick(self):
+        run_time = self.get_run_time()
+
+        if run_time > self.time_limit:
+            return None
+
+        current_step = math.floor(run_time / self.step_time) + 1
+        return current_step * self.step_load, self.spawn_rate

@@ -98,22 +98,25 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
     serial_run = "True" if args.force_serial_run else "False"
     force_serial_run = force_serial_run + serial_run
     prc_cnt = str(args.prc_cnt) + "*popen"
+    te_id = ''
+    if args.te_ticket:
+        te_id = str(args.te_ticket) + "_"
     if re_execution:
-        report_name = "--html=log/re_non_parallel_" + args.html_report
+        report_name = "--html=log/re_non_parallel_" + te_id + args.html_report
         cmd_line = ["pytest", "--continue-on-collection-errors", is_parallel, is_distributed,
                     log_level, report_name]
     else:
         if parallel_exe and not args.force_serial_run:
-            report_name = "--html=log/parallel_" + args.html_report
+            report_name = "--html=log/parallel_" + te_id + args.html_report
             cmd_line = ["pytest", is_parallel, is_distributed,
                         log_level, report_name, '-d', "--tx",
                         prc_cnt, force_serial_run]
         elif parallel_exe and args.force_serial_run:
-            report_name = "--html=log/parallel_" + args.html_report
+            report_name = "--html=log/parallel_" + te_id + args.html_report
             cmd_line = ["pytest", is_parallel, is_distributed,
                         log_level, report_name, force_serial_run]
         else:
-            report_name = "--html=log/non_parallel_" + args.html_report
+            report_name = "--html=log/non_parallel_" + te_id + args.html_report
             cmd_line = ["pytest", is_parallel, is_distributed,
                         log_level, report_name, force_serial_run]
 
@@ -459,12 +462,17 @@ def check_kafka_msg_trigger_test(args):
 def get_setup_details(args):
     if not os.path.exists(params.LOG_DIR_NAME):
         os.mkdir(params.LOG_DIR_NAME)
+        LOGGER.info("Log directory created...")
     setups = None
     try:
+        LOGGER.info("Fetching setups details from database...")
         setups = configmanager.get_config_db(setup_query={})
+        LOGGER.info(setups)
         if os.path.exists(params.SETUPS_FPATH):
             os.remove(params.SETUPS_FPATH)
+            LOGGER.info("Removed the stale setups.json file...")
         config_utils.create_content_json(params.SETUPS_FPATH, setups, ensure_ascii=False)
+        LOGGER.info("Updated setups.json can be found under log directory...")
     except requests.exceptions.RequestException as fault:
         LOGGER.exception(str(fault))
         if args.db_update:

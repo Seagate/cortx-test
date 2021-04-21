@@ -1,6 +1,7 @@
 *** Settings ***
 Documentation    This suite verifies the testcases for csm user creation
 Resource   ${EXECDIR}/resources/page_objects/loginPage.robot
+Resource   ${EXECDIR}/resources/page_objects/s3accountPage.robot
 Resource   ${EXECDIR}/resources/page_objects/settingsPage.robot
 Resource   ${EXECDIR}/resources/page_objects/userSettingsLocalPage.robot
 Resource   ${EXECDIR}/resources/page_objects/preboardingPage.robot
@@ -24,6 +25,29 @@ ${username}
 ${password}
 ${Download_File_Path}  \root\Downloads\
 ${server_file_name}  s3server.pem
+
+*** Keywords ***
+
+SSL certificate expiration alert Verification
+    [Documentation]  This keyword is used to test SSL related alerts for  diffrent expiry days
+    [Arguments]  ${days}
+    Navigate To Page  SETTINGS_ID  SETTINGS_SSL_BUTTON_ID
+    Sleep  20s
+    ${installation_status_init} =  Format String  not_installed
+    ${installation_status_success} =  Format String  installation_successful
+    ${file_path}=  SSL Gennerate and Upload  ${days}  ${Download_File_Path}
+    ${file_name}=  Set Variable  stx_${days}.pem
+    Verify SSL status  ${installation_status_init}  ${file_name}
+    # # These following lines should be executed in case you have the proper machine
+    # Install uploaded SSL
+    # Sleep  5 minutes  #will re-start all service
+    # Close Browser
+    # CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
+    # Sleep  20s  # Took time to load dashboard after install
+    # Reload Page
+    # Sleep  10s  # Took time to load dashboard after install
+    # Verify SSL status  ${installation_status_success}  ${file_name}
+    ## TODO : find the alert and verifiy
 
 *** Test Cases ***
 
@@ -89,22 +113,6 @@ TEST-1863
     Navigate To Page  ${page name}
     Click On Add User Button
     Verify Mismatch Password Error
-
-TEST-1838
-    [Documentation]  Test that monitor user can't able to delete any user
-    ...  Reference : https://jts.seagate.com/browse/TEST-1838
-    [Tags]  Priority_High
-    ${new_user_name}=  Generate New User Name
-    ${new_password}=  Generate New Password
-    Navigate To Page  ${page name}
-    #  Checking for manage
-    Create New CSM User  ${new_user_name}  ${new_password}  monitor
-    Click On Confirm Button
-    Verify New User  ${new_user_name}
-    Re-login  ${new_user_name}  ${new_password}  ${page name}
-    Verify No Delete Button Present
-    Re-login  ${username}  ${password}  ${page name}
-    Delete CSM User  ${new_user_name}
 
 TEST-1842
     [Documentation]  Test that root user must present when user navigate to manage page
@@ -289,6 +297,30 @@ TEST-5389
     Verify Setting menu item
     Verify Setting menu navigating
 
+TEST-18326
+    [Documentation]  Test that csm Admin user is able to reset the s3 account users password through CSM GUI
+    ...  Reference : https://jts.seagate.com/browse/TEST-18326
+    [Tags]  Priority_High  TEST-18326  S3_test  Smoke_test
+    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    sleep  2s
+    ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
+    sleep  5s
+    Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
+    CSM GUI Logout
+    Enter Username And Password  ${S3_account_name}  ${S3_password}
+    Click Sigin Button
+    sleep  2s
+    Validate CSM Login Success  ${s3_account_name}
+    CSM GUI Logout
+    wait for page or element to load  2s
+    Enter Username And Password  ${username}  ${password}
+    Click Sigin Button
+    wait for page or element to load  2s
+    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    ${S3_new_password}=  Generate New Password
+    Edit S3 User Password  ${S3_account_name}  ${S3_new_password}  ${S3_new_password}
+    Delete S3 Account  ${S3_account_name}  ${S3_new_password}  True
+
 TEST-4871
     [Documentation]  Test that SSl certificate get uploaded on SSl certificate upload page	
     ...  Reference : https://jts.seagate.com/browse/TEST-4871
@@ -300,7 +332,7 @@ TEST-4871
     Verify SSL status  ${installation_status_init}  ${server_file_name}
 
 TEST-9045
-    [Documentation]  Test that user should able to see latest changes on settings page : SSL certificate	
+    [Documentation]  Test that user should able to see latest changes on settings page : SSL certificate
     ...  Reference : https://jts.seagate.com/browse/TEST-9045
     [Tags]  Priority_High  CFT_Test  TEST-9045
     ${installation_status_init} =  Format String  not_installed
@@ -318,3 +350,11 @@ TEST-9045
     # Reload Page
     # Sleep  10s  # Took time to load dashboard after install
     # Verify SSL status  ${installation_status_success}  ${server_file_name}
+
+TEST-11152
+    [Documentation]  Test that IEM alerts should be generated for number of days mentioned in /etc/csm/csm.conf prior to SSL certificate expiration
+    ...  Reference : https://jts.seagate.com/browse/TEST-9045
+    [Tags]  Priority_High  CFT_Test  TEST-11152
+    SSL certificate expiration alert Verification  30
+    SSL certificate expiration alert Verification  5
+    SSL certificate expiration alert Verification  1

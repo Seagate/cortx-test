@@ -1,77 +1,44 @@
-bucket_policy:
-  bkt_name_prefix: "bktpolicy"
-  obj_name_prefix: "obj_policy"
-  acc_name_prefix: "accpolicy"
-  user_name_prefix: "userpolicy"
-  file_path: "/home/bkt_policy.txt"
-  folder_path: "/home/policy"
-  file_path_2: "/home/policy/bkt_policy1.txt"
-  acl_permission: "private"
-  file_size: 10
-  account_name: "accpolicy_account"
-  user_name: "userpolicy_user"
-  email_id: "@seagate.com"
-  id_str: "id={}"
-  range_val: 2
-test_254:
-  bucket_name: "bktpolicy-254"
-  error_message: "NoSuchBucketPolicy"
-test_260:
-  bucket_name: "bktpolicy-260"
-  error_message: "NoSuchBucket"
 test_261:
-  bucket_name: "bktpolicy-261"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-261/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-261/*"
+        Resource: "arn:aws:s3:::{}/*"
 test_262:
-  bucket_name: "bktpolicy-262"
-  account_name: "bktpolicy_acc"
-  email_id: "@seagate.com"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-262/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-262/*"
-  error_message : "AccessDenied"
+        Resource: "arn:aws:s3:::{}/*"
 test_642:
-  bucket_name: "bktpolicy-642"
-  object_name_2: "objkey642_2"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-642/*"
+        Resource: "arn:aws:s3:::{}/*"
 test_644:
-  bucket_name: "bktpolicy-644"
-  object_name_2: "objkey644_2"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-644"
+        Resource: "arn:aws:s3:::{}"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-644/*"
-  error_message: "Action does not apply to any resource(s) in statement"
+        Resource: "arn:aws:s3:::{}/*"
 test_646:
-  bucket_name: "bktpolicy-646"
-  object_name_2: "objkey646_2"
   bucket_policy:
     Statement:
       - Effect: "Allow"
@@ -81,11 +48,8 @@ test_646:
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-646/*"
-  error_message: "Policy has invalid resource"
+        Resource: "arn:aws:s3:::{}/*"
 test_658:
-  bucket_name: "bktpolicy-658"
-  object_name_2: "objkey658_2"
   bucket_policy:
     Statement:
       - Effect: "Allow"
@@ -95,29 +59,22 @@ test_658:
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-658/*"
-  error_message: "Policy has invalid resource"
+        Resource: "arn:aws:s3:::{}/*"
 test_659:
-  bucket_name: "bktpolicy-659"
-  object_name_2: "objkey659_2"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-659/obj_policy"
+        Resource: "arn:aws:s3:::{}/obj_policy"
 test_679:
-  bucket_name: "bktpolicy-679"
-  object_name_2: "policy/objkey679_2"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-679/policy/objkey679_2"
+        Resource: "arn:aws:s3:::{}/policy/objkey679_2"
 test_680:
-  bucket_name: "bktpolicy-680"
-  object_name_2: "objkey680_2"
   bucket_policy:
     Statement:
       - Effect: "Allow"
@@ -127,25 +84,19 @@ test_680:
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-680/*"
-  error_message: "Policy has invalid resource"
+        Resource: "arn:aws:s3:::{}/*"
 test_682:
-  bucket_name: "bktpolicy-682"
-  object_name_2: "objkey682_2"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-682/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3::bktpolicy-682/*"
-  error_message: "Policy has invalid resource"
+        Resource: "arn:aws:s3::{}/*"
 test_688:
-  bucket_name: "bktpolicy-688"
-  object_name_2: "objkey688_2"
   bucket_policy:
     Statement:
       - Effect: "Allow"
@@ -153,16 +104,13 @@ test_688:
         Action: "s3:GetObject"
         Resource:
           AWS:
-            - "arn:aws:s3:::bktpolicy-688/obj_policy"
-            - "arn:aws:s3:::bktpolicy-688/policy/objkey688_2"
+            - "arn:aws:s3:::{}/obj_policy"
+            - "arn:aws:s3:::{}/policy/objkey688_2"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-688/*"
-  error_message: "Policy has invalid resource"
+        Resource: "arn:aws:s3:::{}/*"
 test_689:
-  bucket_name: "bktpolicy-689"
-  object_name_2: "objkey689_2"
   bucket_policy:
     Statement:
       - Effect: "Allow"
@@ -172,150 +120,108 @@ test_689:
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-689/*"
-  error_message: "Policy has invalid resource"
+        Resource: "arn:aws:s3:::{}/*"
 test_690:
-  bucket_name: "bktpolicy-690"
-  object_name_2: "objkey690_2"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-690/obj*"
+        Resource: "arn:aws:s3:::{}/obj*"
 test_1300:
-  obj_count: 10
-  bucket_name: "bktpolicy-1300"
-  buc_policy_val: "NumericGreaterThan"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:ListBucket"
-        Resource: "arn:aws:s3:::bktpolicy-1300"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           NumericGreaterThan:
             s3:max-keys: 10
 
 test_1303:
-   obj_count: 10
-   buc_policy_val: "NumericLessThan"
-   bucket_name: "bktpolicy-1303"
    bucket_policy:
      Statement:
        - Effect: "Allow"
          Principal: "*"
          Action: "s3:ListBucket"
-         Resource: "arn:aws:s3:::bktpolicy-1303"
+         Resource: "arn:aws:s3:::{}"
          Condition:
             NumericLessThan:
               s3:max-keys: 10
 
 test_1307:
-  obj_count: 10
-  buc_policy_val: "NumericGreaterThan"
-  bucket_name: "bktpolicy-1307"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:ListBucket"
-        Resource: "arn:aws:s3:::bktpolicy-1307"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           NumericGreaterThan:
             s3:max-keys: 10
 
 test_1308:
-  obj_count: 10
-  buc_policy_val: "NumericGreaterThanEquals"
-  bucket_name: "bktpolicy-1308"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:ListBucket"
-        Resource: "arn:aws:s3:::bktpolicy-1308"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           NumericGreaterThanEquals:
             s3:max-keys: 10
 
 test_1294:
-  obj_count: 2
-  buc_policy_val: "StringEquals"
-  bucket_name: "bktpolicy-1294"
-  object_prefix: "home/testobj"
-  prefix: "home"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:ListBucket"
-        Resource: "arn:aws:s3:::bktpolicy-1294"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           StringEquals:
-            s3:prefix: "home"
+            s3:prefix: "obj"
 
 test_1296:
-  obj_count: 2
-  buc_policy_val: "StringNotEquals"
-  bucket_name: "bktpolicy-1296"
-  object_prefix: "home/testobj"
-  prefix: "home"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:ListBucket"
-        Resource: "arn:aws:s3:::bktpolicy-1296"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           StringNotEquals:
-            s3:prefix: "home"
+            s3:prefix: "obj"
             s3:max-keys: 10
 
 test_558:
-  bucket_name: "bktpolicy-558"
-  error_message: "NoSuchBucketPolicy"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-558/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-558/*"
-
-test_560:
-  bucket_name: "bktpolicy-560"
-  error_message: "NoSuchBucket"
+        Resource: "arn:aws:s3:::{}/*"
 
 test_562:
-  bucket_name: "bktpolicy-562"
-  error_message: "expected string"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-562/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-562/*"
-
-test_563:
-  bucket_name: "bktpolicy-563"
-  error_message: "NoSuchBucketPolicy"
+        Resource: "arn:aws:s3:::{}/*"
 
 test_566:
   bucket_name: "bkt-policybkt-5661"
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  account_name_2: "accpolicy_two{}"
-  emailid_2: "accpolicy_two{}@seagate.com"
   error_message: "AccessDenied"
-  id_str: "id={}"
   bucket_policy:
     Statement:
       - Effect: "Allow"
@@ -329,12 +235,7 @@ test_566:
 
 test_569:
   bucket_name: "bktpolicybkt-5691"
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  account_name_2: "accpolicy_two{}"
-  emailid_2: "accpolicy_two{}@seagate.com"
   error_message: "AccessDenied"
-  id_str: "id={}"
   bucket_policy:
     Statement:
       - Effect: "Allow"
@@ -348,10 +249,6 @@ test_569:
 
 test_570:
   bucket_name: "bktpolicybkt-5701"
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  account_name_2: "accpolicy_two{}"
-  emailid_2: "accpolicy_two{}@seagate.com"
   error_message: "AccessDenied"
   id_str: "id={}"
   bucket_policy:
@@ -367,12 +264,7 @@ test_570:
 
 test_574:
   bucket_name: "bktpolicybkt-5741"
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  account_name_2: "accpolicy_two{}"
-  emailid_2: "accpolicy_two{}@seagate.com"
   error_message: "AccessDenied"
-  id_str: "id={}"
   bucket_policy:
     Statement:
       - Effect: "Allow"
@@ -386,12 +278,7 @@ test_574:
 
 test_582:
   bucket_name: "bktpolicybkt-5821"
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  account_name_2: "accpolicy_two{}"
-  emailid_2: "accpolicy_two{}@seagate.com"
   error_message: "AccessDenied"
-  id_str: "id={}"
   bucket_policy:
     Statement:
       - Effect: "Allow"
@@ -404,254 +291,202 @@ test_582:
         Resource: "arn:aws:s3:::bktpolicybkt-5821/*"
 
 test_583:
-  bucket_name: "bktpolicybkt-583"
-  account_name_2: "accpolicy_two{}"
-  emailid_2: "accpolicy_two{}@seagate.com"
-  error_message: "AccessDenied"
-  id_str: "id={}"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicybkt-583/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicybkt-583/*"
+        Resource: "arn:aws:s3:::{}/*"
 
 test_584:
-  bucket_name: "bktpolicybkt-584"
-  acl_permission: "authenticated-read"
-  account_name_2: "accpolicy_two{}"
-  emailid_2: "accpolicy_two{}@seagate.com"
-  error_message: "AccessDenied"
-  id_str: "id={}"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicybkt-584/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicybkt-584/*"
+        Resource: "arn:aws:s3:::{}/*"
 
 test_693:
-  bucket_name: "bktpolicy-693"
-  object_name_2: "objkey693_2"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           AWS: "arn:aws:iam::123456789123:user/{}"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-693/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-693/*"
-  error_message: "Invalid principal in policy"
+        Resource: "arn:aws:s3:::{}/*"
+
 test_694:
-  bucket_name: "bktpolicy-694"
-  object_name_2: "objkey694_2"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           AWS: "arn:aws:iam::{}:user/invalid_user"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-694/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-694/*"
-  error_message: "Invalid principal in policy"
+        Resource: "arn:aws:s3:::{}/*"
 test_716:
-  bucket_name: "bktpolicy-716"
-  object_name_2: "objkey716_2"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           AWS: "arn:aws:iam::{}:user/{}"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-716/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-716/*"
-  error_message: "Invalid principal in policy"
+        Resource: "arn:aws:s3:::{}/*"
 test_718:
-  bucket_name: "bktpolicy-718"
-  object_name_2: "objkey718_2"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           AWS: "arn:aws:iam::*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-718/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-718/*"
-  error_message: "Invalid principal in policy"
+        Resource: "arn:aws:s3:::{}/*"
 test_719:
-  bucket_name: "bktpolicy-719"
-  object_name_2: "objkey719_2"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           AWS: "arn:aws:iam::{}:user/*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-719/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-719/*"
-  error_message: "Invalid principal in policy"
+        Resource: "arn:aws:s3:::{}/*"
 test_720:
-  bucket_name: "bktpolicy-720"
-  object_name_2: "objkey720_2"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           AWS: "arn:aws:iam::{}:us*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-720/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-720/*"
-  error_message: "Invalid principal in policy"
+        Resource: "arn:aws:s3:::{}/*"
 test_721:
-  bucket_name: "bktpolicy-721"
-  object_name_2: "objkey721_2"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           AWS: "ran:aws:iam::{}:user/{}"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-721/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-721/*"
-  error_message: "Invalid principal in policy"
+        Resource: "arn:aws:s3:::{}/*"
 test_722:
-  bucket_name: "bktpolicy-722"
-  object_name_2: "objkey722_2"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           AWS: "arn:awss3:iam::{}:user/{}"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-722/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-722/*"
-  error_message: "Invalid principal in policy"
+        Resource: "arn:aws:s3:::{}/*"
 test_723:
-  bucket_name: "bktpolicy-723"
-  object_name_2: "objkey723_2"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           AWS: "arn:aws:rds::{}:user/{}"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-723/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-723/*"
-  error_message: "Invalid principal in policy"
+        Resource: "arn:aws:s3:::{}/*"
 test_724:
-  bucket_name: "bktpolicy-724"
-  object_name_2: "objkey724_2"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           AWS: "arn:aws:iam:abcd:{}:user/{}"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-724/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-724/*"
-  error_message: "Invalid principal in policy"
+        Resource: "arn:aws:s3:::{}/*"
 test_725:
-  bucket_name: "bktpolicy-725"
-  object_name_2: "objkey725_2"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           AWS: "aws:iam:arn:{}:user/{}:"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-725/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-725/*"
-  error_message: "Invalid principal in policy"
+        Resource: "arn:aws:s3:::{}/*"
 # Cannot be automated as unstructured JSON creation fails during YAML config parsing.
 test_552:
 test_551:
-  bucket_name: "bktpolicy-551"
   bucket_policy:
     Statement:
       - Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-551/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-551/*"
-  error_message: "Missing required field"
+        Resource: "arn:aws:s3:::{}/*"
 # Cannot be automated as unstructured JSON creation fails during YAML config parsing.
 test_550:
 test_549:
-  bucket_name: "bktpolicy-549"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-549/*"
+        Resource: "arn:aws:s3:::{}/*"
         Place: "pune"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-549/*"
-  error_message: "Unknown field"
+        Resource: "arn:aws:s3:::{}/*"
 test_1080:
-  bucket_name: "bktpolicy-1080"
-  object_name_2: "objkey1080_2"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObje?t"
-        Resource: "arn:aws:s3:::bktpolicy-1080/*"
+        Resource: "arn:aws:s3:::{}/*"
 test_1079:
-  bucket_name: "bktpolicy-1079"
-  object_name_2: "objkey1079_2"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:Get*"
-        Resource: "arn:aws:s3:::bktpolicy-1079/*"
-  error_message: "AccessDenied"
+        Resource: "arn:aws:s3:::{}/*"
 test_1078:
   bucket_name: "bktpolicy-1078"
   object_name_2: "objkey1078_2"
@@ -660,47 +495,41 @@ test_1078:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:*"
-        Resource: "arn:aws:s3:::bktpolicy-1078/*"
+        Resource: "arn:aws:s3:::{}/*"
 test_545:
-  bucket_name: "bktpolicy-545"
   bucket_policy:
     Statement:
       - effect: "Allow"
         principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-545/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-545/*"
-  error_message: "Unknown field"
+        Resource: "arn:aws:s3:::{}/*"
 test_555:
-  bucket_name: "bktpolicy-555"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "aaabbbccc"
-        Resource: "arn:aws:s3:::bktpolicy-555/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-555/*"
-  error_message: "invalid action"
+        Resource: "arn:aws:s3:::{}/*"
 test_554:
-  bucket_name: "bktpolicy-554"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-554/*"
+        Resource: "arn:aws:s3:::{}/*"
         Principal: "*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-554/*"
-  error_message: "already has instance of Principal"
+        Resource: "arn:aws:s3:::{}/*"
 test_553:
   bucket_name: "bktpolicy-553"
   bucket_policy:
@@ -708,26 +537,19 @@ test_553:
       - Effect: "Allow"
         Principal: "*"
         Action: ""
-        Resource: "arn:aws:s3:::bktpolicy-553/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-553/*"
-  error_message: "Action cannot be empty"
+        Resource: "arn:aws:s3:::{}/*"
 test_1077:
-  bucket_name: "bktpolicy-1077"
-  object_name_2: "objkey1077_2"
-  object_name_3: "objkey1077_3"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "*"
-        Resource: "arn:aws:s3:::bktpolicy-1077/*"
+        Resource: "arn:aws:s3:::{}/*"
 test_717:
-  bucket_name: "bktpolicy-717"
-  object_name_2: "objkey717_2"
-  acc_count: 2
   bucket_policy:
     Statement:
       - Effect: "Allow"
@@ -736,43 +558,29 @@ test_717:
             - "arn:aws:iam::{}:user/{}"
             - "arn:aws:iam::{}:root"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-717/*"
-  error_message: "AccessDenied"
-
+        Resource: "arn:aws:s3:::{}/*"
 test_692:
-  bucket_name: "bktpolicy-692"
-  object_name_2: "objkey692_2"
   bucket_policy:
     Statement:
       - Effect: "Deny"
         Principal:
           AWS: "arn:aws:iam::{}:user/{}"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-692/*"
-  error_message: "AccessDenied"
+        Resource: "arn:aws:s3:::{}/*"
 test_691:
-  bucket_name: "bktpolicy-691"
-  object_name_2: "objkey691_2"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           AWS: "arn:aws:iam::{}:root"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-691/*"
-  error_message: "AccessDenied"
+        Resource: "arn:aws:s3:::{}/*"
 test_4134:
-  obj_count: 11
-  bucket_name: "bktpolicy-4134"
-  account_name: "accpolicy_two{}"
-  emailid: "accpolicy_two{}@seagate.com"
-  buc_policy_val: "NumericLessThan"
-  maxkeys: 4
   bucket_policy:
     Statement:
       - Action: "s3:ListBucket"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-4134"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           NumericLessThan:
             s3:max-keys: "10"
@@ -780,18 +588,11 @@ test_4134:
           AWS: ""
 
 test_4136:
-  obj_count: 11
-  bucket_name: "bktpolicy-4136"
-  account_name: "accpolicy_two{}"
-  emailid: "accpolicy_two{}@seagate.com"
-  buc_policy_val: "NumericLessThan"
-  error_message: "AccessDenied"
-  maxkeys: 4
   bucket_policy:
     Statement:
       - Action: "s3:ListBucket"
         Effect: "Deny"
-        Resource: "arn:aws:s3:::bktpolicy-4136"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           NumericLessThan:
             s3:max-keys: "10"
@@ -799,17 +600,11 @@ test_4136:
           AWS: ""
 
 test_4143:
-  obj_count: 11
-  bucket_name: "bktpolicy-4143"
-  account_name: "accpolicy_two{}"
-  emailid: "accpolicy_two{}@seagate.com"
-  buc_policy_val: "NumericGreaterThan"
-  maxkeys: 11
   bucket_policy:
     Statement:
       - Action: "s3:ListBucket"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-4143"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           NumericGreaterThan:
             s3:max-keys: "10"
@@ -817,18 +612,11 @@ test_4143:
           AWS: ""
 
 test_4144:
-  obj_count: 11
-  bucket_name: "bktpolicy-4144"
-  account_name: "accpolicy_two{}"
-  emailid: "accpolicy_two{}@seagate.com"
-  buc_policy_val: "NumericGreaterThan"
-  error_message: "AccessDenied"
-  maxkeys: 11
   bucket_policy:
     Statement:
       - Action: "s3:ListBucket"
         Effect: "Deny"
-        Resource: "arn:aws:s3:::bktpolicy-4144"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           NumericGreaterThan:
             s3:max-keys: "10"
@@ -836,17 +624,11 @@ test_4144:
           AWS: ""
 
 test_4145:
-  obj_count: 11
-  bucket_name: "bktpolicy-4145"
-  account_name: "accpolicy_two{}"
-  emailid: "accpolicy_two{}@seagate.com"
-  buc_policy_val: "NumericEquals"
-  maxkeys: 10
   bucket_policy:
     Statement:
       - Action: "s3:ListBucket"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-4145"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           NumericEquals:
             s3:max-keys: "10"
@@ -854,18 +636,11 @@ test_4145:
           AWS: ""
 
 test_4146:
-  obj_count: 11
-  bucket_name: "bktpolicy-4144"
-  account_name: "accpolicy_two{}"
-  emailid: "accpolicy_two{}@seagate.com"
-  buc_policy_val: "NumericNotEquals"
-  error_message: "AccessDenied"
-  maxkeys: 10
   bucket_policy:
     Statement:
       - Action: "s3:ListBucket"
         Effect: "Deny"
-        Resource: "arn:aws:s3:::bktpolicy-4144"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           NumericNotEquals:
             s3:max-keys: "10"
@@ -873,17 +648,11 @@ test_4146:
           AWS: ""
 
 test_4147:
-  obj_count: 11
-  bucket_name: "bktpolicy-4147"
-  account_name: "accpolicy_two{}"
-  emailid: "accpolicy_two{}@seagate.com"
-  buc_policy_val: "NumericLessThanEquals"
-  maxkeys: 10
   bucket_policy:
     Statement:
       - Action: "s3:ListBucket"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-4147"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           NumericLessThanEquals:
             s3:max-keys: "10"
@@ -891,42 +660,33 @@ test_4147:
           AWS: ""
 
 test_4148:
-  obj_count: 11
-  bucket_name: "bktpolicy-4148"
-  account_name: "accpolicy_two{}"
-  emailid: "accpolicy_two{}@seagate.com"
-  buc_policy_val: "NumericGreaterThanEquals"
-  error_message: "AccessDenied"
-  maxkeys: 10
   bucket_policy:
     Statement:
       - Action: "s3:ListBucket"
         Effect: "Deny"
-        Resource: "arn:aws:s3:::bktpolicy-4148"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           NumericGreaterThanEquals:
             s3:max-keys: "10"
         Principal:
           AWS: ""
 test_1190:
-  bucket_name: "bktpolicy-1190"
   bucket_policy:
     Statement:
       - Action:
           - "s3:GetBucketPolicy"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-1190"
+        Resource: "arn:aws:s3:::{}"
         Principal:
           AWS:
             - "arn:aws:iam::{}:user/invalid_user"
       - Action:
           - "s3:DeleteBucketPolicy"
         Effect: "Deny"
-        Resource: "arn:aws:s3:::bktpolicy-1190"
+        Resource: "arn:aws:s3:::{}"
         Principal:
           AWS:
             - "arn:aws:iam::{}:user/invalid_user"
-  error_message: "Invalid principal in policy"
 test_1180:
   bucket_name: "bktpolicy-1180"
   bucket_policy:
@@ -934,54 +694,45 @@ test_1180:
       - Action:
           - "s3:DeleteBucketPolicy"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-1180"
+        Resource: "arn:aws:s3:::{}"
         Principal: "*"
-  error_message: "NoSuchBucketPolicy"
 test_1191:
-  bucket_name: "bktpolicy-1191"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           AWS: "111111111111"
         Action: "s3:GetBucketPolicy"
-        Resource: "arn:aws:s3:::bktpolicy-1191"
+        Resource: "arn:aws:s3:::{}"
       - Effect: "Deny"
         Principal:
           AWS: "111111111111"
         Action: "s3:DeleteBucketPolicy"
-        Resource: "arn:aws:s3:::bktpolicy-1191"
-  error_message: "Invalid principal in policy"
+        Resource: "arn:aws:s3:::{}"
 test_1184:
-  bucket_name: "bktpolicy-1184"
   bucket_policy:
     Statement:
       - Action:
           - "s3:DeleteBucket?Policy"
         Effect: "Deny"
-        Resource: "arn:aws:s3:::bktpolicy-1184"
+        Resource: "arn:aws:s3:::{}"
         Principal: "*"
-  error_message: "Policy has invalid action"
 test_1171:
-  bucket_name: "bktpolicy-1171"
   bucket_policy:
     Statement:
       - Action:
           - "s3:GetBucketPolicy"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-1171"
+        Resource: "arn:aws:s3:::{}"
         Principal: "*"
-  error_message: "MethodNotAllowed"
 test_1182:
-  bucket_name: "bktpolicy-1182"
   bucket_policy:
     Statement:
       - Action:
           - "s3:DeleteBucketPolicy"
         Effect: "Deny"
-        Resource: "arn:aws:s3:::bktpolicy-1182"
+        Resource: "arn:aws:s3:::{}"
         Principal: "*"
-  error_message: "AccessDenied"
 test_1110:
   bucket_name: "bktpolicy-1110"
   bucket_policy_1:
@@ -989,136 +740,114 @@ test_1110:
       - Action:
           - "s3:PutBucketPolicy"
         Effect: "Deny"
-        Resource: "arn:aws:s3:::bktpolicy-1110"
+        Resource: "arn:aws:s3:::{}"
         Principal: "*"
   bucket_policy_2:
     Statement:
       - Action:
           - "s3:PutBucketPolicy"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-1110"
+        Resource: "arn:aws:s3:::{}"
         Principal: "*"
-  error_message: "AccessDenied"
 test_1187:
-  bucket_name: "bktpolicy-1187"
   bucket_policy:
     Statement:
       - Action:
           - "s3:GetBucketPolicy"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-1187"
+        Resource: "arn:aws:s3:::{}"
         Principal:
           AWS:
             - "arn:aws:iam::{}:user/{}"
       - Action:
           - "s3:DeleteBucketPolicy"
         Effect: "Deny"
-        Resource: "arn:aws:s3:::bktpolicy-1187"
+        Resource: "arn:aws:s3:::{}"
         Principal:
           AWS:
             - "arn:aws:iam::{}:user/{}"
-  error_message: "AccessDenied"
 test_1166:
-  bucket_name: "bktpolicy-1166"
   bucket_policy:
     Statement:
       - Action: "s3:*"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-1166"
+        Resource: "arn:aws:s3:::{}"
         Principal: "*"
 test_1177:
-  bucket_name: "bktpolicy-1177"
   bucket_policy:
     Statement:
       - Action:
           - "s3:DeleteBucketPolicy"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-1177"
+        Resource: "arn:aws:s3:::{}"
         Principal: "*"
-  error_message: "MethodNotAllowed"
 test_1188:
-  bucket_name: "bktpolicy-1188"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           AWS: "{}"
         Action: "s3:GetBucketPolicy"
-        Resource: "arn:aws:s3:::bktpolicy-1188"
+        Resource: "arn:aws:s3:::{}"
       - Effect: "Deny"
         Principal:
           AWS: "{}"
         Action: "s3:DeleteBucketPolicy"
-        Resource: "arn:aws:s3:::bktpolicy-1188"
-  error_message_1: "MethodNotAllowed"
-  error_message_2: "AccessDenied"
+        Resource: "arn:aws:s3:::{}"
 test_1174:
-  bucket_name: "bktpolicy-1174"
   bucket_policy:
     Statement:
       - Action:
           - "s3:PutBucketPolicy"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-1174"
+        Resource: "arn:aws:s3:::{}"
         Principal: "*"
-  error_message: "MethodNotAllowed"
 test_1185:
-  bucket_name: "bktpolicy-1185"
   bucket_policy:
     Statement:
       - Action:
           - "s3:DeleteBucket*Policy"
         Effect: "Deny"
-        Resource: "arn:aws:s3:::bktpolicy-1185"
+        Resource: "arn:aws:s3:::{}"
         Principal: "*"
-  error_message: "AccessDenied"
 test_1186:
-  bucket_name: "bktpolicy-1186"
   bucket_policy:
     Statement:
       - Action:
           - "s3:DeleteBucket*Policy"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-1186"
+        Resource: "arn:aws:s3:::{}"
         Principal: "*"
-  error_message: "NoSuchBucketPolicy"
 test_1114:
-  bucket_name: "bktpolicy-1114"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetBucketPolicy"
-        Resource: "arn:aws:s3:::bktpolicy-1114"
+        Resource: "arn:aws:s3:::{}"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:PutBucketPolicy"
-        Resource: "arn:aws:s3:::bktpolicy-1114"
-  error_message: "AccessDenied"
+        Resource: "arn:aws:s3:::{}"
 test_1169:
-  bucket_name: "bktpolicy-1169"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "*"
-        Resource: "arn:aws:s3:::bktpolicy-1169"
+        Resource: "arn:aws:s3:::{}"
       - Effect: "Deny"
         Principal: "*"
         Action: "S3:GetBucketPolicy"
-        Resource: "arn:aws:s3:::bktpolicy-1169"
-  error_message: "AccessDenied"
+        Resource: "arn:aws:s3:::{}"
 test_1167:
-  bucket_name: "bktpolicy-1167"
   bucket_policy:
     Statement:
       - Action: "s3:*"
         Effect: "Deny"
-        Resource: "arn:aws:s3:::bktpolicy-1167"
+        Resource: "arn:aws:s3:::{}"
         Principal: "*"
-  error_message: "AccessDenied"
 test_1113:
-  bucket_name: "bktpolicy-1113"
   bucket_policy:
     Statement:
       - Action:
@@ -1126,24 +855,21 @@ test_1113:
         Effect: "None"
         Resource: "arn:aws:s3:::bktpolicy-1113"
         Principal: "*"
-  error_message: "Invalid effect"
 test_1116:
-  bucket_name: "bktpolicy-1116"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:PutBucketPolicy"
-        Resource: "arn:aws:s3:::bktpolicy-1116"
+        Resource: "arn:aws:s3:::{}"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:GetBucketPolicy"
-        Resource: "arn:aws:s3:::bktpolicy-1116"
+        Resource: "arn:aws:s3:::{}"
       - Effect: "None"
         Principal: "*"
         Action: "s3:DeleteBucketPolicy"
-        Resource: "arn:aws:s3:::bktpolicy-1116"
-  error_message: "Invalid effect"
+        Resource: "arn:aws:s3:::{}"
 test_1109:
   bucket_name: "bktpolicy-1109"
   bucket_policy_1:
@@ -1151,250 +877,195 @@ test_1109:
       - Action:
           - "s3:PutBucketPolicy"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-1109"
+        Resource: "arn:aws:s3:::{}"
         Principal: "*"
   bucket_policy_2:
     Statement:
       - Action:
           - "s3:PutBucketPolicy"
         Effect: "Deny"
-        Resource: "arn:aws:s3:::bktpolicy-1109"
+        Resource: "arn:aws:s3:::{}"
         Principal: "*"
-  error_message: "AccessDenied"
 test_360:
-  bucket_name: "bktpolicy-test360"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-test360/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-test360/*"
+        Resource: "arn:aws:s3:::{}/*"
 
 test_362:
-  bucket_name: "bktpolicy-test362"
-  error_message: "NoSuchBucket"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-test362/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-test362/*"
+        Resource: "arn:aws:s3:::{}/*"
 
 test_363:
-  error_message: "expected string"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-test363/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-test363/*"
-
-test_364:
-  bucket_name: "bktpolicy-test364"
-  error_message: "Parameter validation failed"
-
+        Resource: "arn:aws:s3:::{}/*"
 
 test_365:
-  bucket_name: "bktpolicy-test365"
-  error_message: "Parameter validation failed"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-test363/*"
+        Resource: "arn:aws:s3:::{}/*"
 
 test_366:
-  bucket_name: "bktpolicy-366"
-  account_name_2: "accpolicy_two{}"
-  emailid_2: "accpolicy_two{}@seagate.com"
   error_message: "AccessDenied"
   bucket_permission: "READ"
-  id_str: "id={}"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-366/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-366/*"
+        Resource: "arn:aws:s3:::{}/*"
 
 test_367:
-  bucket_name: "bktpolicy-3671"
-  account_name_2: "accpolicy_two{}"
-  emailid_2: "accpolicy_two{}@seagate.com"
   error_message: "AccessDenied"
   bucket_permission: "WRITE"
-  id_str: "id={}"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-3671/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-3671/*"
+        Resource: "arn:aws:s3:::{}/*"
 
 test_368:
-  bucket_name: "bktpolicy-3681"
-  account_name_2: "accpolicy_two{}"
-  emailid_2: "accpolicy_two{}@seagate.com"
   error_message: "AccessDenied"
   bucket_permission: "READ_ACP"
-  id_str: "id={}"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-3681/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-3681/*"
+        Resource: "arn:aws:s3:::{}/*"
 
 test_369:
-  bucket_name: "bktpolicy-3691"
-  account_name_2: "accpolicy_two{}"
-  emailid_2: "accpolicy_two{}@seagate.com"
   error_message: "AccessDenied"
   bucket_permission: "WRITE_ACP"
-  id_str: "id={}"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-3691/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-3691/*"
+        Resource: "arn:aws:s3:::{}/*"
 
 test_370:
-  bucket_name: "bktpolicy-3701"
-  account_name_2: "accpolicy_two{}"
-  emailid_2: "accpolicy_two{}@seagate.com"
   error_message: "AccessDenied"
   bucket_permission: "FULL_CONTROL"
-  id_str: "id={}"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-3701/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-3701/*"
+        Resource: "arn:aws:s3:::{}/*"
 
 test_371:
-  bucket_name: "bktpolicy-3712"
-  account_name_2: "accpolicy_two{}"
-  emailid_2: "accpolicy_two{}@seagate.com"
-  error_message: "AccessDenied"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-3712/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-3712/*"
+        Resource: "arn:aws:s3:::{}/*"
 
 test_372:
-  bucket_name: "bktpolicy-3721"
-  account_name_2: "accpolicy_two{}"
-  emailid_2: "accpolicy_two{}@seagate.com"
-  error_message: "AccessDenied"
-  bucket_permission: "authenticated-read"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-3721/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-3721/*"
+        Resource: "arn:aws:s3:::{}/*"
 
 test_373:
-  bucket_name: "bktpolicy-373"
-  error_message: "AccessDenied"
-  bucket_permission: "public-read"
   bucket_policy:
     Statement:
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-373/*"
+        Resource: "arn:aws:s3:::{}/*"
 
 test_374:
-  bucket_name: "bktpolicy-374"
-  error_message: "AccessDenied"
-  bucket_permission: "public-read-write"
   bucket_policy:
     Statement:
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-374/*"
+        Resource: "arn:aws:s3:::{}/*"
 
 test_1069:
-  bucket_name: "bktpolicy-1069"
-  object_name_2: "objkey1069_2"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           AWS: "111111111111"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-1069/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-1069/*"
-  error_message: "Invalid principal in policy"
+        Resource: "arn:aws:s3:::{}/*"
 test_1075:
-  bucket_name: "bktpolicy-1075"
-  object_name_2: "objkey1075_2"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           AWS: "arn:aws:iam::{}:user/invlid_user"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-1075/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-1075/*"
-  error_message: "Invalid principal in policy"
+        Resource: "arn:aws:s3:::{}/*"
 
 test_4156:
-  bucket_name: "bktpolicy-4156"
-  obj_count: 2
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -1403,17 +1074,14 @@ test_4156:
         Action:
           - "s3:ListBucket"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-4156"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           StringEquals:
-            s3:prefix: "obj_policy"
+            s3:prefix: "obj"
         Principal:
           AWS: "{}"
-  err_message: "AccessDenied"
 
 test_4161:
-  bucket_name: "bktpolicy-4161"
-  obj_count: 2
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -1422,17 +1090,14 @@ test_4161:
         Action:
           - "s3:ListBucket"
         Effect: "Deny"
-        Resource: "arn:aws:s3:::bktpolicy-4161"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           StringNotEquals:
-            s3:prefix: "obj_policy"
+            s3:prefix: "obj"
         Principal:
           AWS: "{}"
-  err_message: "AccessDenied"
 
 test_4173:
-  bucket_name: "bktpolicy-4173"
-  obj_count: 11
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -1441,17 +1106,14 @@ test_4173:
         Action:
           - "s3:ListBucket"
         Effect: "Deny"
-        Resource: "arn:aws:s3:::bktpolicy-4173"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           StringEquals:
-            s3:prefix: "obj_policy"
+            s3:prefix: "obj"
         Principal:
           AWS: "{}"
-  err_message: "AccessDenied"
 
 test_4170:
-  bucket_name: "bktpolicy-4170"
-  obj_count: 11
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -1460,17 +1122,14 @@ test_4170:
         Action:
           - "s3:ListBucket"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-4170"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           StringNotEquals:
             s3:prefix: "obj_policy"
         Principal:
           AWS: "{}"
-  err_message: "AccessDenied"
 
 test_4183:
-  bucket_name: "bktpolicy-4183"
-  obj_count: 11
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -1479,20 +1138,13 @@ test_4183:
         Action:
           - "s3:ListBucket"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-4183/*"
+        Resource: "arn:aws:s3:::{}/*"
         Condition:
           StringEquals:
             s3:x-amz-grant-write: "id={}"
         Principal: "*"
-  err_message: "Action does not apply to any resource(s) in statement"
 
 test_4502:
-  bucket_name: "bktpolicy-4502"
-  date_format: "%Y-%m-%d"
-  account_name: "accpolicy_two{}"
-  object_name: "objkey_test"
-  effect_lst : ["Allow", "Deny"]
-  emailid: "accpolicy_two{}@seagate.com"
   error_message: "AccessDenied"
   date_condition: "DateEquals"
   bucket_policy:
@@ -1506,12 +1158,6 @@ test_4502:
         Principal:
           AWS: ""
 test_4504:
-  bucket_name: "bktpolicy-4504"
-  date_format: "%Y-%m-%dT%H:%M:%S"
-  account_name: "accpolicy_two{}"
-  object_name: "objkey_test"
-  effect_lst : ["Allow", "Deny"]
-  emailid: "accpolicy_two{}@seagate.com"
   error_message: "AccessDenied"
   date_condition: "DateNotEquals"
   bucket_policy:
@@ -1525,12 +1171,6 @@ test_4504:
         Principal:
           AWS: ""
 test_4505:
-  bucket_name: "bktpolicy-4505"
-  date_format: "%Y-%m-%dT%H:%M:%S"
-  account_name: "accpolicy_two{}"
-  object_name: "objkey_test"
-  effect_lst : ["Allow", "Deny"]
-  emailid: "accpolicy_two{}@seagate.com"
   error_message: "AccessDenied"
   date_condition: "DateLessThan"
   bucket_policy:
@@ -1544,12 +1184,6 @@ test_4505:
         Principal:
           AWS: ""
 test_4506:
-  bucket_name: "bktpolicy-4506"
-  date_format: "%Y-%m-%dT%H:%M:%S"
-  account_name: "accpolicy_two{}"
-  object_name: "objkey_test"
-  effect_lst : ["Allow", "Deny"]
-  emailid: "accpolicy_two{}@seagate.com"
   error_message: "AccessDenied"
   date_condition: "DateLessThanEquals"
   bucket_policy:
@@ -1563,12 +1197,6 @@ test_4506:
         Principal:
           AWS: ""
 test_4507:
-  bucket_name: "bktpolicy-4507"
-  date_format: "%Y-%m-%d"
-  account_name: "accpolicy_two{}"
-  object_name: "objkey_test"
-  effect_lst : ["Allow", "Deny"]
-  emailid: "accpolicy_two{}@seagate.com"
   error_message: "AccessDenied"
   date_condition: "DateGreaterThan"
   bucket_policy:
@@ -1581,13 +1209,8 @@ test_4507:
             aws:CurrentTime: ""
         Principal:
           AWS: ""
+
 test_4508:
-  bucket_name: "bktpolicy-4508"
-  date_format: "%Y-%m-%dT%H:%M:%S"
-  account_name: "accpolicy_two{}"
-  object_name: "objkey_test"
-  effect_lst : ["Allow", "Deny"]
-  emailid: "accpolicy_two{}@seagate.com"
   error_message: "AccessDenied"
   date_condition: "DateGreaterThanEquals"
   bucket_policy:
@@ -1601,12 +1224,6 @@ test_4508:
         Principal:
           AWS: ""
 test_4509:
-  bucket_name: "bktpolicy-4509"
-  date_format: "%Y"
-  account_name: "accpolicy_two{}"
-  object_name: "objkey_test"
-  effect_lst : ["Allow", "Deny"]
-  emailid: "accpolicy_two{}@seagate.com"
   error_message: "AccessDenied"
   date_condition: "DateEquals"
   bucket_policy:
@@ -1620,12 +1237,6 @@ test_4509:
         Principal:
           AWS: ""
 test_4510:
-  bucket_name: "bktpolicy-4510"
-  date_format: "%%Y-%m"
-  account_name: "accpolicy_two{}"
-  object_name: "objkey_test"
-  effect_lst : ["Allow", "Deny"]
-  emailid: "accpolicy_two{}@seagate.com"
   error_message: "AccessDenied"
   date_condition: "DateNotEquals"
   bucket_policy:
@@ -1639,12 +1250,6 @@ test_4510:
         Principal:
           AWS: ""
 test_4511:
-  bucket_name: "bktpolicy-4511"
-  date_format: "%Y-%m-%d"
-  account_name: "accpolicy_two{}"
-  object_name: "objkey_test"
-  effect_lst : ["Allow", "Deny"]
-  emailid: "accpolicy_two{}@seagate.com"
   error_message: "AccessDenied"
   date_condition: "DateLessThan"
   bucket_policy:
@@ -1658,12 +1263,6 @@ test_4511:
         Principal:
           AWS: ""
 test_4512:
-  bucket_name: "bktpolicy-4512"
-  date_format: "%Y"
-  account_name: "accpolicy_two{}"
-  object_name: "objkey_test"
-  effect_lst : ["Allow", "Deny"]
-  emailid: "accpolicy_two{}@seagate.com"
   error_message: "AccessDenied"
   date_condition: "DateGreaterThan"
   bucket_policy:
@@ -1677,11 +1276,6 @@ test_4512:
         Principal:
           AWS: ""
 test_4513:
-  bucket_name: "bktpolicy-4513"
-  account_name: "accpolicy_two{}"
-  object_name: "objkey_test"
-  effect_lst : ["Allow", "Deny"]
-  emailid: "accpolicy_two{}@seagate.com"
   error_message: "AccessDenied"
   date_condition: "DateNotEquals"
   bucket_policy:
@@ -1695,11 +1289,6 @@ test_4513:
         Principal:
           AWS: ""
 test_4514:
-  bucket_name: "bktpolicy-4514"
-  account_name: "accpolicy_two{}"
-  object_name: "objkey_test"
-  effect_lst : ["Allow", "Deny"]
-  emailid: "accpolicy_two{}@seagate.com"
   error_message: "AccessDenied"
   date_condition: "DateLessThan"
   bucket_policy:
@@ -1713,11 +1302,6 @@ test_4514:
         Principal:
           AWS: ""
 test_4515:
-  bucket_name: "bktpolicy-4515"
-  account_name: "accpolicy_two{}"
-  object_name: "objkey_test"
-  effect_lst : ["Allow", "Deny"]
-  emailid: "accpolicy_two{}@seagate.com"
   error_message: "AccessDenied"
   date_condition: "DateLessThanEquals"
   bucket_policy:
@@ -1731,11 +1315,6 @@ test_4515:
         Principal:
           AWS: ""
 test_4516:
-  bucket_name: "bktpolicy-4516"
-  account_name: "accpolicy_two{}"
-  object_name: "objkey_test"
-  effect_lst : ["Allow", "Deny"]
-  emailid: "accpolicy_two{}@seagate.com"
   error_message: "AccessDenied"
   date_condition: "DateGreaterThan"
   bucket_policy:
@@ -1749,11 +1328,6 @@ test_4516:
         Principal:
           AWS: ""
 test_4517:
-  bucket_name: "bktpolicy-4517"
-  account_name: "accpolicy_two{}"
-  object_name: "objkey_test"
-  effect_lst : ["Allow", "Deny"]
-  emailid: "accpolicy_two{}@seagate.com"
   error_message: "AccessDenied"
   date_condition: "DateGreaterThanEquals"
   bucket_policy:
@@ -1767,13 +1341,6 @@ test_4517:
         Principal:
           AWS: ""
 test_1902:
-  bucket_name: "bktpolicy-1902{}"
-  account_name: "accpolicy_two{}"
-  object_name: "objkey_test"
-  object_name_2: "objkey_test_2"
-  emailid: "accpolicy_two{}@seagate.com"
-  error_message: "AccessDenied"
-  obj_permission: "public-read"
   bucket_policy:
     Statement:
       - Action: "s3:PutObject"
@@ -1786,13 +1353,6 @@ test_1902:
         Principal:
           AWS: ""
 test_1903:
-  bucket_name: "bktpolicy-1903{}"
-  account_name: "accpolicy_two{}"
-  object_name: "objkey_test"
-  object_name_2: "objkey_test_2"
-  emailid: "accpolicy_two{}@seagate.com"
-  error_message: "AccessDenied"
-  obj_permission: "bucket-owner-full-control"
   bucket_policy:
     Statement:
       - Action: "s3:PutObject"
@@ -1805,14 +1365,6 @@ test_1903:
         Principal:
           AWS: ""
 test_1904:
-  bucket_name: "bktpolicy-1904{}"
-  account_name: "accpolicy_two{}"
-  object_name: "objkey_test"
-  object_name_2: "objkey_test_2"
-  id_str: "id={}"
-  emailid: "accpolicy_two{}@seagate.com"
-  error_message: "AccessDenied"
-  obj_permission: "grant-full-control"
   bucket_policy:
     Statement:
       - Action: "s3:PutObject"
@@ -1824,14 +1376,6 @@ test_1904:
         Principal:
           AWS: ""
 test_1908:
-  bucket_name: "bktpolicy-1908{}"
-  account_name: "accpolicy_two{}"
-  object_name: "objkey_test"
-  object_name_2: "objkey_test_2"
-  id_str: "id={}"
-  emailid: "accpolicy_two{}@seagate.com"
-  error_message: "AccessDenied"
-  obj_permission: "grant-write-acp"
   bucket_policy:
     Statement:
       - Action: "s3:PutObject"
@@ -1843,35 +1387,18 @@ test_1908:
         Principal:
           AWS: ""
 test_270:
-  bucket_name: "bktpolicy-270"
-  account_name: "accpolicy"
-  error_message: "AccessDenied"
-  acc_count: 2
-  id_str: "id={}"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-270/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-270/*"
-test_271:
-  bucket_name: "bktpolicy-271"
-  account_name: "accpolicy"
-  acc_count: 2
-  error_message: "AccessDenied"
-  id_str: "id={}"
+        Resource: "arn:aws:s3:::{}/*"
 
 test_5770:
-  bucket_name: "bktpolicy-5770"
-  object_name: "objkey_test"
-  date_format: "%Y-%m-%d"
-  account_name: "accpolicy_two{}"
-  email_id: "accpolicy_two{}@seagate.com"
-  effect: "Deny"
   error_message: "AccessDenied"
   date_condition: "DateGreaterThanIfExists"
   bucket_policy:
@@ -1886,11 +1413,6 @@ test_5770:
           AWS: ""
 
 test_5831:
-  bucket_name: "bktpolicy-5831"
-  object_name: "objkey_test"
-  account_name: "accpolicy_two{}"
-  email_id: "accpolicy_two{}@seagate.com"
-  effect: "Deny"
   error_message: "AccessDenied"
   date_condition: "DateNotEqualsIfExists"
   bucket_policy:
@@ -1905,11 +1427,6 @@ test_5831:
           AWS: ""
 
 test_5832:
-  bucket_name: "bktpolicy-5832"
-  object_name: "objkey_test"
-  account_name: "accpolicy_two{}"
-  email_id: "accpolicy_two{}@seagate.com"
-  effect: "Deny"
   error_message: "AccessDenied"
   date_condition: "DateLessThanIfExists"
   bucket_policy:
@@ -1924,12 +1441,6 @@ test_5832:
           AWS: ""
 
 test_5778:
-  bucket_name: "bktpolicy-5778"
-  object_name: "objkey_test"
-  date_format: "%Y-%m-%dT%H:%M:%SZ" #TZ
-  account_name: "accpolicy_two{}"
-  email_id: "accpolicy_two{}@seagate.com"
-  effect: "Allow"
   date_condition: "DateGreaterThanEqualsIfExists"
   bucket_policy:
     Statement:
@@ -1943,12 +1454,6 @@ test_5778:
           AWS: ""
 
 test_5740:
-  bucket_name: "bktpolicy-5740"
-  object_name: "objkey_test"
-  date_format: "%Y-%m-%d"
-  account_name: "accpolicy_two{}"
-  email_id: "accpolicy_two{}@seagate.com"
-  effect: "Allow"
   error_message: "AccessDenied"
   date_condition: "DateEqualsIfExists"
   bucket_policy:
@@ -1963,12 +1468,6 @@ test_5740:
           AWS: ""
 
 test_5751:
-  bucket_name: "bktpolicy-5751"
-  object_name: "objkey_test"
-  date_format: "%Y-%m-%dT%H:%M:%SZ" # TZ
-  account_name: "accpolicy_two{}"
-  email_id: "accpolicy_two{}@seagate.com"
-  effect: "Deny"
   error_message: "AccessDenied"
   date_condition: "DateNotEqualsIfExists"
   bucket_policy:
@@ -1983,12 +1482,6 @@ test_5751:
           AWS: ""
 
 test_5773:
-  bucket_name: "bktpolicy-5773"
-  object_name: "objkey_test"
-  date_format: "%Y-%m-%d"
-  account_name: "accpolicy_two{}"
-  email_id: "accpolicy_two{}@seagate.com"
-  effect: "Deny"
   error_message: "AccessDenied"
   date_condition: "DateLessThanIfExists"
   bucket_policy:
@@ -2003,14 +1496,6 @@ test_5773:
           AWS: ""
 
 test_5764:
-  bucket_name: "bktpolicy-5764"
-  object_name: "objkey_test"
-  date_format: "%Y-%m-%dT%H:%M:%SZ"
-  delta_time: 1
-  account_name: "accpolicy_two{}"
-  email_id: "accpolicy_two{}@seagate.com"
-  effect: "allow"
-  date_condition: "DateLessThanEqualsIfExists"
   bucket_policy:
     Statement:
       - Action: "s3:PutObject"
@@ -2023,12 +1508,6 @@ test_5764:
           AWS: ""
 
 test_5758:
-  bucket_name: "bktpolicy-5758"
-  object_name: "objkey_test"
-  date_format: "%Y-%m-%dT%H:%M:%S" # TZ
-  account_name: "accpolicy_two{}"
-  email_id: "accpolicy_two{}@seagate.com"
-  effect: "Deny"
   error_message: "AccessDenied"
   date_condition: "DateLessThanIfExists"
   bucket_policy:
@@ -2043,13 +1522,8 @@ test_5758:
           AWS: ""
 
 test_5925:
-  bucket_name: "bktpolicy-5925"
-  object_name: "objkey_test"
-  account_name: "accpolicy_two{}"
-  email_id: "accpolicy_two{}@seagate.com"
   effect: "Allow"
   date_condition: "DateLessThanEqualsIfExists"
-  year: 1
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -2058,7 +1532,7 @@ test_5925:
         Action:
           - "s3:PutObject"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-5925/*"
+        Resource: "arn:aws:s3:::{}/*"
         Condition:
           DateLessThanEqualsIfExists:
             aws:EpochTime: "{}"
@@ -2066,11 +1540,6 @@ test_5925:
           AWS: "{}"
 
 test_5926:
-  bucket_name: "bktpolicy-5926"
-  account_name: "accpolicy_two{}"
-  object_name: "objkey_test"
-  email_id: "accpolicy_two{}@seagate.com"
-  effect: "Deny"
   error_message: "AccessDenied"
   date_condition: "DateGreaterThanIfExists"
   bucket_policy:
@@ -2085,11 +1554,6 @@ test_5926:
           AWS: ""
 
 test_5937:
-  bucket_name: "bktpolicy-5937"
-  account_name: "accpolicy_two{}"
-  object_name: "objkey_test"
-  email_id: "accpolicy_two{}@seagate.com"
-  effect: "Allow"
   date_condition: "DateGreaterThanEqualsIfExists"
   bucket_policy:
     Statement:
@@ -2103,10 +1567,6 @@ test_5937:
           AWS: ""
 
 test_4937:
-  bucket_name: "bktpolicy-4937"
-  iam_acc_count: 2
-  s3_obj_count: 11
-  err_message: "AccessDenied"
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -2115,23 +1575,14 @@ test_4937:
         Action:
           - "s3:ListBucket"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-4937"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           NumericLessThanIfExists:
             s3:max-keys: "3"
         Principal:
           AWS: "{}"
-  max_keys:
-    - 1
-    - 2
-    - 3
-    - 4
 
 test_4939:
-  bucket_name: "bktpolicy-4939"
-  iam_acc_count: 2
-  s3_obj_count: 11
-  err_message: "AccessDenied"
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -2140,23 +1591,14 @@ test_4939:
         Action:
           - "s3:ListBucket"
         Effect: "Deny"
-        Resource: "arn:aws:s3:::bktpolicy-4939"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           NumericLessThanIfExists:
             s3:max-keys: "3"
         Principal:
           AWS: "{}"
-  max_keys:
-    - 1
-    - 2
-    - 3
-    - 4
 
 test_4940:
-  bucket_name: "bktpolicy-4940"
-  iam_acc_count: 2
-  s3_obj_count: 11
-  err_message: "AccessDenied"
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -2165,23 +1607,14 @@ test_4940:
         Action:
           - "s3:ListBucket"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-4940"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           NumericGreaterThanIfExists:
             s3:max-keys: "3"
         Principal:
           AWS: "{}"
-  max_keys:
-    - 1
-    - 2
-    - 3
-    - 4
 
 test_4941:
-  bucket_name: "bktpolicy-4941"
-  iam_acc_count: 2
-  s3_obj_count: 11
-  err_message: "AccessDenied"
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -2190,23 +1623,14 @@ test_4941:
         Action:
           - "s3:ListBucket"
         Effect: "Deny"
-        Resource: "arn:aws:s3:::bktpolicy-4941"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           NumericGreaterThanIfExists:
             s3:max-keys: "3"
         Principal:
           AWS: "{}"
-  max_keys:
-    - 1
-    - 2
-    - 3
-    - 4
 
 test_4942:
-  bucket_name: "bktpolicy-4942"
-  iam_acc_count: 2
-  s3_obj_count: 11
-  err_message: "AccessDenied"
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -2215,23 +1639,14 @@ test_4942:
         Action:
           - "s3:ListBucket"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-4942"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           NumericEqualsIfExists:
             s3:max-keys: "3"
         Principal:
           AWS: "{}"
-  max_keys:
-    - 1
-    - 2
-    - 3
-    - 4
 
 test_4943:
-  bucket_name: "bktpolicy-4943"
-  iam_acc_count: 2
-  s3_obj_count: 11
-  err_message: "AccessDenied"
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -2240,23 +1655,14 @@ test_4943:
         Action:
           - "s3:ListBucket"
         Effect: "Deny"
-        Resource: "arn:aws:s3:::bktpolicy-4943"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           NumericNotEqualsIfExists:
             s3:max-keys: "3"
         Principal:
           AWS: "{}"
-  max_keys:
-    - 1
-    - 2
-    - 3
-    - 4
 
 test_4944:
-  bucket_name: "bktpolicy-4944"
-  iam_acc_count: 2
-  s3_obj_count: 11
-  err_message: "AccessDenied"
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -2265,23 +1671,14 @@ test_4944:
         Action:
           - "s3:ListBucket"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-4944"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           NumericLessThanEqualsIfExists:
             s3:max-keys: "3"
         Principal:
           AWS: "{}"
-  max_keys:
-    - 1
-    - 2
-    - 3
-    - 4
 
 test_4945:
-  bucket_name: "bktpolicy-4945"
-  iam_acc_count: 2
-  s3_obj_count: 11
-  err_message: "AccessDenied"
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -2290,22 +1687,14 @@ test_4945:
         Action:
           - "s3:ListBucket"
         Effect: "Deny"
-        Resource: "arn:aws:s3:::bktpolicy-4945"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           NumericGreaterThanEqualsIfExists:
             s3:max-keys: "3"
         Principal:
           AWS: "{}"
-  max_keys:
-    - 1
-    - 2
-    - 3
-    - 4
 
 test_5449:
-  bucket_name: "bktpolicy-5449"
-  acc_count: 2
-  obj_count: 2
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -2314,18 +1703,14 @@ test_5449:
         Action:
           - "s3:ListBucket"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-5449"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           StringEqualsIfExists:
-            s3:prefix: "obj_policy"
+            s3:prefix: "{}"
         Principal:
           AWS: "{}"
-  error_message: "AccessDenied"
 
 test_5471:
-  bucket_name: "bktpolicy-5471"
-  acc_count: 2
-  obj_count: 2
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -2334,18 +1719,14 @@ test_5471:
         Action:
           - "s3:ListBucket"
         Effect: "Deny"
-        Resource: "arn:aws:s3:::bktpolicy-5471"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           StringNotEqualsIfExists:
             s3:prefix: "obj_policy"
         Principal:
           AWS: "{}"
-  error_message: "AccessDenied"
 
 test_5473:
-  bucket_name: "bktpolicy-5473"
-  acc_count: 2
-  obj_count: 11
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -2354,18 +1735,14 @@ test_5473:
         Action:
           - "s3:ListBucket"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-5473"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           StringNotEqualsIfExists:
             s3:prefix: "obj_policy"
         Principal:
           AWS: "{}"
-  error_message: "AccessDenied"
 
 test_5481:
-  bucket_name: "bktpolicy-5481"
-  acc_count: 2
-  obj_count: 11
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -2374,17 +1751,14 @@ test_5481:
         Action:
           - "s3:ListBucket"
         Effect: "Deny"
-        Resource: "arn:aws:s3:::bktpolicy-5481"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           StringEqualsIfExists:
             s3:prefix: "obj_policy"
         Principal:
           AWS: "{}"
-  error_message: "AccessDenied"
 
 test_5490:
-  bucket_name: "bktpolicy-5490"
-  obj_count: 11
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -2393,21 +1767,13 @@ test_5490:
         Action:
           - "s3:ListBucket"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-5490/*"
+        Resource: "arn:aws:s3:::{}/*"
         Condition:
           StringEqualsIfExists:
             s3:x-amz-grant-write: "id={}"
         Principal: "*"
-  error_message: "Action does not apply to any resource(s) in statement"
 
 test_6550:
-  bucket_name: "bktpolicy-6550"
-  error_message: "AccessDenied"
-  obj_permission1: "bucket-owner-read"
-  obj_permission2: "bucket-owner-full-control"
-  obj_permission3: "public-read"
-  acc_count: 1
-  obj_count: 2
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -2416,7 +1782,7 @@ test_6550:
         Action:
           - "s3:PutObject"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-6550/*"
+        Resource: "arn:aws:s3:::{}/*"
         Condition:
           StringEquals:
             s3:x-amz-acl:
@@ -2426,8 +1792,6 @@ test_6550:
           AWS: "{}"
 
 test_6693:
-  bucket_name: "bktpolicy-6693"
-  obj_count: 4
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -2436,20 +1800,15 @@ test_6693:
         Action:
           - "s3:PutObject"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-6693/*"
+        Resource: "arn:aws:s3:::{}/*"
         Condition:
           'Null':
             s3:x-amz-acl:
              - "True"
         Principal:
           AWS: "{}"
-  permission: "bucket-owner-read"
-  error_message: "AccessDenied"
 
 test_6553:
-  bucket_name: "bktpolicy-6553"
-  error_message: "AccessDenied"
-  obj_count: 2
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -2458,7 +1817,7 @@ test_6553:
         Action:
           - "s3:PutObject"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-6553/*"
+        Resource: "arn:aws:s3:::{}/*"
         Condition:
           StringEquals:
             s3:x-amz-grant-full-control: "id={}"
@@ -2467,8 +1826,6 @@ test_6553:
           AWS: "{}"
 
 test_6703:
-  bucket_name: "bktpolicy-6703"
-  obj_count: 4
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -2477,19 +1834,15 @@ test_6703:
         Action:
           - "s3:PutObject"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-6703/*"
+        Resource: "arn:aws:s3:::{}/*"
         Condition:
           'Null':
             s3:x-amz-acl:
              - "False"
         Principal:
           AWS: "{}"
-  permission: "bucket-owner-read"
-  error_message: "AccessDenied"
 
 test_6704:
-  bucket_name: "bktpolicy-6704"
-  obj_count: 4
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -2498,7 +1851,7 @@ test_6704:
         Action:
           - "s3:PutObject"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-6704/*"
+        Resource: "arn:aws:s3:::{}/*"
         Condition:
           'Null':
             s3:x-amz-acl:
@@ -2506,16 +1859,8 @@ test_6704:
              - "False"
         Principal:
           AWS: "{}"
-  permission: "bucket-owner-read"
 
 test_7053:
-  bucket_name: "bktpolicy-7053"
-  error_message: "AccessDenied"
-  obj_permission1: "bucket-owner-read"
-  obj_permission2: "bucket-owner-full-control"
-  obj_permission3: "public-read"
-  acc_count: 1
-  obj_count: 2
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -2524,7 +1869,7 @@ test_7053:
         Action:
           - "s3:PutObject"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-7053/*"
+        Resource: "arn:aws:s3:::{}/*"
         Condition:
           StringEquals:
             s3:x-AMZ-ACL:
@@ -2533,8 +1878,6 @@ test_7053:
           AWS: "{}"
 
 test_6760:
-  bucket_name: "bktpolicy-6760"
-  obj_count: 4
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -2543,7 +1886,7 @@ test_6760:
         Action:
           - "s3:PutObject"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-6760/*"
+        Resource: "arn:aws:s3:::{}/*"
         Condition:
           'Null':
             s3:x-amz-grant-read:
@@ -2553,12 +1896,6 @@ test_6760:
           AWS: "{}"
 
 test_6554:
-  bucket_name: "bktpolicy-6554"
-  error_message: "AccessDenied"
-  obj_permission1: "grant_full_control"
-  obj_permission2: "grant_read"
-  obj_count: 2
-  acc_count: 5
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -2567,7 +1904,7 @@ test_6554:
         Action:
           - "s3:PutObject"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-6554/*"
+        Resource: "arn:aws:s3:::{}/*"
         Condition:
           StringEquals:
             s3:x-amz-grant-full-control: "id={}"
@@ -2576,8 +1913,6 @@ test_6554:
           AWS: "{}"
 
 test_6761:
-  bucket_name: "bktpolicy-6761"
-  obj_count: 4
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -2586,7 +1921,7 @@ test_6761:
         Action:
           - "s3:PutObject"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-6761/*"
+        Resource: "arn:aws:s3:::{}/*"
         Condition:
           'Null':
             s3:x-amz-grant-write:
@@ -2595,8 +1930,6 @@ test_6761:
           AWS: "{}"
 
 test_6763:
-  bucket_name: "bktpolicy-6763"
-  obj_count: 4
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -2605,7 +1938,7 @@ test_6763:
         Action:
           - "s3:PutObject"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-6763/*"
+        Resource: "arn:aws:s3:::{}/*"
         Condition:
           'Null':
             s3:x-amz-grant-write:
@@ -2615,8 +1948,6 @@ test_6763:
           AWS: "{}"
 
 test_6764:
-  bucket_name: "bktpolicy-6764"
-  obj_count: 4
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -2625,18 +1956,15 @@ test_6764:
         Action:
           - "s3:PutObject"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-6764/*"
+        Resource: "arn:aws:s3:::{}/*"
         Condition:
           'Null':
             s3:x-amz-grant-read-acp:
              - "True"
         Principal:
           AWS: "{}"
-  error_message: "AccessDenied"
 
 test_6765:
-  bucket_name: "bktpolicy-6765"
-  obj_count: 4
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -2645,18 +1973,15 @@ test_6765:
         Action:
           - "s3:PutObject"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-6765/*"
+        Resource: "arn:aws:s3:::{}/*"
         Condition:
           'Null':
             s3:x-amz-grant-read-acp:
              - "False"
         Principal:
           AWS: "{}"
-  error_message: "AccessDenied"
 
 test_6766:
-  bucket_name: "bktpolicy-6766"
-  obj_count: 4
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -2665,7 +1990,7 @@ test_6766:
         Action:
           - "s3:PutObject"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-6766/*"
+        Resource: "arn:aws:s3:::{}/*"
         Condition:
           'Null':
             s3:x-amz-grant-read-acp:
@@ -2675,10 +2000,6 @@ test_6766:
           AWS: "{}"
 
 test_6555:
-  bucket_name: "bktpolicy-6555"
-  error_message: "AccessDenied"
-  obj_count: 2
-  acc_count: 8
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -2687,7 +2008,7 @@ test_6555:
         Action:
           - "s3:PutObject"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-6555/*"
+        Resource: "arn:aws:s3:::{}/*"
         Condition:
           StringEquals:
             s3:x-amz-grant-full-control: "id={}"
@@ -2699,8 +2020,6 @@ test_6555:
           AWS: "{}"
 
 test_6767:
-  bucket_name: "bktpolicy-6767"
-  obj_count: 4
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -2709,18 +2028,15 @@ test_6767:
         Action:
           - "s3:PutObject"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-6767/*"
+        Resource: "arn:aws:s3:::{}/*"
         Condition:
           'Null':
             s3:x-amz-grant-write-acp:
               - "True"
         Principal:
           AWS: "{}"
-  error_message: "AccessDenied"
 
 test_6768:
-  bucket_name: "bktpolicy-6768"
-  obj_count: 4
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -2729,20 +2045,15 @@ test_6768:
         Action:
           - "s3:PutObject"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-6768/*"
+        Resource: "arn:aws:s3:::{}/*"
         Condition:
           'Null':
             s3:x-amz-grant-write-acp:
               - "false"
         Principal:
           AWS: "{}"
-  error_message: "AccessDenied"
 
 test_6557:
-  bucket_name: "bktpolicy-6557"
-  error_message: "MalformedPolicy"
-  obj_count: 2
-  acc_count: 2
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -2751,7 +2062,7 @@ test_6557:
         Action:
           - "s3:PutObject"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-6557/*"
+        Resource: "arn:aws:s3:::{}/*"
         Condition:
           StringEquals:
             s3:x-amz-grant-full-control: "id={}"
@@ -2761,8 +2072,6 @@ test_6557:
           AWS: "{}"
 
 test_6769:
-  bucket_name: "bktpolicy-6769"
-  obj_count: 4
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -2771,7 +2080,7 @@ test_6769:
         Action:
           - "s3:PutObject"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-6769/*"
+        Resource: "arn:aws:s3:::{}/*"
         Condition:
           'Null':
             s3:x-amz-grant-write-acp:
@@ -2781,8 +2090,6 @@ test_6769:
           AWS: "{}"
 
 test_6770:
-  bucket_name: "bktpolicy-6770"
-  obj_count: 4
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -2791,23 +2098,18 @@ test_6770:
         Action:
           - "s3:PutObject"
         Effect: "Allow"
-        Resource: "arn:aws:s3:::bktpolicy-6770/*"
+        Resource: "arn:aws:s3:::{}/*"
         Condition:
           'Null':
             s3:x-amz-grant-full-control:
               - "True"
         Principal:
           AWS: "{}"
-  error_message: "AccessDenied"
 
 test_5921:
-  bucket_name: "bktpolicy-5921{0}"
   bucket_policy: "{}"
-  error_message: "This policy contains invalid Json"
 
 test_5211:
-  bucket_name: "bktpolicy-5211{0}"
-  object_name_2: "objkey5211_2"
   bucket_policy_1:
     Statement:
       - Effect: "Allow"
@@ -2826,8 +2128,6 @@ test_5211:
         Resource: "arn:aws:s3:::{0}"
 
 test_5210:
-  bucket_name: "bktpolicy-5210{0}"
-  object_name_2: "objkey5210_2"
   bucket_policy:
     Statement:
       - Effect: "Allow"
@@ -2837,11 +2137,8 @@ test_5210:
             - "{0}"
         Action: "s3:GetBucketPolicy"
         Resource: "arn:aws:s3:::{0}"
-  error_message: "MethodNotAllowed"
 
 test_5206:
-  bucket_name: "bktpolicy-5206{0}"
-  object_name_2: "objkey5206_2"
   bucket_policy:
     Statement:
       - Effect: "Allow"
@@ -2851,9 +2148,6 @@ test_5206:
         Resource: "arn:aws:s3:::{0}"
 
 test_5212:
-  bucket_name: "bktpolicy-5212{0}"
-  acc_count: 2
-  object_name_2: "objkey5212_2"
   bucket_policy_1:
     Statement:
       - Effect: "Allow"
@@ -2872,11 +2166,8 @@ test_5212:
           - "s3:PutBucketPolicy"
           - "s3:GetBucketPolicy"
         Resource: "arn:aws:s3:::{0}"
-  error_message: "MethodNotAllowed"
 
 test_5214:
-  bucket_name: "bktpolicy-5214{0}"
-  object_name_2: "objkey5214_2"
   bucket_policy_1:
     Statement:
       - Effect: "Allow"
@@ -2884,7 +2175,6 @@ test_5214:
           AWS: "{0}"
         Action: "s3:PutBucketPolicy"
         Resource: "arn:aws:s3:::{0}"
-  error_message: "MethodNotAllowed"
   bucket_policy_2:
     Statement:
       - Effect: "Allow"
@@ -2897,9 +2187,6 @@ test_5214:
         Resource: "arn:aws:s3:::{0}"
 
 test_5215:
-  bucket_name: "bktpolicy-5215{0}"
-  acc_count: 2
-  object_name_2: "objkey5215_2"
   bucket_policy_1:
     Statement:
       - Effect: "Allow"
@@ -2918,13 +2205,8 @@ test_5215:
           - "s3:PutBucketAcl"
         Resource: "arn:aws:s3:::{0}"
   id_str: "id={}"
-  error_message: "MethodNotAllowed"
-  error_message_1: "AccessDenied"
 
 test_6771:
-  bucket_name: "bktpolicy-6771{0}"
-  obj_count: 2
-  object_name: "objkey_6771"
   bucket_policy:
     Statement:
       - Action:
@@ -2937,13 +2219,8 @@ test_6771:
               - "False"
         Principal:
           AWS: "{0}"
-  id_str: "id={}"
-  error_message: "AccessDenied"
 
 test_6772:
-  bucket_name: "bktpolicy-6772{0}"
-  obj_count: 2
-  object_name: "objkey_6772"
   bucket_policy:
     Statement:
       - Action:
@@ -2957,12 +2234,8 @@ test_6772:
               - "False"
         Principal:
           AWS: "{0}"
-  id_str: "id={0}"
 
 test_6773:
-  bucket_name: "bktpolicy-6773{0}"
-  obj_count: 2
-  max_keys: 2
   bucket_policy:
     Statement:
       - Action:
@@ -2975,12 +2248,8 @@ test_6773:
               - "True"
         Principal:
           AWS: "{0}"
-  error_message: "AccessDenied"
 
 test_6774:
-  bucket_name: "bktpolicy-6774{0}"
-  obj_count: 2
-  max_keys: 2
   bucket_policy:
     Statement:
       - Action:
@@ -2993,12 +2262,8 @@ test_6774:
               - "False"
         Principal:
           AWS: "{0}"
-  error_message: "AccessDenied"
 
 test_6775:
-  bucket_name: "bktpolicy-6775{0}"
-  obj_count: 2
-  max_keys: 1
   bucket_policy:
     Statement:
       - Action:
@@ -3014,11 +2279,6 @@ test_6775:
           AWS: "{0}"
 
 test_6776:
-  bucket_name: "bktpolicy-6776{0}"
-  obj_count: 1
-  obj_prefix: "bkt_policy"
-  obj_key_1: "/bkt_policy/policy1"
-  obj_key_2: "/bkt_policy/policy2"
   bucket_policy:
     Statement:
       - Action:
@@ -3031,14 +2291,8 @@ test_6776:
               - "True"
         Principal:
           AWS: "{0}"
-  error_message: "AccessDenied"
 
 test_6777:
-  bucket_name: "bktpolicy-6777{0}"
-  obj_count: 1
-  obj_prefix: "bktpolicy"
-  obj_key_1: "bktpolicy/policy1"
-  obj_key_2: "bktpolicy/policy2"
   bucket_policy:
     Statement:
       - Action:
@@ -3051,14 +2305,8 @@ test_6777:
               - "False"
         Principal:
           AWS: "{0}"
-  error_message: "AccessDenied"
 
 test_6779:
-  bucket_name: "bktpolicy-6779{0}"
-  obj_count: 1
-  obj_prefix: "bktpolicy"
-  obj_key_1: "bktpolicy/policy1"
-  obj_key_2: "bktpolicy/policy2"
   bucket_policy:
     Statement:
       - Action:
@@ -3074,8 +2322,6 @@ test_6779:
           AWS: "{0}"
 
 test_6783:
-  bucket_name: "bktpolicy-6783{0}"
-  obj_count: 3
   bucket_policy:
     Statement:
       - Action:
@@ -3088,11 +2334,8 @@ test_6783:
               - "True"
         Principal:
           AWS: "{0}"
-  error_message: "AccessDenied"
 
 test_6787:
-  bucket_name: "bktpolicy-6787{0}"
-  obj_count: 3
   bucket_policy:
     Statement:
       - Action:
@@ -3107,8 +2350,6 @@ test_6787:
           AWS: "{0}"
 
 test_6788:
-  bucket_name: "bktpolicy-6788{0}"
-  obj_count: 3
   bucket_policy:
     Statement:
       - Action:
@@ -3124,9 +2365,6 @@ test_6788:
           AWS: "{0}"
 
 test_6790:
-  bucket_name: "bktpolicy-6790{0}"
-  obj_count: 3
-  storage_class: "STANDARD"
   bucket_policy:
     Statement:
       - Action:
@@ -3139,12 +2377,8 @@ test_6790:
               - "True"
         Principal:
           AWS: "{0}"
-  error_message: "AccessDenied"
 
 test_6791:
-  bucket_name: "bktpolicy-6791{0}"
-  obj_count: 3
-  storage_class: "STANDARD"
   bucket_policy:
     Statement:
       - Action:
@@ -3157,12 +2391,8 @@ test_6791:
               - "False"
         Principal:
           AWS: "{0}"
-  error_message: "AccessDenied"
 
 test_6792:
-  bucket_name: "bktpolicy-6792{0}"
-  obj_count: 3
-  storage_class: "STANDARD"
   bucket_policy:
     Statement:
       - Action:
@@ -3178,10 +2408,6 @@ test_6792:
           AWS: "{0}"
 
 test_6762:
-  bucket_name: "bktpolicy-6762"
-  obj_count: 2
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
   id_str: "ID={}"
   bucket_policy:
     Statement:
@@ -3195,14 +2421,8 @@ test_6762:
               - "False"
         Principal:
           AWS: "{0}"
-  error_message: "AccessDenied"
 
 test_6707:
-  bucket_name: "bktpolicy-6707"
-  obj_count: 2
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  id_str: "ID={}"
   bucket_policy:
     Statement:
       - Action:
@@ -3215,14 +2435,8 @@ test_6707:
               - "True"
         Principal:
           AWS: "{0}"
-  error_message: "AccessDenied"
 
 test_6708:
-  bucket_name: "bktpolicy-6708"
-  obj_count: 2
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  id_str: "ID={}"
   bucket_policy:
     Statement:
       - Action:
@@ -3235,17 +2449,8 @@ test_6708:
               - "False"
         Principal:
           AWS: "{0}"
-  error_message: "AccessDenied"
 
 test_7051:
-  bucket_name: "bktpolicy-7051"
-  obj_count: 2
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  id_str: "ID={}"
-  bucket-owner-read: "bucket-owner-read"
-  bucket-owner-full-control: "bucket-owner-full-control"
-  invalid_value: "xyz"
   bucket_policy:
     Statement:
       - Action:
@@ -3258,16 +2463,8 @@ test_7051:
               - "xyz"
         Principal:
           AWS: "{0}"
-  error_message: "AccessDenied"
-  error_message_2: "BadRequest"
 
 test_7052:
-  bucket_name: "bktpolicy-7052"
-  obj_count: 2
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  id_str: "ID={}"
-  invalid_value: "xyz"
   bucket_policy:
     Statement:
       - Action:
@@ -3280,16 +2477,8 @@ test_7052:
               - "xyz"
         Principal:
           AWS: "{0}"
-  error_message: "invalid condition key"
 
 test_7054:
-  bucket_name: "bktpolicy-7054"
-  obj_count: 2
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  id_str: "ID={}"
-  bucket-owner-read: "bucket-owner-read"
-  bucket-owner-full-control: "bucket-owner-full-control"
   bucket_policy:
     Statement:
       - Action:
@@ -3305,16 +2494,8 @@ test_7054:
               - "bucket-owner-read"
         Principal:
           AWS: "{0}"
-  error_message: "AccessDenied"
 
 test_7055:
-  bucket_name: "bktpolicy-7055"
-  obj_count: 2
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  id_str: "ID={}"
-  bucket-owner-read: "bucket-owner-read"
-  public-read: "public-read"
   bucket_policy:
     Statement:
       - Action:
@@ -3327,16 +2508,8 @@ test_7055:
               - "Bucket-Owner-Read"
         Principal:
           AWS: "{0}"
-  error_message: "AccessDenied"
 
 test_7056:
-  bucket_name: "bktpolicy-7056"
-  obj_count: 2
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  id_str: "ID={}"
-  bucket-owner-read: "bucket-owner-read"
-  public-read: "public-read"
   bucket_policy:
     Statement:
       - Action:
@@ -3350,13 +2523,6 @@ test_7056:
           AWS: "{0}"
 
 test_7057:
-  bucket_name: "bktpolicy-7057"
-  obj_count: 1
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  id_str: "ID={}"
-  bucket-owner-read: "bucket-owner-read"
-  public-read: "public-read"
   bucket_policy:
     Statement:
       - Action:
@@ -3368,15 +2534,8 @@ test_7057:
             s3:prefix: "{0}"
         Principal:
           AWS: "{0}"
-  error_message: "AccessDenied"
 
 test_7058:
-  bucket_name: "bktpolicy-7058"
-  obj_count: 1
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  id_str: "ID={}"
-  bucket-owner-full-control: "bucket-owner-full-control"
   bucket_policy:
     Statement:
       - Action:
@@ -3391,12 +2550,6 @@ test_7058:
           AWS: "{0}"
 
 test_7059:
-  bucket_name: "bktpolicy-7059"
-  obj_count: 1
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  id_str: "ID={}"
-  bucket-owner-full-control: "bucket-owner-full-control"
   bucket_policy:
     Statement:
       - Action:
@@ -3409,468 +2562,259 @@ test_7059:
             - "bucket-owner-f*"
         Principal:
           AWS: "{0}"
-  error_message: "AccessDenied"
 
 test_5134:
-  bucket_name: "bktpolicy-test5134"
-  obj_count: 2
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  account_name_2: "accpolicy_two{}"
-  emailid_2: "accpolicy_two{}@seagate.com"
-  id_str: "ID={}"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           CanonicalUser: "{}"
         Action: "s3:PutObjectAcl"
-        Resource: "arn:aws:s3:::bktpolicy-test5134/{}"
+        Resource: "arn:aws:s3:::{}/{}"
 
 test_5136:
-  bucket_name: "bktpolicy-test5136"
-  obj_name_download: "test1_d.txt"
-  obj_count: 2
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  account_name_2: "accpolicy_two{}"
-  emailid_2: "accpolicy_two{}@seagate.com"
-  id_str: "ID={}"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           CanonicalUser: "{}"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-test5136/{}"
+        Resource: "arn:aws:s3:::{}/{}"
 
 test_5138:
-  bucket_name: "bktpolicy-test5138"
-  obj_name_download: "test1_d{}.txt"
-  obj_count: 2
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  account_name_2: "accpolicy_two{}"
-  emailid_2: "accpolicy_two{}@seagate.com"
-  id_str: "ID={}"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           CanonicalUser: "{}"
         Action: "s3:GetObjectAcl"
-        Resource: "arn:aws:s3:::bktpolicy-test5138/{}"
+        Resource: "arn:aws:s3:::{}/{}"
 
 test_5121:
-  bucket_name: "bktpolicy-test5121"
-  obj_count: 2
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  account_name_2: "accpolicy_two{}"
-  emailid_2: "accpolicy_two{}@seagate.com"
-  id_str: "ID={}"
   bucket_policy:
     Statement:
       - Effect: "Deny"
         Principal:
           CanonicalUser: "{}"
         Action: "s3:PutObjectAcl"
-        Resource: "arn:aws:s3:::bktpolicy-test5121/*"
-  error_message: "AccessDenied"
+        Resource: "arn:aws:s3:::{}/*"
 
 test_5118:
-  bucket_name: "bktpolicy-5118"
-  obj_name_download: "test1_d.txt"
-  obj_count: 2
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  account_name_2: "accpolicy_two{}"
-  emailid_2: "accpolicy_two{}@seagate.com"
-  id_str: "ID={}"
   bucket_policy:
     Statement:
       - Effect: "Deny"
         Principal:
           CanonicalUser: "{}"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-5118/*"
-  error_message: "Forbidden"
+        Resource: "arn:aws:s3:::{}/*"
 
 test_5115:
-  bucket_name: "bktpolicy-test5115"
-  obj_count: 2
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  account_name_2: "accpolicy_two{}"
-  emailid_2: "accpolicy_two{}@seagate.com"
-  id_str: "ID={}"
   bucket_policy:
     Statement:
       - Effect: "Deny"
         Principal:
           CanonicalUser: "{}"
         Action: "s3:GetBucketAcl"
-        Resource: "arn:aws:s3:::bktpolicy-test5115"
-  error_message: "AccessDenied"
+        Resource: "arn:aws:s3:::{}"
 test_5114:
-  bucket_name: "bktpolicy-test5114"
-  obj_count: 2
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  account_name_2: "accpolicy_two{}"
-  emailid_2: "accpolicy_two{}@seagate.com"
-  id_str: "ID={}"
   bucket_policy:
     Statement:
       - Effect: "Deny"
         Principal:
           CanonicalUser: "{}"
         Action: "s3:PutObject"
-        Resource: "arn:aws:s3:::bktpolicy-test5114/*"
-  error_message: "AccessDenied"
+        Resource: "arn:aws:s3:::{}/*"
 test_5110:
-  bucket_name: "bktpolicy-test5110"
-  obj_count: 2
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  account_name_2: "accpolicy_two{}"
-  emailid_2: "accpolicy_two{}@seagate.com"
-  id_str: "ID={}"
   bucket_policy:
     Statement:
       - Effect: "Deny"
         Principal:
           CanonicalUser: "{}"
         Action: "s3:ListBucket"
-        Resource: "arn:aws:s3:::bktpolicy-test5110"
-  error_message: "AccessDenied"
+        Resource: "arn:aws:s3:::{}"
 test_5116:
-  bucket_name: "bktpolicy-test5116"
-  obj_count: 2
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  account_name_2: "accpolicy_two{}"
-  emailid_2: "accpolicy_two{}@seagate.com"
-  id_str: "ID={}"
   bucket_policy:
     Statement:
       - Effect: "Deny"
         Principal:
           CanonicalUser: "{}"
         Action: "s3:PutBucketAcl"
-        Resource: "arn:aws:s3:::bktpolicy-test5116"
-  error_message: "AccessDenied"
+        Resource: "arn:aws:s3:::{}"
 test_5117:
-  bucket_name: "bktpolicy-test5117"
-  obj_count: 2
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  account_name_2: "accpolicy_two{}"
-  emailid_2: "accpolicy_two{}@seagate.com"
-  id_str: "ID={}"
   bucket_policy:
     Statement:
       - Effect: "Deny"
         Principal:
           CanonicalUser: "{}"
         Action: "s3:GetBucketAcl"
-        Resource: "arn:aws:s3:::bktpolicy-test5117"
-  error_message: "AccessDenied"
+        Resource: "arn:aws:s3:::{}"
 test_5120:
-  bucket_name: "bktpolicy-test5120"
-  obj_count: 2
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  account_name_2: "accpolicy_two{}"
-  emailid_2: "accpolicy_two{}@seagate.com"
-  id_str: "ID={}"
   bucket_policy:
     Statement:
       - Effect: "Deny"
         Principal:
           CanonicalUser: "{}"
         Action: "s3:GetObjectAcl"
-        Resource: "arn:aws:s3:::bktpolicy-test5120/*"
-  error_message: "AccessDenied"
+        Resource: "arn:aws:s3:::{}/*"
 test_5122:
-  bucket_name: "bktpolicy-test5122"
-  obj_count: 2
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  account_name_2: "accpolicy_two{}"
-  emailid_2: "accpolicy_two{}@seagate.com"
-  id_str: "ID={}"
   bucket_policy:
     Statement:
       - Effect: "Deny"
         Principal:
           CanonicalUser: "{}"
         Action: "s3:GetObjectAcl"
-        Resource: "arn:aws:s3:::bktpolicy-test5122/*"
-  error_message: "AccessDenied"
+        Resource: "arn:aws:s3:::{}/*"
 test_5123:
-  bucket_name: "bktpolicy-test5123"
-  obj_count: 2
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  account_name_2: "accpolicy_two{}"
-  emailid_2: "accpolicy_two{}@seagate.com"
-  id_str: "ID={}"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           CanonicalUser: "{}"
         Action: "s3:ListBucket"
-        Resource: "arn:aws:s3:::bktpolicy-test5123"
+        Resource: "arn:aws:s3:::{}"
 test_5126:
-  bucket_name: "bktpolicy-test5126"
-  obj_count: 2
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  account_name_2: "accpolicy_two{}"
-  emailid_2: "accpolicy_two{}@seagate.com"
-  id_str: "ID={}"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           CanonicalUser: "{}"
         Action: "s3:PutBucketAcl"
-        Resource: "arn:aws:s3:::bktpolicy-test5126"
+        Resource: "arn:aws:s3:::{}"
 test_5124:
-  bucket_name: "bktpolicy-test5124"
-  acl: "FULL_CONTROL"
-  obj_count: 2
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  account_name_2: "accpolicy_two{}"
-  emailid_2: "accpolicy_two{}@seagate.com"
-  id_str: "ID={}"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           CanonicalUser: "{}"
         Action: "s3:PutObject"
-        Resource: "arn:aws:s3:::bktpolicy-test5124/*"
+        Resource: "arn:aws:s3:::{}/*"
 test_5125:
-  bucket_name: "bktpolicy-test5125"
-  obj_count: 2
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  account_name_2: "accpolicy_two{}"
-  emailid_2: "accpolicy_two{}@seagate.com"
-  id_str: "ID={}"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           CanonicalUser: "{}"
         Action: "s3:GetBucketAcl"
-        Resource: "arn:aws:s3:::bktpolicy-test5125"
+        Resource: "arn:aws:s3:::{}"
 
 test_5137:
-  bucket_name: "bktpolicy-test5137"
-  obj_name_download: "test1_d{}.txt"
-  obj_count: 2
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  account_name_2: "accpolicy_two{}"
-  emailid_2: "accpolicy_two{}@seagate.com"
-  id_str: "ID={}"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           CanonicalUser: "{}"
         Action: "s3:GetObjectAcl"
-        Resource: "arn:aws:s3:::bktpolicy-test5137/{}"
+        Resource: "arn:aws:s3:::{}/{}"
 
 test_6967:
-  bucket_name: "bktpolicy-6967"
-  obj_count: 2
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           AWS: "{}"
         Action: "s3:ListBucket"
-        Resource: "arn:aws:s3:::bktpolicy-6967"
+        Resource: "arn:aws:s3:::{}"
 
 test_6969:
-  bucket_name: "bktpolicy-6969"
-  obj_count: 2
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           AWS: "{}"
         Action: "s3:PutBucketAcl"
-        Resource: "arn:aws:s3:::bktpolicy-6969"
+        Resource: "arn:aws:s3:::{}"
 
 test_6991:
-  bucket_name: "bktpolicy-6991"
-  obj_count: 2
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  error_message: "validation failed"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           AWS: "{}"
         Action: "s3:PutBucketPolicy"
-        Resource: "arn:aws:s3:::bktpolicy-6991"
+        Resource: "arn:aws:s3:::{}"
 
 test_6992:
-  bucket_name: "bktpolicy-6992"
-  obj_count: 2
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  error_message: "MethodNotAllowed"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           AWS: "{}"
         Action: "s3:GetBucketPolicy"
-        Resource: "arn:aws:s3:::bktpolicy-6992"
+        Resource: "arn:aws:s3:::{}"
 
 test_6999:
-  bucket_name: "bktpolicy-6999"
-  obj_count: 2
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  obj_name_download: "test1_d.txt"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           AWS: "{}"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy-6999/{}"
+        Resource: "arn:aws:s3:::{}/{}"
 
 test_7000:
-  bucket_name: "bktpolicy-7000"
-  obj_count: 2
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  obj_name_download: "test1_d.txt"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           AWS: "{}"
         Action: "s3:GetObjectAcl"
-        Resource: "arn:aws:s3:::bktpolicy-7000/{}"
+        Resource: "arn:aws:s3:::{}/{}"
 
 test_6968:
-  bucket_name: "bktpolicy-6968"
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           AWS: "{}"
         Action: "s3:ListBucketMultipartUploads"
-        Resource: "arn:aws:s3:::bktpolicy-6968"
+        Resource: "arn:aws:s3:::{}"
 
 test_6978:
-  bucket_name: "bktpolicy-6978"
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  key: "organization"
-  value: "marketing"
-  key1_validate: "organization0"
-  key2_validate: "marketing0"
-  tagset: "TagSet"
-  key_val: "Key"
-  value_val: "Value"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           AWS: "{}"
         Action: "s3:GetBucketTagging"
-        Resource: "arn:aws:s3:::bktpolicy-6978"
+        Resource: "arn:aws:s3:::{}"
 
 test_6987:
-  bucket_name: "bktpolicy-6987"
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  loc: "LocationConstraint"
-  exp_loc: "us-west-2"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           AWS: "{}"
         Action: "s3:GetBucketLocation"
-        Resource: "arn:aws:s3:::bktpolicy-6987"
+        Resource: "arn:aws:s3:::{}"
 
 test_6988:
-  bucket_name: "bktpolicy-6988"
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  key: "organization"
-  value: "marketing"
-  key1_validate: "organization0"
-  key2_validate: "marketing0"
-  tagset: "TagSet"
-  key_val: "Key"
-  value_val: "Value"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           AWS: "{}"
         Action: "s3:PutBucketTagging"
-        Resource: "arn:aws:s3:::bktpolicy-6988"
+        Resource: "arn:aws:s3:::{}"
 
 test_6990:
-  bucket_name: "bktpolicy-6990"
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  key: "organization"
-  value: "marketing"
-  key1_validate: "organization0"
-  key2_validate: "marketing0"
-  tagset: "TagSet"
-  key_val: "Key"
-  value_val: "Value"
-  error_message: "MethodNotAllowed"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           AWS: "{}"
         Action: "s3:DeleteBucketPolicy"
-        Resource: "arn:aws:s3:::bktpolicy-6990"
+        Resource: "arn:aws:s3:::{}"
 
 test_6997:
-  bucket_name: "bktpolicy-6997"
-  obj_count: 2
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
-  error_message: "validation failed"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           AWS: "{}"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicy-6997/{}"
+        Resource: "arn:aws:s3:::{}/{}"
 
 test_1295:
-  bucket_name: "bktpolicy1295"
-  s3_obj_count: 2
-  err_message: "AccessDenied"
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -3879,16 +2823,13 @@ test_1295:
         Action:
           - "s3:ListBucket"
         Effect: "Deny"
-        Resource: "arn:aws:s3:::bktpolicy1295"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           StringNotEquals:
             s3:prefix: "{}"
         Principal: "*"
 
 test_1297:
-  bucket_name: "bktpolicy1297"
-  s3_obj_count: 2
-  err_message: "AccessDenied"
   bucket_policy:
     Id: "{}"
     Version: "2012-10-17"
@@ -3897,30 +2838,23 @@ test_1297:
         Action:
           - "s3:ListBucket"
         Effect: "Deny"
-        Resource: "arn:aws:s3:::bktpolicy1297"
+        Resource: "arn:aws:s3:::{}"
         Condition:
           StringEquals:
             s3:prefix: "{}"
         Principal: "*"
 
 test_4598:
-  bucket_name: "bktpolicy4598"
-  obj_name: "policyobj4598"
-  account_name: "accpolicy4598"
-  s3_obj_count: 2
-  err_message: "Invalid principal in policy"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           AWS: "arn:aws:iam::{}:user/root"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicy4598/*"
+        Resource: "arn:aws:s3:::{}/*"
 
 
 test_7001:
-  bucket_name: "bktpolicy-7001{0}"
-  obj_count: 2
   bucket_policy:
     Statement:
       - Effect: "Allow"
@@ -3931,8 +2865,6 @@ test_7001:
         Resource: "arn:aws:s3:::{0}/{1}"
 
 test_7002:
-  bucket_name: "bktpolicy-7002{0}"
-  obj_count: 2
   bucket_policy:
     Statement:
       - Effect: "Allow"
@@ -3941,11 +2873,8 @@ test_7002:
         Action:
           - "s3:PutObjectAcl"
         Resource: "arn:aws:s3:::{0}/{1}"
-  id_str: "id={0}"
 
 test_7009:
-  bucket_name: "bktpolicy-7009{0}"
-  obj_count: 2
   bucket_policy:
     Statement:
       - Effect: "Allow"
@@ -3954,14 +2883,8 @@ test_7009:
         Action:
           - "s3:PutObjectTagging"
         Resource: "arn:aws:s3:::{0}/{1}"
-  key: "testkey"
-  value: "valuekey"
 
 test_7014:
-  bucket_name: "bktpolicy-7014{0}"
-  obj_count: 2
-  key: "testkey"
-  value: "valuekey"
   bucket_policy:
     Statement:
       - Effect: "Allow"
@@ -3972,10 +2895,6 @@ test_7014:
         Resource: "arn:aws:s3:::{0}/{1}"
 
 test_7015:
-  bucket_name: "bktpolicy-7015{0}"
-  file_size: 10
-  total_parts: 1
-  object_name: "testobj_7015"
   bucket_policy:
     Statement:
       - Effect: "Allow"
@@ -3986,8 +2905,6 @@ test_7015:
         Resource: "arn:aws:s3:::{0}/{1}"
 
 test_7016:
-  bucket_name: "bktpolicy-7016{0}"
-  object_name: "testobj_7016"
   bucket_policy:
     Statement:
       - Effect: "Allow"
@@ -3998,8 +2915,6 @@ test_7016:
         Resource: "arn:aws:s3:::{0}/{1}"
 
 test_7849:
-  bucket_name: "bktpolicy-7849{0}"
-  obj_count: 2
   bucket_policy_1:
     Statement:
       - Effect: "Allow"
@@ -4016,11 +2931,8 @@ test_7849:
         Action:
           - "s3:ListBucket"
         Resource: "arn:aws:s3:::{0}"
-  error_message: "Policy has invalid action"
 
 test_7850:
-  bucket_name: "bktpolicy-7850{0}"
-  obj_count: 2
   bucket_policy_1:
     Statement:
       - Effect: "Allow"
@@ -4037,10 +2949,8 @@ test_7850:
         Action:
           - "s3:GetObject"
         Resource: "arn:aws:s3:::{0}/{1}"
-  error_message: "Policy has invalid action"
 
 test_7851:
-  bucket_name: "bktpolicy-7851{0}"
   bucket_policy_1:
     Statement:
       - Effect: "Allow"
@@ -4057,13 +2967,8 @@ test_7851:
         Action:
           - "s3:PutBucketTagging"
         Resource: "arn:aws:s3:::{0}"
-  key: "testkey"
-  value: "valuekey"
-  error_message: "Policy has invalid action"
 
 test_7852:
-  bucket_name: "bktpolicy-7852{0}"
-  obj_count: 2
   bucket_policy:
     Statement:
       - Effect: "Allow"
@@ -4072,31 +2977,21 @@ test_7852:
         Action:
           - "s3:DeleteObjectTagging"
         Resource: "arn:aws:s3:::{0}/{1}"
-  key: "testkey"
-  value: "valuekey"
 
 test_6966:
-  bucket_name: "bktpolicy-6966"
-  obj_count: 2
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           AWS: "{}"
         Action: "s3:DeleteBucket"
-        Resource: "arn:aws:s3:::bktpolicy-6966"
+        Resource: "arn:aws:s3:::{}"
 
 test_6923:
-  bucket_name: "bktpolicy-6923"
-  obj_count: 2
-  account_name_1: "accpolicy_one{}"
-  emailid_1: "accpolicy_one{}@seagate.com"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal:
           AWS: "{}"
         Action: "s3:GetBucketAcl"
-        Resource: "arn:aws:s3:::bktpolicy-6923"
+        Resource: "arn:aws:s3:::{}"

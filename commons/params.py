@@ -29,14 +29,18 @@ USER_JSON = '_usersdata'
 CONFIG_DIR = 'config'
 LOG_DIR_NAME = 'log'
 LATEST_LOG_FOLDER = 'latest'
+TEST_DATA_FOLDER = 'TestData'
 
 COMMON_CONFIG = os.path.join(CONFIG_DIR, 'common_config.yaml')
 S3_CONFIG = os.path.join(CONFIG_DIR, 's3', 's3_config.yaml')
 S3_OBJ_TEST_CONFIG = os.path.join(CONFIG_DIR, 's3', 's3_object_test.yaml')
+S3_BKT_TEST_CONFIG = os.path.join(CONFIG_DIR, "s3", "s3_bucket_test.yaml")
 RAS_CONFIG_PATH = "config/ras_config.yaml"
 SSPL_TEST_CONFIG_PATH = "config/ras_test.yaml"
 PROV_TEST_CONFIG_PATH = "config/prov_test.yaml"
 COMMON_DESTRUCTIVE_CONFIG_PATH = "config/common_destructive.yaml"
+
+TEST_DATA_PATH = os.path.join(os.getcwd(), TEST_DATA_FOLDER)
 
 JIRA_TEST_LIST = 'test_lists.csv'
 
@@ -63,7 +67,7 @@ CSM_DIR = os.path.join(CONFIG_DIR, 'csm')
 CSM_CONFIG = os.path.join(CSM_DIR, 'csm_config.yaml')
 SETUPS_FPATH = os.path.join(LOG_DIR_NAME, "setups.json")
 
-NFS_SERVER_DIR = "cftic2.pun.seagate.com:/cftshare"
+NFS_SERVER_DIR = "cftic2.pun.seagate.com:/cftshare_temp"
 NFS_BASE_DIR = "automation"
 MOUNT_DIR = os.path.join("/root", "nfs_share")
 DB_HOSTNAME = """cftic1.pun.seagate.com:27017,
@@ -78,4 +82,4 @@ LOCAL_LOG_PATH = "/root/pytest_logs"
 JENKINS_URL = "http://eos-jenkins.mero.colo.seagate.com/job/QA/"
 
 REPORT_SRV = "http://cftic2.pun.seagate.com:5000/"
-
+SETUP_DEFAULTS = "tools/setup_update/setup_entry.json"
