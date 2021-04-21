@@ -40,8 +40,66 @@ def run_cmd(cmd):
     proc = subprocess.Popen(cmd, shell=True,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE)
-    result = str(proc.communicate())
+    result = proc.communicate()
     return result
+
+
+def check_log_file(file_path, error):
+    """
+    Function to find out error is reported in given file or not
+    :param str file_path: the file in which error is to be searched
+    :param str error: error sting to be searched for
+    :return: errorFound: True (if error is seen) else False
+    :rtype: Boolean
+    """
+    error_found = False
+    os.write(1, str.encode("Debug: Log File Path {}".format(file_path)))
+    with open(file_path, "r") as log_file:
+        for line in log_file:
+            if error in line:
+                error_found = True
+                os.write(1, str.encode(
+                    "checkLogFileError: Error Found in S3Bench Run : {}".format(line)))
+                return error_found
+
+    os.write(1, str.encode("No Error Found"))
+    return error_found
+
+
+def run_locust(
+        host: str, locust_file: str, users: int, hatch_rate: int = 1,
+        duration: str = "3m") -> tuple:
+    """
+    Function to run locust.
+    :param host: host FQDN
+    :param locust_file: path to the locust file
+    :param users: number of concurrent users
+    :param hatch_rate: rate at which number of user to be increase per sec
+    :param duration: total time for execution
+    :return: tupple resp with over all execution and log and html file path
+    """
+    upper_limit_cmd = "ulimit -n 100000"
+    log_file = "".join([LOCUST_CFG['default']['LOGFILE'],
+                        str(time.strftime("-%Y%m%d-%H%M%S")), ".log"])
+    html_file = "".join([LOCUST_CFG['default']['HTMLFILE'], str(
+        time.strftime("-%Y%m%d-%H%M%S")), ".html"])
+    locust_run_cmd = \
+        "locust --host={} -f {} --headless -u {} -r {} --run-time {} --html {} --logfile {}"
+    os.write(1, str.encode("Setting ulimit for locust\n"))
+    locust_run_cmd = locust_run_cmd.format(
+        host,
+        locust_file,
+        int(users),
+        hatch_rate,
+        duration,
+        html_file,
+        log_file)
+    cmd = "{}; {}\n".format(upper_limit_cmd, locust_run_cmd)
+    res = run_cmd(cmd)
+    os.write(1, str.encode("Locust run completed."))
+    res1 = {"log-file": log_file, "html-file": html_file}
+
+    return res, res1
 
 
 if __name__ == '__main__':
