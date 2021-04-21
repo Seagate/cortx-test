@@ -53,7 +53,7 @@ class TestCliCSMUser:
         cls.CSM_USER.open_connection()
         cls.CSM_ALERT = CortxCliAlerts()
         cls.IAM_USER = CortxCliIamUser()
-        cls.bkt_ops = CortxCliS3BucketOperations()
+        cls.bkt_ops = CortxCliS3BucketOperations(session_obj=cls.CSM_USER.session_obj)
         cls.S3_ACC = CortxCliS3AccountOperations(
             session_obj=cls.CSM_USER.session_obj)
         cls.GENERATE_ALERT_OBJ = GenerateAlertLib()
@@ -514,7 +514,7 @@ class TestCliCSMUser:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
-    @pytest.mark.tags("TEST-10830")
+    @pytest.mark.tags("TEST-10831")
     def test_1261(self):
         """
         Initiating the test case to verify delete CSM User
@@ -599,7 +599,7 @@ class TestCliCSMUser:
         self.logger.info("Verifying delete admin/root User")
         resp = self.CSM_USER.delete_csm_user(user_name="admin")
         assert_utils.assert_equals(resp[0], False, resp)
-        assert_utils.assert_exact_string(resp[1], "Can't delete super user")
+        assert_utils.assert_exact_string(resp[1], "Cannot delete admin user")
         self.logger.info(
             "Verifying delete admin/root User is failed with error %s",
             resp[1])
@@ -1637,7 +1637,7 @@ class TestCliCSMUser:
         self.logger.debug(resp[1])
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(
-            resp[1], "Non super user cannot change other user")
+            resp[1], "Non admin user cannot change other user")
         self.CSM_USER.logout_cortx_cli()
         self.logger.info(
             "Verified manage user can not change roles for other user")
@@ -1653,7 +1653,7 @@ class TestCliCSMUser:
         self.logger.debug(resp[1])
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(
-            resp[1], "Non super user cannot change other user")
+            resp[1], "Non admin user cannot change other user")
         self.logger.info(
             "Verified monitor user can not change roles for other user")
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
@@ -1907,4 +1907,59 @@ class TestCliCSMUser:
         self.CSM_USER.login_cortx_cli()
         self.logger.info(
             "Resetting password of admin by csm user is failed with error")
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-16211")
+    def test_7425(self):
+        """
+        Test that no user should not able to change roles for root user through CSM-CLI
+        """
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        user_name_list = []
+        user_name2 = "auto_csm_user{0}".format(
+            random.randint(0, 10))
+        user_name_list.append(self.user_name)
+        user_name_list.append(user_name2)
+        self.logger.info("Creating csm users with manage and monitor role")
+        for each in zip(user_name_list, ["manage", "monitor"]):
+            resp = self.CSM_USER.create_csm_user_cli(
+                csm_user_name=each[0],
+                email_id=self.email_id,
+                password=self.csm_user_pwd,
+                confirm_password=self.csm_user_pwd,
+                role=each[1])
+            assert_utils.assert_equals(resp[0], True, resp[1])
+            assert_utils.assert_exact_string(resp[1], "User created")
+        self.logger.info("Created csm users with manage and monitor role")
+        self.logger.info(
+            "Verifying admin user should not able to change roles for root user")
+        resp = self.CSM_USER.update_role(
+            user_name=CMN_CFG["csm"]["csm_admin_user"]["username"],
+            role="manage",
+            current_password=CMN_CFG["csm"]["csm_admin_user"]["password"])
+        self.logger.debug(resp)
+        assert_utils.assert_false(resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], "Cannot change roles for admin user")
+        self.logger.info(
+            "Verified admin user should not able to change roles for root user")
+        self.logger.info(
+            "Verifying csm user is not able to change roles for root user")
+        self.CSM_USER.logout_cortx_cli()
+        for each_user in zip(user_name_list, ["monitor", "manage"]):
+            resp = self.CSM_USER.login_cortx_cli(
+                username=each_user[0], password=self.csm_user_pwd)
+            assert_utils.assert_equals(resp[0], True, resp[1])
+            resp = self.CSM_USER.update_role(
+                user_name=CMN_CFG["csm"]["csm_admin_user"]["username"],
+                role=each_user[1],
+                current_password=CMN_CFG["csm"]["csm_admin_user"]["password"])
+            self.logger.debug(resp)
+            assert_utils.assert_false(resp[0], resp[1])
+            assert_utils.assert_exact_string(resp[1], "Non admin user cannot change other user")
+            self.CSM_USER.logout_cortx_cli()
+        self.CSM_USER.login_cortx_cli()
+        self.logger.info(
+            "Verified csm user is not able to change roles for root user")
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
