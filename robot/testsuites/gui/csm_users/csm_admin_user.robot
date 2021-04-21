@@ -1,10 +1,11 @@
 *** Settings ***
 Documentation    This suite verifies the testcases for csm user creation
+Resource   ${EXECDIR}/resources/page_objects/alertPage.robot
 Resource   ${EXECDIR}/resources/page_objects/loginPage.robot
+Resource   ${EXECDIR}/resources/page_objects/preboardingPage.robot
 Resource   ${EXECDIR}/resources/page_objects/s3accountPage.robot
 Resource   ${EXECDIR}/resources/page_objects/settingsPage.robot
 Resource   ${EXECDIR}/resources/page_objects/userSettingsLocalPage.robot
-Resource   ${EXECDIR}/resources/page_objects/preboardingPage.robot
 
 Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
 ...  ${username}  ${password}
@@ -32,7 +33,7 @@ SSL certificate expiration alert Verification
     [Documentation]  This keyword is used to test SSL related alerts for  diffrent expiry days
     [Arguments]  ${days}
     Navigate To Page  SETTINGS_ID  SETTINGS_SSL_BUTTON_ID
-    Sleep  20s
+    wait for page or element to load  20s
     ${installation_status_init} =  Format String  not_installed
     ${installation_status_success} =  Format String  installation_successful
     ${file_path}=  SSL Gennerate and Upload  ${days}  ${Download_File_Path}
@@ -40,14 +41,15 @@ SSL certificate expiration alert Verification
     Verify SSL status  ${installation_status_init}  ${file_name}
     # # These following lines should be executed in case you have the proper machine
     # Install uploaded SSL
-    # Sleep  5 minutes  #will re-start all service
+    # wait for page or element to load  5 minutes  #will re-start all service
     # Close Browser
     # CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
-    # Sleep  20s  # Took time to load dashboard after install
+    # wait for page or element to load  20s  # Took time to load dashboard after install
     # Reload Page
-    # Sleep  10s  # Took time to load dashboard after install
+    # wait for page or element to load  10s  # Took time to load dashboard after install
     # Verify SSL status  ${installation_status_success}  ${file_name}
-    ## TODO : find the alert and verifiy
+    # # Find the alert and verifiy
+    # Verify Presence SSL certificate expires alert  ${days}
 
 *** Test Cases ***
 
@@ -55,7 +57,6 @@ TEST-5326
     [Documentation]  Test that "Add new user" should open a form to create new user on the User Settings
     ...  Reference : https://jts.seagate.com/browse/TEST-5326
     [Tags]  Priority_High
-    Sleep  1s
     Navigate To Page  ${page name}
     Click on add user button
     Log To Console And Report  Verifying the Form To Create CSM Users
@@ -293,7 +294,7 @@ TEST-5389
     ...  Reference : https://jts.seagate.com/browse/TEST-5389
     [Tags]  Priority_High  user_role  TEST-5389
     Navigate To Page  SETTINGS_ID
-    Sleep  5s
+    wait for page or element to load  5s
     Verify Setting menu item
     Verify Setting menu navigating
 
@@ -302,14 +303,14 @@ TEST-18326
     ...  Reference : https://jts.seagate.com/browse/TEST-18326
     [Tags]  Priority_High  TEST-18326  S3_test  Smoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    sleep  2s
+    wait for page or element to load  2s
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
-    sleep  5s
+    wait for page or element to load  5s
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
     CSM GUI Logout
     Enter Username And Password  ${S3_account_name}  ${S3_password}
     Click Sigin Button
-    sleep  2s
+    wait for page or element to load  2s
     Validate CSM Login Success  ${s3_account_name}
     CSM GUI Logout
     wait for page or element to load  2s
@@ -327,7 +328,7 @@ TEST-4871
     [Tags]  Priority_High  CFT_Test  TEST-4871
     ${installation_status_init} =  Format String  not_installed
     Navigate To Page  SETTINGS_ID  SETTINGS_SSL_BUTTON_ID
-    Sleep  3s
+    wait for page or element to load  3s
     SSL Upload  ${Download_File_Path}  ${server_file_name}
     Verify SSL status  ${installation_status_init}  ${server_file_name}
 
@@ -338,23 +339,24 @@ TEST-9045
     ${installation_status_init} =  Format String  not_installed
     ${installation_status_success} =  Format String  installation_successful
     Navigate To Page  SETTINGS_ID  SETTINGS_SSL_BUTTON_ID
-    Sleep  3s
+    wait for page or element to load  3s
     SSL Upload  ${Download_File_Path}  ${server_file_name}
     Verify SSL status  ${installation_status_init}  ${server_file_name} 
     # # These following lines should be executed in case you have the proper machine
     # Install uploaded SSL
-    # Sleep  5 minutes  #will re-start all service
+    # wait for page or element to load  5 minutes  #will re-start all service
     # Close Browser
     # CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
-    # Sleep  20s  # Took time to load dashboard after install
+    # wait for page or element to load  20s  # Took time to load dashboard after install
     # Reload Page
-    # Sleep  10s  # Took time to load dashboard after install
+    # wait for page or element to load  10s  # Took time to load dashboard after install
     # Verify SSL status  ${installation_status_success}  ${server_file_name}
 
 TEST-11152
     [Documentation]  Test that IEM alerts should be generated for number of days mentioned in /etc/csm/csm.conf prior to SSL certificate expiration
-    ...  Reference : https://jts.seagate.com/browse/TEST-9045
+    ...  Reference : https://jts.seagate.com/browse/TEST-11152
     [Tags]  Priority_High  CFT_Test  TEST-11152
-    SSL certificate expiration alert Verification  30
-    SSL certificate expiration alert Verification  5
+    SSL certificate expiration alert Verification  0
     SSL certificate expiration alert Verification  1
+    SSL certificate expiration alert Verification  5
+    SSL certificate expiration alert Verification  30
