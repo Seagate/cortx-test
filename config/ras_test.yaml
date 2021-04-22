@@ -230,5 +230,4 @@ test_5343:
   alert_insertion: "insertion"
   alert_fault_resolved: "fault_resolved"
 
-test_19963:
 

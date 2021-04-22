@@ -978,12 +978,12 @@ def systemctl_cmd(
             "command parameter must be one of %r." % valid_commands)
     out = []
     for service in services:
-        print("Performing %s on service %s...", command, service)
+        LOGGER.info("Performing %s on service %s...", command, service)
         cmd = commands.SYSTEM_CTL_CMD.format(command, service)
         status, result = run_remote_cmd(cmd=cmd, hostname=hostname,
                                         username=username,
                                         password=password, read_lines=True)
-        print("Status: %s", status)
+        LOGGER.info("Status: %s", status)
         out.append(result)
         resp = list(chain.from_iterable(out))
 
