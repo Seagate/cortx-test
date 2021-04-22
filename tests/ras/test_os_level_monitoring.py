@@ -50,7 +50,6 @@ class TestOSLevelMonitoring:
         cls.uname = CMN_CFG["nodes"][0]["username"]
         cls.passwd = CMN_CFG["nodes"][0]["password"]
         cls.sspl_stop = cls.changed_level = cls.selinux_enabled = False
-        # cls.default_cpu_usage = cls.default_mem_usage = True
 
         cls.ras_test_obj = RASTestLib(host=cls.host, username=cls.uname,
                                       password=cls.passwd)
