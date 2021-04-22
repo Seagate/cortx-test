@@ -37,8 +37,11 @@ from config import CMN_CFG
 from config import S3_CFG
 from libs.s3 import S3H_OBJ
 from libs.s3 import s3_test_lib
+from libs.s3 import iam_test_lib
 from scripts.s3_bench import s3bench
+from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
 
+IAM_OBJ = iam_test_lib.IamTestLib()
 S3_OBJ = s3_test_lib.S3TestLib()
 
 
@@ -85,6 +88,7 @@ class TestCopyObjects:
         """
         self.log.info("STARTED: test setup method.")
         self.account_name = "acc-copyobject-{}".format(perf_counter_ns())
+        self.email_id = "{}@seagate.com".format(self.account_name)
         self.io_bucket_name = "iobkt-copyobject-{}".format(perf_counter_ns())
         self.bucket_name = "bkt-copyobject-{}".format(perf_counter_ns())
         self.bucket_name2 = "bkt2-copyobject-{}".format(perf_counter_ns())
@@ -294,11 +298,11 @@ class TestCopyObjects:
         self.log.info(resp)
         if self.parallel_ios.is_alive():
             self.parallel_ios.join()
-        self.log.info(
-            "Steps 7: Check cluster status, all services are running")
-        self.check_cluster_health()
-        self.log.info("Steps 8: Validate S3 parallel IO executions.")
+        self.log.info("Steps 7: Validate S3 parallel IO executions.")
         self.validate_paralle_execution(log_prifix="test_19841_ios")
+        self.log.info(
+            "Steps 8: Check cluster status, all services are running")
+        self.check_cluster_health()
         self.log.info(
             "ENDED: Copy object to same bucket with different object name while S3 IOs"
             " are in progress.")
@@ -344,11 +348,186 @@ class TestCopyObjects:
         self.log.info(resp)
         if self.parallel_ios.is_alive():
             self.parallel_ios.join()
-        self.log.info(
-            "Steps 7: Check cluster status, all services are running")
-        self.check_cluster_health()
-        self.log.info("Steps 8: Validate S3 parallel IO executions.")
+        self.log.info("Steps 7: Validate S3 parallel IO executions.")
         self.validate_paralle_execution(log_prifix="test_19842_ios")
+        self.log.info(
+            "Steps 8: Check cluster status, all services are running")
+        self.check_cluster_health()
         self.log.info(
             "ENDED: Copy object to same bucket with different object name while S3 IOs"
             " are in progress.")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-19843")
+    @CTFailOn(error_handler)
+    def test_19843(self):
+        """Copy object to cross account buckets while S3 IOs are in progress."""
+        self.log.info(
+            "STARTED: Copy object to cross account buckets while S3 IOs are in progress.")
+        self.log.info("Step 1: Check cluster status, all services are running")
+        self.check_cluster_health()
+        self.log.info("Step 2: start s3 IO's")
+        self.parallel_ios = Process(
+            target=self.s3_ios, args=(
+                self.io_bucket_name, "test_19843_ios"))
+        if not self.parallel_ios.is_alive():
+            self.parallel_ios.start()
+        self.log.info("Parallel IOs started: %s", self.parallel_ios.is_alive())
+        self.log.info(
+            "Step 3: Create a bucket in Account1 and upload object in it.")
+        status, PutETag = self.create_bucket_put_object(
+            S3_OBJ, self.bucket_name, self.object_name, self.file_path)
+        self.log.info(
+            "Step 4: From Account2 create a bucket. Referred as bucket2.")
+        status, response = IAM_OBJ.create_s3iamcli_acc(
+            self.account_name, self.email_id)
+        assert_utils.assert_true(status, response)
+        self.log.info(response)
+        canonical_id, s3_obj, s3_acl_obj, access_key, secret_key = response
+        resp = s3_obj.create_bucket(self.bucket_name2)
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = s3_obj.bucket_list()
+        assert_utils.assert_in(
+            self.bucket_name2,
+            resp[1],
+            f"Failed to create bucket: {self.bucket_name2}")
+        self.log.info(
+            "Step 5: From Account2 on bucket2 grant Write ACL to Account1 and full control to account2.")
+        resp = s3_acl_obj.put_bucket_acl(
+            bucket_name=self.bucket_name2,
+            grant_full_control="id={}".format(canonical_id))
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = s3_acl_obj.put_bucket_acl(
+            bucket_name=self.bucket_name2,
+            grant_write="id={}".format(canonical_id))
+        self.log.info(
+            "Step 6: From Account2 check the applied ACL in above step.")
+        resp = s3_acl_obj.get_bucket_acl(self.bucket_name2)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info(
+            "Steps 7: From Account1 copy object from bucket1 to bucket2 .")
+        status, CopyETag = self.copy_object_to_bucket(
+            s3_obj, self.bucket_name, self.object_name, self.bucket_name2, self.object_name2)
+        self.log.info(
+            "Step 8:  compare the compare ETag of source and destination object.")
+        self.log.info("ETags: Put: %s, copy: %s", PutETag, CopyETag)
+        assert_utils.assert_equal(
+            PutETag,
+            CopyETag,
+            f"Failed to match ETag: {PutETag}, {CopyETag}")
+        self.log.info("Matched ETag: %s, %s", PutETag, CopyETag)
+        self.log.info("Steps 9: Stop S3 IOs")
+        resp = S3_OBJ.object_list(self.io_bucket_name)
+        self.log.info(resp)
+        if self.parallel_ios.is_alive():
+            self.parallel_ios.join()
+        self.log.info("Step 10: Cleanup accounts.")
+        s3_obj.delete_bucket(self.bucket_name2)
+        IAM_OBJ.delete_account_s3iamcli(self.account_name, access_key, secret_key)
+        self.log.info("Steps 11: Validate S3 parallel IO executions.")
+        self.validate_paralle_execution(log_prifix="test_19843_ios")
+        self.log.info(
+            "Steps 12: Check cluster status, all services are running")
+        self.check_cluster_health()
+        self.log.info(
+            "ENDED: Copy object to cross account buckets while S3 IOs are in progress.")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-19844")
+    @CTFailOn(error_handler)
+    def test_19844(self):
+        """Copy object of object size equal to 5GB while S3 IOs are in progress."""
+        self.log.info(
+            "STARTED: Copy object of object size equal to 5GB while S3 IOs are in progress.")
+        self.log.info("Step 1: Check cluster status, all services are running")
+        self.check_cluster_health()
+        self.log.info("Step 2: start s3 IO's")
+        self.parallel_ios = Process(
+            target=self.s3_ios, args=(
+                self.io_bucket_name, "test_19844_ios"))
+        if not self.parallel_ios.is_alive():
+            self.parallel_ios.start()
+        self.log.info("Parallel IOs started: %s", self.parallel_ios.is_alive())
+        self.log.info(
+            "Step 3: Create and upload object of size equal to 5GiB to the bucket.")
+        status, PutETag = self.create_bucket_put_object(
+            S3_OBJ, self.bucket_name, self.object_name, self.file_path, count=10, size="500M")
+        self.log.info("Put object ETag: %s", PutETag)
+        self.log.info(
+            "Step 4: Copy object to different bucket with different object.")
+        resp = S3_OBJ.create_bucket(self.bucket_name2)
+        assert_utils.assert_true(resp[0], resp)
+        status, CopyETag = self.copy_object_to_bucket(
+            S3_OBJ, self.bucket_name, self.object_name, self.bucket_name2, self.object_name2)
+        self.log.info("Copy object ETag: %s", CopyETag)
+        self.log.info(
+            "Steps 5: compare the compare ETag of source and destination object.")
+        assert_utils.assert_equal(
+            PutETag,
+            CopyETag,
+            f"Failed to match ETag: {PutETag}, {CopyETag}")
+        self.log.info("Matched ETag: %s, %s", PutETag, CopyETag)
+        self.log.info("Steps 6: Stop S3 IOs")
+        resp = S3_OBJ.object_list(self.io_bucket_name)
+        self.log.info(resp)
+        if self.parallel_ios.is_alive():
+            self.parallel_ios.join()
+        self.log.info("Steps 7: Validate S3 parallel IO executions.")
+        self.validate_paralle_execution(log_prifix="test_19844_ios")
+        self.log.info(
+            "Steps 8: Check cluster status, all services are running")
+        self.check_cluster_health()
+        self.log.info(
+            "ENDED: Copy object of object size equal to 5GB while S3 IOs are in progress.")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-19846")
+    @CTFailOn(error_handler)
+    def test_19846(self):
+        """Copy object of object size greater than 5GB while S3 IOs are in progress."""
+        self.log.info(
+            "STARTED: Copy object of object size greater than 5GB while S3 IOs are in progress.")
+        self.log.info("Step 1: Check cluster status, all services are running")
+        self.check_cluster_health()
+        self.log.info("Step 2: start s3 IO's")
+        self.parallel_ios = Process(
+            target=self.s3_ios, args=(
+                self.io_bucket_name, "test_19846_ios"))
+        if not self.parallel_ios.is_alive():
+            self.parallel_ios.start()
+        self.log.info("Parallel IOs started: %s", self.parallel_ios.is_alive())
+        self.log.info(
+            "Step 3: Create and upload object of size greater than 5GB to the bucket..")
+        status, PutETag = self.create_bucket_put_object(
+            S3_OBJ, self.bucket_name, self.object_name, self.file_path, count=11, size="512M")
+        self.log.info("Put object ETag: %s", PutETag)
+        self.log.info(
+            "Step 4: create second bucket.")
+        resp = S3_OBJ.create_bucket(self.bucket_name2)
+        assert_utils.assert_true(resp[0], resp)
+        self.log.info(
+            "Steps 5: Copy object from bucket1 to bucket2 .Check for error message.")
+        try:
+            status, CopyETag = self.copy_object_to_bucket(
+                S3_OBJ, self.bucket_name, self.object_name, self.bucket_name2, self.object_name2)
+            self.log.info("Copy object ETag: %s", CopyETag)
+            assert_utils.assert_false(
+                status, "copied object greater than 5GB.")
+        except CTException as error:
+            self.log.info(error.message)
+            assert_utils.assert_equal(
+                "An error occurred (InvalidRequest) when calling the CopyObject operation:"
+                " The specified copy source is larger than the maximum allowable size for a"
+                " copy source: 5368709120", error.message, error)
+        self.log.info("Steps 6: Stop S3 IOs")
+        resp = S3_OBJ.object_list(self.io_bucket_name)
+        self.log.info(resp)
+        if self.parallel_ios.is_alive():
+            self.parallel_ios.join()
+        self.log.info("Steps 7: Validate S3 parallel IO executions.")
+        self.validate_paralle_execution(log_prifix="test_19846_ios")
+        self.log.info(
+            "Steps 8: Check cluster status, all services are running")
+        self.check_cluster_health()
+        self.log.info(
+            "ENDED: Copy object of object size greater than 5GB while S3 IOs are in progress.")
