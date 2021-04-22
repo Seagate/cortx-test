@@ -34,6 +34,7 @@ from commons import commands as common_cmd
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
 from commons.utils.system_utils import systemctl_cmd
+from commons.utils.assert_utils import *
 
 LOGGER = logging.getLogger(__name__)
 
@@ -81,7 +82,7 @@ class TestOSLevelMonitoring:
         if not res:
             LOGGER.info("SSPL not present updating same on server")
             response = self.ras_test_obj.check_status_file()
-            assert response[0], response[1]
+            assert_true(response[0], response[1])
         LOGGER.info("Done Checking SSPL state file")
 
         LOGGER.info("Delete keys with prefix SSPL_")
@@ -90,7 +91,7 @@ class TestOSLevelMonitoring:
 
         LOGGER.info("Restarting sspl service")
         resp = self.health_obj.restart_pcs_resource(self.cm_cfg["sspl_resource_id"])
-        assert resp, "Failed to restart sspl-ll"
+        assert_true(resp, "Failed to restart sspl-ll")
         time.sleep(self.cm_cfg["sspl_timeout"])
         LOGGER.info(
             "Verifying the status of sspl and kafka service is online")
@@ -100,7 +101,7 @@ class TestOSLevelMonitoring:
         resp = self.s3obj.get_s3server_service_status(
             service=services["sspl_service"], host=self.host, user=self.uname,
             pwd=self.passwd)
-        assert resp[0], resp[1]
+        assert_true(resp[0], resp[1])
         # resp = self.s3obj.get_s3server_service_status(
         #     service=services["kafka"], host=self.host, user=self.uname,
         #     pwd=self.passwd)
@@ -113,13 +114,13 @@ class TestOSLevelMonitoring:
             LOGGER.info("Running read_message_bus.py script on node")
             resp = self.ras_test_obj.start_message_bus_reader_cmd(
                 self.cm_cfg["sspl_exch"], self.cm_cfg["sspl_key"])
-            assert resp, "Failed to start message bus reader"
+            assert_true(resp, "Failed to start message bus reader")
             LOGGER.info(
                 "Successfully started read_message_bus.py script on node")
 
         LOGGER.info("Starting collection of sspl.log")
         res = self.ras_test_obj.sspl_log_collect()
-        assert res[0], res[1]
+        assert_true(res[0], res[1])
         LOGGER.info("Started collection of sspl logs")
 
         LOGGER.info("Check that all the 3rd party services are active")
@@ -132,7 +133,8 @@ class TestOSLevelMonitoring:
         if stat_list:
             for i in stat_list:
                 inactive_list.append(services[i])
-            assert False, f"{inactive_list} services are not in active state"
+            assert_false(False, f"{inactive_list} services are not in active "
+                                f"state")
         LOGGER.info("All 3rd party services are in active state.")
 
         self.timeouts = common_cfg["os_lvl_monitor_timeouts"]
@@ -149,7 +151,7 @@ class TestOSLevelMonitoring:
             LOGGER.info("Enable the SSPL master")
             resp = self.ras_test_obj.enable_disable_service(
                 "enable", self.cm_cfg["sspl_resource_id"])
-            assert resp, "Failed to enable sspl-master"
+            assert_true(resp, "Failed to enable sspl-master")
 
         LOGGER.info("Restoring values to default in consul")
 
@@ -160,7 +162,7 @@ class TestOSLevelMonitoring:
                 kv_store_path, common_cfg["sspl_log_level_key"],
                 common_cfg["sspl_log_dval"],
                 update=True)
-            assert res
+            assert_true(res)
 
         LOGGER.info("Terminating the process of reading sspl.log")
         self.ras_test_obj.kill_remote_process("/sspl/sspl.log")
@@ -200,7 +202,7 @@ class TestOSLevelMonitoring:
             LOGGER.info("Modifying selinux status from %s to %s on node %s",
                         old_value, new_value, self.host)
             resp = self.ras_test_obj.modify_selinux_file()
-            assert resp[0], "Failed to update selinux file"
+            assert_true(resp[0], "Failed to update selinux file")
             LOGGER.info(
                 "Modified selinux status to %s", new_value)
 
@@ -217,12 +219,13 @@ class TestOSLevelMonitoring:
     @pytest.mark.ras
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-19963")
-    def test_19963(self):
+    def test_multiple_services_monitoring_19963(self):
         """
         Multiple 3rd party services monitoring and management
         """
         LOGGER.info("Step 1: Start IOs")
-        # TODO
+        # TODO: Add command to start IOs in background.
+
         LOGGER.info("Step 2: Stopping multiple randomly selected services")
         num_services = random.randint(0, 5)
         random_services = random.sample(RAS_TEST_CFG["third_party_services"],
@@ -239,14 +242,14 @@ class TestOSLevelMonitoring:
         if stat_list:
             for i in stat_list:
                 active_list.append(random_services[i])
-            assert False, f"Failed to put {active_list} services in " \
-                          f"stopped/inactive state"
+            assert_false(False, f"Failed to put {active_list} services in "
+                                f"stopped/inactive state")
         LOGGER.info(f"Step 2: Successfully stopped {random_services}")
 
         time.sleep(self.timeouts["alert_timeout"])
         LOGGER.info("Step 3: Check if fault alert is generated for "
                     "%s services", random_services)
-        # TODO
+        # TODO: Check alert in message bus and using CSM cli/rest.
 
         LOGGER.info("Step 4: Starting %s", random_services)
         self.node_obj.send_systemctl_cmd("start", services=random_services)
@@ -259,16 +262,17 @@ class TestOSLevelMonitoring:
         if stat_list:
             for i in stat_list:
                 inactive_list.append(random_services[i])
-            assert False, f"Failed to put {inactive_list} services in " \
-                          f"active state"
+            assert_false(False, f"Failed to put {inactive_list} services in "
+                                f"active state")
         LOGGER.info("Step 4: Successfully started %s", random_services)
 
         time.sleep(self.timeouts["alert_timeout"])
         LOGGER.info("Step 5: Check if fault_resolved alert is generated for "
                     "%s services", random_services)
-        # TODO
+        # TODO: Check alert in message bus and using CSM cli/rest.
 
         LOGGER.info(f"Step 6: Check IO state")
-        # TODO
+        # TODO: Check IO state after performing operations on services
+
         LOGGER.info(f"Step 7: Stop IOs")
-        # TODO
+        # TODO: Stop background IOs.
