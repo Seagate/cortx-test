@@ -230,7 +230,7 @@ class TestCopyObjects:
         assert_utils.assert_in(object_name, resp[1],
                                f"failed to put object {object_name}")
 
-        return True, put_resp[1]["ETag"].strip('"')
+        return True, put_resp[1]["ETag"]
 
     def copy_object_to_bucket(
             self,
