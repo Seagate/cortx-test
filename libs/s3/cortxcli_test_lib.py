@@ -383,7 +383,7 @@ class CortxcliS3BucketOperations(CortxCliS3BucketOperations):
             self,
             bucket_name: str) -> tuple:
         """
-        Function will create a bucket using CORTX CLI.
+        Function will delete a bucket using CORTX CLI.
 
         :param bucket_name: New bucket's name
         :return: True/False and response returned by CORTX CLI
