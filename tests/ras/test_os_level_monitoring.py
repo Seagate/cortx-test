@@ -221,12 +221,13 @@ class TestSSPL:
         LOGGER.info("Successfully performed Teardown operation")
 
     @pytest.mark.ras
-    @pytest.mark.tags("TEST-15733")
+    @pytest.mark.tags("TEST-19609")
     @pytest.mark.sw_alert
     @pytest.mark.skip
     @CTFailOn(error_handler)
     def test_19609(self):
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
+        external_svcs = 
 
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
