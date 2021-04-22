@@ -181,3 +181,144 @@ class TestCliSupportBundle:
                     "xz") or resp[0].endswith("zip") or resp[0].endswith("tar")]))
         self.LOGGER.info(
             "Step 3: Verified os logs are generated for each component")
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.csm_cli
+    @CTFailOn(error_handler)
+    @pytest.mark.tags("TEST-20117")
+    def test_20117_generate_support_bundle_single_command(self):
+        """
+        Test that user can generate support bundle logs through single command
+        for all nodes and components.
+        """
+        self.LOGGER.info("Step 1: Generating support bundle through cli")
+        new_dict = {}
+        # single_command_trigger = True,node_list = None(i.e All nodes),
+        # component_list = None(i.e All comp)
+        resp = self.support_bundle_obj.r2_generate_support_bundle(comment="test_20117")
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        bundle_id = resp[1]["Single_Command"].split("|")[1].strip()
+        time.sleep(700)
+        self.LOGGER.info("Step 1: Generated support bundle through cli")
+
+        self.LOGGER.info("Step 2: Verifying status of support bundle")
+        resp = self.support_bundle_obj.support_bundle_status(
+            bundle_id=bundle_id, output_format="json")
+        self.LOGGER.debug(resp)
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        #self.node_list = [each[0]["host"] for each in CMN_CFG["nodes"]]
+        self.node_list = list(set([each["node_name"] for each in resp[1][
+            "status"] if constants.SUPPORT_BUNDLE_MSG in each["message"]]))
+        self.LOGGER.info("Step 2: Verified status of support bundle")
+
+        self.LOGGER.info(
+            "Step 3: Extracting logs generated on each node")
+        for each_node in self.node_list:
+            resp = self.support_bundle_obj.extract_support_bundle(
+                bundle_id, each_node, "/tmp/csm_support_bundle/", host=each_node)
+            assert_utils.assert_equals(True, resp[0], resp[1])
+            new_dict[each_node] = resp[1]
+        time.sleep(1000)
+        self.LOGGER.info("Step 3:Extracted logs generated on each node")
+
+        self.LOGGER.info("Step 4: Verifying logs are generated for each component")
+        comp_list = ["csm", "sspl", "s3", "motr", "hare", "provisioner",
+                     "health_map", "manifest", "uds", "elasticsearch", "alerts", "HA"]
+
+        for node in new_dict:
+            for comp in comp_list:
+                assert_utils.assert_not_in(comp, new_dict[node],
+                          f"{comp} Not found in {new_dict[node]} support bundle")
+        self.LOGGER.info("Step 4: Verified logs are generated for each component")
+
+        self.LOGGER.info("Step 5: Verifying zip files are generated for each component")
+        for each in new_dict:
+            for each_dir in new_dict[each]:
+                path = "{0}{1}/{2}/".format("/tmp/csm_support_bundle/",
+                                            bundle_id, each_dir)
+                obj = Node(hostname=each,
+                           username=CMN_CFG["csm"]["admin_user"],
+                           password=CMN_CFG["csm"]["admin_pass"])
+                resp = obj.list_dir(path)
+                self.LOGGER.info(resp)
+                assert_utils.assert_equals(True, any([resp[0].endswith("gz") or resp[0].endswith(
+                    "xz") or resp[0].endswith("zip") or resp[0].endswith("tar")]))
+        self.LOGGER.info(
+            "Step 5: Verified zip files are generated for each component")
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.csm_cli
+    @CTFailOn(error_handler)
+    @pytest.mark.tags("TEST-20118")
+    def test_20118_generate_support_bundle_validate_size(self):
+        """
+        Test that user generated support bundle is less than 1GB size.
+        """
+        self.LOGGER.info("Step 1: Generating support bundle through cli")
+        new_dict = {}
+        # single_command_trigger = True,node_list = None(i.e All nodes),
+        # component_list = None(i.e All comp)
+        resp = self.support_bundle_obj.r2_generate_support_bundle(comment="test_20118")
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        bundle_id = resp[1]["Single_Command"].split("|")[1].strip()
+        time.sleep(1200)
+        self.LOGGER.info("Step 1: Generated support bundle through cli")
+
+        self.LOGGER.info("Step 2: Verifying status of support bundle")
+        resp = self.support_bundle_obj.support_bundle_status(
+            bundle_id=bundle_id, output_format="json")
+        self.LOGGER.debug(resp)
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        self.node_list = list(set([each["node_name"] for each in resp[1][
+            "status"] if constants.SUPPORT_BUNDLE_MSG in each["message"]]))
+
+        self.LOGGER.info("Step 2: Verified status of support bundle")
+
+        self.LOGGER.info("Step 3: Verify if size of support bundle is less than 1GB")
+        for each_node in self.node_list:
+            resp = self.support_bundle_obj.validate_support_bundle_size(
+                bundle_id, each_node,host=each_node)
+            assert_utils.assert_equals(True, resp[0], resp[1])
+            size_support_bundle = resp[1]
+            #check if size doesnt exceed 1GB
+            #du -sh output ex : 512M, 2G etc
+            if "G" in size_support_bundle:
+                size_support_bundle.replace("G","")
+                if size_support_bundle != "1":
+                    self.LOGGER.error(f"Support bundle size exceeds for {each_node}, "
+                                      f"Expected: < 1G Actual: {size_support_bundle}G")
+
+        self.LOGGER.info("Step 3: Verified if size of support bundle is less than 1GB")
+
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.csm_cli
+    @CTFailOn(error_handler)
+    @pytest.mark.tags("TEST-20121")
+    def test_20121_generate_support_bundle_repeatedly(self):
+        """
+        Test that support bundle generation doesnt fail when triggered 10 times sequentially.
+        """
+        repeat_count = 10
+        for count in range(repeat_count):
+            self.LOGGER.info(f" ===== Iteration count : {count} =====")
+            self.LOGGER.info("Step 1: Generating support bundle through cli")
+            # single_command_trigger = True,node_list = None(i.e All nodes),
+            # component_list = None(i.e All comp)
+            str_comment = "test_20121_" + count
+            resp = self.support_bundle_obj.r2_generate_support_bundle(comment=str_comment)
+            assert_utils.assert_equals(True, resp[0], resp[1])
+            bundle_id = resp[1]["Single_Command"].split("|")[1].strip()
+            time.sleep(1200)
+            self.LOGGER.info("Step 1: Generated support bundle through cli")
+
+            self.LOGGER.info("Step 2: Verifying status of support bundle")
+            resp = self.support_bundle_obj.support_bundle_status(
+                bundle_id=bundle_id, output_format="json")
+            self.LOGGER.debug(resp)
+            assert_utils.assert_equals(True, resp[0], resp[1])
+            self.node_list = list(set([each["node_name"] for each in resp[1][
+                "status"] if constants.SUPPORT_BUNDLE_MSG in each["message"]]))
+            self.LOGGER.info("Step 2: Verified status of support bundle")
+
+        self.LOGGER.info(f"Verifies Generation of support bundle {repeat_count} times")

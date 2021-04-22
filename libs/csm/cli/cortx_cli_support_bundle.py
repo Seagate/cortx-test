@@ -48,6 +48,10 @@ class CortxCliSupportBundle(CortxCli):
         :param object session_obj: session object of host connection if already established
         """
         super().__init__(session_obj=session_obj)
+        cls.host = CMN_CFG["nodes"][0]["host"]
+        cls.uname = CMN_CFG["nodes"][0]["username"]
+        cls.passwd = CMN_CFG["nodes"][0]["password"]
+        cls.node_list = [each[0]["host"] for each in CMN_CFG["nodes"]]
 
     def generate_support_bundle(self, comment: str = None) -> Tuple[bool, str]:
         """
@@ -252,3 +256,106 @@ class CortxCliSupportBundle(CortxCli):
             output = status_list
 
         return True, output
+
+    def r2_generate_support_bundle(self, comment, single_command_trigger=True,
+                                   node_list=None, component_list=None,
+                                   ) -> Tuple[bool, dict]:
+        """
+        single_command_trigger :
+            True : Use single command to trigger support bundle for all nodes/components.
+            False: Trigger support bundle individually on each node.
+        node_list : List of nodes to trigger support bundle on,
+            if single_command_trigger : True ignore this parameter. #default : all
+        component_list : Trigger suppport bundle for provided list of Component #default : all
+        """
+        command = " ".join([CMD_GENERATE_SUPPORT_BUNDLE, comment])
+        # Form the command if component list is provided in parameters
+        if component_list is not None:
+            command = command + " -c"
+            command = [" ".join(command, each) for each in component_list]
+        else:
+            command = command + " -c all"
+
+        # Single Command through CortxCli
+        if single_command_trigger:
+            LOGGER.info("Generating support bundle using cortxcli command(All nodes,components)")
+            output = self.execute_cli_commands(cmd=command, time_out=900, sleep_time=9)[1]
+            if "error" in output.lower() or "exception" in output.lower() or \
+                    "failed" in output.lower() or \
+                    "Please Find the file on -> /tmp/support_bundle/" not in output:
+                output_overall["Single_Command"] = output
+                return False, output_overall
+        else:
+            return_status = True
+            output_per_node = {}
+            if node_list is None:
+                node_list = self.node_list
+
+            # Single Command to be triggered for each node
+            for each in node_list:
+                LOGGER.info(f"Generating support bundle on node {each} ")
+                # todo: confirm from CSM team,if its part of cortxcli or
+                #  individual command needs to be executed on each of the node
+                if 1:
+                    command = " ".join(
+                        [CMD_GENERATE_SUPPORT_BUNDLE, comment])
+                    output = self.execute_cli_commands(cmd=command, time_out=900, sleep_time=9)[1]
+                else:
+                    cmd = ""
+                    status, response = run_remote_cmd(cmd, self.host, self.uname, self.passwd,
+                                                      read_lines=True)
+
+                if "error" in output.lower() or "exception" in output.lower() or "failed" in output.lower():
+                    return_status = return_status and False
+                    output_per_node[each] = output
+                if "Please Find the file on -> /tmp/support_bundle/" not in output:
+                    return_status = return_status and False
+                    output_per_node[each] = output
+            return return_status, output_per_node
+
+    def validate_support_bundle_size(
+            self,
+            bundle_id: str = None,
+            node: str = None,
+            **kwargs) -> Tuple[bool, Union[list, tuple]]:
+        """
+        This function is used to extract support bundle files
+        :param bundle_id: Specify the id Support Bundle.
+        :param node: Name of node
+        :keyword host: host ip or domain name
+        :keyword user: host machine user name
+        :keyword pwd: host machine password
+        :return: (Boolean, response)
+        :rtype: Tuple
+        """
+        self.log.info("Extracting support bundle files")
+        host = kwargs.get("host", CMN_CFG["csm"]["mgmt_vip"])
+        user = kwargs.get("user", CMN_CFG["csm"]["admin_user"])
+        pwd = kwargs.get("pwd", CMN_CFG["csm"]["admin_pass"])
+        tar_file_name = "{0}{1}_{2}.{3}".format(
+            const.SUPPORT_BUNDLE_PATH,
+            bundle_id,
+            node,
+            const.TAR_POSTFIX)
+
+        # Check if file is exists on node
+        resp = S3H_OBJ.is_s3_server_path_exists(
+            tar_file_name,
+            host,
+            user,
+            pwd)
+        if not resp[0]:
+            return False, resp
+
+        command = "du -sh " + tar_file_name
+        status, response  = system_utils.run_remote_cmd(
+            cmd= command,
+            hostname=host,
+            username=user,
+            password=pwd)
+
+        if status:
+            return True, response.split()[0]
+        else:
+            LOGGER.error("Not able to retrieve the size of tar file")
+            return False,response
