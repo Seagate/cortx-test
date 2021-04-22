@@ -60,7 +60,6 @@ class TestCortxcli:
         cls.error = "InvalidAccessKeyId"
         cls.err_message = "EntityAlreadyExists"
         cls.account_name = "seagate_account"
-        cls.total_users = 100
         cls.test_file_path = "/root/testfile"
         cls.s3acc_obj = CortxCliS3AccountOperations()
         cls.s3acc_obj.open_connection()
@@ -466,7 +465,7 @@ class TestCortxcli:
         assert_true(resp[0], resp[1])
         assert_greater_equal(
             (len(users_list)),
-            self.total_users,
+            total_users,
             resp[1])
         self.log.info("Verified %s users are created", total_users)
         self.log.info("Step 3: Deleting %s users", total_users)
