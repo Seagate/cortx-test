@@ -82,6 +82,8 @@ class TestS3IOSystemLimits:
         cls.test_file = "testfile{}.txt"
 
     def setup_method(self):
+        """Create test data directory"""
+        self.log.info("STARTED: Test Setup")
         if not system_utils.path_exists(self.test_dir_path):
             resp = system_utils.make_dirs(self.test_dir_path)
             self.log.info("Created path: %s", resp)
@@ -90,7 +92,8 @@ class TestS3IOSystemLimits:
             self.test_file.format(str(int(time.time()))))
 
     def teardown_method(self):
-        self.log.info("STARTED: Teardown Operations")
+        """Delete test data file"""
+        self.log.info("STARTED: Test Teardown")
         if system_utils.path_exists(self.test_file_path):
             resp = system_utils.remove_file(self.test_file_path)
             assert_utils.assert_true(resp[0], resp[1])
@@ -100,6 +103,8 @@ class TestS3IOSystemLimits:
                 resp)
 
     def teardown_class(self):
+        """Delete test data directory"""
+        self.log.info("STARTED: Class Teardown")
         if system_utils.path_exists(self.test_dir_path):
             resp = system_utils.remove_dirs(self.test_dir_path)
             assert_utils.assert_true(resp, f"Unable to remove {self.test_dir_path}")
@@ -650,7 +655,7 @@ class TestS3IOSystemLimits:
                          metadata_limit,
                          random.SystemRandom().randint(metadata_limit+1, 4000)]
         for metadata in metadata_size:
-            object_name = "mp-obj-test20271" + str(metadata)
+            object_name = f"mp-obj-test20271{metadata}"
             m_key = system_utils.random_metadata_generator(10)
             m_value = system_utils.random_metadata_generator(metadata-10)
 
@@ -669,6 +674,7 @@ class TestS3IOSystemLimits:
                 else:
                     self.log.error(f"Unable to upload object even if "
                                    f"metadata size is {metadata} < {metadata_limit}")
+                    assert_utils.assert_true(False, res[1])
             else:
                 if metadata <= metadata_limit:
                     assert_utils.assert_true(res[0], res[1])
@@ -684,6 +690,7 @@ class TestS3IOSystemLimits:
                 else:
                     self.log.error(f"Could not see exception while uploading object with "
                                    f"metadata size of {metadata} > {metadata_limit}")
+                    assert_utils.assert_true(False, res[1])
 
         self.log.info(f"Deleting bucket {bucket_name}")
         res = S3_TEST_OBJ.delete_bucket(bucket_name, True)
