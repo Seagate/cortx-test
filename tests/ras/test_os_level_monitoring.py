@@ -28,24 +28,20 @@ import pytest
 from libs.ras.ras_test_lib import RASTestLib
 from commons.helpers.node_helper import Node
 from commons.helpers.health_helper import Health
-from commons.helpers.controller_helper import ControllerLib
 from libs.s3 import S3H_OBJ
-from commons.ct_fail_on import CTFailOn
-from commons.errorcodes import error_handler
 from commons import constants as cons
 from commons import commands as common_cmd
 from commons.utils.assert_utils import *
 from commons import cortxlogging
 
 from libs.csm.rest.csm_rest_alert import SystemAlerts
-from commons.alerts_simulator.generate_alert_lib import \
-     GenerateAlertLib, AlertType
 from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
+from commons.utils.system_utils import systemctl_cmd
 
 LOGGER = logging.getLogger(__name__)
 
 
-class TestSSPL:
+class TestOSLevelMonitoring:
     """SSPL Test Suite."""
 
     @classmethod
@@ -65,30 +61,17 @@ class TestSSPL:
                             password=cls.passwd)
         cls.health_obj = Health(hostname=cls.host, username=cls.uname,
                                 password=cls.passwd)
-        # cls.controller_obj = ControllerLib(
-        #     host=cls.host, h_user=cls.uname, h_pwd=cls.passwd,
-        #     enclosure_ip=CMN_CFG["enclosure"]["primary_enclosure_ip"],
-        #     enclosure_user=CMN_CFG["enclosure"]["enclosure_user"],
-        #     enclosure_pwd=CMN_CFG["enclosure"]["enclosure_pwd"])
 
-        # cls.alert_api_obj = GenerateAlertLib()
         cls.csm_alert_obj = SystemAlerts(cls.node_obj)
         # Enable this flag for starting RMQ channel
         cls.start_msg_bus = cls.cm_cfg["start_msg_bus"]
         cls.s3obj = S3H_OBJ
 
-        field_list = ("primary_controller_ip", "secondary_controller_ip",
-                      "primary_controller_port", "secondary_controller_port",
-                      "user", "password", "secret")
-        LOGGER.info("Putting expected values in KV store")
-        for field in field_list:
-            res = cls.ras_test_obj.put_kv_store(
-                CMN_CFG["enclosure"]["enclosure_user"],
-                CMN_CFG["enclosure"]["enclosure_pwd"], field)
-            assert res
-
     def setup_method(self):
         """Setup operations per test."""
+        services = RAS_TEST_CFG["third_party_services"]
+        common_cfg = RAS_VAL["ras_sspl_alert"]
+
         LOGGER.info("Running setup_method")
         self.starttime = time.time()
         LOGGER.info("Retaining the original/default config")
@@ -112,9 +95,9 @@ class TestSSPL:
         LOGGER.info("Restarting sspl service")
         resp = self.health_obj.restart_pcs_resource(self.cm_cfg["sspl_resource_id"])
         assert resp, "Failed to restart sspl-ll"
-        time.sleep(self.cm_cfg["after_service_restart_sleep_val"])
+        time.sleep(self.cm_cfg["sspl_timeout"])
         LOGGER.info(
-            "Verifying the status of sspl and rabittmq service is online")
+            "Verifying the status of sspl and kafka service is online")
 
         # Getting SSPl and Kafka service status
         services = self.cm_cfg["service"]
@@ -122,10 +105,10 @@ class TestSSPL:
             service=services["sspl_service"], host=self.host, user=self.uname,
             pwd=self.passwd)
         assert resp[0], resp[1]
-        resp = self.s3obj.get_s3server_service_status(
-            service=services["kafka"], host=self.host, user=self.uname,
-            pwd=self.passwd)
-        assert resp[0], resp[1]
+        # resp = self.s3obj.get_s3server_service_status(
+        #     service=services["kafka"], host=self.host, user=self.uname,
+        #     pwd=self.passwd)
+        # assert resp[0], resp[1]
 
         LOGGER.info(
             "Validated the status of sspl and kafka service are online")
@@ -134,7 +117,7 @@ class TestSSPL:
             LOGGER.info("Running read_message_bus.py script on node")
             resp = self.ras_test_obj.start_message_bus_reader_cmd(
                 self.cm_cfg["sspl_exch"], self.cm_cfg["sspl_key"])
-            assert resp, "Failed to start RMQ channel"
+            assert resp, "Failed to start message bus reader"
             LOGGER.info(
                 "Successfully started read_message_bus.py script on node")
 
@@ -142,6 +125,21 @@ class TestSSPL:
         res = self.ras_test_obj.sspl_log_collect()
         assert res[0], res[1]
         LOGGER.info("Started collection of sspl logs")
+
+        LOGGER.info("Check that all the 3rd party services are active")
+        resp = systemctl_cmd(command="is-active", services=services,
+                             hostname=self.host, username=self.uname,
+                             password=self.passwd)
+        stat_list = list(
+            filter(lambda j: resp[j] != "active", range(0, len(resp))))
+        inactive_list = []
+        if stat_list:
+            for i in stat_list:
+                inactive_list.append(services[i])
+            assert False, f"{inactive_list} services are not in active state"
+        LOGGER.info("All 3rd party services are in active state.")
+
+        self.timeouts = common_cfg["os_lvl_monitor_timeouts"]
 
         LOGGER.info("Successfully performed Setup operations")
 
@@ -221,13 +219,72 @@ class TestSSPL:
         LOGGER.info("Successfully performed Teardown operation")
 
     @pytest.mark.ras
+    @pytest.mark.sw_alert
+    @pytest.mark.tags("TEST-19963")
+    def test_19963(self):
+        """
+        Multiple 3rd party services monitoring and management
+        """
+        LOGGER.info("Step 1: Start IOs")
+        # TODO
+        LOGGER.info("Step 2: Stopping multiple randomly selected services")
+        num_services = random.randint(0, 5)
+        random_services = random.sample(RAS_TEST_CFG["third_party_services"],
+                                        num_services)
+
+        self.node_obj.send_systemctl_cmd("stop", services=random_services)
+        LOGGER.info("Checking that %s services are in stopped state",
+                    random_services)
+        resp = systemctl_cmd(command="is-active", services=random_services,
+                             hostname=self.host, username=self.uname,
+                             password=self.passwd)
+        stat_list = list(filter(lambda j: resp[j] == "active", range(0, len(resp))))
+        active_list = []
+        if stat_list:
+            for i in stat_list:
+                active_list.append(random_services[i])
+            assert False, f"Failed to put {active_list} services in " \
+                          f"stopped/inactive state"
+        LOGGER.info(f"Step 2: Successfully stopped {random_services}")
+
+        time.sleep(self.timeouts["alert_timeout"])
+        LOGGER.info("Step 3: Check if fault alert is generated for "
+                    "%s services", random_services)
+        # TODO
+
+        LOGGER.info("Step 4: Starting %s", random_services)
+        self.node_obj.send_systemctl_cmd("start", services=random_services)
+        LOGGER.info("Checking that %s services are in active state", random_services)
+        resp = systemctl_cmd(command="is-active", services=random_services,
+                             hostname=self.host, username=self.uname,
+                             password=self.passwd)
+        stat_list = list(filter(lambda j: resp[j] != "active", range(0, len(resp))))
+        inactive_list = []
+        if stat_list:
+            for i in stat_list:
+                inactive_list.append(random_services[i])
+            assert False, f"Failed to put {inactive_list} services in " \
+                          f"active state"
+        LOGGER.info("Step 4: Successfully started %s", random_services)
+
+        time.sleep(self.timeouts["alert_timeout"])
+        LOGGER.info("Step 5: Check if fault_resolved alert is generated for "
+                    "%s services", random_services)
+        # TODO
+
+        LOGGER.info(f"Step 6: Check IO state")
+        # TODO
+        LOGGER.info(f"Step 7: Stop IOs")
+        # TODO
+
+    @pytest.mark.ras
     @pytest.mark.tags("TEST-19609")
     @pytest.mark.sw_alert
     @pytest.mark.skip
-    @CTFailOn(error_handler)
     def test_19609(self):
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
-        external_svcs = 
-
+        external_svcs = RAS_TEST_CFG["third_party_services"]
+        for svc in external_svcs:
+            
         LOGGER.info("##### Test completed -  %s #####", test_case_name)

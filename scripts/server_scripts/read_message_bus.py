@@ -1,4 +1,3 @@
-import sys
 import time
 # from cortx.utils.message_bus import MessageConsumer
 try:

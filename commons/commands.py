@@ -29,6 +29,7 @@ SYSTEM_CTL_STATUS_CMD = "systemctl status {}"
 SYSTEM_CTL_RESTART_CMD = "systemctl restart {}"
 SYSTEM_CTL_START_CMD = "systemctl start {}"
 SYSTEM_CTL_STOP_CMD = "systemctl stop {}"
+START_MSG_BUS_READER_CMD = "python3 read_message_bus.py"
 
 # S3IAMCLI Commands
 BUNDLE_CMD = "sh /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh"
@@ -314,6 +315,11 @@ CMD_SYSTEM_STATUS = "system status"
 CMD_SYSTEM_START = "system start"
 CMD_SYSTEM_STOP = "system stop"
 CMD_SYSTEM_SHUTDOWN = "system shutdown"
+CMD_CREATE_ACCESS_KEY = "s3accesskeys create -iu"
+CMD_DELETE_ACCESS_KEY = "s3accesskeys delete"
+CMD_SHOW_ACCESS_KEY = "s3accesskeys show -iu"
+CMD_UPDATE_ACCESS_KEY = "s3accesskeys update"
+CMD_RESET_IAM_PWD = "s3iamusers reset_password {}"
 
 # Linux System Commands
 CMD_MKDIR = "mkdir -p {}"

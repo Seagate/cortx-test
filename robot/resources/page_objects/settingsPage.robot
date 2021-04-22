@@ -112,3 +112,14 @@ SSL Upload
     Sleep  3s
     Click On Upload New SSL File Button
     Sleep  5s
+
+SSL Gennerate and Upload
+    [Documentation]  This keyword is to gennerate and upload SSL file with given expiry day
+    [Arguments]  ${days}  ${Download_File_Path} 
+    ${path}=  cert_gen  ${days}  ${Download_File_Path}
+    Log To Console And Report  ${path}
+    Upload File  CHOOSE_SSL_UPDATE_FILE_BTN_ID  ${path}
+    Sleep  3s
+    Click On Upload New SSL File Button
+    Sleep  5s
+    [Return]  ${path}

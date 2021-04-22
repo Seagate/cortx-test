@@ -39,14 +39,17 @@ ras_sspl_alert:
   ldap_user: "sgiamadmin"
   ldap_pwd: "ldapadmin"
   sleep_val: 120
-  after_service_restart_sleep_val: 60
+  sspl_timeout: 190
+  os_lvl_monitor_timeouts:
+    alert_timeout: 5
+    intrmdt_state: 200
   ipmitool_sdr_cmd: "ipmitool sdr list"
   sspl_exch: "sspl-out"
   sspl_key: "sensor-key"
   service:
     sspl_service: "sspl-ll"
     kafka_service: "kafka"
-  sspl_resource_id: "sspl-master"
+  sspl_resource_id: "sspl-ll-clone"
   mc_debug_port: 7900
   telnet_sleep_val: 120
   max_wait_time: 320
@@ -54,7 +57,7 @@ ras_sspl_alert:
   csm_error_msg: "Failed to get alerts using CSM REST API"
   csm_alert_gen_delay: 60
   default_mem_usage: 80
-  start_rmq: False
+  start_msg_bus: False
   selinux_key: "SELINUX"
   selinux_disabled: "disabled"
   selinux_enforced: "enforcing"

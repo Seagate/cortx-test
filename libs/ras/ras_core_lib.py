@@ -179,11 +179,10 @@ class RASCoreLib:
         :rtype: bool
         """
         file_path = cmn_cons.MSG_BUS_READER_PATH
-        local_path_rabittmq = cmn_cons.MSG_BUS_READER_PATH
-        sspl_pass = kwargs.get("sspl_pass")
+        local_path_msg_bus = cmn_cons.MSG_BUS_READER_PATH
         LOGGER.debug("Copying file to %s", self.host)
         self.node_utils.copy_file_to_remote(
-            local_path=local_path_rabittmq, remote_path=file_path)
+            local_path=local_path_msg_bus, remote_path=file_path)
         copy_res = self.node_utils.path_exists(file_path)
         if not copy_res:
             LOGGER.debug('Failed to copy the file')
@@ -478,7 +477,7 @@ class RASCoreLib:
             Tuple[Union[List[str], str, bytes]]:
         """
         Function generate err log on the using logger command on the
-        rabbitmq channel.
+        message bus channel.
 
         :param str logger_alert_cmd: command to be executed
         :return: response in tuple
@@ -567,19 +566,19 @@ class RASCoreLib:
                         "services")
             time.sleep(common_cfg["sleep_val"])
 
-        LOGGER.info("Checking status of sspl and rabbitmq services")
+        LOGGER.info("Checking status of sspl and kafka services")
         resp = self.s3obj.get_s3server_service_status(
             service=common_cfg["service"]["sspl_service"],
             host=self.host, user=self.username, pwd=self.pwd)
         if not resp[0]:
             return resp
         resp = self.s3obj.get_s3server_service_status(
-            service=common_cfg["service"]["rabitmq_service"],
+            service=common_cfg["service"]["kafka_service"],
             host=self.host, user=self.username, pwd=self.pwd)
         if not resp[0]:
             return resp
         LOGGER.info(
-            "Verified sspl and rabbitmq services are in running state")
+            "Verified sspl and kafka services are in running state")
         time.sleep(common_cfg["sleep_val"])
 
         LOGGER.info("Fetching sspl alert response")
@@ -601,7 +600,7 @@ class RASCoreLib:
         LOGGER.debug(
             "======================================================")
         LOGGER.info(
-            "Checking if alerts are generated on rabbitmq channel")
+            "Checking if alerts are generated on message bus")
         cmd = common_commands.EXTRACT_LOG_CMD.format(
             common_cfg["file"]["alert_log_file"], string_list[0],
             common_cfg["file"]["extracted_alert_file"])

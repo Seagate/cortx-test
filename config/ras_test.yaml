@@ -1,7 +1,7 @@
 third_party_services:
     - "hare-consul-agent.service"
-    - "hare-consul-agent-c1.service"
-    - "hare-consul-agent-c2.service"
+#    - "hare-consul-agent-c1.service"
+#    - "hare-consul-agent-c2.service"
     - "elasticsearch.service"
     - "statsd.service"
     - "rsyslog.service"
@@ -10,10 +10,10 @@ third_party_services:
     - "lnet.service"
     - "salt-master.service"
     - "salt-minion.service"
-    - "glusterd.service"
-    - "multipathd.service"
-    - "scsi-network-relay.service"
-    - "Kafka"
+#    - "glusterd.service"
+#    - "multipathd.service"
+#    - "scsi-network-relay.service"
+#    - "Kafka"
 
 test_3005:
   alert: True

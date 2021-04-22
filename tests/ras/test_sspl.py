@@ -110,7 +110,7 @@ class TestSSPL:
         LOGGER.info("Restarting sspl service")
         resp = self.health_obj.restart_pcs_resource(self.cm_cfg["sspl_resource_id"])
         assert resp, "Failed to restart sspl-ll"
-        time.sleep(self.cm_cfg["after_service_restart_sleep_val"])
+        time.sleep(self.cm_cfg["sspl_timeout"])
         LOGGER.info(
             "Verifying the status of sspl and rabittmq service is online")
 
@@ -938,7 +938,7 @@ class TestSSPL:
 
         assert resp[0], resp[1]
         LOGGER.info("Step 3: Successfully Restarted the SSPL Service")
-        time.sleep(common_cfg["after_service_restart_sleep_val"])
+        time.sleep(common_cfg["sspl_timeout"])
         LOGGER.info("Step 4: Verify that log_level wont be changed after "
                     "restarting the sspl service")
         res = self.ras_test_obj.update_threshold_values(kv_store_path,

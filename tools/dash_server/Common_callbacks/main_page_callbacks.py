@@ -109,7 +109,7 @@ def fetch_build_for_dropdown(branch, version):
 
 
 @app.callback(
-    [Output('test_system_dropdown', 'options')],
+    Output('test_system_dropdown', 'options'),
     [Input('version_dropdown', 'value'),
      Input('branch_dropdown', 'value'),
      Input('build_no_dropdown', 'value')]
@@ -126,8 +126,8 @@ def fetch_test_system_for_dropdown(version, branch, build_no):
         raise PreventUpdate
 
     if version == "LR1":
-        # test system not applicable for R1
-        raise PreventUpdate
+        output = [{'label': "NA", 'value': "NA"}]
+        return output
     else:
         # testPlanLabel corresponds to the system type: for ex: isolated, near full system
         query_input = {"query": {"buildType": branch, "buildNo": build_no, "latest": True},
@@ -141,7 +141,8 @@ def fetch_test_system_for_dropdown(version, branch, build_no):
             output = [
                 {'label': sys_type, 'value': sys_type} for sys_type in label
             ]
-            return [output]
+            #output.append({'label': 'Consolidated', 'value': 'Consolidated'})
+            return output
     return None
 
 
@@ -150,7 +151,8 @@ def fetch_test_system_for_dropdown(version, branch, build_no):
     [Input('version_dropdown', 'value'),
      Input('branch_dropdown', 'value'),
      Input('build_no_dropdown', 'value'),
-     Input('test_system_dropdown', 'value')]
+     Input('test_system_dropdown', 'value'),
+     ]
 )
 def fetch_team_for_dropdown(version, branch, build_no, system_type):
     """
@@ -169,16 +171,61 @@ def fetch_team_for_dropdown(version, branch, build_no, system_type):
         raise PreventUpdate
     else:
         # testPlanLabel corresponds to the system type: for ex: isolated, near full system
-        query_input = {
-            "query": {"buildType": branch, "buildNo": build_no, "testPlanLabel": system_type,
-                      "latest": True},
-            "field": "testTeam"}
+        query = {"buildType": branch, "buildNo": build_no, "latest": True,
+                 "testPlanLabel": system_type}
+
+        query_input = {"query": query, "field": "testTeam"}
         query_input.update(common.credentials)
         response = requests.request("GET", common.distinct_endpoint, headers=common.headers,
                                     data=json.dumps(query_input))
         if response.status_code == HTTPStatus.OK:
             json_response = json.loads(response.text)
             teams = json_response["result"]
+            output = [
+                {'label': team, 'value': team} for team in teams
+            ]
+            return [output]
+    return None
+
+
+@app.callback(
+    [Output('test_plan_dropdown', 'options')],
+    [Input('version_dropdown', 'value'),
+     Input('branch_dropdown', 'value'),
+     Input('build_no_dropdown', 'value'),
+     Input('test_system_dropdown', 'value'),
+     Input('test_team_dropdown', 'value')]
+)
+def fetch_test_plan_for_dropdown(version, branch, build_no, system_type, test_team):
+    """
+    Fetch the testing teams for version, build_no and testing system type
+    :param test_team:
+    :param version:Product version R1/R2
+    :param branch: Branch name Release/Beta etc
+    :param build_no: Build no
+    :param system_type: System type : Isolated/Regular etc
+    :return:
+    """
+    if not (version and branch and build_no and system_type and test_team):
+        raise PreventUpdate
+
+    if version == "LR1":
+        # test team not applicable for R1
+        raise PreventUpdate
+    else:
+        # testPlanLabel corresponds to the system type: for ex: isolated, near full system
+        query_input = {
+            "query": {"buildType": branch, "buildNo": build_no, "testPlanLabel": system_type,
+                      "testTeam": test_team, "latest": True},
+            "field": "testPlanID",
+        }
+        query_input.update(common.credentials)
+        response = requests.request("GET", common.distinct_endpoint, headers=common.headers,
+                                    data=json.dumps(query_input))
+        if response.status_code == HTTPStatus.OK:
+            json_response = json.loads(response.text)
+            teams = json_response["result"]
+            teams.sort(reverse=True)
             output = [
                 {'label': team, 'value': team} for team in teams
             ]
