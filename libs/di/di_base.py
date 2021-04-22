@@ -27,8 +27,9 @@ from logging.handlers import SysLogHandler
 from config import DATA_PATH_CFG
 from commons.utils import assert_utils
 from commons.utils.system_utils import run_local_cmd
-from libs.di.di_params import S3_ENDPOINT
-logger = logging.getLogger(__name__)
+from commons.params import S3_ENDPOINT
+
+LOGGER = logging.getLogger(__name__)
 
 
 class SysLogger:
@@ -51,14 +52,14 @@ class SysLogger:
 
 
 def init_s3_connections(users):
-    s3Objects = dict()
+    s3_objects = dict()
 
     for user, keys in users.items():
         user_name = user
         access_key = keys[0]
         secret_key = keys[1]
-        s3Objects[user_name] = _init_s3_conn(access_key, s3Objects, secret_key, user_name)
-    return s3Objects
+        s3_objects[user_name] = _init_s3_conn(access_key, secret_key, user_name)
+    return s3_objects
 
 
 def init_s3_conn(user_name, keys, nworkers):
@@ -66,17 +67,18 @@ def init_s3_conn(user_name, keys, nworkers):
     secret_key = keys[1]
     pool = list()
     for ix in range(nworkers + 1):
-        pool.append(_init_s3_conn(access_key, pool, secret_key, user_name))
+        pool.append(_init_s3_conn(access_key, secret_key, user_name))
     return pool
 
 
-def _init_s3_conn(access_key, pool, secret_key, user_name):
+def _init_s3_conn(access_key, secret_key, user_name):
     s3 = None
     try:
         s3 = boto3.resource('s3', aws_access_key_id=access_key, aws_secret_access_key=secret_key,
                             endpoint_url=S3_ENDPOINT)
+        LOGGER.info(f's3 resource created for user {user_name}')
     except Exception as e:
-        logger.error(
+        LOGGER.error(
             f'could not create s3 object for user {user_name} with '
             f'access key {access_key} secret key {secret_key} exception:{e}')
     return s3
@@ -95,7 +97,7 @@ def run_s3bench(test_conf, bucket, keys):
     :type bucket: str
     :return: None
     """
-    logger.info("concurrent users TC using S3bench")
+    LOGGER.info("concurrent users TC using S3bench")
     access_key, secret_key = keys
     cmd = DATA_PATH_CFG["data_path"]["s3bench_cmd"].format(access_key,
                                                            secret_key,
@@ -106,11 +108,11 @@ def run_s3bench(test_conf, bucket, keys):
                                                            test_conf["obj_prefix"],
                                                            DATA_PATH_CFG["data_path"]["obj_size"])
     resp = run_local_cmd(cmd)
-    logger.debug(resp)
+    LOGGER.debug(resp)
     assert_utils.assert_true(resp[0], resp[1])
     assert_utils.assert_is_not_none(resp[1], resp)
     resp_split = resp[1].split("\\n")
     resp_filtered = [i for i in resp_split if 'Number of Errors' in i]
     for response in resp_filtered:
-        logger.debug(response)
+        LOGGER.debug(response)
         assert_utils.assert_equal(int(response.split(":")[1].strip()), 0, response)

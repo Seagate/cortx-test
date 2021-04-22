@@ -20,41 +20,25 @@
 #
 
 """Data Integrity test library"""
-import queue
-import threading
 import time
-import os
 import sys
 import logging
-import socket
-import paramiko
-import yaml
-import traceback
-import re
-import base64
-import datetime
-import json
-import gevent
-import boto3
-
+import hashlib
+from pathlib import Path
 from fabric import Connection
 from fabric import Config
 from fabric import ThreadingGroup, SerialGroup
-from fabric import runners
-from fabric.exceptions import GroupException
-from threading import Thread
-from gevent.pool import Group
-from gevent.queue import Queue, Empty
-from gevent.queue import JoinableQueue
-from gevent.lock import BoundedSemaphore
-from libs.di import di_params
 from libs.di.di_mgmt_ops import ManagementOPs
+from libs.di import di_base
 from commons.exceptions import TestException
 from commons import params
 from commons.utils import assert_utils
+
 IAM_UTYPE = 1
 S3_ACC_UTYPE = 2
 s3connections = list()
+CKSUM_ALGO_1 = 'md5'
+CKSUM_ALGO_2 = 'sha1'
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -85,27 +69,11 @@ def create_buckets(user_dict, s3_prefix, nbuckets):
         secret_key = user_dict.get('secret_key')
         timestamp = time.strftime("%Y%m%d-%H%M%S")
         buckets = [user_name + '-' + timestamp + '-bucket' + str(i) for i in range(nbuckets)]
-
-        try:
-            s3 = boto3.resource('s3', aws_access_key_id=access_key,
-                                aws_secret_access_key=secret_key,
-                                endpoint_url=params.S3_ENDPOINT)
-        except Exception as e:
-            LOGGER.info(f'could not create s3 object for '
-                        f'user {user_name} with access key {access_key} '
-                        f'secret key {secret_key} exception:{e}')
-            return
-
+        s3 = di_base._init_s3_conn(access_key=access_key, secret_key=secret_key,
+                                   user_name=user_name)
+        if not s3:
+            raise TestException('S3 resource could not be created')
         for bucket in buckets:
-            try:
-                file1 = open(di_params.DATASET_FILES,"r")
-                obj_file_paths = file1.readlines()
-            except Exception as e:
-                LOGGER.info(f'could not access file {di_params.DATASET_FILES} exception:{e}')
-                return
-            else:
-                LOGGER.info(f'able to access file {di_params.DATASET_FILES}')
-
             try:
 
                 s3.create_bucket(Bucket=bucket)
@@ -115,7 +83,7 @@ def create_buckets(user_dict, s3_prefix, nbuckets):
                 LOGGER.info(f'create bucket {bucket} Done')
 
     except Exception as fault:
-        LOGGER.error(f"An error {fault} occurred in creating users of type {utype}")
+        LOGGER.error(f"An error {fault} occurred in creating buckets.")
         raise fault
 
 
@@ -127,7 +95,7 @@ class NodeOps:
 
     def init_Connection(self, host: str, user: str, password: str) -> str:
         self.connection = Connection(host, user=user, connect_kwargs={'password': password},
-                                      config=Config(overrides={'sudo': {'password': password}}))
+                                     config=Config(overrides={'sudo': {'password': password}}))
 
         assert_utils.assert_true('Linux' in self.connection.run('uname -s', pty=False).stdout,
                                  "Node {} not reachable".format(host))
@@ -167,5 +135,25 @@ def sigint_handler(signum, frame):
     sys.exit(0)
 
 
-if __name__ == '__main__':
-    pass
+def read_file(filepath, size=0, algo=CKSUM_ALGO_1):
+    """Find checksum of file as per algo."""
+    if not size:
+        sz = Path(filepath).stat().st_size
+
+    read_sz = 8192  # blk sz
+    c_sum = ''
+    if algo == CKSUM_ALGO_1:
+        file_hash = hashlib.md5()
+    elif algo == CKSUM_ALGO_2:
+        file_hash = hashlib.sha1()
+
+    with open(filepath, 'rb') as fp:
+        if sz < read_sz:
+            buf = fp.read(sz)
+        else:
+            buf = fp.read(read_sz)
+        while buf:
+            file_hash.update(buf)
+            buf = fp.read(read_sz)
+        c_sum = file_hash.hexdigest()
+    return c_sum.strip()  # not required. Recheck.

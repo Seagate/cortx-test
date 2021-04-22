@@ -23,16 +23,13 @@ Simulates parallel downloads.
 """
 import os
 import logging
-import boto3
 import csv
-import errno
 import queue
 import hashlib
 from pathlib import Path
 from commons import params
 from commons import worker
 from commons.utils import system_utils
-from commons.params import SCRIPT_HOME
 from libs.di import di_base
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.di import uploader
@@ -43,7 +40,7 @@ LOGGER = logging.getLogger(__name__)
 class DataIntegrityValidator:
     s3_objects = dict()
     failed_files = list()
-    failed_filesServerError = list()
+    failed_files_server_error = list()
 
     @staticmethod
     def download_and_compare_chksum(kwargs):
@@ -200,7 +197,7 @@ class DataIntegrityValidator:
 
         if len(cls.failed_files_server_error) > 0:
             keys = cls.failed_files_server_error[0].keys()
-            with open(params.FailedFilesServerError, 'w', newline='') as fp:
+            with open(params.FAILED_FILES_SERVER_ERROR, 'w', newline='') as fp:
                 wr = csv.DictWriter(fp, keys)
                 wr.writerows(cls.failed_files_server_error)
 
@@ -212,21 +209,6 @@ class DataIntegrityValidator:
         LOGGER.info("Failed files were {}  and "
                     "Checksum verified for Files {} ".format(summary['failed_files'],
                                                              summary['checksum_verified']))
-
-
-def FileSHA1(blobfile, blobsize, readcallback):
-    cksum = Hash(hint_algo='sha1')
-
-    offset = 0
-    cookie = 0
-    buflist = ['hello', ]
-    while buflist:
-        buflist, cookie = readcallback(blobfile, offset, blobsize, cookie)
-        for buf in buflist:
-            offset += len(buf)
-            cksum.update(buf)
-
-    return cksum.digest()
 
 
 if __name__ == '__main__':

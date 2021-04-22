@@ -73,6 +73,8 @@ class DataGenerator:
         self.compression_ratio = c_ratio
         self.dedupe_ratio = d_ratio
         self.compressibility = int(100 - (1.0 / self.compression_ratio * 100))
+        self.secret = '0123456789abcdef' * 2
+        self.iv = '0123456789abcdef'
 
     def generate(self,
                  size: int,
@@ -139,9 +141,7 @@ class DataGenerator:
             pad = ' ' * (blksz - sz % blksz)
             buf = ''.join([buf, pad])
 
-        secret = '0123456789abcdef' * 2
-        iv = '0123456789abcdef'
-        aes = AES.new(secret.encode('utf-8'), AES.MODE_OFB, iv.encode('utf-8'))
+        aes = AES.new(self.secret.encode('utf-8'), AES.MODE_OFB, self.iv.encode('utf-8'))
         buf = aes.encrypt(buf)
         if pad:
             buf = buf[:sz]

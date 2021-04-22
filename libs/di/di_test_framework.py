@@ -20,10 +20,10 @@
 """DI checker test case"""
 
 import os
+import sys
 import queue
 import logging
 import csv
-import fcntl
 import hashlib
 import multiprocessing as mp
 import boto3
@@ -37,6 +37,9 @@ from libs.di import di_params
 from libs.di.di_mgmt_ops import ManagementOPs
 from commons.utils import config_utils
 from commons import params
+
+if sys.platform != 'win32':
+    import fcntl
 
 logger = logging.getLogger(__name__)
 uploadObjects = []

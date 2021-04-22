@@ -33,6 +33,7 @@ import datetime
 import pytest
 import requests
 import xdist
+import tempfile
 from datetime import date
 from _pytest.nodes import Item
 from _pytest.runner import CallInfo
@@ -223,7 +224,10 @@ def pytest_addoption(parser):
         "--data_integrity_chk", action="store", default=False,
         help="Decide whether to perform DI Check or not for a I/O test case."
     )
-
+    parser.addoption(
+        "--jira_update", action="store", default=True,
+        help="Decide whether to update Jira."
+    )
 
 def read_test_list_csv() -> List:
     try:
@@ -351,10 +355,30 @@ def pytest_configure(config):
     """pytest configure hook runs before collection."""
     if not config.option.nodes:
         config.option.nodes = []  # CMN_CFG.nodes
+    import pdb
+    pdb.set_trace()
+    jira_update = ast.literal_eval(str(config.option.jira_update))
+    if jira_update:
+        Globals.JIRA_UPDATE = True
+        LOGGER.info(f'Jira update pytest switch is set to {Globals.JIRA_UPDATE}')
+    else:
+        Globals.JIRA_UPDATE = False
 
     # Handle parallel execution.
-    if not hasattr(config, 'slaveinput'):
-        pass
+    if not hasattr(config, 'workerinput'):
+        config.shared_directory = tempfile.mkdtemp()
+
+
+def pytest_configure_node(node):
+    """xdist hook."""
+    jira_update = ast.literal_eval(str(node.config.option.jira_update))
+    if jira_update:
+        Globals.JIRA_UPDATE = True
+        LOGGER.info(f'Jira update pytest switch is set to {Globals.JIRA_UPDATE}')
+    else:
+        Globals.JIRA_UPDATE = False
+
+    node.workerinput['shared_dir'] = node.config.shared_directory
 
 
 def pytest_sessionstart(session: Session) -> None:
@@ -478,6 +502,21 @@ def pytest_collection(session):
     return items
 
 
+# pylint: disable=too-many-arguments
+def db_and_jira_update(task, test_id, item, call, status, db_user, db_pass):
+    try:
+        jira_update = ast.literal_eval(str(item.config.option.jira_update))
+        db_update = ast.literal_eval(str(item.config.option.db_update))
+        if jira_update:
+            task.update_test_jira_status(item.config.option.te_tkt, test_id, status)
+        if db_update:
+            payload = create_report_payload(item, call, status, db_user, db_pass)
+            REPORT_CLIENT.create_db_entry(**payload)
+    except (requests.exceptions.RequestException, Exception) as fault:
+        LOGGER.exception(str(fault))
+        LOGGER.error("Failed to execute DB update for %s", test_id)
+
+
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_runtest_makereport(item, call):
     """
@@ -500,52 +539,60 @@ def pytest_runtest_makereport(item, call):
     fail_file = 'failed_tests.log'
     pass_file = 'passed_tests.log'
     current_file = 'other_test_calls.log'
+    jira_update = ast.literal_eval(str(item.config.option.jira_update))
+    db_update = ast.literal_eval(str(item.config.option.db_update))
     if not _local:
-        db_user, db_pass = get_db_credential()
-        jira_id, jira_pwd = get_jira_credential()
-        task = jira_utils.JiraTask(jira_id, jira_pwd)
         test_id = CACHE.lookup(report.nodeid)
         if report.when == 'teardown':
             try:
+                if jira_update:
+                    db_user, db_pass = get_db_credential()
+                    jira_id, jira_pwd = get_jira_credential()
+                    task = jira_utils.JiraTask(jira_id, jira_pwd)
+
                 if item.rep_setup.failed or item.rep_teardown.failed:
-                    task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
-                    if item.config.option.db_update:
-                        try:
+                    try:
+                        if jira_update:
+                            task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
+                        if db_update:
                             payload = create_report_payload(item, call, 'FAIL', db_user, db_pass)
                             REPORT_CLIENT.create_db_entry(**payload)
-                        except requests.exceptions.RequestException as fault:
-                            LOGGER.exception(str(fault))
-                            LOGGER.error("Failed to execute DB update for %s", test_id)
+                    except (requests.exceptions.RequestException, Exception) as fault:
+                        LOGGER.exception(str(fault))
+                        LOGGER.error("Failed to execute DB update for %s", test_id)
                 elif item.rep_setup.passed and (item.rep_call.failed or item.rep_teardown.failed):
-                    task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
-                    if item.config.option.db_update:
-                        try:
+                    try:
+                        if jira_update:
+                            task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
+                        if db_update:
                             payload = create_report_payload(item, call, 'FAIL', db_user, db_pass)
                             REPORT_CLIENT.create_db_entry(**payload)
-                        except requests.exceptions.RequestException as fault:
-                            LOGGER.exception(str(fault))
-                            LOGGER.error("Failed to execute DB update for %s", test_id)
+                    except (requests.exceptions.RequestException, Exception) as fault:
+                        LOGGER.exception(str(fault))
+                        LOGGER.error("Failed to execute DB update for %s", test_id)
                 elif item.rep_setup.passed and item.rep_call.passed and item.rep_teardown.passed:
-                    task.update_test_jira_status(item.config.option.te_tkt, test_id, 'PASS')
-                    if item.config.option.db_update:
-                        try:
+                    try:
+                        if jira_update:
+                            task.update_test_jira_status(item.config.option.te_tkt, test_id, 'PASS')
+                        if db_update:
                             payload = create_report_payload(item, call, 'PASS', db_user, db_pass)
                             REPORT_CLIENT.create_db_entry(**payload)
-                        except requests.exceptions.RequestException as fault:
-                            LOGGER.exception(str(fault))
-                            LOGGER.error("Failed to execute DB update for %s", test_id)
+                    except (requests.exceptions.RequestException, Exception) as fault:
+                        LOGGER.exception(str(fault))
+                        LOGGER.error("Failed to execute DB update for %s", test_id)
                 elif item.rep_setup.skipped and \
                         (item.rep_teardown.skipped or item.rep_teardown.passed):
                     # Jira reporting of skipped cases does not contain skipped option
                     # Reporting it blocked and updating db.
-                    task.update_test_jira_status(item.config.option.te_tkt, test_id, 'BLOCKED')
-                    if item.config.option.db_update:
-                        try:
+                    try:
+                        if jira_update:
+                            task.update_test_jira_status(item.config.option.te_tkt, test_id, 'BLOCKED')
+                        if db_update:
                             payload = create_report_payload(item, call, 'BLOCKED', db_user, db_pass)
                             REPORT_CLIENT.create_db_entry(**payload)
-                        except requests.exceptions.RequestException as fault:
-                            LOGGER.exception(str(fault))
-                            LOGGER.error("Failed to execute DB update for %s", test_id)
+                    except (requests.exceptions.RequestException, Exception) as fault:
+                        LOGGER.exception(str(fault))
+                        LOGGER.error("Failed to execute DB update for %s", test_id)
 
             except Exception as exception:
                 LOGGER.error("Exception %s occurred in reporting for test %s.",
@@ -615,11 +662,12 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
                 for rec in logs:
                     fp.write(rec + '\n')
         return
-    jira_id, jira_pwd = get_jira_credential()
-    task = jira_utils.JiraTask(jira_id, jira_pwd)
     test_id = CACHE.lookup(report.nodeid)
     if report.when == 'setup':
-        task.update_test_jira_status(Globals.TE_TKT, test_id, 'Executing')
+        if Globals.JIRA_UPDATE:
+            jira_id, jira_pwd = get_jira_credential()
+            task = jira_utils.JiraTask(jira_id, jira_pwd)
+            task.update_test_jira_status(Globals.TE_TKT, test_id, 'Executing')
     elif report.when == 'call':
         pass
     elif report.when == 'teardown':
@@ -652,16 +700,19 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
         upload_supporting_logs(test_id, remote_path, "s3bench")
         LOGGER.info("Adding log file path to %s", test_id)
         comment = "Log file path: {}".format(resp[1])
-        data = task.get_test_details(test_exe_id=Globals.TE_TKT)
-        if data:
-            resp = task.update_execution_details(data=data, test_id=test_id,
-                                                 comment=comment)
-            if resp:
-                LOGGER.info("Added execution details comment in: %s", test_id)
+        if Globals.JIRA_UPDATE:
+            jira_id, jira_pwd = get_jira_credential()
+            task = jira_utils.JiraTask(jira_id, jira_pwd)
+            data = task.get_test_details(test_exe_id=Globals.TE_TKT)
+            if data:
+                resp = task.update_execution_details(data=data, test_id=test_id,
+                                                     comment=comment)
+                if resp:
+                    LOGGER.info("Added execution details comment in: %s", test_id)
+                else:
+                    LOGGER.error("Failed to comment to %s", test_id)
             else:
-                LOGGER.error("Failed to comment to %s", test_id)
-        else:
-            LOGGER.error("Failed to add log file path to %s", test_id)
+                LOGGER.error("Failed to add log file path to %s", test_id)
 
 
 @pytest.fixture(scope='function')

@@ -20,12 +20,9 @@
 
 """Management operations needed during the DI tests."""
 
-import os
 import random
 import logging
-import csv
 import boto3
-from pathlib import Path
 from config import CMN_CFG
 from config import S3_CFG
 from config import DI_CFG
@@ -35,7 +32,7 @@ from libs.s3 import iam_test_lib
 from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
 
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 class ManagementOPs:
@@ -107,7 +104,7 @@ class ManagementOPs:
                                                        CMN_CFG["ldap"]["username"])
 
                 except Exception as ctpe:
-                    logger.error("Exception")
+                    LOGGER.error(f"Exception occurred ")
                     # check if s3 account already exists and get keys
                     ret = cli.list_accounts_s3iamcli(DI_CFG['ldap_username'], DI_CFG['ldap_passwd'])
                     accounts = ret[1]
@@ -119,7 +116,7 @@ class ManagementOPs:
                     udict.update({'accesskey': resp[1]["access_key"]})
                     udict.update({'secretkey': resp[1]["secret_key"]})
             else:
-                logger.info("Creating Cortx CLI users with ")
+                LOGGER.info("Creating Cortx CLI users with ")
                 s3acc_obj = CortxCliS3AccountOperations()
                 s3acc_obj.open_connection()
 

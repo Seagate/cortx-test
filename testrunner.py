@@ -29,8 +29,11 @@ def parse_args():
     parser.add_argument("-r", "--html_report", type=str, default='report.html',
                         help="html report name")
     parser.add_argument("-d", "--db_update", type=str_to_bool,
-                        default=True, nargs='?', const=True,
+                        default=True,
                         help="Update Reports DB. Can be false in case reports db is down")
+    parser.add_argument("-u", "--jira_update", type=str_to_bool,
+                        default=True,
+                        help="Update Jira. Can be false in case Jira is down")
     parser.add_argument("-te", "--te_ticket", type=str,
                         help="jira xray test execution id")
     parser.add_argument("-pe", "--parallel_exe", type=str, default=False,
@@ -138,6 +141,9 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
 
     if not args.db_update:
         cmd_line = cmd_line + ["--db_update=" + str(False)]
+
+    if not args.jira_update:
+        cmd_line = cmd_line + ["--jira_update=" + str(False)]
 
     if args.data_integrity_chk:  # redo for kafka tests remove when drunner is supported.
         cmd_line = cmd_line + ["--data_integrity_chk=" + str(True)]

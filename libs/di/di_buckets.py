@@ -22,20 +22,17 @@ The data can be verified after interleaved executions as well.
 """
 import os
 import queue
-import threading
 import logging
 import csv
 import hashlib
-import boto3
 import re
-import errno
-import json
 import base64
 from pathlib import Path
-from libs.di.di_base import init_s3_conn
+from libs.di.di_base import _init_s3_conn
 from libs.di.di_params import DOWNLOAD_HOME
 from commons.worker import Workers, WorkQ
-logger = logging.getLogger(__name__)
+
+LOGGER = logging.getLogger(__name__)
 
 pool = list()
 FailedFiles = list()
@@ -54,21 +51,15 @@ def compare_checksum_after_download(user, keys, bucket, nworkers):
     user_name = user
     access_key = keys[0]
     secret_key = keys[1]
-    init_s3_conn(user_name, keys)
-    try:
-        s3 = boto3.resource('s3', aws_access_key_id=access_key, aws_secret_access_key=secret_key,
-                            endpoint_url="https://s3.seagate.com")
-    except Exception as e:
-        logger.error(
-            f'could not create s3 obj for user {user_name} with key {access_key} secret {secret_key} exception:{e}')
-
+    s3 = _init_s3_conn(access_key, secret_key, user_name)
     test_bucket = s3.Bucket(bucket)
     for ix in range(nworkers):
         try:
             if not os.path.exists(os.path.join(DOWNLOAD_HOME, "ps", str(ix))):
                 _path = os.mkdirs(os.path.join(DOWNLOAD_HOME, "ps", str(ix)))
-        except Exception as e:
-            logger.error(f"Error while creating directory for process {ix}")
+        except (OSError, Exception) as exec:
+            LOGGER.error(str(exec))
+            LOGGER.error(f"Error while creating directory for process {ix}")
 
     workers = Workers()
     workers.start_workers()
@@ -98,7 +89,7 @@ def compare_checksum_after_download(user, keys, bucket, nworkers):
             wr = csv.DictWriter(fp, keys)
             wr.writerows(FailedFiles)
     workers.end_workers()
-    logger.info('Workers shutdown completed successfully')
+    LOGGER.info('Workers shutdown completed successfully')
 
 
 def download_and_compare(kwargs):
@@ -120,14 +111,14 @@ def download_and_compare(kwargs):
         secret = kwargs.get('secret')
         cwd = DOWNLOAD_HOME
         objectpath = os.path.join(cwd, "ps", str(pid), key)
-        logger.info(f'Send download request for {key}')
+        LOGGER.info(f'Send download request for {key}')
         try:
             s3.meta.client.download_file(bucket, key, objectpath)
-            logger.info(f'download object successful : {key}')
+            LOGGER.info(f'download object successful : {key}')
         except Exception as e:
-            logger.exception(e)
+            LOGGER.exception(e)
             print(e)
-            logger.error(f'Download failed for {kwargs} with exception {e}')
+            LOGGER.error(f'Download failed for {kwargs} with exception {e}')
             FailedFiles.append(kwargs)
         else:
             if len(objcsum) % 8:  # check the length of hash to find the padding needed
@@ -157,13 +148,13 @@ def download_and_compare(kwargs):
                     os.system(rmLocalObject)
 
             if objhash == csum.strip():
-                logger.info("download object checksum {} matches provided c"
+                LOGGER.info("download object checksum {} matches provided c"
                             "hecksum {} for file {}".format(csum, objcsum, objectpath))
             else:
-                logger.error(
+                LOGGER.error(
                     "download object checksum {} does not matches provided "
                     "checksum {} for file {}".format(csum, objcsum, objectpath))
                 FailedFiles.append(kwargs)
     except Exception as fault:
-        logger.exception(fault)
-        logger.error(f'Exception occurred for item {kwargs} with exception {fault}')
+        LOGGER.exception(fault)
+        LOGGER.error(f'Exception occurred for item {kwargs} with exception {fault}')

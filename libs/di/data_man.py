@@ -46,11 +46,8 @@ framework. It acts as a hash cache storing the server state on client side.
 }
 """
 import os
-import copy
 import logging
 import threading
-import ijson
-import traceback
 import time
 import random
 import multiprocessing
