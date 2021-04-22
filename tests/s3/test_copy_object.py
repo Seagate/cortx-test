@@ -230,7 +230,7 @@ class TestCopyObjects:
         assert_utils.assert_in(object_name, resp[1],
                                f"failed to put object {object_name}")
 
-        return True, put_resp[1]["ETag"]
+        return True, put_resp[1]["ETag"].strip('"')
 
     def copy_object_to_bucket(
             self,
@@ -254,3 +254,101 @@ class TestCopyObjects:
                                f"failed to copy object {dest_object}")
 
         return True, copy_resp[1]['CopyObjectResult']['ETag']
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-19841")
+    @CTFailOn(error_handler)
+    def test_19841(self):
+        """Copy object to same bucket with different object name while S3 IOs are in progress."""
+        self.log.info(
+            "STARTED: Copy object to same bucket with different object name while S3 IOs"
+            " are in progress.")
+        self.log.info("Step 1: Check cluster status, all services are running")
+        self.check_cluster_health()
+        self.log.info("Step 2: start s3 IO's")
+        self.parallel_ios = Process(
+            target=self.s3_ios, args=(
+                self.io_bucket_name, "test_19841_ios"))
+        if not self.parallel_ios.is_alive():
+            self.parallel_ios.start()
+        self.log.info("Parallel IOs started: %s", self.parallel_ios.is_alive())
+        self.log.info("Step 3: Create bucket and put object in it.")
+        status, PutETag = self.create_bucket_put_object(
+            S3_OBJ, self.bucket_name, self.object_name, self.file_path)
+        self.log.info("Put object ETag: %s", PutETag)
+        self.log.info(
+            "Step 4: Copy object to same bucket with different object.")
+        status, CopyETag = self.copy_object_to_bucket(
+            S3_OBJ, self.bucket_name, self.object_name, self.bucket_name, self.object_name2)
+        self.log.info("Copy object ETag: %s", CopyETag)
+        self.log.info(
+            "Steps 5: compare the compare Etag of source and destination object.")
+        self.log.info("ETags: Put: %s, copy: %s", PutETag, CopyETag)
+        assert_utils.assert_equal(
+            PutETag,
+            CopyETag,
+            f"Failed to match ETag: {PutETag}, {CopyETag}")
+        self.log.info("Matched ETag: %s, %s", PutETag, CopyETag)
+        self.log.info("Steps 6: Stop S3 IOs")
+        resp = S3_OBJ.object_list(self.io_bucket_name)
+        self.log.info(resp)
+        if self.parallel_ios.is_alive():
+            self.parallel_ios.join()
+        self.log.info(
+            "Steps 7: Check cluster status, all services are running")
+        self.check_cluster_health()
+        self.log.info("Steps 8: Validate S3 parallel IO executions.")
+        self.validate_paralle_execution(log_prifix="test_19841_ios")
+        self.log.info(
+            "ENDED: Copy object to same bucket with different object name while S3 IOs"
+            " are in progress.")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-19842")
+    @CTFailOn(error_handler)
+    def test_19842(self):
+        """Copy object to same account different bucket while S3 IOs are in progress."""
+        self.log.info(
+            "STARTED: Copy object to same bucket with different object name while S3 IOs"
+            " are in progress.")
+        self.log.info("Step 1: Check cluster status, all services are running")
+        self.check_cluster_health()
+        self.log.info("Step 2: start s3 IO's")
+        self.parallel_ios = Process(
+            target=self.s3_ios, args=(
+                self.io_bucket_name, "test_19842_ios"))
+        if not self.parallel_ios.is_alive():
+            self.parallel_ios.start()
+        self.log.info("Parallel IOs started: %s", self.parallel_ios.is_alive())
+        self.log.info("Step 3: Create bucket and put object in it.")
+        status, PutETag = self.create_bucket_put_object(
+            S3_OBJ, self.bucket_name, self.object_name, self.file_path)
+        self.log.info("Put object ETag: %s", PutETag)
+        self.log.info(
+            "Step 4: Copy object to different bucket with different object.")
+        resp = S3_OBJ.create_bucket(self.bucket_name2)
+        assert_utils.assert_true(resp[0], resp)
+        status, CopyETag = self.copy_object_to_bucket(
+            S3_OBJ, self.bucket_name, self.object_name, self.bucket_name2, self.object_name2)
+        self.log.info("Copy object ETag: %s", CopyETag)
+        self.log.info(
+            "Steps 5: compare the compare ETag of source and destination object.")
+        self.log.info("ETags: Put: %s, copy: %s", PutETag, CopyETag)
+        assert_utils.assert_equal(
+            PutETag,
+            CopyETag,
+            f"Failed to match ETag: {PutETag}, {CopyETag}")
+        self.log.info("Matched ETag: %s, %s", PutETag, CopyETag)
+        self.log.info("Steps 6: Stop S3 IOs")
+        resp = S3_OBJ.object_list(self.io_bucket_name)
+        self.log.info(resp)
+        if self.parallel_ios.is_alive():
+            self.parallel_ios.join()
+        self.log.info(
+            "Steps 7: Check cluster status, all services are running")
+        self.check_cluster_health()
+        self.log.info("Steps 8: Validate S3 parallel IO executions.")
+        self.validate_paralle_execution(log_prifix="test_19842_ios")
+        self.log.info(
+            "ENDED: Copy object to same bucket with different object name while S3 IOs"
+            " are in progress.")
