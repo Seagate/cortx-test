@@ -29,6 +29,7 @@ import pytest
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.ct_fail_on import CTFailOn
+from commons.exceptions import CTException
 from commons.errorcodes import error_handler
 from commons.helpers.health_helper import Health
 from commons.params import TEST_DATA_FOLDER
@@ -103,7 +104,7 @@ class TestCopyObjects:
         self.log.info("STARTED: test teardown method.")
         self.log.info(
             "Deleting all buckets/objects created during TC execution")
-        if self.parallel_ios:
+        if self.parallel_ios.is_alive():
             self.parallel_ios.join()
         bucket_list = S3_OBJ.bucket_list()[1]
         pref_list = [
@@ -182,6 +183,8 @@ class TestCopyObjects:
             if filename.startswith(log_prifix):
                 log_path = os.path.join(s3bench.LOG_DIR, filename)
         self.log.info("IO log path: %s", log_path)
+        assert_utils.assert_is_not_none(
+            log_path, f"failed to generate logs for parallel IOs log.")
         lines = open(log_path).readlines()
         resp_filtered = [
             line for line in lines if 'Errors Count:' in line and "reportFormat" not in line]
@@ -189,8 +192,11 @@ class TestCopyObjects:
         for response in resp_filtered:
             assert_utils.assert_equal(
                 int(response.split(":")[1].strip()), 0, response)
-        if os.path.exists(log_path):
-            os.remove(log_path)
+        for error in ["with error ", "panic", "status code"]:
+            assert_utils.assert_not_equal(
+                error, ",".join(lines), f"Parallel IOs failed.")
+        # if os.path.exists(log_path):
+        #     os.remove(log_path)
 
     def create_bucket_put_object(self,
                                  s3_test_obj=None,
