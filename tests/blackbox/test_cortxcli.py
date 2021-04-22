@@ -284,7 +284,7 @@ class TestCortxcli:
         self.log.info("ENDED: Delete Account using cortxcli")
 
     @pytest.mark.s3_ops
-    @pytest.mark.tags("TEST-7125")
+    @pytest.mark.tags("TEST-7182")
     @CTFailOn(error_handler)
     def test_2430(self):
         """CRUD operations with valid login credentials using cortxcli."""
