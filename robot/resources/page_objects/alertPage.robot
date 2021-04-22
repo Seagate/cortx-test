@@ -90,3 +90,29 @@ Verify comment on alert
      ${comment_text}=  Get text of elements from elements list  ${ALERTS_COMMENT_TEXT_XPATH}
      List Should Contain Value  ${comment_text}  ${TEST_COMMENT}
      Click CommentsClose Image
+
+Verify Presence SSL certificate expires alert
+    [Documentation]  Verify Presence of SSL certificate expires alert
+    [Arguments]  ${days}
+    ${found}=  Set Variable  False
+    ${type}=  Set Variable  Resource type: iem
+    ${Description} =  Set Variable If  ${days} == 0  SSL certificate expired
+    ...  ${days} > 0  ${days} day(s) left. Please refer user guide on how to update the certificate.
+
+    Log To Console And Report  ${Description}
+    Click AlertPage Image
+    wait for page or element to load  10s  # Took time to load all alerts
+    ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
+    # loop through all alerts row
+    FOR    ${item}     IN      @{alert_table_row_data}
+        ${found}=  Run Keyword And Return Status  Should Contain  ${item}  ${Description}
+        Run Keyword If  ${found} == True  # Description found in the alert
+        ...  Run Keywords
+        ...  Should Contain  ${item}  ${type}
+        ...  AND  Exit For Loop  # as soon as correct Description found, exit from loop, no neet ot check all alaerts
+    END
+    Run Keyword If  ${found} == False
+    ...  Run Keywords
+    ...  Log To Console And Report  ${found}
+    ...  AND  Capture Page Screenshot
+    ...  AND  Fail  # correct Description not found in the alert, failing test
