@@ -21,7 +21,6 @@
 import logging
 import os
 import random
-import string
 import time
 
 import pytest
@@ -108,12 +107,6 @@ class TestS3IOSystemLimits:
                 "removed path: %s, resp: %s",
                 self.test_dir_path,
                 resp)
-
-    @staticmethod
-    def random_metadata_generator(
-            size=6,
-            chars=string.ascii_uppercase + string.digits + string.ascii_lowercase):
-        return ''.join(random.choice(chars) for _ in range(size))
 
     def create_csm_accounts(self, count):
         """
@@ -653,15 +646,15 @@ class TestS3IOSystemLimits:
         assert_utils.assert_true(res[0], res[1])
         self.log.info(f"Bucket is created: {bucket_name}")
 
-        metadata_size = [random.randint(500, metadata_limit-1),
+        metadata_size = [random.SystemRandom().randint(500, metadata_limit-1),
                          metadata_limit,
-                         random.randint(metadata_limit+1, 4000)]
+                         random.SystemRandom().randint(metadata_limit+1, 4000)]
         for metadata in metadata_size:
             object_name = "mp-obj-test20271" + str(metadata)
-            m_key = self.random_metadata_generator(10)
-            m_value = self.random_metadata_generator(metadata-10)
+            m_key = system_utils.random_metadata_generator(10)
+            m_value = system_utils.random_metadata_generator(metadata-10)
 
-            obj_size = random.randint(5, 20)
+            obj_size = random.SystemRandom().randint(5, 20)
 
             self.log.info(f"Creating a object: {object_name} size: {obj_size}")
             self.log.info(f"Metadata m_key: {m_key} m_value: {m_value}")
