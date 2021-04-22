@@ -1,0 +1,48 @@
+s3_params:
+  password: "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
+  new_password: "udXC/QLVeEgI0yIidEGy5XlwitDX6rLezfUlJ39i7zU="
+
+test_configs:
+  test_9784:
+    password: "aNOm4xqgBspLAC4o9dR704Ti7yoOGZ/15JzLw1Jb36A="
+
+  test_9785:
+    password: "IEhPX0D4Ek79B3tYce+ZfwICAj51DLmbTiyEP3aSJs00E3BcvVKHqeJn0Rm6/vwfISaGJOJRPZB7axzfgYNTZju8gHo9FFl7f/x1aeQHHRR+7z8MBZr3dMy7zhBVW6FtuMbA0S/I5ASZgeEgwL5jy4PBL52mw9AQ46T4ZApXL45Cjg1LiN5Ul8unpGdp/RS5ViowWWbjFfnx11YvuRprxg=="
+
+  test_9786:
+    list_of_passwords:
+      - "Lqckb7sMfSw7joS2zFn2LZK1RlMUx01FHVMoWVEFhDU="
+      - "COmpsDmylsDZ7iLC9jv78ZI+l0bUpo/TwNMhsfrMC00="
+      - "oOPdW3a5sMcVfchrdiJGDSIrIu49ByTsprb/jIQbowU="
+      - "2Ugu1j2T3vpGDQKe7IKP39bcVtf3JWkrtUl3oPVvI8U="
+
+  test_9787:
+    list_special_invalid_char:
+      - "SyKP0sW5djTj5mvAfwUNZdG6pQgm5vN7ytfD+xwfoqs="
+      - "Dn3yl1ldWmjiB4XlcUJiENeUgZuCiz0xMGB945CxUk0="
+      - "fj1Jnp+tnzDaiNugjqy6QmH3finqsjhCYrDvUcfP8fI="
+      - "O36j7i6uMDNpWUs086czDzdEYNmgJiuvxpFbtXrt4+U="
+      - "p/MwB+c2Y10T5ISQfDcR/XxSXJ+I664xJnOIV0KD14k="
+      - "uLXhYl8AyPjiB+x7I+GPuCt8ygIwXEBCzdcM33xF7I8="
+
+  test_9812:
+    new_password: "Sf7bfyuMGqCDb7yoxB8COo9dbkk1LiFEB5KTsYvNv9s="
+
+  test_9820:
+    new_password: "nCuTjXVKVqZA9ARDwKbCYhenkXC/JCPT11Qi483PpNA="
+
+  test_9822:
+    new_password: "KogDN0tQA0UMf4aQClKmHFV4Pk0tkIOY9sgeOWlI3jk="
+
+  test_9866:
+    password: "nRHRiP0c8Uf7tPaDgAuR7V4Po1XLAG61KBfOpR3dnsI="
+
+  test_9870:
+    invalid_password: "hBnypgcZpgCgs12vxVP+IgaUKdfbkHWrCwq3M5ueZpM="
+
+  test_9871:
+    user_password: "ND0e3stzCIBPKbh2Z26+cmfVnhrbl2n9t2kfKrgX6FM="
+
+  test_9875:
+    user_password: "f8dpfmqXLqaeCB0We0C2ueVKbun6JZecL5FWpX+1iLY="
+
