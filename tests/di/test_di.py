@@ -29,8 +29,7 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from config import DATA_PATH_CFG
 
-logger = logging.getLogger(__name__)
-
+LOGGER = logging.getLogger(__name__)
 
 class TestDataIntegrity:
     """ log sys event when doing node operation
@@ -73,8 +72,6 @@ class TestDataIntegrity:
     @pytest.mark.di
     @pytest.mark.tags("TEST-0")
     def test_di_sanity(self):
-        import pdb
-        pdb.set_trace()
         ops = ManagementOPs()
         users = ops.create_account_users(nusers=4)
         #uploader = Uploader()
@@ -91,11 +88,11 @@ class TestDataIntegrity:
         300 * 3, 300 * 6, 300 * 9, 300 * 12
         :return:
         """
-        logger.info("Start large number of S3 connections.")
+        LOGGER.info("Start large number of S3 connections.")
         test_conf = DATA_PATH_CFG["test_1703"]
         bucket = self.create_bucket(test_conf)
         self.run_s3bench(test_conf, bucket)
-        logger.info("ENDED: Persistence storage test.")
+        LOGGER.info("ENDED: Persistence storage test.")
 
     @pytest.mark.skip
     @pytest.mark.di
