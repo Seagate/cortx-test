@@ -82,8 +82,9 @@ class TestDataIntegrity:
         #DIChecker.init_s3_conn(users)
         #DIChecker.verify_data_integrity(users)
 
+    @pytest.mark.skip
     @pytest.mark.di
-    @pytest.mark.tags("TEST-0")
+    @pytest.mark.tags("TEST-1")
     @CTFailOn(error_handler)
     def test_large_number_s3_connection(self):
         """
@@ -96,6 +97,10 @@ class TestDataIntegrity:
         self.run_s3bench(test_conf, bucket)
         logger.info("ENDED: Persistence storage test.")
 
+    @pytest.mark.skip
+    @pytest.mark.di
+    @pytest.mark.tags("TEST-2")
+    @CTFailOn(error_handler)
     def test_di_large_number_s3_connection_with_deletes(self):
         ops = ManagementOPs()
         users = ops.create_account_users(nusers=4)
