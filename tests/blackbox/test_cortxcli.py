@@ -38,8 +38,8 @@ from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
 from libs.csm.cli.cortxcli_iam_user import CortxCliIamUser
 from libs.csm.cli.cortx_cli_s3access_keys import CortxCliS3AccessKeys
 
-from libs.s3 import s3_test_lib
-
+from libs.s3 import s3_test_lib, iam_test_lib
+from libs.s3 import ACCESS_KEY, SECRET_KEY
 
 class TestCortxcli:
     """Cortxcli Blackbox Testsuite."""
@@ -853,7 +853,6 @@ class TestCortxcli:
         self.log.info("Get Created Access Key %s", created_access_key)
 
         resp = self.accesskeys_obj.show_s3access_key(user_name=self.s3user_name)
-        # assert_true(resp[0], resp[1])
         acc_key_list = list()
         for item in resp["access_keys"]:
             acc_key_list.append(item["access_key_id"])
@@ -890,3 +889,209 @@ class TestCortxcli:
             "Step 6: Verified that access key of user is updated successfully")
         self.log.info(
             "ENDED: update accesskey with inactive mode using cortxcli")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-7193")
+    @CTFailOn(error_handler)
+    def test_2398(self):
+        """Check Login to account with invalid creds and perform s3 crud ops using cortxcli."""
+        self.log.info(
+            "STARTED: login to account with invalid cred and perform s3 crud ops using cortxcli")
+        self.log.info("Step 1: Create new account")
+        err_message = "InvalidAccessKeyId"
+        download_obj_err = "Forbidden"
+        file_size = 1
+        # Dummy access and secret keys
+        user_access_key = ACCESS_KEY
+        user_secret_key = SECRET_KEY
+        resp = self.create_account(acc_name=self.s3acc_name,
+                                   acc_email=self.s3acc_email,
+                                   acc_password=self.s3acc_password)
+        assert_true(resp[0], resp[1])
+        self.s3acc_obj.logout_cortx_cli()
+        self.log.info("Step 1: Created new account")
+        login = self.iam_user_obj.login_cortx_cli(username=self.s3acc_name,
+                                                  password=self.s3acc_password)
+        assert_utils.assert_equals(login[0], True, "Server authentication check failed")
+        s3_user_obj = s3_test_lib.S3TestLib(
+            access_key=user_access_key,
+            secret_key=user_secret_key)
+        self.log.info("Step 2: Performing operations with invalid user's credentials")
+        self.log.info("Creating a bucket with name %s", self.s3bucket_name)
+        try:
+            s3_user_obj.create_bucket(self.s3bucket_name)
+        except CTException as error:
+            assert_in(
+                err_message,
+                error.message,
+                error.message)
+        self.log.info(
+            "Bucket with name %s is not created", self.s3bucket_name)
+        self.log.info(
+            "Putting object %s to bucket %s",
+            self.s3obj_name, self.s3bucket_name)
+        try:
+            create_file(
+                self.test_file_path,
+                file_size)
+            s3_user_obj.put_object(
+                self.s3bucket_name,
+                self.s3obj_name,
+                self.test_file_path)
+        except CTException as error:
+            assert_in(
+                err_message,
+                error.message,
+                error.message)
+        self.log.info(
+            "Could not put object %s to bucket %s",
+            self.s3obj_name, self.s3bucket_name)
+        self.log.info("Downloading object from bucket %s", self.s3bucket_name)
+        try:
+            s3_user_obj.object_download(
+                self.s3bucket_name,
+                self.s3obj_name,
+                self.test_file_path)
+        except CTException as error:
+            assert_in(
+                download_obj_err,
+                error.message,
+                error.message)
+        self.log.info(
+            "Could not download object from bucket %s", self.s3bucket_name)
+        self.log.info(
+            "Step 2: Performed CRUD operations with invalid user's credentials")
+        self.log.info(
+            "ENDED: login to account with invalid cred and perform s3 crud ops using cortxcli")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-7195")
+    @CTFailOn(error_handler)
+    def test_2397(self):
+        """Login to account with valid credentials and perform s3 crud operations using cortxcli.
+
+        This Test is duplicate to test_2430 , hence skipping for now.
+        """
+        self.log.info(
+            "STARTED: login to account with valid creds and perform s3 crud ops using cortxcli")
+        resp = self.create_account(acc_name=self.s3acc_name,
+                                   acc_email=self.s3acc_email,
+                                   acc_password=self.s3acc_password)
+        assert_true(resp[0], resp[1])
+        self.s3acc_obj.logout_cortx_cli()
+        login = self.iam_user_obj.login_cortx_cli(username=self.s3acc_name,
+                                                  password=self.s3acc_password)
+        assert_utils.assert_equals(login[0], True, "Server authentication check failed")
+        self.log.info("Creating iam user with name %s", self.s3user_name)
+        resp = self.iam_user_obj.create_iam_user(user_name=self.s3user_name,
+                                                 password=self.s3acc_password,
+                                                 confirm_password=self.s3acc_password)
+        self.log.info(
+            "Step 1: Creating a user with name %s", self.s3user_name)
+        assert_true(resp[0], resp[1])
+        self.log.info("Verifying user is created by listing users")
+        resp = self.iam_user_obj.list_iam_user()
+        self.log.info("Users list %s", resp[1])
+        assert_true(resp[0], resp[1])
+        self.log.info("Verified that user is created by listing users")
+        self.log.info(
+            "Step 1: Created a user with name %s", self.s3user_name)
+        self.log.info("Step 2: Creating access key for the user")
+        resp = self.accesskeys_obj.create_s3_iam_access_key(self.s3user_name)
+        assert_true(resp[0], resp[1])
+        user_access_key = resp[1]["access_key"]
+        user_secret_key = resp[1]["secret_key"]
+        self.log.info("Step 2: Created access key for newly created user")
+        s3_user_obj = s3_test_lib.S3TestLib(
+            access_key=user_access_key,
+            secret_key=user_secret_key)
+        self.log.info(
+            "Step 3: Performing CRUD operations using valid user's credentials")
+        self.log.info("Creating a bucket with name %s", self.s3bucket_name)
+        resp = self.s3bkt_obj.create_bucket_cortx_cli(self.s3bucket_name)
+        assert_true(resp[0], resp[1])
+        self.log.info(
+            "Bucket with name %s is created successfully", self.s3bucket_name)
+        create_file(self.test_file_path, count=1)
+        self.log.info(
+            "Putting object %s to bucket %s",
+            self.s3obj_name, self.s3bucket_name)
+        resp = s3_user_obj.put_object(
+            self.s3bucket_name,
+            self.s3obj_name,
+            self.test_file_path)
+        assert_true(resp[0], resp[1])
+        self.log.info(
+            "Object %s successfully put to bucket %s",
+            self.s3obj_name, self.s3bucket_name)
+        self.log.info("Downloading object from bucket %s", self.s3bucket_name)
+        resp = s3_user_obj.object_download(
+            self.s3bucket_name, self.s3obj_name, self.test_file_path)
+        assert_true(resp[0], resp[1])
+        assert_equal(
+            resp[1],
+            self.test_file_path,
+            resp[1])
+        self.log.info(
+            "Downloading object from bucket %s successfully", self.s3bucket_name)
+        self.log.info(
+            "Step 3: Performed CRUD operations using valid user's credentials")
+        # Cleanup activity
+        resp = s3_user_obj.delete_object(self.s3bucket_name, self.s3obj_name)
+        assert_true(resp[0], resp[1])
+        resp = self.s3bkt_obj.delete_bucket_cortx_cli(self.s3bucket_name)
+        assert_true(resp[0], resp[1])
+        self.log.info(
+            "ENDED: login to account with valid creds and perform s3 crud ops using cortxcli")
+
+    @pytest.mark.skip
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-7188")
+    @CTFailOn(error_handler)
+    def test_2402(self):
+        """Update user using cortxcli.
+
+        This feature is not support as of now in cortxcli
+        """
+        self.log.info("STARTED: Update user using cortxcli")
+        self.log.info("Step 1: Create new account and new user in it")
+        new_user_name = "testuser2402"
+        resp = self.create_account(acc_name=self.s3acc_name,
+                                   acc_email=self.s3acc_email,
+                                   acc_password=self.s3acc_password)
+        assert_true(resp[0], resp[1])
+        self.s3acc_obj.logout_cortx_cli()
+        login = self.iam_user_obj.login_cortx_cli(username=self.s3acc_name,
+                                                  password=self.s3acc_password)
+        assert_utils.assert_equals(login[0], True, "Server authentication check failed")
+        self.log.info("Creating iam user with name %s", self.s3user_name)
+
+        self.log.info(
+            "Step 1: Creating user with name %s", self.s3user_name)
+        resp = self.iam_user_obj.create_iam_user(user_name=self.s3user_name,
+                                                 password=self.s3acc_password,
+                                                 confirm_password=self.s3acc_password)
+        assert_true(resp[0], resp[1])
+        self.log.info("Step 1: Created new account and new user in it")
+        resp = self.accesskeys_obj.show_s3access_key(user_name=self.s3user_name)
+
+        access_key = resp["access_keys"][0]["access_key_id"]
+        secret_key = resp["access_keys"][0]["secret_key_id"]
+        self.log.info("Access Key for user is %s", access_key)
+        self.log.info("Step 2: Updating user name of already existing user")
+        new_iam_obj = iam_test_lib.IamTestLib(
+            access_key=access_key,
+            secret_key=secret_key)
+        resp = new_iam_obj.update_user(new_user_name, self.s3user_name)
+        assert_true(resp[0], resp[1])
+        self.log.info("Step 2: Updated user name of already existing user")
+        self.log.info(
+            "Step 3: Listing users and verifying user name is updated")
+        resp = self.iam_user_obj.list_iam_user()
+        assert_true(resp[0], resp[1])
+        assert_in(
+            self.s3user_name,
+            resp[1],
+            resp[1])
+        self.log.info("Step 3: Listed users and verified user name is updated")
+        self.log.info("ENDED: Update user using cortxcli")
