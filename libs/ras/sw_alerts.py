@@ -31,39 +31,77 @@ from commons.helpers.health_helper import Health
 from libs.s3 import S3H_OBJ
 from config import RAS_VAL
 from commons.utils.system_utils import run_remote_cmd
-from libs.ras import RASCoreLib
-
+from libs.ras.ras_core_lib import RASCoreLib
+from libs.csm.rest.csm_rest_alert import SystemAlerts
+import re
 LOGGER = logging.getLogger(__name__)
 
 
 class SoftwareAlert(RASCoreLib):
     """A class including functions for ras component related operations."""
 
-    def __init__(self, host: str, username: str, password: str) -> None:
-        """
-        Method which initializes members of RASCoreLib.
+    def run_verify_svc_state(self, svc:str, action:str, monitor_svcs:list):
+        "Perform the given action on the given service and verify systemctl response."
+        try:
+            monitor_svcs.remove(svc)
+        except ValueError:
+            pass
 
-        :param str host: node hostname
-        :param str username: node username
-        :param str password: node password
-        """
-        self.host = host
-        self.username = username
-        self.pwd = password
-        self.node_obj = node_helper.Node(
-            hostname=self.host, username=self.username, password=self.pwd)
-        self.health_obj = Health(hostname=self.host, username=self.username,
-                                 password=self.pwd)
-        self.s3obj = S3H_OBJ
+        LOGGER.info("Get systemctl status for %s ...", monitor_svcs)
+        prev_svcs_status= self.get_svc_status(monitor_svcs)
+        
+        LOGGER.info("Get systemctl status for %s ...", monitor_svcs)
+        prev_svc_state= self.get_svc_status([svc])[svc]
+        
+        LOGGER.info("Performing %s on %s ...",action, svc)
+        self.node_utils.send_systemctl_cmd(action, [svc], exc=False)
+        
+        LOGGER.info("Get systemctl status for %s ...", svc)
+        services_status= self.get_svc_status([svc])
+        a_sysctl_resp =services_status[svc]
+        e_sysctl_resp = self.get_expected_systemctl_resp(action)
+        svc_result = self.verify_systemctl_response(expected=e_sysctl_resp, actual=a_sysctl_resp)
+        if svc_result:
+            LOGGER.info("%s service state is as expected.")
+        else:
+            LOGGER.info("%s service state is NOT as expected.")
 
-    def get_expected_csm_response(action):
+        LOGGER.info("Get systemctl status for %s ...", monitor_svcs)
+        new_svcs_status= self.get_svc_status(monitor_svcs)
+        monitor_svcs_result = new_svcs_status == prev_svcs_status
+        if monitor_svcs_result:
+            LOGGER.info("There is no change in the state of other services")
+        else:
+            LOGGER.error("There is change in the state of the other services")
+
+        e_csm_resp = get_expected_csm_resp(action, prev_svc_state)
+        result = svc_result and monitor_svcs_result
+        return result, e_csm_resp
+
+    def verify_systemctl_response(self, expected:dict, actual:dict):
+        "Verify systemctl status actual response against expected dictornary
+        "
+        result = True
+        LOGGER.info("Expected response : %s", expected)
+        LOGGER.info("Actual response : %s", actual)
+        for key, value in expected.items():
+            if actual[key] != value:
+                result = False
+        return result
+
+    def get_expected_csm_resp(self, action:str, prev_state:dict):
+        "
+        #TODO: This function will be refined when the CSM is available for testing.
+        "
         svc_fault_response ={"description":"{service_name} is failed state.",  
                         "alert_type": "fault",
                         "serverity": "critical",
                         "impact": "{service_name} service is unavailable.",
                         "recommendation": "Try to restart the service."}
 
-        svc_timeout_response = {"description":"{service_name} in a {inactive/activating/reloading/deactivating} state for more than {threshold_inactive_time} seconds. ",  
+        svc_timeout_response = {"description":"{service_name} in a "
+                                "{inactive/activating/reloading/deactivating} state for more than"
+                                "{threshold_inactive_time} seconds. ",  
                         "alert_type": "fault",
                         "serverity": "critical",
                         "impact": "{service_name} service is unavailable.",
@@ -76,23 +114,75 @@ class SoftwareAlert(RASCoreLib):
                         "recommendation": ""}
 
         if action == "start":
-            systemctl_status = ""
-            csm_response = svc_resolved_response
+            if prev_state['state'] not in ["active"]
+                csm_response = svc_resolved_response
+            else:
+                csm_response = None
 
         elif action == "stop":
-            csm_response = svc_fault_response
+            if prev_state['state'] not in ['inactive']:
+                csm_response = svc_fault_response
+            else:
+                csm_response = None
 
-        elif action == "reload":
-            csm_response = 
+        elif action == "restart":
+            if prev_state['state'] not in ['inactive', 'failed']
+                csm_response = None
+            else:
+                csm_response = None
 
         elif action == "enable":
-            csm_response =
+            csm_response = None
 
         elif action == "disable":
-            csm_response = 
-        
-    def get_svc_status(services:list):
-        status ={}
-        for svc in services:
-            response = node_obj.send_systemctl_cmd("status",svc)
-            status[svc]= 
+            csm_response = None
+
+        return systemctl_status,csm_response
+
+
+    def get_expected_systemctl_resp(self, action:str, prev_state:dict):
+        "Find the expected response based on action performed on the service and it's previous state
+        "
+        if action == "start":
+            systemctl_status = {'state': 'active'}
+        elif action == "stop":
+            systemctl_status = {'state': 'inactive'}
+        elif action == "restart":
+            systemctl_status = {'state': 'active'}
+        elif action == "enable":
+            systemctl_status = {'enabled': 'enabled'}
+        elif action == "disable":
+            systemctl_status = {'enabled': 'disabled'}
+        return systemctl_status
+
+    def get_svc_status(self,services:list):
+        status = {}
+        responses = self.node_utils.send_systemctl_cmd("status",services, exc=False)
+        for svc, response in zip(services, responses):
+            LOGGER.info("Systemctl status for %s service is %s", svc, response)
+            status[svc]=self.parse_systemctl_status(response)
+        return status
+
+
+    def parse_systemctl_status(self, response):
+        response=response.decode("utf8")
+        service_tokenizer = re.compile(r'● (?P<service>.*?) - (?P<description>.*)')
+        state_tokenizer = re.compile(r'Active: (?P<state>.*?) (?P<sub_state>.*) since (?P<timestamp>.*)')
+        load_tokenizer = re.compile(r'Loaded: (?P<loaded>.*?) \((?P<path>.*?); (?P<enabled>.*); vendor preset: (?P<vendorpreset>.*)\)')
+        pid_tokenizer = re.compile(r'Main PID: (?P<pid>.*?) (?P<comment>.*)')
+        parsed_op = {}
+        for line in response.splitlines():
+            line = line.lstrip().rstrip()
+            if "● " in line:
+                match = re.match(service_tokenizer,line)
+                parsed_op.update(match.groupdict())
+            if "Active:" in line:
+                match = re.match(state_tokenizer,line)
+                parsed_op.update(match.groupdict())
+            if "Loaded:" in line:
+                match = re.match(load_tokenizer,line)
+                parsed_op.update(match.groupdict())
+            if "Main PID:" in line:
+                match = re.match(pid_tokenizer,line)
+                parsed_op.update(match.groupdict())
+        return parsed_op
