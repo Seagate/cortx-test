@@ -59,11 +59,6 @@ class ManagementOPs:
                                            CMN_CFG["ldap"]["password"])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
-
-        # iam_cert_path = S3_CFG['iam_cert_path']
-        # endpoint_url = S3_CFG['iam_url']
-        # cli = iam_core_lib.IamLib(access_key, secret_key, endpoint_url, iam_cert_path)
-
         users = {"{}{}".format(cls.user_prefix, i): tuple() for i in range(1, nusers + 1)}
 
         # Create IAM users
@@ -80,7 +75,9 @@ class ManagementOPs:
         return users
 
     @classmethod
-    def create_account_users(cls, nusers=10, use_cortx_cli=True):
+    def create_account_users(cls,
+                             nusers: int = 10,
+                             use_cortx_cli: bool = True) -> dict:
         """
         Creates s3 account users to upload DI test data. This function uses S3IamCli
         to create users.
@@ -126,13 +123,12 @@ class ManagementOPs:
                                                             account_email=email,
                                                             password=s3_user_passwd)
                 assert_utils.assert_equals(True, resp[0], resp[1])
-                LOGGER.info("Created s3 account %s", user)
                 result, acc_details = cctl.create_get_s3account_details_cortxcli(user,
                                                                                  email,
                                                                                  s3_user_passwd)
                 if not result:
                     assert_utils.assert_true(result, 's3 account use not created.')
-
+                LOGGER.info("Created s3 account %s", user)
                 udict.update({'accesskey': acc_details["access_key"]})
                 udict.update({'secretkey': acc_details["secret_key"]})
 
