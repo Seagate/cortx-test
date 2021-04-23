@@ -73,6 +73,8 @@ class TestDataIntegrity:
     @pytest.mark.di
     @pytest.mark.tags("TEST-0")
     def test_di_sanity(self):
+        import pdb
+        pdb.set_trace()
         ops = ManagementOPs()
         users = ops.create_account_users(nusers=4)
         #uploader = Uploader()

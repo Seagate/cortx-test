@@ -24,13 +24,15 @@ import random
 import logging
 import boto3
 from config import CMN_CFG
+from config import CSM_CFG
 from config import S3_CFG
 from config import DI_CFG
+from commons.utils import assert_utils
 from libs.s3 import iam_core_lib
 from libs.s3.iam_core_lib import S3IamCli
 from libs.s3 import iam_test_lib
 from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
-
+from libs.s3 import cortxcli_test_lib as cctl
 
 LOGGER = logging.getLogger(__name__)
 
@@ -86,14 +88,18 @@ class ManagementOPs:
         :param nusers: number of users to create
         :return:
         """
+        LOGGER.info("Creating Cortx CLI users with ")
+        s3acc_obj = CortxCliS3AccountOperations()
+        s3acc_obj.open_connection()
         users = {"{}{}".format(cls.user_prefix, i): dict() for i in range(1, nusers + 1)}
-
+        s3_user_passwd = CSM_CFG["CliConfig"]["s3_account"]["password"]
         for i in range(1, nusers + 1):
             udict = dict()
             user = cls.user_prefix + str(i)
             email = user + cls.email_suffix
             udict.update({'user_name': user})
             udict.update({'emailid': email})
+            udict.update({'password': s3_user_passwd})
 
             if not use_cortx_cli:
                 # Create S3 account
@@ -116,13 +122,22 @@ class ManagementOPs:
                     udict.update({'accesskey': resp[1]["access_key"]})
                     udict.update({'secretkey': resp[1]["secret_key"]})
             else:
-                LOGGER.info("Creating Cortx CLI users with ")
-                s3acc_obj = CortxCliS3AccountOperations()
-                s3acc_obj.open_connection()
+                resp = s3acc_obj.create_s3account_cortx_cli(account_name=user,
+                                                            account_email=email,
+                                                            password=s3_user_passwd)
+                assert_utils.assert_equals(True, resp[0], resp[1])
+                LOGGER.info("Created s3 account %s", user)
+                result, acc_details = cctl.create_get_s3account_details_cortxcli(user,
+                                                                                 email,
+                                                                                 s3_user_passwd)
+                if not result:
+                    assert_utils.assert_true(result, 's3 account use not created.')
 
-                s3acc_obj.logout_cortx_cli()
+                udict.update({'accesskey': acc_details["access_key"]})
+                udict.update({'secretkey': acc_details["secret_key"]})
 
             users.update({user: udict})
+
         return users
 
     @classmethod
