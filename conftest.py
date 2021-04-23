@@ -355,14 +355,13 @@ def pytest_configure(config):
     """pytest configure hook runs before collection."""
     if not config.option.nodes:
         config.option.nodes = []  # CMN_CFG.nodes
-    import pdb
-    pdb.set_trace()
-    jira_update = ast.literal_eval(str(config.option.jira_update))
-    if jira_update:
-        Globals.JIRA_UPDATE = True
-        LOGGER.info(f'Jira update pytest switch is set to {Globals.JIRA_UPDATE}')
-    else:
-        Globals.JIRA_UPDATE = False
+    if not config.option.local:
+        jira_update = ast.literal_eval(str(config.option.jira_update))
+        if jira_update:
+            Globals.JIRA_UPDATE = True
+            LOGGER.info(f'Jira update pytest switch is set to {Globals.JIRA_UPDATE}')
+        else:
+            Globals.JIRA_UPDATE = False
 
     # Handle parallel execution.
     if not hasattr(config, 'workerinput'):
@@ -371,12 +370,13 @@ def pytest_configure(config):
 
 def pytest_configure_node(node):
     """xdist hook."""
-    jira_update = ast.literal_eval(str(node.config.option.jira_update))
-    if jira_update:
-        Globals.JIRA_UPDATE = True
-        LOGGER.info(f'Jira update pytest switch is set to {Globals.JIRA_UPDATE}')
-    else:
-        Globals.JIRA_UPDATE = False
+    if not node.config.option.local:
+        jira_update = ast.literal_eval(str(node.config.option.jira_update))
+        if jira_update:
+            Globals.JIRA_UPDATE = True
+            LOGGER.info(f'Jira update pytest switch is set to {Globals.JIRA_UPDATE}')
+        else:
+            Globals.JIRA_UPDATE = False
 
     node.workerinput['shared_dir'] = node.config.shared_directory
 
