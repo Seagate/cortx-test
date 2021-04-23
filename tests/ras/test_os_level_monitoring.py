@@ -25,18 +25,17 @@ import time
 import random
 import logging
 import pytest
-from libs.ras.ras_test_lib import RASTestLib
+from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
 from commons.helpers.node_helper import Node
 from commons.helpers.health_helper import Health
-from libs.s3 import S3H_OBJ
+from commons.utils.system_utils import systemctl_cmd
 from commons import constants as cons
 from commons import commands as common_cmd
 from commons.utils.assert_utils import *
 from commons import cortxlogging
-
+from libs.s3 import S3H_OBJ
 from libs.csm.rest.csm_rest_alert import SystemAlerts
-from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
-from commons.utils.system_utils import systemctl_cmd
+from libs.ras.ras_test_lib import RASTestLib
 from libs.ras.sw_alerts import SoftwareAlert
 
 LOGGER = logging.getLogger(__name__)
@@ -67,7 +66,7 @@ class TestOSLevelMonitoring:
         # Enable this flag for starting RMQ channel
         cls.start_msg_bus = cls.cm_cfg["start_msg_bus"]
         cls.s3obj = S3H_OBJ
-        cls.sw_alert_obj = SoftwareAlert("10.230.246.237","root","seagate")
+        cls.sw_alert_obj = SoftwareAlert("10.230.246.237", "root", "seagate")
 
     def setup_method(self):
         """Setup operations per test."""
@@ -231,36 +230,41 @@ class TestOSLevelMonitoring:
         external_svcs = RAS_TEST_CFG["third_party_services"]
         for svc in external_svcs:
             LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
-            
-            LOGGER.info("Stopping %s service...",svc)
+
+            LOGGER.info("Stopping %s service...", svc)
             starttime = time.time()
-            result, e_csm_resp = sw_alert_obj.run_verify_svc_state(svc, "stop", external_svcs)
+            result, e_csm_resp = self.sw_alert_obj.run_verify_svc_state(svc, "stop", external_svcs)
             assert result, "Failed in stop service"
-            assert self.csm_alert_obj.verify_csm_response(starttime,e_csm_resp["alert_type"], False)
-            
-            LOGGER.info("Starting %s service...",svc)
+            assert self.csm_alert_obj.verify_csm_response(
+                starttime, e_csm_resp["alert_type"], False)
+
+            LOGGER.info("Starting %s service...", svc)
             starttime = time.time()
-            result, e_csm_resp = sw_alert_obj.run_verify_svc_state(svc, "start", external_svcs)
+            result, e_csm_resp = self.sw_alert_obj.run_verify_svc_state(svc, "start", external_svcs)
             assert result, " Failed in start service"
-            assert self.csm_alert_obj.verify_csm_response(starttime,e_csm_resp["alert_type"], True)
+            assert self.csm_alert_obj.verify_csm_response(starttime, e_csm_resp["alert_type"], True)
 
-            LOGGER.info("Disabling %s service...",svc)
+            LOGGER.info("Disabling %s service...", svc)
             starttime = time.time()
-            result, e_csm_resp = sw_alert_obj.run_verify_svc_state(svc, "disable", external_svcs)
+            result, e_csm_resp = self.sw_alert_obj.run_verify_svc_state(
+                svc, "disable", external_svcs)
             assert result, "Failed in disable service"
-            assert self.csm_alert_obj.verify_csm_response(starttime,e_csm_resp["alert_type"], False)
+            assert self.csm_alert_obj.verify_csm_response(
+                starttime, e_csm_resp["alert_type"], False)
 
-            LOGGER.info("Enabling %s service...",svc)
+            LOGGER.info("Enabling %s service...", svc)
             starttime = time.time()
-            result, e_csm_resp = sw_alert_obj.run_verify_svc_state(svc, "enable", external_svcs)
+            result, e_csm_resp = self.sw_alert_obj.run_verify_svc_state(
+                svc, "enable", external_svcs)
             assert result, "Failed in enable service"
-            assert self.csm_alert_obj.verify_csm_response(starttime,e_csm_resp["alert_type"], True)
+            assert self.csm_alert_obj.verify_csm_response(starttime, e_csm_resp["alert_type"], True)
 
-            LOGGER.info("Restarting %s service...",svc)
+            LOGGER.info("Restarting %s service...", svc)
             starttime = time.time()
-            result, e_csm_resp = sw_alert_obj.run_verify_svc_state(svc, "restart", external_svcs)
+            result, e_csm_resp = self.sw_alert_obj.run_verify_svc_state(
+                svc, "restart", external_svcs)
             assert result, "Failed in restart service"
-            assert self.csm_alert_obj.verify_csm_response(starttime,e_csm_resp["alert_type"], True)
+            assert self.csm_alert_obj.verify_csm_response(starttime, e_csm_resp["alert_type"], True)
 
             LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
