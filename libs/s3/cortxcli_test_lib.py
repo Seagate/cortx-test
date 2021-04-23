@@ -319,7 +319,7 @@ class CortxcliS3AccessKeys(CortxCliS3AccessKeys):
             self,
             user_name: str) -> tuple:
         """
-        Function will create a bucket using CORTX CLI.
+        Function will delete a user access key using CORTX CLI.
 
         :param user_name: user name for whom access key will be created.
         :return: True/False and response returned by CORTX CLI
@@ -370,7 +370,7 @@ class CortxcliS3BucketOperations(CortxCliS3BucketOperations):
 
     def list_bucket_cortx_cli(
             self,
-            bucket_name: str) -> tuple:
+            op_format: str = "sjon") -> tuple:
         """
         Function will create a bucket using CORTX CLI.
 
@@ -378,10 +378,10 @@ class CortxcliS3BucketOperations(CortxCliS3BucketOperations):
         :return: True/False and response returned by CORTX CLI
         """
         try:
-            response = super().list_buckets_cortx_cli(bucket_name)
+            response = super().list_buckets_cortx_cli(op_format=op_format)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
-                         CortxcliS3BucketOperations.create_bucket_cortx_cli.__name__,
+                         CortxcliS3BucketOperations.list_bucket_cortx_cli.__name__,
                          error)
             raise CTException(err.S3_ERROR, error.args[0])
 
@@ -391,7 +391,7 @@ class CortxcliS3BucketOperations(CortxCliS3BucketOperations):
             self,
             bucket_name: str) -> tuple:
         """
-        Function will create a bucket using CORTX CLI.
+        Function will delete a bucket using CORTX CLI.
 
         :param bucket_name: New bucket's name
         :return: True/False and response returned by CORTX CLI
@@ -400,7 +400,7 @@ class CortxcliS3BucketOperations(CortxCliS3BucketOperations):
             response = super().delete_bucket_cortx_cli(bucket_name)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
-                         CortxcliS3BucketOperations.create_bucket_cortx_cli.__name__,
+                         CortxcliS3BucketOperations.delete_bucket_cortx_cli.__name__,
                          error)
             raise CTException(err.S3_ERROR, error.args[0])
 
@@ -413,11 +413,7 @@ class CortxCliTestLib(CortxcliS3AccountOperations,
                       CortxcliCsmUser,
                       CortxcliS3AccessKeys,
                       IamTestLib):
-    """Class for performing cortxcli operations.
-
-        Create session in Tests/setup_method to consume resources of this library.
-        i.e. class_obj.open_connection()
-    """
+    """Class for performing cortxcli operations."""
 
     def __init__(
             self, session_obj: object = None):
