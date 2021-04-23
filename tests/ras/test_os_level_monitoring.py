@@ -25,10 +25,10 @@ import time
 import random
 import logging
 import pytest
-from libs.ras.ras_test_lib import RASTestLib
+from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
 from commons.helpers.node_helper import Node
 from commons.helpers.health_helper import Health
-from libs.s3 import S3H_OBJ
+from commons.utils.system_utils import systemctl_cmd
 from commons import constants as cons
 from commons import commands as common_cmd
 from libs.csm.rest.csm_rest_alert import SystemAlerts
@@ -61,7 +61,7 @@ class TestOSLevelMonitoring:
         # Enable this flag for starting RMQ channel
         cls.start_msg_bus = cls.cm_cfg["start_msg_bus"]
         cls.s3obj = S3H_OBJ
-        cls.sw_alert_obj = SoftwareAlert("10.230.246.237","root","seagate")
+        cls.sw_alert_obj = SoftwareAlert("10.230.246.237", "root", "seagate")
 
     def setup_method(self):
         """Setup operations per test."""
