@@ -29,6 +29,7 @@ import shutil
 import socket
 import builtins
 import errno
+import string
 from typing import Tuple
 from subprocess import Popen, PIPE
 from hashlib import md5
@@ -1001,3 +1002,16 @@ def configre_minio_cloud(minio_repo=None,
     except Exception as error:
         LOGGER.error(str(error))
         return False
+
+
+def random_metadata_generator(
+        size: int = 6,
+        chars: str = string.ascii_uppercase + string.digits + string.ascii_lowercase) -> str:
+    """
+    Generate random string of given size
+
+    :param size: Length of string
+    :param chars: Characters from which random selection is done
+    :return: str
+    """
+    return ''.join(random.SystemRandom().choice(chars) for _ in range(size))
