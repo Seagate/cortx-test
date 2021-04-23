@@ -708,15 +708,15 @@ class TestUserLoginProfileTests():
         """Verify get-login-profile for s3 IAM user."""
         self.log.info("STARTED: Verify get-login-profile for s3 IAM user")
         test_9849_cfg = USER_CONFIG["test_9849"]
-        resp = IAM_TEST_OBJ.create_user(test_9849_cfg["user_name"])
+        resp = IAM_TEST_OBJ.create_user(self.user_name)
         assert_true(resp[0], resp[1])
         resp = IAM_TEST_OBJ.create_user_login_profile(
-            test_9849_cfg["user_name"],
-            test_9849_cfg["password"],
-            test_9849_cfg["password_reset"])
+            self.user_name,
+            self.test_cfg["test_9849"]["password"],
+            True)
         assert_true(resp[0], resp[1])
         resp = IAM_TEST_OBJ.get_user_login_profile_s3iamcli(
-            test_9849_cfg["user_name"],
+            self.user_name,
             S3H_OBJ.get_local_keys()[0],
             S3H_OBJ.get_local_keys()[1])
         assert_true(resp[0], resp[1])
@@ -733,13 +733,13 @@ class TestUserLoginProfileTests():
         test_9850_cfg = USER_CONFIG["test_9850"]
         try:
             IAM_TEST_OBJ.get_user_login_profile_s3iamcli(
-                test_9850_cfg["user_name"],
+                self.user_name,
                 S3H_OBJ.get_local_keys()[0],
                 S3H_OBJ.get_local_keys()[1])
         except CTException as error:
             self.log.debug(error.message)
             assert_in(
-                test_9850_cfg["err_message"],
+                "NoSuchEntity",
                 error.message,
                 error.message)
         self.log.info(
@@ -756,17 +756,17 @@ class TestUserLoginProfileTests():
             "STARTED: Verify get-login-profile for a non profile "
             "IAM user (IAM user with no profile created)")
         test_9851_cfg = USER_CONFIG["test_9851"]
-        resp = IAM_TEST_OBJ.create_user(test_9851_cfg["user_name"])
+        resp = IAM_TEST_OBJ.create_user(self.user_name)
         assert_true(resp[0], resp[1])
         try:
             IAM_TEST_OBJ.get_user_login_profile_s3iamcli(
-                test_9851_cfg["user_name"],
+                self.user_name,
                 S3H_OBJ.get_local_keys()[0],
                 S3H_OBJ.get_local_keys()[1])
         except CTException as error:
             self.log.debug(error.message)
             assert_in(
-                test_9851_cfg["err_message"],
+                "NoSuchEntity",
                 error.message,
                 error.message)
         self.log.info(
@@ -782,18 +782,18 @@ class TestUserLoginProfileTests():
         self.log.info("STARTED: Verify password change for IAM user")
         test_9876_cfg = USER_CONFIG["test_9876"]
         resp = self.create_user_and_access_key(
-            test_9876_cfg["user_name"],
-            test_9876_cfg["password"])
+            self.user_name,
+            self.test_cfg["test_9876"]["password"])
         user_access_key = resp[0]
         user_secret_key = resp[1]
         resp = IAM_TEST_OBJ.change_user_password(
-            test_9876_cfg["password"],
-            test_9876_cfg["new_password"],
+            self.test_cfg["test_9876"]["password"],
+            self.test_cfg["test_9876"]["new_password"],
             user_access_key,
             user_secret_key)
         assert_true(resp[0], resp[1])
         resp = IAM_TEST_OBJ.delete_access_key(
-            test_9876_cfg["user_name"], user_access_key)
+            self.user_name, user_access_key)
         assert_true(resp[0], resp[1])
         self.log.info("ENDED: Verify password change for IAM user")
 
@@ -809,14 +809,14 @@ class TestUserLoginProfileTests():
         test_9877_cfg = USER_CONFIG["test_9877"]
         try:
             IAM_TEST_OBJ.change_user_password(
-                test_9877_cfg["password"],
-                test_9877_cfg["new_password"],
-                test_9877_cfg["user_access_key"],
-                test_9877_cfg["user_secret_key"])
+                self.test_cfg["test_9877"]["password"],
+                self.test_cfg["test_9877"]["new_password"],
+                "dummy_access_key",
+                "dummy_secret_key")
         except CTException as error:
             self.log.debug(error.message)
             assert_in(
-                test_9877_cfg["err_message"],
+                "InvalidAccessKeyId",
                 error.message,
                 error.message)
         self.log.info("ENDED: Verify password change for a "
@@ -831,13 +831,13 @@ class TestUserLoginProfileTests():
         self.log.info("STARTED: Provide only six character length in password")
         test_9878_cfg = USER_CONFIG["test_9878"]
         resp = self.create_user_and_access_key(
-            test_9878_cfg["user_name"],
-            test_9878_cfg["password"])
+            self.user_name,
+            self.test_cfg["test_9878"]["password"])
         user_access_key = resp[0]
         user_secret_key = resp[1]
         resp = IAM_TEST_OBJ.change_user_password(
-            test_9878_cfg["password"],
-            test_9878_cfg["new_password"],
+            self.test_cfg["test_9878"]["password"],
+            self.test_cfg["test_9878"]["new_password"],
             user_access_key,
             user_secret_key)
         assert_true(resp[0], resp[1])
@@ -852,20 +852,20 @@ class TestUserLoginProfileTests():
         self.log.info("STARTED: Provide only one character length in password")
         test_9879_cfg = USER_CONFIG["test_9879"]
         resp = self.create_user_and_access_key(
-            test_9879_cfg["user_name"],
-            test_9879_cfg["password"])
+            self.user_name,
+            self.test_cfg["test_9879"]["password"])
         user_access_key = resp[0]
         user_secret_key = resp[1]
         try:
             IAM_TEST_OBJ.change_user_password(
-                test_9879_cfg["password"],
-                test_9879_cfg["new_password"],
+                self.test_cfg["test_9879"]["password"],
+                self.test_cfg["test_9879"]["new_password"],
                 user_access_key,
                 user_secret_key)
         except CTException as error:
             self.log.debug(error.message)
             assert_in(
-                test_9879_cfg["err_message"],
+                "PasswordPolicyVoilation",
                 error.message,
                 error.message)
         self.log.info("ENDED: Provide only one character length in password")

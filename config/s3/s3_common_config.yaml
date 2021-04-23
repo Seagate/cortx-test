@@ -135,3 +135,22 @@ test_configs:
 
   test_9848:
     password: "MKfKFPvnz+bywHQ4bPCB0ty8+jz1+YSHPHfUOCM/bQU="
+
+  test_9849:
+    password: "MKfKFPvnz+bywHQ4bPCB0ty8+jz1+YSHPHfUOCM/bQU="
+
+  test_9876:
+    password: "MKfKFPvnz+bywHQ4bPCB0ty8+jz1+YSHPHfUOCM/bQU="
+    new_password: "DLzaqFOr0UOgOKrWI3P3XqNuTvF2i1Kq+kSgKF3w5AQ="
+
+  test_9877:
+    password: "MKfKFPvnz+bywHQ4bPCB0ty8+jz1+YSHPHfUOCM/bQU="
+    new_password: "DLzaqFOr0UOgOKrWI3P3XqNuTvF2i1Kq+kSgKF3w5AQ="
+
+  test_9878:
+    password: "MKfKFPvnz+bywHQ4bPCB0ty8+jz1+YSHPHfUOCM/bQU="
+    new_password: "DLzaqFOr0UOgOKrWI3P3XqNuTvF2i1Kq+kSgKF3w5AQ="
+
+  test_9879:
+    password: "MKfKFPvnz+bywHQ4bPCB0ty8+jz1+YSHPHfUOCM/bQU="
+    new_password: "l8eFHwZQtUp++zFTdUEwnVNeMev7oSIy3t8wXyTcDWw="
