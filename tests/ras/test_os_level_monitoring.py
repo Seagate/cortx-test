@@ -133,8 +133,8 @@ class TestOSLevelMonitoring:
         if stat_list:
             for i in stat_list:
                 inactive_list.append(services[i])
-            assert_false(False, f"{inactive_list} services are not in active "
-                                f"state")
+            assert_true(False, f"{inactive_list} services are not in active "
+                               f"state")
         LOGGER.info("All 3rd party services are in active state.")
 
         self.timeouts = common_cfg["os_lvl_monitor_timeouts"]
@@ -242,8 +242,8 @@ class TestOSLevelMonitoring:
         if stat_list:
             for i in stat_list:
                 active_list.append(random_services[i])
-            assert_false(False, f"Failed to put {active_list} services in "
-                                f"stopped/inactive state")
+            assert_true(False, f"Failed to put {active_list} services in "
+                               f"stopped/inactive state")
         LOGGER.info(f"Step 2: Successfully stopped {random_services}")
 
         time.sleep(self.timeouts["alert_timeout"])
@@ -262,8 +262,8 @@ class TestOSLevelMonitoring:
         if stat_list:
             for i in stat_list:
                 inactive_list.append(random_services[i])
-            assert_false(False, f"Failed to put {inactive_list} services in "
-                                f"active state")
+            assert_true(False, f"Failed to put {inactive_list} services in "
+                               f"active state")
         LOGGER.info("Step 4: Successfully started %s", random_services)
 
         time.sleep(self.timeouts["alert_timeout"])
