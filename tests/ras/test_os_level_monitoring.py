@@ -234,31 +234,31 @@ class TestOSLevelMonitoring:
             
             LOGGER.info("Stopping %s service...",svc)
             starttime = time.time()
-            result, e_csm_resp = sw_alert_obj.run_verify_svc_state(svc, "stop")
+            result, e_csm_resp = sw_alert_obj.run_verify_svc_state(svc, "stop", external_svcs)
             assert result, "Failed in stop service"
             assert self.csm_alert_obj.verify_csm_response(starttime,e_csm_resp["alert_type"], False)
             
             LOGGER.info("Starting %s service...",svc)
             starttime = time.time()
-            result, e_csm_resp = sw_alert_obj.run_verify_svc_state(svc, "start")
+            result, e_csm_resp = sw_alert_obj.run_verify_svc_state(svc, "start", external_svcs)
             assert result, " Failed in start service"
             assert self.csm_alert_obj.verify_csm_response(starttime,e_csm_resp["alert_type"], True)
 
             LOGGER.info("Disabling %s service...",svc)
             starttime = time.time()
-            result, e_csm_resp = sw_alert_obj.run_verify_svc_state(svc, "disable")
+            result, e_csm_resp = sw_alert_obj.run_verify_svc_state(svc, "disable", external_svcs)
             assert result, "Failed in disable service"
             assert self.csm_alert_obj.verify_csm_response(starttime,e_csm_resp["alert_type"], False)
 
             LOGGER.info("Enabling %s service...",svc)
             starttime = time.time()
-            result, e_csm_resp = sw_alert_obj.run_verify_svc_state(svc, "enable")
+            result, e_csm_resp = sw_alert_obj.run_verify_svc_state(svc, "enable", external_svcs)
             assert result, "Failed in enable service"
             assert self.csm_alert_obj.verify_csm_response(starttime,e_csm_resp["alert_type"], True)
 
             LOGGER.info("Restarting %s service...",svc)
             starttime = time.time()
-            result, e_csm_resp = sw_alert_obj.run_verify_svc_state(svc, "restart")
+            result, e_csm_resp = sw_alert_obj.run_verify_svc_state(svc, "restart", external_svcs)
             assert result, "Failed in restart service"
             assert self.csm_alert_obj.verify_csm_response(starttime,e_csm_resp["alert_type"], True)
 
