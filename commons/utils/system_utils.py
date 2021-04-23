@@ -20,22 +20,24 @@
 #
 """Module to maintain system utils."""
 
+import builtins
 import logging
 import os
-import sys
 import platform
 import random
 import shutil
 import socket
 import builtins
-from typing import Tuple
-from subprocess import Popen, PIPE
-from itertools import chain
+import string
+import sys
 from hashlib import md5
+from subprocess import Popen, PIPE
+from typing import Tuple
+
 from paramiko import SSHClient, AutoAddPolicy
+
 from commons import commands
 from commons import params
-
 
 if sys.platform == 'win32':
     try:
@@ -993,3 +995,16 @@ def configre_minio_cloud(minio_repo=None,
     except Exception as error:
         LOGGER.error(str(error))
         return False
+
+
+def random_metadata_generator(
+        size: int = 6,
+        chars: str = string.ascii_uppercase + string.digits + string.ascii_lowercase) -> str:
+    """
+    Generate random string of given size
+
+    :param size: Length of string
+    :param chars: Characters from which random selection is done
+    :return: str
+    """
+    return ''.join(random.SystemRandom().choice(chars) for _ in range(size))
