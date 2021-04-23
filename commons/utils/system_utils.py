@@ -961,40 +961,6 @@ def configure_jclient_cloud(
     return bool(".jar" in res_ls)
 
 
-def systemctl_cmd(
-        command: str,
-        services: list,
-        hostname: str,
-        username: str,
-        password: str) -> list:
-    """
-    send/execute systemctl command on remote node.
-    :param command: systemctl command to be executed
-    :param services: list of services on which systemctl command is to be
-    executed
-    :param hostname: hostname of the system on which command is to be executed
-    :param username: username of the host
-    :param password: password of the host
-    """
-    valid_commands = {"start", "stop",
-                      "reload", "enable", "disable", "status", "is-active"}
-    if command not in valid_commands:
-        raise ValueError(
-            "command parameter must be one of %r." % valid_commands)
-    out = []
-    for service in services:
-        LOGGER.info("Performing %s on service %s...", command, service)
-        cmd = commands.SYSTEM_CTL_CMD.format(command, service)
-        status, result = run_remote_cmd(cmd=cmd, hostname=hostname,
-                                        username=username,
-                                        password=password, read_lines=True)
-        LOGGER.info("Status: %s", status)
-        out.append(result)
-        resp = list(chain.from_iterable(out))
-
-    return resp
-
-
 def configre_minio_cloud(minio_repo=None,
                          endpoint_url=None,
                          s3_cert_path=None,

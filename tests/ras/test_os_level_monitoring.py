@@ -33,7 +33,6 @@ from commons import constants as cons
 from commons import commands as common_cmd
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
-from commons.utils.system_utils import systemctl_cmd
 from commons.utils.assert_utils import *
 
 LOGGER = logging.getLogger(__name__)
@@ -66,7 +65,7 @@ class TestOSLevelMonitoring:
 
     def setup_method(self):
         """Setup operations per test."""
-        services = RAS_TEST_CFG["third_party_services"]
+        external_services = RAS_TEST_CFG["third_party_services"]
         common_cfg = RAS_VAL["ras_sspl_alert"]
 
         LOGGER.info("Running setup_method")
@@ -124,9 +123,10 @@ class TestOSLevelMonitoring:
         LOGGER.info("Started collection of sspl logs")
 
         LOGGER.info("Check that all the 3rd party services are active")
-        resp = systemctl_cmd(command="is-active", services=services,
-                             hostname=self.host, username=self.uname,
-                             password=self.passwd)
+        resp = self.node_obj.send_systemctl_cmd(command="is-active",
+                                                services=external_services,
+                                                decode=True, exc=False)
+
         stat_list = list(
             filter(lambda j: resp[j] != "active", range(0, len(resp))))
         inactive_list = []
@@ -234,9 +234,9 @@ class TestOSLevelMonitoring:
         self.node_obj.send_systemctl_cmd("stop", services=random_services)
         LOGGER.info("Checking that %s services are in stopped state",
                     random_services)
-        resp = systemctl_cmd(command="is-active", services=random_services,
-                             hostname=self.host, username=self.uname,
-                             password=self.passwd)
+        resp = self.node_obj.send_systemctl_cmd(command="is-active",
+                                                services=random_services,
+                                                decode=True, exc=False)
         stat_list = list(filter(lambda j: resp[j] == "active", range(0, len(resp))))
         active_list = []
         if stat_list:
@@ -254,9 +254,9 @@ class TestOSLevelMonitoring:
         LOGGER.info("Step 4: Starting %s", random_services)
         self.node_obj.send_systemctl_cmd("start", services=random_services)
         LOGGER.info("Checking that %s services are in active state", random_services)
-        resp = systemctl_cmd(command="is-active", services=random_services,
-                             hostname=self.host, username=self.uname,
-                             password=self.passwd)
+        resp = self.node_obj.send_systemctl_cmd(command="is-active",
+                                                services=random_services,
+                                                decode=True, exc=False)
         stat_list = list(filter(lambda j: resp[j] != "active", range(0, len(resp))))
         inactive_list = []
         if stat_list:
