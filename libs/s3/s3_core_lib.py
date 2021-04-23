@@ -156,6 +156,34 @@ class S3Lib:
 
         return response
 
+    def copy_object_acl(self,
+                        source_bucket: str = None,
+                        source_object: str = None,
+                        dest_bucket: str = None,
+                        dest_object: str = None,
+                        acl: str = None) -> dict:
+        """
+        Creates a copy of an object that is already stored in Seagate S3.
+
+        :param source_bucket: The name of the source bucket.
+        :param source_object: The name of the source object.
+        :param dest_bucket: The name of the destination bucket.
+        :param dest_object: The name of the destination object.
+        :param acl: The canned ACL to apply to the object.
+            ACL='private'|'public-read'|'public-read-write'|'authenticated-read'|'aws-exec-read'|
+            'bucket-owner-read'|'bucket-owner-full-control'
+        :return: response dict.
+        """
+        response = self.s3_client.copy_object(
+            Bucket=dest_bucket,
+            CopySource='/{}/{}'.format(source_bucket, source_object),
+            Key=dest_object,
+            Acl=acl
+        )
+        LOGGER.debug(response)
+
+        return response
+
     def object_upload(self,
                       bucket_name: str = None,
                       object_name: str = None,
