@@ -61,6 +61,7 @@ class TestOSLevelMonitoring:
         # Enable this flag for starting RMQ channel
         cls.start_msg_bus = cls.cm_cfg["start_msg_bus"]
         cls.s3obj = S3H_OBJ
+        cls.sw_alert_obj = SoftwareAlert("10.230.246.237","root","seagate")
 
     def setup_method(self):
         """Setup operations per test."""
