@@ -41,7 +41,8 @@ class SoftwareAlert(RASCoreLib):
     """A class including functions for ras component related operations."""
 
     def run_verify_svc_state(self, svc:str, action:str, monitor_svcs:list):
-        "Perform the given action on the given service and verify systemctl response."
+        """Perform the given action on the given service and verify systemctl response.
+        """
         try:
             monitor_svcs.remove(svc)
         except ValueError:
@@ -74,13 +75,13 @@ class SoftwareAlert(RASCoreLib):
         else:
             LOGGER.error("There is change in the state of the other services")
 
-        e_csm_resp = get_expected_csm_resp(action, prev_svc_state)
+        e_csm_resp = self.get_expected_csm_resp(action, prev_svc_state)
         result = svc_result and monitor_svcs_result
         return result, e_csm_resp
 
     def verify_systemctl_response(self, expected:dict, actual:dict):
-        "Verify systemctl status actual response against expected dictornary
-        "
+        """Verify systemctl status actual response against expected dictornary
+        """
         result = True
         LOGGER.info("Expected response : %s", expected)
         LOGGER.info("Actual response : %s", actual)
@@ -90,9 +91,9 @@ class SoftwareAlert(RASCoreLib):
         return result
 
     def get_expected_csm_resp(self, action:str, prev_state:dict):
-        "
+        """
         #TODO: This function will be refined when the CSM is available for testing.
-        "
+        """
         svc_fault_response ={"description":"{service_name} is failed state.",  
                         "alert_type": "fault",
                         "serverity": "critical",
@@ -114,7 +115,7 @@ class SoftwareAlert(RASCoreLib):
                         "recommendation": ""}
 
         if action == "start":
-            if prev_state['state'] not in ["active"]
+            if prev_state['state'] not in ["active"]:
                 csm_response = svc_resolved_response
             else:
                 csm_response = None
@@ -126,7 +127,7 @@ class SoftwareAlert(RASCoreLib):
                 csm_response = None
 
         elif action == "restart":
-            if prev_state['state'] not in ['inactive', 'failed']
+            if prev_state['state'] not in ['inactive', 'failed']:
                 csm_response = None
             else:
                 csm_response = None
@@ -137,12 +138,12 @@ class SoftwareAlert(RASCoreLib):
         elif action == "disable":
             csm_response = None
 
-        return systemctl_status,csm_response
+        return csm_response
 
 
-    def get_expected_systemctl_resp(self, action:str, prev_state:dict):
-        "Find the expected response based on action performed on the service and it's previous state
-        "
+    def get_expected_systemctl_resp(self, action:str):
+        """Find the expected response based on action performed on the service and it's previous state
+        """
         if action == "start":
             systemctl_status = {'state': 'active'}
         elif action == "stop":
