@@ -28,9 +28,9 @@ from commons.configmanager import get_config_wrapper
 from commons.utils.assert_utils import assert_true, assert_in, assert_false
 from libs.s3 import iam_test_lib
 from libs.s3 import LDAP_USERNAME, LDAP_PASSWD, S3H_OBJ
+from config import S3_CMN_CONFIG
 
 IAM_TEST_OBJ = iam_test_lib.IamTestLib()
-USER_CONFIG = get_config_wrapper(fpath="config/s3/test_iam_user_login.yaml")
 
 
 class TestUserLoginProfileTests():
@@ -43,6 +43,10 @@ class TestUserLoginProfileTests():
         self.ldap_user = LDAP_USERNAME
         self.ldap_pwd = LDAP_PASSWD
         self.delete_accounts_and_users()
+        self.user_name_prefix = "iamuser"
+        self.acc_name_prefix = "iamaccount"
+        self.user_name = "{}{}".format(self.user_name_prefix, str(time.time()))
+        self.test_cfg = S3_CMN_CONFIG["test_configs"]
         self.log.info("ENDED: Setup operations")
 
     def teardown_method(self):
@@ -54,11 +58,10 @@ class TestUserLoginProfileTests():
     def delete_accounts_and_users(self):
         """This function will delete all accounts and users which are getting created
         while running test cases."""
-        user_cfg = USER_CONFIG["iam_user_login"]
         all_users = IAM_TEST_OBJ.list_users()[1]
         iam_users_list = [user["UserName"]
                           for user in all_users if
-                          user_cfg["user_name_prefix"] in user["UserName"]]
+                          self.user_name_prefix in user["UserName"]]
         self.log.debug("IAM users: %s", iam_users_list)
         if iam_users_list:
             self.log.debug("Deleting IAM users...")
@@ -76,7 +79,7 @@ class TestUserLoginProfileTests():
         all_accounts = IAM_TEST_OBJ.list_accounts_s3iamcli(
             self.ldap_user, self.ldap_pwd)[1]
         iam_accounts = [acc["AccountName"]
-                        for acc in all_accounts if user_cfg["acc_name_prefix"] in acc["AccountName"]]
+                        for acc in all_accounts if self.acc_name_prefix in acc["AccountName"]]
         self.log.debug("IAM accounts: %s", iam_accounts)
         if iam_accounts:
             self.log.debug("Deleting IAM accounts...")
@@ -164,15 +167,15 @@ class TestUserLoginProfileTests():
         self.log.info(
             "STARTED:Verify update-login-profile (password change) for IAM user")
         test_9824_cfg = USER_CONFIG["test_9824"]
-        resp = IAM_TEST_OBJ.create_user(test_9824_cfg["user_name"])
+        resp = IAM_TEST_OBJ.create_user(self.user_name)
         assert_true(resp[0], resp[1])
         resp = IAM_TEST_OBJ.create_user_login_profile(
-            test_9824_cfg["user_name"],
-            test_9824_cfg["password"],
-            test_9824_cfg["password_reset"])
+            self.user_name,
+            self.test_cfg["test_9824"]["password"],
+            True)
         assert_true(resp[0], resp[1])
         resp = IAM_TEST_OBJ.update_user_login_profile(
-            test_9824_cfg["user_name"], test_9824_cfg["password"])
+            self.user_name, self.test_cfg["test_9824"]["password"])
         assert_true(resp[0], resp[1])
         self.log.info(
             "ENDED:Verify update-login-profile (password change) for IAM user")
@@ -188,11 +191,11 @@ class TestUserLoginProfileTests():
         test_9825_cfg = USER_CONFIG["test_9825"]
         try:
             IAM_TEST_OBJ.update_user_login_profile(
-                test_9825_cfg["user_name"], test_9825_cfg["password"])
+                self.user_name, self.test_cfg["test_9825"]["password"])
         except CTException as error:
             self.log.debug(error.message)
             assert_in(
-                test_9825_cfg["err_message"],
+                "NoSuchEntity",
                 error.message,
                 error.message)
         self.log.info("ENDED: Verify update-login-profile (password change)"
@@ -207,20 +210,20 @@ class TestUserLoginProfileTests():
         self.log.info("STARTED: Verify update-login-profile (password change)"
                       " for IAM user with 'Blank' or 'NO' password")
         test_9826_cfg = USER_CONFIG["test_9826"]
-        resp = IAM_TEST_OBJ.create_user(test_9826_cfg["user_name"])
+        resp = IAM_TEST_OBJ.create_user(self.user_name)
         assert_true(resp[0], resp[1])
         resp = IAM_TEST_OBJ.create_user_login_profile(
-            test_9826_cfg["user_name"],
-            test_9826_cfg["password"],
-            test_9826_cfg["password_reset"])
+            self.user_name,
+            self.test_cfg["test_9826"]["password"],
+            True)
         assert_true(resp[0], resp[1])
         try:
             IAM_TEST_OBJ.update_user_login_profile(
-                test_9826_cfg["user_name"], test_9826_cfg["new_password"])
+                self.user_name, self.test_cfg["test_9826"]["new_password"])
         except CTException as error:
             self.log.debug(error.message)
             assert_in(
-                test_9826_cfg["err_message"],
+                "PasswordPolicyVoilation",
                 error.message,
                 error.message)
         self.log.info("ENDED: Verify update-login-profile (password change)"
@@ -235,15 +238,15 @@ class TestUserLoginProfileTests():
         self.log.info("STARTED: Provide password length 128 valid "
                       "characters long")
         test_9828_cfg = USER_CONFIG["test_9828"]
-        resp = IAM_TEST_OBJ.create_user(test_9828_cfg["user_name"])
+        resp = IAM_TEST_OBJ.create_user(self.user_name)
         assert_true(resp[0], resp[1])
         resp = IAM_TEST_OBJ.create_user_login_profile(
-            test_9828_cfg["user_name"],
-            test_9828_cfg["password"],
-            test_9828_cfg["password_reset"])
+            self.user_name,
+            self.test_cfg["test_9828"]["password"],
+            True)
         assert_true(resp[0], resp[1])
         resp = IAM_TEST_OBJ.update_user_login_profile(
-            test_9828_cfg["user_name"], test_9828_cfg["new_password"])
+            self.user_name, self.test_cfg["test_9828"]["new_password"])
         assert_true(resp[0], resp[1])
         self.log.info("ENDED: Provide password length 128 valid"
                       " characters long")
@@ -257,20 +260,20 @@ class TestUserLoginProfileTests():
         self.log.info("STARTED: Provide password length more than128"
                       " valid characters long")
         test_9829_cfg = USER_CONFIG["test_9829"]
-        resp = IAM_TEST_OBJ.create_user(test_9829_cfg["user_name"])
+        resp = IAM_TEST_OBJ.create_user(self.user_name)
         assert_true(resp[0], resp[1])
         resp = IAM_TEST_OBJ.create_user_login_profile(
-            test_9829_cfg["user_name"],
-            test_9829_cfg["password"],
-            test_9829_cfg["password_reset"])
+            self.user_name,
+            self.test_cfg["test_9829"]["password"],
+            True)
         assert_true(resp[0], resp[1])
         try:
             IAM_TEST_OBJ.update_user_login_profile(
-                test_9829_cfg["user_name"], test_9829_cfg["new_password"])
+                self.user_name, self.test_cfg["test_9829"]["new_password"])
         except CTException as error:
             self.log.debug(error.message)
             assert_in(
-                test_9829_cfg["err_message"],
+                "PasswordPolicyVoilation",
                 error.message,
                 error.message)
         self.log.info("ENDED: Provide password length more than128 valid "
@@ -285,17 +288,17 @@ class TestUserLoginProfileTests():
         self.log.info("STARTED: Change the password for IAM user with "
                       "--password-reset-required option")
         test_9830_cfg = USER_CONFIG["test_9830"]
-        resp = IAM_TEST_OBJ.create_user(test_9830_cfg["user_name"])
+        resp = IAM_TEST_OBJ.create_user(self.user_name)
         assert_true(resp[0], resp[1])
         resp = IAM_TEST_OBJ.create_user_login_profile(
-            test_9830_cfg["user_name"],
-            test_9830_cfg["password"],
-            test_9830_cfg["password_reset"])
+            self.user_name,
+            self.test_cfg["test_9830"]["password"],
+            False)
         assert_true(resp[0], resp[1])
         resp = IAM_TEST_OBJ.update_user_login_profile(
-            test_9830_cfg["user_name"],
-            test_9830_cfg["new_password"],
-            test_9830_cfg["new_password_reset"])
+            self.user_name,
+            self.test_cfg["test_9830"]["new_password"],
+            True)
         assert_true(resp[0], resp[1])
         self.log.info("ENDED: Change the password for IAM user with "
                       "--password-reset-required option")
@@ -309,15 +312,15 @@ class TestUserLoginProfileTests():
         self.log.info("STARTED: Update login profile for IAM user which does"
                       " not have the login profile created")
         test_9831_cfg = USER_CONFIG["test_9831"]
-        resp = IAM_TEST_OBJ.create_user(test_9831_cfg["user_name"])
+        resp = IAM_TEST_OBJ.create_user(self.user_name)
         assert_true(resp[0], resp[1])
         try:
             IAM_TEST_OBJ.update_user_login_profile(
-                test_9831_cfg["user_name"], test_9831_cfg["password"])
+                self.user_name, self.test_cfg["test_9831"]["password"])
         except CTException as error:
             self.log.debug(error.message)
             assert_in(
-                test_9831_cfg["err_message"],
+                "NoSuchEntity",
                 error.message,
                 error.message)
         self.log.info("ENDED: Update login profile for IAM user which does "
@@ -334,16 +337,16 @@ class TestUserLoginProfileTests():
             "STARTED: verify update-login-profile with password having"
             " combinations of special characters  _+=,.@-")
         test_9832_cfg = USER_CONFIG["test_9832"]
-        resp = IAM_TEST_OBJ.create_user(test_9832_cfg["user_name"])
+        resp = IAM_TEST_OBJ.create_user(self.user_name)
         assert_true(resp[0], resp[1])
         resp = IAM_TEST_OBJ.create_user_login_profile(
-            test_9832_cfg["user_name"],
-            test_9832_cfg["password"],
-            test_9832_cfg["password_reset"])
+            self.user_name,
+            self.test_cfg["test_9832"]["password"],
+            False)
         assert_true(resp[0], resp[1])
-        for password in test_9832_cfg["special_char_pwd"]:
+        for password in self.test_cfg["test_9832"]["special_char_pwd"]:
             resp = IAM_TEST_OBJ.update_user_login_profile(
-                test_9832_cfg["user_name"], password)
+                self.user_name, password)
             assert_true(resp[0], resp[1])
         self.log.info("ENDED: verify update-login-profile with password having"
                       " combinations of special characters  _+=,.@-")
@@ -359,15 +362,15 @@ class TestUserLoginProfileTests():
                       " mentioning  --password-reset-required "
                       "--no-password-reset-required")
         test_9833_cfg = USER_CONFIG["test_9833"]
-        resp = IAM_TEST_OBJ.create_user(test_9833_cfg["user_name"])
+        resp = IAM_TEST_OBJ.create_user(self.user_name)
         assert_true(resp[0], resp[1])
         resp = IAM_TEST_OBJ.create_user_login_profile(
-            test_9833_cfg["user_name"],
-            test_9833_cfg["password"],
-            test_9833_cfg["password_reset"])
+            self.user_name,
+            self.test_cfg["test_9833"]["password"],
+            True)
         assert_true(resp[0], resp[1])
         resp = IAM_TEST_OBJ.update_user_login_profile_no_pwd_reset(
-            test_9833_cfg["user_name"], test_9833_cfg["new_password"])
+            self.user_name, self.test_cfg["test_9833"]["new_password"])
         assert_true(resp[0], resp[1])
         self.log.info("ENDED: Update login profile for IAM user without "
                       "mentioning--password-reset-required "
@@ -384,14 +387,14 @@ class TestUserLoginProfileTests():
                       " options --no-password-reset-required "
                       "--password-reset-required")
         test_9834_cfg = USER_CONFIG["test_9834"]
-        resp = IAM_TEST_OBJ.create_user(test_9834_cfg["user_name"])
+        resp = IAM_TEST_OBJ.create_user(self.user_name)
         assert_true(resp[0], resp[1])
         resp = IAM_TEST_OBJ.create_user_login_profile(
-            test_9834_cfg["user_name"], test_9834_cfg["password"])
+            self.user_name, self.test_cfg["test_9834"]["password"])
         assert_true(resp[0], resp[1])
         resp = IAM_TEST_OBJ.update_user_login_profile_s3iamcli_with_both_reset_options(
-            test_9834_cfg["user_name"],
-            test_9834_cfg["password"],
+            self.user_name,
+            self.test_cfg["test_9834"]["password"],
             S3H_OBJ.get_local_keys()[0],
             S3H_OBJ.get_local_keys()[1])
         assert_true(resp[0], resp[1])
@@ -408,22 +411,22 @@ class TestUserLoginProfileTests():
         self.log.info("STARTED: Update login profile for IAM user without "
                       "password and reset flag enabled")
         test_9835_cfg = USER_CONFIG["test_9835"]
-        resp = IAM_TEST_OBJ.create_user(test_9835_cfg["user_name"])
+        resp = IAM_TEST_OBJ.create_user(self.user_name)
         assert_true(resp[0], resp[1])
         resp = IAM_TEST_OBJ.create_user_login_profile(
-            test_9835_cfg["user_name"],
-            test_9835_cfg["password"],
-            test_9835_cfg["password_reset"])
+            self.user_name,
+            self.test_cfg["test_9835"]["password"],
+            True)
         assert_true(resp[0], resp[1])
         try:
             IAM_TEST_OBJ.update_user_login_profile_without_passowrd_and_reset_option(
-                test_9835_cfg["user_name"],
+                self.user_name,
                 S3H_OBJ.get_local_keys()[0],
                 S3H_OBJ.get_local_keys()[1])
         except CTException as error:
             self.log.debug(error.message)
             assert_in(
-                test_9835_cfg["err_message"],
+                "Please provide password or password-reset flag",
                 error.message,
                 error.message)
         self.log.info("STARTED: Update login profile for IAM user without "
@@ -438,12 +441,12 @@ class TestUserLoginProfileTests():
         self.log.info(
             "STARTED: Create a login profile for the existing IAM user")
         test_9836_cfg = USER_CONFIG["test_9836"]
-        resp = IAM_TEST_OBJ.create_user(test_9836_cfg["user_name"])
+        resp = IAM_TEST_OBJ.create_user(self.user_name)
         assert_true(resp[0], resp[1])
         resp = IAM_TEST_OBJ.create_user_login_profile(
-            test_9836_cfg["user_name"],
-            test_9836_cfg["password"],
-            test_9836_cfg["password_reset"])
+            self.user_name,
+            self.test_cfg["test_9836"]["password"],
+            True)
         assert_true(resp[0], resp[1])
         self.log.info(
             "ENDED: Create a login profile for the existing IAM user")
@@ -459,13 +462,13 @@ class TestUserLoginProfileTests():
         test_9837_cfg = USER_CONFIG["test_9837"]
         try:
             IAM_TEST_OBJ.create_user_login_profile(
-                test_9837_cfg["user_name"],
-                test_9837_cfg["password"],
-                test_9837_cfg["password_reset"])
+                self.user_name,
+                self.test_cfg["test_9837"]["password"],
+                True)
         except CTException as error:
             self.log.debug(error.message)
             assert_in(
-                test_9837_cfg["err_message"],
+                "NoSuchEntity",
                 error.message,
                 error.message)
         self.log.info(
@@ -481,17 +484,17 @@ class TestUserLoginProfileTests():
         self.log.info("STARTED: Create a login profile with password of 0 "
                       "character or without password for existing user")
         test_9838_cfg = USER_CONFIG["test_9838"]
-        resp = IAM_TEST_OBJ.create_user(test_9838_cfg["user_name"])
+        resp = IAM_TEST_OBJ.create_user(self.user_name)
         assert_true(resp[0], resp[1])
         try:
             IAM_TEST_OBJ.create_user_login_profile(
-                test_9838_cfg["user_name"],
-                test_9838_cfg["password"],
-                test_9838_cfg["password_reset"])
+                self.user_name,
+                self.test_cfg["test_9838"]["password"],
+                True)
         except CTException as error:
             self.log.debug(error.message)
             assert_in(
-                test_9838_cfg["err_message"],
+                "PasswordPolicyVoilation",
                 error.message,
                 error.message)
         self.log.info("ENDED: Create a login profile with password of 0 "
@@ -506,12 +509,12 @@ class TestUserLoginProfileTests():
         self.log.info("STARTED: Create a login profile with password of 128"
                       " characters for existing user")
         test_9840_cfg = USER_CONFIG["test_9840"]
-        resp = IAM_TEST_OBJ.create_user(test_9840_cfg["user_name"])
+        resp = IAM_TEST_OBJ.create_user(self.user_name)
         assert_true(resp[0], resp[1])
         resp = IAM_TEST_OBJ.create_user_login_profile(
-            test_9840_cfg["user_name"],
-            test_9840_cfg["password"],
-            test_9840_cfg["password_reset"])
+            self.user_name,
+            self.test_cfg["test_9840"]["password"],
+            True)
         assert_true(resp[0], resp[1])
         self.log.info("ENDED: Create a login profile with password of 128"
                       " characters for existing user")
@@ -525,17 +528,17 @@ class TestUserLoginProfileTests():
         self.log.info("STARTED: Create a login profile with password of more "
                       "than 128 characters for existing user")
         test_9841_cfg = USER_CONFIG["test_9841"]
-        resp = IAM_TEST_OBJ.create_user(test_9841_cfg["user_name"])
+        resp = IAM_TEST_OBJ.create_user(self.user_name)
         assert_true(resp[0], resp[1])
         try:
             IAM_TEST_OBJ.create_user_login_profile(
-                test_9841_cfg["user_name"],
-                test_9841_cfg["password"],
-                test_9841_cfg["password_reset"])
+                self.user_name,
+                self.test_cfg["test_9841"]["password"],
+                True)
         except CTException as error:
             self.log.debug(error.message)
             assert_in(
-                test_9841_cfg["err_message"],
+                "PasswordPolicyVoilation",
                 error.message,
                 error.message)
         self.log.info("ENDED: Create a login profile with password of more "
@@ -550,12 +553,12 @@ class TestUserLoginProfileTests():
         self.log.info("STARTED: Create a login profile with password having"
                       " special characters only")
         test_9842_cfg = USER_CONFIG["test_9842"]
-        resp = IAM_TEST_OBJ.create_user(test_9842_cfg["user_name"])
+        resp = IAM_TEST_OBJ.create_user(self.user_name)
         assert_true(resp[0], resp[1])
         resp = IAM_TEST_OBJ.create_user_login_profile(
-            test_9842_cfg["user_name"],
-            test_9842_cfg["password"],
-            test_9842_cfg["password_reset"])
+            self.user_name,
+            self.test_cfg["test_9842"]["password"],
+            True)
         assert_true(resp[0], resp[1])
         self.log.info("ENDED: Create a login profile with password having"
                       " special characters only")
@@ -571,15 +574,15 @@ class TestUserLoginProfileTests():
                       " combinations of special characters and alphanumberic "
                       "characters")
         test_9843_cfg = USER_CONFIG["test_9843"]
-        for password in test_9843_cfg["special_char_pwd"]:
-            resp = IAM_TEST_OBJ.create_user(test_9843_cfg["user_name"])
+        for password in self.test_cfg["test_9843"]["special_char_pwd"]:
+            resp = IAM_TEST_OBJ.create_user(self.user_name)
             assert_true(resp[0], resp[1])
             self.log.debug(
                 "Creating user login profile with password: %s", password)
             resp = IAM_TEST_OBJ.create_user_login_profile(
-                test_9843_cfg["user_name"], password, test_9843_cfg["password_reset"])
+                self.user_name, password, True)
             assert_true(resp[0], resp[1])
-            resp = IAM_TEST_OBJ.delete_user(test_9843_cfg["user_name"])
+            resp = IAM_TEST_OBJ.delete_user(self.user_name)
             assert_true(resp[0], resp[1])
         self.log.info("ENDED: Create a login profile with password - try few"
                       " combinations of special characters and alphanumberic"
@@ -594,16 +597,16 @@ class TestUserLoginProfileTests():
         self.log.info("STARTED: Create login profiles for maximum nos of "
                       "existing IAM users")
         test_9844_cfg = USER_CONFIG["test_9844"]
-        self.log.debug("Creating %d users", test_9844_cfg["no_of_users"])
-        for n in range(test_9844_cfg["no_of_users"]):
+        self.log.debug("Creating 101 users")
+        for n in range(101):
             new_user_name = "{0}{1}".format(
-                test_9844_cfg["user_name"],
-                test_9844_cfg["user_name_suffix"].format(n))
+                self.user_name,
+                "_{}".format(n))
             self.log.debug("Creating a user with name: %s", new_user_name)
             resp = IAM_TEST_OBJ.create_user(new_user_name)
             assert_true(resp[0], resp[1])
             resp = IAM_TEST_OBJ.create_user_login_profile(
-                new_user_name, test_9844_cfg["password"], test_9844_cfg["password_reset"])
+                new_user_name, self.test_cfg["test_9844"]["password"], True)
             assert_true(resp[0], resp[1])
         self.log.info("ENDED: Create login profiles for maximum nos of "
                       "existing IAM users")
@@ -617,12 +620,12 @@ class TestUserLoginProfileTests():
         self.log.info("STARTED: Create login profile for IAM user with "
                       "--no-password-reset-required option")
         test_9845_cfg = USER_CONFIG["test_9845"]
-        resp = IAM_TEST_OBJ.create_user(test_9845_cfg["user_name"])
+        resp = IAM_TEST_OBJ.create_user(self.user_name)
         assert_true(resp[0], resp[1])
         resp = IAM_TEST_OBJ.create_user_login_profile(
-            test_9845_cfg["user_name"],
-            test_9845_cfg["password"],
-            test_9845_cfg["password_reset"])
+            self.user_name,
+            self.test_cfg["test_9845"]["password"],
+            False)
         assert_true(resp[0], resp[1])
         assert_false(resp[1]["password_reset_required"], resp[1])
         self.log.info("ENDED: Create login profile for IAM user with "
@@ -638,12 +641,12 @@ class TestUserLoginProfileTests():
             "STARTED: Create login profile for IAM user with "
             "--password-reset-required option")
         test_9846_cfg = USER_CONFIG["test_9846"]
-        resp = IAM_TEST_OBJ.create_user(test_9846_cfg["user_name"])
+        resp = IAM_TEST_OBJ.create_user(self.user_name)
         assert_true(resp[0], resp[1])
         resp = IAM_TEST_OBJ.create_user_login_profile(
-            test_9846_cfg["user_name"],
-            test_9846_cfg["password"],
-            test_9846_cfg["password_reset"])
+            self.user_name,
+            self.test_cfg["test_9846"]["password"],
+            True)
         assert_true(resp[0], resp[1])
         assert_true(resp[1]["password_reset_required"], resp[1])
         self.log.info(
@@ -661,11 +664,11 @@ class TestUserLoginProfileTests():
             "STARTED: Create login profile for IAM user without mentioning  "
             "--password-reset-required --no-password-reset-required .")
         test_9847_cfg = USER_CONFIG["test_9847"]
-        resp = IAM_TEST_OBJ.create_user(test_9847_cfg["user_name"])
+        resp = IAM_TEST_OBJ.create_user(self.user_name)
         assert_true(resp[0], resp[1])
         resp = IAM_TEST_OBJ.create_user_login_profile_s3iamcli_with_both_reset_options(
-            test_9847_cfg["user_name"],
-            test_9847_cfg["password"],
+            self.user_name,
+            self.test_cfg["test_9847"]["password"],
             S3H_OBJ.get_local_keys()[0],
             S3H_OBJ.get_local_keys()[1])
         assert_true(resp[0], resp[1])
@@ -684,14 +687,14 @@ class TestUserLoginProfileTests():
             "STARTED: Create login profile for IAM user with both options "
             "--no-password-reset-required --password-reset-required .")
         test_9848_cfg = USER_CONFIG["test_9848"]
-        resp = IAM_TEST_OBJ.create_user(test_9848_cfg["user_name"])
+        resp = IAM_TEST_OBJ.create_user(self.user_name)
         assert_true(resp[0], resp[1])
         resp = IAM_TEST_OBJ.create_user_login_profile_s3iamcli_with_both_reset_options(
-            test_9848_cfg["user_name"],
-            test_9848_cfg["password"],
+            self.user_name,
+            self.test_cfg["test_9848"]["password"],
             S3H_OBJ.get_local_keys()[0],
             S3H_OBJ.get_local_keys()[1],
-            both_reset_options=test_9848_cfg["both_reset_options"])
+            both_reset_options=True)
         assert_true(resp[0], resp[1])
         self.log.info(
             "ENDED: Create login profile for IAM user with both options "

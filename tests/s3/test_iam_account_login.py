@@ -1072,7 +1072,9 @@ class TestAccountLoginProfile:
                 "no_accesskey", "no_secretkey", password_reset=True)
         except CTException as error:
             LOGGER.error("Expected failure: %s", error.message)
-            assert_in("The AWS access key Id you provided does not exist in our records",
+            assert_in("Account login profile wasn't Updated.An error occurred"
+                      " (InvalidLdapUserId) : The Ldap user id you provided "
+                      "does not exist.",
                       error.message, error.message)
         LOGGER.info(
             "Step 2: Failed to update login profile for account %s",
@@ -1122,7 +1124,9 @@ class TestAccountLoginProfile:
                 password_reset=True)
         except CTException as error:
             LOGGER.error("Expected failure: %s", error.message)
-            assert_in("The AWS access key Id you provided does not exist in our records",
+            assert_in("Account login profile wasn't Updated.An error occurred"
+                      " (InvalidLdapUserId) : The Ldap user id you provided"
+                      " does not exist.",
                       error.message, error.message)
         LOGGER.info(
             "Step 4: Failed to update account login profile for account %s",

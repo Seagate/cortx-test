@@ -37,8 +37,6 @@ ACL_OBJ = s3_acl_test_lib.S3AclTestLib()
 NO_AUTH_OBJ = s3_test_lib.S3LibNoAuth()
 IAM_TEST_OBJ = iam_test_lib.IamTestLib()
 
-ALL_USERS_CONF = read_yaml("config/s3/test_all_users_object_acl.yaml")[1]
-
 
 class TestAllUsers:
     """All Users Object ACL Testsuite."""
