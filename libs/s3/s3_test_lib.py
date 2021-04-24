@@ -167,43 +167,58 @@ class S3TestLib(S3Lib):
         :return: True, dict.
         """
         try:
-            response = super().copy_object(source_bucket, source_object, dest_bucket, dest_object)
+            response = self.s3_client.copy_object(
+                Bucket=dest_bucket,
+                CopySource='/{}/{}'.format(source_bucket, source_object),
+                Key=dest_object,
+            )
+            bucket = self.s3_resource.Bucket(dest_bucket)
+            response_obj = [obj.key for obj in bucket.objects.all()]
+            LOGGER.debug(response_obj)
+            LOGGER.debug(response)
         except BaseException as error:
             LOGGER.error("Error in %s: %s",
                          S3TestLib.copy_object.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
-        return True, response
+        return dest_object in response_obj, response
 
-    def copy_object_acl(self,
-                        source_bucket: str = None,
-                        source_object: str = None,
-                        dest_bucket: str = None,
-                        dest_object: str = None,
-                        acl: str = None) -> tuple:
+    def copy_object_with_permission(self,
+                                    source_bucket: str = None,
+                                    source_object: str = None,
+                                    dest_bucket: str = None,
+                                    dest_object: str = None,
+                                    **kwargs) -> tuple:
         """
-        Creates a copy of an object that is already stored in Seagate S3 with acl.
+        Creates a copy of an object that is already stored in Seagate S3 with different permissions.
 
         :param source_bucket: The name of the source bucket.
         :param source_object: The name of the source object.
         :param dest_bucket: The name of the destination bucket.
         :param dest_object: The name of the destination object.
-        :param acl: The canned ACL to apply to the object.
-            ACL='private'|'public-read'|'public-read-write'|'authenticated-read'|'aws-exec-read'|
-            'bucket-owner-read'|'bucket-owner-full-control'
+        :param kwargs: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services
+        /s3.html#S3.Client.copy_object
         :return: True, dict.
         """
         try:
-            response = super().copy_object_acl(source_bucket, source_object, dest_bucket,
-                                               dest_object, acl)
+            response = self.s3_client.copy_object(
+                Bucket=dest_bucket,
+                CopySource='/{}/{}'.format(source_bucket, source_object),
+                Key=dest_object,
+                **kwargs
+            )
+            bucket = self.s3_resource.Bucket(dest_bucket)
+            response_obj = [obj.key for obj in bucket.objects.all()]
+            LOGGER.debug(response_obj)
+            LOGGER.debug(response)
         except BaseException as error:
             LOGGER.error("Error in %s: %s",
-                         S3TestLib.copy_object_acl.__name__,
+                         S3TestLib.copy_object_with_permission.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
-        return True, response
+        return dest_object in response_obj, response
 
     def object_upload(
             self,
