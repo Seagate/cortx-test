@@ -22,7 +22,6 @@
 """Multithreaded and greenlet based Upload tasks. Upload files and data blobs."""
 
 import os
-import sys
 import queue
 import random
 import logging
@@ -30,25 +29,13 @@ import csv
 import fcntl
 import hashlib
 import multiprocessing as mp
-import boto3
 import re
-import json
-import time
-import errno
-from pathlib import Path
 from boto3.s3.transfer import TransferConfig
-from commons.cortxlogging import init_loghandler
 from commons.utils import config_utils
 from commons.worker import Workers
-from commons.worker import WorkQ
 from commons import params
 from libs.di import di_base
-from libs.di import di_lib
 from libs.di import data_man
-from libs.di.di_mgmt_ops import ManagementOPs
-from config import CMN_CFG
-from config import S3_CFG
-from commons.params import SCRIPT_HOME
 from commons.params import USER_JSON
 
 
@@ -68,10 +55,6 @@ class Uploader:
     def upload(user, keys, buckets):
 
         user_name = user
-        access_key = keys[0]
-        secret_key = keys[1]
-        #timestamp = time.strftime("%Y%m%d-%H%M%S")
-        #buckets = [user_name + '-' + timestamp + '-bucket' + str(i) for i in range(nbuckets)]
         Uploader.change_manager = data_man.DataManager(user=user)
         s3connections = di_base.init_s3_conn(user_name=user_name,
                                              keys=keys,
@@ -87,14 +70,6 @@ class Uploader:
             else:
                 logger.info(f'able to access file {params.DATASET_FILES}')
 
-            # try:
-            #
-            #     s3.create_bucket(Bucket=bucket)
-            # except Exception as e:
-            #     logger.info(f'could not create create bucket {bucket} exception:{e}')
-            # else:
-            #     logger.info(f'create bucket {bucket} Done')
-            #
             workers = Workers()
             workers.start_workers(func=Uploader._upload)
 

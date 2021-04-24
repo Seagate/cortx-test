@@ -32,7 +32,6 @@ import time
 import datetime
 import pytest
 import requests
-import xdist
 import tempfile
 from datetime import date
 from _pytest.nodes import Item

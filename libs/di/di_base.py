@@ -20,9 +20,9 @@
 #
 """ Data Integrity framework base file.
 """
-import os
 import logging
 import boto3
+from botocore.exceptions import ClientError
 from logging.handlers import SysLogHandler
 from config import DATA_PATH_CFG
 from commons.utils import assert_utils
@@ -68,6 +68,7 @@ def init_s3_conn(user_name, keys, nworkers):
     pool = list()
     for ix in range(nworkers + 1):
         pool.append(_init_s3_conn(access_key, secret_key, user_name))
+        LOGGER.info('Initialized s3 connection %s', str(ix))
     return pool
 
 
@@ -77,10 +78,10 @@ def _init_s3_conn(access_key, secret_key, user_name):
         s3 = boto3.resource('s3', aws_access_key_id=access_key, aws_secret_access_key=secret_key,
                             endpoint_url=S3_ENDPOINT)
         LOGGER.info(f's3 resource created for user {user_name}')
-    except Exception as e:
+    except (ClientError, Exception) as exc:
         LOGGER.error(
             f'could not create s3 object for user {user_name} with '
-            f'access key {access_key} secret key {secret_key} exception:{e}')
+            f'access key {access_key} secret key {secret_key} exception:{exc}')
     return s3
 
 

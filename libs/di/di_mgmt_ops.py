@@ -26,11 +26,9 @@ import boto3
 from config import CMN_CFG
 from config import CSM_CFG
 from config import S3_CFG
-from config import DI_CFG
 from commons.utils import assert_utils
 from libs.s3 import iam_core_lib
 from libs.s3.iam_core_lib import S3IamCli
-from libs.s3 import iam_test_lib
 from libs.s3.cortxcli_test_lib import CortxcliS3AccountOperations
 from libs.s3 import cortxcli_test_lib as cctl
 

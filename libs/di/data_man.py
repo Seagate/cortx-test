@@ -61,7 +61,7 @@ C_LEVEL_TOP = 1
 C_LEVEL_USER = 2
 C_LEVEL_BUCKET = 3
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 class DataManager(object):
@@ -82,14 +82,14 @@ class DataManager(object):
             try:
                 system_utils.mkdirs(p_home)
             except (OSError, Exception) as fault:
-                logger.exception(str(fault), exc_info=fault.__traceback__)
+                LOGGER.exception(str(fault), exc_info=fault.__traceback__)
                 raise
 
         fpath = os.path.join(p_home, user + params.USER_META_JSON)
 
         if not os.path.exists(fpath):
-            file_path = config_utils.create_content_json(fpath, {}, ensure_ascii=True)
-            logger.info(f'Created metadata file for user {user}')
+            fpath = config_utils.create_content_json(fpath, {}, ensure_ascii=True)
+            LOGGER.info(f'Created metadata file for user {user}')
         return fpath
 
     def store_file_data(self, data, user):
@@ -107,8 +107,7 @@ class DataManager(object):
             raise ValueError('user is mandatory')
 
         fpath = self.prepare_file_data(user)
-        # with open(fpath, 'rb') as fp:
-        #    data = ijson.items(fp, 'buckets.item')
+        # improve with ijson lib
         data = config_utils.read_content_json(fpath=fpath)
         if data:
             if user != data['name']:
@@ -186,11 +185,10 @@ class DataManager(object):
                     data = self.get_container(level=C_LEVEL_USER)
                     data['name'] = user
                 bkt_container, flag = self._get_bucket_container_from_buckets(bucket, user)
-
-                # files = self.get_files_within_bucket(bkt_container, user, bucket)
+                # usage files = self.get_files_within_bucket(bkt_container, user, bucket)
                 fdict = self.get_file_within_bucket(file_obj, bkt_container, bucket)
                 if not fdict:
-                    '''name=a.txt, chksum=abcd, seed=1, size=1024'''
+                    # format of fdict is name=a.txt, chksum=abcd, seed=1, size=1024
                     fdict = dict(name=file_obj, checksum=checksum,
                                  sz=size, seed=seed, mtime=mtime)
                     bkt_container['files'].append(fdict)
@@ -231,20 +229,18 @@ class DataManager(object):
 
 
 def dummy_test(change_manager, user, keys, file_dicts, nbuckets):
-    access_key = 'keys[0]'
-    secret_key = 'keys[1]'
-    timestamp = time.strftime("%Y%m%d-%H%M%S")
+    """Test function to test this lib. Refer main of this file."""
     print(f'starting thread {threading.current_thread().getName()}')
     buckets = [user + '-bucket' + str(i) for i in range(nbuckets)]
     for bucket in buckets:
         try:
             change_manager.add_file_to_bucket(user, bucket, file_dicts)
-        except Exception as e:
-            logger.info(f'exception occurred')
+        except (OSError, Exception) as ex:
+            LOGGER.error(f'exception occurred %s', str(ex))
 
 
 if __name__ == '__main__':
-    logger.info('Starting tests')
+    LOGGER.info('Starting tests')
     jobs = []
     nbuckets = 4
     users = {"user1": ["AKIAvVRBu_qhRc2eOpMJwXOBjQ", "cT1tEIKo8SztEBpqHF5OroZkqda7kpph7DFQfZAz"],
@@ -282,4 +278,4 @@ if __name__ == '__main__':
     for p in jobs:
         p.join()
 
-    logger.info('Upload Done for all users')
+    LOGGER.info('Upload Done for all users')

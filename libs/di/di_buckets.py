@@ -30,7 +30,7 @@ import base64
 from pathlib import Path
 from libs.di.di_base import _init_s3_conn
 from libs.di.di_params import DOWNLOAD_HOME
-from commons.worker import Workers, WorkQ
+from commons.worker import Workers
 
 LOGGER = logging.getLogger(__name__)
 
@@ -107,8 +107,6 @@ def download_and_compare(kwargs):
         pid = kwargs.get('pid')
         bucket = kwargs.get('bucket')
         objcsum = kwargs.get('objcsum')
-        accesskey = kwargs.get('accesskey')
-        secret = kwargs.get('secret')
         cwd = DOWNLOAD_HOME
         objectpath = os.path.join(cwd, "ps", str(pid), key)
         LOGGER.info(f'Send download request for {key}')
@@ -143,7 +141,8 @@ def download_and_compare(kwargs):
                 csum = file_hash.digest()
                 try:
                     os.unlink(filepath)
-                except Exception as f:
+                except (OSError, Exception) as fault:
+                    LOGGER.error('Unlink unsuccessful with fault %s using rm.', fault)
                     rmLocalObject = "rm -rf " + str(filepath)
                     os.system(rmLocalObject)
 

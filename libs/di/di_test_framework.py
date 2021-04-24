@@ -256,7 +256,7 @@ class DIChecker(object):
         ulen = len(users)
         workers = worker.Workers()
         workers.start_workers()
-        cls.init_s3_conn()
+        cls.init_s3_conn(users)
         deletedFiles = list()
         uploadedFiles = list()
         deletedDict = dict()

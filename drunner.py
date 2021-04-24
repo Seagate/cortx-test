@@ -172,7 +172,7 @@ def run(opts: dict) -> None:
             raise EnvironmentError('Test plan env needs to be in format <build_type>_<build#>')
         opts.build, opts.build_type = _build, _build_type
 
-    log_home = create_log_dir_if_not_exists()   
+    log_home = create_log_dir_if_not_exists()
     # Create a reverse map of test id as key and values as node_id, tags
     meta_data = dict()  # test universe collected
     test_map = dict()  # tid: (test_mark, test_meta.get('nodeid'), test_meta.get('marks')

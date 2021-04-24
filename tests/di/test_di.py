@@ -1,3 +1,4 @@
+# !/usr/bin/env python3
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -16,12 +17,10 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-# !/usr/bin/env python3
-import os
+"""DI Test Cases."""
+
 import logging
 import pytest
-from commons.utils import assert_utils
-from commons.exceptions import TestException
 from libs.di.di_test_framework import Uploader
 from libs.di.di_test_framework import DIChecker
 from libs.di.di_mgmt_ops import ManagementOPs
@@ -106,7 +105,3 @@ class TestDataIntegrity:
         uploader.start(users)
         DIChecker.init_s3_conn(users)
         DIChecker.verify_data_integrity(users)
-
-
-if __name__ == '__main__':
-    pass

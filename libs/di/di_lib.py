@@ -80,7 +80,7 @@ def create_buckets(user_dict, s3_prefix, nbuckets):
             except Exception as e:
                 LOGGER.info(f'could not create create bucket {bucket} exception:{e}')
             else:
-                LOGGER.info(f'create bucket {bucket} Done')
+                LOGGER.info(f'create bucket {bucket} Done with {s3_prefix}')
 
     except Exception as fault:
         LOGGER.error(f"An error {fault} occurred in creating buckets.")

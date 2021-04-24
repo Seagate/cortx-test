@@ -31,7 +31,6 @@ import string
 from typing import Union
 from typing import Tuple
 from typing import Any
-from Crypto import Random
 from Crypto.Cipher import AES
 from pathlib import Path
 from commons import params
@@ -92,8 +91,8 @@ class DataGenerator:
         if size == 0:
             buf = ''
             csum.update(buf)
-            sum = csum.hexdigest()
-            return buf, sum
+            chksum = csum.hexdigest()
+            return buf, chksum
 
         if datatype == DEFAULT_DATA_TYPE:
             # Ignoring de-dupe ratio for blobs.
@@ -102,8 +101,8 @@ class DataGenerator:
                 buf = self.__get_data(size, compressibility, seed)
         buf = buf.encode('utf-8')[:size]  # hack until better solution is found.
         csum.update(buf)
-        sum = csum.hexdigest()
-        return buf, sum
+        chksum = csum.hexdigest()
+        return buf, chksum
 
     @staticmethod
     def get_random_seed(lower: int = 0,

@@ -52,16 +52,14 @@ class DataIntegrityValidator:
             objectpath = kwargs.get('objectpath')
             bucket = kwargs.get('bucket')
             objcsum = kwargs.get('objcsum')
-            accesskey = kwargs.get('accesskey')
-            secret = kwargs.get('secret')
             cwd = params.DOWNLOAD_HOME
             basepath = os.path.join(cwd, user)
             objpth = os.path.join(cwd, user, objectpath)
             try:
                 if not os.path.exists(basepath):
                     system_utils.mkdirs(basepath)
-            except Exception as e:
-                LOGGER.error(f"Error while creating directory for user {user}")
+            except (OSError, Exception) as fault:
+                LOGGER.error(f"Error {fault} while creating directory for user {user}")
 
             try:
                 s3 = DataIntegrityValidator.s3_objects[user]
@@ -123,7 +121,6 @@ class DataIntegrityValidator:
         """
         workers = worker.Workers()
         workers.start_workers()
-        # cls.init_s3_conn()
         cls.s3_objects = di_base.init_s3_connections(users=users)
         deletedFiles = list()
         uploadedFiles = list()
@@ -156,8 +153,8 @@ class DataIntegrityValidator:
                                                    ManagementOPs.user_prefix + str(i))):
                     system_utils.mkdirs(os.path.join(params.DOWNLOAD_HOME,
                                                      ManagementOPs.user_prefix + str(i)))
-            except Exception as e:
-                LOGGER.error(f"Error while creating directory for user {i}")
+            except (OSError, Exception) as exe:
+                LOGGER.error(f"Error {exe} while creating directory for user {i}")
 
         for ix, ent in enumerate(uploadedFiles, 1):
             if (ent[0], ent[1], ent[2]) in deletedDict:
@@ -212,7 +209,9 @@ class DataIntegrityValidator:
 
 
 if __name__ == '__main__':
+    ops = ManagementOPs()
+    users = ops.create_account_users(nusers=4)
     uploader = uploader.Uploader()
-    uploader.start()
+    uploader.start(users)
     downloader = DataIntegrityValidator()
-    downloader.verify_data_integrity()
+    downloader.verify_data_integrity(users)
