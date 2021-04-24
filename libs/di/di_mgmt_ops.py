@@ -31,7 +31,7 @@ from commons.utils import assert_utils
 from libs.s3 import iam_core_lib
 from libs.s3.iam_core_lib import S3IamCli
 from libs.s3 import iam_test_lib
-from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
+from libs.s3.cortxcli_test_lib import CortxcliS3AccountOperations
 from libs.s3 import cortxcli_test_lib as cctl
 
 LOGGER = logging.getLogger(__name__)
@@ -81,12 +81,12 @@ class ManagementOPs:
         """
         Creates s3 account users to upload DI test data. This function uses S3IamCli
         to create users.
-        :param use_cortx_cli:
+        :param use_cortx_cli: Not in use will remove later
         :param nusers: number of users to create
         :return:
         """
-        LOGGER.info("Creating Cortx CLI users with ")
-        s3acc_obj = CortxCliS3AccountOperations()
+        LOGGER.info(f"Creating Cortx s3 account users with {use_cortx_cli}")
+        s3acc_obj = CortxcliS3AccountOperations()
         s3acc_obj.open_connection()
         users = {"{}{}".format(cls.user_prefix, i): dict() for i in range(1, nusers + 1)}
         s3_user_passwd = CSM_CFG["CliConfig"]["s3_account"]["password"]
@@ -98,40 +98,17 @@ class ManagementOPs:
             udict.update({'emailid': email})
             udict.update({'password': s3_user_passwd})
 
-            if not use_cortx_cli:
-                # Create S3 account
-                cli = iam_test_lib.IamTestLib()
-                try:
-                    resp = cli.create_account_s3iamcli(user, email,
-                                                       CMN_CFG["ldap"]["username"],
-                                                       CMN_CFG["ldap"]["username"])
-
-                except Exception as ctpe:
-                    LOGGER.error(f"Exception occurred ")
-                    # check if s3 account already exists and get keys
-                    ret = cli.list_accounts_s3iamcli(DI_CFG['ldap_username'], DI_CFG['ldap_passwd'])
-                    accounts = ret[1]
-                    for account in accounts:
-                        if account.get('AccountName') == user:
-                            udict.update({'accesskey': account["access_key"]})
-                            udict.update({'secretkey': account["secret_key"]})
-                else:
-                    udict.update({'accesskey': resp[1]["access_key"]})
-                    udict.update({'secretkey': resp[1]["secret_key"]})
-            else:
-                resp = s3acc_obj.create_s3account_cortx_cli(account_name=user,
-                                                            account_email=email,
-                                                            password=s3_user_passwd)
-                assert_utils.assert_equals(True, resp[0], resp[1])
-                result, acc_details = cctl.create_get_s3account_details_cortxcli(user,
-                                                                                 email,
-                                                                                 s3_user_passwd)
-                if not result:
-                    assert_utils.assert_true(result, 's3 account use not created.')
-                LOGGER.info("Created s3 account %s", user)
-                udict.update({'accesskey': acc_details["access_key"]})
-                udict.update({'secretkey': acc_details["secret_key"]})
-
+            resp = s3acc_obj.create_s3account_cortx_cli(account_name=user,
+                                                        account_email=email,
+                                                        password=s3_user_passwd)
+            assert_utils.assert_equals(True, resp[0], resp[1])
+            result, acc_details = cctl.create_get_s3account_details_cortxcli(user,
+                                                                             email,
+                                                                             s3_user_passwd)
+            assert_utils.assert_true(result, 's3 account use not created.')
+            LOGGER.info("Created s3 account %s", user)
+            udict.update({'accesskey': acc_details["access_key"]})
+            udict.update({'secretkey': acc_details["secret_key"]})
             users.update({user: udict})
 
         return users

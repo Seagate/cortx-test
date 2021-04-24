@@ -31,6 +31,7 @@ from config import DATA_PATH_CFG
 
 LOGGER = logging.getLogger(__name__)
 
+
 class TestDataIntegrity:
     """ log sys event when doing node operation
        log test hooks and actions/events
