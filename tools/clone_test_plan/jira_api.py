@@ -106,7 +106,7 @@ def create_new_test_plan(test_plan, jira_id, jira_pwd, tp_info):
 
     affect_ver = []
     affect_ver_dict = dict()
-    for i in range(len(test_plan_details.fields.fixVersions)):
+    for i in range(len(test_plan_details.fields.versions)):
         affect_ver_dict['name'] = test_plan_details.fields.versions[i].name
         affect_ver.append(affect_ver_dict)
 
