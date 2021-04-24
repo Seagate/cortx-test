@@ -857,9 +857,263 @@ class TestCopyObjects:
         if self.parallel_ios.is_alive():
             self.parallel_ios.join()
         self.log.info("Steps 11: Validate S3 parallel IO executions.")
-        self.validate_paralle_execution(log_prifix="test_19849_ios")
+        self.validate_paralle_execution(log_prifix="test_19850_ios")
         self.log.info(
             "Steps 13: Check cluster status, all services are running")
         self.check_cluster_health()
         self.log.info("ENDED: Copy object applying canned ACL public-read-write while S3 IOs"
                       " are in progress")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-19851")
+    @CTFailOn(error_handler)
+    def test_19851(self):
+        """Copy object applying canned ACL bucket-owner-read while S3 IOs are in progress."""
+        self.log.info(
+            "Step 1. Check cluster status, all services are running before starting test.")
+        self.check_cluster_health()
+        self.log.info("Step 2. Start S3 IO.")
+        self.parallel_ios = Process(
+            target=self.s3_ios, args=(
+                self.io_bucket_name, "test_19851_ios"))
+        if not self.parallel_ios.is_alive():
+            self.parallel_ios.start()
+        self.log.info("Parallel IOs started: %s", self.parallel_ios.is_alive())
+        self.log.info("Step 3. Create a bucket in Account1 and referred as bucket1.")
+        self.log.info("Step 4. Create and upload object to the above bucket1.")
+        self.log.info("Step 5. Get the source object ACL. Capture the output.")
+        self.log.info("Step 6. From Account2 create a bucket. Referred as bucket2.")
+        self.log.info("Step 7. From Account2 grant Write ACL to Account1 on bucket2.")
+        self.log.info("Step 8. From Account2 check the applied ACL in above step.")
+        self.log.info(
+            "Step 9. From Account1 copy object from bucket1 to bucket2 specifying canned ACL"
+            " bucket-owner-read.")
+        self.log.info("Step 10. Get Object ACL of the destination object from Account1.")
+        self.log.info("11. Stop S3 IO.")
+        resp = S3_OBJ.object_list(self.io_bucket_name)
+        self.log.info(resp)
+        if self.parallel_ios.is_alive():
+            self.parallel_ios.join()
+        self.log.info("Steps 12: Validate S3 parallel IO executions.")
+        self.validate_paralle_execution(log_prifix="test_19851_ios")
+        self.log.info(
+            "setup 13. Check cluster status, all services are running after completing test.")
+        self.check_cluster_health()
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-19891")
+    @CTFailOn(error_handler)
+    def test_19891(self):
+        """Copy object applying canned ACL bucket-owner-full-control while S3 IOs are in progress."""
+        self.log.info("STARTED: Copy object applying canned ACL bucket-owner-full-control while S3 IOs are in progress")
+        self.log.info("1. Check cluster status, all services are running before starting test.")
+        self.log.info("2. Start S3 IO.")
+        self.log.info("3. Create a bucket in Account1. Referred as bucket1.")
+        self.log.info("4. Create and upload object to the above bucket1.")
+        self.log.info("5. Get the source object ACL. Capture the output.")
+        self.log.info("6. From Account2 create a bucket. Referred as bucket2.")
+        self.log.info("7. From Account2 grant Write ACL to Account1 on bucket2.")
+        self.log.info("8. From Account2 check the applied ACL in above step.")
+        self.log.info(
+            "9. From Account1 copy object from bucket1 to bucket2 specifying canned ACL bucket-owner-full-control.")
+        self.log.info("10. Get Object ACL of the destination object from Account1.")
+        self.log.info("11. Check cluster status, all services are running after completing test.")
+        self.log.info("12. Stop S3 IO.")
+        self.log.info("ENDED: Copy object applying canned ACL bucket-owner-full-control while S3 IOs are in progress")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-19892")
+    @CTFailOn(error_handler)
+    def test_19892(self):
+        """Copy object applying full control access while S3 IOs are in progress"""
+        self.log.info(
+            "STARTED: Copy object applying full control access while S3 IOs are in progress.")
+        self.log.info("1. Check cluster status, all services are running before starting test.")
+        self.log.info("2. Start S3 IO.")
+        self.log.info("3. Create 2 buckets in same accounts.")
+        self.log.info("4. Create and upload object to the above bucket1.")
+        self.log.info("5. List object for the bucket1.")
+        self.log.info(
+            "6. Copy object from bucket1 to bucket2 specifying full control access to Account2.")
+        self.log.info(
+            "7. Get Object ACL of the destination object from Account1. Validate the permission.")
+        self.log.info(
+            "8. Get Object ACL of the destination object from Account2. Validate the permission.")
+        self.log.info("9. Check cluster status, all services are running after completing test.")
+        self.log.info("10. Stop S3 IO.")
+        self.log.info(
+            "ENDED: Copy object applying full control access while S3 IOs are in progress.")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-19893")
+    @CTFailOn(error_handler)
+    def test_19893(self):
+        """Copy object applying read access while S3 IOs are in progress."""
+        self.log.info("STARTED: Copy object applying read access while S3 IOs are in progress.")
+        self.log.info("1. Check cluster status, all services are running before starting test")
+        self.log.info("2. Start S3 IO")
+        self.log.info("3. Create 2 buckets in same accounts.")
+        self.log.info("4. Create and upload object to the above bucket1.")
+        self.log.info("5. List object for the bucket1.")
+        self.log.info("6. Copy object from bucket1 to bucket2 specifying read access to Account2.")
+        self.log.info(
+            "7. Get Object ACL of the destination object from Account1. Validate the permission")
+        self.log.info(
+            "8. Get Object ACL of the destination object from Account2. Validate the permission")
+        self.log.info("9. Get/download destination object from Account2.")
+        self.log.info("10. Check cluster status, all services are running after completing test")
+        self.log.info("11. Stop S3 IO")
+        self.log.info("ENDED: Copy object applying read access while S3 IOs are in progress.")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-19894")
+    @CTFailOn(error_handler)
+    def test_19894(self):
+        """Copy object applying Read ACL access while S3 IOs are in progress."""
+        self.log.info("STARTED: Copy object applying Read ACL access while S3 IOs are in progress.")
+        self.log.info("1. Check cluster status, all services are running before starting test")
+        self.log.info("2. Start S3 IO")
+        self.log.info("3. Create 2 buckets in same accounts .")
+        self.log.info("4. Create and upload object to the above bucket1 .")
+        self.log.info("5. List object for the bucket1.")
+        self.log.info(
+            "6. Copy object from bucket1 to bucket2 specifying read acp access to Account2")
+        self.log.info(
+            "7. Get Object ACL of the destination object from Account1. Validate the permission")
+        self.log.info(
+            "8. Get Object ACL of the destination object from Account2. Validate the permission")
+        self.log.info("9. Check cluster status, all services are running after completing test")
+        self.log.info("10. Stop S3 IO")
+        self.log.info("ENDED: Copy object applying Read ACL access while S3 IOs are in progress.")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-19895")
+    @CTFailOn(error_handler)
+    def test_19895(self):
+        """Copy object applying Write ACL access while S3 IOs are in progress."""
+        self.log.info("STARTED: Copy object applying Write ACL access while S3 IOs are in progress")
+        self.log.info("1. Check cluster status, all services are running before starting test")
+        self.log.info("2. Start S3 IO")
+        self.log.info("3. Create 2 buckets in same accounts .")
+        self.log.info("4. Create and upload object to the above bucket1 .")
+        self.log.info("5. List object for the bucket1.")
+        self.log.info(
+            "6. Copy object from bucket1 to bucket2 specifying write acp access to Account2")
+        self.log.info(
+            "7. Get Object ACL of the destination object from Account1. Validate the permission.")
+        self.log.info(
+            "8. Get Object ACL of the destination object from Account2. Validate the permission.")
+        self.log.info("9. Check cluster status, all services are running after completing test")
+        self.log.info("10. Stop S3 IO")
+        self.log.info("ENDED: Copy object applying Write ACL access while S3 IOs are in progress")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-19896")
+    @CTFailOn(error_handler)
+    def test_19896(self):
+        """Copy object specifying multiple ACL while S3 IOs are in progress."""
+        self.log.info("STARTED: Copy object specifying multiple ACL while S3 IOs are in progress")
+        self.log.info("1. Check cluster status, all services are running before starting test")
+        self.log.info("2. Start S3 IO")
+        self.log.info("3. Create 2 buckets in same accounts .")
+        self.log.info("4. Create and upload object to the above bucket1 .")
+        self.log.info("5. List object for the bucket1.")
+        self.log.info(
+            "6. Copy object from bucket1 to bucket2 specifying read and read acp access to Account2")
+        self.log.info(
+            "7. Get Object ACL of the destination object from Account1. Validate the permission")
+        self.log.info(
+            "8. Get Object ACL of the destination object from Account2. Validate the permission")
+        self.log.info("9. Check cluster status, all services are running after completing test.")
+        self.log.info("10. Stop S3 IO.")
+        self.log.info("ENDED: Copy object specifying multiple ACL while S3 IOs are in progress")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-19897")
+    @CTFailOn(error_handler)
+    def test_19897(self):
+        """Copy object with no read access to source bucket while S3 IOs are in progress."""
+        self.log.info(
+            "STARTED: Copy object with no read access to source bucket while S3 IOs are in progress.")
+        self.log.info("1. Check cluster status, all services are running before starting test")
+        self.log.info("2. Start S3 IO")
+        self.log.info("3. Create a bucket in Account1 .Referred as bucket1.")
+        self.log.info("4. Create and upload object to the above bucket1 .")
+        self.log.info("5. Get the source object ACL. Capture the output .")
+        self.log.info("6. From Account2 create a bucket. Referred as bucket2 .")
+        self.log.info("7. From Account2 copy object from bucket1 to bucket2 .")
+        self.log.info("8. Check cluster status, all services are running after completing test")
+        self.log.info("9. Stop S3 IO")
+        self.log.info(
+            "ENDED: Copy object with no read access to source bucket while S3 IOs are in progress.")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-19898")
+    @CTFailOn(error_handler)
+    def test_19898(self):
+        """Copy object with no write access to destination bucket while S3 IOs are in progress."""
+        self.log.info(
+            "STARTED: Copy object with no write access to destination bucket while S3 IOs are in progress")
+        self.log.info("1. Check cluster status, all services are running before starting test")
+        self.log.info("2. Start S3 IO")
+        self.log.info("3. Create a bucket in Account1 .Referred as bucket1.")
+        self.log.info("4. Create and upload object to the above bucket1 .")
+        self.log.info("5. Get the source object ACL. Capture the output .")
+        self.log.info("6. From Account2 create a bucket. Referred as bucket2 .")
+        self.log.info("7. From Account1 copy object from bucket1 to bucket2 .")
+        self.log.info("8. Check cluster status, all services are running after completing test")
+        self.log.info("9. Stop S3 IO")
+        self.log.info(
+            "ENDED: Copy object with no write access to destination bucket while S3 IOs are in progress")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-19899")
+    @CTFailOn(error_handler)
+    def test_19899(self):
+        """
+        Copy object.
+
+         Copy object with no access to source object and destination bucket present in different
+         account having full access to the source bucket during S3 IOs.
+         """
+        self.log.info("STARTED: Copy object with no access to source object and destination bucket"
+                      " present in different account having full access to the source bucket"
+                      " during S3 IOs")
+        self.log.info("1. Check cluster status, all services are running before starting test")
+        self.log.info("2. Start S3 IO")
+        self.log.info("3. Create a bucket in Account1 .Referred as bucket1.")
+        self.log.info("4. Create and upload object to the above bucket1 .")
+        self.log.info("5. Get the source object ACL. Capture the output .")
+        self.log.info("6. Put bucket ACL on source bucket and grant Full control to Account2 .")
+        self.log.info("7. From Account2 create a bucket. Referred as bucket2 .")
+        self.log.info("8. From Account2 copy object from bucket1 to bucket2 .")
+        self.log.info("9. Check cluster status, all services are running after completing test")
+        self.log.info("10. Stop S3 IO")
+        self.log.info("ENDED: Copy object with no access to source object and destination bucket"
+                      " present in different account having full access to the source bucket"
+                      " during S3 IOs")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-19900")
+    @CTFailOn(error_handler)
+    def test_19900(self):
+        """Copy object specifying bucket name and object under folders while S3 IOs are in progress."""
+        self.log.info(
+            "STARTED: Copy object specifying bucket name and object under folders while S3 IOs are in progress")
+        self.log.info("1. Check cluster status, all services are running before starting test")
+        self.log.info("2. Start S3 IO")
+        self.log.info("3. Create 2 buckets in same accounts .")
+        self.log.info(
+            "4. Create object inside multiple folders and upload object to the above bucket1 .")
+        self.log.info("5. List object for the bucket1.")
+        self.log.info("6. Copy object from bucket1 to bucket2 .")
+        self.log.info(
+            "7. List Objects from bucket2 .Check object is present and of same size as source object.")
+        self.log.info(
+            "8. Copy object from bucket1 to bucket2 specfying folder structure for destination object.")
+        self.log.info(
+            "9. List Objects from bucket2 .Check object is present and of same size and folder structure as source object.")
+        self.log.info("10. Check cluster status, all services are running after completing test")
+        self.log.info("11. Stop S3 IO")
+        self.log.info(
+            "ENDED: Copy object specifying bucket name and object under folders while S3 IOs are in progress")
