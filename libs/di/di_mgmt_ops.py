@@ -88,7 +88,7 @@ class ManagementOPs:
         s3acc_obj = cctl.CortxcliS3AccountOperations()
         s3acc_obj.open_connection()
         timestamp = time.strftime("%Y%m%d_%H%M%S")
-        users = {"{}{}".format(cls.user_prefix, i, timestamp): dict() for i in range(1, nusers + 1)}
+        users = {"{}{}{}".format(cls.user_prefix, i, timestamp): dict() for i in range(1, nusers + 1)}
         s3_user_passwd = CSM_CFG["CliConfig"]["s3_account"]["password"]
         for i in range(1, nusers + 1):
             udict = dict()
@@ -100,7 +100,7 @@ class ManagementOPs:
 
             result, acc_details = s3acc_obj.create_account_cortxcli(user, email,
                                                                     s3_user_passwd)
-            assert_utils.assert_true(result, 's3 account use not created.')
+            assert_utils.assert_true(result, 'S3 account use not created.')
             LOGGER.info("Created s3 account %s", user)
             udict.update({'accesskey': acc_details["access_key"]})
             udict.update({'secretkey': acc_details["secret_key"]})
