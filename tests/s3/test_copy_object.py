@@ -108,8 +108,7 @@ class TestCopyObjects:
         self.log.info("STARTED: test teardown method.")
         self.log.info(
             "Deleting all buckets/objects created during TC execution")
-        if self.parallel_ios.is_alive():
-            self.parallel_ios.join()
+        self.start_stop_validate_parallel_s3ios(ios="Stop")
         bucket_list = S3_OBJ.bucket_list()[1]
         pref_list = [
             each_bucket for each_bucket in bucket_list if each_bucket in [
@@ -126,7 +125,7 @@ class TestCopyObjects:
     def check_cluster_health(self):
         """Check the cluster health."""
         self.log.info(
-            "STARTED: Check cluster status, all services are running.")
+            "Check cluster status, all services are running.")
         nodes = CMN_CFG["nodes"]
         self.log.info(nodes)
         for i in range(len(nodes)):
@@ -137,16 +136,16 @@ class TestCopyObjects:
             self.log.info(resp)
             assert_utils.assert_true(resp[0], resp[1])
             health_obj.disconnect()
-        self.log.info("ENDED: Check cluster status, all services are running.")
+        self.log.info("Checked cluster status, all services are running.")
 
     def s3_ios(self,
                bucket=None,
                log_file_prefix="parallel_io",
+               duration="0h3m",
+               obj_size="2Mb",
                num_clients=5,
                num_sample=20,
                obj_name_pref="loadgen_",
-               obj_size="2Mb",
-               duration="0h3m",
                end_point=S3_CFG["s3_url"]):
         """
         Perform io's for specific durations.
@@ -179,16 +178,17 @@ class TestCopyObjects:
             f"failed to generate log: {resp[1]}")
         self.log.info("ENDED: s3 io's operations.")
 
-    def validate_paralle_execution(self, log_prifix=None):
+    def validate_parallel_execution(self, log_prefix=None):
         """Check parallel execution failure."""
+        self.log.info("S3 parallel ios log validation started.")
         logflist = system_utils.list_dir(s3bench.LOG_DIR)
         log_path = None
         for filename in logflist:
-            if filename.startswith(log_prifix):
+            if filename.startswith(log_prefix):
                 log_path = os.path.join(s3bench.LOG_DIR, filename)
         self.log.info("IO log path: %s", log_path)
         assert_utils.assert_is_not_none(
-            log_path, f"failed to generate logs for parallel IOs log.")
+            log_path, f"failed to generate logs for parallel S3 IO.")
         lines = open(log_path).readlines()
         resp_filtered = [
             line for line in lines if 'Errors Count:' in line and "reportFormat" not in line]
@@ -196,21 +196,41 @@ class TestCopyObjects:
         for response in resp_filtered:
             assert_utils.assert_equal(
                 int(response.split(":")[1].strip()), 0, response)
-        for error in ["with error ", "panic", "status code"]:
+        self.log.info("Observed no Error count in io log.")
+        error_kws = ["with error ", "panic", "status code"]
+        for error in error_kws:
             assert_utils.assert_not_equal(
                 error, ",".join(lines), f"Parallel IOs failed.")
-        # if os.path.exists(log_path):
-        #     os.remove(log_path)
+        self.log.info("Observed no Error keyword '%s' in io log.", error_kws)
+        self.log.info("S3 parallel ios log validation completed.")
+
+    def start_stop_validate_parallel_s3ios(self, ios=None, log_prefix=None, duration="0h2m"):
+        """
+        Start/stop parallel s3 io's and validate io's worked successfully.  
+        """
+        if ios == "Start":
+            self.parallel_ios = Process(
+                target=self.s3_ios, args=(
+                    self.io_bucket_name, log_prefix, duration))
+            if not self.parallel_ios.is_alive():
+                self.parallel_ios.start()
+            self.log.info("Parallel IOs started: %s for duration: %s",
+                          self.parallel_ios.is_alive(), duration)
+        if ios == "Stop":
+            if self.parallel_ios.is_alive():
+                resp = S3_OBJ.object_list(self.io_bucket_name)
+                self.log.info(resp)
+                self.parallel_ios.join()
+                self.log.info("Parallel IOs stopped: %s", not self.parallel_ios.is_alive())
+            if log_prefix:
+                self.validate_parallel_execution(log_prefix)
 
     def create_bucket_put_object(self,
                                  s3_test_obj=None,
                                  bucket_name=None,
                                  object_name=None,
                                  file_path=None,
-                                 m_key=None,
-                                 m_value=None,
-                                 count=10,
-                                 size="1M"):
+                                 **kwargs):
         """Create bucket and put object to bucket and return ETag."""
         self.log.info("Create bucket and put object.")
         resp = s3_test_obj.create_bucket(bucket_name)
@@ -220,16 +240,11 @@ class TestCopyObjects:
         self.log.info("Bucket list: %s", bktlist)
         assert_utils.assert_in(bucket_name, bktlist,
                                f"failed to create bucket {bucket_name}")
-        resp = system_utils.create_file(
-            fpath=file_path, count=count, b_size=size)
-        self.log.info(resp)
-        assert_utils.assert_true(resp[0], resp[1])
         put_resp = s3_test_obj.put_object(
             bucket_name=bucket_name,
             object_name=object_name,
             file_path=file_path,
-            m_key=m_key,
-            m_value=m_value)
+            **kwargs)
         self.log.info("put object response: %s", put_resp)
         assert_utils.assert_true(put_resp[0], put_resp[1])
         resp = s3_test_obj.object_list(bucket_name)
@@ -239,38 +254,6 @@ class TestCopyObjects:
                                f"failed to put object {object_name}")
 
         return True, put_resp[1]["ETag"].strip('"')
-
-    def copy_object_to_bucket(
-            self,
-            s3_test_obj,
-            src_bucket,
-            src_object,
-            dest_bucket,
-            dest_object,
-            acl=None):
-        """Copy object to bucket and return ETag."""
-        if acl:
-            copy_resp = s3_test_obj.copy_object_acl(
-                source_bucket=src_bucket,
-                source_object=src_object,
-                dest_bucket=dest_bucket,
-                dest_object=dest_object,
-                acl=acl)
-        else:
-            copy_resp = s3_test_obj.copy_object(
-                source_bucket=src_bucket,
-                source_object=src_object,
-                dest_bucket=dest_bucket,
-                dest_object=dest_object)
-        self.log.info("copy object resp: %s", copy_resp)
-        assert_utils.assert_true(copy_resp[0], copy_resp[1])
-        resp = s3_test_obj.object_list(dest_bucket)
-        self.log.info(resp)
-        assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_in(dest_object, resp[1],
-                               f"failed to copy object {dest_object}")
-
-        return True, copy_resp[1]['CopyObjectResult']['ETag']
 
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-19841")
@@ -283,36 +266,31 @@ class TestCopyObjects:
         self.log.info("Step 1: Check cluster status, all services are running")
         self.check_cluster_health()
         self.log.info("Step 2: start s3 IO's")
-        self.parallel_ios = Process(
-            target=self.s3_ios, args=(
-                self.io_bucket_name, "test_19841_ios"))
-        if not self.parallel_ios.is_alive():
-            self.parallel_ios.start()
-        self.log.info("Parallel IOs started: %s", self.parallel_ios.is_alive())
+        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_19841_ios",
+                                                duration="0h4m")
         self.log.info("Step 3: Create bucket and put object in it.")
+        resp = system_utils.create_file(fpath=self.file_path, count=10, b_size="1M")
+        self.log.info(resp)
+        assert_utils.assert_true(resp[0], resp[1])
         status, PutETag = self.create_bucket_put_object(
             S3_OBJ, self.bucket_name1, self.object_name1, self.file_path)
         self.log.info("Put object ETag: %s", PutETag)
         self.log.info(
             "Step 4: Copy object to same bucket with different object.")
-        status, CopyETag = self.copy_object_to_bucket(
-            S3_OBJ, self.bucket_name1, self.object_name1, self.bucket_name1, self.object_name2)
+        status, response = S3_OBJ.copy_object(self.bucket_name1, self.object_name1,
+                                              self.bucket_name1, self.object_name2)
+        CopyETag = response['CopyObjectResult']['ETag']
         self.log.info("Copy object ETag: %s", CopyETag)
         self.log.info(
-            "Steps 5: compare the compare Etag of source and destination object.")
+            "Steps 5: Compare the compare ETag of source and destination object.")
         self.log.info("ETags: Put: %s, copy: %s", PutETag, CopyETag)
         assert_utils.assert_equal(
             PutETag,
             CopyETag,
             f"Failed to match ETag: {PutETag}, {CopyETag}")
         self.log.info("Matched ETag: %s, %s", PutETag, CopyETag)
-        self.log.info("Steps 6: Stop S3 IOs")
-        resp = S3_OBJ.object_list(self.io_bucket_name)
-        self.log.info(resp)
-        if self.parallel_ios.is_alive():
-            self.parallel_ios.join()
-        self.log.info("Steps 7: Validate S3 parallel IO executions.")
-        self.validate_paralle_execution(log_prifix="test_19841_ios")
+        self.log.info("Steps 6: Stop and validate parallel S3 IOs")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_19841_ios")
         self.log.info(
             "Steps 8: Check cluster status, all services are running")
         self.check_cluster_health()
@@ -331,13 +309,12 @@ class TestCopyObjects:
         self.log.info("Step 1: Check cluster status, all services are running")
         self.check_cluster_health()
         self.log.info("Step 2: start s3 IO's")
-        self.parallel_ios = Process(
-            target=self.s3_ios, args=(
-                self.io_bucket_name, "test_19842_ios"))
-        if not self.parallel_ios.is_alive():
-            self.parallel_ios.start()
-        self.log.info("Parallel IOs started: %s", self.parallel_ios.is_alive())
+        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_19842_ios",
+                                                duration="0h4m")
         self.log.info("Step 3: Create bucket and put object in it.")
+        resp = system_utils.create_file(fpath=self.file_path, count=10, b_size="1M")
+        self.log.info(resp)
+        assert_utils.assert_true(resp[0], resp[1])
         status, PutETag = self.create_bucket_put_object(
             S3_OBJ, self.bucket_name1, self.object_name1, self.file_path)
         self.log.info("Put object ETag: %s", PutETag)
@@ -345,8 +322,9 @@ class TestCopyObjects:
             "Step 4: Copy object to different bucket with different object.")
         resp = S3_OBJ.create_bucket(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp)
-        status, CopyETag = self.copy_object_to_bucket(
-            S3_OBJ, self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2)
+        status, response = S3_OBJ.copy_object(self.bucket_name1, self.object_name1,
+                                              self.bucket_name2, self.object_name2)
+        CopyETag = response['CopyObjectResult']['ETag']
         self.log.info("Copy object ETag: %s", CopyETag)
         self.log.info(
             "Steps 5: compare the compare ETag of source and destination object.")
@@ -356,13 +334,8 @@ class TestCopyObjects:
             CopyETag,
             f"Failed to match ETag: {PutETag}, {CopyETag}")
         self.log.info("Matched ETag: %s, %s", PutETag, CopyETag)
-        self.log.info("Steps 6: Stop S3 IOs")
-        resp = S3_OBJ.object_list(self.io_bucket_name)
-        self.log.info(resp)
-        if self.parallel_ios.is_alive():
-            self.parallel_ios.join()
-        self.log.info("Steps 7: Validate S3 parallel IO executions.")
-        self.validate_paralle_execution(log_prifix="test_19842_ios")
+        self.log.info("Steps 6: Stop and validate S3 IOs")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_19842_ios")
         self.log.info(
             "Steps 8: Check cluster status, all services are running")
         self.check_cluster_health()
@@ -380,12 +353,8 @@ class TestCopyObjects:
         self.log.info("Step 1: Check cluster status, all services are running")
         self.check_cluster_health()
         self.log.info("Step 2: start s3 IO's")
-        self.parallel_ios = Process(
-            target=self.s3_ios, args=(
-                self.io_bucket_name, "test_19843_ios"))
-        if not self.parallel_ios.is_alive():
-            self.parallel_ios.start()
-        self.log.info("Parallel IOs started: %s", self.parallel_ios.is_alive())
+        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_19843_ios",
+                                                duration="0h4m")
         self.log.info(
             "Step 3: Create a bucket in Account1 and upload object in it.")
         status, response = IAM_OBJ.create_s3iamcli_acc(
@@ -426,8 +395,9 @@ class TestCopyObjects:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Steps 7: From Account1 copy object from bucket1 to bucket2 .")
-        status, CopyETag = self.copy_object_to_bucket(
-            s3_obj2, self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2)
+        status, response = S3_OBJ.copy_object(self.bucket_name1, self.object_name1,
+                                              self.bucket_name2, self.object_name2)
+        CopyETag = response['CopyObjectResult']['ETag']
         self.log.info(
             "Step 8:  compare the compare ETag of source and destination object.")
         self.log.info("ETags: Put: %s, copy: %s", PutETag, CopyETag)
@@ -436,20 +406,10 @@ class TestCopyObjects:
             CopyETag,
             f"Failed to match ETag: {PutETag}, {CopyETag}")
         self.log.info("Matched ETag: %s, %s", PutETag, CopyETag)
-        self.log.info("Steps 9: Stop S3 IOs")
-        resp = S3_OBJ.object_list(self.io_bucket_name)
-        self.log.info(resp)
-        if self.parallel_ios.is_alive():
-            self.parallel_ios.join()
-        self.log.info("Step 10: Cleanup accounts.")
-        s3_obj1.delete_bucket(self.bucket_name1)
-        IAM_OBJ.delete_account_s3iamcli(self.account_name1, access_key1, secret_key1)
-        s3_obj2.delete_bucket(self.bucket_name2)
-        IAM_OBJ.delete_account_s3iamcli(self.account_name2, access_key2, secret_key2)
-        self.log.info("Steps 11: Validate S3 parallel IO executions.")
-        self.validate_paralle_execution(log_prifix="test_19843_ios")
+        self.log.info("Steps 9: Stop and validate parallel S3 IOs")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_19843_ios")
         self.log.info(
-            "Steps 12: Check cluster status, all services are running")
+            "Steps 10: Check cluster status, all services are running")
         self.check_cluster_health()
         self.log.info(
             "ENDED: Copy object to cross account buckets while S3 IOs are in progress.")
@@ -464,12 +424,8 @@ class TestCopyObjects:
         self.log.info("Step 1: Check cluster status, all services are running")
         self.check_cluster_health()
         self.log.info("Step 2: start s3 IO's")
-        self.parallel_ios = Process(
-            target=self.s3_ios, args=(
-                self.io_bucket_name, "test_19844_ios"))
-        if not self.parallel_ios.is_alive():
-            self.parallel_ios.start()
-        self.log.info("Parallel IOs started: %s", self.parallel_ios.is_alive())
+        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_19844_ios",
+                                                duration="0h4m")
         self.log.info(
             "Step 3: Create and upload object of size equal to 5GiB to the bucket.")
         status, PutETag = self.create_bucket_put_object(
@@ -479,8 +435,10 @@ class TestCopyObjects:
             "Step 4: Copy object to different bucket with different object.")
         resp = S3_OBJ.create_bucket(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp)
-        status, CopyETag = self.copy_object_to_bucket(
-            S3_OBJ, self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2)
+        status, response = S3_OBJ.copy_object(self.bucket_name1, self.object_name1,
+                                              self.bucket_name2, self.object_name2)
+        assert_utils.assert_true(status, response)
+        CopyETag = response['CopyObjectResult']['ETag']
         self.log.info("Copy object ETag: %s", CopyETag)
         self.log.info(
             "Steps 5: compare the compare ETag of source and destination object.")
@@ -489,15 +447,10 @@ class TestCopyObjects:
             CopyETag,
             f"Failed to match ETag: {PutETag}, {CopyETag}")
         self.log.info("Matched ETag: %s, %s", PutETag, CopyETag)
-        self.log.info("Steps 6: Stop S3 IOs")
-        resp = S3_OBJ.object_list(self.io_bucket_name)
-        self.log.info(resp)
-        if self.parallel_ios.is_alive():
-            self.parallel_ios.join()
-        self.log.info("Steps 7: Validate S3 parallel IO executions.")
-        self.validate_paralle_execution(log_prifix="test_19844_ios")
+        self.log.info("Steps 6: Stop and validate parallel S3 IOs")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_19844_ios")
         self.log.info(
-            "Steps 8: Check cluster status, all services are running")
+            "Steps 7: Check cluster status, all services are running")
         self.check_cluster_health()
         self.log.info(
             "ENDED: Copy object of object size equal to 5GB while S3 IOs are in progress.")
@@ -512,12 +465,8 @@ class TestCopyObjects:
         self.log.info("Step 1: Check cluster status, all services are running")
         self.check_cluster_health()
         self.log.info("Step 2: start s3 IO's")
-        self.parallel_ios = Process(
-            target=self.s3_ios, args=(
-                self.io_bucket_name, "test_19846_ios"))
-        if not self.parallel_ios.is_alive():
-            self.parallel_ios.start()
-        self.log.info("Parallel IOs started: %s", self.parallel_ios.is_alive())
+        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_19846_ios",
+                                                duration="0h4m")
         self.log.info(
             "Step 3: Create and upload object of size greater than 5GB to the bucket..")
         status, PutETag = self.create_bucket_put_object(
@@ -530,24 +479,20 @@ class TestCopyObjects:
         self.log.info(
             "Steps 5: Copy object from bucket1 to bucket2 .Check for error message.")
         try:
-            status, CopyETag = self.copy_object_to_bucket(
-                S3_OBJ, self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2)
-            self.log.info("Copy object ETag: %s", CopyETag)
+            status, response = S3_OBJ.copy_object(self.bucket_name1, self.object_name1,
+                                                  self.bucket_name2, self.object_name2)
             assert_utils.assert_false(
                 status, "copied object greater than 5GB.")
+            CopyETag = response['CopyObjectResult']['ETag']
+            self.log.info("Copy object ETag: %s", CopyETag)
         except CTException as error:
             self.log.info(error.message)
             assert_utils.assert_equal(
                 "An error occurred (InvalidRequest) when calling the CopyObject operation:"
                 " The specified copy source is larger than the maximum allowable size for a"
                 " copy source: 5368709120", error.message, error)
-        self.log.info("Steps 6: Stop S3 IOs")
-        resp = S3_OBJ.object_list(self.io_bucket_name)
-        self.log.info(resp)
-        if self.parallel_ios.is_alive():
-            self.parallel_ios.join()
-        self.log.info("Steps 7: Validate S3 parallel IO executions.")
-        self.validate_paralle_execution(log_prifix="test_19846_ios")
+        self.log.info("Steps 6: Stop and validate parallel S3 IOs")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_19846_ios")
         self.log.info(
             "Steps 8: Check cluster status, all services are running")
         self.check_cluster_health()
@@ -566,12 +511,8 @@ class TestCopyObjects:
         self.log.info("Step 1: Check cluster status, all services are running")
         self.check_cluster_health()
         self.log.info("Step 2: start s3 IO's")
-        self.parallel_ios = Process(
-            target=self.s3_ios, args=(
-                self.io_bucket_name, "test_19847_ios"))
-        if not self.parallel_ios.is_alive():
-            self.parallel_ios.start()
-        self.log.info("Parallel IOs started: %s", self.parallel_ios.is_alive())
+        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_19847_ios",
+                                                duration="0h4m")
         self.log.info("Step 3: Create a bucket in Account1.")
         status, response = IAM_OBJ.create_s3iamcli_acc(
             self.account_name1, self.email_id.format(self.account_name1))
@@ -610,8 +551,10 @@ class TestCopyObjects:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Steps 7: From Account1 copy object from bucket1 to bucket2 .")
-        status, CopyETag = self.copy_object_to_bucket(
-            s3_obj2, self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2)
+        status, response = s3_obj2.copy_object(self.bucket_name1, self.object_name1,
+                                               self.bucket_name2, self.object_name2)
+        assert_utils.assert_true(status, response)
+        CopyETag = response['CopyObjectResult']['ETag']
         self.log.info(
             "Step 8:  compare the compare ETag of source and destination object.")
         self.log.info("ETags: Put: %s, copy: %s", PutETag, CopyETag)
@@ -632,15 +575,10 @@ class TestCopyObjects:
         self.log.info("Step 10: Get Object ACL of the destination bucket from Account1.")
         resp = s3_acl_obj2.get_bucket_acl(self.bucket_name1)
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Steps 11: Stop S3 IOs")
-        resp = S3_OBJ.object_list(self.io_bucket_name)
-        self.log.info(resp)
-        if self.parallel_ios.is_alive():
-            self.parallel_ios.join()
-        self.log.info("Steps 12: Validate S3 parallel IO executions.")
-        self.validate_paralle_execution(log_prifix="test_19847_ios")
+        self.log.info("Steps 11: Stop and validate parallel S3 IOs")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_19847_ios")
         self.log.info(
-            "Steps 13: Check cluster status, all services are running")
+            "Steps 12: Check cluster status, all services are running")
         self.check_cluster_health()
         self.log.info(
             "ENDED: Copy object to different account with write access on destination bucket"
@@ -657,12 +595,8 @@ class TestCopyObjects:
         self.log.info("Step 1: Check cluster status, all services are running")
         self.check_cluster_health()
         self.log.info("Step 2: start s3 IO's")
-        self.parallel_ios = Process(
-            target=self.s3_ios, args=(
-                self.io_bucket_name, "test_19848_ios"))
-        if not self.parallel_ios.is_alive():
-            self.parallel_ios.start()
-        self.log.info("Parallel IOs started: %s", self.parallel_ios.is_alive())
+        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_19848_ios",
+                                                duration="0h4m")
         self.log.info("Step 3: Create a bucket in Account1.")
         status, response = IAM_OBJ.create_s3iamcli_acc(
             self.account_name1, self.email_id.format(self.account_name1))
@@ -702,8 +636,10 @@ class TestCopyObjects:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Steps 8: From Account1 copy object from bucket1 to bucket2 .")
-        status, CopyETag = self.copy_object_to_bucket(
-            s3_obj2, self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2)
+        status, response = s3_obj2.copy_object(self.bucket_name1, self.object_name1,
+                                               self.bucket_name2, self.object_name2)
+        assert_utils.assert_true(status, response)
+        CopyETag = response['CopyObjectResult']['ETag']
         self.log.info(
             "Step 9:  compare the compare ETag of source and destination object.")
         self.log.info("ETags: Put: %s, copy: %s", PutETag, CopyETag)
@@ -712,13 +648,8 @@ class TestCopyObjects:
             CopyETag,
             f"Failed to match ETag: {PutETag}, {CopyETag}")
         self.log.info("Matched ETag: %s, %s", PutETag, CopyETag)
-        self.log.info("Steps 10: Stop S3 IOs")
-        resp = S3_OBJ.object_list(self.io_bucket_name)
-        self.log.info(resp)
-        if self.parallel_ios.is_alive():
-            self.parallel_ios.join()
-        self.log.info("Steps 11: Validate S3 parallel IO executions.")
-        self.validate_paralle_execution(log_prifix="test_19848_ios")
+        self.log.info("Steps 10: Stop and validate parallel S3 IOs")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_19848_ios")
         self.log.info(
             "Steps 13: Check cluster status, all services are running")
         self.check_cluster_health()
@@ -735,12 +666,8 @@ class TestCopyObjects:
         self.log.info("Step 1: Check cluster status, all services are running")
         self.check_cluster_health()
         self.log.info("Step 2: start s3 IO's")
-        self.parallel_ios = Process(
-            target=self.s3_ios, args=(
-                self.io_bucket_name, "test_19849_ios"))
-        if not self.parallel_ios.is_alive():
-            self.parallel_ios.start()
-        self.log.info("Parallel IOs started: %s", self.parallel_ios.is_alive())
+        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_19849_ios",
+                                                duration="0h4m")
         self.log.info("Step 3: Create a bucket in Account1.")
         status, response = IAM_OBJ.create_s3iamcli_acc(
             self.account_name1, self.email_id.format(self.account_name1))
@@ -781,8 +708,10 @@ class TestCopyObjects:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Steps 8: From Account1 copy object from bucket1 to bucket2 .")
-        status, CopyETag = self.copy_object_to_bucket(
-            s3_obj2, self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2)
+        status, response = s3_obj2.copy_object(self.bucket_name1, self.object_name1,
+                                               self.bucket_name2, self.object_name2)
+        assert_utils.assert_true(status, response)
+        CopyETag = response['CopyObjectResult']['ETag']
         self.log.info(
             "Step 9:  compare the compare ETag of source and destination object.")
         self.log.info("ETags: Put: %s, copy: %s", PutETag, CopyETag)
@@ -791,13 +720,8 @@ class TestCopyObjects:
             CopyETag,
             f"Failed to match ETag: {PutETag}, {CopyETag}")
         self.log.info("Matched ETag: %s, %s", PutETag, CopyETag)
-        self.log.info("Steps 10: Stop S3 IOs")
-        resp = S3_OBJ.object_list(self.io_bucket_name)
-        self.log.info(resp)
-        if self.parallel_ios.is_alive():
-            self.parallel_ios.join()
-        self.log.info("Steps 11: Validate S3 parallel IO executions.")
-        self.validate_paralle_execution(log_prifix="test_19849_ios")
+        self.log.info("Steps 10: Stop and validate parallel S3 IOs")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_19849_ios")
         self.log.info(
             "Steps 13: Check cluster status, all services are running")
         self.check_cluster_health()
@@ -814,12 +738,8 @@ class TestCopyObjects:
         self.log.info("Step 1: Check cluster status, all services are running")
         self.check_cluster_health()
         self.log.info("Step 2: start s3 IO's")
-        self.parallel_ios = Process(
-            target=self.s3_ios, args=(
-                self.io_bucket_name, "test_19850_ios"))
-        if not self.parallel_ios.is_alive():
-            self.parallel_ios.start()
-        self.log.info("Parallel IOs started: %s", self.parallel_ios.is_alive())
+        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_19850_ios",
+                                                duration="0h4m")
         self.log.info(
             "3. Create 2 buckets in same accounts and upload object to the above bucket1..")
         status, response = IAM_OBJ.create_s3iamcli_acc(
@@ -834,9 +754,11 @@ class TestCopyObjects:
         assert_utils.assert_true(status, PutETag)
         self.log.info("4. Copy object from bucket1 to bucket2 specifying canned ACL as"
                       " public-read-write.")
-        status, CopyETag = self.copy_object_to_bucket(
-            s3_obj1, self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2,
-            acl="public-read-write")
+        status, response = s3_acl_obj1.copy_object_acl(self.bucket_name1, self.object_name1,
+                                                       self.bucket_name2, self.object_name2,
+                                                       acl="public-read-write")
+        assert_utils.assert_true(status, response)
+        CopyETag = response['CopyObjectResult']['ETag']
         self.log.info(
             "Step 5:  compare the compare ETag of source and destination object.")
         self.log.info("ETags: Put: %s, copy: %s", PutETag, CopyETag)
@@ -851,13 +773,8 @@ class TestCopyObjects:
             bucket_name=self.bucket_name2,
             object_name=self.object_name2)
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Steps 10: Stop S3 IOs")
-        resp = S3_OBJ.object_list(self.io_bucket_name)
-        self.log.info(resp)
-        if self.parallel_ios.is_alive():
-            self.parallel_ios.join()
-        self.log.info("Steps 11: Validate S3 parallel IO executions.")
-        self.validate_paralle_execution(log_prifix="test_19850_ios")
+        self.log.info("Steps 10: Stop and validate parallel S3 IOs")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_19850_ios")
         self.log.info(
             "Steps 13: Check cluster status, all services are running")
         self.check_cluster_health()
@@ -869,16 +786,14 @@ class TestCopyObjects:
     @CTFailOn(error_handler)
     def test_19851(self):
         """Copy object applying canned ACL bucket-owner-read while S3 IOs are in progress."""
+        self.log.info("STARTED: Copy object applying canned ACL bucket-owner-read while S3 "
+                      "IOs are in progress.")
         self.log.info(
             "Step 1. Check cluster status, all services are running before starting test.")
         self.check_cluster_health()
         self.log.info("Step 2. Start S3 IO.")
-        self.parallel_ios = Process(
-            target=self.s3_ios, args=(
-                self.io_bucket_name, "test_19851_ios"))
-        if not self.parallel_ios.is_alive():
-            self.parallel_ios.start()
-        self.log.info("Parallel IOs started: %s", self.parallel_ios.is_alive())
+        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_19851_ios",
+                                                duration="0h4m")
         self.log.info("Step 3. Create a bucket in Account1 and referred as bucket1.")
         self.log.info("Step 4. Create and upload object to the above bucket1.")
         self.log.info("Step 5. Get the source object ACL. Capture the output.")
@@ -889,16 +804,13 @@ class TestCopyObjects:
             "Step 9. From Account1 copy object from bucket1 to bucket2 specifying canned ACL"
             " bucket-owner-read.")
         self.log.info("Step 10. Get Object ACL of the destination object from Account1.")
-        self.log.info("11. Stop S3 IO.")
-        resp = S3_OBJ.object_list(self.io_bucket_name)
-        self.log.info(resp)
-        if self.parallel_ios.is_alive():
-            self.parallel_ios.join()
-        self.log.info("Steps 12: Validate S3 parallel IO executions.")
-        self.validate_paralle_execution(log_prifix="test_19851_ios")
+        self.log.info("11. Stop and validate parallel S3 IOs")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_19851_ios")
         self.log.info(
-            "setup 13. Check cluster status, all services are running after completing test.")
+            "setup 12. Check cluster status, all services are running after completing test.")
         self.check_cluster_health()
+        self.log.info("ENDED: Copy object applying canned ACL bucket-owner-read while S3 "
+                      "IOs are in progress.")
 
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-19891")
@@ -914,12 +826,8 @@ class TestCopyObjects:
         self.log.info("1. Check cluster status, all services are running before starting test.")
         self.check_cluster_health()
         self.log.info("2. Start S3 IO.")
-        self.parallel_ios = Process(
-            target=self.s3_ios, args=(
-                self.io_bucket_name, "test_19841_ios"))
-        if not self.parallel_ios.is_alive():
-            self.parallel_ios.start()
-        self.log.info("Parallel IOs started: %s", self.parallel_ios.is_alive())
+        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_19891_ios",
+                                                duration="0h4m")
         self.log.info("3. Create a bucket in Account1. Referred as bucket1.")
         self.log.info("4. Create and upload object to the above bucket1.")
         self.log.info("5. Get the source object ACL. Capture the output.")
@@ -930,11 +838,8 @@ class TestCopyObjects:
             "9. From Account1 copy object from bucket1 to bucket2 specifying canned ACL "
             "bucket-owner-full-control.")
         self.log.info("10. Get Object ACL of the destination object from Account1.")
-        self.log.info("11. Stop S3 IO.")
-        resp = S3_OBJ.object_list(self.io_bucket_name)
-        self.log.info(resp)
-        if self.parallel_ios.is_alive():
-            self.parallel_ios.join()
+        self.log.info("11. Stop and validate parallel S3 IOs")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_19891_ios")
         self.log.info("12. Check cluster status, all services are running after completing test.")
         self.check_cluster_health()
         self.log.info("ENDED: Copy object applying canned ACL bucket-owner-full-control while S3"
@@ -950,12 +855,8 @@ class TestCopyObjects:
         self.log.info("1. Check cluster status, all services are running before starting test.")
         self.check_cluster_health()
         self.log.info("2. Start S3 IO.")
-        self.parallel_ios = Process(
-            target=self.s3_ios, args=(
-                self.io_bucket_name, "test_19892_ios"))
-        if not self.parallel_ios.is_alive():
-            self.parallel_ios.start()
-        self.log.info("Parallel IOs started: %s", self.parallel_ios.is_alive())
+        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_19892_ios",
+                                                duration="0h4m")
         self.log.info("3. Create 2 buckets in same accounts.")
         self.log.info("4. Create and upload object to the above bucket1.")
         self.log.info("5. List object for the bucket1.")
@@ -965,11 +866,8 @@ class TestCopyObjects:
             "7. Get Object ACL of the destination object from Account1. Validate the permission.")
         self.log.info(
             "8. Get Object ACL of the destination object from Account2. Validate the permission.")
-        self.log.info("9. Stop S3 IO.")
-        resp = S3_OBJ.object_list(self.io_bucket_name)
-        self.log.info(resp)
-        if self.parallel_ios.is_alive():
-            self.parallel_ios.join()
+        self.log.info("9. Stop and validate parallel S3 IOs")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_19892_ios")
         self.log.info("10. Check cluster status, all services are running after completing test.")
         self.check_cluster_health()
         self.log.info(
@@ -984,12 +882,8 @@ class TestCopyObjects:
         self.log.info("1. Check cluster status, all services are running before starting test")
         self.check_cluster_health()
         self.log.info("2. Start S3 IO")
-        self.parallel_ios = Process(
-            target=self.s3_ios, args=(
-                self.io_bucket_name, "test_19893_ios"))
-        if not self.parallel_ios.is_alive():
-            self.parallel_ios.start()
-        self.log.info("Parallel IOs started: %s", self.parallel_ios.is_alive())
+        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_19893_ios",
+                                                duration="0h4m")
         self.log.info("3. Create 2 buckets in same accounts.")
         self.log.info("4. Create and upload object to the above bucket1.")
         self.log.info("5. List object for the bucket1.")
@@ -999,11 +893,8 @@ class TestCopyObjects:
         self.log.info(
             "8. Get Object ACL of the destination object from Account2. Validate the permission")
         self.log.info("9. Get/download destination object from Account2.")
-        self.log.info("10. Stop S3 IO")
-        resp = S3_OBJ.object_list(self.io_bucket_name)
-        self.log.info(resp)
-        if self.parallel_ios.is_alive():
-            self.parallel_ios.join()
+        self.log.info("10. Stop and validate parallel S3 IOs")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_19893_ios")
         self.log.info("11. Check cluster status, all services are running after completing test")
         self.check_cluster_health()
         self.log.info("ENDED: Copy object applying read access while S3 IOs are in progress.")
@@ -1017,12 +908,8 @@ class TestCopyObjects:
         self.log.info("1. Check cluster status, all services are running before starting test")
         self.check_cluster_health()
         self.log.info("2. Start S3 IO")
-        self.parallel_ios = Process(
-            target=self.s3_ios, args=(
-                self.io_bucket_name, "test_19841_ios"))
-        if not self.parallel_ios.is_alive():
-            self.parallel_ios.start()
-        self.log.info("Parallel IOs started: %s", self.parallel_ios.is_alive())
+        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_19894_ios",
+                                                duration="0h4m")
         self.log.info("3. Create 2 buckets in same accounts .")
         self.log.info("4. Create and upload object to the above bucket1 .")
         self.log.info("5. List object for the bucket1.")
@@ -1032,11 +919,8 @@ class TestCopyObjects:
             "7. Get Object ACL of the destination object from Account1. Validate the permission")
         self.log.info(
             "8. Get Object ACL of the destination object from Account2. Validate the permission")
-        self.log.info("9. Stop S3 IO")
-        resp = S3_OBJ.object_list(self.io_bucket_name)
-        self.log.info(resp)
-        if self.parallel_ios.is_alive():
-            self.parallel_ios.join()
+        self.log.info("9. Stop and validate parallel S3 IOs")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_19894_ios")
         self.log.info("10. Check cluster status, all services are running after completing test")
         self.check_cluster_health()
         self.log.info("ENDED: Copy object applying Read ACL access while S3 IOs are in progress.")
@@ -1050,12 +934,8 @@ class TestCopyObjects:
         self.log.info("1. Check cluster status, all services are running before starting test")
         self.check_cluster_health()
         self.log.info("2. Start S3 IO")
-        self.parallel_ios = Process(
-            target=self.s3_ios, args=(
-                self.io_bucket_name, "test_19895_ios"))
-        if not self.parallel_ios.is_alive():
-            self.parallel_ios.start()
-        self.log.info("Parallel IOs started: %s", self.parallel_ios.is_alive())
+        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_19895_ios",
+                                                duration="0h4m")
         self.log.info("3. Create 2 buckets in same accounts .")
         self.log.info("4. Create and upload object to the above bucket1 .")
         self.log.info("5. List object for the bucket1.")
@@ -1065,11 +945,8 @@ class TestCopyObjects:
             "7. Get Object ACL of the destination object from Account1. Validate the permission.")
         self.log.info(
             "8. Get Object ACL of the destination object from Account2. Validate the permission.")
-        self.log.info("9. Stop S3 IO")
-        resp = S3_OBJ.object_list(self.io_bucket_name)
-        self.log.info(resp)
-        if self.parallel_ios.is_alive():
-            self.parallel_ios.join()
+        self.log.info("9. Stop and validate parallel S3 IOs")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_19895_ios")
         self.log.info("10. Check cluster status, all services are running after completing test")
         self.check_cluster_health()
         self.log.info("ENDED: Copy object applying Write ACL access while S3 IOs are in progress")
@@ -1083,12 +960,8 @@ class TestCopyObjects:
         self.log.info("1. Check cluster status, all services are running before starting test")
         self.check_cluster_health()
         self.log.info("2. Start S3 IO")
-        self.parallel_ios = Process(
-            target=self.s3_ios, args=(
-                self.io_bucket_name, "test_19896_ios"))
-        if not self.parallel_ios.is_alive():
-            self.parallel_ios.start()
-        self.log.info("Parallel IOs started: %s", self.parallel_ios.is_alive())
+        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_19896_ios",
+                                                duration="0h4m")
         self.log.info("3. Create 2 buckets in same accounts .")
         self.log.info("4. Create and upload object to the above bucket1 .")
         self.log.info("5. List object for the bucket1.")
@@ -1098,11 +971,8 @@ class TestCopyObjects:
             "7. Get Object ACL of the destination object from Account1. Validate the permission")
         self.log.info(
             "8. Get Object ACL of the destination object from Account2. Validate the permission")
-        self.log.info("9. Stop S3 IO.")
-        resp = S3_OBJ.object_list(self.io_bucket_name)
-        self.log.info(resp)
-        if self.parallel_ios.is_alive():
-            self.parallel_ios.join()
+        self.log.info("9. Stop and validate parallel S3 IOs")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_19896_ios")
         self.log.info("10. Check cluster status, all services are running after completing test.")
         self.check_cluster_health()
         self.log.info("ENDED: Copy object specifying multiple ACL while S3 IOs are in progress")
@@ -1113,26 +983,20 @@ class TestCopyObjects:
     def test_19897(self):
         """Copy object with no read access to source bucket while S3 IOs are in progress."""
         self.log.info(
-            "STARTED: Copy object with no read access to source bucket while S3 IOs are in progress.")
+            "STARTED: Copy object with no read access to source bucket while S3 IOs are"
+            " in progress.")
         self.log.info("1. Check cluster status, all services are running before starting test")
         self.check_cluster_health()
         self.log.info("2. Start S3 IO")
-        self.parallel_ios = Process(
-            target=self.s3_ios, args=(
-                self.io_bucket_name, "test_19897_ios"))
-        if not self.parallel_ios.is_alive():
-            self.parallel_ios.start()
-        self.log.info("Parallel IOs started: %s", self.parallel_ios.is_alive())
+        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_19897_ios",
+                                                duration="0h4m")
         self.log.info("3. Create a bucket in Account1 .Referred as bucket1.")
         self.log.info("4. Create and upload object to the above bucket1 .")
         self.log.info("5. Get the source object ACL. Capture the output .")
         self.log.info("6. From Account2 create a bucket. Referred as bucket2 .")
         self.log.info("7. From Account2 copy object from bucket1 to bucket2 .")
-        self.log.info("8. Stop S3 IO")
-        resp = S3_OBJ.object_list(self.io_bucket_name)
-        self.log.info(resp)
-        if self.parallel_ios.is_alive():
-            self.parallel_ios.join()
+        self.log.info("8. Stop and validate parallel S3 IOs")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_19897_ios")
         self.log.info("9. Check cluster status, all services are running after completing test")
         self.check_cluster_health()
         self.log.info(
@@ -1144,30 +1008,25 @@ class TestCopyObjects:
     def test_19898(self):
         """Copy object with no write access to destination bucket while S3 IOs are in progress."""
         self.log.info(
-            "STARTED: Copy object with no write access to destination bucket while S3 IOs are in progress")
+            "STARTED: Copy object with no write access to destination bucket while S3 IOs"
+            " are in progress")
         self.log.info("1. Check cluster status, all services are running before starting test")
         self.check_cluster_health()
         self.log.info("2. Start S3 IO")
-        self.parallel_ios = Process(
-            target=self.s3_ios, args=(
-                self.io_bucket_name, "test_19898_ios"))
-        if not self.parallel_ios.is_alive():
-            self.parallel_ios.start()
-        self.log.info("Parallel IOs started: %s", self.parallel_ios.is_alive())
+        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_19898_ios",
+                                                duration="0h4m")
         self.log.info("3. Create a bucket in Account1 .Referred as bucket1.")
         self.log.info("4. Create and upload object to the above bucket1 .")
         self.log.info("5. Get the source object ACL. Capture the output .")
         self.log.info("6. From Account2 create a bucket. Referred as bucket2 .")
         self.log.info("7. From Account1 copy object from bucket1 to bucket2 .")
-        self.log.info("8. Stop S3 IO")
-        resp = S3_OBJ.object_list(self.io_bucket_name)
-        self.log.info(resp)
-        if self.parallel_ios.is_alive():
-            self.parallel_ios.join()
+        self.log.info("8. Stop and validate parallel S3 IOs")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_19898_ios")
         self.log.info("9. Check cluster status, all services are running after completing test")
         self.check_cluster_health()
         self.log.info(
-            "ENDED: Copy object with no write access to destination bucket while S3 IOs are in progress")
+            "ENDED: Copy object with no write access to destination bucket while S3 IOs are"
+            " in progress")
 
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-19899")
@@ -1185,23 +1044,16 @@ class TestCopyObjects:
         self.log.info("1. Check cluster status, all services are running before starting test")
         self.check_cluster_health()
         self.log.info("2. Start S3 IO")
-        self.parallel_ios = Process(
-            target=self.s3_ios, args=(
-                self.io_bucket_name, "test_19899_ios"))
-        if not self.parallel_ios.is_alive():
-            self.parallel_ios.start()
-        self.log.info("Parallel IOs started: %s", self.parallel_ios.is_alive())
+        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_19899_ios",
+                                                duration="0h4m")
         self.log.info("3. Create a bucket in Account1 .Referred as bucket1.")
         self.log.info("4. Create and upload object to the above bucket1 .")
         self.log.info("5. Get the source object ACL. Capture the output .")
         self.log.info("6. Put bucket ACL on source bucket and grant Full control to Account2 .")
         self.log.info("7. From Account2 create a bucket. Referred as bucket2 .")
         self.log.info("8. From Account2 copy object from bucket1 to bucket2 .")
-        self.log.info("9. Stop S3 IO")
-        resp = S3_OBJ.object_list(self.io_bucket_name)
-        self.log.info(resp)
-        if self.parallel_ios.is_alive():
-            self.parallel_ios.join()
+        self.log.info("9. Stop and validate parallel S3 IOs")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_19899_ios")
         self.log.info("10. Check cluster status, all services are running after completing test")
         self.check_cluster_health()
         self.log.info("ENDED: Copy object with no access to source object and destination bucket"
@@ -1218,33 +1070,67 @@ class TestCopyObjects:
         Copy object specifying bucket name and object under folders while S3 IOs are in progress.
         """
         self.log.info(
-            "STARTED: Copy object specifying bucket name and object under folders while S3 IOs are in progress")
+            "STARTED: Copy object specifying bucket name and object under folders while"
+            " S3 IOs are in progress")
+        fpath = "sub/sub2/sub3/sub4/sub5/sub6/sub7/sub8/sub9/"
         self.log.info("1. Check cluster status, all services are running before starting test")
         self.check_cluster_health()
         self.log.info("2. Start S3 IO")
-        self.parallel_ios = Process(
-            target=self.s3_ios, args=(
-                self.io_bucket_name, "test_19900_ios"))
-        if not self.parallel_ios.is_alive():
-            self.parallel_ios.start()
-        self.log.info("Parallel IOs started: %s", self.parallel_ios.is_alive())
+        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_19900_ios",
+                                                duration="0h4m")
         self.log.info("3. Create 2 buckets in same accounts .")
+        resp = S3_OBJ.create_bucket(self.bucket_name1)
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = S3_OBJ.create_bucket(self.bucket_name2)
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = S3_OBJ.bucket_list()
+        assert_utils.assert_in(self.bucket_name1, resp[1], f"Failed to create {self.bucket_name1}")
+        assert_utils.assert_in(self.bucket_name2, resp[1], f"Failed to create {self.bucket_name2}")
         self.log.info(
-            "4. Create object inside multiple folders and upload object to the above bucket1 .")
-        self.log.info("5. List object for the bucket1.")
-        self.log.info("6. Copy object from bucket1 to bucket2 .")
-        self.log.info(
-            "7. List Objects from bucket2, Check object is present and of same size as source object.")
-        self.log.info(
-            "8. Copy object from bucket1 to bucket2 specfying folder structure for destination object.")
-        self.log.info(
-            "9. List Objects from bucket2, Check object is present and of same size and folder structure as source object.")
-        self.log.info("10. Stop S3 IO")
-        resp = S3_OBJ.object_list(self.io_bucket_name)
+            "4. Create object inside multiple folders and upload object to the above bucket1.")
+        resp = system_utils.create_file(fpath=self.file_path, count=10, b_size="1M")
         self.log.info(resp)
-        if self.parallel_ios.is_alive():
-            self.parallel_ios.join()
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = S3_OBJ.put_object(self.bucket_name1, f"{fpath}{self.object_name1}", self.file_path)
+        assert_utils.assert_true(resp[0], resp[1])
+        PutTag = resp[1]["ETag"].strip('"')
+        self.log.info("5. List object for the bucket1.")
+        resp = S3_OBJ.object_list(self.bucket_name1)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_true(any([self.object_name1 in obj for obj in resp[1]]),
+                                 f"{self.object_name1} not present in {resp[1]}")
+        self.log.info("6. Copy object from bucket1 to bucket2.")
+        resp = S3_OBJ.copy_object(self.bucket_name1, f"{fpath}{self.object_name1}",
+                                  self.bucket_name2, self.object_name2)
+        assert_utils.assert_true(resp[0], resp[1])
+        CopyETag1 = resp[1]['CopyObjectResult']['ETag']
+        assert_utils.assert_equal(PutTag, CopyETag1, f"Failed to match object ETag")
+        self.log.info(
+            "7. List Objects from bucket2, Check object is present and of same size as source"
+            " object.")
+        resp = S3_OBJ.object_list(self.bucket_name2)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_in(self.object_name2, resp[1],
+                               f"{self.object_name2} not present in {resp[1]}")
+        self.log.info(
+            "8. Copy object from bucket1 to bucket2 specifying folder structure for destination"
+            " object.")
+        resp = S3_OBJ.copy_object(self.bucket_name1, f"{fpath}{self.object_name1}",
+                                  self.bucket_name2, f"{fpath}{self.object_name2}")
+        assert_utils.assert_true(resp[0], resp[1])
+        CopyETag2 = resp[1]['CopyObjectResult']['ETag']
+        assert_utils.assert_equal(PutTag, CopyETag2, f"Failed to match object ETag")
+        self.log.info(
+            "9. List Objects from bucket2, Check object is present and of same size and folder"
+            " structure as source object.")
+        resp = S3_OBJ.object_list(self.bucket_name2)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_true(any([self.object_name2 in obj for obj in resp[1]]),
+                                 f"{self.object_name2} not present in {resp[1]}")
+        self.log.info("10. Stop and validate parallel S3 IOs")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_19900_ios")
         self.log.info("11. Check cluster status, all services are running after completing test")
         self.check_cluster_health()
         self.log.info(
-            "ENDED: Copy object specifying bucket name and object under folders while S3 IOs are in progress")
+            "ENDED: Copy object specifying bucket name and object under folders while S3 IOs"
+            " are in progress")
