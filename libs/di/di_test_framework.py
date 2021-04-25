@@ -58,11 +58,12 @@ class Uploader(object):
         access_key = keys[0]
         secret_key = keys[1]
         timestamp = time.strftime("%Y%m%d-%H%M%S")
-        buckets = [user_name + '-' + timestamp + '-bucket' + str(i) for i in range(4)]
+        buckets = [user_name + '-' + timestamp + '-bucket' + str(i) for i in range(2)]
 
         try:
             s3 = boto3.resource('s3', aws_access_key_id=access_key, aws_secret_access_key=secret_key,
-                                endpoint_url="https://s3.seagate.com")
+                                endpoint_url=params.S3_ENDPOINT)
+            LOGGER.info("S3 resource created for %s", user_name)
         except Exception as e:
             LOGGER.info(
                 f'could not create s3 object for user {user_name} with '
@@ -349,7 +350,7 @@ class DIChecker(object):
 
 if __name__ == '__main__':
     ops = ManagementOPs()
-    users = ops.create_account_users(nusers=4)
+    users = ops.create_account_users(nusers=2)
     uploader = Uploader()
     uploader.start(users)
     DIChecker.init_s3_conn(users)
