@@ -42,7 +42,6 @@ if sys.platform != 'win32':
     import fcntl
 
 LOGGER = logging.getLogger(__name__)
-cortxlogging.init_loghandler()
 uploadObjects = []
 
 
