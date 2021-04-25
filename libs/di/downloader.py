@@ -93,7 +93,8 @@ class DataIntegrityValidator:
                     csum = file_hash.hexdigest()
                     try:
                         os.unlink(filepath)
-                    except Exception as f:
+                    except (OSError, Exception) as fault:
+                        LOGGER.error('Fault %s occurred duing unlink. Trying rm command', fault)
                         rmLocalObject = "rm -rf " + str(filepath)
                         os.system(rmLocalObject)
 

@@ -48,7 +48,6 @@ framework. It acts as a hash cache storing the server state on client side.
 import os
 import logging
 import threading
-import time
 import random
 import multiprocessing
 from commons import params

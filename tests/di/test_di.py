@@ -32,52 +32,18 @@ LOGGER = logging.getLogger(__name__)
 
 
 class TestDataIntegrity:
-    """ log sys event when doing node operation
-       log test hooks and actions/events
+    """ Data Integrity test plan. Log test hooks and actions/events.
     """
-
-    def setup_method(self, method) -> None:
-        """ setup any state tied to the execution of the given method in a
-        class.  setup_method is invoked for every test method of a class.
-        """
-        pass
-
-    def teardown_method(self, method) -> None:
-        """ teardown any state that was previously setup with a setup_method
-        call.
-        """
-        # done = False # Flag hack to test if the tear down was executed successful
-        # try:
-        #     login = self.s3acc_obj.login_cortx_cli()
-        #     assert_utils.assert_equals(True, login[0], login[1])
-        #     accounts = self.s3acc_obj.show_s3account_cortx_cli(output_format="json")[1]
-        #     accounts = self.s3acc_obj.format_str_to_dict(
-        #         input_str=accounts)["s3_accounts"]
-        #     accounts = [acc["account_name"]
-        #                 for acc in accounts if ManagementOPs.user_prefix in acc["account_name"]]
-        #     self.s3acc_obj.logout_cortx_cli()
-        #     for acc in accounts:
-        #         self.s3acc_obj.login_cortx_cli(
-        #             username=acc, password=self.s3acc_password)
-        #         self.s3acc_obj.delete_s3account_cortx_cli(account_name=acc)
-        #         self.s3acc_obj.logout_cortx_cli()
-        #     logger.info("ENDED : Teardown operations at test function level")
-        #     done = True
-        # except TestException as te:
-        #     logger.error(str(te))
-        #     logger.error('An error occurred while running teardown')
-        # if done:
-        #     logger.info('Teardown executed successfully')
 
     @pytest.mark.di
     @pytest.mark.tags("TEST-0")
     def test_di_sanity(self):
         ops = ManagementOPs()
         users = ops.create_account_users(nusers=4)
-        #uploader = Uploader(users)
-        #uploader.start(users)
-        #DIChecker.init_s3_conn(users)
-        #DIChecker.verify_data_integrity(users)
+        uploader = Uploader(users)
+        uploader.start(users)
+        DIChecker.init_s3_conn(users)
+        DIChecker.verify_data_integrity(users)
 
     @pytest.mark.skip
     @pytest.mark.di
@@ -86,13 +52,16 @@ class TestDataIntegrity:
     def test_large_number_s3_connection(self):
         """
         300 * 3, 300 * 6, 300 * 9, 300 * 12
+        Assuming scale of 300 connections per node. For 3 node, 6 node cluster, etc.
         :return:
         """
+        ops = ManagementOPs()
+        users = ops.create_account_users(nusers=4)
         LOGGER.info("Start large number of S3 connections.")
         test_conf = DATA_PATH_CFG["test_1703"]
-        bucket = self.create_bucket(test_conf)
+        bucket = ops.create_buckets(nbuckets=10)
         self.run_s3bench(test_conf, bucket)
-        LOGGER.info("ENDED: Persistence storage test.")
+        LOGGER.info("ENDED: large # of s3 connections.")
 
     @pytest.mark.skip
     @pytest.mark.di
