@@ -84,8 +84,8 @@ class ManagementOPs:
         :return:
         """
         LOGGER.info(f"Creating Cortx s3 account users with {use_cortx_cli}")
-        s3acc_obj = CortxcliS3AccountOperations()
-        s3acc_obj.open_connection()
+        s3acc_obj = cctl.CortxcliS3AccountOperations()
+        #s3acc_obj.open_connection()
         users = {"{}{}".format(cls.user_prefix, i): dict() for i in range(1, nusers + 1)}
         s3_user_passwd = CSM_CFG["CliConfig"]["s3_account"]["password"]
         for i in range(1, nusers + 1):
@@ -96,9 +96,8 @@ class ManagementOPs:
             udict.update({'emailid': email})
             udict.update({'password': s3_user_passwd})
 
-            result, acc_details = cctl.create_account_cortxcli(user,
-                                                               email,
-                                                               s3_user_passwd)
+            result, acc_details = s3acc_obj.create_account_cortxcli(user, email,
+                                                                    s3_user_passwd)
             assert_utils.assert_true(result, 's3 account use not created.')
             LOGGER.info("Created s3 account %s", user)
             udict.update({'accesskey': acc_details["access_key"]})
