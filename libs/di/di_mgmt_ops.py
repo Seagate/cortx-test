@@ -96,9 +96,9 @@ class ManagementOPs:
             udict.update({'emailid': email})
             udict.update({'password': s3_user_passwd})
 
-            result, acc_details = cctl.create_get_s3account_details_cortxcli(user,
-                                                                             email,
-                                                                             s3_user_passwd)
+            result, acc_details = cctl.create_account_cortxcli(user,
+                                                               email,
+                                                               s3_user_passwd)
             assert_utils.assert_true(result, 's3 account use not created.')
             LOGGER.info("Created s3 account %s", user)
             udict.update({'accesskey': acc_details["access_key"]})
