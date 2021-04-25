@@ -96,10 +96,6 @@ class ManagementOPs:
             udict.update({'emailid': email})
             udict.update({'password': s3_user_passwd})
 
-            resp = s3acc_obj.create_s3account_cortx_cli(account_name=user,
-                                                        account_email=email,
-                                                        password=s3_user_passwd)
-            assert_utils.assert_equals(True, resp[0], resp[1])
             result, acc_details = cctl.create_get_s3account_details_cortxcli(user,
                                                                              email,
                                                                              s3_user_passwd)

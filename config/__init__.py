@@ -88,7 +88,7 @@ PROV_CFG = configmanager.get_config_wrapper(fpath=PROV_TEST_CONFIG_PATH)
 DI_CFG = configmanager.get_config_wrapper(fpath=DI_CONFIG_PATH, target=target)
 DATA_PATH_CFG = configmanager.get_config_wrapper(fpath=DATA_PATH_CONFIG_PATH, target=target)
 
-# munchified configs. These can be used by dot "." operator.
+# Munched configs. These can be used by dot "." operator.
 
 di_cfg = munch.munchify(DI_CFG)
 cmn_cfg = munch.munchify(CMN_CFG)
