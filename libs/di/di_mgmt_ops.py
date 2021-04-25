@@ -105,7 +105,7 @@ class ManagementOPs:
             udict.update({'accesskey': acc_details["access_key"]})
             udict.update({'secretkey': acc_details["secret_key"]})
             users.update({user: udict})
-
+        LOGGER.debug("Users %s created for I/O", users)
         return users
 
     @classmethod

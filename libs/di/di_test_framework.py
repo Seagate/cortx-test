@@ -133,7 +133,8 @@ class Uploader(object):
         config_utils.create_content_json(users_path, users)
 
         jobs = []
-        for user, keys in users.items():
+        for user, udict in users.items():
+            keys = [udict['accesskey'], udict['secretkey']]
             p = mp.Process(target=Uploader.upload, args=(user, keys))
             jobs.append(p)
         for p in jobs:
