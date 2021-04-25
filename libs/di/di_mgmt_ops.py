@@ -20,6 +20,7 @@
 
 """Management operations needed during the DI tests."""
 
+import time
 import random
 import logging
 import boto3
@@ -85,8 +86,9 @@ class ManagementOPs:
         """
         LOGGER.info(f"Creating Cortx s3 account users with {use_cortx_cli}")
         s3acc_obj = cctl.CortxcliS3AccountOperations()
-        #s3acc_obj.open_connection()
-        users = {"{}{}".format(cls.user_prefix, i): dict() for i in range(1, nusers + 1)}
+        s3acc_obj.open_connection()
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        users = {"{}{}".format(cls.user_prefix, i, timestamp): dict() for i in range(1, nusers + 1)}
         s3_user_passwd = CSM_CFG["CliConfig"]["s3_account"]["password"]
         for i in range(1, nusers + 1):
             udict = dict()
