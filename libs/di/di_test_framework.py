@@ -37,11 +37,12 @@ from libs.di import di_params
 from libs.di.di_mgmt_ops import ManagementOPs
 from commons.utils import config_utils
 from commons import params
-
+from commons import cortxlogging
 if sys.platform != 'win32':
     import fcntl
 
 LOGGER = logging.getLogger(__name__)
+cortxlogging.init_loghandler()
 uploadObjects = []
 
 
@@ -349,6 +350,12 @@ class DIChecker(object):
 
 
 if __name__ == '__main__':
+
+    file = os.path.join(os.getcwd(),
+                        params.LOG_DIR_NAME,
+                        'latest',
+                        'di-test.log')
+    cortxlogging.set_log_handlers(LOGGER, file)
     ops = ManagementOPs()
     users = ops.create_account_users(nusers=2)
     uploader = Uploader()
