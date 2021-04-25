@@ -87,12 +87,12 @@ class ManagementOPs:
         LOGGER.info(f"Creating Cortx s3 account users with {use_cortx_cli}")
         s3acc_obj = cctl.CortxcliS3AccountOperations()
         s3acc_obj.open_connection()
-        timestamp = time.strftime("%Y%m%d_%H%M%S")
-        users = {"{}{}{}".format(cls.user_prefix, i, timestamp): dict() for i in range(1, nusers + 1)}
+        ts = time.strftime("%Y%m%d_%H%M%S")
+        users = {"{}{}_{}".format(cls.user_prefix, i, ts): dict() for i in range(1, nusers + 1)}
         s3_user_passwd = CSM_CFG["CliConfig"]["s3_account"]["password"]
         for i in range(1, nusers + 1):
             udict = dict()
-            user = cls.user_prefix + str(i)
+            user = "{}{}_{}".format(cls.user_prefix, i, ts)
             email = user + cls.email_suffix
             udict.update({'user_name': user})
             udict.update({'emailid': email})
