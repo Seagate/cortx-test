@@ -40,7 +40,7 @@ class TestDataIntegrity:
     def test_di_sanity(self):
         ops = ManagementOPs()
         users = ops.create_account_users(nusers=4)
-        uploader = Uploader(users)
+        uploader = Uploader()
         uploader.start(users)
         DIChecker.init_s3_conn(users)
         DIChecker.verify_data_integrity(users)
