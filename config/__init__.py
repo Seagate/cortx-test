@@ -25,7 +25,7 @@ import re
 from typing import List
 from commons.utils import config_utils
 from commons import configmanager
-from commons.params import COMMON_CONFIG, CSM_CONFIG, S3_CONFIG
+from commons.params import COMMON_CONFIG, CSM_CONFIG, S3_CONFIG, S3_CMN_CONFIG
 from commons.params import S3_OBJ_TEST_CONFIG
 from commons.params import RAS_CONFIG_PATH
 from commons.params import SSPL_TEST_CONFIG_PATH
@@ -81,3 +81,5 @@ RAS_VAL = configmanager.get_config_wrapper(fpath=RAS_CONFIG_PATH,
 CMN_DESTRUCTIVE_CFG = configmanager.get_config_wrapper(fpath=COMMON_DESTRUCTIVE_CONFIG_PATH)
 RAS_TEST_CFG = configmanager.get_config_wrapper(fpath=SSPL_TEST_CONFIG_PATH)
 PROV_CFG = configmanager.get_config_wrapper(fpath=PROV_TEST_CONFIG_PATH)
+S3_CMN_CONFIG = configmanager.get_config_wrapper(fpath=S3_CMN_CONFIG, target=target,
+                                                 target_key="s3")
