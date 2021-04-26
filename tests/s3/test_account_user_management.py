@@ -35,11 +35,10 @@ from commons.utils.system_utils import create_file, remove_file
 from libs.s3 import S3H_OBJ, LDAP_USERNAME, LDAP_PASSWD
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.iam_test_lib import IamTestLib
+from config import S3_CMN_CONFIG
 
 IAM_OBJ = IamTestLib()
 S3_OBJ = S3TestLib()
-
-TEST_CFG = get_config_wrapper(fpath="config/s3/test_account_user_management.yaml")
 
 
 class TestAccountUserManagement:
@@ -54,7 +53,6 @@ class TestAccountUserManagement:
         """
         cls.log = logging.getLogger(__name__)
         cls.log.info("STARTED: setup test suite operations.")
-        cls.acc_user_config = TEST_CFG["acc_user_mng"]
         cls.ca_cert_path = const.CA_CERT_PATH
         cls.ldap_user = LDAP_USERNAME
         cls.ldap_passwd = LDAP_PASSWD
@@ -81,7 +79,6 @@ class TestAccountUserManagement:
         It will clean up resources which are getting created during test suite setup.
         """
         cls.log.info("STARTED: teardown test suite operations.")
-        del cls.acc_user_config
         if os.path.exists(cls.test_dir_path):
             shutil.rmtree(cls.test_dir_path)
         cls.log.info("Cleanup test directory: %s", cls.test_dir_path)
@@ -95,27 +92,34 @@ class TestAccountUserManagement:
         """
         # Delete created user with prefix.
         self.log.info("STARTED: Test setup operations.")
+
+        self.timestamp = time.time()
+        self.bucket_name = "testbucket{}".format(str(time.time()))
+        self.obj_name = "testobj{}".format(str(time.time()))
+        self.account_name = "accusrmgmt_account"
+        self.email_id = "{}@seagate.com"
+        self.user_name = "accusrmgmt_user"
+
         self.log.info(
-            "Delete created user with prefix: %s",
-            self.acc_user_config["user_name"])
+            "Delete created user with prefix: %s", self.user_name)
         usr_list = IAM_OBJ.list_users()[1]
         self.log.debug("Listing users: %s", usr_list)
         all_usrs = [usr["UserName"]
-                    for usr in usr_list if self.acc_user_config["user_name"] in usr["UserName"]]
+                    for usr in usr_list if self.user_name in usr["UserName"]]
         if all_usrs:
             IAM_OBJ.delete_users_with_access_key(all_usrs)
         # Delete account created with prefix.
         self.log.info(
-            "Delete created account with prefix: %s",
-            self.acc_user_config["user_name"])
+            "Delete created account with prefix: %s", self.user_name)
         acc_list = IAM_OBJ.list_accounts_s3iamcli(
             self.ldap_user,
             self.ldap_passwd)[1]
         self.log.debug("Listing account %s", acc_list)
         all_acc = [acc["AccountName"]
-                   for acc in acc_list if self.acc_user_config["user_name"] in acc["AccountName"]]
+                   for acc in acc_list if self.user_name in acc["AccountName"]]
         if all_acc:
             IAM_OBJ.delete_multiple_accounts(all_acc)
+
         self.log.info("ENDED: Test setup operations.")
 
     def teardown_method(self):
@@ -128,7 +132,7 @@ class TestAccountUserManagement:
         self.log.info("STARTED: Test teardown Operations.")
         users_list = [user["UserName"]
                       for user in IAM_OBJ.list_users()[1]
-                      if self.acc_user_config["user_name"] in user["UserName"]]
+                      if self.user_name in user["UserName"]]
         self.log.info("IAM users: %s", str(users_list))
         if users_list:
             self.log.info("Deleting IAM users...")
@@ -150,7 +154,7 @@ class TestAccountUserManagement:
         acc_list = IAM_OBJ.list_accounts_s3iamcli(
             self.ldap_user, self.ldap_passwd)[1]
         all_acc = [acc["AccountName"]
-                   for acc in acc_list if self.acc_user_config["account_name"] in acc["AccountName"]
+                   for acc in acc_list if self.account_name in acc["AccountName"]
                    ]
         if all_acc:
             self.log.info("Accounts to delete: %s", str(all_acc))
@@ -186,7 +190,7 @@ class TestAccountUserManagement:
         """Create s3 account using s3iamcli."""
         response = IAM_OBJ.create_account_s3iamcli(
             account_name,
-            self.acc_user_config["email_id"].format(account_name),
+            self.email_id.format(account_name),
             self.ldap_user,
             self.ldap_passwd)
         self.log.info(
@@ -203,7 +207,7 @@ class TestAccountUserManagement:
     def test_create_new_account_1968(self):
         """Create new account."""
         self.log.info("START: Test create new account.")
-        account_name = f'{self.acc_user_config["account_name"]}_{str(int(time.time()))}'
+        account_name = f'{self.account_name}_{str(int(time.time()))}'
         self.log.info(
             "Step 1: Creating a new account with name %s", str(account_name))
         resp = self.create_account(account_name)
@@ -219,7 +223,7 @@ class TestAccountUserManagement:
     def test_list_account_1969(self):
         """List account."""
         self.log.info("START: Test List account.")
-        account_name = f'{self.acc_user_config["account_name"]}_{str(int(time.time()))}'
+        account_name = f'{self.account_name}_{str(int(time.time()))}'
         self.log.info(
             "Step 1: Creating a new account with name %s", str(account_name))
         resp = self.create_account(account_name)
@@ -241,7 +245,7 @@ class TestAccountUserManagement:
     def test_delete_account_1970(self):
         """Delete Account."""
         self.log.info("START: Test Delete Account.")
-        account_name = f'{self.acc_user_config["account_name"]}_{str(int(time.time()))}'
+        account_name = f'{self.account_name}_{str(int(time.time()))}'
         self.log.info(
             "Step 1: Creating a new account with name %s", str(account_name))
         resp = self.create_account(account_name)
@@ -262,11 +266,11 @@ class TestAccountUserManagement:
     def test_create_100_number_of_account_1971(self):
         """Create 100 No of Accounts."""
         self.log.info("START: Create 100 No of Accounts.")
-        total_account = TEST_CFG["test_8531"]["total_accounts"]
+        total_account = 100
         self.log.info("Step 1: Creating %s accounts", str(total_account))
         # Defining list.
         account_list, access_keys, secret_keys = list(), list(), list()
-        acc_name = self.acc_user_config["account_name"]
+        acc_name = self.account_name
         self.log.info("account prefix: %s", str(acc_name))
         for cnt in range(total_account):
             account_name = f"{acc_name}{cnt}{cnt}{str(int(time.time()))}"
@@ -303,7 +307,7 @@ class TestAccountUserManagement:
         """Creating new account with existing account name."""
         self.log.info(
             "START: Test creating new account with existing account name.")
-        account_name = f'{self.acc_user_config["account_name"]}_{str(int(time.time()))}'
+        account_name = f'{self.account_name}_{str(int(time.time()))}'
         self.log.info(
             "Step 1: Creating a new account with name %s", str(account_name))
         resp = self.create_account(account_name)
@@ -315,7 +319,7 @@ class TestAccountUserManagement:
             resp = self.create_account(account_name)
             assert not resp[0], resp[1]
         except CTException as error:
-            assert TEST_CFG["test_8532"]["err_message"] in error.message, error.message
+            assert "EntityAlreadyExists" in error.message, error.message
         self.log.info("Created another account with existing account name")
         self.log.info(
             "END: Tested creating new account with existing account name")
@@ -328,8 +332,8 @@ class TestAccountUserManagement:
         """CRUD operations with valid login credentials."""
         self.log.info(
             "START: Test CRUD operations with valid login credentials.")
-        account_name = f'{self.acc_user_config["account_name"]}_{str(int(time.time()))}'
-        user_name = f'{self.acc_user_config["user_name"]}_{str(int(time.time()))}'
+        account_name = f'{self.account_name}_{str(int(time.time()))}'
+        user_name = f'{self.user_name}_{str(int(time.time()))}'
         self.log.info("Step 1: Create new account and new user in it")
         self.log.info(
             "account name: %s and user name: %s",
@@ -358,17 +362,15 @@ class TestAccountUserManagement:
             secret_key=user_secret_key)
         self.log.info(
             "Step 3: Performing CRUD operations using valid user's credentials")
-        bucket_name = f'{TEST_CFG["test_8533"]["bucket_name"]}-{str(int(time.time()))}'
+        bucket_name = self.bucket_name
         self.log.info("Creating a bucket with name %s", str(bucket_name))
         resp = s3_user_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         self.log.info(
             "Bucket with name %s is created successfully", str(bucket_name))
-        obj_name = TEST_CFG["test_8533"]["obj_name"]
+        obj_name = self.obj_name
         self.log.info("Object name: %s", str(obj_name))
-        resp = create_file(
-            self.test_file_path,
-            TEST_CFG["test_8533"]["file_size"])
+        resp = create_file(self.test_file_path, 1)
         self.log.info(resp)
         self.log.info("Putting object %s to bucket %s", obj_name, bucket_name)
         resp = s3_user_obj.put_object(
@@ -402,8 +404,8 @@ class TestAccountUserManagement:
         self.log.info(
             "START: Test CRUD operations with invalid login credentials.")
         self.log.info("Step 1: Create new account and new user in it.")
-        account_name = f'{self.acc_user_config["account_name"]}_{str(int(time.time()))}'
-        user_name = f'{self.acc_user_config["user_name"]}_{str(int(time.time()))}'
+        account_name = f'{self.account_name}_{str(int(time.time()))}'
+        user_name = f'{self.user_name}_{str(int(time.time()))}'
         self.log.info(
             "username: %s and account name: %s",
             str(user_name),
@@ -418,8 +420,8 @@ class TestAccountUserManagement:
         assert resp[0], resp[1]
         self.log.info("Step 1: Created new account and new user in it.")
         # Dummy access and secret keys.
-        user_access_key = TEST_CFG["test_8534"]["user_access_key"]
-        user_secret_key = TEST_CFG["test_8534"]["user_secret_key"]
+        user_access_key = "alfjkalfjiecnk@#&kafjkancsmnc"
+        user_secret_key = "*HSLKJMDqpowdapofmamcamc"
         self.log.info("user_access_key: %s and user_secret_key: %s",
                       str(user_access_key), str(user_secret_key))
         s3_user_obj = S3TestLib(
@@ -427,22 +429,20 @@ class TestAccountUserManagement:
             secret_key=user_secret_key)
         self.log.info(
             "Step 2: Performing CRUD operations with invalid user's credentials.")
-        bucket_name = TEST_CFG["test_8534"]["bucket_name"]
+        bucket_name = self.bucket_name
         self.log.info(bucket_name)
         self.log.info("Creating a bucket with name %s", str(bucket_name))
-        err_message = TEST_CFG["test_8534"]["error"]
+        err_message = "InvalidAccessKeyId"
         try:
             resp = s3_user_obj.create_bucket(bucket_name)
             assert not resp[0], resp[1]
         except CTException as error:
             assert err_message in error.message, error.message
         self.log.info("Bucket with name %s is not created", str(bucket_name))
-        obj_name = TEST_CFG["test_8534"]["obj_name"]
+        obj_name = self.obj_name
         self.log.info("Putting object %s to bucket %s", obj_name, bucket_name)
         try:
-            respo = create_file(
-                self.test_file_path,
-                TEST_CFG["test_8534"]["file_size"])
+            respo = create_file(self.test_file_path, 1)
             self.log.info(respo)
             resp = s3_user_obj.put_object(
                 bucket_name, obj_name, self.test_file_path)
@@ -458,7 +458,7 @@ class TestAccountUserManagement:
             self.log.info(resp)
             assert resp[0], resp[1]
         except CTException as error:
-            assert TEST_CFG["test_8534"]["download_obj_err"] in error.message, error.message
+            assert "Forbidden" in error.message, error.message
         self.log.info(
             "Could not download object from bucket %s", str(bucket_name))
         self.log.info(
@@ -473,8 +473,8 @@ class TestAccountUserManagement:
         """Create new user for current Account."""
         self.log.info("START: Create new user for current Account.")
         self.log.info("Step 1: Create new account and new user in it")
-        account_name = f'{self.acc_user_config["account_name"]}_{str(int(time.time()))}'
-        user_name = f'{self.acc_user_config["user_name"]}_{str(int(time.time()))}'
+        account_name = f'{self.account_name}_{str(int(time.time()))}'
+        user_name = f'{self.user_name}_{str(int(time.time()))}'
         self.log.info("account_name: %s", str(account_name))
         self.log.info("user_name: %s", str(user_name))
         resp = self.create_account(account_name)
@@ -505,8 +505,8 @@ class TestAccountUserManagement:
         """Update User."""
         self.log.info("START: Update User.")
         self.log.info("Step 1: Create new account and new user in it")
-        account_name = f'{self.acc_user_config["account_name"]}_{str(int(time.time()))}'
-        user_name = f'{self.acc_user_config["user_name"]}_{str(int(time.time()))}'
+        account_name = f'{self.account_name}_{str(int(time.time()))}'
+        user_name = f'{self.user_name}_{str(int(time.time()))}'
         resp = self.create_account(account_name)
         assert resp[0], resp[1]
         access_key = resp[1]["access_key"]
@@ -518,7 +518,7 @@ class TestAccountUserManagement:
         self.log.info("Step 1: Created new account and new user in it")
         self.log.info("Step 2: Updating user name of already existing user")
         new_s3h_obj = IamTestLib(access_key=access_key, secret_key=secret_key)
-        new_user_name = TEST_CFG["test_8676"]["new_user_name"]
+        new_user_name = "testuser8676"
         resp = new_s3h_obj.update_user(new_user_name, user_name)
         self.log.info(resp)
         assert resp[0], resp[1]
@@ -528,7 +528,7 @@ class TestAccountUserManagement:
         resp = IAM_OBJ.list_users_s3iamcli(access_key, secret_key)
         self.log.info(resp)
         assert resp[0], resp[1]
-        assert TEST_CFG["test_8676"]["new_user_name"] in resp[1], resp[1]
+        assert "testuser8676" in resp[1], resp[1]
         self.log.info("Listed users and verified user name is updated.")
         self.log.info("END: Update User.")
 
@@ -540,8 +540,8 @@ class TestAccountUserManagement:
         """List user."""
         self.log.info("START: list user")
         self.log.info("Step 1: Create new account and new user in it")
-        account_name = f'{self.acc_user_config["account_name"]}_{str(int(time.time()))}'
-        user_name = f'{self.acc_user_config["user_name"]}_{str(int(time.time()))}'
+        account_name = f'{self.account_name}_{str(int(time.time()))}'
+        user_name = f'{self.user_name}_{str(int(time.time()))}'
         resp = self.create_account(account_name)
         assert resp[0], resp[1]
         access_key = resp[1]["access_key"]
@@ -566,8 +566,8 @@ class TestAccountUserManagement:
         """Delete User."""
         self.log.info("START: Delete User")
         self.log.info("Step 1: Create new account and new user in it.")
-        account_name = f'{self.acc_user_config["account_name"]}_{str(int(time.time()))}'
-        user_name = f'{self.acc_user_config["user_name"]}_{str(int(time.time()))}'
+        account_name = f'{self.account_name}_{str(int(time.time()))}'
+        user_name = f'{self.user_name}_{str(int(time.time()))}'
         resp = self.create_account(account_name)
         assert resp[0], resp[1]
         access_key = resp[1]["access_key"]
@@ -590,10 +590,10 @@ class TestAccountUserManagement:
     def test_create_100_number_of_users_2080(self):
         """Created 100 No of Users."""
         self.log.info("START: Created 100 No of Users")
-        total_users = TEST_CFG["test_8679"]["total_users"]
+        total_users = 100
         self.log.info("Step 1: Create new %s account", str(total_users))
-        account_name = f'{self.acc_user_config["account_name"]}_{str(int(time.time()))}'
-        user_name = f'{self.acc_user_config["user_name"]}_{str(int(time.time()))}'
+        account_name = f'{self.account_name}_{str(int(time.time()))}'
+        user_name = f'{self.user_name}_{str(int(time.time()))}'
         resp = self.create_account(account_name)
         assert resp[0], resp[1]
         access_key = resp[1]["access_key"]
@@ -625,7 +625,7 @@ class TestAccountUserManagement:
     def test_create_user_with_existing_name_2081(self):
         """Creating user with existing name."""
         self.log.info("START: creating user with existing name.")
-        user_name = f'{self.acc_user_config["user_name"]}_{str(int(time.time()))}'
+        user_name = f'{self.user_name}_{str(int(time.time()))}'
         self.log.info("Step 1: Creating user with name %s", str(user_name))
         resp = IAM_OBJ.create_user(user_name)
         assert resp[0], resp[1]
@@ -637,7 +637,7 @@ class TestAccountUserManagement:
             self.log.info(resp)
             assert not resp[0], resp[1]
         except CTException as error:
-            assert TEST_CFG["test_8680"]["err_message"] in error.message, error.message
+            assert "EntityAlreadyExists" in error.message, error.message
         self.log.info(
             "Could not create user with existing name %s", str(user_name))
         self.log.info("END: creating user with existing name.")
@@ -649,7 +649,7 @@ class TestAccountUserManagement:
     def test_create_access_key_to_the_user_2082(self):
         """Create Access key to the user."""
         self.log.info("START: Create Access key to the user")
-        user_name = f'{self.acc_user_config["user_name"]}_{str(int(time.time()))}'
+        user_name = f'{self.user_name}_{str(int(time.time()))}'
         self.log.info("Step 1: Creating a user with name %s", str(user_name))
         resp = IAM_OBJ.create_user(user_name)
         assert resp[0], resp[1]
@@ -673,7 +673,7 @@ class TestAccountUserManagement:
     def test_list_access_keys_for_the_user_2083(self):
         """List accesskeys for the user."""
         self.log.info("START: List accesskeys for the user")
-        user_name = f'{self.acc_user_config["user_name"]}_{str(int(time.time()))}'
+        user_name = f'{self.user_name}_{str(int(time.time()))}'
         self.log.info("Step 1: Creating a user with name %s", str(user_name))
         resp = IAM_OBJ.create_user(user_name)
         assert resp[0], resp[1]
@@ -698,7 +698,7 @@ class TestAccountUserManagement:
     def test_delete_access_key_of_a_user_2084(self):
         """Delete Accesskey of a user."""
         self.log.info("START: Delete Accesskey of a users")
-        user_name = f'{self.acc_user_config["user_name"]}_{str(int(time.time()))}'
+        user_name = f'{self.user_name}_{str(int(time.time()))}'
         self.log.info("Step 1: Creating a user with name %s", str(user_name))
         resp = IAM_OBJ.create_user(user_name)
         assert resp[0], resp[1]
@@ -727,9 +727,8 @@ class TestAccountUserManagement:
     def test_update_access_key_of_a_user_2085(self):
         """Update Accesskey of a user."""
         self.log.info("START: Update Accesskey of a user.")
-        test_8684_cfg = TEST_CFG["test_8684"]
         self.log.info("Update Accesskey of a user")
-        user_name = f'{self.acc_user_config["user_name"]}_{str(int(time.time()))}'
+        user_name = f'{self.user_name}_{str(int(time.time()))}'
         self.log.info("Step 1: Creating a user with name %s", str(user_name))
         resp = IAM_OBJ.create_user(user_name)
         assert resp[0], resp[1]
@@ -740,7 +739,7 @@ class TestAccountUserManagement:
         assert resp[0], resp[1]
         self.log.info("Step 3: Updating access key of user")
         resp = IAM_OBJ.update_access_key(
-            access_key_to_update, test_8684_cfg["status"], user_name)
+            access_key_to_update, "Active", user_name)
         assert resp[0], resp[1]
         self.log.info("Updated access key of user")
         self.log.info("Step 4: Verifying that access key of user is updated")
@@ -749,7 +748,7 @@ class TestAccountUserManagement:
         new_access_key = resp[1]["AccessKeyMetadata"][0]["AccessKeyId"]
         status = resp[1]["AccessKeyMetadata"][0]["Status"]
         assert new_access_key == access_key_to_update, resp[1]
-        assert status == test_8684_cfg["status"], resp[1]
+        assert status == "Active", resp[1]
         self.log.info(
             "Verified that access key of user is updated successfully")
         self.log.info("END: Update Accesskey of a user.")
@@ -761,9 +760,8 @@ class TestAccountUserManagement:
     def test_update_accesskey_of_user_with_inactive_mode_2086(self):
         """Update accesskey of a user with inactive mode."""
         self.log.info("START: update accesskey of a user with inactive mode.")
-        test_8685_cfg = TEST_CFG["test_8685"]
         self.log.info("update accesskey of a user with inactive mode")
-        user_name = f'{self.acc_user_config["user_name"]}_{str(int(time.time()))}'
+        user_name = f'{self.user_name}_{str(int(time.time()))}'
         self.log.info("Step 1: Creating a user with name %s", str(user_name))
         resp = IAM_OBJ.create_user(user_name)
         assert resp[0], resp[1]
@@ -774,7 +772,7 @@ class TestAccountUserManagement:
         assert resp[0], resp[1]
         self.log.info("Step 3: Updating access key of user")
         resp = IAM_OBJ.update_access_key(
-            access_key_to_update, test_8685_cfg["status"], user_name)
+            access_key_to_update, "Inactive", user_name)
         assert resp[0], resp[1]
         self.log.info("Updated access key of user")
         self.log.info("Step 4: Verifying that access key of user is updated")
@@ -783,7 +781,7 @@ class TestAccountUserManagement:
         new_access_key = resp[1]["AccessKeyMetadata"][0]["AccessKeyId"]
         status = resp[1]["AccessKeyMetadata"][0]["Status"]
         assert new_access_key == access_key_to_update, resp[1]
-        assert status == test_8685_cfg["status"], resp[1]
+        assert status == "Inactive", resp[1]
         self.log.info(
             "Verified that access key of user is updated successfully")
         self.log.info("END: update accesskey of a user with inactive mode")
@@ -795,16 +793,14 @@ class TestAccountUserManagement:
     def test_create_max_accesskey_with_existing_user_name_2087(self):
         """Create max accesskey with existing user name."""
         self.log.info("START: create max accesskey with existing user name.")
-        test_8686_cfg = TEST_CFG["test_8686"]
         self.log.info("create max accesskey with existing user name")
-        user_name = f'{self.acc_user_config["user_name"]}_{str(int(time.time()))}'
+        user_name = f'{self.user_name}_{str(int(time.time()))}'
         self.log.info("Step 1: Creating a user with name %s", str(user_name))
         resp = IAM_OBJ.create_user(user_name)
         assert resp[0], resp[1]
         self.log.info("Created a user with name %s", str(user_name))
-        self.log.info("Step 2: Creating %s access keys for user %s",
-                      test_8686_cfg["max_access_keys"], user_name)
-        for _ in range(test_8686_cfg["max_access_keys"]):
+        self.log.info("Step 2: Creating %s access keys for user %s", 2, user_name)
+        for _ in range(2):
             resp = IAM_OBJ.create_access_key(user_name)
             assert resp[0], resp[1]
         self.log.info("END: create max accesskey with existing user name")
@@ -816,9 +812,8 @@ class TestAccountUserManagement:
     def test_update_login_profile_2088(self):
         """Update login profile."""
         self.log.info("START: update login profile.")
-        test_8687_cfg = TEST_CFG["test_8687"]
         self.log.info("update login profile")
-        user_name = f'{self.acc_user_config["user_name"]}_{str(int(time.time()))}'
+        user_name = f'{self.user_name}_{str(int(time.time()))}'
         self.log.info("Step 1: Creating a user with name %s", str(user_name))
         resp = IAM_OBJ.create_user(user_name)
         assert resp[0], resp[1]
@@ -826,15 +821,15 @@ class TestAccountUserManagement:
         self.log.info(
             "Step 2: Creating login profile for user %s", str(user_name))
         resp = IAM_OBJ.create_user_login_profile(
-            user_name, test_8687_cfg["password"], test_8687_cfg["password_reset"])
+            user_name, S3_CMN_CONFIG["s3_params"]["password"], True)
         assert resp[0], resp[1]
         self.log.info("Created login profile for user %s", str(user_name))
         self.log.info(
             "Step 3: Updating login profile for user %s", str(user_name))
         resp = IAM_OBJ.update_user_login_profile(
             user_name,
-            test_8687_cfg["new_password"],
-            test_8687_cfg["password_reset"])
+            S3_CMN_CONFIG["s3_params"]["new_password"],
+            True)
         assert resp[0], resp[1]
         self.log.info("Updated login profile for user %s", str(user_name))
         self.log.info("END: update login profile")
@@ -846,21 +841,20 @@ class TestAccountUserManagement:
     def test_ssl_certificate_2090(self):
         """SSL certificate."""
         self.log.info("START: SSL certificate.")
-        test_8689_cfg = TEST_CFG["test_8689"]
         resp = S3H_OBJ.is_s3_server_path_exists(self.ca_cert_path)
         assert resp, "certificate path not present: {}".format(
             self.ca_cert_path)
         status, resp = S3H_OBJ.copy_s3server_file(
-            self.ca_cert_path, test_8689_cfg["local_cert_path"])
+            self.ca_cert_path, "ca.crt")
         assert status, resp
-        with open(test_8689_cfg["local_cert_path"], "r") as file:
+        with open("ca.crt", "r") as file:
             file_data = file.readlines()
         self.log.info(file_data)
-        assert test_8689_cfg["starts_with"] in file_data[0],\
-            test_8689_cfg["err_message_1"].format(test_8689_cfg["starts_with"])
-        assert test_8689_cfg["ends_with"] in file_data[-1],\
-            test_8689_cfg["err_message_2"].format(test_8689_cfg["ends_with"])
-        remove_file(test_8689_cfg["local_cert_path"])
+        assert "-----BEGIN CERTIFICATE-----" in file_data[0],\
+            "Certificate does not begin with {}".format("-----BEGIN CERTIFICATE-----")
+        assert "-----END CERTIFICATE-----" in file_data[-1],\
+            "Certificate does not end with {}".format("-----END CERTIFICATE-----")
+        remove_file("ca.crt")
         self.log.info("END: SSL certificate.")
 
     @pytest.mark.parallel
@@ -887,8 +881,7 @@ class TestAccountUserManagement:
     def test_change_pwd_for_iam_user_2092(self):
         """Change passsword for IAM user."""
         self.log.info("START: Change password for IAM user.")
-        test_8691_cfg = TEST_CFG["test_8691"]
-        user_name = f'{self.acc_user_config["user_name"]}_{str(int(time.time()))}'
+        user_name = f'{self.user_name}_{str(int(time.time()))}'
         self.log.info("Step 1: Creating a user with name %s", str(user_name))
         resp = IAM_OBJ.create_user(user_name)
         assert resp[0], resp[1]
@@ -896,7 +889,7 @@ class TestAccountUserManagement:
         self.log.info(
             "Step 2: Creating login profile for user %s", str(user_name))
         resp = IAM_OBJ.create_user_login_profile(
-            user_name, test_8691_cfg["password"], test_8691_cfg["pwd_reset"])
+            user_name, S3_CMN_CONFIG["s3_params"]["password"], True)
         self.log.info(resp)
         assert resp[0], resp[1]
         self.log.info("Created login profile for user %s", str(user_name))
@@ -910,8 +903,8 @@ class TestAccountUserManagement:
         secret_key = resp[1]["AccessKey"]["SecretAccessKey"]
         self.log.info("Step 4: Changing password for %s user", str(user_name))
         resp = IAM_OBJ.change_user_password(
-            test_8691_cfg["password"],
-            test_8691_cfg["new_password"],
+            S3_CMN_CONFIG["s3_params"]["password"],
+            S3_CMN_CONFIG["s3_params"]["new_password"],
             access_key,
             secret_key)
         self.log.info(resp)
@@ -927,9 +920,8 @@ class TestAccountUserManagement:
         """Test Create user for the account and verify output with proper ARN format."""
         self.log.info(
             "START: Test Create user for the account and verify output with proper ARN format")
-        test_4625_cfg = TEST_CFG["test_4625"]
-        account_name = f"{self.acc_user_config['account_name']}_{str(int(time.time()))}"
-        user_name = f"{self.acc_user_config['user_name']}_{str(int(time.time()))}"
+        account_name = f"{self.account_name}_{str(int(time.time()))}"
+        user_name = f"{self.user_name}_{str(int(time.time()))}"
         self.log.info(
             "Step 1: Creating a new account with name %s", str(account_name))
         resp = self.create_account(account_name)
@@ -945,8 +937,8 @@ class TestAccountUserManagement:
         self.log.info("Created a user with name %s", str(user_name))
         self.log.info(
             "Step 3: Verifying ARN format of user %s", str(user_name))
-        arn_format = test_4625_cfg["arn_str"].format(account_id, user_name)
-        assert arn_format == resp[1]["ARN"], test_4625_cfg["err_message"]
+        arn_format = "arn:aws:iam::{}:user/{}".format(account_id, user_name)
+        assert arn_format == resp[1]["ARN"], "Invalid user ARN format"
         self.log.info(
             "Step 3: Verified ARN format of user %s successfully",
             str(user_name))
