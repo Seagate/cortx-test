@@ -209,7 +209,7 @@ class TestRAIDOperations:
 
         LOGGER.info("ENDED: Teardown Operations")
 
-    @pytest.mark.ras
+    @pytest.mark.cluster_monitor_ops
     @pytest.mark.tags("TEST-15733")
     @pytest.mark.sw_alert
     @pytest.mark.skip
@@ -299,9 +299,10 @@ class TestRAIDOperations:
         LOGGER.info(
             "ENDED: TEST-5345 RAID: Assemble a array")
 
-    @pytest.mark.ras
+    @pytest.mark.cluster_monitor_ops
     @pytest.mark.tags("TEST-15732")
     @pytest.mark.sw_alert
+    @pytest.mark.skip
     @CTFailOn(error_handler)
     def test_5342(self):
         """
@@ -393,9 +394,10 @@ class TestRAIDOperations:
         LOGGER.info(
             "ENDED: TEST-5342 RAID: Remove a drive from array")
 
-    @pytest.mark.ras
+    @pytest.mark.cluster_monitor_ops
     @pytest.mark.tags("TEST-15868")
     @pytest.mark.sw_alert
+    @pytest.mark.skip
     @CTFailOn(error_handler)
     def test_4785(self):
         """
@@ -448,9 +450,10 @@ class TestRAIDOperations:
         LOGGER.info(
             "ENDED: TEST-4785 RAID: Fail a drive of array")
 
-    @pytest.mark.ras
+    @pytest.mark.cluster_monitor_ops
     @pytest.mark.tags("TEST-16214")
     @pytest.mark.sw_alert
+    @pytest.mark.skip
     @CTFailOn(error_handler)
     def test_5343(self):
         """
