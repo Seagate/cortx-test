@@ -154,3 +154,65 @@ test_configs:
   test_9879:
     password: "MKfKFPvnz+bywHQ4bPCB0ty8+jz1+YSHPHfUOCM/bQU="
     new_password: "l8eFHwZQtUp++zFTdUEwnVNeMev7oSIy3t8wXyTcDWw="
+
+  test_9880:
+    password: "MKfKFPvnz+bywHQ4bPCB0ty8+jz1+YSHPHfUOCM/bQU="
+    new_password: "4XIWHPsV9dmVs8u1CLGftbQ7fhIK2zh0sZpjAf+hNF2mzpN6cKZ53asTf0IG3HUina6WrTV/+CEnEQs6wpws+LIXc6ZSpZdNx69pX+BLswdqnznirnoePDqyEgYPR8nxhCL74kyM+oAOGi/pgbGThfllnAiVjOUBbNNmWXJ+wJplhZQATanJ6R0W8MZxlYBeXuGxEYL3J6dSaycoRfOinQ=="
+
+  test_9881:
+    password: "MKfKFPvnz+bywHQ4bPCB0ty8+jz1+YSHPHfUOCM/bQU="
+    new_password: "CwCrXx838o3H58net0yeCg/jJgOS4OLsEhAUu6LlVpB9/Sq0wwsg82cSnXQk8MfmhKjhnYRR2dQz893JNZG66G0/3xPWk7s72miXYDxIoQEM7zQ1D0w+t/+4xAjpw8viwUo9Ls5gRax+4IGNsIEwhD6Te073tr6an/s4iuhnfsDh3xHSvBSr8qkc8na8e0VDhZmcsS9T8rA/uydXMQ470Q=="
+
+  test_9882:
+    password: "MKfKFPvnz+bywHQ4bPCB0ty8+jz1+YSHPHfUOCM/bQU="
+    list_special_char_pwd:
+      - "xZ4MvdpVZchbVOZASxVv9k4iqC6vVs5eE7eUf4FIXZw="
+      - 'mCrRjCVmw8QDvfgohmP/S8Xfovbdq8S2JXdKXgcHs+g='
+      - '++cmX3GLURLzQ+TVCG6FittvTMXbWMrj+H1hIqZIBPc='
+      - "xQCBE/BWer4HeYWU+m1IShXRkHIjEv9PBq3z3v3f2i4="
+      - "F3n+Q8yWcvdYMpZSdgaWuQhY3tsDPx+tM/RFZJXdFmk="
+      - 'su5ibVDRAwBFfnNkr5guXAWdcfLOnuNPC4fAUbmjH10='
+      - "GGVIMnuo60BI5fBgalcLe6MFCPxqIKQgHSx1R1G8eTY="
+      - "P4dpkPtLAcswLMN+f1OnLUgECQX6QPOiiYtJXBzE1Fs="
+      - 'biRcbHB3Xa8JsBzvaU9Rnd+Qgzd5e8kDw0J/i+tREZY='
+      - "0Wzknj2AVsNR6ZgtWGpW/GPNjTVSLqlGkaayZmLuD3w="
+      - "s2DAJ53F3TcdA2qZXxPB0ThvBcS7/ZhXrvEhDaxb+k4="
+      - "zs7bwHv/tXAeIud2ULjeJuOqHEEwUAv5DJEWDWICObo="
+
+  test_9883:
+    password: "MKfKFPvnz+bywHQ4bPCB0ty8+jz1+YSHPHfUOCM/bQU="
+
+  test_9884:
+    password: "MKfKFPvnz+bywHQ4bPCB0ty8+jz1+YSHPHfUOCM/bQU="
+    new_password: "U7UQ7NoFYowF5pqxRl5UzHFkrySVkfWI7pQL4nd+uQ0="
+
+  test_9923:
+    account_password: "DRU9Oz1HtTY5hkRuJrc0WtCpClN8v+ZfcgAckKTqnq0="
+    user_password:  "MKfKFPvnz+bywHQ4bPCB0ty8+jz1+YSHPHfUOCM/bQU="
+
+  test_9924:
+    user_password: "AZayKOusURwffmkBDmZS9oQ6Q3V1XAIJ+BL6dYp49WI="
+
+  test_9925:
+    user_password: "AZayKOusURwffmkBDmZS9oQ6Q3V1XAIJ+BL6dYp49WI="
+
+  test_9927:
+    user_password: "BPXmk6sHpfPrBU/wRJuKJ9FcdHXVqgnSHJVDwG/GOFs="
+
+  test_9928:
+    user_password: "BPXmk6sHpfPrBU/wRJuKJ9FcdHXVqgnSHJVDwG/GOFs="
+
+  test_9929:
+    user_password: "AZayKOusURwffmkBDmZS9oQ6Q3V1XAIJ+BL6dYp49WI="
+
+  test_9930:
+    user_password: "BPXmk6sHpfPrBU/wRJuKJ9FcdHXVqgnSHJVDwG/GOFs="
+
+  test_9931:
+    user_password: "BPXmk6sHpfPrBU/wRJuKJ9FcdHXVqgnSHJVDwG/GOFs="
+
+  test_9932:
+    user_password: "BPXmk6sHpfPrBU/wRJuKJ9FcdHXVqgnSHJVDwG/GOFs="
+
+  test_9936:
+    user_password: "BPXmk6sHpfPrBU/wRJuKJ9FcdHXVqgnSHJVDwG/GOFs="
