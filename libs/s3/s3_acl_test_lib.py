@@ -134,11 +134,9 @@ class S3AclTestLib(Acl):
                 Bucket=dest_bucket,
                 CopySource='/{}/{}'.format(source_bucket, source_object),
                 Key=dest_object,
-                Acl=acl
+                ACL=acl
             )
-            bucket = self.s3_resource.Bucket(dest_bucket)
-            response_obj = [obj.key for obj in bucket.objects.all()]
-            LOGGER.debug(response_obj)
+
             LOGGER.debug(response)
         except BaseException as error:
             LOGGER.error("Error in %s: %s",
@@ -146,7 +144,7 @@ class S3AclTestLib(Acl):
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
-        return dest_object in response_obj, response
+        return response, response
 
     def put_object_acl(
             self,
