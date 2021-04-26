@@ -33,7 +33,6 @@ def main(args):
     """
     main function to clone test plan
     """
-    #jira_id, jira_pwd = jira_api.get_username_password()
     test_plan = args.test_plan
 
     tp_info = dict()
