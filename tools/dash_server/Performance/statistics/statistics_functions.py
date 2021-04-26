@@ -23,16 +23,16 @@ from Performance.global_functions import get_db_details, keys_exists, round_off,
 from Performance.mongodb_api import find_documents, count_documents
 
 
-def get_performance_metrics(build: str, object_size: str, bench: str, operation: str,
-                            sessions: int = None, buckets: int = None, objects: int = None, version='release', release='R1'):
+def get_performance_metrics(release: str, branch: str, build: str, object_size: str, bench: str, operation: str,
+                            sessions: int = None, buckets: int = None, objects: int = None):
     """need to add release and version logic"""
-    uri, db_name, db_collection = get_db_details()
+    uri, db_name, db_collection = get_db_details(release)
 
     if sessions:
-        query = {'Build': build, 'Name': bench, 'Object_Size': object_size,
+        query = {'Branch': branch, 'Build': build, 'Name': bench, 'Object_Size': object_size,
                  'Operation': operation, 'Sessions': sessions, 'Buckets': buckets, 'Objects': objects}
     else:
-        query = {'Build': build, 'Name': bench,
+        query = {'Branch': branch, 'Build': build, 'Name': bench,
                  'Object_Size': object_size, 'Operation': operation}
 
     count = count_documents(query=query, uri=uri, db_name=db_name,
@@ -61,16 +61,25 @@ def get_data(count, data, stat, multiplier):
     else:
         return "NA"
 
+def get_heading(operation, stat):
+    if stat == 'IOPS':
+        heading = operation + " " + stat
+    elif stat == 'Throughput':
+        heading = operation + " " + stat + " (MBps)"
+    else:
+        heading = operation + " " + stat + " (ms)"
+    return heading
 
-def get_s3benchmark_data(build, object_size, data, release='R1', version='release'):
+def get_s3benchmark_data(release, branch, build, object_size, data):
     temp_data = []
     operations = ["Write", "Read"]
     for operation in operations:
         count, db_data = get_performance_metrics(
-            build, object_size, 'S3bench', operation)
-        stats = ["Throughput", "Latency", "IOPS", "TTFB"]
+            release, branch, build, object_size, 'S3bench', operation)
+        stats = ["Throughput", "IOPS", "Latency", "TTFB"]
 
         for stat in stats:
+            # heading = get_heading(operation, stat)
             if stat in ["Latency", "TTFB"]:
                 temp_data.append(get_average_data(
                     count, db_data, stat, "Avg", 1000))
@@ -80,26 +89,26 @@ def get_s3benchmark_data(build, object_size, data, release='R1', version='releas
     data[object_size] = temp_data
 
 
-def get_metadata_latencies(build, object_size, data, release='R1', version='release'):
+def get_metadata_latencies(release, branch, build, object_size, data):
     temp_data = []
     operations = ["PutObjTag", "GetObjTag", "HeadObj"]
 
     for operation in operations:
         count, db_data = get_performance_metrics(
-            build, object_size, 'S3bench', operation)
+            release, branch, build, object_size, 'S3bench', operation)
         temp_data.append(get_average_data(
             count, db_data, "Latency", "Avg", 1000))
 
     data[object_size] = temp_data
 
 
-def get_hsbenchmark_data(build, object_size, sessions, buckets, objects, data, release='R1', version='release'):
+def get_hsbenchmark_data(release, branch, build, object_size, sessions, buckets, objects, data):
     temp_data = []
     operations = ["write", "read"]
     for operation in operations:
         count, db_data = get_performance_metrics(
-            build, object_size, 'Hsbench', operation, sessions, buckets, objects)
-        stats = ["Throughput", "Latency", "IOPS"]
+            release, branch, build, object_size, 'Hsbench', operation, sessions, buckets, objects)
+        stats = ["Throughput", "IOPS", "Latency"]
 
         for stat in stats:
             temp_data.append(get_data(count, db_data, stat, 1))
@@ -107,13 +116,13 @@ def get_hsbenchmark_data(build, object_size, sessions, buckets, objects, data, r
     data[object_size] = temp_data
 
 
-def get_cosbenchmark_data(build, object_size, sessions, buckets, objects, data, release='R1', version='release'):
+def get_cosbenchmark_data(release, branch, build, object_size, sessions, buckets, objects, data):
     temp_data = []
     operations = ["write", "read"]
     for operation in operations:
         count, db_data = get_performance_metrics(
-            build, object_size, 'Cosbench', operation, sessions, buckets, objects)
-        stats = ["Throughput", "Latency", "IOPS"]
+            release, branch, build, object_size, 'Cosbench', operation, sessions, buckets, objects)
+        stats = ["Throughput", "IOPS", "Latency"]
 
         for stat in stats:
             if stat == "Latency":
@@ -125,7 +134,7 @@ def get_cosbenchmark_data(build, object_size, sessions, buckets, objects, data, 
     data[object_size] = temp_data
 
 
-def update_hsbench_callbacks(bench, workload, objects, build, Thread, data):
+def update_hsbench_callbacks(bench, workload, objects, release, branch, build, Thread, data):
     threads = []
 
     if bench == 'Hsbench':
@@ -134,7 +143,7 @@ def update_hsbench_callbacks(bench, workload, objects, build, Thread, data):
         target = get_cosbenchmark_data
 
     for obj in objects:
-        temp = Thread(target=target, args=(build, obj, workload['sessions'],
+        temp = Thread(target=target, args=(release, branch, build, obj, workload['sessions'],
                                            workload['buckets'], workload['objects'], data))
         temp.start()
         threads.append(temp)
@@ -157,10 +166,10 @@ def get_dash_table(DataTable, table_id, columns, dataframe, header_style, condit
     return table
 
 
-def get_bucketops(object_size, benchmark_config, build, operation, modes, bucket_operation,
+def get_bucketops(object_size, benchmark_config, release, branch, build, operation, modes, bucket_operation,
                   sessions, buckets, objects, data):
 
-    count, db_data = get_performance_metrics(build, object_size, 'Hsbench',
+    count, db_data = get_performance_metrics(release, branch, build, object_size, 'Hsbench',
                                              operation, sessions, buckets, objects)
     results = db_data[0]['Bucket_Ops']
 

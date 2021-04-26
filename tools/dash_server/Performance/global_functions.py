@@ -66,21 +66,15 @@ def get_db_details():
     return uri, db_name, db_collection
 
 
-def keys_exists(element, *keys):
+def keys_exists(data, key):
     """Check if *keys (nested) exists in `element` (dict)."""
-    if not isinstance(element, dict):
+    if not isinstance(data, dict):
         raise AttributeError('keys_exists() expects dict as first argument.')
-    if len(keys) == 0:
-        raise AttributeError(
-            'keys_exists() expects at least two arguments, one given.')
 
-    _element = element
-    for key in keys:
-        try:
-            _element = _element[key]
-        except KeyError:
-            return False
-    return True
+    if key in data.keys():
+        return True
+    else:
+        return False
 
 
 def round_off(value, base=1):
