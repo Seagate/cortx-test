@@ -39,7 +39,7 @@ def run_cmd(cmd):
     Execute bash commands on the host
     :param str cmd: command to be executed
     :return: command output
-    :rtype:
+    :rtype: string
     """
     print("Executing command: {}".format(cmd))
     proc = subprocess.Popen(cmd, shell=True,
@@ -53,6 +53,13 @@ def run_cmd(cmd):
 def create_db_entry(hostname, username, password, ip_addr, admin_user, admin_passwd):
     """
     Creation of new host entry in database.
+    :param str hostname: hostname of the node
+    :param str username: username of the node
+    :param str password: password of the node
+    :param str ip_addr: management IP for the node
+    :param str admin_user: admin user for cortxcli
+    :param str admin_passwd: admin password for cortxcli
+    :return: none
     """
     json_file = "tools/setup_update/setup_entry.json"
     new_setupname = hostname.split(".")[0]
@@ -90,6 +97,7 @@ def create_db_entry(hostname, username, password, ip_addr, admin_user, admin_pas
 def set_s3_endpoints(cluster_ip):
     """
     Set s3 endpoints to cluster ip in /etc/hosts
+    :param str cluster_ip: IP of the cluster
     :return: None
     """
     with open("/etc/hosts", 'r+') as fp:
@@ -106,7 +114,7 @@ def set_s3_endpoints(cluster_ip):
 def setup_chrome():
     """
     Method to install chrome and chromedriver
-    :return:
+    :return: none
     """
     run_cmd(cmd="wget https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm")
     run_cmd(cmd="yum install -y google-chrome-stable_current_x86_64.rpm")

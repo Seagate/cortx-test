@@ -17,7 +17,6 @@ config_file = 'scripts/jenkins_job/config.ini'
 config = configparser.ConfigParser()
 config.read(config_file)
 
-
 class CSMBoarding(unittest.TestCase):
     def setUp(self):
         # self.driver = webdriver.Firefox()
