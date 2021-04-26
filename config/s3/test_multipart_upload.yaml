@@ -102,6 +102,7 @@ test_8923:
     object_name: "mp-obj-test8923"
     file_size: 50000
     total_parts: 10000
+    max_list_parts: 1000 # Limit for maximum number of parts returned for a list parts request
 
 test_8924:
     bucket_name: "mp-bkt-test8924"
@@ -155,11 +156,11 @@ test_8929:
 test_631:
     bucket_name: "mp-bkt-test631"
     object_name: "mp-obj-test631"
-    error_msg: "An error occurred(InvalidPart) when calling the CompleteMultipartUpload operation:
+    error_msg: "An error occurred (InvalidPart) when calling the CompleteMultipartUpload operation:
     One or more of the specified parts could not be found. The part might not have been uploaded,
     or the specified entity tag might not have matched the part's entity tag."
     wrong_json:
-        - ETag: d41d8cd98f00b204e9800998ecf8427e
-        - PartNumber: 1
-        - ETag: d41d8cd98876362482364f00b204e980
-        - PartNumber: 2
+        -   ETag: d41d8cd98f00b204e9800998ecf8427e
+            PartNumber: 1
+        -   ETag: d41d8cd98876362482364f00b204e980
+            PartNumber: 2

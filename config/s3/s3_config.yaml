@@ -35,3 +35,9 @@ minio_path: "/root/.mc/config.json"
 minio_crt_path_list:
     - "/root/.mc/certs/CAs/ca.crt"
     - "/root/.mc/certs/s3.seagate.com.crt"
+
+CliConfig:
+  iam_user:
+    password: "KAGpbh5Tit5kX0lVGuxSeaOwsUTFaoIsaBFf64q8OqI="
+  s3_account:
+    password: "bbTlh4ugvzXd2/4ODI12T8p2rTCYj9t5rSkUVUKiotY="

@@ -38,3 +38,9 @@ test_16911:
   s3_count: 0
   iam_count: 0
   bucket_count: 0
+
+test_20274:
+  list_multipart_uploads_limit: 1000
+
+test_20271:
+  metadata_limit: 2048  # user-defined metadata is limited to 2 KB from AWS
