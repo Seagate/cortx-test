@@ -88,19 +88,6 @@ test_configs:
 
   test_9834:
     password: "3JM1hp8xFmN1D2mQJtOYCSKp/uJtpIwu7hJzMEI0UTc="
-    new_password: "DLzaqFOr0UOgOKrWI3P3XqNuTvF2i1Kq+kSgKF3w5AQ="
-
-  test_9835:
-    password: "MKfKFPvnz+bywHQ4bPCB0ty8+jz1+YSHPHfUOCM/bQU="
-
-  test_9836:
-    password: "MKfKFPvnz+bywHQ4bPCB0ty8+jz1+YSHPHfUOCM/bQU="
-
-  test_9837:
-    password: "MKfKFPvnz+bywHQ4bPCB0ty8+jz1+YSHPHfUOCM/bQU="
-
-  test_9838:
-    password: "o22+WkHq9tJVUUZd21qKzHBM9wk+Fi/3QaUsDPcIzIM="
 
   test_9840:
     password: "4XIWHPsV9dmVs8u1CLGftbQ7fhIK2zh0sZpjAf+hNF2mzpN6cKZ53asTf0IG3HUina6WrTV/+CEnEQs6wpws+LIXc6ZSpZdNx69pX+BLswdqnznirnoePDqyEgYPR8nxhCL74kyM+oAOGi/pgbGThfllnAiVjOUBbNNmWXJ+wJplhZQATanJ6R0W8MZxlYBeXuGxEYL3J6dSaycoRfOinQ=="
@@ -121,50 +108,13 @@ test_configs:
       - "CxD7a9fqP4y+f9c7kC4ahb1EzfsBHIwpl7bKfj8HCeY="
     password_reset: True
 
-  test_9844:
-    password: "MKfKFPvnz+bywHQ4bPCB0ty8+jz1+YSHPHfUOCM/bQU="
-
-  test_9845:
-    password: "MKfKFPvnz+bywHQ4bPCB0ty8+jz1+YSHPHfUOCM/bQU="
-
-  test_9846:
-    password: "MKfKFPvnz+bywHQ4bPCB0ty8+jz1+YSHPHfUOCM/bQU="
-
-  test_9847:
-    password: "MKfKFPvnz+bywHQ4bPCB0ty8+jz1+YSHPHfUOCM/bQU="
-
-  test_9848:
-    password: "MKfKFPvnz+bywHQ4bPCB0ty8+jz1+YSHPHfUOCM/bQU="
-
-  test_9849:
-    password: "MKfKFPvnz+bywHQ4bPCB0ty8+jz1+YSHPHfUOCM/bQU="
-
   test_9876:
-    password: "MKfKFPvnz+bywHQ4bPCB0ty8+jz1+YSHPHfUOCM/bQU="
-    new_password: "DLzaqFOr0UOgOKrWI3P3XqNuTvF2i1Kq+kSgKF3w5AQ="
-
-  test_9877:
-    password: "MKfKFPvnz+bywHQ4bPCB0ty8+jz1+YSHPHfUOCM/bQU="
-    new_password: "DLzaqFOr0UOgOKrWI3P3XqNuTvF2i1Kq+kSgKF3w5AQ="
-
-  test_9878:
-    password: "MKfKFPvnz+bywHQ4bPCB0ty8+jz1+YSHPHfUOCM/bQU="
     new_password: "DLzaqFOr0UOgOKrWI3P3XqNuTvF2i1Kq+kSgKF3w5AQ="
 
   test_9879:
-    password: "MKfKFPvnz+bywHQ4bPCB0ty8+jz1+YSHPHfUOCM/bQU="
     new_password: "l8eFHwZQtUp++zFTdUEwnVNeMev7oSIy3t8wXyTcDWw="
 
-  test_9880:
-    password: "MKfKFPvnz+bywHQ4bPCB0ty8+jz1+YSHPHfUOCM/bQU="
-    new_password: "4XIWHPsV9dmVs8u1CLGftbQ7fhIK2zh0sZpjAf+hNF2mzpN6cKZ53asTf0IG3HUina6WrTV/+CEnEQs6wpws+LIXc6ZSpZdNx69pX+BLswdqnznirnoePDqyEgYPR8nxhCL74kyM+oAOGi/pgbGThfllnAiVjOUBbNNmWXJ+wJplhZQATanJ6R0W8MZxlYBeXuGxEYL3J6dSaycoRfOinQ=="
-
-  test_9881:
-    password: "MKfKFPvnz+bywHQ4bPCB0ty8+jz1+YSHPHfUOCM/bQU="
-    new_password: "CwCrXx838o3H58net0yeCg/jJgOS4OLsEhAUu6LlVpB9/Sq0wwsg82cSnXQk8MfmhKjhnYRR2dQz893JNZG66G0/3xPWk7s72miXYDxIoQEM7zQ1D0w+t/+4xAjpw8viwUo9Ls5gRax+4IGNsIEwhD6Te073tr6an/s4iuhnfsDh3xHSvBSr8qkc8na8e0VDhZmcsS9T8rA/uydXMQ470Q=="
-
   test_9882:
-    password: "MKfKFPvnz+bywHQ4bPCB0ty8+jz1+YSHPHfUOCM/bQU="
     list_special_char_pwd:
       - "xZ4MvdpVZchbVOZASxVv9k4iqC6vVs5eE7eUf4FIXZw="
       - 'mCrRjCVmw8QDvfgohmP/S8Xfovbdq8S2JXdKXgcHs+g='
@@ -179,40 +129,14 @@ test_configs:
       - "s2DAJ53F3TcdA2qZXxPB0ThvBcS7/ZhXrvEhDaxb+k4="
       - "zs7bwHv/tXAeIud2ULjeJuOqHEEwUAv5DJEWDWICObo="
 
-  test_9883:
-    password: "MKfKFPvnz+bywHQ4bPCB0ty8+jz1+YSHPHfUOCM/bQU="
-
   test_9884:
-    password: "MKfKFPvnz+bywHQ4bPCB0ty8+jz1+YSHPHfUOCM/bQU="
     new_password: "U7UQ7NoFYowF5pqxRl5UzHFkrySVkfWI7pQL4nd+uQ0="
 
   test_9923:
     account_password: "DRU9Oz1HtTY5hkRuJrc0WtCpClN8v+ZfcgAckKTqnq0="
-    user_password:  "MKfKFPvnz+bywHQ4bPCB0ty8+jz1+YSHPHfUOCM/bQU="
 
   test_9924:
     user_password: "AZayKOusURwffmkBDmZS9oQ6Q3V1XAIJ+BL6dYp49WI="
 
-  test_9925:
-    user_password: "AZayKOusURwffmkBDmZS9oQ6Q3V1XAIJ+BL6dYp49WI="
-
   test_9927:
-    user_password: "BPXmk6sHpfPrBU/wRJuKJ9FcdHXVqgnSHJVDwG/GOFs="
-
-  test_9928:
-    user_password: "BPXmk6sHpfPrBU/wRJuKJ9FcdHXVqgnSHJVDwG/GOFs="
-
-  test_9929:
-    user_password: "AZayKOusURwffmkBDmZS9oQ6Q3V1XAIJ+BL6dYp49WI="
-
-  test_9930:
-    user_password: "BPXmk6sHpfPrBU/wRJuKJ9FcdHXVqgnSHJVDwG/GOFs="
-
-  test_9931:
-    user_password: "BPXmk6sHpfPrBU/wRJuKJ9FcdHXVqgnSHJVDwG/GOFs="
-
-  test_9932:
-    user_password: "BPXmk6sHpfPrBU/wRJuKJ9FcdHXVqgnSHJVDwG/GOFs="
-
-  test_9936:
     user_password: "BPXmk6sHpfPrBU/wRJuKJ9FcdHXVqgnSHJVDwG/GOFs="

@@ -35,7 +35,7 @@ from commons.utils.system_utils import create_file, remove_file
 from libs.s3 import S3H_OBJ, LDAP_USERNAME, LDAP_PASSWD
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.iam_test_lib import IamTestLib
-from config import S3_CMN_CONFIG
+from config import S3_USER_ACC_MGMT_CONFIG
 
 IAM_OBJ = IamTestLib()
 S3_OBJ = S3TestLib()

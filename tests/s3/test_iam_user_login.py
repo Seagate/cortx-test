@@ -28,7 +28,7 @@ from commons.configmanager import get_config_wrapper
 from commons.utils.assert_utils import assert_true, assert_in, assert_false
 from libs.s3 import iam_test_lib
 from libs.s3 import LDAP_USERNAME, LDAP_PASSWD, S3H_OBJ
-from config import S3_CMN_CONFIG
+from config import S3_USER_ACC_MGMT_CONFIG
 
 IAM_TEST_OBJ = iam_test_lib.IamTestLib()
 
@@ -407,7 +407,7 @@ class TestUserLoginProfileTests():
         assert_true(resp[0], resp[1])
         resp = IAM_TEST_OBJ.create_user_login_profile(
             self.user_name,
-            self.test_cfg["test_9835"]["password"],
+            self.test_cfg["test_9832"]["password"],
             True)
         assert_true(resp[0], resp[1])
         try:
@@ -436,7 +436,7 @@ class TestUserLoginProfileTests():
         assert_true(resp[0], resp[1])
         resp = IAM_TEST_OBJ.create_user_login_profile(
             self.user_name,
-            self.test_cfg["test_9836"]["password"],
+            self.test_cfg["test_9832"]["password"],
             True)
         assert_true(resp[0], resp[1])
         self.log.info(
@@ -453,7 +453,7 @@ class TestUserLoginProfileTests():
         try:
             IAM_TEST_OBJ.create_user_login_profile(
                 self.user_name,
-                self.test_cfg["test_9837"]["password"],
+                self.test_cfg["test_9832"]["password"],
                 True)
         except CTException as error:
             self.log.debug(error.message)
@@ -478,7 +478,7 @@ class TestUserLoginProfileTests():
         try:
             IAM_TEST_OBJ.create_user_login_profile(
                 self.user_name,
-                self.test_cfg["test_9838"]["password"],
+                self.test_cfg["test_9826"]["new_password"],
                 True)
         except CTException as error:
             self.log.debug(error.message)
@@ -591,7 +591,7 @@ class TestUserLoginProfileTests():
             resp = IAM_TEST_OBJ.create_user(new_user_name)
             assert_true(resp[0], resp[1])
             resp = IAM_TEST_OBJ.create_user_login_profile(
-                new_user_name, self.test_cfg["test_9844"]["password"], True)
+                new_user_name, self.test_cfg["test_9832"]["password"], True)
             assert_true(resp[0], resp[1])
         self.log.info("ENDED: Create login profiles for maximum nos of "
                       "existing IAM users")
@@ -608,7 +608,7 @@ class TestUserLoginProfileTests():
         assert_true(resp[0], resp[1])
         resp = IAM_TEST_OBJ.create_user_login_profile(
             self.user_name,
-            self.test_cfg["test_9845"]["password"],
+            self.test_cfg["test_9832"]["password"],
             False)
         assert_true(resp[0], resp[1])
         assert_false(resp[1]["password_reset_required"], resp[1])
@@ -628,7 +628,7 @@ class TestUserLoginProfileTests():
         assert_true(resp[0], resp[1])
         resp = IAM_TEST_OBJ.create_user_login_profile(
             self.user_name,
-            self.test_cfg["test_9846"]["password"],
+            self.test_cfg["test_9832"]["password"],
             True)
         assert_true(resp[0], resp[1])
         assert_true(resp[1]["password_reset_required"], resp[1])
@@ -650,7 +650,7 @@ class TestUserLoginProfileTests():
         assert_true(resp[0], resp[1])
         resp = IAM_TEST_OBJ.create_user_login_profile_s3iamcli_with_both_reset_options(
             self.user_name,
-            self.test_cfg["test_9847"]["password"],
+            self.test_cfg["test_9832"]["password"],
             S3H_OBJ.get_local_keys()[0],
             S3H_OBJ.get_local_keys()[1])
         assert_true(resp[0], resp[1])
@@ -672,7 +672,7 @@ class TestUserLoginProfileTests():
         assert_true(resp[0], resp[1])
         resp = IAM_TEST_OBJ.create_user_login_profile_s3iamcli_with_both_reset_options(
             self.user_name,
-            self.test_cfg["test_9848"]["password"],
+            self.test_cfg["test_9832"]["password"],
             S3H_OBJ.get_local_keys()[0],
             S3H_OBJ.get_local_keys()[1],
             both_reset_options=True)
@@ -692,7 +692,7 @@ class TestUserLoginProfileTests():
         assert_true(resp[0], resp[1])
         resp = IAM_TEST_OBJ.create_user_login_profile(
             self.user_name,
-            self.test_cfg["test_9849"]["password"],
+            self.test_cfg["test_9832"]["password"],
             True)
         assert_true(resp[0], resp[1])
         resp = IAM_TEST_OBJ.get_user_login_profile_s3iamcli(
@@ -760,11 +760,11 @@ class TestUserLoginProfileTests():
         self.log.info("STARTED: Verify password change for IAM user")
         resp = self.create_user_and_access_key(
             self.user_name,
-            self.test_cfg["test_9876"]["password"])
+            self.test_cfg["test_9832"]["password"])
         user_access_key = resp[0]
         user_secret_key = resp[1]
         resp = IAM_TEST_OBJ.change_user_password(
-            self.test_cfg["test_9876"]["password"],
+            self.test_cfg["test_9832"]["password"],
             self.test_cfg["test_9876"]["new_password"],
             user_access_key,
             user_secret_key)
@@ -785,8 +785,8 @@ class TestUserLoginProfileTests():
         self.log.info("Change user password for a non-existing IAM user")
         try:
             IAM_TEST_OBJ.change_user_password(
-                self.test_cfg["test_9877"]["password"],
-                self.test_cfg["test_9877"]["new_password"],
+                self.test_cfg["test_9832"]["password"],
+                self.test_cfg["test_9876"]["new_password"],
                 "dummy_access_key",
                 "dummy_secret_key")
         except CTException as error:
@@ -807,12 +807,12 @@ class TestUserLoginProfileTests():
         self.log.info("STARTED: Provide only six character length in password")
         resp = self.create_user_and_access_key(
             self.user_name,
-            self.test_cfg["test_9878"]["password"])
+            self.test_cfg["test_9832"]["password"])
         user_access_key = resp[0]
         user_secret_key = resp[1]
         resp = IAM_TEST_OBJ.change_user_password(
             self.test_cfg["test_9878"]["password"],
-            self.test_cfg["test_9878"]["new_password"],
+            self.test_cfg["test_9876"]["new_password"],
             user_access_key,
             user_secret_key)
         assert_true(resp[0], resp[1])
@@ -827,7 +827,7 @@ class TestUserLoginProfileTests():
         self.log.info("STARTED: Provide only one character length in password")
         resp = self.create_user_and_access_key(
             self.user_name,
-            self.test_cfg["test_9879"]["password"])
+            self.test_cfg["test_9832"]["password"])
         user_access_key = resp[0]
         user_secret_key = resp[1]
         try:
@@ -853,12 +853,12 @@ class TestUserLoginProfileTests():
     #     self.log.info("Provide password length 128 valid characters long")
     #     resp = self.create_user_and_access_key(
     #         self.user_name,
-    #         self.test_cfg["test_9880"]["password"])
+    #         self.test_cfg["test_9832"]["password"])
     #     user_access_key = resp[0]
     #     user_secret_key = resp[1]
     #     resp = IAM_TEST_OBJ.change_user_password(
-    #         self.test_cfg["test_9880"]["password"],
-    #         self.test_cfg["test_9880"]["new_password"],
+    #         self.test_cfg["test_9832"]["password"],
+    #         self.test_cfg["test_9840"]["new_password"],
     #         user_access_key,
     #         user_secret_key)
     #     assert_true(resp[0], resp[1])
@@ -874,13 +874,13 @@ class TestUserLoginProfileTests():
     #     test_9881_cfg = USER_CONFIG["test_9881"]
     #     resp = self.create_user_and_access_key(
     #         self.user_name,
-    #         self.test_cfg["test_9881"]["password"])
+    #         self.test_cfg["test_9832"]["password"])
     #     user_access_key = resp[0]
     #     user_secret_key = resp[1]
     #     try:
     #         IAM_TEST_OBJ.change_user_password(
-    #             self.test_cfg["test_9881"]["password"],
-    #             self.test_cfg["test_9881"]["new_password"],
+    #             self.test_cfg["test_9832"]["password"],
+    #             self.test_cfg["test_9841"]["new_password"],
     #             user_access_key,
     #             user_secret_key)
     #     except CTException as error:
@@ -907,20 +907,20 @@ class TestUserLoginProfileTests():
                       "characters ~,$,?,&,\\n,\\t,<,>")
         resp = self.create_user_and_access_key(
             self.user_name,
-            self.test_cfg["test_9882"]["password"],
+            self.test_cfg["test_9832"]["password"],
             True)
         user_access_key = resp[0]
         user_secret_key = resp[1]
         for new_password in self.test_cfg["test_9882"]["list_special_char_pwd"]:
             self.log.debug(new_password)
             resp = IAM_TEST_OBJ.change_user_password(
-                self.test_cfg["test_9882"]["password"],
+                self.test_cfg["test_9832"]["password"],
                 new_password,
                 user_access_key,
                 user_secret_key)
             assert_true(resp[0], resp[1])
             resp = IAM_TEST_OBJ.change_user_password(
-                new_password, self.test_cfg["test_9882"]["password"], user_access_key, user_secret_key)
+                new_password, self.test_cfg["test_9832"]["password"], user_access_key, user_secret_key)
             assert_true(resp[0], resp[1])
         self.log.info("ENDED: Password with allowed special "
                       "characters ~,$,?,&,\\n,\\t,<,>")
@@ -934,14 +934,14 @@ class TestUserLoginProfileTests():
         self.log.info("STARTED: Verify change password with old password")
         resp = self.create_user_and_access_key(
             self.user_name,
-            self.test_cfg["test_9883"]["password"],
+            self.test_cfg["test_9832"]["password"],
             True)
         user_access_key = resp[0]
         user_secret_key = resp[1]
         try:
             IAM_TEST_OBJ.change_user_password(
-                self.test_cfg["test_9883"]["password"],
-                self.test_cfg["test_9883"]["password"],
+                self.test_cfg["test_9832"]["password"],
+                self.test_cfg["test_9832"]["password"],
                 user_access_key,
                 user_secret_key)
         except CTException as error:
@@ -963,10 +963,10 @@ class TestUserLoginProfileTests():
                       "users invalid access key and secret key")
         self.create_user_and_access_key(
             self.user_name,
-            self.test_cfg["test_9884"]["password"])
+            self.test_cfg["test_9832"]["password"])
         try:
             IAM_TEST_OBJ.change_user_password(
-                self.test_cfg["test_9884"]["password"],
+                self.test_cfg["test_9832"]["password"],
                 self.test_cfg["test_9884"]["new_password"],
                 "aldkjakjfakjfklafj",
                 "kahdahfouk692583")
@@ -1020,7 +1020,7 @@ class TestUserLoginProfileTests():
             self.user_name)
         resp = IAM_TEST_OBJ.create_user_login_profile_s3iamcli(
             self.user_name,
-            self.test_cfg["test_9923"]["user_password"],
+            self.test_cfg["test_9832"]["password"],
             False,
             access_key=access_key,
             secret_key=secret_key)
@@ -1031,7 +1031,7 @@ class TestUserLoginProfileTests():
         resp = IAM_TEST_OBJ.get_temp_auth_credentials_user(
             self.account_name,
             self.user_name,
-            self.test_cfg["test_9923"]["user_password"])
+            self.test_cfg["test_9832"]["password"])
         assert_true(resp[0], resp[1])
         self.log.info("ENDED: Get temporary credentials for valid user")
 
@@ -1105,7 +1105,7 @@ class TestUserLoginProfileTests():
             IAM_TEST_OBJ.get_temp_auth_credentials_user(
                 self.account_name,
                 self.user_name,
-                self.test_cfg["test_9925"]["user_password"])
+                self.test_cfg["test_9924"]["user_password"])
         except CTException as error:
             self.log.debug(error.message)
             assert_in(
@@ -1170,7 +1170,7 @@ class TestUserLoginProfileTests():
             self.account_name,
             email_id,
             self.user_name,
-            self.test_cfg["test_9928"]["user_password"],
+            self.test_cfg["test_9927"]["user_password"],
             user_profile=True)
         self.log.info(
             "Performing s3 operations using invalid temporary credentials")
@@ -1213,7 +1213,7 @@ class TestUserLoginProfileTests():
             IAM_TEST_OBJ.get_temp_auth_credentials_user(
                 self.account_name,
                 self.user_name,
-                self.test_cfg["test_9929"]["user_password"])
+                self.test_cfg["test_9924"]["user_password"])
         except CTException as error:
             self.log.debug(error.message)
             assert_in(
@@ -1240,14 +1240,14 @@ class TestUserLoginProfileTests():
             self.account_name,
             email_id,
             self.user_name,
-            self.test_cfg["test_9930"]["user_password"],
+            self.test_cfg["test_9927"]["user_password"],
             user_profile=True)
         self.log.info("Getting temporary credentials for user %s",
                       self.user_name)
         res = IAM_TEST_OBJ.get_temp_auth_credentials_user(
             self.account_name,
             self.user_name,
-            self.test_cfg["test_9930"]["user_password"])
+            self.test_cfg["test_9927"]["user_password"])
         assert_true(res[0], res[1])
         self.log.info(
             "ENDED: Get temporary credentials for the user which contain"
@@ -1268,14 +1268,14 @@ class TestUserLoginProfileTests():
             self.account_name,
             email_id,
             self.user_name,
-            self.test_cfg["test_9931"]["user_password"],
+            self.test_cfg["test_9927"]["user_password"],
             user_profile=True)
         self.log.info("Getting temporary credentials for user %s with 20 min"
                       " time duration", self.user_name)
         res = IAM_TEST_OBJ.get_temp_auth_credentials_user(
             self.account_name,
             self.user_name,
-            self.test_cfg["test_9931"]["user_password"],
+            self.test_cfg["test_9927"]["user_password"],
             1200)
         assert_true(res[0], res[1])
         temp_access_key = res[1]["access_key"]
@@ -1322,7 +1322,7 @@ class TestUserLoginProfileTests():
             self.account_name,
             email_id,
             self.user_name,
-            self.test_cfg["test_9932"]["user_password"],
+            self.test_cfg["test_9927"]["user_password"],
             user_profile=True)
         self.log.info(
             "Getting temp auth credentials for user %s "
@@ -1331,7 +1331,7 @@ class TestUserLoginProfileTests():
             IAM_TEST_OBJ.get_temp_auth_credentials_user(
                 self.account_name,
                 self.user_name,
-                self.test_cfg["test_9932"]["user_password"],
+                self.test_cfg["test_9927"]["user_password"],
                 800)
         except CTException as error:
             self.log.debug(error.message)
@@ -1357,14 +1357,14 @@ class TestUserLoginProfileTests():
             self.account_name,
             email_id,
             self.user_name,
-            self.test_cfg["test_9936"]["user_password"],
+            self.test_cfg["test_9927"]["user_password"],
             user_profile=True)
         self.log.info("Getting temp auth credentials for user %s",
                       self.user_name)
         res = IAM_TEST_OBJ.get_temp_auth_credentials_user(
             self.account_name,
             self.user_name,
-            self.test_cfg["test_9936"]["user_password"])
+            self.test_cfg["test_9927"]["user_password"])
         assert_true(res[0], res[1])
         temp_access_key = res[1]["access_key"]
         temp_secret_key = res[1]["secret_key"]
