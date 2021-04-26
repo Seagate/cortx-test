@@ -30,9 +30,9 @@ from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
 from libs.csm.cli.cortx_cli_s3_buckets import CortxCliS3BucketOperations
 from libs.csm.cli.cortxcli_iam_user import CortxCliIamUser
 from libs.csm.cli.cli_csm_user import CortxCliCsmUser
+from libs.csm.cli.cortx_cli_s3access_keys import CortxCliS3AccessKeys
 from libs.s3.iam_test_lib import IamTestLib
-
-
+from config import S3_CFG
 LOGGER = logging.getLogger(__name__)
 
 
@@ -48,20 +48,116 @@ class CortxcliS3AccountOperations(CortxCliS3AccountOperations):
         """Constructor for s3 account operations."""
         super().__init__(session_obj=session_obj)
 
-
-class CortxcliS3BucketOperations(CortxCliS3BucketOperations):
-    """Overriding class for cortxcli s3 bucket operations.
-
-    This class is used to have s3 Bucket Operations.
-    """
-
-    def __init__(
-            self, session_obj: object = None):
-        """Constructor for s3 bucket operations.
-
-        :param object session_obj: session object of host connection if already established.
+    def create_account_cortxcli(self,
+                                account_name: str,
+                                account_email: str,
+                                password: str,
+                                **kwargs) -> tuple:
         """
-        super().__init__(session_obj=session_obj)
+        Creating new account using  cortxcli.
+
+        :param password:
+        :param account_email:
+        :param account_name: s3 account name.
+        :return: create account cortxcli response.
+        """
+
+        acc_details = dict()
+        try:
+            self.login_cortx_cli()
+            status, response = super().create_s3account_cortx_cli(
+                account_name, account_email, password, **kwargs)
+            if account_name in response:
+                response = self.split_table_response(response)[0]
+                acc_details["account_name"] = response[1]
+                acc_details["account_email"] = response[2]
+                acc_details["account_id"] = response[3]
+                acc_details["canonical_id"] = response[4]
+                acc_details["access_key"] = response[5]
+                acc_details["secret_key"] = response[6]
+                LOGGER.info("Account Details: %s", acc_details)
+                response = acc_details
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         CortxcliS3AccountOperations.create_account_cortxcli.__name__,
+                         error)
+            raise CTException(err.S3_ERROR, error.args[0])
+        finally:
+            self.logout_cortx_cli()
+        return status, response
+
+    def list_accounts_cortxcli(self) -> tuple:
+        """
+        Listing accounts using  cortxcli.
+
+        :return: list account cortxcli response.
+        """
+        try:
+            self.login_cortx_cli()
+            response = super().show_s3account_cortx_cli(output_format="json")[1]
+            accounts = self.format_str_to_dict(input_str=response)["s3_accounts"]
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         CortxcliS3AccountOperations.list_accounts_cortxcli.__name__,
+                         error)
+            raise CTException(err.S3_ERROR, error.args[0])
+        finally:
+            self.logout_cortx_cli()
+        return accounts
+
+    def delete_account_cortxcli(self,
+                                account_name: str,
+                                password: str) -> tuple:
+        """
+        Deleting account using cortxcli.
+
+        :param account_name: s3 account name.
+        :return:
+        """
+
+        try:
+            self.login_cortx_cli(username=account_name, password=password)
+            response = super().delete_s3account_cortx_cli(account_name)
+
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         CortxcliS3AccountOperations.delete_account_cortxcli.__name__,
+                         error)
+            raise CTException(err.S3_ERROR, error.args[0])
+        finally:
+            self.logout_cortx_cli()
+        return response
+
+    def reset_s3_account_password(
+            self,
+            account_name: str,
+            old_password: str,
+            new_password: str,
+            **kwargs) -> tuple:
+        """
+        Function will update password for specified s3 account to new_password using CORTX CLI.
+
+        :param account_name: Name of the s3 account whose password is to be update
+        :param old_password: original password
+        :param new_password: New password for s3 account
+        :keyword reset_password: Y/n
+        :return: True/False and Response returned by CORTX CLI
+        """
+        # inherit from csm cli
+        try:
+            self.login_cortx_cli(username=account_name, password=old_password)
+            response = super().reset_s3account_password(account_name,
+                                                        new_password,
+                                                        **kwargs)
+        except Exception as error:
+            LOGGER.error(
+                "Error in %s:%s",
+                CortxcliS3AccountOperations.reset_s3account_password.__name__,
+                error)
+            raise CTException(err.S3_ERROR, error.args[0])
+        finally:
+            self.logout_cortx_cli()
+        return response
 
 
 class CortxcliIamUser(CortxCliIamUser):
@@ -78,6 +174,68 @@ class CortxcliIamUser(CortxCliIamUser):
         """
         super().__init__(session_obj=session_obj)
 
+    def create_user_cortxcli(self,
+                             user_name: str = None,
+                             password: str = None,
+                             confirm_password: str = None,
+                             **kwargs) -> tuple:
+        """
+        Creating user using cortxcli.
+
+        This function will create new IAM user
+        :param user_name: Name of IAM user to be created
+        :param password: Password to create s3 IAM user.
+        :param confirm_password: Confirm password to create s3 IAM user.
+        :keyword confirm: Confirm option for creating a IAM user
+        :keyword help_param: True for displaying help/usage
+        :return: (Boolean/Response)
+        :return: create user using cortxcli response.
+        """
+        try:
+            response = super().create_iam_user(
+                user_name=user_name,
+                password=password,
+                confirm_password=confirm_password,
+                **kwargs)
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         CortxcliIamUser.create_user_cortxcli.__name__,
+                         error)
+            raise CTException(err.S3_ERROR, error.args[0])
+
+        return response
+
+    def list_users_cortxcli(self) -> tuple:
+        """
+        Listing users using  cortxcli.
+
+        :return: list users cortxcli response.
+        """
+        try:
+            status, response = super().list_iam_user()
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         CortxcliIamUser.list_users_cortxcli.__name__,
+                         error)
+            raise CTException(err.S3_ERROR, error.args[0])
+
+        return status, response
+
+    def delete_user_cortxcli(self, user_name) -> tuple:
+        """
+        Listing users using  cortxcli.
+
+        :return: list users cortxcli response.
+        """
+        try:
+            status, response = super().delete_iam_user(user_name)
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         CortxcliIamUser.delete_user_cortxcli.__name__,
+                         error)
+            raise CTException(err.S3_ERROR, error.args[0])
+
+        return status, response
 
 class CortxcliCsmUser(CortxCliCsmUser):
     """Overriding class for CSM User."""
@@ -91,10 +249,176 @@ class CortxcliCsmUser(CortxCliCsmUser):
         super().__init__(session_obj=session_obj)
 
 
+class CortxcliS3AccessKeys(CortxCliS3AccessKeys):
+    """This class has all s3 access key operations."""
+
+    def __init__(self, session_obj: object = None):
+        """
+        Method initializes members of CortxCliS3AccessKeys.
+
+        :param object session_obj: session object of host connection if already established
+        """
+        super().__init__(session_obj=session_obj)
+
+    def create_s3user_access_key_cortx_cli(
+            self,
+            user_name: str) -> tuple:
+        """
+        Function will create a bucket using CORTX CLI.
+
+        :param user_name: for whon access key needs to be created.
+        :return: True/False and response returned by CORTX CLI
+        """
+        try:
+            status, response = super().create_s3_iam_access_key(user_name)
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         CortxcliS3AccessKeys.create_s3user_access_key_cortx_cli.__name__,
+                         error)
+            raise CTException(err.S3_ERROR, error.args[0])
+
+        return status, response
+
+    def show_s3user_access_key_cortx_cli(
+            self,
+            user_name: str) -> tuple:
+        """
+        Function will show s3 user access keys using CORTX CLI.
+
+        :param user_name: for whom the access key needs to be listed
+        :return: True/False and response returned by CORTX CLI
+        """
+        try:
+            status, response = super().show_s3access_key(user_name)
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         CortxcliS3AccessKeys.show_s3user_access_key_cortx_cli.__name__,
+                         error)
+            raise CTException(err.S3_ERROR, error.args[0])
+
+        return status, response
+
+    def update_s3user_access_key_cortx_cli(
+            self,
+            user_name: str,
+            access_key: str,
+            status: str) -> tuple:
+        """
+        Function will update a access key using CORTX CLI.
+
+        :param status: Status for update access key
+                        (possible values: Active/Inactive)
+        :param access_key: which need to be updated
+        :param user_name: for whom access key needs to be updated.
+        :return: True/False and response returned by CORTX CLI
+        """
+        try:
+            status, response = super().update_s3access_key(user_name, access_key, status)
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         CortxcliS3AccessKeys.update_s3user_access_key_cortx_cli.__name__,
+                         error)
+            raise CTException(err.S3_ERROR, error.args[0])
+
+        return status, response
+
+    def delete_s3user_access_key_cortx_cli(
+            self,
+            user_name: str) -> tuple:
+        """
+        Function will delete a user access key using CORTX CLI.
+
+        :param user_name: user name for whom access key will be created.
+        :return: True/False and response returned by CORTX CLI
+        """
+        try:
+            status, response = super().delete_s3access_key(user_name)
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         CortxcliS3AccessKeys.update_s3user_access_key_cortx_cli.__name__,
+                         error)
+            raise CTException(err.S3_ERROR, error.args[0])
+
+        return status, response
+
+
+class CortxcliS3BucketOperations(CortxCliS3BucketOperations):
+    """Overriding class for cortxcli s3 bucket operations.
+
+    This class is used to have s3 Bucket Operations.
+    """
+
+    def __init__(
+            self, session_obj: object = None):
+        """Constructor for s3 bucket operations.
+
+        :param object session_obj: session object of host connection if already established.
+        """
+        super().__init__(session_obj=session_obj)
+
+    def create_bucket_cortx_cli(
+            self,
+            bucket_name: str) -> tuple:
+        """
+        Function will create a bucket using CORTX CLI.
+
+        :param bucket_name: New bucket's name
+        :return: True/False and response returned by CORTX CLI
+        """
+        try:
+            response = super().create_bucket_cortx_cli(bucket_name)
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         CortxcliS3BucketOperations.create_bucket_cortx_cli.__name__,
+                         error)
+            raise CTException(err.S3_ERROR, error.args[0])
+
+        return response
+
+    def list_bucket_cortx_cli(
+            self,
+            op_format: str = "sjon") -> tuple:
+        """
+        Function will create a bucket using CORTX CLI.
+
+        :param bucket_name: New bucket's name
+        :return: True/False and response returned by CORTX CLI
+        """
+        try:
+            response = super().list_buckets_cortx_cli(op_format=op_format)
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         CortxcliS3BucketOperations.list_bucket_cortx_cli.__name__,
+                         error)
+            raise CTException(err.S3_ERROR, error.args[0])
+
+        return response
+
+    def delete_bucket_cortx_cli(
+            self,
+            bucket_name: str) -> tuple:
+        """
+        Function will delete a bucket using CORTX CLI.
+
+        :param bucket_name: New bucket's name
+        :return: True/False and response returned by CORTX CLI
+        """
+        try:
+            response = super().delete_bucket_cortx_cli(bucket_name)
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         CortxcliS3BucketOperations.delete_bucket_cortx_cli.__name__,
+                         error)
+            raise CTException(err.S3_ERROR, error.args[0])
+
+        return response
+
+
 class CortxCliTestLib(CortxcliS3AccountOperations,
                       CortxcliS3BucketOperations,
                       CortxcliIamUser,
                       CortxcliCsmUser,
+                      CortxcliS3AccessKeys,
                       IamTestLib):
     """Class for performing cortxcli operations."""
 
@@ -105,6 +429,10 @@ class CortxCliTestLib(CortxcliS3AccountOperations,
         :param object session_obj: session object of host connection if already established.
         """
         super().__init__(session_obj=session_obj)
+        self.open_connection()
+
+    def __del__(self):
+        self.close_connection()
 
     def login_cortx_cli(
             self,
@@ -149,185 +477,12 @@ class CortxCliTestLib(CortxcliS3AccountOperations,
 
         return response
 
-    def list_accounts_cortxcli(self) -> tuple:
-        """
-        Listing accounts using aws s3iamcli.
-
-        :return: list account cortxcli response.
-        """
-        try:
-            response = super().show_s3account_cortx_cli()
-        except Exception as error:
-            LOGGER.error("Error in %s: %s",
-                         CortxCliTestLib.list_accounts_cortxcli.__name__,
-                         error)
-            raise CTException(err.S3_ERROR, error.args[0])
-
-        return response
-
-    def list_users_cortxcli(self) -> tuple:
-        """
-        Listing users using aws cortxcli.
-
-        :return: list users cortxcli response.
-        """
-        try:
-            status, response = super().list_iam_user()
-        except Exception as error:
-            LOGGER.error("Error in %s: %s",
-                         CortxCliTestLib.list_users_cortxcli.__name__,
-                         error)
-            raise CTException(err.S3_ERROR, error.args[0])
-
-        return status, response
-
-    def create_account_cortxcli(self,
-                                account_name: str,
-                                account_email: str,
-                                password: str,
-                                **kwargs) -> tuple:
-        """
-        Creating new account using aws s3iamcli.
-
-        :param password:
-        :param account_email:
-        :param account_name: s3 account name.
-        :return: create account cortxcli response.
-        """
-        try:
-            status, response = super().create_s3account_cortx_cli(
-                account_name, account_email, password, **kwargs)
-
-        except Exception as error:
-            LOGGER.error("Error in %s: %s",
-                         CortxCliTestLib.create_account_cortxcli.__name__,
-                         error)
-            raise CTException(err.S3_ERROR, error.args[0])
-
-        return status, response
-
-    def create_user_using_cortxcli(self,
-                                   user_name: str = None,
-                                   password: str = None,
-                                   confirm_password: str = None,
-                                   **kwargs) -> tuple:
-        """
-        Creating user using cortxcli.
-
-        This function will create new IAM user
-        :param user_name: Name of IAM user to be created
-        :param password: Password to create s3 IAM user.
-        :param confirm_password: Confirm password to create s3 IAM user.
-        :keyword confirm: Confirm option for creating a IAM user
-        :keyword help_param: True for displaying help/usage
-        :return: (Boolean/Response)
-        :return: create user using cortxcli response.
-        """
-        try:
-            response = super().create_iam_user(
-                user_name=user_name,
-                password=password,
-                confirm_password=confirm_password,
-                **kwargs)
-        except Exception as error:
-            LOGGER.error("Error in %s: %s",
-                         CortxCliTestLib.create_user_using_cortxcli.__name__,
-                         error)
-            raise CTException(err.S3_ERROR, error.args[0])
-
-        return response
-
-    def reset_s3account_password(
-            self,
-            account_name: str,
-            new_password: str,
-            **kwargs) -> tuple:
-        """
-        Function will update password for specified s3 account to new_password using CORTX CLI.
-
-        :param account_name: Name of the s3 account whose password is to be update
-        :param new_password: New password for s3 account
-        :keyword reset_password: Y/n
-        :return: True/False and Response returned by CORTX CLI
-        """
-        # inherit from csm cli
-        try:
-            response = super(
-                CortxCliTestLib,
-                self).reset_s3account_password(account_name,
-                                               new_password,
-                                               **kwargs)
-
-        except Exception as error:
-            LOGGER.error(
-                "Error in %s:%s",
-                CortxCliTestLib.reset_s3account_password.__name__,
-                error)
-            raise CTException(err.S3_ERROR, error.args[0])
-
-        return response
-
-    def create_get_s3account_details_cortxcli(
-            self,
-            account_name,
-            account_email,
-            password):
-        """
-        Method will create s3 account using cortxcli and returns access and secret key.
-
-        :param str account_name: Name of s3 account user to be created.
-        :param str account_email: Account email for account creation.
-        :param str password: Password to create s3 account user.
-        :return: (True/False, Response)
-        :rtype: tuple
-        """
-        acc_details = dict()
-        login = self.login_cortx_cli()
-        if login:
-            response = self.create_s3account_cortx_cli(
-                account_name=account_name,
-                account_email=account_email,
-                password=password)[1]
-            if account_name in response:
-                response = self.split_table_response(response)[0]
-                acc_details["account_name"] = response[1]
-                acc_details["account_email"] = response[2]
-                acc_details["account_id"] = response[3]
-                acc_details["canonical_id"] = response[4]
-                acc_details["access_key"] = response[5]
-                acc_details["secret_key"] = response[6]
-                LOGGER.info("Account Details: %s", acc_details)
-                self.logout_cortx_cli()
-                return True, acc_details
-
-            return False, response
-
-        return False, login
-
-    @staticmethod
-    def delete_account_cortxcli(account_name: str = None) -> tuple:
-        """
-        Deleting account using cortxcli.
-
-        :param account_name: s3 account name.
-        :return:
-        """
-        try:
-            response = super().delete_s3account_cortx_cli(account_name)
-        except Exception as error:
-            LOGGER.error("Error in %s: %s",
-                         CortxCliTestLib.delete_account_cortxcli.__name__,
-                         error)
-            raise CTException(err.S3_ERROR, error.args[0])
-
-        return response
-
     def create_user_login_profile_boto3(self,
                                         user_name=None,
                                         password=None,
                                         password_reset=False) -> tuple:
         """
-        Create user login profile using aws cortxcli.
+        Create user login profile using  cortxcli.
 
         :param user_name: s3 user name.
         :param password: s3 password.
@@ -353,8 +508,7 @@ class CortxCliTestLib(CortxcliS3AccountOperations,
             self,
             user_name: str = None,
             password: str = None,
-            password_reset: bool = False,
-    ) -> tuple:
+            password_reset: bool = False, ) -> tuple:
         """
         Update user login profile using cortxcli.
 
@@ -365,29 +519,10 @@ class CortxCliTestLib(CortxcliS3AccountOperations,
         """
         return super().update_user_login_profile(user_name, password, password_reset)
 
-    def update_user_login_profile_no_pwd_reset(
-            self,
-            user_name: str = None,
-            password: str = None,
-            password_reset: bool = False) -> dict:
-        """
-        Update user login profile.
-
-        :param password_reset:
-        :param user_name: s3 user name.
-        :param password: s3 password.
-        :return: update user login profile no pwd reset response dict.
-        """
-        # using boto3
-        return self.update_user_login_profile(
-            user_name=user_name,
-            password=password,
-            password_reset=password_reset)[1]
-
     def reset_access_key_and_delete_account_cortxcli(
             self, account_name: str = None) -> tuple:
         """
-        Reset account access key and delete the account using aws cortxcli.
+        Reset account access key and delete the account using  cortxcli.
 
         :param account_name: Name of the account.
         :return: (Boolean, response)
@@ -397,49 +532,8 @@ class CortxCliTestLib(CortxcliS3AccountOperations,
 
         return result
 
-    def change_user_password_boto3(self,
-                                   user_name: str = None,
-                                   password: str = None,
-                                   password_reset: bool = False) -> tuple:
-        """
-        Change password for IAM user.
-
-        :return: change user password response.
-        """
-        return self.update_user_login_profile_boto3(user_name,
-                                                    password,
-                                                    password_reset=password_reset)
-
-    def reset_iamuser_password(
-            self,
-            iamuser_name: str,
-            new_password: str,
-            **kwargs) -> tuple:
-        """
-        This function will update password for specified s3 account to new_password using CORTX CLI.
-        :param iamuser_name:
-        :param new_password: New password for s3 account
-        :keyword reset_password: Y/n
-        :return: True/False and Response returned by CORTX CLI
-        """
-        reset_password = kwargs.get("reset_password", "Y")
-        cmd = "s3iamusers reset_password {}"
-        reset_pwd_cmd = cmd.format(iamuser_name)
-        LOGGER.info("Resetting s3 account password to %s", new_password)
-        response = self.execute_cli_commands(cmd=reset_pwd_cmd)[1]
-        if "Password:" in response:
-            response = self.execute_cli_commands(cmd=new_password)[1]
-            if "Confirm Password:" in response:
-                response = self.execute_cli_commands(cmd=new_password)[1]
-                if "[Y/n]" in response:
-                    response = self.execute_cli_commands(cmd=reset_password)[1]
-                    if iamuser_name in response:
-                        LOGGER.info("Response returned: \n%s", response)
-                        return True, response
-                return False, response
-
     @staticmethod
-    def create_iamuser_access_key(user_name: str = None) -> tuple:
+    def create_iamuser_access_key_boto3(user_name: str = None) -> tuple:
         """
         Creating access key for given user.
 
@@ -450,21 +544,3 @@ class CortxCliTestLib(CortxcliS3AccountOperations,
         status, response = IamTestLib.create_access_key(user_name)
         LOGGER.info(response)
         return status, response
-
-    def create_bucket_cortx_cli(
-            self,
-            bucket_name: str) -> tuple:
-        """
-        This function will create a bucket using CORTX CLI
-        :param bucket_name: New bucket's name
-        :return: True/False and response returned by CORTX CLI
-        """
-        try:
-            response = super().create_bucket_cortx_cli(bucket_name)
-        except Exception as error:
-            LOGGER.error("Error in %s: %s",
-                         CortxCliTestLib.create_bucket_cortx_cli.__name__,
-                         error)
-            raise CTException(err.S3_ERROR, error.args[0])
-
-        return response
