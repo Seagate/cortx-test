@@ -60,7 +60,9 @@ class CTException(Exception):
                                              pformat(self.kwargs))
 
 
-class TestException(Exception):
+class CortxTestException(Exception):
+    """Intended for use to raise test errors with using error codes."""
+
     def __init__(self, msg=None) -> None:
         """
         Create a test exception

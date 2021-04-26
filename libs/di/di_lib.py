@@ -30,7 +30,7 @@ from fabric import Config
 from fabric import ThreadingGroup, SerialGroup
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.di import di_base
-from commons.exceptions import TestException
+from commons.exceptions import CortxTestException
 from commons import params
 from commons.utils import assert_utils
 
@@ -62,7 +62,7 @@ def create_users(utype=S3_ACC_UTYPE, nusers=10):
 def create_buckets(user_dict, s3_prefix, nbuckets):
     """Create buckets with default name prefix."""
     if not user_dict:
-        raise TestException('User dict is empty')
+        raise CortxTestException('User dict is empty')
     try:
         user_name = user_dict.get('name')
         access_key = user_dict.get('access_key')
@@ -72,7 +72,7 @@ def create_buckets(user_dict, s3_prefix, nbuckets):
         s3 = di_base._init_s3_conn(access_key=access_key, secret_key=secret_key,
                                    user_name=user_name)
         if not s3:
-            raise TestException('S3 resource could not be created')
+            raise CortxTestException('S3 resource could not be created')
         for bucket in buckets:
             try:
 

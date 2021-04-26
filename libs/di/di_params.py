@@ -40,5 +40,5 @@ FailedFilesServerError = "FailedFilesServerError.csv"
 destructiveTestResult = "/var/log/datagen/result_summary.csv"
 
 deletePercentage = 10
-DOWNLOAD_HOME = '/var/log/'
+DOWNLOAD_HOME = '/var/log/download'
 

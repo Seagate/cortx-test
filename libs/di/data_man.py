@@ -53,7 +53,7 @@ import multiprocessing
 from commons import params
 from commons.utils import system_utils
 from commons.utils import config_utils
-from commons.exceptions import TestException
+from commons.exceptions import CortxTestException
 
 # Container level
 C_LEVEL_TOP = 1
@@ -98,7 +98,7 @@ class DataManager(object):
         p_home = params.META_DATA_HOME
         fpath = os.path.join(p_home, user + params.USER_META_JSON)
         if not os.path.exists(fpath):
-            raise TestException('It is expected that the json path should be created by now')
+            raise CortxTestException('It is expected that the json path should be created by now')
         config_utils.create_content_json(fpath, data, ensure_ascii=True)
 
     def get_all_buckets_data_for_user(self, user):

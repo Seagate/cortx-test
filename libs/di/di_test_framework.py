@@ -54,7 +54,7 @@ class Uploader(object):
 
     @staticmethod
     def upload(user, keys):
-        user_name = user
+        user_name = user.replace('_', '-')
         access_key = keys[0]
         secret_key = keys[1]
         timestamp = time.strftime("%Y%m%d-%H%M%S")
@@ -62,7 +62,7 @@ class Uploader(object):
 
         try:
             s3 = boto3.resource('s3', aws_access_key_id=access_key, aws_secret_access_key=secret_key,
-                                endpoint_url=params.S3_ENDPOINT)
+                                endpoint_url=params.S3_ENDPOINT, verify=False)
             LOGGER.info("S3 resource created for %s", user_name)
         except Exception as e:
             LOGGER.info(
@@ -161,7 +161,7 @@ class DIChecker(object):
             try:
                 s3 = boto3.resource('s3', aws_access_key_id=access_key,
                                     aws_secret_access_key=secret_key,
-                                    endpoint_url=di_params.S3_ENDPOINT)
+                                    endpoint_url=params.S3_ENDPOINT, verify=False)
             except Exception as e:
                 LOGGER.error(
                     f'could not create s3 object for user {user_name} with access '
@@ -248,13 +248,16 @@ class DIChecker(object):
             LOGGER.error(f'Exception occurred for item {kwargs} with exception {fault}')
 
     @classmethod
-    def verify_data_integrity(cls, users):
+    def verify_data_integrity(cls, users_data):
         """
         UploadInfo File format supported is
         #user7,user7-8844buckets0,naPcn6qP47SkUPkxbP_PtJUVF1iv.json,7e2db9e2f7621db0ddfde4d294e92eca
         Downloads the file and compare checksum.
         :return:
         """
+        users = dict()
+        for user, udict in users_data.items():
+            users.update({user.replace('_', '-'):[udict['accesskey'], udict['secretkey']]})
         ulen = len(users)
         workers = worker.Workers()
         workers.start_workers()
