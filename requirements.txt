@@ -27,6 +27,7 @@ MarkupSafe==1.1.1
 matplotlib==3.1.1
 mdstat==1.0.4
 msgpack==0.6.2
+munch==2.5.0
 mypy==0.782
 pandas==0.25.1
 paramiko==2.6.0

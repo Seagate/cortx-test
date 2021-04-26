@@ -126,8 +126,8 @@ class ReportClient(SingletonMixin):
             "testType": "Pytest",
             "latest": true,
             "feature": "Test",
-            "db_username": "datawrite",
-            "db_password": "seagate@123"
+            "db_username": "",
+            "db_password": ""
         }
         """
         payload = {"OSVersion": data_kwargs.get('os', "CentOS"),

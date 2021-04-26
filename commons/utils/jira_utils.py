@@ -301,8 +301,7 @@ class JiraTask:
                                         params=None)
             print("Response code: %s", response.status_code)
             if response.status_code == HTTPStatus.OK:
-                print("Updated execution details successfully for test id "
-                      "%s", test_id)
+                print(f"Updated execution details successfully for test id {test_id}")
                 return True
             return False
         except JIRAError as err:
