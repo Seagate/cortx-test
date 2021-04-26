@@ -5,7 +5,6 @@ import plotly.graph_objs as go
 from common import app
 from threading import Thread
 
-from Performance.global_functions import get_distinct_keys, fetch_configs_from_file
 from Performance.graphs.graphs_functions import get_data_for_graphs, get_metrics, get_yaxis_heading,\
     get_structure_trace, get_operations
 

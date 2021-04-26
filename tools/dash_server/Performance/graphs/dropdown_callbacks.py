@@ -1,7 +1,6 @@
 from dash.dependencies import Output, Input
 from dash.exceptions import PreventUpdate
 from Performance.global_functions import get_dict_from_array, get_distinct_keys, get_db_details
-from Performance.styles import dict_style_dropdown_medium
 from common import app
 from Performance.mongodb_api import find_documents
 
