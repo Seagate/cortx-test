@@ -20,7 +20,6 @@
 #
 """Module to maintain system utils."""
 
-import builtins
 import logging
 import os
 import platform
