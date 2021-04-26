@@ -821,14 +821,14 @@ class TestAccountUserManagement:
         self.log.info(
             "Step 2: Creating login profile for user %s", str(user_name))
         resp = IAM_OBJ.create_user_login_profile(
-            user_name, S3_CMN_CONFIG["s3_params"]["password"], True)
+            user_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"], True)
         assert resp[0], resp[1]
         self.log.info("Created login profile for user %s", str(user_name))
         self.log.info(
             "Step 3: Updating login profile for user %s", str(user_name))
         resp = IAM_OBJ.update_user_login_profile(
             user_name,
-            S3_CMN_CONFIG["s3_params"]["new_password"],
+            S3_USER_ACC_MGMT_CONFIG["s3_params"]["new_password"],
             True)
         assert resp[0], resp[1]
         self.log.info("Updated login profile for user %s", str(user_name))
@@ -889,7 +889,7 @@ class TestAccountUserManagement:
         self.log.info(
             "Step 2: Creating login profile for user %s", str(user_name))
         resp = IAM_OBJ.create_user_login_profile(
-            user_name, S3_CMN_CONFIG["s3_params"]["password"], True)
+            user_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"], True)
         self.log.info(resp)
         assert resp[0], resp[1]
         self.log.info("Created login profile for user %s", str(user_name))
@@ -903,8 +903,8 @@ class TestAccountUserManagement:
         secret_key = resp[1]["AccessKey"]["SecretAccessKey"]
         self.log.info("Step 4: Changing password for %s user", str(user_name))
         resp = IAM_OBJ.change_user_password(
-            S3_CMN_CONFIG["s3_params"]["password"],
-            S3_CMN_CONFIG["s3_params"]["new_password"],
+            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
+            S3_USER_ACC_MGMT_CONFIG["s3_params"]["new_password"],
             access_key,
             secret_key)
         self.log.info(resp)

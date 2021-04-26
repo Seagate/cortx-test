@@ -47,7 +47,7 @@ class TestUserLoginProfileTests():
         self.user_name = "{}{}".format(self.user_name_prefix, str(time.time()))
         self.account_name = "iamaccount{}".format(str(time.time()))
         self.email_id = "@seagate.com"
-        self.test_cfg = S3_CMN_CONFIG["test_configs"]
+        self.test_cfg = S3_USER_ACC_MGMT_CONFIG["test_configs"]
         self.delete_accounts_and_users()
         self.log.info("ENDED: Setup operations")
 
