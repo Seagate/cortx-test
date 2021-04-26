@@ -20,6 +20,9 @@
 # !/usr/bin/python
 
 import yaml
+import sys
+from urllib.parse import quote_plus
+from Performance.mongodb_api import find_distinct_values
 
 config_path = 'Performance/configs/configs.yml'
 benchmark_config = 'Performance/configs/benchmark.yml'
@@ -40,15 +43,14 @@ def get_chain(version):
     return chain
 
 
-def get_db_details():
-    import sys
-    from urllib.parse import quote_plus
+def get_db_details(release=1):
 
     config = makeconfig(config_path)
     try:
         db_hostname = config["PerfDB"]["hostname"]
         db_name = config["PerfDB"]["database"]
-        db_collection = config["PerfDB"]["collection"]
+        db_collection = config["PerfDB"]["collection"]["R{}".format(
+            int(release))]
         db_username = config["PerfDB"]["auth"]["full_access_user"]
         db_password = config["PerfDB"]["auth"]["full_access_password"]
 
@@ -92,6 +94,13 @@ def round_off(value, base=1):
     return base * round(value / base)
 
 
+def get_distinct_keys(release, field_to_query, query):
+    uri, db, col = get_db_details(release)
+    results = find_distinct_values(field_to_query, query, uri, db, col)
+
+    return results
+
+
 def get_dict_from_array(options, makeReverse, allcaps=False):
     if makeReverse:
         options.reverse()
@@ -106,3 +115,15 @@ def get_dict_from_array(options, makeReverse, allcaps=False):
         return versions
 
     return versions
+
+
+def get_distinct_keys(release, field_to_query, query):
+    uri, db, col = get_db_details(release)
+    results = find_distinct_values(field_to_query, query, uri, db, col)
+
+    return results
+
+
+def fetch_configs_from_file(benchmark_config, bench, prop):
+    config = makeconfig(benchmark_config)
+    return config[bench][prop]

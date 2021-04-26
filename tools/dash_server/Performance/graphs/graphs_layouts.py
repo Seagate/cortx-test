@@ -23,18 +23,11 @@ from dash_bootstrap_components import Card, CardBody, Row, Button, Tab
 from dash_core_components import Dropdown, Graph
 import dash_html_components as html
 from Performance.styles import dict_style_sub_tab, dict_style_sub_label, dict_style_dropdown_medium
-
-versions = [
-    {'label': 'Cortx-1.0-Beta', 'value': 'beta'},
-    {'label': 'Cortx-1.0', 'value': 'cortx1'},
-    {'label': 'Custom', 'value': 'custom'},
-    {'label': 'Main', 'value': 'main', 'disabled': True},
-    {'label': 'Release', 'value': 'release'},
-]
+import dash_daq as daq
 
 Xfilter = [
-    {'label': 'Object Size', 'value': 'Object Size'},
-    {'label': 'Build', 'value': 'build'},
+    {'label': 'Object Size', 'value': 'Object_Size'},
+    {'label': 'Build', 'value': 'Build'},
 ]
 
 benchmarks = [
@@ -43,25 +36,18 @@ benchmarks = [
     {'label': 'HSBench', 'value': 'Hsbench'},
 ]
 
-config_list = [
-    {'label': '100 Sessions, 1 Bucket, 1000 Objects', 'value': '1'},
-    {'label': '100 Sessions, 10 Buckets, 100 Objects', 'value': '2'},
-    {'label': '100 Sessions, 50 Buckets, 100 Objects', 'value': '3'}
-]
-
 operations = [
     {'label': 'Both', 'value': 'both'},
     {'label': 'Read', 'value': 'read'},
     {'label': 'Write', 'value': 'write'},
 ]
 
-graphs_input_options = Row([
-    Dropdown(
-        id="graphs_version_dropdown",
-        options=versions,
-        placeholder="Branch / Version",
-        style=dict_style_dropdown_medium
-    ),
+release = [
+    {'label': 'LR-R1', 'value': '1'},
+    {'label': 'LR-R2', 'value': '2'}
+]
+
+first_input_set = Row([
     Dropdown(
         id="filter_dropdown",
         options=Xfilter,
@@ -69,39 +55,74 @@ graphs_input_options = Row([
         style=dict_style_dropdown_medium
     ),
     Dropdown(
-        id='configs_dropdown',
-        options=config_list,
+        id="release_dropdown_first",
+        options=release,
+        placeholder="Select Release",
+        style={'width': '200px', 'verticalAlign': 'middle',
+               "margin-right": "15px", "margin-top": "10px"},
+    ),
+    Dropdown(
+        id="branch_dropdown_first",
+        placeholder="Select Branch",
+        style={'width': '200px', 'verticalAlign': 'middle',
+               "margin-right": "15px", "margin-top": "10px"},
+    ),
+    Dropdown(
+        id='dropdown_first',
+        placeholder="Build/object Size",
+        style={'width': '200px', 'verticalAlign': 'middle',
+               "margin-right": "15px", "margin-top": "10px"},
+    ),
+    Dropdown(
+        id="benchmark_dropdown_first",
+        options=benchmarks,
+        placeholder="Benchmark",
+        # value='S3bench',
+        style=dict_style_dropdown_medium
+    ),
+    Dropdown(
+        id='configs_dropdown_first',
         placeholder="Choose configurations",
         style={'display': 'none'}
     ),
     Dropdown(
-        id='option1_dropdown',
-        placeholder="first choice",
-        style=dict_style_dropdown_medium
-    ),
-    Dropdown(
-        id='option2_dropdown',
-        placeholder="Compare with",
-        style={'display': 'none'}
-    ),
-    Dropdown(
-        id="benchmark_dropdown",
-        options=benchmarks,
-        placeholder="Benchmark",
-        value='S3bench',
-        style=dict_style_dropdown_medium
-    ),
-    Dropdown(
-        id="operations_dropdown",
+        id="operations_dropdown_first",
         options=operations,
         placeholder="Operation",
         value='both',
         style=dict_style_dropdown_medium
     ),
-    Button("Get!", id="get_graph_button", color="success",
-           style={'height': '35px', "margin-right": "40px", "margin-top": "10px"}),
+    daq.ToggleSwitch(
+        id="compare_flag",
+        label="Compare",
+        labelPosition="bottom",
+        style={'color': '#FFFFFF', 'margin-top': '15px'}
+    )
 ],
     justify='center', style={'padding': '10px'}
+)
+
+second_input_set = Row([
+    Dropdown(
+        id="release_dropdown_second",
+        options=release,
+        placeholder="Select Release",
+        style={'display': 'none'}
+    ),
+    Dropdown(
+        id="branch_dropdown_second",
+        placeholder="Select Branch",
+        style={'display': 'none'}
+    ),
+    Dropdown(
+        id='dropdown_second',
+        placeholder="Select Build",
+        style={'display': 'none'}
+    ),
+    Button("Get!", id="get_graphs", color="success",
+           style={'height': '35px', 'margin-top': '20px'}),
+],
+    justify='center', style={'margin-bottom': '10px'}
 )
 
 graphs_layout = Card(
