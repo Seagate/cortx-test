@@ -70,7 +70,7 @@ class TestBucketACL:
         Description: It will remove test suite directory.
         """
         cls.log.info("STARTED: Teardown Operations")
-        if not system_utils.path_exists(cls.test_dir_path):
+        if system_utils.path_exists(cls.test_dir_path):
             resp = system_utils.remove_dirs(cls.test_dir_path)
             cls.log.info(resp)
         cls.log.info("Remove path: %s", cls.test_dir_path)
