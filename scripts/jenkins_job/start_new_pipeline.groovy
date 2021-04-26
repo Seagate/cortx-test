@@ -48,7 +48,7 @@ deactivate
 		stage('TEST_EXECUTION') {
 			steps{
 			    sh label: '', script: '''source venv/bin/activate
-#sh scripts/jenkins_job/run_tests.sh
+sh scripts/jenkins_job/run_tests.sh
 deactivate
 '''
 			}
