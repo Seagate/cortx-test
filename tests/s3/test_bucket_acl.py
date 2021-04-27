@@ -138,13 +138,11 @@ class TestBucketACL:
             self.cortx_obj.delete_account_cortxcli(
                 account_name=acc, password=self.s3acc_password)
         self.log.info("Deleted IAM accounts successfully")
+        del self.cortx_obj
         self.log.info("ENDED: Teardown Operations")
 
     def helper_method(self, bucket_name, acl, error_msg):
         """Helper method for creating bucket with acl."""
-        # resp = IAM_OBJ.create_account_s3iamcli(
-        #     self.account_name, self.email_id, LDAP_USERNAME, LDAP_PASSWD)
-
         resp = self.cortx_obj.create_account_cortxcli(
             self.account_name, self.email_id, self.s3acc_password)
         assert_utils.assert_true(resp[0], resp[1])
