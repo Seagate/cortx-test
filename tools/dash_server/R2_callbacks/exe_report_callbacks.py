@@ -199,7 +199,6 @@ def gen_table_overall_qa_report(n_clicks, branch, build_no, test_system, test_pl
     overall_qa_data = {"Category": ["PASS", "FAIL", "ABORTED", "BLOCKED", "TOTAL"]}
 
     previous_build_list.insert(0, build_no)
-    print("previos build list : {}".format(previous_build_list))
     for build in previous_build_list:
         build_results = []
         # check latest testplan for that build
