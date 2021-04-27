@@ -24,7 +24,7 @@ import sys
 import argparse
 import csv
 from datetime import datetime
-import jira_api
+from jira_api import JiraTask
 
 # cloned test plan csv name
 CLONED_TP_CSV = 'cloned_tp_info.csv'
@@ -33,7 +33,6 @@ def main(args):
     """
     main function to clone test plan
     """
-    jira_id, jira_pwd = jira_api.get_username_password()
     test_plan = args.test_plan
 
     tp_info = dict()
@@ -41,29 +40,39 @@ def main(args):
     tp_info['build_type'] = args.build_type
     tp_info['setup_type'] = args.setup_type
 
-    new_tp_key = jira_api.create_new_test_plan(test_plan, jira_id, jira_pwd, tp_info)
+    jira_obj = JiraTask()
+
+    new_tp_key = jira_obj.create_new_test_plan(test_plan, tp_info)
     if new_tp_key == '':
         sys.exit('New test plan creation failed')
     else:
         print("New test plan {} created".format(new_tp_key))
 
-    test_executions = jira_api.get_test_executions_from_test_plan(test_plan, jira_id, jira_pwd)
+    test_executions = jira_obj.get_test_executions_from_test_plan(test_plan)
     te_keys = [te["key"] for te in test_executions]
     print("test executions of existing test plan {}".format(te_keys))
 
     new_te_keys = []
-    gui_te = ''
+    skip_tes = []
+    if args.skip_te:
+        try:
+            skip_te_arg = args.skip_te
+            skip_tes = [ele.strip() for ele in skip_te_arg]
+        except Exception as e:
+            print(f"Exception {e} in getting processing skip tes")
+    new_skipped_te = []
     for te in te_keys:
         # create new te
-        new_te_id, is_gui_te = jira_api.create_new_test_exe(te, jira_id, jira_pwd, tp_info)
+        new_te_id, is_te_skipped = jira_obj.create_new_test_exe(te, tp_info,
+                                                                skip_tes)
         if new_te_id != '':
-            response = jira_api.add_tests_to_te_tp(te, new_te_id, new_tp_key, jira_id, jira_pwd)
+            response = jira_obj.add_tests_to_te_tp(te, new_te_id, new_tp_key)
             if response:
-                print("Tests added to TE {} and TP {}".format(new_te_id,new_tp_key))
+                print("Tests added to TE {} and TP {}".format(new_te_id, new_tp_key))
                 new_te_keys.append(new_te_id)
-                if is_gui_te:
-                    gui_te = new_te_id
-                response_add = jira_api.add_te_to_tp(new_te_keys, new_tp_key, jira_id, jira_pwd)
+                if is_te_skipped:
+                    new_skipped_te.append(new_te_id)
+                response_add = jira_obj.add_te_to_tp(new_te_keys, new_tp_key)
                 if response_add:
                     print("TEs are added to TP")
                 else:
@@ -75,14 +84,14 @@ def main(args):
     with open(os.path.join(os.getcwd(),  CLONED_TP_CSV), 'w', newline='') as tp_info_csv:
         writer = csv.writer(tp_info_csv)
         for te in new_te_keys:
-            if te != gui_te:
+            if te not in new_skipped_te:
                 writer.writerow([new_tp_key.strip(), te.strip()])
 
     if args.comment_jira:
         current_time_ms = datetime.utcnow().strftime('%Y-%m-%d_%H:%M:%S.%f')
         comment = ' Build: {}, Setup: {}, Test Plan: {}, Test Executions: {} created on {}'. \
             format(args.build, args.setup_type, new_tp_key, new_te_keys, current_time_ms)
-        jira_api.add_comment(args.comment_jira, comment, jira_id, jira_pwd)
+        jira_obj.add_comment(args.comment_jira, comment)
 
 
 def parse_args():
@@ -100,6 +109,8 @@ def parse_args():
                         help="Setup type (regular/nearfull/isolated)", required=True)
     parser.add_argument("-c", "--comment_jira", type=str,
                         help="Test id where comments to be added")
+    parser.add_argument("-st", "--skip_te", nargs='+', type=str,
+                        help="Space separated list of TEs to skip from execution")
     return parser.parse_args()
 
 
