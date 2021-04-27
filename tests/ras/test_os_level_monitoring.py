@@ -28,7 +28,6 @@ import pytest
 from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
 from commons.helpers.node_helper import Node
 from commons.helpers.health_helper import Health
-from commons.utils.system_utils import systemctl_cmd
 from commons import constants as cons
 from commons import commands as common_cmd
 from commons.utils.assert_utils import *
@@ -219,7 +218,6 @@ class TestOSLevelMonitoring:
 
         LOGGER.info("Successfully performed Teardown operation")
 
-    @pytest.mark.ras
     @pytest.mark.tags("TEST-19609")
     @pytest.mark.sw_alert
     @pytest.mark.skip
@@ -269,7 +267,6 @@ class TestOSLevelMonitoring:
             LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.ras
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-19963")

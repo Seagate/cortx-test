@@ -59,17 +59,12 @@ LOG_DIR = 'log'
 CACHE = LRUCache(1024 * 10)
 CACHE_JSON = 'nodes-cache.yaml'
 REPORT_CLIENT = None
+
 LOGGER = logging.getLogger(__name__)
 logging.getLogger('boto3').setLevel(logging.WARNING)
 logging.getLogger('botocore').setLevel(logging.WARNING)
 logging.getLogger('nose').setLevel(logging.WARNING)
 logging.getLogger("paramiko").setLevel(logging.WARNING)
-
-SKIP_MARKS = ("dataprovider", "test", "run", "skip", "usefixtures",
-              "filterwarnings", "skipif", "xfail", "parametrize",
-              "tags")
-
-BASE_COMPONENTS_MARKS = ('csm', 's3', 'ha', 'ras', 'di', 'stress', 'combinational')
 
 SKIP_MARKS = ("dataprovider", "test", "run", "skip", "usefixtures",
               "filterwarnings", "skipif", "xfail", "parametrize",
@@ -307,30 +302,6 @@ def get_marks_for_test_item(item):
     return marks
 
 
-def get_test_metadata_from_tp_meta(item):
-    tests_meta = Globals.tp_meta['test_meta']
-    tp_label = Globals.tp_meta['test_plan_label'][0]  # first is significant
-    te_meta = Globals.tp_meta['te_meta']
-    te_label = te_meta['te_label'][0]
-    te_component = Globals.tp_meta['te_meta']['te_components']
-    test_id = CACHE.lookup(item.nodeid)
-    for it in tests_meta:
-        if it['test_id'] == test_id:
-            it['tp_label'] = tp_label
-            it['te_label'] = te_label
-            it['te_component'] = te_component
-            return it
-
-
-def get_marks_for_test_item(item):
-    marks = list()
-    for mark in item.iter_markers():
-        if mark.name in SKIP_MARKS:
-            continue
-        marks.append(mark.name)
-    return marks
-
-
 def create_report_payload(item, call, final_result, d_u, d_pass):
     """Create Report Payload for POST request to put data in Report DB."""
     os_ver = system_utils.get_os_version()
@@ -412,7 +383,6 @@ def pytest_configure_node(node):
 def pytest_sessionstart(session: Session) -> None:
     """Called after the ``Session`` object has been created and before performing collection
     and entering the run test loop.
-
     :param pytest.Session session: The pytest session object.
     """
     # db_user, db_passwd = CMN_CFG.db_user, CMN_CFG.db_passwd
@@ -420,7 +390,7 @@ def pytest_sessionstart(session: Session) -> None:
     global REPORT_CLIENT
     report_client.ReportClient.init_instance()
     REPORT_CLIENT = report_client.ReportClient.get_instance()
-    #reset_imported_module_log_level()
+    reset_imported_module_log_level()
 
 
 def reset_imported_module_log_level():
