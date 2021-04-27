@@ -31,8 +31,9 @@ from typing import Tuple
 from typing import List
 from typing import Union
 from typing import Any
-from commons import commands
+from commons import commands, const
 from commons.helpers.host import Host
+from commons.utils.system_utils import run_remote_cmd
 
 log = logging.getLogger(__name__)
 
@@ -481,3 +482,76 @@ class Node(Host):
             return False, error
 
         return True, resp
+
+    def update_auth_server_health_check_status(
+            self, remote_path, local_path, status="enable"):
+        """
+        Function to toggle healthcheck status of the authserver.
+
+        It will add or remove entry under backend s3-auth in haproxy.cfg
+        :param str remote_path: remote config file path
+        :param str local_path: local config file path
+        :param str status: enable | disable
+        :return: tuple
+        """
+        self.copy_file_to_local(
+            remote_path=remote_path, local_path=local_path)
+        log.info("remote_path: %s", remote_path)
+        log.info("local_path: %s", local_path)
+        if not os.path.exists(local_path):
+            msg = f"copy_file_to_local failed: remote path: " \
+                f"{remote_path}, local path: {local_path}"
+            return False, msg
+        with open(local_path, "r+") as filep:
+            data = filep.readlines()
+            for i, _ in enumerate(data):
+                if "enable" in status:
+                    update_value = "    option httpchk HEAD / HTTP/1.1\\r\\nHost:\\ localhost\n"
+                else:
+                    update_value = "    #option httpchk HEAD / HTTP/1.1\\r\\nHost:\\ localhost\n"
+
+                if "option httpchk HEAD / HTTP/1.1\\r\\nHost:\\ localhost\n" in data[i]:
+                    data[i] = update_value
+        with open(local_path, "w+") as nfp:
+            for i in data:
+                nfp.write(i)
+        self.copy_file_to_remote(local_path, remote_path)
+        resp = self.path_exists(remote_path)
+
+        return resp
+
+    def extract_tar_file(self, tar_file_path, tar_dest_dir, **kwargs):
+        """
+        Function to extract tar file in remote node.
+
+        :param tar_file_path: Path to the tar file
+        :param tar_dest_dir: Destination path to for extracting tar
+        :keyword host: Host name or ip
+        :return:
+        """
+        host = kwargs.get("host", self.hostname)
+        tar_cmd = "tar -xvf {} -C {}".format(tar_file_path, tar_dest_dir)
+        log.debug("Command to be executed %s on %s", tar_cmd, host)
+        return run_remote_cmd(
+            tar_cmd, host, self.username, self.password)
+
+    def is_file_size(self, path):
+        """
+        Check if file exists and the size of the file on s3 server of extracted file.
+
+        :param path: Absolute path of the file
+        :return: bool, response
+        """
+        flag = False
+        self.connect_pysftp()
+        log.debug("Client connected")
+        try:
+            resp = self.pysftp_obj.stat(path)
+            resp_val = resp.st_size
+            flag = bool(resp.st_size > 0)
+        except Exception as error:
+            log.error(
+                "%s %s: %s", const.EXCEPTION_ERROR,
+                self.is_file_size.__name__, error)
+            resp_val = error
+        return flag, resp_val

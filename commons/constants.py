@@ -94,6 +94,11 @@ const.CRASH_COMMANDS = ["ls -l /var/crash", "ls -lR /var/motr | grep core"],
 const.AUTHSERVER_LOG_PATH = "/var/log/seagate/auth/server/app.log"
 const.S3CMD = "s3cmd"
 const.S3FS = "s3fs-fuse"
+const.HAPROXY_LOG_PATH = "/var/log/haproxy.log"
+const.S3_LOG_PATH = "/var/log/seagate/s3"
+const.SUPPORT_BUNDLE_SUCCESS_MSG = "S3 support bundle generated successfully"
+const.CLUSTER_NOT_RUNNING_MSG = "Cluster is not running"
+const.LOG_MSG_PATH = "/var/log/messages"
 
 
 class Rest:

@@ -34,8 +34,6 @@ from commons.utils.system_utils import path_exists, remove_file, make_dirs
 from commons.helpers.node_helper import Node
 from libs.s3 import S3H_OBJ, CM_CFG, S3_CFG
 
-AUTH_CFG = read_yaml("config/s3/test_authserver_healthcheck.yaml")[1]
-
 
 class TestAuthServerHealthCheckAPI:
     """AuthServer HealthCheck API Test suite."""
@@ -73,47 +71,13 @@ class TestAuthServerHealthCheckAPI:
     def teardown_method(self):
         """Function to perform the clean up for each test."""
         self.log.info("Started: Performing clean up operations")
-        resp = self.update_auth_server_health_check_status(
+        resp = self.nobj.update_auth_server_health_check_status(
             self.remote_path, self.local_file)
         self.log.info(resp)
+        self.log.info("Removing local files")
         if path_exists(self.local_file):
             remove_file(self.local_file)
         self.log.info("Ended: Performed clean up operations")
-
-    def update_auth_server_health_check_status(
-            self, remote_path, local_path, status="enable"):
-        """
-        Function to toggle healthcheck status of the authserver.
-
-        It will add or remove entry under backend s3-auth in haproxy.cfg
-        :param str remote_path: remote config file path
-        :param str local_path: local config file path
-        :param str status: enable | disable
-        :return: tuple.
-        """
-        resp = S3H_OBJ.copy_s3server_file(remote_path, local_path)
-        self.log.info("remote_path: %s", remote_path)
-        self.log.info("local_path: %s", local_path)
-        assert_true(
-            resp,
-            f"copy_s3server_file failed: remote path: {remote_path}, local path: {local_path}")
-        with open(local_path, "r+") as filep:
-            data = filep.readlines()
-            for i, _ in enumerate(data):
-                if "enable" in status:
-                    update_value = "    option httpchk HEAD / HTTP/1.1\\r\\nHost:\\ localhost\n"
-                else:
-                    update_value = "    #option httpchk HEAD / HTTP/1.1\\r\\nHost:\\ localhost\n"
-
-                if "option httpchk HEAD / HTTP/1.1\\r\\nHost:\\ localhost\n" in data[i]:
-                    data[i] = update_value
-        with open(local_path, "w+") as nfp:
-            for i in data:
-                nfp.write(i)
-        self.nobj.copy_file_to_remote(local_path, remote_path)
-        resp = self.nobj.path_exists(remote_path)
-
-        return resp
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-7577')
@@ -122,11 +86,8 @@ class TestAuthServerHealthCheckAPI:
         """Aauthserver response when health check is enabled."""
         self.log.info(
             "Started: Test authserver response when health check is enabled")
-        test_cfg = AUTH_CFG["test_1161"]
-        resp = self.update_auth_server_health_check_status(
-            self.remote_path,
-            self.local_file,
-            status=test_cfg["status"])
+        resp = self.nobj.update_auth_server_health_check_status(
+            self.remote_path, self.local_file, status="enable")
         self.log.info(resp)
         assert_true(resp, f"Failed to toggle healthcheck status of the authserver: {resp}")
         resp = S3H_OBJ.restart_s3server_service(self.service)
@@ -136,7 +97,7 @@ class TestAuthServerHealthCheckAPI:
         for _ in range(2):
             res = http_head_request(url=S3_CFG["head_urls"])
             self.log.info(res)
-            assert_equal(test_cfg["status_code"], str(res.status_code))
+            assert_equal("200", str(res.status_code))
         self.log.info(
             "Ended: Test authserver response when health check is enabled")
 
@@ -147,11 +108,8 @@ class TestAuthServerHealthCheckAPI:
         """Authserver response when health check is disabled."""
         self.log.info(
             "Started: Test authserver response when health check is disabled")
-        test_cfg = AUTH_CFG["test_1164"]
-        resp = self.update_auth_server_health_check_status(
-            self.remote_path,
-            self.local_file,
-            status=test_cfg["status"])
+        resp = self.nobj.update_auth_server_health_check_status(
+            self.remote_path, self.local_file, status="disable")
         self.log.info(resp)
         assert_true(resp, f"Failed to toggle healthcheck status of the authserver: {resp}")
         resp = S3H_OBJ.restart_s3server_service(self.service)
@@ -161,6 +119,6 @@ class TestAuthServerHealthCheckAPI:
         for _ in range(2):
             res = http_head_request(url=S3_CFG["head_urls"])
             self.log.info(res)
-            assert_equal(test_cfg["status_code"], str(res.status_code))
+            assert_equal("200", str(res.status_code))
         self.log.info(
             "Ended: Test authserver response when health check is disabled")

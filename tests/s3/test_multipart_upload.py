@@ -61,6 +61,8 @@ class TestMultipartUpload:
         cls.mp_obj_path = os.path.join(cls.test_dir_path, cls.test_file)
         cls.config_backup_path = os.path.join(
             cls.test_dir_path, "config_backup")
+        cls.aws_set_cmd = MPART_CFG["multipart"]["aws_set_cmd"]
+        cls.aws_get_cmd = MPART_CFG["multipart"]["aws_get_cmd"]
         if not path_exists(cls.test_dir_path):
             make_dirs(cls.test_dir_path)
             cls.log.info("Created path: %s", cls.test_dir_path)
@@ -122,12 +124,12 @@ class TestMultipartUpload:
             "Restored aws config file from %s to %s",
             self.config_backup_path,
             self.aws_config_path)
-        self.log.info("Deleting a backup directory...")
+        self.log.info("Deleting a backup file and directory...")
         if path_exists(self.config_backup_path):
             remove_dirs(self.config_backup_path)
         if path_exists(self.mp_obj_path):
             remove_file(self.mp_obj_path)
-        self.log.info("Deleted a backup directory")
+        self.log.info("Deleted a backup file and directory")
         self.log.info("ENDED: Teardown operations")
 
     def create_bucket_to_upload_parts(
@@ -368,8 +370,6 @@ class TestMultipartUpload:
         mp_config = MPART_CFG["test_8670"]
         self.log.info(
             "Configuring AWS S3 CLI custom settings for multipart upload ")
-        aws_set_cmd = mp_config["aws_set_cmd"]
-        aws_get_cmd = mp_config["aws_get_cmd"]
         mp_s3_config_list = zip(
             mp_config["s3_configs"],
             mp_config["multipart_s3_config_values"])
@@ -378,8 +378,8 @@ class TestMultipartUpload:
             mp_config["default_s3_config_values"])
         self.log.info("Setting aws s3 configurations for multipart upload")
         for cfg, value in mp_s3_config_list:
-            res = run_local_cmd("{0} {1} {2}".format(aws_set_cmd, cfg, value))
-            res = run_local_cmd("{0} {1}".format(aws_get_cmd, cfg))
+            run_local_cmd("{0} {1} {2}".format(self.aws_set_cmd, cfg, value))
+            res = run_local_cmd("{0} {1}".format(self.aws_get_cmd, cfg))
             assert_utils.assert_in(value, str(res))
         self.log.info("Applied aws s3 configurations for multipart upload")
         self.log.info(
@@ -411,8 +411,8 @@ class TestMultipartUpload:
             mp_config["bucket_name"])
         self.log.info("Setting aws s3 configurations to default")
         for cfg, value in default_s3_config_list:
-            res = run_local_cmd("{0} {1} {2}".format(aws_set_cmd, cfg, value))
-            res = run_local_cmd("{0} {1}".format(aws_get_cmd, cfg))
+            run_local_cmd("{0} {1} {2}".format(self.aws_set_cmd, cfg, value))
+            res = run_local_cmd("{0} {1}".format(self.aws_get_cmd, cfg))
             assert_utils.assert_in(value, str(res))
         self.log.info("Applied default aws s3 configurations")
         self.log.info(
@@ -596,8 +596,8 @@ class TestMultipartUpload:
         part_list = res[1]["Parts"]
         assert_utils.assert_equal(
             len(part_list), mp_config["max_list_parts"],
-            "Listed {0} parts, Expected {1} " \
-            "parts".format(len(part_list), mp_config["max_list_parts"]))
+            "Listed {0} parts, Expected {1} parts".format(
+                len(part_list), mp_config["max_list_parts"]))
         max_part_number = mp_config["total_parts"]
         part_numbers = list(range(1, max_part_number + 1))
         for part in part_list:
@@ -784,17 +784,15 @@ class TestMultipartUpload:
         mp_config = MPART_CFG["test_8928"]
         self.log.info(
             "Configuring AWS S3 CLI custom settings for multipart upload ")
-        aws_set_cmd = mp_config["aws_set_cmd"]
-        aws_get_cmd = mp_config["aws_get_cmd"]
         self.log.info("Setting max_concurrent_requests for multipart upload")
-        res = run_local_cmd(
+        run_local_cmd(
             "{0} {1} {2}".format(
-                aws_set_cmd,
+                self.aws_set_cmd,
                 mp_config["s3_configs"],
                 mp_config["max_concurrent_requests"]))
         res = run_local_cmd(
             "{0} {1}".format(
-                aws_get_cmd,
+                self.aws_get_cmd,
                 mp_config["s3_configs"]))
         assert_utils.assert_in(mp_config["max_concurrent_requests"], str(res))
         self.log.info("Applied max_concurrent_requests for multipart upload")
@@ -826,14 +824,14 @@ class TestMultipartUpload:
             mp_config["object_name"],
             mp_config["bucket_name"])
         self.log.info("Setting max_concurrent_requests to default")
-        res = run_local_cmd(
+        run_local_cmd(
             "{0} {1} {2}".format(
-                aws_set_cmd,
+                self.aws_set_cmd,
                 mp_config["s3_configs"],
                 mp_config["default_max_concurrent_requests"]))
         res = run_local_cmd(
             "{0} {1}".format(
-                aws_get_cmd,
+                self.aws_get_cmd,
                 mp_config["s3_configs"]))
         assert_utils.assert_in(
             mp_config["default_max_concurrent_requests"], str(res))
@@ -850,17 +848,15 @@ class TestMultipartUpload:
         mp_config = MPART_CFG["test_8929"]
         self.log.info(
             "Configuring AWS S3 CLI custom settings for multipart upload ")
-        aws_set_cmd = mp_config["aws_set_cmd"]
-        aws_get_cmd = mp_config["aws_get_cmd"]
         self.log.info("Setting multipart_threshold for multipart upload")
-        res = run_local_cmd(
+        run_local_cmd(
             "{0} {1} {2}".format(
-                aws_set_cmd,
+                self.aws_set_cmd,
                 mp_config["s3_configs"],
                 mp_config["multipart_threshold"]))
         res = run_local_cmd(
             "{0} {1}".format(
-                aws_get_cmd,
+                self.aws_get_cmd,
                 mp_config["s3_configs"]))
         assert_utils.assert_in(mp_config["multipart_threshold"], str(res))
         self.log.info("Applied multipart_threshold for multipart upload")
@@ -892,14 +888,14 @@ class TestMultipartUpload:
             mp_config["object_name"],
             mp_config["bucket_name"])
         self.log.info("Setting multipart_threshold to default")
-        res = run_local_cmd(
+        run_local_cmd(
             "{0} {1} {2}".format(
-                aws_set_cmd,
+                self.aws_set_cmd,
                 mp_config["s3_configs"],
                 mp_config["default_multipart_threshold"]))
         res = run_local_cmd(
             "{0} {1}".format(
-                aws_get_cmd,
+                self.aws_get_cmd,
                 mp_config["s3_configs"]))
         assert_utils.assert_in(
             mp_config["default_multipart_threshold"], str(res), res)
