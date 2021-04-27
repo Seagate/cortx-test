@@ -22,21 +22,21 @@
 
 import logging
 import os
+import sys
 import platform
 import random
 import shutil
 import socket
 import builtins
+import errno
 import string
-import sys
-from hashlib import md5
-from subprocess import Popen, PIPE
 from typing import Tuple
-
+from subprocess import Popen, PIPE
+from hashlib import md5
 from paramiko import SSHClient, AutoAddPolicy
-
 from commons import commands
 from commons import params
+
 
 if sys.platform == 'win32':
     try:
@@ -384,6 +384,14 @@ def make_dirs(dpath: str, mode: int = None) -> str:
         return str(error)
 
     return dpath
+
+
+def mkdirs(pth):
+    try:
+        os.makedirs(pth, exist_ok=True)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
 
 
 def remove_dir(dpath: str) -> bool:
