@@ -35,4 +35,3 @@ CM_CFG = CMN_CFG #config_utils.read_yaml(COMMON_CONFIG)[1]  # Read common config
 ACCESS_KEY, SECRET_KEY = S3H_OBJ.get_local_keys()
 LDAP_USERNAME = CMN_CFG["ldap"]["username"]  # Ldap username.
 LDAP_PASSWD = CMN_CFG["ldap"]["password"]  # Ldap password.
-__all__ =[CortxCliTestLib]
