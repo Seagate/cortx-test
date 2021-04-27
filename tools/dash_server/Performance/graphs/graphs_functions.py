@@ -34,11 +34,11 @@ def get_metrics(bench):
 
 def get_yaxis_heading(metric):
     if metric == "Throughput":
-        return "Data (MBps)"
+        return "{} (MBps)".format(metric)
     elif metric == "IOPS":
-        return "Data"
+        return "{}".format(metric)
     else:
-        return "Data (ms)"
+        return "{} (ms)".format(metric)
 
 
 def get_structure_trace(Scatter, operation, metrics, option, x_axis, y_data):
@@ -115,7 +115,7 @@ def sort_xaxis(data_dict):
         temp.sort()
         for item in temp:
             for obj in objects:
-                if obj.startswith(str(item)):
+                if obj[:-2]== str(item):
                     data_sorted[str(item) +
                                 size_unit] = sizes_sorted[size_unit][obj]
                     break
