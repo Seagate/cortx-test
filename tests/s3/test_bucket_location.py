@@ -32,10 +32,6 @@ from libs.s3 import s3_test_lib, iam_test_lib, s3_acl_test_lib
 
 from libs.s3.cortxcli_test_lib import CortxCliTestLib
 from config import S3_CFG
-IAM_OBJ = iam_test_lib.IamTestLib()
-S3_OBJ = s3_test_lib.S3TestLib()
-S3_ACL_OBJ = s3_acl_test_lib.S3AclTestLib()
-
 
 class TestBucketLocation:
     """Bucket Location Test suite."""
@@ -47,7 +43,10 @@ class TestBucketLocation:
         """Setup all the states required for execution of this test suit."""
         cls.log = logging.getLogger(__name__)
         cls.log.info("STARTED : Setup operations at test suit level")
+        cls.iam_obj = iam_test_lib.IamTestLib()
+        cls.s3_obj = s3_test_lib.S3TestLib()
         cls.account_name = "location-acct"
+        cls.bucket_prefix = "location-bkt"
         cls.email_id = "@seagate.com"
         cls.s3acc_password = S3_CFG["CliConfig"]["s3_account"]["password"]
         cls.log.info("ENDED : Setup operations at test suit level")
@@ -62,7 +61,7 @@ class TestBucketLocation:
         """
         self.log.info("STARTED: Setup operations.")
         self.bucket_name = "{}{}".format(
-            "location-bkt", str(time.perf_counter()))
+            self.bucket_prefix, str(time.perf_counter()))
         self.cortx_obj = CortxCliTestLib()
         self.log.info("ENDED: Setup operations.")
 
@@ -75,16 +74,23 @@ class TestBucketLocation:
         """
         self.log.info("STARTED: Teardown operations.")
         self.log.info("Delete bucket: %s", self.bucket_name)
-        resp = S3_OBJ.bucket_list()
+        resp = self.s3_obj.bucket_list()
         self.log.info("Bucket list: %s", resp)
         if resp:
             pref_list = [each_bucket for each_bucket in resp[1]
-                         if each_bucket == self.bucket_name]
+                         if self.bucket_prefix in each_bucket]
             if pref_list:
-                resp = S3_OBJ.delete_multiple_buckets(pref_list)
+                resp = self.s3_obj.delete_multiple_buckets(pref_list)
                 assert_utils.assert_true(resp[0], resp[1])
                 self.log.info("Buckets deleted successfully: %s", pref_list)
+
+        accounts = self.cortx_obj.list_accounts_cortxcli()
+        accounts = [acc["account_name"]
+                    for acc in accounts if self.account_name in acc["account_name"]]
+        for acc in accounts:
+            self.cortx_obj.delete_account_cortxcli(account_name=acc, password=self.s3acc_password)
         self.log.info("ENDED: Teardown operations.")
+
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -97,7 +103,7 @@ class TestBucketLocation:
         self.log.info(
             "Step 1 : Creating a bucket with name %s",
             self.bucket_name)
-        resp = S3_OBJ.create_bucket(
+        resp = self.s3_obj.create_bucket(
             self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
@@ -110,7 +116,7 @@ class TestBucketLocation:
         self.log.info(
             "Step 2 : Retrieving bucket location on existing bucket %s",
             self.bucket_name)
-        resp = S3_OBJ.bucket_location(
+        resp = self.s3_obj.bucket_location(
             self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
@@ -135,7 +141,7 @@ class TestBucketLocation:
             "Step 1 : Check the bucket location on non existing bucket %s ",
             self.bucket_name)
         try:
-            resp = S3_OBJ.bucket_location(
+            resp = self.s3_obj.bucket_location(
                 self.bucket_name)
             self.log.info(resp)
             assert_utils.assert_false(resp[0], resp[1])
@@ -167,8 +173,8 @@ class TestBucketLocation:
         self.log.info(
             "Creating account1 with name prefix as %s",
             self.account_name)
-        account1 = "{}{}".format(self.account_name, str(time.perf_counter()))
-        email_id1 = "{}{}".format(account1, self.email_id)
+        account1 = "{0}{1}".format(self.account_name, str(time.perf_counter())).replace('.', '_')
+        email_id1 = "{0}{1}".format(account1, self.email_id)
         acc1_resp = self.cortx_obj.create_account_cortxcli(
             account_name=account1, account_email=email_id1, password=self.s3acc_password)
         assert_utils.assert_true(acc1_resp[0], acc1_resp[1])
@@ -186,7 +192,7 @@ class TestBucketLocation:
             "Creating account2 with name prefix as %s",
             self.account_name)
 
-        account2 = "{}{}".format(self.account_name, str(time.perf_counter()))
+        account2 = "{}{}".format(self.account_name, str(time.perf_counter())).replace('.', '_')
         email_id2 = "{}{}".format(account2, self.email_id)
         acc2_resp = self.cortx_obj.create_account_cortxcli(
             account_name=account2, account_email=email_id2, password=self.s3acc_password)
@@ -254,7 +260,7 @@ class TestBucketLocation:
         self.log.info(
             "Step 1 : Creating bucket with name %s",
             self.bucket_name)
-        resp = S3_OBJ.create_bucket(
+        resp = self.s3_obj.create_bucket(
             self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equals(
@@ -265,7 +271,7 @@ class TestBucketLocation:
         self.log.info(
             "Step 2 : Creating second account to retrieve bucket location")
         account_name = "{}{}".format(
-            self.account_name, str(time.perf_counter()))
+            self.account_name, str(time.perf_counter())).replace('.', '_')
         email_id = "{}{}".format(account_name,
                                  self.email_id)
         resp = self.cortx_obj.create_account_cortxcli(
