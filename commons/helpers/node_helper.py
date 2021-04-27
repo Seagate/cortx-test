@@ -52,12 +52,15 @@ class Node(Host):
     def send_systemctl_cmd(
             self,
             command: str,
-            services: list) -> list:
+            services: list,
+            decode=False,
+            **kwargs) -> list:
         """
         send/execute command on remote node.
         """
         valid_commands = {"start", "stop",
-                          "reload", "enable", "disable", "status"}
+                          "reload", "enable", "disable", "status", "restart",
+                          "is-active"}
         if command not in valid_commands:
             raise ValueError(
                 "command parameter must be one of %r." % valid_commands)
@@ -66,7 +69,10 @@ class Node(Host):
             log.debug(
                 "Performing %s on service %s...", command, service)
             cmd = commands.SYSTEM_CTL_CMD.format(command, service)
-            out.append(self.execute_cmd(cmd))
+            resp = self.execute_cmd(cmd, **kwargs)
+            if decode:
+                resp = resp.decode("utf8").strip()
+            out.append(resp)
 
         return out
 
