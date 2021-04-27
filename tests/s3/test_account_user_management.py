@@ -26,7 +26,6 @@ import shutil
 import logging
 import pytest
 
-from commons.configmanager import get_config_wrapper
 from commons.constants import const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler

@@ -24,7 +24,6 @@ import pytest
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
-from commons.configmanager import get_config_wrapper
 from commons.utils.assert_utils import assert_true, assert_in, assert_false
 from libs.s3 import iam_test_lib
 from libs.s3 import LDAP_USERNAME, LDAP_PASSWD, S3H_OBJ
