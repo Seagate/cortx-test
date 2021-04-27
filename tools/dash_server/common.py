@@ -160,7 +160,8 @@ def r2_get_previous_builds(branch, build_no, no_of_prev_builds=1):
 
                                   "testStartTime": {"$min": "$testStartTime"}}},
                       {"$sort": {"testStartTime": 1}}]}
-    print("r2_get_previous_builds query :{}".format(query_input))
+    if DEBUG_PRINTS:
+        print("r2_get_previous_builds query :{}".format(query_input))
     query_input.update(credentials)
     response = requests.request("GET", aggregate_endpoint, headers=headers,
                                 data=json.dumps(query_input))
@@ -170,7 +171,6 @@ def r2_get_previous_builds(branch, build_no, no_of_prev_builds=1):
         for each in json_response["result"]:
             if each["_id"]["buildType"] == branch:
                 build_list.append(each["_id"]["buildNo"])
-        print("Sorted build list {}".format(build_list))
         if build_no in build_list:
             index = build_list.index(build_no)
             if no_of_prev_builds > index:
