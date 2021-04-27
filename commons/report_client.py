@@ -170,8 +170,6 @@ class ReportClient(SingletonMixin):
         headers = {
             'Content-Type': 'application/json'
         }
-        import pdb
-        pdb.set_trace()
         response = web_utils.http_post_request(REPORT_SRV_CREATE, payload, headers, verify=False)
         print(response.text.encode('utf8'))
         return response.status_code

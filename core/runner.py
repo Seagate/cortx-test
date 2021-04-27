@@ -34,6 +34,7 @@ from config import CMN_CFG
 
 LOGGER = logging.getLogger(__name__)
 
+
 def get_jira_credential() -> Tuple[str, Optional[str]]:
     """
     Adapter function to get Jira Credentials.
