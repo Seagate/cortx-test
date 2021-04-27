@@ -1173,7 +1173,7 @@ class IamTestLib(IamLib, S3IamCli):
         LOGGER.info("output = %s", str(result))
         if "failed" in result:
             LOGGER.error("Error in %s: %s",
-                         IamTestLib.change_user_password.__name__,
+                         super().change_user_password.__name__,
                          result)
             raise CTException(err.S3_CLIENT_ERROR, result)
 
