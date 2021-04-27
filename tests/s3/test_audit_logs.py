@@ -142,7 +142,8 @@ class TestAuditLogs:
 
     def update_conf_restart_s3(self, new_value):
         """
-        Function to update s3config.yaml file and restart each instance post restart also check stack status.
+        Function to update s3config.yaml file and restart each instance post
+        restart also check stack status.
 
         :param str new_value: Value to be updated in the config file
         :return: None
@@ -227,7 +228,7 @@ class TestAuditLogs:
         res = f"Searched value {value} doesn't exists"
         for node in range(len(self.nodes)):
             host_name = CMN_CFG["nodes"][node]["host"]
-            log_msg_path = AUDIT_CFG["audit_logs"]["log_msg_path"]
+            log_msg_path = const.LOG_MSG_PATH
             self.log.debug(log_msg_path)
             resp = S3H_OBJ.is_s3_server_path_exists(
                 log_msg_path, host=host_name)
@@ -604,7 +605,7 @@ class TestAuditLogs:
         assert_utils.assert_in(bucket_name, res[1], res[1])
         system_utils.create_file(
             self.common_file_path,
-            test_conf["obj_size"])
+            int(test_conf["obj_size"]))
         res = S3_OBJ.put_object(
             bucket_name,
             test_conf["obj_name"],

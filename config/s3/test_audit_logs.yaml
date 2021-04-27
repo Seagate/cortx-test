@@ -6,7 +6,6 @@ audit_logs:
     folder: "audit"
     file: "audit.log"
     pwd: "password"
-    log_msg_path: "/var/log/messages"
 
 test_5248:
     bucket_name: "audit-bkt5248"
