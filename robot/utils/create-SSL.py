@@ -17,7 +17,7 @@ def cert_gen(days=1, file_save_path="."):
     stateOrProvinceName="MH"
     organizationName="Seagate"
     organizationUnitName="CFT"
-    serialNumber=0
+    serialNumber=days
     validityStartInSeconds=0
     KEY_FILE = "private.key"
     CERT_FILE="selfsigned.crt"
