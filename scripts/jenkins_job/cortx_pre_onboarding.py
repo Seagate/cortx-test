@@ -12,6 +12,7 @@ from selenium.common.exceptions import NoSuchElementException
 from scripts.jenkins_job import gui_element_locators as loc
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from commons import pswdmanager
 
 config_file = 'scripts/jenkins_job/config.ini'
 config = configparser.ConfigParser()
@@ -19,7 +20,6 @@ config.read(config_file)
 
 class CSMBoarding(unittest.TestCase):
     def setUp(self):
-        # self.driver = webdriver.Firefox()
         chrome_options = Options()
         chrome_options.add_argument('--ignore-ssl-errors=yes')
         chrome_options.add_argument('--ignore-certificate-errors')
@@ -28,8 +28,10 @@ class CSMBoarding(unittest.TestCase):
         self.driver = webdriver.Chrome(options=chrome_options)
         self.driver.implicitly_wait(30)
         self.csm_mgmt_ip = os.getenv('HOSTNAME')
-        self.admin_user = os.getenv('ADMIN_USR', config['preboarding']['username'])
-        self.admin_pwd = os.getenv('ADMIN_PWD', config['preboarding']['password'])
+        self.default_username = pswdmanager.decrypt(config['csmboarding']['username'])
+        self.default_password = pswdmanager.decrypt(config['csmboarding']['password'])
+        self.admin_user = os.getenv('ADMIN_USR', self.default_username)
+        self.admin_pwd = os.getenv('ADMIN_PWD', self.default_password)
         self.host_passwd = os.getenv('HOST_PASS')
         self.usr = "root"
         self.create_admin_user = True
@@ -43,7 +45,7 @@ class CSMBoarding(unittest.TestCase):
         try:
             if self.create_admin_user:
                 browser = self.driver
-                preboarding_url = config['preboarding']['url'].format(self.csm_mgmt_ip)
+                preboarding_url = config['csmboarding']['preboarding_url'].format(self.csm_mgmt_ip)
                 browser.get(preboarding_url)
                 ele = self.get_element(By.ID, loc.Preboarding.start_btn)
                 ele.click()
@@ -58,7 +60,7 @@ class CSMBoarding(unittest.TestCase):
                 ele = self.get_element(By.ID, loc.Preboarding.confirmpwd_ip)
                 ele.send_keys(self.admin_pwd)
                 ele = self.get_element(By.ID, loc.Preboarding.email_ip)
-                ele.send_keys(config['preboarding']['email'])
+                ele.send_keys(config['csmboarding']['email'])
                 ele = self.get_element(By.ID, loc.Preboarding.create_btn)
                 ele.click()
                 ele = self.get_element(By.ID, loc.Preboarding.userlogin_ip)
@@ -72,7 +74,7 @@ class CSMBoarding(unittest.TestCase):
     def test_onboarding(self):
         try:
             browser = self.driver
-            onboarding_url = config['onboarding']['url'].format(self.csm_mgmt_ip)
+            onboarding_url = config['csmboarding']['onboarding_url'].format(self.csm_mgmt_ip)
             browser.get(onboarding_url)
             ele = self.get_element(By.ID, loc.Onboarding.username_ip)
             self.clear_send(ele, self.admin_user)
@@ -81,19 +83,19 @@ class CSMBoarding(unittest.TestCase):
             ele = self.get_element(By.ID, loc.Onboarding.login_btn)
             ele.click()
             ele = self.get_element(By.ID, loc.Onboarding.sys_ip)
-            self.clear_send(ele, config['onboarding']['system'])
+            self.clear_send(ele, config['csmboarding']['system'])
             ele = self.get_element(By.XPATH, loc.Onboarding.continue_btn)
             ele.click()
             ele = self.get_element(By.XPATH, loc.Onboarding.continue_btn)
             ele.click()
             ele = self.get_element(By.ID, loc.Onboarding.dns_server_ip)
-            self.clear_send(ele, config['onboarding']['dns'])
+            self.clear_send(ele, config['csmboarding']['dns'])
             ele = self.get_element(By.ID, loc.Onboarding.dns_search_ip)
-            self.clear_send(ele, config['onboarding']['search'])
+            self.clear_send(ele, config['csmboarding']['search'])
             ele = self.get_element(By.XPATH, loc.Onboarding.continue_btn)
             ele.click()
             ele = self.get_element(By.ID, loc.Onboarding.ntp_server_ip)
-            self.clear_send(ele, config['onboarding']['ntp'])
+            self.clear_send(ele, config['csmboarding']['ntp'])
             ele = self.get_element(By.XPATH, loc.Onboarding.continue_btn)
             ele.click()
             ele = self.get_element(By.XPATH, loc.Onboarding.skip_step_chk)
