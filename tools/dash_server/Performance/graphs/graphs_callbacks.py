@@ -98,7 +98,7 @@ def update_graphs(n_clicks, xfilter, release1, branch1, option1, bench, config, 
         figs = []
         fig_all = go.Figure()
         param = None
-        if xfilter == 'build':
+        if xfilter == 'Build':
             x_axis_heading = 'Object Sizes'
         else:
             x_axis_heading = 'Builds'
