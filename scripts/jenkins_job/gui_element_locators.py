@@ -104,7 +104,6 @@ class UserSettings:
     invalid_confirm_password_msg = "//*[@id='app']//label[contains(text(), 'Passwords do not match')]"
     user_table = "//*[@id='app']//table"
     expand_button = "//table//tr//img[contains(@src,'/img/caret-right.bd531b05.svg')]"
-    # drop_down_btn = "//*[@class='v-icon notranslate mdi mdi-menu-down theme--light']"
     drop_down_btn = "//*[@class='v-input__icon v-input__icon--append']"
     select_all = "//*[contains(text(),'All')]"
     edit_user_btn = "//table//tr//img[contains(@src,'/img/edit-green.f0f29592.svg')]"

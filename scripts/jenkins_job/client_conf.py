@@ -47,7 +47,6 @@ def run_cmd(cmd):
                             stderr=subprocess.PIPE)
 
     result = str(proc.communicate())
-    #print("output = {}".format(result))
     return result
 
 def create_db_entry(hostname, username, password, ip_addr, admin_user, admin_passwd):
