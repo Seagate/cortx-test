@@ -383,6 +383,7 @@ def pytest_configure_node(node):
 def pytest_sessionstart(session: Session) -> None:
     """Called after the ``Session`` object has been created and before performing collection
     and entering the run test loop.
+
     :param pytest.Session session: The pytest session object.
     """
     # db_user, db_passwd = CMN_CFG.db_user, CMN_CFG.db_passwd
