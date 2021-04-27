@@ -46,11 +46,11 @@ class SoftwareAlert(RASCoreLib):
         LOGGER.info("Get systemctl status for %s ...", monitor_svcs)
         prev_svcs_status = self.get_svc_status(monitor_svcs)
 
-        LOGGER.info("Get systemctl status for %s ...", monitor_svcs)
+        LOGGER.info("Get systemctl status for %s ...", svc)
         prev_svc_state = self.get_svc_status([svc])[svc]
 
         LOGGER.info("Performing %s on %s ...", action, svc)
-        self.node_utils.send_systemctl_cmd(action, [svc], exc=False)
+        self.node_utils.send_systemctl_cmd(action, [svc], exc=True)
 
         LOGGER.info("Get systemctl status for %s ...", svc)
         services_status = self.get_svc_status([svc])

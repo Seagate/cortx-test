@@ -175,10 +175,7 @@ class Host:
                 else:
                     raise IOError(stdout.readlines())
             else:
-                if err:
-                    return err
-                else:
-                    return stdout.read(read_nbytes)
+                return stdout.read(read_nbytes), err
         if inputs:
             stdin.write('\n'.join(inputs))
             stdin.write('\n')
