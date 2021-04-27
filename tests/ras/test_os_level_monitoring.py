@@ -263,7 +263,7 @@ class TestOSLevelMonitoring:
                 svc, "restart", external_svcs)
             assert result, "Failed in restart service"
             assert self.csm_alert_obj.verify_csm_response(starttime, e_csm_resp["alert_type"], True)
-
+            # TODO message bus check.
             LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
 
