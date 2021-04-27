@@ -33,7 +33,6 @@ from commons.exceptions import CTException
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from config import S3_CFG
-from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
 from libs.s3 import s3_test_lib
 from libs.s3 import iam_test_lib
 from libs.s3 import s3_acl_test_lib
@@ -288,9 +287,6 @@ class TestBucketACL:
         """verify Get Bucket ACL of existing Bucket with associated Account credentials."""
         self.log.info(
             "verify Get Bucket ACL of existing Bucket with associated Account credentials")
-        # resp = IAM_OBJ.create_account_s3iamcli(self.account_name,
-        #                                        self.email_id,
-        #                                        LDAP_USERNAME, LDAP_PASSWD)
         resp = self.cortx_obj.create_account_cortxcli(
             self.account_name, self.email_id, self.s3acc_password)
         assert_utils.assert_true(resp[0], resp[1])
@@ -860,7 +856,7 @@ class TestBucketACL:
             resp = self.cortx_obj.delete_account_cortxcli(
                 account, self.s3acc_password)
             self.log.info(resp)
-        #assert_utils.assert_true(resp[0], resp[1])
+        # assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Apply authenticated-read canned ACL to account2 and execute "
             "head-bucket from account2 on a bucket. Bucket belongs to account1")
@@ -889,9 +885,6 @@ class TestBucketACL:
             account = "{}{}".format(account, str(int(time.perf_counter())))
             account_name.append(account)
             email = "{}{}".format(str(int(time.perf_counter())), email)
-            # resp = IAM_OBJ.create_account_s3iamcli(account, email,
-            #                                        LDAP_USERNAME,
-            #                                        LDAP_PASSWD)
             resp = self.cortx_obj.create_account_cortxcli(account,
                                                           email,
                                                           self.s3acc_password)
@@ -948,7 +941,7 @@ class TestBucketACL:
             resp = self.cortx_obj.delete_account_cortxcli(
                 account, self.s3acc_password)
             self.log.info(resp)
-        #assert_utils.assert_true(resp[0], resp[1])
+        # assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Apply private canned ACL to account2 and execute "
             "head-bucket from account2 on a bucket. Bucket belongs to account1")
@@ -1044,7 +1037,7 @@ class TestBucketACL:
             resp = self.cortx_obj.delete_account_cortxcli(
                 account, self.s3acc_password)
             self.log.info(resp)
-        #assert_utils.assert_true(resp[0], resp[1])
+        # assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Grant read permission to account2 and execute head-bucket "
             "from account2 on a bucket. Bucket belongs to account1")
@@ -1123,14 +1116,12 @@ class TestBucketACL:
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 1: Bucket : %s created", self.bucket_name)
-        # create_acc = IAM_OBJ.create_s3iamcli_acc(
-        #      self.account_name1, self.email_id1)
         create_acc = self.cortx_obj.create_account_cortxcli(self.account_name1,
                                                             self.email_id1,
                                                             self.s3acc_password)
         assert create_acc[0], create_acc[1]
         acl_test_2 = S3AclTestLib(
-                access_key=create_acc[1]["access_key"], secret_key=create_acc[1]["secret_key"])
+            access_key=create_acc[1]["access_key"], secret_key=create_acc[1]["secret_key"])
         self.log.info(
             "Step 2: Retrieving bucket acl attributes using account 2")
         try:
@@ -1165,7 +1156,7 @@ class TestBucketACL:
         assert create_acc[0], create_acc[1]
         cannonical_id = create_acc[1]["canonical_id"]
         acl_test_2 = S3AclTestLib(
-                access_key=create_acc[1]["access_key"], secret_key=create_acc[1]["secret_key"])
+            access_key=create_acc[1]["access_key"], secret_key=create_acc[1]["secret_key"])
         self.log.info("Step 2: Performing authenticated read acp")
         resp = ACL_OBJ.put_bucket_acl(
             self.bucket_name, grant_read_acp="id={}".format(cannonical_id))
@@ -1186,7 +1177,7 @@ class TestBucketACL:
     @pytest.mark.tags("TEST-8712")
     @CTFailOn(error_handler)
     def test_full_control_acl_6423(self):
-        """Test full-control on bucket to cross account and test delete bucket from owner account."""
+        """Test full-control on bucket to cross accnt and test delete bucket from owner account."""
         self.log.info(
             "STARTED: Test full-control on bucket to cross account and test delete")
         create_acc = self.cortx_obj.create_account_cortxcli(self.account_name,
