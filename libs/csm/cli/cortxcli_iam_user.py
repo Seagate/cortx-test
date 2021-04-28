@@ -70,7 +70,7 @@ class CortxCliIamUser(CortxCli):
             if "Confirm Password" in output:
                 output = self.execute_cli_commands(cmd=confirm_password)[1]
                 if "[Y/n]" in output:
-                    output = self.execute_cli_commands(cmd=confirm)[1]
+                    output = self.execute_cli_commands(cmd=confirm, sleep_time=8)[1]
                     if ("User Name" in output) and (
                             "User ID" in output) and ("ARN" in output):
 

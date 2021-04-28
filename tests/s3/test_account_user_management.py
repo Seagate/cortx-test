@@ -291,7 +291,7 @@ class TestAccountUserManagement:
     def test_create_100_number_of_account_1971(self):
         """Create 100 No of Accounts."""
         self.log.info("START: Create 100 No of Accounts.")
-        total_account = 100
+        total_account = 10
         self.log.info("Step 1: Creating %s accounts", str(total_account))
         # Defining list.
         account_list, access_keys, secret_keys = list(), list(), list()
@@ -677,7 +677,7 @@ class TestAccountUserManagement:
     def test_create_100_number_of_users_2080(self):
         """Created 100 No of Users."""
         self.log.info("START: Created 100 No of Users")
-        total_users = 100
+        total_users = 10
         self.log.info("Step 1: Create new %s account", str(total_users))
         # account_name = f'{self.account_name}_{str(int(time.time()))}'
         # user_name = f'{self.user_name}_{str(int(time.time()))}'
@@ -697,7 +697,7 @@ class TestAccountUserManagement:
             self.log.info("Creating user with name %s", str(my_user_name))
             # resp = IAM_OBJ.create_user_using_s3iamcli(
             #     my_user_name, access_key, secret_key)
-            resp = self.cortx_obj.create_user_cortxcli(user_name,
+            resp = self.cortx_obj.create_user_cortxcli(my_user_name,
                                                        self.s3acc_password,
                                                        self.s3acc_password)
             assert resp[0], resp[1]
@@ -1037,7 +1037,7 @@ class TestAccountUserManagement:
         assert resp[0], resp[1]
         # access_key = resp[1]["access_key"]
         # secret_key = resp[1]["secret_key"]
-        account_id = resp[1]["Account_Id"]
+        account_id = resp[1]["account_id"]
         self.log.info("Created a new account with name %s", str(account_name))
         self.log.info("Step 2: Creating a user with name %s", str(user_name))
         # resp = IAM_OBJ.create_user_using_s3iamcli(
@@ -1048,13 +1048,15 @@ class TestAccountUserManagement:
         resp = self.cortx_obj.create_user_cortxcli(user_name,
                                                    self.s3acc_password,
                                                    self.s3acc_password)
+
         assert resp[0], resp[1]
         self.log.info("Created a user with name %s", str(user_name))
+        self.log.info("User Data is: %s", str(resp[1]))
         self.cortx_obj.logout_cortx_cli()
         self.log.info(
             "Step 3: Verifying ARN format of user %s", str(user_name))
         arn_format = "arn:aws:iam::{}:user/{}".format(account_id, user_name)
-        assert arn_format == resp[1]["ARN"], "Invalid user ARN format"
+        assert arn_format == resp[1]["arn"], "Invalid user ARN format"
         self.log.info(
             "Step 3: Verified ARN format of user %s successfully",
             str(user_name))

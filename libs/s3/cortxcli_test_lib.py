@@ -208,19 +208,26 @@ class _IamUser(CortxCliIamUser):
         :return: (Boolean/Response)
         :return: create user using cortxcli response.
         """
+        user_details = dict()
         try:
-            response = super().create_iam_user(
+            status, response = super().create_iam_user(
                 user_name=user_name,
                 password=password,
                 confirm_password=confirm_password,
                 **kwargs)
+            if user_name in response:
+                response = self.split_table_response(response)[0]
+                user_details["user_name"] = response[1]
+                user_details["user_id"] = response[2]
+                user_details["arn"] = response[3]
+                response = user_details
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          _IamUser.create_user_cortxcli.__name__,
                          error)
             raise CTException(err.S3_ERROR, error.args[0])
 
-        return response
+        return status, response
 
     def list_users_cortxcli(self) -> tuple:
         """
