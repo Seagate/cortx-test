@@ -215,7 +215,7 @@ class _IamUser(CortxCliIamUser):
                 password=password,
                 confirm_password=confirm_password,
                 **kwargs)
-            if user_name in response:
+            if status and user_name in response:
                 response = self.split_table_response(response)[0]
                 user_details["user_name"] = response[1]
                 user_details["user_id"] = response[2]
