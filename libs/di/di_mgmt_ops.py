@@ -20,24 +20,24 @@
 
 """Management operations needed during the DI tests."""
 
-import time
-import random
 import logging
+import random
+import time
+
 import boto3
+
+from commons.utils import assert_utils
 from config import CMN_CFG
 from config import CSM_CFG
 from config import S3_CFG
-from commons.utils import assert_utils
+from libs.s3 import cortxcli_test_lib as cctl
 from libs.s3 import iam_core_lib
 from libs.s3.iam_core_lib import S3IamCli
-from libs.s3.cortxcli_test_lib import CortxcliS3AccountOperations
-from libs.s3 import cortxcli_test_lib as cctl
 
 LOGGER = logging.getLogger(__name__)
 
 
 class ManagementOPs:
-
     email_suffix = "@seagate.com"
     user_prefix = 'di_user'
 
@@ -56,6 +56,7 @@ class ManagementOPs:
         resp = cli.create_account_s3iamcli(email,
                                            CMN_CFG["ldap"]["username"],
                                            CMN_CFG["ldap"]["password"])
+
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
         users = {"{}{}".format(cls.user_prefix, i): tuple() for i in range(1, nusers + 1)}
@@ -85,8 +86,7 @@ class ManagementOPs:
         :return:
         """
         LOGGER.info(f"Creating Cortx s3 account users with {use_cortx_cli}")
-        s3acc_obj = cctl.CortxcliS3AccountOperations()
-        s3acc_obj.open_connection()
+        s3acc_obj = cctl.CortxCliTestLib()
         ts = time.strftime("%Y%m%d_%H%M%S")
         users = {"{}{}_{}".format(cls.user_prefix, i, ts): dict() for i in range(1, nusers + 1)}
         s3_user_passwd = CSM_CFG["CliConfig"]["s3_account"]["password"]
@@ -241,5 +241,3 @@ class ManagementOPs:
         for k in users:
             bkts = [cli.create_bucket('{}bucket{}'.format(k, i)) for i in range(1, maxbuckets + 1)]
             buckets[k] = bkts
-
-
