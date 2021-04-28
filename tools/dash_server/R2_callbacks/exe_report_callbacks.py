@@ -149,7 +149,7 @@ def gen_table_reported_bugs(n_clicks, branch, build_no, test_system, test_plan, 
             print("cortx issue {}".format(df_cortx_issue))
         df_cortx_issue["Total"] = df_cortx_issue.shape[0]
 
-        for i_type in issue_type[1:]:
+        for i_type in issue_type[:-1]:
             test_infra_issue_dict[i_type] = \
                 df_test_infra_issue[df_test_infra_issue["issue_priority"] == i_type].shape[0]
             cortx_issue_dict[i_type] = \

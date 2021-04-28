@@ -89,7 +89,7 @@ def test_min(logger):
     :param logger:
     :return:
     """
-    logger.info(str(os.environ.get('PYTEST_XDIST_WORKER')))
+    logger.info("PYTEST_XDIST_WORKER value is" + str(os.environ.get('PYTEST_XDIST_WORKER')))
     values = (2, 3, 1, 4, 6)
     val = min(values)
     logger.debug("min is %s" % val)
