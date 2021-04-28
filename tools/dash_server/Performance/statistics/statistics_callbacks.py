@@ -31,10 +31,9 @@ from Performance.statistics.statistics_functions import get_s3benchmark_data,\
 from common import app
 from Performance.styles import dict_style_header, dict_style_cell
 from Performance.statistics.statistics_functions import update_hsbench_callbacks, get_dash_table, get_bucketops
-from Performance.global_functions import get_dict_from_array, get_chain, get_distinct_keys
+from Performance.global_functions import benchmark_config
 
 
-benchmark_config = 'Performance/configs/benchmark.yml'
 statistics_column_headings = ['Write Throughput (MBps)', 'Write Latency (ms)', 'Write TTFB (ms)', 'Write IOPS',
                               'Read Throughput (MBps)', 'Read Latency (ms)', 'Read IOPS', 'Read TTFB (ms)']
 
@@ -43,34 +42,6 @@ multiple_buckets_headings = ['Write Throughput (MBps)', 'Write Latency (ms)', 'W
 
 bucketops_headings = ['Create Buckets (BINIT)', 'Put Objects (PUT)', 'Listing Objects (LIST)', 'Get Objects (GET)',
                       'Delete Objects (DEL)', 'Clear Buckets (BCLR)', 'Delete Buckets (BDEL)']
-
-
-@app.callback(
-    Output('perf_branch_dropdown', 'options'),
-    Input('perf_release_dropdown', 'value')
-)
-def update_branches_dropdown(release):
-    branches = get_distinct_keys(release, 'Branch', {})
-    options = get_dict_from_array(branches, False)
-    return options
-
-
-@app.callback(
-    Output('perf_build_dropdown', 'options'),
-    Input('perf_release_dropdown', 'value'),
-    Input('perf_branch_dropdown', 'value')
-)
-def update_builds_dropdown(release, branch):
-    if release is None or branch is None:
-        raise PreventUpdate
-
-    versions = None
-    if release:
-        builds = get_distinct_keys(release, 'Build', {'Branch': branch})
-        versions = get_dict_from_array(builds, False)
-
-    return versions
-
 
 @app.callback(
     [Output('statistics_s3bench_workload', 'children'),

@@ -136,9 +136,14 @@ stats_input_options = Row(
             style={'width': '200px', 'verticalAlign': 'middle',
                    "margin-right": "15px", "margin-top": "10px"},
         ),
+        Dropdown(
+            id='profiles_options',
+            placeholder="Select Build",
+            style={'display': 'none'}
+        ),
 
         Button("Get!", id="perf_submit_button", n_clicks=0, color="success",
-               style={'height': '30px', 'margin-top': '18px', 'margin-bottom': '22px'}),
+               style={'height': '35px', 'margin-top': '20px'}),
     ],
     justify='center'
 )
