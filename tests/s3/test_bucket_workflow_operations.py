@@ -32,11 +32,11 @@ from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils import assert_utils
 from commons.utils import system_utils
+from config import S3_CFG
 from libs.s3 import s3_test_lib
 from libs.s3 import iam_test_lib
 from libs.s3 import s3_acl_test_lib
-from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
-
+from libs.s3.cortxcli_test_lib import CortxCliTestLib
 
 S3_TEST_OBJ = s3_test_lib.S3TestLib()
 IAM_OBJ = iam_test_lib.IamTestLib()
@@ -45,6 +45,8 @@ ACL_OBJ = s3_acl_test_lib.S3AclTestLib()
 
 class TestBucketWorkflowOperations:
     """Bucket Workflow Operations Test suite."""
+
+    cortx_obj = None
 
     @classmethod
     def setup_class(cls):
@@ -56,8 +58,11 @@ class TestBucketWorkflowOperations:
         cls.log = logging.getLogger(__name__)
         cls.log.info("STARTED: Setup suite operations")
         cls.account_name = "bktwrkflowaccnt"
+        cls.s3acc_password = S3_CFG["CliConfig"]["s3_account"]["password"]
         cls.folder_path = os.path.join(
             TEST_DATA_FOLDER, "TestBucketWorkflowOperations")
+        cls.filename = "bkt_workflow{}.txt".format(str(time.perf_counter()))
+        cls.file_path = os.path.join(cls.folder_path, cls.filename)
         if not system_utils.path_exists(cls.folder_path):
             system_utils.make_dirs(cls.folder_path)
         cls.log.info("ENDED: Setup suite operations")
@@ -82,8 +87,7 @@ class TestBucketWorkflowOperations:
         It will perform prerequisite test steps if any
         """
         self.log.info("STARTED: Setup operations")
-        self.filename = "bkt_workflow{}.txt".format(str(time.time()))
-        self.file_path = os.path.join(self.folder_path, self.filename)
+        self.cortx_obj = CortxCliTestLib()
         self.log.info("ENDED: Setup operations")
 
     def teardown_method(self):
@@ -98,23 +102,20 @@ class TestBucketWorkflowOperations:
             system_utils.remove_file(self.file_path)
         self.log.info("ENDED: Teardown operations")
 
-    def delete_iam_account(self, account_name):
+    def delete_iam_account(self, account_name, password):
         """
         Delete iam account.
 
-        :param account: account name.
+        :param account_name: name of account to be deleted.
+        :param password: password for account to be deleted
         """
-        self.log.info("Deleting IAM accounts")
-        acc_list = IAM_OBJ.list_accounts_s3iamcli(
-            LDAP_USERNAME, LDAP_PASSWD)[1]
-        self.log.info(acc_list)
-        all_acc = [acc["AccountName"]
-                   for acc in acc_list if account_name == acc["AccountName"]]
-        self.log.info(all_acc)
-        for acc_name in all_acc:
-            resp = IAM_OBJ.reset_access_key_and_delete_account_s3iamcli(acc_name)
-            assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Deleted IAM accounts successfully")
+        self.log.info("Deleting: IAM accounts")
+        if password is None:
+            password = self.s3acc_password
+        resp = self.cortx_obj.delete_account_cortxcli(
+            account_name=account_name, password=password)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Deleted: IAM accounts successfully")
 
     def delete_s3_buckets(self, bucket):
         """
@@ -243,9 +244,10 @@ class TestBucketWorkflowOperations:
             "STARTED: Bucket name with less than 3 characters and more than 63 characters")
         self.log.info(
             "Creating buckets with name less than 3 and more than 63 character length")
-        bkt_name2_64 = ["a2",
-        "bktworkflow-seagateeosbucket-8537-bktworkflow-seagateeosbucketsbktworkflow"
-        "-seagateeosbucket"]
+        bkt_name2_64 = [
+            "a2",
+            "bktworkflow-seagateeosbucket-8537-bktworkflow-seagateeosbucketsbktworkflow"
+            "-seagateeosbucket"]
         for each_bucket in bkt_name2_64:
             try:
                 resp = S3_TEST_OBJ.create_bucket(each_bucket)
@@ -287,7 +289,7 @@ class TestBucketWorkflowOperations:
     def test_name_with_underscores_1980(self):
         """Bucket names must not contain underscores."""
         self.log.info("STARTED: Bucket names must not contain underscores")
-        bkt_name = "bktworkflow_8540{}".format(str(time.time()))
+        bkt_name = "bktworkflow_8540{}".format(str(time.perf_counter()))
         self.log.info(
             "Creating a bucket with underscore is : %s",
             bkt_name)
@@ -361,7 +363,7 @@ class TestBucketWorkflowOperations:
     def test_create_single_bucket_2039(self):
         """Create single bucket."""
         self.log.info("STARTED: Create single bucket")
-        bkt_name = "bktworkflow-8638{}".format(str(time.time()))
+        bkt_name = "bktworkflow-8638{}".format(str(time.perf_counter()))
         self.log.info(
             "Creating single Bucket with name %s",
             bkt_name)
@@ -413,7 +415,7 @@ class TestBucketWorkflowOperations:
         """Create bucket with same bucket name already present."""
         self.log.info(
             "STARTED: Create bucket with same bucket name already present")
-        bkt_name = "bktworkflow-8642{}".format(str(time.time()))
+        bkt_name = "bktworkflow-8642{}".format(str(time.perf_counter()))
         self.log.info("Creating a bucket with name %s",
                       bkt_name)
         resp = S3_TEST_OBJ.create_bucket(
@@ -458,7 +460,8 @@ class TestBucketWorkflowOperations:
         resp = S3_TEST_OBJ.bucket_count()
         self.log.info(resp)
         assert resp[0], resp[1]
-        assert_utils.assert_equal(len(bkt_list), 100, "failed to create 100 buckets")
+        assert_utils.assert_equal(
+            len(bkt_list), 100, "failed to create 100 buckets")
         resp = S3_TEST_OBJ.delete_multiple_buckets(bkt_list)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp1[1])
@@ -473,7 +476,7 @@ class TestBucketWorkflowOperations:
     def test_delete_bucket_with_objects_2045(self):
         """Delete bucket which has objects."""
         self.log.info("STARTED: Delete bucket which has objects")
-        bkt_name = "bktworkflow-8644{}".format(str(time.time()))
+        bkt_name = "bktworkflow-8644{}".format(str(time.perf_counter()))
         self.log.info(
             "Creating a Bucket with name %s",
             bkt_name)
@@ -515,7 +518,7 @@ class TestBucketWorkflowOperations:
     def test_forcefully_delete_objects_2046(self):
         """Delete bucket forcefully which has objects."""
         self.log.info("STARTED: Delete bucket forcefully which has objects")
-        bkt_name = "bktworkflow-8645{}".format(str(time.time()))
+        bkt_name = "bktworkflow-8645{}".format(str(time.perf_counter()))
         self.log.info(
             "Creating a bucket with name %s",
             bkt_name)
@@ -550,7 +553,7 @@ class TestBucketWorkflowOperations:
     def test_delete_empty_bucket_2047(self):
         """Delete empty bucket."""
         self.log.info("STARTED: Delete empty bucket")
-        bkt_name = "bktworkflow-8646{}".format(str(time.time()))
+        bkt_name = "bktworkflow-8646{}".format(str(time.perf_counter()))
         self.log.info(
             "Creating a bucket with name %s",
             bkt_name)
@@ -584,8 +587,10 @@ class TestBucketWorkflowOperations:
             assert resp[0], resp[1]
             assert resp[1] == bucket_name, resp[1]
             bucket_list.append(bucket_name)
-        assert_utils.assert_equal(len(bucket_list), 10, "Failed to create 10 bucket: {}".format(
-            bucket_list))
+        assert_utils.assert_equal(
+            len(bucket_list),
+            10,
+            "Failed to create 10 bucket: {}".format(bucket_list))
         self.log.info("Multiple buckets are created")
         self.log.info("Deleting multiple buckets")
         resp = S3_TEST_OBJ.delete_multiple_buckets(bucket_list)
@@ -621,7 +626,7 @@ class TestBucketWorkflowOperations:
     def test_list_all_buckets_2050(self):
         """List all objects in a bucket."""
         self.log.info("STARTED: List all objects in a bucket")
-        bkt_name = "bktworkflow-8649{}".format(str(time.time()))
+        bkt_name = "bktworkflow-8649{}".format(str(time.perf_counter()))
         self.log.info(
             "Creating a bucket with name %s",
             bkt_name)
@@ -665,7 +670,7 @@ class TestBucketWorkflowOperations:
     def test_disk_usages_verification_2051(self):
         """Verification of disk usage by bucket."""
         self.log.info("STARTED: Verification of disk usage by bucket")
-        bkt_name = "bktworkflow-8650{}".format(str(time.time()))
+        bkt_name = "bktworkflow-8650{}".format(str(time.perf_counter()))
         self.log.info(
             "Creating a bucket with name %s",
             bkt_name)
@@ -722,7 +727,7 @@ class TestBucketWorkflowOperations:
     def test_verify_head_bucket_2056(self):
         """Verify HEAD bucket."""
         self.log.info("STARTED: Verify HEAD bucket")
-        bkt_name = "bktworkflow-8655{}".format(str(time.time()))
+        bkt_name = "bktworkflow-8655{}".format(str(time.perf_counter()))
         self.log.info(
             "Creating a bucket with name %s",
             bkt_name)
@@ -780,7 +785,7 @@ class TestBucketWorkflowOperations:
     def test_bucket_location_verification_2059(self):
         """Verification of bucket location."""
         self.log.info("STARTED: Verification of bucket location")
-        bkt_name = "bktworkflow-8658{}".format(str(time.time()))
+        bkt_name = "bktworkflow-8658{}".format(str(time.perf_counter()))
         self.log.info(
             "Creating a bucket with name %s",
             bkt_name)
@@ -791,8 +796,7 @@ class TestBucketWorkflowOperations:
         resp = S3_TEST_OBJ.bucket_location(
             bkt_name)
         assert resp[0], resp[1]
-        assert resp[1]["LocationConstraint"] == \
-            "us-west-2", resp[1]
+        assert resp[1]["LocationConstraint"] == "us-west-2", resp[1]
         self.delete_s3_buckets(bkt_name)
         self.log.info("ENDED: Verification of bucket location")
 
@@ -804,7 +808,7 @@ class TestBucketWorkflowOperations:
         """Delete multiobjects which are present in bucket."""
         self.log.info(
             "STARTED: Delete multiobjects which are present in bucket")
-        bktname = "bktworkflow-432-{}".format(str(time.time()))
+        bktname = "bktworkflow-432-{}".format(str(time.perf_counter()))
         self.log.info("Step 1: Creating a bucket and putting object")
         res = S3_TEST_OBJ.create_bucket(bktname)
         assert res[1] == bktname, res[1]
@@ -848,7 +852,7 @@ class TestBucketWorkflowOperations:
         """Delete multiobjects where the bucket is not present."""
         self.log.info(
             "STARTED: Delete multiobjects where the bucket is not present")
-        bktname = "bktworkflow-433-{}".format(str(time.time()))
+        bktname = "bktworkflow-433-{}".format(str(time.perf_counter()))
         obj_lst = ["obj1", "obj2"]
         self.log.info(
             "Step 1: Deleting the objects for non-existing bucket")
@@ -887,21 +891,21 @@ class TestBucketWorkflowOperations:
         self.log.info(
             "STARTED: create bucket and upload objects from account1 and dont give"
             " any permissions to account2 and delete multiple objects from account2")
-        bktname = "bktworkflow-434-{}".format(str(time.time()))
-        acc_name_2 = "bktwrkflowaccnt434_{}".format(str(time.time()))
-        emailid_2 = "acltestaccnt434_{}@seagate.com".format(str(time.time()))
+        bktname = "bktworkflow-434-{}".format(str(time.perf_counter()))
+        acc_name_2 = "{}_{}".format(
+            self.account_name, str(
+                time.perf_counter())).replace('.', '_')
+        emailid_2 = "acltestaccnt434_{}@seagate.com".format(
+            str(time.perf_counter()))
         self.log.info(
             "Step : Creating account with name %s and email_id %s",
             acc_name_2, emailid_2)
-        create_account = IAM_OBJ.create_account_s3iamcli(
-            acc_name_2,
-            emailid_2,
-            LDAP_USERNAME,
-            LDAP_PASSWD)
+        create_account = self.cortx_obj.create_account_cortxcli(
+            account_name=acc_name_2, account_email=emailid_2, password=self.s3acc_password)
         assert create_account[0], create_account[1]
         access_key = create_account[1]["access_key"]
         secret_key = create_account[1]["secret_key"]
-        self.log.info("Step Successfully created the s3iamcli account")
+        self.log.info("Step Successfully created the cortxcli account")
         s3_obj_2 = s3_test_lib.S3TestLib(
             access_key=access_key, secret_key=secret_key)
         self.log.info(
@@ -936,7 +940,7 @@ class TestBucketWorkflowOperations:
             self.log.info(
                 "Step 3: deleting objects using account 2 failed with error %s",
                 "AccessDenied")
-        self.delete_iam_account(acc_name_2)
+        self.delete_iam_account(acc_name_2, self.s3acc_password)
         self.log.info(
             "ENDED: create bucket and upload objects from account1 and dont give"
             " any permissions to account2 and delete multiple objects from account2")
@@ -956,21 +960,21 @@ class TestBucketWorkflowOperations:
         self.log.info(
             "STARTED: create bucket and upload objects from account1 and dont give"
             " any permissions to account2 and delete multiple objects from account2")
-        bktname = "bktworkflow-435-{}".format(str(time.time()))
-        acc_name_2 = "bktwrkflowaccnt435_{}".format(str(time.time()))
-        emailid_2 = "acltestaccnt435_{}@seagate.com".format(str(time.time()))
+        bktname = "bktworkflow-435-{}".format(str(time.perf_counter()))
+        acc_name_2 = "{}_{}".format(
+            self.account_name, str(
+                time.perf_counter())).replace('.', '_')
+        emailid_2 = "acltestaccnt435_{}@seagate.com".format(
+            str(time.perf_counter()))
         self.log.info(
             "Step : Creating account with name %s and email_id %s",
             acc_name_2, emailid_2)
-        create_account = IAM_OBJ.create_account_s3iamcli(
-            acc_name_2,
-            emailid_2,
-            LDAP_USERNAME,
-            LDAP_PASSWD)
+        create_account = self.cortx_obj.create_account_cortxcli(
+            account_name=acc_name_2, account_email=emailid_2, password=self.s3acc_password)
         assert create_account[0], create_account[1]
         access_key = create_account[1]["access_key"]
         secret_key = create_account[1]["secret_key"]
-        self.log.info("Step Successfully created the s3iamcli account")
+        self.log.info("Step Successfully created the cortxcli account")
         s3_obj_2 = s3_test_lib.S3TestLib(
             access_key=access_key, secret_key=secret_key)
         self.log.info(
@@ -1018,7 +1022,7 @@ class TestBucketWorkflowOperations:
         self.log.info("Step 5: Verified that bucket was empty")
         resp = S3_TEST_OBJ.delete_bucket(bktname, force=True)
         assert resp[0], resp[1]
-        self.delete_iam_account(acc_name_2)
+        self.delete_iam_account(acc_name_2, self.s3acc_password)
         self.log.info(
             "ENDED: create bucket and upload objects from account1 and dont give"
             " any permissions to account2 and delete multiple objects from account2")
