@@ -34,7 +34,10 @@ from commons.utils.system_utils import create_file, remove_file
 from libs.s3 import S3H_OBJ, LDAP_USERNAME, LDAP_PASSWD
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.iam_test_lib import IamTestLib
+from libs.s3.cortxcli_test_lib import CortxCliTestLib
+
 from config import S3_USER_ACC_MGMT_CONFIG
+from config import S3_CFG
 
 IAM_OBJ = IamTestLib()
 S3_OBJ = S3TestLib()
@@ -55,6 +58,7 @@ class TestAccountUserManagement:
         cls.ca_cert_path = const.CA_CERT_PATH
         cls.ldap_user = LDAP_USERNAME
         cls.ldap_passwd = LDAP_PASSWD
+        cls.s3acc_password = S3_CFG["CliConfig"]["s3_account"]["password"]
         cls.test_file = "testfile"
         cls.test_dir_path = os.path.join(os.getcwd(), "testdata")
         cls.test_file_path = os.path.join(cls.test_dir_path, cls.test_file)
@@ -98,6 +102,7 @@ class TestAccountUserManagement:
         self.account_name = "accusrmgmt_account"
         self.email_id = "{}@seagate.com"
         self.user_name = "accusrmgmt_user"
+        self.cortx_obj = CortxCliTestLib()
 
         self.log.info(
             "Delete created user with prefix: %s", self.user_name)
@@ -187,15 +192,12 @@ class TestAccountUserManagement:
 
     def create_account(self, account_name):
         """Create s3 account using s3iamcli."""
-        response = IAM_OBJ.create_account_s3iamcli(
+        status, response = self.cortx_obj.create_account_cortxcli(
             account_name,
             self.email_id.format(account_name),
-            self.ldap_user,
-            self.ldap_passwd)
-        self.log.info(
-            "Create account: %s, response: %s",
-            account_name,
-            response)
+            self.s3acc_password)
+        if status:
+            self.log.info("Create account: %s, response: %s", account_name, response)
 
         return response
 
@@ -229,12 +231,14 @@ class TestAccountUserManagement:
         assert resp[0], resp[1]
         self.log.info(
             "Step 2: Listing account to verify new account is created")
-        list_of_accounts = IAM_OBJ.list_accounts_s3iamcli(
-            self.ldap_user, self.ldap_passwd)
-        assert list_of_accounts[0], list_of_accounts[1]
-        new_accounts = [acc["AccountName"] for acc in list_of_accounts[1]]
+        # list_of_accounts = IAM_OBJ.list_accounts_s3iamcli(
+        #     self.ldap_user, self.ldap_passwd)
+        list_of_accounts = self.cortx_obj.list_accounts_cortxcli()
+        #assert list_of_accounts[0], list_of_accounts[1]
+        new_accounts = [acc["account_name"] for acc in list_of_accounts]
         self.log.info(new_accounts)
         assert account_name in new_accounts, f"{account_name} not in {new_accounts}"
+        #assert_in(account_name, list_of_accounts)
         self.log.info("END: Tested List account.")
 
     @pytest.mark.parallel
@@ -253,8 +257,9 @@ class TestAccountUserManagement:
         secret_key = resp[1]["secret_key"]
         self.log.info(
             "Step 2: Deleting account with name %s", str(account_name))
-        resp = IAM_OBJ.delete_account_s3iamcli(
-            account_name, access_key, secret_key)
+        # resp = IAM_OBJ.delete_account_s3iamcli(
+        #     account_name, access_key, secret_key)
+        resp = self.cortx_obj.delete_account_cortxcli(account_name, self.s3acc_password)
         assert resp[0], resp[1]
         self.log.info("END: Tested Delete Account.")
 
@@ -276,8 +281,9 @@ class TestAccountUserManagement:
             email_id = f"{acc_name}{cnt}{cnt}@seagate.com"
             self.log.info("account name: %s", str(account_name))
             self.log.info("email id: %s", str(email_id))
-            resp = IAM_OBJ.create_account_s3iamcli(
-                account_name, email_id, self.ldap_user, self.ldap_passwd)
+            # resp = IAM_OBJ.create_account_s3iamcli(
+            #     account_name, email_id, self.ldap_user, self.ldap_passwd)
+            resp= self.cortx_obj.create_account_cortxcli(account_name,email_id,self.s3acc_password)
             assert resp[0], resp[1]
             access_keys.append(resp[1]["access_key"])
             secret_keys.append(resp[1]["secret_key"])
@@ -287,10 +293,12 @@ class TestAccountUserManagement:
         self.log.info(
             "Step 2: Verifying %s accounts are created by listing accounts",
             str(total_account))
-        list_of_accounts = IAM_OBJ.list_accounts_s3iamcli(
-            self.ldap_user, self.ldap_passwd)
-        assert list_of_accounts[0], list_of_accounts[1]
-        new_accounts = [acc["AccountName"] for acc in list_of_accounts[1]]
+        # list_of_accounts = IAM_OBJ.list_accounts_s3iamcli(
+        #     self.ldap_user, self.ldap_passwd)
+        #assert list_of_accounts[0], list_of_accounts[1]
+        #new_accounts = [acc["AccountName"] for acc in list_of_accounts[1]]
+        list_of_accounts = self.cortx_obj.list_accounts_cortxcli()
+        new_accounts = [acc["account_name"] for acc in list_of_accounts]
         for cnt in range(total_account):
             assert account_list[cnt] in new_accounts
         self.log.info(
@@ -344,8 +352,9 @@ class TestAccountUserManagement:
         secret_key = resp[1]["secret_key"]
         self.log.info("access key: %s", str(access_key))
         self.log.info("secret key: %s", str(secret_key))
-        resp = IAM_OBJ.create_user_using_s3iamcli(
-            user_name, access_key, secret_key)
+        # resp = IAM_OBJ.create_user_using_s3iamcli(
+        #     user_name, access_key, secret_key)
+        resp = self.cortx_obj.create_user_cortxcli(user_name,self.s3acc_pasword,self.s3acc_password)
         self.log.info(resp)
         assert resp[0], resp[1]
         self.log.info("Created new account and new user in it")
