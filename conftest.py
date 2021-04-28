@@ -59,6 +59,7 @@ LOG_DIR = 'log'
 CACHE = LRUCache(1024 * 10)
 CACHE_JSON = 'nodes-cache.yaml'
 REPORT_CLIENT = None
+JIRA_DATA = list()
 
 LOGGER = logging.getLogger(__name__)
 logging.getLogger('boto3').setLevel(logging.WARNING)
@@ -702,9 +703,11 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
         if Globals.JIRA_UPDATE:
             jira_id, jira_pwd = get_jira_credential()
             task = jira_utils.JiraTask(jira_id, jira_pwd)
-            data = task.get_test_details(test_exe_id=Globals.TE_TKT)
-            if data:
-                resp = task.update_execution_details(data=data, test_id=test_id,
+            global JIRA_DATA
+            if test_id not in [d['key'] for i in range(len(JIRA_DATA)) for d in JIRA_DATA[i]]:
+                JIRA_DATA = task.get_test_details(test_exe_id=Globals.TE_TKT)
+            if JIRA_DATA:
+                resp = task.update_execution_details(data=JIRA_DATA, test_id=test_id,
                                                      comment=comment)
                 if resp:
                     LOGGER.info("Added execution details comment in: %s", test_id)
