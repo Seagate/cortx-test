@@ -65,7 +65,7 @@ class CortxCliS3AccountOperations(CortxCli):
             if "Confirm Password:" in response:
                 response = self.execute_cli_commands(cmd=confirm_password)[1]
                 if "[Y/n]" in response:
-                    response = self.execute_cli_commands(cmd="Y")[1]
+                    response = self.execute_cli_commands(cmd="Y", sleep_time=8)[1]
                     if account_name in response:
                         LOGGER.info("Response returned: \n%s", response)
                         return True, response
