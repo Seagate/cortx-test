@@ -1,3 +1,12 @@
 password: "NxcdYlhvOOic8ahZt9JHNoP0JVNOq2/J3B2RinQd0jY="
 new_password: "htj410PciGqrH099Ew4b7lmLUc/DnJJZhmzBEey8ON4="
 user_name_prefix: "iamuser"
+jcloud_cfg:
+    jcloud_tool: "jcloud"
+    jclient_tool: "jclient"
+    jclient_properties_path: "scripts/jcloud/jclient.properties"
+    jcloud_properties_path: "scripts/jcloud/jcloud.properties"
+    jcloud_path: "scripts/jcloud/jcloudclient.jar"
+    jclient_path: "scripts/jcloud/jclient.jar"
+    jcloud_cmd: "java -jar scripts/jcloud/jcloudclient.jar"
+    jclient_cmd: "java -jar scripts/jcloud/jclient.jar"

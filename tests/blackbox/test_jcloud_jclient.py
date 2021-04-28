@@ -31,10 +31,12 @@ import time
 import logging
 import pytest
 
+from commons.params import TEST_DATA_FOLDER
 from commons.ct_fail_on import CTFailOn
 from commons.exceptions import CTException
 from commons.errorcodes import error_handler, S3_CLIENT_ERROR
-from commons.utils import config_utils
+from commons.configmanager import config_utils
+from commons.configmanager import get_config_wrapper
 from commons.utils import system_utils
 from commons.utils import assert_utils
 from config import S3_CFG
@@ -42,7 +44,7 @@ from libs.s3 import s3_test_lib
 from libs.s3 import ACCESS_KEY, SECRET_KEY
 
 S3_TEST_OBJ = s3_test_lib.S3TestLib()
-BLACKBOX_CONF = config_utils.read_yaml("config/blackbox/test_jcloud_jclient.yaml")[1]
+BLACKBOX_CONF = get_config_wrapper(fpath="config/blackbox/test_blackbox.yaml")
 
 
 class TestJcloudAndJclient:
@@ -61,16 +63,14 @@ class TestJcloudAndJclient:
         cls.access_key = ACCESS_KEY
         cls.secret_key = SECRET_KEY
         cls.file_path_lst = []
-        cls.test_file = "testfile.txt"
         cls.root_path = os.path.join(
-            os.getcwd(), "testdata", "TestJcloudAndJclient")
-        cls.file_path = os.path.join(cls.root_path, cls.test_file)
+            os.getcwd(), TEST_DATA_FOLDER, "TestJcloudAndJclient")
         if not system_utils.path_exists(cls.root_path):
             system_utils.make_dirs(cls.root_path)
             cls.log.info("Created path: %s", cls.root_path)
         cls.log.info("setup jClientCloud on runner.")
         res_ls = system_utils.execute_cmd(
-            BLACKBOX_CONF["common_cfg"]["ls_script_path_cmd"])[1]
+            "ls scripts/jcloud/")[1]
         res = ".jar" in res_ls
         if not res:
             res = system_utils.configure_jclient_cloud(
@@ -83,7 +83,7 @@ class TestJcloudAndJclient:
             if not res:
                 raise CTException(
                     S3_CLIENT_ERROR,
-                    BLACKBOX_CONF["common_cfg"]["jar_skip_err"])
+                    "Error: jcloudclient.jar or jclient.jar file does not exists")
         cls.s3_url = S3_CFG['s3_url'].replace("https://", "").replace("http://", "")
         cls.s3_iam = S3_CFG['iam_url'].strip("https://").strip("http://").strip(":9443")
         resp = cls.update_jclient_jcloud_properties()
@@ -112,8 +112,10 @@ class TestJcloudAndJclient:
         teardown for cleanup
         """
         self.log.info("STARTED: Setup operations.")
-        if system_utils.path_exists(self.file_path):
-            system_utils.remove_file(self.file_path)
+        self.bucket_name = "jcloudjclientbucket-{}".format(time.perf_counter_ns())
+        self.obj_name = "objkey{}".format(time.perf_counter_ns())
+        self.test_file = "testfile{}.txt".format(time.perf_counter_ns())
+        self.file_path = os.path.join(self.root_path, self.test_file)
         self.log.info("Test file path: %s", self.file_path)
         self.log.info("ENDED: Setup operations.")
 
@@ -129,22 +131,14 @@ class TestJcloudAndJclient:
         self.log.info(
             "Deleting all buckets/objects created during TC execution")
         bucket_list = S3_TEST_OBJ.bucket_list()[1]
-        if bucket_list:
-            pref_list = [
-                each_bucket for each_bucket in bucket_list if each_bucket.startswith(
-                    BLACKBOX_CONF["common_cfg"]["bkt_prefix"])]
-            self.log.info(pref_list)
-            if pref_list:
-                resp = S3_TEST_OBJ.delete_multiple_buckets(pref_list)
-                assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("All the buckets/objects deleted successfully")
-        self.log.info("Deleting the directory created locally for object")
-        if self.file_path_lst:
-            for file_name in self.file_path_lst:
-                if os.path.exists(file_name):
-                    resp = system_utils.remove_file(file_name)
-                    assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Local directory was deleted")
+        if self.bucket_name in bucket_list:
+            resp = S3_TEST_OBJ.delete_bucket(self.bucket_name, force=True)
+            assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("The bucket and all objects deleted successfully")
+        self.log.info("Deleting the file created locally for object")
+        if os.path.exists(self.file_path):
+            resp = system_utils.remove_file(self.file_path)
+            assert_utils.assert_true(resp[0], resp[1])
         self.log.info("ENDED: Teardown Operations")
 
     def create_cmd_format(self, bucket, operation, jtool=None):
@@ -157,20 +151,17 @@ class TestJcloudAndJclient:
         :param str jtool: Name of the java jar tool
         :return: str command: cli command to be executed
         """
-        if jtool == BLACKBOX_CONF["common_cfg"]["jcloud_tool"]:
-            java_cmd = BLACKBOX_CONF["common_cfg"]["jcloud_cmd"]
-            aws_keys_str = BLACKBOX_CONF["common_cfg"]["jcloud_format_keys"].format(
+        if jtool == BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"]:
+            java_cmd = BLACKBOX_CONF["jcloud_cfg"]["jcloud_cmd"]
+            aws_keys_str = "--access-key {} --secret-key {}".format(
                 self.access_key, self.secret_key)
         else:
-            java_cmd = BLACKBOX_CONF["common_cfg"]["jclient_cmd"]
-            aws_keys_str = BLACKBOX_CONF["common_cfg"]["jclient_format_keys"].format(
+            java_cmd = BLACKBOX_CONF["jcloud_cfg"]["jclient_cmd"]
+            aws_keys_str = "--access_key {} --secret_key {}".format(
                 self.access_key, self.secret_key)
-        bucket_url = BLACKBOX_CONF["common_cfg"]["bkt_path_format"].format(
-            bucket)
-
-        path_style = BLACKBOX_CONF["common_cfg"]["path_style_opt"]
+        bucket_url = "s3://{}".format(bucket)
         cmd = "{} {} {} {} {}".format(java_cmd, operation, bucket_url,
-                                      aws_keys_str, path_style)
+                                      aws_keys_str, "-p")
         self.log.info("jcloud command: %s", cmd)
 
         return cmd
@@ -183,8 +174,8 @@ class TestJcloudAndJclient:
         :return: True
         """
         resp = False
-        for prop_path in [BLACKBOX_CONF["common_cfg"]["jclient_properties_path"],
-                          BLACKBOX_CONF["common_cfg"]["jcloud_properties_path"]]:
+        for prop_path in [BLACKBOX_CONF["jcloud_cfg"]["jclient_properties_path"],
+                          BLACKBOX_CONF["jcloud_cfg"]["jcloud_properties_path"]]:
             cls.log.info("Updating: %s", prop_path)
             prop_dict = config_utils.read_properties_file(prop_path)
             if prop_dict:
@@ -202,18 +193,16 @@ class TestJcloudAndJclient:
     def test_create_bucket_2368(self):
         """create bucket using Jcloudclient."""
         self.log.info("STARTED: create bucket using Jcloudclient")
-        test_cfg = BLACKBOX_CONF["test_2368"]
-        bucket_name = test_cfg["bucket_name"].format(self.random_id)
-        self.log.info("STEP: 1 Creating bucket %s", bucket_name)
+        self.log.info("STEP: 1 Creating bucket %s", self.bucket_name)
         command = self.create_cmd_format(
-            bucket_name,
-            BLACKBOX_CONF["common_cfg"]["make_bucket"],
-            jtool=BLACKBOX_CONF["common_cfg"]["jcloud_tool"])
+            self.bucket_name,
+            "mb",
+            jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
         self.log.info("command: %s", command)
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_in(test_cfg["success_msg"], resp[1][:-1], resp[1])
-        self.log.info("STEP: 1 Bucket was created %s", bucket_name)
+        assert_utils.assert_in("Bucket created successfully", resp[1][:-1], resp[1])
+        self.log.info("STEP: 1 Bucket was created %s", self.bucket_name)
         self.log.info("ENDED: create bucket using Jcloudclient")
 
     @pytest.mark.s3_ops
@@ -222,29 +211,27 @@ class TestJcloudAndJclient:
     def test_delete_bucket_2370(self):
         """Delete bucket using jcloudclient."""
         self.log.info("STARTED: delete bucket using jcloudclient")
-        test_cfg = BLACKBOX_CONF["test_2370"]
-        bucket_name = test_cfg["bucket_name"].format(self.random_id)
-        self.log.info("STEP: 1 Creating bucket %s", bucket_name)
+        self.log.info("STEP: 1 Creating bucket %s", self.bucket_name)
         command = self.create_cmd_format(
-            bucket_name,
-            BLACKBOX_CONF["common_cfg"]["make_bucket"],
-            jtool=BLACKBOX_CONF["common_cfg"]["jcloud_tool"])
+            self.bucket_name,
+            "mb",
+            jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(
-            test_cfg["success_msg_create"], resp[1][:-1], resp[1])
-        self.log.info("STEP: 1 Bucket was created %s", bucket_name)
-        self.log.info("STEP: 2 Deleting buckets %s", bucket_name)
+            "Bucket created successfully", resp[1][:-1], resp[1])
+        self.log.info("STEP: 1 Bucket was created %s", self.bucket_name)
+        self.log.info("STEP: 2 Deleting buckets %s", self.bucket_name)
         command = self.create_cmd_format(
-            bucket_name,
-            test_cfg["remove_bkt"],
-            jtool=BLACKBOX_CONF["common_cfg"]["jcloud_tool"])
+            self.bucket_name,
+            "rb",
+            jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(
-            test_cfg["success_msg_del"], resp[1][:-1], resp[1])
+            "Bucket deleted successfully", resp[1][:-1], resp[1])
         self.log.info(
-            "STEP: 2 Bucket %s was deleted successfully", bucket_name)
+            "STEP: 2 Bucket %s was deleted successfully", self.bucket_name)
         self.log.info("ENDED: delete bucket using jcloudclient")
 
     @pytest.mark.s3_ops
@@ -253,33 +240,31 @@ class TestJcloudAndJclient:
     def test_put_object_2373(self):
         """Put object using jcloudclient."""
         self.log.info("STARTED: put object using jcloudclient")
-        test_cfg = BLACKBOX_CONF["test_2373"]
-        bucket_name = test_cfg["bucket_name"].format(self.random_id)
-        self.log.info("STEP: 1 Creating bucket %s", bucket_name)
+        self.log.info("STEP: 1 Creating bucket %s", self.bucket_name)
         command = self.create_cmd_format(
-            bucket_name,
-            BLACKBOX_CONF["common_cfg"]["make_bucket"],
-            jtool=BLACKBOX_CONF["common_cfg"]["jcloud_tool"])
+            self.bucket_name,
+            "mb",
+            jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(
-            test_cfg["create_success_msg"], resp[1][:-1], resp[1])
-        self.log.info("STEP: 1 Bucket was created %s", bucket_name)
-        self.log.info("STEP: 2 Put object to a bucket %s", bucket_name)
+            "Bucket created successfully", resp[1][:-1], resp[1])
+        self.log.info("STEP: 1 Bucket was created %s", self.bucket_name)
+        self.log.info("STEP: 2 Put object to a bucket %s", self.bucket_name)
         system_utils.create_file(self.file_path,
-                                 BLACKBOX_CONF["common_cfg"]["file_size"])
-        put_cmd_str = "{} {}".format(test_cfg["put_cmd"],
+                                 10)
+        put_cmd_str = "{} {}".format("put",
                                      self.file_path)
         command = self.create_cmd_format(
-            bucket_name,
+            self.bucket_name,
             put_cmd_str,
-            jtool=BLACKBOX_CONF["common_cfg"]["jcloud_tool"])
+            jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(
-            test_cfg["obj_success_msg"], resp[1][:-1], resp[1])
+            "Object put successfully", resp[1][:-1], resp[1])
         self.log.info(
-            "STEP: 2 Put object to a bucket %s was successful", bucket_name)
+            "STEP: 2 Put object to a bucket %s was successful", self.bucket_name)
         self.file_path_lst.append(self.file_path)
         self.log.info("ENDED: get object using jcloudclient")
 
@@ -289,44 +274,42 @@ class TestJcloudAndJclient:
     def test_get_object_2374(self):
         """Get object using jcloudclient."""
         self.log.info("STARTED: get object using jcloudclient")
-        test_cfg = BLACKBOX_CONF["test_2374"]
-        bucket_name = test_cfg["bucket_name"].format(self.random_id)
-        self.log.info("STEP: 1 Creating bucket %s", bucket_name)
+        self.log.info("STEP: 1 Creating bucket %s", self.bucket_name)
         command = self.create_cmd_format(
-            bucket_name,
-            BLACKBOX_CONF["common_cfg"]["make_bucket"],
-            jtool=BLACKBOX_CONF["common_cfg"]["jcloud_tool"])
+            self.bucket_name,
+            "mb",
+            jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(
-            test_cfg["create_success_msg"], resp[1][:-1], resp[1])
-        self.log.info("STEP: 1 Bucket was created %s", bucket_name)
+            "Bucket created successfully", resp[1][:-1], resp[1])
+        self.log.info("STEP: 1 Bucket was created %s", self.bucket_name)
         self.log.info(
-            "STEP: 2 Uploading an object to a bucket %s", bucket_name)
+            "STEP: 2 Uploading an object to a bucket %s", self.bucket_name)
         system_utils.create_file(self.file_path,
-                                 BLACKBOX_CONF["common_cfg"]["file_size"])
-        put_cmd_str = "{} {}".format(test_cfg["put_cmd"],
+                                 10)
+        put_cmd_str = "{} {}".format("put",
                                      self.file_path)
         command = self.create_cmd_format(
-            bucket_name,
+            self.bucket_name,
             put_cmd_str,
-            jtool=BLACKBOX_CONF["common_cfg"]["jcloud_tool"])
+            jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_in(test_cfg["put_obj_msg"], resp[1][:-1], resp[1])
+        assert_utils.assert_in("Object put successfully", resp[1][:-1], resp[1])
         self.log.info(
-            "STEP: 2 Put object to a bucket %s was successful", bucket_name)
-        self.log.info("STEP: 3 Get object from bucket %s", bucket_name)
+            "STEP: 2 Put object to a bucket %s was successful", self.bucket_name)
+        self.log.info("STEP: 3 Get object from bucket %s", self.bucket_name)
         file_path = self.file_path.split("/")[-1]
         self.file_path_lst.append(file_path)
-        bucket_str = "{0}/{1} {1}".format(bucket_name, file_path)
+        bucket_str = "{0}/{1} {1}".format(self.bucket_name, file_path)
         command = self.create_cmd_format(
             bucket_str,
-            test_cfg["get_cmd"],
-            jtool=BLACKBOX_CONF["common_cfg"]["jcloud_tool"])
+            "get",
+            jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_in(test_cfg["get_obj_msg"], resp[1][:-1], resp)
+        assert_utils.assert_in("Object download successfully", resp[1][:-1], resp)
         self.log.info("STEP: 3 Object was downloaded successfully")
         self.file_path_lst.append(os.path.join(
             self.file_path))
@@ -338,42 +321,40 @@ class TestJcloudAndJclient:
     def test_delete_object_2375(self):
         """Delete object using jcloudclient."""
         self.log.info("STARTED: delete object using jcloudclient")
-        test_cfg = BLACKBOX_CONF["test_2375"]
-        bucket_name = test_cfg["bucket_name"].format(self.random_id)
-        self.log.info("STEP: 1 Creating bucket %s", bucket_name)
+        self.log.info("STEP: 1 Creating bucket %s", self.bucket_name)
         command = self.create_cmd_format(
-            bucket_name, BLACKBOX_CONF["common_cfg"]["make_bucket"])
+            self.bucket_name, "mb")
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(
-            test_cfg["create_success_msg"], resp[1][:-1], resp[1])
-        self.log.info("STEP: 1 Bucket was created %s", bucket_name)
+            "Bucket created successfully", resp[1][:-1], resp[1])
+        self.log.info("STEP: 1 Bucket was created %s", self.bucket_name)
         self.log.info(
-            "STEP: 2 Uploading an object to a bucket %s", bucket_name)
+            "STEP: 2 Uploading an object to a bucket %s", self.bucket_name)
         system_utils.create_file(self.file_path,
-                                 BLACKBOX_CONF["common_cfg"]["file_size"])
-        put_cmd_str = "{} {}".format(test_cfg["put_cmd"],
+                                 10)
+        put_cmd_str = "{} {}".format("put",
                                      self.file_path)
         command = self.create_cmd_format(
-            bucket_name,
+            self.bucket_name,
             put_cmd_str,
-            jtool=BLACKBOX_CONF["common_cfg"]["jcloud_tool"])
+            jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_in(test_cfg["put_obj_msg"], resp[1][:-1], resp[1])
+        assert_utils.assert_in("Object put successfully", resp[1][:-1], resp[1])
         self.log.info(
-            "STEP: 2 Put object to a bucket %s was successful", bucket_name)
+            "STEP: 2 Put object to a bucket %s was successful", self.bucket_name)
         self.log.info(
-            "STEP: 3 Deleting object from bucket %s", bucket_name)
+            "STEP: 3 Deleting object from bucket %s", self.bucket_name)
         file_name = self.file_path.split("/")[-1]
-        bucket_str = "{0}/{1} {1}".format(bucket_name, file_name)
+        bucket_str = "{0}/{1} {1}".format(self.bucket_name, file_name)
         command = self.create_cmd_format(
             bucket_str,
-            test_cfg["del_cmd"],
-            jtool=BLACKBOX_CONF["common_cfg"]["jcloud_tool"])
+            "del",
+            jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_in(test_cfg["get_obj_msg"], resp[1][:-1], resp)
+        assert_utils.assert_in("Object download successfully", resp[1][:-1], resp)
         self.log.info("STEP: 3 Object was deleted successfully")
         self.file_path_lst.append(self.file_path)
         self.log.info("ENDED: delete object using jcloudclient")
@@ -384,32 +365,30 @@ class TestJcloudAndJclient:
     def test_del_multiple_objects_2376(self):
         """Delete multiple objects using jcloudclient."""
         self.log.info("STARTED: delete multiple objects using jcloudclient")
-        test_cfg = BLACKBOX_CONF["test_2376"]
-        bucket_name = test_cfg["bucket_name"].format(self.random_id)
         self.log.info("STEP: 1 Creating bucket and uploading multiple objects")
-        obj_lst = test_cfg["obj_list"]
-        resp = S3_TEST_OBJ.create_bucket(bucket_name)
+        obj_lst = ["object2376-1.txt", "object2376-2.txt"]
+        resp = S3_TEST_OBJ.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         for obj_name in obj_lst:
             file_p = os.path.join(self.root_path,
                                   obj_name)
             self.file_path_lst.append(file_p)
             system_utils.create_file(file_p,
-                                     BLACKBOX_CONF["common_cfg"]["file_size"])
-            S3_TEST_OBJ.put_object(bucket_name, obj_name, file_p)
+                                     10)
+            S3_TEST_OBJ.put_object(self.bucket_name, obj_name, file_p)
         self.log.info(
             "STEP: 1 Creating a bucket and uploading multiple objects was successful")
         self.log.info(
-            "STEP: 2 Deleting multiple objects from bucket %s", bucket_name)
+            "STEP: 2 Deleting multiple objects from bucket %s", self.bucket_name)
         objects_str = " ".join(obj_lst)
-        bucket_str = "{} {}".format(bucket_name, objects_str)
+        bucket_str = "{} {}".format(self.bucket_name, objects_str)
         command = self.create_cmd_format(
             bucket_str,
-            test_cfg["multi_del"],
-            jtool=BLACKBOX_CONF["common_cfg"]["jcloud_tool"])
+            "multidel",
+            jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_in(test_cfg["multi_del_msg"], resp[1][:-1], resp)
+        assert_utils.assert_in("Objects deleted successfully", resp[1][:-1], resp)
         self.log.info("STEP: 2 Successfully deleted all objects")
         self.log.info("ENDED: delete multiple objects using jcloudclient")
 
@@ -419,31 +398,28 @@ class TestJcloudAndJclient:
     def test_head_object_2377(self):
         """Head object using jcloudclient."""
         self.log.info("STARTED: head object using jcloudclient")
-        test_cfg = BLACKBOX_CONF["test_2377"]
-        bucket_name = test_cfg["bucket_name"].format(self.random_id)
         self.log.info(
             "STEP: 1 Creating bucket and uploading object in bucket %s",
-            bucket_name)
-        obj_name = test_cfg["obj_name"]
-        file_path = "{}/{}".format(self.root_path, obj_name)
+            self.bucket_name)
+        file_path = "{}/{}".format(self.root_path, self.obj_name)
         S3_TEST_OBJ.create_bucket_put_object(
-            bucket_name,
-            obj_name,
+            self.bucket_name,
+            self.obj_name,
             file_path,
-            BLACKBOX_CONF["common_cfg"]["file_size"])
+            10)
         self.log.info(
             "STEP: 1 Creating a bucket and uploading object was successful")
         self.log.info("STEP: 2 Get head object")
-        bucket_str = "{}/{}".format(bucket_name, obj_name)
+        bucket_str = "{}/{}".format(self.bucket_name, self.obj_name)
         command = self.create_cmd_format(
             bucket_str,
-            test_cfg["head_obj_cmd"],
-            jtool=BLACKBOX_CONF["common_cfg"]["jcloud_tool"])
+            "head",
+            jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(resp)
         output_objname = resp[1].split("\\n")[1].split("-")[1].strip()
-        assert_utils.assert_equal(output_objname, obj_name, resp)
+        assert_utils.assert_equal(output_objname, self.obj_name, resp)
         self.log.info("STEP: 2 Get head object was successful")
         self.file_path_lst.append(file_path)
         self.log.info("ENDED: head object using jcloudclient")
@@ -454,31 +430,28 @@ class TestJcloudAndJclient:
     def test_check_obj_exists_2379(self):
         """object exists using jcloudclient."""
         self.log.info("STARTED: object exists using jcloudclient")
-        test_cfg = BLACKBOX_CONF["test_2379"]
-        bucket_name = test_cfg["bucket_name"].format(self.random_id)
         self.log.info("STEP: 1 Creating bucket and uploading object")
-        obj_name = test_cfg["obj_name"]
-        file_path = "{}/{}".format(self.root_path, obj_name)
+        file_path = "{}/{}".format(self.root_path, self.obj_name)
         S3_TEST_OBJ.create_bucket_put_object(
-            bucket_name,
-            obj_name,
+            self.bucket_name,
+            self.obj_name,
             file_path,
-            BLACKBOX_CONF["common_cfg"]["file_size"])
+            10)
         self.log.info(
             "STEP: 1 Creating a bucket and uploading object was successful")
         self.log.info(
-            "STEP: 2 Check object exists in the bucket %s", bucket_name)
-        bucket_str = "{}/{}".format(bucket_name, obj_name)
+            "STEP: 2 Check object exists in the bucket %s", self.bucket_name)
+        bucket_str = "{}/{}".format(self.bucket_name, self.obj_name)
         command = self.create_cmd_format(
             bucket_str,
-            test_cfg["exists_cmd"],
-            jtool=BLACKBOX_CONF["common_cfg"]["jcloud_tool"])
+            "exists",
+            jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
-        success_msg = test_cfg["exists_msg"].format(obj_name)
+        success_msg = "Object {} exists".format(self.obj_name)
         assert_utils.assert_in(success_msg, resp[1][:-1], resp[1])
         self.log.info(
-            "STEP: 2 Object exists in the bucket %s", bucket_name)
+            "STEP: 2 Object exists in the bucket %s", self.bucket_name)
         self.file_path_lst.append(file_path)
         self.log.info("ENDED: object exists using jcloudclient")
 
@@ -488,21 +461,19 @@ class TestJcloudAndJclient:
     def test_remove_empty_bucket_2380(self):
         """Remove bucket if empty."""
         self.log.info("STARTED: Remove bucket if empty")
-        test_cfg = BLACKBOX_CONF["test_2380"]
-        bucket_name = test_cfg["bucket_name"].format(self.random_id)
-        self.log.info("STEP: 1 Creating bucket %s", bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(bucket_name)
+        self.log.info("STEP: 1 Creating bucket %s", self.bucket_name)
+        resp = S3_TEST_OBJ.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("STEP: 1 Bucket was created %s", bucket_name)
+        self.log.info("STEP: 1 Bucket was created %s", self.bucket_name)
         self.log.info(
-            "STEP: 2 Trying to remove bucket: %s if empty", bucket_name)
+            "STEP: 2 Trying to remove bucket: %s if empty", self.bucket_name)
         command = self.create_cmd_format(
-            bucket_name,
-            test_cfg["rb_bkt_cmd"],
-            jtool=BLACKBOX_CONF["common_cfg"]["jcloud_tool"])
+            self.bucket_name,
+            "rbifempty",
+            jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_in(test_cfg["rb_bkt_msg"], resp[1][:-1], resp)
+        assert_utils.assert_in("Bucket deleted successfully", resp[1][:-1], resp)
         self.log.info("STEP: 2 Bucket was successfully removed")
         self.log.info("ENDED: Remove bucket if empty")
 
@@ -512,17 +483,15 @@ class TestJcloudAndJclient:
     def test_create_bucket_2381(self):
         """create bucket using jclient."""
         self.log.info("STARTED: create bucket using jclient")
-        test_cfg = BLACKBOX_CONF["test_2381"]
-        bucket_name = test_cfg["bucket_name"].format(self.random_id)
-        self.log.info("STEP: 1 Creating bucket %s", bucket_name)
+        self.log.info("STEP: 1 Creating bucket %s", self.bucket_name)
         command = self.create_cmd_format(
-            bucket_name,
-            BLACKBOX_CONF["common_cfg"]["make_bucket"],
-            jtool=BLACKBOX_CONF["common_cfg"]["jclient_tool"])
+            self.bucket_name,
+            "mb",
+            jtool=BLACKBOX_CONF["jcloud_cfg"]["jclient_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_in(test_cfg["success_msg"], resp[1][:-1], resp)
-        self.log.info("STEP: 1 Bucket was created %s", bucket_name)
+        assert_utils.assert_in("Bucket created successfully", resp[1][:-1], resp)
+        self.log.info("STEP: 1 Bucket was created %s", self.bucket_name)
         self.log.info("ENDED: create bucket using jclient")
 
     @pytest.mark.s3_ops
@@ -531,23 +500,21 @@ class TestJcloudAndJclient:
     def test_list_bucket_2382(self):
         """list bucket using jclient."""
         self.log.info("STARTED: list bucket using jclient")
-        test_cfg = BLACKBOX_CONF["test_2382"]
-        bucket_name = test_cfg["bucket_name"].format(self.random_id)
-        self.log.info("STEP: 1 Creating bucket %s", bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(bucket_name)
+        self.log.info("STEP: 1 Creating bucket %s", self.bucket_name)
+        resp = S3_TEST_OBJ.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("STEP: 1 Bucket was created %s", bucket_name)
+        self.log.info("STEP: 1 Bucket was created %s", self.bucket_name)
         self.log.info("STEP: 2 Listing all the bucket created")
-        java_cmd = BLACKBOX_CONF["common_cfg"]["jclient_cmd"]
-        aws_keys_str = BLACKBOX_CONF["common_cfg"]["jclient_format_keys"].format(
+        java_cmd = BLACKBOX_CONF["jcloud_cfg"]["jclient_cmd"]
+        aws_keys_str = "--access_key {} --secret_key {}".format(
             self.access_key, self.secret_key)
         command = "{} {} {}".format(
-            java_cmd, test_cfg["lst_bkt_cmd"], aws_keys_str)
+            java_cmd, "ls", aws_keys_str)
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         bkt_lst = resp[1][9:].strip().split("\\n")
         self.log.info("Bucket List %s", bkt_lst)
-        assert_utils.assert_in(bucket_name, bkt_lst, resp)
+        assert_utils.assert_in(self.bucket_name, bkt_lst, resp)
         self.log.info("STEP: 2 All buckets were listed")
         self.log.info("ENDED: list bucket using jclient")
 
@@ -557,22 +524,20 @@ class TestJcloudAndJclient:
     def test_delete_bucket_2384(self):
         """delete bucket using jclient."""
         self.log.info("STARTED: delete bucket using jclient")
-        test_cfg = BLACKBOX_CONF["test_2384"]
-        bucket_name = test_cfg["bucket_name"].format(self.random_id)
-        self.log.info("STEP: 1 Creating bucket %s", bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(bucket_name)
+        self.log.info("STEP: 1 Creating bucket %s", self.bucket_name)
+        resp = S3_TEST_OBJ.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("STEP: 1 Bucket was created %s", bucket_name)
+        self.log.info("STEP: 1 Bucket was created %s", self.bucket_name)
         self.log.info(
-            "STEP: 2 Trying to delete a bucket: %s", bucket_name)
+            "STEP: 2 Trying to delete a bucket: %s", self.bucket_name)
         command = self.create_cmd_format(
-            bucket_name,
-            test_cfg["remove_bkt"],
-            jtool=BLACKBOX_CONF["common_cfg"]["jclient_tool"])
+            self.bucket_name,
+            "rb",
+            jtool=BLACKBOX_CONF["jcloud_cfg"]["jclient_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(
-            test_cfg["del_success_msg"], resp[1][:-1], resp[1])
+            "Bucket deleted successfully", resp[1][:-1], resp[1])
         self.log.info("STEP: 2 Bucket was successfully deleted")
         self.log.info("ENDED: delete bucket using jclient")
 
@@ -582,28 +547,25 @@ class TestJcloudAndJclient:
     def test_list_object_2385(self):
         """list object using jclient."""
         self.log.info("STARTED: list object using jclient")
-        test_cfg = BLACKBOX_CONF["test_2385"]
-        bucket_name = test_cfg["bucket_name"].format(self.random_id)
         self.log.info("STEP: 1 Creating bucket and uploading object")
-        obj_name = test_cfg["obj_name"]
-        file_path = "{}/{}".format(self.root_path, obj_name)
+        file_path = "{}/{}".format(self.root_path, self.obj_name)
         S3_TEST_OBJ.create_bucket_put_object(
-            bucket_name,
-            obj_name,
+            self.bucket_name,
+            self.obj_name,
             file_path,
-            BLACKBOX_CONF["common_cfg"]["file_size"])
+            10)
         self.log.info(
             "STEP: 1 Creating a bucket and uploading object was successful")
         self.log.info(
-            "STEP: 2 Listing all the objects from buckets %s", bucket_name)
+            "STEP: 2 Listing all the objects from buckets %s", self.bucket_name)
         command = self.create_cmd_format(
-            bucket_name,
-            test_cfg["ls_cmd"],
-            jtool=BLACKBOX_CONF["common_cfg"]["jclient_tool"])
+            self.bucket_name,
+            "ls",
+            jtool=BLACKBOX_CONF["jcloud_cfg"]["jclient_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Object List %s", resp[1])
-        assert_utils.assert_in(obj_name, resp[1], resp)
+        assert_utils.assert_in(self.obj_name, resp[1], resp)
         self.log.info("STEP: 2 All objects were listed of bucket")
         self.file_path_lst.append(file_path)
         self.log.info("ENDED: list object using jclient")
@@ -614,29 +576,26 @@ class TestJcloudAndJclient:
     def test_delete_object_2386(self):
         """delete object using jclient."""
         self.log.info("STARTED: delete object using jclient")
-        test_cfg = BLACKBOX_CONF["test_2386"]
-        bucket_name = test_cfg["bucket_name"].format(self.random_id)
         self.log.info("STEP: 1 Creating bucket and uploading object")
-        obj_name = test_cfg["obj_name"]
-        file_path = "{}/{}".format(self.root_path, obj_name)
+        file_path = "{}/{}".format(self.root_path, self.obj_name)
         S3_TEST_OBJ.create_bucket_put_object(
-            bucket_name,
-            obj_name,
+            self.bucket_name,
+            self.obj_name,
             file_path,
-            BLACKBOX_CONF["common_cfg"]["file_size"])
+            10)
         self.log.info(
             "STEP: 1 Creating a bucket and uploading object was successful")
         self.log.info(
-            "STEP: 2 Deleting object from bucket %s", bucket_name)
-        bucket_str = "{}/{}".format(bucket_name, obj_name)
+            "STEP: 2 Deleting object from bucket %s", self.bucket_name)
+        bucket_str = "{}/{}".format(self.bucket_name, self.obj_name)
         command = self.create_cmd_format(
             bucket_str,
-            test_cfg["del_cmd"],
-            jtool=BLACKBOX_CONF["common_cfg"]["jclient_tool"])
+            "del",
+            jtool=BLACKBOX_CONF["jcloud_cfg"]["jclient_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(
-            test_cfg["multi_del_msg"], resp[1][:-1], resp[1])
+            "Objects deleted successfully", resp[1][:-1], resp[1])
         self.log.info("STEP: 2 Object was deleted successfully")
         self.file_path_lst.append(file_path)
         self.log.info("ENDED: delete object using jclient")
@@ -647,28 +606,25 @@ class TestJcloudAndJclient:
     def test_head_object_2388(self):
         """head object using jclient."""
         self.log.info("STARTED: head object using jclient")
-        test_cfg = BLACKBOX_CONF["test_2388"]
-        bucket_name = test_cfg["bucket_name"].format(self.random_id)
         self.log.info("STEP: 1 Creating bucket and upload object")
-        obj_name = test_cfg["obj_name"]
-        file_path = "{}/{}".format(self.root_path, obj_name)
+        file_path = "{}/{}".format(self.root_path, self.obj_name)
         S3_TEST_OBJ.create_bucket_put_object(
-            bucket_name,
-            obj_name,
+            self.bucket_name,
+            self.obj_name,
             file_path,
-            BLACKBOX_CONF["common_cfg"]["file_size"])
+            10)
         self.log.info(
             "STEP: 1 Creating a bucket and uploading object was successful")
         self.log.info("STEP: 2 Get head object")
-        bucket_str = "{}/{}".format(bucket_name, obj_name)
+        bucket_str = "{}/{}".format(self.bucket_name, self.obj_name)
         command = self.create_cmd_format(
             bucket_str,
-            test_cfg["head_obj_cmd"],
-            jtool=BLACKBOX_CONF["common_cfg"]["jclient_tool"])
+            "head",
+            jtool=BLACKBOX_CONF["jcloud_cfg"]["jclient_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         output_objname = resp[1].split("\\n")[1].split("-")[1].strip()
-        assert_utils.assert_equal(output_objname, obj_name, resp)
+        assert_utils.assert_equal(output_objname, self.obj_name, resp)
         self.log.info("STEP: 2 Get head object was successful")
         self.file_path_lst.append(file_path)
         self.log.info("ENDED: head object using jclient")
@@ -679,27 +635,24 @@ class TestJcloudAndJclient:
     def test_put_obj_2389(self):
         """put object using jclient."""
         self.log.info("STARTED: put object using jclient")
-        test_cfg = BLACKBOX_CONF["test_2389"]
-        bucket_name = test_cfg["bucket_name"].format(self.random_id)
-        self.log.info("STEP: 1 Creating bucket %s", bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(bucket_name)
+        self.log.info("STEP: 1 Creating bucket %s", self.bucket_name)
+        resp = S3_TEST_OBJ.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("STEP: 1 Bucket was created %s", bucket_name)
+        self.log.info("STEP: 1 Bucket was created %s", self.bucket_name)
         self.log.info(
-            "STEP: 2 Uploading an object to a bucket %s", bucket_name)
-        obj_name = test_cfg["obj_name"]
-        file_path = "{}/{}".format(self.root_path, obj_name)
+            "STEP: 2 Uploading an object to a bucket %s", self.bucket_name)
+        file_path = "{}/{}".format(self.root_path, self.obj_name)
         system_utils.create_file(file_path,
-                                 BLACKBOX_CONF["common_cfg"]["file_size"])
-        put_cmd = "{} {}".format(test_cfg["put_cmd"], file_path)
+                                 10)
+        put_cmd = "{} {}".format("put", file_path)
         command = self.create_cmd_format(
-            bucket_name, put_cmd, jtool=BLACKBOX_CONF["common_cfg"]["jclient_tool"])
+            self.bucket_name, put_cmd, jtool=BLACKBOX_CONF["jcloud_cfg"]["jclient_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(
-            test_cfg["obj_success_msg"], resp[1][:-1], resp[1])
+            "Object put successfully", resp[1][:-1], resp[1])
         self.log.info(
-            "STEP: 2Put object to a bucket %s was successful", bucket_name)
+            "STEP: 2Put object to a bucket %s was successful", self.bucket_name)
         self.file_path_lst.append(file_path)
         self.log.info("ENDED: put object using jclient")
 
@@ -709,30 +662,27 @@ class TestJcloudAndJclient:
     def test_get_object_2390(self):
         """get object using jclient."""
         self.log.info("STARTED: get object using jclient")
-        test_cfg = BLACKBOX_CONF["test_2390"]
-        bucket_name = test_cfg["bucket_name"].format(self.random_id)
         self.log.info("STEP: 1 Creating bucket and uploading object")
-        obj_name = test_cfg["obj_name"]
-        file_path = "{}/{}".format(self.root_path, obj_name)
+        file_path = "{}/{}".format(self.root_path, self.obj_name)
         S3_TEST_OBJ.create_bucket_put_object(
-            bucket_name,
-            obj_name,
+            self.bucket_name,
+            self.obj_name,
             file_path,
-            BLACKBOX_CONF["common_cfg"]["file_size"])
+            10)
         self.log.info(
             "STEP: 1 Creating a bucket and uploading object was successful")
-        self.log.info("STEP: 2 Get object from bucket %s", bucket_name)
-        bucket_str = "{0}/{1} {1}".format(bucket_name, obj_name)
+        self.log.info("STEP: 2 Get object from bucket %s", self.bucket_name)
+        bucket_str = "{0}/{1} {1}".format(self.bucket_name, self.obj_name)
         command = self.create_cmd_format(
             bucket_str,
-            test_cfg["get_cmd"],
-            jtool=BLACKBOX_CONF["common_cfg"]["jclient_tool"])
+            "get",
+            jtool=BLACKBOX_CONF["jcloud_cfg"]["jclient_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_in(test_cfg["get_obj_msg"], resp[1][:-1], resp)
+        assert_utils.assert_in("Object download successfully", resp[1][:-1], resp)
         self.log.info("STEP: 2 Object was downloaded successfully")
         self.file_path_lst.append(file_path)
-        self.file_path_lst.append(os.path.join(os.getcwd(), obj_name))
+        self.file_path_lst.append(os.path.join(os.getcwd(), self.obj_name))
         self.log.info("ENDED: put object using jclient")
 
     @pytest.mark.s3_ops
@@ -741,24 +691,22 @@ class TestJcloudAndJclient:
     def test_bucket_exists_2391(self):
         """Bucket exists using Jclient."""
         self.log.info("STARTED: Bucket exists using Jclient")
-        test_cfg = BLACKBOX_CONF["test_2391"]
-        bucket_name = test_cfg["bucket_name"].format(self.random_id)
-        self.log.info("STEP: 1 Creating bucket %s", bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(bucket_name)
+        self.log.info("STEP: 1 Creating bucket %s", self.bucket_name)
+        resp = S3_TEST_OBJ.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("STEP: 1 Bucket was created %s", bucket_name)
+        self.log.info("STEP: 1 Bucket was created %s", self.bucket_name)
         self.log.info(
-            "STEP: 2 Check bucket %s exists on s3 server", bucket_name)
+            "STEP: 2 Check bucket %s exists on s3 server", self.bucket_name)
         command = self.create_cmd_format(
-            bucket_name,
-            test_cfg["exists_cmd"],
-            jtool=BLACKBOX_CONF["common_cfg"]["jclient_tool"])
+            self.bucket_name,
+            "exists",
+            jtool=BLACKBOX_CONF["jcloud_cfg"]["jclient_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
-        success_msg = test_cfg["exists_msg"].format(bucket_name)
+        success_msg = "Object {} exists".format(self.bucket_name)
         assert_utils.assert_in(success_msg, resp[1][:-1], resp[1])
         self.log.info(
-            "STEP: 2 Bucket %s exists on s3 server", bucket_name)
+            "STEP: 2 Bucket %s exists on s3 server", self.bucket_name)
         self.log.info("ENDED: Bucket exists using Jclient")
 
     @pytest.mark.s3_ops
@@ -767,30 +715,27 @@ class TestJcloudAndJclient:
     def test_check_obj_exists_2392(self):
         """object exists using jclient."""
         self.log.info("STARTED: object exists using jclient")
-        test_cfg = BLACKBOX_CONF["test_2392"]
-        bucket_name = test_cfg["bucket_name"].format(self.random_id)
         self.log.info("STEP: 1 Creating bucket and uploading objects")
-        obj_name = test_cfg["obj_name"]
-        file_path = "{}/{}".format(self.root_path, obj_name)
+        file_path = "{}/{}".format(self.root_path, self.obj_name)
         S3_TEST_OBJ.create_bucket_put_object(
-            bucket_name,
-            obj_name,
+            self.bucket_name,
+            self.obj_name,
             file_path,
-            BLACKBOX_CONF["common_cfg"]["file_size"])
+            10)
         self.log.info(
             "STEP: 1 Creating a bucket and uploading object was successful")
         self.log.info(
-            "STEP: 2 Check object exists in the bucket %s", bucket_name)
-        bucket_str = "{}/{}".format(bucket_name, obj_name)
+            "STEP: 2 Check object exists in the bucket %s", self.bucket_name)
+        bucket_str = "{}/{}".format(self.bucket_name, self.obj_name)
         command = self.create_cmd_format(
             bucket_str,
-            test_cfg["exists_cmd"],
-            jtool=BLACKBOX_CONF["common_cfg"]["jclient_tool"])
+            "exists",
+            jtool=BLACKBOX_CONF["jcloud_cfg"]["jclient_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_in(test_cfg["exists_msg"], resp[1][:-1], resp[1])
+        assert_utils.assert_in("Object {} exists", resp[1][:-1], resp[1])
         self.log.info(
-            "STEP: 2 Object exists in the bucket %s", bucket_name)
+            "STEP: 2 Object exists in the bucket %s", self.bucket_name)
         self.file_path_lst.append(file_path)
         self.log.info("ENDED: object exists using jclient")
 
@@ -800,22 +745,20 @@ class TestJcloudAndJclient:
     def test_list_buckets_2369(self):
         """list buckets using jcloudclient."""
         self.log.info("STARTED: list buckets using jcloudclient")
-        test_cfg = BLACKBOX_CONF["test_2369"]
-        common_cfg = BLACKBOX_CONF["common_cfg"]
-        bucket_name = test_cfg["bucket_name"].format(self.random_id)
-        self.log.info("STEP 1: Creating bucket %s", bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(bucket_name)
+        common_cfg = BLACKBOX_CONF["jcloud_cfg"]
+        self.log.info("STEP 1: Creating bucket %s", self.bucket_name)
+        resp = S3_TEST_OBJ.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("STEP 1: Bucket was created %s", bucket_name)
+        self.log.info("STEP 1: Bucket was created %s", self.bucket_name)
         self.log.info("STEP 2: Listing all the buckets")
         keys_str = common_cfg["jcloud_format_keys"].format(
             self.access_key, self.secret_key)
         command = "{} {} {}".format(common_cfg["jcloud_cmd"],
-                                    test_cfg["ls_bkt_cmd"], keys_str)
+                                    "ls", keys_str)
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         bucket_lst = [bkt.strip() for bkt in resp[1].split("\\n")]
-        assert_utils.assert_in(bucket_name, bucket_lst, resp)
+        assert_utils.assert_in(self.bucket_name, bucket_lst, resp)
         self.log.info("STEP 2: All the s3 bucket listed")
         self.log.info("ENDED: list buckets using jcloudclient")
 
@@ -826,13 +769,11 @@ class TestJcloudAndJclient:
         """max no of buckets supported using jcloudclient."""
         self.log.info(
             "STARTED: max no of buckets supported using jcloudclient")
-        test_cfg = BLACKBOX_CONF["test_2371"]
-        common_cfg = BLACKBOX_CONF["common_cfg"]
-        bucket_name = test_cfg["bucket_name"].format(self.random_id)
+        common_cfg = BLACKBOX_CONF["jcloud_cfg"]
         bkt_lst = []
         self.log.info("STEP 1: Creating n buckets")
-        for bkt in range(test_cfg["bucket_count"]):
-            bkt_name_str = "{}-{}".format(bucket_name, bkt)
+        for bkt in range(1000):
+            bkt_name_str = "{}-{}".format(self.bucket_name, bkt)
             self.log.info(
                 "Creating bucket with name : %s", bkt_name_str)
             command = self.create_cmd_format(
@@ -842,14 +783,14 @@ class TestJcloudAndJclient:
             resp = system_utils.execute_cmd(command)
             assert_utils.assert_true(resp[0], resp[1])
             bkt_lst.append(bkt_name_str)
-            assert_utils.assert_in(test_cfg["success_msg"], resp[1][:-1], resp)
+            assert_utils.assert_in("Bucket created successfully", resp[1][:-1], resp)
             self.log.info(
                 "Bucket %s was created successfully", bkt_name_str)
         self.log.info("STEP 1: n buckets were created successfully")
         self.log.info("STEP 2: Verifying all the buckets")
         resp = S3_TEST_OBJ.bucket_list()
         assert_utils.assert_true(resp[0], resp[1])
-        s3_bkt_lst = [bkt for bkt in resp[1] if bucket_name in bkt]
+        s3_bkt_lst = [bkt for bkt in resp[1] if self.bucket_name in bkt]
         assert_utils.assert_equal(bkt_lst.sort(), s3_bkt_lst.sort(), resp)
         self.log.info("STEP 2: All the s3 buckets created were verified")
         self.log.info("ENDED: max no of buckets supported using jcloudclient")
@@ -860,30 +801,27 @@ class TestJcloudAndJclient:
     def test_list_objects_2372(self):
         """list objects using jcloudclient."""
         self.log.info("STARTED: list objects using jcloudclient")
-        test_cfg = BLACKBOX_CONF["test_2372"]
-        bucket_name = test_cfg["bucket_name"].format(self.random_id)
         self.log.info("STEP 1: Creating bucket and uploading object")
-        obj_name = test_cfg["obj_name"]
         file_path = "{}/{}".format(
             self.root_path,
-            obj_name)
+            self.obj_name)
         S3_TEST_OBJ.create_bucket_put_object(
-            bucket_name,
-            obj_name,
+            self.bucket_name,
+            self.obj_name,
             file_path,
-            BLACKBOX_CONF["common_cfg"]["file_size"])
+            10)
         self.log.info(
             "STEP 1: Creating a bucket and uploading object was successful")
         self.log.info(
             "STEP 2: Listing all the objects from buckets %s",
-            bucket_name)
+            self.bucket_name)
         command = self.create_cmd_format(
-            bucket_name,
-            test_cfg["ls_cmd"],
-            jtool=BLACKBOX_CONF["common_cfg"]["jcloud_tool"])
+            self.bucket_name,
+            "ls",
+            jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_in(obj_name, resp[1], resp)
+        assert_utils.assert_in(self.obj_name, resp[1], resp)
         self.log.info("STEP 2: All objects were listed of bucket")
         self.file_path_lst.append(file_path)
         self.log.info("ENDED: list objects using jcloudclient")
@@ -894,24 +832,22 @@ class TestJcloudAndJclient:
     def test_check_bucket_exist_2378(self):
         """Bucket exists using jcloudclient."""
         self.log.info("STARTED: Bucket exists using jcloudclient")
-        test_cfg = BLACKBOX_CONF["test_2378"]
-        bucket_name = test_cfg["bucket_name"].format(self.random_id)
-        self.log.info("STEP 1: Creating bucket %s", bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(bucket_name)
+        self.log.info("STEP 1: Creating bucket %s", self.bucket_name)
+        resp = S3_TEST_OBJ.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("STEP 1: Bucket was created %s", bucket_name)
+        self.log.info("STEP 1: Bucket was created %s", self.bucket_name)
         self.log.info(
-            "STEP 2: Check bucket %s exists on s3 server", bucket_name)
+            "STEP 2: Check bucket %s exists on s3 server", self.bucket_name)
         command = self.create_cmd_format(
-            bucket_name,
-            test_cfg["exists_cmd"],
-            jtool=BLACKBOX_CONF["common_cfg"]["jcloud_tool"])
+            self.bucket_name,
+            "exists",
+            jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
-        success_msg = test_cfg["exists_msg"].format(bucket_name)
+        success_msg = "Object {} exists".format(self.bucket_name)
         assert_utils.assert_in(success_msg, resp[1][:-1], resp[1])
         self.log.info(
-            "STEP 2: Bucket %s exists on s3 server", bucket_name)
+            "STEP 2: Bucket %s exists on s3 server", self.bucket_name)
         self.log.info("ENDED: Bucket exists using jcloudclient")
 
     @pytest.mark.s3_ops
@@ -920,13 +856,11 @@ class TestJcloudAndJclient:
     def test_max_bucket_support_2383(self):
         """max no of buckets supported using Jclient."""
         self.log.info("STARTED: max no of buckets supported using Jclient")
-        test_cfg = BLACKBOX_CONF["test_2383"]
-        common_cfg = BLACKBOX_CONF["common_cfg"]
-        bucket_name = test_cfg["bucket_name"].format(self.random_id)
+        common_cfg = BLACKBOX_CONF["jcloud_cfg"]
         bkt_lst = []
         self.log.info("STEP 1: Creating n buckets")
-        for bkt in range(test_cfg["bucket_count"]):
-            bkt_name_str = "{}-{}".format(bucket_name, bkt)
+        for bkt in range(1000):
+            bkt_name_str = "{}-{}".format(self.bucket_name, bkt)
             self.log.info(
                 "Creating bucket with name : %s", bkt_name_str)
             command = self.create_cmd_format(bkt_name_str,
@@ -936,14 +870,14 @@ class TestJcloudAndJclient:
             assert_utils.assert_true(resp[0], resp[1])
             bkt_lst.append(bkt_name_str)
             assert_utils.assert_in(
-                test_cfg["success_msg"], resp[1][:-1], resp[1])
+                "Bucket created successfully", resp[1][:-1], resp[1])
             self.log.info(
                 "Bucket %s was created successfully", bkt_name_str)
         self.log.info("STEP 1: n buckets were created successfully")
         self.log.info("STEP 2: Verifying all the buckets")
         resp = S3_TEST_OBJ.bucket_list()
         assert_utils.assert_true(resp[0], resp[1])
-        s3_bkt_lst = [bkt for bkt in resp[1] if bucket_name in bkt]
+        s3_bkt_lst = [bkt for bkt in resp[1] if self.bucket_name in bkt]
         assert_utils.assert_equal(bkt_lst.sort(), s3_bkt_lst.sort(), resp)
         self.log.info("STEP 2: All the s3 buckets created were verified")
         self.log.info("ENDED: max no of buckets supported using Jclient")
@@ -954,32 +888,30 @@ class TestJcloudAndJclient:
     def test_del_multiple_object_2387(self):
         """delete multiple objects using jclient."""
         self.log.info("STARTED: delete multiple objects using jclient")
-        test_cfg = BLACKBOX_CONF["test_2387"]
-        bucket_name = test_cfg["bucket_name"].format(self.random_id)
         self.log.info("STEP 1: Creating bucket and uploading multiple objects")
-        obj_lst = test_cfg["obj_list"]
-        resp = S3_TEST_OBJ.create_bucket(bucket_name)
+        obj_lst = ["object2387-1.txt", "object2387-2.txt"]
+        resp = S3_TEST_OBJ.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         for obj_name in obj_lst:
             file_p = os.path.join(self.root_path,
                                   obj_name)
             self.file_path_lst.append(file_p)
             system_utils.create_file(file_p,
-                                     BLACKBOX_CONF["common_cfg"]["file_size"])
-            S3_TEST_OBJ.put_object(bucket_name, obj_name, file_p)
+                                     10)
+            S3_TEST_OBJ.put_object(self.bucket_name, obj_name, file_p)
         self.log.info(
             "STEP 1: Creating a bucket and uploading multiple objects was successful")
         self.log.info(
-            "STEP 2: Deleting multiple objects from bucket %s", bucket_name)
+            "STEP 2: Deleting multiple objects from bucket %s", self.bucket_name)
         objects_str = " ".join(obj_lst)
-        bucket_str = "{} {}".format(bucket_name, objects_str)
+        bucket_str = "{} {}".format(self.bucket_name, objects_str)
         command = self.create_cmd_format(
             bucket_str,
-            test_cfg["multi_del"],
-            jtool=BLACKBOX_CONF["common_cfg"]["jclient_tool"])
+            "multidel",
+            jtool=BLACKBOX_CONF["jcloud_cfg"]["jclient_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(
-            test_cfg["multi_del_msg"], resp[1][:-1], resp[1])
+            "Objects deleted successfully", resp[1][:-1], resp[1])
         self.log.info("STEP 2: Successfully deleted multiple objects")
         self.log.info("ENDED: delete multiple objects using jclient")
