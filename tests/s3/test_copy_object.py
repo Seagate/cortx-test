@@ -22,7 +22,7 @@
 
 import os
 from time import perf_counter_ns
-from multiprocessing import Process, Manager
+from multiprocessing import Process
 
 import logging
 import pytest
@@ -35,10 +35,10 @@ from commons.helpers.health_helper import Health
 from commons.params import TEST_DATA_FOLDER
 from config import CMN_CFG
 from config import S3_CFG
+from scripts.s3_bench import s3bench
 from libs.s3 import S3H_OBJ
 from libs.s3 import s3_test_lib
 from libs.s3 import iam_test_lib
-from scripts.s3_bench import s3bench
 from libs.s3.s3_acl_test_lib import S3AclTestLib
 from libs.s3.cortxcli_test_lib import CortxCliTestLib
 
@@ -157,10 +157,10 @@ class TestCopyObjects:
             "Check cluster status, all services are running.")
         nodes = CMN_CFG["nodes"]
         self.log.info(nodes)
-        for i in range(len(nodes)):
-            health_obj = Health(hostname=nodes[i]["hostname"],
-                                username=nodes[i]["username"],
-                                password=nodes[i]["password"])
+        for _, node in enumerate(nodes):
+            health_obj = Health(hostname=node["hostname"],
+                                username=node["username"],
+                                password=node["password"])
             resp = health_obj.check_node_health()
             self.log.info(resp)
             assert_utils.assert_true(resp[0], resp[1])
@@ -217,7 +217,7 @@ class TestCopyObjects:
                 log_path = os.path.join(s3bench.LOG_DIR, filename)
         self.log.info("IO log path: %s", log_path)
         assert_utils.assert_is_not_none(
-            log_path, f"failed to generate logs for parallel S3 IO.")
+            log_path, "failed to generate logs for parallel S3 IO.")
         lines = open(log_path).readlines()
         resp_filtered = [
             line for line in lines if 'Errors Count:' in line and "reportFormat" not in line]
@@ -229,15 +229,13 @@ class TestCopyObjects:
         error_kws = ["with error ", "panic", "status code"]
         for error in error_kws:
             assert_utils.assert_not_equal(
-                error, ",".join(lines), f"Parallel IOs failed.")
+                error, ",".join(lines), "Parallel IOs failed.")
         self.log.info("Observed no Error keyword '%s' in io log.", error_kws)
         self.log.info("S3 parallel ios log validation completed.")
 
     def start_stop_validate_parallel_s3ios(
             self, ios=None, log_prefix=None, duration="0h2m"):
-        """
-        Start/stop parallel s3 io's and validate io's worked successfully.
-        """
+        """Start/stop parallel s3 io's and validate io's worked successfully."""
         if ios == "Start":
             self.parallel_ios = Process(
                 target=self.s3_ios, args=(
@@ -306,6 +304,7 @@ class TestCopyObjects:
             "Step : Creating account with name %s and email_id %s",
             account_name,
             email_id)
+        response = None
         try:
             create_account = self.cortx_test_obj.create_account_cortxcli(
                 account_name, email_id, password)
@@ -327,10 +326,10 @@ class TestCopyObjects:
                 s3_acl_obj,
                 access_key,
                 secret_key)
-
-            return True, response
         except CTException as error:
             assert error.message
+
+        return True, response
 
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-19841")
@@ -352,6 +351,7 @@ class TestCopyObjects:
         assert_utils.assert_true(resp[0], resp[1])
         status, put_etag = self.create_bucket_put_object(
             S3_OBJ, self.bucket_name1, self.object_name1, self.file_path)
+        assert_utils.assert_true(status, put_etag)
         self.log.info("Put object ETag: %s", put_etag)
         self.log.info(
             "Step 4: Copy object to same bucket with different object.")
@@ -397,6 +397,7 @@ class TestCopyObjects:
         assert_utils.assert_true(resp[0], resp[1])
         status, put_etag = self.create_bucket_put_object(
             S3_OBJ, self.bucket_name1, self.object_name1, self.file_path)
+        assert_utils.assert_true(status, put_etag)
         self.log.info("Put object ETag: %s", put_etag)
         self.log.info(
             "Step 4: Copy object to different bucket with different object.")
@@ -438,16 +439,17 @@ class TestCopyObjects:
             ios="Start", log_prefix="test_19843_ios", duration="0h4m")
         self.log.info(
             "Step 3: Create a bucket in Account1 and upload object in it.")
-        canonical_id1, s3_obj1, s3_acl_obj1, access_key1, secret_key1 = self.response1
+        canonical_id1, s3_obj1 = self.response1[:2]
         resp = system_utils.create_file(
             fpath=self.file_path, count=10, b_size="1M")
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
         status, put_etag = self.create_bucket_put_object(
             s3_obj1, self.bucket_name1, self.object_name1, self.file_path)
+        assert_utils.assert_true(status, put_etag)
         self.log.info(
             "Step 4: From Account2 create a bucket. Referred as bucket2.")
-        canonical_id2, s3_obj2, s3_acl_obj2, access_key2, secret_key2 = self.response2
+        canonical_id2, s3_obj2, s3_acl_obj2 = self.response2[:3]
         resp = s3_obj2.create_bucket(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp[1])
         resp = s3_obj2.bucket_list()
@@ -591,8 +593,12 @@ class TestCopyObjects:
     @pytest.mark.tags("TEST-19847")
     @CTFailOn(error_handler)
     def test_19847(self):
-        """Copy object to different account with write access on destination bucket and check
-        ACL while S3 IOs are in progress"""
+        """
+        Copy object.
+
+        Copy object to different account with write access on destination bucket and check
+        ACL while S3 IOs are in progress.
+        """
         self.log.info(
             "STARTED: Copy object to different account with write access on destination bucket"
             " and check ACL while S3 IOs are in progress.")
@@ -602,7 +608,7 @@ class TestCopyObjects:
         self.start_stop_validate_parallel_s3ios(
             ios="Start", log_prefix="test_19847_ios", duration="0h4m")
         self.log.info("Step 3: Create a bucket in Account1.")
-        canonical_id1, s3_obj1, s3_acl_obj1, access_key1, secret_key1 = self.response1
+        canonical_id1, s3_obj1, s3_acl_obj1 = self.response1[:3]
         resp = system_utils.create_file(
             fpath=self.file_path, count=10, b_size="1M")
         self.log.info(resp)
@@ -611,7 +617,7 @@ class TestCopyObjects:
             s3_obj1, self.bucket_name1, self.object_name1, self.file_path)
         self.log.info(
             "Step 4: From Account2 create a bucket. Referred as bucket2.")
-        canonical_id2, s3_obj2, s3_acl_obj2, access_key2, secret_key2 = self.response2
+        canonical_id2, s3_obj2, s3_acl_obj2 = self.response2[:3]
         resp = s3_obj2.create_bucket(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp[1])
         resp = s3_obj2.bucket_list()
@@ -677,8 +683,12 @@ class TestCopyObjects:
     @pytest.mark.tags("TEST-19848")
     @CTFailOn(error_handler)
     def test_19848(self):
-        """Copy object to different account with read access on source object and check ACL
-        while S3 IOs are in progress."""
+        """
+        Copy object.
+
+        Copy object to different account with read access on source object and check ACL
+        while S3 IOs are in progress.
+        """
         self.log.info(
             "STARTED: Copy object to different account with read access on source object"
             " and check ACL while S3 IOs are in progress.")
@@ -688,7 +698,7 @@ class TestCopyObjects:
         self.start_stop_validate_parallel_s3ios(
             ios="Start", log_prefix="test_19848_ios", duration="0h4m")
         self.log.info("Step 3: Create a bucket in Account1.")
-        canonical_id1, s3_obj1, s3_acl_obj1, access_key1, secret_key1 = self.response1
+        s3_obj1, s3_acl_obj1 = self.response1[1:3]
         resp = system_utils.create_file(
             fpath=self.file_path, count=10, b_size="1M")
         self.log.info(resp)
@@ -702,7 +712,7 @@ class TestCopyObjects:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 5: From Account2 create a bucket. Referred as bucket2.")
-        canonical_id2, s3_obj2, s3_acl_obj2, access_key2, secret_key2 = self.response2
+        canonical_id2, s3_obj2, s3_acl_obj2 = self.response2[:3]
         resp = s3_obj2.create_bucket(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp[1])
         resp = s3_obj2.bucket_list()
@@ -729,16 +739,18 @@ class TestCopyObjects:
             self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2)
         assert_utils.assert_true(status, response)
         copy_etag = response['CopyObjectResult']['ETag']
-        self.log.info("Step 9: Get Object ACL of the destination object from Account1.")
+        self.log.info(
+            "Step 9: Get Object ACL of the destination object from Account1.")
         try:
-            resp = s3_acl_obj1.get_object_acl(self.bucket_name2, self.object_name2)
+            resp = s3_acl_obj1.get_object_acl(
+                self.bucket_name2, self.object_name2)
             assert_utils.assert_false(resp[0], resp)
         except CTException as error:
             assert_utils.assert_equal(
-                "An error occurred (AccessDenied) when calling the GetObjectAcl operation: Access Denied",
-                error.message,
-                error)
-        self.log.info("Step 10: Get Object ACL of the destination object from Account2.")
+                "An error occurred (AccessDenied) when calling the GetObjectAcl operation:"
+                " Access Denied", error.message, error)
+        self.log.info(
+            "Step 10: Get Object ACL of the destination object from Account2.")
         resp = s3_acl_obj2.get_object_acl(self.bucket_name2, self.object_name2)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
@@ -773,7 +785,7 @@ class TestCopyObjects:
         self.start_stop_validate_parallel_s3ios(
             ios="Start", log_prefix="test_19849_ios", duration="0h4m")
         self.log.info("Step 3: Create a bucket in Account1.")
-        canonical_id1, s3_obj1, s3_acl_obj1, access_key1, secret_key1 = self.response1
+        canonical_id1, s3_obj1, s3_acl_obj1 = self.response1[:3]
         resp = system_utils.create_file(
             fpath=self.file_path, count=10, b_size="1M")
         self.log.info(resp)
@@ -788,7 +800,7 @@ class TestCopyObjects:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 5: From Account2 create a bucket. Referred as bucket2.")
-        canonical_id2, s3_obj2, s3_acl_obj2, access_key2, secret_key2 = self.response2
+        s3_obj2, s3_acl_obj2 = self.response2[1:3]
         resp = s3_obj2.create_bucket(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp[1])
         resp = s3_obj2.bucket_list()
@@ -852,7 +864,7 @@ class TestCopyObjects:
             ios="Start", log_prefix="test_19850_ios", duration="0h4m")
         self.log.info(
             "3. Create 2 buckets in same accounts and upload object to the above bucket1.")
-        canonical_id1, s3_obj1, s3_acl_obj1, access_key1, secret_key1 = self.response1
+        s3_obj1, s3_acl_obj1 = self.response1[1:3]
         resp = s3_obj1.create_bucket(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp[1])
         resp = system_utils.create_file(
@@ -918,7 +930,7 @@ class TestCopyObjects:
             fpath=self.file_path, count=10, b_size="1M")
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
-        canonical_id1, s3_obj1, s3_acl_obj1, access_key1, secret_key1 = self.response1
+        canonical_id1, s3_obj1, s3_acl_obj1 = self.response1[:3]
         resp, put_etag = self.create_bucket_put_object(
             s3_obj1,
             self.bucket_name1,
@@ -929,7 +941,7 @@ class TestCopyObjects:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 5. From Account2 create a bucket. Referred as bucket2.")
-        canonical_id2, s3_obj2, s3_acl_obj2, access_key2, secret_key2 = self.response2
+        s3_obj2, s3_acl_obj2 = self.response2[1:3]
         resp = s3_obj2.create_bucket(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
@@ -999,7 +1011,7 @@ class TestCopyObjects:
             fpath=self.file_path, count=10, b_size="1M")
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
-        canonical_id1, s3_obj1, s3_acl_obj1, access_key1, secret_key1 = self.response1
+        canonical_id1, s3_obj1, s3_acl_obj1 = self.response1[:3]
         resp, put_etag = self.create_bucket_put_object(
             s3_obj1,
             self.bucket_name1,
@@ -1009,7 +1021,7 @@ class TestCopyObjects:
         resp = s3_acl_obj1.get_object_acl(self.bucket_name1, self.object_name1)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("5. From Account2 create a bucket. Referred as bucket2.")
-        canonical_id2, s3_obj2, s3_acl_obj2, access_key2, secret_key2 = self.response2
+        s3_obj2, s3_acl_obj2 = self.response2[1:3]
         resp = s3_obj2.create_bucket(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
@@ -1058,7 +1070,7 @@ class TestCopyObjects:
     @pytest.mark.tags("TEST-19892")
     @CTFailOn(error_handler)
     def test_19892(self):
-        """Copy object applying full control access while S3 IOs are in progress"""
+        """Copy object applying full control access while S3 IOs are in progress."""
         self.log.info(
             "STARTED: Copy object applying full control access while S3 IOs are in progress.")
         self.log.info(
@@ -1073,7 +1085,7 @@ class TestCopyObjects:
             fpath=self.file_path, count=10, b_size="1M")
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
-        canonical_id1, s3_obj1, s3_acl_obj1, access_key1, secret_key1 = self.response1
+        s3_obj1, s3_acl_obj1 = self.response1[1:3]
         resp = s3_obj1.create_bucket(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp[1])
         resp, put_etag = self.create_bucket_put_object(
@@ -1089,7 +1101,7 @@ class TestCopyObjects:
         assert_utils.assert_in(self.object_name1, resp[1], resp)
         self.log.info(
             "5. Copy object from bucket1 to bucket2 specifying full control access to Account2.")
-        canonical_id2, s3_obj2, s3_acl_obj2, access_key2, secret_key2 = self.response2
+        canonical_id2, s3_acl_obj2 = self.response2[0], self.response2[2]
         resp = s3_obj1.copy_object_with_permission(
             self.bucket_name1,
             self.object_name1,
@@ -1142,7 +1154,7 @@ class TestCopyObjects:
             fpath=self.file_path, count=10, b_size="1M")
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
-        canonical_id1, s3_obj1, s3_acl_obj1, access_key1, secret_key1 = self.response1
+        s3_obj1, s3_acl_obj1 = self.response1[1:3]
         resp = s3_obj1.create_bucket(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp[1])
         resp, put_etag = self.create_bucket_put_object(
@@ -1158,7 +1170,7 @@ class TestCopyObjects:
         assert_utils.assert_in(self.object_name1, resp[1], resp)
         self.log.info(
             "5. Copy object from bucket1 to bucket2 specifying read access to Account2.")
-        canonical_id2, s3_obj2, s3_acl_obj2, access_key2, secret_key2 = self.response2
+        canonical_id2, s3_obj2, s3_acl_obj2 = self.response2[:3]
         resp = s3_obj1.copy_object_with_permission(
             self.bucket_name1,
             self.object_name1,
@@ -1179,9 +1191,8 @@ class TestCopyObjects:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             assert_utils.assert_equal(
-                "An error occurred (AccessDenied) when calling the GetObjectAcl operation: Access Denied",
-                error.message,
-                error)
+                "An error occurred (AccessDenied) when calling the GetObjectAcl operation: "
+                "Access Denied", error.message, error)
         self.log.info(
             "Step 8:  Compare ETag of source and destination object for data Integrity.")
         self.log.info("ETags: Put: %s, copy: %s", put_etag, copy_etag)
@@ -1227,7 +1238,7 @@ class TestCopyObjects:
             fpath=self.file_path, count=10, b_size="1M")
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
-        canonical_id1, s3_obj1, s3_acl_obj1, access_key1, secret_key1 = self.response1
+        s3_obj1, s3_acl_obj1 = self.response1[1:3]
         resp = s3_obj1.create_bucket(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp[1])
         resp, put_etag = self.create_bucket_put_object(
@@ -1243,7 +1254,7 @@ class TestCopyObjects:
         assert_utils.assert_in(self.object_name1, resp[1], resp)
         self.log.info(
             "5. Copy object from bucket1 to bucket2 specifying read acp access to Account2")
-        canonical_id2, s3_obj2, s3_acl_obj2, access_key2, secret_key2 = self.response2
+        canonical_id2, s3_acl_obj2 = self.response2[0], self.response2[2]
         resp = s3_obj1.copy_object_with_permission(
             self.bucket_name1,
             self.object_name1,
@@ -1300,7 +1311,7 @@ class TestCopyObjects:
             fpath=self.file_path, count=10, b_size="1M")
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
-        canonical_id1, s3_obj1, s3_acl_obj1, access_key1, secret_key1 = self.response1
+        s3_obj1, s3_acl_obj1 = self.response1[1:3]
         resp = s3_obj1.create_bucket(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp[1])
         resp, put_etag = self.create_bucket_put_object(
@@ -1316,7 +1327,7 @@ class TestCopyObjects:
         assert_utils.assert_in(self.object_name1, resp[1], resp)
         self.log.info(
             "5. Copy object from bucket1 to bucket2 specifying write acp access to Account2")
-        canonical_id2, s3_obj2, s3_acl_obj2, access_key2, secret_key2 = self.response2
+        canonical_id2, s3_acl_obj2 = self.response2[0], self.response2[2]
         resp = s3_obj1.copy_object_with_permission(
             self.bucket_name1,
             self.object_name1,
@@ -1337,9 +1348,8 @@ class TestCopyObjects:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             assert_utils.assert_equal(
-                "An error occurred (AccessDenied) when calling the GetObjectAcl operation: Access Denied",
-                error.message,
-                error)
+                "An error occurred (AccessDenied) when calling the GetObjectAcl operation: "
+                "Access Denied", error.message, error)
         self.log.info(
             "Step 8:  Compare ETag of source and destination object for data Integrity.")
         self.log.info("ETags: Put: %s, copy: %s", put_etag, copy_etag)
@@ -1380,7 +1390,7 @@ class TestCopyObjects:
             fpath=self.file_path, count=10, b_size="1M")
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
-        canonical_id1, s3_obj1, s3_acl_obj1, access_key1, secret_key1 = self.response1
+        s3_obj1, s3_acl_obj1 = self.response1[1:3]
         resp, put_etag = self.create_bucket_put_object(
             s3_obj1,
             self.bucket_name1,
@@ -1392,9 +1402,10 @@ class TestCopyObjects:
         resp = s3_obj1.bucket_list()
         assert_utils.assert_in(self.bucket_name1, resp[1], resp)
         assert_utils.assert_in(self.bucket_name2, resp[1], resp)
-        canonical_id2, s3_obj2, s3_acl_obj2, access_key2, secret_key2 = self.response2
+        canonical_id2, s3_acl_obj2 = self.response2[0], self.response2[2]
         self.log.info(
-            "5. Copy object from bucket1 to bucket2 specifying read and read acp access to Account2")
+            "5. Copy object from bucket1 to bucket2 specifying read and read acp access to "
+            "Account2")
         resp = s3_obj1.copy_object_with_permission(
             self.bucket_name1,
             self.object_name1,
@@ -1451,7 +1462,7 @@ class TestCopyObjects:
             fpath=self.file_path, count=10, b_size="1M")
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
-        canonical_id1, s3_obj1, s3_acl_obj1, access_key1, secret_key1 = self.response1
+        s3_obj1, s3_acl_obj1 = self.response1[1:3]
         self.create_bucket_put_object(
             s3_obj1,
             self.bucket_name1,
@@ -1461,7 +1472,7 @@ class TestCopyObjects:
         resp = s3_acl_obj1.get_object_acl(self.bucket_name1, self.object_name1)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("6. From Account2 create a bucket. Referred as bucket2.")
-        canonical_id2, s3_obj2, s3_acl_obj2, access_key2, secret_key2 = self.response2
+        s3_obj2 = self.response2[1]
         resp = s3_obj2.create_bucket(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("7. From Account2 copy object from bucket1 to bucket2.")
@@ -1480,9 +1491,8 @@ class TestCopyObjects:
                 f"copied object {self.object_name2}")
         except CTException as error:
             assert_utils.assert_equal(
-                "An error occurred (AccessDenied) when calling the CopyObject operation: Access Denied",
-                error.message,
-                error)
+                "An error occurred (AccessDenied) when calling the CopyObject operation: "
+                "Access Denied", error.message, error)
         self.log.info("8. Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
             ios="Stop", log_prefix="test_19897_ios")
@@ -1516,7 +1526,7 @@ class TestCopyObjects:
             fpath=self.file_path, count=10, b_size="1M")
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
-        canonical_id1, s3_obj1, s3_acl_obj1, access_key1, secret_key1 = self.response1
+        s3_obj1, s3_acl_obj1 = self.response1[1:3]
         self.create_bucket_put_object(
             s3_obj1,
             self.bucket_name1,
@@ -1526,7 +1536,7 @@ class TestCopyObjects:
         resp = s3_acl_obj1.get_object_acl(self.bucket_name1, self.object_name1)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("6. From Account2 create a bucket. Referred as bucket2.")
-        canonical_id2, s3_obj2, s3_acl_obj2, access_key2, secret_key2 = self.response2
+        s3_obj2 = self.response2[1]
         resp = s3_obj2.create_bucket(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("7. From Account1 copy object from bucket1 to bucket2 .")
@@ -1545,9 +1555,8 @@ class TestCopyObjects:
                 f"copied object {self.object_name2}")
         except CTException as error:
             assert_utils.assert_equal(
-                "An error occurred (AccessDenied) when calling the CopyObject operation: Access Denied",
-                error.message,
-                error)
+                "An error occurred (AccessDenied) when calling the CopyObject operation: "
+                "Access Denied", error.message, error)
         self.log.info("8. Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
             ios="Stop", log_prefix="test_19898_ios")
@@ -1565,9 +1574,9 @@ class TestCopyObjects:
         """
         Copy object negative test.
 
-         Copy object with no access to source object and destination bucket present in different
-         account having full access to the source bucket during S3 IOs.
-         """
+        Copy object with no access to source object and destination bucket present in different
+        account having full access to the source bucket during S3 IOs.
+        """
         self.log.info(
             "STARTED: Copy object with no access to source object and destination bucket"
             " present in different account having full access to the source bucket"
@@ -1584,7 +1593,7 @@ class TestCopyObjects:
             fpath=self.file_path, count=10, b_size="1M")
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
-        canonical_id1, s3_obj1, s3_acl_obj1, access_key1, secret_key1 = self.response1
+        s3_obj1, s3_acl_obj1 = self.response1[1:3]
         self.create_bucket_put_object(
             s3_obj1,
             self.bucket_name1,
@@ -1595,7 +1604,7 @@ class TestCopyObjects:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "7. From Account2 create a bucket. Referred as bucket2.")
-        canonical_id2, s3_obj2, s3_acl_obj2, access_key2, secret_key2 = self.response2
+        canonical_id2, s3_obj2 = self.response2[:2]
         resp = s3_obj2.create_bucket(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
@@ -1620,9 +1629,8 @@ class TestCopyObjects:
                 f"copied object {self.object_name2}")
         except CTException as error:
             assert_utils.assert_equal(
-                "An error occurred (AccessDenied) when calling the CopyObject operation: Access Denied",
-                error.message,
-                error)
+                "An error occurred (AccessDenied) when calling the CopyObject operation: "
+                "Access Denied", error.message, error)
         self.log.info("9. Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
             ios="Stop", log_prefix="test_19899_ios")
@@ -1693,7 +1701,9 @@ class TestCopyObjects:
         assert_utils.assert_true(resp[0], resp[1])
         copy_etag1 = resp[1]['CopyObjectResult']['ETag']
         assert_utils.assert_equal(
-            put_etag, copy_etag1, f"Failed to match object ETag")
+            put_etag,
+            copy_etag1,
+            f"Failed to match object ETag: {put_etag}, {copy_etag1}")
         self.log.info(
             "7. List Objects from bucket2, Check object is present and of same size as source"
             " object.")
@@ -1712,7 +1722,9 @@ class TestCopyObjects:
         assert_utils.assert_true(resp[0], resp[1])
         copy_etag2 = resp[1]['CopyObjectResult']['ETag']
         assert_utils.assert_equal(
-            put_etag, copy_etag2, f"Failed to match object ETag")
+            put_etag,
+            copy_etag2,
+            f"Failed to match object ETag: {put_etag}, {copy_etag2}")
         self.log.info(
             "9. List Objects from bucket2, Check object is present and of same size and folder"
             " structure as source object.")
