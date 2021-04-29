@@ -103,10 +103,6 @@ class TestOSLevelMonitoring:
             service=services["sspl_service"], host=self.host, user=self.uname,
             pwd=self.passwd)
         assert_true(resp[0], resp[1])
-        # resp = self.s3obj.get_s3server_service_status(
-        #     service=services["kafka"], host=self.host, user=self.uname,
-        #     pwd=self.passwd)
-        # assert resp[0], resp[1]
 
         LOGGER.info(
             "Validated the status of sspl and kafka service are online")
