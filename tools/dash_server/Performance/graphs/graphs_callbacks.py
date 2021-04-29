@@ -52,10 +52,11 @@ def graphs_global(fig, fig_all, xfilter, release1, branch1, option1, bench, conf
     prevent_initial_call=True
 )
 def update_Ttfb_Style(bench):
+    style = None
     if bench != 'S3bench':
-        return {'display': 'none'}
-    else:
-        return None
+        style = {'display': 'none'}
+
+    return style
 
 
 @app.callback(

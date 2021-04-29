@@ -167,7 +167,9 @@ def get_data_for_graphs(xfilter, release, branch, option, bench, configs, operat
                                      collection=db_collection)
             try:
                 number_of_nodes = db_data[0]['Count_of_Servers']
-            except:
+            except KeyError:
+                number_of_nodes = 2
+            except IndexError:
                 number_of_nodes = 2
 
             if count > 0:
@@ -177,7 +179,7 @@ def get_data_for_graphs(xfilter, release, branch, option, bench, configs, operat
                             db_data[0][metric][param] * 1000/number_of_nodes)
                     else:
                         yaxis_list.append(db_data[0][metric]/number_of_nodes)
-                except:
+                except IndexError:
                     yaxis_list.append('NA')
             else:
                 yaxis_list.append('NA')

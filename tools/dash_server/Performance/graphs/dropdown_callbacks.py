@@ -92,11 +92,12 @@ def update_configs_first(xfilter, release, branch, option1, bench):
     prevent_initial_call=True
 )
 def return_States(value):
+    style = [{'display': 'none'}] * 3
     if value:
-        return [{'width': '200px', 'verticalAlign': 'middle',
-                 "margin-right": "10px", "margin-top": "10px"}] * 3
-    else:
-        return [{'display': 'none'}] * 3
+        style = [{'width': '200px', 'verticalAlign': 'middle',
+                  "margin-right": "10px", "margin-top": "10px"}] * 3
+
+    return style
 
 
 @app.callback(
@@ -125,14 +126,12 @@ def update_second_branch_dropdown(release, flag):
     prevent_initial_call=True
 )
 def update_second_builds_dropdown(xfilter, release, branch, flag):
+    versions = None
     if release is None or branch is None or xfilter is None or not flag:
         raise PreventUpdate
-        return None
 
     if flag and release:
         builds = get_distinct_keys(release, xfilter, {'Branch': branch})
         versions = get_dict_from_array(builds, False)
 
-        return versions
-    else:
-        return None
+    return versions
