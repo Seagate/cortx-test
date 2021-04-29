@@ -135,7 +135,7 @@ graphs_layout = Card(
                    style={'text-align': 'center', 'font-size': '30px', 'font-weight': 'bold'}),
             html.P("Note: Each data point represents PER NODE data.",  style={
                    "font-weight": "bold", 'font-size': '20px', 'color': '#D00000'}),
-            html.P("Note: Statistics are displayed only for the builds on which Performance test suite has ran.",  style={
+            html.P("Note: Data is displayed for the builds on which PerfPro has run.",  style={
                    "font-weight": "bold", 'font-size': '20px', 'color': '#D00000'}),
 
             Graph(id='plot_Throughput'),
