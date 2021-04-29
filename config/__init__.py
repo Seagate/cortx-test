@@ -35,6 +35,7 @@ from commons.params import PROV_TEST_CONFIG_PATH
 from commons.params import DI_CONFIG_PATH
 from commons.params import DATA_PATH_CONFIG_PATH
 from commons.params import S3_BKT_TEST_CONFIG
+from commons.params import S3_DATA_CMN_CONFIG_PATH
 
 
 def split_args(sys_cmd: List):
@@ -87,6 +88,9 @@ PROV_CFG = configmanager.get_config_wrapper(fpath=PROV_TEST_CONFIG_PATH)
 S3_USER_ACC_MGMT_CONFIG = configmanager.get_config_wrapper(fpath=S3_USER_ACC_MGMT_CONFIG_PATH,
                                                            target=target,
                                                            target_key="s3")
+S3_DATA_CMN_CONFIG = configmanager.get_config_wrapper(fpath=S3_DATA_CMN_CONFIG_PATH,
+                                                      target=target,
+                                                      target_key="s3")
 
 DI_CFG = configmanager.get_config_wrapper(fpath=DI_CONFIG_PATH, target=target)
 DATA_PATH_CFG = configmanager.get_config_wrapper(fpath=DATA_PATH_CONFIG_PATH, target=target)
