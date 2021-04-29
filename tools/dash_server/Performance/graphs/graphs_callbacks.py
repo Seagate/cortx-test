@@ -33,16 +33,15 @@ def graphs_global(fig, fig_all, xfilter, release1, branch1, option1, bench, conf
         height=625,
         showlegend=True,
         title='{} Plot'.format(metric),
-        title_font_size=24,
-        title_font_color="blue",
-        title_font_family="Sans Serif",
+        title_font_size=26,
+        title_font_color='#40b01d',
         legend_title='Glossary',
         yaxis=dict(
             title_text=y_axis_heading,
-            titlefont=dict(size=20, family="Sans Serif")),
+            titlefont=dict(size=23)),
         xaxis=dict(
             title_text=x_axis_heading,
-            titlefont=dict(size=20, family="Sans Serif")
+            titlefont=dict(size=23)
         ),
     )
 
@@ -132,16 +131,15 @@ def update_graphs(n_clicks, xfilter, release1, branch1, option1, bench, config, 
             height=625,
             showlegend=True,
             title='All Plots in One',
-            title_font_size=24,
-            title_font_color="blue",
-            title_font_family="Sans Serif",
+            title_font_size=26,
+            title_font_color='#40b01d',
             legend_title='Glossary',
             yaxis=dict(
                 title_text='Data',
-                titlefont=dict(size=20, family="Sans Serif")),
+                titlefont=dict(size=23)),
             xaxis=dict(
                 title_text=x_axis_heading,
-                titlefont=dict(size=20, family="Sans Serif")
+                titlefont=dict(size=23)
             ),
         )
 

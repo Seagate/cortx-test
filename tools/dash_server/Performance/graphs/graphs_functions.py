@@ -93,7 +93,7 @@ def get_xaxis(xfilter, release, branch, option, bench):
         return obj_sizes
 
 
-def sort_xaxis(data_dict):
+def sort_objectsizes(data_dict):
     sizes_sorted = {
         'KB': {}, 'MB': {}, 'GB': {},
     }
@@ -115,12 +115,30 @@ def sort_xaxis(data_dict):
         temp.sort()
         for item in temp:
             for obj in objects:
-                if obj[:-2]== str(item):
+                if obj[:-2] == str(item):
                     data_sorted[str(item) +
                                 size_unit] = sizes_sorted[size_unit][obj]
                     break
 
     data_sorted.update(rest)
+    return data_sorted
+
+
+def sort_builds(data_dict):
+    builds = list(data_dict.keys())
+    data_sorted = {}
+    for key in builds:
+        try:
+            int(key[0])
+        except:
+            data_sorted[key] = data_dict[key]
+            del data_dict[key]
+
+    builds = list(data_dict.keys())
+    builds.sort(key=lambda x: int(x.split("-")[0]))
+    for build in builds:
+        data_sorted[build] = data_dict[build]
+
     return data_sorted
 
 
@@ -176,6 +194,8 @@ def get_data_for_graphs(xfilter, release, branch, option, bench, configs, operat
     # remove_nones(data_dict)
 
     if xfilter == 'Build':
-        data_dict = sort_xaxis(data_dict)
+        data_dict = sort_objectsizes(data_dict)
+    else:
+        data_dict = sort_builds(data_dict)
 
     return [list(data_dict.keys()), list(data_dict.values())]
