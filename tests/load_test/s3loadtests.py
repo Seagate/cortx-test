@@ -179,80 +179,104 @@ class TestS3Load:
             res = locust_runner.check_log_file(log_file, error="InternalError")
             assert_utils.assert_false(res, "Few IO failed due to some reason")
 
-    @pytest.mark.s3_load_test
-    @pytest.mark.tags("EOS-19542")
+    @pytest.mark.s3_io_load
+    @pytest.mark.tags("TEST-19542")
     @pytest.mark.skip(reason="workload is not supported")
     def test_variable_obj_multi_bucket_19542(self):
         """
         Load test with variable sizes of objects with multiple buckets
         """
+        self.log.info("Setting up test configurations")
         os.environ["MAX_POOL_CONNECTIONS"] = str(100)
         os.environ["BUCKET_COUNT"] = str(30)
         os.environ["MIN_OBJECT_SIZE"] = str(26214400)
         os.environ["MAX_OBJECT_SIZE"] = str(524288000)
+        self.log.info("Configurations completed successfully.")
+        self.log.info("Starting locust run.")
         res = locust_runner.run_locust(
             host=self.host_url, locust_file="scripts/locust/locustfile.py",
             users=30, duration="15m")
         self.log.info(res)
+        self.log.info("Successfully executed locust run.")
+        self.log.info("Checking locust log file.")
         log_file = res[1]["log-file"]
         if os.path.exists(log_file):
             res = locust_runner.check_log_file(log_file, error="InternalError")
             assert_utils.assert_false(res, "Few IO failed due to some reason")
+        self.log.info("Validated locust log file.")
 
-    @pytest.mark.s3_load_test
-    @pytest.mark.tags("EOS-19539")
+    @pytest.mark.s3_io_load
+    @pytest.mark.tags("TEST-19539")
     @pytest.mark.skip(reason="workload is not supported")
     def test_large_obj_multi_bucket_max_session_19539(self):
         """
         Load test with larger object size with multiple buckets
         """
+        self.log.info("Setting up test configurations")
         os.environ["MAX_POOL_CONNECTIONS"] = str(100)
         os.environ["BUCKET_COUNT"] = str(30)
         os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(419430400)
+        self.log.info("Configurations completed successfully.")
+        self.log.info("Starting locust run.")
         res = locust_runner.run_locust(
             host=self.host_url, locust_file="scripts/locust/locustfile.py",
             users=30, duration="15m")
         self.log.info(res)
+        self.log.info("Successfully executed locust run.")
+        self.log.info("Checking locust log file.")
         log_file = res[1]["log-file"]
         if os.path.exists(log_file):
             res = locust_runner.check_log_file(log_file, error="InternalError")
             assert_utils.assert_false(res, "Few IO failed due to some reason")
+        self.log.info("Validated locust log file.")
 
-    @pytest.mark.s3_load_test
-    @pytest.mark.tags("EOS-19544")
+    @pytest.mark.s3_io_load
+    @pytest.mark.tags("TEST-19544")
     @pytest.mark.skip(reason="workload is not supported")
     def test_large_obj_single_bucket_max_session_19544(self):
         """
         Load test with larger object size with single bucket
         """
+        self.log.info("Setting up test configurations")
         os.environ["MAX_POOL_CONNECTIONS"] = str(100)
         os.environ["BUCKET_COUNT"] = str(1)
         os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(1073741824)
+        self.log.info("Configurations completed successfully.")
+        self.log.info("Starting locust run.")
         res = locust_runner.run_locust(
             host=self.host_url, locust_file="scripts/locust/locustfile.py",
             users=30, duration="15m")
         self.log.info(res)
+        self.log.info("Successfully executed locust run.")
+        self.log.info("Checking locust log file.")
         log_file = res[1]["log-file"]
         if os.path.exists(log_file):
             res = locust_runner.check_log_file(log_file, error="InternalError")
             assert_utils.assert_false(res, "Few IO failed due to some reason")
+        self.log.info("Validated locust log file.")
 
-    @pytest.mark.s3_load_test
-    @pytest.mark.tags("EOS-19545")
+    @pytest.mark.s3_io_load
+    @pytest.mark.tags("TEST-19545")
     @pytest.mark.skip(reason="workload is not supported")
     def test_large_obj_multiple_buckets_19545(self):
         """
         Load test with larger object size with multiple buckets and constant number of users
         """
+        self.log.info("Setting up test configurations")
         os.environ["MAX_POOL_CONNECTIONS"] = str(100)
         os.environ["BUCKET_COUNT"] = str(30)
         os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(1073741824)
+        self.log.info("Configurations completed successfully.")
+        self.log.info("Starting locust run.")
         res = locust_runner.run_locust(
             host=self.host_url, locust_file="scripts/locust/locustfile.py",
             users=30, duration="15m")
         self.log.info(res)
+        self.log.info("Successfully executed locust run.")
+        self.log.info("Checking locust log file.")
         log_file = res[1]["log-file"]
         if os.path.exists(log_file):
             res = locust_runner.check_log_file(log_file, error="InternalError")
             assert_utils.assert_false(res, "Few IO failed due to some reason")
+        self.log.info("Validated locust log file.")
 
