@@ -25,15 +25,17 @@ import time
 import random
 import logging
 import pytest
-from libs.ras.ras_test_lib import RASTestLib
+from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
 from commons.helpers.node_helper import Node
 from commons.helpers.health_helper import Health
-from libs.s3 import S3H_OBJ
 from commons import constants as cons
 from commons import commands as common_cmd
-from libs.csm.rest.csm_rest_alert import SystemAlerts
-from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
 from commons.utils.assert_utils import *
+from commons import cortxlogging
+from libs.s3 import S3H_OBJ
+from libs.csm.rest.csm_rest_alert import SystemAlerts
+from libs.ras.ras_test_lib import RASTestLib
+from libs.ras.sw_alerts import SoftwareAlert
 
 LOGGER = logging.getLogger(__name__)
 
@@ -57,11 +59,11 @@ class TestOSLevelMonitoring:
                             password=cls.passwd)
         cls.health_obj = Health(hostname=cls.host, username=cls.uname,
                                 password=cls.passwd)
-
         cls.csm_alert_obj = SystemAlerts(cls.node_obj)
         # Enable this flag for starting RMQ channel
         cls.start_msg_bus = cls.cm_cfg["start_msg_bus"]
         cls.s3obj = S3H_OBJ
+        cls.sw_alert_obj = SoftwareAlert(cls.host, cls.uname, cls.passwd)
 
     def setup_method(self):
         """Setup operations per test."""
@@ -101,10 +103,6 @@ class TestOSLevelMonitoring:
             service=services["sspl_service"], host=self.host, user=self.uname,
             pwd=self.passwd)
         assert_true(resp[0], resp[1])
-        # resp = self.s3obj.get_s3server_service_status(
-        #     service=services["kafka"], host=self.host, user=self.uname,
-        #     pwd=self.passwd)
-        # assert resp[0], resp[1]
 
         LOGGER.info(
             "Validated the status of sspl and kafka service are online")
@@ -215,6 +213,56 @@ class TestOSLevelMonitoring:
                         self.host)
 
         LOGGER.info("Successfully performed Teardown operation")
+
+    @pytest.mark.tags("TEST-19609")
+    @pytest.mark.cluster_monitor_ops
+    @pytest.mark.sw_alert
+    @pytest.mark.skip
+    def test_19609_3ps_monitoring(self):
+        "Tests 3rd party service monitoring and management"
+        test_case_name = cortxlogging.get_frame()
+        LOGGER.info("##### Test started -  %s #####", test_case_name)
+        external_svcs = RAS_TEST_CFG["third_party_services"]
+        for svc in external_svcs:
+            LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
+
+            LOGGER.info("Stopping %s service...", svc)
+            starttime = time.time()
+            result, e_csm_resp = self.sw_alert_obj.run_verify_svc_state(svc, "stop", external_svcs)
+            assert result, "Failed in stop service"
+            assert self.csm_alert_obj.verify_csm_response(
+                starttime, e_csm_resp["alert_type"], False)
+
+            LOGGER.info("Starting %s service...", svc)
+            starttime = time.time()
+            result, e_csm_resp = self.sw_alert_obj.run_verify_svc_state(svc, "start", external_svcs)
+            assert result, " Failed in start service"
+            assert self.csm_alert_obj.verify_csm_response(starttime, e_csm_resp["alert_type"], True)
+
+            LOGGER.info("Disabling %s service...", svc)
+            starttime = time.time()
+            result, e_csm_resp = self.sw_alert_obj.run_verify_svc_state(
+                svc, "disable", external_svcs)
+            assert result, "Failed in disable service"
+            assert self.csm_alert_obj.verify_csm_response(
+                starttime, e_csm_resp["alert_type"], False)
+
+            LOGGER.info("Enabling %s service...", svc)
+            starttime = time.time()
+            result, e_csm_resp = self.sw_alert_obj.run_verify_svc_state(
+                svc, "enable", external_svcs)
+            assert result, "Failed in enable service"
+            assert self.csm_alert_obj.verify_csm_response(starttime, e_csm_resp["alert_type"], True)
+
+            LOGGER.info("Restarting %s service...", svc)
+            starttime = time.time()
+            result, e_csm_resp = self.sw_alert_obj.run_verify_svc_state(
+                svc, "restart", external_svcs)
+            assert result, "Failed in restart service"
+            assert self.csm_alert_obj.verify_csm_response(starttime, e_csm_resp["alert_type"], True)
+            # TODO message bus check.
+            LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)
+        LOGGER.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
