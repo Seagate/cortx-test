@@ -115,10 +115,6 @@ class TestObjectACL:
                 cls.cli_obj.login_cortx_cli(username=acc, password=cls.s3acc_passwd)
                 cls.log.debug("Deleting %s account", acc)
                 cls.cli_obj.delete_all_buckets_cortx_cli()
-                # s3_obj_acl = s3_acl_test_lib.S3AclTestLib(
-                #     access_key, secret_key)
-                # for bucket in bucket_list:
-                #     s3_obj_acl.put_bucket_acl(bucket, acl="private")
                 cls.cli_obj.logout_cortx_cli()
                 cls.cli_obj.delete_account_cortxcli(account_name=acc, password=cls.s3acc_passwd)
                 cls.log.info("Deleted %s account successfully", acc)
