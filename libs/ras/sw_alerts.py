@@ -178,25 +178,28 @@ class SoftwareAlert(RASCoreLib):
         :return [type]: Parsed systemctl status response.
         """
         response = response.decode("utf8")
-        service_tokenizer = re.compile(r'● (?P<service>.*?) - (?P<description>.*)')
-        state_tokenizer = re.compile(
-            r'Active: (?P<state>.*?) (?P<sub_state>.*) since (?P<timestamp>.*)')
-        load_tokenizer = re.compile(
-            r'Loaded: (?P<loaded>.*?) \((?P<path>.*?); (?P<enabled>.*); vendor preset: (?P<vendorpreset>.*)\)')
-        pid_tokenizer = re.compile(r'Main PID: (?P<pid>.*?) (?P<comment>.*)')
         parsed_op = {}
         for line in response.splitlines():
             line = line.lstrip().rstrip()
-            if "● " in line:
+            if "● " in line and "-" in line:
+                service_tokenizer = re.compile(r'● (?P<service>.*?) - (?P<description>.*)')
                 match = re.match(service_tokenizer, line)
                 parsed_op.update(match.groupdict())
             if "Active:" in line:
+                if "since" in line:
+                    state_tokenizer = re.compile(
+                        r'Active: (?P<state>.*?) (?P<sub_state>.*) since (?P<timestamp>.*)')
+                else:
+                    state_tokenizer = re.compile(r'Active: (?P<state>.*?) (?P<sub_state>.*)')
                 match = re.match(state_tokenizer, line)
                 parsed_op.update(match.groupdict())
-            if "Loaded:" in line:
+            if "Loaded:" in line and "vendor preset:" in line and ";" in line:
+                load_tokenizer = re.compile(
+                    r'Loaded: (?P<loaded>.*?) \((?P<path>.*?); (?P<enabled>.*); vendor preset: (?P<vendorpreset>.*)\)')
                 match = re.match(load_tokenizer, line)
                 parsed_op.update(match.groupdict())
             if "Main PID:" in line:
+                pid_tokenizer = re.compile(r'Main PID: (?P<pid>.*?) (?P<comment>.*)')
                 match = re.match(pid_tokenizer, line)
                 parsed_op.update(match.groupdict())
         return parsed_op

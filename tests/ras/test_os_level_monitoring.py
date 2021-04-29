@@ -219,6 +219,7 @@ class TestOSLevelMonitoring:
         LOGGER.info("Successfully performed Teardown operation")
 
     @pytest.mark.tags("TEST-19609")
+    @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.skip
     def test_19609(self):
