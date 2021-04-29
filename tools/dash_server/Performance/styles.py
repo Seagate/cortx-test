@@ -92,13 +92,12 @@ dict_style_dropdown_medium = {
     'verticalAlign': 'middle',
     "margin-right": "10px",
     "margin-top": "10px",
-    "margin-bottom": "10px"
 }
 
 dict_dropdown_normal_Style = {
     'width': '200px',
     'verticalAlign': 'middle',
-    "margin-right": "15px",
+    "margin-right": "10px",
     "margin-top": "10px"
 }
 

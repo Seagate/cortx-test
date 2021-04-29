@@ -100,7 +100,7 @@ first_input_set = Row([
         style={'color': '#FFFFFF', 'margin-top': '15px'}
     )
 ],
-    justify='center', style={'margin-top': '10px'}
+    justify='center'
 )
 
 # set of non-mandatory input options
@@ -124,7 +124,7 @@ second_input_set = Row([
     Button("Get!", id="get_graphs", color="success",
            style={'height': '35px', 'margin-top': '20px'}),
 ],
-    justify='center', style={'margin-bottom': '10px'}
+    justify='center', style={'margin-bottom': '20px'}
 )
 
 # graph layouts function

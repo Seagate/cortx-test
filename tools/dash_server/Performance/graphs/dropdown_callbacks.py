@@ -94,7 +94,7 @@ def update_configs_first(xfilter, release, branch, option1, bench):
 def return_States(value):
     if value:
         return [{'width': '200px', 'verticalAlign': 'middle',
-                 "margin-right": "15px", "margin-top": "10px"}] * 3
+                 "margin-right": "10px", "margin-top": "10px"}] * 3
     else:
         return [{'display': 'none'}] * 3
 
