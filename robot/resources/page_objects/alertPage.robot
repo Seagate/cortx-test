@@ -34,12 +34,12 @@ Capture AlertEventDetails Screenshot
 
 Click Comments Button
     [Documentation]  On Alert Page, click on Comment icon
-    wait until element is visible  ${ALERT_COMMENT_ICON_XPATH}  timeout=10
+    wait until element is visible  ${ALERT_COMMENT_ICON_XPATH}  timeout=30
     Click Element    ${ALERT_COMMENT_ICON_XPATH}
 
 Add CommentInCommentBox Text
     [Documentation]  Add Comment in The CommentBox popup
-    wait until element is visible  ${ALERT_COMMENT_TEXT_ID}  timeout=10
+    wait until element is visible  ${ALERT_COMMENT_TEXT_ID}  timeout=30
     input text  ${ALERT_COMMENT_TEXT_ID}  ${TEST_COMMENT}
     Click Element    ${ALERT_COMMENT_SAVE_BUTTON_ID}
 
