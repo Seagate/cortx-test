@@ -218,7 +218,7 @@ class TestOSLevelMonitoring:
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.skip
-    def test_19609(self):
+    def test_19609_3ps_monitoring(self):
         "Tests 3rd party service monitoring and management"
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
