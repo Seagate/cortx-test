@@ -42,12 +42,6 @@ def get_yaxis_heading(metric):
 
 
 def get_structure_trace(Scatter, operation, metrics, option, x_axis, y_data):
-    if metrics == 'Throughput':
-        unit = 'MBps'
-    elif metrics == 'IOPS':
-        unit = ''
-    else:
-        unit = 'ms'
     trace = Scatter(
         name='{} {} - {}'.format(operation, metrics, option),
         x=x_axis,
@@ -130,7 +124,7 @@ def sort_builds(data_dict):
     for key in builds:
         try:
             int(key[0])
-        except:
+        except ValueError:
             data_sorted[key] = data_dict[key]
             del data_dict[key]
 
@@ -187,7 +181,9 @@ def get_data_for_graphs(xfilter, release, branch, option, bench, configs, operat
                     yaxis_list.append('NA')
             else:
                 yaxis_list.append('NA')
-        except KeyError or IndexError:
+        except KeyError:
+            yaxis_list.append(None)
+        except IndexError:
             yaxis_list.append(None)
 
     data_dict = dict(zip(xaxis_list, yaxis_list))

@@ -48,12 +48,12 @@ def update_builds_dropdown(xfilter, release, branch):
     prevent_initial_call=True
 )
 def update_configs_first(xfilter, release, branch, option1, bench):
+    results = []
+    style = {'display': 'none'}
     if xfilter is None or release is None or branch is None or option1 is None or bench is None:
         raise PreventUpdate
-        return None, {'display': 'none'}
 
-    results = []
-    if bench != 'S3bench':
+    elif bench != 'S3bench':
         configs = []
 
         uri, db_name, db_collection = get_db_details(release)
@@ -104,17 +104,16 @@ def return_States(value):
     Input('release_dropdown_second', 'value'),
     Input('compare_flag', 'value')
 )
-def update_branches_dropdown(release, flag):
+def update_second_branch_dropdown(release, flag):
+    options = None
     if release is None or not flag:
         raise PreventUpdate
-        return None
 
     if flag:
         branches = get_distinct_keys(release, 'Branch', {})
         options = get_dict_from_array(branches, False)
-        return options
-    else:
-        return None
+
+    return options
 
 
 @app.callback(
@@ -125,7 +124,7 @@ def update_branches_dropdown(release, flag):
     Input('compare_flag', 'value'),
     prevent_initial_call=True
 )
-def update_builds_dropdown(xfilter, release, branch, flag):
+def update_second_builds_dropdown(xfilter, release, branch, flag):
     if release is None or branch is None or xfilter is None or not flag:
         raise PreventUpdate
         return None

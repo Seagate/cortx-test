@@ -32,9 +32,9 @@ def graphs_global(fig, fig_all, xfilter, release1, branch1, option1, bench, conf
         autosize=True,
         height=625,
         showlegend=True,
-        title='{} Plot'.format(metric),
-        title_font_size=26,
-        title_font_color='#40b01d',
+        title='<b>{} Plot</b>'.format(metric),
+        title_font_size=25,
+        title_font_color='#343a40',
         legend_title='Glossary',
         yaxis=dict(
             title_text=y_axis_heading,
@@ -80,18 +80,16 @@ def update_Ttfb_Style(bench):
 )
 def update_graphs(n_clicks, xfilter, release1, branch1, option1, bench, config, operation,
                   flag, release2, branch2, option2):
+    return_val = [None] * 5
     if n_clicks is None or xfilter is None or branch1 is None:
         raise PreventUpdate
-        return [None] * 5
 
     if bench is None or release1 is None or option1 is None or (bench != 'S3bench' and config is None):
         raise PreventUpdate
-        return [None] * 5
 
     if flag:
         if release2 is None or branch2 is None or option2 is None:
             raise PreventUpdate
-            return [None] * 5
 
     if n_clicks > 0:
         figs = []
@@ -130,9 +128,9 @@ def update_graphs(n_clicks, xfilter, release1, branch1, option1, bench, config, 
             autosize=True,
             height=625,
             showlegend=True,
-            title='All Plots in One',
-            title_font_size=26,
-            title_font_color='#40b01d',
+            title='<b>All Plots in One</b>',
+            title_font_size=25,
+            title_font_color='#343a40',
             legend_title='Glossary',
             yaxis=dict(
                 title_text='Data',
@@ -147,6 +145,6 @@ def update_graphs(n_clicks, xfilter, release1, branch1, option1, bench, config, 
             figs.append(fig)
         figs.append(fig_all)
 
-        return figs
-    else:
-        return [None] * 5
+        return_val = figs
+
+    return return_val

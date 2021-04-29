@@ -117,13 +117,6 @@ def get_dict_from_array(options, makeReverse, allcaps=False):
     return versions
 
 
-def get_distinct_keys(release, field_to_query, query):
-    uri, db, col = get_db_details(release)
-    results = find_distinct_values(field_to_query, query, uri, db, col)
-
-    return results
-
-
 def fetch_configs_from_file(benchmark_config, bench, prop):
     config = makeconfig(benchmark_config)
     return config[bench][prop]
