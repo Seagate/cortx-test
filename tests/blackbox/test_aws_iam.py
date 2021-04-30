@@ -33,7 +33,7 @@ from commons.utils.assert_utils import \
     assert_true, assert_false, assert_in, assert_equal
 from config import S3_CFG
 from libs.s3 import iam_test_lib
-from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
+from libs.s3.cortxcli_test_lib import CortxCliTestLib
 
 IAM_OBJ = iam_test_lib.IamTestLib()
 IAM_CFG = get_config_wrapper(fpath="config/blackbox/test_blackbox.yaml")
@@ -63,6 +63,8 @@ class TestAwsIam:
         self.account_name = "seagateaccount_{}".format(time.perf_counter_ns())
         self.email_id = "{}@seagate.com".format(self.account_name)
         self.user_name = "seagate_user{}".format(time.perf_counter_ns())
+        self.cortx_obj = CortxCliTestLib()
+        self.s3acc_password = S3_CFG["CliConfig"]["s3_account"]["password"]
 
     def teardown_method(self):
         """
@@ -91,17 +93,12 @@ class TestAwsIam:
                     self.log.debug("Deleted user access key")
                 IAM_OBJ.delete_user(user)
                 self.log.debug("Deleted user : %s", user)
-        acc_list = IAM_OBJ.list_accounts_s3iamcli(
-            LDAP_USERNAME,
-            LDAP_PASSWD)[1]
-        all_acc = [acc["AccountName"]
-                   for acc in acc_list if "seagateaccount" in acc["AccountName"]]
-        if all_acc:
-            self.log.info("Accounts to delete: %s", all_acc)
-            for acc in all_acc:
-                self.log.info("Deleting %s account", acc)
-                IAM_OBJ.reset_access_key_and_delete_account_s3iamcli(acc)
-                self.log.info("Deleted %s account", acc)
+        accounts = self.cortx_obj.list_accounts_cortxcli()
+        accounts = [acc["account_name"]
+                    for acc in accounts if self.account_name in acc["account_name"]]
+        for acc in accounts:
+            self.cortx_obj.delete_account_cortxcli(account_name=acc, password=self.s3acc_password)
+        del self.cortx_obj
         self.log.info("ENDED: Teardown Operations")
 
     def create_account(self):
@@ -110,11 +107,8 @@ class TestAwsIam:
             "Account name: %s, Account email: %s",
             self.account_name,
             self.email_id)
-        return IAM_OBJ.create_account_s3iamcli(
-            self.account_name,
-            self.email_id,
-            LDAP_USERNAME,
-            LDAP_PASSWD)
+        return self.cortx_obj.create_account_cortxcli(
+            self.account_name, self.email_id, self.s3acc_password)
 
     def create_user_and_access_key(
             self,
@@ -419,9 +413,11 @@ class TestAwsIam:
         self.log.info(
             "Step 1: Creating user with name %s",
             self.user_name)
-        resp = IAM_OBJ.create_user_using_s3iamcli(
-            self.user_name, access_key, secret_key)
+        self.cortx_obj.login_cortx_cli(self.account_name, self.s3acc_password)
+        resp = self.cortx_obj.create_user_cortxcli(
+            self.user_name, self.s3acc_password, self.s3acc_password)
         assert_true(resp[0], resp[1])
+        self.cortx_obj.logout_cortx_cli()
         self.log.info(
             "Step 1: Created user with name %s",
             self.user_name)
