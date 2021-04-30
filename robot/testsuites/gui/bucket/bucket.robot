@@ -34,19 +34,19 @@ Login To S3 Account
     [Tags]  Priority_High  S3_test
     CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    sleep  2s
+    wait for page or element to load
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
-    sleep  3s
-    Re-login  ${S3_account_name}  ${password}  MANAGE_MENU_ID
-    Navigate To Page  MANAGE_MENU_ID  BUCKET_TAB_ID
+    wait for page or element to load
+    Re-login  ${S3_account_name}  ${password}  S3_ACCOUNTS_TAB_ID
+    Navigate To Page  Bucket_TAB_ID
 
 Delete S3 Account And Close Browser
     [Documentation]  This key word is for test case teardown which delete s3 account and close browsers
     [Tags]  Priority_High  S3_test
-    sleep  3s
-    Navigate To Page  MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    wait for page or element to load
+    Navigate To Page   S3_ACCOUNTS_TAB_ID
     ${S3_account_name}=  Fetch S3 Account Name
-    Sleep  3s
+    wait for page or element to load
     Delete S3 Account  ${S3_account_name}  ${password}  True
     Close Browser
 
