@@ -75,7 +75,8 @@ class TestAwsIam:
         all_users = IAM_OBJ.list_users()[1]
         iam_users_list = [user["UserName"]
                           for user in all_users if
-                          IAM_CFG["user_name_prefix"] in user["UserName"]]
+                          IAM_CFG["user_name_prefix"] in user["UserName"] or
+                          self.user_name == user["UserName"]]
         self.log.debug("IAM users: %s", iam_users_list)
         if iam_users_list:
             self.log.debug("Deleting IAM users...")
@@ -168,7 +169,7 @@ class TestAwsIam:
         resp = new_iam_obj.create_user_login_profile(
             self.user_name,
             IAM_CFG["password"],
-            IAM_CFG["password_reset"])
+            True)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 1: Created new account and new user and new profile in it")
@@ -215,9 +216,9 @@ class TestAwsIam:
         self.log.debug("all_users %s", all_users)
         iam_users_list = [user["UserName"]
                           for user in all_users if
-                          "iamuser" in user["UserName"]]
+                          "seagate_user" in user["UserName"]]
         self.log.debug("IAM users: %s", iam_users_list)
-        assert_true(iam_users_list, "true")
+        assert_true(iam_users_list, iam_users_list)
         self.log.info("Step 2: Listed users and verified user name is present")
         self.log.info("ENDED: list user using aws iam")
 
