@@ -56,6 +56,7 @@ class CortxCliIamUser(CortxCli):
         """
         help_param = kwargs.get("help_param", False)
         confirm = kwargs.get("confirm", "Y")
+        sleep_time = kwargs.get("sleep_time", 10)
         if help_param:
             cmd = " ".join([CREATE_IAM_USER, "-h"])
         else:
@@ -70,7 +71,7 @@ class CortxCliIamUser(CortxCli):
             if "Confirm Password" in output:
                 output = self.execute_cli_commands(cmd=confirm_password)[1]
                 if "[Y/n]" in output:
-                    output = self.execute_cli_commands(cmd=confirm, sleep_time=8)[1]
+                    output = self.execute_cli_commands(cmd=confirm, sleep_time=sleep_time)[1]
                     if ("User Name" in output) and (
                             "User ID" in output) and ("ARN" in output):
 
