@@ -42,12 +42,6 @@ def get_yaxis_heading(metric):
 
 
 def get_structure_trace(Scatter, operation, metrics, option, x_axis, y_data):
-    if metrics == 'Throughput':
-        unit = 'MBps'
-    elif metrics == 'IOPS':
-        unit = ''
-    else:
-        unit = 'ms'
     trace = Scatter(
         name='{} {} - {}'.format(operation, metrics, option),
         x=x_axis,
@@ -93,7 +87,7 @@ def get_xaxis(xfilter, release, branch, option, bench):
         return obj_sizes
 
 
-def sort_xaxis(data_dict):
+def sort_objectsizes(data_dict):
     sizes_sorted = {
         'KB': {}, 'MB': {}, 'GB': {},
     }
@@ -115,12 +109,30 @@ def sort_xaxis(data_dict):
         temp.sort()
         for item in temp:
             for obj in objects:
-                if obj[:-2]== str(item):
+                if obj[:-2] == str(item):
                     data_sorted[str(item) +
                                 size_unit] = sizes_sorted[size_unit][obj]
                     break
 
     data_sorted.update(rest)
+    return data_sorted
+
+
+def sort_builds(data_dict):
+    builds = list(data_dict.keys())
+    data_sorted = {}
+    for key in builds:
+        try:
+            int(key[0])
+        except ValueError:
+            data_sorted[key] = data_dict[key]
+            del data_dict[key]
+
+    builds = list(data_dict.keys())
+    builds.sort(key=lambda x: int(x.split("-")[0]))
+    for build in builds:
+        data_sorted[build] = data_dict[build]
+
     return data_sorted
 
 
@@ -155,7 +167,9 @@ def get_data_for_graphs(xfilter, release, branch, option, bench, configs, operat
                                      collection=db_collection)
             try:
                 number_of_nodes = db_data[0]['Count_of_Servers']
-            except:
+            except KeyError:
+                number_of_nodes = 2
+            except IndexError:
                 number_of_nodes = 2
 
             if count > 0:
@@ -165,17 +179,21 @@ def get_data_for_graphs(xfilter, release, branch, option, bench, configs, operat
                             db_data[0][metric][param] * 1000/number_of_nodes)
                     else:
                         yaxis_list.append(db_data[0][metric]/number_of_nodes)
-                except:
+                except IndexError:
                     yaxis_list.append('NA')
             else:
                 yaxis_list.append('NA')
-        except KeyError or IndexError:
+        except KeyError:
+            yaxis_list.append(None)
+        except IndexError:
             yaxis_list.append(None)
 
     data_dict = dict(zip(xaxis_list, yaxis_list))
     # remove_nones(data_dict)
 
     if xfilter == 'Build':
-        data_dict = sort_xaxis(data_dict)
+        data_dict = sort_objectsizes(data_dict)
+    else:
+        data_dict = sort_builds(data_dict)
 
     return [list(data_dict.keys()), list(data_dict.values())]
