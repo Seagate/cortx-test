@@ -90,7 +90,6 @@ class TestCopyObjects:
         self.log.info("STARTED: test setup method.")
         self.cortx_test_obj = CortxCliTestLib()
         self.account_name1 = "acc-copyobject-{}".format(perf_counter_ns())
-        self.email_id = "{}@seagate.com"
         self.account_name2 = "acc-copyobject-{}".format(perf_counter_ns())
         self.io_bucket_name = "iobkt-copyobject-{}".format(perf_counter_ns())
         self.bucket_name1 = "bkt-copyobject-{}".format(perf_counter_ns())
@@ -102,11 +101,11 @@ class TestCopyObjects:
         self.download_path = os.path.join(
             self.test_dir_path, self.object_name2)
         status, self.response1 = self.create_s3cortxcli_acc(
-            self.account_name1, self.email_id.format(
+            self.account_name1, "{}@seagate.com".format(
                 self.account_name1), self.s3acc_passwd)
         assert_utils.assert_true(status, self.response1)
         status, self.response2 = self.create_s3cortxcli_acc(
-            self.account_name2, self.email_id.format(
+            self.account_name2, "{}@seagate.com".format(
                 self.account_name2), self.s3acc_passwd)
         assert_utils.assert_true(status, self.response2)
         self.parallel_ios = None
@@ -283,7 +282,7 @@ class TestCopyObjects:
         assert_utils.assert_in(object_name, resp[1],
                                f"failed to put object {object_name}")
 
-        return True, put_resp[1]["ETag"]
+        return True, put_resp[1]["ETag"].strip('"')
 
     def create_s3cortxcli_acc(
             self,
@@ -304,30 +303,27 @@ class TestCopyObjects:
             "Step : Creating account with name %s and email_id %s",
             account_name,
             email_id)
-        response = None
-        try:
-            create_account = self.cortx_test_obj.create_account_cortxcli(
-                account_name, email_id, password)
-            access_key = create_account[1]["access_key"]
-            secret_key = create_account[1]["secret_key"]
-            canonical_id = create_account[1]["canonical_id"]
-            self.log.info("Step Successfully created the s3iamcli account")
-            s3_obj = s3_test_lib.S3TestLib(
-                access_key,
-                secret_key,
-                endpoint_url=S3_CFG["s3_url"],
-                s3_cert_path=S3_CFG["s3_cert_path"],
-                region=S3_CFG["region"])
-            s3_acl_obj = S3AclTestLib(
-                access_key=access_key, secret_key=secret_key)
-            response = (
-                canonical_id,
-                s3_obj,
-                s3_acl_obj,
-                access_key,
-                secret_key)
-        except CTException as error:
-            assert error.message
+        create_account = self.cortx_test_obj.create_account_cortxcli(
+            account_name, email_id, password)
+        assert_utils.assert_true(create_account[0], create_account[1])
+        access_key = create_account[1]["access_key"]
+        secret_key = create_account[1]["secret_key"]
+        canonical_id = create_account[1]["canonical_id"]
+        self.log.info("Step Successfully created the s3iamcli account")
+        s3_obj = s3_test_lib.S3TestLib(
+            access_key,
+            secret_key,
+            endpoint_url=S3_CFG["s3_url"],
+            s3_cert_path=S3_CFG["s3_cert_path"],
+            region=S3_CFG["region"])
+        s3_acl_obj = S3AclTestLib(
+            access_key=access_key, secret_key=secret_key)
+        response = (
+            canonical_id,
+            s3_obj,
+            s3_acl_obj,
+            access_key,
+            secret_key)
 
         return True, response
 
@@ -400,7 +396,7 @@ class TestCopyObjects:
         assert_utils.assert_true(status, put_etag)
         self.log.info("Put object ETag: %s", put_etag)
         self.log.info(
-            "Step 4: Copy object to different bucket with different object.")
+            "Step 4: Copy object to different bucket with different object name.")
         resp = S3_OBJ.create_bucket(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp)
         status, response = S3_OBJ.copy_object(
@@ -1102,7 +1098,7 @@ class TestCopyObjects:
         self.log.info(
             "5. Copy object from bucket1 to bucket2 specifying full control access to Account2.")
         canonical_id2, s3_acl_obj2 = self.response2[0], self.response2[2]
-        resp = s3_obj1.copy_object_with_permission(
+        resp = s3_obj1.copy_object(
             self.bucket_name1,
             self.object_name1,
             self.bucket_name2,
@@ -1171,7 +1167,7 @@ class TestCopyObjects:
         self.log.info(
             "5. Copy object from bucket1 to bucket2 specifying read access to Account2.")
         canonical_id2, s3_obj2, s3_acl_obj2 = self.response2[:3]
-        resp = s3_obj1.copy_object_with_permission(
+        resp = s3_obj1.copy_object(
             self.bucket_name1,
             self.object_name1,
             self.bucket_name2,
@@ -1255,7 +1251,7 @@ class TestCopyObjects:
         self.log.info(
             "5. Copy object from bucket1 to bucket2 specifying read acp access to Account2")
         canonical_id2, s3_acl_obj2 = self.response2[0], self.response2[2]
-        resp = s3_obj1.copy_object_with_permission(
+        resp = s3_obj1.copy_object(
             self.bucket_name1,
             self.object_name1,
             self.bucket_name2,
@@ -1328,7 +1324,7 @@ class TestCopyObjects:
         self.log.info(
             "5. Copy object from bucket1 to bucket2 specifying write acp access to Account2")
         canonical_id2, s3_acl_obj2 = self.response2[0], self.response2[2]
-        resp = s3_obj1.copy_object_with_permission(
+        resp = s3_obj1.copy_object(
             self.bucket_name1,
             self.object_name1,
             self.bucket_name2,
@@ -1406,7 +1402,7 @@ class TestCopyObjects:
         self.log.info(
             "5. Copy object from bucket1 to bucket2 specifying read and read acp access to "
             "Account2")
-        resp = s3_obj1.copy_object_with_permission(
+        resp = s3_obj1.copy_object(
             self.bucket_name1,
             self.object_name1,
             self.bucket_name2,

@@ -156,37 +156,8 @@ class S3TestLib(S3Lib):
                     source_bucket: str = None,
                     source_object: str = None,
                     dest_bucket: str = None,
-                    dest_object: str = None) -> tuple:
-        """
-        Creates a copy of an object that is already stored in Seagate S3.
-
-        :param source_bucket: The name of the source bucket.
-        :param source_object: The name of the source object.
-        :param dest_bucket: The name of the destination bucket.
-        :param dest_object: The name of the destination object.
-        :return: True, dict.
-        """
-        try:
-            response = self.s3_client.copy_object(
-                Bucket=dest_bucket,
-                CopySource='/{}/{}'.format(source_bucket, source_object),
-                Key=dest_object,
-            )
-            LOGGER.debug(response)
-        except BaseException as error:
-            LOGGER.error("Error in %s: %s",
-                         S3TestLib.copy_object.__name__,
-                         error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
-
-        return True, response
-
-    def copy_object_with_permission(self,
-                                    source_bucket: str = None,
-                                    source_object: str = None,
-                                    dest_bucket: str = None,
-                                    dest_object: str = None,
-                                    **kwargs) -> tuple:
+                    dest_object: str = None,
+                    **kwargs) -> tuple:
         """
         Creates a copy of an object that is already stored in Seagate S3 with different permissions.
 
@@ -205,17 +176,14 @@ class S3TestLib(S3Lib):
                 Key=dest_object,
                 **kwargs
             )
-            bucket = self.s3_resource.Bucket(dest_bucket)
-            response_obj = [obj.key for obj in bucket.objects.all()]
-            LOGGER.debug(response_obj)
             LOGGER.debug(response)
         except BaseException as error:
             LOGGER.error("Error in %s: %s",
-                         S3TestLib.copy_object_with_permission.__name__,
+                         S3TestLib.copy_object.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
-        return dest_object in response_obj, response
+        return True, response
 
     def object_upload(
             self,
