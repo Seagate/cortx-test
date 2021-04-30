@@ -169,8 +169,8 @@ class TestMinioClient:
     def test_create_multiple_bucket_2346(self):
         """Create multiple buckets using Minion client."""
         self.log.info("STARTED: Create multiple buckets using Minion client")
-        bucket_name_1 = f"{self.bucket_name}_1"
-        bucket_name_2 = f"{self.bucket_name}_2"
+        bucket_name_1 = f"{self.bucket_name}-1"
+        bucket_name_2 = f"{self.bucket_name}-2"
         self.log.info("Step 1: Creating two buckets simultaneously")
         resp = system_utils.run_local_cmd(
             self.minio_cnf["cr_two_bkt_cmd"].format(
@@ -235,12 +235,11 @@ class TestMinioClient:
     def test_delete_empty_bucket_2349(self):
         """Delete empty bucket using Minion client."""
         self.log.info("STARTED: Delete empty bucket using Minion client")
-        test_cfg = MINIO_CFG["test_2349"]
         self.create_bucket(self.bucket_name)
         self.log.info(
             "Step 2: Deleting bucket with name %s", self.bucket_name)
         resp = system_utils.run_local_cmd(
-            test_cfg["dlt_bkt_cmd"].format(self.bucket_name))
+            self.minio_cnf["dlt_bkt_cmd"].format(self.bucket_name))
         assert_utils.assert_true(resp[0], resp)
         self.log.info(
             "Step 2: Bucket is deleted with name %s", self.bucket_name)
