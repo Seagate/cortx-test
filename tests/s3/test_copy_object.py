@@ -47,7 +47,13 @@ S3_OBJ = s3_test_lib.S3TestLib()
 
 
 class TestCopyObjects:
-    """S3 copy object class."""
+    """
+    S3 copy object class.
+
+    Bugs:
+        https://jts.seagate.com/browse/EOS-19623
+        https://jts.seagate.com/browse/EOS-16032
+    """
 
     @classmethod
     def setup_class(cls):
@@ -121,8 +127,9 @@ class TestCopyObjects:
         self.log.info("STARTED: test teardown method.")
         self.log.info(
             "Deleting all buckets/objects created during TC execution")
-        if self.parallel_ios.is_alive():
-            self.parallel_ios.join()
+        if self.parallel_ios:
+            if self.parallel_ios.is_alive():
+                self.parallel_ios.join()
         bucket_list = S3_OBJ.bucket_list()[1]
         pref_list = [
             each_bucket for each_bucket in bucket_list if each_bucket in [
@@ -282,7 +289,7 @@ class TestCopyObjects:
         assert_utils.assert_in(object_name, resp[1],
                                f"failed to put object {object_name}")
 
-        return True, put_resp[1]["ETag"].strip('"')
+        return True, put_resp[1]["ETag"]
 
     def create_s3cortxcli_acc(
             self,
