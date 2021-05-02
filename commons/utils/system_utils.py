@@ -30,6 +30,7 @@ import socket
 import builtins
 import errno
 import string
+import json
 from typing import Tuple
 from subprocess import Popen, PIPE
 from hashlib import md5
@@ -1015,3 +1016,21 @@ def random_metadata_generator(
     :return: str
     """
     return ''.join(random.SystemRandom().choice(chars) for _ in range(size))
+
+
+def create_test_details_file(te_ticket, test_list, test_id_dict):
+    """
+    Create test details file
+    """
+    tp_details = dict()
+
+    tp_details_file = os.path.join(os.getcwd(),
+                                   params.LOG_DIR_NAME,
+                                   params.JIRA_TEST_DETAILS_JSON)
+    with open(tp_details_file, 'w') as t_meta:
+        # test_name, test_id, test_id_labels, test_team, test_type
+        item = dict()
+        for test in test_list:
+            item[test] = test_id_dict[test]
+        tp_details[te_ticket] = item
+        json.dump(tp_details, t_meta, ensure_ascii=False)

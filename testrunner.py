@@ -204,10 +204,11 @@ def get_tests_from_te(jira_obj, args, test_type='ALL'):
     """
     Get tests from given test execution
     """
-    test_list, tag = jira_obj.get_test_ids_from_te(args.te_ticket, test_type)
+    test_list, tag, test_id_dict = jira_obj.get_test_ids_from_te(
+        args.te_ticket, test_type)
     if len(test_list) == 0 or tag == "":
         raise EnvironmentError("Please check TE provided, tests or tag is missing")
-    return test_list, tag
+    return test_list, tag, test_id_dict
 
 
 def trigger_unexecuted_tests(args, test_list):
@@ -217,7 +218,7 @@ def trigger_unexecuted_tests(args, test_list):
     """
     jira_id, jira_pwd = runner.get_jira_credential()
     jira_obj = JiraTask(jira_id, jira_pwd)
-    te_test_list, tag = get_tests_from_te(jira_obj, args, 'TODO')
+    te_test_list, tag, test_id_dict = get_tests_from_te(jira_obj, args, 'TODO')
     if len(te_test_list) != 0:
         # check if there are any selected tests with todo status
         unexecuted_test_list = [test for test in test_list if test in te_test_list]
@@ -350,7 +351,7 @@ def trigger_tests_from_te(args):
     # test_list, te_tag = jira_obj.get_test_ids_from_te(args.te_ticket)
     # if len(test_list) == 0 or te_tag == "":
     #     assert False, "Please check TE provided, tests or tag is missing"
-    test_list, te_tag = get_tests_from_te(jira_obj, args)
+    test_list, te_tag, test_id_dict = get_tests_from_te(jira_obj, args)
     # writing the data into the file
     with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_TEST_LIST), 'w') \
             as test_file:
@@ -359,6 +360,8 @@ def trigger_tests_from_te(args):
             write.writerow([test])
 
     tp_metadata = create_test_meta_data_file(args, test_list)
+    system_utils.create_test_details_file(args.te_ticket, test_list,
+                                          test_id_dict)
     if not args.build and not args.build_type:
         if 'environment' in tp_metadata and tp_metadata.get('environment'):
             test_env = tp_metadata.get('environment')
@@ -529,3 +532,4 @@ if __name__ == '__main__':
     initialize_loghandler(LOGGER)
     opts = parse_args()
     main(opts)
+
