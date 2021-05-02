@@ -153,7 +153,8 @@ class TestBucketPolicy:
         cls.log.debug(iam_accounts)
         if iam_accounts:
             for acc in iam_accounts:
-                cls.cli_obj.login_cortx_cli(
+                cls.cli_obj = cortxcli_test_lib.CortxCliTestLib()
+                resp = cls.cli_obj.login_cortx_cli(
                     username=acc, password=cls.s3acc_passwd)
                 cls.log.debug("Deleting %s account", acc)
                 cls.cli_obj.delete_all_buckets_cortx_cli()
@@ -6816,7 +6817,7 @@ _date
             secret_key=acc_details[0][1]["secret_key"])
         S3_OBJ2 = s3_test_lib.S3TestLib(
             access_key=acc_details[1][1]["access_key"],
-            secret_key=acc_details1[1][1]["secret_key"])
+            secret_key=acc_details[1][1]["secret_key"])
         self.log.info(
             "Creating a json with StringEqualsIfExists condition")
         policy_id = f"Policy{uuid.uuid4()}"
@@ -7000,14 +7001,13 @@ _date
             obj_prefix,
             object_lst)
 
-        account_name2 = "{}{}".format(self.acc_name_prefix, str(
-            time.time()))
-        email2 = "{}{}".format(account_name2, self.email_id)
+        account_name2 = "{}{}".format(self.acc_name_prefix, int(time.perf_counter()))
+        email2 = "{}{}".format(account_name2, "@seagate.com")
         resp1 = self.cli_obj.create_account_cortxcli(
             account_name=account_name2,
             account_email=email2,
             password=self.s3acc_passwd)
-        account_id2 = resp1[1]["Account_Id"]
+        account_id2 = resp1[1]["account_id"]
         canonical_id_2 = resp1[1]["canonical_id"]
         self.log.debug(
             "Account2 Id: %s, Cannonical_id_2: %s",
@@ -7022,9 +7022,8 @@ _date
             access_key=access_key,
             secret_key=secret_key)
 
-        account_name3 = "{}{}".format(self.acc_name_prefix, str(
-            time.time()))
-        email3 = "{}{}".format(account_name3, self.email_id)
+        account_name3 = "{}{}".format(self.acc_name_prefix, int(time.perf_counter()))
+        email3 = "{}{}".format(account_name3, "@seagate.com")
         resp2 = self.cli_obj.create_account_cortxcli(
             account_name=account_name3,
             account_email=email3,
@@ -7983,7 +7982,7 @@ _date
             access_key=access_key_2, secret_key=secret_key_2)
         resp = s3_policy_acc2_obj.create_user(user_name_2)
         assert resp[0], resp[1]
-        user_id_2 = resp[1]["User Id"]
+        user_id_2 = resp[1]["User"]["UserId"]
         self.log.info("Step 1: Created user using account 2 credential")
         self.create_bucket_put_obj_with_dir(
             self.bucket_name,
@@ -8102,7 +8101,7 @@ _date
             access_key=access_key_2, secret_key=secret_key_2)
         resp = iam_obj_acc_2.create_user(user_name)
         assert resp[0], resp[1]
-        user_id_2 = resp[1]["User Id"]
+        user_id_2 = resp[1]["User"]["UserId"]
         self.log.info("Created user in account 2")
         self.log.info(
             "Step 1: Creating a bucket and uploading objects in a bucket using account 1")
@@ -8316,7 +8315,7 @@ _date
         resp = iam_acc2_obj.create_user(user_name_2)
         assert resp[0], resp[1]
 
-        user_id_2 = resp[1]["User Id"]
+        user_id_2 = resp[1]["User"]["UserId"]
         self.log.info("Step 1: Created user using account 2 credential")
         self.create_bucket_put_obj_with_dir(
             self.bucket_name,
