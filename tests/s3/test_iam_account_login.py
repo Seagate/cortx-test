@@ -31,7 +31,7 @@ from commons.exceptions import CTException
 from commons.configmanager import get_config_wrapper
 from commons.utils.assert_utils import assert_true, assert_in
 from commons.utils.assert_utils import assert_is_not_none, assert_not_in
-from config import S3_CMN_CONFIG
+from config import S3_USER_ACC_MGMT_CONFIG
 
 LOGGER = logging.getLogger(__name__)
 IAM_OBJ = iam_test_lib.IamTestLib()
@@ -47,7 +47,7 @@ class TestAccountLoginProfile:
         self.email_id = "{}{}".format(self.account_name, self.email_suffix)
         self.ldap_user = LDAP_USERNAME
         self.ldap_pwd = LDAP_PASSWD
-        self.test_cfg = S3_CMN_CONFIG["test_configs"]
+        self.test_cfg = S3_USER_ACC_MGMT_CONFIG["test_configs"]
         LOGGER.info("ENDED: Setup Operation")
 
     def teardown_method(self):
@@ -122,7 +122,7 @@ class TestAccountLoginProfile:
             "Step 3: Creating login profile for an account %s",
             self.account_name)
         res = IAM_OBJ.create_account_login_profile_s3iamcli(
-            self.account_name, S3_CMN_CONFIG["s3_params"]["password"],
+            self.account_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             res[1]["access_key"], res[1]["secret_key"],
             password_reset=True)
         assert_true(res[0], res[1])
@@ -149,7 +149,7 @@ class TestAccountLoginProfile:
             "Step 2: Creating login profile for a non existing account")
         try:
             IAM_OBJ.create_account_login_profile_s3iamcli(
-                "dummy_account", S3_CMN_CONFIG["s3_params"]["password"],
+                "dummy_account", S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
                 "dummy_access_key", "dummy_secret_key",
                 password_reset=False)
             LOGGER.info("after try")
@@ -202,7 +202,7 @@ class TestAccountLoginProfile:
             "Step 4: Creating account login profile for recently deleted account")
         try:
             IAM_OBJ.create_account_login_profile_s3iamcli(
-                self.account_name, S3_CMN_CONFIG["s3_params"]["password"],
+                self.account_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
                 access_key, secret_key, password_reset=True)
         except CTException as error:
             LOGGER.error("Expected failure: %s", error.message)
@@ -346,7 +346,7 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_CMN_CONFIG["s3_params"]["password"],
+            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             False,
             self.ldap_user,
             self.ldap_pwd)
@@ -364,7 +364,7 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_CMN_CONFIG["s3_params"]["password"],
+            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             True,
             self.ldap_user,
             self.ldap_pwd)
@@ -402,7 +402,7 @@ class TestAccountLoginProfile:
             "Step 3: Creating login profile for account %s without password reset options",
             self.account_name)
         res = IAM_OBJ.create_account_login_profile_without_both_reset_options(
-            self.account_name, S3_CMN_CONFIG["s3_params"]["password"],
+            self.account_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             access_key, secret_key)
         assert_true(res[0], res[1])
         LOGGER.info(
@@ -442,7 +442,7 @@ class TestAccountLoginProfile:
             "Step 3: Creating account login profile for account %s with"
             " both password reset value", self.account_name)
         res = IAM_OBJ.create_account_login_profile_both_reset_options(
-            self.account_name, S3_CMN_CONFIG["s3_params"]["password"],
+            self.account_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             access_key, secret_key)
         assert_true(res[0], res[1])
         LOGGER.info(
@@ -491,7 +491,7 @@ class TestAccountLoginProfile:
         try:
             IAM_OBJ.create_account_login_profile_s3iamcli(
                 self.account_name,
-                S3_CMN_CONFIG["s3_params"]["password"],
+                S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
                 user_access_key,
                 user_secret_key,
                 password_reset=True)
@@ -521,7 +521,7 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_CMN_CONFIG["s3_params"]["password"],
+            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             True,
             self.ldap_user,
             self.ldap_pwd)
@@ -602,7 +602,7 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_CMN_CONFIG["s3_params"]["password"],
+            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             True,
             self.ldap_user,
             self.ldap_pwd)
@@ -669,7 +669,7 @@ class TestAccountLoginProfile:
             "of its user", self.account_name)
         IAM_OBJ.create_account_login_profile_s3iamcli(
             self.account_name,
-            S3_CMN_CONFIG["s3_params"]["password"],
+            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             access_key,
             secret_key,
             password_reset=True)
@@ -708,7 +708,7 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_CMN_CONFIG["s3_params"]["password"],
+            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             True,
             self.ldap_user,
             self.ldap_pwd)
@@ -763,7 +763,7 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_CMN_CONFIG["s3_params"]["password"],
+            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             False,
             self.ldap_user,
             self.ldap_pwd)
@@ -815,7 +815,7 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_CMN_CONFIG["s3_params"]["password"],
+            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             True,
             self.ldap_user,
             self.ldap_pwd)
@@ -874,7 +874,7 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_CMN_CONFIG["s3_params"]["password"],
+            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             False,
             self.ldap_user,
             self.ldap_pwd)
@@ -893,7 +893,7 @@ class TestAccountLoginProfile:
             "Step 4: Updating account login profile for account %s",
             self.account_name)
         resp = IAM_OBJ.update_account_login_profile_both_reset_options(
-            self.account_name, S3_CMN_CONFIG["s3_params"]["password"],
+            self.account_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             access_key, secret_key)
         assert_true(resp[0], resp[1])
         LOGGER.info(
@@ -928,7 +928,7 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_CMN_CONFIG["s3_params"]["password"],
+            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             False,
             self.ldap_user,
             self.ldap_pwd)
@@ -978,7 +978,7 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_CMN_CONFIG["s3_params"]["password"],
+            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             False,
             self.ldap_user,
             self.ldap_pwd)
@@ -1035,7 +1035,7 @@ class TestAccountLoginProfile:
             self.account_name)
         try:
             IAM_OBJ.update_account_login_profile_s3iamcli(
-                self.account_name, S3_CMN_CONFIG["s3_params"]["password"],
+                self.account_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
                 access_key, secret_key, password_reset=True)
         except CTException as error:
             LOGGER.error("Expected failure: %s", error.message)
@@ -1068,7 +1068,7 @@ class TestAccountLoginProfile:
             acc_name)
         try:
             IAM_OBJ.update_account_login_profile_s3iamcli(
-                acc_name, S3_CMN_CONFIG["s3_params"]["password"],
+                acc_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
                 "no_accesskey", "no_secretkey", password_reset=True)
         except CTException as error:
             LOGGER.error("Expected failure: %s", error.message)
@@ -1097,7 +1097,7 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_CMN_CONFIG["s3_params"]["password"],
+            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             True,
             self.ldap_user,
             self.ldap_pwd)
@@ -1148,7 +1148,7 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_CMN_CONFIG["s3_params"]["password"],
+            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             True,
             self.ldap_user,
             self.ldap_pwd)
@@ -1167,7 +1167,7 @@ class TestAccountLoginProfile:
             "Step 4: Updating account login profile for account %s",
             self.account_name)
         resp = IAM_OBJ.update_account_login_profile_s3iamcli(
-            self.account_name, S3_CMN_CONFIG["s3_params"]["password"],
+            self.account_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             access_key, secret_key, password_reset=True)
         assert_true(resp[0], resp[1])
         LOGGER.info(
@@ -1204,7 +1204,7 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_CMN_CONFIG["s3_params"]["password"],
+            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             True,
             self.ldap_user,
             self.ldap_pwd)
@@ -1281,7 +1281,7 @@ class TestAccountLoginProfile:
             " of its user", self.account_name)
         IAM_OBJ.create_account_login_profile_s3iamcli(
             self.account_name,
-            S3_CMN_CONFIG["s3_params"]["password"],
+            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             access_key,
             secret_key,
             password_reset=False)
@@ -1297,7 +1297,7 @@ class TestAccountLoginProfile:
             self.account_name)
         try:
             IAM_OBJ.update_account_login_profile_s3iamcli(
-                self.account_name, S3_CMN_CONFIG["s3_params"]["password"],
+                self.account_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
                 user_access_key, user_secret_key, password_reset=True)
         except CTException as error:
             LOGGER.error("Expected failure: %s", error.message)
@@ -1319,7 +1319,7 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_CMN_CONFIG["s3_params"]["password"],
+            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             False,
             self.ldap_user,
             self.ldap_pwd)
@@ -1328,7 +1328,7 @@ class TestAccountLoginProfile:
             "Step 3: Getting temp auth credentials for account %s",
             self.account_name)
         res = IAM_OBJ.get_temp_auth_credentials_account(
-            self.account_name, S3_CMN_CONFIG["s3_params"]["password"])
+            self.account_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"])
         assert_is_not_none(res[0], res[1])
         LOGGER.info(
             "Step 3: Get temp auth credentials for account %s successful %s",
@@ -1348,7 +1348,7 @@ class TestAccountLoginProfile:
             "Step 1: Getting temp auth credentials for invalid account")
         try:
             IAM_OBJ.get_temp_auth_credentials_account(
-                acc_name, S3_CMN_CONFIG["s3_params"]["password"])
+                acc_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"])
         except CTException as error:
             LOGGER.error("Expected failure: %s", error.message)
             assert_in("An error occurred (NoSuchEntity)",
@@ -1382,7 +1382,7 @@ class TestAccountLoginProfile:
             "recently got deleted".format(self.account_name))
         try:
             IAM_OBJ.get_temp_auth_credentials_account(
-                self.account_name, S3_CMN_CONFIG["s3_params"]["password"])
+                self.account_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"])
         except CTException as error:
             LOGGER.error("Expected failure: %s", error.message)
             assert_in("An error occurred (NoSuchEntity)",
@@ -1403,7 +1403,7 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_CMN_CONFIG["s3_params"]["password"],
+            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             False,
             self.ldap_user,
             self.ldap_pwd)
@@ -1412,7 +1412,7 @@ class TestAccountLoginProfile:
             "Step 3: Getting temp auth credentials for account %s",
             self.account_name)
         res = IAM_OBJ.get_temp_auth_credentials_account(
-            self.account_name, S3_CMN_CONFIG["s3_params"]["password"])
+            self.account_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"])
         assert_is_not_none(res[0], res[1])
         LOGGER.info(
             "Step 3: Get temp auth credentials for account %s successful %s",
@@ -1445,7 +1445,7 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_CMN_CONFIG["s3_params"]["password"],
+            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             False,
             self.ldap_user,
             self.ldap_pwd)
@@ -1454,7 +1454,7 @@ class TestAccountLoginProfile:
             "Step 3: Getting temp auth credentials for account %s",
             self.account_name)
         res = IAM_OBJ.get_temp_auth_credentials_account(
-            self.account_name, S3_CMN_CONFIG["s3_params"]["password"])
+            self.account_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"])
         assert_is_not_none(res[0], res[1])
         LOGGER.info(
             "Step 3: Get temp auth credentials for account %s successful %s",
@@ -1518,7 +1518,7 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_CMN_CONFIG["s3_params"]["password"],
+            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             False,
             self.ldap_user,
             self.ldap_pwd)
@@ -1527,7 +1527,7 @@ class TestAccountLoginProfile:
             "Step 3: Getting temp auth credentials for account %s",
             self.account_name)
         res = IAM_OBJ.get_temp_auth_credentials_account(
-            self.account_name, S3_CMN_CONFIG["s3_params"]["password"])
+            self.account_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"])
         assert_is_not_none(res[0], res[1])
         LOGGER.info(
             "Step 3: Get temp auth credentials for account %s successful %s",
@@ -1547,7 +1547,7 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_CMN_CONFIG["s3_params"]["password"],
+            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             False,
             self.ldap_user,
             self.ldap_pwd)
@@ -1557,7 +1557,7 @@ class TestAccountLoginProfile:
             "Step 3: Getting temp auth credentials for account with %s "
             "sec duration %s", duration, self.account_name)
         res = IAM_OBJ.get_temp_auth_credentials_account(
-            self.account_name, S3_CMN_CONFIG["s3_params"]["password"], duration)
+            self.account_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"], duration)
         assert_is_not_none(res[0], res[1])
         LOGGER.info(
             "Step 3: Get temp auth credentials for account %s successful %s",
@@ -1603,7 +1603,7 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_CMN_CONFIG["s3_params"]["password"],
+            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             False,
             self.ldap_user,
             self.ldap_pwd)
@@ -1614,7 +1614,7 @@ class TestAccountLoginProfile:
             "sec duration less than 20min %s", duration, self.account_name)
         try:
             IAM_OBJ.get_temp_auth_credentials_account(
-                self.account_name, S3_CMN_CONFIG["s3_params"]["password"],
+                self.account_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
                 duration)
         except CTException as error:
             LOGGER.error("Expected failure: %s", error.message)
@@ -1638,7 +1638,7 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_CMN_CONFIG["s3_params"]["password"],
+            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             False,
             self.ldap_user,
             self.ldap_pwd)
@@ -1672,7 +1672,7 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_CMN_CONFIG["s3_params"]["password"],
+            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             False,
             self.ldap_user,
             self.ldap_pwd)
@@ -1723,7 +1723,7 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_CMN_CONFIG["s3_params"]["password"],
+            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             False,
             self.ldap_user,
             self.ldap_pwd)
@@ -1758,7 +1758,7 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_CMN_CONFIG["s3_params"]["password"],
+            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             False,
             self.ldap_user,
             self.ldap_pwd)
