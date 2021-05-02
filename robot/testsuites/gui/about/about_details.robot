@@ -18,7 +18,7 @@ Force Tags  CSM_GUI  CSM_login
 
 test_1111  # TODO: correct test ID, correct Tag
     [Documentation]  Test that about section has ssl details
-    [Tags]  Priority_High  Smoke_test  R2
+    [Tags]  Priority_High  R2
     Navigate To About 
     Click Issuer Option
     Click Subject Option
