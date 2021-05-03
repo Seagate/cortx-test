@@ -101,14 +101,13 @@ class _S3AccountOperations(CortxCliS3AccountOperations):
         self.log.info("Total Time in seconds for Creating Account is: %s", str(end-start))
         return status, response
 
-    def list_accounts_cortxcli(self, output_format='json', sleep_time=None) -> tuple:
+    def list_accounts_cortxcli(self, output_format='json', sleep_time=10) -> tuple:
         """
         Listing accounts using  cortxcli.
 
         :return: list account cortxcli response.
         """
         try:
-            sleep_time = sleep_time if sleep_time else 10
             self.login_cortx_cli()
             status, response = super().show_s3account_cortx_cli(output_format=output_format, sleep_time=sleep_time)
             if status:

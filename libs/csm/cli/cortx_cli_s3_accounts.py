@@ -73,7 +73,7 @@ class CortxCliS3AccountOperations(CortxCli):
 
         return False, response
 
-    def show_s3account_cortx_cli(self, output_format: str = None, sleep_time: int = None) -> tuple:
+    def show_s3account_cortx_cli(self, output_format: str = None, sleep_time: int = 10) -> tuple:
         """
         This function will list all S3 accounts using CORTX CLI
         :param sleep_time: wait time for response
