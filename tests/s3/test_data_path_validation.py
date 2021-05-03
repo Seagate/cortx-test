@@ -415,12 +415,11 @@ class TestDataPathValidation:
         self.log.info(
             "STARTED: Test gradual increase of concurrent client sessions"
             " with single client on single bucket")
-        bucket_name = self.bucket_name
-        self.log.info("Step 1: Create bucket with name %s.", bucket_name)
-        resp = S3_OBJ.create_bucket(bucket_name)
+        self.log.info("Step 1: Create bucket with name %s.", self.bucket_name)
+        resp = S3_OBJ.create_bucket(self.bucket_name)
         assert_true(resp[0], resp[1])
         resp = S3_OBJ.bucket_list()
-        assert_in(bucket_name, resp[1], resp[1])
+        assert_in(self.bucket_name, resp[1], resp[1])
         self.log.info("Step 1: Successfully created bucket.")
         self.log.info(
             "Step 2: Start concurrent I/O with 100 client and "
@@ -431,7 +430,7 @@ class TestDataPathValidation:
             res = s3bench_obj.s3bench(
                 access_key=access_key,
                 secret_key=secret_key,
-                bucket=bucket_name,
+                bucket=self.bucket_name,
                 end_point=S3_CFG["s3_url"],
                 num_clients=1,
                 num_sample=request_load,
@@ -468,12 +467,11 @@ class TestDataPathValidation:
         self.log.info(
             "STARTED: Test gradual increase of concurrent client sessions"
             " with multiple clients on single buckets")
-        bucket_name = self.bucket_name
-        self.log.info("Step 1: Create bucket with name %s.", bucket_name)
-        resp = S3_OBJ.create_bucket(bucket_name)
+        self.log.info("Step 1: Create bucket with name %s.", self.bucket_name)
+        resp = S3_OBJ.create_bucket(self.bucket_name)
         assert_true(resp[0], resp[1])
         resp = S3_OBJ.bucket_list()
-        assert_in(bucket_name, resp[1], resp[1])
+        assert_in(self.bucket_name, resp[1], resp[1])
         self.log.info("Step 1: Successfully created bucket.")
         self.log.info(
             "Step 2: Start concurrent I/O with multiple client increasing "
@@ -485,7 +483,7 @@ class TestDataPathValidation:
             res = s3bench_obj.s3bench(
                 access_key=access_key,
                 secret_key=secret_key,
-                bucket=bucket_name,
+                bucket=self.bucket_name,
                 end_point=S3_CFG["s3_url"],
                 num_clients=client,
                 num_sample=request_load,

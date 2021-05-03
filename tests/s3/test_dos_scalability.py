@@ -126,14 +126,13 @@ class TestDosScalability:
         self.log.info(
             "Step 2: Executed s3bench run with objects upto 20billion and obj size 1B.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
-        bucket_name = self.bucket_name
-        res = S3_OBJ.create_bucket(bucket_name)
+        res = S3_OBJ.create_bucket(self.bucket_name)
         assert_true(res[0], res[1])
         for _ in range(20000):
             res = s3b_obj.s3bench(
                 access_key=access_key,
                 secret_key=secret_key,
-                bucket=bucket_name,
+                bucket=self.bucket_name,
                 end_point=S3_CFG['s3_url'],
                 num_clients=100,
                 num_sample=1000000,
@@ -165,14 +164,13 @@ class TestDosScalability:
         self.log.info(
             "Step 2: Perform with {test_cfg['num_clients']} constant s3 operations.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
-        bucket_name = self.bucket_name
-        res = S3_OBJ.create_bucket(bucket_name)
+        res = S3_OBJ.create_bucket(self.bucket_name)
         assert_true(res[0], res[1])
         for _ in range(5):
             res = s3b_obj.s3bench(
                 access_key=access_key,
                 secret_key=secret_key,
-                bucket=bucket_name,
+                bucket=self.bucket_name,
                 end_point=S3_CFG['s3_url'],
                 num_clients=400,
                 num_sample=1000,
@@ -211,14 +209,13 @@ class TestDosScalability:
         self.log.info(
             "Step 2: Perform with {test_cfg['num_clients']} constant s3 operations.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
-        bucket_name = self.bucket_name
-        res = S3_OBJ.create_bucket(bucket_name)
+        res = S3_OBJ.create_bucket(self.bucket_name)
         assert_true(res[0], res[1])
         for _ in range(5):
             res = s3b_obj.s3bench(
                 access_key=access_key,
                 secret_key=secret_key,
-                bucket=bucket_name,
+                bucket=self.bucket_name,
                 end_point=S3_CFG['s3_url'],
                 num_clients=300,
                 num_sample=1000,
@@ -258,14 +255,13 @@ class TestDosScalability:
         self.log.info(
             "Step 2: Perform with {test_cfg['num_clients']} constant s3 operations.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
-        bucket_name = self.bucket_name
-        res = S3_OBJ.create_bucket(bucket_name)
+        res = S3_OBJ.create_bucket(self.bucket_name)
         assert_true(res[0], res[1])
         for _ in range(5):
             res = s3b_obj.s3bench(
                 access_key=access_key,
                 secret_key=secret_key,
-                bucket=bucket_name,
+                bucket=self.bucket_name,
                 end_point=S3_CFG['s3_url'],
                 num_clients=1000,
                 num_sample=1000,
@@ -304,8 +300,7 @@ class TestDosScalability:
             " Install and Configure S3bench tool and validate")
         self.log.info("Step 2: Perform with n constant s3 operations.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
-        bucket_name = self.bucket_name
-        res = S3_OBJ.create_bucket(bucket_name)
+        res = S3_OBJ.create_bucket(self.bucket_name)
         assert_true(res[0], res[1])
         count = 0
         for client in S3_DATA_CMN_CONFIG["test_5340"]["nclients"]:
@@ -316,7 +311,7 @@ class TestDosScalability:
                 res = s3b_obj.s3bench(
                     access_key=access_key,
                     secret_key=secret_key,
-                    bucket=bucket_name,
+                    bucket=self.bucket_name,
                     end_point=S3_CFG['s3_url'],
                     num_clients=client,
                     num_sample=client,
@@ -361,14 +356,13 @@ class TestDosScalability:
             " Install and Configure S3bench tool and validate")
         self.log.info("Step 2: Perform with n constant s3 operations.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
-        bucket_name = self.bucket_name
-        res = S3_OBJ.create_bucket(bucket_name)
+        res = S3_OBJ.create_bucket(self.bucket_name)
         assert_true(res[0], res[1])
         for client in S3_DATA_CMN_CONFIG["test_5341"]["nclients"]:
             res = s3b_obj.s3bench(
                 access_key=access_key,
                 secret_key=secret_key,
-                bucket=bucket_name,
+                bucket=self.bucket_name,
                 end_point=S3_CFG['s3_url'],
                 num_clients=client,
                 num_sample=client,
