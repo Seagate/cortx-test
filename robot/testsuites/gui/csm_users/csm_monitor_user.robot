@@ -56,12 +56,12 @@ TEST-5269
     [Tags]  Priority_High  user_role  TEST-5269
     ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
     Click AlertPage Image
-    wait for page or element to load  5s
+    wait for page or element to load
     Click Comments Button
-    wait for page or element to load  2s
+    wait for page or element to load
     Verify Absence of comment textbox
     Click CommentsClose Image
-    wait for page or element to load  2s
+    wait for page or element to load
     Re-login  ${username}  ${password}  ${page_name}
     Delete CSM User  ${new_user_name}
 
@@ -69,7 +69,7 @@ TEST-1239
     [Documentation]  Test that CSM user with role monitor cannot create, delete Any CSM users.
     [Tags]  Priority_High  user_role  TEST-1239
     ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
-    wait for page or element to load  2s
+    wait for page or element to load
     Verify that monitor user is not able to create delete csm user
     Re-login  ${username}  ${password}  ${page_name}
     Delete CSM User  ${new_user_name}
@@ -79,7 +79,7 @@ TEST-1838
     ...  Reference : https://jts.seagate.com/browse/TEST-1838
     [Tags]  Priority_High  TEST-1838
     ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
-    wait for page or element to load  2s
+    wait for page or element to load
     Verify Absence of Edit And Delete Button on S3account
     Verify Absence of Delete Button on CSM users
     Re-login  ${username}  ${password}  ${page_name}
@@ -90,7 +90,7 @@ TEST-1234
     [Tags]  Priority_High  user_role  TEST-1234
     ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
     Verify Absence of Edit And Delete Button on S3account
-    wait for page or element to load  2s
+    wait for page or element to load
     Re-login  ${username}  ${password}  ${page_name}
     Delete CSM User  ${new_user_name}
 
@@ -99,13 +99,13 @@ TEST-1233
     [Tags]  Priority_High  user_role  TEST-1233
     ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
     Click AlertPage Image
-    wait for page or element to load  5s
+    wait for page or element to load
     Click Comments Button
-    wait for page or element to load  2s
+    wait for page or element to load
     Verify Absence of comment textbox
     Click CommentsClose Image
     Verify Absence of Acknowledge
-    wait for page or element to load  2s
+    wait for page or element to load
     Re-login  ${username}  ${password}  ${page_name}
     Delete CSM User  ${new_user_name}
 
@@ -113,9 +113,9 @@ TEST-1224
     [Documentation]  Test that CSM user with role monitor don't have access to Lyve Pilot menu
     [Tags]  Priority_High  user_role  TEST-1224
     ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
-    wait for page or element to load  2s
+    wait for page or element to load
     Verify that user can not access Lyve Pilot menu
-    wait for page or element to load  2s
+    wait for page or element to load
     Re-login  ${username}  ${password}  ${page_name}
     Delete CSM User  ${new_user_name}
 
@@ -124,7 +124,7 @@ TEST-1223
     [Tags]  Priority_High  user_role  TEST-1223
     ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
     Verify New User  ${new_user_name}
-    sleep  2s
+    wait for page or element to load
     Re-login  ${username}  ${password}  ${page_name}
     Delete CSM User  ${new_user_name}
 
@@ -132,7 +132,7 @@ TEST-1222
     [Documentation]  Test that monitor user cannot view, create, update or delete IAM users.
     [Tags]  Priority_High  user_role  TEST-1222
     ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
-    wait for page or element to load  2s
+    wait for page or element to load
     Verify IAM User Section Not Present
     Verify bucket Section Not Present
     Re-login  ${username}  ${password}  ${page_name}
@@ -142,7 +142,7 @@ TEST-1221
     [Documentation]  Test that CSM user with role monitor can view s3 accounts
     [Tags]  Priority_High  user_role  TEST-1221
     ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
-    wait for page or element to load  2s
+    wait for page or element to load
     Verify Absence of Edit And Delete Button on S3account
     Re-login  ${username}  ${password}  ${page_name}
     Delete CSM User  ${new_user_name}
@@ -152,7 +152,7 @@ TEST-18329
     ...  Reference : https://jts.seagate.com/browse/TEST-18329
     [Tags]  Priority_High  user_role  TEST-18329
     ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
-    wait for page or element to load  2s
+    wait for page or element to load
     Verify Absence of Reset Passwrod Button on S3account
     Re-login  ${username}  ${password}  ${page_name}
     Delete CSM User  ${new_user_name}
