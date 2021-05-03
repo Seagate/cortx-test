@@ -139,7 +139,7 @@ stats_input_options = Row(
         Dropdown(
             id='profiles_options',
             placeholder="Select Profile",
-            style={'width': '300px', 'verticalAlign': 'middle',
+            style={'width': '340px', 'verticalAlign': 'middle',
                    "margin-right": "10px", "margin-top": "10px"}
         ),
 

@@ -55,7 +55,7 @@ def update_unique_profiles(release, branch, build):
             'Branch': branch, 'Build': build
         })
 
-        reference = ('ITR1', '2N', '1C', '0PC', 'S3B')
+        reference = ('ITR1', '2N', '1C', '0PC', 'NA')
         pkey_split = {}
 
         for key in pkeys:
@@ -64,16 +64,18 @@ def update_unique_profiles(release, branch, build):
         options = []
 
         for profile_list in list(pkey_split.values()):
-            label = 'Nodes {}, '.format(profile_list[1][:-1])
+            tag = 'Nodes {}, '.format(profile_list[1][:-1])
 
             if profile_list[2] != reference[2]:
-                label = label + 'Clients {}, '.format(profile_list[2][:-1])
+                tag = tag + 'Clients {}, '.format(profile_list[2][:-1])
 
-            label = label + 'Filled {}%, '.format(profile_list[3][:-2])
-            label = label + 'Iteration {}'.format(profile_list[0][3:])
+            tag = tag + 'Filled {}%, '.format(profile_list[3][:-2])
+            tag = tag + 'Iteration {}'.format(profile_list[0][3:])
+            if profile_list[4] != reference[4]:
+                tag = tag + ', {}'.format(profile_list[4])
 
-            option = {'label': label, 'value': '_'.join(
-                [profile_list[0], profile_list[1], profile_list[2], profile_list[3]])}
+            option = {'label': tag, 'value': '_'.join(
+                [profile_list[0], profile_list[1], profile_list[2], profile_list[3], profile_list[4]])}
             if option not in options:
                 options.append(option)
 
