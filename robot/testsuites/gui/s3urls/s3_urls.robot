@@ -35,19 +35,19 @@ ${s3_password}
 Create s3 account and login
     [Documentation]  This is test level keyword to create and and login to s3 account
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    wait for page or element to load  2s
+    wait for page or element to load
     ${s3_account_user_name}  ${email}  ${s3_password} =  Create S3 account
     Set test variable    ${s3_account_user}  ${s3_account_user_name}
     Set test variable    ${s3_account_password}  ${s3_password}
     wait for page or element to load
-    Re-login  ${s3_account_user_name}  ${s3_password}  MANAGE_MENU_ID
+    Re-login  ${s3_account_user_name}  ${s3_password}  S3_ACCOUNTS_TAB_ID
 
 Delete S3 Account And Close Browser
     [Documentation]  This key word is for test case teardown which delete s3 account and close browsers
     Log To Console And Report  ${s3_account_user_name}
     Log To Console And Report  ${s3_password}
     wait for page or element to load
-    Navigate To Page  MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    Navigate To Page   S3_ACCOUNTS_TAB_ID
     ${s3_account_user_name}=  Fetch S3 Account Name
     wait for page or element to load
     Delete S3 Account  ${s3_account_user_name}  ${s3_password}  True
@@ -59,7 +59,7 @@ Delete S3 Account And Close Browser
 TEST-14405
    [Documentation]  Test that tooltip associated with bucket contains bucket_URL.
    [Tags]  Priority_High  TEST-14405  S3_URL
-   Navigate To Page  MANAGE_MENU_ID  BUCKET_TAB_ID
+   Navigate To Page  Bucket_TAB_ID
    Click On Create Bucket Form
    ${bucketname}=  Generate New User Name
    Create Bucket  ${bucketname}
@@ -70,7 +70,7 @@ TEST-14405
 TEST-14404
    [Documentation]  Verify that bucket URL is shown on popup window after bucket is created
    [Tags]  Priority_High  TEST-14404  S3_URL
-   Navigate To Page  MANAGE_MENU_ID  BUCKET_TAB_ID
+   Navigate To Page  Bucket_TAB_ID
    Click On Create Bucket Form
    ${bucketname}=  Generate New User Name
    Create Bucket  ${bucketname}  True
@@ -80,7 +80,7 @@ TEST-14404
 TEST-14402
    [Documentation]  Verify that s3 URL is shown on popup window after IAM user is created
    [Tags]  Priority_High  TEST-14402  S3_URL
-   Navigate To Page  MANAGE_MENU_ID  IAM_USER_TAB_ID
+   Navigate To Page   IAM_USER_TAB_ID
    ${username}=  Generate New User Name
    ${password}=  Generate New Password
    Click Create IAM User Button
@@ -92,7 +92,7 @@ TEST-14402
 TEST-14401
    [Documentation]  Verify that s3 URL is shown IAM user tab
    [Tags]  Priority_High  TEST-14401  S3_URL
-   Navigate To Page  MANAGE_MENU_ID  IAM_USER_TAB_ID
+   Navigate To Page   IAM_USER_TAB_ID
    wait for page or element to load
    Verify S3 urls are displayed on the IAM user tab
 
@@ -100,7 +100,7 @@ TEST-14403
    [Documentation]  Verify that s3 URLs is displayed on popup which appears after generating new set of access keys
     ...  for IAM user
    [Tags]  Priority_High  TEST-14403  S3_URL
-   Navigate To Page  MANAGE_MENU_ID  IAM_USER_TAB_ID
+   Navigate To Page   IAM_USER_TAB_ID
    ${username}=  Generate New User Name
    ${password}=  Generate New Password
    Click Create IAM User Button
@@ -115,7 +115,7 @@ TEST-14403
 TEST-14400
    [Documentation]  Test that both s3 URLs appears above IAM users table on IAM users page
    [Tags]  Priority_High  TEST-14400  S3_URL
-   Navigate To Page  MANAGE_MENU_ID  IAM_USER_TAB_ID
+   Navigate To Page   IAM_USER_TAB_ID
    wait for page or element to load
    Verify S3 urls are displayed on the IAM user tab
 
@@ -137,11 +137,11 @@ TEST-14392
     [Documentation]  Test that appropriate fields are shown on popup that appears after generating
    ...  new s3 account
    [Tags]  Priority_High  TEST-14392  S3_URL
-   Re-login  ${username}  ${password}  MANAGE_MENU_ID
-   Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-   wait for page or element to load  2s
+   Re-login  ${username}  ${password}  S3_ACCOUNTS_TAB_ID
+   Navigate To Page    S3_ACCOUNTS_TAB_ID
+   wait for page or element to load
    Verify that s3 url on s3 account creation
-   wait for page or element to load  2s
+   wait for page or element to load
    Log To Console And Report  ${s3_account_user}
    Log To Console And Report  ${s3_account_password}
-   Re-login  ${s3_account_user}  ${s3_account_password}  MANAGE_MENU_ID  false
+   Re-login  ${s3_account_user}  ${s3_account_password}  S3_ACCOUNTS_TAB_ID  false
