@@ -1,8 +1,10 @@
 from dash.dependencies import Output, Input
 from dash.exceptions import PreventUpdate
-from Performance.global_functions import get_dict_from_array, get_distinct_keys, get_db_details
+from Performance.global_functions import get_dict_from_array,\
+    get_distinct_keys, get_db_details, get_profiles, sort_builds_list, sort_object_sizes_list
 from common import app
 from Performance.mongodb_api import find_documents
+from Performance.styles import dict_style_profiles
 
 # first dropdown
 
@@ -25,14 +27,19 @@ def update_branches_dropdown(release):
     Input('branch_dropdown_first', 'value'),
     prevent_initial_call=True
 )
-def update_builds_dropdown(xfilter, release, branch):
+def update_options_dropdown(xfilter, release, branch):
     if release is None or branch is None or xfilter is None:
         raise PreventUpdate
 
     versions = None
     if release:
-        builds = get_distinct_keys(release, xfilter, {'Branch': branch})
-        versions = get_dict_from_array(builds, False)
+        options = get_distinct_keys(release, xfilter, {'Branch': branch})
+        if xfilter == 'Build':
+            options = sort_builds_list(options)
+            versions = get_dict_from_array(options, True)
+        else:
+            options = sort_object_sizes_list(options)
+            versions = get_dict_from_array(options, False)
 
     return versions
 
@@ -53,7 +60,7 @@ def update_configs_first(xfilter, release, branch, option1, bench):
     if xfilter is None or release is None or branch is None or option1 is None or bench is None:
         raise PreventUpdate
 
-    elif bench != 'S3bench':
+    else:
         configs = []
 
         uri, db_name, db_collection = get_db_details(release)
@@ -63,7 +70,8 @@ def update_configs_first(xfilter, release, branch, option1, bench):
         cursor = find_documents(query, uri, db_name, db_collection)
 
         for doc in cursor:
-            pattern = {'Buckets': doc['Buckets'], 'Sessions': doc['Sessions']}
+            pattern = {'Buckets': int(
+                doc['Buckets']), 'Sessions': int(doc['Sessions'])}
             if pattern not in configs:
                 configs.append(pattern)
 
@@ -76,14 +84,39 @@ def update_configs_first(xfilter, release, branch, option1, bench):
         style = {'display': 'block', 'width': '250px', 'verticalAlign': 'middle',
                  "margin-right": "10px", "margin-top": "10px"}
 
-    else:
-        style = {'display': 'none'}
-
     return results, style
 
+
+@app.callback(
+    Output('profiles_options_first', 'style'),
+    Input('filter_dropdown', 'value'),
+)
+def update_profile_style_first(xfilter):
+    if xfilter is None:
+        raise PreventUpdate
+        return {'display': 'none'}
+    elif xfilter == 'Build':
+        return dict_style_profiles
+    else:
+        return {'display': 'none'}
+
+
+@app.callback(
+    Output('profiles_options_first', 'options'),
+    Input('release_dropdown_first', 'value'),
+    Input('branch_dropdown_first', 'value'),
+    Input('dropdown_first', 'value'),
+    prevent_initial_call=True
+)
+def update_profiles_first(release, branch, build):
+    if release is None or branch is None or build is None:
+        raise PreventUpdate
+        return None
+    else:
+        return get_profiles(release, branch, build)
+
+
 # second dropdown
-
-
 @app.callback(
     [Output('release_dropdown_second', 'style'),
      Output('branch_dropdown_second', 'style'),
@@ -131,7 +164,45 @@ def update_second_builds_dropdown(xfilter, release, branch, flag):
         raise PreventUpdate
 
     if flag and release:
-        builds = get_distinct_keys(release, xfilter, {'Branch': branch})
-        versions = get_dict_from_array(builds, False)
+        options = get_distinct_keys(release, xfilter, {'Branch': branch})
+        if xfilter == 'Build':
+            options = sort_builds_list(options)
+            versions = get_dict_from_array(options, True)
+        else:
+            options = sort_object_sizes_list(options)
+            versions = get_dict_from_array(options, False)
 
     return versions
+
+
+@app.callback(
+    Output('profiles_options_second', 'style'),
+    Input('filter_dropdown', 'value'),
+    Input('compare_flag', 'value'),
+)
+def update_profile_style_first(xfilter, flag):
+    if xfilter is None or flag is None:
+        raise PreventUpdate
+        return {'display': 'none'}
+    elif xfilter == 'Build' and flag:
+        return dict_style_profiles
+    else:
+        return {'display': 'none'}
+
+
+@app.callback(
+    Output('profiles_options_second', 'options'),
+    Input('release_dropdown_second', 'value'),
+    Input('branch_dropdown_second', 'value'),
+    Input('dropdown_second', 'value'),
+    Input('compare_flag', 'value'),
+    prevent_initial_call=True
+)
+def update_profiles_second(release, branch, build, flag):
+    if release is None or branch is None or build is None or flag is None:
+        raise PreventUpdate
+        return None
+    elif flag:
+        return get_profiles(release, branch, build)
+    else:
+        return None

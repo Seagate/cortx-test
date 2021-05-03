@@ -9,11 +9,11 @@ from Performance.graphs.graphs_functions import get_data_for_graphs, get_metrics
     get_structure_trace, get_operations
 
 
-def graphs_global(fig, fig_all, xfilter, release1, branch1, option1, bench, config, flag, release2,
-                  branch2, option2, operations, x_axis_heading, y_axis_heading, metric, param):
+def graphs_global(fig, fig_all, xfilter, release1, branch1, option1, profile1, bench, config, flag, release2,
+                  branch2, option2, profile2, operations, x_axis_heading, y_axis_heading, metric, param):
 
     for op in operations:
-        [x_axis, y_data] = get_data_for_graphs(xfilter, release1, branch1, option1, bench,
+        [x_axis, y_data] = get_data_for_graphs(xfilter, release1, branch1, option1, profile1, bench,
                                                config, op, metric, param)
         trace = get_structure_trace(
             go.Scatter, op, metric, option1, x_axis, y_data)
@@ -21,7 +21,7 @@ def graphs_global(fig, fig_all, xfilter, release1, branch1, option1, bench, conf
         fig_all.add_trace(trace)
 
         if flag and release2 and branch2 and option2:
-            [x_axis, y_data] = get_data_for_graphs(xfilter, release2, branch2, option2, bench,
+            [x_axis, y_data] = get_data_for_graphs(xfilter, release2, branch2, option2, profile2, bench,
                                                    config, op, metric, param)
             trace = get_structure_trace(
                 go.Scatter, op, metric, option2, x_axis, y_data)
@@ -70,6 +70,7 @@ def update_Ttfb_Style(bench):
     Input('release_dropdown_first', 'value'),
     Input('branch_dropdown_first', 'value'),
     Input('dropdown_first', 'value'),
+    Input('profiles_options_first', 'value'),
     Input('benchmark_dropdown_first', 'value'),
     Input('configs_dropdown_first', 'value'),
     Input('operations_dropdown_first', 'value'),
@@ -77,15 +78,16 @@ def update_Ttfb_Style(bench):
     Input('release_dropdown_second', 'value'),
     Input('branch_dropdown_second', 'value'),
     Input('dropdown_second', 'value'),
+    Input('profiles_options_second', 'value'),
     prevent_initial_call=True
 )
-def update_graphs(n_clicks, xfilter, release1, branch1, option1, bench, config, operation,
-                  flag, release2, branch2, option2):
+def update_graphs(n_clicks, xfilter, release1, branch1, option1, profile1, bench, config, operation,
+                  flag, release2, branch2, option2, profile2):
     return_val = [None] * 5
     if n_clicks is None or xfilter is None or branch1 is None:
         raise PreventUpdate
 
-    if bench is None or release1 is None or option1 is None or (bench != 'S3bench' and config is None):
+    if bench is None or release1 is None or option1 is None or config is None:
         raise PreventUpdate
 
     if flag:
@@ -103,8 +105,6 @@ def update_graphs(n_clicks, xfilter, release1, branch1, option1, bench, config, 
 
         operations = get_operations(bench, operation)
         metrics = get_metrics(bench)
-        if bench == 'S3bench':
-            config = None
         threads = []
 
         for metric in metrics:
@@ -116,8 +116,8 @@ def update_graphs(n_clicks, xfilter, release1, branch1, option1, bench, config, 
             else:
                 param = None
 
-            temp = Thread(target=graphs_global, args=(fig, fig_all, xfilter, release1, branch1, option1, bench, config, flag, release2,
-                                                      branch2, option2, operations, x_axis_heading, y_axis_heading, metric, param))
+            temp = Thread(target=graphs_global, args=(fig, fig_all, xfilter, release1, branch1, option1, profile1, bench, config, flag, release2,
+                                                      branch2, option2, profile2, operations, x_axis_heading, y_axis_heading, metric, param))
             temp.start()
             threads.append(temp)
             figs.append(fig)

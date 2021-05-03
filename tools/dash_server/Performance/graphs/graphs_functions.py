@@ -18,6 +18,7 @@
 #
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
+import re
 
 from Performance.global_functions import get_db_details, get_distinct_keys
 from Performance.mongodb_api import count_documents, find_documents
@@ -73,10 +74,18 @@ def return_compliment(xfilter):
 
 
 def get_xaxis(xfilter, release, branch, option, bench):
+    # Version_Branch_Build_Iteration_NodeCount_ClientCount_PercentFull_Benchmark_ObjSize_NoOfBuckets_Operation_Sessions
     if xfilter == 'Object_Size':
-        return get_distinct_keys(release, 'Build', {
+        pkeys = get_distinct_keys(release, 'PKey', {
             'Branch': branch, xfilter: option, 'Name': bench
         })
+        profiles = []
+        for key in pkeys:
+            profile = "_".join(key.split("_")[2:8])
+            if profile not in profiles:
+                profiles.append(profile)
+
+        return profiles
     else:
         obj_sizes = get_distinct_keys(release, 'Object_Size', {
             'Branch': branch, xfilter: option, 'Name': bench
@@ -120,18 +129,37 @@ def sort_objectsizes(data_dict):
 
 def sort_builds(data_dict):
     builds = list(data_dict.keys())
+
     data_sorted = {}
     for key in builds:
+        splits = re.split("_|-", key)
+
         try:
-            int(key[0])
+            int(splits[0])
         except ValueError:
-            data_sorted[key] = data_dict[key]
+            components = key.split("_")
+            placeholder = ", ".join(
+                [components[0], components[2][:-1]+' nodes', components[4][:-2] + '% fill'])
+            if components[-1] != 'NA':
+                placeholder = placeholder + ", " + components[-1]
+            if components[1] != 'ITR1':
+                placeholder = placeholder + ", " + components[1][3:]
+
+            data_sorted[placeholder] = data_dict[key]
             del data_dict[key]
 
     builds = list(data_dict.keys())
-    builds.sort(key=lambda x: int(x.split("-")[0]))
+    builds.sort(key=lambda x: int(re.split("_|-", x)[0]))
     for build in builds:
-        data_sorted[build] = data_dict[build]
+        components = build.split("_")
+        placeholder = ", ".join(
+            [components[0], components[2][:-1]+' nodes', components[4][:-2] + '% fill'])
+        if components[-1] != 'NA':
+            placeholder = placeholder + ", " + components[-1]
+        if components[1] != 'ITR1':
+            placeholder = placeholder + ", " + components[1][3:]
+
+        data_sorted[placeholder] = data_dict[build]
 
     return data_sorted
 
@@ -144,22 +172,25 @@ def remove_nones(data_dict):
     return data_dict
 
 
-def get_data_for_graphs(xfilter, release, branch, option, bench, configs, operation, metric, param):
+def get_data_for_graphs(xfilter, release, branch, option, profile, bench, configs, operation, metric, param):
     compliment = return_compliment(xfilter)
     uri, db_name, db_collection = get_db_details(release)
     xaxis_list = get_xaxis(xfilter, release, branch, option, bench)
     yaxis_list = []
 
-    query = {'Branch': branch, 'Name': bench,
-             xfilter: option, 'Operation': operation}
-
-    if configs:
-        config_splits = configs.split('_')
-        query['Buckets'] = int(config_splits[0])
-        query['Sessions'] = int(config_splits[1])
+    config_splits = configs.split('_')
+    buckets = int(config_splits[0])
+    sessions = int(config_splits[1])
 
     for item in xaxis_list:
-        query[compliment] = item
+        if xfilter == 'Build':
+            PKey = "_".join([str(release), branch[0].upper(), option, profile, bench[:3].upper(),
+                             item, str(buckets), operation[0].upper(), str(sessions)])
+        else:
+            PKey = "_".join([str(release), branch[0].upper(), item, bench[:3].upper(),
+                             option, str(buckets), operation[0].upper(), str(sessions)])
+        query = {'PKey': PKey}
+
         try:
             count = count_documents(query=query, uri=uri, db_name=db_name,
                                     collection=db_collection)
@@ -189,8 +220,8 @@ def get_data_for_graphs(xfilter, release, branch, option, bench, configs, operat
             yaxis_list.append(None)
 
     data_dict = dict(zip(xaxis_list, yaxis_list))
-    # remove_nones(data_dict)
 
+    # remove_nones(data_dict)
     if xfilter == 'Build':
         data_dict = sort_objectsizes(data_dict)
     else:

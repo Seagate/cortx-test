@@ -75,6 +75,11 @@ first_input_set = Row([
         style=dict_dropdown_normal_Style
     ),
     Dropdown(
+        id='profiles_options_first',
+        placeholder="Select Profile",
+        style={'display': 'none'}
+    ),
+    Dropdown(
         id="benchmark_dropdown_first",
         options=benchmarks,
         placeholder="Benchmark",
@@ -119,6 +124,11 @@ second_input_set = Row([
     Dropdown(
         id='dropdown_second',
         placeholder="Select Build",
+        style={'display': 'none'}
+    ),
+    Dropdown(
+        id='profiles_options_second',
+        placeholder="Select Profile",
         style={'display': 'none'}
     ),
     Button("Get!", id="get_graphs", color="success",
