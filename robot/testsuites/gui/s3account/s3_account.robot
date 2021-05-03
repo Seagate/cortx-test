@@ -37,7 +37,7 @@ Check S3 Account Exists
     [Tags]  Priority_High  S3_test
     Validate CSM Login Success  ${username}
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    sleep  2s
+    wait for page or element to load
     Check S3 Account Exists     S3_ACCOUNTS_TABLE_XPATH  ${S3_ACCOUNT}
 
 Test action on table
@@ -45,18 +45,18 @@ Test action on table
     [Tags]  Priority_High  S3_test
     Validate CSM Login Success  ${username}
     Navigate To Page    MANAGE_MENU_ID
-    sleep  2s
+    wait for page or element to load
     Action on the table     ${CSM_USER}  CSM_USER_EDIT_XPATH
 
 TEST-5268
     [Documentation]  Test S3 account user should only be able to see S3 account details of the accounts which are associated with its account
     [Tags]  Priority_High  Smoke_test  user_role  TEST-5268
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    sleep  2s
+    wait for page or element to load
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
-    sleep  2s
-    Re-login   ${S3_account_name}  ${password}  MANAGE_MENU_ID
-    sleep  5s
+    wait for page or element to load
+    Re-login   ${S3_account_name}  ${password}  S3_ACCOUNTS_TAB_ID
+    wait for page or element to load
     Check Associated S3 Account Exists  ${S3_account_name}  ${email} 
     Delete S3 Account  ${S3_account_name}  ${password}  True
 
@@ -64,10 +64,10 @@ TEST-1033
     [Documentation]  Test that alerts should not get visible to the s3 user
     [Tags]  Priority_High  Smoke_test  user_role  TEST-1033
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    sleep  2s
+    wait for page or element to load
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
-    sleep  2s
-    Re-login   ${S3_account_name}  ${password}  MANAGE_MENU_ID
+    wait for page or element to load
+    Re-login   ${S3_account_name}  ${password}  S3_ACCOUNTS_TAB_ID
     Check Dashboard Option Not Exists
     Delete S3 Account  ${S3_account_name}  ${password}  True  
 
@@ -75,11 +75,11 @@ TEST-1042
     [Documentation]  Test that setting option not available for s3 user
     [Tags]  Priority_High  Smoke_test  user_role  TEST-1042
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    sleep  2s
+    wait for page or element to load
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
-    sleep  2s
-    Re-login   ${S3_account_name}  ${password}  MANAGE_MENU_ID
-    sleep  2s
+    wait for page or element to load
+    Re-login   ${S3_account_name}  ${password}  S3_ACCOUNTS_TAB_ID
+    wait for page or element to load
     Verify that S3 user can not access setting menu
     Delete S3 Account  ${S3_account_name}  ${password}  True
 
@@ -87,10 +87,10 @@ TEST-6454
     [Documentation]  Test Alert icon should not be visible to s3 account user Verify Alert icon should not be visible to s3 account user
     [Tags]  Priority_High  Smoke_test  user_role  TEST-6454
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    sleep  2s
+    wait for page or element to load
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
-    sleep  2s
-    Re-login   ${S3_account_name}  ${password}  MANAGE_MENU_ID
+    wait for page or element to load
+    Re-login   ${S3_account_name}  ${password}  S3_ACCOUNTS_TAB_ID
     Check Alert Icon Not Exists
     Delete S3 Account  ${S3_account_name}  ${password}  True       
 
@@ -98,10 +98,10 @@ TEST-1035
     [Documentation]  Test that maintenance option not available for s3 user
     [Tags]  Priority_High  Smoke_test  user_role  TEST-1035
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    sleep  2s
+    wait for page or element to load
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
-    sleep  2s
-    Re-login   ${S3_account_name}  ${password}  MANAGE_MENU_ID
+    wait for page or element to load
+    Re-login   ${S3_account_name}  ${password}  S3_ACCOUNTS_TAB_ID
     Check Maintenance Option Not Exists
     Delete S3 Account  ${S3_account_name}  ${password}  True   
 
@@ -109,10 +109,10 @@ TEST-1872
     [Documentation]  Test that Test s3user not able to do system shutdown
     [Tags]  Priority_High  Smoke_test  user_role  TEST-1872
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    sleep  2s
+    wait for page or element to load
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
-    sleep  2s
-    Re-login   ${S3_account_name}  ${password}  MANAGE_MENU_ID
+    wait for page or element to load
+    Re-login   ${S3_account_name}  ${password}  S3_ACCOUNTS_TAB_ID
     Check Maintenance Option Not Exists
     Delete S3 Account  ${S3_account_name}  ${password}  True   
 
@@ -120,10 +120,10 @@ TEST-1873
     [Documentation]  Test s3user not able to do any service restart
     [Tags]  Priority_High  Smoke_test  user_role  TEST-1873
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    sleep  2s
+    wait for page or element to load
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
-    sleep  2s
-    Re-login   ${S3_account_name}  ${password}  MANAGE_MENU_ID
+    wait for page or element to load
+    Re-login   ${S3_account_name}  ${password}  S3_ACCOUNTS_TAB_ID
     Check Maintenance Option Not Exists
     Delete S3 Account  ${S3_account_name}  ${password}  True   
 
@@ -131,10 +131,10 @@ TEST-1034
     [Documentation]  Test that s3 user should only have access to IAM user and Bucket section in provisoning section
     [Tags]  Priority_High  Smoke_test  user_role  TEST-1034
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    sleep  2s
+    wait for page or element to load
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
-    sleep  2s
-    Re-login   ${S3_account_name}  ${password}  MANAGE_MENU_ID
+    wait for page or element to load
+    Re-login   ${S3_account_name}  ${password}  S3_ACCOUNTS_TAB_ID
     Check Dashboard Option Not Exists
     Check Health Option Not Exists
     Verify that S3 user can not access setting menu
@@ -148,32 +148,32 @@ TEST-1036
     sleep  2s
     ${testname}=  generate new User Name
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
-    sleep  2s
-    Re-login   ${S3_account_name}  ${password}  MANAGE_MENU_ID
-    Navigate To Page  MANAGE_MENU_ID  IAM_USER_TAB_ID
+    wait for page or element to load
+    Re-login   ${S3_account_name}  ${password}  S3_ACCOUNTS_TAB_ID
+    Navigate To Page  IAM_USER_TAB_ID
     Click Create IAM User Button
     Create IAMuser  ${testname}  ${password}
-    sleep  5s
+    wait for page or element to load
     ${status}=  Is IAMuser Present   ${testname}
     Should be equal  ${status}  ${True}
     Delete IAMuser   ${testname}
-    sleep  5s
+    wait for page or element to load
     ${status}=  Is IAMuser Present   ${testname}
     Should be equal  ${status}  ${False}
-    sleep  3s
-    Navigate To Page  MANAGE_MENU_ID  BUCKET_TAB_ID
-    sleep  5s
+    wait for page or element to load
+    Navigate To Page  Bucket_TAB_ID
+    wait for page or element to load
     Click On Create Bucket Form
-    sleep  3s
+    wait for page or element to load
     Create Bucket  ${testname}
-    sleep  5s
+    wait for page or element to load
     ${status}=  Is Bucket Present   ${testname}
     Should be equal  ${status}  ${True}
     Delete Bucket  ${testname}
-    sleep  5s
+    wait for page or element to load
     ${status}=  Is Bucket Present   ${testname}
     Should be equal  ${status}  ${False}
-    sleep  2s
+    wait for page or element to load
     Delete S3 Account  ${S3_account_name}  ${password}  True
 
 TEST-99
@@ -181,7 +181,7 @@ TEST-99
     ...  fields got filled on s3 configure.
     [Tags]  Priority_High  TEST-99  S3_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    sleep  2s
+    wait for page or element to load
     Click on add new s3 account button
     Check create S3 account button disabled
 
@@ -190,7 +190,7 @@ TEST-102
     ...  getting opened.
     [Tags]  Priority_High  TEST-102  S3_test  Smoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    sleep  2s
+    wait for page or element to load
     Click on add new s3 account button
     Check s3 account form is opened
 
@@ -198,7 +198,7 @@ TEST-106
     [Documentation]  This test case is to verify that s3 accounts form does not accepts invalid user name.
     [Tags]  Priority_High  TEST-106  S3_test  Smoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    sleep  2s
+    wait for page or element to load
     Click on add new s3 account button
     Add data to create new S3 account  ${invalid_S3_account_name}  ${invalid_S3_email_id}  ${invalid_S3_account_password}
     ...  ${invalid_S3_account_password}
@@ -427,7 +427,7 @@ TEST-5200
     ...  miss-match password while creating s3 account.
     [Tags]  Priority_High  TEST-5200  S3_test  Smoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    sleep  2s
+    wait for page or element to load
     ${new_password}=  Generate New Password
     Click on add new s3 account button
     Add data to create new S3 account  ${invalid_S3_account_name}  ${invalid_S3_email_id}  ${invalid_S3_account_password}
@@ -470,15 +470,15 @@ TEST-17018  # TODO: correct test ID, correct Tag
     [Documentation]  Test a reset password functionality on clicking "edit" button on S3 account page
     [Tags]  Priority_High  S3_test  TEST-17018  R2
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    sleep  2s
+    wait for page or element to load
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
-    sleep  5s
+    wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
-    sleep  2s
-    Re-login   ${S3_account_name}  ${S3_password}  MANAGE_MENU_ID
-    sleep  5s
+    wait for page or element to load
+    Re-login   ${S3_account_name}  ${S3_password}  S3_ACCOUNTS_TAB_ID
+    wait for page or element to load
     Reset Password S3 Account  ${S3_account_name}
-    sleep  2s
+    wait for page or element to load
     Delete S3 Account  ${S3_account_name}  ${password}  True
     Close Browser
 

@@ -16,7 +16,8 @@ Click On Confirm Button
     [Documentation]  Perform click operation on confirm pop up button
     wait for page or element to load  5s
     Wait Until Element Is Visible  ${NEW_USER_CONFIRM_OK_BUTTON_ID}  timeout=60
-    Click button    ${NEW_USER_CONFIRM_OK_BUTTON_ID}
+    log to console and report  ${NEW_USER_CONFIRM_OK_BUTTON_ID}
+    Click element  ${NEW_USER_CONFIRM_OK_BUTTON_ID}
 
 Verify A Form Got Open To Create CSM Users
     [Documentation]  Verify the Form elements should be present
@@ -67,9 +68,8 @@ Delete CSM User
     [Documentation]  Functionality to validate correc user name
     [Arguments]  ${user_name}
     Action On The Table Element  ${CSM_USER_DELETE_XAPTH}  ${user_name}
-    Sleep  3s
+    wait until element is visible  ${CONFIRM_DELETE_BOX_BTN_ID}  timeout=60
     Click Button  ${CONFIRM_DELETE_BOX_BTN_ID}
-    Sleep  3s
     click on confirm button
 
 Verify Only Valid User Allowed For Username
@@ -127,7 +127,7 @@ Verify Mismatch Password Error
     Input Text  ${ADD_USER_CONFIRM_PASSWORD_INPUT_ID}  ${value}
     Page Should Contain Element  ${PASSWORD_MISS_MATCH_MSG_ID}
     ${text}=  get text  ${PASSWORD_MISS_MATCH_MSG_ID}
-    should be equal  ${text}  ${mismatch password msg}
+    should be equal  ${text}  ${MISSMATCH_PASSWORD_MESSAGE}
 
 Verify Absence of Edit And Delete Button on S3account
     [Documentation]  Verify Absence of Edit And Delete Button on S3account
