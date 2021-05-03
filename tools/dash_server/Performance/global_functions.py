@@ -120,3 +120,22 @@ def get_dict_from_array(options, makeReverse, allcaps=False):
 def fetch_configs_from_file(benchmark_config, bench, prop):
     config = makeconfig(benchmark_config)
     return config[bench][prop]
+
+
+def sort_builds_list(builds):
+    print(builds)
+    temp_builds = builds
+    data_sorted = []
+    for key in builds:
+        try:
+            int(key[0])
+        except ValueError:
+            data_sorted.append(key)
+            temp_builds.remove(key)
+
+            continue
+
+    temp_builds.sort(key=lambda x: int(x.split("-")[0]))
+    data_sorted = data_sorted + temp_builds
+
+    return data_sorted

@@ -47,14 +47,14 @@ Hsbench:
 
 Cosbench:
   object_size:
-    - '4 KB'
-    - '100 KB'
-    - '1 MB'
-    - '5 MB'
-    - '36 MB'
-    - '64 MB'
-    - '128 MB'
-    - '256 MB'
+    - '4Kb'
+    - '100Kb'
+    - '1Mb'
+    - '5Mb'
+    - '36Mb'
+    - '64Mb'
+    - '128Mb'
+    - '256Mb'
   workload-1:
     sessions: 100
     buckets: 1

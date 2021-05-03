@@ -138,14 +138,15 @@ stats_input_options = Row(
         ),
         Dropdown(
             id='profiles_options',
-            placeholder="Select Build",
-            style={'display': 'none'}
+            placeholder="Select Profile",
+            style={'width': '300px', 'verticalAlign': 'middle',
+                   "margin-right": "10px", "margin-top": "10px"}
         ),
 
         Button("Get!", id="perf_submit_button", n_clicks=0, color="success",
                style={'height': '35px', 'margin-top': '20px'}),
     ],
-    justify='center'
+    justify='center', style={'margin-bottom': '20px'}
 )
 
 statistics_perf_tabs = html.Div(
