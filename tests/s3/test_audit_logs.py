@@ -41,7 +41,6 @@ from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 
 S3_OBJ = S3TestLib()
 MP_OBJ = S3MultipartTestLib()
-AUDIT_CFG = read_yaml("config/s3/test_audit_logs.yaml")[1]
 
 
 class TestAuditLogs:
@@ -57,9 +56,12 @@ class TestAuditLogs:
         cls.log = logging.getLogger(__name__)
         cls.log.info("STARTED: setup test suite operations.")
         cls.rem_path = const.S3_CONFIG
-        cls.lcl_path = AUDIT_CFG["audit_logs"]["local_path"]
+        cls.lcl_path = "/root/s3config.yaml"
         cls.common_file = "audit_test_file.txt"
         cls.test_file = "audit-obj-mp"
+        cls.section = "S3_SERVER_CONFIG"
+        cls.key = "S3_AUDIT_LOGGER_POLICY"
+        cls.pwd_key = "password"
         cls.test_dir_path = os.path.join(
             os.getcwd(), "testdata", "TestAuditLogs")
         cls.common_file_path = os.path.join(cls.test_dir_path, cls.common_file)
@@ -103,14 +105,14 @@ class TestAuditLogs:
         """
         self.log.info("STARTED: Setup operations.")
         self.log.info("Fetching s3config.yaml file from server")
+        self.test_cfg = {}
         if system_utils.path_exists(self.lcl_path):
             system_utils.remove_file(self.lcl_path)
         resp = S3H_OBJ.copy_s3server_file(self.rem_path, self.lcl_path)
         assert_utils.assert_true(resp[0], resp[1])
         audit_config = read_yaml(self.lcl_path)[1]
         self.log.info(audit_config)
-        self.old_value = audit_config[AUDIT_CFG["audit_logs"][
-            "section"]][AUDIT_CFG["audit_logs"]["key"]]
+        self.old_value = audit_config[self.section][self.key]
         self.log.info("ENDED: Setup operations.")
 
     def teardown_method(self):
@@ -124,8 +126,7 @@ class TestAuditLogs:
         resp = S3_OBJ.bucket_list()
         if resp:
             pref_list = [
-                each_bucket for each_bucket in resp[1] if each_bucket.startswith(
-                    AUDIT_CFG["audit_logs"]["name_prefix"])]
+                each_bucket for each_bucket in resp[1] if each_bucket.startswith("audit")]
             if pref_list:
                 self.log.info("Deleting listed buckets: {pref_list}")
             S3_OBJ.delete_multiple_buckets(pref_list)
@@ -134,7 +135,7 @@ class TestAuditLogs:
         self.old_value = self.new_val
         self.update_conf_restart_s3(val)
         self.log.info("Deleting test generated files")
-        for fpath in [AUDIT_CFG["audit_logs"]["local_path"], self.common_file_path]:
+        for fpath in [self.lcl_path, self.common_file_path]:
             if system_utils.path_exists(fpath):
                 system_utils.remove_file(fpath)
                 self.log.info("removed: %s", fpath)
@@ -162,7 +163,7 @@ class TestAuditLogs:
                 assert_utils.assert_true(resp[0], resp)
                 resp = update_cfg_based_on_separator(
                     self.lcl_path,
-                    AUDIT_CFG["audit_logs"]["key"],
+                    self.key,
                     self.old_value,
                     new_value)
                 assert_utils.assert_true(resp[0], resp[1])
@@ -191,11 +192,11 @@ class TestAuditLogs:
         res = f"Searched value {value} doesn't exists"
         for node in range(len(self.nodes)):
             host_name = CMN_CFG["nodes"][node]["host"]
-            folder = AUDIT_CFG["audit_logs"]["folder"]
+            folder = "audit"
             audit_path = "{}/{}/{}".format(
                 S3_CFG["s3_logs"],
                 folder,
-                AUDIT_CFG["audit_logs"]["file"])
+                "audit.log")
             self.log.debug(audit_path)
             resp = S3H_OBJ.is_s3_server_path_exists(audit_path, host=host_name)
             if resp:
@@ -397,13 +398,12 @@ class TestAuditLogs:
         """
         Verify and check if audit logs are generated if we set audit logger policy to "disabled".
         """
-        test_conf = AUDIT_CFG["test_5248"]
         self.log.info("STARTED : Verify and check if audit logs are generated "
                       "if we set audit logger policy to disabled")
-        self.update_conf_restart_s3(test_conf["value"])
+        self.update_conf_restart_s3("disabled")
         self.log.info("Step 3 : Create a bucket ")
         bucket_name = "{}{}".format(
-            test_conf["bucket_name"], str(time.time()))
+            "audit-bkt5248", str(time.time()))
         resp = S3_OBJ.create_bucket(bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
@@ -431,8 +431,12 @@ class TestAuditLogs:
         self.log.info(
             "STARTED : Verify and check if audit logs are generated post"
             "Multipart upload with Syslog logger policy")
-        test_conf = AUDIT_CFG["test_5236"]
-        self.audit_multipart(test_conf)
+        self.test_cfg["bucket_name"] = "audit-bkt5236"
+        self.test_cfg["object_name"] = "audit-obj5236"
+        self.test_cfg["file_size"] = 200
+        self.test_cfg["value"] = "syslog"
+        self.test_cfg["total_parts"] = 4
+        self.audit_multipart(self.test_cfg)
         self.log.info(
             "ENDED : Verify and check if audit logs are generated post"
             "Multipart upload with Syslog logger policy")
@@ -449,8 +453,11 @@ class TestAuditLogs:
         self.log.info(
             "STARTED : Verify and check if audit logs are generated post S3 "
             "Object operations with syslog logger policy.")
-        test_conf = AUDIT_CFG["test_5235"]
-        self.audit_objects_ops(test_conf)
+        self.test_cfg["bucket_name"] = "audit-bkt5235"
+        self.test_cfg["object_name"] = "audit-obj5235"
+        self.test_cfg["file_size"] = 5
+        self.test_cfg["value"] = "syslog"
+        self.audit_objects_ops(self.test_cfg)
         self.log.info(
             "ENDED : Verify and check if audit logs are generated post S3 "
             "Object operations with syslog logger policy.")
@@ -467,8 +474,11 @@ class TestAuditLogs:
         self.log.info(
             "STARTED : Verify and check if audit logs are generated post S3 "
             "Bucket operations with syslog logger policy.")
-        test_conf = AUDIT_CFG["test_5231"]
-        self.audit_bucket_ops(test_conf)
+        test_cfg = {
+            "bucket_name": "audit-bkt5231",
+            "value": "syslog"
+        }
+        self.audit_bucket_ops(test_cfg)
         self.log.info(
             "ENDED : Verify and check if audit logs are generated post S3 "
             "Bucket operations with syslog logger policy.")
@@ -485,8 +495,11 @@ class TestAuditLogs:
         self.log.info(
             "STARTED : Verify and check if audit logs are generated post S3 "
             "Object operations with log4cxx logger policy.")
-        test_conf = AUDIT_CFG["test_5228"]
-        self.audit_objects_ops(test_conf)
+        self.test_cfg["bucket_name"] = "audit-bkt5228"
+        self.test_cfg["object_name"] = "audit-obj5228"
+        self.test_cfg["file_size"] = 5
+        self.test_cfg["value"] = "log4cxx"
+        self.audit_objects_ops(self.test_cfg)
         self.log.info(
             "ENDED : Verify and check if audit logs are generated post S3 "
             "Object operations with log4cxx logger policy.")
@@ -503,8 +516,11 @@ class TestAuditLogs:
         self.log.info(
             "STARTED : Verify and check if audit logs are generated post S3 "
             "Bucket operations with log4cxx logger policy.")
-        test_conf = AUDIT_CFG["test_5209"]
-        self.audit_bucket_ops(test_conf)
+        test_cfg = {
+            "bucket_name": "audit-bkt5209",
+            "value": "log4cxx"
+        }
+        self.audit_bucket_ops(test_cfg)
         self.log.info(
             "ENDED : Verify and check if audit logs are generated post S3 "
             "Bucket operations with log4cxx logger policy.")
@@ -521,8 +537,12 @@ class TestAuditLogs:
         self.log.info(
             "STARTED : Verify and check if audit logs are generated post"
             "Multipart upload with log4cxx logger policy")
-        test_conf = AUDIT_CFG["test_5213"]
-        self.audit_multipart(test_conf)
+        self.test_cfg["bucket_name"] = "audit-bkt5213"
+        self.test_cfg["object_name"] = "audit-obj5213"
+        self.test_cfg["file_size"] = 200
+        self.test_cfg["value"] = "log4cxx"
+        self.test_cfg["total_parts"] = 4
+        self.audit_multipart(self.test_cfg)
         self.log.info(
             "ENDED : Verify and check if audit logs are generated post"
             "Multipart upload with log4cxx logger policy")
@@ -539,12 +559,11 @@ class TestAuditLogs:
         self.log.info(
             "STARTED: Test to Verify Password should not be logged in any of"
             " the audit server logs post any bucket operation.")
-        test_conf = AUDIT_CFG["test_6253"]
         self.log.info("Step 1,2: Updating s3 config and restating s3 instance")
-        self.update_conf_restart_s3(test_conf["value"])
+        self.update_conf_restart_s3("log4cxx")
         self.log.info(
             "Step 1,2: Successfully updated config and verified hctl status")
-        bucket_name = "{}{}".format(test_conf["bucket_name"],
+        bucket_name = "{}{}".format("audit-bkt6253",
                                     str(int(time.time())))
         self.log.info(
             "Step 3: Creating a bucket with name : %s", bucket_name)
@@ -566,7 +585,7 @@ class TestAuditLogs:
             "Step 5: Verify password should not be logged in any of the audit"
             " server logs post object upload")
         assert_utils.assert_not_in(
-            AUDIT_CFG["audit_logs"]["pwd"],
+            self.pwd_key,
             result[1],
             result)
         self.log.info(
@@ -588,16 +607,16 @@ class TestAuditLogs:
         self.log.info(
             "STARTED: Test to Verify Password should not be logged in any of"
             " the audit server logs post any object operation.")
-        test_conf = AUDIT_CFG["test_6255"]
         self.log.info("Step 1,2: Updating s3 config and restating s3 instance")
-        self.update_conf_restart_s3(test_conf["value"])
+        self.update_conf_restart_s3("log4cxx")
         self.log.info(
             "Step 1,2: Successfully updated config and verified hctl status")
-        bucket_name = "{}{}".format(test_conf["bucket_name"],
+        bucket_name = "{}{}".format("audit-bkt6255",
                                     str(int(time.time())))
+        obj_name = "audit-obj6255"
         self.log.info(
             "Step 3: Putting an %s object into %s bucket",
-            test_conf["obj_name"],
+            obj_name,
             bucket_name)
         res = S3_OBJ.create_bucket(bucket_name)
         assert_utils.assert_in(bucket_name, res[1], res[1])
@@ -605,10 +624,10 @@ class TestAuditLogs:
         assert_utils.assert_in(bucket_name, res[1], res[1])
         system_utils.create_file(
             self.common_file_path,
-            int(test_conf["obj_size"]))
+            int(2))
         res = S3_OBJ.put_object(
             bucket_name,
-            test_conf["obj_name"],
+            obj_name,
             self.common_file_path)
         assert_utils.assert_true(res[0], res[1])
         self.log.info(
@@ -617,7 +636,7 @@ class TestAuditLogs:
             "Step 4: Check audit logs under every s3server instance folder."
             "Open audit.log to check if log is generated in JSON format "
             "post object upload.")
-        result = self.check_in_audit(test_conf["obj_name"])
+        result = self.check_in_audit(obj_name)
         assert_utils.assert_true(result[0], result)
         self.log.info("Step 4: Validated json generated in audit.log file"
                       " under every s3server instance folder.")
@@ -625,7 +644,7 @@ class TestAuditLogs:
             "Step 5: Verify password should not be logged in any of the audit server"
             " logs post object upload")
         assert_utils.assert_not_in(
-            AUDIT_CFG["audit_logs"]["pwd"],
+            self.pwd_key,
             result[1],
             result)
         self.log.info(
@@ -647,12 +666,11 @@ class TestAuditLogs:
         self.log.info(
             "STARTED : Test-Verify and check if audit logs are generated post S3 Bucket "
             "operations with 'rsyslog-tcp' logger policy")
-        test_conf = AUDIT_CFG["test_5238"]
         self.log.info(
             "Step 1,2: Update config and restart s3 service instances.")
-        self.update_conf_restart_s3(test_conf["value"])
+        self.update_conf_restart_s3("syslog")
 
-        bucket_name = "{}{}".format(test_conf["bucket_name"],
+        bucket_name = "{}{}".format("audit-bkt5238",
                                     str(int(time.time())))
         self.log.info(
             "Step 1,2: Updated config and restarted s3 service instances.")
@@ -695,13 +713,13 @@ class TestAuditLogs:
         self.log.info(
             "STARTED : Test- Verify and check if audit logs are generated post S3 Bucket "
             "operations with 'rsyslog-tcp' logger policy")
-        test_conf = AUDIT_CFG["test_5240"]
         self.log.info(
             "Step 1,2: Update config and restart s3 service instances.")
-        self.update_conf_restart_s3(test_conf["value"])
+        self.update_conf_restart_s3("syslog")
 
-        bucket_name = "{}{}".format(test_conf["bucket_name"],
+        bucket_name = "{}{}".format("audit-bkt5240",
                                     str(int(time.time())))
+        obj_name = "audit-obj5240"
         res = S3_OBJ.create_bucket(bucket_name)
         assert_utils.assert_equal(res[1], bucket_name, res[1])
         self.log.info(
@@ -710,10 +728,10 @@ class TestAuditLogs:
             "Step 3: Put an object into bucket : %s", bucket_name)
         system_utils.create_file(
             self.common_file_path,
-            test_conf["obj_size"])
+            5)
         res = S3_OBJ.put_object(
             bucket_name,
-            test_conf["obj_name"],
+            obj_name,
             self.common_file_path)
         assert_utils.assert_true(res[0], res[1])
         self.log.info(
@@ -721,10 +739,10 @@ class TestAuditLogs:
         self.log.info("Step 4: List objects from bucket %s", bucket_name)
         res = S3_OBJ.object_list(bucket_name)
         assert_utils.assert_true(res[0], res[1])
-        assert_utils.assert_in(test_conf["obj_name"], res[1], res[1])
+        assert_utils.assert_in(obj_name, res[1], res[1])
         self.log.info("Step 4: Successfully listed object from bucket")
         self.log.info("Step 5: Delete object from bucket %s", bucket_name)
-        res = S3_OBJ.delete_object(bucket_name, test_conf["obj_name"])
+        res = S3_OBJ.delete_object(bucket_name, obj_name)
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 5: Deleted object successfully")
         self.log.info(
@@ -732,7 +750,7 @@ class TestAuditLogs:
             " local log file on s3 server.")
         res = self.check_in_messages(bucket_name)
         assert_utils.assert_true(res[0], res)
-        res = self.check_in_messages(test_conf["obj_name"])
+        res = self.check_in_messages(obj_name)
         assert_utils.assert_true(res[0], res)
         self.log.info(
             "Step 7: Check Using rsyslog-tcp audit log are also directed to"
@@ -753,14 +771,18 @@ class TestAuditLogs:
         self.log.info(
             "STARTED : Test-Verify and check if audit logs are generated "
             "post Multipart upload with 'rsyslog-tcp' logger policy.")
-        test_conf = AUDIT_CFG["test_5246"]
-        self.audit_multipart(test_conf, check_audit=False)
+        self.test_cfg["bucket_name"] = "audit-bkt5246"
+        self.test_cfg["object_name"] = "audit-obj5246"
+        self.test_cfg["file_size"] = 200
+        self.test_cfg["value"] = "syslog"
+        self.test_cfg["total_parts"] = 4
+        self.audit_multipart(self.test_cfg, check_audit=False)
         self.log.info(
             "Step 7: Check Using rsyslog-tcp audit log are also directed to"
             " local log file on s3 server.")
-        res = self.check_in_messages(test_conf["bucket_name"])
+        res = self.check_in_messages(self.test_cfg["bucket_name"])
         assert_utils.assert_true(res[0], res)
-        res = self.check_in_messages(test_conf["object_name"])
+        res = self.check_in_messages(self.test_cfg["object_name"])
         assert_utils.assert_true(res[0], res)
         self.log.info(
             "Step 7: Check Using rsyslog-tcp audit log are also directed to"

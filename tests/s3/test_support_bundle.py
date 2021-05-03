@@ -238,22 +238,6 @@ class TestSupportBundle:
                 return False, result
         return True, result
 
-    def start_stop_service(self, command, host):
-        """
-        Function start and stop s3services using the systemctl command.
-
-        :param str command: Actual command to be executed
-        :param str host: hostname or ip of the remote s3server
-        :return: respone of s3server service
-        """
-        run_remote_cmd(
-            command,
-            host,
-            self.uname,
-            self.passwd)
-        status = S3H_OBJ.get_s3server_service_status(command, host=host)
-        return status
-
     def hctl_stop_cmd(self):
         """
         Function stops the cluster using hctl command.
@@ -530,9 +514,8 @@ class TestSupportBundle:
         assert_true(resp, remote_path)
         self.file_lst.append(os.path.join(remote_path))
         tar_dest_dir = os.path.join(remote_path, common_dir)
-        stop_cmd = const.SYSTEM_CTL_STOP_CMD.format(service_name)
-        self.log.info("Step 1: Stopping the service : %s", stop_cmd)
-        resp = self.start_stop_service(stop_cmd, self.host_ip)
+        self.log.info("Step 1: Stopping the service : %s", service_name)
+        resp = S3H_OBJ.stop_s3server_service(service_name, self.host_ip)
         assert_false(resp[0], resp[1])
         self.log.info(
             "Step 1: Service %s was stopped successfully",
@@ -549,9 +532,8 @@ class TestSupportBundle:
         resp = S3H_OBJ.is_s3_server_path_exists(tar_file_path)
         assert_true(resp[0], resp[1])
         self.log.info("Step 2: Support bundle created successfully")
-        start_cmd = const.SYSTEM_CTL_START_CMD.format(service_name)
-        self.log.info("Step 3: Starting the service : %s", start_cmd)
-        resp = self.start_stop_service(start_cmd, self.host_ip)
+        self.log.info("Step 3: Starting the service : %s", service_name)
+        resp = S3H_OBJ.start_s3server_service(service_name, self.host_ip)
         assert_true(resp[0], resp[1])
         self.log.info("Step 3: Started the service : %s", start_cmd)
         self.log.info(
@@ -575,9 +557,8 @@ class TestSupportBundle:
         assert_true(resp, remote_path)
         self.file_lst.append(os.path.join(remote_path))
         tar_dest_dir = os.path.join(remote_path, common_dir)
-        stop_cmd = const.SYSTEM_CTL_STOP_CMD.format(service_name)
-        self.log.info("Step 1: Stopping the service : %s", stop_cmd)
-        resp = self.start_stop_service(stop_cmd, self.host_ip)
+        self.log.info("Step 1: Stopping the service : %s", service_name)
+        resp = S3H_OBJ.stop_s3server_service(service_name, self.host_ip)
         assert_false(resp[0], resp[1])
         self.log.info(
             "Step 1: Service %s was stopped successfully",
@@ -594,9 +575,8 @@ class TestSupportBundle:
         resp = S3H_OBJ.is_s3_server_path_exists(tar_file_path)
         assert_true(resp[0], resp[1])
         self.log.info("Step 2: Support bundle created successfully")
-        start_cmd = const.SYSTEM_CTL_START_CMD.format(service_name)
-        self.log.info("Step 3: Starting the service : %s", start_cmd)
-        resp = self.start_stop_service(start_cmd, self.host_ip)
+        self.log.info("Step 3: Starting the service : %s", service_name)
+        resp = S3H_OBJ.start_s3server_service(service_name, self.host_ip)
         assert_true(resp[0], resp[1])
         self.log.info("Step 3: Started the service : %s", start_cmd)
         self.log.info(

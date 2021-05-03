@@ -767,19 +767,3 @@ class S3Helper:
                 os.remove(local_path)
 
         return False, file_path
-
-    def start_stop_service(self, command, host):
-        """
-        Function start and stop s3services using the systemctl command.
-
-        :param str command: Actual command to be executed
-        :param str host: hostname or ip of the remote s3server
-        :return: responce of s3server service
-        """
-        run_remote_cmd(
-            command,
-            host,
-            self.user,
-            self.pwd)
-        status = self.get_s3server_service_status(command, host=host)
-        return status
