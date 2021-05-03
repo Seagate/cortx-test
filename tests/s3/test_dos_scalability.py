@@ -114,8 +114,12 @@ class TestDosScalability:
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8725')
+    @pytest.mark.parametrize("num_clients", 100)
+    @pytest.mark.parametrize("num_sample", 1000000)
+    @pytest.mark.parametrize("obj_size", "1Kb")
     @CTFailOn(error_handler)
-    def test_scaling_obj_20billion_size_1bytes_5308(self):
+    def test_scaling_obj_20billion_size_1bytes_5308(self, num_clients,
+                                                    num_sample, obj_size):
         """Verify scaling of number of objects upto 20 billion with minimum object size i.e 1B."""
         self.log.info(
             "STARTED: Test To Verify scaling of number of objects upto 20 billion with minimum"
@@ -126,18 +130,20 @@ class TestDosScalability:
         self.log.info(
             "Step 2: Executed s3bench run with objects upto 20billion and obj size 1B.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
+        self.log.info("Creating bucket %s", self.bucket_name)
         res = S3_OBJ.create_bucket(self.bucket_name)
         assert_true(res[0], res[1])
+        self.log.info("Successfully created the bucket")
         for _ in range(20000):
             res = s3b_obj.s3bench(
                 access_key=access_key,
                 secret_key=secret_key,
                 bucket=self.bucket_name,
                 end_point=S3_CFG['s3_url'],
-                num_clients=100,
-                num_sample=1000000,
+                num_clients=num_clients,
+                num_sample=num_sample,
                 obj_name_pref=self.obj_name,
-                obj_size="1Kb",
+                obj_size=obj_size,
                 skip_cleanup=True,
                 verbose=True)
             self.log.debug(res)
@@ -153,8 +159,12 @@ class TestDosScalability:
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8724')
+    @pytest.mark.parametrize("num_clients", 400)
+    @pytest.mark.parametrize("num_sample", 1000)
+    @pytest.mark.parametrize("obj_size", 1048576)
     @CTFailOn(error_handler)
-    def test_400_constant_s3_operations_5336(self):
+    def test_400_constant_s3_operations_5336(self, num_clients, num_sample,
+                                             obj_size):
         """Test constant 400 S3 operations using s3bench."""
         self.log.info(
             "STARTED: Test constant 400 S3 operations using s3bench.")
@@ -164,18 +174,20 @@ class TestDosScalability:
         self.log.info(
             "Step 2: Perform with {test_cfg['num_clients']} constant s3 operations.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
+        self.log.info("Creating bucket %s", self.bucket_name)
         res = S3_OBJ.create_bucket(self.bucket_name)
         assert_true(res[0], res[1])
+        self.log.info("Successfully created the bucket")
         for _ in range(5):
             res = s3b_obj.s3bench(
                 access_key=access_key,
                 secret_key=secret_key,
                 bucket=self.bucket_name,
                 end_point=S3_CFG['s3_url'],
-                num_clients=400,
-                num_sample=1000,
+                num_clients=num_clients,
+                num_sample=num_sample,
                 obj_name_pref=self.obj_name,
-                obj_size=1048576,
+                obj_size=obj_size,
                 skip_cleanup=True,
                 verbose=True)
             self.log.debug(res)
@@ -199,8 +211,12 @@ class TestDosScalability:
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-9657')
+    @pytest.mark.parametrize("num_clients", 300)
+    @pytest.mark.parametrize("num_sample", 1000)
+    @pytest.mark.parametrize("obj_size", 1048576)
     @CTFailOn(error_handler)
-    def test_300_constant_s3_operations_5337(self):
+    def test_300_constant_s3_operations_5337(self, num_clients, num_sample,
+                                             obj_size):
         """Test constant 300 S3 operations using s3bench."""
         self.log.info("STARTED: Test constant 300 S3 operations using s3bench")
         self.log.info(
@@ -209,18 +225,20 @@ class TestDosScalability:
         self.log.info(
             "Step 2: Perform with {test_cfg['num_clients']} constant s3 operations.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
+        self.log.info("Creating bucket %s", self.bucket_name)
         res = S3_OBJ.create_bucket(self.bucket_name)
         assert_true(res[0], res[1])
+        self.log.info("Successfully created the bucket")
         for _ in range(5):
             res = s3b_obj.s3bench(
                 access_key=access_key,
                 secret_key=secret_key,
                 bucket=self.bucket_name,
                 end_point=S3_CFG['s3_url'],
-                num_clients=300,
-                num_sample=1000,
+                num_clients=num_clients,
+                num_sample=num_sample,
                 obj_name_pref=self.obj_name,
-                obj_size=1048576,
+                obj_size=obj_size,
                 skip_cleanup=True,
                 verbose=True)
             self.log.debug(res)
@@ -244,8 +262,12 @@ class TestDosScalability:
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-9658')
+    @pytest.mark.parametrize("num_clients", 1000)
+    @pytest.mark.parametrize("num_sample", 1000)
+    @pytest.mark.parametrize("obj_size", 1048576)
     @CTFailOn(error_handler)
-    def test_1000_constant_s3_operations_5338(self):
+    def test_1000_constant_s3_operations_5338(self, num_clients, num_sample,
+                                              obj_size):
         """Test constant 1000 S3 operations using s3bench."""
         self.log.info(
             "STARTED: Test constant 1000 S3 operations using s3bench")
@@ -255,18 +277,20 @@ class TestDosScalability:
         self.log.info(
             "Step 2: Perform with {test_cfg['num_clients']} constant s3 operations.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
+        self.log.info("Creating bucket %s", self.bucket_name)
         res = S3_OBJ.create_bucket(self.bucket_name)
         assert_true(res[0], res[1])
+        self.log.info("Successfully created the bucket")
         for _ in range(5):
             res = s3b_obj.s3bench(
                 access_key=access_key,
                 secret_key=secret_key,
                 bucket=self.bucket_name,
                 end_point=S3_CFG['s3_url'],
-                num_clients=1000,
-                num_sample=1000,
+                num_clients=num_clients,
+                num_sample=num_sample,
                 obj_name_pref=self.obj_name,
-                obj_size=1048576,
+                obj_size=obj_size,
                 skip_cleanup=True,
                 verbose=True)
             self.log.debug(res)
@@ -290,8 +314,9 @@ class TestDosScalability:
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-9659')
+    @pytest.mark.parametrize("obj_size", 1048576)
     @CTFailOn(error_handler)
-    def test_growing_s3_operations_5340(self):
+    def test_growing_s3_operations_5340(self, obj_size):
         """Test growing S3 operations using s3bench from 1000 to 1200 then to 1500."""
         self.log.info(
             "STARTED: Test growing S3 operations using s3bench from 1000 to 1200 then to 1500")
@@ -300,8 +325,10 @@ class TestDosScalability:
             " Install and Configure S3bench tool and validate")
         self.log.info("Step 2: Perform with n constant s3 operations.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
+        self.log.info("Creating bucket %s", self.bucket_name)
         res = S3_OBJ.create_bucket(self.bucket_name)
         assert_true(res[0], res[1])
+        self.log.info("Successfully created the bucket")
         count = 0
         for client in S3_DATA_CMN_CONFIG["test_5340"]["nclients"]:
             repetation = 5
@@ -316,7 +343,7 @@ class TestDosScalability:
                     num_clients=client,
                     num_sample=client,
                     obj_name_pref=self.obj_name,
-                    obj_size=1048576,
+                    obj_size=obj_size,
                     skip_cleanup=True,
                     verbose=True)
                 self.log.debug(res)
@@ -341,8 +368,9 @@ class TestDosScalability:
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-9660')
+    @pytest.mark.parametrize("obj_size", 1048576)
     @CTFailOn(error_handler)
-    def test_growing_s3_operations_5341(self):
+    def test_growing_s3_operations_5341(self, obj_size):
         """
         Growing S3 operations.
 
@@ -356,8 +384,10 @@ class TestDosScalability:
             " Install and Configure S3bench tool and validate")
         self.log.info("Step 2: Perform with n constant s3 operations.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
+        self.log.info("Creating bucket %s", self.bucket_name)
         res = S3_OBJ.create_bucket(self.bucket_name)
         assert_true(res[0], res[1])
+        self.log.info("Successfully created the bucket")
         for client in S3_DATA_CMN_CONFIG["test_5341"]["nclients"]:
             res = s3b_obj.s3bench(
                 access_key=access_key,
@@ -367,7 +397,7 @@ class TestDosScalability:
                 num_clients=client,
                 num_sample=client,
                 obj_name_pref=self.obj_name,
-                obj_size=1048576,
+                obj_size=obj_size,
                 skip_cleanup=True,
                 verbose=True)
             self.log.debug(res)

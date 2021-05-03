@@ -220,92 +220,99 @@ class TestDataPathValidation:
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8735')
+    @pytest.mark.parametrize("obj_size", 1)
     @CTFailOn(error_handler)
-    def test_1696(self):
+    def test_1696(self, obj_size):
         """Validate Data-Path on fresh system with 1 byte object size."""
         self.log.info(
             "STARTED: Validate Data-Path on fresh system with 1 byte object size")
         bucket = self.create_bucket(self.bucket_name)
         self.put_object(object_name=self.object_name, bucket_name=bucket,
-                        obj_size=1)
+                        obj_size=obj_size)
         self.log.info(
             "ENDED: Validate Data-Path on fresh system with 1 byte object size")
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8736')
+    @pytest.mark.parametrize("obj_size", 1000)
     @CTFailOn(error_handler)
-    def test_1697(self):
+    def test_1697(self, obj_size):
         """Validate Data-Path on fresh system with 1 KB object size."""
         self.log.info(
             "STARTED: Validate Data-Path on fresh system with 1 KB object size")
         bucket = self.create_bucket(bkt_name=self.bucket_name)
         self.put_object(object_name=self.object_name, bucket_name=bucket,
-                        obj_size=1000)
+                        obj_size=obj_size)
         self.log.info(
             "ENDED: Validate Data-Path on fresh system with 1 KB object size")
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8737')
+    @pytest.mark.parametrize("obj_size", 1)
     @CTFailOn(error_handler)
-    def test_1698(self):
+    def test_1698(self, obj_size):
         """Validate Data-Path on fresh system with 1 MB object size."""
         self.log.info(
             "STARTED: Validate Data-Path on fresh system with 1 MB object size")
         bucket = self.create_bucket(bkt_name=self.bucket_name)
         self.put_object(object_name=self.object_name, bucket_name=bucket,
-                        obj_size=1, bs="1M")
+                        obj_size=obj_size, bs="1M")
         self.log.info(
             "ENDED: Validate Data-Path on fresh system with 1 MB object size")
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8738')
+    @pytest.mark.parametrize("obj_size", 10)
     @CTFailOn(error_handler)
-    def test_1699(self):
+    def test_1699(self, obj_size):
         """Validate Data-Path on fresh system with 10 MB object size."""
         self.log.info(
             "STARTED: Validate Data-Path on fresh system with 10 MB object size")
         bucket = self.create_bucket(bkt_name=self.bucket_name)
         self.put_object(object_name=self.object_name, bucket_name=bucket,
-                        obj_size=10, bs="1M")
+                        obj_size=obj_size, bs="1M")
         self.log.info(
             "ENDED: Validate Data-Path on fresh system with 10 MB object size")
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8739')
+    @pytest.mark.parametrize("obj_size", 100)
     @CTFailOn(error_handler)
-    def test_1700(self):
+    def test_1700(self, obj_size):
         """Validate Data-Path on fresh system with 100 MB object size."""
         self.log.info(
             "STARTED: Validate Data-Path on fresh system with 100 MB object size")
         bucket = self.create_bucket(bkt_name=self.bucket_name)
         self.put_object(object_name=self.object_name, bucket_name=bucket,
-                        obj_size=100, bs="1M")
+                        obj_size=obj_size, bs="1M")
         self.log.info(
             "ENDED: Validate Data-Path on fresh system with 100 MB object size")
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8740')
+    @pytest.mark.parametrize("obj_size", 1000)
     @CTFailOn(error_handler)
-    def test_1701(self):
+    def test_1701(self, obj_size):
         """Validate Data-Path on fresh system with 1 GB object size."""
         self.log.info(
             "STARTED: Validate Data-Path on fresh system with 1 GB object size")
         bucket = self.create_bucket(bkt_name=self.bucket_name)
         self.put_object(object_name=self.object_name, bucket_name=bucket,
-                        obj_size=1000, bs="1M")
+                        obj_size=obj_size, bs="1M")
         self.log.info(
             "ENDED: Validate Data-Path on fresh system with 1 GB object size")
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8741')
+    @pytest.mark.parametrize("obj_size", 10000)
     @CTFailOn(error_handler)
-    def test_1702(self):
+    def test_1702(self, obj_size):
         """Validate Data-Path on fresh system with 10 GB object size."""
         self.log.info(
             "STARTED: Validate Data-Path on fresh system with 10 GB object size")
         bucket = self.create_bucket(bkt_name=self.bucket_name)
         self.put_object(object_name=self.object_name, bucket_name=bucket,
-                        obj_size=10000, bs="1M")
+                        obj_size=obj_size, bs="1M")
         self.log.info(
             "ENDED: Validate Data-Path on fresh system with 10 GB object size")
 
@@ -325,92 +332,99 @@ class TestDataPathValidation:
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8743')
+    @pytest.mark.parametrize("obj_size", 1)
     @CTFailOn(error_handler)
-    def test_1704(self):
+    def test_1704(self, obj_size):
         """Validate Data-Path on loaded system with 1 KB object size."""
         self.log.info(
             "STARTED: Validate Data-Path on loaded system with 1 KB object size")
         bucket = self.create_bucket(bkt_name=self.bucket_name)
         self.run_s3bench(self.obj_prefix, bucket)
         self.put_object(object_name=self.object_name, bucket_name=bucket,
-                        obj_size=1)
+                        obj_size=obj_size)
         self.log.info(
             "ENDED: Validate Data-Path on loaded system with 1 KB object size")
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8744')
+    @pytest.mark.parametrize("obj_size", 1)
     @CTFailOn(error_handler)
-    def test_1705(self):
+    def test_1705(self, obj_size):
         """Validate Data-Path on loaded system with 1 MB object size."""
         self.log.info(
             "STARTED: Validate Data-Path on loaded system with 1 MB object size")
         bucket = self.create_bucket(bkt_name=self.bucket_name)
         self.run_s3bench(self.obj_prefix, bucket)
         self.put_object(object_name=self.object_name, bucket_name=bucket,
-                        obj_size=1, bs="1M")
+                        obj_size=obj_size, bs="1M")
         self.log.info(
             "ENDED: Validate Data-Path on loaded system with 1 MB object size")
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8745')
+    @pytest.mark.parametrize("obj_size", 10)
     @CTFailOn(error_handler)
-    def test_1706(self):
+    def test_1706(self, obj_size):
         """Validate Data-Path on loaded system with 10 MB object size."""
         self.log.info(
             "STARTED: Validate Data-Path on loaded system with 10 MB object size")
         bucket = self.create_bucket(bkt_name=self.bucket_name)
         self.run_s3bench(self.obj_prefix, bucket)
         self.put_object(object_name=self.object_name, bucket_name=bucket,
-                        obj_size=10, bs="1M")
+                        obj_size=obj_size, bs="1M")
         self.log.info(
             "ENDED: Validate Data-Path on loaded system with 10 MB object size")
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8746')
+    @pytest.mark.parametrize("obj_size", 100)
     @CTFailOn(error_handler)
-    def test_1707(self):
+    def test_1707(self, obj_size):
         """Validate Data-Path on loaded system with 100 MB object size."""
         self.log.info(
             "STARTED: Validate Data-Path on loaded system with 100 MB object size")
         bucket = self.create_bucket(bkt_name=self.bucket_name)
         self.run_s3bench(self.obj_prefix, bucket)
         self.put_object(object_name=self.object_name, bucket_name=bucket,
-                        obj_size=100, bs="1M")
+                        obj_size=obj_size, bs="1M")
         self.log.info(
             "ENDED: Validate Data-Path on loaded system with 100 MB object size")
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8729')
+    @pytest.mark.parametrize("obj_size", 1000)
     @CTFailOn(error_handler)
-    def test_1708(self):
+    def test_1708(self, obj_size):
         """Validate Data-Path on loaded system with 1 GB object size."""
         self.log.info(
             "STARTED: Validate Data-Path on loaded system with 1 GB object size")
         bucket = self.create_bucket(bkt_name=self.bucket_name)
         self.run_s3bench(self.obj_prefix, bucket)
         self.put_object(object_name=self.object_name, bucket_name=bucket,
-                        obj_size=1000, bs="1M")
+                        obj_size=obj_size, bs="1M")
         self.log.info(
             "ENDED: Validate Data-Path on loaded system with 1 GB object size")
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8730')
+    @pytest.mark.parametrize("obj_size", 10000)
     @CTFailOn(error_handler)
-    def test_1709(self):
+    def test_1709(self, obj_size):
         """Validate Data-Path on loaded system with 10 GB object size."""
         self.log.info(
             "STARTED: Validate Data-Path on loaded system with 10 GB object size")
         bucket = self.create_bucket(bkt_name=self.bucket_name)
         self.run_s3bench(self.obj_prefix, bucket)
         self.put_object(object_name=self.object_name, bucket_name=bucket,
-                        obj_size=10000, bs="1M")
+                        obj_size=obj_size, bs="1M")
         self.log.info(
             "ENDED: Validate Data-Path on loaded system with 10 GB object size")
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8731')
+    @pytest.mark.parametrize("obj_size", 8388608)
     @CTFailOn(error_handler)
-    def test_1745(self):
+    def test_1745(self, obj_size):
         """Test gradual increase of concurrent client sessions with single client on single bucket."""
         self.log.info(
             "STARTED: Test gradual increase of concurrent client sessions"
@@ -435,7 +449,7 @@ class TestDataPathValidation:
                 num_clients=1,
                 num_sample=request_load,
                 obj_name_pref=self.object_name,
-                obj_size=8388608,
+                obj_size=obj_size,
                 skip_cleanup=True,
                 verbose=True)
             self.log.debug(res)
@@ -461,8 +475,9 @@ class TestDataPathValidation:
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8732')
+    @pytest.mark.parametrize("obj_size", 8388608)
     @CTFailOn(error_handler)
-    def test_1746(self):
+    def test_1746(self, obj_size):
         """Test gradual increase of concurrent client sessions with multiple clients on single buckets."""
         self.log.info(
             "STARTED: Test gradual increase of concurrent client sessions"
@@ -488,7 +503,7 @@ class TestDataPathValidation:
                 num_clients=client,
                 num_sample=request_load,
                 obj_name_pref=self.object_name,
-                obj_size=8388608,
+                obj_size=obj_size,
                 skip_cleanup=True,
                 verbose=True)
             self.log.debug(res)
@@ -516,8 +531,9 @@ class TestDataPathValidation:
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8733')
+    @pytest.mark.parametrize("obj_size", 8388608)
     @CTFailOn(error_handler)
-    def test_1747(self):
+    def test_1747(self, obj_size):
         """Test gradual increase of concurrent client sessions with multiple clients on multiple buckets."""
         self.log.info(
             "STARTED: Test gradual increase of concurrent client sessions"
@@ -547,7 +563,7 @@ class TestDataPathValidation:
                 num_clients=client,
                 num_sample=request_load,
                 obj_name_pref=self.object_name,
-                obj_size=8388608,
+                obj_size=obj_size,
                 skip_cleanup=True,
                 verbose=True)
             self.log.debug(res)
@@ -573,8 +589,9 @@ class TestDataPathValidation:
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8734')
+    @pytest.mark.parametrize("obj_size", 8388608)
     @CTFailOn(error_handler)
-    def test_1748(self):
+    def test_1748(self, obj_size):
         """Test burst I/O with single client on single bucket."""
         self.log.info(
             "STARTED: Test gradual increase of concurrent client sessions"
@@ -603,7 +620,7 @@ class TestDataPathValidation:
                 num_clients=client,
                 num_sample=request_load,
                 obj_name_pref=self.object_name,
-                obj_size=8388608,
+                obj_size=obj_size,
                 skip_cleanup=True,
                 verbose=True)
             self.log.debug(res)
