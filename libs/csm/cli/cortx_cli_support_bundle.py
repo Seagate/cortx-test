@@ -272,7 +272,7 @@ class CortxCliSupportBundle(CortxCli):
         # Form the command if component list is provided in parameters
         if component_list is not None:
             command = command + " -c"
-            command = [" ".join(command, each) for each in component_list]
+            command = command + " ".join(component_list)
         else:
             command = command + " -c all"
 
@@ -302,7 +302,7 @@ class CortxCliSupportBundle(CortxCli):
                     output = self.execute_cli_commands(cmd=command, time_out=900, sleep_time=9)[1]
                 else:
                     cmd = ""
-                    status, response = run_remote_cmd(cmd, self.host, self.uname, self.passwd,
+                    _, response = run_remote_cmd(cmd, self.host, self.uname, self.passwd,
                                                       read_lines=True)
 
                 if "error" in output.lower() or "exception" in output.lower() or "failed" in output.lower():

@@ -206,7 +206,6 @@ class TestCliSupportBundle:
             bundle_id=bundle_id, output_format="json")
         self.LOGGER.debug(resp)
         assert_utils.assert_equals(True, resp[0], resp[1])
-        #self.node_list = [each[0]["host"] for each in CMN_CFG["nodes"]]
         self.node_list = list(set([each["node_name"] for each in resp[1][
             "status"] if constants.SUPPORT_BUNDLE_MSG in each["message"]]))
         self.LOGGER.info("Step 2: Verified status of support bundle")
@@ -255,7 +254,6 @@ class TestCliSupportBundle:
         Test that user generated support bundle is less than 1GB size.
         """
         self.LOGGER.info("Step 1: Generating support bundle through cli")
-        new_dict = {}
         # single_command_trigger = True,node_list = None(i.e All nodes),
         # component_list = None(i.e All comp)
         resp = self.support_bundle_obj.r2_generate_support_bundle(comment="test_20118")
