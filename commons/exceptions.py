@@ -58,3 +58,21 @@ class CTException(Exception):
                                              self.ct_error.desc,
                                              self.message,
                                              pformat(self.kwargs))
+
+
+class CortxTestException(Exception):
+    """Intended for use to raise test errors with using error codes."""
+
+    def __init__(self, msg=None) -> None:
+        """
+        Create a test exception
+        :param msg: String error message from user.
+        """
+        super().__init__()
+        self.message = msg
+
+    def __str__(self):
+        """
+        Representation of this exception.
+        """
+        return f"TestException: with Error Message {self.messsage}:"

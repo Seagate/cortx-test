@@ -71,7 +71,7 @@ Is Bucket Present
 verify that create buttn functionality on buckets tab
     [Documentation]  This keyword verifys that create button functionality on the buckets tab
     Click On Create Bucket Form
-    wait until element is visible  ${BUCKET_NAME_ID}  timeout=10
+    wait until element is visible  ${BUCKET_NAME_ID}  timeout=30
     ${bucket_name} =   Get WebElements  ${BUCKET_NAME_ID}
 
 verify the tooptip for the bucket name policy
@@ -187,7 +187,7 @@ Verify the bucket url in buckets table
      wait for page or element to load  10s
      Mouse Over  ${tool_tip_element}
      wait for page or element to load
-     wait until element is visible  ${BUCKET_URL_TOOLTIP_TEXT_ID}  timeout=10
+     wait until element is visible  ${BUCKET_URL_TOOLTIP_TEXT_ID}  timeout=30
      ${tooltip_from_gui}=  get text  ${BUCKET_URL_TOOLTIP_TEXT_ID}
      Should Contain  ${tooltip_from_gui}  ${bucketname}
 
