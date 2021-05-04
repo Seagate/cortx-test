@@ -126,6 +126,17 @@ def sort_objectsizes(data_dict):
     data_sorted.update(rest)
     return data_sorted
 
+def get_placeholder(components):
+    placeholder = ", ".join(
+        [components[0], components[2][:-1]+' nodes'])
+    if components[4][:-2] != '0':
+        placeholder = placeholder + ", " + components[4][:-2] + '% fill'
+    if components[-1] != 'NA':
+        placeholder = placeholder + ", " + components[-1]
+    if components[1] != 'ITR1':
+        placeholder = placeholder + ", " + components[1][3:]
+    
+    return placeholder
 
 def sort_builds(data_dict):
     builds = list(data_dict.keys())
@@ -137,29 +148,13 @@ def sort_builds(data_dict):
         try:
             int(splits[0])
         except ValueError:
-            components = key.split("_")
-            placeholder = ", ".join(
-                [components[0], components[2][:-1]+' nodes', components[4][:-2] + '% fill'])
-            if components[-1] != 'NA':
-                placeholder = placeholder + ", " + components[-1]
-            if components[1] != 'ITR1':
-                placeholder = placeholder + ", " + components[1][3:]
-
-            data_sorted[placeholder] = data_dict[key]
+            data_sorted[get_placeholder(key.split("_"))] = data_dict[key]
             del data_dict[key]
 
     builds = list(data_dict.keys())
     builds.sort(key=lambda x: int(re.split("_|-", x)[0]))
     for build in builds:
-        components = build.split("_")
-        placeholder = ", ".join(
-            [components[0], components[2][:-1]+' nodes', components[4][:-2] + '% fill'])
-        if components[-1] != 'NA':
-            placeholder = placeholder + ", " + components[-1]
-        if components[1] != 'ITR1':
-            placeholder = placeholder + ", " + components[1][3:]
-
-        data_sorted[placeholder] = data_dict[build]
+        data_sorted[get_placeholder(build.split("_"))] = data_dict[build]
 
     return data_sorted
 

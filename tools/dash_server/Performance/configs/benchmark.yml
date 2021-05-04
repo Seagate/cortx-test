@@ -24,17 +24,14 @@ Hsbench:
   workload-1:
     sessions: 100
     buckets: 1
-    objects: 1000
   
   workload-2:
     sessions: 100
     buckets: 10
-    objects: 1000
 
   workload-3:
     sessions: 100
     buckets: 50
-    objects: 5000
   
   modes:
     2: BINIT
@@ -58,14 +55,11 @@ Cosbench:
   workload-1:
     sessions: 100
     buckets: 1
-    objects: 1000
   
   workload-2:
     sessions: 100
     buckets: 10
-    objects: 100
 
   workload-3:
     sessions: 100
     buckets: 50
-    objects: 100

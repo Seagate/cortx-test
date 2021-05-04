@@ -68,7 +68,6 @@ def update_configs_first(xfilter, release, branch, option1, bench):
             'Branch': branch, xfilter: option1, 'Name': bench,
         }
         cursor = find_documents(query, uri, db_name, db_collection)
-
         for doc in cursor:
             pattern = {'Buckets': int(
                 doc['Buckets']), 'Sessions': int(doc['Sessions'])}
