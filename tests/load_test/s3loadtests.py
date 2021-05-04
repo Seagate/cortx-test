@@ -234,7 +234,7 @@ class TestS3Load:
         else:
             host_url = self.host_url
         res = locust_runner.run_locust(
-            host=self.host_url, locust_file="scripts/locust/locustfile_step_users.py",
+            host=host_url, locust_file="scripts/locust/locustfile_step_users.py",
             users=10, duration="15m")
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
@@ -286,7 +286,7 @@ class TestS3Load:
         else:
             host_url = self.host_url
         res = locust_runner.run_locust(
-            host=self.host_url, locust_file="scripts/locust/locustfile_step_users.py",
+            host=host_url, locust_file="scripts/locust/locustfile_step_users.py",
             users=10, duration="15m")
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
