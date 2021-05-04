@@ -45,12 +45,15 @@ class TestUserLoginProfileTests():
         cls.default_acc_mail = "{}@seagate.com".format(cls.default_acc)
         cls.default_acc_pass = S3_CFG["CliConfig"]["s3_account"]["password"]
         create_account = cls.cli_obj_class.create_account_cortxcli(
-            account_name=cls.default_acc, account_email=cls.default_acc_mail, password=cls.default_acc_pass)
+            account_name=cls.default_acc,
+            account_email=cls.default_acc_mail,
+            password=cls.default_acc_pass)
         assert create_account[0], create_account[1]
         cls.log.debug("Successfully created s3 account %s", create_account[1])
         access_key = create_account[1]["access_key"]
         secret_key = create_account[1]["secret_key"]
-        cls.iam_test_obj = iam_test_lib.IamTestLib(access_key=access_key, secret_key=secret_key)
+        cls.iam_test_obj = iam_test_lib.IamTestLib(
+            access_key=access_key, secret_key=secret_key)
         cls.log.info("ENDED: Setup operations at suit level")
 
     def setup_method(self):
@@ -100,11 +103,13 @@ class TestUserLoginProfileTests():
             cls.log.debug("Deleting IAM accounts...")
             for acc in iam_accounts:
                 cls.log.debug("Deleting %s account", acc)
-                cls.cli_obj_class.login_cortx_cli(username=acc, password=cls.default_acc_pass)
+                cls.cli_obj_class.login_cortx_cli(
+                    username=acc, password=cls.default_acc_pass)
                 cls.cli_obj_class.delete_all_buckets_cortx_cli()
                 cls.cli_obj_class.delete_all_iam_users()
                 cls.cli_obj_class.logout_cortx_cli()
-                cls.cli_obj_class.delete_account_cortxcli(account_name=acc, password=cls.default_acc_pass)
+                cls.cli_obj_class.delete_account_cortxcli(
+                    account_name=acc, password=cls.default_acc_pass)
         cls.log.info("ENDED: Teardown operations at suit level")
 
     def create_user_and_access_key(
@@ -163,7 +168,8 @@ class TestUserLoginProfileTests():
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
         self.log.info("Creating a user with name %s", user_name)
-        iam_obj = iam_test_lib.IamTestLib(access_key=access_key, secret_key=secret_key)
+        iam_obj = iam_test_lib.IamTestLib(
+            access_key=access_key, secret_key=secret_key)
         resp = iam_obj.create_user(user_name=user_name)
         assert_true(resp[0], resp[1])
         self.log.info("Created a user with name %s", user_name)
@@ -430,7 +436,8 @@ class TestUserLoginProfileTests():
             True)
         assert_true(resp[0], resp[1])
         try:
-            self.iam_test_obj.update_user_login_profile_no_pwd_reset(self.user_name)
+            self.iam_test_obj.update_user_login_profile_no_pwd_reset(
+                self.user_name)
         except CTException as error:
             self.log.debug(error.message)
             assert_in(
@@ -598,10 +605,10 @@ class TestUserLoginProfileTests():
         self.log.info("STARTED: Create login profiles for maximum nos of "
                       "existing IAM users")
         self.log.debug("Creating 101 users")
-        for n in range(101):
+        for cnt in range(101):
             new_user_name = "{0}{1}".format(
                 self.user_name,
-                "_{}".format(n))
+                "_{}".format(cnt))
             self.log.debug("Creating a user with name: %s", new_user_name)
             resp = self.iam_test_obj.create_user(new_user_name)
             assert_true(resp[0], resp[1])
@@ -666,7 +673,7 @@ class TestUserLoginProfileTests():
         resp = self.iam_test_obj.create_user_login_profile(
             self.user_name,
             self.test_cfg["test_9832"]["password"]
-            )
+        )
         assert_true(resp[0], resp[1])
         self.log.info(
             "ENDED: Create login profile for IAM user without mentioning  "
@@ -768,12 +775,14 @@ class TestUserLoginProfileTests():
         self.log.info("STARTED: Verify password change for IAM user")
         email_id = "{0}{1}".format(
             self.account_name, self.email_id)
-        resp = self.create_account_and_user(
+        self.create_account_and_user(
             self.account_name,
             email_id,
             self.user_name,
             self.test_cfg["test_9832"]["password"])
-        login = self.cli_obj.login_cortx_cli(username=self.account_name, password=self.s3acc_passwd)
+        login = self.cli_obj.login_cortx_cli(
+            username=self.account_name,
+            password=self.s3acc_passwd)
         assert_true(login[0], login[1])
         resp = self.cli_obj.reset_iamuser_password(
             self.user_name, self.test_cfg["test_9876"]["new_password"])
@@ -816,15 +825,16 @@ class TestUserLoginProfileTests():
         self.log.info("STARTED: Provide only six character length in password")
         email_id = "{0}{1}".format(
             self.account_name, self.email_id)
-        resp = self.create_account_and_user(
+        self.create_account_and_user(
             self.account_name,
             email_id,
             self.user_name,
             self.test_cfg["test_9832"]["password"])
         try:
-            login = self.cli_obj.login_cortx_cli(username=self.account_name, password=self.s3acc_passwd)
+            login = self.cli_obj.login_cortx_cli(
+                username=self.account_name, password=self.s3acc_passwd)
             assert_true(login[0], login[1])
-            resp = self.cli_obj.reset_iamuser_password(
+            self.cli_obj.reset_iamuser_password(
                 self.user_name, self.test_cfg["test_2899"]["new_password"])
         except CTException as error:
             self.log.debug(error.message)
@@ -851,9 +861,10 @@ class TestUserLoginProfileTests():
             self.user_name,
             self.test_cfg["test_9832"]["password"])
         try:
-            login = self.cli_obj.login_cortx_cli(username=self.account_name, password=self.s3acc_passwd)
+            login = self.cli_obj.login_cortx_cli(
+                username=self.account_name, password=self.s3acc_passwd)
             assert_true(login[0], login[1])
-            resp = self.cli_obj.reset_iamuser_password(
+            self.cli_obj.reset_iamuser_password(
                 self.user_name, self.test_cfg["test_9879"]["new_password"])
         except CTException as error:
             self.log.debug(error.message)
@@ -928,12 +939,14 @@ class TestUserLoginProfileTests():
                       "characters ~,$,?,&,\\n,\\t,<,>")
         email_id = "{0}{1}".format(
             self.account_name, self.email_id)
-        resp = self.create_account_and_user(
+        self.create_account_and_user(
             self.account_name,
             email_id,
             self.user_name,
             self.test_cfg["test_9832"]["password"])
-        login = self.cli_obj.login_cortx_cli(username=self.account_name, password=self.s3acc_passwd)
+        login = self.cli_obj.login_cortx_cli(
+            username=self.account_name,
+            password=self.s3acc_passwd)
         assert_true(login[0], login[1])
         for new_password in self.test_cfg["test_9882"]["list_special_char_pwd"]:
             self.log.debug(new_password)
@@ -953,15 +966,17 @@ class TestUserLoginProfileTests():
         self.log.info("STARTED: Verify change password with old password")
         email_id = "{0}{1}".format(
             self.account_name, self.email_id)
-        resp = self.create_account_and_user(
+        self.create_account_and_user(
             self.account_name,
             email_id,
             self.user_name,
             self.test_cfg["test_9832"]["password"])
-        login = self.cli_obj.login_cortx_cli(username=self.account_name, password=self.s3acc_passwd)
+        login = self.cli_obj.login_cortx_cli(
+            username=self.account_name,
+            password=self.s3acc_passwd)
         assert_true(login[0], login[1])
         try:
-            resp = self.cli_obj.reset_iamuser_password(
+            self.cli_obj.reset_iamuser_password(
                 self.user_name, self.test_cfg["test_9832"]["password"])
         except CTException as error:
             self.log.debug(error.message)
