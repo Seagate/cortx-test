@@ -74,6 +74,7 @@ def return_compliment(xfilter):
 
 
 def get_xaxis(xfilter, release, branch, option, bench):
+
     # Version_Branch_Build_Iteration_NodeCount_ClientCount_PercentFull_Benchmark_ObjSize_NoOfBuckets_Operation_Sessions
     if xfilter == 'Object_Size':
         pkeys = get_distinct_keys(release, 'PKey', {
