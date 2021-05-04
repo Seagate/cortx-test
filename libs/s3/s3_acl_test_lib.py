@@ -111,6 +111,41 @@ class S3AclTestLib(Acl):
 
         return True, response
 
+    def copy_object_acl(self,
+                        source_bucket: str = None,
+                        source_object: str = None,
+                        dest_bucket: str = None,
+                        dest_object: str = None,
+                        acl: str = None) -> tuple:
+        """
+        Creates a copy of an object that is already stored in Seagate S3 with acl.
+
+        :param source_bucket: The name of the source bucket.
+        :param source_object: The name of the source object.
+        :param dest_bucket: The name of the destination bucket.
+        :param dest_object: The name of the destination object.
+        :param acl: The canned ACL to apply to the object.
+            ACL='private'|'public-read'|'public-read-write'|'authenticated-read'|'aws-exec-read'|
+            'bucket-owner-read'|'bucket-owner-full-control'
+        :return: True, dict.
+        """
+        try:
+            response = self.s3_client.copy_object(
+                Bucket=dest_bucket,
+                CopySource='/{}/{}'.format(source_bucket, source_object),
+                Key=dest_object,
+                ACL=acl
+            )
+
+            LOGGER.debug(response)
+        except BaseException as error:
+            LOGGER.error("Error in %s: %s",
+                         S3AclTestLib.copy_object_acl.__name__,
+                         error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
+        return response, response
+
     def put_object_acl(
             self,
             bucket_name: str = None,
