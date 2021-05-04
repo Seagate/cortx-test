@@ -38,7 +38,7 @@ from R2_callbacks import exe_report_callbacks, \
     engg_report_callbacks  # pylint: disable=unused-import
 
 from Performance.statistics import statistics_callbacks  # pylint: disable=unused-import
-from Performance.graphs import graphs_callbacks  # pylint: disable=unused-import
+from Performance.graphs import dropdown_callbacks, graphs_callbacks  # pylint: disable=unused-import
 from Performance.perf_main import perf_stats_page, perf_graphs_page
 
 
@@ -87,7 +87,7 @@ input_options = dbc.Row(
 )
 input_optional_options = dbc.Row(
     [
-    dcc.Dropdown(
+        dcc.Dropdown(
             id='test_team_dropdown',
             placeholder="Test Component(Opt)",
             style={'width': '200px', 'verticalAlign': 'middle', "margin-right": "15px",
@@ -109,7 +109,8 @@ dict_style_tab = {'margin-left': 10, 'margin-right': 10}
 dict_style_label = {'font-size': '22px', 'color': '#44cc00', 'background-color': '#343a40',
                     'border-style': 'solid', 'border-color': '#ffffff', 'font-family': 'Serif'}
 
-dict_style_sub_tab = {'margin-left': 10, 'margin-right': 10, 'margin-top': '10px'}
+dict_style_sub_tab = {'margin-left': 10,
+                      'margin-right': 10, 'margin-top': '10px'}
 dict_style_sub_label = {'font-size': '18px', 'color': '#44cc00', 'background-color': '#343a40',
                         'border-style': 'solid', 'margin-top': '20px'}
 
@@ -210,7 +211,8 @@ navbar = dbc.Navbar(
         html.A(
             dbc.Row(
                 [
-                    dbc.Col(html.Img(src=app.get_asset_url("seagate.png"), height="100px")),
+                    dbc.Col(html.Img(src=app.get_asset_url(
+                        "seagate.png"), height="100px")),
                     dbc.Col(dbc.NavbarBrand("CORTX Companion",
                                             style={'font-size': 40, 'textAlign': 'center',
                                                    'width': '800px'}),
