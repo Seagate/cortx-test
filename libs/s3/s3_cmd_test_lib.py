@@ -182,7 +182,7 @@ class S3CmdTestLib(S3LibCmd):
         :return: actual command that is going to execute for utility.
         """
         cmd_elements = []
-        tool = s3cmd_cnf["common_cfg"]["s3cmd_tool"]
+        tool = s3cmd_cnf["s3cmd_cfg"]["s3cmd_tool"]
         cmd_elements.append(tool)
         cmd_elements.append(operation)
         if cmd_arguments:
