@@ -599,7 +599,7 @@ class TestS3Concurrency:
         self.log.info(
             "STARTED: Download an already existing object from one client and in parallel "
             "overwrite the same object from other s3 client")
-        file_path = os.path.join("/root", self.obj_name)
+        file_path = os.path.join("/tmp", self.obj_name)
         resp = S3T_OBJ.create_bucket_put_object(
             self.bucket_name, self.obj_name, file_path, 10)
         assert_utils.assert_true(resp[0], resp[1])

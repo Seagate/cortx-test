@@ -742,7 +742,7 @@ class TestSupportBundle:
         self.extract_tar_file(tar_file_path, tar_dest_dir)
         auth_server_path = "{}{}".format(
             tar_dest_dir, const.AUTHSERVER_LOG_PATH)
-        resp = self.node_obj.get_remote_file_size(auth_server_path)
+        resp = self.node_obj.get_file_size(auth_server_path)
         assert_true(resp[0], resp[1])
         self.log.info("Step 2: Validated the authserver logs of the tar")
         self.log.info(
@@ -779,7 +779,7 @@ class TestSupportBundle:
         self.extract_tar_file(tar_file_path, tar_dest_dir)
         auth_server_path = "{}{}".format(
             tar_dest_dir, const.HAPROXY_LOG_PATH)
-        resp = self.node_obj.get_remote_file_size(auth_server_path)
+        resp = self.node_obj.get_file_size(auth_server_path)
         assert_true(resp[0], resp[1])
         self.log.info("Step 2: Validated the haproxy logs of the tar")
         self.log.info(
@@ -972,7 +972,7 @@ class TestSupportBundle:
         self.log.info(
             "Step 4 : Verifying that system level stat files are not empty")
         for file in stat_files:
-            resp = self.node_obj.get_remote_file_size(file)
+            resp = self.node_obj.get_file_size(file)
             assert_true(resp[0], resp[1])
         self.log.info(
             "Step 4 : Verified that system level stat files are not empty")

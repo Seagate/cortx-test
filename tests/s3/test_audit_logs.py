@@ -56,7 +56,7 @@ class TestAuditLogs:
         cls.log = logging.getLogger(__name__)
         cls.log.info("STARTED: setup test suite operations.")
         cls.rem_path = const.S3_CONFIG
-        cls.lcl_path = "/root/s3config.yaml"
+        cls.lcl_path = "/tmp/s3config.yaml"
         cls.common_file = "audit_test_file.txt"
         cls.test_file = "audit-obj-mp"
         cls.section = "S3_SERVER_CONFIG"

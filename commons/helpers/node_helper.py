@@ -33,7 +33,6 @@ from typing import Union
 from typing import Any
 from commons import commands, const
 from commons.helpers.host import Host
-from commons.utils.system_utils import run_remote_cmd
 
 log = logging.getLogger(__name__)
 
@@ -489,7 +488,7 @@ class Node(Host):
 
         return True, resp
 
-    def get_remote_file_size(self, path):
+    def get_file_size(self, path):
         """
         Check if file exists and the size of the file on s3 server of extracted file.
 
