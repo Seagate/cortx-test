@@ -33,10 +33,10 @@ from commons.utils.assert_utils import \
     assert_true, assert_false, assert_in, assert_equal
 from config import S3_CFG
 from libs.s3 import iam_test_lib
-from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
+from libs.s3.cortxcli_test_lib import CortxCliTestLib
 
 IAM_OBJ = iam_test_lib.IamTestLib()
-IAM_CFG = get_config_wrapper(fpath="config/blackbox/test_aws_iam.yaml")
+IAM_CFG = get_config_wrapper(fpath="config/blackbox/test_blackbox.yaml")
 
 
 class TestAwsIam:
@@ -50,18 +50,21 @@ class TestAwsIam:
         It will perform all prerequisite test suite steps if any.
         """
         cls.log = logging.getLogger(__name__)
-        cls.cfg = IAM_CFG["acc_user_mng"]
         cls.log.info("STARTED: setup test suite operations.")
         resp = system_utils.path_exists(S3_CFG["aws_config_path"])
-        assert_true(resp, "config path not exists: {}".format(S3_CFG["aws_config_path"]))
-        cls.new_access_key = None
-        cls.new_secret_key = None
-        cls.random_str = None
+        assert_true(
+            resp, "config path not exists: {}".format(
+                S3_CFG["aws_config_path"]))
         cls.log.info("ENDED: setup test suite operations.")
 
     def setup_method(self):
         """Function to perform the setup ops for each test."""
         self.random_str = str(int(time.time()))
+        self.account_name = "seagateaccount_{}".format(time.perf_counter_ns())
+        self.email_id = "{}@seagate.com".format(self.account_name)
+        self.user_name = "seagate_user{}".format(time.perf_counter_ns())
+        self.cortx_obj = CortxCliTestLib()
+        self.s3acc_password = S3_CFG["CliConfig"]["s3_account"]["password"]
 
     def teardown_method(self):
         """
@@ -71,11 +74,11 @@ class TestAwsIam:
         This function will delete IAM accounts and users.
         """
         self.log.info("STARTED: Teardown Operations")
-        user_cfg = IAM_CFG["iam_user_login"]
         all_users = IAM_OBJ.list_users()[1]
         iam_users_list = [user["UserName"]
                           for user in all_users if
-                          user_cfg["user_name_prefix"] in user["UserName"]]
+                          IAM_CFG["user_name_prefix"] in user["UserName"] or
+                          self.user_name == user["UserName"]]
         self.log.debug("IAM users: %s", iam_users_list)
         if iam_users_list:
             self.log.debug("Deleting IAM users...")
@@ -90,31 +93,22 @@ class TestAwsIam:
                     self.log.debug("Deleted user access key")
                 IAM_OBJ.delete_user(user)
                 self.log.debug("Deleted user : %s", user)
-        account_name = self.cfg["account_name"]
-        acc_list = IAM_OBJ.list_accounts_s3iamcli(
-            LDAP_USERNAME,
-            LDAP_PASSWD)[1]
-        all_acc = [acc["AccountName"]
-                   for acc in acc_list if account_name in acc["AccountName"]]
-        if all_acc:
-            self.log.info("Accounts to delete: %s", all_acc)
-            for acc in all_acc:
-                self.log.info("Deleting %s account", acc)
-                IAM_OBJ.reset_access_key_and_delete_account_s3iamcli(acc)
-                self.log.info("Deleted %s account", acc)
+        accounts = self.cortx_obj.list_accounts_cortxcli()
+        accounts = [acc["account_name"]
+                    for acc in accounts if self.account_name in acc["account_name"]]
+        for acc in accounts:
+            self.cortx_obj.delete_account_cortxcli(account_name=acc, password=self.s3acc_password)
+        del self.cortx_obj
         self.log.info("ENDED: Teardown Operations")
 
     def create_account(self):
         """Function will create IAM account."""
-        acc_name = "{}{}".format(
-            IAM_CFG["acc_user_mng"]["account_name"], str(int(time.time())))
-        acc_email = "{}{}".format(acc_name, IAM_CFG["acc_user_mng"]["email_id"])
-        self.log.info("Account name: %s, Account email: %s", acc_name, acc_email)
-        return IAM_OBJ.create_account_s3iamcli(
-            acc_name,
-            acc_email,
-            LDAP_USERNAME,
-            LDAP_PASSWD)
+        self.log.info(
+            "Account name: %s, Account email: %s",
+            self.account_name,
+            self.email_id)
+        return self.cortx_obj.create_account_cortxcli(
+            self.account_name, self.email_id, self.s3acc_password)
 
     def create_user_and_access_key(
             self,
@@ -161,24 +155,21 @@ class TestAwsIam:
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
-        test_2419_cfg = IAM_CFG["test_2419"]
         new_iam_obj = iam_test_lib.IamTestLib(
             access_key=access_key,
             secret_key=secret_key)
-        user_nm = test_2419_cfg["user_name"].format(self.random_str)
-        resp = new_iam_obj.create_user(user_nm)
+        resp = new_iam_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
         resp = new_iam_obj.create_user_login_profile(
-            user_nm,
-            test_2419_cfg["password"],
-            test_2419_cfg["password_reset"])
+            self.user_name,
+            IAM_CFG["password"],
+            True)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 1: Created new account and new user and new profile in it")
         self.log.info("Step 2: Updating user name of already existing user")
-        new_user_name = IAM_CFG["test_2419"]["new_user_name"]
         resp = new_iam_obj.update_user(
-            new_user_name, user_nm)
+            "iamusertest2419", self.user_name)
         assert_true(resp[0], resp[1])
         self.log.info("Step 2: Updated user name of already existing user")
         self.log.info(
@@ -187,9 +178,9 @@ class TestAwsIam:
         self.log.info("User: %s", resp[1])
         assert_true(resp[0], resp[1])
         all_users = resp[1]
-        iam_users_list = [IAM_CFG["test_2419"]["new_user_name"]
+        iam_users_list = ["iamusertest2419"
                           for user in all_users if
-                          IAM_CFG["test_2419"]["new_user_name"] in user["UserName"]]
+                          "iamusertest2419" in user["UserName"]]
         self.log.debug("IAM users: %s", iam_users_list)
         assert_true(iam_users_list, "true")
         self.log.info("Step 3: Listed users and verified user name is updated")
@@ -207,22 +198,21 @@ class TestAwsIam:
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
-        test_2420_cfg = IAM_CFG["test_2420"]
         new_iam_obj = iam_test_lib.IamTestLib(
             access_key=access_key,
             secret_key=secret_key)
-        resp = new_iam_obj.create_user(test_2420_cfg["user_name"])
+        resp = new_iam_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
         self.log.info("Step 1: Created new account and new user in it")
         self.log.info(
             "Step 2: Listing users and verifying user name present")
         all_users = new_iam_obj.list_users()[1]
         self.log.debug("all_users %s", all_users)
-        iam_users_list = [IAM_CFG["test_2420"]["user_name"]
+        iam_users_list = [user["UserName"]
                           for user in all_users if
-                          IAM_CFG["test_2420"]["user_name"] in user["UserName"]]
+                          "seagate_user" in user["UserName"]]
         self.log.debug("IAM users: %s", iam_users_list)
-        assert_true(iam_users_list, "true")
+        assert_true(iam_users_list, iam_users_list)
         self.log.info("Step 2: Listed users and verified user name is present")
         self.log.info("ENDED: list user using aws iam")
 
@@ -240,17 +230,16 @@ class TestAwsIam:
         new_iam_obj = iam_test_lib.IamTestLib(
             access_key=access_key,
             secret_key=secret_key)
-        test_2421_cfg = IAM_CFG["test_2421"]
-        resp = new_iam_obj.create_user(test_2421_cfg["user_name"])
+        resp = new_iam_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
         self.log.info("Step 1: Created new account and new user in it")
-        resp = new_iam_obj.delete_user(test_2421_cfg["user_name"])
+        resp = new_iam_obj.delete_user(self.user_name)
         assert_true(resp[0], resp[1])
         all_users = new_iam_obj.list_users()[1]
         self.log.debug("all_users %s", all_users)
-        iam_users_list = [IAM_CFG["test_2421"]["user_name"]
+        iam_users_list = [self.user_name
                           for user in all_users if
-                          IAM_CFG["test_2421"]["user_name"] in user["UserName"]]
+                          self.user_name == user["UserName"]]
         self.log.debug("IAM users: %s", iam_users_list)
         assert_false(iam_users_list, "false")
         self.log.info("ENDED: Delete User using aws iam")
@@ -269,14 +258,10 @@ class TestAwsIam:
         new_iam_obj = iam_test_lib.IamTestLib(
             access_key=access_key,
             secret_key=secret_key)
-        test_2422_cfg = IAM_CFG["test_2422"]
         self.log.debug(
-            "Creating %s users",
-            test_2422_cfg["no_of_users"])
-        for num in range(test_2422_cfg["no_of_users"]):
-            new_user_name = "{0}{1}".format(
-                test_2422_cfg["user_name"],
-                test_2422_cfg["user_name_suffix"].format(num))
+            "Creating %s users", 100)
+        for num in range(100):
+            new_user_name = "{0}{1}".format("iamuser2422", "_{}".format(num))
             self.log.debug(
                 "Creating a user with name: %s", new_user_name)
             resp = new_iam_obj.create_user(new_user_name)
@@ -299,24 +284,23 @@ class TestAwsIam:
         new_iam_obj = iam_test_lib.IamTestLib(
             access_key=self.new_access_key,
             secret_key=self.new_secret_key)
-        test_2425_cfg = IAM_CFG["test_2425"]
-        resp = new_iam_obj.create_user(test_2425_cfg["user_name"])
+        resp = new_iam_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
         resp = new_iam_obj.create_user_login_profile(
-            test_2425_cfg["user_name"],
-            test_2425_cfg["password"],
-            test_2425_cfg["password_reset"])
+            self.user_name,
+            IAM_CFG["password"],
+            True)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 1: Created new account and new user and new profile in it")
         self.log.info("Creating access key for user %s",
-                      test_2425_cfg["user_name"])
-        resp = new_iam_obj.create_access_key(test_2425_cfg["user_name"])
+                      self.user_name)
+        resp = new_iam_obj.create_access_key(self.user_name)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Created access key for user %s",
-            test_2425_cfg["user_name"])
-        resp = new_iam_obj.list_access_keys(test_2425_cfg["user_name"])
+            self.user_name)
+        resp = new_iam_obj.list_access_keys(self.user_name)
         assert_true(resp[0], resp[1])
         self.log.info("ENDED: list accesskeys for the user using aws iam")
 
@@ -335,17 +319,18 @@ class TestAwsIam:
         new_iam_obj = iam_test_lib.IamTestLib(
             access_key=access_key,
             secret_key=secret_key)
-        test_2426_cfg = IAM_CFG["test_2426"]
         resp = self.create_user_and_access_key(
-            test_2426_cfg["user_name"],
-            test_2426_cfg["password"],
+            self.user_name,
+            IAM_CFG["password"],
             new_iam_obj)
         user_access_key = resp[0]
         user_secret_key = resp[1]
         resp = new_iam_obj.delete_access_key(
-            test_2426_cfg["user_name"], user_access_key)
+            self.user_name, user_access_key)
         assert_true(user_access_key, user_secret_key)
-        self.log.info("ENDED: Delete Accesskey of a user using aws iam %s", resp)
+        self.log.info(
+            "ENDED: Delete Accesskey of a user using aws iam %s",
+            resp)
 
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7172")
@@ -362,25 +347,24 @@ class TestAwsIam:
         new_iam_obj = iam_test_lib.IamTestLib(
             access_key=access_key,
             secret_key=secret_key)
-        test_2424_cfg = IAM_CFG["test_2424"]
-        resp = new_iam_obj.create_user(test_2424_cfg["user_name"])
+        resp = new_iam_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
         resp = new_iam_obj.create_user_login_profile(
-            test_2424_cfg["user_name"],
-            test_2424_cfg["password"],
-            test_2424_cfg["password_reset"])
+            self.user_name,
+            IAM_CFG["password"],
+            True)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 1: Created new account and new user and new profile in it")
         self.log.info(
             "Step 2: Creating access key for user %s",
-            test_2424_cfg["user_name"])
-        resp = new_iam_obj.create_access_key(test_2424_cfg["user_name"])
+            self.user_name)
+        resp = new_iam_obj.create_access_key(self.user_name)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Created access key for user %s",
-            test_2424_cfg["user_name"])
-        resp = new_iam_obj.list_access_keys(test_2424_cfg["user_name"])
+            self.user_name)
+        resp = new_iam_obj.list_access_keys(self.user_name)
         assert_true(resp[0], resp[1])
         self.log.info("ENDED: Create Access key to the user using aws iam")
 
@@ -396,21 +380,19 @@ class TestAwsIam:
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
-        test_2418_cfg = IAM_CFG["test_2418"]
         new_iam_obj = iam_test_lib.IamTestLib(
             access_key=access_key,
             secret_key=secret_key)
-        user_nm = test_2418_cfg["user_name"].format(self.random_str)
-        resp = new_iam_obj.create_user(user_nm)
+        resp = new_iam_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
         self.log.info("Step 1: Created new account and new user in it")
         self.log.info(
             "Step 2: Listing users and verifying user name present")
         all_users = new_iam_obj.list_users()[1]
         self.log.debug("all_users %s", all_users)
-        iam_users_list = [user_nm
+        iam_users_list = [self.user_name
                           for user in all_users if
-                          user_nm in user["UserName"]]
+                          self.user_name in user["UserName"]]
         self.log.debug("IAM users: %s", iam_users_list)
         assert_true(iam_users_list, "true")
         self.log.info("Step 2: Listed users and verified user name is present")
@@ -430,27 +412,29 @@ class TestAwsIam:
         secret_key = resp[1]["secret_key"]
         self.log.info(
             "Step 1: Creating user with name %s",
-            IAM_CFG["acc_user_mng"]["user_name"])
-        resp = IAM_OBJ.create_user_using_s3iamcli(
-            IAM_CFG["acc_user_mng"]["user_name"], access_key, secret_key)
+            self.user_name)
+        self.cortx_obj.login_cortx_cli(self.account_name, self.s3acc_password)
+        resp = self.cortx_obj.create_user_cortxcli(
+            self.user_name, self.s3acc_password, self.s3acc_password)
         assert_true(resp[0], resp[1])
+        self.cortx_obj.logout_cortx_cli()
         self.log.info(
             "Step 1: Created user with name %s",
-            IAM_CFG["acc_user_mng"]["user_name"])
+            self.user_name)
         self.log.info(
             "Step 2: Creating user with existing name %s",
-            IAM_CFG["acc_user_mng"]["user_name"])
+            self.user_name)
         try:
             IAM_OBJ.create_user(
-                IAM_CFG["acc_user_mng"]["user_name"])
+                self.user_name)
         except CTException as error:
             assert_in(
-                IAM_CFG["test_2423"]["err_message"],
+                "EntityAlreadyExists",
                 error.message,
                 error.message)
         self.log.info(
             "Step 2: Could not create user with existing name %s",
-            IAM_CFG["acc_user_mng"]["user_name"])
+            self.user_name)
         self.log.info(
             "ENDED: creating user with existing name With AWS IAM client")
 
@@ -459,12 +443,11 @@ class TestAwsIam:
     @CTFailOn(error_handler)
     def test_update_accesskey_2427(self):
         """Update Accesskey of a user with active mode using aws iam."""
-        test_2427_cfg = IAM_CFG["test_2427"]
         self.log.info(
             "STARTED: Update Accesskey of a user with active mode using aws iam")
         self.log.info(
             "Step 1: Creating a new account with name %s",
-            IAM_CFG["acc_user_mng"]["account_name"])
+            self.account_name)
         resp = self.create_account()
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
@@ -474,7 +457,7 @@ class TestAwsIam:
             secret_key=secret_key)
         self.log.info(
             "Step 1: Created a new account with name %s",
-            IAM_CFG["acc_user_mng"]["account_name"])
+            self.account_name)
         self.log.info(
             "Step 2: Verifying that new account is created successfully")
         assert_true(resp[0], resp[1])
@@ -482,30 +465,30 @@ class TestAwsIam:
             "Step 2: Verified that new account is created successfully")
         self.log.info(
             "Step 3: Creating a user with name %s",
-            self.cfg["user_name"])
-        resp = iam_obj.create_user(self.cfg["user_name"])
+            self.user_name)
+        resp = iam_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 3: Created a user with name %s",
-            self.cfg["user_name"])
+            self.user_name)
         self.log.info("Step 4: Creating access key for the user")
-        resp = iam_obj.create_access_key(self.cfg["user_name"])
+        resp = iam_obj.create_access_key(self.user_name)
         access_key_to_update = resp[1]["AccessKey"]["AccessKeyId"]
         assert_true(resp[0], resp[1])
         self.log.info("Step 5: Updating access key of user")
         resp = iam_obj.update_access_key(
             access_key_to_update,
-            test_2427_cfg["status"],
-            self.cfg["user_name"])
+            "Active",
+            self.user_name)
         assert_true(resp[0], resp[1])
         self.log.info("Step 5: Updated access key of user")
         self.log.info("Step 6: Verifying that access key of user is updated")
-        resp = iam_obj.list_access_keys(self.cfg["user_name"])
+        resp = iam_obj.list_access_keys(self.user_name)
         assert_true(resp[0], resp[1])
         new_access_key = resp[1]["AccessKeyMetadata"][0]["AccessKeyId"]
         status = resp[1]["AccessKeyMetadata"][0]["Status"]
         assert_equal(new_access_key, access_key_to_update, resp[1])
-        assert_equal(status, test_2427_cfg["status"], resp[1])
+        assert_equal(status, "Active", resp[1])
         self.log.info(
             "Step 6: Verified that access key of user is updated successfully")
         self.log.info(
@@ -516,12 +499,11 @@ class TestAwsIam:
     @CTFailOn(error_handler)
     def test_update_accesskey_userinactive_2428(self):
         """Update accesskey of a user with inactive mode using aws iam."""
-        test_2428_cfg = IAM_CFG["test_2428"]
         self.log.info(
             "STARTED: update accesskey of a user with inactive mode using aws iam")
         self.log.info(
             "Step 1: Creating a new account with name %s",
-            IAM_CFG["acc_user_mng"]["account_name"])
+            self.account_name)
         resp = self.create_account()
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
@@ -531,7 +513,7 @@ class TestAwsIam:
             secret_key=secret_key)
         self.log.info(
             "Step 1: Created a new account with name %s",
-            IAM_CFG["acc_user_mng"]["account_name"])
+            self.account_name)
         self.log.info(
             "Step 2: Verifying that new account is created successfully")
         assert_true(resp[0], resp[1])
@@ -539,30 +521,30 @@ class TestAwsIam:
             "Step 2: Verified that new account is created successfully")
         self.log.info(
             "Step 3: Creating a user with name %s",
-            self.cfg["user_name"])
-        resp = iam_obj.create_user(self.cfg["user_name"])
+            self.user_name)
+        resp = iam_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 3: Created a user with name %s",
-            self.cfg["user_name"])
+            self.user_name)
         self.log.info("Step 4: Creating access key for the user")
-        resp = iam_obj.create_access_key(self.cfg["user_name"])
+        resp = iam_obj.create_access_key(self.user_name)
         access_key_to_update = resp[1]["AccessKey"]["AccessKeyId"]
         assert_true(resp[0], resp[1])
         self.log.info("Step 5: Updating access key of user")
         resp = iam_obj.update_access_key(
             access_key_to_update,
-            test_2428_cfg["status"],
-            self.cfg["user_name"])
+            "Inactive",
+            self.user_name)
         assert_true(resp[0], resp[1])
         self.log.info("Step 5: Updated access key of user")
         self.log.info("Step 6: Verifying that access key of user is updated")
-        resp = iam_obj.list_access_keys(self.cfg["user_name"])
+        resp = iam_obj.list_access_keys(self.user_name)
         assert_true(resp[0], resp[1])
         new_access_key = resp[1]["AccessKeyMetadata"][0]["AccessKeyId"]
         status = resp[1]["AccessKeyMetadata"][0]["Status"]
         assert_equal(new_access_key, access_key_to_update, resp[1])
-        assert_equal(status, test_2428_cfg["status"], resp[1])
+        assert_equal(status, "Inactive", resp[1])
         self.log.info(
             "Step 6: Verified that access key of user is updated successfully")
         self.log.info(
@@ -584,26 +566,25 @@ class TestAwsIam:
         new_iam_obj = iam_test_lib.IamTestLib(
             access_key=access_key,
             secret_key=secret_key)
-        test_2429_cfg = IAM_CFG["test_2429"]
-        resp = new_iam_obj.create_user(test_2429_cfg["user_name"])
+        resp = new_iam_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
         resp = new_iam_obj.create_user_login_profile(
-            test_2429_cfg["user_name"],
-            test_2429_cfg["password"],
-            test_2429_cfg["password_reset"])
+            self.user_name,
+            IAM_CFG["password"],
+            True)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 1: Created new account and new user and new profile in it")
-        for _ in range(IAM_CFG["test_2429"]["accesskey_count"]):
+        for _ in range(2):
             self.log.info(
                 "Step 2: Creating access key for user %s",
-                test_2429_cfg["user_name"])
-            resp = new_iam_obj.create_access_key(test_2429_cfg["user_name"])
+                self.user_name)
+            resp = new_iam_obj.create_access_key(self.user_name)
             assert_true(resp[0], resp[1])
             self.log.info(
                 "Step 2: Created access key for user %s",
-                test_2429_cfg["user_name"])
-            resp = new_iam_obj.list_access_keys(test_2429_cfg["user_name"])
+                self.user_name)
+            resp = new_iam_obj.list_access_keys(self.user_name)
             assert_true(resp[0], resp[1])
         self.log.info(
             "ENDED: create access key with existing user name using aws iam")

@@ -10,10 +10,10 @@ Variables  ${EXECDIR}/resources/common/element_locators.py
 Check S3 Account Exists
     [Documentation]  This keyword is used to check S3 account exists.
     [Arguments]  ${S3_account_table}    ${expected_s3_account}
-    wait until element is visible  ${SELECT_FROM_PAGINATION_XPATH}  timeout=10
+    wait until element is visible  ${SELECT_FROM_PAGINATION_XPATH}  timeout=30
     click element  ${SELECT_FROM_PAGINATION_XPATH}
     click element  ${SELECT_ALL_RECORDS_FROM_PAGINATION_XPATH}
-    wait until element is visible  ${${S3_account_table}}  timeout=10
+    wait until element is visible  ${${S3_account_table}}  timeout=30
     ${s3_account_table_data}=   Read Table Data   ${${S3_account_table}}
     List Should Contain Value      ${s3_account_table_data}     ${expected_s3_account}
 
@@ -24,7 +24,7 @@ Action on the table
 
 Click on add new s3 account button
     [Documentation]  This keyword is to click on the add new s3 account.
-    wait until element is visible  ${ADD_S3_ACCOUNT_BUTTON_ID}  timeout=10
+    wait until element is visible  ${ADD_S3_ACCOUNT_BUTTON_ID}  timeout=30
     Execute JavaScript    window.scrollTo(200,0)
     click button  ${ADD_S3_ACCOUNT_BUTTON_ID}
 
@@ -35,7 +35,7 @@ Click on create new S3 account button
 Click on download and close button
     [Documentation]  This keyword is to click on the download and close button on s3 account.
     sleep  3s
-    wait until element is visible  ${DOWNLOAD_AND_CLOSE_BUTTON_ID}  timeout=10
+    wait until element is visible  ${DOWNLOAD_AND_CLOSE_BUTTON_ID}  timeout=30
     click element  ${DOWNLOAD_AND_CLOSE_BUTTON_ID}
 
 Click on cancel button on s3 account
@@ -44,22 +44,26 @@ Click on cancel button on s3 account
 
 Click on edit s3 account option
     [Documentation]  This keyword is to click on edit s3 account option.
-    wait until element is visible  ${EDIT_S3_ACCOUNT_OPTION_ID}  timeout=10
+    wait until element is visible  ${EDIT_S3_ACCOUNT_OPTION_ID}  timeout=60
     click element  ${EDIT_S3_ACCOUNT_OPTION_ID}
 
 Click on update s3 account button
     [Documentation]  This keyword is to click on edit s3 account option.
-    wait until element is visible  ${UPDATE_S3_ACCOUNT_BTN_ID}  timeout=10
+    wait until element is visible  ${UPDATE_S3_ACCOUNT_BTN_ID}  timeout=60
     click element  ${UPDATE_S3_ACCOUNT_BTN_ID}
 
 Click on add new access key button
     [Documentation]  This keyword is to click on the add new access key button.
-    wait until element is visible  ${ADD_S3_ACCOUNT_ACCESS_KEY_ID}  timeout=10
-    click button  ${ADD_S3_ACCOUNT_ACCESS_KEY_ID}
+    Reload Page
+    wait for page or element to load
+    wait until element is visible  ${ADD_S3_ACCOUNT_ACCESS_KEY_ID}  timeout=30
+    click element  ${ADD_S3_ACCOUNT_ACCESS_KEY_ID}
 
 Click on download and close button for new access key
     [Documentation]  This keyword is to click on edit s3 account option.
-    wait until element is visible  ${ACCESS_KEY_DOWNLOAD_AND_CLOSE_BTN_ID}  timeout=10
+    Reload Page
+    wait for page or element to load
+    wait until element is visible  ${ACCESS_KEY_DOWNLOAD_AND_CLOSE_BTN_ID}  timeout=30
     click element  ${ACCESS_KEY_DOWNLOAD_AND_CLOSE_BTN_ID}
 
 Add data to create new S3 account
@@ -95,7 +99,7 @@ Delete S3 Account
     ...  Enter Username And Password    ${s3_account_name}  ${password}
     ...  AND
     ...  Click Sigin Button
-    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    Navigate To Page    S3_ACCOUNTS_TAB_ID
     Validate CSM Login Success  ${s3_account_name}
     log to console and report   deleting S3 account ${s3_account_name}
     wait until element is visible  ${DELETE_S3_ACCOUNT_ID}  timeout=30
@@ -114,7 +118,7 @@ Check create S3 account button disabled
 
 Check s3 account form is opened
     [Documentation]  This keyword checks whether s3 account form is opened or not.
-    wait until element is visible  ${S3_ACCOUNT_NAME_FIELD_ID}  timeout=10
+    wait until element is visible  ${S3_ACCOUNT_NAME_FIELD_ID}  timeout=30
 
 check cancel s3 account form feature
     [Documentation]  This keyword checks whether s3 account form is getting closed by clicking on the cancel button.
@@ -126,8 +130,8 @@ check cancel s3 account form feature
 Verify edit s3 account form getting opened
     [Documentation]  This keyword to verify that edit s3 account form is getting opened.
     Click on edit s3 account option
-    wait until element is visible  ${UPDATE_S3_ACCOUNT_PASSWORD_FIELD_ID}  timeout=10
-    wait until element is visible  ${UPDATE_S3_ACCOUNT_CONFIRM_PASSWORD_FIELD_ID}  timeout=10
+    wait until element is visible  ${UPDATE_S3_ACCOUNT_PASSWORD_FIELD_ID}  timeout=30
+    wait until element is visible  ${UPDATE_S3_ACCOUNT_CONFIRM_PASSWORD_FIELD_ID}  timeout=30
 
 
 Verify update s3 account button remains disabled
@@ -170,11 +174,12 @@ Reset Password S3 Account
     ${new_password} =  Generate New Password
     input text  ${S3_ACCOUNT_RESET_NEW_PASSWORD_ID}  ${new_password}
     input text  ${S3_ACCOUNT_RESET_CONFIRM_PASSWORD_ID}  ${new_password}
-    Click Button  ${S3_ACCOUNT_RESET_PAWWSORD_BUTTON_ID}
+    wait until element is visible  ${S3_ACCOUNT_RESET_PAWWSORD_BUTTON_ID}  timeout=60
+    Click element  ${S3_ACCOUNT_RESET_PAWWSORD_BUTTON_ID}
     Sleep  5s
     wait until element is visible  ${S3_ACCOUNT_SUCCESS_MESSAGE_ID}  timeout=60
     Sleep  2s
-    Click Button  ${S3_ACCOUNT_SUCCESS_MESSAGE_BUTTON_ID}
+    Click element  ${S3_ACCOUNT_SUCCESS_MESSAGE_BUTTON_ID}
 
 Verify update s3 account accepts only valid password
     [Documentation]  This keyword is validate password fields on update s3 account form along with error messages.
@@ -204,13 +209,13 @@ Verify unique username for csm and s3 account
     Navigate To Page  MANAGE_MENU_ID
     Create New CSM User  ${user_name}  ${new_password}  monitor
     Click On Confirm Button
-    sleep  2s
-    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    sleep  2s
+    wait for page or element to load
+    Navigate To Page   S3_ACCOUNTS_TAB_ID
+    wait for page or element to load
     Click on add new s3 account button
     Add data to create new S3 account  ${user_name}  ${email}  ${new_password}  ${new_password}
     Click on create new S3 account button
-    sleep  2s
+    wait for page or element to load
     Verify message  S3_ACCOUNT_NAME_SAME_AS_CSM_USER_ID  ${S3_ACCOUNT_NAME_SAME_AS_CSM_USER_MESSAGE}
     click element  ${CLOSE_ALERT_BOX_FOR_DUPLICATE_USER_ID}
     Reload Page
@@ -219,13 +224,13 @@ Verify unique username for csm and s3 account
 verify the table headers for s3 account access key
     [Documentation]  This keyword verify the table headers for s3 account access key table.
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    sleep  2s
+    wait for page or element to load
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
-    sleep  3s
+    wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
-    sleep  2s
-    Re-login  ${S3_account_name}  ${password}  MANAGE_MENU_ID
-    wait until element is visible  ${ACCESS_KEY_TABLE_HEADERS_XPATH}  timeout=10
+    wait for page or element to load
+    Re-login  ${S3_account_name}  ${password}  S3_ACCOUNTS_TAB_ID
+    wait until element is visible  ${ACCESS_KEY_TABLE_HEADERS_XPATH}  timeout=30
     ${access_key_table_headers} =  Read Table Data   ${ACCESS_KEY_TABLE_HEADERS_XPATH}
     log to console and report  ${access_key_table_headers}
     ${expected_headers} =	Create List  ${S3_TABLE_HEADER_ACCOUNTNAME}  ${S3_TABLE_HEADER_SECRET_KEY}  ${S3_TABLE_HEADER_ACTION}
@@ -236,12 +241,12 @@ verify the table headers for s3 account access key
 generate new access key
      [Documentation]  This keyword generate new access key.
      Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-     sleep  2s
+     wait for page or element to load
      ${S3_account_name}  ${email}  ${password} =  Create S3 account
-     sleep  3s
+     wait for page or element to load
      Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
-     sleep  2s
-     Re-login  ${S3_account_name}  ${password}  MANAGE_MENU_ID
+     wait for page or element to load
+     Re-login  ${S3_account_name}  ${password}  S3_ACCOUNTS_TAB_ID
      Click on add new access key button
      [Return]  ${S3_account_name}  ${password}
 
@@ -255,7 +260,7 @@ verify new access key is getting added
 
 get new access key
      [Documentation]  This keyword get the newly generated access key.
-     wait until element is visible  ${NEW_ACCESS_KEY_TABLE_XPATH}  timeout=10
+     wait until element is visible  ${NEW_ACCESS_KEY_TABLE_XPATH}  timeout=30
      ${new_access_key_data} =  Read Table Data   ${NEW_ACCESS_KEY_TABLE_XPATH}
      log to console and report  ${new_access_key_data}
      ${new_access_key} =  Get From List  ${new_access_key_data}  1
@@ -264,7 +269,7 @@ get new access key
 
 get access key table data
      [Documentation]  This keyword get data from access key table
-     wait until element is visible  ${ACCESS_KEY_TABLE_DATA_XPATH}  timeout=10
+     wait until element is visible  ${ACCESS_KEY_TABLE_DATA_XPATH}  timeout=30
      ${access_key_table_data} =  Read Table Data   ${ACCESS_KEY_TABLE_DATA_XPATH}
      log to console and report  ${access_key_table_data}
      [Return]   ${access_key_table_data}
@@ -307,12 +312,12 @@ verify that add access key button disables after limit exceeded
 verify update s3 account has only password options
     [Documentation]  This keyword verify that update s3 account has only password options for update.
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    sleep  2s
+    wait for page or element to load
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
-    sleep  3s
+    wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
-    sleep  2s
-    Re-login  ${S3_account_name}  ${password}  MANAGE_MENU_ID
+    wait for page or element to load
+    Re-login  ${S3_account_name}  ${password}  S3_ACCOUNTS_TAB_ID
     Click on edit s3 account option
     ${password_fields} =  Get Element Count  ${EDIT_S3_ACCOUNT_OPTIONS_XPATH}
     Should Be True  ${password_fields} == 2
@@ -360,7 +365,7 @@ Verify S3 urls are displayed on the S3accounts tab
 Verify that s3 url is displyed access key popup
     [Documentation]  Verify s3 url is displyed access key popup
     Click on add new access key button
-    wait until element is visible  ${NEW_ACCESS_KEY_TABLE_XPATH}  timeout=10
+    wait until element is visible  ${NEW_ACCESS_KEY_TABLE_XPATH}  timeout=30
     ${new_access_key_data} =  Read Table Data   ${NEW_ACCESS_KEY_TABLE_XPATH}
     List Should Contain Value  ${new_access_key_data}  S3 URL
     Click on download and close button for new access key
@@ -378,10 +383,10 @@ Verify that s3 url on s3 account creation
     Add data to create new S3 account  ${S3_account}  ${email}  ${s3_account_password}  ${s3_account_password}
     Click on create new S3 account button
     wait for page or element to load  2s
-    wait until element is visible  ${S3_ACCOUNT_CREATION_POP_UP_TABLE_XPATH}  timeout=10
+    wait until element is visible  ${S3_ACCOUNT_CREATION_POP_UP_TABLE_XPATH}  timeout=30
     ${new_s3_account_data} =  Read Table Data   ${S3_ACCOUNT_CREATION_POP_UP_TABLE_XPATH}
     Should Contain  ${new_s3_account_data}  S3 URL:
     Click on download and close button
-    Re-login  ${S3_account}  ${s3_account_password}  MANAGE_MENU_ID
+    Re-login  ${S3_account}  ${s3_account_password}  S3_ACCOUNTS_TAB_ID
     wait for page or element to load
     Delete S3 Account  ${S3_account}  ${s3_account_password}  True

@@ -25,6 +25,7 @@ import json
 import logging
 import pytest
 
+from commons.params import TEST_DATA_FOLDER
 from commons import commands
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
@@ -47,15 +48,18 @@ class TestAwsCliS3Api:
         cls.log = logging.getLogger(__name__)
         cls.log.info("STARTED : Setup operations at test suit level")
         resp = system_utils.path_exists(S3_CFG["aws_config_path"])
-        assert_utils.assert_true(resp, "config path not exists: {}".format(S3_CFG[
-                                                                               "aws_config_path"]))
+        assert_utils.assert_true(
+            resp, "config path not exists: {}".format(
+                S3_CFG["aws_config_path"]))
         cls.bucket_prefix = "blackboxs3bkt"
         cls.object_name = "blackboxs3obj"
         cls.file_name = "blackboxs3file"
         cls.downloaded_file = "get_blackboxs3obj"
-        cls.test_dir_path = os.path.join(os.getcwd(), "testdata", "TestAwsCliS3Api")
+        cls.test_dir_path = os.path.join(
+            os.getcwd(), TEST_DATA_FOLDER, "TestAwsCliS3Api")
         cls.file_path = os.path.join(cls.test_dir_path, cls.file_name)
-        cls.downloaded_file_path = os.path.join(cls.test_dir_path, cls.downloaded_file)
+        cls.downloaded_file_path = os.path.join(
+            cls.test_dir_path, cls.downloaded_file)
         if not os.path.exists(cls.test_dir_path):
             os.makedirs(cls.test_dir_path)
             cls.log.info("Created path: %s", cls.test_dir_path)
@@ -105,7 +109,9 @@ class TestAwsCliS3Api:
         if system_utils.path_exists(cls.test_dir_path):
             system_utils.remove_dirs(cls.test_dir_path)
         cls.log.info("Cleanup test directory: %s", cls.test_dir_path)
-        buckets = [bkt for bkt in S3T_OBJ.bucket_list()[1] if bkt.startswith(cls.bucket_prefix)]
+        buckets = [
+            bkt for bkt in S3T_OBJ.bucket_list()[1] if bkt.startswith(
+                cls.bucket_prefix)]
         cls.log.info(buckets)
         if buckets:
             resp = S3T_OBJ.delete_multiple_buckets(buckets)
@@ -135,7 +141,8 @@ class TestAwsCliS3Api:
         resp = S3T_OBJ.create_bucket_awscli(
             bucket_name=" ".join(buckets))
         assert_utils.assert_false(resp[0], resp[1])
-        self.log.info("Failed to create multiple buckets at a time using awscli")
+        self.log.info(
+            "Failed to create multiple buckets at a time using awscli")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -400,7 +407,8 @@ class TestAwsCliS3Api:
         """update object of large size of(10gb) using aws cli."""
         file_size = 10000
         no_of_parts = 10
-        split_parts = system_utils.split_file(self.file_path, file_size, no_of_parts)
+        split_parts = system_utils.split_file(
+            self.file_path, file_size, no_of_parts)
         mpu_parts_list = [part["Output"] for part in split_parts]
         resp = S3T_OBJ.create_bucket_awscli(
             bucket_name=self.bucket_name)
@@ -412,7 +420,9 @@ class TestAwsCliS3Api:
         assert_utils.assert_true(resp[0], resp[1])
         mpu_upload_id = resp[1][resp[1].find(
             "{"):resp[1].rfind("}") + 1]
-        mpu_upload_id = json.loads(mpu_upload_id.replace("\\n", ""))["UploadId"]
+        mpu_upload_id = json.loads(
+            mpu_upload_id.replace(
+                "\\n", ""))["UploadId"]
         self.log.info("Listing Multipart uploads")
         resp = system_utils.run_local_cmd(
             cmd=commands.CMD_AWSCLI_LIST_MULTIPART_UPLOADS.format(
@@ -436,12 +446,7 @@ class TestAwsCliS3Api:
         assert_utils.assert_true(resp[0], resp[1])
         parts_str = resp[1][resp[1].find("{"):resp[1].rfind("}") + 1]
         self.log.info(parts_str.replace("\\n", "").replace("\\\\", "\\"))
-        list_parts = json.loads(
-            parts_str.replace(
-                "\\n",
-                "").replace(
-                "\\\\",
-                "\\"))["Parts"]
+        list_parts = json.loads(parts_str.replace("\\n", "").replace("\\\\", "\\"))["Parts"]
         part_data = dict()
         part_data["Parts"] = list()
         for i in range(no_of_parts):
@@ -465,7 +470,8 @@ class TestAwsCliS3Api:
         system_utils.remove_file(json_file)
         for part in mpu_parts_list:
             system_utils.remove_file(part)
-        self.log.info("Successfully completed multipart upload of a large file")
+        self.log.info(
+            "Successfully completed multipart upload of a large file")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -500,7 +506,10 @@ class TestAwsCliS3Api:
         assert_utils.assert_true(resp[0], resp[1])
         resp = system_utils.create_file(fpath=self.file_path, count=1)
         before_checksum = system_utils.calculate_checksum(self.file_path)
-        self.log.info("File path: %s, before_checksum: %s", self.file_path, before_checksum)
+        self.log.info(
+            "File path: %s, before_checksum: %s",
+            self.file_path,
+            before_checksum)
         self.log.info("Uploading objects to bucket using awscli")
         resp = system_utils.run_local_cmd(
             cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
@@ -519,11 +528,16 @@ class TestAwsCliS3Api:
                 self.object_name,
                 self.downloaded_file_path))
         assert_utils.assert_true(resp[0], resp[1])
-        download_checksum = system_utils.calculate_checksum(self.downloaded_file_path)
-        self.log.info("File path: %s, before_checksum: %s", self.downloaded_file_path, before_checksum)
+        download_checksum = system_utils.calculate_checksum(
+            self.downloaded_file_path)
+        self.log.info(
+            "File path: %s, before_checksum: %s",
+            self.downloaded_file_path,
+            before_checksum)
         assert_utils.assert_equals(
             before_checksum,
             download_checksum,
             f"Downloaded file is not same as uploaded: {before_checksum}, {download_checksum}")
         system_utils.remove_file(self.downloaded_file_path)
-        self.log.info("Successfully downloaded object from bucket using awscli")
+        self.log.info(
+            "Successfully downloaded object from bucket using awscli")
