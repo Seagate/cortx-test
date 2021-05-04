@@ -51,7 +51,6 @@ class TestS3Concurrency:
         """
 
         cls.log.info("STARTED: setup test suite operations.")
-        cls.random_id = str(time.time())
         cls.file_lst = []
         cls.s3cmd_cfg = {
             "common_cfg": {
@@ -90,7 +89,11 @@ class TestS3Concurrency:
         It will perform prerequisite test steps if any
         """
         self.log.info("STARTED: Setup operations")
+        self.random_id = int(time.time())
         self.bkt_name_prefix = "concurrency"
+        self.bucket_name = f"{self.bkt_name_prefix}-{self.random_id}"
+        self.bucket_url = "s3://{}".format(self.bucket_name)
+        self.obj_name = f"obj{self.random_id}.txt"
         self.resp_lst = MANAGER.list()
         self.log.info("File list: %s", self.file_lst)
         self.log.info("ENDED: Setup operations")
@@ -326,16 +329,13 @@ class TestS3Concurrency:
         """Existing Object is being overwritten by multiple client."""
         self.log.info(
             "STARTED: Existing Object is being overwritten by multiple client")
-        bkt_name = "{}-{}-{}".format(self.bkt_name_prefix, "2128", self.random_id)
-        bucket_url = "s3://{}".format(bkt_name)
-        obj_name = "{}{}{}".format("obj", "2128", ".txt")
-        file_path = os.path.join(self.test_dir_path, obj_name)
-        self.create_bkt_put_obj_list_obj(bkt_name, obj_name, file_path)
+        file_path = os.path.join(self.test_dir_path, self.obj_name)
+        self.create_bkt_put_obj_list_obj(self.bucket_name, self.obj_name, file_path)
         self.log.info("Step 2: Put the same object in the bucket with 2 "
                       "different s3 clients at the same time")
         helpers = (self.put_object_thread, self.put_object_s3cmd_thread)
-        helpers_args = ((bkt_name, obj_name, file_path, self.resp_lst),
-                        (bucket_url, file_path, self.resp_lst))
+        helpers_args = ((self.bucket_name, self.obj_name, file_path, self.resp_lst),
+                        (self.bucket_url, file_path, self.resp_lst))
         client_lst = list()
         for helper, h_arg in zip(helpers, helpers_args):
             self.log.debug("Calling %s with args %s", helper, h_arg)
@@ -364,17 +364,14 @@ class TestS3Concurrency:
         self.log.info(
             "STARTED: Object download is in progress on one s3 client "
             "and delete object triggered from other s3 client")
-        bkt_name = "{}-{}-{}".format(self.bkt_name_prefix, "2129", self.random_id)
-        bucket_url = "s3://{}".format(bkt_name)
-        obj_name = "{}{}{}".format("obj", "2129", ".txt")
-        file_path = os.path.join(self.test_dir_path, obj_name)
-        self.create_bkt_put_obj_list_obj(bkt_name, obj_name, file_path)
+        file_path = os.path.join(self.test_dir_path, self.obj_name)
+        self.create_bkt_put_obj_list_obj(self.bucket_name, self.obj_name, file_path)
         self.log.info(
             "Step 2: Initiate Get object from s3cmd client and now parallels trigger "
             "the object delete operation from awscli client")
         helpers = (self.get_obj_s3cmd_thread, self.del_object_thread)
-        helpers_args = ((bucket_url, obj_name, self.resp_lst),
-                        (bkt_name, obj_name, self.resp_lst))
+        helpers_args = ((self.bucket_url, self.obj_name, self.resp_lst),
+                        (self.bucket_name, self.obj_name, self.resp_lst))
         client_lst = list()
         for helper, h_arg in zip(helpers, helpers_args):
             self.log.debug("Calling %s with args %s", helper, h_arg)
@@ -403,17 +400,14 @@ class TestS3Concurrency:
         self.log.info(
             "STARTED: Object download in progress on one client and delete bucket "
             "(in which the object exits) is triggered from the other s3 client")
-        bkt_name = "{}-{}-{}".format(self.bkt_name_prefix, "2130", self.random_id)
-        bucket_url = "s3://{}".format(bkt_name)
-        obj_name = "{}{}{}".format("obj", "2130", ".txt")
-        file_path = os.path.join(self.test_dir_path, obj_name)
-        self.create_bkt_put_obj_list_obj(bkt_name, obj_name, file_path)
+        file_path = os.path.join(self.test_dir_path, self.obj_name)
+        self.create_bkt_put_obj_list_obj(self.bucket_name, self.obj_name, file_path)
         self.log.info(
             "Step 2: Initiate Get object from s3cmd client and in "
             "Parallel trigger the delete bucket operation from awscli client ")
         helpers = (self.put_object_s3cmd_thread, self.del_bucket_thread)
-        helpers_args = ((bucket_url, file_path, self.resp_lst),
-                        (bkt_name, self.resp_lst))
+        helpers_args = ((self.bucket_url, file_path, self.resp_lst),
+                        (self.bucket_name, self.resp_lst))
         client_lst = list()
         for helper, h_arg in zip(helpers, helpers_args):
             self.log.debug("Calling %s with args %s", helper, h_arg)
@@ -438,12 +432,10 @@ class TestS3Concurrency:
         """Parallel bucket creation of same name from 2 different clients."""
         self.log.info(
             "STARTED: Parallel bucket creation of same name from 2 different clients")
-        bkt_name = "{}-{}-{}".format(self.bkt_name_prefix, "2131", self.random_id)
-        bucket_url = "s3://{}".format(bkt_name)
         self.log.info("Step 1: Create bucket from s3cmd and aws parallely")
         helpers = (self.create_bucket_thread, self.create_bucket_s3cmd_thread)
-        helpers_args = ((bkt_name, self.resp_lst),
-                        (bucket_url, self.resp_lst))
+        helpers_args = ((self.bucket_name, self.resp_lst),
+                        (self.bucket_url, self.resp_lst))
         client_lst = list()
         for helper, h_arg in zip(helpers, helpers_args):
             self.log.debug("Calling %s with args %s", helper, h_arg)
@@ -466,16 +458,13 @@ class TestS3Concurrency:
         """Parallel deletion of same object from 2 different clients."""
         self.log.info(
             "STARTED: Parallel deletion of same object from 2 different clients")
-        bkt_name = "{}-{}-{}".format(self.bkt_name_prefix, "2132", self.random_id)
-        bucket_url = "s3://{}".format(bkt_name)
-        obj_name = "{}{}{}".format("obj", "2132", ".txt")
-        file_path = os.path.join(self.test_dir_path, obj_name)
-        self.create_bkt_put_obj_list_obj(bkt_name, obj_name, file_path)
+        file_path = os.path.join(self.test_dir_path, self.obj_name)
+        self.create_bkt_put_obj_list_obj(self.bucket_name, self.obj_name, file_path)
         self.log.info(
             "Step 2: Parallel initiate delete of same object from both s3cmd and awscli")
         helpers = (self.del_object_thread, self.del_object_s3cmd_thread)
-        helpers_args = ((bkt_name, obj_name, self.resp_lst),
-                        (bucket_url, obj_name, "del", self.resp_lst))
+        helpers_args = ((self.bucket_name, self.obj_name, self.resp_lst),
+                        (self.bucket_url, self.obj_name, "del", self.resp_lst))
         client_lst = list()
         for helper, h_arg in zip(helpers, helpers_args):
             self.log.debug("Calling %s with args %s", helper, h_arg)
@@ -505,21 +494,18 @@ class TestS3Concurrency:
         self.log.info(
             "STARTED: Upload an object to the bucket from one s3 client and in parallel"
             "try to delete the same bucket from other s3 client")
-        bkt_name = "{}-{}-{}".format(self.bkt_name_prefix, "test-2133", self.random_id)
-        bucket_url = "s3://{}".format(bkt_name)
-        obj_name = "{}{}{}".format("obj", "2133", ".txt")
-        file_path = os.path.join(self.test_dir_path, obj_name)
+        file_path = os.path.join(self.test_dir_path, self.obj_name)
         system_utils.create_file(file_path, 100)
-        self.log.info("Step 1: Creating a bucket: %s", bkt_name)
-        resp = S3T_OBJ.create_bucket(bkt_name)
+        self.log.info("Step 1: Creating a bucket: %s", self.bucket_name)
+        resp = S3T_OBJ.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 1: Bucket was created")
         self.log.info(
             "Step 2: Initiate Get object from s3cmd client and in "
             "Parallel trigger the delete bucket operation from awscli client ")
         helpers = (self.del_bucket_thread, self.put_object_s3cmd_thread)
-        helpers_args = ((bkt_name, self.resp_lst),
-                        (bucket_url, file_path, self.resp_lst))
+        helpers_args = ((self.bucket_name, self.resp_lst),
+                        (self.bucket_url, file_path, self.resp_lst))
         client_lst = list()
         for helper, h_arg in zip(helpers, helpers_args):
             self.log.debug("Calling %s with args %s", helper, h_arg)
@@ -543,16 +529,13 @@ class TestS3Concurrency:
         """Parallel deletion of bucket from 2 different clients."""
         self.log.info(
             "STARTED: Parallel deletion of bucket from 2 different clients")
-        bkt_name = "{}-{}-{}".format(self.bkt_name_prefix, "2134", self.random_id)
-        bucket_url = "s3://{}".format(bkt_name)
-        obj_name = "{}{}{}".format("obj", "2134", ".txt")
-        file_path = os.path.join(self.test_dir_path, obj_name)
-        self.create_bkt_put_obj_list_obj(bkt_name, obj_name, file_path, 100)
+        file_path = os.path.join(self.test_dir_path, self.obj_name)
+        self.create_bkt_put_obj_list_obj(self.bucket_name, self.obj_name, file_path, 100)
         self.log.info(
             "Step 2: Remove the bucket simultaneously using aws and s3cmd clients.")
         helpers = (self.del_bucket_thread, self.del_bucket_s3cmd_thread)
-        helpers_args = ((bkt_name, self.resp_lst),
-                        (bucket_url, "rb", self.resp_lst))
+        helpers_args = ((self.bucket_name, self.resp_lst),
+                        (self.bucket_url, "rb", self.resp_lst))
         client_lst = list()
         for helper, h_arg in zip(helpers, helpers_args):
             self.log.debug("Calling %s with args %s", helper, h_arg)
@@ -576,20 +559,17 @@ class TestS3Concurrency:
         """Put object through one s3 client and try deleting it from other s3 client."""
         self.log.info(
             "STARTED: Put object through one s3 client and try deleting it from other s3 client")
-        bkt_name = "{}-{}-{}".format(self.bkt_name_prefix, "2135", self.random_id)
-        bucket_url = "s3://{}".format(bkt_name)
-        obj_name = "{}{}{}".format("obj", "2135", ".txt")
-        file_path = os.path.join(self.test_dir_path, obj_name)
-        self.log.info("Step 1: Creating a bucket%s", bkt_name)
-        resp = S3T_OBJ.create_bucket(bkt_name)
+        file_path = os.path.join(self.test_dir_path, self.obj_name)
+        self.log.info("Step 1: Creating a bucket%s", self.bucket_name)
+        resp = S3T_OBJ.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 1: Bucket was created")
         self.log.info(
             "Step 2: Upload an object from s3cmd client and in parallely "
             "try removing the same object from awscli client ")
         helpers = (self.del_bucket_thread, self.put_object_s3cmd_thread)
-        helpers_args = ((bkt_name, self.resp_lst),
-                        (bucket_url, file_path, self.resp_lst))
+        helpers_args = ((self.bucket_name, self.resp_lst),
+                        (self.bucket_url, file_path, self.resp_lst))
         client_lst = list()
         for helper, h_arg in zip(helpers, helpers_args):
             self.log.debug("Calling %s with args %s", helper, h_arg)
@@ -619,20 +599,17 @@ class TestS3Concurrency:
         self.log.info(
             "STARTED: Download an already existing object from one client and in parallel "
             "overwrite the same object from other s3 client")
-        bkt_name = "{}-{}-{}".format(self.bkt_name_prefix, "2136", self.random_id)
-        bucket_url = "s3://{}".format(bkt_name)
-        obj_name = "{}{}{}".format("obj", "2136", ".txt")
-        file_path = os.path.join("/root", obj_name)
+        file_path = os.path.join("/root", self.obj_name)
         resp = S3T_OBJ.create_bucket_put_object(
-            bkt_name, obj_name, file_path, 10)
+            self.bucket_name, self.obj_name, file_path, 10)
         assert_utils.assert_true(resp[0], resp[1])
         self.file_lst.append(file_path)
         self.log.info(
             "Step 2: Initiate get object from awscli and simultaneously "
             "initiate upload object with same name from s3cmd in same bucket")
         helpers = (self.upload_object_thread, self.get_obj_s3cmd_thread)
-        helpers_args = ((bkt_name, obj_name, file_path, self.resp_lst),
-                        (bucket_url, obj_name, self.resp_lst))
+        helpers_args = ((self.bucket_name, self.obj_name, file_path, self.resp_lst),
+                        (self.bucket_url, self.obj_name, self.resp_lst))
         client_lst = list()
         for helper, h_arg in zip(helpers, helpers_args):
             self.log.debug("Calling %s with args %s", helper, h_arg)
@@ -641,7 +618,7 @@ class TestS3Concurrency:
                     target=helper, args=h_arg)
             )
         self.start_concurrent_clients(client_lst, self.resp_lst, all_true=True)
-        self.file_lst.append(os.path.join(self.test_dir_path, obj_name))
+        self.file_lst.append(os.path.join(self.test_dir_path, self.obj_name))
         self.log.info(
             "Step 2: Operations on both s3 clients when triggered in parallel "
             "got executed successfully without error")

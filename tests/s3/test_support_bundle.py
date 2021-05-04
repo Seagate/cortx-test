@@ -220,6 +220,21 @@ class TestSupportBundle:
                             return False, org_m0trace_lst
         return True, x_m0trace_lst
 
+    def extract_tar_file(self, tar_file_path, tar_dest_dir, **kwargs):
+        """
+        Function to extract tar file in remote node.
+
+        :param tar_file_path: Path to the tar file
+        :param tar_dest_dir: Destination path to for extracting tar
+        :keyword host: Host name or ip
+        :return:
+        """
+        host = kwargs.get("host", self.host_ip)
+        tar_cmd = "tar -xvf {} -C {}".format(tar_file_path, tar_dest_dir)
+        self.log.debug("Command to be executed %s on %s", tar_cmd, host)
+        return run_remote_cmd(
+            tar_cmd, host, self.uname, self.passwd)
+
     def pcs_start_stop_cluster(self, start_stop_cmd, status_cmd):
         """
         Function start and stops the cluster using the pcs command.
@@ -388,7 +403,7 @@ class TestSupportBundle:
             self.log.info(
                 "Step 2 and 3: Extracting the tar file and "
                 "validating the tar extraction")
-            self.node_obj.extract_tar_file(tar_file_path, tar_dest_dir)
+            self.extract_tar_file(tar_file_path, tar_dest_dir)
             dir_list = self.pysftp_obj.listdir(
                 os.path.join(extracted_dir, self.tmp_dir))
             abs_m0trace_path = os.path.join(
@@ -535,7 +550,7 @@ class TestSupportBundle:
         self.log.info("Step 3: Starting the service : %s", service_name)
         resp = S3H_OBJ.start_s3server_service(service_name, self.host_ip)
         assert_true(resp[0], resp[1])
-        self.log.info("Step 3: Started the service : %s", start_cmd)
+        self.log.info("Step 3: Started the service : %s", service_name)
         self.log.info(
             "ENDED: Test Support bundle collection when authserver service is down")
 
@@ -578,7 +593,7 @@ class TestSupportBundle:
         self.log.info("Step 3: Starting the service : %s", service_name)
         resp = S3H_OBJ.start_s3server_service(service_name, self.host_ip)
         assert_true(resp[0], resp[1])
-        self.log.info("Step 3: Started the service : %s", start_cmd)
+        self.log.info("Step 3: Started the service : %s", service_name)
         self.log.info(
             "ENDED: Test Support bundle collection when haproxy service is down")
 
@@ -684,10 +699,10 @@ class TestSupportBundle:
         self.log.info("Step 1: Support bundle tar created successfully")
         self.log.info(
             "Step 2: Validating the s3server logs in the support bundle tar")
-        self.node_obj.extract_tar_file(tar_file_path, tar_dest_dir)
+        self.extract_tar_file(tar_file_path, tar_dest_dir)
         extracted_file_path = "{}{}".format(
             tar_dest_dir, const.S3_LOG_PATH)
-        self.node_obj.extract_tar_file(tar_file_path, tar_dest_dir)
+        self.extract_tar_file(tar_file_path, tar_dest_dir)
         resp = self.get_s3_instaces_and_ism0exists(
             extracted_file_path, self.s3server_pre)
         assert_true(resp[0], resp[1])
@@ -724,10 +739,10 @@ class TestSupportBundle:
         assert_true(resp[0], resp[1])
         self.log.info("Step 1: Support bundle tar created successfully")
         self.log.info("Step 2: Validating the authserver logs in the tar")
-        self.node_obj.extract_tar_file(tar_file_path, tar_dest_dir)
+        self.extract_tar_file(tar_file_path, tar_dest_dir)
         auth_server_path = "{}{}".format(
             tar_dest_dir, const.AUTHSERVER_LOG_PATH)
-        resp = self.node_obj.is_file_size(auth_server_path)
+        resp = self.node_obj.get_remote_file_size(auth_server_path)
         assert_true(resp[0], resp[1])
         self.log.info("Step 2: Validated the authserver logs of the tar")
         self.log.info(
@@ -761,10 +776,10 @@ class TestSupportBundle:
         assert_true(resp[0], resp[1])
         self.log.info("Step 1: Support bundle tar created successfully")
         self.log.info("Step 2: Validating the haproxy logs in the tar")
-        self.node_obj.extract_tar_file(tar_file_path, tar_dest_dir)
+        self.extract_tar_file(tar_file_path, tar_dest_dir)
         auth_server_path = "{}{}".format(
             tar_dest_dir, const.HAPROXY_LOG_PATH)
-        resp = self.node_obj.is_file_size(auth_server_path)
+        resp = self.node_obj.get_remote_file_size(auth_server_path)
         assert_true(resp[0], resp[1])
         self.log.info("Step 2: Validated the haproxy logs of the tar")
         self.log.info(
@@ -877,7 +892,7 @@ class TestSupportBundle:
             dir_path, tar_dest_dir, bundle_tar_name)
         self.log.info(
             "Step 2: Extracting the support bundle %s", bundle_tar_name)
-        self.node_obj.extract_tar_file(tar_file_path, tar_dest_dir)
+        self.extract_tar_file(tar_file_path, tar_dest_dir)
         self.log.info(
             "Step 2: Extracted the support bundle %s", bundle_tar_name)
         self.log.info(
@@ -933,7 +948,7 @@ class TestSupportBundle:
             remote_path, tar_dest_dir, bundle_tar_name)
         self.log.info(
             "Step 2: Extracting the support bundle %s", bundle_tar_name)
-        self.node_obj.extract_tar_file(tar_file_path, tar_dest_dir)
+        self.extract_tar_file(tar_file_path, tar_dest_dir)
         self.log.info(
             "Step 2: Extracted the support bundle %s", bundle_tar_name)
         self.log.info(
@@ -957,7 +972,7 @@ class TestSupportBundle:
         self.log.info(
             "Step 4 : Verifying that system level stat files are not empty")
         for file in stat_files:
-            resp = self.node_obj.is_file_size(file)
+            resp = self.node_obj.get_remote_file_size(file)
             assert_true(resp[0], resp[1])
         self.log.info(
             "Step 4 : Verified that system level stat files are not empty")

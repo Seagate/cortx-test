@@ -26,18 +26,15 @@ from datetime import datetime
 
 import paramiko
 import pytest
-from config import CMN_CFG
+from config import CMN_CFG, S3_LDAP_TST_CFG
 from commons.constants import const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.utils.config_utils import get_config
-from commons.configmanager import get_config_wrapper
 from commons.utils.system_utils import run_remote_cmd, remove_file, path_exists
 from commons.utils.assert_utils import assert_false, assert_true
 from commons.utils.assert_utils import assert_in, assert_equal, assert_not_equal
 from libs.s3 import S3H_OBJ, LDAP_PASSWD
-
-LDAP_CFG = get_config_wrapper(fpath="config/s3/test_openldap.yaml")
 
 
 class TestOpenLdap:
@@ -55,7 +52,7 @@ class TestOpenLdap:
         cls.host = CMN_CFG["nodes"][0]["host"]
         cls.username = CMN_CFG["nodes"][0]['username']
         cls.pwd = CMN_CFG["nodes"][0]['password']
-        cls.cm_ldap_cfg = LDAP_CFG["common_vars"]
+        cls.cm_ldap_cfg = S3_LDAP_TST_CFG["common_vars"]
         cls.openldap_path = cls.cm_ldap_cfg["openldap_path"]
         cls.slapd_dir = cls.cm_ldap_cfg["slapd_dir"]
         cls.slapd_service = cls.cm_ldap_cfg["slapd_service"]
@@ -376,7 +373,7 @@ class TestOpenLdap:
         self.log.info(
             "STARTED: Test to verify and check backup of openldap "
             "configuration directory is done successfully")
-        cfg_5066 = LDAP_CFG["test_5066"]
+        cfg_5066 = S3_LDAP_TST_CFG["test_5066"]
         backup_cfg_file = self.cm_ldap_cfg["cfg_backup_file"]
         slapd_err = self.cm_ldap_cfg["slapd_err"]
         self.log.info(
@@ -420,7 +417,7 @@ class TestOpenLdap:
         self.log.info(
             "STARTED: Test to verify & check backup of "
             "openldap Data Directories is done successfully")
-        cfg_5067 = LDAP_CFG["test_5067"]
+        cfg_5067 = S3_LDAP_TST_CFG["test_5067"]
         ldap_data_path = self.cm_ldap_cfg["ldap_data_path"]
         ldap_data_dir = self.cm_ldap_cfg["ldap_data_dir"]
         backup_data_file = self.cm_ldap_cfg["data_backup_file"]
@@ -463,7 +460,7 @@ class TestOpenLdap:
         self.log.info(
             "STARTED: Test to verify and check restore of openldap configuration "
             "directory is done successfully")
-        cfg_5068 = LDAP_CFG["test_5068"]
+        cfg_5068 = S3_LDAP_TST_CFG["test_5068"]
         slapd_err = self.cm_ldap_cfg["slapd_err"]
         bkp_config_dir = f"{self.slapd_dir}.{self.datestamp}"
         self.log.info(
@@ -565,7 +562,7 @@ class TestOpenLdap:
             "STARTED: Test to verify and check if ownership and "
             "permissions of the configuration directory "
             "is changed to what it was previously before restore.")
-        cfg_5069 = LDAP_CFG["test_5069"]
+        cfg_5069 = S3_LDAP_TST_CFG["test_5069"]
         slapd_err = self.cm_ldap_cfg["slapd_err"]
         bkp_config_dir = f"{self.slapd_dir}.{self.datestamp}"
         self.log.info(
@@ -669,7 +666,7 @@ class TestOpenLdap:
         self.log.info(
             "STARTED: Test to verify and check restore of "
             "openldap data directories is done successfully")
-        cfg_5070 = LDAP_CFG["test_5070"]
+        cfg_5070 = S3_LDAP_TST_CFG["test_5070"]
         ldap_data_path = self.cm_ldap_cfg["ldap_data_path"]
         ldap_data_dir = self.cm_ldap_cfg["ldap_data_dir"]
         ldap_data_err = self.cm_ldap_cfg["ldap_data_err"]
@@ -768,7 +765,7 @@ class TestOpenLdap:
         self.log.info(
             "STARTED: Test to verify and check change if ownership "
             "and permissions of the data directory to what it was previously")
-        cfg_5071 = LDAP_CFG["test_5071"]
+        cfg_5071 = S3_LDAP_TST_CFG["test_5071"]
         ldap_data_path = self.cm_ldap_cfg["ldap_data_path"]
         ldap_data_dir = self.cm_ldap_cfg["ldap_data_dir"]
         ldap_data_err = self.cm_ldap_cfg["ldap_data_err"]
@@ -873,7 +870,7 @@ class TestOpenLdap:
         self.log.info(
             "STARTED: Test to verify and check if password reset is done successfully using "
             "enc_ldap_passwd_in_cfg.sh script.")
-        cfg_5073 = LDAP_CFG["test_5073"]
+        cfg_5073 = S3_LDAP_TST_CFG["test_5073"]
         new_passwd = cfg_5073["new_pwd"]
         self.log.info("Step 1: Changing openldap password")
         ch_pwd_cmd = self.cm_ldap_cfg["ch_pwd_cmd"].format(
@@ -907,7 +904,7 @@ class TestOpenLdap:
         self.log.info(
             "STARTED: Test to verify and check if authserver.properties"
             "file is updated post password change/reset")
-        cfg_5074 = LDAP_CFG["test_5074"]
+        cfg_5074 = S3_LDAP_TST_CFG["test_5074"]
         temp_file = self.cm_ldap_cfg["temp_path"]
         new_passwd = cfg_5074["new_pwd"]
         self.log.info("Step 1: Retrieving existing openldap password")
@@ -963,7 +960,7 @@ class TestOpenLdap:
         self.log.info(
             "STARTED: Test to verify and check if password allows special characters"
             "with uppercase/lowercase characters")
-        cfg_5075 = LDAP_CFG["test_5075"]
+        cfg_5075 = S3_LDAP_TST_CFG["test_5075"]
         temp_file = self.cm_ldap_cfg["temp_path"]
         new_passwd = cfg_5075["new_pwd"]
         self.log.info("Step 1: Retrieving existing openldap password")
@@ -1013,7 +1010,7 @@ class TestOpenLdap:
         self.log.info(
             "STARTED: Test to verify and check if blank ldap password is "
             "accepted during password reset/change.")
-        cfg_5076 = LDAP_CFG["test_5076"]
+        cfg_5076 = S3_LDAP_TST_CFG["test_5076"]
         new_passwd = cfg_5076["new_pwd"]
         self.log.info(
             "Step 1: Changing openldap password with blank password")
