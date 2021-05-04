@@ -42,7 +42,6 @@ from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
 from libs.s3.s3_acl_test_lib import S3AclTestLib
 from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench as s3bench_obj
-from config import S3_DATA_CMN_CONFIG
 
 
 class TestDataPathValidation:

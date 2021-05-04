@@ -34,7 +34,6 @@ from commons.helpers.health_helper import Health
 from scripts.s3_bench import s3bench as s3b_obj
 from libs.s3 import S3H_OBJ, CM_CFG, S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
-from config import S3_DATA_CMN_CONFIG
 
 
 class TestDosScalability:
