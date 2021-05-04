@@ -40,6 +40,8 @@ statistics_layout = Card(
         [
             html.P(html.U("Performance Metrics Statistics Summary"),
                    style={'text-align': 'center', 'font-size': '30px', 'font-weight': 'bold'}),
+            html.P("Note: Each data point represents PER CLUSTER data.",  style={
+                   "font-weight": "bold", 'font-size': '20px', 'color': '#D00000'}),
             html.P("S3 Bench", style=style_perf_captions),
             Markdown('''
             ___
