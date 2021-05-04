@@ -2,9 +2,7 @@ from dash.dependencies import Output, Input
 from dash.exceptions import PreventUpdate
 from common import app
 
-from Performance.global_functions import get_dict_from_array, get_distinct_keys, get_db_details, sort_builds_list, get_profiles
-from Performance.mongodb_api import find_documents
-
+from Performance.global_functions import get_dict_from_array, get_distinct_keys, sort_builds_list, get_profiles
 
 @app.callback(
     Output('perf_branch_dropdown', 'options'),
@@ -47,9 +45,10 @@ def update_builds_dropdown(release, branch):
     prevent_initial_call=True
 )
 def update_unique_profiles(release, branch, build):
+    options = None
     if release is None or branch is None or build is None:
         raise PreventUpdate
-        return {}
-
     else:
-        return get_profiles(release, branch, build)
+        options = get_profiles(release, branch, build)
+    
+    return options

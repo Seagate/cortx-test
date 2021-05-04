@@ -57,9 +57,9 @@ bucketops_headings = ['Create Buckets (BINIT)', 'Put Objects (PUT)', 'Listing Ob
 )
 def s3bench_callback(n_clicks, release, branch, build, profile):
     workload_heading = html.H5("Workload: 100 Sessions, 1 Bucket")
+    return_val = None
     if n_clicks is None or branch is None or build is None or profile is None:
         raise PreventUpdate
-        return [workload_heading, None]
 
     if n_clicks > 0:
         objects = fetch_configs_from_file(
@@ -81,10 +81,7 @@ def s3bench_callback(n_clicks, release, branch, build, profile):
             thread.join()
 
         df_s3bench = pd.DataFrame(data)
-        try:
-            df_s3bench = df_s3bench[['Object Sizes'] + objects]
-        except:
-            pass
+        df_s3bench = df_s3bench[['Object Sizes'] + objects]
         df_s3bench = df_s3bench.T
         df_s3bench.reset_index(inplace=True)
         df_s3bench.columns = df_s3bench.iloc[0]
@@ -106,9 +103,9 @@ def s3bench_callback(n_clicks, release, branch, build, profile):
             ],
             style_cell=dict_style_cell
         )
-        return [workload_heading, s3benchmark]
-    else:
-        return [workload_heading, None]
+        return_val = s3benchmark
+
+    return [workload_heading, return_val]
 
 
 @app.callback(
@@ -122,9 +119,9 @@ def s3bench_callback(n_clicks, release, branch, build, profile):
     prevent_initial_call=True
 )
 def metadata_callback(n_clicks, release, branch, build, profile):
+    return_val = None
     if n_clicks is None or branch is None or build is None or profile is None:
         raise PreventUpdate
-        return None
 
     if n_clicks > 0:
         objects = fetch_configs_from_file(
@@ -164,9 +161,9 @@ def metadata_callback(n_clicks, release, branch, build, profile):
             ],
             style_cell=dict_style_cell
         )
-        return metadata
-    else:
-        return None
+        return_val = metadata
+
+    return return_val
 
 
 def get_hsbench_workload_headings(html, sessions, buckets):
@@ -187,10 +184,7 @@ def benchmark_global(bench, workload, release, branch, build, table_ID, profile)
                              release, branch, build, Thread, data, profile)
 
     df_bench = pd.DataFrame(data)
-    try:
-        df_bench = df_bench[['Object Sizes'] + objects]
-    except KeyError:
-        pass
+    df_bench = df_bench[['Object Sizes'] + objects]
     df_bench = df_bench.T
     df_bench.reset_index(inplace=True)
     df_bench.columns = df_bench.iloc[0]
@@ -227,15 +221,14 @@ def hsbench1_callback(n_clicks, release, branch, build, profile):
         benchmark_config, 'Hsbench', 'workload-1')
     workload_heading = get_hsbench_workload_headings(
         html, workload['sessions'], workload['buckets'])
+    return_val = None
 
     if n_clicks is None or branch is None or build is None or profile is None:
         raise PreventUpdate
-        return [workload_heading, None]
+    elif n_clicks > 0:
+        return_val = benchmark_global('Hsbench', workload, release, branch, build, 'hsbench-table-1', profile)
 
-    if n_clicks > 0:
-        return [workload_heading, benchmark_global('Hsbench', workload, release, branch, build, 'hsbench-table-1', profile)]
-    else:
-        return [workload_heading, None]
+    return [workload_heading, return_val]
 
 
 @app.callback(
@@ -254,15 +247,14 @@ def hsbench2_callback(n_clicks, release, branch, build, profile):
         benchmark_config, 'Hsbench', 'workload-2')
     workload_heading = get_hsbench_workload_headings(
         html, workload['sessions'], workload['buckets'])
+    return_val = None
 
     if n_clicks is None or branch is None or build is None or profile is None:
         raise PreventUpdate
-        return [workload_heading, None]
+    elif n_clicks > 0:
+        return_val = benchmark_global('Hsbench', workload, release, branch, build, 'hsbench-table-2', profile)
 
-    if n_clicks > 0:
-        return [workload_heading, benchmark_global('Hsbench', workload, release, branch, build, 'hsbench-table-2', profile)]
-    else:
-        return [workload_heading, None]
+    return [workload_heading, return_val]
 
 
 @app.callback(
@@ -281,15 +273,14 @@ def hsbench3_callback(n_clicks, release, branch, build, profile):
         benchmark_config, 'Hsbench', 'workload-3')
     workload_heading = get_hsbench_workload_headings(
         html, workload['sessions'], workload['buckets'])
+    return_val = None
 
     if n_clicks is None or branch is None or build is None or profile is None:
         raise PreventUpdate
-        return [workload_heading, None]
+    elif n_clicks > 0:
+        return_val = benchmark_global('Hsbench', workload, release, branch, build, 'hsbench-table-3', profile)
 
-    if n_clicks > 0:
-        return [workload_heading, benchmark_global('Hsbench', workload, release, branch, build, 'hsbench-table-3', profile)]
-    else:
-        return [workload_heading, None]
+    return [workload_heading, return_val]
 
 
 @app.callback(
@@ -308,15 +299,14 @@ def cosbench1_callback(n_clicks, release, branch, build, profile):
         benchmark_config, 'Cosbench', 'workload-1')
     workload_heading = get_cosbench_workload_headings(
         html, workload['sessions'], workload['buckets'])
+    return_val = None
 
     if n_clicks is None or branch is None or build is None or profile is None:
         raise PreventUpdate
-        return [workload_heading, None]
+    elif n_clicks > 0:
+        return_val = benchmark_global('Cosbench', workload, release, branch, build, 'cosbench-table-1', profile)
 
-    if n_clicks > 0:
-        return [workload_heading, benchmark_global('Cosbench', workload, release, branch, build, 'cosbench-table-1', profile)]
-    else:
-        return [workload_heading, None]
+    return [workload_heading, return_val]
 
 
 @app.callback(
@@ -335,15 +325,14 @@ def cosbench2_callback(n_clicks, release, branch, build, profile):
         benchmark_config, 'Cosbench', 'workload-2')
     workload_heading = get_cosbench_workload_headings(
         html, workload['sessions'], workload['buckets'])
+    return_val = None
 
     if n_clicks is None or branch is None or build is None or profile is None:
         raise PreventUpdate
-        return [workload_heading, None]
+    elif n_clicks > 0:
+        return_val = benchmark_global('Cosbench', workload, release, branch, build, 'cosbench-table-2', profile)
 
-    if n_clicks > 0:
-        return [workload_heading, benchmark_global('Cosbench', workload, release, branch, build, 'cosbench-table-2', profile)]
-    else:
-        return [workload_heading, None]
+    return [workload_heading, return_val]
 
 
 @app.callback(
@@ -362,15 +351,14 @@ def cosbench3_callback(n_clicks, release, branch, build, profile):
         benchmark_config, 'Cosbench', 'workload-3')
     workload_heading = get_cosbench_workload_headings(
         html, workload['sessions'], workload['buckets'])
+    return_val = None
 
     if n_clicks is None or branch is None or build is None or profile is None:
         raise PreventUpdate
-        return [workload_heading, None]
+    elif n_clicks > 0:
+        return_val = benchmark_global('Cosbench', workload, release, branch, build, 'cosbench-table-3', profile)
 
-    if n_clicks > 0:
-        return [workload_heading, benchmark_global('Cosbench', workload, release, branch, build, 'cosbench-table-3', profile)]
-    else:
-        return [workload_heading, None]
+    return [workload_heading, return_val]
 
 
 def get_bucketops_everything(workload, release, branch, build, object_size, table_ID, profile):
@@ -435,15 +423,14 @@ def bucketops1_callback(n_clicks, release, branch, build, operation, profile):
         benchmark_config, 'Hsbench', 'workload-1')
     workload_heading = get_hsbench_workload_headings(
         html, workload['sessions'], workload['buckets'])
+    return_val = None
 
     if n_clicks is None or branch is None or build is None or operation is None or profile is None:
         raise PreventUpdate
-        return [workload_heading, None]
-
-    if n_clicks > 0:
-        return [workload_heading, get_bucketops_everything(workload, release, branch, build, operation, 'bucketops-1', profile)]
-    else:
-        return [workload_heading, None]
+    elif n_clicks > 0:
+        return_val = get_bucketops_everything(workload, release, branch, build, operation, 'bucketops-1', profile)
+    
+    return [workload_heading, return_val]
 
 
 @app.callback(
@@ -463,15 +450,14 @@ def bucketops2_callback(n_clicks, release, branch, build, operation, profile):
         benchmark_config, 'Hsbench', 'workload-2')
     workload_heading = get_hsbench_workload_headings(
         html, workload['sessions'], workload['buckets'])
+    return_val = None
 
     if n_clicks is None or branch is None or build is None or operation is None or profile is None:
         raise PreventUpdate
-        return [workload_heading, None]
+    elif n_clicks > 0:
+        return_val = get_bucketops_everything(workload, release, branch, build, operation, 'bucketops-2', profile)
 
-    if n_clicks > 0:
-        return [workload_heading, get_bucketops_everything(workload, release, branch, build, operation, 'bucketops-2', profile)]
-    else:
-        return [workload_heading, None]
+    return [workload_heading, return_val]
 
 
 @app.callback(
@@ -491,12 +477,11 @@ def bucketops3_callback(n_clicks, release, branch, build, operation, profile):
         benchmark_config, 'Hsbench', 'workload-3')
     workload_heading = get_hsbench_workload_headings(
         html, workload['sessions'], workload['buckets'])
+    return_val = None
 
     if n_clicks is None or branch is None or build is None or operation is None or profile is None:
         raise PreventUpdate
-        return [workload_heading, None]
+    elif n_clicks > 0:
+        return_val = get_bucketops_everything(workload, release, branch, build, operation, 'bucketops-3', profile)
 
-    if n_clicks > 0:
-        return [workload_heading, get_bucketops_everything(workload, release, branch, build, operation, 'bucketops-3', profile)]
-    else:
-        return [workload_heading, None]
+    return [workload_heading, return_val]

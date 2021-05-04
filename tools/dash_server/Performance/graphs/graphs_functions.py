@@ -66,15 +66,7 @@ def get_operations(bench, operation_opt):
             return [operation_opt]
 
 
-def return_compliment(xfilter):
-    if xfilter == 'Build':
-        return 'Object_Size'
-    else:
-        return 'Build'
-
-
 def get_xaxis(xfilter, release, branch, option, bench):
-    # Version_Branch_Build_Iteration_NodeCount_ClientCount_PercentFull_Benchmark_ObjSize_NoOfBuckets_Operation_Sessions
     if xfilter == 'Object_Size':
         pkeys = get_distinct_keys(release, 'PKey', {
             'Branch': branch, xfilter: option, 'Name': bench
@@ -135,7 +127,7 @@ def get_placeholder(components):
         placeholder = placeholder + ", " + components[-1]
     if components[1] != 'ITR1':
         placeholder = placeholder + ", " + components[1][3:]
-    
+
     return placeholder
 
 def sort_builds(data_dict):
@@ -168,7 +160,6 @@ def remove_nones(data_dict):
 
 
 def get_data_for_graphs(xfilter, release, branch, option, profile, bench, configs, operation, metric, param):
-    compliment = return_compliment(xfilter)
     uri, db_name, db_collection = get_db_details(release)
     xaxis_list = get_xaxis(xfilter, release, branch, option, bench)
     yaxis_list = []

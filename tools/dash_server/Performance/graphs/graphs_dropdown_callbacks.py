@@ -91,13 +91,14 @@ def update_configs_first(xfilter, release, branch, option1, bench):
     Input('filter_dropdown', 'value'),
 )
 def update_profile_style_first(xfilter):
+    return_val = {'display': 'none'}
     if xfilter is None:
         raise PreventUpdate
-        return {'display': 'none'}
-    elif xfilter == 'Build':
-        return dict_style_profiles
-    else:
-        return {'display': 'none'}
+
+    if xfilter == 'Build':
+        return_val = dict_style_profiles
+
+    return return_val
 
 
 @app.callback(
@@ -108,11 +109,13 @@ def update_profile_style_first(xfilter):
     prevent_initial_call=True
 )
 def update_profiles_first(release, branch, build):
+    return_val = None
     if release is None or branch is None or build is None:
         raise PreventUpdate
-        return None
     else:
-        return get_profiles(release, branch, build)
+        return_val = get_profiles(release, branch, build)
+
+    return return_val
 
 
 # second dropdown
@@ -179,14 +182,14 @@ def update_second_builds_dropdown(xfilter, release, branch, flag):
     Input('filter_dropdown', 'value'),
     Input('compare_flag', 'value'),
 )
-def update_profile_style_first(xfilter, flag):
+def update_profile_style_second(xfilter, flag):
+    return_val = {'display': 'none'}
     if xfilter is None or flag is None:
         raise PreventUpdate
-        return {'display': 'none'}
     elif xfilter == 'Build' and flag:
-        return dict_style_profiles
-    else:
-        return {'display': 'none'}
+        return_val = dict_style_profiles
+
+    return return_val
 
 
 @app.callback(
@@ -198,10 +201,10 @@ def update_profile_style_first(xfilter, flag):
     prevent_initial_call=True
 )
 def update_profiles_second(release, branch, build, flag):
+    return_val = None
     if release is None or branch is None or build is None or flag is None:
         raise PreventUpdate
-        return None
     elif flag:
-        return get_profiles(release, branch, build)
-    else:
-        return None
+        return_val = get_profiles(release, branch, build)
+
+    return return_val

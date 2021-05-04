@@ -169,7 +169,6 @@ def sort_object_sizes_list(obj_sizes):
 
 
 def get_profiles(release, branch, build):
-    uri, db_name, db_collection = get_db_details(release)
     pkeys = get_distinct_keys(release, 'PKey', {
         'Branch': branch, 'Build': build
     })
