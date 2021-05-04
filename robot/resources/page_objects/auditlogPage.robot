@@ -35,6 +35,7 @@ Select Audit Log Details
     Click Element  ${component}
     Wait Until Element Is Visible  ${AUDIT_LOG_TIME_PERIOD_DROP_DOWN_ID}  timeout=30
     Click Element  ${AUDIT_LOG_TIME_PERIOD_DROP_DOWN_ID}
+    Wait Until Element Is Visible  ${duration}
     Click Element  ${duration}
 
 View Audit Log
@@ -62,3 +63,15 @@ Verify Audit Log Downloaded
     ${files}=  List Files In Directory  ${path}  ${audit_type}*.gz
     Log To Console And Report  ${files}
     Should Not Be Empty  ${files}
+
+Verify CSM Audit Log In Tabular format
+    [Documentation]  Test keyword is to verify that csm audit log details has shown in tabular format
+    FOR    ${value}    IN    @{Audit_log_days}
+      View Audit Log  CSM  ${value}
+      wait for page or element to load  #  Audit log need time to load
+      Page Should Contain Element  ${CSM_AUDIT_LOG_TABLE_XPATH}
+      ${csm_audit_log_table_data}=  Read Table Data  ${CSM_AUDIT_LOG_TABLE_XPATH}
+      Should Not Be Empty  ${csm_audit_log_table_data}
+      Navigate To Audit Log Section
+    END
+	

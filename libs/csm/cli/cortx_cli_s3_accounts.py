@@ -55,6 +55,7 @@ class CortxCliS3AccountOperations(CortxCli):
         :return: True/False and Response returned by CORTX CLI
         """
         confirm_password = kwargs.get("confirm_password", password)
+        sleep_time = kwargs.get("sleep_time", 10)
         command = " ".join(
             [commands.CMD_CREATE_S3ACC, account_name, account_email])
         LOGGER.info("Creating S3 account with name %s", account_name)
@@ -65,16 +66,17 @@ class CortxCliS3AccountOperations(CortxCli):
             if "Confirm Password:" in response:
                 response = self.execute_cli_commands(cmd=confirm_password)[1]
                 if "[Y/n]" in response:
-                    response = self.execute_cli_commands(cmd="Y", sleep_time=8)[1]
+                    response = self.execute_cli_commands(cmd="Y", sleep_time=sleep_time)[1]
                     if account_name in response:
                         LOGGER.info("Response returned: \n%s", response)
                         return True, response
 
         return False, response
 
-    def show_s3account_cortx_cli(self, output_format: str = None) -> tuple:
+    def show_s3account_cortx_cli(self, output_format: str = None, sleep_time: int = 10) -> tuple:
         """
         This function will list all S3 accounts using CORTX CLI
+        :param sleep_time: wait time for response
         :param str output_format: Format for account list (optional) (default value: table)
                        (possible values: table/xml/json)
         :return: responsed returned by cortxcli
@@ -84,7 +86,7 @@ class CortxCliS3AccountOperations(CortxCli):
             show_s3accounts_cmd = "{} -f {}".format(
                 show_s3accounts_cmd, output_format)
         LOGGER.info("Listing s3 accounts with cmd: %s", show_s3accounts_cmd)
-        response = self.execute_cli_commands(cmd=show_s3accounts_cmd)
+        response = self.execute_cli_commands(cmd=show_s3accounts_cmd, sleep_time=sleep_time)
         LOGGER.info("Response returned: \n%s", response)
 
         return response
