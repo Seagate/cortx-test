@@ -50,5 +50,5 @@ def update_unique_profiles(release, branch, build):
         raise PreventUpdate
     else:
         options = get_profiles(release, branch, build)
-    
+
     return options

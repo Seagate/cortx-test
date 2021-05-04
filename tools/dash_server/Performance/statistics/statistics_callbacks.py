@@ -429,7 +429,7 @@ def bucketops1_callback(n_clicks, release, branch, build, operation, profile):
         raise PreventUpdate
     elif n_clicks > 0:
         return_val = get_bucketops_everything(workload, release, branch, build, operation, 'bucketops-1', profile)
-    
+
     return [workload_heading, return_val]
 
 
