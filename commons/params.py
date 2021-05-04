@@ -34,7 +34,6 @@ TEST_DATA_FOLDER = 'TestData'
 COMMON_CONFIG = os.path.join(CONFIG_DIR, 'common_config.yaml')
 S3_CONFIG = os.path.join(CONFIG_DIR, 's3', 's3_config.yaml')
 S3_USER_ACC_MGMT_CONFIG_PATH = os.path.join(CONFIG_DIR, 's3', 's3_user_acc_management_test_config.yaml')
-S3_DATA_CMN_CONFIG_PATH = os.path.join(CONFIG_DIR, 's3', 'test_s3_data_common_config.yaml')
 S3_OBJ_TEST_CONFIG = os.path.join(CONFIG_DIR, 's3', 's3_object_test.yaml')
 S3_BKT_TEST_CONFIG = os.path.join(CONFIG_DIR, "s3", "s3_bucket_test.yaml")
 RAS_CONFIG_PATH = "config/ras_config.yaml"
