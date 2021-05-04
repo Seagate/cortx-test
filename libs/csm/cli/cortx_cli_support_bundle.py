@@ -296,14 +296,12 @@ class CortxCliSupportBundle(CortxCli):
                 LOGGER.info(f"Generating support bundle on node {each} ")
                 # todo: confirm from CSM team,if its part of cortxcli or
                 #  individual command needs to be executed on each of the node
-                if 1:
-                    command = " ".join(
-                        [CMD_GENERATE_SUPPORT_BUNDLE, comment])
-                    output = self.execute_cli_commands(cmd=command, time_out=900, sleep_time=9)[1]
-                else:
-                    cmd = ""
-                    _, response = run_remote_cmd(cmd, self.host, self.uname, self.passwd,
-                                                      read_lines=True)
+                command = " ".join([CMD_GENERATE_SUPPORT_BUNDLE, comment])
+                output = self.execute_cli_commands(cmd=command, time_out=900, sleep_time=9)[1]
+                #else:
+                #Run remote command
+                #cmd = ""
+                #output, _ = run_remote_cmd(cmd, self.host, self.uname, self.passwd,read_lines=True)
 
                 if "error" in output.lower() or "exception" in output.lower() or "failed" in output.lower():
                     return_status = return_status and False
