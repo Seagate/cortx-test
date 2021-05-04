@@ -26,7 +26,6 @@ from commons.constants import const
 from commons.commands import CMD_S3BENCH
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
-from commons.utils.config_utils import read_yaml
 from commons.utils import system_utils
 from commons.utils.system_utils import remove_file
 from commons.utils.system_utils import run_remote_cmd
@@ -40,15 +39,9 @@ from commons.helpers.health_helper import Health
 from libs.s3 import CM_CFG
 from libs.s3 import S3H_OBJ, S3_CFG
 from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
-from libs.s3.iam_test_lib import IamTestLib
 from libs.s3.s3_acl_test_lib import S3AclTestLib
 from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench as s3bench_obj
-
-IAM_TEST_OBJ = IamTestLib()
-ACL_OBJ = S3AclTestLib()
-S3_OBJ = S3TestLib()
-DATA_PATH_CFG = read_yaml("config/s3/test_data_path_validate.yaml")[1]
 
 
 class TestDataPathValidation:
@@ -67,18 +60,21 @@ class TestDataPathValidation:
         cls.log.info("STARTED: Setup operations")
         cls.ldap_user = LDAP_USERNAME
         cls.ldap_pwd = LDAP_PASSWD
-        cls.account_name = "{}{}".format(
-            DATA_PATH_CFG["data_path"]["acc_name_prefix"],
-            str(time.time()))
-        cls.email_id = "{}{}".format(
-            cls.account_name,
-            DATA_PATH_CFG["data_path"]["email_suffix"])
+        cls.bkt_name_prefix = "dpv"
+        cls.bkt_permission = "private"
+        cls.cmd_msg = "core."
+        cls.acc_name_prefix = "dpv-acc"
+        cls.email_suffix = "@seagate.com"
+        cls.account_name = "{}{}".format(cls.acc_name_prefix, str(time.time()))
+        cls.email_id = "{}{}".format(cls.account_name, cls.email_suffix)
         cls.nodes = CM_CFG["nodes"]
         cls.host = CM_CFG["nodes"][0]["host"]
         cls.uname = CM_CFG["nodes"][0]["username"]
         cls.passwd = CM_CFG["nodes"][0]["password"]
         cls.health_obj = Health(hostname=cls.host, username=cls.uname,
                                 password=cls.passwd)
+        cls.acl_obj = S3AclTestLib()
+        cls.s3_obj = S3TestLib()
         cls.test_file = "bkt-dp.txt"
         cls.test_dir_path = os.path.join(
             os.getcwd(), "testdata", "TestDataPathValidation")
@@ -114,6 +110,8 @@ class TestDataPathValidation:
         """
         self.log.info("STARTED: Setup operations")
         self.random_id = str(time.time())
+        self.bucket_name = "dpv-bkt{}".format(self.random_id)
+        self.object_name = self.obj_prefix = "dpv-obj{}".format(self.random_id)
         self.log_file = []
         if not system_utils.path_exists(self.test_dir_path):
             system_utils.cleanup_dir(self.test_dir_path)
@@ -128,15 +126,15 @@ class TestDataPathValidation:
         test execution such as S3 buckets and the objects present into that bucket.
         """
         self.log.info("STARTED: Teardown operations")
-        resp = S3_OBJ.bucket_list()
+        resp = self.s3_obj.bucket_list()
         pref_list = [
             each_bucket for each_bucket in resp[1] if each_bucket.startswith(
-                DATA_PATH_CFG["data_path"]["bkt_name_prefix"])]
+                self.bkt_name_prefix)]
         for bucket in pref_list:
-            ACL_OBJ.put_bucket_acl(
-                bucket, acl=DATA_PATH_CFG["data_path"]["bkt_permission"])
+            self.acl_obj.put_bucket_acl(
+                bucket, acl=self.bkt_permission)
         if pref_list:
-            resp = S3_OBJ.delete_multiple_buckets(pref_list)
+            resp = self.s3_obj.delete_multiple_buckets(pref_list)
             assert_true(resp[0], resp[1])
         self.log.info("Deleting files created during execution")
         for file in self.log_file:
@@ -147,55 +145,49 @@ class TestDataPathValidation:
         self.log.info("Created files deleted")
         self.log.info("ENDED: Teardown operations")
 
-    def create_bucket(self, test_conf):
+    def create_bucket(self, bkt_name):
         """
         create a new bucket
-        :param test_conf: test config
+        :param bkt_name: bucket ame
         :type test_conf: dict
         :return: bucket_name
         """
         self.log.info("Step 1: Prepare fresh setup with EES/EOS stack")
-        bucket_name = "{}{}".format(test_conf["bucket_name"],
-                                    str(int(time.time())))
-        self.log.info("Step 2: Creating a bucket with name : %s", bucket_name)
-        res = S3_OBJ.create_bucket(bucket_name)
+        self.log.info("Step 2: Creating a bucket with name : %s", bkt_name)
+        res = self.s3_obj.create_bucket(bkt_name)
         assert_true(res[0], res)
-        assert_in(bucket_name, res[1], res)
+        assert_in(bkt_name, res[1], res)
 
-        return bucket_name
+        return bkt_name
 
-    def put_object(self, test_conf, bucket_name, bs=1):
+    def put_object(self, object_name, bucket_name, obj_size, bs="1M"):
         """
         upload a given size object in already created bucket
-        :param test_conf: test config
-        :type test_conf: dict
-        :param bs: byte size
-        :type bs: int
+        :param obj_size: object size
+        :param object_name: NAme of object
         :param bucket_name: bucket in which object need to be uploaded
         :type bucket_name: str
         :return: None
         """
-        self.log.info(
-            "Step 3:Upload object of size : %d", test_conf["obj_size"])
+        self.log.info("Upload object of size : %s", obj_size)
         resp = system_utils.create_file(
             fpath=self.file_path,
-            count=bs,
-            b_size=test_conf["obj_size"])
+            count=obj_size,
+            b_size=bs)
         self.log.info(resp)
         assert_true(resp[0], resp[1])
-        res = S3_OBJ.put_object(bucket_name,
-                                test_conf["object_name"],
+        res = self.s3_obj.put_object(bucket_name,
+                                object_name,
                                 self.file_path)
         assert_true(res[0], res[1])
 
-    def run_s3bench(self, test_conf, bucket):
+    def run_s3bench(self, obj_prefix, bucket):
         """
         concurrent users operations using S3bench
         yum install go
         go get github.com/igneous-systems/s3bench
         git clone https://github.com/igneous-systems/s3bench at /root/go/src/
-        :param test_conf: test config
-        :type test_conf: dict
+        :param obj_prefix: object prefix
         :param bucket: already created bucket name
         :type bucket: str
         :return: None
@@ -207,10 +199,10 @@ class TestDataPathValidation:
             secret_key,
             bucket,
             S3_CFG["s3_url"],
-            DATA_PATH_CFG["data_path"]["clients"],
-            DATA_PATH_CFG["data_path"]["samples"],
-            test_conf["obj_prefix"],
-            DATA_PATH_CFG["data_path"]["obj_size"])
+            100,
+            100,
+            obj_prefix,
+            "4Kb")
         resp = run_local_cmd(cmd)
         self.log.debug(resp)
         assert_true(resp[0], resp[1])
@@ -223,227 +215,157 @@ class TestDataPathValidation:
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8735')
-    @CTFailOn(error_handler)
-    def test_1696(self):
+    @pytest.mark.parametrize("obj_size", [1])
+    # @CTFailOn(error_handler)
+    def test_1696(self, obj_size):
         """Validate Data-Path on fresh system with 1 byte object size."""
         self.log.info(
-            "STARTED: Validate Data-Path on fresh system with 1 byte object size")
-        test_conf = DATA_PATH_CFG["test_1696"]
-        bucket = self.create_bucket(test_conf)
-        self.put_object(test_conf, bucket)
+            "STARTED: Validate Data-Path on fresh system with %s byte object "
+            "size", obj_size)
+        bucket = self.create_bucket(self.bucket_name)
+        self.put_object(object_name=self.object_name, bucket_name=bucket,
+                        obj_size=obj_size)
         self.log.info(
-            "ENDED: Validate Data-Path on fresh system with 1 byte object size")
+            "ENDED: Validate Data-Path on fresh system with %s byte object "
+            "size", obj_size)
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8736')
-    @CTFailOn(error_handler)
-    def test_1697(self):
+    @pytest.mark.parametrize("obj_size", [1000])
+    # @CTFailOn(error_handler)
+    def test_1697(self, obj_size):
         """Validate Data-Path on fresh system with 1 KB object size."""
-        self.log.info(
-            "STARTED: Validate Data-Path on fresh system with 1 KB object size")
-        test_conf = DATA_PATH_CFG["test_1697"]
-        bucket = self.create_bucket(test_conf)
-        self.put_object(test_conf, bucket)
-        self.log.info(
-            "ENDED: Validate Data-Path on fresh system with 1 KB object size")
+        self.test_1696(obj_size)
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8737')
-    @CTFailOn(error_handler)
-    def test_1698(self):
+    @pytest.mark.parametrize("obj_size", [1])
+    # @CTFailOn(error_handler)
+    def test_1698(self, obj_size):
         """Validate Data-Path on fresh system with 1 MB object size."""
-        self.log.info(
-            "STARTED: Validate Data-Path on fresh system with 1 MB object size")
-        test_conf = DATA_PATH_CFG["test_1698"]
-        bucket = self.create_bucket(test_conf)
-        self.put_object(test_conf, bucket, test_conf["size_mb"])
-        self.log.info(
-            "ENDED: Validate Data-Path on fresh system with 1 MB object size")
+        self.test_1696(obj_size)
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8738')
-    @CTFailOn(error_handler)
-    def test_1699(self):
+    @pytest.mark.parametrize("obj_size", [10])
+    # @CTFailOn(error_handler)
+    def test_1699(self, obj_size):
         """Validate Data-Path on fresh system with 10 MB object size."""
-        self.log.info(
-            "STARTED: Validate Data-Path on fresh system with 10 MB object size")
-        test_conf = DATA_PATH_CFG["test_1699"]
-        bucket = self.create_bucket(test_conf)
-        self.put_object(test_conf, bucket, test_conf["size_mb"])
-        self.log.info(
-            "ENDED: Validate Data-Path on fresh system with 10 MB object size")
+        self.test_1696(obj_size)
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8739')
-    @CTFailOn(error_handler)
-    def test_1700(self):
+    @pytest.mark.parametrize("obj_size", [100])
+    # @CTFailOn(error_handler)
+    def test_1700(self, obj_size):
         """Validate Data-Path on fresh system with 100 MB object size."""
-        self.log.info(
-            "STARTED: Validate Data-Path on fresh system with 100 MB object size")
-        test_conf = DATA_PATH_CFG["test_1700"]
-        bucket = self.create_bucket(test_conf)
-        self.put_object(test_conf, bucket, test_conf["size_mb"])
-        self.log.info(
-            "ENDED: Validate Data-Path on fresh system with 100 MB object size")
+        self.test_1696(obj_size)
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8740')
-    @CTFailOn(error_handler)
-    def test_1701(self):
+    @pytest.mark.parametrize("obj_size", [1000])
+    # @CTFailOn(error_handler)
+    def test_1701(self, obj_size):
         """Validate Data-Path on fresh system with 1 GB object size."""
-        self.log.info(
-            "STARTED: Validate Data-Path on fresh system with 1 GB object size")
-        test_conf = DATA_PATH_CFG["test_1701"]
-        bucket = self.create_bucket(test_conf)
-        self.put_object(test_conf, bucket, test_conf["size_mb"])
-        self.log.info(
-            "ENDED: Validate Data-Path on fresh system with 1 GB object size")
+        self.test_1696(obj_size)
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8741')
-    @CTFailOn(error_handler)
-    def test_1702(self):
+    @pytest.mark.parametrize("obj_size", [10000])
+    # @CTFailOn(error_handler)
+    def test_1702(self, obj_size):
         """Validate Data-Path on fresh system with 10 GB object size."""
-        self.log.info(
-            "STARTED: Validate Data-Path on fresh system with 10 GB object size")
-        test_conf = DATA_PATH_CFG["test_1702"]
-        bucket = self.create_bucket(test_conf)
-        self.put_object(test_conf, bucket, test_conf["size_mb"])
-        self.log.info(
-            "ENDED: Validate Data-Path on fresh system with 10 GB object size")
+        self.test_1696(obj_size)
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8742')
-    @CTFailOn(error_handler)
-    def test_1703(self):
+    @pytest.mark.parametrize("obj_size", [1])
+    # @CTFailOn(error_handler)
+    def test_1703(self, obj_size):
         """Validate Data-Path on loaded system with 1 byte object size."""
-        self.log.info(
-            "STARTED: Validate Data-Path on loaded system with 1 byte object size")
-        test_conf = DATA_PATH_CFG["test_1703"]
-        bucket = self.create_bucket(test_conf)
-        self.run_s3bench(test_conf, bucket)
-        self.put_object(test_conf, bucket)
-        self.log.info(
-            "ENDED: Validate Data-Path on loaded system with 1 byte object size")
+        self.test_1696(obj_size)
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8743')
-    @CTFailOn(error_handler)
-    def test_1704(self):
+    @pytest.mark.parametrize("obj_size", [1])
+    # @CTFailOn(error_handler)
+    def test_1704(self, obj_size):
         """Validate Data-Path on loaded system with 1 KB object size."""
-        self.log.info(
-            "STARTED: Validate Data-Path on loaded system with 1 KB object size")
-        test_conf = DATA_PATH_CFG["test_1704"]
-        bucket = self.create_bucket(test_conf)
-        self.run_s3bench(test_conf, bucket)
-        self.put_object(test_conf, bucket)
-        self.log.info(
-            "ENDED: Validate Data-Path on loaded system with 1 KB object size")
+        self.test_1696(obj_size)
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8744')
-    @CTFailOn(error_handler)
-    def test_1705(self):
+    @pytest.mark.parametrize("obj_size", [1])
+    # @CTFailOn(error_handler)
+    def test_1705(self, obj_size):
         """Validate Data-Path on loaded system with 1 MB object size."""
-        self.log.info(
-            "STARTED: Validate Data-Path on loaded system with 1 MB object size")
-        test_conf = DATA_PATH_CFG["test_1705"]
-        bucket = self.create_bucket(test_conf)
-        self.run_s3bench(test_conf, bucket)
-        self.put_object(test_conf, bucket, test_conf["size_mb"])
-        self.log.info(
-            "ENDED: Validate Data-Path on loaded system with 1 MB object size")
+        self.test_1696(obj_size)
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8745')
-    @CTFailOn(error_handler)
-    def test_1706(self):
+    @pytest.mark.parametrize("obj_size", [10])
+    # @CTFailOn(error_handler)
+    def test_1706(self, obj_size):
         """Validate Data-Path on loaded system with 10 MB object size."""
-        self.log.info(
-            "STARTED: Validate Data-Path on loaded system with 10 MB object size")
-        test_conf = DATA_PATH_CFG["test_1706"]
-        bucket = self.create_bucket(test_conf)
-        self.run_s3bench(test_conf, bucket)
-        self.put_object(test_conf, bucket, test_conf["size_mb"])
-        self.log.info(
-            "ENDED: Validate Data-Path on loaded system with 10 MB object size")
+        self.test_1696(obj_size)
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8746')
-    @CTFailOn(error_handler)
-    def test_1707(self):
+    @pytest.mark.parametrize("obj_size", [100])
+    # @CTFailOn(error_handler)
+    def test_1707(self, obj_size):
         """Validate Data-Path on loaded system with 100 MB object size."""
-        self.log.info(
-            "STARTED: Validate Data-Path on loaded system with 100 MB object size")
-        test_conf = DATA_PATH_CFG["test_1707"]
-        bucket = self.create_bucket(test_conf)
-        self.run_s3bench(test_conf, bucket)
-        self.put_object(test_conf, bucket, test_conf["size_mb"])
-        self.log.info(
-            "ENDED: Validate Data-Path on loaded system with 100 MB object size")
+        self.test_1696(obj_size)
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8729')
-    @CTFailOn(error_handler)
-    def test_1708(self):
+    @pytest.mark.parametrize("obj_size", [1000])
+    # @CTFailOn(error_handler)
+    def test_1708(self, obj_size):
         """Validate Data-Path on loaded system with 1 GB object size."""
-        self.log.info(
-            "STARTED: Validate Data-Path on loaded system with 1 GB object size")
-        test_conf = DATA_PATH_CFG["test_1708"]
-        bucket = self.create_bucket(test_conf)
-        self.run_s3bench(test_conf, bucket)
-        self.put_object(test_conf, bucket, test_conf["size_mb"])
-        self.log.info(
-            "ENDED: Validate Data-Path on loaded system with 1 GB object size")
+        self.test_1696(obj_size)
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8730')
-    @CTFailOn(error_handler)
-    def test_1709(self):
+    @pytest.mark.parametrize("obj_size", [10000])
+    # @CTFailOn(error_handler)
+    def test_1709(self, obj_size):
         """Validate Data-Path on loaded system with 10 GB object size."""
-        self.log.info(
-            "STARTED: Validate Data-Path on loaded system with 10 GB object size")
-        test_conf = DATA_PATH_CFG["test_1709"]
-        bucket = self.create_bucket(test_conf)
-        self.run_s3bench(test_conf, bucket)
-        self.put_object(test_conf, bucket, test_conf["size_mb"])
-        self.log.info(
-            "ENDED: Validate Data-Path on loaded system with 10 GB object size")
+        self.test_1696(obj_size)
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8731')
-    @CTFailOn(error_handler)
-    def test_1745(self):
+    @pytest.mark.parametrize("requests", [[100, 500, 1200, 1500]])
+    @pytest.mark.parametrize("obj_size", [8388608])
+    # @CTFailOn(error_handler)
+    def test_1745(self, obj_size, requests):
         """Test gradual increase of concurrent client sessions with single client on single bucket."""
         self.log.info(
             "STARTED: Test gradual increase of concurrent client sessions"
             " with single client on single bucket")
-        test_cfg = DATA_PATH_CFG["test_1745"]
-        bucket_name = "{}{}".format(
-            test_cfg["bucket_name"], time.time())
-        self.log.info("Step 1: Create bucket with name %s.", bucket_name)
-        resp = S3_OBJ.create_bucket(bucket_name)
+        self.log.info("Step 1: Create bucket with name %s.", self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         assert_true(resp[0], resp[1])
-        resp = S3_OBJ.bucket_list()
-        assert_in(bucket_name, resp[1], resp[1])
+        resp = self.s3_obj.bucket_list()
+        assert_in(self.bucket_name, resp[1], resp[1])
         self.log.info("Step 1: Successfully created bucket.")
         self.log.info(
             "Step 2: Start concurrent I/O with 100 client and "
             "gradually increase request.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
-        for request_load in test_cfg["requests"]:
+        for request_load in requests:
             self.log.info("I/O with %s request", request_load)
             res = s3bench_obj.s3bench(
                 access_key=access_key,
                 secret_key=secret_key,
-                bucket=bucket_name,
+                bucket=self.bucket_name,
                 end_point=S3_CFG["s3_url"],
-                num_clients=test_cfg["num_clients"],
+                num_clients=1,
                 num_sample=request_load,
-                obj_name_pref=test_cfg["obj_name"],
-                obj_size=test_cfg["s3bench_obj_size"],
-                skip_cleanup=test_cfg["skip_cleanup"],
-                verbose=test_cfg["verbose"])
+                obj_name_pref=self.object_name,
+                obj_size=obj_size,
+                skip_cleanup=True,
+                verbose=True)
             self.log.debug(res)
             self.log_file.append(res[1])
         self.log.info(
@@ -452,7 +374,7 @@ class TestDataPathValidation:
         self.log.info("Step 3: checking system stability")
         res = self.health_obj.is_motr_online()
         assert_true(res, f"Failed to check is_motr_online: resp: {res}")
-        cmd_msg = DATA_PATH_CFG["data_path"]["cmd_msg"]
+        cmd_msg = self.cmd_msg
         for cmd in const.CRASH_COMMANDS[0]:
             for nid in range(len(self.nodes)):
                 res_cmd = run_remote_cmd(cmd,
@@ -467,38 +389,37 @@ class TestDataPathValidation:
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8732')
-    @CTFailOn(error_handler)
-    def test_1746(self):
+    @pytest.mark.parametrize("num_clients", [[10, 10, 12, 20]])
+    @pytest.mark.parametrize("requests", [[10, 50, 100, 500]])
+    @pytest.mark.parametrize("obj_size", [8388608])
+    # @CTFailOn(error_handler)
+    def test_1746(self, obj_size, num_clients, requests):
         """Test gradual increase of concurrent client sessions with multiple clients on single buckets."""
         self.log.info(
             "STARTED: Test gradual increase of concurrent client sessions"
             " with multiple clients on single buckets")
-        test_cfg = DATA_PATH_CFG["test_1746"]
-        bucket_name = "{}{}".format(
-            test_cfg["bucket_name"], time.time())
-        self.log.info("Step 1: Create bucket with name %s.", bucket_name)
-        resp = S3_OBJ.create_bucket(bucket_name)
+        self.log.info("Step 1: Create bucket with name %s.", self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         assert_true(resp[0], resp[1])
-        resp = S3_OBJ.bucket_list()
-        assert_in(bucket_name, resp[1], resp[1])
+        resp = self.s3_obj.bucket_list()
+        assert_in(self.bucket_name, resp[1], resp[1])
         self.log.info("Step 1: Successfully created bucket.")
         self.log.info(
             "Step 2: Start concurrent I/O with multiple client increasing "
             "request on single bucket.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
-        for client, request_load in zip(
-                test_cfg["num_clients"], test_cfg["requests"]):
+        for client, request_load in zip(num_clients, requests):
             res = s3bench_obj.s3bench(
                 access_key=access_key,
                 secret_key=secret_key,
-                bucket=bucket_name,
+                bucket=self.bucket_name,
                 end_point=S3_CFG["s3_url"],
                 num_clients=client,
                 num_sample=request_load,
-                obj_name_pref=test_cfg["obj_name"],
-                obj_size=test_cfg["s3bench_obj_size"],
-                skip_cleanup=test_cfg["skip_cleanup"],
-                verbose=test_cfg["verbose"])
+                obj_name_pref=self.object_name,
+                obj_size=obj_size,
+                skip_cleanup=True,
+                verbose=True)
             self.log.debug(res)
             self.log_file.append(res[1])
         self.log.info(
@@ -507,7 +428,7 @@ class TestDataPathValidation:
         self.log.info("Step 3: checking system stability")
         res = self.health_obj.is_motr_online()
         assert_true(res, f"Failed to check is_motr_online: resp: {res}")
-        cmd_msg = DATA_PATH_CFG["data_path"]["cmd_msg"]
+        cmd_msg = self.cmd_msg
         self.log.info("Crash commands: %s", const.CRASH_COMMANDS[0])
         for cmd in const.CRASH_COMMANDS[0]:
             self.log.info(cmd)
@@ -524,30 +445,30 @@ class TestDataPathValidation:
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8733')
-    @CTFailOn(error_handler)
-    def test_1747(self):
+    @pytest.mark.parametrize("num_clients", [[1, 2, 3, 4]])
+    @pytest.mark.parametrize("requests", [[100, 100, 100, 200]])
+    @pytest.mark.parametrize("obj_size", [8388608])
+    # @CTFailOn(error_handler)
+    def test_1747(self, obj_size, num_clients, requests):
         """Test gradual increase of concurrent client sessions with multiple clients on multiple buckets."""
         self.log.info(
             "STARTED: Test gradual increase of concurrent client sessions"
             " with multiple clients on multiple buckets")
-        test_cfg = DATA_PATH_CFG["test_1747"]
-        self.log.info("Step 1: Creating %s buckets.", test_cfg['bkt_count'])
+        self.log.info("Step 1: Creating %s buckets.", 5)
         bkt_list = []
-        for bkt in range(test_cfg["bkt_count"]):
-            bucket_name = "{}{}".format(
-                test_cfg["bucket_name"], time.time())
-            resp = S3_OBJ.create_bucket(bucket_name)
+        for bkt in range(5):
+            bucket_name = "{}{}".format(self.bkt_name_prefix, time.time())
+            resp = self.s3_obj.create_bucket(bucket_name)
             assert_true(resp[0], resp[1])
             bkt_list.append(bucket_name)
-        resp = S3_OBJ.bucket_list()
+        resp = self.s3_obj.bucket_list()
         assert_in(bkt_list[0], resp[1], resp[1])
         self.log.info("Step 1: Successfully created buckets: %s.", bkt_list)
         self.log.info(
             "Step 2: Start concurrent I/O with increasing client and "
             "request on multiple buckets.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
-        for client, request_load, bkt in zip(
-                test_cfg["num_clients"], test_cfg["requests"], bkt_list):
+        for client, request_load, bkt in zip(num_clients, requests, bkt_list):
             res = s3bench_obj.s3bench(
                 access_key=access_key,
                 secret_key=secret_key,
@@ -555,10 +476,10 @@ class TestDataPathValidation:
                 end_point=S3_CFG["s3_url"],
                 num_clients=client,
                 num_sample=request_load,
-                obj_name_pref=test_cfg["obj_name"],
-                obj_size=test_cfg["s3bench_obj_size"],
-                skip_cleanup=test_cfg["skip_cleanup"],
-                verbose=test_cfg["verbose"])
+                obj_name_pref=self.object_name,
+                obj_size=obj_size,
+                skip_cleanup=True,
+                verbose=True)
             self.log.debug(res)
             self.log_file.append(res[1])
         self.log.info(
@@ -567,7 +488,7 @@ class TestDataPathValidation:
         self.log.info("Step 3: checking system stability")
         res = self.health_obj.is_motr_online()
         assert_true(res, f"Failed to check is_motr_online: resp: {res}")
-        cmd_msg = DATA_PATH_CFG["data_path"]["cmd_msg"]
+        cmd_msg = self.cmd_msg
         for cmd in const.CRASH_COMMANDS[0]:
             for nid in range(len(self.nodes)):
                 res_cmd = run_remote_cmd(cmd,
@@ -582,29 +503,29 @@ class TestDataPathValidation:
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8734')
-    @CTFailOn(error_handler)
-    def test_1748(self):
+    @pytest.mark.parametrize("num_clients", [[10, 2]])
+    @pytest.mark.parametrize("requests", [[120, 150]])
+    @pytest.mark.parametrize("obj_size", [8388608])
+    # @CTFailOn(error_handler)
+    def test_1748(self, obj_size, num_clients, requests):
         """Test burst I/O with single client on single bucket."""
         self.log.info(
             "STARTED: Test gradual increase of concurrent client sessions"
             " with multiple clients on single buckets")
-        test_cfg = DATA_PATH_CFG["test_1748"]
         self.log.info("Step 1: Create bucket.")
         bkt_list = []
-        for bkt in range(test_cfg["bkt_count"]):
-            bucket_name = "{}{}".format(
-                test_cfg["bucket_name"], time.time())
-            resp = S3_OBJ.create_bucket(bucket_name)
+        for bkt in range(2):
+            bucket_name = "{}{}".format(self.bkt_name_prefix, time.time())
+            resp = self.s3_obj.create_bucket(bucket_name)
             assert_true(resp[0], resp[1])
             bkt_list.append(bucket_name)
-        resp = S3_OBJ.bucket_list()
+        resp = self.s3_obj.bucket_list()
         assert_in(bkt_list[0], resp[1], resp[1])
         self.log.info("Step 1: Successfully created bucket.")
         self.log.info(
             "Step 2: Start concurrent I/O with increasing client and request.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
-        for client, request_load, bkt in zip(
-                test_cfg["num_clients"], test_cfg["requests"], bkt_list):
+        for client, request_load, bkt in zip(num_clients, requests, bkt_list):
             res = s3bench_obj.s3bench(
                 access_key=access_key,
                 secret_key=secret_key,
@@ -612,10 +533,10 @@ class TestDataPathValidation:
                 end_point=S3_CFG["s3_url"],
                 num_clients=client,
                 num_sample=request_load,
-                obj_name_pref=test_cfg["obj_name"],
-                obj_size=test_cfg["s3bench_obj_size"],
-                skip_cleanup=test_cfg["skip_cleanup"],
-                verbose=test_cfg["verbose"])
+                obj_name_pref=self.object_name,
+                obj_size=obj_size,
+                skip_cleanup=True,
+                verbose=True)
             self.log.debug(res)
             self.log_file.append(res[1])
         self.log.info(
@@ -623,7 +544,7 @@ class TestDataPathValidation:
         self.log.info("Step 3: checking system stability")
         res = self.health_obj.is_motr_online()
         assert_true(res, f"Failed to check is_motr_online: resp: {res}")
-        cmd_msg = DATA_PATH_CFG["data_path"]["cmd_msg"]
+        cmd_msg = self.cmd_msg
         for cmd in const.CRASH_COMMANDS[0]:
             for nid in range(len(self.nodes)):
                 res_cmd = run_remote_cmd(cmd,
