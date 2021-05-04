@@ -123,7 +123,6 @@ def fetch_configs_from_file(benchmark_config, bench, prop):
 
 
 def sort_builds_list(builds):
-    print(builds)
     temp_builds = builds
     data_sorted = []
     for key in builds:
@@ -141,17 +140,17 @@ def sort_builds_list(builds):
 
 def sort_object_sizes_list(obj_sizes):
     sizes_sorted = {
-        'KB': [], 'MB': [], 'GB': [],
+        'Kb': [], 'Mb': [], 'Gb': [],
     }
     rest = []
     data_sorted = []
     for size in obj_sizes:
         if size.lower().endswith("kb"):
-            sizes_sorted['KB'].append(size)
+            sizes_sorted['Kb'].append(size)
         elif size.lower().endswith("mb"):
-            sizes_sorted['MB'].append(size)
+            sizes_sorted['Mb'].append(size)
         elif size.lower().endswith("gb"):
-            sizes_sorted['GB'].append(size)
+            sizes_sorted['Gb'].append(size)
         else:
             rest.append(size)
 
