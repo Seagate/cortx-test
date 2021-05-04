@@ -118,6 +118,7 @@ def update_graphs(n_clicks, xfilter, release1, branch1, option1, profile1, bench
 
             temp = Thread(target=graphs_global, args=(fig, fig_all, xfilter, release1, branch1, option1, profile1, bench, config, flag, release2,
                                                       branch2, option2, profile2, operations, x_axis_heading, y_axis_heading, metric, param))
+
             temp.start()
             threads.append(temp)
             figs.append(fig)

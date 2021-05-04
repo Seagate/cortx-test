@@ -1,5 +1,6 @@
 from dash.dependencies import Output, Input
 from dash.exceptions import PreventUpdate
+
 from Performance.global_functions import get_dict_from_array,\
     get_distinct_keys, get_db_details, get_profiles, sort_builds_list, sort_object_sizes_list
 from common import app
@@ -27,6 +28,7 @@ def update_branches_dropdown(release):
     Input('branch_dropdown_first', 'value'),
     prevent_initial_call=True
 )
+
 def update_options_dropdown(xfilter, release, branch):
     if release is None or branch is None or xfilter is None:
         raise PreventUpdate
@@ -68,9 +70,11 @@ def update_configs_first(xfilter, release, branch, option1, bench):
             'Branch': branch, xfilter: option1, 'Name': bench,
         }
         cursor = find_documents(query, uri, db_name, db_collection)
+
         for doc in cursor:
             pattern = {'Buckets': int(
                 doc['Buckets']), 'Sessions': int(doc['Sessions'])}
+
             if pattern not in configs:
                 configs.append(pattern)
 
@@ -82,6 +86,7 @@ def update_configs_first(xfilter, release, branch, option1, bench):
                 })
         style = {'display': 'block', 'width': '250px', 'verticalAlign': 'middle',
                  "margin-right": "10px", "margin-top": "10px"}
+
 
     return results, style
 
@@ -119,6 +124,7 @@ def update_profiles_first(release, branch, build):
 
 
 # second dropdown
+
 @app.callback(
     [Output('release_dropdown_second', 'style'),
      Output('branch_dropdown_second', 'style'),
