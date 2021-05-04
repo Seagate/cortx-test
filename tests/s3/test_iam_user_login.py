@@ -104,7 +104,7 @@ class TestUserLoginProfileTests():
                 cls.cli_obj_class.delete_all_buckets_cortx_cli()
                 cls.cli_obj_class.delete_all_iam_users()
                 cls.cli_obj_class.logout_cortx_cli()
-                cls.cli_obj_class.delete_account_cortxcli(account_name=acc, password=cls.s3acc_passwd)
+                cls.cli_obj_class.delete_account_cortxcli(account_name=acc, password=cls.default_acc_pass)
         cls.log.info("ENDED: Teardown operations at suit level")
 
     def create_user_and_access_key(
@@ -170,7 +170,7 @@ class TestUserLoginProfileTests():
         if user_profile:
             self.log.info(
                 "Creating user login profile for user %s", user_name)
-            resp = self.iam_test_obj.create_user_login_profile(
+            resp = iam_obj.create_user_login_profile(
                 user_name, user_password, pwd_reset)
             assert_true(resp[0], resp[1])
             self.log.info(
@@ -239,8 +239,7 @@ class TestUserLoginProfileTests():
         except CTException as error:
             self.log.debug(error.message)
             assert_in(
-                "Parameter validation failed:\nInvalid length for parameter "
-                "Password, value: 0, valid min length: 1",
+                "Parameter validation failed:\nInvalid length for parameter Password",
                 error.message,
                 error.message)
         self.log.info("ENDED: Verify update-login-profile (password change)"
@@ -435,7 +434,7 @@ class TestUserLoginProfileTests():
         except CTException as error:
             self.log.debug(error.message)
             assert_in(
-                "Please provide password or password-reset flag",
+                "Parameter validation failed:\nInvalid type for parameter Password",
                 error.message,
                 error.message)
         self.log.info("STARTED: Update login profile for IAM user without "
@@ -500,8 +499,7 @@ class TestUserLoginProfileTests():
         except CTException as error:
             self.log.debug(error.message)
             assert_in(
-                "Parameter validation failed:\nInvalid length for parameter "
-                "Password, value: 0, valid min length: 1",
+                "Parameter validation failed:\nInvalid length for parameter Password",
                 error.message,
                 error.message)
         self.log.info("ENDED: Create a login profile with password of 0 "
@@ -796,7 +794,7 @@ class TestUserLoginProfileTests():
             login = self.cli_obj.login_cortx_cli(
                 username=self.default_acc, password=self.default_acc_pass)
             assert_true(login[0], login[1])
-            resp = self.cli_obj.reset_iamuser_password(
+            self.cli_obj.reset_iamuser_password(
                 self.user_name, self.test_cfg["test_9876"]["new_password"])
         except CTException as error:
             self.log.debug(error.message)
@@ -823,12 +821,19 @@ class TestUserLoginProfileTests():
             email_id,
             self.user_name,
             self.test_cfg["test_9832"]["password"])
-        login = self.cli_obj.login_cortx_cli(username=self.account_name, password=self.s3acc_passwd)
-        assert_true(login[0], login[1])
-        resp = self.cli_obj.reset_iamuser_password(
-            self.user_name, self.test_cfg["test_9876"]["new_password"])
-        assert_true(resp[0], resp[1])
-        self.cli_obj.logout_cortx_cli()
+        try:
+            login = self.cli_obj.login_cortx_cli(username=self.account_name, password=self.s3acc_passwd)
+            assert_true(login[0], login[1])
+            resp = self.cli_obj.reset_iamuser_password(
+                self.user_name, self.test_cfg["test_2899"]["new_password"])
+        except CTException as error:
+            self.log.debug(error.message)
+            assert_in(
+                "Password Policy Not Met",
+                error.message,
+                error.message)
+        finally:
+            self.cli_obj.logout_cortx_cli()
         self.log.info("ENDED: Provide only six character length in password")
 
     @pytest.mark.parallel
@@ -840,7 +845,7 @@ class TestUserLoginProfileTests():
         self.log.info("STARTED: Provide only one character length in password")
         email_id = "{0}{1}".format(
             self.account_name, self.email_id)
-        resp = self.create_account_and_user(
+        self.create_account_and_user(
             self.account_name,
             email_id,
             self.user_name,
@@ -853,7 +858,7 @@ class TestUserLoginProfileTests():
         except CTException as error:
             self.log.debug(error.message)
             assert_in(
-                "PasswordPolicyVoilation",
+                "Password Policy Not Met",
                 error.message,
                 error.message)
         finally:
