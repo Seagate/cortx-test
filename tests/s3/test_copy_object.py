@@ -1743,3 +1743,120 @@ class TestCopyObjects:
         self.log.info(
             "ENDED: Copy object specifying bucket name and object under folders while S3 IOs"
             " are in progress")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-16899")
+    @CTFailOn(error_handler)
+    def test_16899(self):
+        """
+        Copy object negative test.
+
+        Copy object to same bucket with same object name while S3 IO's are in progress.
+        """
+        self.log.info(
+            "STARTED: Copy object to same bucket with same object name while S3 IO's"
+            " are in progress.")
+        self.log.info("Step 1: Check cluster status, all services are running")
+        self.check_cluster_health()
+        self.log.info("Step 2: start s3 IO's")
+        self.start_stop_validate_parallel_s3ios(
+            ios="Start", log_prefix="test_16899_ios", duration="0h3m")
+        self.log.info("Step 3: Create bucket and put object in it.")
+        resp = system_utils.create_file(
+            fpath=self.file_path, count=10, b_size="1M")
+        self.log.info(resp)
+        assert_utils.assert_true(resp[0], resp[1])
+        status, put_etag = self.create_bucket_put_object(
+            S3_OBJ, self.bucket_name1, self.object_name1, self.file_path)
+        assert_utils.assert_true(status, put_etag)
+        self.log.info("Put object ETag: %s", put_etag)
+        self.log.info(
+            "Step 4: Copy object to same bucket with same name.")
+        try:
+            status, response = S3_OBJ.copy_object(
+                self.bucket_name1, self.object_name1, self.bucket_name1, self.object_name1)
+            assert_utils.assert_false(status, response)
+        except CTException as error:
+            assert_utils.assert_equal(
+                "An error occurred (InvalidRequest) when calling the "
+                "CopyObject operation: This copy request is illegal because "
+                "it is trying to copy an object to itself without changing "
+                "the object's metadata, storage class, website redirect "
+                "location or encryption attributes.", error.message, error.message)
+        self.log.info("Step 5: Stop and validate parallel S3 IOs")
+        self.start_stop_validate_parallel_s3ios(
+            ios="Stop", log_prefix="test_16899_ios")
+        self.log.info(
+            "Step 6: Check cluster status, all services are running")
+        self.check_cluster_health()
+        self.log.info(
+            "ENDED: Copy object to same bucket with same object name while S3 IO's"
+            " are in progress.")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-17110")
+    @CTFailOn(error_handler)
+    def test_17110(self):
+        """
+        Copy object negative test.
+
+        Copy object specifying bucket name and object using wildcard while S3 IO's are in progress.
+        """
+        self.log.info(
+            "STARTED: Copy object specifying bucket name and object using wildcard while"
+            " S3 IO's are in progress.")
+        self.log.info("Step 1: Check cluster status, all services are running")
+        self.check_cluster_health()
+        self.log.info("Step 2: start s3 IO's")
+        self.start_stop_validate_parallel_s3ios(
+            ios="Start", log_prefix="test_17110_ios", duration="0h3m")
+        self.log.info("Step 3: Create bucket and put object in it.")
+        resp = system_utils.create_file(
+            fpath=self.file_path, count=10, b_size="1M")
+        self.log.info(resp)
+        assert_utils.assert_true(resp[0], resp[1])
+        status, put_etag = self.create_bucket_put_object(
+            S3_OBJ, self.bucket_name1, self.object_name1, self.file_path)
+        assert_utils.assert_true(status, put_etag)
+        self.log.info("Put object ETag: %s", put_etag)
+        self.log.info(
+            "Step 4: Copy object from bucket1 to bucket2 using wildcard * for source-object.")
+        try:
+            status, response = S3_OBJ.copy_object(
+                self.bucket_name1, "*", self.bucket_name1, self.object_name1)
+            assert_utils.assert_false(status, response)
+        except CTException as error:
+            assert_utils.assert_equal(
+                "An error occurred (NoSuchKey) when calling the CopyObject operation:"
+                " The specified key does not exist.", error.message, error.message)
+        self.log.info(
+            "Step 5: Copy object from bucket1 to bucket2 using wildcard * for part of "
+            "source-object name..")
+        try:
+            status, response = S3_OBJ.copy_object(
+                self.bucket_name1, f"{self.object_name1}*", self.bucket_name1, self.object_name1)
+            assert_utils.assert_false(status, response)
+        except CTException as error:
+            assert_utils.assert_equal(
+                "An error occurred (NoSuchKey) when calling the CopyObject operation:"
+                " The specified key does not exist.", error.message, error.message)
+        self.log.info(
+            "Step 6: Copy object from bucket1 to bucket2 using wildcard ? for a character of "
+            "source-object name.")
+        try:
+            status, response = S3_OBJ.copy_object(
+                self.bucket_name1, f"{self.object_name1}?", self.bucket_name1, self.object_name1)
+            assert_utils.assert_false(status, response)
+        except CTException as error:
+            assert_utils.assert_equal(
+                "An error occurred (NoSuchKey) when calling the CopyObject operation:"
+                " The specified key does not exist.", error.message, error.message)
+        self.log.info("Step 7: Stop and validate parallel S3 IOs")
+        self.start_stop_validate_parallel_s3ios(
+            ios="Stop", log_prefix="test_17110_ios")
+        self.log.info(
+            "Step 8: Check cluster status, all services are running")
+        self.check_cluster_health()
+        self.log.info(
+            "ENDED: Copy object specifying bucket name and object using wildcard while"
+            " S3 IO's are in progress.")
