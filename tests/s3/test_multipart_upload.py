@@ -337,7 +337,6 @@ class TestMultipartUpload:
     def test_list_multipart_upload_2068(self):
         """List Multipart uploads."""
         self.log.info("List Multipart uploads")
-        mp_config = MPART_CFG["test_8667"]
         self.log.info(
             "Creating a bucket with name : %s",
             self.bucket_name)
