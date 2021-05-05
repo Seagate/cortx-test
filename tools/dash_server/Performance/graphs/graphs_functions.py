@@ -18,10 +18,28 @@
 #
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
+import re
 
-from Performance.global_functions import benchmark_config, get_chain
-from Performance.statistics.statistics_functions import fetch_configs_from_file,\
-    get_performance_metrics, get_data, get_average_data
+from Performance.global_functions import get_db_details, get_distinct_keys
+from Performance.mongodb_api import count_documents, find_documents
+
+meta_data_objs = ['1Kb']
+
+
+def get_metrics(bench):
+    if bench == 'S3bench':
+        return ['Throughput', 'Latency', 'IOPS', 'TTFB']
+    else:
+        return ['Throughput', 'Latency', 'IOPS']
+
+
+def get_yaxis_heading(metric):
+    if metric == "Throughput":
+        return "{} (MBps)".format(metric)
+    elif metric == "IOPS":
+        return "{}".format(metric)
+    else:
+        return "{} (ms)".format(metric)
 
 
 def get_structure_trace(Scatter, operation, metrics, option, x_axis, y_data):
@@ -29,8 +47,7 @@ def get_structure_trace(Scatter, operation, metrics, option, x_axis, y_data):
         name='{} {} - {}'.format(operation, metrics, option),
         x=x_axis,
         y=y_data,
-        hovertemplate='<br>%{y} MBps<br>' +
-        '<b>{} - {}</b><extra></extra>'.format(
+        hovertemplate='<br>%{y}<br>' + '<b>{} - {}</b><extra></extra>'.format(
             operation, option),
     )
     return trace
@@ -41,92 +58,159 @@ def get_operations(bench, operation_opt):
         if operation_opt == 'both':
             return ['Read', 'Write']
         else:
-            return operation_opt.capitalize()
-
-    if operation_opt == 'both':
-        return ['read', 'write']
+            return [operation_opt.capitalize()]
     else:
-        return operation_opt
+        if operation_opt == 'both':
+            return ['read', 'write']
+        else:
+            return [operation_opt]
 
 
-def get_options(option1, option2):
-    if option2:
-        return [option1, option2]
+def get_xaxis(xfilter, release, branch, option, bench):
+    if xfilter == 'Object_Size':
+        pkeys = get_distinct_keys(release, 'PKey', {
+            'Branch': branch, xfilter: option, 'Name': bench
+        })
+        profiles = []
+        for key in pkeys:
+            profile = "_".join(key.split("_")[2:8])
+            if profile not in profiles:
+                profiles.append(profile)
+
+        return profiles
     else:
-        return [option1]
+        obj_sizes = get_distinct_keys(release, 'Object_Size', {
+            'Branch': branch, xfilter: option, 'Name': bench
+        })
+        for obj in meta_data_objs:
+            if obj in obj_sizes:
+                obj_sizes.remove(obj)
+        return obj_sizes
 
 
-def data_routine(results, build, object_size, bench, operation, param,
-                 buckets=None, objects=None, sessions=None, subparam=None):
+def sort_objectsizes(data_dict):
+    sizes_sorted = {
+        'KB': {}, 'MB': {}, 'GB': {},
+    }
+    rest = {}
+    data_sorted = {}
+    for size, data in data_dict.items():
+        if size.lower().endswith("kb"):
+            sizes_sorted['KB'][size] = data
+        elif size.lower().endswith("mb"):
+            sizes_sorted['MB'][size] = data
+        elif size.lower().endswith("gb"):
+            sizes_sorted['GB'][size] = data
+        else:
+            rest[size] = data
 
-    if subparam:
+    for size_unit in sizes_sorted.keys():
+        objects = list(sizes_sorted[size_unit].keys())
+        temp = [int(obj[:-2]) for obj in objects]
+        temp.sort()
+        for item in temp:
+            for obj in objects:
+                if obj[:-2] == str(item):
+                    data_sorted[str(item) +
+                                size_unit] = sizes_sorted[size_unit][obj]
+                    break
+
+    data_sorted.update(rest)
+    return data_sorted
+
+def get_placeholder(components):
+    placeholder = ", ".join(
+        [components[0], components[2][:-1]+' nodes'])
+    if components[4][:-2] != '0':
+        placeholder = placeholder + ", " + components[4][:-2] + '% fill'
+    if components[-1] != 'NA':
+        placeholder = placeholder + ", " + components[-1]
+    if components[1] != 'ITR1':
+        placeholder = placeholder + ", " + components[1][3:]
+
+    return placeholder
+
+def sort_builds(data_dict):
+    builds = list(data_dict.keys())
+
+    data_sorted = {}
+    for key in builds:
+        splits = re.split("_|-", key)
+
         try:
-            count, data = get_performance_metrics(build, object_size, bench,
-                                                  operation, sessions, buckets, objects)
-            results.append(get_average_data(
-                count, data, param, subparam, 1000))
+            int(splits[0])
+        except ValueError:
+            data_sorted[get_placeholder(key.split("_"))] = data_dict[key]
+            del data_dict[key]
 
-        except KeyError:
-            results.append(None)
-    else:
-        try:
-            count, data = get_performance_metrics(build, object_size,
-                                                  bench, operation, sessions, buckets, objects)
-            results.append(get_data(count, data, param, 1))
+    builds = list(data_dict.keys())
+    builds.sort(key=lambda x: int(re.split("_|-", x)[0]))
+    for build in builds:
+        data_sorted[get_placeholder(build.split("_"))] = data_dict[build]
 
-        except KeyError:
-            results.append(None)
+    return data_sorted
 
 
-def get_configs(bench, configs):
-    if configs:
-        workload = fetch_configs_from_file(
-            benchmark_config, bench, 'workload-{}'.format(configs))
-        return workload['buckets'], workload['objects'], workload['sessions']
-
-    else:
-        return None, None, None
-
-
-def get_objsizewise_data(build, bench, configs, operation, param, subparam=None):
-    data = []
-    objsize_list = fetch_configs_from_file(
-        benchmark_config, bench, 'object_size')
-
-    buckets, objects, sessions = get_configs(bench, configs)
-
-    for object_size in objsize_list:
-        data_routine(data, build, object_size, bench, operation,
-                     param, buckets, objects, sessions, subparam)
-
-    data_dict = dict(zip(objsize_list, data))
+def remove_nones(data_dict):
     for k, v in dict(data_dict).items():
         if v is None or v is 'NA':
             del data_dict[k]
 
-    return [list(data_dict.keys()), list(data_dict.values())]
+    return data_dict
 
 
-def get_buildwise_data(version, object_size, bench, configs, operation, param, subparam=None):
-    data = []
-    builds_list = get_chain(version)
+def get_data_for_graphs(xfilter, release, branch, option, profile, bench, configs, operation, metric, param):
+    uri, db_name, db_collection = get_db_details(release)
+    xaxis_list = get_xaxis(xfilter, release, branch, option, bench)
+    yaxis_list = []
 
-    buckets, objects, sessions = get_configs(bench, configs)
+    config_splits = configs.split('_')
+    buckets = int(config_splits[0])
+    sessions = int(config_splits[1])
 
-    for build in builds_list:
-        data_routine(data, build, object_size, bench,
-                     operation, param, buckets, objects, sessions, subparam)
+    for item in xaxis_list:
+        if xfilter == 'Build':
+            PKey = "_".join([str(release), branch[0].upper(), option, profile, bench[:3].upper(),
+                             item, str(buckets), operation[0].upper(), str(sessions)])
+        else:
+            PKey = "_".join([str(release), branch[0].upper(), item, bench[:3].upper(),
+                             option, str(buckets), operation[0].upper(), str(sessions)])
+        query = {'PKey': PKey}
 
-    data_dict = dict(zip(builds_list, data))
-    for k, v in dict(data_dict).items():
-        if v is None or v is 'NA':
-            del data_dict[k]
+        try:
+            count = count_documents(query=query, uri=uri, db_name=db_name,
+                                    collection=db_collection)
+            db_data = find_documents(query=query, uri=uri, db_name=db_name,
+                                     collection=db_collection)
+            try:
+                number_of_nodes = db_data[0]['Count_of_Servers']
+            except KeyError:
+                number_of_nodes = 2
+            except IndexError:
+                number_of_nodes = 2
 
-    return [list(data_dict.keys()), list(data_dict.values())]
+            if count > 0:
+                try:
+                    if param:
+                        yaxis_list.append(
+                            db_data[0][metric][param] * 1000/number_of_nodes)
+                    else:
+                        yaxis_list.append(db_data[0][metric]/number_of_nodes)
+                except IndexError:
+                    yaxis_list.append('NA')
+            else:
+                yaxis_list.append('NA')
+        except KeyError:
+            yaxis_list.append(None)
+        except IndexError:
+            yaxis_list.append(None)
 
+    data_dict = dict(zip(xaxis_list, yaxis_list))
 
-def get_data_based_on_filter(Xfilter, version, option, bench, configs, operation, param, subparam=None):
-    if Xfilter == 'build':
-        return get_objsizewise_data(option, bench, configs, operation, param, subparam)
+    # remove_nones(data_dict)
+    if xfilter == 'Build':
+        data_dict = sort_objectsizes(data_dict)
     else:
-        return get_buildwise_data(version, option, bench, configs, operation, param, subparam)
+        data_dict = sort_builds(data_dict)
+
+    return [list(data_dict.keys()), list(data_dict.values())]

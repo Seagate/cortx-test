@@ -20,6 +20,9 @@
 # !/usr/bin/python
 
 import yaml
+import sys
+from urllib.parse import quote_plus
+from Performance.mongodb_api import find_distinct_values
 
 config_path = 'Performance/configs/configs.yml'
 benchmark_config = 'Performance/configs/benchmark.yml'
@@ -40,15 +43,14 @@ def get_chain(version):
     return chain
 
 
-def get_db_details():
-    import sys
-    from urllib.parse import quote_plus
+def get_db_details(release=1):
 
     config = makeconfig(config_path)
     try:
         db_hostname = config["PerfDB"]["hostname"]
         db_name = config["PerfDB"]["database"]
-        db_collection = config["PerfDB"]["collection"]
+        db_collection = config["PerfDB"]["collection"]["R{}".format(
+            int(release))]
         db_username = config["PerfDB"]["auth"]["full_access_user"]
         db_password = config["PerfDB"]["auth"]["full_access_password"]
 
@@ -66,21 +68,15 @@ def get_db_details():
     return uri, db_name, db_collection
 
 
-def keys_exists(element, *keys):
+def keys_exists(data, key):
     """Check if *keys (nested) exists in `element` (dict)."""
-    if not isinstance(element, dict):
+    if not isinstance(data, dict):
         raise AttributeError('keys_exists() expects dict as first argument.')
-    if len(keys) == 0:
-        raise AttributeError(
-            'keys_exists() expects at least two arguments, one given.')
 
-    _element = element
-    for key in keys:
-        try:
-            _element = _element[key]
-        except KeyError:
-            return False
-    return True
+    if key in data.keys():
+        return True
+    else:
+        return False
 
 
 def round_off(value, base=1):
@@ -98,6 +94,13 @@ def round_off(value, base=1):
     return base * round(value / base)
 
 
+def get_distinct_keys(release, field_to_query, query):
+    uri, db, col = get_db_details(release)
+    results = find_distinct_values(field_to_query, query, uri, db, col)
+
+    return results
+
+
 def get_dict_from_array(options, makeReverse, allcaps=False):
     if makeReverse:
         options.reverse()
@@ -112,3 +115,85 @@ def get_dict_from_array(options, makeReverse, allcaps=False):
         return versions
 
     return versions
+
+
+def fetch_configs_from_file(benchmark_config, bench, prop):
+    config = makeconfig(benchmark_config)
+    return config[bench][prop]
+
+
+def sort_builds_list(builds):
+    temp_builds = builds
+    data_sorted = []
+    for key in builds:
+        if key.startswith('cortx'):
+            data_sorted.append(key)
+
+    for key in data_sorted:
+        temp_builds.remove(key)
+
+    temp_builds.sort(key=lambda x: int(x.split("-")[0]))
+    data_sorted = data_sorted + temp_builds
+
+    return data_sorted
+
+
+def sort_object_sizes_list(obj_sizes):
+    sizes_sorted = {
+        'Kb': [], 'Mb': [], 'Gb': [],
+    }
+    rest = []
+    data_sorted = []
+    for size in obj_sizes:
+        if size.lower().endswith("kb"):
+            sizes_sorted['Kb'].append(size)
+        elif size.lower().endswith("mb"):
+            sizes_sorted['Mb'].append(size)
+        elif size.lower().endswith("gb"):
+            sizes_sorted['Gb'].append(size)
+        else:
+            rest.append(size)
+
+    for size_unit in sizes_sorted.keys():
+        objects = sizes_sorted[size_unit]
+        temp = [int(obj[:-2]) for obj in objects]
+        temp.sort()
+        for item in temp:
+            for obj in objects:
+                if obj[:-2] == str(item):
+                    data_sorted.append(str(item) + size_unit)
+                    break
+    if any(rest):
+        data_sorted.extend(rest)
+    return data_sorted
+
+
+def get_profiles(release, branch, build):
+    pkeys = get_distinct_keys(release, 'PKey', {
+        'Branch': branch, 'Build': build
+    })
+
+    reference = ('ITR1', '2N', '1C', '0PC', 'NA')
+    pkey_split = {}
+    options = []
+
+    for key in pkeys:
+        pkey_split[key] = key.split("_")[3:]
+
+    for profile_list in list(pkey_split.values()):
+        tag = 'Nodes {}, '.format(profile_list[1][:-1])
+
+        if profile_list[2] != reference[2]:
+            tag = tag + 'Clients {}, '.format(profile_list[2][:-1])
+
+        tag = tag + 'Filled {}%, '.format(profile_list[3][:-2])
+        tag = tag + 'Iteration {}'.format(profile_list[0][3:])
+        if profile_list[4] != reference[4]:
+            tag = tag + ', {}'.format(profile_list[4])
+
+        option = {'label': tag, 'value': '_'.join(
+            [profile_list[0], profile_list[1], profile_list[2], profile_list[3], profile_list[4]])}
+        if option not in options:
+            options.append(option)
+
+    return options
