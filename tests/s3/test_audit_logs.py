@@ -128,7 +128,7 @@ class TestAuditLogs:
             pref_list = [
                 each_bucket for each_bucket in resp[1] if each_bucket.startswith("audit")]
             if pref_list:
-                self.log.info("Deleting listed buckets: {pref_list}")
+                self.log.info("Deleting listed buckets: %s",  pref_list)
             S3_OBJ.delete_multiple_buckets(pref_list)
         self.log.info("Reverting s3config changes to default")
         val = self.old_value
@@ -167,9 +167,12 @@ class TestAuditLogs:
                     self.old_value,
                     new_value)
                 assert_utils.assert_true(resp[0], resp[1])
-                self.node_obj.copy_file_to_remote(
+                node_obj = Node(
+                    hostname=host_name, username=self.uname, password=self.passwd)
+                node_obj.copy_file_to_remote(
                     self.lcl_path,
                     self.rem_path
+
                 )
                 system_utils.remove_file(self.lcl_path)
             self.log.info(
@@ -586,7 +589,7 @@ class TestAuditLogs:
             " server logs post object upload")
         assert_utils.assert_not_in(
             self.pwd_key,
-            result[1],
+            result[1].decode(),
             result)
         self.log.info(
             "Step 5: Verified post object upload no password is logged in any"
@@ -645,7 +648,7 @@ class TestAuditLogs:
             " logs post object upload")
         assert_utils.assert_not_in(
             self.pwd_key,
-            result[1],
+            result[1].decode(),
             result)
         self.log.info(
             "Step 5: Verified post object upload no password is logged in any of the"
