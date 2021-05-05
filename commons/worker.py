@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# !/usr/bin/python
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -16,12 +18,11 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-# -*- coding: utf-8 -*-
-# !/usr/bin/python
-
+"""Worker pool to perform similar tasks"""
 import logging
 import queue
 import threading
+from typing import Any
 from threading import Thread
 from commons.constants import NWORKERS
 
@@ -29,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 class WorkQ(queue.Queue):
-    def __init__(self, func, maxsize):
+    def __init__(self, func: Any, maxsize: int) -> None:
         self.lock_req = maxsize != 0
         self.func = func
         self.semaphore = threading.Semaphore(maxsize)
@@ -48,9 +49,15 @@ class WorkQ(queue.Queue):
 
 class Workers(object):
     """ A fixed size thread pool for I/O bound tasks """
-    def start_workers(self, nworkers=NWORKERS, func=None):
-        self.w_workq = WorkQ(func, nworkers)
+
+    def __init__(self):
         self.w_workers = []
+        self.w_workq = None
+
+    def start_workers(self,
+                      nworkers: int = NWORKERS,
+                      func: Any = None) -> None:
+        self.w_workq = WorkQ(func, nworkers)
         for i in range(nworkers):
             w = Thread(target=self.worker)
             w.start()
