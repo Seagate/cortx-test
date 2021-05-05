@@ -73,7 +73,7 @@ test_configs:
     password: "a9QLKFuCAcyQDKJvA4H3SbHhybUk/7DU2uXvzr6p9sk="
 
   test_9832:
-    password: "MKfKFPvnz+bywHQ4bPCB0ty8+jz1+YSHPHfUOCM/bQU="
+    password: "ocQXyZmOWvzmxb0FPBxYNS7zqORe+t91VB79yB6S3Y8="
     special_char_pwd:
       - "9i0YFGVrSRCkWbFRdtcEqEqH93UfdEbZ1hG2ddaKDnU="
       - "AIGL/7QSRnIblF+CxTNxaXcD5lm6YvpmuwWEn9i7+aw="
@@ -109,25 +109,23 @@ test_configs:
     password_reset: True
 
   test_9876:
-    new_password: "DLzaqFOr0UOgOKrWI3P3XqNuTvF2i1Kq+kSgKF3w5AQ="
+    new_password: "w+9dlDStau18FrQwdlJMkUH2F7Bqn1mLKHSYJMK1V4o="
 
   test_9879:
     new_password: "l8eFHwZQtUp++zFTdUEwnVNeMev7oSIy3t8wXyTcDWw="
 
   test_9882:
     list_special_char_pwd:
-      - "xZ4MvdpVZchbVOZASxVv9k4iqC6vVs5eE7eUf4FIXZw="
-      - 'mCrRjCVmw8QDvfgohmP/S8Xfovbdq8S2JXdKXgcHs+g='
-      - '++cmX3GLURLzQ+TVCG6FittvTMXbWMrj+H1hIqZIBPc='
-      - "xQCBE/BWer4HeYWU+m1IShXRkHIjEv9PBq3z3v3f2i4="
-      - "F3n+Q8yWcvdYMpZSdgaWuQhY3tsDPx+tM/RFZJXdFmk="
-      - 'su5ibVDRAwBFfnNkr5guXAWdcfLOnuNPC4fAUbmjH10='
-      - "GGVIMnuo60BI5fBgalcLe6MFCPxqIKQgHSx1R1G8eTY="
-      - "P4dpkPtLAcswLMN+f1OnLUgECQX6QPOiiYtJXBzE1Fs="
-      - 'biRcbHB3Xa8JsBzvaU9Rnd+Qgzd5e8kDw0J/i+tREZY='
-      - "0Wzknj2AVsNR6ZgtWGpW/GPNjTVSLqlGkaayZmLuD3w="
-      - "s2DAJ53F3TcdA2qZXxPB0ThvBcS7/ZhXrvEhDaxb+k4="
-      - "zs7bwHv/tXAeIud2ULjeJuOqHEEwUAv5DJEWDWICObo="
+      - "Pt7DyC2OiQUcMWM3Q1u+VUrBz83h5Jg30irVsR42sTA="
+      - 'L77KFvyiJqzddVuTcNtOZXxGiWjuGFtIAqr4Z7Dn8q4='
+      - '0x+hWIdMGtTAJcjuHOdedJ5Ny6wbg02wGp8ZRNyv56s='
+      - "hkz8oiw0NbM7T0MXQOBhXi/iJunu4+/NerHwK/HNDco="
+      - "L3UtjUUyVBGkcFdvCGN2T55SiGbLsqgJdOEqTGwnRAA="
+      - 'PxxMEaMH/PQzg3H2agjF6xYGbrZlVG8Tng8YhKCBogY='
+      - "7RO0hX+IuzjmSeIwDk0NQxXUUYoojMmEDupMwRK6rBs="
+      - "Rqjnj42N/16Z/6jlv0atekIo75WUvrp/JeA4MW9HqSA="
+      - "Yz95G2q2rYPtHN5eKJxUjm8bs4nVvy+KXmVLdYFYSYw="
+      - "a7hvHYLXy99/9I9CaNvPtRvKH873FIr5RYcihsIaggY="
 
   test_9884:
     new_password: "U7UQ7NoFYowF5pqxRl5UzHFkrySVkfWI7pQL4nd+uQ0="
@@ -140,3 +138,7 @@ test_configs:
 
   test_9927:
     user_password: "BPXmk6sHpfPrBU/wRJuKJ9FcdHXVqgnSHJVDwG/GOFs="
+
+  test_2899:
+    new_password: "+CD5ae8DWxlCzJk0wiYnvRS9ARBoVnbFPmtmd51IHeI="
+

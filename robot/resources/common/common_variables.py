@@ -79,3 +79,8 @@ TOTAL_CAPACITY_LABEL_VALUE = "Total"
 TOTAL_AVAILABLE_LABEL_VALUE = "Available"
 TOTAL_USED_LABEL_VALUE = "Used"
 CAPACITY_WIDGET_LABEL_VALUE = "Capacity"
+
+#Audit Logs
+Audit_log_days = ["One day", "Two days", "Three days",
+                  "Four days", "Five days", "Six days", "Seven days"]
+
