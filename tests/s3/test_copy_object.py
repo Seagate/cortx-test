@@ -1646,12 +1646,13 @@ class TestCopyObjects:
 
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-19900")
-    @CTFailOn(error_handler)
-    def test_19900(self):
+    @pytest.mark.parametrize("object_name", ["new% (1234) ::#$$^**", "cp-object"])
+    def test_19900(self, object_name):
         """
-        Copy object Test 19900.
+        Copy object Test 19900, Test 19240.
 
         Copy object specifying bucket name and object under folders while S3 IOs are in progress.
+        Copy object with special character in object name under folders while S3 IOs are in progress
         """
         self.log.info(
             "STARTED: Copy object specifying bucket name and object under folders while"
@@ -1685,19 +1686,19 @@ class TestCopyObjects:
         assert_utils.assert_true(resp[0], resp[1])
         resp = S3_OBJ.put_object(
             self.bucket_name1,
-            f"{dpath}{self.object_name1}",
+            f"{dpath}{object_name}",
             self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
         put_etag = resp[1]["ETag"].strip('"')
         self.log.info("5. List object for the bucket1.")
         resp = S3_OBJ.object_list(self.bucket_name1)
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_true(any([self.object_name1 in obj for obj in resp[1]]),
-                                 f"{self.object_name1} not present in {resp[1]}")
+        assert_utils.assert_true(any([object_name in obj for obj in resp[1]]),
+                                 f"{object_name} not present in {resp[1]}")
         self.log.info("6. Copy object from bucket1 to bucket2.")
         resp = S3_OBJ.copy_object(
             self.bucket_name1,
-            f"{dpath}{self.object_name1}",
+            f"{dpath}{object_name}",
             self.bucket_name2,
             self.object_name2)
         assert_utils.assert_true(resp[0], resp[1])
@@ -1718,7 +1719,7 @@ class TestCopyObjects:
             " object.")
         resp = S3_OBJ.copy_object(
             self.bucket_name1,
-            f"{dpath}{self.object_name1}",
+            f"{dpath}{object_name}",
             self.bucket_name2,
             f"{dpath}{self.object_name2}")
         assert_utils.assert_true(resp[0], resp[1])
