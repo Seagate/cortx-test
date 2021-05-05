@@ -26,7 +26,7 @@ import munch
 from typing import List
 from commons.utils import config_utils
 from commons import configmanager
-from commons.params import COMMON_CONFIG, CSM_CONFIG, S3_CONFIG, S3_USER_ACC_MGMT_CONFIG_PATH
+from commons.params import COMMON_CONFIG, CSM_CONFIG, S3_CONFIG
 from commons.params import S3_OBJ_TEST_CONFIG
 from commons.params import RAS_CONFIG_PATH
 from commons.params import SSPL_TEST_CONFIG_PATH
@@ -35,6 +35,7 @@ from commons.params import PROV_TEST_CONFIG_PATH
 from commons.params import DI_CONFIG_PATH
 from commons.params import DATA_PATH_CONFIG_PATH
 from commons.params import S3_BKT_TEST_CONFIG
+from commons.params import S3_USER_ACC_MGMT_CONFIG_PATH
 
 
 def split_args(sys_cmd: List):
