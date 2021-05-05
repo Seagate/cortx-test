@@ -120,3 +120,80 @@ def get_dict_from_array(options, makeReverse, allcaps=False):
 def fetch_configs_from_file(benchmark_config, bench, prop):
     config = makeconfig(benchmark_config)
     return config[bench][prop]
+
+
+def sort_builds_list(builds):
+    temp_builds = builds
+    data_sorted = []
+    for key in builds:
+        if key.startswith('cortx'):
+            data_sorted.append(key)
+
+    for key in data_sorted:
+        temp_builds.remove(key)
+
+    temp_builds.sort(key=lambda x: int(x.split("-")[0]))
+    data_sorted = data_sorted + temp_builds
+
+    return data_sorted
+
+
+def sort_object_sizes_list(obj_sizes):
+    sizes_sorted = {
+        'Kb': [], 'Mb': [], 'Gb': [],
+    }
+    rest = []
+    data_sorted = []
+    for size in obj_sizes:
+        if size.lower().endswith("kb"):
+            sizes_sorted['Kb'].append(size)
+        elif size.lower().endswith("mb"):
+            sizes_sorted['Mb'].append(size)
+        elif size.lower().endswith("gb"):
+            sizes_sorted['Gb'].append(size)
+        else:
+            rest.append(size)
+
+    for size_unit in sizes_sorted.keys():
+        objects = sizes_sorted[size_unit]
+        temp = [int(obj[:-2]) for obj in objects]
+        temp.sort()
+        for item in temp:
+            for obj in objects:
+                if obj[:-2] == str(item):
+                    data_sorted.append(str(item) + size_unit)
+                    break
+    if any(rest):
+        data_sorted.extend(rest)
+    return data_sorted
+
+
+def get_profiles(release, branch, build):
+    pkeys = get_distinct_keys(release, 'PKey', {
+        'Branch': branch, 'Build': build
+    })
+
+    reference = ('ITR1', '2N', '1C', '0PC', 'NA')
+    pkey_split = {}
+    options = []
+
+    for key in pkeys:
+        pkey_split[key] = key.split("_")[3:]
+
+    for profile_list in list(pkey_split.values()):
+        tag = 'Nodes {}, '.format(profile_list[1][:-1])
+
+        if profile_list[2] != reference[2]:
+            tag = tag + 'Clients {}, '.format(profile_list[2][:-1])
+
+        tag = tag + 'Filled {}%, '.format(profile_list[3][:-2])
+        tag = tag + 'Iteration {}'.format(profile_list[0][3:])
+        if profile_list[4] != reference[4]:
+            tag = tag + ', {}'.format(profile_list[4])
+
+        option = {'label': tag, 'value': '_'.join(
+            [profile_list[0], profile_list[1], profile_list[2], profile_list[3], profile_list[4]])}
+        if option not in options:
+            options.append(option)
+
+    return options

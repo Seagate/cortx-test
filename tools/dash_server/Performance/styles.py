@@ -108,3 +108,17 @@ dict_style_dropdown_large = {
     "margin-top": "10px",
     "margin-bottom": "10px"
 }
+
+dict_style_profiles = {
+    'width': '340px',
+    'verticalAlign': 'middle',
+    "margin-right": "10px",
+    "margin-top": "10px"
+}
+
+dict_Style_Stats_input_options = {
+    'width': '200px',
+    'verticalAlign': 'middle',
+    "margin-right": "15px",
+    "margin-top": "10px"
+}
