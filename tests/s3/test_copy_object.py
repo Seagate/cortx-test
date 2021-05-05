@@ -204,7 +204,6 @@ class TestCopyObjects:
             obj_name_pref=obj_name_pref,
             obj_size=obj_size,
             duration=duration,
-            verbose=True,
             log_file_prefix=log_file_prefix)
         self.log.info(resp)
         assert_utils.assert_true(
@@ -232,10 +231,10 @@ class TestCopyObjects:
             assert_utils.assert_equal(
                 int(response.split(":")[1].strip()), 0, response)
         self.log.info("Observed no Error count in io log.")
-        error_kws = ["with error ", "panic", "status code"]
+        error_kws = ["with error ", "panic", "status code", "exit status 2"]
         for error in error_kws:
             assert_utils.assert_not_equal(
-                error, ",".join(lines), "Parallel IOs failed.")
+                error, ",".join(lines), f"{error} Found in S3Bench Run.")
         self.log.info("Observed no Error keyword '%s' in io log.", error_kws)
         self.log.info("S3 parallel ios log validation completed.")
 
