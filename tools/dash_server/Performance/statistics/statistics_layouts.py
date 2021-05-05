@@ -23,13 +23,13 @@ from dash_bootstrap_components import Card, CardBody, Row, Button, Tab
 from dash_core_components import Dropdown, Markdown
 import dash_html_components as html
 from Performance.styles import dict_style_sub_tab, dict_style_table_caption,\
-    dict_style_sub_label, style_perf_captions, style_workload_captions, dict_style_profiles, dict_Style_Stats_input_options
+    dict_style_sub_label, style_perf_captions, style_workload_captions
 from Performance.global_functions import benchmark_config, get_dict_from_array
 from Performance.statistics.statistics_functions import fetch_configs_from_file
 
 release = [
-    {'label': 'LR-R1', 'value': '1'},
-    {'label': 'LR-R2', 'value': '2'}
+    {'label': 'LR1', 'value': 'LR1'},
+    {'label': 'LR2', 'value': 'LR2'}
 ]
 
 bucketOps = get_dict_from_array(fetch_configs_from_file(
@@ -40,8 +40,6 @@ statistics_layout = Card(
         [
             html.P(html.U("Performance Metrics Statistics Summary"),
                    style={'text-align': 'center', 'font-size': '30px', 'font-weight': 'bold'}),
-            html.P("Note: Each data point represents PER CLUSTER data.",  style={
-                   "font-weight": "bold", 'font-size': '20px', 'color': '#D00000'}),
             html.P("S3 Bench", style=style_perf_captions),
             Markdown('''
             ___
@@ -121,30 +119,28 @@ stats_input_options = Row(
             id="perf_release_dropdown",
             options=release,
             placeholder="Select Release",
-            style=dict_Style_Stats_input_options,
+            style={'width': '200px', 'verticalAlign': 'middle',
+                   "margin-right": "15px", "margin-top": "10px"},
         ),
 
         Dropdown(
             id="perf_branch_dropdown",
             placeholder="Select Branch",
-            style=dict_Style_Stats_input_options,
+            style={'width': '200px', 'verticalAlign': 'middle',
+                   "margin-right": "15px", "margin-top": "10px"},
         ),
 
         Dropdown(
             id='perf_build_dropdown',
             placeholder="Select Build",
-            style=dict_Style_Stats_input_options,
-        ),
-        Dropdown(
-            id='profiles_options',
-            placeholder="Select Profile",
-            style=dict_style_profiles
+            style={'width': '200px', 'verticalAlign': 'middle',
+                   "margin-right": "15px", "margin-top": "10px"},
         ),
 
         Button("Get!", id="perf_submit_button", n_clicks=0, color="success",
-               style={'height': '35px', 'margin-top': '20px'}),
+               style={'height': '30px', 'margin-top': '18px', 'margin-bottom': '22px'}),
     ],
-    justify='center', style={'margin-bottom': '20px'}
+    justify='center'
 )
 
 statistics_perf_tabs = html.Div(

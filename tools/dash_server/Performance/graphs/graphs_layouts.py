@@ -75,11 +75,6 @@ first_input_set = Row([
         style=dict_dropdown_normal_Style
     ),
     Dropdown(
-        id='profiles_options_first',
-        placeholder="Select Profile",
-        style={'display': 'none'}
-    ),
-    Dropdown(
         id="benchmark_dropdown_first",
         options=benchmarks,
         placeholder="Benchmark",
@@ -126,11 +121,6 @@ second_input_set = Row([
         placeholder="Select Build",
         style={'display': 'none'}
     ),
-    Dropdown(
-        id='profiles_options_second',
-        placeholder="Select Profile",
-        style={'display': 'none'}
-    ),
     Button("Get!", id="get_graphs", color="success",
            style={'height': '35px', 'margin-top': '20px'}),
 ],
@@ -143,7 +133,9 @@ graphs_layout = Card(
         [
             html.P(html.U("Graphical Representation of Performance Data", id="graphs_headings"),
                    style={'text-align': 'center', 'font-size': '30px', 'font-weight': 'bold'}),
-            html.P("Note: Each data point represents PER NODE data. Data is displayed for the builds on which PerfPro has run.",  style={
+            html.P("Note: Each data point represents PER NODE data.",  style={
+                   "font-weight": "bold", 'font-size': '20px', 'color': '#D00000'}),
+            html.P("Note: Data is displayed for the builds on which PerfPro has run.",  style={
                    "font-weight": "bold", 'font-size': '20px', 'color': '#D00000'}),
 
             Graph(id='plot_Throughput'),

@@ -37,8 +37,8 @@ from R1_callbacks import r1_exe_report_callbacks, \
 from R2_callbacks import exe_report_callbacks, \
     engg_report_callbacks  # pylint: disable=unused-import
 
-from Performance.statistics import stats_dropdown_callbacks, statistics_callbacks  # pylint: disable=unused-import
-from Performance.graphs import graphs_dropdown_callbacks, graphs_callbacks  # pylint: disable=unused-import
+from Performance.statistics import statistics_callbacks  # pylint: disable=unused-import
+from Performance.graphs import dropdown_callbacks, graphs_callbacks  # pylint: disable=unused-import
 from Performance.perf_main import perf_stats_page, perf_graphs_page
 
 
