@@ -44,7 +44,7 @@ class JiraTask:
         test_list = []
         te_tag = ""
         id_list = []
-        test_id_dict = {}
+        test_tuple = ()
 
         jira_url = "https://jts.seagate.com/"
         options = {'server': jira_url}
@@ -108,16 +108,16 @@ class JiraTask:
                                 if str(test['status']) == 'ABORTED':
                                     test_list.append(test['key'])
                                     id_list.append(test['id'])
-                        test_id_dict = dict(zip(test_list, id_list))
-        return test_list, te_tag, test_id_dict
+                        test_tuple = tuple(zip(test_list, id_list))
+        return test_tuple, te_tag
 
     def get_test_list_from_te(self, test_exe_id, status='ALL'):
         """
         Get required test jira information for all tests from test execution jira.
         """
         test_details = []
-        test_list, te_tag, test_id_dict = self.get_test_ids_from_te(
-            test_exe_id, status)
+        test_tuple, te_tag = self.get_test_ids_from_te(test_exe_id, status)
+        test_list = list(list(zip(*test_tuple))[0])
         for test in test_list:
             test_id = str(test)
             jira_link = 'https://jts.seagate.com/rest/raven/1.0/api/test?keys=' + test_id
@@ -148,7 +148,7 @@ class JiraTask:
             test_details.append([test_id, test_name, test_to_execute])
         else:
             print("Returned code from xray jira request: {}".format(response.status_code))
-        return test_details, te_tag, test_id_dict
+        return test_details, te_tag
 
     def get_test_plan_details(self, test_plan_id: str) -> [dict]:
         """

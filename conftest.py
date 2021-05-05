@@ -698,7 +698,7 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
             LOGGER.error("Failed to upload log file at location %s", resp[1])
         upload_supporting_logs(test_id, remote_path, "s3bench")
         LOGGER.info("Adding log file path to %s", test_id)
-        comment = "Log file path: {}".format(resp[1])
+        comment = "Log file path: {}".format(os.path.join(resp[1], name))
         if Globals.JIRA_UPDATE:
             jira_id, jira_pwd = get_jira_credential()
             task = jira_utils.JiraTask(jira_id, jira_pwd)

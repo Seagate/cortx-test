@@ -31,6 +31,7 @@ from typing import Tuple
 from typing import Optional
 from typing import Any
 from config import CMN_CFG
+from commons import params
 
 LOGGER = logging.getLogger(__name__)
 
@@ -131,6 +132,26 @@ def cleanup():
         os.makedirs(latest)
     else:
         os.makedirs(os.path.join(log_dir, 'latest'))
+
+
+def create_test_details_file(te_ticket, test_tuple):
+    """
+    Create test details file
+    """
+    tp_details = dict()
+
+    tp_details_file = os.path.join(os.getcwd(),
+                                   params.LOG_DIR_NAME,
+                                   params.JIRA_TEST_DETAILS_JSON)
+    import pdb
+    pdb.set_trace()
+    with open(tp_details_file, 'w') as t_meta:
+        # test_name, test_run_id
+        item = dict()
+        for test, run_id in test_tuple:
+            item[test] = run_id
+        tp_details[te_ticket] = item
+        json.dump(tp_details, t_meta, ensure_ascii=False)
 
 
 class LRUCache:

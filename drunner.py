@@ -235,10 +235,11 @@ def develop_execution_plan(rev_tag_map, selected_tag_map, skip_test, test_map, t
     """Develop Test execution plan to be followed by test runners."""
     for ticket in tickets:
         # get the te meta and create an execution plan
-        test_list, ignore, test_id_dict = get_te_tickets_data(ticket)
+        test_tuple, ignore = get_te_tickets_data(ticket)
         print(f"Ignoring TE tag field {ignore}")
         # group test_list into narrow feature groups
         # with each feature group create parallel and non parallel groups
+        test_list = list(list(zip(*test_tuple))[0])
         for test in test_list:
             if test in skip_test:
                 continue
@@ -273,7 +274,7 @@ def develop_execution_plan(rev_tag_map, selected_tag_map, skip_test, test_map, t
                     t_l[0].add(test)
                 else:
                     t_l[1].add(test)
-        system_utils.create_test_details_file(ticket, test_list, test_id_dict)
+        runner.create_test_details_file(ticket, test_tuple)
 
 
 def create_test_map(base_components_marks: Tuple,
@@ -361,7 +362,7 @@ def run_pytest_collect_only_cmd(opts, te_tag=None):
     prc.communicate()
 
 
-def get_te_tickets_data(ticket: str) -> Tuple[list, str, dict]:
+def get_te_tickets_data(ticket: str) -> Tuple[tuple, str]:
     """
     Gets TE test list and te tag.
     :param ticket:
@@ -369,10 +370,11 @@ def get_te_tickets_data(ticket: str) -> Tuple[list, str, dict]:
     """
     jira_id, jira_pwd = runner.get_jira_credential()
     jira_obj = jira_utils.JiraTask(jira_id, jira_pwd)
-    test_list, te_tag, test_id_dict = jira_obj.get_test_ids_from_te(ticket)
+    test_tuple, te_tag = jira_obj.get_test_ids_from_te(ticket)
+    test_list = list(list(zip(*test_tuple))[0])
     if len(test_list) == 0 or te_tag == "":
         raise EnvironmentError("Please check TE provided, tests or tag is missing")
-    return test_list, te_tag, test_id_dict
+    return test_tuple, te_tag
 
 
 def save_to_logdir(test_list: List) -> None:
