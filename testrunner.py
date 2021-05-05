@@ -29,8 +29,11 @@ def parse_args():
     parser.add_argument("-r", "--html_report", type=str, default='report.html',
                         help="html report name")
     parser.add_argument("-d", "--db_update", type=str_to_bool,
-                        default=True, nargs='?', const=True,
+                        default=True,
                         help="Update Reports DB. Can be false in case reports db is down")
+    parser.add_argument("-u", "--jira_update", type=str_to_bool,
+                        default=True,
+                        help="Update Jira. Can be false in case Jira is down")
     parser.add_argument("-te", "--te_ticket", type=str,
                         help="jira xray test execution id")
     parser.add_argument("-pe", "--parallel_exe", type=str, default=False,
@@ -50,6 +53,9 @@ def parse_args():
     parser.add_argument("-f", "--force_serial_run", type=str_to_bool,
                         default=False, nargs='?', const=True,
                         help="Force sequential run if you face problems with parallel run")
+    parser.add_argument("-i", "--data_integrity_chk", type=str_to_bool,
+                        default=False, help="Helps set DI check enabled so that tests "
+                                            "perform additional checksum check")
     return parser.parse_args()
 
 
@@ -135,6 +141,12 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
 
     if not args.db_update:
         cmd_line = cmd_line + ["--db_update=" + str(False)]
+
+    if not args.jira_update:
+        cmd_line = cmd_line + ["--jira_update=" + str(False)]
+
+    if args.data_integrity_chk:  # redo for kafka tests remove when drunner is supported.
+        cmd_line = cmd_line + ["--data_integrity_chk=" + str(True)]
 
     cmd_line = cmd_line + ['--build=' + build, '--build_type=' + build_type,
                            '--tp_ticket=' + args.test_plan]
@@ -265,6 +277,8 @@ def create_test_meta_data_file(args, test_list, jira_obj=None):
             else:
                 component = list()
             item['component'] = component
+            domain = resp.fields.customfield_21087.value if resp.fields.customfield_21087 else 'None'
+            item['test_domain'] = domain
             test_meta.append(item)
         tp_meta['test_meta'] = test_meta
         json.dump(tp_meta, t_meta, ensure_ascii=False)
@@ -467,7 +481,7 @@ def get_setup_details(args):
     try:
         LOGGER.info("Fetching setups details from database...")
         setups = configmanager.get_config_db(setup_query={})
-        LOGGER.info(setups)
+        LOGGER.debug(setups)
         if os.path.exists(params.SETUPS_FPATH):
             os.remove(params.SETUPS_FPATH)
             LOGGER.info("Removed the stale setups.json file...")

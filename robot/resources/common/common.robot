@@ -23,8 +23,9 @@ Navigate To Page
     [Documentation]  This Keyword is for navigating to certain page
     [Arguments]  ${page_name}  ${sub_page}=False
     log to console and report  Navigating to ${page_name}
+    wait until element is visible  ${${page_name}}  timeout=60
     Click Element  ${${page_name}}
-    Sleep  5s
+    wait for page or element to load
     ${value}=  Convert To Boolean  ${sub_page}
     Run Keyword If  ${value}
     ...  Click Element  ${${sub_page}}
@@ -84,7 +85,7 @@ Generate New Password
 Verify message
     [Documentation]  This keyword verifies error messages for provided element with expected message.
     [Arguments]  ${element_locator}  ${message_to_verify}
-    wait until element is visible  ${${element_locator}}  timeout=10
+    wait until element is visible  ${${element_locator}}  timeout=30
     ${msg_from_gui}=  get text  ${${element_locator}}
     Log To Console And Report  message from guI is ${msg_from_gui}
     should be equal  ${msg_from_gui}  ${message_to_verify}
@@ -99,7 +100,7 @@ Upload File
 Get element list
     [Documentation]  This keyword returns the list of elements.
     [Arguments]  ${locator}
-    wait until element is visible  ${locator}  timeout=10
+    wait until element is visible  ${locator}  timeout=30
     @{element_list}=  Get WebElements  ${locator}
     Log To Console And Report  ${locator}
     [Return]  @{element_list}
