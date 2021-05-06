@@ -142,16 +142,17 @@ class TestCopyObjects:
         for fpath in [self.file_path, self.download_path]:
             if system_utils.path_exists(fpath):
                 system_utils.remove_file(fpath)
+        for response in [self.response1, self.response2]:
+            if response:
+                bucket_list = response[1].bucket_list()[1]
+                if bucket_list:
+                    resp = response[1].delete_multiple_buckets(bucket_list)
+                    assert_utils.assert_true(resp[0], resp[1])
         accounts = self.cortx_test_obj.list_accounts_cortxcli()
         all_accounts = [acc["account_name"] for acc in accounts]
         self.log.info("setup %s", all_accounts)
         for acc in [self.account_name1, self.account_name2]:
             if acc in all_accounts:
-                self.cortx_test_obj.login_cortx_cli(
-                    username=acc, password=self.s3acc_passwd)
-                self.log.debug("Deleting %s account", acc)
-                self.cortx_test_obj.delete_all_buckets_cortx_cli()
-                self.cortx_test_obj.logout_cortx_cli()
                 self.cortx_test_obj.delete_account_cortxcli(
                     account_name=acc, password=self.s3acc_passwd)
                 self.log.info("Deleted %s account successfully", acc)
@@ -289,7 +290,7 @@ class TestCopyObjects:
         assert_utils.assert_in(object_name, resp[1],
                                f"failed to put object {object_name}")
 
-        return True, put_resp[1]["ETag"]
+        return True, put_resp[1]["ETag"].strip('"')
 
     def create_s3cortxcli_acc(
             self,
@@ -338,27 +339,35 @@ class TestCopyObjects:
     @pytest.mark.tags("TEST-19841")
     @CTFailOn(error_handler)
     def test_19841(self):
-        """Copy object to same bucket with different object name while S3 IOs are in progress."""
+        """
+        Copy object to same bucket while S3 IOs are in progress.
+
+        TEST-19841: Copy object to same bucket with different object name.
+        TEST-16941: Copy object to same bucket and check ACL.
+        TEST-17064: Copy object to same bucket and check metadata.
+        """
         self.log.info(
-            "STARTED: Copy object to same bucket with different object name while S3 IOs"
-            " are in progress.")
+            "STARTED: Copy object to same bucket with different object name, check ACL and metadata"
+            " while S3 IOs are in progress.")
         self.log.info("Step 1: Check cluster status, all services are running")
         self.check_cluster_health()
         self.log.info("Step 2: start s3 IO's")
         self.start_stop_validate_parallel_s3ios(
             ios="Start", log_prefix="test_19841_ios", duration="0h4m")
         self.log.info("Step 3: Create bucket and put object in it.")
+        s3_obj, s3_acl_obj = self.response1[1:3]
         resp = system_utils.create_file(
             fpath=self.file_path, count=10, b_size="1M")
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
         status, put_etag = self.create_bucket_put_object(
-            S3_OBJ, self.bucket_name1, self.object_name1, self.file_path)
+            s3_obj, self.bucket_name1, self.object_name1, self.file_path,
+            metadata={"City": "Pune", "State": "Maharashtra"})
         assert_utils.assert_true(status, put_etag)
         self.log.info("Put object ETag: %s", put_etag)
         self.log.info(
             "Step 4: Copy object to same bucket with different object.")
-        status, response = S3_OBJ.copy_object(
+        status, response = s3_obj.copy_object(
             self.bucket_name1, self.object_name1, self.bucket_name1, self.object_name2)
         copy_etag = response['CopyObjectResult']['ETag']
         self.log.info("Copy object ETag: %s", copy_etag)
@@ -370,15 +379,29 @@ class TestCopyObjects:
             copy_etag,
             f"Failed to match ETag: {put_etag}, {copy_etag}")
         self.log.info("Matched ETag: %s, %s", put_etag, copy_etag)
-        self.log.info("Step 6: Stop and validate parallel S3 IOs")
+        self.log.info("Step 6: Get metadata of the destination object and check metadata is same"
+                      " as source object.")
+        resp_meta1 = s3_obj.object_info(self.bucket_name1, self.object_name1)
+        assert_utils.assert_true(resp_meta1[0], resp_meta1[1])
+        resp_meta2 = s3_obj.object_info(self.bucket_name1, self.object_name2)
+        assert_utils.assert_true(resp_meta2[0], resp_meta2[1])
+        assert_utils.assert_dict_equal(resp_meta1[1]["Metadata"],
+                                       resp_meta2[1]["Metadata"])
+        self.log.info("Step 7: Get Object ACL of the destination object and Check that ACL is set"
+                      " to private for the user making the request.")
+        resp_acl = s3_acl_obj.get_object_acl(self.bucket_name1, self.object_name2)
+        assert_utils.assert_true(resp_acl[0], resp_acl[1])
+        assert_utils.assert_equal(resp_acl[1]["Grants"][0]["Grantee"]["ID"], self.response1[0])
+        assert_utils.assert_equal(resp_acl[1]["Grants"][0]["Permission"], "FULL_CONTROL")
+        self.log.info("Step 8: Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
             ios="Stop", log_prefix="test_19841_ios")
         self.log.info(
-            "Step 8: Check cluster status, all services are running")
+            "Step 9: Check cluster status, all services are running")
         self.check_cluster_health()
         self.log.info(
-            "ENDED: Copy object to same bucket with different object name while S3 IOs"
-            " are in progress.")
+            "ENDED: Copy object to same bucket with different object name, check ACL and metadata"
+            " while S3 IOs are in progress.")
 
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-19842")
