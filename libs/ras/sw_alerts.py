@@ -203,3 +203,36 @@ class SoftwareAlert(RASCoreLib):
                 match = re.match(pid_tokenizer, line)
                 parsed_op.update(match.groupdict())
         return parsed_op
+
+    def put_svc_activating(self):
+        
+
+    def put_svc_deactivating(self):
+        pass
+
+    def put_svc_reloading(self):
+        pass
+
+    def put_svc_restarting(self):
+        pass
+
+    def edit_svc_config(self, content:dict):
+        dpath, fname = os.path.split(self.svc_path)
+        response = self.node_utils.read_file(fname,dpath)
+        for key, value in content.items():
+            if key in response:
+                # replace the value
+            else:
+                # insert the value
+        self.node_utils.rename_file(self.svc_path,self.get_tmp_svc_path())
+        f_obj = self.node_utils.create_file(self.svc_path, )
+        f.obj.write(response)
+        
+
+    def restore_svc_config(self):
+        self.node_utils.rename_file(self.get_tmp_svc_path(),self.svc_path)
+
+    def get_tmp_svc_path():
+        dpath, fname = os.path.split(self.svc_path)
+        tmp_svc_path = os.join(dpath,fname+"tmp")
+        return tmp_svc_path
