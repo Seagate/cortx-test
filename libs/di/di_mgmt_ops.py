@@ -85,7 +85,7 @@ class ManagementOPs:
         :return:
         """
         LOGGER.info(f"Creating Cortx s3 account users with {use_cortx_cli}")
-        s3acc_obj = cctl.CortxcliS3AccountOperations()
+        s3acc_obj = cctl.CortxCliTestLib()
         s3acc_obj.open_connection()
         ts = time.strftime("%Y%m%d_%H%M%S")
         users = {"{}{}_{}".format(cls.user_prefix, i, ts): dict() for i in range(1, nusers + 1)}
@@ -241,5 +241,3 @@ class ManagementOPs:
         for k in users:
             bkts = [cli.create_bucket('{}bucket{}'.format(k, i)) for i in range(1, maxbuckets + 1)]
             buckets[k] = bkts
-
-
