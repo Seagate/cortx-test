@@ -23,10 +23,12 @@ import os
 import sys
 from http import HTTPStatus
 from jira import JIRA
+import time
 
 import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
+
 
 DEFAULT_TIMEOUT = 180  # seconds
 
