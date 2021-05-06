@@ -21,6 +21,7 @@
 import os
 import logging
 import pytest
+import time
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
@@ -38,7 +39,6 @@ from libs.s3.s3_acl_test_lib import S3AclTestLib
 S3_TEST_OBJ = S3TestLib()
 ACL_OBJ = S3AclTestLib()
 NO_AUTH_OBJ = S3LibNoAuth()
-ALL_USERS_CFG = read_yaml("config/s3/test_all_users_bucket_acl.yaml")[1]
 
 
 class TestAllUsers:
@@ -61,6 +61,9 @@ class TestAllUsers:
             os.makedirs(cls.test_dir_path)
             cls.log.info("Created path: %s", cls.test_dir_path)
         cls.log.info("Test file path: %s", cls.test_file_path)
+
+        cls.mb_count = 5
+        cls.group_uri = "uri=http://acs.amazonaws.com/groups/global/AllUsers"
         cls.log.info("ENDED: setup test suite operations.")
 
     @classmethod
@@ -85,6 +88,11 @@ class TestAllUsers:
         self.log.info("STARTED: Setup operations")
         if system_utils.path_exists(self.test_file_path):
             system_utils.remove_file(self.test_file_path)
+
+        self.timestamp = time.time()
+        self.bucket_name = "allusersbktacl-bkt{}".format(str(time.time()))
+        self.obj_name = "testobj{}".format(str(time.time()))
+        self.new_obj_name = "newtestobj{}".format(str(time.time()))
         self.log.info("ENDED: Setup operations")
 
     def teardown_method(self):
@@ -95,13 +103,14 @@ class TestAllUsers:
         test execution such as S3 buckets and the objects present into that bucket.
         """
         self.log.info("STARTED: Teardown operations")
+        bkt_name_prefix = "allusersbktacl-bkt"
         bucket_list = S3_TEST_OBJ.bucket_list()[1]
         all_users_buckets = [
-            bucket for bucket in bucket_list if ALL_USERS_CFG["all_users"]["bkt_name_prefix"] in bucket]
+            bucket for bucket in bucket_list if bkt_name_prefix in bucket]
         for bucket in all_users_buckets:
             ACL_OBJ.put_bucket_acl(
                 bucket,
-                grant_full_control=ALL_USERS_CFG["all_users"]["group_uri"])
+                grant_full_control=self.group_uri)
         if all_users_buckets:
             resp = S3_TEST_OBJ.delete_multiple_buckets(all_users_buckets)
             assert_true(resp[0], resp[1])
@@ -142,32 +151,27 @@ class TestAllUsers:
             "STARTED: Check listing of objects in bucket without "
             "Authentication when AllUsers have READ permission")
         self.log.info("Step 1: Creating a bucket and uploading an object")
-        self.create_bucket_put_object(
-            ALL_USERS_CFG["test_375"]["bucket_name"],
-            ALL_USERS_CFG["test_375"]["obj_name"],
-            self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+        self.create_bucket_put_object(self.bucket_name, self.obj_name,
+                                      self.test_file_path,
+                                      self.mb_count)
         self.log.info("Step 1: Created a bucket and uploaded an object")
         self.log.info("Step 2: Changing bucket permission to AllUsers READ")
-        resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_375"]["bucket_name"],
-            grant_read=ALL_USERS_CFG["all_users"]["group_uri"])
+        resp = ACL_OBJ.put_bucket_acl(self.bucket_name,
+                                      grant_read=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers READ")
         self.log.info("Step 3: Verifying bucket permission is changed")
-        resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_375"]["bucket_name"])
+        resp = ACL_OBJ.get_bucket_acl(self.bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_375"]["permission"],
+            "READ",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info(
             "Step 4: Trying to list objects of a bucket from "
             "other unsigned user")
-        resp = NO_AUTH_OBJ.object_list(
-            ALL_USERS_CFG["test_375"]["bucket_name"])
+        resp = NO_AUTH_OBJ.object_list(self.bucket_name)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 4: Listed objects of a bucket from other "
@@ -185,39 +189,33 @@ class TestAllUsers:
             "STARTED: Put an object in bucket without Authentication"
             " when AllUsers have READ permission")
         self.log.info("Step 1: Creating a bucket and uploading an object")
-        self.create_bucket_put_object(
-            ALL_USERS_CFG["test_376"]["bucket_name"],
-            ALL_USERS_CFG["test_376"]["obj_name"],
-            self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+        self.create_bucket_put_object(self.bucket_name, self.obj_name,
+                                      self.test_file_path,
+                                      self.mb_count)
         self.log.info("Step 1: Created a bucket and uploaded an object")
         self.log.info("Step 2: Changing bucket permission to AllUsers READ")
-        resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_376"]["bucket_name"],
-            grant_read=ALL_USERS_CFG["all_users"]["group_uri"])
+        resp = ACL_OBJ.put_bucket_acl(self.bucket_name,
+                                      grant_read=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers READ")
         self.log.info("Step 3: Verifying bucket permission is changed")
-        resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_376"]["bucket_name"])
+        resp = ACL_OBJ.get_bucket_acl(self.bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_376"]["permission"],
+            "READ",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info(
             "Step 4: Trying to put an object to a bucket "
             "from other unsigned user")
         try:
-            resp = NO_AUTH_OBJ.put_object(
-                ALL_USERS_CFG["test_376"]["bucket_name"],
-                ALL_USERS_CFG["test_376"]["new_obj_name"],
-                self.test_file_path)
+            resp = NO_AUTH_OBJ.put_object(self.bucket_name, "testobj",
+                                          self.test_file_path)
             assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
-                ALL_USERS_CFG["test_376"]["err_message"],
+                "AccessDenied",
                 error.message,
                 error.message)
         self.log.info(
@@ -237,37 +235,31 @@ class TestAllUsers:
             "STARTED: Delete an object from bucket without Authentication "
             "when AllUsers have READ permission")
         self.log.info("Step 1: Creating a bucket and uploading an object")
-        self.create_bucket_put_object(
-            ALL_USERS_CFG["test_377"]["bucket_name"],
-            ALL_USERS_CFG["test_377"]["obj_name"],
-            self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+        self.create_bucket_put_object(self.bucket_name, self.obj_name,
+                                      self.test_file_path,
+                                      self.mb_count)
         self.log.info("Step 1: Created a bucket and uploaded an object")
         self.log.info("Step 2: Changing bucket permission to AllUsers READ")
-        resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_377"]["bucket_name"],
-            grant_read=ALL_USERS_CFG["all_users"]["group_uri"])
+        resp = ACL_OBJ.put_bucket_acl(self.bucket_name,
+                                      grant_read=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers READ")
         self.log.info("Step 3: Verifying bucket permission is changed")
-        resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_377"]["bucket_name"])
+        resp = ACL_OBJ.get_bucket_acl(self.bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_377"]["permission"],
+            "READ",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info(
             "Step 4: Trying to delete an object from other unsigned user")
         try:
-            resp = NO_AUTH_OBJ.delete_object(
-                ALL_USERS_CFG["test_377"]["bucket_name"],
-                ALL_USERS_CFG["test_377"]["obj_name"])
+            resp = NO_AUTH_OBJ.delete_object(self.bucket_name, self.obj_name)
             assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
-                ALL_USERS_CFG["test_377"]["err_message"],
+                "AccessDenied",
                 error.message,
                 error.message)
         self.log.info(
@@ -286,37 +278,31 @@ class TestAllUsers:
             "STARTED: Read an object ACL from bucket without Authentication "
             "when AllUsers have READ permission")
         self.log.info("Step 1: Creating a bucket and uploading an object")
-        self.create_bucket_put_object(
-            ALL_USERS_CFG["test_378"]["bucket_name"],
-            ALL_USERS_CFG["test_378"]["obj_name"],
-            self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+        self.create_bucket_put_object(self.bucket_name, self.obj_name,
+                                      self.test_file_path,
+                                      self.mb_count)
         self.log.info("Step 1: Created a bucket and uploaded an object")
         self.log.info("Step 2: Changing bucket permission to AllUsers READ")
-        resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_378"]["bucket_name"],
-            grant_read=ALL_USERS_CFG["all_users"]["group_uri"])
+        resp = ACL_OBJ.put_bucket_acl(self.bucket_name,
+                                      grant_read=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers READ")
         self.log.info("Step 3: Verifying bucket permission is changed")
-        resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_378"]["bucket_name"])
+        resp = ACL_OBJ.get_bucket_acl(self.bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_378"]["permission"],
+            "READ",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info(
             "Step 4: Trying to read an object's ACL from other unsigned user")
         try:
-            resp = NO_AUTH_OBJ.get_object_acl(
-                ALL_USERS_CFG["test_378"]["bucket_name"],
-                ALL_USERS_CFG["test_378"]["obj_name"])
+            resp = NO_AUTH_OBJ.get_object_acl(self.bucket_name, self.obj_name)
             assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
-                ALL_USERS_CFG["test_378"]["err_message"],
+                "AccessDenied",
                 error.message,
                 error.message)
         self.log.info(
@@ -336,34 +322,34 @@ class TestAllUsers:
             "when AllUsers have READ permission")
         self.log.info("Step 1: Creating a bucket and uploading an object")
         self.create_bucket_put_object(
-            ALL_USERS_CFG["test_379"]["bucket_name"],
-            ALL_USERS_CFG["test_379"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+            self.mb_count)
         self.log.info("Step 1: Created a bucket and uploaded an object")
         self.log.info("Step 2: Changing bucket permission to AllUsers READ")
         resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_379"]["bucket_name"],
-            grant_read=ALL_USERS_CFG["all_users"]["group_uri"])
+            self.bucket_name,
+            grant_read=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers READ")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_379"]["bucket_name"])
+            self.bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_379"]["permission"],
+            "READ",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info("Step 4: Reading bucket's ACL from other unsigned user")
         try:
             resp = NO_AUTH_OBJ.get_bucket_acl(
-                ALL_USERS_CFG["test_379"]["bucket_name"])
+                self.bucket_name)
             assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
-                ALL_USERS_CFG["test_379"]["err_message"],
+                "AccessDenied",
                 error.message,
                 error.message)
         self.log.info(
@@ -383,35 +369,35 @@ class TestAllUsers:
             "when AllUsers have READ permission")
         self.log.info("Step 1: Creating a bucket and uploading an object")
         self.create_bucket_put_object(
-            ALL_USERS_CFG["test_380"]["bucket_name"],
-            ALL_USERS_CFG["test_380"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+            self.mb_count)
         self.log.info("Step 1: Created a bucket and uploaded an object")
         self.log.info("Step 2: Changing bucket permission to AllUsers READ")
         resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_380"]["bucket_name"],
-            grant_read=ALL_USERS_CFG["all_users"]["group_uri"])
+            self.bucket_name,
+            grant_read=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers READ")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_380"]["bucket_name"])
+            self.bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_380"]["permission"],
+            "READ",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info("Step 4: Updating bucket ACL from other unsigned user")
         try:
             resp = NO_AUTH_OBJ.put_bucket_acl(
-                ALL_USERS_CFG["test_380"]["bucket_name"],
-                acl=ALL_USERS_CFG["test_380"]["acl"])
+                self.bucket_name,
+                acl="private")
             assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
-                ALL_USERS_CFG["test_380"]["err_message"],
+                "AccessDenied",
                 error.message,
                 error.message)
         self.log.info(
@@ -431,37 +417,37 @@ class TestAllUsers:
             "when AllUsers have READ permission")
         self.log.info("Step 1: Creating a bucket and uploading an object")
         self.create_bucket_put_object(
-            ALL_USERS_CFG["test_381"]["bucket_name"],
-            ALL_USERS_CFG["test_381"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+            self.mb_count)
         self.log.info("Step 1: Created a bucket and uploaded an object")
         self.log.info("Step 2: Changing bucket permission to AllUsers READ")
         resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_381"]["bucket_name"],
-            grant_read=ALL_USERS_CFG["all_users"]["group_uri"])
+            self.bucket_name,
+            grant_read=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers READ")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_381"]["bucket_name"])
+            self.bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_381"]["permission"],
+            "READ",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info(
             "Step 4: Updating object's ACL from other unsigned user")
         try:
             resp = NO_AUTH_OBJ.put_object_canned_acl(
-                ALL_USERS_CFG["test_381"]["bucket_name"],
-                ALL_USERS_CFG["test_381"]["obj_name"],
-                acl=ALL_USERS_CFG["test_381"]["acl"])
+                self.bucket_name,
+                self.obj_name,
+                acl="private")
             assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
-                ALL_USERS_CFG["test_381"]["err_message"],
+                "AccessDenied",
                 error.message,
                 error.message)
         self.log.info(
@@ -481,35 +467,35 @@ class TestAllUsers:
             "when AllUsers have WRITE permission")
         self.log.info("Step 1: Creating a bucket and uploading an object")
         self.create_bucket_put_object(
-            ALL_USERS_CFG["test_382"]["bucket_name"],
-            ALL_USERS_CFG["test_382"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+            self.mb_count)
         self.log.info("Step 1: Created a bucket and uploaded an object")
         self.log.info("Step 2: Changing bucket permission to AllUsers WRITE")
         resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_382"]["bucket_name"],
-            grant_write=ALL_USERS_CFG["all_users"]["group_uri"])
+            self.bucket_name,
+            grant_write=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers WRITE")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_382"]["bucket_name"])
+            self.bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_382"]["permission"],
+            "WRITE",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info(
             "Step 4: Listing objects in bucket from other unsigned user")
         try:
             resp = NO_AUTH_OBJ.object_list(
-                ALL_USERS_CFG["test_382"]["bucket_name"])
+                self.bucket_name)
             assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
-                ALL_USERS_CFG["test_382"]["err_message"],
+                "AccessDenied",
                 error.message,
                 error.message)
         self.log.info(
@@ -529,52 +515,52 @@ class TestAllUsers:
             "AllUsers have WRITE permission")
         self.log.info("Step 1: Creating a bucket and uploading an object")
         self.create_bucket_put_object(
-            ALL_USERS_CFG["test_383"]["bucket_name"],
-            ALL_USERS_CFG["test_383"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+            self.mb_count)
         self.log.info("Step 1: Created a bucket and uploaded an object")
         self.log.info("Step 2: Changing bucket permission to AllUsers WRITE")
         resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_383"]["bucket_name"],
-            grant_write=ALL_USERS_CFG["all_users"]["group_uri"])
+            self.bucket_name,
+            grant_write=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers WRITE")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_383"]["bucket_name"])
+            self.bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_383"]["permission"],
+            "WRITE",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info(
             "Step 4: Putting an object in the bucket from other unsigned user")
         resp = NO_AUTH_OBJ.put_object(
-            ALL_USERS_CFG["test_383"]["bucket_name"],
-            ALL_USERS_CFG["test_383"]["new_obj_name"],
+            self.bucket_name,
+            self.new_obj_name,
             self.test_file_path)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 4: An object %s is put to bucket %s successfully",
-            ALL_USERS_CFG["test_383"]["new_obj_name"],
-            ALL_USERS_CFG["test_383"]["bucket_name"])
+            self.new_obj_name,
+            self.bucket_name)
         self.log.info("Step 5: Setting the bucket ACL to 'private'")
         resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_383"]["bucket_name"],
-            acl=ALL_USERS_CFG["test_383"]["acl"])
+            self.bucket_name,
+            acl="private")
         assert_true(resp[0], resp[1])
         self.log.info("Step 5: Bucket ACL is set to 'private' successfully")
         self.log.info(
             "Step 6: Reading objects of bucket %s",
-            ALL_USERS_CFG["test_383"]["bucket_name"])
+            self.bucket_name)
         resp = S3_TEST_OBJ.object_list(
-            ALL_USERS_CFG["test_383"]["bucket_name"])
+            self.bucket_name)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 6: Read objects of bucket %s successfully",
-            ALL_USERS_CFG["test_383"]["bucket_name"])
+            self.bucket_name)
         self.log.info(
             "ENDED: Create an object in bucket without Authentication when "
             "AllUsers have WRITE permission")
@@ -590,31 +576,31 @@ class TestAllUsers:
             " AllUsers have WRITE permission")
         self.log.info("Step 1: Creating a bucket and uploading an object")
         self.create_bucket_put_object(
-            ALL_USERS_CFG["test_384"]["bucket_name"],
-            ALL_USERS_CFG["test_384"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+            self.mb_count)
         self.log.info("Step 1: Created a bucket and uploaded an object")
         self.log.info("Step 2: Changing bucket permission to AllUsers WRITE")
         resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_384"]["bucket_name"],
-            grant_write=ALL_USERS_CFG["all_users"]["group_uri"])
+            self.bucket_name,
+            grant_write=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers WRITE")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_384"]["bucket_name"])
+            self.bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_384"]["permission"],
+            "WRITE",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info(
             "Step 4: Deleting an object of a bucket from other unsigned user")
         resp = NO_AUTH_OBJ.delete_object(
-            ALL_USERS_CFG["test_384"]["bucket_name"],
-            ALL_USERS_CFG["test_384"]["obj_name"])
+            self.bucket_name,
+            self.obj_name)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 4: Deleted an object of a bucket from other"
@@ -634,35 +620,35 @@ class TestAllUsers:
             " when AllUsers have WRITE permission")
         self.log.info("Step 1: Creating a bucket and uploading an object")
         self.create_bucket_put_object(
-            ALL_USERS_CFG["test_385"]["bucket_name"],
-            ALL_USERS_CFG["test_385"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+            self.mb_count)
         self.log.info("Step 1: Created a bucket and uploaded an object")
         self.log.info("Step 2: Changing bucket permission to AllUsers WRITE")
         resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_385"]["bucket_name"],
-            grant_write=ALL_USERS_CFG["all_users"]["group_uri"])
+            self.bucket_name,
+            grant_write=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers WRITE")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_385"]["bucket_name"])
+            self.bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_385"]["permission"],
+            "WRITE",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info("Step 4: Reading an object ACL from other unsigned user")
         try:
             resp = NO_AUTH_OBJ.get_object_acl(
-                ALL_USERS_CFG["test_385"]["bucket_name"],
-                ALL_USERS_CFG["test_385"]["obj_name"])
+                self.bucket_name,
+                self.obj_name)
             assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
-                ALL_USERS_CFG["test_385"]["err_message"],
+                "AccessDenied",
                 error.message,
                 error.message)
         self.log.info(
@@ -682,34 +668,34 @@ class TestAllUsers:
             " when AllUsers have WRITE permission")
         self.log.info("Step 1: Creating a bucket and uploading an object")
         self.create_bucket_put_object(
-            ALL_USERS_CFG["test_386"]["bucket_name"],
-            ALL_USERS_CFG["test_386"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+            self.mb_count)
         self.log.info("Step 1: Created a bucket and uploaded an object")
         self.log.info("Step 2: Changing bucket permission to AllUsers WRITE")
         resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_386"]["bucket_name"],
-            grant_write=ALL_USERS_CFG["all_users"]["group_uri"])
+            self.bucket_name,
+            grant_write=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers WRITE")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_386"]["bucket_name"])
+            self.bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_386"]["permission"],
+            "WRITE",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info("Step 4: Reading bucket ACL from other unsigned user")
         try:
             resp = NO_AUTH_OBJ.get_bucket_acl(
-                ALL_USERS_CFG["test_386"]["bucket_name"])
+                self.bucket_name)
             assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
-                ALL_USERS_CFG["test_386"]["err_message"],
+                "AccessDenied",
                 error.message,
                 error.message)
         self.log.info(
@@ -729,25 +715,25 @@ class TestAllUsers:
             " when AllUsers have WRITE permission")
         self.log.info("Step 1: Creating a bucket and uploading an object")
         self.create_bucket_put_object(
-            ALL_USERS_CFG["test_387"]["bucket_name"],
-            ALL_USERS_CFG["test_387"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+            self.mb_count)
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
         self.log.info("Step 2: Changing bucket permission to AllUsers WRITE")
         resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_387"]["bucket_name"],
-            grant_write=ALL_USERS_CFG["all_users"]["group_uri"])
+            self.bucket_name,
+            grant_write=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers WRITE")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_387"]["bucket_name"])
+            self.bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_387"]["permission"],
+            "WRITE",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info(
@@ -755,12 +741,12 @@ class TestAllUsers:
             "other unsigned user")
         try:
             resp = NO_AUTH_OBJ.put_bucket_acl(
-                ALL_USERS_CFG["test_387"]["bucket_name"],
-                acl=ALL_USERS_CFG["test_387"]["acl"])
+                self.bucket_name,
+                acl="private")
             assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
-                ALL_USERS_CFG["test_387"]["err_message"],
+                "AccessDenied",
                 error.message,
                 error.message)
         self.log.info(
@@ -781,37 +767,37 @@ class TestAllUsers:
             "when AllUsers have WRITE permission")
         self.log.info("Step 1: Creating a bucket and uploading an object")
         self.create_bucket_put_object(
-            ALL_USERS_CFG["test_388"]["bucket_name"],
-            ALL_USERS_CFG["test_388"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+            self.mb_count)
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
         self.log.info("Step 2: Changing bucket permission to AllUsers WRITE")
         resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_388"]["bucket_name"],
-            grant_write=ALL_USERS_CFG["all_users"]["group_uri"])
+            self.bucket_name,
+            grant_write=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers WRITE")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_388"]["bucket_name"])
+            self.bucket_name)
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_388"]["permission"],
+            "WRITE",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info(
             "Step 4: Trying to change object ACL from other unsigned user")
         try:
             resp = NO_AUTH_OBJ.put_object_canned_acl(
-                ALL_USERS_CFG["test_388"]["bucket_name"],
-                ALL_USERS_CFG["test_388"]["obj_name"],
-                acl=ALL_USERS_CFG["test_388"]["acl"])
+                self.bucket_name,
+                self.obj_name,
+                acl="private")
             assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
-                ALL_USERS_CFG["test_388"]["err_message"],
+                "AccessDenied",
                 error.message,
                 error.message)
         self.log.info(
@@ -833,36 +819,36 @@ class TestAllUsers:
         self.log.info(
             "Step 1: Creating a bucket and uploading an object to bucket")
         self.create_bucket_put_object(
-            ALL_USERS_CFG["test_389"]["bucket_name"],
-            ALL_USERS_CFG["test_389"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+            self.mb_count)
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
         self.log.info(
             "Step 2: Changing bucket permission to AllUsers READ_ACP")
         resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_389"]["bucket_name"],
-            grant_read_acp=ALL_USERS_CFG["all_users"]["group_uri"])
+            self.bucket_name,
+            grant_read_acp=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers READ_ACP")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_389"]["bucket_name"])
+            self.bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_389"]["permission"],
+            "READ_ACP",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info("Step 4: Get list of objects from other unsigned user")
         try:
             resp = NO_AUTH_OBJ.object_list(
-                ALL_USERS_CFG["test_389"]["bucket_name"])
+                self.bucket_name)
             assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
-                ALL_USERS_CFG["test_389"]["err_message"],
+                "AccessDenied",
                 error.message,
                 error.message)
         self.log.info(
@@ -883,39 +869,39 @@ class TestAllUsers:
         self.log.info(
             "Step 1: Creating a bucket and uploading an object to bucket")
         self.create_bucket_put_object(
-            ALL_USERS_CFG["test_390"]["bucket_name"],
-            ALL_USERS_CFG["test_390"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+            self.mb_count)
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
         self.log.info(
             "Step 2: Changing bucket permission to AllUsers READ_ACP")
         resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_390"]["bucket_name"],
-            grant_read_acp=ALL_USERS_CFG["all_users"]["group_uri"])
+            self.bucket_name,
+            grant_read_acp=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers READ_ACP")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_390"]["bucket_name"])
+            self.bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_390"]["permission"],
+            "READ_ACP",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info(
             "Step 4: Trying to upload an object from other unsigned user")
         try:
             resp = NO_AUTH_OBJ.put_object(
-                ALL_USERS_CFG["test_390"]["bucket_name"],
-                ALL_USERS_CFG["test_390"]["new_obj_name"],
+                self.bucket_name,
+                self.new_obj_name,
                 self.test_file_path)
             assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
-                ALL_USERS_CFG["test_390"]["err_message"],
+                "AccessDenied",
                 error.message,
                 error.message)
         self.log.info(
@@ -936,38 +922,38 @@ class TestAllUsers:
         self.log.info(
             "Step 1: Creating a bucket and uploading an object to bucket")
         self.create_bucket_put_object(
-            ALL_USERS_CFG["test_391"]["bucket_name"],
-            ALL_USERS_CFG["test_391"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+            self.mb_count)
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
         self.log.info(
             "Step 2: Changing bucket permission to AllUsers READ_ACP")
         resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_391"]["bucket_name"],
-            grant_read_acp=ALL_USERS_CFG["all_users"]["group_uri"])
+            self.bucket_name,
+            grant_read_acp=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers READ_ACP")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_391"]["bucket_name"])
+            self.bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_391"]["permission"],
+            "READ_ACP",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info(
             "Step 4:Trying to delete existing object from other unsigned user")
         try:
             resp = NO_AUTH_OBJ.delete_object(
-                ALL_USERS_CFG["test_391"]["bucket_name"],
-                ALL_USERS_CFG["test_391"]["obj_name"])
+                self.bucket_name,
+                self.obj_name)
             assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
-                ALL_USERS_CFG["test_391"]["err_message"],
+                "AccessDenied",
                 error.message,
                 error.message)
         self.log.info(
@@ -988,26 +974,26 @@ class TestAllUsers:
         self.log.info(
             "Step 1: Creating a bucket and uploading an object to bucket")
         self.create_bucket_put_object(
-            ALL_USERS_CFG["test_392"]["bucket_name"],
-            ALL_USERS_CFG["test_392"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+            self.mb_count)
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
         self.log.info(
             "Step 2: Changing bucket permission to AllUsers READ_ACP")
         resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_392"]["bucket_name"],
-            grant_read_acp=ALL_USERS_CFG["all_users"]["group_uri"])
+            self.bucket_name,
+            grant_read_acp=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers READ_ACP")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_392"]["bucket_name"])
+            self.bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_392"]["permission"],
+            "READ_ACP",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info(
@@ -1015,12 +1001,12 @@ class TestAllUsers:
             " other unsigned user")
         try:
             resp = NO_AUTH_OBJ.get_object_acl(
-                ALL_USERS_CFG["test_392"]["bucket_name"],
-                ALL_USERS_CFG["test_392"]["obj_name"])
+                self.bucket_name,
+                self.obj_name)
             assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
-                ALL_USERS_CFG["test_392"]["err_message"],
+                "AccessDenied",
                 error.message,
                 error.message)
         self.log.info(
@@ -1041,32 +1027,32 @@ class TestAllUsers:
         self.log.info(
             "Step 1: Creating a bucket and uploading an object to bucket")
         self.create_bucket_put_object(
-            ALL_USERS_CFG["test_393"]["bucket_name"],
-            ALL_USERS_CFG["test_393"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+            self.mb_count)
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
         self.log.info(
             "Step 2: Changing bucket permission to AllUsers READ_ACP")
         resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_393"]["bucket_name"],
-            grant_read_acp=ALL_USERS_CFG["all_users"]["group_uri"])
+            self.bucket_name,
+            grant_read_acp=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers READ_ACP")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_393"]["bucket_name"])
+            self.bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_393"]["permission"],
+            "READ_ACP",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info(
             "Step 4: Trying to read bucket's ACL from other unsigned user")
         resp = NO_AUTH_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_393"]["bucket_name"])
+            self.bucket_name)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 4: Read bucket's ACL from other unsigned user successfully")
@@ -1086,38 +1072,38 @@ class TestAllUsers:
         self.log.info(
             "Step 1: Creating a bucket and uploading an object to bucket")
         self.create_bucket_put_object(
-            ALL_USERS_CFG["test_394"]["bucket_name"],
-            ALL_USERS_CFG["test_394"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+            self.mb_count)
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
         self.log.info(
             "Step 2: Changing bucket permission to AllUsers READ_ACP")
         resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_394"]["bucket_name"],
-            grant_read_acp=ALL_USERS_CFG["all_users"]["group_uri"])
+            self.bucket_name,
+            grant_read_acp=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers READ_ACP")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_394"]["bucket_name"])
+            self.bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_394"]["permission"],
+            "READ_ACP",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info(
             "Step 4: Trying to update bucket's ACL from other unsigned user")
         try:
             resp = NO_AUTH_OBJ.put_bucket_acl(
-                ALL_USERS_CFG["test_394"]["bucket_name"],
-                acl=ALL_USERS_CFG["test_394"]["acl"])
+                self.bucket_name,
+                acl="private")
             assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
-                ALL_USERS_CFG["test_394"]["err_message"],
+                "AccessDenied",
                 error.message,
                 error.message)
         self.log.info(
@@ -1138,39 +1124,39 @@ class TestAllUsers:
         self.log.info(
             "Step 1: Creating a bucket and uploading an object to bucket")
         self.create_bucket_put_object(
-            ALL_USERS_CFG["test_395"]["bucket_name"],
-            ALL_USERS_CFG["test_395"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+            self.mb_count)
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
         self.log.info(
             "Step 2: Changing bucket permission to AllUsers READ_ACP")
         resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_395"]["bucket_name"],
-            grant_read_acp=ALL_USERS_CFG["all_users"]["group_uri"])
+            self.bucket_name,
+            grant_read_acp=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers READ_ACP")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_395"]["bucket_name"])
+            self.bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_395"]["permission"],
+            "READ_ACP",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info(
             "Step 4: Trying to update object's ACL from other unsigned user")
         try:
             resp = NO_AUTH_OBJ.put_object_canned_acl(
-                ALL_USERS_CFG["test_395"]["bucket_name"],
-                ALL_USERS_CFG["test_395"]["obj_name"],
-                acl=ALL_USERS_CFG["test_395"]["acl"])
+                self.bucket_name,
+                self.obj_name,
+                acl="private")
             assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
-                ALL_USERS_CFG["test_395"]["err_message"],
+                "AccessDenied",
                 error.message,
                 error.message)
         self.log.info(
@@ -1191,38 +1177,38 @@ class TestAllUsers:
         self.log.info(
             "Step 1: Creating a bucket and uploading an object to bucket")
         self.create_bucket_put_object(
-            ALL_USERS_CFG["test_396"]["bucket_name"],
-            ALL_USERS_CFG["test_396"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+            self.mb_count)
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
         self.log.info(
             "Step 2: Changing bucket permission to AllUsers WRITE_ACP")
         resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_396"]["bucket_name"],
-            grant_write_acp=ALL_USERS_CFG["all_users"]["group_uri"])
+            self.bucket_name,
+            grant_write_acp=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Changed bucket permission to AllUsers WRITE_ACP")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_396"]["bucket_name"])
+            self.bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_396"]["permission"],
+            "WRITE_ACP",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info(
             "Step 4: Getting list of objects in bucket from other unsigned user")
         try:
             resp = NO_AUTH_OBJ.object_list(
-                ALL_USERS_CFG["test_396"]["bucket_name"])
+                self.bucket_name)
             assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
-                ALL_USERS_CFG["test_396"]["err_message"],
+                "AccessDenied",
                 error.message,
                 error.message)
         self.log.info(
@@ -1243,40 +1229,40 @@ class TestAllUsers:
         self.log.info(
             "Step 1: Creating a bucket and uploading an object to bucket")
         self.create_bucket_put_object(
-            ALL_USERS_CFG["test_397"]["bucket_name"],
-            ALL_USERS_CFG["test_397"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+            self.mb_count)
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
         self.log.info(
             "Step 2: Changing bucket permission to AllUsers WRITE_ACP")
         resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_397"]["bucket_name"],
-            grant_write_acp=ALL_USERS_CFG["all_users"]["group_uri"])
+            self.bucket_name,
+            grant_write_acp=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Changed bucket permission to AllUsers WRITE_ACP")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_397"]["bucket_name"])
+            self.bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_397"]["permission"],
+            "WRITE_ACP",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info(
             "Step 4: Uploading an object to a bucket from other unsigned user")
         try:
             resp = NO_AUTH_OBJ.put_object(
-                ALL_USERS_CFG["test_397"]["bucket_name"],
-                ALL_USERS_CFG["test_397"]["new_obj_name"],
+                self.bucket_name,
+                self.new_obj_name,
                 self.test_file_path)
             assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
-                ALL_USERS_CFG["test_397"]["err_message"],
+                "AccessDenied",
                 error.message,
                 error.message)
         self.log.info(
@@ -1297,39 +1283,39 @@ class TestAllUsers:
         self.log.info(
             "Step 1: Creating a bucket and uploading an object to bucket")
         self.create_bucket_put_object(
-            ALL_USERS_CFG["test_398"]["bucket_name"],
-            ALL_USERS_CFG["test_398"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+            self.mb_count)
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
         self.log.info(
             "Step 2: Changing bucket permission to AllUsers WRITE_ACP")
         resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_398"]["bucket_name"],
-            grant_write_acp=ALL_USERS_CFG["all_users"]["group_uri"])
+            self.bucket_name,
+            grant_write_acp=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Changed bucket permission to AllUsers WRITE_ACP")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_398"]["bucket_name"])
+            self.bucket_name)
         assert_true(resp[0], resp[1])
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_398"]["permission"],
+            "WRITE_ACP",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info(
             "Step 4: Deleting an object to a bucket from other unsigned user")
         try:
             resp = NO_AUTH_OBJ.delete_object(
-                ALL_USERS_CFG["test_398"]["bucket_name"],
-                ALL_USERS_CFG["test_398"]["obj_name"])
+                self.bucket_name,
+                self.obj_name)
             assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
-                ALL_USERS_CFG["test_398"]["err_message"],
+                "AccessDenied",
                 error.message,
                 error.message)
         self.log.info(
@@ -1350,38 +1336,38 @@ class TestAllUsers:
         self.log.info(
             "Step 1: Creating a bucket and uploading an object to bucket")
         self.create_bucket_put_object(
-            ALL_USERS_CFG["test_399"]["bucket_name"],
-            ALL_USERS_CFG["test_399"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+            self.mb_count)
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
         self.log.info(
             "Step 2: Changing bucket permission to AllUsers WRITE_ACP")
         resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_399"]["bucket_name"],
-            grant_write_acp=ALL_USERS_CFG["all_users"]["group_uri"])
+            self.bucket_name,
+            grant_write_acp=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Changed bucket permission to AllUsers WRITE_ACP")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_399"]["bucket_name"])
+            self.bucket_name)
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_399"]["permission"],
+            "WRITE_ACP",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info(
             "Step 4: Reading object ACL through other unsigned account")
         try:
             resp = NO_AUTH_OBJ.get_object_acl(
-                ALL_USERS_CFG["test_399"]["bucket_name"],
-                ALL_USERS_CFG["test_399"]["obj_name"])
+                self.bucket_name,
+                self.obj_name)
             assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
-                ALL_USERS_CFG["test_399"]["err_message"],
+                "AccessDenied",
                 error.message,
                 error.message)
         self.log.info(
@@ -1402,37 +1388,37 @@ class TestAllUsers:
         self.log.info(
             "Step 1: Creating a bucket and uploading an object to bucket")
         self.create_bucket_put_object(
-            ALL_USERS_CFG["test_400"]["bucket_name"],
-            ALL_USERS_CFG["test_400"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+            self.mb_count)
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
         self.log.info(
             "Step 2: Changing bucket permission to AllUsers WRITE_ACP")
         resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_400"]["bucket_name"],
-            grant_write_acp=ALL_USERS_CFG["all_users"]["group_uri"])
+            self.bucket_name,
+            grant_write_acp=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Changed bucket permission to AllUsers WRITE_ACP")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_400"]["bucket_name"])
+            self.bucket_name)
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_400"]["permission"],
+            "WRITE_ACP",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info(
             "Step 4: Reading bucket ACL through other unsigned account")
         try:
             resp = NO_AUTH_OBJ.get_bucket_acl(
-                ALL_USERS_CFG["test_400"]["bucket_name"])
+                self.bucket_name)
             assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
-                ALL_USERS_CFG["test_400"]["err_message"],
+                "AccessDenied",
                 error.message,
                 error.message)
         self.log.info(
@@ -1453,39 +1439,39 @@ class TestAllUsers:
         self.log.info(
             "Step 1: Creating a bucket and uploading an object to bucket")
         self.create_bucket_put_object(
-            ALL_USERS_CFG["test_401"]["bucket_name"],
-            ALL_USERS_CFG["test_401"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+            self.mb_count)
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
         self.log.info(
             "Step 2: Changing bucket permission to AllUsers WRITE_ACP")
         resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_401"]["bucket_name"],
-            grant_write_acp=ALL_USERS_CFG["all_users"]["group_uri"])
+            self.bucket_name,
+            grant_write_acp=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Changed bucket permission to AllUsers WRITE_ACP")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_401"]["bucket_name"])
+            self.bucket_name)
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_401"]["permission"],
+            "WRITE_ACP",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info(
             "Step 4: Updating bucket ACL through other unsigned account")
         resp = NO_AUTH_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_401"]["bucket_name"],
-            grant_full_control=ALL_USERS_CFG["all_users"]["group_uri"])
+            self.bucket_name,
+            grant_full_control=self.group_uri)
         assert_true(resp[0], resp[1])
         resp = NO_AUTH_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_401"]["bucket_name"])
+            self.bucket_name)
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_401"]["new_permission"],
+            "FULL_CONTROL",
             resp[1])
         self.log.info(
             "Step 4: Updated bucket ACL through from other unsigned"
@@ -1506,39 +1492,39 @@ class TestAllUsers:
         self.log.info(
             "Step 1: Creating a bucket and uploading an object to bucket")
         self.create_bucket_put_object(
-            ALL_USERS_CFG["test_402"]["bucket_name"],
-            ALL_USERS_CFG["test_402"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+            self.mb_count)
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
         self.log.info(
             "Step 2: Changing bucket permission to AllUsers WRITE_ACP")
         resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_402"]["bucket_name"],
-            grant_write_acp=ALL_USERS_CFG["all_users"]["group_uri"])
+            self.bucket_name,
+            grant_write_acp=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Changed bucket permission to AllUsers WRITE_ACP")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_402"]["bucket_name"])
+            self.bucket_name)
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_402"]["permission"],
+            "WRITE_ACP",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info(
             "Step 4: Updating object ACL through other unsigned account")
         try:
             resp = NO_AUTH_OBJ.put_object_canned_acl(
-                ALL_USERS_CFG["test_402"]["bucket_name"],
-                ALL_USERS_CFG["test_402"]["obj_name"],
-                acl=ALL_USERS_CFG["test_402"]["acl"])
+                self.bucket_name,
+                self.obj_name,
+                acl="private")
             assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
-                ALL_USERS_CFG["test_402"]["err_message"],
+                "AccessDenied",
                 error.message,
                 error.message)
         self.log.info(
@@ -1559,35 +1545,35 @@ class TestAllUsers:
         self.log.info(
             "Step 1: Creating a bucket and uploading an object to bucket")
         self.create_bucket_put_object(
-            ALL_USERS_CFG["test_403"]["bucket_name"],
-            ALL_USERS_CFG["test_403"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+            self.mb_count)
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
         self.log.info(
             "Step 2: Changing bucket permission to AllUsers FULL_CONTROL")
         resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_403"]["bucket_name"],
-            grant_full_control=ALL_USERS_CFG["all_users"]["group_uri"])
+            self.bucket_name,
+            grant_full_control=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Changed bucket permission to AllUsers FULL_CONTROL")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_403"]["bucket_name"])
+            self.bucket_name)
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_403"]["permission"],
+            "FULL_CONTROL",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info(
             "Step 4: Listing objects in bucket through other unsigned account")
         resp = NO_AUTH_OBJ.object_list(
-            ALL_USERS_CFG["test_403"]["bucket_name"])
+            self.bucket_name)
         assert_true(resp[0], resp[1])
         assert_in(
-            ALL_USERS_CFG["test_403"]["obj_name"], str(
+            self.obj_name, str(
                 resp[1]), resp[1])
         self.log.info(
             "Step 4: Listed objects in bucket through other "
@@ -1608,39 +1594,39 @@ class TestAllUsers:
         self.log.info(
             "Step 1: Creating a bucket and uploading an object to bucket")
         self.create_bucket_put_object(
-            ALL_USERS_CFG["test_404"]["bucket_name"],
-            ALL_USERS_CFG["test_404"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+            self.mb_count)
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
         self.log.info(
             "Step 2: Changing bucket permission to AllUsers FULL_CONTROL")
         resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_404"]["bucket_name"],
-            grant_full_control=ALL_USERS_CFG["all_users"]["group_uri"])
+            self.bucket_name,
+            grant_full_control=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Changed bucket permission to AllUsers FULL_CONTROL")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_404"]["bucket_name"])
+            self.bucket_name)
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_404"]["permission"],
+            "FULL_CONTROL",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info(
             "Step 4:Uploading object in bucket through other unsigned account")
         resp = NO_AUTH_OBJ.put_object(
-            ALL_USERS_CFG["test_404"]["bucket_name"],
-            ALL_USERS_CFG["test_404"]["new_obj_name"],
+            self.bucket_name,
+            self.new_obj_name,
             self.test_file_path)
         assert_true(resp[0], resp[1])
         resp = NO_AUTH_OBJ.object_list(
-            ALL_USERS_CFG["test_404"]["bucket_name"])
+            self.bucket_name)
         assert_in(
-            ALL_USERS_CFG["test_404"]["new_obj_name"], str(
+            self.new_obj_name, str(
                 resp[1]), resp[1])
         self.log.info(
             "Step 4: Uploaded object in bucket through other "
@@ -1661,38 +1647,38 @@ class TestAllUsers:
         self.log.info(
             "Step 1: Creating a bucket and uploading an object to bucket")
         self.create_bucket_put_object(
-            ALL_USERS_CFG["test_405"]["bucket_name"],
-            ALL_USERS_CFG["test_405"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+            self.mb_count)
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
         self.log.info(
             "Step 2: Changing bucket permission to AllUsers FULL_CONTROL")
         resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_405"]["bucket_name"],
-            grant_full_control=ALL_USERS_CFG["all_users"]["group_uri"])
+            self.bucket_name,
+            grant_full_control=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Changed bucket permission to AllUsers FULL_CONTROL")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_405"]["bucket_name"])
+            self.bucket_name)
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_405"]["permission"],
+            "FULL_CONTROL",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info(
             "Step 4:Deleting obj from bucket through other unsigned account")
         resp = NO_AUTH_OBJ.delete_object(
-            ALL_USERS_CFG["test_405"]["bucket_name"],
-            ALL_USERS_CFG["test_405"]["obj_name"])
+            self.bucket_name,
+            self.obj_name)
         assert_true(resp[0], resp[1])
         resp = NO_AUTH_OBJ.object_list(
-            ALL_USERS_CFG["test_405"]["bucket_name"])
+            self.bucket_name)
         assert_not_in(
-            ALL_USERS_CFG["test_405"]["obj_name"],
+            self.obj_name,
             str(resp[1]), resp[1])
         self.log.info(
             "Step 4:Deleted object from bucket through other unsigned account")
@@ -1712,38 +1698,38 @@ class TestAllUsers:
         self.log.info(
             "Step 1: Creating a bucket and uploading an object to bucket")
         self.create_bucket_put_object(
-            ALL_USERS_CFG["test_406"]["bucket_name"],
-            ALL_USERS_CFG["test_406"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+            self.mb_count)
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
         self.log.info(
             "Step 2: Changing bucket permission to AllUsers FULL_CONTROL")
         resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_406"]["bucket_name"],
-            grant_full_control=ALL_USERS_CFG["all_users"]["group_uri"])
+            self.bucket_name,
+            grant_full_control=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Changed bucket permission to AllUsers FULL_CONTROL")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_406"]["bucket_name"])
+            self.bucket_name)
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_406"]["permission"],
+            "FULL_CONTROL",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info(
             "Step 4: Reading object ACL through other unsigned account")
         try:
             resp = NO_AUTH_OBJ.get_object_acl(
-                ALL_USERS_CFG["test_406"]["bucket_name"],
-                ALL_USERS_CFG["test_406"]["obj_name"])
+                self.bucket_name,
+                self.obj_name)
             assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
-                ALL_USERS_CFG["test_406"]["err_message"],
+                "AccessDenied",
                 error.message,
                 error.message)
         self.log.info(
@@ -1764,35 +1750,35 @@ class TestAllUsers:
         self.log.info(
             "Step 1: Creating a bucket and uploading an object to bucket")
         self.create_bucket_put_object(
-            ALL_USERS_CFG["test_407"]["bucket_name"],
-            ALL_USERS_CFG["test_407"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+            self.mb_count)
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
         self.log.info(
             "Step 2: Changing bucket permission to AllUsers FULL_CONTROL")
         resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_407"]["bucket_name"],
-            grant_full_control=ALL_USERS_CFG["all_users"]["group_uri"])
+            self.bucket_name,
+            grant_full_control=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Changed bucket permission to AllUsers FULL_CONTROL")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_407"]["bucket_name"])
+            self.bucket_name)
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_407"]["permission"],
+            "FULL_CONTROL",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info(
             "Step 4: Reading bucket ACL through other unsigned account")
         resp = NO_AUTH_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_407"]["bucket_name"])
+            self.bucket_name)
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_407"]["permission"],
+            "FULL_CONTROL",
             resp[1])
         self.log.info(
             "Step 4: Read bucket ACL through other unsigned "
@@ -1813,39 +1799,39 @@ class TestAllUsers:
         self.log.info(
             "Step 1: Creating a bucket and uploading an object to bucket")
         self.create_bucket_put_object(
-            ALL_USERS_CFG["test_408"]["bucket_name"],
-            ALL_USERS_CFG["test_408"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+            self.mb_count)
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
         self.log.info(
             "Step 2: Changing bucket permission to AllUsers FULL_CONTROL")
         resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_408"]["bucket_name"],
-            grant_full_control=ALL_USERS_CFG["all_users"]["group_uri"])
+            self.bucket_name,
+            grant_full_control=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Changed bucket permission to AllUsers FULL_CONTROL")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_408"]["bucket_name"])
+            self.bucket_name)
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_408"]["permission"],
+            "FULL_CONTROL",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info(
             "Step 4: Updating bucket ACL through other unsigned account")
         resp = NO_AUTH_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_408"]["bucket_name"],
-            acl=ALL_USERS_CFG["test_408"]["acl"])
+            self.bucket_name,
+            acl="private")
         assert_true(resp[0], resp[1])
         resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_408"]["bucket_name"])
+            self.bucket_name)
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_408"]["permission"],
+            "FULL_CONTROL",
             resp[1])
         self.log.info(
             "Step 4: Updated bucket ACL through other unsigned"
@@ -1866,39 +1852,39 @@ class TestAllUsers:
         self.log.info(
             "Step 1: Creating a bucket and uploading an object to bucket")
         self.create_bucket_put_object(
-            ALL_USERS_CFG["test_409"]["bucket_name"],
-            ALL_USERS_CFG["test_409"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.test_file_path,
-            ALL_USERS_CFG["all_users"]["mb_count"])
+            self.mb_count)
         self.log.info(
             "Step 1: Created a bucket and uploaded an object to bucket")
         self.log.info(
             "Step 2: Changing bucket permission to AllUsers FULL_CONTROL")
         resp = ACL_OBJ.put_bucket_acl(
-            ALL_USERS_CFG["test_409"]["bucket_name"],
-            grant_full_control=ALL_USERS_CFG["all_users"]["group_uri"])
+            self.bucket_name,
+            grant_full_control=self.group_uri)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Changed bucket permission to AllUsers FULL_CONTROL")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
-            ALL_USERS_CFG["test_409"]["bucket_name"])
+            self.bucket_name)
         assert_equal(
             resp[1][1][0]["Permission"],
-            ALL_USERS_CFG["test_409"]["permission"],
+            "FULL_CONTROL",
             resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info(
             "Step 4: Updating object ACL through other unsigned account")
         try:
             resp = NO_AUTH_OBJ.put_object_canned_acl(
-                ALL_USERS_CFG["test_409"]["bucket_name"],
-                ALL_USERS_CFG["test_409"]["obj_name"],
-                acl=ALL_USERS_CFG["test_409"]["acl"])
+                self.bucket_name,
+                self.obj_name,
+                acl="private")
             assert_false(resp[0], resp[1])
         except CTException as error:
             assert_in(
-                ALL_USERS_CFG["test_409"]["err_message"],
+                "AccessDenied",
                 error.message,
                 error.message)
         self.log.info(

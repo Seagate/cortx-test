@@ -40,8 +40,10 @@ DISK_ALERT_KEY = "diskUsedPercentage"
 LAST_SEL_INDEX = "cd /var/cortx/sspl/data/server && cat last_sel_index"
 CHECK_SSPL_LOG_FILE = "tail -f /var/log/cortx/sspl/sspl.log > '{}' 2>&1 &"
 RABBIT_MQ_FILE = "/root/rabbitmq_reader.py"
+MSG_BUS_READER_PATH = "/root/read_message_bus.py"
 MANUAL_PATH = "/opt/seagate/sspl/low-level/tests/manual/"
 RABBIT_MQ_LOCAL_PATH = "scripts/server_scripts/rabbitmq_reader.py"
+MSG_BUS_READER_LOCAL_PATH = "scripts/server_scripts/read_message_bus.py"
 ENCRYPTOR_FILE_PATH = "scripts/server_scripts/encryptor.py"
 STORAGE_ENCLOSURE_PATH = "/opt/seagate/cortx/provisioner/pillar/components" \
                         "/storage_enclosure.sls"
@@ -94,6 +96,11 @@ const.CRASH_COMMANDS = ["ls -l /var/crash", "ls -lR /var/motr | grep core"],
 const.AUTHSERVER_LOG_PATH = "/var/log/seagate/auth/server/app.log"
 const.S3CMD = "s3cmd"
 const.S3FS = "s3fs-fuse"
+const.HAPROXY_LOG_PATH = "/var/log/haproxy.log"
+const.S3_LOG_PATH = "/var/log/seagate/s3"
+const.SUPPORT_BUNDLE_SUCCESS_MSG = "S3 support bundle generated successfully"
+const.CLUSTER_NOT_RUNNING_MSG = "Cluster is not running"
+const.LOG_MSG_PATH = "/var/log/messages"
 
 
 class Rest:

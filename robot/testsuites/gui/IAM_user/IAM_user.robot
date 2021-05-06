@@ -35,8 +35,8 @@ Login To S3 Account
     wait for page or element to load  2s
     ${S3_account_name}  ${email}  ${s3password} =  Create S3 account
     wait for page or element to load  3s
-    Re-login  ${S3_account_name}  ${s3password}  MANAGE_MENU_ID
-    Navigate To Page  MANAGE_MENU_ID  IAM_USER_TAB_ID
+    Re-login  ${S3_account_name}  ${s3password}  S3_ACCOUNTS_TAB_ID
+    Navigate To Page   IAM_USER_TAB_ID
     wait for page or element to load  3s
     set suite variable    ${S3_account_name}
     set suite variable    ${s3password}
@@ -44,7 +44,7 @@ Login To S3 Account
 Delete S3 Account And Close Browser
     [Documentation]  This key word is for test case teardown which delete s3 account and close browsers
     [Tags]  Priority_High  S3_test
-    Navigate To Page  MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    Navigate To Page   S3_ACCOUNTS_TAB_ID
     ${S3_account_name}=  Fetch S3 Account Name
     Delete S3 Account  ${S3_account_name}  ${s3password}  True
     wait for page or element to load  1s

@@ -158,18 +158,19 @@ def r2_get_previous_builds(branch, build_no, no_of_prev_builds=1):
     query_input = {
         "aggregate": [{"$group": {"_id": {"buildNo": "$buildNo", "buildType": "$buildType"},
 
-                                  "testStartTime": {"$min": "$testStartTime"}}}]}
+                                  "testStartTime": {"$min": "$testStartTime"}}},
+                      {"$sort": {"testStartTime": 1}}]}
+    if DEBUG_PRINTS:
+        print("r2_get_previous_builds query :{}".format(query_input))
     query_input.update(credentials)
-    print("r2_get_previous_builds query :{}".format(query_input))
     response = requests.request("GET", aggregate_endpoint, headers=headers,
                                 data=json.dumps(query_input))
     build_list = []
     if response.status_code == HTTPStatus.OK:
         json_response = json.loads(response.text)
-        for each in sorted(json_response["result"], key=lambda k: k["testStartTime"]):
+        for each in json_response["result"]:
             if each["_id"]["buildType"] == branch:
                 build_list.append(each["_id"]["buildNo"])
-        print("Sorted build list {}".format(build_list))
         if build_no in build_list:
             index = build_list.index(build_no)
             if no_of_prev_builds > index:
@@ -178,19 +179,21 @@ def r2_get_previous_builds(branch, build_no, no_of_prev_builds=1):
                 prev_list = build_list[index - no_of_prev_builds:index]
         else:
             prev_list = []
+
     else:
         print("r2_get_previous_builds error code :{}".format(response.status_code))
     return prev_list
 
 
 def add_link(row):
-    temp = "https://jts.seagate.com/browse/"+row
-    l = "[{0}]({1})".format(row,temp)
+    temp = "https://jts.seagate.com/browse/" + row
+    l = "[{0}]({1})".format(row, temp)
     return l
 
 
 def get_testplan_ID(query):
     temp_query = {"query": query, "field": "testPlanID"}
+    # print(f"get_testplan_ID : {query}")
     temp_query.update(credentials)
     response = requests.request("GET", distinct_endpoint, headers=headers,
                                 data=json.dumps(temp_query))
@@ -198,6 +201,6 @@ def get_testplan_ID(query):
         json_response = json.loads(response.text)
         tps = json_response["result"]
         tps.sort(reverse=True)
-        return tps[0]
-    else:
-        return None
+        if len(tps):
+            return tps[0]
+    return None
