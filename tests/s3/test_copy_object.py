@@ -142,7 +142,8 @@ class TestCopyObjects:
         for fpath in [self.file_path, self.download_path]:
             if system_utils.path_exists(fpath):
                 system_utils.remove_file(fpath)
-        all_accounts = self.cortx_test_obj.list_accounts_cortxcli()
+        accounts = self.cortx_test_obj.list_accounts_cortxcli()
+        all_accounts = [acc["account_name"] for acc in accounts]
         self.log.info("setup %s", all_accounts)
         for acc in [self.account_name1, self.account_name2]:
             if acc in all_accounts:
@@ -515,7 +516,7 @@ class TestCopyObjects:
             ios="Start", log_prefix="test_19844_ios", duration="0h6m")
         self.log.info(
             "Step 3: Create and upload object of size %s to the bucket.", object_size)
-        object_size = "533MiB" if object_size == "5GB" else "224MiB"
+        object_size = "533M" if object_size == "5GB" else "224M"
         resp = system_utils.create_file(
             fpath=self.file_path, count=9, b_size=object_size)
         self.log.info(resp)
@@ -559,7 +560,7 @@ class TestCopyObjects:
         self.check_cluster_health()
         self.log.info("Step 2: start s3 IO's")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_19846_ios", duration="0h4m")
+            ios="Start", log_prefix="test_19846_ios", duration="0h6m")
         self.log.info(
             "Step 3: Create and upload object of size greater than 5GB to the bucket.")
         resp = system_utils.create_file(
