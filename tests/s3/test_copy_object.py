@@ -498,20 +498,26 @@ class TestCopyObjects:
 
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-19844")
-    @CTFailOn(error_handler)
-    def test_19844(self):
-        """Copy object of object size equal to 5GB while S3 IOs are in progress."""
+    @pytest.mark.parametrize("object_size", ["5GB", "3GB"])
+    def test_19844(self, object_size):
+        """
+        Copy object.
+
+        TEST-19844: Copy object of object size equal to 5GB while S3 IOs are in progress.
+        TEST-16915: Copy object of bigger size and less than 5GB while S3 IOs are in progress.
+        """
         self.log.info(
             "STARTED: Copy object of object size equal to 5GB while S3 IOs are in progress.")
         self.log.info("Step 1: Check cluster status, all services are running")
         self.check_cluster_health()
         self.log.info("Step 2: start s3 IO's")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_19844_ios", duration="0h4m")
+            ios="Start", log_prefix="test_19844_ios", duration="0h6m")
         self.log.info(
-            "Step 3: Create and upload object of size equal to 5GiB to the bucket.")
+            "Step 3: Create and upload object of size %s to the bucket.", object_size)
+        object_size = "533MiB" if object_size == "5GB" else "224MiB"
         resp = system_utils.create_file(
-            fpath=self.file_path, count=10, b_size="500M")
+            fpath=self.file_path, count=9, b_size=object_size)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
         status, put_etag = self.create_bucket_put_object(
