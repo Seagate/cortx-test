@@ -31,173 +31,157 @@ from Performance.statistics.statistics_functions import get_s3benchmark_data,\
 from common import app
 from Performance.styles import dict_style_header, dict_style_cell
 from Performance.statistics.statistics_functions import update_hsbench_callbacks, get_dash_table, get_bucketops
-from Performance.global_functions import get_dict_from_array, get_chain
+from Performance.global_functions import benchmark_config
 
 
-benchmark_config = 'Performance/configs/benchmark.yml'
-statistics_column_headings = ['Write Throughput (MBps)', 'Write Latency (ms)', 'Write TTFB (ms)', 'Write IOPS',
-                              'Read Throughput (MBps)', 'Read Latency (ms)', 'Read IOPS', 'Read TTFB (ms)']
+statistics_column_headings = ['Write Throughput (MBps)', 'Write IOPS', 'Write Latency (ms)', 'Write TTFB (ms)',
+                              'Read Throughput (MBps)', 'Read IOPS', 'Read Latency (ms)', 'Read TTFB (ms)']
 
-multiple_buckets_headings = ['Write Throughput (MBps)', 'Write Latency (ms)', 'Write IOPS',
-                             'Read Throughput (MBps)', 'Read Latency (ms)', 'Read IOPS']
+multiple_buckets_headings = ['Write Throughput (MBps)', 'Write IOPS', 'Write Latency (ms)',
+                             'Read Throughput (MBps)', 'Read IOPS', 'Read Latency (ms)']
 
 bucketops_headings = ['Create Buckets (BINIT)', 'Put Objects (PUT)', 'Listing Objects (LIST)', 'Get Objects (GET)',
                       'Delete Objects (DEL)', 'Clear Buckets (BCLR)', 'Delete Buckets (BDEL)']
 
 
 @app.callback(
-    Output('perf_branch_dropdown', 'options'),
-    Input('perf_release_dropdown', 'value')
-)
-def update_branches_dropdown(release):
-    versions = []
-    if release == 'LR1':
-        versions = [
-            {'label': 'Cortx-1.0-Beta', 'value': 'beta'},
-            {'label': 'Cortx-1.0', 'value': 'cortx1'},
-            {'label': 'Custom', 'value': 'custom'},
-            {'label': 'Main', 'value': 'main', 'disabled': True},
-            {'label': 'Release', 'value': 'release'},
-        ]
-    elif release == 'LR2':
-        versions = [
-            {'label': 'Cortx-2.0-Beta', 'value': 'beta-2'},
-            {'label': 'Cortx-1.0', 'value': 'cortx1'},
-            {'label': 'Custom', 'value': 'custom', 'disabled': True},
-            {'label': 'Release', 'value': 'release'},
-        ]
-    return versions
-
-
-@app.callback(
-    Output('perf_build_dropdown', 'options'),
-    Input('perf_branch_dropdown', 'value')
-)
-def update_builds_dropdown(release):
-    versions = None
-    if release:
-        builds = get_chain(release)
-        versions = get_dict_from_array(builds, True)
-
-    return versions
-
-
-@app.callback(
     [Output('statistics_s3bench_workload', 'children'),
      Output('statistics_s3bench_table', 'children')],
     [Input('perf_submit_button', 'n_clicks'),
+     Input('perf_release_dropdown', 'value'),
      Input('perf_branch_dropdown', 'value'),
      Input('perf_build_dropdown', 'value'),
-     ]
+     Input('profiles_options', 'value'),
+     ],
+    prevent_initial_call=True
 )
-def s3bench_callback(n_clicks, branch, build):
-    if n_clicks is None or branch is None or build is None:
+def s3bench_callback(n_clicks, release, branch, build, profile):
+    workload_heading = html.H5("Workload: 100 Sessions, 1 Bucket")
+    return_val = None
+    if n_clicks is None or branch is None or build is None or profile is None:
         raise PreventUpdate
 
-    workload_heading = html.H5("Workload: 1 Bucket")
-    objects = fetch_configs_from_file(
-        benchmark_config, 'S3bench', 'object_size')
-    threads = []
-    data = {
-        'Object Sizes': statistics_column_headings
-    }
+    if n_clicks > 0:
+        objects = fetch_configs_from_file(
+            benchmark_config, 'S3bench', 'object_size')
+        threads = []
+        data = {
+            'Object Sizes': statistics_column_headings
+        }
 
-    for obj in objects:
-        temp = Thread(target=get_s3benchmark_data, args=(build, obj, data))
-        temp.start()
-        threads.append(temp)
+        sessions = 100
+        buckets = 1
+        for obj in objects:
+            temp = Thread(target=get_s3benchmark_data, args=(
+                release, branch, build, obj, data, sessions, buckets, profile))
+            temp.start()
+            threads.append(temp)
 
-    for thread in threads:
-        thread.join()
+        for thread in threads:
+            thread.join()
 
-    df_s3bench = pd.DataFrame(data)
-    df_s3bench = df_s3bench[['Object Sizes'] + objects]
-    df_s3bench = df_s3bench.T
-    df_s3bench.reset_index(inplace=True)
-    df_s3bench.columns = df_s3bench.iloc[0]
-    df_s3bench = df_s3bench[1:]
+        df_s3bench = pd.DataFrame(data)
+        df_s3bench = df_s3bench[['Object Sizes'] + objects]
+        df_s3bench = df_s3bench.T
+        df_s3bench.reset_index(inplace=True)
+        df_s3bench.columns = df_s3bench.iloc[0]
+        df_s3bench = df_s3bench[1:]
 
-    columns = [
-        {'name': column, 'id': column} for column in list(df_s3bench.columns)
-    ]
-    s3benchmark = dash_table.DataTable(
-        id="s3bench_table",
-        columns=columns,
-        data=df_s3bench.to_dict('records'),
-        merge_duplicate_headers=True,
-        sort_action="native",
-        style_header=dict_style_header,
-        style_data_conditional=[
-            {'if': {'row_index': 'odd'}, 'backgroundColor': '#E5E4E2'},
-            {'if': {'column_id': 'Object Sizes'}, 'backgroundColor': '#D8D8D8'}
-        ],
-        style_cell=dict_style_cell
-    )
-    return [workload_heading, s3benchmark]
+        columns = [
+            {'name': column, 'id': column} for column in list(df_s3bench.columns)
+        ]
+        s3benchmark = dash_table.DataTable(
+            id="s3bench_table",
+            columns=columns,
+            data=df_s3bench.to_dict('records'),
+            merge_duplicate_headers=True,
+            sort_action="native",
+            style_header=dict_style_header,
+            style_data_conditional=[
+                {'if': {'row_index': 'odd'}, 'backgroundColor': '#E5E4E2'},
+                {'if': {'column_id': 'Object Sizes'}, 'backgroundColor': '#D8D8D8'}
+            ],
+            style_cell=dict_style_cell
+        )
+        return_val = s3benchmark
+
+    return [workload_heading, return_val]
 
 
 @app.callback(
     Output('statistics_metadata_table', 'children'),
     [Input('perf_submit_button', 'n_clicks'),
+     Input('perf_release_dropdown', 'value'),
      Input('perf_branch_dropdown', 'value'),
      Input('perf_build_dropdown', 'value'),
-     ]
+     Input('profiles_options', 'value'),
+     ],
+    prevent_initial_call=True
 )
-def metadata_callback(n_clicks, branch, build):
-    if n_clicks is None or branch is None or build is None:
+def metadata_callback(n_clicks, release, branch, build, profile):
+    return_val = None
+    if n_clicks is None or branch is None or build is None or profile is None:
         raise PreventUpdate
 
-    objects = fetch_configs_from_file(benchmark_config, 'S3bench', 'meta_data')
-    threads = []
-    data = {
-        'Statistics': ['Add / Edit Object Tags', 'Read Object Tags',
-                       'Read Object Metadata']
-    }
+    if n_clicks > 0:
+        objects = fetch_configs_from_file(
+            benchmark_config, 'S3bench', 'meta_data')
+        threads = []
+        data = {
+            'Statistics': ['Add / Edit Object Tags', 'Read Object Tags',
+                           'Read Object Metadata']
+        }
 
-    for obj in objects:
-        temp = Thread(target=get_metadata_latencies, args=(build, obj, data))
-        temp.start()
-        threads.append(temp)
+        sessions = 100
+        buckets = 1
+        for obj in objects:
+            temp = Thread(target=get_metadata_latencies, args=(
+                release, branch, build, obj, data, sessions, buckets, profile))
+            temp.start()
+            threads.append(temp)
 
-    for thread in threads:
-        thread.join()
+        for thread in threads:
+            thread.join()
 
-    df_metadata = pd.DataFrame(data)
+        df_metadata = pd.DataFrame(data)
 
-    headings = [{'name': 'Operations', 'id': 'Statistics'},
-                {'name': 'Latency (ms)', 'id': '1Kb'}
-                ]
-    metadata = dash_table.DataTable(
-        id="metadata_table",
-        columns=headings,
-        data=df_metadata.to_dict('records'),
-        merge_duplicate_headers=True,
-        sort_action="native",
-        style_header=dict_style_header,
-        style_data_conditional=[
-            {'if': {'row_index': 'odd'}, 'backgroundColor': '#E5E4E2'},
-            {'if': {'column_id': 'Statistics'}, 'backgroundColor': '#D8D8D8'}
-        ],
-        style_cell=dict_style_cell
-    )
-    return metadata
+        headings = [{'name': 'Operations', 'id': 'Statistics'},
+                    {'name': 'Latency (ms)', 'id': '1Kb'}
+                    ]
+        metadata = dash_table.DataTable(
+            id="metadata_table",
+            columns=headings,
+            data=df_metadata.to_dict('records'),
+            merge_duplicate_headers=True,
+            sort_action="native",
+            style_header=dict_style_header,
+            style_data_conditional=[
+                {'if': {'row_index': 'odd'}, 'backgroundColor': '#E5E4E2'},
+                {'if': {'column_id': 'Statistics'}, 'backgroundColor': '#D8D8D8'}
+            ],
+            style_cell=dict_style_cell
+        )
+        return_val = metadata
 
-
-def get_hsbench_workload_headings(html, sessions, buckets, objects):
-    return html.H5("Workload: {0} Sessions, {1} Buckets, {2} Objects".format(sessions, buckets, objects))
-
-
-def get_cosbench_workload_headings(html, sessions, buckets, objects):
-    return html.H5("Workload: {0} Sessions, {1} Buckets, {2} Objects".format(sessions, buckets, objects*buckets))
+    return return_val
 
 
-def benchmark_global(bench, workload, branch, build, table_ID):
+def get_hsbench_workload_headings(html, sessions, buckets):
+    return html.H5("Workload: {0} Sessions, {1} Buckets".format(sessions, buckets))
+
+
+def get_cosbench_workload_headings(html, sessions, buckets):
+    return html.H5("Workload: {0} Sessions, {1} Buckets".format(sessions, buckets))
+
+
+def benchmark_global(bench, workload, release, branch, build, table_ID, profile):
     objects = fetch_configs_from_file(benchmark_config, bench, 'object_size')
     data = {
         'Object Sizes': multiple_buckets_headings
     }
 
-    update_hsbench_callbacks(bench, workload, objects, build, Thread, data)
+    update_hsbench_callbacks(bench, workload, objects,
+                             release, branch, build, Thread, data, profile)
 
     df_bench = pd.DataFrame(data)
     df_bench = df_bench[['Object Sizes'] + objects]
@@ -225,117 +209,159 @@ def benchmark_global(bench, workload, branch, build, table_ID):
     [Output('statistics_hsbench_workload_1', 'children'),
      Output('statistics_hsbench_table_1', 'children'), ],
     [Input('perf_submit_button', 'n_clicks'),
+     Input('perf_release_dropdown', 'value'),
      Input('perf_branch_dropdown', 'value'),
      Input('perf_build_dropdown', 'value'),
-     ]
+     Input('profiles_options', 'value'),
+     ],
+    prevent_initial_call=True
 )
-def hsbench1_callback(n_clicks, branch, build):
-    if n_clicks is None or branch is None or build is None:
-        raise PreventUpdate
-
+def hsbench1_callback(n_clicks, release, branch, build, profile):
     workload = fetch_configs_from_file(
         benchmark_config, 'Hsbench', 'workload-1')
     workload_heading = get_hsbench_workload_headings(
-        html, workload['sessions'], workload['buckets'], workload['objects'])
-    return [workload_heading, benchmark_global('Hsbench', workload, branch, build, 'hsbench-table-1')]
+        html, workload['sessions'], workload['buckets'])
+    return_val = None
+
+    if n_clicks is None or branch is None or build is None or profile is None:
+        raise PreventUpdate
+    elif n_clicks > 0:
+        return_val = benchmark_global('Hsbench', workload, release, branch, build, 'hsbench-table-1', profile)
+
+    return [workload_heading, return_val]
 
 
 @app.callback(
     [Output('statistics_hsbench_workload_2', 'children'),
      Output('statistics_hsbench_table_2', 'children'), ],
     [Input('perf_submit_button', 'n_clicks'),
+     Input('perf_release_dropdown', 'value'),
      Input('perf_branch_dropdown', 'value'),
      Input('perf_build_dropdown', 'value'),
-     ]
+     Input('profiles_options', 'value'),
+     ],
+    prevent_initial_call=True
 )
-def hsbench2_callback(n_clicks, branch, build):
-    if n_clicks is None or branch is None or build is None:
-        raise PreventUpdate
-
+def hsbench2_callback(n_clicks, release, branch, build, profile):
     workload = fetch_configs_from_file(
         benchmark_config, 'Hsbench', 'workload-2')
     workload_heading = get_hsbench_workload_headings(
-        html, workload['sessions'], workload['buckets'], workload['objects'])
-    return [workload_heading, benchmark_global('Hsbench', workload, branch, build, 'hsbench-table-2')]
+        html, workload['sessions'], workload['buckets'])
+    return_val = None
+
+    if n_clicks is None or branch is None or build is None or profile is None:
+        raise PreventUpdate
+    elif n_clicks > 0:
+        return_val = benchmark_global('Hsbench', workload, release, branch, build, 'hsbench-table-2', profile)
+
+    return [workload_heading, return_val]
 
 
 @app.callback(
     [Output('statistics_hsbench_workload_3', 'children'),
      Output('statistics_hsbench_table_3', 'children'), ],
     [Input('perf_submit_button', 'n_clicks'),
+     Input('perf_release_dropdown', 'value'),
      Input('perf_branch_dropdown', 'value'),
      Input('perf_build_dropdown', 'value'),
-     ]
+     Input('profiles_options', 'value'),
+     ],
+    prevent_initial_call=True
 )
-def hsbench3_callback(n_clicks, branch, build):
-    if n_clicks is None or branch is None or build is None:
-        raise PreventUpdate
-
+def hsbench3_callback(n_clicks, release, branch, build, profile):
     workload = fetch_configs_from_file(
         benchmark_config, 'Hsbench', 'workload-3')
     workload_heading = get_hsbench_workload_headings(
-        html, workload['sessions'], workload['buckets'], workload['objects'])
-    return [workload_heading, benchmark_global('Hsbench', workload, branch, build, 'hsbench-table-3')]
+        html, workload['sessions'], workload['buckets'])
+    return_val = None
+
+    if n_clicks is None or branch is None or build is None or profile is None:
+        raise PreventUpdate
+    elif n_clicks > 0:
+        return_val = benchmark_global('Hsbench', workload, release, branch, build, 'hsbench-table-3', profile)
+
+    return [workload_heading, return_val]
 
 
 @app.callback(
     [Output('statistics_cosbench_workload_1', 'children'),
      Output('statistics_cosbench_table_1', 'children'), ],
     [Input('perf_submit_button', 'n_clicks'),
+     Input('perf_release_dropdown', 'value'),
      Input('perf_branch_dropdown', 'value'),
      Input('perf_build_dropdown', 'value'),
-     ]
+     Input('profiles_options', 'value'),
+     ],
+    prevent_initial_call=True
 )
-def cosbench1_callback(n_clicks, branch, build):
-    if n_clicks is None or branch is None or build is None:
-        raise PreventUpdate
-
+def cosbench1_callback(n_clicks, release, branch, build, profile):
     workload = fetch_configs_from_file(
         benchmark_config, 'Cosbench', 'workload-1')
     workload_heading = get_cosbench_workload_headings(
-        html, workload['sessions'], workload['buckets'], workload['objects'])
-    return [workload_heading, benchmark_global('Cosbench', workload, branch, build, 'cosbench-table-1')]
+        html, workload['sessions'], workload['buckets'])
+    return_val = None
+
+    if n_clicks is None or branch is None or build is None or profile is None:
+        raise PreventUpdate
+    elif n_clicks > 0:
+        return_val = benchmark_global('Cosbench', workload, release, branch, build, 'cosbench-table-1', profile)
+
+    return [workload_heading, return_val]
 
 
 @app.callback(
     [Output('statistics_cosbench_workload_2', 'children'),
      Output('statistics_cosbench_table_2', 'children'), ],
     [Input('perf_submit_button', 'n_clicks'),
+     Input('perf_release_dropdown', 'value'),
      Input('perf_branch_dropdown', 'value'),
      Input('perf_build_dropdown', 'value'),
-     ]
+     Input('profiles_options', 'value'),
+     ],
+    prevent_initial_call=True
 )
-def cosbench2_callback(n_clicks, branch, build):
-    if n_clicks is None or branch is None or build is None:
-        raise PreventUpdate
-
+def cosbench2_callback(n_clicks, release, branch, build, profile):
     workload = fetch_configs_from_file(
         benchmark_config, 'Cosbench', 'workload-2')
     workload_heading = get_cosbench_workload_headings(
-        html, workload['sessions'], workload['buckets'], workload['objects'])
-    return [workload_heading, benchmark_global('Cosbench', workload, branch, build, 'cosbench-table-2')]
+        html, workload['sessions'], workload['buckets'])
+    return_val = None
+
+    if n_clicks is None or branch is None or build is None or profile is None:
+        raise PreventUpdate
+    elif n_clicks > 0:
+        return_val = benchmark_global('Cosbench', workload, release, branch, build, 'cosbench-table-2', profile)
+
+    return [workload_heading, return_val]
 
 
 @app.callback(
     [Output('statistics_cosbench_workload_3', 'children'),
      Output('statistics_cosbench_table_3', 'children'), ],
     [Input('perf_submit_button', 'n_clicks'),
+     Input('perf_release_dropdown', 'value'),
      Input('perf_branch_dropdown', 'value'),
      Input('perf_build_dropdown', 'value'),
-     ]
+     Input('profiles_options', 'value'),
+     ],
+    prevent_initial_call=True
 )
-def cosbench3_callback(n_clicks, branch, build):
-    if n_clicks is None or branch is None or build is None:
-        raise PreventUpdate
-
+def cosbench3_callback(n_clicks, release, branch, build, profile):
     workload = fetch_configs_from_file(
         benchmark_config, 'Cosbench', 'workload-3')
     workload_heading = get_cosbench_workload_headings(
-        html, workload['sessions'], workload['buckets'], workload['objects'])
-    return [workload_heading, benchmark_global('Cosbench', workload, branch, build, 'cosbench-table-3')]
+        html, workload['sessions'], workload['buckets'])
+    return_val = None
+
+    if n_clicks is None or branch is None or build is None or profile is None:
+        raise PreventUpdate
+    elif n_clicks > 0:
+        return_val = benchmark_global('Cosbench', workload, release, branch, build, 'cosbench-table-3', profile)
+
+    return [workload_heading, return_val]
 
 
-def get_bucketops_everything(workload, branch, build, object_size, table_ID):
+def get_bucketops_everything(workload, release, branch, build, object_size, table_ID, profile):
     ops_modes = fetch_configs_from_file(benchmark_config, 'Hsbench', 'modes')
     mode_indices = list(ops_modes.keys())
 
@@ -359,8 +385,8 @@ def get_bucketops_everything(workload, branch, build, object_size, table_ID):
     }
 
     for operation in bucket_ops:
-        temp = Thread(target=get_bucketops, args=(object_size, benchmark_config, build, 'write', mode_indices, operation,
-                                                  workload['sessions'], workload['buckets'], workload['objects'], data))
+        temp = Thread(target=get_bucketops, args=(object_size, benchmark_config, release, branch, build, 'write', mode_indices, operation,
+                                                  workload['sessions'], workload['buckets'], data, profile))
         temp.start()
         threads.append(temp)
 
@@ -384,57 +410,78 @@ def get_bucketops_everything(workload, branch, build, object_size, table_ID):
     [Output('statistics_bucketops_workload_1', 'children'),
      Output('statistics_bucketops_table_1', 'children'), ],
     [Input('perf_submit_button', 'n_clicks'),
+     Input('perf_release_dropdown', 'value'),
      Input('perf_branch_dropdown', 'value'),
      Input('perf_build_dropdown', 'value'),
      Input('bucketops_dropdown', 'value'),
-     ]
+     Input('profiles_options', 'value'),
+     ],
+    prevent_initial_call=True
 )
-def bucketops1_callback(n_clicks, branch, build, operation):
-    if n_clicks is None or branch is None or build is None or operation is None:
-        raise PreventUpdate
-
+def bucketops1_callback(n_clicks, release, branch, build, operation, profile):
     workload = fetch_configs_from_file(
         benchmark_config, 'Hsbench', 'workload-1')
     workload_heading = get_hsbench_workload_headings(
-        html, workload['sessions'], workload['buckets'], workload['objects'])
-    return [workload_heading, get_bucketops_everything(workload, branch, build, operation, 'bucketops-1')]
+        html, workload['sessions'], workload['buckets'])
+    return_val = None
+
+    if n_clicks is None or branch is None or build is None or operation is None or profile is None:
+        raise PreventUpdate
+    elif n_clicks > 0:
+        return_val = get_bucketops_everything(workload, release, branch, build, operation, 'bucketops-1', profile)
+
+    return [workload_heading, return_val]
 
 
 @app.callback(
     [Output('statistics_bucketops_workload_2', 'children'),
      Output('statistics_bucketops_table_2', 'children'), ],
     [Input('perf_submit_button', 'n_clicks'),
+     Input('perf_release_dropdown', 'value'),
      Input('perf_branch_dropdown', 'value'),
      Input('perf_build_dropdown', 'value'),
      Input('bucketops_dropdown', 'value'),
-     ]
+     Input('profiles_options', 'value'),
+     ],
+    prevent_initial_call=True
 )
-def bucketops2_callback(n_clicks, branch, build, operation):
-    if n_clicks is None or branch is None or build is None or operation is None:
-        raise PreventUpdate
-
+def bucketops2_callback(n_clicks, release, branch, build, operation, profile):
     workload = fetch_configs_from_file(
         benchmark_config, 'Hsbench', 'workload-2')
     workload_heading = get_hsbench_workload_headings(
-        html, workload['sessions'], workload['buckets'], workload['objects'])
-    return [workload_heading, get_bucketops_everything(workload, branch, build, operation, 'bucketops-2')]
+        html, workload['sessions'], workload['buckets'])
+    return_val = None
+
+    if n_clicks is None or branch is None or build is None or operation is None or profile is None:
+        raise PreventUpdate
+    elif n_clicks > 0:
+        return_val = get_bucketops_everything(workload, release, branch, build, operation, 'bucketops-2', profile)
+
+    return [workload_heading, return_val]
 
 
 @app.callback(
     [Output('statistics_bucketops_workload_3', 'children'),
      Output('statistics_bucketops_table_3', 'children'), ],
     [Input('perf_submit_button', 'n_clicks'),
+     Input('perf_release_dropdown', 'value'),
      Input('perf_branch_dropdown', 'value'),
      Input('perf_build_dropdown', 'value'),
      Input('bucketops_dropdown', 'value'),
-     ]
+     Input('profiles_options', 'value'),
+     ],
+    prevent_initial_call=True
 )
-def bucketops3_callback(n_clicks, branch, build, operation):
-    if n_clicks is None or branch is None or build is None or operation is None:
-        raise PreventUpdate
-
+def bucketops3_callback(n_clicks, release, branch, build, operation, profile):
     workload = fetch_configs_from_file(
         benchmark_config, 'Hsbench', 'workload-3')
     workload_heading = get_hsbench_workload_headings(
-        html, workload['sessions'], workload['buckets'], workload['objects'])
-    return [workload_heading, get_bucketops_everything(workload, branch, build, operation, 'bucketops-3')]
+        html, workload['sessions'], workload['buckets'])
+    return_val = None
+
+    if n_clicks is None or branch is None or build is None or operation is None or profile is None:
+        raise PreventUpdate
+    elif n_clicks > 0:
+        return_val = get_bucketops_everything(workload, release, branch, build, operation, 'bucketops-3', profile)
+
+    return [workload_heading, return_val]
