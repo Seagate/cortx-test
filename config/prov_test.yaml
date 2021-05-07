@@ -8,5 +8,20 @@ deploy:
 system:
   offline: "offline"
   stopped: "Stopped"
+service_ports:
+  consul: ["8600", "8500", "8300", "8301", "8302"]
+  csm: ["28101"]
+  dhclient: ["68"]
+  dns: ["53"]
+  elasticsearch: ["9200", "9300"]
+  haproxy: ["443"]
+  hare: ["8008"]
+  ntp: ["123"]
+  openldap: ["389"]
+  redis: ["6379"]
+  salt-master: ["4505", "4506"]
+  smtp: ["25"]
+  s3: ["9443", "7081"]
+  uds: ["5000"]
 
 
