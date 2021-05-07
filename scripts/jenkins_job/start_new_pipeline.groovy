@@ -8,7 +8,7 @@ pipeline {
     stages {
 		stage('CODE_CHECKOUT') {
 			steps{
-			    checkout([$class: 'GitSCM', branches: [[name: '*/eos-19246-new-pipeline']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'rel_sanity_github_auto', url: 'https://github.com/sonalk0209/cortx-test/']]])
+			    checkout([$class: 'GitSCM', branches: [[name: '*/dev']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'rel_sanity_github_auto', url: 'https://github.com/Seagate/cortx-test/']]])
 			}
 		}
 		stage('ENV_SETUP') {
