@@ -1,28 +1,41 @@
 # cortx-test
 Test Automation project for LDR R2 and future versions.
 
-## Set up dev environment:
+## Set up dev environment
+    
+    1. `yum update -y`
+    
+    2. `yum install -y gcc openssl-devel bzip2-devel libffi-devel zlib-devel wget make sqlite-devel`
+    
+    3. `cd /usr/src && wget https://www.python.org/ftp/python/3.7.9/Python-3.7.9.tgz && tar xzf Python-3.7.9.tgz && rm Python-3.7.9.tgz`
+    
+    4. `cd /usr/src/Python-3.7.9 && ./configure --prefix=/usr --enable-optimizations`
+    
+    5. `cd /usr/src/Python-3.7.9 && make altinstall`
+    
+    6. Create a softlink to point to this installation.
+    
+    7. `yum install -y python3-devel librdkafka nfs-utils python3-tkinter`
+    
+    8. `python3.7 -m venv virenv`
+    
+    9. `source virenv/bin/activate` or use old style `. ./virenv/bin/activate`
+      
+    8. `pip install --upgrade pip`
+    
+    9. `pip install pysqlite3`
+    
+    10. `pip install --ignore-installed -r requirements.txt`
+    
+    11. Install awscli with default python 3.6 pre installed with inhouse vm images and 
+    configure aws and copy cert file.
+    
+    Alternatively by skipping step 8 to 10, you can also set python environment with using virtual env.
 
-1. `yum update -y`
-2. `yum install -y gcc openssl-devel bzip2-devel libffi-devel zlib-devel wget make sqlite-devel`
-3. `cd /usr/src && wget https://www.python.org/ftp/python/3.7.9/Python-3.7.9.tgz && tar xzf Python-3.7.9.tgz && rm Python-3.7.9.tgz`
-4. `cd /usr/src/Python-3.7.9 && ./configure --prefix=/usr --enable-optimizations`
-5. `cd /usr/src/Python-3.7.9 && make altinstall`
-6. Create a softlink to point to this installation.
-7. `yum install -y python3-devel librdkafka nfs-utils python3-tkinter`
-8. `python3.7 -m venv virenv`
-9. `source virenv/bin/activate` or use old style `. ./virenv/bin/activate`  
-8. `pip install --upgrade pip`
-9. `pip install pysqlite3`
-10. `pip install --ignore-installed -r requirements.txt`
-11. Install awscli with default python 3.6 pre installed with inhouse vm images and 
-configure aws and copy cert file.
 
-Alternatively by skipping step 8 to 10, you can also set python environment with using virtual env.
+## Steps to run test automation locally
 
-## Steps to run test automation locally:
-
-### Run cortx tests with test runner.
+### Run Cortx tests with test runner
 
 If you want to anyway run the parallel tests sequentially. You should use --force_serial_run switch as shown in following command.
 ```commandline
@@ -81,14 +94,13 @@ usage: testrunner.py [-h] [-j JSON_FILE] [-r HTML_REPORT] [-d DB_UPDATE]
                          Helps set DI check enabled so that tests perform
                          additional checksum check
   ```
-#### Running Test locally in distributed mode:
+#### Running Test locally in distributed mode
 ```commandline
 pytest --local=True -d --tx 3*popen -rA unittests\<Your_Test_Module>.py
 ```
 ```properties
 3 is # of worker processes to be spawned.
 ```
-
 #### Running test plans in dev environment
 ##### With dist mode
 ```commandline
