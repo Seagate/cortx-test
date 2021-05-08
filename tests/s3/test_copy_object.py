@@ -18,7 +18,13 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-"""S3 copy object test module."""
+"""
+S3 copy object test module.
+
+Bugs:
+    https://jts.seagate.com/browse/EOS-19623
+    https://jts.seagate.com/browse/EOS-16032
+"""
 
 import os
 from time import perf_counter_ns
@@ -26,6 +32,7 @@ from multiprocessing import Process
 
 import logging
 import pytest
+from commons import commands
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.ct_fail_on import CTFailOn
@@ -47,13 +54,7 @@ S3_OBJ = s3_test_lib.S3TestLib()
 
 
 class TestCopyObjects:
-    """
-    S3 copy object class.
-
-    Bugs:
-        https://jts.seagate.com/browse/EOS-19623
-        https://jts.seagate.com/browse/EOS-16032
-    """
+    """S3 copy object class."""
 
     @classmethod
     def setup_class(cls):
@@ -379,20 +380,27 @@ class TestCopyObjects:
             copy_etag,
             f"Failed to match ETag: {put_etag}, {copy_etag}")
         self.log.info("Matched ETag: %s, %s", put_etag, copy_etag)
-        self.log.info("Step 6: Get metadata of the destination object and check metadata is same"
-                      " as source object.")
+        self.log.info(
+            "Step 6: Get metadata of the destination object and check metadata is same"
+            " as source object.")
         resp_meta1 = s3_obj.object_info(self.bucket_name1, self.object_name1)
         assert_utils.assert_true(resp_meta1[0], resp_meta1[1])
         resp_meta2 = s3_obj.object_info(self.bucket_name1, self.object_name2)
         assert_utils.assert_true(resp_meta2[0], resp_meta2[1])
         assert_utils.assert_dict_equal(resp_meta1[1]["Metadata"],
                                        resp_meta2[1]["Metadata"])
-        self.log.info("Step 7: Get Object ACL of the destination object and Check that ACL is set"
-                      " to private for the user making the request.")
-        resp_acl = s3_acl_obj.get_object_acl(self.bucket_name1, self.object_name2)
+        self.log.info(
+            "Step 7: Get Object ACL of the destination object and Check that ACL is set"
+            " to private for the user making the request.")
+        resp_acl = s3_acl_obj.get_object_acl(
+            self.bucket_name1, self.object_name2)
         assert_utils.assert_true(resp_acl[0], resp_acl[1])
-        assert_utils.assert_equal(resp_acl[1]["Grants"][0]["Grantee"]["ID"], self.response1[0])
-        assert_utils.assert_equal(resp_acl[1]["Grants"][0]["Permission"], "FULL_CONTROL")
+        assert_utils.assert_equal(
+            resp_acl[1]["Grants"][0]["Grantee"]["ID"],
+            self.response1[0])
+        assert_utils.assert_equal(
+            resp_acl[1]["Grants"][0]["Permission"],
+            "FULL_CONTROL")
         self.log.info("Step 8: Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
             ios="Stop", log_prefix="test_19841_ios")
@@ -448,20 +456,27 @@ class TestCopyObjects:
             put_etag,
             copy_etag,
             f"Failed to match ETag: {put_etag}, {copy_etag}")
-        self.log.info("Step 6: Get metadata of the destination object and check metadata is same"
-                      " as source object.")
+        self.log.info(
+            "Step 6: Get metadata of the destination object and check metadata is same"
+            " as source object.")
         resp_meta1 = s3_obj.object_info(self.bucket_name1, self.object_name1)
         assert_utils.assert_true(resp_meta1[0], resp_meta1[1])
         resp_meta2 = s3_obj.object_info(self.bucket_name2, self.object_name2)
         assert_utils.assert_true(resp_meta2[0], resp_meta2[1])
         assert_utils.assert_dict_equal(resp_meta1[1]["Metadata"],
                                        resp_meta2[1]["Metadata"])
-        self.log.info("Step 7: Get Object ACL of the destination object and Check that ACL is set"
-                      " to private for the user making the request.")
-        resp_acl = s3_acl_obj.get_object_acl(self.bucket_name2, self.object_name2)
+        self.log.info(
+            "Step 7: Get Object ACL of the destination object and Check that ACL is set"
+            " to private for the user making the request.")
+        resp_acl = s3_acl_obj.get_object_acl(
+            self.bucket_name2, self.object_name2)
         assert_utils.assert_true(resp_acl[0], resp_acl[1])
-        assert_utils.assert_equal(resp_acl[1]["Grants"][0]["Grantee"]["ID"], self.response1[0])
-        assert_utils.assert_equal(resp_acl[1]["Grants"][0]["Permission"], "FULL_CONTROL")
+        assert_utils.assert_equal(
+            resp_acl[1]["Grants"][0]["Grantee"]["ID"],
+            self.response1[0])
+        assert_utils.assert_equal(
+            resp_acl[1]["Grants"][0]["Permission"],
+            "FULL_CONTROL")
         self.log.info("Matched ETag: %s, %s", put_etag, copy_etag)
         self.log.info("Step 8: Stop and validate S3 IOs")
         self.start_stop_validate_parallel_s3ios(
@@ -499,7 +514,7 @@ class TestCopyObjects:
         assert_utils.assert_true(resp[0], resp[1])
         status, put_etag = self.create_bucket_put_object(
             s3_obj1, self.bucket_name1, self.object_name1, self.file_path,
-            metadata={"Name":"Vishal", "City": "Pune", "Country": "India"})
+            metadata={"Name": "Vishal", "City": "Pune", "Country": "India"})
         assert_utils.assert_true(status, put_etag)
         self.log.info(
             "Step 4: From Account2 create a bucket. Referred as bucket2.")
@@ -539,8 +554,9 @@ class TestCopyObjects:
             copy_etag,
             f"Failed to match ETag: {put_etag}, {copy_etag}")
         self.log.info("Matched ETag: %s, %s", put_etag, copy_etag)
-        self.log.info("Step 9: From Account1 Get metadata of the destination object and check"
-                      " for metadata is same as source object .")
+        self.log.info(
+            "Step 9: From Account1 Get metadata of the destination object and check"
+            " for metadata is same as source object .")
         resp_meta1 = s3_obj1.object_info(self.bucket_name1, self.object_name1)
         assert_utils.assert_true(resp_meta1[0], resp_meta1[1])
         resp_meta2 = s3_obj1.object_info(self.bucket_name2, self.object_name2)
@@ -562,30 +578,51 @@ class TestCopyObjects:
 
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-19844")
-    @pytest.mark.parametrize("object_size", ["5GB", "3GB"])
+    @pytest.mark.parametrize("object_size", ["5GB", "2GB"])
     def test_19844(self, object_size):
         """
-        Copy object.
+        Copy large object while IOs are in progress.
 
         TEST-19844: Copy object of object size equal to 5GB while S3 IOs are in progress.
         TEST-16915: Copy object of bigger size and less than 5GB while S3 IOs are in progress.
         """
         self.log.info(
-            "STARTED: Copy object of object size equal to 5GB while S3 IOs are in progress.")
+            "STARTED: Copy object of object size %s while S3 IOs are in progress.",
+            object_size)
         self.log.info("Step 1: Check cluster status, all services are running")
         self.check_cluster_health()
         self.log.info("Step 2: start s3 IO's")
         self.start_stop_validate_parallel_s3ios(
             ios="Start", log_prefix="test_19844_ios", duration="0h6m")
         self.log.info(
-            "Step 3: Create and upload object of size %s to the bucket.", object_size)
+            "Step 3: Create and upload object of size %s to the bucket.",
+            object_size)
         object_size = "533M" if object_size == "5GB" else "224M"
         resp = system_utils.create_file(
             fpath=self.file_path, count=9, b_size=object_size)
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = S3_OBJ.create_bucket(self.bucket_name1)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
-        status, put_etag = self.create_bucket_put_object(
-            S3_OBJ, self.bucket_name1, self.object_name1, self.file_path)
+        resp, bktlist = S3_OBJ.bucket_list()
+        self.log.info("Bucket list: %s", bktlist)
+        assert_utils.assert_in(self.bucket_name1, bktlist,
+                               f"failed to create bucket {self.bucket_name1}")
+        self.log.info("Uploading objects to bucket using awscli")
+        resp = system_utils.run_local_cmd(
+            cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
+                self.file_path,
+                self.bucket_name1,
+                self.object_name1))
+        assert_utils.assert_true(resp[0], resp[1])
+        status, objlist = S3_OBJ.object_list(self.bucket_name1)
+        assert_utils.assert_true(status, objlist)
+        assert_utils.assert_in(self.object_name1, objlist)
+        response = S3_OBJ.list_objects_details(self.bucket_name1)
+        put_etag = None
+        for objl in response[1]["Contents"]:
+            if objl["Key"] == self.object_name1:
+                put_etag = objl["ETag"]
         self.log.info("Put object ETag: %s", put_etag)
         self.log.info(
             "Step 4: Copy object to different bucket with different object.")
@@ -610,7 +647,8 @@ class TestCopyObjects:
             "Step 7: Check cluster status, all services are running")
         self.check_cluster_health()
         self.log.info(
-            "ENDED: Copy object of object size equal to 5GB while S3 IOs are in progress.")
+            "ENDED: Copy object of object size %s while S3 IOs are in progress.",
+            object_size)
 
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-19846")
@@ -630,9 +668,23 @@ class TestCopyObjects:
             fpath=self.file_path, count=11, b_size="512M")
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
-        status, put_etag = self.create_bucket_put_object(
-            S3_OBJ, self.bucket_name1, self.object_name1, self.file_path)
-        self.log.info("Put object ETag: %s", put_etag)
+        resp = S3_OBJ.create_bucket(self.bucket_name1)
+        self.log.info(resp)
+        assert_utils.assert_true(resp[0], resp[1])
+        resp, bktlist = S3_OBJ.bucket_list()
+        self.log.info("Bucket list: %s", bktlist)
+        assert_utils.assert_in(self.bucket_name1, bktlist,
+                               f"failed to create bucket {self.bucket_name1}")
+        self.log.info("Uploading objects to bucket using awscli")
+        resp = system_utils.run_local_cmd(
+            cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
+                self.file_path,
+                self.bucket_name1,
+                self.object_name1))
+        assert_utils.assert_true(resp[0], resp[1])
+        status, objlist = S3_OBJ.object_list(self.bucket_name1)
+        assert_utils.assert_true(status, objlist)
+        assert_utils.assert_in(self.object_name1, objlist)
         self.log.info(
             "Step 4: create second bucket.")
         resp = S3_OBJ.create_bucket(self.bucket_name2)
@@ -644,8 +696,6 @@ class TestCopyObjects:
                 self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2)
             assert_utils.assert_false(
                 status, "copied object greater than 5GB.")
-            copy_etag = response['CopyObjectResult']['ETag']
-            self.log.info("Copy object ETag: %s", copy_etag)
         except CTException as error:
             self.log.info(error.message)
             assert_utils.assert_equal(
@@ -740,6 +790,10 @@ class TestCopyObjects:
         self.log.info(
             "Step 10: Get Object ACL of the destination bucket from Account1.")
         resp = s3_acl_obj1.get_bucket_acl(self.bucket_name1)
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = s3_acl_obj1.put_bucket_acl(
+            bucket_name=self.bucket_name2,
+            grant_full_control="id={}".format(canonical_id2))
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 11: Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
@@ -864,7 +918,7 @@ class TestCopyObjects:
         assert_utils.assert_true(resp[0], resp[1])
         status, put_etag = self.create_bucket_put_object(
             s3_obj1, self.bucket_name1, self.object_name1, self.file_path,
-            m_key="city", m_value="Pune")
+            metadata={"City": "Pune", "Hub": "IT"})
         assert_utils.assert_true(status, put_etag)
         self.log.info(
             "Step 4: Get the source object ACL. Capture the output .")
@@ -872,7 +926,7 @@ class TestCopyObjects:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 5: From Account2 create a bucket. Referred as bucket2.")
-        s3_obj2, s3_acl_obj2 = self.response2[1:3]
+        canonical_id2, s3_obj2, s3_acl_obj2 = self.response2[:3]
         resp = s3_obj2.create_bucket(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp[1])
         resp = s3_obj2.bucket_list()
@@ -900,9 +954,12 @@ class TestCopyObjects:
         self.log.info(
             "Step 9: From Account1 Get metadata of the destination object. Check for metadata"
             " is same as source object.")
-        status, response = s3_obj1.object_info(
-            self.bucket_name2, self.object_name2)
-        assert_utils.assert_true(status, response)
+        resp_meta1 = s3_obj1.object_info(self.bucket_name1, self.object_name1)
+        assert_utils.assert_true(resp_meta1[0], resp_meta1[1])
+        resp_meta2 = s3_obj1.object_info(self.bucket_name2, self.object_name2)
+        assert_utils.assert_true(resp_meta2[0], resp_meta2[1])
+        assert_utils.assert_dict_equal(resp_meta1[1]["Metadata"],
+                                       resp_meta2[1]["Metadata"])
         self.log.info(
             "Step 10:  Compare ETag of source and destination object for data Integrity.")
         self.log.info("ETags: Put: %s, copy: %s", put_etag, copy_etag)
@@ -911,6 +968,10 @@ class TestCopyObjects:
             copy_etag,
             f"Failed to match ETag: {put_etag}, {copy_etag}")
         self.log.info("Matched ETag: %s, %s", put_etag, copy_etag)
+        resp = s3_acl_obj2.put_bucket_acl(
+            bucket_name=self.bucket_name2,
+            grant_full_control="id={}".format(canonical_id2))
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 11: Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
             ios="Stop", log_prefix="test_19849_ios")
@@ -1013,7 +1074,7 @@ class TestCopyObjects:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 5. From Account2 create a bucket. Referred as bucket2.")
-        s3_obj2, s3_acl_obj2 = self.response2[1:3]
+        canonical_id2, s3_obj2, s3_acl_obj2 = self.response2[:3]
         resp = s3_obj2.create_bucket(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
@@ -1049,6 +1110,10 @@ class TestCopyObjects:
             copy_etag,
             f"Failed to match ETag: {put_etag}, {copy_etag}")
         self.log.info("Matched ETag: %s, %s", put_etag, copy_etag)
+        resp = s3_acl_obj2.put_bucket_acl(
+            bucket_name=self.bucket_name2,
+            grant_full_control="id={}".format(canonical_id2))
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("11. Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
             ios="Stop", log_prefix="test_19851_ios")
@@ -1093,7 +1158,7 @@ class TestCopyObjects:
         resp = s3_acl_obj1.get_object_acl(self.bucket_name1, self.object_name1)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("5. From Account2 create a bucket. Referred as bucket2.")
-        s3_obj2, s3_acl_obj2 = self.response2[1:3]
+        canonical_id2, s3_obj2, s3_acl_obj2 = self.response2[:3]
         resp = s3_obj2.create_bucket(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
@@ -1128,6 +1193,10 @@ class TestCopyObjects:
             copy_etag,
             f"Failed to match ETag: {put_etag}, {copy_etag}")
         self.log.info("Matched ETag: %s, %s", put_etag, copy_etag)
+        resp = s3_acl_obj2.put_bucket_acl(
+            bucket_name=self.bucket_name2,
+            grant_full_control="id={}".format(canonical_id2))
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("11. Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
             ios="Stop", log_prefix="test_19891_ios")
@@ -1665,7 +1734,7 @@ class TestCopyObjects:
             fpath=self.file_path, count=10, b_size="1M")
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
-        s3_obj1, s3_acl_obj1 = self.response1[1:3]
+        canonical_id1, s3_obj1, s3_acl_obj1 = self.response1[:3]
         self.create_bucket_put_object(
             s3_obj1,
             self.bucket_name1,
@@ -1703,6 +1772,10 @@ class TestCopyObjects:
             assert_utils.assert_equal(
                 "An error occurred (AccessDenied) when calling the CopyObject operation: "
                 "Access Denied", error.message, error)
+        resp = s3_acl_obj1.put_bucket_acl(
+            bucket_name=self.bucket_name1,
+            grant_full_control="id={}".format(canonical_id1))
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("9. Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
             ios="Stop", log_prefix="test_19899_ios")
@@ -1759,7 +1832,7 @@ class TestCopyObjects:
             f"{dpath}{object_name}",
             self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
-        put_etag = resp[1]["ETag"].strip('"')
+        put_etag = resp[1]["ETag"]
         self.log.info("5. List object for the bucket1.")
         resp = S3_OBJ.object_list(self.bucket_name1)
         assert_utils.assert_true(resp[0], resp[1])
@@ -1902,7 +1975,7 @@ class TestCopyObjects:
                 " The specified key does not exist.", error.message, error.message)
         self.log.info(
             "Step 5: Copy object from bucket1 to bucket2 using wildcard * for part of "
-            "source-object name..")
+            "source-object name.")
         try:
             status, response = S3_OBJ.copy_object(
                 self.bucket_name1, f"{self.object_name1}*", self.bucket_name1, self.object_name1)
