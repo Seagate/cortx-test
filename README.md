@@ -112,4 +112,112 @@ pytest --capture=no --te_tkt TEST-17412 -d --tx 2*popen -rA unittests\<Your_Test
 pytest --capture=no --te_tkt TEST-17412 -rA unittests\test_reporting_and_logging_hooks.py
 ```
 
+## MongoDB as Configuration Management Database
+Cortx-test uses MongoDB as backend to store Cortx setup details. These details are specific
+to the setup itself. The purpose of this setup is to do automatic config generation
+based on the setup. A sample template is as shown below.
 
+```json
+
+{
+"setupname":"T2",
+"setup_in_useby": "",
+"in_use_for_parallel": false,
+"parallel_client_cnt": 0,
+"is_setup_free": true,
+"nodes":[
+    {
+        "host": "eos-node-0",
+        "hostname": "node 0 hostname",
+        "ip": "node 0 ip",
+        "username": "node 0 username",
+        "password": "node 0 password"
+    },
+    {
+        "host": "eos-node-1",
+        "hostname": "node 1 hostname",
+        "ip": "node 1 ip address",
+        "username": "node 1 username",
+        "password": "node 1 password"
+    }
+],
+
+"enclosure":
+{
+    "primary_enclosure_ip": "10.0.0.2",
+    "secondary_enclosure_ip": "10.0.0.3",
+    "enclosure_user": "",
+    "enclosure_pwd": ""
+},
+
+"pdu":{
+    "ip": "",
+    "username": "",
+    "password": "",
+    "power_on": "on",
+    "power_off": "off",
+    "sleep_time": 120
+},
+
+"gem_controller":
+{
+    "ip": "",
+    "username": "",
+    "password": "",
+    "port1": "9012",
+    "port2": "9014"
+},
+
+"bmc":
+{
+    "username": "",
+    "password": ""
+},
+
+"ldap":
+{
+    "username": "",
+    "password": "",
+    "sspl_pass": ""
+},
+
+"csm":
+{
+  "mgmt_vip": "",
+  "csm_admin_user":{
+    "username": "",
+    "password": ""
+  }
+
+},
+"s3":
+{
+    "s3_server_ip": "",
+    "s3_server_user": "",
+    "s3_server_pwd": ""
+}
+}
+```   
+
+Script in project's path `tools/setup_update` can be used to generate a setup specific config entry. 
+```commandline
+python setup_entry.py --help
+usage: setup_entry.py [-h] [--fpath FPATH] [--dbuser DBUSER]
+                      [--dbpassword DBPASSWORD] [--new_entry NEW_ENTRY]
+
+Update the setup entry
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --fpath FPATH         Path of the json entry file
+  --dbuser DBUSER       Database user
+  --dbpassword DBPASSWORD
+                        database password
+  --new_entry NEW_ENTRY
+                        True for new entry , False for update
+
+e.g. python3 tools/setup_entry/setup_entry.py --dbuser <> --dbpassword <>
+
+Name of setup specified in json file should be unique in case you are creating a new setup.
+For example in sample json setupname value should be unique `"setupname":"T2"`.
+```
