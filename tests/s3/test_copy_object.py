@@ -180,7 +180,7 @@ class TestCopyObjects:
                bucket=None,
                log_file_prefix="parallel_io",
                duration="0h3m",
-               obj_size="2Mb",
+               obj_size="24Kb",
                num_clients=5,
                num_sample=20,
                obj_name_pref="loadgen_",
@@ -791,7 +791,7 @@ class TestCopyObjects:
             "Step 10: Get Object ACL of the destination bucket from Account1.")
         resp = s3_acl_obj1.get_bucket_acl(self.bucket_name1)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = s3_acl_obj1.put_bucket_acl(
+        resp = s3_acl_obj2.put_bucket_acl(
             bucket_name=self.bucket_name2,
             grant_full_control="id={}".format(canonical_id2))
         assert_utils.assert_true(resp[0], resp[1])
