@@ -181,10 +181,7 @@ class TestCopyObjects:
                log_file_prefix="parallel_io",
                duration="0h3m",
                obj_size="24Kb",
-               num_clients=5,
-               num_sample=20,
-               obj_name_pref="loadgen_",
-               end_point=S3_CFG["s3_url"]):
+               **kwargs):
         """
         Perform io's for specific durations.
 
@@ -192,6 +189,10 @@ class TestCopyObjects:
         2. perform io's for specified durations.
         3. Check executions successful.
         """
+        kwargs.setdefault("num_clients", 5)
+        kwargs.setdefault("num_sample", 20)
+        kwargs.setdefault("obj_name_pref", "loadgen_")
+        kwargs.setdefault("end_point", S3_CFG["s3_url"])
         self.log.info("STARTED: s3 io's operations.")
         bucket = bucket if bucket else self.io_bucket_name
         resp = S3_OBJ.create_bucket(bucket)
@@ -201,10 +202,10 @@ class TestCopyObjects:
             access_key,
             secret_key,
             bucket=bucket,
-            end_point=end_point,
-            num_clients=num_clients,
-            num_sample=num_sample,
-            obj_name_pref=obj_name_pref,
+            end_point=kwargs["end_point"],
+            num_clients=kwargs["num_clients"],
+            num_sample=kwargs["num_sample"],
+            obj_name_pref=kwargs["obj_name_pref"],
             obj_size=obj_size,
             duration=duration,
             log_file_prefix=log_file_prefix)
@@ -695,7 +696,7 @@ class TestCopyObjects:
             status, response = S3_OBJ.copy_object(
                 self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2)
             assert_utils.assert_false(
-                status, "copied object greater than 5GB.")
+                status, f"copied object greater than 5GB: {response}")
         except CTException as error:
             self.log.info(error.message)
             assert_utils.assert_equal(
@@ -733,7 +734,6 @@ class TestCopyObjects:
         canonical_id1, s3_obj1, s3_acl_obj1 = self.response1[:3]
         resp = system_utils.create_file(
             fpath=self.file_path, count=10, b_size="1M")
-        self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
         status, put_etag = self.create_bucket_put_object(
             s3_obj1, self.bucket_name1, self.object_name1, self.file_path)
