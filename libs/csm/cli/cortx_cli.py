@@ -38,8 +38,10 @@ class CortxCli(CortxCliClient):
     def __init__(
             self,
             host: str = CMN_CFG["csm"]["mgmt_vip"],
-            username: str = CMN_CFG["csm"]["csm_admin_user"]["username"],
-            password: str = CMN_CFG["csm"]["csm_admin_user"]["password"],
+            #username: str = CMN_CFG["csm"]["csm_admin_user"]["username"],
+            #password: str = CMN_CFG["csm"]["csm_admin_user"]["password"],
+            username: str = CMN_CFG["nodes"][0]["username"],
+            password: str = CMN_CFG["nodes"][0]["password"],
             **kwargs):
         """
         This method initializes members of CortxCli and its parent class
