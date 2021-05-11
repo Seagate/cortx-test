@@ -188,8 +188,8 @@ class TestS3Load:
             assert_utils.assert_false(res, "Few IO failed due to some reason")
         self.log.info("Validated locust log file.")
 
-    @pytest.mark.s3_load_test
-    @pytest.mark.tags("EOS-19534")
+    @pytest.mark.s3_io_load
+    @pytest.mark.tags("TEST-19534")
     def test_small_obj_multi_bkt_max_session_19534(self):
         """
         Load test with multiple buckets, small size objects and max supported concurrent sessions.
@@ -241,8 +241,8 @@ class TestS3Load:
             assert_utils.assert_false(res, "Few IO failed due to some reason")
         self.log.info("Validated locust log file.")
 
-    @pytest.mark.s3_load_test
-    @pytest.mark.tags("EOS-19537")
+    @pytest.mark.s3_io_load
+    @pytest.mark.tags("TEST-19537")
     def test_small_obj_increase_session_19537(self):
         """
         Load test with small size objects and gradually increasing users per hr.
@@ -299,8 +299,8 @@ class TestS3Load:
             assert_utils.assert_false(res, "Few IO failed due to some reason")
         self.log.info("Validated locust log file.")
 
-    @pytest.mark.s3_load_test
-    @pytest.mark.tags("EOS-19538")
+    @pytest.mark.s3_io_load
+    @pytest.mark.tags("TEST-19538")
     def test_small_obj_sudden_spike_session_19538(self):
         """
         Load test with small size objects and sudden spike in users count.
