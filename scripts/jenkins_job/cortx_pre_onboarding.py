@@ -3,6 +3,7 @@ import configparser
 import os
 import unittest
 import time
+import json
 import paramiko
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -13,6 +14,7 @@ from scripts.jenkins_job import gui_element_locators as loc
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from commons import pswdmanager
+from libs.csm.rest.csm_rest_test_lib import CSM_REST_CFG, RestTestLib
 
 config_file = 'scripts/jenkins_job/config.ini'
 config = configparser.ConfigParser()
@@ -35,11 +37,12 @@ class CSMBoarding(unittest.TestCase):
         self.host_passwd = os.getenv('HOST_PASS')
         self.usr = "root"
         self.create_admin_user = True
-        check_admin_user_cmd = "cat /etc/passwd | grep admin"
-        response = self.remote_execution(
-            host=self.csm_mgmt_ip, user=self.usr, password=self.host_passwd, cmd=check_admin_user_cmd)
-        if "/opt/seagate/users/admin" in str(response):
+        CSM_REST_CFG["mgmt_vip"] = self.csm_mgmt_ip
+        rest_obj = RestTestLib()
+        response = rest_obj.custom_rest_login(self.admin_user, self.admin_pwd)
+        if response.status_code in ['200', "201"]:
             self.create_admin_user = False
+        self.create_admin_user = False
 
     def test_preboarding(self):
         try:
