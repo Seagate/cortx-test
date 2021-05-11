@@ -18,13 +18,7 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-"""
-S3 copy object test module.
-
-Bugs:
-    https://jts.seagate.com/browse/EOS-19623
-    https://jts.seagate.com/browse/EOS-16032
-"""
+"""S3 copy object test module."""
 
 import os
 from time import perf_counter_ns
@@ -586,6 +580,7 @@ class TestCopyObjects:
 
         TEST-19844: Copy object of object size equal to 5GB while S3 IOs are in progress.
         TEST-16915: Copy object of bigger size and less than 5GB while S3 IOs are in progress.
+        Bug: https://jts.seagate.com/browse/EOS-16032
         """
         self.log.info(
             "STARTED: Copy object of object size %s while S3 IOs are in progress.",
