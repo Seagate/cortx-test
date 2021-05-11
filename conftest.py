@@ -61,10 +61,7 @@ CACHE_JSON = 'nodes-cache.yaml'
 REPORT_CLIENT = None
 
 LOGGER = logging.getLogger(__name__)
-logging.getLogger('boto3').setLevel(logging.WARNING)
-logging.getLogger('botocore').setLevel(logging.WARNING)
-logging.getLogger('nose').setLevel(logging.WARNING)
-logging.getLogger("paramiko").setLevel(logging.WARNING)
+
 
 SKIP_MARKS = ("dataprovider", "test", "run", "skip", "usefixtures",
               "filterwarnings", "skipif", "xfail", "parametrize",
@@ -403,8 +400,8 @@ def reset_imported_module_log_level():
         if isinstance(_logger, logging.PlaceHolder):
             LOGGER.info("Skipping placeholder to reset logging level")
             continue
-        if _logger.name in ('boto3', 'botocore', 'nose', 'paramiko'):
-            _logger.setLevel(logging.WARNING)
+    for pkg in ['boto', 'boto3', 'botocore', 'nose', 'paramiko', 's3transfer', 'urllib3']:
+        logging.getLogger(pkg).setLevel(logging.WARNING)
 
 
 @pytest.hookimpl(tryfirst=True)
