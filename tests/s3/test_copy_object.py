@@ -96,13 +96,13 @@ class TestCopyObjects:
         """
         self.log.info("STARTED: test setup method.")
         self.cortx_test_obj = CortxCliTestLib()
-        self.account_name1 = "acc-copyobject-{}".format(perf_counter_ns())
-        self.account_name2 = "acc-copyobject-{}".format(perf_counter_ns())
-        self.io_bucket_name = "iobkt-copyobject-{}".format(perf_counter_ns())
-        self.bucket_name1 = "bkt-copyobject-{}".format(perf_counter_ns())
+        self.account_name1 = "acc1-copyobject-{}".format(perf_counter_ns())
+        self.account_name2 = "acc2-copyobject-{}".format(perf_counter_ns())
+        self.io_bucket_name = "iobkt1-copyobject-{}".format(perf_counter_ns())
+        self.bucket_name1 = "bkt1-copyobject-{}".format(perf_counter_ns())
         self.bucket_name2 = "bkt2-copyobject-{}".format(perf_counter_ns())
-        self.object_name1 = "copyobject-{}".format(perf_counter_ns())
-        self.object_name2 = "copyobject2-{}".format(perf_counter_ns())
+        self.object_name1 = "obj1-copyobject-{}".format(perf_counter_ns())
+        self.object_name2 = "obj2-copyobject-{}".format(perf_counter_ns())
         self.s3acc_passwd = S3_CFG["CliConfig"]["s3_account"]["password"]
         self.file_path = os.path.join(self.test_dir_path, self.object_name1)
         self.download_path = os.path.join(
