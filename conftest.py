@@ -472,7 +472,18 @@ def pytest_collection(session):
             write = csv.writer(test_file)
             for test in selected_tests:
                 write.writerow([test])
+        if is_parallel:
+            te_selected_csv = str(config.option.te_tkt) + "_parallel.csv"
+        else:
+            te_selected_csv = str(config.option.te_tkt) + "_non_parallel.csv"
+        with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, te_selected_csv), 'w') \
+                as test_file:
+            write = csv.writer(test_file)
+            for test in selected_tests:
+                write.writerow([test])
         items[:] = selected_items
+        import pdb
+        pdb.set_trace()
     cache_home = os.path.join(os.getcwd(), LOG_DIR)
     cache_path = os.path.join(cache_home, CACHE_JSON)
     if not os.path.exists(cache_home):
