@@ -23,6 +23,7 @@ export HOSTNAME="${HOSTNAME}"
 export HOST_PASS="${HOST_PASS}"
 python3.7 setup.py install
 python3.7 setup.py develop
+rm -rf build/
 deactivate
 '''
 			}
