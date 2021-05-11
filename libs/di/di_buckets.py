@@ -29,8 +29,10 @@ import re
 import base64
 from pathlib import Path
 from libs.di.di_base import _init_s3_conn
-from libs.di.di_params import DOWNLOAD_HOME
+from commons.params import DOWNLOAD_HOME
 from commons.worker import Workers
+from commons.constants import NWORKERS
+from typing import List
 
 LOGGER = logging.getLogger(__name__)
 
@@ -39,16 +41,19 @@ FailedFiles = list()
 FailedFilesCSV = "FailedFiles.csv"
 
 
-def compare_checksum_after_download(user, keys, bucket, nworkers):
+def compare_checksum_after_download(user_name: str,
+                                    keys: List,
+                                    bucket: str,
+                                    nworkers: int = NWORKERS) -> None:
     """
     List the objects from specified bucket or global bucket and download and verifies the
     checksum. This function supports DI/downloading of data uploaded from Seagate's S3bench.
+    :param user_name:
+    :param nworkers: number of workers
     :param bucket: bucket name
-    :param user: username
     :param keys: access key and secret list
     :return:
     """
-    user_name = user
     access_key = keys[0]
     secret_key = keys[1]
     s3 = _init_s3_conn(access_key, secret_key, user_name)
@@ -57,12 +62,12 @@ def compare_checksum_after_download(user, keys, bucket, nworkers):
         try:
             if not os.path.exists(os.path.join(DOWNLOAD_HOME, "ps", str(ix))):
                 _path = os.mkdirs(os.path.join(DOWNLOAD_HOME, "ps", str(ix)))
-        except (OSError, Exception) as exec:
-            LOGGER.error(str(exec))
+        except (OSError, Exception) as fault:
+            LOGGER.error(str(fault))
             LOGGER.error(f"Error while creating directory for process {ix}")
 
     workers = Workers()
-    workers.start_workers()
+    workers.start_workers(nworkers=nworkers)
     counter = 0
     for my_bucket_object in test_bucket.objects.all():
         workQ = queue.Queue()

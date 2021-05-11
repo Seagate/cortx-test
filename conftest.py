@@ -59,6 +59,7 @@ LOG_DIR = 'log'
 CACHE = LRUCache(1024 * 10)
 CACHE_JSON = 'nodes-cache.yaml'
 REPORT_CLIENT = None
+DT_PATTERN = '%Y-%m-%d_%H:%M:%S'
 
 LOGGER = logging.getLogger(__name__)
 logging.getLogger('boto3').setLevel(logging.WARNING)
@@ -228,6 +229,7 @@ def pytest_addoption(parser):
         help="Decide whether to update Jira."
     )
 
+
 def read_test_list_csv() -> List:
     try:
         tests = list()
@@ -310,11 +312,9 @@ def create_report_payload(item, call, final_result, d_u, d_pass):
     are_logs_collected = True
     if final_result == 'FAIL':
         health_chk_res = "TODO"
-        log_path = "TODO"
     elif final_result in ['PASS', 'BLOCKED']:
         health_chk_res = "NA"
-        log_path = "NA"
-
+    log_path = "NA"
     nodes = len(CMN_CFG['nodes'])  # number of target hosts
     nodes_hostnames = [n['hostname'] for n in CMN_CFG['nodes']]
     data_kwargs = dict(os=os_ver,
@@ -532,7 +532,6 @@ def pytest_runtest_makereport(item, call):
     outcome = yield
     report = outcome.get_result()
     setattr(item, "rep_" + report.when, report)
-    # print(rep)
     _local = bool(item.config.option.local)
     Globals.LOCAL_RUN = _local
     fail_file = 'failed_tests.log'
@@ -686,7 +685,7 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
                                    Globals.BUILD, Globals.TP_TKT,
                                    Globals.TE_TKT, test_id,
                                    datetime.datetime.fromtimestamp(
-                                       time.time()).strftime('%Y-%m-%d_%H:%M:%S')
+                                       time.time()).strftime(DT_PATTERN)
                                    )
         resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
                                                    mnt_dir=params.MOUNT_DIR,

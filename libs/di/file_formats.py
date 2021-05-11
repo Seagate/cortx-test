@@ -105,7 +105,7 @@ compressed_exts = frozenset([
     # https://en.wikipedia.org/wiki/List_of_archive_formats
     '.a', '.ar', '.cpio', '.shar', '.lbr', '.iso', '.mar',
     '.sbx', '.gz', '.bz2', '.zip', '.lz', '.lzma', '.lzo', '.rz', '.sfark',
-    '.sz', '.?q?', '.?z?', '.xz', '.z', '.7z', '.s7z', '.ace', '.afa', '.alz',
+    '.sz', '.xz', '.z', '.7z', '.s7z', '.ace', '.afa', '.alz',
     '.apk', '.arc', '.arj', '.b1', '.b6z', '.ba', '.bh', '.cab', '.car',
     '.cfs', '.cpt', '.dar', '.dd', '.dgc', '.dmg', '.ear', '.gca', '.ha',
     '.hki', '.ice', '.jar', '.kgb', '.lzh', '.lha', '.lzx', '.pak', '.partimg',

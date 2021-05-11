@@ -29,7 +29,7 @@ from fabric import Connection
 from fabric import Config
 from fabric import ThreadingGroup, SerialGroup
 from libs.di.di_mgmt_ops import ManagementOPs
-from libs.di import di_base
+from libs.di.di_base import _init_s3_conn
 from commons.exceptions import CortxTestException
 from commons import params
 from commons.utils import assert_utils
@@ -69,7 +69,7 @@ def create_buckets(user_dict, s3_prefix, nbuckets):
         secret_key = user_dict.get('secret_key')
         timestamp = time.strftime("%Y%m%d-%H%M%S")
         buckets = [user_name + '-' + timestamp + '-bucket' + str(i) for i in range(nbuckets)]
-        s3 = di_base._init_s3_conn(access_key=access_key, secret_key=secret_key,
+        s3 = _init_s3_conn(access_key=access_key, secret_key=secret_key,
                                    user_name=user_name)
         if not s3:
             raise CortxTestException('S3 resource could not be created')

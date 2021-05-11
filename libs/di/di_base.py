@@ -52,6 +52,7 @@ class SysLogger:
 
 
 def init_s3_connections(users):
+    """Init s3 connections pool for a multiple  user"""
     s3_objects = dict()
 
     for user, keys in users.items():
@@ -63,6 +64,7 @@ def init_s3_connections(users):
 
 
 def init_s3_conn(user_name, keys, nworkers):
+    """Init s3 connections pool for a single user"""
     access_key = keys[0]
     secret_key = keys[1]
     pool = list()
@@ -73,6 +75,7 @@ def init_s3_conn(user_name, keys, nworkers):
 
 
 def _init_s3_conn(access_key, secret_key, user_name):
+    """Protected function to create a single s3 resource."""
     s3 = None
     try:
         s3 = boto3.resource('s3', aws_access_key_id=access_key, aws_secret_access_key=secret_key,

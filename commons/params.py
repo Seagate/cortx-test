@@ -104,3 +104,5 @@ FAILED_FILES_SERVER_ERROR = "FailedFilesServerError.csv"
 DESTRUCTIVE_TEST_RESULT = "/root/result_summary.csv"
 DELETE_PERCENTAGE = 10
 DOWNLOAD_HOME = '/var/log/'
+
+DT_PATTERN_PREFIX = '%Y%m%d-%H%M%S'
