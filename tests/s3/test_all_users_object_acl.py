@@ -27,10 +27,8 @@ import pytest
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
-from commons.utils.config_utils import read_yaml
 from commons.utils.system_utils import make_dirs, cleanup_dir, path_exists
 from libs.s3 import s3_test_lib, iam_test_lib, s3_acl_test_lib
-
 
 S3_TEST_OBJ = s3_test_lib.S3TestLib()
 ACL_OBJ = s3_acl_test_lib.S3AclTestLib()
@@ -162,7 +160,6 @@ class TestAllUsers:
         self.log.info("Deleted buckets.")
         self.log.info("ENDED: Teardown operations")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-6019")
     @CTFailOn(error_handler)
@@ -192,7 +189,6 @@ class TestAllUsers:
             "ENDED: Put an object with same name in bucket without Autentication when "
             "AllUsers have READ permission on object")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-6016")
     @CTFailOn(error_handler)
@@ -219,7 +215,6 @@ class TestAllUsers:
             "ENDED: Delete an object from bucket without Authentication "
             "when AllUsers have READ permission on object")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-6014")
     @CTFailOn(error_handler)
@@ -250,7 +245,6 @@ class TestAllUsers:
             "ENDED: Read an object ACL from bucket without Authentication "
             "when AllUsers have READ permission on object")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-6011")
     @CTFailOn(error_handler)
@@ -282,7 +276,6 @@ class TestAllUsers:
             "ENDED: Update an object ACL in bucket without Authentication "
             "when AllUsers have READ permission on object")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-6009")
     @CTFailOn(error_handler)
@@ -313,7 +306,6 @@ class TestAllUsers:
             "ENDED: Put an object with same name in bucket without Autentication "
             "when AllUsers have WRITE permission on object")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-6006")
     @CTFailOn(error_handler)
@@ -341,7 +333,6 @@ class TestAllUsers:
             "ENDED: Delete an object from bucket without Authentication "
             "when AllUsers have WRITE permission on object")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-6004")
     @CTFailOn(error_handler)
@@ -370,7 +361,6 @@ class TestAllUsers:
             "ENDED: Read an object ACL from bucket without Authentication "
             "when AllUsers have WRITE permission on object")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-6002")
     @CTFailOn(error_handler)
@@ -400,7 +390,6 @@ class TestAllUsers:
             "ENDED: Update an object ACL in bucket without Authentication "
             "when AllUsers have WRITE permission on object")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-6001")
     @CTFailOn(error_handler)
@@ -432,7 +421,6 @@ class TestAllUsers:
             "ENDED: Put an object with same name in bucket without Autentication "
             "when AllUsers have READ_ACP permission on object")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5970")
     @CTFailOn(error_handler)
@@ -461,7 +449,6 @@ class TestAllUsers:
             "ENDED: GET an object from bucket without Autentication "
             "when AllUsers have READ permission on object")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5968")
     @CTFailOn(error_handler)
@@ -495,7 +482,6 @@ class TestAllUsers:
             "ENDED: GET an object from bucket without Autentication "
             "when AllUsers have WRITE permission on object")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5999")
     @CTFailOn(error_handler)
@@ -530,7 +516,6 @@ class TestAllUsers:
             "ENDED: GET an object from bucket without Authentication "
             "when AllUsers have READ_ACP permission on object")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5997")
     @CTFailOn(error_handler)
@@ -559,7 +544,6 @@ class TestAllUsers:
             "ENDED: Read an object ACL from bucket without Authentication "
             "when AllUsers have READ_ACP permission on object")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5995")
     @CTFailOn(error_handler)
@@ -590,7 +574,6 @@ class TestAllUsers:
             "ENDED: Update an object ACL in bucket without Authentication "
             "when AllUsers have READ_ACP permission on object")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5993")
     @CTFailOn(error_handler)
@@ -620,7 +603,6 @@ class TestAllUsers:
             "ENDED: Put an object with same name in bucket without Autentication "
             "when AllUsers have WRITE_ACP permission on object")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5986")
     @CTFailOn(error_handler)
@@ -652,7 +634,6 @@ class TestAllUsers:
             "ENDED:GET an object from bucket without Authentication "
             "when AllUsers have WRITE_ACP permission on object")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5984")
     @CTFailOn(error_handler)
@@ -684,7 +665,6 @@ class TestAllUsers:
             "ENDED: Read an object ACL from bucket without Authentication "
             "when AllUsers have WRITE_ACP permission on object")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5982")
     @CTFailOn(error_handler)
@@ -710,7 +690,6 @@ class TestAllUsers:
             "ENDED:Update an object ACL in bucket without Authentication "
             "when AllUsers have WRITE_ACP permission on object")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5979")
     @CTFailOn(error_handler)
@@ -740,7 +719,6 @@ class TestAllUsers:
             "ENDED:Put an object with same name in bucket without Autentication "
             "when AllUsers have FULL_CONTROL permission on object")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5977")
     @CTFailOn(error_handler)
@@ -769,7 +747,6 @@ class TestAllUsers:
             "ENDED:GET an object from bucket without Authentication "
             "when AllUsers have FULL_CONTROL permission on object")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5975")
     @CTFailOn(error_handler)
@@ -792,12 +769,11 @@ class TestAllUsers:
             "Step 3: Get object acl from that bucket using unsigned account")
         resp = ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)
         assert resp[0], resp[1]
-        assert "FULL_CONTROL" == resp[1]["Grants"][0]["Permission"], resp[1]
+        assert resp[1]["Grants"][0]["Permission"] == "FULL_CONTROL", resp[1]
         self.log.info(
             "ENDED:Read an object ACL from bucket without Authentication "
             "when AllUsers have FULL_CONTROL permission on object")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5973")
     @CTFailOn(error_handler)
@@ -824,7 +800,7 @@ class TestAllUsers:
         self.log.info("Step 4: Verifying that object's acl is changed")
         resp = ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)
         assert resp[0], resp[1]
-        assert "WRITE_ACP" == resp[1]["Grants"][0]["Permission"], resp[1]
+        assert resp[1]["Grants"][0]["Permission"] == "WRITE_ACP", resp[1]
         self.log.info("Step 4: Verified that object's acl is changed")
         self.log.info(
             "ENDED:Update an object ACL in bucket without Authentication "

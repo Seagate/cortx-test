@@ -27,14 +27,12 @@ from multiprocessing import Process, Manager
 
 import logging
 import pytest
-from commons.exceptions import CTException
 from commons.constants import const
 from commons import commands as cmd
 from commons.ct_fail_on import CTFailOn
 from commons.utils.system_utils import run_remote_cmd
 from commons.errorcodes import error_handler
 from commons.utils.assert_utils import assert_false, assert_true
-from commons.utils.config_utils import read_yaml
 from commons.helpers.node_helper import Node
 from libs.s3 import S3H_OBJ, CM_CFG, S3_CFG
 
@@ -300,7 +298,6 @@ class TestSupportBundle:
         self.log.info("Step : Deleted all the files")
         self.log.info("ENDED: Teardown operations")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8024 ")
     @CTFailOn(error_handler)
@@ -331,7 +328,6 @@ class TestSupportBundle:
         self.log.info(
             "ENDED: Support bundle collection when destination has less space than required")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8025")
     @CTFailOn(error_handler)
@@ -370,7 +366,6 @@ class TestSupportBundle:
         self.log.info(
             "ENDED: Test multiple Support bundle collection triggered simultaneously")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8026")
     @CTFailOn(error_handler)
@@ -468,7 +463,6 @@ class TestSupportBundle:
         self.log.info(
             "ENDED: Test Support bundle collection with network fluctuation")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8692 ")
     @CTFailOn(error_handler)
@@ -633,7 +627,6 @@ class TestSupportBundle:
         self.log.info(
             "ENDED: Test Support bundle collection when Cluster is shut down")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8697")
     @CTFailOn(error_handler)
@@ -670,7 +663,6 @@ class TestSupportBundle:
         self.log.info(
             "ENDED: Test multiple Support bundle collections one after the other")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8698 ")
     @CTFailOn(error_handler)
@@ -711,7 +703,6 @@ class TestSupportBundle:
         self.log.info(
             "ENDED: Validate Support bundle contains s3server logs for all instances")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8699")
     @CTFailOn(error_handler)
@@ -748,7 +739,6 @@ class TestSupportBundle:
         self.log.info(
             "ENDED: Validate Support bundle contains authserver logs")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8700")
     @CTFailOn(error_handler)
@@ -829,7 +819,6 @@ class TestSupportBundle:
         self.log.info(
             "ENDED: Test Support bundle collection when s3server services are down")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8701")
     @CTFailOn(error_handler)
@@ -861,7 +850,6 @@ class TestSupportBundle:
         self.log.info(
             "ENDED: Test Support bundle collection through command/script")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8689")
     @CTFailOn(error_handler)
@@ -917,7 +905,6 @@ class TestSupportBundle:
         self.log.info(
             "ENDED: Validate Support bundle contains system related configs")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8690")
     @CTFailOn(error_handler)

@@ -136,7 +136,6 @@ class TestBucketWorkflowOperations:
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("ENDED: Delete s3 bucket: %s", bucket)
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5463")
     @CTFailOn(error_handler)
@@ -175,7 +174,6 @@ class TestBucketWorkflowOperations:
         self.log.info(
             "ENDED: Bucket names must start with a lowercase letter or number")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5469")
     @CTFailOn(error_handler)
@@ -198,7 +196,6 @@ class TestBucketWorkflowOperations:
             "ENDED: Bucket name can contain only lower-case characters, "
             "numbers, periods and dashes")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5467")
     @CTFailOn(error_handler)
@@ -234,7 +231,6 @@ class TestBucketWorkflowOperations:
         self.log.info(
             "ENDED: Bucket names must be at least 3 and no more than 63 characters long")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5468")
     @CTFailOn(error_handler)
@@ -260,7 +256,6 @@ class TestBucketWorkflowOperations:
         self.log.info(
             "ENDED: Bucket name with less than 3 characters and more than 63 characters")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5464")
     @CTFailOn(error_handler)
@@ -282,7 +277,6 @@ class TestBucketWorkflowOperations:
         self.log.info(
             "ENDED: Bucket names must not contain uppercase characters")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5465")
     @CTFailOn(error_handler)
@@ -302,7 +296,6 @@ class TestBucketWorkflowOperations:
         self.log.info("Creating a bucket with underscore is failed")
         self.log.info("ENDED: Bucket names must not contain underscores")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5462")
     @CTFailOn(error_handler)
@@ -334,7 +327,6 @@ class TestBucketWorkflowOperations:
         self.log.info("Creating a bucket with special characters is failed")
         self.log.info("ENDED: Bucket names with special characters")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5466")
     @CTFailOn(error_handler)
@@ -356,7 +348,6 @@ class TestBucketWorkflowOperations:
         self.log.info(
             "ENDED: Bucket names must not be formatted as an IP address (for example, 192.168.5.4)")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5459")
     @CTFailOn(error_handler)
@@ -382,7 +373,6 @@ class TestBucketWorkflowOperations:
         self.log.info("Verified that bucket is created")
         self.log.info("ENDED: Creating single Bucket")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5460")
     @CTFailOn(error_handler)
@@ -407,7 +397,6 @@ class TestBucketWorkflowOperations:
         self.log.info("Verified that buckets are created")
         self.log.info("ENDED: Create 10 multiple buckets")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5461")
     @CTFailOn(error_handler)
@@ -438,7 +427,6 @@ class TestBucketWorkflowOperations:
         self.log.info(
             "ENDED: Create bucket with same bucket name already present")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5447")
     @CTFailOn(error_handler)
@@ -469,7 +457,6 @@ class TestBucketWorkflowOperations:
         self.log.info(
             "ENDED: Verification of max. 100 no. of buckets user can create")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5457")
     @CTFailOn(error_handler)
@@ -511,7 +498,6 @@ class TestBucketWorkflowOperations:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("ENDED: Delete bucket which has objects")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5458")
     @CTFailOn(error_handler)
@@ -546,7 +532,6 @@ class TestBucketWorkflowOperations:
         self.log.info("Forcefully deleted a bucket")
         self.log.info("ENDED: Delete bucket forcefully which has objects")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5455")
     @CTFailOn(error_handler)
@@ -571,7 +556,6 @@ class TestBucketWorkflowOperations:
         self.log.info("Bucket is deleted")
         self.log.info("ENDED: Delete empty bucket")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5454")
     @CTFailOn(error_handler)
@@ -599,7 +583,6 @@ class TestBucketWorkflowOperations:
         self.log.info("Multiple buckets are deleted")
         self.log.info("ENDED: Delete multiple empty buckets")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5456")
     @CTFailOn(error_handler)
@@ -619,7 +602,6 @@ class TestBucketWorkflowOperations:
         self.log.info(
             "ENDED: Delete bucket which does not exists on s3 server")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5452")
     @CTFailOn(error_handler)
@@ -663,7 +645,6 @@ class TestBucketWorkflowOperations:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("ENDED: List all objects in a bucket")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5448")
     @CTFailOn(error_handler)
@@ -703,7 +684,6 @@ class TestBucketWorkflowOperations:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("ENDED: Verification of disk usage by bucket")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5453")
     @CTFailOn(error_handler)
@@ -720,7 +700,6 @@ class TestBucketWorkflowOperations:
         self.log.info("Head bucket on non existing bucket is failed")
         self.log.info("ENDED: HEAD bucket when Bucket does not exists")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5445")
     @CTFailOn(error_handler)
@@ -751,7 +730,6 @@ class TestBucketWorkflowOperations:
         self.delete_s3_buckets(bkt_name)
         self.log.info("ENDED: Verify HEAD bucket")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5446")
     @CTFailOn(error_handler)
@@ -778,7 +756,6 @@ class TestBucketWorkflowOperations:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("ENDED: Verify 'LIST buckets' command")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5450")
     @CTFailOn(error_handler)
@@ -800,7 +777,6 @@ class TestBucketWorkflowOperations:
         self.delete_s3_buckets(bkt_name)
         self.log.info("ENDED: Verification of bucket location")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8031")
     @CTFailOn(error_handler)
@@ -844,7 +820,6 @@ class TestBucketWorkflowOperations:
         self.log.info(
             "ENDED: Delete multiobjects which are present in bucket")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8032")
     @CTFailOn(error_handler)
@@ -878,7 +853,6 @@ class TestBucketWorkflowOperations:
         self.log.info(
             "ENDED: Delete multiobjects where the bucket is not present")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8033")
     @CTFailOn(error_handler)
@@ -945,7 +919,6 @@ class TestBucketWorkflowOperations:
             "ENDED: create bucket and upload objects from account1 and dont give"
             " any permissions to account2 and delete multiple objects from account2")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8035")
     @CTFailOn(error_handler)

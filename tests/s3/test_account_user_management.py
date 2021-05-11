@@ -568,7 +568,6 @@ class TestAccountUserManagement:
         self.log.info("Step 2: Deleted user successfully")
         self.log.info("END: Delete User")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5438")
     @CTFailOn(error_handler)
@@ -606,7 +605,6 @@ class TestAccountUserManagement:
         self.log.info("Verified %s users are created", str(total_users))
         self.log.info("END: Created 100 No of Users.")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5436")
     @CTFailOn(error_handler)
@@ -630,7 +628,6 @@ class TestAccountUserManagement:
             "Could not create user with existing name %s", str(user_name))
         self.log.info("END: creating user with existing name.")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5442")
     @CTFailOn(error_handler)
@@ -654,7 +651,6 @@ class TestAccountUserManagement:
         self.log.info("Step 2: Created access key for the user")
         self.log.info("END: Create Access key to the user")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5430")
     @CTFailOn(error_handler)
@@ -679,7 +675,6 @@ class TestAccountUserManagement:
         self.log.info("Listed access key of the user successfully")
         self.log.info("END: List accesskeys for the user")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5433")
     @CTFailOn(error_handler)
@@ -708,7 +703,6 @@ class TestAccountUserManagement:
         self.log.info("Listed access key of the user successfully.")
         self.log.info("END: Delete Accesskey of a users")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5425")
     @CTFailOn(error_handler)
@@ -741,7 +735,6 @@ class TestAccountUserManagement:
             "Verified that access key of user is updated successfully")
         self.log.info("END: Update Accesskey of a user.")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5424")
     @CTFailOn(error_handler)
@@ -774,7 +767,6 @@ class TestAccountUserManagement:
             "Verified that access key of user is updated successfully")
         self.log.info("END: update accesskey of a user with inactive mode")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5441")
     @CTFailOn(error_handler)
@@ -796,7 +788,6 @@ class TestAccountUserManagement:
             assert resp[0], resp[1]
         self.log.info("END: create max accesskey with existing user name")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5423")
     @CTFailOn(error_handler)
@@ -825,7 +816,6 @@ class TestAccountUserManagement:
         self.log.info("Updated login profile for user %s", str(user_name))
         self.log.info("END: update login profile")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5427")
     @CTFailOn(error_handler)
@@ -848,7 +838,6 @@ class TestAccountUserManagement:
         remove_file("ca.crt")
         self.log.info("END: SSL certificate.")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5426")
     @CTFailOn(error_handler)
@@ -865,7 +854,6 @@ class TestAccountUserManagement:
             "Verified that %s file exists on server", str(self.ca_cert_path))
         self.log.info("END: ssl certificate present.")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5444")
     @CTFailOn(error_handler)
@@ -903,7 +891,6 @@ class TestAccountUserManagement:
         self.log.info("Changed password for %s user", str(user_name))
         self.log.info("END: Change password for IAM user.")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8718")
     @CTFailOn(error_handler)

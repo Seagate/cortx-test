@@ -26,9 +26,9 @@ import pytest
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
+from commons.utils.system_utils import create_file, remove_file, path_exists, make_dirs
 from config import S3_OBJ_TST
 from libs.s3 import s3_test_lib, s3_tagging_test_lib, s3_multipart_test_lib
-from commons.utils.system_utils import create_file, remove_file, path_exists, make_dirs
 
 S3_TEST_OBJ = s3_test_lib.S3TestLib()
 TAG_OBJ = s3_tagging_test_lib.S3TaggingTestLib()
@@ -107,7 +107,6 @@ class TestObjectTagging:
             bucket_name, obj_name, key, value, tag_count=tag_count)
         assert resp[0], resp[1]
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5549")
     @CTFailOn(error_handler)
@@ -126,7 +125,7 @@ class TestObjectTagging:
         self.log.info(
             "Created a bucket, uploaded an object and tag is set for object")
         self.log.info("Retrieving tag of an object %s",
-                         S3_OBJ_TST["s3_object"]["obj_name"])
+                      S3_OBJ_TST["s3_object"]["obj_name"])
         resp = TAG_OBJ.get_object_tags(
             S3_OBJ_TST["test_9413"]["bucket_name"],
             S3_OBJ_TST["s3_object"]["obj_name"])
@@ -134,7 +133,6 @@ class TestObjectTagging:
         self.log.info("Retrieved tag of an object")
         self.log.info("Verify PUT object tagging")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5557")
     @CTFailOn(error_handler)
@@ -153,7 +151,7 @@ class TestObjectTagging:
         self.log.info(
             "Created a bucket, uploaded an object and tag is set for object")
         self.log.info("Retrieving tag of an object %s",
-                         S3_OBJ_TST["s3_object"]["obj_name"])
+                      S3_OBJ_TST["s3_object"]["obj_name"])
         resp = TAG_OBJ.get_object_tags(
             S3_OBJ_TST["test_9414"]["bucket_name"],
             S3_OBJ_TST["s3_object"]["obj_name"])
@@ -161,7 +159,6 @@ class TestObjectTagging:
         self.log.info("Retrieved tag of an object")
         self.log.info("Verify GET object tagging")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5561")
     @CTFailOn(error_handler)
@@ -180,7 +177,7 @@ class TestObjectTagging:
         self.log.info(
             "Created a bucket, uploaded an object and tag is set for object")
         self.log.info("Retrieving tag of an object %s",
-                         S3_OBJ_TST["s3_object"]["obj_name"])
+                      S3_OBJ_TST["s3_object"]["obj_name"])
         resp = TAG_OBJ.get_object_tags(
             S3_OBJ_TST["test_9415"]["bucket_name"],
             S3_OBJ_TST["s3_object"]["obj_name"])
@@ -200,7 +197,6 @@ class TestObjectTagging:
         self.log.info("Verified that tags are deleted")
         self.log.info("Verify DELETE object tagging")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5547")
     @CTFailOn(error_handler)
@@ -234,7 +230,6 @@ class TestObjectTagging:
         self.log.info("Object is uploaded to a bucket")
         self.log.info("Verify put object with tagging support")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5555")
     @CTFailOn(error_handler)
@@ -267,7 +262,7 @@ class TestObjectTagging:
         assert S3_OBJ_TST["s3_object"]["obj_name"] == resp[1].key, resp[1]
         self.log.info("Object is uploaded to a bucket")
         self.log.info("Retrieving tag of an object %s",
-                         S3_OBJ_TST["s3_object"]["obj_name"])
+                      S3_OBJ_TST["s3_object"]["obj_name"])
         resp = TAG_OBJ.get_object_tags(
             S3_OBJ_TST["test_9417"]["bucket_name"],
             S3_OBJ_TST["s3_object"]["obj_name"])
@@ -275,7 +270,6 @@ class TestObjectTagging:
         self.log.info("Retrieved tag of an object")
         self.log.info("Verify get object with tagging support")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5553")
     @CTFailOn(error_handler)
@@ -283,7 +277,7 @@ class TestObjectTagging:
         """Verify Multipart Upload with tagging support."""
         self.log.info("Verify Multipart Upload with tagging support")
         self.log.info("Creating a bucket with name %s",
-                         S3_OBJ_TST["test_9418"]["bucket_name"])
+                      S3_OBJ_TST["test_9418"]["bucket_name"])
         resp = S3_TEST_OBJ.create_bucket(
             S3_OBJ_TST["test_9418"]["bucket_name"])
         assert resp[0], resp[1]
@@ -296,7 +290,7 @@ class TestObjectTagging:
             S3_OBJ_TST["test_9418"]["bucket_name"],
             S3_OBJ_TST["s3_object"]["obj_name"],
             S3_OBJ_TST["test_9418"]["object_tag"])
-        assert(resp[0]), resp[1]
+        assert (resp[0]), resp[1]
         self.log.info("Created multipart upload with tagging support")
         self.log.info("Performing list multipart uploads")
         resp = S3_MP_OBJ.list_multipart_uploads(
@@ -307,7 +301,7 @@ class TestObjectTagging:
             "Performed list multipart upload on a bucket %s",
             S3_OBJ_TST["test_9418"]["bucket_name"])
         self.log.info("Uploading parts to a bucket %s",
-                         S3_OBJ_TST["test_9418"]["bucket_name"])
+                      S3_OBJ_TST["test_9418"]["bucket_name"])
         resp = S3_MP_OBJ.upload_parts(
             upload_id,
             S3_OBJ_TST["test_9418"]["bucket_name"],
@@ -342,7 +336,6 @@ class TestObjectTagging:
             S3_OBJ_TST["test_9418"]["bucket_name"])
         self.log.info("Verify Multipart Upload with tagging support")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5574")
     @CTFailOn(error_handler)
@@ -373,7 +366,6 @@ class TestObjectTagging:
         self.log.info(
             "Add up to 10 or maximum tags with an existing object")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5576")
     @CTFailOn(error_handler)
@@ -394,7 +386,7 @@ class TestObjectTagging:
             self.file_path,
             S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info("Uploading an object %s",
-                         S3_OBJ_TST["s3_object"]["obj_name"])
+                      S3_OBJ_TST["s3_object"]["obj_name"])
         resp = S3_TEST_OBJ.put_object(
             S3_OBJ_TST["test_9420"]["bucket_name"],
             S3_OBJ_TST["s3_object"]["obj_name"],
@@ -414,7 +406,6 @@ class TestObjectTagging:
                 error.message), error.message
         self.log.info("Add more than 10 tags to an existing object")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5564")
     @CTFailOn(error_handler)
@@ -435,7 +426,7 @@ class TestObjectTagging:
             self.file_path,
             S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info("Uploading an object %s",
-                         S3_OBJ_TST["s3_object"]["obj_name"])
+                      S3_OBJ_TST["s3_object"]["obj_name"])
         resp = S3_TEST_OBJ.put_object(
             S3_OBJ_TST["test_9421"]["bucket_name"],
             S3_OBJ_TST["s3_object"]["obj_name"],
@@ -455,7 +446,6 @@ class TestObjectTagging:
         self.log.info(
             "Tags associated with an object must have unique tag keys.")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5578")
     @CTFailOn(error_handler)
@@ -476,7 +466,7 @@ class TestObjectTagging:
             self.file_path,
             S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info("Uploading an object %s",
-                         S3_OBJ_TST["s3_object"]["obj_name"])
+                      S3_OBJ_TST["s3_object"]["obj_name"])
         resp = S3_TEST_OBJ.put_object(
             S3_OBJ_TST["test_9422"]["bucket_name"],
             S3_OBJ_TST["s3_object"]["obj_name"],
@@ -503,7 +493,6 @@ class TestObjectTagging:
         self.log.info(
             "Add a tag with duplicate tag values to an existing object")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5579")
     @CTFailOn(error_handler)
@@ -523,7 +512,7 @@ class TestObjectTagging:
         self.log.info(
             "Created a bucket, uploaded an object and tag is set for object")
         self.log.info("Retrieving tag of an object %s",
-                         S3_OBJ_TST["s3_object"]["obj_name"])
+                      S3_OBJ_TST["s3_object"]["obj_name"])
         resp = TAG_OBJ.get_object_tags(
             S3_OBJ_TST["test_9423"]["bucket_name"],
             S3_OBJ_TST["s3_object"]["obj_name"])
@@ -532,7 +521,6 @@ class TestObjectTagging:
         self.log.info(
             "A tag key can be up to 128 Unicode characters in length")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5570")
     @CTFailOn(error_handler)
@@ -553,7 +541,7 @@ class TestObjectTagging:
             self.file_path,
             S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info("Uploading an object %s",
-                         S3_OBJ_TST["s3_object"]["obj_name"])
+                      S3_OBJ_TST["s3_object"]["obj_name"])
         resp = S3_TEST_OBJ.put_object(
             S3_OBJ_TST["test_9424"]["bucket_name"],
             S3_OBJ_TST["s3_object"]["obj_name"],
@@ -574,7 +562,6 @@ class TestObjectTagging:
         self.log.info(
             "Create a tag whose key is more than 128 Unicode characters in length")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5572")
     @CTFailOn(error_handler)
@@ -594,7 +581,7 @@ class TestObjectTagging:
         self.log.info(
             "Created a bucket, uploaded an object and tag is set for object")
         self.log.info("Retrieving tag of an object %s",
-                         S3_OBJ_TST["s3_object"]["obj_name"])
+                      S3_OBJ_TST["s3_object"]["obj_name"])
         resp = TAG_OBJ.get_object_tags(
             S3_OBJ_TST["test_9425"]["bucket_name"],
             S3_OBJ_TST["s3_object"]["obj_name"])
@@ -603,7 +590,6 @@ class TestObjectTagging:
         self.log.info(
             "Create a tag having tag values up to 256 Unicode characters in length")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5571")
     @CTFailOn(error_handler)
@@ -624,7 +610,7 @@ class TestObjectTagging:
             self.file_path,
             S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info("Uploading an object %s",
-                         S3_OBJ_TST["s3_object"]["obj_name"])
+                      S3_OBJ_TST["s3_object"]["obj_name"])
         resp = S3_TEST_OBJ.put_object(
             S3_OBJ_TST["test_9426"]["bucket_name"],
             S3_OBJ_TST["s3_object"]["obj_name"],
@@ -645,7 +631,6 @@ class TestObjectTagging:
         self.log.info(
             "Create a tag having values more than 512 Unicode characters in length")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5552")
     @CTFailOn(error_handler)
@@ -664,7 +649,7 @@ class TestObjectTagging:
         self.log.info(
             "Created a bucket, uploaded an object and tag is set for object")
         self.log.info("Retrieving tag of an object %s",
-                         S3_OBJ_TST["s3_object"]["obj_name"])
+                      S3_OBJ_TST["s3_object"]["obj_name"])
         resp = TAG_OBJ.get_object_tags(
             S3_OBJ_TST["test_9427"]["bucket_name"],
             S3_OBJ_TST["s3_object"]["obj_name"])
@@ -686,7 +671,6 @@ class TestObjectTagging:
         self.log.info("Retrieved tags of an object")
         self.log.info("Verify Object Tag Keys with case sensitive labels")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5551")
     @CTFailOn(error_handler)
@@ -705,7 +689,7 @@ class TestObjectTagging:
         self.log.info(
             "Created a bucket, uploaded an object and tag is set for object")
         self.log.info("Retrieving tag of an object %s",
-                         S3_OBJ_TST["s3_object"]["obj_name"])
+                      S3_OBJ_TST["s3_object"]["obj_name"])
         resp = TAG_OBJ.get_object_tags(
             S3_OBJ_TST["test_9428"]["bucket_name"],
             S3_OBJ_TST["s3_object"]["obj_name"])
@@ -728,7 +712,6 @@ class TestObjectTagging:
         self.log.info("Retrieved tags of an object")
         self.log.info("Verify Object Tag Values with case sensitive labels")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5566")
     @CTFailOn(error_handler)
@@ -747,7 +730,7 @@ class TestObjectTagging:
         self.log.info(
             "Created a bucket, uploaded an object and tag is set for object")
         self.log.info("Retrieving tag of an object %s",
-                         S3_OBJ_TST["s3_object"]["obj_name"])
+                      S3_OBJ_TST["s3_object"]["obj_name"])
         resp = TAG_OBJ.get_object_tags(
             S3_OBJ_TST["test_9429"]["bucket_name"],
             S3_OBJ_TST["s3_object"]["obj_name"])
@@ -755,7 +738,6 @@ class TestObjectTagging:
         self.log.info("Retrieved tag of an object")
         self.log.info("Create Object tags with valid special characters.")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5569")
     @CTFailOn(error_handler)
@@ -801,11 +783,10 @@ class TestObjectTagging:
                     S3_OBJ_TST["test_9430"]["value"])
             except CTException as error:
                 assert S3_OBJ_TST["test_9430"]["error_message"] \
-                    in str(error.message), error.message
+                       in str(error.message), error.message
         self.log.info(
             "Create multiple tags with tag keys having invalid special characters")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5568")
     @CTFailOn(error_handler)
@@ -851,11 +832,10 @@ class TestObjectTagging:
                     invalid_value)
             except CTException as error:
                 assert S3_OBJ_TST["test_9431"]["error_message"] in \
-                    str(error.message), error.message
+                       str(error.message), error.message
         self.log.info(
             "Create multiple tags with tag values having invalid special characters")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5567")
     @CTFailOn(error_handler)
@@ -904,7 +884,6 @@ class TestObjectTagging:
             "Create Object tags with invalid "
             "(characters outside the allowed set) special characters")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5565")
     @CTFailOn(error_handler)
@@ -960,7 +939,6 @@ class TestObjectTagging:
         self.log.info(
             "PUT object when object with same name already present in bucket with tag support")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5562")
     @CTFailOn(error_handler)
@@ -1017,7 +995,6 @@ class TestObjectTagging:
         self.log.info(
             "Verification of max. no. of Objects user can upload with max no. of tags per Object")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5573")
     @CTFailOn(error_handler)
@@ -1059,7 +1036,6 @@ class TestObjectTagging:
         self.log.info(
             "Add user defined metadata and Object tags while adding the new object to the bucket")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5575")
     @CTFailOn(error_handler)
@@ -1132,7 +1108,6 @@ class TestObjectTagging:
         self.log.info(
             "Add or update user defined metadata and verify the Object Tags")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5563")
     @CTFailOn(error_handler)
@@ -1177,7 +1152,6 @@ class TestObjectTagging:
         self.log.info(
             "Upload Object with user definced metadata upto 2KB and upto 10 object tags")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5577")
     @CTFailOn(error_handler)
@@ -1222,7 +1196,6 @@ class TestObjectTagging:
         self.log.info(
             "Add maximum nos. of Object tags >100 using json file")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5548")
     @CTFailOn(error_handler)
@@ -1230,7 +1203,7 @@ class TestObjectTagging:
         """Verify PUT object tagging to non-existing object."""
         self.log.info("verify PUT object tagging to non-existing object")
         self.log.info("Creating a bucket with name %s",
-                         S3_OBJ_TST["test_9439"]["bucket_name"])
+                      S3_OBJ_TST["test_9439"]["bucket_name"])
         resp = S3_TEST_OBJ.create_bucket(
             S3_OBJ_TST["test_9439"]["bucket_name"])
         assert resp[0], resp[1]
@@ -1250,7 +1223,6 @@ class TestObjectTagging:
                 error.message), error.message
         self.log.info("verify PUT object tagging to non-existing object")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5556")
     @CTFailOn(error_handler)
@@ -1258,7 +1230,7 @@ class TestObjectTagging:
         """Verify GET object tagging to non-existing object."""
         self.log.info("verify GET object tagging to non-existing object")
         self.log.info("Creating a bucket with name %s",
-                         S3_OBJ_TST["test_9440"]["bucket_name"])
+                      S3_OBJ_TST["test_9440"]["bucket_name"])
         resp = S3_TEST_OBJ.create_bucket(
             S3_OBJ_TST["test_9440"]["bucket_name"])
         assert resp[0], resp[1]
@@ -1276,7 +1248,6 @@ class TestObjectTagging:
                 error.message), error.message
         self.log.info("verify GET object tagging to non-existing object")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5559")
     @CTFailOn(error_handler)
@@ -1284,7 +1255,7 @@ class TestObjectTagging:
         """Verify DELETE object tagging to non-existing object."""
         self.log.info("verify DELETE object tagging to non-existing object")
         self.log.info("Creating a bucket with name %s",
-                         S3_OBJ_TST["test_9441"]["bucket_name"])
+                      S3_OBJ_TST["test_9441"]["bucket_name"])
         resp = S3_TEST_OBJ.create_bucket(
             S3_OBJ_TST["test_9441"]["bucket_name"])
         assert resp[0], resp[1]
@@ -1302,7 +1273,6 @@ class TestObjectTagging:
                 error.message), error.message
         self.log.info("verify DELETE object tagging to non-existing object")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5546")
     @CTFailOn(error_handler)
@@ -1311,7 +1281,7 @@ class TestObjectTagging:
         self.log.info(
             "Verify put object with tagging support to non-existing object")
         self.log.info("Creating a bucket with name %s",
-                         S3_OBJ_TST["test_9442"]["bucket_name"])
+                      S3_OBJ_TST["test_9442"]["bucket_name"])
         resp = S3_TEST_OBJ.create_bucket(
             S3_OBJ_TST["test_9442"]["bucket_name"])
         assert resp[0], resp[1]
@@ -1332,7 +1302,6 @@ class TestObjectTagging:
         self.log.info(
             "Verify put object with tagging support to non-existing object")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5554")
     @CTFailOn(error_handler)
@@ -1341,7 +1310,7 @@ class TestObjectTagging:
         self.log.info(
             "Verify get object with tagging support to non-existing object")
         self.log.info("Creating a bucket with name %s",
-                         S3_OBJ_TST["test_9443"]["bucket_name"])
+                      S3_OBJ_TST["test_9443"]["bucket_name"])
         resp = S3_TEST_OBJ.create_bucket(
             S3_OBJ_TST["test_9443"]["bucket_name"])
         assert resp[0], resp[1]

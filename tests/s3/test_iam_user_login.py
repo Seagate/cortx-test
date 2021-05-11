@@ -28,6 +28,7 @@ from config import S3_USER_ACC_MGMT_CONFIG, S3_CFG
 from libs.s3 import iam_test_lib
 from libs.s3 import S3H_OBJ
 from libs.s3 import cortxcli_test_lib
+from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
 
 
 class TestUserLoginProfileTests():
@@ -38,6 +39,7 @@ class TestUserLoginProfileTests():
         """It will perform all prerequisite test suite steps if any."""
         cls.log = logging.getLogger(__name__)
         cls.log.info("STARTED: Setup operations at suit level")
+        cls.ldap_user, cls.ldap_pwd = LDAP_USERNAME, LDAP_PASSWD
         cls.cli_obj_class = cortxcli_test_lib.CortxCliTestLib()
         cls.user_name_prefix = "iamuser"
         cls.acc_name_prefix = "iamaccount"
@@ -183,7 +185,6 @@ class TestUserLoginProfileTests():
                 "Created user login profile for user %s", user_name)
         return access_key, secret_key
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5664")
     @CTFailOn(error_handler)
@@ -204,7 +205,6 @@ class TestUserLoginProfileTests():
         self.log.info(
             "ENDED:Verify update-login-profile (password change) for IAM user")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5665")
     @CTFailOn(error_handler)
@@ -224,7 +224,6 @@ class TestUserLoginProfileTests():
         self.log.info("ENDED: Verify update-login-profile (password change)"
                       " for a non-existing IAM user")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5663")
     @CTFailOn(error_handler)
@@ -251,7 +250,6 @@ class TestUserLoginProfileTests():
         self.log.info("ENDED: Verify update-login-profile (password change)"
                       " for IAM user with 'Blank' or 'NO' password")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5681")
     @CTFailOn(error_handler)
@@ -272,7 +270,6 @@ class TestUserLoginProfileTests():
         self.log.info("ENDED: Provide password length 128 valid"
                       " characters long")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5680")
     @CTFailOn(error_handler)
@@ -299,7 +296,6 @@ class TestUserLoginProfileTests():
         self.log.info("ENDED: Provide password length more than128 valid "
                       "characters long")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5704")
     @CTFailOn(error_handler)
@@ -322,7 +318,6 @@ class TestUserLoginProfileTests():
         self.log.info("ENDED: Change the password for IAM user with "
                       "--password-reset-required option")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5678")
     @CTFailOn(error_handler)
@@ -344,7 +339,6 @@ class TestUserLoginProfileTests():
         self.log.info("ENDED: Update login profile for IAM user which does "
                       " not have the login profile created")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5662")
     @CTFailOn(error_handler)
@@ -368,7 +362,6 @@ class TestUserLoginProfileTests():
         self.log.info("ENDED: verify update-login-profile with password having"
                       " combinations of special characters  _+=,.@-")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5676")
     @CTFailOn(error_handler)
@@ -395,7 +388,6 @@ class TestUserLoginProfileTests():
     # Both --password-reset-required and --no-password-reset-required cannot be provided
     # using boto3, hence skipping the test.
     @pytest.mark.skip
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5677")
     @CTFailOn(error_handler)
@@ -420,7 +412,6 @@ class TestUserLoginProfileTests():
                       " options --no-password-reset-required "
                       "--password-reset-required")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5675")
     @CTFailOn(error_handler)
@@ -447,7 +438,6 @@ class TestUserLoginProfileTests():
         self.log.info("STARTED: Update login profile for IAM user without "
                       "password and reset flag enabled")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5703")
     @CTFailOn(error_handler)
@@ -465,7 +455,6 @@ class TestUserLoginProfileTests():
         self.log.info(
             "ENDED: Create a login profile for the existing IAM user")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5702")
     @CTFailOn(error_handler)
@@ -487,7 +476,6 @@ class TestUserLoginProfileTests():
         self.log.info(
             "ENDED: Create a login profile for the non-existing IAM user")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5697")
     @CTFailOn(error_handler)
@@ -512,7 +500,6 @@ class TestUserLoginProfileTests():
         self.log.info("ENDED: Create a login profile with password of 0 "
                       "character or without password for existing user")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5695")
     @CTFailOn(error_handler)
@@ -530,7 +517,6 @@ class TestUserLoginProfileTests():
         self.log.info("ENDED: Create a login profile with password of 128"
                       " characters for existing user")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5693")
     @CTFailOn(error_handler)
@@ -554,7 +540,6 @@ class TestUserLoginProfileTests():
         self.log.info("ENDED: Create a login profile with password of more "
                       "than 128 characters for existing user")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5699")
     @CTFailOn(error_handler)
@@ -572,7 +557,6 @@ class TestUserLoginProfileTests():
         self.log.info("ENDED: Create a login profile with password having"
                       " special characters only")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5701")
     @CTFailOn(error_handler)
@@ -596,7 +580,6 @@ class TestUserLoginProfileTests():
                       " combinations of special characters and alphanumberic"
                       " characters")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5688")
     @CTFailOn(error_handler)
@@ -618,7 +601,6 @@ class TestUserLoginProfileTests():
         self.log.info("ENDED: Create login profiles for maximum nos of "
                       "existing IAM users")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5692")
     @CTFailOn(error_handler)
@@ -637,7 +619,6 @@ class TestUserLoginProfileTests():
         self.log.info("ENDED: Create login profile for IAM user with "
                       "--no-password-reset-required option")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5691")
     @CTFailOn(error_handler)
@@ -658,7 +639,6 @@ class TestUserLoginProfileTests():
             "ENDED: Create login profile for IAM user with "
             "--password-reset-required option")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5689")
     @CTFailOn(error_handler)
@@ -682,7 +662,6 @@ class TestUserLoginProfileTests():
     # Both --password-reset-required and --no-password-reset-required cannot be provided
     # using boto3, hence skipping the test.
     @pytest.mark.skip
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5690")
     @CTFailOn(error_handler)
@@ -705,7 +684,6 @@ class TestUserLoginProfileTests():
             "ENDED: Create login profile for IAM user with both options "
             "--no-password-reset-required --password-reset-required .")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5670")
     @CTFailOn(error_handler)
@@ -723,7 +701,6 @@ class TestUserLoginProfileTests():
         assert_true(resp[0], resp[1])
         self.log.info("ENDED: Verify get-login-profile for s3 IAM user")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5671")
     @CTFailOn(error_handler)
@@ -742,7 +719,6 @@ class TestUserLoginProfileTests():
         self.log.info(
             "ENDED: Verify get-login-profile for non-existing s3 IAM user")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5672")
     @CTFailOn(error_handler)
@@ -766,7 +742,6 @@ class TestUserLoginProfileTests():
             "ENDED: Verify get-login-profile for a non profile IAM user "
             "(IAM user with no profile created)")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5668")
     @CTFailOn(error_handler)
@@ -790,7 +765,6 @@ class TestUserLoginProfileTests():
         self.cli_obj.logout_cortx_cli()
         self.log.info("ENDED: Verify password change for IAM user")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5669")
     @CTFailOn(error_handler)
@@ -816,7 +790,6 @@ class TestUserLoginProfileTests():
         self.log.info("ENDED: Verify password change for a "
                       "non-existing IAM user")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5682")
     @CTFailOn(error_handler)
@@ -846,7 +819,6 @@ class TestUserLoginProfileTests():
             self.cli_obj.logout_cortx_cli()
         self.log.info("ENDED: Provide only six character length in password")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5683")
     @CTFailOn(error_handler)
@@ -924,7 +896,6 @@ class TestUserLoginProfileTests():
     #     self.log.info(
     #         "Provide password length more than128 valid characters long")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5661")
     @CTFailOn(error_handler)
@@ -957,7 +928,6 @@ class TestUserLoginProfileTests():
         self.log.info("ENDED: Password with allowed special "
                       "characters ~,$,?,&,\\n,\\t,<,>")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5673")
     @CTFailOn(error_handler)
@@ -991,7 +961,6 @@ class TestUserLoginProfileTests():
     # Access key and secret key is not needed for resetting iam user password using cortxcli
     # Hence invalid scenario
     @pytest.mark.skip
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5705")
     @CTFailOn(error_handler)
@@ -1021,7 +990,6 @@ class TestUserLoginProfileTests():
     # No api available yet for getting Temp auth credentials using cortxcli
     # Hence temporary skipping this test
     @pytest.mark.skip
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5686")
     @CTFailOn(error_handler)
@@ -1080,7 +1048,6 @@ class TestUserLoginProfileTests():
     # No api available yet for getting Temp auth credentials using cortxcli
     # Hence temporary skipping this test
     @pytest.mark.skip
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5660")
     @CTFailOn(error_handler)
@@ -1115,7 +1082,6 @@ class TestUserLoginProfileTests():
     # No api available yet for getting Temp auth credentials using cortxcli
     # Hence temporary skipping this test
     @pytest.mark.skip
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5685")
     @CTFailOn(error_handler)
@@ -1166,7 +1132,6 @@ class TestUserLoginProfileTests():
     # No api available yet for getting Temp auth credentials using cortxcli
     # Hence temporary skipping this test
     @pytest.mark.skip
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-10923")
     @CTFailOn(error_handler)
@@ -1205,7 +1170,6 @@ class TestUserLoginProfileTests():
         self.log.info("ENDED: Verify that by using user valid temporary "
                       "credentials to perform s3 operations")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5674")
     @CTFailOn(error_handler)
@@ -1243,7 +1207,6 @@ class TestUserLoginProfileTests():
     # No api available yet for getting Temp auth credentials using cortxcli
     # Hence temporary skipping this test
     @pytest.mark.skip
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5659")
     @CTFailOn(error_handler)
@@ -1281,7 +1244,6 @@ class TestUserLoginProfileTests():
     # No api available yet for getting Temp auth credentials using cortxcli
     # Hence temporary skipping this test
     @pytest.mark.skip
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5687")
     @CTFailOn(error_handler)
@@ -1313,7 +1275,6 @@ class TestUserLoginProfileTests():
     # No api available yet for getting Temp auth credentials using cortxcli
     # Hence temporary skipping this test
     @pytest.mark.skip
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5666")
     @CTFailOn(error_handler)
@@ -1368,7 +1329,6 @@ class TestUserLoginProfileTests():
     # No api available yet for getting Temp auth credentials using cortxcli
     # Hence temporary skipping this test
     @pytest.mark.skip
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5667")
     @CTFailOn(error_handler)
@@ -1409,7 +1369,6 @@ class TestUserLoginProfileTests():
     # No api available yet for getting Temp auth credentials using cortxcli
     # Hence temporary skipping this test
     @pytest.mark.skip
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5684")
     @CTFailOn(error_handler)

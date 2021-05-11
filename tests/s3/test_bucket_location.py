@@ -33,6 +33,7 @@ from libs.s3 import s3_test_lib, iam_test_lib, s3_acl_test_lib
 from libs.s3.cortxcli_test_lib import CortxCliTestLib
 from config import S3_CFG
 
+
 class TestBucketLocation:
     """Bucket Location Test suite."""
     cortx_obj = None
@@ -91,8 +92,6 @@ class TestBucketLocation:
             self.cortx_obj.delete_account_cortxcli(account_name=acc, password=self.s3acc_password)
         self.log.info("ENDED: Teardown operations.")
 
-
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5310")
     @CTFailOn(error_handler)
@@ -129,7 +128,6 @@ class TestBucketLocation:
         self.log.info(
             "Verify get bucket location for valid bucket which is present")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5311")
     @CTFailOn(error_handler)
@@ -155,7 +153,6 @@ class TestBucketLocation:
         self.log.info(
             "Verify get bucket location for the bucket which is not present")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7419")
     @CTFailOn(error_handler)
@@ -248,7 +245,6 @@ class TestBucketLocation:
             "ENDED: Verify for the bucket which is present in account1 and give read"
             "permissions to account2 and check get bucket location")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5312")
     @CTFailOn(error_handler)
