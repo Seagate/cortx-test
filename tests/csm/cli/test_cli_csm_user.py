@@ -51,8 +51,8 @@ class TestCliCSMUser:
         cls.logger.info("STARTED : Setup operations for test suit")
         cls.CSM_USER = CortxCliCsmUser()
         cls.CSM_USER.open_connection()
-        cls.CSM_ALERT = CortxCliAlerts()
-        cls.IAM_USER = CortxCliIamUser()
+        cls.CSM_ALERT = CortxCliAlerts(session_obj=cls.CSM_USER.session_obj)
+        cls.IAM_USER = CortxCliIamUser(session_obj=cls.CSM_USER.session_obj)
         cls.bkt_ops = CortxCliS3BucketOperations(session_obj=cls.CSM_USER.session_obj)
         cls.S3_ACC = CortxCliS3AccountOperations(
             session_obj=cls.CSM_USER.session_obj)
