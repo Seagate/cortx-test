@@ -56,11 +56,7 @@ class Uploader:
 
     def upload(self, user, keys, buckets, files_count, prefs):
         user_name = user.replace('_', '-')
-        # access_key = keys[0]
-        # secret_key = keys[1]
         timestamp = time.strftime(params.DT_PATTERN_PREFIX)
-        # buckets = [user_name + '-' + timestamp + '-bucket' + str(i) for i in range(2)]
-
         s3connections = di_base.init_s3_conn(user_name=user_name,
                                              keys=keys,
                                              nworkers=params.NWORKERS)
@@ -70,15 +66,6 @@ class Uploader:
         workers.start_workers(func=self._upload)
 
         for bucket in buckets:
-            # try:
-            #     file1 = open(params.DATASET_FILES, "r")
-            #     obj_file_paths = file1.readlines()
-            # except Exception as e:
-            #     LOGGER.info(f'could not access file {params.DATASET_FILES} exception:{e}')
-            #     return
-            # else:
-            #     LOGGER.info(f'able to access file {params.DATASET_FILES}')
-
             for ix in range(files_count):
                 workQ = queue.Queue()
                 workQ.func = self._upload
@@ -145,10 +132,6 @@ class Uploader:
     def start(self, users, buckets, files_count, prefs):
         LOGGER.info(f'Starting uploads for users {users}')
         # check if users comply to specific schema
-        # try:
-        #    os.remove(params.UPLOADED_FILES)
-        # except Exception as fault:
-        #    LOGGER.info(f'Not able to remove file: {fault}')
         users_home = params.LOG_DIR
         users_path = os.path.join(users_home, USER_JSON)
         config_utils.create_content_json(users_path, users, ensure_ascii=False)  # need test name prefix

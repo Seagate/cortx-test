@@ -34,7 +34,6 @@ Test Automation project for LDR R2 and future versions.
     
     Alternatively by skipping step 8 to 10, you can also set python environment with using virtual env.
 
-
 ## MongoDB as Configuration Management Database
 Cortx-test uses MongoDB as backend to store Cortx setup details. These details are specific
 to the setup itself. The purpose of this setup is to do automatic config generation
@@ -42,84 +41,84 @@ based on the setup. A sample template is as shown below.
 
 ```json
 
-{
-"setupname":"T2",
-"setup_in_useby": "",
-"in_use_for_parallel": false,
-"parallel_client_cnt": 0,
-"is_setup_free": true,
-"nodes":[
     {
-        "host": "eos-node-0",
-        "hostname": "node 0 hostname",
-        "ip": "node 0 ip",
-        "username": "node 0 username",
-        "password": "node 0 password"
+    "setupname":"T2",
+    "setup_in_useby": "",
+    "in_use_for_parallel": false,
+    "parallel_client_cnt": 0,
+    "is_setup_free": true,
+    "nodes":[
+        {
+            "host": "eos-node-0",
+            "hostname": "node 0 hostname",
+            "ip": "node 0 ip",
+            "username": "node 0 username",
+            "password": "node 0 password"
+        },
+        {
+            "host": "eos-node-1",
+            "hostname": "node 1 hostname",
+            "ip": "node 1 ip address",
+            "username": "node 1 username",
+            "password": "node 1 password"
+        }
+    ],
+    
+    "enclosure":
+    {
+        "primary_enclosure_ip": "10.0.0.2",
+        "secondary_enclosure_ip": "10.0.0.3",
+        "enclosure_user": "",
+        "enclosure_pwd": ""
     },
+    
+    "pdu":{
+        "ip": "",
+        "username": "",
+        "password": "",
+        "power_on": "on",
+        "power_off": "off",
+        "sleep_time": 120
+    },
+    
+    "gem_controller":
     {
-        "host": "eos-node-1",
-        "hostname": "node 1 hostname",
-        "ip": "node 1 ip address",
-        "username": "node 1 username",
-        "password": "node 1 password"
+        "ip": "",
+        "username": "",
+        "password": "",
+        "port1": "9012",
+        "port2": "9014"
+    },
+    
+    "bmc":
+    {
+        "username": "",
+        "password": ""
+    },
+    
+    "ldap":
+    {
+        "username": "",
+        "password": "",
+        "sspl_pass": ""
+    },
+    
+    "csm":
+    {
+      "mgmt_vip": "",
+      "csm_admin_user":{
+        "username": "",
+        "password": ""
+      }
+    
+    },
+    "s3":
+    {
+        "s3_server_ip": "",
+        "s3_server_user": "",
+        "s3_server_pwd": ""
     }
-],
-
-"enclosure":
-{
-    "primary_enclosure_ip": "10.0.0.2",
-    "secondary_enclosure_ip": "10.0.0.3",
-    "enclosure_user": "",
-    "enclosure_pwd": ""
-},
-
-"pdu":{
-    "ip": "",
-    "username": "",
-    "password": "",
-    "power_on": "on",
-    "power_off": "off",
-    "sleep_time": 120
-},
-
-"gem_controller":
-{
-    "ip": "",
-    "username": "",
-    "password": "",
-    "port1": "9012",
-    "port2": "9014"
-},
-
-"bmc":
-{
-    "username": "",
-    "password": ""
-},
-
-"ldap":
-{
-    "username": "",
-    "password": "",
-    "sspl_pass": ""
-},
-
-"csm":
-{
-  "mgmt_vip": "",
-  "csm_admin_user":{
-    "username": "",
-    "password": ""
-  }
-
-},
-"s3":
-{
-    "s3_server_ip": "",
-    "s3_server_user": "",
-    "s3_server_pwd": ""
-}
-}
+    }
 ```   
 
 Script in project's path `tools/setup_update` can be used to generate a setup specific config entry. 
