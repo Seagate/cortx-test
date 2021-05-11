@@ -33,7 +33,7 @@ from commons import pswdmanager
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from config import CMN_CFG, PROV_CFG
-from libs.prov import provisioner
+from libs.prov.provisioner import Provisioner
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
@@ -61,6 +61,7 @@ class TestProvSingleNode:
                           password=cls.passwd)
         cls.hlt_obj = Health(hostname=cls.host, username=cls.uname,
                              password=cls.passwd)
+        cls.prov_obj = Provisioner()
         LOGGER.info("Done: Setup module operations")
 
     def setup_method(self):
@@ -94,8 +95,8 @@ class TestProvSingleNode:
         cmd = common_cmds.CMD_LSBLK
         count = self.nd_obj.execute_cmd(cmd, read_lines=True)
         LOGGER.info("count : {}".format(int(count[0])))
-        assert int(
-            count[0]) >= test_cfg["count"], "Need at least 2 disks for deployment"
+        assert_utils.assert_greater_equal(
+            int(count[0]), test_cfg["count"], "Need at least 2 disks for deployment")
 
         LOGGER.info("Checking OS release version")
         cmd = common_cmds.CMD_OS_REL
@@ -122,7 +123,7 @@ class TestProvSingleNode:
         common_cnst.PARAMS["HOST"] = self.host
         common_cnst.PARAMS["HOST_PASS"] = self.passwd
         token = pswdmanager.decrypt(common_cnst.TOKEN_NAME)
-        output = provisioner.build_job(
+        output = Provisioner.build_job(
             test_cfg["job_name"], common_cnst.PARAMS, token)
         LOGGER.info("Jenkins Build URL: {}".format(output['url']))
         assert_utils.assert_equal(
