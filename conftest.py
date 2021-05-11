@@ -482,8 +482,6 @@ def pytest_collection(session):
             for test in selected_tests:
                 write.writerow([test])
         items[:] = selected_items
-        import pdb
-        pdb.set_trace()
     cache_home = os.path.join(os.getcwd(), LOG_DIR)
     cache_path = os.path.join(cache_home, CACHE_JSON)
     if not os.path.exists(cache_home):
