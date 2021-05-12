@@ -17,7 +17,7 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-"""DI checker test case"""
+"""DI checker test case. Eventually we want to delete this file."""
 
 import os
 import sys

@@ -31,7 +31,7 @@ from typing import Tuple
 from typing import List
 from typing import Union
 from typing import Any
-from commons import commands
+from commons import commands, const
 from commons.helpers.host import Host
 
 log = logging.getLogger(__name__)
@@ -501,3 +501,24 @@ class Node(Host):
             return False, error
 
         return True, resp
+
+    def get_file_size(self, path):
+        """
+        Check if file exists and the size of the file on s3 server of extracted file.
+
+        :param path: Absolute path of the file
+        :return: bool, response
+        """
+        flag = False
+        self.connect_pysftp()
+        log.debug("Client connected")
+        try:
+            resp = self.pysftp_obj.stat(path)
+            resp_val = resp.st_size
+            flag = bool(resp.st_size > 0)
+        except Exception as error:
+            log.error(
+                "%s %s: %s", const.EXCEPTION_ERROR,
+                self.get_remote_file_size.__name__, error)
+            resp_val = error
+        return flag, resp_val
