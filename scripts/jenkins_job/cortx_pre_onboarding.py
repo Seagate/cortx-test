@@ -3,7 +3,6 @@ import configparser
 import os
 import unittest
 import time
-import json
 import paramiko
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -19,6 +18,7 @@ from libs.csm.rest.csm_rest_test_lib import CSM_REST_CFG, RestTestLib
 config_file = 'scripts/jenkins_job/config.ini'
 config = configparser.ConfigParser()
 config.read(config_file)
+
 
 class CSMBoarding(unittest.TestCase):
     def setUp(self):
