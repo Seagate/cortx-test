@@ -151,6 +151,16 @@ class TestProvSingleNode:
                 test_cfg["stopped"], line, "Some services are not up.")
 
         LOGGER.info("Check that all services are running on respective ports.")
+        self.nd_obj.send_systemctl_cmd(
+            command="restart", services=[
+                PROV_CFG["services"]["firewall"]])
+        status = self.nd_obj.send_systemctl_cmd(
+            command="status", services=[
+                PROV_CFG["services"]["firewall"]], decode=True)
+        assert_utils.assert_in(
+            test_cfg["active"],
+            status[0],
+            "Firewalld service is not running")
         inactive_ports = list()
         for service in PROV_CFG["service_ports"]:
             active_ports = self.hlt_obj.get_ports_for_firewall_cmd(service)
