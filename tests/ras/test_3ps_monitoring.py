@@ -40,7 +40,7 @@ from libs.ras.sw_alerts import SoftwareAlert
 LOGGER = logging.getLogger(__name__)
 
 
-class TestOSLevelMonitoring:
+class Test3PSvcMonitoring:
     """SSPL Test Suite."""
 
     @classmethod
@@ -324,3 +324,28 @@ class TestOSLevelMonitoring:
 
         LOGGER.info(f"Step 7: Stop IOs")
         # TODO: Stop background IOs.
+
+    @pytest.mark.cluster_monitor_ops
+    @pytest.mark.sw_alert
+    @pytest.mark.tags("TEST-21194")
+    def test_21194_deactivating_alerts(self):
+        """
+        Test when service takes longer than expected to deactivate
+        """
+        test_case_name = cortxlogging.get_frame()
+        LOGGER.info("##### Test started -  %s #####", test_case_name)
+        external_svcs = RAS_TEST_CFG["third_party_services"]
+        for svc in external_svcs:
+            LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
+
+            LOGGER.info("Deactivating %s service...", svc)
+            starttime = time.time()
+            result, e_csm_resp = self.sw_alert_obj.run_verify_svc_state(svc, "deactivating", external_svcs)
+            assert result, "Failed in stop service"
+            time.sleep(200)
+            assert self.csm_alert_obj.verify_csm_response(
+                starttime, e_csm_resp["alert_type"], False)
+            self.sw_alert_obj.restore_svc_config()
+            self.sw_alert_obj.recover_svc(svc)
+            # TODO: Check alert on message bus
+            # TODO: Check alert on CSM

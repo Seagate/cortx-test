@@ -22,6 +22,10 @@
 """Python library which will perform ras component related and system level operations."""
 import logging
 import re
+import os
+import time
+from collections import OrderedDict
+
 from libs.ras.ras_core_lib import RASCoreLib
 
 LOGGER = logging.getLogger(__name__)
@@ -49,8 +53,11 @@ class SoftwareAlert(RASCoreLib):
         LOGGER.info("Get systemctl status for %s ...", svc)
         prev_svc_state = self.get_svc_status([svc])[svc]
 
-        LOGGER.info("Performing %s on %s ...", action, svc)
-        self.node_utils.send_systemctl_cmd(action, [svc], exc=True)
+        LOGGER.info("Performing %s operation on %s ...", action, svc)
+        if action == "deactivating":
+            process = self.put_svc_deactivating(svc)
+        else:
+            self.node_utils.send_systemctl_cmd(action, [svc], exc=True)
 
         LOGGER.info("Get systemctl status for %s ...", svc)
         services_status = self.get_svc_status([svc])
@@ -137,6 +144,9 @@ class SoftwareAlert(RASCoreLib):
         elif action == "disable":
             csm_response = None
 
+        elif action == "deactivating":
+            csm_response = None
+
         return csm_response
 
     def get_expected_systemctl_resp(self, action: str):
@@ -155,6 +165,8 @@ class SoftwareAlert(RASCoreLib):
             systemctl_status = {'enabled': 'enabled'}
         elif action == "disable":
             systemctl_status = {'enabled': 'disabled'}
+        elif action == "deactivating":
+            systemctl_status = {'state': 'deactivating'}
         return systemctl_status
 
     def get_svc_status(self, services: list):
@@ -168,7 +180,13 @@ class SoftwareAlert(RASCoreLib):
         responses = self.node_utils.send_systemctl_cmd("status", services, exc=False)
         for svc, response in zip(services, responses):
             LOGGER.info("Systemctl status for %s service is %s", svc, response)
-            status[svc] = self.parse_systemctl_status(response)
+            if isinstance(response, bytes):
+                response = response.decode("utf8")
+                status[svc] = self.parse_systemctl_status(response)
+            elif isinstance(response, str):
+                status[svc] = self.parse_systemctl_status(response)
+            else:
+                raise Exception(response)
         return status
 
     def parse_systemctl_status(self, response):
@@ -177,7 +195,6 @@ class SoftwareAlert(RASCoreLib):
         :param response: byte response
         :return [type]: Parsed systemctl status response.
         """
-        response = response.decode("utf8")
         parsed_op = {}
         for line in response.splitlines():
             line = line.lstrip().rstrip()
@@ -204,11 +221,13 @@ class SoftwareAlert(RASCoreLib):
                 parsed_op.update(match.groupdict())
         return parsed_op
 
-    def put_svc_activating(self):
-        
-
-    def put_svc_deactivating(self):
+    def put_svc_activating(self, svc):
         pass
+
+    def put_svc_deactivating(self, svc):
+        self.write_svc_file(svc,{"Service":{"ExecStop":"/bin/sleep 200","TimeoutStopSec":"500"}})
+        self.apply_svc_setting()
+        stdin, stdout, stderr = self.node_utils.host_obj.exec_command("systemctl stop {}".format(svc))
 
     def put_svc_reloading(self):
         pass
@@ -216,23 +235,78 @@ class SoftwareAlert(RASCoreLib):
     def put_svc_restarting(self):
         pass
 
-    def edit_svc_config(self, content:dict):
+    def recover_svc(self,svc:str, attempt_start:bool=True, timeout=200):
+        """
+        response recovery time is with +5sec precision
+        :param recover: 
+        :return dict: response: {svc_name1:{state:<value>,recovery_time:<value>},...}
+        """
+        starttime = time.time()
+        op = {}
+        time_lapsed=0
+        while(time_lapsed < timeout):
+            response = self.get_svc_status([svc])
+            print(svc)
+            print(response)
+            print(svc+":"+response[svc]["state"])
+            if attempt_start and response[svc]["state"] != "active":
+                print(svc+":"+response[svc]["state"])
+                self.node_utils.send_systemctl_cmd("start", [svc], exc=True)
+            response = self.get_svc_status([svc])
+            op[svc]={"state":response[svc]["state"], "recovery_time":time.time()-starttime}
+            time.sleep(5)
+            time_lapsed = time.time()
+        return op
+
+    def get_tmp_svc_path(self):
         dpath, fname = os.path.split(self.svc_path)
-        response = self.node_utils.read_file(fname,dpath)
-        for key, value in content.items():
-            if key in response:
-                # replace the value
-            else:
-                # insert the value
+        tmp_svc_path = os.path.join(dpath,fname+"tmp")
+        return tmp_svc_path
+
+    def read_svc_file(self,svc):
+        fpath = self.get_svc_status([svc])[svc]["path"]
+        response = self.node_utils.read_file(self.get_svc_status([svc])[svc]["path"])
+        op = OrderedDict()
+        section = None
+        for line in response.splitlines():
+            if "[" in line and "]" in line:
+                section=re.sub("\[", "", line)
+                section=re.sub("\]", "", section)
+                op[section]={}
+            elif section is not None and "=" in line:
+                txt=line.split("=")
+                if len(txt)>2:
+                    separator = '='
+                    key = separator.join(txt[:-1])
+                else:
+                    key = txt[0]
+                    op[section].update({key:txt[-1]})
+        return op
+
+    def write_svc_file(self, svc, content):
+        """
+        {section:{key:value}}
+        """
+        fpath = self.get_svc_status([svc])[svc]["path"]
+        self.svc_path = fpath
+        op = self.read_svc_file(svc)
+        #create a local file
         self.node_utils.rename_file(self.svc_path,self.get_tmp_svc_path())
-        f_obj = self.node_utils.create_file(self.svc_path, )
-        f.obj.write(response)
-        
+
+        for section, svalue in content.items():
+            op[section].update(content[section])
+            txt = ""
+            for key,value in op.items():
+                txt = txt + "[" + key + "]"+"\n"
+                for k,v in value.items():
+                    txt = txt+k+"="+v+"\n"
+            self.node_utils.write_file(fpath,txt)
+
+    def apply_svc_setting(self):
+        RELOAD_SYSTEM_CTL = "systemctl daemon-reload"
+        self.node_utils.execute_cmd(cmd=RELOAD_SYSTEM_CTL)
 
     def restore_svc_config(self):
+        self.node_utils.remove_file(self.svc_path)
         self.node_utils.rename_file(self.get_tmp_svc_path(),self.svc_path)
-
-    def get_tmp_svc_path():
-        dpath, fname = os.path.split(self.svc_path)
-        tmp_svc_path = os.join(dpath,fname+"tmp")
-        return tmp_svc_path
+        self.apply_svc_setting()
