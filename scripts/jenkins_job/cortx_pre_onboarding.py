@@ -42,7 +42,6 @@ class CSMBoarding(unittest.TestCase):
         response = rest_obj.custom_rest_login(self.admin_user, self.admin_pwd)
         if response.status_code in ['200', "201"]:
             self.create_admin_user = False
-        self.create_admin_user = False
 
     def test_preboarding(self):
         try:
