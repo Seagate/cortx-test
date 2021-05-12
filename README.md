@@ -225,13 +225,13 @@ pytest --capture=no --te_tkt TEST-17412 -rA unittests\test_reporting_and_logging
 
 ## How to automate component level test cases
 Components level tests can be either pure component level tests which run 
-a) tests run in the same process as code to be tested 
-b) tests run in another process and interact with the component over a protocol (RPC/HTTP)  
-c) test runs in another process where component is available as a service and where cortx-test and it's capabilities can be used. 
+1. Tests run in the same process as code to be tested 
+2. Tests run in another process and interact with the component over a protocol (RPC/HTTP)  
+3. Test runs in another process where component is available as a service and where cortx-test and it's capabilities can be used. 
 
 Some of the setup steps like "MongoDB as Configuration Management Database" should not be required for component level tests. 
 
-In case a) Component tests can be automated as a seperate mini framework utilizing cortx-test or have their own libraries. This can then be integrated with test execution and reporting framework.
-In case b) Component tests can utilize cortx-test directly and build their own libraries to test components.
-In case c) Component tests can be written in cortx-test and utilize all the capabilities of the framework.
+* In case 1) Component tests can be automated as a seperate mini framework utilizing cortx-test or have their own libraries. This can then be integrated with test execution and reporting framework.
+* In case 2) Component tests can utilize cortx-test directly and build their own libraries to test components.
+* In case 3) Component tests can be written in cortx-test and utilize all the capabilities of the framework.
 
