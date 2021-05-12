@@ -36,6 +36,7 @@ class JiraTask:
         self.http = requests.Session()
         self.http.mount("https://", self.adapter)
         self.http.mount("http://", self.adapter)
+        self.jira_url = "https://jts.seagate.com/"
 
     def get_test_ids_from_te(self, test_exe_id, status='ALL'):
         """
@@ -43,9 +44,7 @@ class JiraTask:
         """
         test_list = []
         te_tag = ""
-
-        jira_url = "https://jts.seagate.com/"
-        options = {'server': jira_url}
+        options = {'server': self.jira_url}
         retries_cnt = 5
         incremental_timeout_sec = 60
         req_success = False
@@ -115,8 +114,7 @@ class JiraTask:
             response = requests.get(jira_link, auth=(self.jira_id, self.jira_password))
             test_data = response.json()
             test_to_execute = test_data[0]['definition']
-            jira_url = "https://jts.seagate.com/"
-            options = {'server': jira_url}
+            options = {'server': self.jira_url}
             auth_jira = JIRA(options, basic_auth=(self.jira_id, self.jira_password))
             issue = auth_jira.issue(test_id)
             comments = issue.fields.comment.comments
@@ -192,14 +190,18 @@ class JiraTask:
                     },
             }
         """
-        try:
-            if not auth_jira or not isinstance(auth_jira, JIRA):
-                jira_url = "https://jts.seagate.com/"
-                options = {'server': jira_url}
-                auth_jira = JIRA(options, basic_auth=self.auth)
-            return auth_jira.issue(issue_id)
-        except (JIRAError, requests.exceptions.RequestException) as fault:
-            LOGGER.error(f'Error occurred {fault} in getting test details for {issue_id}')
+        retry = 0
+        while True:
+            try:
+                if not auth_jira or not isinstance(auth_jira, JIRA):
+                    options = {'server': self.jira_url}
+                    auth_jira = JIRA(options, basic_auth=self.auth)
+                return auth_jira.issue(issue_id)
+            except (JIRAError, requests.exceptions.RequestException, Exception) as fault:
+                LOGGER.error(f'Error occurred {fault} in getting test details for {issue_id}')
+                retry += 1
+                if retry > 3:
+                    return None
 
     def update_test_jira_status(self, test_exe_id, test_id, test_status, log_path=''):
         """
@@ -218,7 +220,7 @@ class JiraTask:
         state["tests"] = []
         state['tests'].append(status)
         data = json.dumps(state)
-        jira_url = "https://jts.seagate.com/" + "/rest/raven/1.0/import/execution"
+        jira_url = self.jira_url + "/rest/raven/1.0/import/execution"
         response = requests.request("POST", jira_url, data=data,
                                     auth=(self.jira_id, self.jira_password),
                                     headers=self.headers,
