@@ -36,6 +36,7 @@ S3_CONFIG = os.path.join(CONFIG_DIR, 's3', 's3_config.yaml')
 S3_USER_ACC_MGMT_CONFIG_PATH = os.path.join(CONFIG_DIR, 's3', 's3_user_acc_management_test_config.yaml')
 S3_OBJ_TEST_CONFIG = os.path.join(CONFIG_DIR, 's3', 's3_object_test.yaml')
 S3_BKT_TEST_CONFIG = os.path.join(CONFIG_DIR, "s3", "s3_bucket_test.yaml")
+S3_LDAP_TEST_CONFIG = os.path.join(CONFIG_DIR, "s3", "test_openldap.yaml")
 RAS_CONFIG_PATH = "config/ras_config.yaml"
 SSPL_TEST_CONFIG_PATH = "config/ras_test.yaml"
 PROV_TEST_CONFIG_PATH = "config/prov_test.yaml"
@@ -104,3 +105,5 @@ FAILED_FILES_SERVER_ERROR = "FailedFilesServerError.csv"
 DESTRUCTIVE_TEST_RESULT = "/root/result_summary.csv"
 DELETE_PERCENTAGE = 10
 DOWNLOAD_HOME = '/var/log/'
+
+DT_PATTERN_PREFIX = '%Y%m%d-%H%M%S'
