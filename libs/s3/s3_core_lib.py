@@ -116,6 +116,7 @@ class S3Lib:
         """
         m_key = kwargs.get("m_key", None)
         m_value = kwargs.get("m_value", None)
+        metadata = kwargs.get("metadata", None)  # metadata dict.
         LOGGER.debug("bucket_name: %s, object_name: %s, file_path: %s, m_key: %s, m_value: %s",
                      bucket_name, object_name, file_path, m_key, m_value)
         with open(file_path, "rb") as data:
@@ -126,6 +127,12 @@ class S3Lib:
                     Body=data,
                     Metadata={
                         m_key: m_value})
+            elif metadata:
+                response = self.s3_client.put_object(
+                    Bucket=bucket_name,
+                    Key=object_name,
+                    Body=data,
+                    Metadata=metadata)
             else:
                 response = self.s3_client.put_object(
                     Bucket=bucket_name, Key=object_name, Body=data)
