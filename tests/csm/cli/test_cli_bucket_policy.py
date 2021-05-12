@@ -53,11 +53,12 @@ class TestCliBucketPolicy:
         cls.log.info("STARTED : Setup operations for test suit")
         cls.bucket_name = "clis3bkt"
         cls.s3bkt_plc_obj = CortxCliS3BktPolicyOperations()
+        cls.s3bkt_plc_obj.open_connection()
         cls.s3acc_obj = CortxCliS3AccountOperations(
             session_obj=cls.s3bkt_plc_obj.session_obj)
         cls.bkt_obj = CortxCliS3BucketOperations(
             session_obj=cls.s3bkt_plc_obj.session_obj)
-        cls.csm_user_obj = CortxCliCsmUser()
+        cls.csm_user_obj = CortxCliCsmUser(session_obj=cls.s3bkt_plc_obj.session_obj)
         cls.node_list = [each["hostname"] for each in CMN_CFG["nodes"] if each["hostname"]]
         cls.csm_user_pwd = CSM_CFG["CliConfig"]["csm_user"]["password"]
         cls.acc_password = CSM_CFG["CliConfig"]["s3_account"]["password"]
@@ -774,6 +775,7 @@ class TestCliBucketPolicy:
             "Step 4: Uploaded policy on a bucket %s", self.bucket_name)
         self.log.info("Step 5: Verifying policy in json format")
         resp = self.s3bkt_plc_obj.show_bucket_policy(self.bucket_name)
+        print("aaa {}".format(resp))
         json_data = self.s3bkt_plc_obj.format_str_to_dict(resp[1])
         assert json_data['Statement'][0] == self.bkt_policy[0]
         self.log.info("Step 5: Verified policy in json format")

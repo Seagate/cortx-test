@@ -25,6 +25,7 @@ across all other libraries and test suites
 import logging
 import json
 import xmltodict
+import redexpect
 import commons.errorcodes as err
 from commons import commands
 from commons.exceptions import CTException
@@ -37,9 +38,10 @@ class CortxCli(CortxCliClient):
 
     def __init__(
             self,
+            # For the stop gap arrangement till we have nodeadmin user
             host: str = CMN_CFG["csm"]["mgmt_vip"],
-            username: str = CMN_CFG["csm"]["csm_admin_user"]["username"],
-            password: str = CMN_CFG["csm"]["csm_admin_user"]["password"],
+            username: str = CMN_CFG["nodes"][0]["username"],
+            password: str = CMN_CFG["nodes"][0]["password"],
             **kwargs):
         """
         This method initializes members of CortxCli and its parent class
@@ -59,7 +61,11 @@ class CortxCli(CortxCliClient):
             session_obj=session_obj,
             port=port)
 
-    def execute_cli_commands(self, cmd: str, time_out: int = 800, sleep_time: int = 2) -> tuple:
+    def execute_cli_commands(
+            self,
+            cmd: str,
+            patterns: list,
+            time_out: int = 120) -> tuple:
         """
         This function executes command on interactive shell on csm server and returns output
         :param str cmd: command to execute on shell
@@ -68,10 +74,20 @@ class CortxCli(CortxCliClient):
         :return: output of executed command
         """
         try:
-            output = super().execute_cli_commands(cmd=cmd, time_out=time_out, sleep_time=sleep_time)
-            if "error" in output.lower() or "exception" in output.lower():
+            default_patterns = ["Error", "exception"]
+            default_patterns.extend(patterns)
+            self.log.debug("Default patterns : %s", default_patterns)
+            index, output = super().execute_cli_commands(
+                cmd=cmd, patterns=default_patterns, time_out=time_out)
+            if index in range(2):
                 return False, output
             return True, output
+        except redexpect.exceptions.ExpectTimeout as error:
+            self.log.debug(
+                "Current output \n %s",
+                self.session_obj.current_output)
+            self.log.error("Timeout waiting for expected response!")
+            raise TimeoutError from error
         except Exception as error:
             self.log.error(
                 "An error in %s: %s:",
@@ -99,13 +115,19 @@ class CortxCli(CortxCliClient):
                 [login_cortxcli, "--username", username_param])
 
         self.log.info("Opening interactive CORTX CLI session....")
-        output = self.execute_cli_commands(login_cortxcli)[1]
+        output = self.execute_cli_commands(
+            login_cortxcli, patterns=["Username:"])[1]
 
         if "Username:" in output:
             self.log.info("Logging in CORTX CLI as user %s", username)
-            output = self.execute_cli_commands(cmd=username)[1]
+            output = self.execute_cli_commands(
+                cmd=username, patterns=["Password:"])[1]
             if "Password:" in output:
-                output = self.execute_cli_commands(cmd=password)[1]
+                output = self.execute_cli_commands(
+                    cmd=password,
+                    patterns=[
+                        "CORTX Interactive Shell",
+                        "Server authentication check failed"])[1]
                 if "CORTX Interactive Shell" in output:
                     self.log.info(
                         "Logged in CORTX CLI as user %s successfully", username)
@@ -118,11 +140,14 @@ class CortxCli(CortxCliClient):
         This function will be used to logout of CORTX CLI
         :return: True/False and output
         """
-        output = self.execute_cli_commands(cmd=commands.CMD_HELP_OPTION)[1]
+        output = self.execute_cli_commands(
+            cmd=commands.CMD_HELP_OPTION,
+            patterns=["usage: cortxcli"])[1]
         if "usage: cortxcli" in output:
             self.log.info("Logging out of CORTX CLI")
             output = self.execute_cli_commands(
-                cmd=commands.CMD_LOGOUT_CORTXCLI)[1]
+                cmd=commands.CMD_LOGOUT_CORTXCLI,
+                patterns=["Successfully logged out"])[1]
             if "Successfully logged out" in output:
                 return True, output
 
@@ -158,8 +183,8 @@ class CortxCli(CortxCliClient):
             self.log.error("String is empty")
             return resp_list
         self.log.debug("Data received \n %s", input_str)
-        formatted_data = input_str.replace("\r\n  ", "").replace(
-            "\r\n", ",").replace(",</", "</").split(",")[1:-1]
+        formatted_data = input_str.replace("\n  ", "").replace(
+            "\n", ",").replace(",</", "</").split(",")[1:-1]
         for node in formatted_data:
             temp_dict = json.dumps(xmltodict.parse(node))
             json_format = json.loads(temp_dict)
@@ -174,13 +199,13 @@ class CortxCli(CortxCliClient):
         :return: List formed after splitting response
         """
         # Splitting response row-wise
-        response = str(ip_response).split('\r\n')
-
+        response = str(ip_response).split('\n')
         # Splitting values of each row column-wise
         for i, string in enumerate(response):
             response[i] = string.split('|')
             for j in range(len(response[i])):
                 response[i][j] = response[i][j].strip()
+            response[i] = response[i][1:-1]
         response = response[4:len(response) - 2]
         self.log.info(response)
         return response
