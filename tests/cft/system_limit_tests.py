@@ -431,22 +431,26 @@ class TestS3IOSystemLimits:
                         "password": password
                     })
 
+    @pytest.mark.scalability
     @pytest.mark.tags("TEST-13693")
     def test_13693(self):
         """
-        For system limit of 498 s3 account
-        Create 0 csm account, 498 s3 account,
+        For system limit of s3 account
+        Create 0 csm account, max s3 account,
         1 IAM user per s3 account, 1 bucket per s3 account
         """
         test = "test_13693"
         self.create(test)
 
-        # list 498 s3 account
+        # ToDo: Create one extra S3 account and verify limit response is 403
+        # https://seagate-systems.atlassian.net/wiki/spaces/PRIVATECOR/pages/238485708/S3+Accounts+and+IAM+User+Management
+
+        # list all s3 account
         created_s3users = self.get_created_s3_users()
         assert len(created_s3users) >= self.cft_test_cfg[test]["s3_count"], \
             f"Created s3 user count != listed s3 user count "
 
-        # update 498 s3 account
+        # update all s3 account
         for s3_acc in self.created_s3_users:
             s3 = s3_acc["account_name"]
             self.log.info(f"Updating passwords for {s3} s3 accounts")
@@ -461,15 +465,19 @@ class TestS3IOSystemLimits:
         # Delete everything
         self.destroy(s3_password=self.new_password)
 
+    @pytest.mark.scalability
     @pytest.mark.tags("TEST-16009")
     def test_16009(self):
         """
-        For system limit of 500 IAM users per s3 account
+        For system limit of max IAM users per s3 account
         Create 0 csm account, 1 s3 account,
-        500 IAM accounts per s3 account, 50 buckets per s3 account
+        max IAM accounts per s3 account, 50 buckets per s3 account
         """
         test = "test_16009"
         self.create(test)
+
+        # ToDo: Create one extra IAM user and verify limit response is 403
+        # https://seagate-systems.atlassian.net/wiki/spaces/PRIVATECOR/pages/238485708/S3+Accounts+and+IAM+User+Management
 
         # List a s3 accounts
         s3_accounts = self.created_s3_users
@@ -486,12 +494,13 @@ class TestS3IOSystemLimits:
         # Delete everything
         self.destroy(s3_password=self.s3_original_password)
 
+    @pytest.mark.scalability
     @pytest.mark.tags("TEST-16908")
     def test_16908(self):
         """
-        For system limit of 1000 buckets per s3 account
+        For system limit of max buckets per s3 account
         Create 0 csm account, 1 s3 account,
-        5 IAM accounts per s3 account, 1000 buckets per s3 account
+        5 IAM accounts per s3 account, max buckets per s3 account
         """
         test = "test_16908"
         self.create(test)
@@ -502,10 +511,11 @@ class TestS3IOSystemLimits:
         # Delete everything
         self.destroy(s3_password=self.s3_original_password)
 
+    @pytest.mark.scalability
     @pytest.mark.tags("TEST-16909")
     def test_16909(self):
         """
-        For system limit of 10k buckets
+        For system limit of max buckets
         Create 0 csm account, 100 s3 account,
         1 IAM accounts per s3 account, 100 buckets per s3 account
         """
@@ -518,6 +528,7 @@ class TestS3IOSystemLimits:
         # Delete everything
         self.destroy(s3_password=self.s3_original_password)
 
+    @pytest.mark.scalability
     @pytest.mark.tags("TEST-16910")
     def test_16910(self):
         """
@@ -546,6 +557,7 @@ class TestS3IOSystemLimits:
         # Delete everything
         self.destroy(s3_password=self.s3_original_password)
 
+    @pytest.mark.scalability
     @pytest.mark.tags("TEST-16911")
     def test_16911(self):
         """
@@ -599,6 +611,7 @@ class TestS3IOSystemLimits:
         # Delete everything
         self.destroy(s3_password=self.csm_original_password)
 
+    @pytest.mark.scalability
     @pytest.mark.tags('TEST-20274')
     @CTFailOn(error_handler)
     def test_list_multipart_upload_20274(self):
@@ -639,6 +652,7 @@ class TestS3IOSystemLimits:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Deleted Bucket")
 
+    @pytest.mark.scalability
     @pytest.mark.tags("TEST-20271")
     @CTFailOn(error_handler)
     def test_object_user_metadata_limit_20271(self):
