@@ -28,19 +28,20 @@ import logging
 import csv
 import fcntl
 import hashlib
-import multiprocessing as mp
 import re
+import time
+import multiprocessing as mp
 from boto3.s3.transfer import TransferConfig
 from commons.utils import config_utils
 from commons.worker import Workers
 from commons import params
 from libs.di import di_base
 from libs.di import data_man
+from libs.di import data_generator
 from commons.params import USER_JSON
 
-
 uploadObjects = []
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 class Uploader:
@@ -49,78 +50,76 @@ class Uploader:
                                 max_concurrency=320,
                                 multipart_chunksize=1024 * 1024 * 16,
                                 use_threads=True)
-    change_manager = None
 
-    @staticmethod
-    def upload(user, keys, buckets):
+    def __init__(self):
+        self.change_manager = data_man.DataManager()
 
-        user_name = user
-        Uploader.change_manager = data_man.DataManager(user=user)
+    def upload(self, user, keys, buckets, files_count, prefs):
+        user_name = user.replace('_', '-')
+        timestamp = time.strftime(params.DT_PATTERN_PREFIX)
         s3connections = di_base.init_s3_conn(user_name=user_name,
                                              keys=keys,
                                              nworkers=params.NWORKERS)
         pool_len = len(s3connections)
+
+        workers = Workers()
+        workers.start_workers(func=self._upload)
+
         for bucket in buckets:
-            try:
-                file1 = open(params.DATASET_FILES,"r")
-                obj_file_paths = file1.readlines()
-            except Exception as e:
-                logger.info(f'could not access file {params.DATASET_FILES} exception:{e}')
-                return
-            else:
-                logger.info(f'able to access file {params.DATASET_FILES}')
-
-            workers = Workers()
-            workers.start_workers(func=Uploader._upload)
-
-            for ix, each_line in enumerate(obj_file_paths):
-                reg = '\(\'(.+)\''
-                m = re.search(reg, each_line)
-                if m:
-                    workQ = queue.Queue()
-                    workQ.func = Uploader._upload
-                    kwargs = dict()
-                    kwargs['user'] = user
-                    kwargs['bucket'] = bucket
-                    kwargs['s3connections'] = s3connections
-                    kwargs['pool_len'] = pool_len
-                    kwargs['match'] = m
-                    workQ.put(kwargs)
-                    workers.wenque(workQ)
-                    logger.info(f"Enqueued item {ix} for download and checksum compare")
-            logger.info(f"processed items {ix} to upload for user {user}")
-            workers.end_workers()
-            logger.info('Upload Workers shutdown completed successfully')
+            for ix in range(files_count):
+                workQ = queue.Queue()
+                workQ.func = self._upload
+                kwargs = dict()
+                kwargs['user'] = user
+                kwargs['bucket'] = bucket
+                kwargs['s3connections'] = s3connections
+                kwargs['pool_len'] = pool_len
+                kwargs['file_number'] = ix
+                kwargs['prefs'] = prefs
+                workQ.put(kwargs)
+                workers.wenque(workQ)
+                LOGGER.info(f"Enqueued item {ix} for download and checksum compare")
+            LOGGER.info(f"processed items {ix} to upload for user {user}")
+        workers.end_workers()
+        LOGGER.info('Upload Workers shutdown completed successfully')
         if len(uploadObjects) > 0:
             with open(params.UPLOADED_FILES, 'a', newline='') as fp:
-                wr = csv.writer(fp, quoting=csv.QUOTE_NONE, delimiter=',', quotechar='',escapechar='\\')
+                wr = csv.writer(fp, quoting=csv.QUOTE_NONE, delimiter=',', quotechar='', escapechar='\\')
                 fcntl.flock(fp, fcntl.LOCK_EX)
                 wr.writerows(uploadObjects)
                 fcntl.flock(fp, fcntl.LOCK_UN)
-        logger.info(f'Upload completed for user {user}')
+        LOGGER.info(f'Upload completed for user {user}')
 
-    @staticmethod
-    def _upload(kwargs):
+    def _upload(self, kwargs):
         bucket = kwargs['bucket']
-        m = kwargs['match']
+        m = kwargs['file_number']
         s3connections = kwargs['s3connections']
         pool_len = kwargs['pool_len']
         user_name = kwargs['user']
-        each_file_path = params.DATAGEN_HOME + m.group(1)
+        prefs = kwargs['prefs']
+        prefix = prefs.get('prefix_dir', 'test-1')  # todo revisit
+
+        # todo get random compression ratio and process prefs
+        # get random size
+        seed = data_generator.DataGenerator.get_random_seed()
+        size = random.sample(data_generator.SMALL_BLOCK_SIZES, 1)[0]
+        gen = data_generator.DataGenerator(c_ratio=2)
+        buf, csum = gen.generate(size, seed=seed)
+        file_path = gen.save_buf_to_file(buf, csum, 1024 * 1024, prefix)
         s3 = s3connections[random.randint(0, pool_len - 1)]
         try:
-            s3.meta.client.upload_file(str(each_file_path),
+            s3.meta.client.upload_file(str(file_path),
                                        bucket,
-                                       os.path.basename(each_file_path),
+                                       os.path.basename(file_path),
                                        Config=Uploader.tsfrConfig)
-            print(f'uploaded file {each_file_path} for user {user_name}')
+            print(f'uploaded file {file_path} for user {user_name}')
         except Exception as e:
-            logger.info(f'{each_file_path} in bucket {bucket} Upload caught exception: {e}')
+            LOGGER.info(f'{file_path} in bucket {bucket} Upload caught exception: {e}')
         else:
-            logger.info(f'{each_file_path} in bucket {bucket} Upload Done')
-            with open(each_file_path, 'rb') as fp:
+            LOGGER.info(f'{file_path} in bucket {bucket} Upload Done')
+            with open(file_path, 'rb') as fp:
                 md5sum = hashlib.md5(fp.read()).hexdigest()
-            obj_name = os.path.basename(each_file_path)
+            obj_name = os.path.basename(file_path)
             row_data = [user_name, bucket, obj_name, md5sum]
             uploadObjects.append(row_data)
             Uploader.change_manager.add_files_to_bucket(user_name,
@@ -130,29 +129,19 @@ class Uploader:
                                                         size
                                                         )
 
-    @staticmethod
-    def start(users):
-        logger.info('Starting uploads')
-        try:
-            os.remove(params.UPLOAD_FINISHED_FILENAME)
-        except Exception as e:
-            logger.info(f'file not able to remove: {e}')
-        try:
-            os.remove(params.UPLOADED_FILES)
-        except Exception as e:
-            logger.info(f'file not able to remove: {e}')
+    def start(self, users, buckets, files_count, prefs):
+        LOGGER.info(f'Starting uploads for users {users}')
+        # check if users comply to specific schema
         users_home = params.LOG_DIR
         users_path = os.path.join(users_home, USER_JSON)
-        config_utils.create_content_json(users_path, users, ensure_ascii=False)
-
+        config_utils.create_content_json(users_path, users, ensure_ascii=False)  # need test name prefix
         jobs = []
-        for user,keys in users.items():
-            p = mp.Process(target=Uploader.upload, args=(user,keys, uploadObjects))
+        for user, udict in users.items():
+            keys = [udict['accesskey'], udict['secretkey']]
+            p = mp.Process(target=self.upload, args=(user, keys, buckets, files_count, prefs))
             jobs.append(p)
         for p in jobs:
             p.start()
         for p in jobs:
             p.join()
-        logger.info('Upload Done for all users')
-        with open(params.UPLOAD_FINISHED_FILENAME, 'w') as lck:
-            pass
+        LOGGER.info(f'Upload Done for all users {users}')
