@@ -639,6 +639,27 @@ class S3TestLib(S3Lib):
 
         return True, response
 
+    def list_objects_details(
+            self,
+            bucket_name: str = None,) -> tuple:
+        """
+        Listing objects of a bucket with details.
+
+        :param bucket_name: Name of the bucket
+        :return: bool, response dict.
+        """
+        try:
+            response = self.s3_client.list_objects(
+                Bucket=bucket_name)
+            LOGGER.debug(response)
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         S3TestLib.list_objects_details.__name__,
+                         error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
+        return True, response
+
     def put_object_with_storage_class(self,
                                       bucket_name: str = None,
                                       object_name: str = None,

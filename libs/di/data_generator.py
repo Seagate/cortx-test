@@ -36,12 +36,16 @@ from pathlib import Path
 from commons import params
 from libs.di.file_formats import *
 
-MB = 1024 * 1024
+KB = 1024
+MB = KB * KB
 CMN_BUF = 'i' * MB
 DEF_COMPRESS_LEVEL = 4
 DEFAULT_DATA_TYPE = 1
 ZEROED_DATA_TYPE = 2
 U_LIMIT = 10 ** 6
+CMPR_RATIOS = (1, 2, 3, 4, 5, 6, 7, 8)
+SMALL_BLOCK_SIZES = [4 * KB, 8 * KB, 16 * KB, 32 * KB, 64 * KB, 128 * KB]
+MEDIUM_BLOCK_SIZES = [4 * MB, 8 * MB, 16 * MB, 21 * MB, 32 * MB, 64 * MB, 128 * MB]
 
 LOGGER = logging.getLogger(__name__)
 
@@ -68,9 +72,9 @@ class DataGenerator:
 
     def __init__(self,
                  c_ratio: int = 1,
-                 d_ratio: int = 1) -> None:
+                 embed_csum_in_name: bool = True) -> None:
         self.compression_ratio = c_ratio
-        self.dedupe_ratio = d_ratio
+        self.append_csum_file_name = embed_csum_in_name
         self.compressibility = int(100 - (1.0 / self.compression_ratio * 100))
         self.secret = '0123456789abcdef' * 2
         self.iv = '0123456789abcdef'
@@ -148,15 +152,18 @@ class DataGenerator:
 
     def save_buf_to_file(self,
                          fbuf: Any,
-                         size: Any,
+                         csum: str,
+                         size: int,
                          data_folder_prefix: str,
                          min_sz: int = 5,
-                         max_sz: int = 10) -> None:
+                         max_sz: int = 10) -> str:
         name = ''
         ext = random.sample(all_extensions, 1)[0]
         for i in range(random.randrange(min_sz, max_sz)):
             name += random.choice(string.ascii_letters + string.digits + '_-')
-        name += ext
+        if self.append_csum_file_name:
+            name += '_' + csum
+        name += '_' + 'cx' + ext
         if size < 1024:
             iosize = 1024
         elif (size >= 1024) & (size < 1024 * 1024):
@@ -188,11 +195,11 @@ class DataGenerator:
                 else:
                     fd.write(fbuf[off:off + iosize])
                 off += iosize
-
+        return name
 
 if __name__ == '__main__':
     # Test Data Generator here.
-    d = DataGenerator(c_ratio=2, d_ratio=2)
-    buf, csum = d.generate(1024 * 1024, seed=10)
+    d = DataGenerator(c_ratio=2)
+    buf, csum = d.generate(1024 * 1024 * 5, seed=10)
     print(csum)
-    d.save_buf_to_file(buf, 1024 * 1024, "test-1")
+    d.save_buf_to_file(buf, csum, 1024 * 1024, "test-1")
