@@ -97,7 +97,7 @@ def get_code_maturity_data(test_plan: str, test_plan1: str, test_plan2: str,
         if t_plan:
             tests = jira_api.get_test_list_from_test_plan(test_plan, username, password)
             counters.append(Counter(test['latestStatus'] for test in tests))
-            builds.append(jira_api.get_build_from_test_plan(t_plan, username, password))
+            builds.append(jira_api.get_details_from_test_plan(t_plan, username, password)["build"])
         else:
             counters.append(Counter())
             builds.append("NA")
@@ -170,7 +170,7 @@ def main():
     rest, db_username, db_password = common.get_timings_db_details()
     username, password = jira_api.get_username_password()
 
-    builds = [jira_api.get_build_from_test_plan(test_plan, username, password) if
+    builds = [jira_api.get_details_from_test_plan(test_plan, username, password)["buildNo"] if
               test_plan else "NA" for test_plan in tp_ids]
 
     data = []

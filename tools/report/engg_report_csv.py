@@ -66,7 +66,8 @@ def get_component_level_summary(test_plans: list, username: str, password: str):
             component_summary.append(
                 get_component_breakup_from_testplan(t_plan, username, password)
             )
-            builds.append(jira_api.get_build_from_test_plan(t_plan, username, password))
+            builds.append(jira_api.get_details_from_test_plan(t_plan, username,
+                                                              password)["buildNo"])
         else:
             component_summary.append({})
             builds.append("NA")
@@ -306,7 +307,8 @@ def main():
     username, password = jira_api.get_username_password()
 
     tp_ids = [test_plans.tp, test_plans.tp1, test_plans.tp2, test_plans.tp3]
-    builds = [jira_api.get_build_from_test_plan(test_plan, username, password) if
+
+    builds = [jira_api.get_details_from_test_plan(test_plan, username, password)["buildNo"] if
               test_plan else "NA" for test_plan in tp_ids]
 
     data = []
