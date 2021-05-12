@@ -40,7 +40,7 @@ class CSMBoarding(unittest.TestCase):
         CSM_REST_CFG["mgmt_vip"] = self.csm_mgmt_ip
         rest_obj = RestTestLib()
         response = rest_obj.custom_rest_login(self.admin_user, self.admin_pwd)
-        if response.status_code in ['200', "201"]:
+        if response.status_code in [200, 201]:
             self.create_admin_user = False
 
     def test_preboarding(self):
