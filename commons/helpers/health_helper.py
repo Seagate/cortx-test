@@ -55,13 +55,17 @@ class Health(Host):
         Find all ports exposed through firewall permanent service for given
         component
         """
-        output = self.execute_cmd(
-            commands.FIREWALL_CMD.format(service), read_lines=True)
-        ports = []
-        for word in output:
-            ports.append(word.split())
-        if not ports:
-            LOG.error("Does Not Found Running Service %s", service)
+        try:
+            output = self.execute_cmd(
+                commands.FIREWALL_CMD.format(service), read_lines=True)
+            ports = []
+            for port in output[0].split():
+                ports.append(port.split("/")[0])
+            if not ports:
+                LOG.error("Does Not Found Running Service %s", service)
+                return None
+        except OSError as error:
+            LOG.error(error)
             return None
         return ports
 

@@ -22,8 +22,6 @@
 Prov test file for all the Prov tests scenarios for single node VM.
 """
 
-import jenkins
-import time
 import logging
 import pytest
 from commons.helpers.health_helper import Health
@@ -32,13 +30,14 @@ from commons import commands as common_cmds
 from commons import constants as common_cnst
 from commons.utils import assert_utils
 from commons import pswdmanager
-from commons import params as prm
-from config import CMN_CFG, PROV_CFG
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
+from config import CMN_CFG, PROV_CFG
+from libs.prov.provisioner import Provisioner
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
+
 
 class TestProvSingleNode:
     """
@@ -53,47 +52,22 @@ class TestProvSingleNode:
         LOGGER.info("STARTED: Setup Module operations")
         cls.host = CMN_CFG["nodes"][0]["hostname"]
         cls.build_path = CMN_CFG["build_path"]
-        LOGGER.info("User provided Hostname: {} and build path: {}".format(cls.host, cls.build_path))
+        LOGGER.info(
+            "User provided Hostname: {} and build path: {}".format(
+                cls.host, cls.build_path))
         cls.uname = CMN_CFG["nodes"][0]["username"]
         cls.passwd = CMN_CFG["nodes"][0]["password"]
         cls.nd_obj = Node(hostname=cls.host, username=cls.uname,
                           password=cls.passwd)
         cls.hlt_obj = Health(hostname=cls.host, username=cls.uname,
                              password=cls.passwd)
+        cls.prov_obj = Provisioner()
         LOGGER.info("Done: Setup module operations")
 
     def setup_method(self):
         """
         Setup operations for each test.
         """
-
-    def build_job(self, name: str, parameters: dict=None, token: str=None):
-        """
-        Helper function to start the jenkins job.
-        :param name: Name of the jenkins job
-        :param parameters: Dict of different parameters to be passed
-        :param token: Authentication Token for jenkins job
-        :return: response
-        """
-        username = pswdmanager.decrypt(common_cnst.JENKINS_USERNAME)
-        password = pswdmanager.decrypt(common_cnst.JENKINS_PASSWORD)
-        self.jenkins_server = jenkins.Jenkins(prm.JENKINS_URL, username=username, password=password)
-        LOGGER.debug("Jenkins_server obj: {}".format(self.jenkins_server))
-        completed_build_number = self.jenkins_server.get_job_info(name)['lastCompletedBuild']['number']
-        next_build_number = self.jenkins_server.get_job_info(name)['nextBuildNumber']
-        LOGGER.info(
-            "Complete build number: {} and  Next build number: {}".format(completed_build_number, next_build_number))
-        self.jenkins_server.build_job(name, parameters=parameters, token=token)
-        time.sleep(10)
-        LOGGER.info("Running the deployment job")
-        while True:
-            if self.jenkins_server.get_job_info(name)['lastCompletedBuild']['number'] == \
-                    self.jenkins_server.get_job_info(name)['lastBuild']['number']:
-                break
-        build_info = self.jenkins_server.get_build_info(name, next_build_number)
-        console_output = self.jenkins_server.get_build_console_output(name, next_build_number)
-        LOGGER.debug("console output: {}".format(console_output))
-        return build_info
 
     def teardown_method(self):
         """
@@ -121,7 +95,8 @@ class TestProvSingleNode:
         cmd = common_cmds.CMD_LSBLK
         count = self.nd_obj.execute_cmd(cmd, read_lines=True)
         LOGGER.info("count : {}".format(int(count[0])))
-        assert int(count[0]) >= test_cfg["count"], "Need at least 2 disks for deployment"
+        assert_utils.assert_greater_equal(
+            int(count[0]), test_cfg["count"], "Need at least 2 disks for deployment")
 
         LOGGER.info("Checking OS release version")
         cmd = common_cmds.CMD_OS_REL
@@ -136,7 +111,10 @@ class TestProvSingleNode:
         resp = self.nd_obj.execute_cmd(cmd, read_lines=True)
         resp = resp[0].strip()
         LOGGER.info("kernel: {}".format(resp))
-        assert_utils.assert_equal(resp, test_cfg["kernel"], "Kernel version differs than expected.")
+        assert_utils.assert_equal(
+            resp,
+            test_cfg["kernel"],
+            "Kernel version differs than expected.")
 
         LOGGER.info("Starting the deployment steps.")
         test_cfg = PROV_CFG["deploy"]
@@ -145,10 +123,13 @@ class TestProvSingleNode:
         common_cnst.PARAMS["HOST"] = self.host
         common_cnst.PARAMS["HOST_PASS"] = self.passwd
         token = pswdmanager.decrypt(common_cnst.TOKEN_NAME)
-        output = self.build_job(test_cfg["job_name"], common_cnst.PARAMS, token)
+        output = Provisioner.build_job(
+            test_cfg["job_name"], common_cnst.PARAMS, token)
         LOGGER.info("Jenkins Build URL: {}".format(output['url']))
-        assert_utils.assert_equal(output['result'], test_cfg["success_msg"],
-                                  "Deployment is not successful, please check the url.")
+        assert_utils.assert_equal(
+            output['result'],
+            test_cfg["success_msg"],
+            "Deployment is not successful, please check the url.")
 
         LOGGER.info("Starting the post deployment checks.")
         test_cfg = PROV_CFG["system"]
@@ -158,14 +139,36 @@ class TestProvSingleNode:
         resp = self.nd_obj.execute_cmd(cmd, read_lines=True)
         LOGGER.info("hctl status: %s", resp)
         for line in resp:
-            assert_utils.assert_not_in(test_cfg["offline"], line, "Some services look offline.")
+            assert_utils.assert_not_in(
+                test_cfg["offline"], line, "Some services look offline.")
 
         LOGGER.info("Check that all services are up in pcs.")
         cmd = common_cmds.PCS_STATUS_CMD
         resp = self.nd_obj.execute_cmd(cmd, read_lines=True)
         LOGGER.info("PCS status: %s", resp)
         for line in resp:
-            assert_utils.assert_not_in(test_cfg["stopped"], line, "Some services are not up.")
+            assert_utils.assert_not_in(
+                test_cfg["stopped"], line, "Some services are not up.")
 
-        LOGGER.info("Successfully deployed the build after prereq checks and done post "
-                    "deploy checks as well.")
+        LOGGER.info("Check that all services are running on respective ports.")
+        self.nd_obj.send_systemctl_cmd(
+            command="restart", services=[
+                PROV_CFG["services"]["firewall"]])
+        status = self.nd_obj.send_systemctl_cmd(
+            command="status", services=[
+                PROV_CFG["services"]["firewall"]], decode=True)
+        assert_utils.assert_in(
+            test_cfg["active"],
+            status[0],
+            "Firewalld service is not running")
+        inactive_ports = list()
+        for service in PROV_CFG["service_ports"]:
+            active_ports = self.hlt_obj.get_ports_for_firewall_cmd(service)
+            for port in PROV_CFG["service_ports"][service]:
+                if port not in active_ports:
+                    LOGGER.error("%s is not running on port %s", service, port)
+                    inactive_ports.append(port)
+        assert_utils.assert_list_equal([], inactive_ports)
+        LOGGER.info(
+            "Successfully deployed the build after prereq checks and done post "
+            "deploy checks as well.")
