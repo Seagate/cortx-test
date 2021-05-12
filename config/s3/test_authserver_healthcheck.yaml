@@ -1,7 +1,0 @@
-test_1161:
-    status_code: "200"
-    status: "enable"
-
-test_1164:
-    status: "disable"
-    status_code: "200"

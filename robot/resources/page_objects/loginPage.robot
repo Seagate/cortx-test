@@ -15,7 +15,7 @@ Open URL In Headless
     [Documentation]  Test keyword is for opening the URL in the browser in headless mode, with specific options.
     [Arguments]  ${url}  ${browser}
     open browser  ${url}  ${browser}    options=add_argument('--ignore-ssl-errors');add_argument('--ignore-certificate-errors');add_argument('--no-sandbox');add_argument('--headless')
-    maximize browser window
+    Set Window Size  ${1366}  ${768}
 
 Enter Username And Password
     [Documentation]  Test keyword is for entering the username and password on login form.
