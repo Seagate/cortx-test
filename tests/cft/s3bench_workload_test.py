@@ -36,6 +36,7 @@ class TestWorkloadS3Bench:
         test_config = "config/cft/s3bench_workload_test.yaml"
         cls.cft_test_cfg = configmanager.get_config_wrapper(fpath=test_config)
 
+    @pytest.mark.longevity
     @pytest.mark.tags("TEST-19658")
     def test_19658(self):
         """Longevity Test with distributed workload"""
@@ -69,6 +70,7 @@ class TestWorkloadS3Bench:
                                                         ["with error ", "panic", "status code"]), \
                     f"S3bench workload for failed in loop {loop}. Please read log file {resp[1]}"
 
+    @pytest.mark.scalability
     @pytest.mark.tags("TEST-19471")
     def test_19471(self):
         """S3bench Workload test"""
