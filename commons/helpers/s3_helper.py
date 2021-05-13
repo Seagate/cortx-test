@@ -767,3 +767,28 @@ class S3Helper:
                 os.remove(local_path)
 
         return False, file_path
+
+    def s3server_inject_faulttolerance(self,
+                                       host=None,
+                                       user=None,
+                                       password=None,
+                                       enable=False,
+                                       ):
+        """
+        Inject(enable/disable) fault tolerance in s3server.
+
+        :param host: IP of the host.
+        :param user: user name of the host.
+        :param password: password for the user.
+        :param enable: enable or disable fault to s3server.
+        :return: bool, response.
+        """
+        command = 'curl -i -H "x-seagate-faultinjection:{},offnonm,motr_obj_write_fail,2,1"' \
+                  ' -X PUT http://127.0.0.1:28081​'.format("enable" if enable else "disable")
+        status, response = run_remote_cmd(cmd=command,
+                                          hostname=host,
+                                          username=user,
+                                          password=password)
+        status = True if "200" in response else status
+
+        return status, response
