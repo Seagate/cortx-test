@@ -230,4 +230,14 @@ test_5343:
   alert_insertion: "insertion"
   alert_fault_resolved: "fault_resolved"
 
+test_21194_deactivating_alerts:
+  resource_type: "node:sw:os:service"
+  fault_alert_type: "fault"
+  severity: "critical"
+  resolved_alert_type: "fault_resolved"
 
+test_21194_activating_alerts:
+  resource_type: "node:sw:os:service"
+  fault_alert_type: "fault"
+  severity: "critical"
+  resolved_alert_type: "fault_resolved"
