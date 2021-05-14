@@ -62,10 +62,7 @@ REPORT_CLIENT = None
 DT_PATTERN = '%Y-%m-%d_%H:%M:%S'
 
 LOGGER = logging.getLogger(__name__)
-logging.getLogger('boto3').setLevel(logging.WARNING)
-logging.getLogger('botocore').setLevel(logging.WARNING)
-logging.getLogger('nose').setLevel(logging.WARNING)
-logging.getLogger("paramiko").setLevel(logging.WARNING)
+
 
 SKIP_MARKS = ("dataprovider", "test", "run", "skip", "usefixtures",
               "filterwarnings", "skipif", "xfail", "parametrize",
@@ -403,8 +400,8 @@ def reset_imported_module_log_level():
         if isinstance(_logger, logging.PlaceHolder):
             LOGGER.info("Skipping placeholder to reset logging level")
             continue
-        if _logger.name in ('boto3', 'botocore', 'nose', 'paramiko'):
-            _logger.setLevel(logging.WARNING)
+    for pkg in ['boto', 'boto3', 'botocore', 'nose', 'paramiko', 's3transfer', 'urllib3']:
+        logging.getLogger(pkg).setLevel(logging.WARNING)
 
 
 @pytest.hookimpl(tryfirst=True)
@@ -468,6 +465,15 @@ def pytest_collection(session):
                     selected_tests.append(test_found)
             CACHE.store(item.nodeid, test_found)
         with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_SELECTED_TESTS), 'w') \
+                as test_file:
+            write = csv.writer(test_file)
+            for test in selected_tests:
+                write.writerow([test])
+        if is_parallel:
+            te_selected_csv = str(config.option.te_tkt) + "_parallel.csv"
+        else:
+            te_selected_csv = str(config.option.te_tkt) + "_non_parallel.csv"
+        with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, te_selected_csv), 'w') \
                 as test_file:
             write = csv.writer(test_file)
             for test in selected_tests:
