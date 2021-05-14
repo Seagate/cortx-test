@@ -48,7 +48,7 @@ class Test3PSvcMonitoring:
         """Setup for module."""
         LOGGER.info("Running setup_class")
         cls.cm_cfg = RAS_VAL["ras_sspl_alert"]
-        cls.host = CMN_CFG["nodes"][0]["host"]
+        cls.host = CMN_CFG["nodes"][0]["hostname"]
         cls.uname = CMN_CFG["nodes"][0]["username"]
         cls.passwd = CMN_CFG["nodes"][0]["password"]
         cls.sspl_stop = cls.changed_level = cls.selinux_enabled = False
@@ -60,55 +60,50 @@ class Test3PSvcMonitoring:
         cls.health_obj = Health(hostname=cls.host, username=cls.uname,
                                 password=cls.passwd)
         cls.csm_alert_obj = SystemAlerts(cls.node_obj)
-        # Enable this flag for starting RMQ channel
         cls.start_msg_bus = cls.cm_cfg["start_msg_bus"]
-        cls.s3obj = S3H_OBJ
         cls.sw_alert_obj = SoftwareAlert(cls.host, cls.uname, cls.passwd)
+        LOGGER.info("Completed setup_class")
 
     def setup_method(self):
         """Setup operations per test."""
+        LOGGER.info("Running setup_method")
         external_services = RAS_TEST_CFG["third_party_services"]
         common_cfg = RAS_VAL["ras_sspl_alert"]
+        services = self.cm_cfg["service"]
+        sspl_svc = services["sspl_service"]
         self.timeouts = common_cfg["os_lvl_monitor_timeouts"]
-
-        LOGGER.info("Running setup_method")
-
-        LOGGER.info("Retaining the original/default config")
-        self.ras_test_obj.retain_config(self.cm_cfg["file"]["original_sspl_conf"], False)
-
+        
         LOGGER.info("Check SSPL status")
-        res = self.sw_alert_obj.get_svc_status(["sspl-ll"])["sspl-ll"]
+        res = self.sw_alert_obj.get_svc_status([sspl_svc])[sspl_svc]
         LOGGER.info("SSPL status response %s : ", res)
-        assert ["state"] == "active", "SSPL is not in active state"
+        assert res["state"] == "active", "SSPL is not in active state"
 
         LOGGER.info("Check CSM Web status")
         res = self.sw_alert_obj.get_svc_status(["csm_web"])["csm_web"]
         LOGGER.info("CSM web status response %s : ", res)
-        assert ["state"] == "active", "CSM web is not in active state"
+        assert res["state"] == "active", "CSM web is not in active state"
 
         LOGGER.info("Check CSM Agent status")
         res = self.sw_alert_obj.get_svc_status(["csm_agent"])["csm_agent"]
         LOGGER.info("CSM Agent status response %s : ", res)
-        assert ["state"] == "active", "CSM Agent is not in active state"
+        assert res["state"] == "active", "CSM Agent is not in active state"
 
-        LOGGER.info("Delete keys with prefix SSPL_")
-        cmd = common_cmd.REMOVE_UNWANTED_CONSUL
-        self.node_obj.execute_cmd(cmd=cmd, read_lines=True)
+        LOGGER.info("Check Kafka status")
+        res = self.sw_alert_obj.get_svc_status(["kafka"])["kafka"]
+        LOGGER.info("Kafka status response %s : ", res)
+        assert res["state"] == "active", "Kafka is not in active state"
 
-        LOGGER.info("Restarting sspl service")
-        resp = self.health_obj.restart_pcs_resource(self.cm_cfg["sspl_resource_id"])
-        assert_true(resp, "Failed to restart sspl-ll")
-        time.sleep(self.cm_cfg["sspl_timeout"])
-        LOGGER.info("Verifying the status of sspl and kafka service is online")
+        LOGGER.info("Check that all the 3rd party services are enabled.")
+        resp = self.sw_alert_obj.get_disabled_svcs(external_services)
+        assert resp == [], f"{resp} are in disabled state"
+        LOGGER.info("All 3rd party services are enabled.")
 
-        # Getting SSPl and Kafka service status
-        services = self.cm_cfg["service"]
-        resp = self.s3obj.get_s3server_service_status(
-            service=services["sspl_service"], host=self.host, user=self.uname,
-            pwd=self.passwd)
-        assert_true(resp[0], resp[1])
-        LOGGER.info("Validated the status of sspl and kafka service are online")
-
+        LOGGER.info("Check that all the 3rd party services are active")
+        resp = self.sw_alert_obj.get_inactive_svcs(external_services)
+        assert resp == [], f"{resp} are in inactive state"
+        LOGGER.info("All 3rd party services are in active state.")
+        
+        self.starttime = time.time()
         if self.start_msg_bus:
             LOGGER.info("Running read_message_bus.py script on node")
             resp = self.ras_test_obj.start_message_bus_reader_cmd(
@@ -116,31 +111,15 @@ class Test3PSvcMonitoring:
             assert_true(resp, "Failed to start message bus reader")
             LOGGER.info("Successfully started read_message_bus.py script on node")
 
-        LOGGER.info("Check that all the 3rd party services are active")
-        resp = self.sw_alert_obj.get_inactive_svcs(external_services)
-        assert resp != [], f"{resp} are in inactive state"
-        LOGGER.info("All 3rd party services are in active state.")
-
         LOGGER.info("Starting collection of sspl.log")
         res = self.ras_test_obj.sspl_log_collect()
         assert_true(res[0], res[1])
         LOGGER.info("Started collection of sspl logs")
-
-        self.starttime = time.time()
         LOGGER.info("Successfully performed Setup operations")
 
     def teardown_method(self):
         """Teardown operations."""
         LOGGER.info("Performing Teardown operation")
-        self.ras_test_obj.retain_config(self.cm_cfg["file"]["original_sspl_conf"], True)
-
-        if self.sspl_stop:
-            LOGGER.info("Enable the SSPL master")
-            resp = self.ras_test_obj.enable_disable_service(
-                "enable", self.cm_cfg["sspl_resource_id"])
-            assert_true(resp, "Failed to enable sspl-master")
-
-        LOGGER.info("Restoring values to default in consul")
 
         if self.changed_level:
             kv_store_path = cons.LOG_STORE_PATH
@@ -177,26 +156,6 @@ class Test3PSvcMonitoring:
 
         self.health_obj.restart_pcs_resource(resource=self.cm_cfg["sspl_resource_id"])
         time.sleep(self.cm_cfg["sleep_val"])
-
-        if self.selinux_enabled:
-            local_path = self.cm_cfg["local_selinux_path"]
-            new_value = self.cm_cfg["selinux_disabled"]
-            old_value = self.cm_cfg["selinux_enforced"]
-            LOGGER.info("Modifying selinux status from %s to %s on node %s",
-                        old_value, new_value, self.host)
-            resp = self.ras_test_obj.modify_selinux_file()
-            assert_true(resp[0], "Failed to update selinux file")
-            LOGGER.info(
-                "Modified selinux status to %s", new_value)
-
-            LOGGER.info(
-                "Rebooting node %s after modifying selinux status", self.host)
-            self.node_obj.execute_cmd(cmd=common_cmd.REBOOT_NODE_CMD)
-            time.sleep(self.cm_cfg["reboot_delay"])
-            os.remove(local_path)
-            LOGGER.info("Rebooted node %s after modifying selinux status",
-                        self.host)
-
         LOGGER.info("Successfully performed Teardown operation")
 
     @pytest.mark.tags("TEST-19609")
@@ -326,7 +285,7 @@ class Test3PSvcMonitoring:
             LOGGER.info("Step 1: Deactivating %s service...", svc)
             starttime = time.time()
             result, e_csm_resp = self.sw_alert_obj.run_verify_svc_state(
-                svc, "deactivating", external_svcs)
+                svc, "deactivating", []) #external_svcs
             assert result, "Failed in deactivating service"
             LOGGER.info("Step 1: Deactivated %s service...", svc)
 
