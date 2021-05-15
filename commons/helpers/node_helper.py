@@ -480,13 +480,13 @@ class Node(Host):
                 a=str(dir_path), b=int(field_val))
             log.info("Running python command %s", cmd)
             resp = self.execute_cmd(cmd=cmd)
+
+            return True, resp
         except BaseException as error:
             log.error(
                 "*ERROR* An exception occurred in %s: %s",
                 Node.disk_usage_python_interpreter_cmd.__name__, error)
             return False, error
-
-        return True, resp
 
     def get_file_size(self, path):
         """
@@ -505,6 +505,46 @@ class Node(Host):
         except Exception as error:
             log.error(
                 "%s %s: %s", const.EXCEPTION_ERROR,
-                self.get_remote_file_size.__name__, error)
+                self.get_file_size.__name__, error)
             resp_val = error
         return flag, resp_val
+
+    def get_remote_file(self, local_path, remote_path):
+        """
+        Copy remote file path to local file path.
+
+        :param local_path: Local file path.
+        :param remote_path: Remote file path.
+        :return: True/False, response.
+        """
+        try:
+            ftp_obj = self.host_obj.open_sftp()
+            resp = ftp_obj.get(remote_path, local_path)
+            ftp_obj.close()
+
+            return os.path.exists(local_path), resp
+        except Exception as error:
+            log.error(
+                "%s %s: %s", const.EXCEPTION_ERROR,
+                self.get_remote_file.__name__, error)
+            return False, error
+
+    def copy_to_remote_path(self, local_path, remote_path):
+        """
+        Copy local file to remote path.
+
+        :param local_path: local file path.
+        :param remote_path: remote file path.
+        :return: True/False, response.
+        """
+        try:
+            ftp_obj = self.host_obj.open_sftp()
+            resp = ftp_obj.put(remote_path, local_path)
+            ftp_obj.close()
+
+            return self.path_exists(remote_path), resp
+        except Exception as error:
+            log.error(
+                "%s %s: %s", const.EXCEPTION_ERROR,
+                self.copy_to_remote_path.__name__, error)
+            return False, error
