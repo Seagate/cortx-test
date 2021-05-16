@@ -83,6 +83,7 @@ NODE_PREFIX = "eosnode-"
 
 """ S3 constants """
 const.S3_CONFIG = "/opt/seagate/cortx/s3/conf/s3config.yaml"
+const.LOCAL_S3_CONFIG = "/tmp/s3config.yaml"
 const.CA_CERT_PATH = "/opt/seagate/cortx/provisioner/srv/components/s3clients/files/ca.crt"
 const.REMOTE_DEFAULT_DIR = "/var/motr"
 const.CFG_FILES = ["/etc/haproxy/haproxy.cfg",

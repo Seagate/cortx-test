@@ -29,9 +29,11 @@ import logging
 from configparser import NoSectionError
 from paramiko.ssh_exception import SSHException
 from commons import commands
-from commons.helpers.host import Host
+from commons.constants import const
+from commons.helpers.node_helper import Node
 from commons.utils import config_utils
-from commons.utils.system_utils import run_local_cmd, run_remote_cmd
+from commons.utils.system_utils import run_local_cmd
+from commons.utils.system_utils import run_remote_cmd
 from config import S3_CFG, CMN_CFG
 
 LOGGER = logging.getLogger(__name__)
@@ -537,16 +539,13 @@ class S3Helper:
         user = user if user else self.user
         pwd = pwd if pwd else self.pwd
         try:
-            hobj = Host(hostname=host, username=user, password=pwd)
-            hobj.connect_pysftp()
-            sftp = hobj.pysftp_obj
+            nobj = Node(hostname=host, username=user, password=pwd)
             LOGGER.info("sftp connected")
-            sftp.get(file_path, local_path)
+            resp = nobj.get_remote_file(file_path, local_path)
             LOGGER.info("file copied to : %s", str(local_path))
-            sftp.close()
-            hobj.disconnect()
+            nobj.disconnect()
 
-            return os.path.isfile(local_path), local_path
+            return resp
         except (SSHException, OSError) as error:
             LOGGER.error(
                 "Error in %s: %s",
@@ -768,12 +767,7 @@ class S3Helper:
 
         return False, file_path
 
-    def s3server_inject_faulttolerance(self,
-                                       host=None,
-                                       user=None,
-                                       password=None,
-                                       enable=False,
-                                       ):
+    def s3server_inject_faulttolerance(self, enable=False, **kwargs) -> tuple:
         """
         Inject(enable/disable) fault tolerance in s3server.
 
@@ -783,6 +777,9 @@ class S3Helper:
         :param enable: enable or disable fault to s3server.
         :return: bool, response.
         """
+        host = kwargs.get("host", self.host)
+        user = kwargs.get("user", self.user)
+        password = kwargs.get("password", self.pwd)
         command = 'curl -i -H "x-seagate-faultinjection:{},offnonm,motr_obj_write_fail,2,1"' \
                   ' -X PUT http://127.0.0.1:28081​'.format("enable" if enable else "disable")
         status, response = run_remote_cmd(cmd=command,
@@ -792,3 +789,59 @@ class S3Helper:
         status = True if "200" in response else status
 
         return status, response
+
+    def verify_and_validate_created_object_fragement(self, object):
+        """
+        Verify in m0kv output.
+
+        Verify the Validate that object list index contains extended entries using m0kv.
+        Verify in m0kv output. Main object size and fragment size.
+        No of fragments in json value of main object.
+
+        :return: bool, response
+        """
+        pass
+
+    def update_s3config(self,
+                        section="S3_SERVER_CONFIG",
+                        parameter=None,
+                        value=None,
+                        **kwargs) -> tuple:
+        """
+        Reset parameter to value in s3config.yaml and return (parameter, value, old_value).
+
+        :param host: IP of the host.
+        :param user: user name of the host.
+        :param password: password for the user.
+        :param parameter: s3 parameters to be updated.
+        :param value: s3 parameter value.
+        :param section: s3config section.
+        :param backup_path: backup_path.
+        :return: True/False, response.
+        """
+        host = kwargs.get("host", S3_CFG["s3"]["s3_server_ip"])
+        user = kwargs.get("username", S3_CFG["s3"]["s3_server_user"])
+        pwd = kwargs.get("password", S3_CFG["s3"]["s3_server_pwd"])
+        backup_path = kwargs.get("backup_path", const.LOCAL_S3_CONFIG)
+        nobj = Node(hostname=host, username=user, password=pwd)
+        status, resp = nobj.get_remote_file(const.S3_CONFIG, backup_path)
+        if not status:
+            return status, resp
+        status, resp = config_utils.read_yaml(backup_path)
+        if not status:
+            return status, resp
+        LOGGER.info(resp)
+        old_value = resp[section][parameter]
+        LOGGER.info(old_value)
+        resp[section][parameter] = value
+        status, resp = config_utils.write_yaml(backup_path, resp, backup=True)
+        if not status:
+            return status, resp
+        status, resp = nobj.copy_to_remote_path(backup_path, const.S3_CONFIG)
+        if not status:
+            return status, resp
+        if os.path.exists(backup_path):
+            os.remove(backup_path)
+        nobj.disconnect()
+
+        return status, (parameter, value, old_value)
