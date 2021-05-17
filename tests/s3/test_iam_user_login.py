@@ -990,7 +990,7 @@ class TestUserLoginProfileTests():
 
     # Access key and secret key is not needed for resetting iam user password using cortxcli
     # Hence invalid scenario
-    @pytest.mark.skip
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5705")
@@ -1020,7 +1020,7 @@ class TestUserLoginProfileTests():
 
     # No api available yet for getting Temp auth credentials using cortxcli
     # Hence temporary skipping this test
-    @pytest.mark.skip
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5686")
@@ -1079,7 +1079,7 @@ class TestUserLoginProfileTests():
 
     # No api available yet for getting Temp auth credentials using cortxcli
     # Hence temporary skipping this test
-    @pytest.mark.skip
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5660")
@@ -1114,7 +1114,7 @@ class TestUserLoginProfileTests():
 
     # No api available yet for getting Temp auth credentials using cortxcli
     # Hence temporary skipping this test
-    @pytest.mark.skip
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5685")
@@ -1165,7 +1165,7 @@ class TestUserLoginProfileTests():
 
     # No api available yet for getting Temp auth credentials using cortxcli
     # Hence temporary skipping this test
-    @pytest.mark.skip
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-10923")
@@ -1242,7 +1242,7 @@ class TestUserLoginProfileTests():
 
     # No api available yet for getting Temp auth credentials using cortxcli
     # Hence temporary skipping this test
-    @pytest.mark.skip
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5659")
@@ -1280,7 +1280,7 @@ class TestUserLoginProfileTests():
 
     # No api available yet for getting Temp auth credentials using cortxcli
     # Hence temporary skipping this test
-    @pytest.mark.skip
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5687")
@@ -1312,7 +1312,7 @@ class TestUserLoginProfileTests():
 
     # No api available yet for getting Temp auth credentials using cortxcli
     # Hence temporary skipping this test
-    @pytest.mark.skip
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5666")
@@ -1367,7 +1367,7 @@ class TestUserLoginProfileTests():
 
     # No api available yet for getting Temp auth credentials using cortxcli
     # Hence temporary skipping this test
-    @pytest.mark.skip
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5667")
@@ -1408,7 +1408,7 @@ class TestUserLoginProfileTests():
 
     # No api available yet for getting Temp auth credentials using cortxcli
     # Hence temporary skipping this test
-    @pytest.mark.skip
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5684")
