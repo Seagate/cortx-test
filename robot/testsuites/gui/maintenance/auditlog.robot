@@ -32,7 +32,7 @@ ${Download_File_Path}  \root\Downloads\
 *** Test Cases ***
 
 TEST-21212
-    [Documentation]  Verify the audit log data for the logs seen/downloaded from audit log UI
+    [Documentation]  Test that CSM Audit logs are getting displayed in the Tabular format
     ...  Reference : https://jts.seagate.com/browse/TEST-21212
     [Tags]  Priority_High  Audit_log  TEST-21212  CSM_Audit_Log
     ${test_id}    Set Variable    TEST-21212

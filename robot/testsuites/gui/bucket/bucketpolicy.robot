@@ -132,6 +132,7 @@ TEST-4227
     Click On Update Bucket Policy
     ${new_policy}=  update_json_policy  ${policy}
     Log To Console And Report  ${new_policy}
+    wait for page or element to load
     Click On Edit Bucket Icon
     Add Json Policy To Bucket  ${new_policy}
     Click On Update Bucket Policy
