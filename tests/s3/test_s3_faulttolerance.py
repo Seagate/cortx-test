@@ -29,6 +29,7 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.utils import system_utils
 from commons.utils import assert_utils
+from commons.constants import const
 from commons.params import TEST_DATA_FOLDER
 from libs.s3 import S3H_OBJ
 from libs.s3 import s3_test_lib
@@ -52,14 +53,16 @@ class TestS3Faulttoelrance:
             system_utils.make_dirs(self.test_directory)
         self.test_file_path = os.path.join(
             self.test_directory, self.object_name)
-        self.log.info("S3_MAX_EXTENDED_OBJECTS_IN_FAULT_MODE value in s3config.yaml should be "
-                      "set to more than 1.")
+        self.log.info(
+            "S3_MAX_EXTENDED_OBJECTS_IN_FAULT_MODE value in s3config.yaml should be "
+            "set to more than 1.")
         status, response = S3H_OBJ.update_s3config(
             parameter="S3_MAX_EXTENDED_OBJECTS_IN_FAULT_MODE", value=2)
         assert_utils.assert_true(status, response)
         yield
-        self.log.info("S3_MAX_EXTENDED_OBJECTS_IN_FAULT_MODE value in s3config.yaml should be "
-                      "set to 1.")
+        self.log.info(
+            "S3_MAX_EXTENDED_OBJECTS_IN_FAULT_MODE value in s3config.yaml should be "
+            "set to 1.")
         resp = S3H_OBJ.update_s3config(
             parameter="S3_MAX_EXTENDED_OBJECTS_IN_FAULT_MODE", value=response[-1])
         assert_utils.assert_true(resp[0], resp[1])
@@ -73,7 +76,7 @@ class TestS3Faulttoelrance:
             resp = S3H_OBJ.s3server_inject_faulttolerance(enable=False)
             assert_utils.assert_true(resp[0], resp[1])
 
-    @pytest.mark.skip
+    @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-18838")
     @pytest.mark.parametrize("object_size", ["50k"])
@@ -116,13 +119,14 @@ class TestS3Faulttoelrance:
             "Step 5: Verify the Validate that object list index contains extended entries"
             " using m0kv. Verify in m0kv output. Main object size and fragment size. No of"
             " fragments in json value of main object.")
-        resp = S3H_OBJ.verify_and_validate_created_object_fragement(self.object_name)
+        resp = S3H_OBJ.verify_and_validate_created_object_fragement(
+            self.object_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "ENDED: Verify post put object write failure of 50k file size, new object"
             " fragment is created.")
 
-    @pytest.mark.skip
+    @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-18839")
     @pytest.mark.parametrize("object_size", ["33k"])
@@ -137,7 +141,7 @@ class TestS3Faulttoelrance:
             "ENDED: Verify post put object write failure of 33k file size, new object"
             " fragment is created.")
 
-    @pytest.mark.skip
+    @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-18840")
     @pytest.mark.parametrize("object_size", ["4MB"])
@@ -149,7 +153,7 @@ class TestS3Faulttoelrance:
         """
         self.test_18838(object_size)
 
-    @pytest.mark.skip
+    @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-18841")
     @pytest.mark.parametrize("object_size", ["6MB"])
@@ -161,7 +165,7 @@ class TestS3Faulttoelrance:
         """
         self.test_18838(object_size)
 
-    @pytest.mark.skip
+    @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-18842")
     @CTFailOn(error_handler)
@@ -199,12 +203,13 @@ class TestS3Faulttoelrance:
         self.log.info(
             "Step 5. Verify the Validate that object list index contains extended entries"
             " using m0kv")
-        resp = S3H_OBJ.verify_and_validate_created_object_fragement(self.object_name)
+        resp = S3H_OBJ.verify_and_validate_created_object_fragement(
+            self.object_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "ENDED: Verify if normal putobject works fine with faultinjection disabled.")
 
-    @pytest.mark.skip
+    @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-18843")
     @CTFailOn(error_handler)
@@ -224,8 +229,9 @@ class TestS3Faulttoelrance:
         assert_utils.assert_true(status, response)
         self.log.info(
             "Step 2. Restart the s3services for changes to take effect.")
-        resp = S3H_OBJ.self.restart_s3server_service()
-        assert_utils.assert_true(resp[0], resp[1])
+        for service in [const.SLAPD, const.HAPROXY, const.S3AUTHSERVER]:
+            resp = S3H_OBJ.self.restart_s3server_service(service)
+            assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 3. Using curl ,inject fault injection so that upload of object fails "
             "and results in motr failure.")

@@ -541,7 +541,7 @@ class S3Helper:
         try:
             nobj = Node(hostname=host, username=user, password=pwd)
             LOGGER.info("sftp connected")
-            resp = nobj.get_remote_file(file_path, local_path)
+            resp = nobj.copy_file_to_local(file_path, local_path)
             LOGGER.info("file copied to : %s", str(local_path))
             nobj.disconnect()
 
@@ -692,7 +692,8 @@ class S3Helper:
             data = config_utils.read_content_json(path, mode='rb')
             data["hosts"]["s3"]["accessKey"] = access
             data["hosts"]["s3"]["secretKey"] = secret
-            res = config_utils.create_content_json(path=path, data=data, ensure_ascii=False)
+            res = config_utils.create_content_json(
+                path=path, data=data, ensure_ascii=False)
         else:
             LOGGER.warning(
                 "Minio is not installed please install and than run the configuration.")
@@ -780,8 +781,8 @@ class S3Helper:
         host = kwargs.get("host", self.host)
         user = kwargs.get("user", self.user)
         password = kwargs.get("password", self.pwd)
-        command = 'curl -i -H "x-seagate-faultinjection:{},offnonm,motr_obj_write_fail,2,1"' \
-                  ' -X PUT http://127.0.0.1:28081​'.format("enable" if enable else "disable")
+        command = commands.UPDATE_FAULTTOLERANCE.format(
+            "enable" if enable else "disable")
         status, response = run_remote_cmd(cmd=command,
                                           hostname=host,
                                           username=user,
@@ -790,7 +791,7 @@ class S3Helper:
 
         return status, response
 
-    def verify_and_validate_created_object_fragement(self, object):
+    def verify_and_validate_created_object_fragement(self, object_name) -> tuple:
         """
         Verify in m0kv output.
 
@@ -800,7 +801,8 @@ class S3Helper:
 
         :return: bool, response
         """
-        pass
+        LOGGER.info(object_name)
+        return False, "Not implemented: F-24A feature under development."
 
     def update_s3config(self,
                         section="S3_SERVER_CONFIG",
@@ -819,12 +821,12 @@ class S3Helper:
         :param backup_path: backup_path.
         :return: True/False, response.
         """
-        host = kwargs.get("host", S3_CFG["s3"]["s3_server_ip"])
-        user = kwargs.get("username", S3_CFG["s3"]["s3_server_user"])
-        pwd = kwargs.get("password", S3_CFG["s3"]["s3_server_pwd"])
+        host = kwargs.get("host", self.host)
+        user = kwargs.get("username", self.user)
+        pwd = kwargs.get("password", self.pwd)
         backup_path = kwargs.get("backup_path", const.LOCAL_S3_CONFIG)
         nobj = Node(hostname=host, username=user, password=pwd)
-        status, resp = nobj.get_remote_file(const.S3_CONFIG, backup_path)
+        status, resp = nobj.copy_file_to_local(const.S3_CONFIG, backup_path)
         if not status:
             return status, resp
         status, resp = config_utils.read_yaml(backup_path)
@@ -837,7 +839,7 @@ class S3Helper:
         status, resp = config_utils.write_yaml(backup_path, resp, backup=True)
         if not status:
             return status, resp
-        status, resp = nobj.copy_to_remote_path(backup_path, const.S3_CONFIG)
+        status, resp = nobj.copy_file_to_remote(backup_path, const.S3_CONFIG)
         if not status:
             return status, resp
         if os.path.exists(backup_path):
