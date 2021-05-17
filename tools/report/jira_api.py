@@ -88,7 +88,8 @@ def get_test_executions_from_test_plan(test_plan: str, username: str, password: 
     if response.status_code == HTTPStatus.OK:
         return response.json()
     print(f'get_test_executions GET on {jira_url} failed')
-    print(f'HEADERS={response.request.headers}\n'
+    print(f'RESPONSE={response.text}\n'
+          f'HEADERS={response.request.headers}\n'
           f'BODY={response.request.body}')
     sys.exit(1)
 

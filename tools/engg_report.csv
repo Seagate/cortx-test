@@ -23,20 +23,19 @@ Pass,61,62
 ToDo,71,72
 
 Component Level Summary
-Component,Total,#Build,,#Build-1,,#Build-2,,#Build-3
-,,Pass,Fail,Pass,Fail,Pass,Fail,Pass,Fail
-S3Server,1,2,3,4,5,6,7,8,9
-Provisioner,1,2,3,4,5,6,7,8,9
-CSM,1,2,3,4,5,6,7,8,9
-RAS,1,2,3,4,5,6,7,8,9
-Motr,1,2,3,4,5,6,7,8,9
-HA,1,2,3,4,5,6,7,8,9
-Locust,1,2,3,4,5,6,7,8,9
-Cosbench,1,2,3,4,5,6,7,8,9
-Data Recovery,1,2,3,4,5,6,7,8,9
-Cross Connect,1,2,3,4,5,6,7,8,9,
-CFT,1,2,3,4,5,6,7,8,9
-Total,1,2,3,4,5,6,7,8,9
+Component,12345,NA,NA,NA
+Automation,0,NA,NA,NA
+CSM,1,NA,NA,NA
+CFT,0,NA,NA,NA
+doc,0,NA,NA,NA
+Foundation,0,NA,NA,NA
+HA,0,NA,NA,NA
+hare,0,NA,NA,NA
+Monitor,0,NA,NA,NA
+Motr,0,NA,NA,NA
+Provisioner,0,NA,NA,NA
+S3Server,1,NA,NA,NA
+UDX,0,NA,NA,NA
 
 Single Bucket Performance Statistics (Average) using S3Bench
 Statistics,4 KB,100 KB,1 MB,5 MB,36 MB,64 MB,128 MB,256 MB

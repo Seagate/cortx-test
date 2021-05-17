@@ -66,6 +66,7 @@ def get_feature_breakdown_summary_table_data(test_plan: str, username: str, pass
     df_feature_data.fillna(0, inplace=True)
     feature_data = df_feature_data.reset_index().values.tolist()
     feature_data.insert(0, ["Feature", "Pass", "Fail", "Total", "% Pass", "% Fail"])
+    feature_data.insert(0, ["Feature Breakdown Summary"])
     return feature_data
 
 

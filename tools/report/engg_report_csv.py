@@ -34,67 +34,49 @@ HSBENCH_CONFIG = [[1, 1000, 100], [10, 1000, 100], [50, 5000, 100]]
 HB_OBJECTS_SIZES = ["4Kb", "100Kb", "1Mb", "5Mb", "36Mb", "64Mb", "128Mb", "256Mb"]
 
 
-def get_component_breakup_from_testplan(test_plan: str, username: str, password: str):
-    """Get component breakup from testplan."""
+def get_component_issue_summary_from_testplan(test_plan: str, username: str, password: str) -> dict:
+    """
+    Get component defect counts for given test plan.
+
+    Returns: {"Automation": 4, "CSM": 2, "CFT": 0 ...}
+    """
     te_keys = jira_api.get_test_executions_from_test_plan(test_plan, username, password)
     te_keys = [te_key["key"] for te_key in te_keys]
-    components = {}
+    component_defects = {component: 0 for component in common.COMPONENT_LIST}
     for test_execution in te_keys:
         tests = jira_api.get_test_from_test_execution(test_execution, username, password)
-        fail_count = sum(d['status'] == 'FAIL' for d in tests)
-        pass_count = sum(d['status'] == 'PASS' for d in tests)
-        total_count = len(tests)
-        detail = jira_api.get_issue_details(test_execution, username, password)
-        component = detail.fields.labels[0]
-        if component in components:
-            components[component] = {
-                'total': components[component]['total'] + total_count,
-                'pass': components[component]['pass'] + pass_count,
-                'fail': components[component]['fail'] + fail_count
-            }
-        else:
-            components[component] = {'total': total_count, 'pass': pass_count, 'fail': fail_count}
-    return components
+        defects = [defect["key"] for test in tests for defect in test["defects"]]
+        for defect in defects:
+            defect_details = jira_api.get_issue_details(defect, username, password)
+            for component in defect_details.fields.components:
+                if component.name in component_defects:
+                    component_defects[component.name] += 1
+    return component_defects
 
 
-def get_component_level_summary(test_plans: list, username: str, password: str):
-    """Get component level summary from testplan."""
-    component_summary = []
+def get_component_issue_summary(test_plans: list, username: str, password: str):
+    """Get component issue summary from testplan."""
+    component_summary = {}
     builds = []
+    component_summary["NA"] = {component: "-" for component in common.COMPONENT_LIST}
     for t_plan in test_plans:
         if t_plan:
-            component_summary.append(
-                get_component_breakup_from_testplan(t_plan, username, password)
-            )
-            builds.append(jira_api.get_details_from_test_plan(t_plan, username,
-                                                              password)["buildNo"])
+            build = jira_api.get_details_from_test_plan(t_plan, username, password)["buildNo"]
+            component_summary[build] = get_component_issue_summary_from_testplan(t_plan,
+                                                                                 username,
+                                                                                 password)
+            builds.append(build)
         else:
-            component_summary.append({})
             builds.append("NA")
     data = [
         ["Component Level Summary"],
-        ["Component", "Total", builds[0], "", builds[1], "", builds[2], "", builds[3], ""],
-        ["", "", "Pass", "Fail", "Pass", "Fail", "Pass", "Fail", "Pass", "Fail"],
+        ["Component", builds[0], builds[1], builds[2], builds[3]],
     ]
-    components = {key for comp in component_summary for key in comp}
-
-    for component in components:
-        row = [component]
-
-        if component not in component_summary[0]:
-            total = "NA"
-        else:
-            total = component_summary[0][component]["total"]
-        row.append(total)
-
-        for component_sum in component_summary:
-            if component in component_sum:
-                row.append(component_sum[component]["pass"])
-                row.append(component_sum[component]["fail"])
-            else:
-                row.append("NA")
-                row.append("NA")
-        data.extend([row])
+    for component in common.COMPONENT_LIST:
+        data.append([component.lstrip(), component_summary[builds[0]][component],
+                     component_summary[builds[1]][component],
+                     component_summary[builds[2]][component],
+                     component_summary[builds[3]][component]])
     return data
 
 
