@@ -113,8 +113,11 @@ EDIT_S3_ACCOUNT_OPTIONS_XPATH = '//*[@id="app"]//div[@class ="py-0 col-5 col"]//
 S3_ACCOUNT_RESET_PASSWORD_XPATH = '//td[contains(text(), "{0}")]//following-sibling::td//img[@id="iam-reset-password"]'
 S3_ACCOUNT_REST_OPTION_ID = 'iam-reset-password'
 S3_ACCOUNT_RESET_NEW_PASSWORD_ID = 'user-password'
+S3ACCOUNT_INVALID_PASSWORD_ERROR_MSG_ID = 'iam-password-invalid-error'
+S3ACCOUNT_MISS_MATCH_PASSWORD_ERROR_MSG_ID = 'iam-confirmpass-notmatch-error'
+S3_ACCOUNT_POP_UP_CANCEL_BTN_ID = 'cancel-button'
 S3_ACCOUNT_RESET_CONFIRM_PASSWORD_ID = 'confirm-password'
-S3_ACCOUNT_RESET_PAWWSORD_BUTTON_ID = 'reset-password-button'
+S3_ACCOUNT_RESET_PASSWORD_BUTTON_ID = 'reset-password-button'
 S3_ACCOUNT_SUCCESS_MESSAGE_ID = 's3-success-dialog'
 S3_ACCOUNT_SUCCESS_MESSAGE_BUTTON_ID = 'confirmation-dialogbox-btn'
 S3_ACCOUNTS_TAB_S3_URL_TEXT_ID = "s3-account-manage-lbl"
@@ -246,6 +249,7 @@ AUDIT_LOG_COMPONENT_DROP_DOWN_ID = "auditlog-component"
 AUDIT_LOG_TIME_PERIOD_DROP_DOWN_ID = "auditlog-timeperiod"
 AUDIT_LOG_DATA_ID = "auditlog-data"
 CSM_AUDIT_LOG_TABLE_XPATH = "//*[@id='auditLog-datatable']//table//tr//td"
+
 
 # Bucket
 ADD_BUCKET_FORM_ID = "bucket-addbucket-formbtn"

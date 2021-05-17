@@ -172,6 +172,8 @@ TEST-18197
     wait for page or element to load
     Reset Password IAMuser  ${username}  # Aplicable for LDR R2
     wait for page or element to load
+    Delete IAMuser  ${username}
+    wait for page or element to load
 
 TEST-13109
     [Documentation]  Verify that two empty tables are shown on IAM users page

@@ -274,7 +274,7 @@ Edit S3 User Password
     [Documentation]  This keyword is to edit s3 account password.
     [Arguments]  ${s3_account_name}  ${password}  ${confirm_password}
     log to console and report   editing S3 account ${s3_account_name}
-    Click on edit s3 account option
+    Action On The Table Element  ${S3_ACCOUNT_RESET_PASSWORD_XPATH}  ${s3_account_name}
     update s3 account password  ${password}  ${confirm_password}
     Click on update s3 account button
     wait for page or element to load  5s
@@ -302,3 +302,31 @@ Verify bucket Section Not Present
     Navigate To Page  MANAGE_MENU_ID
     wait for page or element to load  3s
     Page Should Not Contain Element  ${BUCKETS_TAB_ID}
+
+Verify Invalid Password Not Accepted By Edit S3 Account
+    [Documentation]  Functionality to validate only correct pawwsord allowed
+    FOR    ${value}    IN    @{INVALID_PASSWORDS_LIST}
+      wait until element is visible  ${S3_ACCOUNT_REST_OPTION_ID}  timeout=30
+      Click Element  ${S3_ACCOUNT_REST_OPTION_ID}
+      Log To Console And Report  Inserting values ${value}
+      wait for page or element to load  1s
+      Input Text  ${S3_ACCOUNT_RESET_NEW_PASSWORD_ID}  ${value}
+      Verify message  S3ACCOUNT_INVALID_PASSWORD_ERROR_MSG_ID  ${INVALID_PASSWORD_MSG}
+      Click Element  ${S3_ACCOUNT_POP_UP_CANCEL_BTN_ID}
+    END
+
+Verify Mismatch Password Error For Edit S3account
+    [Documentation]  Functionality to erify Mismatch Password Error For Edit S3account
+    wait until element is visible  ${S3_ACCOUNT_REST_OPTION_ID}  timeout=30
+    Click Element  ${S3_ACCOUNT_REST_OPTION_ID}
+    ${password}=  Generate New Password
+    Log To Console And Report  Verifying miss match pasword
+    Input Text  ${S3_ACCOUNT_RESET_NEW_PASSWORD_ID}  ${password}
+    ${value}=  CATENATE  ${password}  new
+    Log To Console And Report  ${value}
+    Input Text  ${S3_ACCOUNT_RESET_CONFIRM_PASSWORD_ID}  ${value}
+    Verify message  S3ACCOUNT_MISS_MATCH_PASSWORD_ERROR_MSG_ID  ${INVALID_S3_CONFIRM_PASSWORD_MESSAGE}
+    ${status}=  Get Element Attribute  ${S3_ACCOUNT_RESET_PASSWORD_BUTTON_ID}  disabled
+    Log To Console And Report  Status of S3_ACCOUNT_RESET_PASSWORD_BUTTON_ID is ${status}
+    Should be equal  ${status}  true
+    Click Element  ${S3_ACCOUNT_POP_UP_CANCEL_BTN_ID}
