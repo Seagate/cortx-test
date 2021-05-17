@@ -18,7 +18,7 @@ Force Tags  CSM_GUI  CSM_login
 
 TEST-17997
     [Documentation]  Test that about section has ssl details
-    [Tags]  Priority_High  R2 TEST-1111
+    [Tags]  Priority_High  R2 TEST-17997
     Navigate To About
     Click Issuer Option
     Click Subject Option
