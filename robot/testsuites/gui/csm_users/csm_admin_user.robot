@@ -318,22 +318,26 @@ TEST-4871
     [Documentation]  Test that SSl certificate get uploaded on SSl certificate upload page	
     ...  Reference : https://jts.seagate.com/browse/TEST-4871
     [Tags]  Priority_High  CFT_Test  TEST-4871
+    ${test_id}    Set Variable    TEST-4871
     ${installation_status_init} =  Format String  not_installed
     Navigate To Page  SETTINGS_ID  SETTINGS_SSL_BUTTON_ID
     wait for page or element to load
     SSL Upload  ${Download_File_Path}  ${server_file_name}
     Verify SSL status  ${installation_status_init}  ${server_file_name}
+    Capture Page Screenshot  ${test_id}_ssl_uploaded.png
 
 TEST-9045
     [Documentation]  Test that user should able to see latest changes on settings page : SSL certificate
     ...  Reference : https://jts.seagate.com/browse/TEST-9045
     [Tags]  Priority_High  CFT_Test  TEST-9045
+    ${test_id}    Set Variable    TEST-9045
     ${installation_status_init} =  Format String  not_installed
     ${installation_status_success} =  Format String  installation_successful
     Navigate To Page  SETTINGS_ID  SETTINGS_SSL_BUTTON_ID
-    wait for page or element to load
+    wait for page or element to load  3s
     SSL Upload  ${Download_File_Path}  ${server_file_name}
     Verify SSL status  ${installation_status_init}  ${server_file_name} 
+    Capture Page Screenshot  ${test_id}_ssl_uploaded.png
     # # These following lines should be executed in case you have the proper machine
     # Install uploaded SSL
     # wait for page or element to load  5 minutes  #will re-start all service
@@ -343,6 +347,7 @@ TEST-9045
     # Reload Page
     # wait for page or element to load  10s  # Took time to load dashboard after install
     # Verify SSL status  ${installation_status_success}  ${server_file_name}
+    # Capture Page Screenshot  ${test_id}_ssl_installed.png
 
 TEST-11152
     [Documentation]  Test that IEM alerts should be generated for number of days mentioned in /etc/csm/csm.conf prior to SSL certificate expiration

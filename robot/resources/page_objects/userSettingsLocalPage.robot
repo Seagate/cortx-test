@@ -14,7 +14,7 @@ Click On Cancel Button
 
 Click On Confirm Button
     [Documentation]  Perform click operation on confirm pop up button
-    wait for page or element to load  5s
+    wait for page or element to load
     Wait Until Element Is Visible  ${NEW_USER_CONFIRM_OK_BUTTON_ID}  timeout=60
     log to console and report  ${NEW_USER_CONFIRM_OK_BUTTON_ID}
     Click element  ${NEW_USER_CONFIRM_OK_BUTTON_ID}
@@ -132,14 +132,14 @@ Verify Mismatch Password Error
 Verify Absence of Edit And Delete Button on S3account
     [Documentation]  Verify Absence of Edit And Delete Button on S3account
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    wait for page or element to load  5s
+    wait for page or element to load
     Page Should Not Contain Element  ${EDIT_S3_ACCOUNT_OPTION_ID}
     Page Should Not Contain Element  ${DELETE_S3_ACCOUNT_ID}
 
 Verify Absence of Reset Passwrod Button on S3account
     [Documentation]  Verify Absence of Reset Passwrod Button Button on S3account
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    wait for page or element to load  5s
+    wait for page or element to load
     Page Should Not Contain Element  ${EDIT_S3_ACCOUNT_OPTION_ID}
 
 Verify Absence of Admin User Section
@@ -277,7 +277,7 @@ Edit S3 User Password
     Action On The Table Element  ${S3_ACCOUNT_RESET_PASSWORD_XPATH}  ${s3_account_name}
     update s3 account password  ${password}  ${confirm_password}
     Click on update s3 account button
-    wait for page or element to load  5s
+    wait for page or element to load
     wait until element is visible  ${LOG_OUT_ID}  timeout=20
     CSM GUI Logout
     Reload Page

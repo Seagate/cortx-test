@@ -117,7 +117,6 @@ TEST-18327
     ${new_user_name}  ${new_password}=  Create and login with CSM manage user
     wait for page or element to load
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    sleep  2s
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
