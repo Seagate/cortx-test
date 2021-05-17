@@ -100,7 +100,7 @@ class TestAccountLoginProfile:
             "Step 2: Created login profile for an account %s", acc_name)
         return acc_res, login_res
 
-    @pytest.mark.skip(reason="Under Development, Currently Not Supported")
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5651")
     @CTFailOn(error_handler)
@@ -132,7 +132,7 @@ class TestAccountLoginProfile:
                     "and details are %s", self.account_name, res[1])
         LOGGER.info("ENDED: Create account login profile for new account")
 
-    @pytest.mark.skip(reason="Under Development, Currently Not Supported")
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5650")
     @CTFailOn(error_handler)
@@ -164,7 +164,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "ENDED: Create account login profile for nonexisting account")
 
-    @pytest.mark.skip(reason="Under Development, Currently Not Supported")
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5652")
     @CTFailOn(error_handler)
@@ -218,7 +218,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "ENDED: Create account login profile for currently deleted account")
 
-    @pytest.mark.skip(reason="Under Development, Currently Not Supported")
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5645")
     @CTFailOn(error_handler)
@@ -257,7 +257,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "ENDED: Create account login profile with password of 0 character")
 
-    @pytest.mark.skip(reason="Under Development, Currently Not Supported")
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5644")
     @CTFailOn(error_handler)
@@ -297,7 +297,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "ENDED: Create account login profile with password of more than 128 characters.")
 
-    @pytest.mark.skip(reason="Under Development, Currently Not Supported")
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5643")
     @CTFailOn(error_handler)
@@ -319,7 +319,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "ENDED: Create account login profile with password of possible combinations")
 
-    @pytest.mark.skip(reason="Under Development, Currently Not Supported")
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5642")
     @CTFailOn(error_handler)
@@ -343,7 +343,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "Create account login profile with password using invalid characters")
 
-    @pytest.mark.skip(reason="Under Development, Currently Not Supported")
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5649")
     @CTFailOn(error_handler)
@@ -362,7 +362,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "Create account login profile with --no-password-reset-required option.")
 
-    @pytest.mark.skip(reason="Under Development, Currently Not Supported")
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5648")
     @CTFailOn(error_handler)
@@ -381,7 +381,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "Create account login profile with --password-reset-required option.")
 
-    @pytest.mark.skip(reason="Under Development, Currently Not Supported")
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5641")
     @CTFailOn(error_handler)
@@ -422,7 +422,7 @@ class TestAccountLoginProfile:
             "ENDED: Create account login profile without mentioning  "
             "--password-reset-required --no-password-reset-required")
 
-    @pytest.mark.skip(reason="Under Development, Currently Not Supported")
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5646")
     @CTFailOn(error_handler)
@@ -463,7 +463,7 @@ class TestAccountLoginProfile:
             "ENDED: Create account login profile with both options "
             "--no-password-reset-required --password-reset-required")
 
-    @pytest.mark.skip(reason="Under Development, Currently Not Supported")
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5647")
     @CTFailOn(error_handler)
@@ -524,7 +524,7 @@ class TestAccountLoginProfile:
             "ENDED: Create account login profile with accesskey"
             " and sercret key of its user")
 
-    @pytest.mark.skip(reason="Under Development, Currently Not Supported")
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5629")
     @CTFailOn(error_handler)
@@ -553,7 +553,7 @@ class TestAccountLoginProfile:
             self.account_name)
         LOGGER.info("ENDED: Get the account login details")
 
-    @pytest.mark.skip(reason="Under Development, Currently Not Supported")
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5628")
     @CTFailOn(error_handler)
@@ -574,7 +574,7 @@ class TestAccountLoginProfile:
             "Step 1: Failed to get account login profile for account not present")
         LOGGER.info("Get the account login details for account not present")
 
-    @pytest.mark.skip(reason="Under Development, Currently Not Supported")
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5627")
     @CTFailOn(error_handler)
@@ -607,7 +607,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "Ended: Get login details for acc which is present but login not created")
 
-    @pytest.mark.skip(reason="Under Development, Currently Not Supported")
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5626")
     @CTFailOn(error_handler)
@@ -645,7 +645,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "ENDED: Get login details for account which is recently got deleted")
 
-    @pytest.mark.skip(reason="Under Development, Currently Not Supported")
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5640")
     @CTFailOn(error_handler)
@@ -712,7 +712,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "ENDED: Get login profile with access key and secret key of its user")
 
-    @pytest.mark.skip(reason="Under Development, Currently Not Supported")
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5611")
     @CTFailOn(error_handler)
@@ -768,7 +768,7 @@ class TestAccountLoginProfile:
         assert_true(res[0], res[1])
         LOGGER.info("ENDED: Update account login profile with password only")
 
-    @pytest.mark.skip(reason="Under Development, Currently Not Supported")
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5614")
     @CTFailOn(error_handler)
@@ -821,7 +821,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "ENDED: Update account login profile with --password-reset-required")
 
-    @pytest.mark.skip(reason="Under Development, Currently Not Supported")
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5616")
     @CTFailOn(error_handler)
@@ -877,7 +877,7 @@ class TestAccountLoginProfile:
             "ENDED: Update account login profile with  "
             "--no-password-reset-required")
 
-    @pytest.mark.skip(reason="Under Development, Currently Not Supported")
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5613")
     @CTFailOn(error_handler)
@@ -935,7 +935,7 @@ class TestAccountLoginProfile:
             "ENDED: Update account login profile with both"
             " --password-reset-required and --no-password-reset-required")
 
-    @pytest.mark.skip(reason="Under Development, Currently Not Supported")
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5612")
     @CTFailOn(error_handler)
@@ -986,7 +986,7 @@ class TestAccountLoginProfile:
             "ENDED: Update account login profile with both password "
             "and reset flag")
 
-    @pytest.mark.skip(reason="Under Development, Currently Not Supported")
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5610")
     @CTFailOn(error_handler)
@@ -1033,7 +1033,7 @@ class TestAccountLoginProfile:
             "ENDED: Update account login profile with both password "
             "and reset flag")
 
-    @pytest.mark.skip(reason="Under Development, Currently Not Supported")
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5622")
     @CTFailOn(error_handler)
@@ -1158,7 +1158,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "ENDED: Update account login profile for the deleted account")
 
-    @pytest.mark.skip(reason="Under Development, Currently Not Supported")
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5620")
     @CTFailOn(error_handler)
@@ -1210,7 +1210,7 @@ class TestAccountLoginProfile:
             "ENDED: Update login profile for acc with new password"
             " as current password.")
 
-    @pytest.mark.skip(reason="Under Development, Currently Not Supported")
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5618")
     @CTFailOn(error_handler)
@@ -1267,7 +1267,7 @@ class TestAccountLoginProfile:
             "password which contains invalid characters.Verify if it accepts "
             "all invalid characters")
 
-    @pytest.mark.skip(reason="Under Development, Currently Not Supported")
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5679")
     @CTFailOn(error_handler)
@@ -1337,7 +1337,7 @@ class TestAccountLoginProfile:
             "ENDED: Update account login profile with access key and "
             "secret key of its user")
 
-    @pytest.mark.skip(reason="Under Development, Currently Not Supported")
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5630")
     @CTFailOn(error_handler)
@@ -1363,7 +1363,7 @@ class TestAccountLoginProfile:
             self.account_name, res)
         LOGGER.info("ENDED: Get temporary credentials for Valid Account")
 
-    @pytest.mark.skip(reason="Under Development, Currently Not Supported")
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5634")
     @CTFailOn(error_handler)
@@ -1386,7 +1386,7 @@ class TestAccountLoginProfile:
             "Step 1: Failed to get temp auth credentials for invalid account")
         LOGGER.info("ENDED: Get temporary credentials for Invalid Account")
 
-    @pytest.mark.skip(reason="Under Development, Currently Not Supported")
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5625")
     @CTFailOn(error_handler)
@@ -1423,7 +1423,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "ENDED: Get the temp Cred for acc which is recently got deleted")
 
-    @pytest.mark.skip(reason="Under Development, Currently Not Supported")
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5658")
     @CTFailOn(error_handler)
@@ -1466,7 +1466,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "ENDED: Verify using valid temp cred to perform s3 operations")
 
-    @pytest.mark.skip(reason="Under Development, Currently Not Supported")
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5608")
     @CTFailOn(error_handler)
@@ -1509,7 +1509,7 @@ class TestAccountLoginProfile:
             "Verify that by using invalid temporary credentials "
             "to perform s3 operations")
 
-    @pytest.mark.skip(reason="Under Development, Currently Not Supported")
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5631")
     @CTFailOn(error_handler)
@@ -1540,7 +1540,7 @@ class TestAccountLoginProfile:
             "ENDED: Get temp cred for the acc which doesn't contain"
             " the acc login prof for that acc")
 
-    @pytest.mark.skip(reason="Under Development, Currently Not Supported")
+    @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5632")
     @CTFailOn(error_handler)
