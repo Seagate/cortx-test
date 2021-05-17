@@ -276,17 +276,17 @@ class SoftwareAlert(RASCoreLib):
         self.node_utils.host_obj.exec_command(commands.SYSTEM_CTL_STOP_CMD.format(svc))
 
     def put_svc_activating(self, svc):
-        """Function to generate deactivating alert
+        """Function to generate activating alert
 
         :param svc: Service Name
         """
-        self.node_utils.host_obj.exec_command("systemctl stop {}".format(svc))
+        self.node_utils.host_obj.exec_command(commands.SYSTEM_CTL_STOP_CMD.format(svc))
         self.write_svc_file(
             svc, {
                 "Service": {
                     "ExecStartPre": "/bin/sleep 200", "TimeoutStartSec": "500"}})
         self.apply_svc_setting()
-        self.node_utils.host_obj.exec_command("systemctl start {}".format(svc))
+        self.node_utils.host_obj.exec_command(commands.SYSTEM_CTL_START_CMD.format(svc))
 
     def recover_svc(self, svc: str, attempt_start: bool = True, timeout=200):
         """
