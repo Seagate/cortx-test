@@ -306,7 +306,7 @@ class SoftwareAlert(RASCoreLib):
             response = self.get_svc_status([svc])
             op = {"state": response[svc]["state"], "recovery_time": time.time() - starttime}
             time.sleep(5)
-            time_lapsed = time.time()
+            time_lapsed = time.time() - starttime
         return op
 
     def get_tmp_svc_path(self):
