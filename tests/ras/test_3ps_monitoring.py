@@ -296,7 +296,7 @@ class Test3PSvcMonitoring:
             self.sw_alert_obj.restore_svc_config()
 
             # TODO: Currently alerts are not getting generated. This will be verified
-            # once alerts come
+            # once alerts come EOS-20536
             if self.start_msg_bus:
                 LOGGER.info("Step 3: Checking the fault alert on message bus")
                 alert_list = [test_cfg["resource_type"],
@@ -318,7 +318,7 @@ class Test3PSvcMonitoring:
             LOGGER.info("Step 5: %s service is active and running", svc)
 
             # TODO: Currently alerts are not getting generated. This will be verified
-            # once alerts come
+            # once alerts come EOS-20536
             if self.start_msg_bus:
                 LOGGER.info("Step 6: Checking the fault resolved alert on message bus")
                 alert_list = [test_cfg["resource_type"],
@@ -331,14 +331,14 @@ class Test3PSvcMonitoring:
             LOGGER.info("Step 7: Checking the fault alert on CSM")
             assert self.csm_alert_obj.verify_csm_response(starttime, e_csm_resp["alert_type"], True)
             LOGGER.info("Step 7: Verified the fault alert on CSM")
-            LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
+            LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)
 
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-21193")
     def test_21193_activating_alerts(self):
         """
-        Test when service takes longer than expected to deactivate
+        Test when service takes longer than expected to activate
         """
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
@@ -363,7 +363,7 @@ class Test3PSvcMonitoring:
             time.sleep(timeout)
 
             # TODO: Currently alerts are not getting generated. This will be verified
-            # once alerts come
+            # once alerts come EOS-20536
             if self.start_msg_bus:
                 LOGGER.info("Step 4: Checking the fault alert on message bus")
                 alert_list = [test_cfg["resource_type"],
@@ -385,7 +385,7 @@ class Test3PSvcMonitoring:
             LOGGER.info("Step 6: %s service is active and running", svc)
 
             # TODO: Currently alerts are not getting generated. This will be verified
-            # once alerts come
+            # once alerts come EOS-20536
             if self.start_msg_bus:
                 LOGGER.info("Step 7: Checking the fault resolved alert on message bus")
                 alert_list = [test_cfg["resource_type"],
@@ -398,7 +398,7 @@ class Test3PSvcMonitoring:
             LOGGER.info("Step 8: Checking the fault alert on CSM")
             assert self.csm_alert_obj.verify_csm_response(starttime, e_csm_resp["alert_type"], True)
             LOGGER.info("Step 8: Verified the fault alert on CSM")
-            LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
+            LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)
 
             LOGGER.info("Step 9: Restore the service configuration")
             self.sw_alert_obj.restore_svc_config()
