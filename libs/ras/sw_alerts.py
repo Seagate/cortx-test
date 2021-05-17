@@ -25,7 +25,7 @@ import re
 import os
 import time
 from collections import OrderedDict
-
+from commons import commands
 from libs.ras.ras_core_lib import RASCoreLib
 
 LOGGER = logging.getLogger(__name__)
@@ -273,7 +273,7 @@ class SoftwareAlert(RASCoreLib):
                 "Service": {
                     "ExecStop": "/bin/sleep 200", "TimeoutStopSec": "500"}})
         self.apply_svc_setting()
-        self.node_utils.host_obj.exec_command("systemctl stop {}".format(svc))
+        self.node_utils.host_obj.exec_command(commands.SYSTEM_CTL_STOP_CMD.format(svc))
 
     def put_svc_activating(self, svc):
         """Function to generate deactivating alert
@@ -300,11 +300,8 @@ class SoftwareAlert(RASCoreLib):
         time_lapsed = 0
         while time_lapsed < timeout:
             response = self.get_svc_status([svc])
-            print(svc)
-            print(response)
-            print(svc + ":" + response[svc]["state"])
+            LOGGER.info(svc + ":" + response[svc]["state"])
             if attempt_start and response[svc]["state"] != "active":
-                print(svc + ":" + response[svc]["state"])
                 self.node_utils.send_systemctl_cmd("start", [svc], exc=True)
             response = self.get_svc_status([svc])
             op = {"state": response[svc]["state"], "recovery_time": time.time() - starttime}

@@ -41,7 +41,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Test3PSvcMonitoring:
-    """SSPL Test Suite."""
+    """3rd party service monitoring test suite."""
 
     @classmethod
     def setup_class(cls):

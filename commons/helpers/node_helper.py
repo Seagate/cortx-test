@@ -191,9 +191,9 @@ class Node(Host):
 
     def write_file(self, fpath: str, content: str=None):
         """
-        This function reads the given file and returns the file content
-        :param local_path:
-        :param filename: Absolute path of the file to be read
+        This function writes the given file
+        :param fpath:complete file path
+        :param content: content to be written.
         """
         self.connect_pysftp()
         log.debug("sftp connected")
