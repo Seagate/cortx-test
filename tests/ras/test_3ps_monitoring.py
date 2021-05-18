@@ -71,7 +71,7 @@ class Test3PSvcMonitoring:
         services = self.cm_cfg["service"]
         sspl_svc = services["sspl_service"]
         self.timeouts = common_cfg["os_lvl_monitor_timeouts"]
-        
+
         LOGGER.info("Check SSPL status")
         res = self.sw_alert_obj.get_svc_status([sspl_svc])[sspl_svc]
         LOGGER.info("SSPL status response %s : ", res)
@@ -101,7 +101,7 @@ class Test3PSvcMonitoring:
         resp = self.sw_alert_obj.get_inactive_svcs(external_services)
         assert resp == [], f"{resp} are in inactive state"
         LOGGER.info("All 3rd party services are in active state.")
-        
+
         self.starttime = time.time()
         if self.start_msg_bus:
             LOGGER.info("Running read_message_bus.py script on node")
@@ -280,7 +280,7 @@ class Test3PSvcMonitoring:
             LOGGER.info("Step 1: Deactivating %s service...", svc)
             starttime = time.time()
             result, e_csm_resp = self.sw_alert_obj.run_verify_svc_state(
-                svc, "deactivating", []) #external_svcs
+                svc, "deactivating", [])  # external_svcs
             assert result, "Failed in deactivating service"
             LOGGER.info("Step 1: Deactivated %s service...", svc)
 
@@ -294,7 +294,7 @@ class Test3PSvcMonitoring:
             # once alerts come EOS-20536
             if self.start_msg_bus:
                 LOGGER.info("Step 3: Checking the fault alert on message bus")
-                alert_list = [const.ResourceType.SW_SVC,const.Severity.CRITICAL,
+                alert_list = [const.ResourceType.SW_SVC, const.Severity.CRITICAL,
                               const.AlertType.FAULT, svc]
                 resp = self.ras_test_obj.alert_validation(string_list=alert_list,
                                                           restart=False)
@@ -316,7 +316,7 @@ class Test3PSvcMonitoring:
             # once alerts come EOS-20536
             if self.start_msg_bus:
                 LOGGER.info("Step 6: Checking the fault resolved alert on message bus")
-                alert_list = [const.ResourceType.SW_SVC,const.Severity.INFO,
+                alert_list = [const.ResourceType.SW_SVC, const.Severity.INFO,
                               const.AlertType.RESOLVED, svc]
                 resp = self.ras_test_obj.alert_validation(string_list=alert_list,
                                                           restart=False)
@@ -360,7 +360,7 @@ class Test3PSvcMonitoring:
             # once alerts come EOS-20536
             if self.start_msg_bus:
                 LOGGER.info("Step 4: Checking the fault alert on message bus")
-                alert_list = [const.ResourceType.SW_SVC,const.Severity.CRITICAL,
+                alert_list = [const.ResourceType.SW_SVC, const.Severity.CRITICAL,
                               const.AlertType.FAULT, svc]
                 resp = self.ras_test_obj.alert_validation(string_list=alert_list,
                                                           restart=False)
@@ -382,7 +382,7 @@ class Test3PSvcMonitoring:
             # once alerts come EOS-20536
             if self.start_msg_bus:
                 LOGGER.info("Step 7: Checking the fault resolved alert on message bus")
-                alert_list = [const.ResourceType.SW_SVC,const.Severity.INFO,
+                alert_list = [const.ResourceType.SW_SVC, const.Severity.INFO,
                               const.AlertType.RESOLVED, svc]
                 resp = self.ras_test_obj.alert_validation(string_list=alert_list,
                                                           restart=False)

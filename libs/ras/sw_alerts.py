@@ -152,7 +152,7 @@ class SoftwareAlert(RASCoreLib):
 
         elif action == "deactivating":
             csm_response = None
-        
+
         elif action == "activating":
             csm_response = None
         return csm_response
@@ -199,34 +199,34 @@ class SoftwareAlert(RASCoreLib):
                 raise Exception(response)
         return status
 
-    def get_disabled_svcs(self, services:list):
+    def get_disabled_svcs(self, services: list):
         """Extract the inactive service from the given service list
 
         :param services: List of services to verified
         :return [type]: list of inactive services
-        """        
+        """
         LOGGER.info("Check that all services are in active state: %s", services)
         resp = self.get_svc_status(services=services)
         disabled_list = []
-        for svc,sresp in resp.items():
-            LOGGER.info("%s : %s",svc, sresp["enabled"])
+        for svc, sresp in resp.items():
+            LOGGER.info("%s : %s", svc, sresp["enabled"])
             if sresp["enabled"] != "enabled":
                 disabled_list.append(svc)
         return disabled_list
 
-    def get_inactive_svcs(self, services:list):
+    def get_inactive_svcs(self, services: list):
         """Extract the inactive service from the given service list
 
         :param services: List of services to verified
         :return [type]: list of inactive services
-        """        
+        """
         LOGGER.info("Check that all services are in active state: %s", services)
         resp = self.node_utils.send_systemctl_cmd(command="is-active",
                                                   services=services,
                                                   decode=True, exc=False)
         inactive_list = []
-        for state,svc in zip(resp, services):
-            LOGGER.info("%s : %s",svc, state)
+        for state, svc in zip(resp, services):
+            LOGGER.info("%s : %s", svc, state)
             if state != "active":
                 inactive_list.append(svc)
         return inactive_list
