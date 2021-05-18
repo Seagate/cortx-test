@@ -280,7 +280,7 @@ def get_test_metadata_from_tp_meta(item):
     tp_meta = Globals.tp_meta
     tests_meta = tp_meta['test_meta']
     flg = tp_meta['test_plan_label']
-    tp_label = tp_meta['test_plan_label'][0] if flg else 'regular'  # first is significant
+    tp_label = tp_meta['test_plan_label'][0] if flg else 'default'  # first is significant
     te_meta = tp_meta['te_meta']
     te_label = te_meta['te_label'][0] if te_meta['te_label'] else ''
     te_component = tp_meta['te_meta']['te_components']
@@ -310,6 +310,29 @@ def get_marks_for_test_item(item):
     return marks
 
 
+def _capture_exec_info(report, call):
+    """Inner function to capture exec info. Needs improvement."""
+    exec_info = None
+    if call.excinfo is None:
+        return exec_info
+    if hasattr(report, "wasxfail"):
+        # Exception was expected.
+        return exec_info
+    return call.excinfo.value
+
+
+def capture_exec_info(report, call, item):
+    """Purpose is to accurately find exception info."""
+    exec_info = None
+    if item.rep_setup.failed or item.rep_teardown.failed:
+        exec_info = _capture_exec_info(report, call)
+    elif item.rep_setup.passed and (item.rep_call.failed or item.rep_teardown.failed):
+        exec_info = _capture_exec_info(report, call)
+    elif item.rep_setup.passed and item.rep_call.passed and item.rep_teardown.passed:
+        return None
+    return exec_info
+
+
 def create_report_payload(item, call, final_result, d_u, d_pass):
     """Create Report Payload for POST request to put data in Report DB."""
     os_ver = system_utils.get_os_version()
@@ -323,6 +346,11 @@ def create_report_payload(item, call, final_result, d_u, d_pass):
     log_path = getattr(item, 'logpath')
     nodes = len(CMN_CFG['nodes'])  # number of target hosts
     nodes_hostnames = [n['hostname'] for n in CMN_CFG['nodes']]
+    exec_info = ''
+    try:
+        call_duration = getattr(item, 'call_duration')
+    except AttributeError:
+        call_duration = 0
     data_kwargs = dict(os=os_ver,
                        build=item.config.option.build,
                        build_type=item.config.option.build_type,
@@ -331,12 +359,12 @@ def create_report_payload(item, call, final_result, d_u, d_pass):
                        health_chk_res=health_chk_res,
                        are_logs_collected=are_logs_collected,
                        log_path=log_path,
-                       testPlanLabel=_item_dict['tp_label'],  # get from TP    tp.fields.labels
-                       testExecutionLabel=_item_dict['te_label'],  # get from TE  te.fields.labels
+                       testPlanLabel=_item_dict['tp_label'],  # get from TP
+                       testExecutionLabel=_item_dict['te_label'],  # get from TE
                        nodes=nodes,
                        nodes_hostnames=nodes_hostnames,
                        test_exec_id=item.config.option.te_tkt,
-                       test_exec_time=call.duration,
+                       test_exec_time=call_duration,
                        test_name=_item_dict['test_name'],
                        test_id=_item_dict['test_id'],
                        test_id_labels=_item_dict['labels'],
@@ -354,7 +382,7 @@ def create_report_payload(item, call, final_result, d_u, d_pass):
                        platform_type=_item_dict['platform_type'],
                        server_type=_item_dict['server_type'],
                        enclosure_type=_item_dict['enclosure_type'],
-                       failure_string='',
+                       failure_string=exec_info,
                        db_username=d_u,
                        db_password=d_pass
                        )
@@ -556,6 +584,13 @@ def pytest_runtest_makereport(item, call):
     outcome = yield
     report = outcome.get_result()
     setattr(item, "rep_" + report.when, report)
+    try:
+        attr = getattr(item, 'call_duration')
+    except AttributeError as attr_error:
+        LOGGER.debug('Exception %s occurred', str(attr_error))
+        setattr(item, "call_duration", call.duration)
+    else:
+        setattr(item, "call_duration", call.duration + attr)
     _local = bool(item.config.option.local)
     Globals.LOCAL_RUN = _local
     fail_file = 'failed_tests.log'
@@ -585,6 +620,7 @@ def pytest_runtest_makereport(item, call):
                         if jira_update:
                             task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
                         if db_update:
+                            # capture exec info
                             payload = create_report_payload(item, call, 'FAIL', db_user, db_pass)
                             REPORT_CLIENT.create_db_entry(**payload)
                     except (requests.exceptions.RequestException, Exception) as fault:

@@ -130,21 +130,20 @@ class ReportClient(SingletonMixin):
             "db_password": ""
         }
        """
-        payload = {"OSVersion": data_kwargs.get('os', "CentOS"), # revisit
+        payload = {"OSVersion": data_kwargs.get('os', "CentOS"),
                    "buildNo": data_kwargs.get('build'),
                    "buildType": data_kwargs.get('build_type', "stable"),
                    "clientHostname": data_kwargs.get('client_hostname', "autoclient"),
-                   "executionType": data_kwargs.get('execution_type', "R2Automated"),  # Revisit
-                   "healthCheckResult": data_kwargs.get('health_chk_res', "Pass"),  # Revisit
+                   "executionType": data_kwargs.get('execution_type', "R2Automated"),
+                   "healthCheckResult": data_kwargs.get('health_chk_res', "Pass"),
                    "logCollectionDone": data_kwargs.get('are_logs_collected', True),
-                   "logPath": data_kwargs.get('log_path', "DemoPath"), # revisit
-                   "noOfNodes": data_kwargs.get('nodes', 1),  # CMN_CFG remove default
+                   "logPath": data_kwargs.get('log_path', "DemoPath"),
+                   "noOfNodes": data_kwargs.get('nodes', 1),  # CMN_CFG defaults 1
                    "nodesHostname": data_kwargs.get('nodes_hostnames', []),  # CMN_CFG
                    "testPlanLabel": data_kwargs['testPlanLabel'],  # get from TP
-                   # get from TE
                    "testExecutionLabel": data_kwargs['testExecutionLabel'],
                    "testExecutionID": data_kwargs['test_exec_id'],
-                   "testExecutionTime": int(data_kwargs.get('test_exec_time', 0)),
+                   "testExecutionTime": data_kwargs.get('test_exec_time', 0),
                    "testID": data_kwargs['test_id'],
                    "testIDLabels": data_kwargs['test_id_labels'],
                    "testName": data_kwargs['test_name'],

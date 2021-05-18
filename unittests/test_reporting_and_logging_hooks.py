@@ -79,7 +79,6 @@ def test_max_lc(logger):
     logger.info("max is %s" % val)
     assert val == 6
 
-
 @pytest.mark.skip
 @pytest.mark.ha
 @pytest.mark.parallel
@@ -98,7 +97,7 @@ def test_min(logger):
     logger.warning("min is %s" % val)
     logger.info("min is %s" % val)
     logger.error("min is %s" % val)
-    assert val == 1
+    assert val == 5
 
 
 @pytest.mark.ha
@@ -129,17 +128,6 @@ def test_max2(logger):
 def test_max4(logger):
     """A test function."""
     logger.info("test pass executed")
-
-
-@pytest.mark.ha
-@pytest.mark.parallel
-@pytest.mark.tags("TEST-17499")
-def test_max3(logger):
-    """A test function."""
-    values = (2, 3, 1, 4, 6)
-    val = max(values)
-    logger.info("max is %s" % val)
-    assert val == 6
 
 
 @pytest.mark.ha
