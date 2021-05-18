@@ -25,13 +25,14 @@ import time
 import random
 import logging
 import pytest
-from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
+from config import CMN_CFG, RAS_VAL
 from commons.helpers.node_helper import Node
 from commons.helpers.health_helper import Health
-from commons import constants as cons
+from commons.constants import LOG_STORE_PATH
+from commons.constants import SwAlerts as const
 from commons import commands as common_cmd
-from commons.utils.assert_utils import *
 from commons import cortxlogging
+from commons.utils.assert_utils import *
 from libs.s3 import S3H_OBJ
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.ras.ras_test_lib import RASTestLib
@@ -65,7 +66,7 @@ class Test3PSvcMonitoring:
     def setup_method(self):
         """Setup operations per test."""
         LOGGER.info("Running setup_method")
-        external_services = RAS_TEST_CFG["third_party_services"]
+        external_services = const.SVCS_3P
         common_cfg = RAS_VAL["ras_sspl_alert"]
         services = self.cm_cfg["service"]
         sspl_svc = services["sspl_service"]
@@ -120,7 +121,7 @@ class Test3PSvcMonitoring:
         LOGGER.info("Performing Teardown operation")
 
         if self.changed_level:
-            kv_store_path = cons.LOG_STORE_PATH
+            kv_store_path = LOG_STORE_PATH
             common_cfg = RAS_VAL["ras_sspl_alert"]["sspl_config"]
             res = self.ras_test_obj.update_threshold_values(
                 kv_store_path, common_cfg["sspl_log_level_key"],
@@ -162,7 +163,7 @@ class Test3PSvcMonitoring:
         "Tests 3rd party service monitoring and management"
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
-        external_svcs = RAS_TEST_CFG["third_party_services"]
+        external_svcs = const.SVCS_3P
         for svc in external_svcs:
             LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
 
@@ -216,8 +217,7 @@ class Test3PSvcMonitoring:
 
         LOGGER.info("Step 2: Stopping multiple randomly selected services")
         num_services = random.randint(0, 5)
-        random_services = random.sample(RAS_TEST_CFG["third_party_services"],
-                                        num_services)
+        random_services = random.sample(const.SVCS_3P, num_services)
 
         self.node_obj.send_systemctl_cmd("stop", services=random_services)
         LOGGER.info("Checking that %s services are in stopped state",
@@ -274,8 +274,7 @@ class Test3PSvcMonitoring:
         """
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
-        test_cfg = RAS_TEST_CFG["test_21194_deactivating_alerts"]
-        external_svcs = RAS_TEST_CFG["third_party_services"]
+        external_svcs = const.SVCS_3P
         for svc in external_svcs:
             LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
             LOGGER.info("Step 1: Deactivating %s service...", svc)
@@ -295,8 +294,8 @@ class Test3PSvcMonitoring:
             # once alerts come EOS-20536
             if self.start_msg_bus:
                 LOGGER.info("Step 3: Checking the fault alert on message bus")
-                alert_list = [test_cfg["resource_type"],
-                              test_cfg["alert_insertion"], svc]
+                alert_list = [const.ResourceType.SW_SVC,const.Severity.CRITICAL,
+                              const.AlertType.FAULT, svc]
                 resp = self.ras_test_obj.alert_validation(string_list=alert_list,
                                                           restart=False)
                 assert resp[0], resp[1]
@@ -317,8 +316,8 @@ class Test3PSvcMonitoring:
             # once alerts come EOS-20536
             if self.start_msg_bus:
                 LOGGER.info("Step 6: Checking the fault resolved alert on message bus")
-                alert_list = [test_cfg["resource_type"],
-                              test_cfg["alert_insertion"], svc]
+                alert_list = [const.ResourceType.SW_SVC,const.Severity.INFO,
+                              const.AlertType.RESOLVED, svc]
                 resp = self.ras_test_obj.alert_validation(string_list=alert_list,
                                                           restart=False)
                 assert resp[0], resp[1]
@@ -338,8 +337,7 @@ class Test3PSvcMonitoring:
         """
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
-        test_cfg = RAS_TEST_CFG["test_21194_activating_alerts"]
-        external_svcs = RAS_TEST_CFG["third_party_services"]
+        external_svcs = const.SVCS_3P
         for svc in external_svcs:
             LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
 
@@ -362,8 +360,8 @@ class Test3PSvcMonitoring:
             # once alerts come EOS-20536
             if self.start_msg_bus:
                 LOGGER.info("Step 4: Checking the fault alert on message bus")
-                alert_list = [test_cfg["resource_type"],
-                              test_cfg["alert_insertion"], svc]
+                alert_list = [const.ResourceType.SW_SVC,const.Severity.CRITICAL,
+                              const.AlertType.FAULT, svc]
                 resp = self.ras_test_obj.alert_validation(string_list=alert_list,
                                                           restart=False)
                 assert resp[0], resp[1]
@@ -384,8 +382,8 @@ class Test3PSvcMonitoring:
             # once alerts come EOS-20536
             if self.start_msg_bus:
                 LOGGER.info("Step 7: Checking the fault resolved alert on message bus")
-                alert_list = [test_cfg["resource_type"],
-                              test_cfg["alert_insertion"], svc]
+                alert_list = [const.ResourceType.SW_SVC,const.Severity.INFO,
+                              const.AlertType.RESOLVED, svc]
                 resp = self.ras_test_obj.alert_validation(string_list=alert_list,
                                                           restart=False)
                 assert resp[0], resp[1]
