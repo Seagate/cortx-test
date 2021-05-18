@@ -1,20 +1,3 @@
-third_party_services:
-    - "hare-consul-agent.service"
-#    - "hare-consul-agent-c1.service"
-#    - "hare-consul-agent-c2.service"
-    - "elasticsearch.service"
-    - "statsd.service"
-    - "rsyslog.service"
-    - "haproxy.service"
-    - "slapd.service"
-    - "lnet.service"
-    - "salt-master.service"
-    - "salt-minion.service"
-#    - "glusterd.service"
-#    - "multipathd.service"
-#    - "scsi-network-relay.service"
-#    - "Kafka"
-
 test_3005:
   alert: True
   du_val: 8
@@ -230,14 +213,3 @@ test_5343:
   alert_insertion: "insertion"
   alert_fault_resolved: "fault_resolved"
 
-test_21194_deactivating_alerts:
-  resource_type: "node:sw:os:service"
-  fault_alert_type: "fault"
-  severity: "critical"
-  resolved_alert_type: "fault_resolved"
-
-test_21194_activating_alerts:
-  resource_type: "node:sw:os:service"
-  fault_alert_type: "fault"
-  severity: "critical"
-  resolved_alert_type: "fault_resolved"
