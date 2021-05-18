@@ -87,24 +87,16 @@ class RASTestLib(RASCoreLib):
                          RASTestLib.start_rabbitmq_reader_cmd.__name__, error)
             raise CTException(err.RAS_ERROR, error.args[0])
 
-    def start_message_bus_reader_cmd(self, sspl_exchange: str, sspl_key: str,
-                                     **kwargs) -> bool:
+    def start_message_bus_reader_cmd(self) -> bool:
         """
-        Function will check for the disk space alert for sspl.
+        Function will check for the alerts in message bus.
 
-        :param str sspl_exchange: sspl exchange string
-        :param str sspl_key: sspl key string
-        :keyword sspl_pass: sspl_pass
         :return: Command response along with status(True/False)
         :rtype: bool
         """
-        sspl_pass = kwargs.get("sspl_pass") if kwargs.get("sspl_pass") else \
-            self.sspl_pass
         try:
             LOGGER.info("Start to read message bus on node %s ", self.host)
-            cmd_output = super().start_message_bus_reader_cmd(sspl_exchange,
-                                                              sspl_key,
-                                                              sspl_pass=sspl_pass)
+            cmd_output = super().start_message_bus_reader_cmd()
             LOGGER.debug(cmd_output)
             return cmd_output
         except BaseException as error:
@@ -1073,3 +1065,33 @@ class RASTestLib(RASCoreLib):
             raise CTException(err.RAS_ERROR, error.args[0])
 
         return True, response
+
+    def update_enclosure_values(self, enclosure_vals: dict):
+        """
+
+        Args:
+            enclosure_vals:
+
+        Returns:
+
+        """
+        try:
+            url = 'yaml:///etc/sspl_global_config_copy.yaml'
+            LOGGER.info("Update correct values of enclosure using conf")
+            enclosure_vals['CONF_PRIMARY_IP'] = CMN_CFG["enclosure"]["primary_enclosure_ip"]
+            enclosure_vals['CONF_PRIMARY_PORT'] = 80
+            enclosure_vals['CONF_SECONDARY_IP'] = CMN_CFG["enclosure"]["secondary_enclosure_ip"]
+            enclosure_vals['CONF_SECONDARY_PORT'] = 80
+            enclosure_vals['CONF_ENCL_USER'] = CMN_CFG["enclosure"]["enclosure_user"]
+            secret_key = self.encrypt_password_secret(CMN_CFG["enclosure"]["enclosure_pwd"])[1]
+            enclosure_vals['CONF_ENCL_SECRET'] = secret_key
+
+            self.set_conf_store_vals(url=url, encl_vals=enclosure_vals)
+            controller_vals = self.get_conf_store_enclosure_vals(field='controller')
+            LOGGER.info("Updated values are : %s", controller_vals)
+        except Exception as error:
+            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                         RASTestLib.update_enclosure_values.__name__, error)
+            raise CTException(err.RAS_ERROR, error.args[0])
+
+        return True, controller_vals
