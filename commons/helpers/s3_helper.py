@@ -772,6 +772,7 @@ class S3Helper:
         """
         Inject(enable/disable) fault tolerance in s3server.
 
+        TODO: Code will be revised based on F-24A feature availability.
         :param host: IP of the host.
         :param user: user name of the host.
         :param password: password for the user.
@@ -795,10 +796,10 @@ class S3Helper:
         """
         Verify in m0kv output.
 
+        TODO: Code will be revised based on F-24A feature availability.
         Verify the Validate that object list index contains extended entries using m0kv.
         Verify in m0kv output. Main object size and fragment size.
         No of fragments in json value of main object.
-
         :return: bool, response
         """
         LOGGER.info(object_name)
