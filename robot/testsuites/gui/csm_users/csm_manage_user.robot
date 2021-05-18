@@ -124,7 +124,7 @@ TEST-18327
     CSM GUI Logout
     Enter Username And Password  ${S3_account_name}  ${S3_password}
     Click Sigin Button
-    sleep  2s
+    wait for page or element to load  2s
     Validate CSM Login Success  ${s3_account_name}
     CSM GUI Logout
     wait for page or element to load
