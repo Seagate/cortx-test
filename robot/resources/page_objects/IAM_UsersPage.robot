@@ -2,6 +2,9 @@
 Library    SeleniumLibrary
 Resource   ${EXECDIR}/resources/common/common.robot
 
+*** Variables ***
+${invalid_IAM_account_password}  TestPass
+
 *** Keywords ***
 
 Fetch S3 Account Name
@@ -81,7 +84,6 @@ Verify A Form Got Open To Create IAM Users
     Page Should Contain Element  ${CANCEL_IAM_USER_BUTTON_ID}
     Element Should Be Disabled  ${CREATE_IAM_USER_BUTTON_ID}
 
-
 Verify Form To Create IAM Users Got Closed
     [Documentation]  Verify the Form elements should not be present
     Page Should Not Contain Button  ${CREATE_IAM_USER_USERNAME_ID}
@@ -121,7 +123,6 @@ Verify Mismatch IAMuser Password Error
     ${text}=  get text  ${IAM_USER_PASSWD_MISSMATCH_ID}
     should be equal  ${text}  ${IAM_USER_PASSWD_MISSMATCH_MSG}
 
-
 Verify Create IAMuser Button Must Remain disabled
     [Documentation]  Functionality to verify create button status at different scenario
     ${password}=  Generate New Password
@@ -159,7 +160,36 @@ Delete IAMuser
     Sleep  5s
     wait until element is visible  ${CONFIRM_DELETE_BOX_BTN_ID}  timeout=60
     Click Button  ${CONFIRM_DELETE_BOX_BTN_ID}
-    
+
+Reset Password IAMuser with invalid password
+    [Documentation]  Functionality to try invalid password to Reset IAMuser Password
+    [Arguments]  ${user_name}
+    Log To Console And Report  Try Resetting with invalid password for IAMuser ${user_name}
+    Action On The Table Element  ${IAM_USER_RESET_PASSWORD_XPATH}  ${user_name}
+    wait for page or element to load
+    wait until element is visible  ${IAM_USER_RESET_NEW_PASSWORD_ID}  timeout=60
+    input text  ${IAM_USER_RESET_NEW_PASSWORD_ID}  ${invalid_IAM_account_password}
+    input text  ${IAM_USER_RESET_CONFIRM_PASSWORD_ID}  ${invalid_IAM_account_password}
+    Verify message  INVALID_IAM_USER_RESET_PASSWORD_MSG_ID  ${INVALID_IAM_PASSWORD_MESSAGE}
+    wait for page or element to load
+    Click element  ${IAM_USER_RESET_PASSWORD_CLOSE_IMAGE_ID}
+
+Verify Reset Password IAMuser button remains disabled
+    [Documentation]  This keyword is to chceck the Reset IAM Password button remains disabled when password does not match.
+    [Arguments]  ${user_name}
+    Action On The Table Element  ${IAM_USER_RESET_PASSWORD_XPATH}  ${user_name}
+    wait for page or element to load
+    wait until element is visible  ${IAM_USER_RESET_NEW_PASSWORD_ID}  timeout=60
+    ${new_password} =  Generate New Password
+    input text  ${IAM_USER_RESET_NEW_PASSWORD_ID}  ${new_password}
+    ${new_password} =  Generate New Password
+    input text  ${IAM_USER_RESET_CONFIRM_PASSWORD_ID}  ${new_password}
+    ${state_of_reset_IAM_Password}=  Get Element Attribute  ${IAM_USER_RESET_PAWWSORD_BUTTON_ID}  disabled
+    Run Keyword If  ${${state_of_reset_IAM_Password}} == True  log to console and report  Reset Password of IAMuser account button is disabled.
+    Should be equal  ${state_of_reset_IAM_Password}  true
+    wait for page or element to load
+    Click Button  ${IAM_USER_RESET_PASSWORD_CANCEL_BUTTON_ID}
+
 Reset Password IAMuser
     [Documentation]  Functionality to Reset IAMuser Password
     [Arguments]  ${user_name}
