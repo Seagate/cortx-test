@@ -3,6 +3,7 @@ import os
 import logging
 import pytest
 
+
 # Do not set logging after imports
 # log = logging.getLogger(__name__)
 # cortxlogging.init_loghandler(log)
@@ -78,7 +79,7 @@ def test_max_lc(logger):
     logger.info("max is %s" % val)
     assert val == 6
 
-
+@pytest.mark.skip
 @pytest.mark.ha
 @pytest.mark.parallel
 @pytest.mark.tags("TEST-17413")
@@ -96,7 +97,7 @@ def test_min(logger):
     logger.warning("min is %s" % val)
     logger.info("min is %s" % val)
     logger.error("min is %s" % val)
-    assert val == 1
+    assert val == 5
 
 
 @pytest.mark.ha
