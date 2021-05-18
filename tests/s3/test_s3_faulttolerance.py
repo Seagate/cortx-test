@@ -258,7 +258,7 @@ class TestS3Faulttoelrance:
             "ENDED: Verify if more than 4 fragments gets created if S3_MAX_EXT value is set to "
             "4 in s3config.")
 
-    @pytest.mark.skip
+    @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-19497")
     @pytest.mark.parametrize("object_size", ["50k"])
@@ -318,7 +318,7 @@ class TestS3Faulttoelrance:
 
         self.log.info("ENDED: Getobject api when object is fragmented with file size 50k.")
 
-    @pytest.mark.skip
+    @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-19499")
     @pytest.mark.parametrize("object_size", ["33k"])
@@ -327,17 +327,16 @@ class TestS3Faulttoelrance:
         self.test_19497(object_size)
         self.log.info("ENDED: getobject api when object is fragmented with file size 33k.")
 
-    @pytest.mark.skip
+    @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-19501")
     @pytest.mark.parametrize("object_size", ["4MB"])
-    @CTFailOn(error_handler)
     def test_19501(self, object_size):
         """Test to verify getobject api when object is fragmented with file size 4MB."""
         self.test_19497(object_size)
         self.log.info("ENDED: Getobject api when object is fragmented with file size 4MB.")
 
-    @pytest.mark.skip
+    @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-19504")
     @pytest.mark.parametrize("object_size", ["8MB"])
@@ -346,11 +345,10 @@ class TestS3Faulttoelrance:
         self.test_19497(object_size)
         self.log.info("ENDED: Copying an s3 object to a local file")
 
-    @pytest.mark.skip
+    @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-19505")
     @pytest.mark.parametrize("object_size", ["4MB"])
-    @CTFailOn(error_handler)
     def test_19505(self, object_size):
         """Test to verify if normal getobject works fine with faultinjection disabled."""
         self.log.info("STARTED: getobject works fine with faultinjection disabled")
@@ -390,11 +388,10 @@ class TestS3Faulttoelrance:
 
         self.log.info("ENDED: getobject works fine with faultinjection disabled")
 
-    @pytest.mark.skip
+    @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-19506")
     @pytest.mark.parametrize("object_size", ["33k"])
-    @CTFailOn(error_handler)
     def test_19506(self, object_size):
         """Test to verify if error is thrown with getobjectapi with invalid readrange."""
         self.log.info("STARTED: getobjectapi with invalid readrange.")
