@@ -26,11 +26,11 @@ import re
 import shutil
 import stat
 import time
-import mdstat
 from typing import Tuple
 from typing import List
 from typing import Union
 from typing import Any
+import mdstat
 from commons import commands, const
 from commons.helpers.host import Host
 
@@ -38,13 +38,10 @@ log = logging.getLogger(__name__)
 
 
 class Node(Host):
-
     """Class to maintain all common functions across component."""
 
     def get_authserver_log(self, path: str, option: str = "-n 3") -> Tuple:
-        """
-        Get authserver log from node.
-        """
+        """Get authserver log from node."""
         cmd = "tail {} {}".format(path, option)
         res = self.execute_cmd(cmd)
         return res
@@ -55,9 +52,7 @@ class Node(Host):
             services: list,
             decode=False,
             **kwargs) -> list:
-        """
-        send/execute command on remote node.
-        """
+        """send/execute command on remote node."""
         valid_commands = {"start", "stop",
                           "reload", "enable", "disable", "status", "restart",
                           "is-active"}
@@ -81,9 +76,7 @@ class Node(Host):
             services: str,
             expected_status: str,
             timeout: int = 2) -> dict:
-        """
-        This function display status of services
-        """
+        """Function display status of services."""
         result = dict()
         result["output"] = {}
         status_list = []
@@ -106,16 +99,19 @@ class Node(Host):
 
     def path_exists(self, path: str) -> bool:
         """
-        Check if file exists
+        Check if file exists.
+
         :param path: Absolute path of the file
         """
         self.connect_pysftp()
         log.debug("client connected")
         try:
             self.pysftp_obj.stat(path)
-        except BaseException:
+        except BaseException as error:
+            log.error(error)
             return False
-        self.disconnect()
+        finally:
+            self.disconnect()
 
         return True
 
@@ -126,7 +122,8 @@ class Node(Host):
             dev="/dev/zero",
             b_size="1M") -> Tuple:
         """
-        Creates a new file, size(count) in MB
+        Create a new file, size(count) in MB.
+
         :param b_size:
         :param dev:
         :param filename: Name of the file with path
@@ -142,7 +139,8 @@ class Node(Host):
 
     def rename_file(self, old_filename: str, new_filename: str):
         """
-        This function renames file on remote host.
+        Function renames file on remote host.
+
         :param old_filename: Old name of the file(Absolute path)
         :param new_filename: New name of the file(Absolute path)
         """
@@ -157,8 +155,9 @@ class Node(Host):
 
     def remove_file(self, filename: str):
         """
-        This function removes the unwanted file from the remote host.
-        :param filename: Absolute path of the file to be removed
+        Function removes the unwanted file from the remote host.
+
+        :param filename: Absolute path of the file to be removed.
         """
         self.connect_pysftp()
         log.debug("Connected to %s", self.hostname)
@@ -173,7 +172,8 @@ class Node(Host):
 
     def read_file(self, filename: str, local_path: str=None):
         """
-        This function reads the given file and returns the file content
+        Function reads the given file and returns the file content.
+
         :param local_path:
         :param filename: Absolute path of the file to be read
         """
@@ -201,34 +201,54 @@ class Node(Host):
             remote.write(content)
         self.disconnect()
 
-    def copy_file_to_remote(self, local_path: str, remote_path: str) -> None:
+    def copy_file_to_remote(self, local_path: str, remote_path: str) -> tuple:
         """
-        copy file from local to local remote
-        :param str local_path: local path
-        :param str remote_path: remote path
-        """
-        self.connect_pysftp()
-        log.debug("sftp connected")
-        self.pysftp_obj.put(local_path, remote_path)
-        log.debug("file copied to : %s", str(remote_path))
-        self.disconnect()
+        Copy local file to remote path.
 
-    def copy_file_to_local(self, remote_path: str, local_path: str) -> None:
+        :param str local_path: local file path.
+        :param str remote_path: remote file path.
         """
-        copy file from local to local remote
-        :param str local_path: local path
-        :param str remote_path: remote path
+        try:
+            self.connect_pysftp()
+            log.debug("sftp connected")
+            resp = self.pysftp_obj.put(local_path, remote_path)
+            log.debug("file copied to : %s", str(remote_path))
+            self.disconnect()
+
+            return self.path_exists(remote_path), resp
+        except Exception as error:
+            log.error(
+                "%s %s: %s", const.EXCEPTION_ERROR,
+                self.copy_file_to_remote.__name__, error)
+            return False, error
+
+    def copy_file_to_local(self, remote_path: str, local_path: str) -> tuple:
         """
-        self.connect_pysftp()
-        log.debug("sftp connected")
-        self.pysftp_obj.get(remote_path, local_path)
-        log.debug("file copied to : %s", str(local_path))
-        self.disconnect()
+        Copy remote file path to local file path.
+
+        :param str local_path: local file path.
+        :param str remote_path: remote local path.
+        :return: True/False, response.
+        """
+        try:
+            self.connect_pysftp()
+            log.debug("sftp connected")
+            resp = self.pysftp_obj.get(remote_path, local_path)
+            log.debug("file copied to : %s", str(local_path))
+            self.disconnect()
+
+            return os.path.exists(local_path), resp
+        except Exception as error:
+            log.error(
+                "%s %s: %s", const.EXCEPTION_ERROR,
+                self.copy_file_to_local.__name__, error)
+            return False, error
 
     def write_remote_file_to_local_file(
             self, file_path: str, local_path: str) -> None:
         """
-        Writing remote file content in local file
+        Writing remote file content in local file.
+
         :param file_path: Remote path
         :param local_path: Local path
         """
@@ -239,7 +259,9 @@ class Node(Host):
 
     def get_mdstat(self):
         """
-        This function retrieves the /proc/mdstat file from remote host and
+        Get file stat.
+
+        Function retrieves the /proc/mdstat file from remote host and
         returns the parsed output in json form.
         :return: parsed mdstat output
         :rtype: dict
@@ -259,7 +281,8 @@ class Node(Host):
     def is_string_in_remote_file(
             self, string: str, file_path: str) -> Tuple[bool, Any]:
         """
-        find given string in file present on s3 server
+        find given string in file present on s3 server.
+
         :param string: String to be check
         :param file_path: absolute file path
         """
@@ -283,9 +306,10 @@ class Node(Host):
             if os.path.exists(local_path):
                 os.remove(local_path)
 
-    def validate_is_dir(self, remote_path: str) -> Tuple[bool, str]:
+    def validate_is_dir(self, remote_path: str) -> tuple:
         """
-        This function validates if the remote path is directory or not
+        Function validates if the remote path is directory or not.
+
         :param str remote_path: absolute path on the remote server
         :return: response: Boolean
         :rtype: list
@@ -306,7 +330,8 @@ class Node(Host):
 
     def list_dir(self, remote_path: str) -> list:
         """
-        This function list the files of the remote server
+        Function list the files of the remote server.
+
         :param str remote_path: absolute path on the remote server
         :return: response: list of files
         :rtype: list
@@ -322,9 +347,7 @@ class Node(Host):
         return dir_lst
 
     def make_dir(self, dpath: str) -> bool:
-        """
-        Make multiple directories with hierarchy
-        """
+        """Make multiple directories with hierarchy."""
         if dpath is None:
             raise TypeError("path or dir_name incorrect")
         if not self.path_exists(dpath):
@@ -336,8 +359,7 @@ class Node(Host):
         return self.path_exists(dpath)
 
     def remove_dir(self, dpath: str):
-        """Remove directory
-        """
+        """Remove directory."""
         cmd = f"rm -rf {dpath}"
         if dpath is None:
             raise TypeError("Requires path to delete directory")
@@ -352,6 +374,8 @@ class Node(Host):
 
     def create_dir_sftp(self, dpath: str) -> bool:
         """
+        Create remote directory.
+
         This function creates directory on the remote server and returns the
         absolute path of the remote server
         :param str dpath: Remote destination path on remote server
@@ -374,8 +398,10 @@ class Node(Host):
 
     def delete_dir_sftp(self, dpath: str, level: int = 0) -> bool:
         """
-        This function deletes all the remote server files and directory
-        recursively of the specified path
+        Delete remote directory.
+
+        Function deletes all the remote server files and directory
+        recursively of the specified path.
         :param str dpath: Remote directory to be deleted
         :param int level: Level or depth of remote directory
         :return: None
@@ -396,7 +422,8 @@ class Node(Host):
 
     def kill_remote_process(self, process_name: str):
         """
-        Kill all process matching the process_name at s3 server
+        Kill all process matching the process_name at s3 server.
+
         :param process_name: Name of the process to be killed
         """
         return self.execute_cmd(commands.PKIL_CMD.format(process_name))
@@ -404,6 +431,7 @@ class Node(Host):
     def pgrep(self, process: str):
         """
         Function to get process ID using pgrep cmd.
+
         :param str process: Name of the process
         :return: bool, response/error
         :rtype: tuple
@@ -419,6 +447,7 @@ class Node(Host):
             **kwargs):
         """
         Function to toggle node power status usng APC PDU switch.
+
         :param string pdu_ip: IP or end pont for the PDU
         :param string pdu_user: PDU login user
         :param string pdu_pwd: PDU logn user password
@@ -457,9 +486,7 @@ class Node(Host):
         return resp
 
     def shutdown_node(self, options=None):
-        """
-        Function to shutdown any of the node.
-        """
+        """Function to shutdown any of the node."""
         try:
             cmd = "shutdown {}".format(options if options else "")
             log.debug(
@@ -483,7 +510,8 @@ class Node(Host):
                                                                              bytes,
                                                                              BaseException]]:
         """
-        This function will return disk usage associated with given path.
+        Function will return disk usage associated with given path.
+
         :param dir_path: Directory path of which size is to be calculated.
         :param field_val: 0, 1, 2 and 3 for total, used, free in bytes and percent used
         space respectively.
@@ -494,13 +522,13 @@ class Node(Host):
                 a=str(dir_path), b=int(field_val))
             log.info("Running python command %s", cmd)
             resp = self.execute_cmd(cmd=cmd)
+
+            return True, resp
         except BaseException as error:
             log.error(
                 "*ERROR* An exception occurred in %s: %s",
                 Node.disk_usage_python_interpreter_cmd.__name__, error)
             return False, error
-
-        return True, resp
 
     def get_file_size(self, path):
         """
@@ -519,6 +547,6 @@ class Node(Host):
         except Exception as error:
             log.error(
                 "%s %s: %s", const.EXCEPTION_ERROR,
-                self.get_remote_file_size.__name__, error)
+                self.get_file_size.__name__, error)
             resp_val = error
         return flag, resp_val
