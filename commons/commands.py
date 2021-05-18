@@ -379,3 +379,7 @@ CMD_KEYTOOL2 = "`keytool -import -trustcacerts -alias s3server -noprompt -file {
 # S3 bench
 CMD_S3BENCH = "go run s3bench -accessKey={} -accessSecret={} -bucket={} -endpoint={} " \
               "-numClients={} -numSamples={} -objectNamePrefix={} -objectSize={}"
+
+# FailtTolerance commands.
+UPDATE_FAULTTOLERANCE = 'curl -i -H "x-seagate-faultinjection:{},offnonm,motr_obj_write_fail,2,1"' \
+    ' -X PUT http://127.0.0.1:28081​'
