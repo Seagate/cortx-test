@@ -303,7 +303,7 @@ class Test3PSvcMonitoring:
 
             # TODO: Check alert on CSM
             LOGGER.info("Step 4: Checking the fault alert on CSM")
-            #assert self.csm_alert_obj.verify_csm_response(starttime, e_csm_resp["alert_type"], True)
+            assert self.csm_alert_obj.verify_csm_response(starttime, e_csm_resp["alert_type"], True)
             LOGGER.info("Step 4: Verified the fault alert on CSM")
 
             LOGGER.info("Step 5: Start the %s service again", svc)
@@ -324,7 +324,7 @@ class Test3PSvcMonitoring:
                 LOGGER.info("Step 6: Verified the fault resolved alert on message bus")
             # TODO: Check alert on CSM
             LOGGER.info("Step 7: Checking the fault alert on CSM")
-            #assert self.csm_alert_obj.verify_csm_response(starttime, e_csm_resp["alert_type"], True)
+            assert self.csm_alert_obj.verify_csm_response(starttime, e_csm_resp["alert_type"], True)
             LOGGER.info("Step 7: Verified the fault alert on CSM")
             LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)
 

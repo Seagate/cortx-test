@@ -256,23 +256,23 @@ SHARED_LOCK = 'shared'
 EXCLUSIVE_LOCK = 'exclusive'
 
 class SwAlerts:
-    #SVCS_3P = [
-    #    "hare-consul-agent.service",
-    #    "hare-consul-agent-c1.service",
-    #    "hare-consul-agent-c2.service",
-    #    "elasticsearch.service",
-    #    "statsd.service",
-    #    "rsyslog.service",
-    #    "haproxy.service",
-    #    "slapd.service",
-    #    "lnet.service",
-    #    "salt-master.service",
-    #    "salt-minion.service",
-    #    "glusterd.service",
-    #    "multipathd.service",
-    #    "scsi-network-relay.service",
-    #    "Kafka"]
-    SVCS_3P = ["statsd.service"]
+    SVCS_3P = [
+        "hare-consul-agent.service",
+        "hare-consul-agent-c1.service",
+        "hare-consul-agent-c2.service",
+        "elasticsearch.service",
+        "statsd.service",
+        "rsyslog.service",
+        "haproxy.service",
+        "slapd.service",
+        "lnet.service",
+        "salt-master.service",
+        "salt-minion.service",
+        "glusterd.service",
+        "multipathd.service",
+        "scsi-network-relay.service",
+        "Kafka"]
+
     class AlertType:
         FAULT = "fault"
         RESOLVED = "fault_resolved"
