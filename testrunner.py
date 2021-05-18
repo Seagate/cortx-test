@@ -56,6 +56,8 @@ def parse_args():
     parser.add_argument("-i", "--data_integrity_chk", type=str_to_bool,
                         default=False, help="Helps set DI check enabled so that tests "
                                             "perform additional checksum check")
+    parser.add_argument("-tt", "--test_type", nargs='+', type=str,
+                        default=['ALL'], help="Space separated test types")
     return parser.parse_args()
 
 
@@ -200,7 +202,7 @@ def get_ticket_meta_from_test_list():
     pass
 
 
-def get_tests_from_te(jira_obj, args, test_type='ALL'):
+def get_tests_from_te(jira_obj, args, test_type=['ALL']):
     """
     Get tests from given test execution
     """
@@ -217,7 +219,7 @@ def trigger_unexecuted_tests(args, test_list):
     """
     jira_id, jira_pwd = runner.get_jira_credential()
     jira_obj = JiraTask(jira_id, jira_pwd)
-    te_test_list, tag = get_tests_from_te(jira_obj, args, 'TODO')
+    te_test_list, tag = get_tests_from_te(jira_obj, args, ['TODO'])
     if len(te_test_list) != 0:
         # check if there are any selected tests with todo status
         unexecuted_test_list = [test for test in test_list if test in te_test_list]
@@ -350,7 +352,11 @@ def trigger_tests_from_te(args):
     # test_list, te_tag = jira_obj.get_test_ids_from_te(args.te_ticket)
     # if len(test_list) == 0 or te_tag == "":
     #     assert False, "Please check TE provided, tests or tag is missing"
-    test_list, te_tag = get_tests_from_te(jira_obj, args)
+    test_type_arg = args.test_type
+    test_types = [ele.strip() for ele in test_type_arg]
+
+    test_list, te_tag = get_tests_from_te(jira_obj, args, test_types)
+
     # writing the data into the file
     with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_TEST_LIST), 'w') \
             as test_file:

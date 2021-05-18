@@ -38,7 +38,7 @@ class JiraTask:
         self.http.mount("http://", self.adapter)
         self.jira_url = "https://jts.seagate.com/"
 
-    def get_test_ids_from_te(self, test_exe_id, status='ALL'):
+    def get_test_ids_from_te(self, test_exe_id, status=['ALL']):
         """
         Get test jira ids available in test execution jira
         """
@@ -86,23 +86,13 @@ class JiraTask:
                     else:
                         page_cnt = page_cnt + 1
                         for test in data:
-                            if status == 'ALL':
+                            if 'ALL' in status:
                                 test_list.append(test['key'])
-                            elif status == 'FAIL':
-                                if str(test['status']) == 'FAIL':
-                                    test_list.append(test['key'])
-                            elif status == 'TODO':
-                                if str(test['status']) == 'TODO':
-                                    test_list.append(test['key'])
-                            elif status == 'PASS':
-                                if str(test['status']) == 'PASS':
-                                    test_list.append(test['key'])
-                            elif status == 'ABORTED':
-                                if str(test['status']) == 'ABORTED':
-                                    test_list.append(test['key'])
+                            elif str(test['status']) in status:
+                                test_list.append(test['key'])
         return test_list, te_tag
 
-    def get_test_list_from_te(self, test_exe_id, status='ALL'):
+    def get_test_list_from_te(self, test_exe_id, status=['ALL']):
         """
         Get required test jira information for all tests from test execution jira.
         """
