@@ -514,6 +514,7 @@ class TestCliCSMUser:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-10831")
     def test_1261(self):
         """

@@ -158,6 +158,7 @@ class TestCortxcli:
         self.log.info("ENDED: create account using cortxcli")
 
     @pytest.mark.s3_ops
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-7178")
     @CTFailOn(error_handler)
     def test_2394(self):
@@ -221,6 +222,7 @@ class TestCortxcli:
         self.log.info("ENDED: Create 'N' No of Accounts")
 
     @pytest.mark.s3_ops
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-7180")
     @CTFailOn(error_handler)
     def test_2396(self):
