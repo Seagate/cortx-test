@@ -361,6 +361,8 @@ class SoftwareAlert(RASCoreLib):
                 for k, v in value.items():
                     txt = txt + k + "=" + v + "\n"
             self.node_utils.write_file(fpath, txt)
+        LOGGER.info("SVC content...")
+        LOGGER.info(txt)
 
     def apply_svc_setting(self):
         """Apply the changed setting using reload deemon command.

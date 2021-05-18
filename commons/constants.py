@@ -258,8 +258,6 @@ EXCLUSIVE_LOCK = 'exclusive'
 class SwAlerts:
     SVCS_3P = [
         "hare-consul-agent.service",
-        "hare-consul-agent-c1.service",
-        "hare-consul-agent-c2.service",
         "elasticsearch.service",
         "statsd.service",
         "rsyslog.service",
