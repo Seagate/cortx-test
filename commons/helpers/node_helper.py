@@ -170,13 +170,15 @@ class Node(Host):
 
         return not self.path_exists(filename)
 
-    def read_file(self, filename: str, local_path: str):
+    def read_file(self, filename: str, local_path: str=None):
         """
         Function reads the given file and returns the file content.
 
         :param local_path:
         :param filename: Absolute path of the file to be read
         """
+        if local_path is None:
+            local_path = os.path.join(os.getcwd(),filename)
         if os.path.exists(local_path):
             os.remove(local_path)
         self.copy_file_to_local(remote_path=filename, local_path=local_path)
@@ -186,6 +188,18 @@ class Node(Host):
             os.remove(local_path)
 
         return response
+
+    def write_file(self, fpath: str, content: str=None):
+        """
+        This function writes the given file
+        :param fpath: file path with name
+        :param content: content to be written.
+        """
+        self.connect_pysftp()
+        log.debug("sftp connected")
+        with self.pysftp_obj.open(fpath, "w") as remote:
+            remote.write(content)
+        self.disconnect()
 
     def copy_file_to_remote(self, local_path: str, remote_path: str) -> tuple:
         """
