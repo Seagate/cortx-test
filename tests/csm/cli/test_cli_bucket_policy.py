@@ -775,7 +775,6 @@ class TestCliBucketPolicy:
             "Step 4: Uploaded policy on a bucket %s", self.bucket_name)
         self.log.info("Step 5: Verifying policy in json format")
         resp = self.s3bkt_plc_obj.show_bucket_policy(self.bucket_name)
-        print("aaa {}".format(resp))
         json_data = self.s3bkt_plc_obj.format_str_to_dict(resp[1])
         assert json_data['Statement'][0] == self.bkt_policy[0]
         self.log.info("Step 5: Verified policy in json format")
