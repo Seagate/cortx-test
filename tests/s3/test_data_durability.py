@@ -24,17 +24,21 @@ import os
 import time
 import logging
 import pytest
+from time import perf_counter_ns
 
+from commons.constants import const
 from commons import commands as cmd
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.helpers.host import Host
+from commons.params import TEST_DATA_FOLDER
 from libs.s3 import S3H_OBJ, CMN_CFG
-from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.iam_test_lib import IamTestLib
+from libs.s3 import cortxcli_test_lib
+from libs.s3 import S3_CFG
 
 S3T_OBJ = S3TestLib()
 IAMT_OBJ = IamTestLib()
@@ -43,99 +47,72 @@ IAMT_OBJ = IamTestLib()
 class TestDataDurability:
     """Data Durability Test suite."""
 
-    @classmethod
-    def setup_class(cls):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """
         Function will be invoked prior to each test case.
 
         It will perform all prerequisite test suite steps if any.
         """
-        cls.log = logging.getLogger(__name__)
-        cls.log.info("STARTED: setup test suite operations.")
-        cls.timestamp = time.time()
-        cls.bucket_name = "data-durability-bkt{0}".format(cls.timestamp)
-        cls.test_file = "data_durability.txt"
-        cls.file_size = 5
-        cls.object_name = "obj_data_durability"
-        cls.sleep_time = 4
-        cls.host_ip = CMN_CFG["nodes"][0]["host"]
-        cls.uname = CMN_CFG["nodes"][0]["username"]
-        cls.passwd = CMN_CFG["nodes"][0]["password"]
-        cls.ldap_user = LDAP_USERNAME
-        cls.ldap_pwd = LDAP_PASSWD
-        cls.test_dir_path = os.path.join(
-            os.getcwd(), "testdata", "TestDataDurability")
-        cls.file_path = os.path.join(cls.test_dir_path, cls.test_file)
-        if not system_utils.path_exists(cls.test_dir_path):
-            system_utils.make_dirs(cls.test_dir_path)
-            cls.log.info("Created path: %s", cls.test_dir_path)
-        cls.hobj = Host(
-            hostname=cls.host_ip,
-            username=cls.uname,
-            password=cls.passwd)
-        cls.hobj.connect()
-        cls.log.info("ENDED: setup test suite operations.")
-
-    @classmethod
-    def teardown_class(cls):
-        """
-        Function will be invoked after completion of all test case.
-
-        It will clean up resources which are getting created during test suite setup.
-        """
-        cls.log.info("STARTED: teardown test suite operations.")
-        if system_utils.path_exists(cls.test_dir_path):
-            system_utils.remove_dirs(cls.test_dir_path)
-        cls.log.info("Cleanup test directory: %s", cls.test_dir_path)
-        cls.hobj.disconnect()
-        cls.log.info("ENDED: teardown test suite operations.")
-
-    def setup_method(self):
-        """
-        Function will be invoked prior to each test case.
-
-        It will perform all prerequisite test steps if any.
-        Initializing common variable which will be used in test and
-        teardown for cleanup
-        """
-        self.log.info("STARTED: Setup operations")
-        self.log.info("Test file path: %s", self.file_path)
-        self.log.info("ENDED: Setup operations")
-
-    def teardown_method(self):
-        """
-        Function will be invoked after each test case.
-
-        It will perform all cleanup operations.
-        This function will delete buckets and accounts created for tests.
-        """
+        self.log = logging.getLogger(__name__)
+        self.cli_obj = cortxcli_test_lib.CortxCliTestLib()
+        self.log.info("STARTED: setup test operations.")
+        self.account_name = "data_durability_acc{}".format(perf_counter_ns())
+        self.email_id = "{}@seagate.com".format(self.account_name)
+        self.bucket_name = "data-durability-bkt{}".format(perf_counter_ns())
+        self.test_file = "data_durability{}.txt".format(perf_counter_ns())
+        self.object_name = "obj_data_durability"
+        self.sleep_time = 4
+        self.file_size = 5
+        self.host_ip = CMN_CFG["nodes"][0]["host"]
+        self.uname = CMN_CFG["nodes"][0]["username"]
+        self.passwd = CMN_CFG["nodes"][0]["password"]
+        self.s3acc_passwd = S3_CFG["CliConfig"]["s3_account"]["password"]
+        self.test_dir_path = os.path.join(
+            os.getcwd(), TEST_DATA_FOLDER, "TestDataDurability")
+        self.file_path = os.path.join(self.test_dir_path, self.test_file)
+        if not system_utils.path_exists(self.test_dir_path):
+            system_utils.make_dirs(self.test_dir_path)
+            self.log.info("Created path: %s", self.test_dir_path)
+        self.hobj = Host(
+            hostname=self.host_ip,
+            username=self.uname,
+            password=self.passwd)
+        self.hobj.connect()
+        self.acc_del = False
+        self.log.info("ENDED: setup test operations.")
+        yield
         self.log.info("STARTED: Teardown operations")
         self.log.info(
             "Deleting all buckets/objects created during TC execution")
         resp = S3T_OBJ.bucket_list()
-        if resp:
-            pref_list = [each_bucket for each_bucket in resp[1]
-                         if each_bucket.startswith("data-durability-bkt")]
-            if pref_list:
-                S3T_OBJ.delete_multiple_buckets(pref_list)
+        if self.bucket_name in resp[1]:
+            resp = S3T_OBJ.delete_bucket(self.bucket_name, force=True)
+            assert_utils.assert_true(resp[0], resp[1])
         self.log.info("All the buckets/objects deleted successfully")
-        self.log.info("Deleting the IAM accounts and users")
-        all_accounts = IAMT_OBJ.list_accounts_s3iamcli(
-            self.ldap_user,
-            self.ldap_pwd)[1]
-        iam_accounts = [acc["AccountName"]
-                        for acc in all_accounts if
-                        "data_durability" in acc["AccountName"]]
-        self.log.info(iam_accounts)
-        if iam_accounts:
-            for acc in iam_accounts:
-                resp = IAMT_OBJ.reset_access_key_and_delete_account_s3iamcli(
-                    acc)
-        self.log.info("Deleted the IAM accounts and users")
+        if self.acc_del:
+            self.log.info("Deleting the IAM accounts and users")
+            all_accounts = self.cli_obj.list_accounts_cortxcli()
+            iam_accounts = [acc["account_name"]
+                            for acc in all_accounts if self.account_name == acc["account_name"]]
+            self.log.debug(iam_accounts)
+            if iam_accounts:
+                for acc in iam_accounts:
+                    self.cli_obj = cortxcli_test_lib.CortxCliTestLib()
+                    resp = self.cli_obj.login_cortx_cli(
+                        username=acc, password=self.s3acc_passwd)
+                    self.log.debug("Deleting %s account", acc)
+                    self.cli_obj.delete_all_iam_users()
+                    self.cli_obj.logout_cortx_cli()
+                    self.cli_obj.delete_account_cortxcli(
+                        account_name=acc, password=self.s3acc_passwd)
+                    self.log.info("Deleted %s account successfully", acc)
+            self.log.info("Deleted the IAM accounts and users")
         self.log.info("Deleting the file created locally for object")
         if system_utils.path_exists(self.file_path):
             system_utils.remove_file(self.file_path)
         self.log.info("Local file was deleted")
+        self.hobj.disconnect()
         self.log.info("ENDED: Teardown operations")
 
     def create_bkt_put_obj(self):
@@ -288,6 +265,7 @@ class TestDataDurability:
         self.log.info(
             "ENDED: Test NO data loss in case of service restart - haproxy")
 
+    @pytest.mark.skip(reason="Will be taken after F-45H.")
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8009')
     @CTFailOn(error_handler)
@@ -311,18 +289,12 @@ class TestDataDurability:
         self.log.info(
             "Step 2: Retrieved checksum of file %s", (
                 self.test_file))
-        account_name = "{0}{1}".format(
-            "data_durability_acc", str(
-                time.time()))
-        email_id = "{0}{1}".format(account_name, "@seagate.com")
         self.log.info(
             "Step 3: Uploading a object to a bucket %s", (
                 self.bucket_name))
-        resp = IAMT_OBJ.create_account_s3iamcli(
-            account_name,
-            email_id,
-            self.ldap_user,
-            self.ldap_pwd)
+        resp = self.cli_obj.create_account_cortxcli(self.account_name,
+                                                    self.email_id,
+                                                    self.s3acc_passwd)
         assert_utils.assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
@@ -337,17 +309,15 @@ class TestDataDurability:
             "Step 3: Uploaded an object to a bucket %s", (
                 self.bucket_name))
         self.log.info(
-            "Step 4: Changing credentials of an account %s", account_name)
-        resp = IAMT_OBJ.reset_account_access_key_s3iamcli(
-            account_name, self.ldap_user,
-            self.ldap_pwd)
+            "Step 4: Changing credentials of an account %s", self.account_name)
+        resp = IAMT_OBJ.reset_account_access_key_s3iamcli(self.account_name)
         assert_utils.assert_true(resp[0], resp[1])
         access_key = resp[1]["AccessKeyId"]
         secret_key = resp[1]["SecretKey"]
         s3_temp_obj = S3TestLib(
             access_key=access_key, secret_key=secret_key)
         self.log.info(
-            "Step 4: Changed credentials of an account %s", account_name)
+            "Step 4: Changed credentials of an account %s", self.account_name)
         self.log.info(
             "Step 5: Verifying that data is accessible with new set of credentials")
         resp = s3_temp_obj.object_list(self.bucket_name)
@@ -372,6 +342,7 @@ class TestDataDurability:
         # Cleanup activity
         resp = s3_temp_obj.delete_bucket(self.bucket_name, force=True)
         assert_utils.assert_true(resp[0], resp[1])
+        self.acc_del = True
         self.log.info(
             "ENDED: Test NO data loss in case of account credentials change")
 
