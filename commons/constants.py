@@ -83,6 +83,7 @@ NODE_PREFIX = "eosnode-"
 
 """ S3 constants """
 const.S3_CONFIG = "/opt/seagate/cortx/s3/conf/s3config.yaml"
+const.LOCAL_S3_CONFIG = "/tmp/s3config.yaml"
 const.CA_CERT_PATH = "/opt/seagate/cortx/provisioner/srv/components/s3clients/files/ca.crt"
 const.REMOTE_DEFAULT_DIR = "/var/motr"
 const.CFG_FILES = ["/etc/haproxy/haproxy.cfg",
@@ -96,6 +97,9 @@ const.CRASH_COMMANDS = ["ls -l /var/crash", "ls -lR /var/motr | grep core"],
 const.AUTHSERVER_LOG_PATH = "/var/log/seagate/auth/server/app.log"
 const.S3CMD = "s3cmd"
 const.S3FS = "s3fs-fuse"
+const.SLAPD = "slapd"
+const.HAPROXY = "haproxy"
+const.S3AUTHSERVER = "s3authserver"
 const.HAPROXY_LOG_PATH = "/var/log/haproxy.log"
 const.S3_LOG_PATH = "/var/log/seagate/s3"
 const.SUPPORT_BUNDLE_SUCCESS_MSG = "S3 support bundle generated successfully"
@@ -212,9 +216,10 @@ S3ACCOUNT_HELP_CMDS = [
         "s3accounts",
         "s3bucketpolicy"]
 S3ACCOUNT_HELP = ["positional arguments:",
-                  "{show,create}",
-                  "show         Displays S3 Accounts On the cli",
-                  "create       Create a new S3 Account."]
+                  "{show,create,reset_password}",
+                  "show                Displays S3 Accounts On the cli",
+                  "create              Create a new S3 Account",
+                  "reset_password      Reset password for S3 Account"]
 S3ACC_CREATE_HELP = ["positional arguments:",
                      "account_name   Name to be given to S3 account",
                      "account_email  Email to be given to S3 account"]
@@ -254,3 +259,30 @@ PARAMS = {"CORTX_BUILD": "{0}", "HOST": "{1}", "HOST_PASS": "{2}", "DEBUG": "Tru
 #Locking server
 SHARED_LOCK = 'shared'
 EXCLUSIVE_LOCK = 'exclusive'
+
+class SwAlerts:
+    SVCS_3P = [
+        "hare-consul-agent.service",
+        "elasticsearch.service",
+        "statsd.service",
+        "rsyslog.service",
+        "haproxy.service",
+        "slapd.service",
+        "lnet.service",
+        "salt-master.service",
+        "salt-minion.service",
+        "glusterd.service",
+        "multipathd.service",
+        "scsi-network-relay.service",
+        "Kafka"]
+
+    class AlertType:
+        FAULT = "fault"
+        RESOLVED = "fault_resolved"
+
+    class Severity:
+        CRITICAL = "critical"
+        INFO = "informational"
+
+    class ResourceType:
+        SW_SVC = "node:sw:os:service"
