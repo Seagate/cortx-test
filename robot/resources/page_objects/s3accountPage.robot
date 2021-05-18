@@ -48,9 +48,16 @@ Click on edit s3 account option
     click element  ${EDIT_S3_ACCOUNT_OPTION_ID}
 
 Click on update s3 account button
-    [Documentation]  This keyword is to click on edit s3 account option.
-    wait until element is visible  ${UPDATE_S3_ACCOUNT_BTN_ID}  timeout=60
-    click element  ${UPDATE_S3_ACCOUNT_BTN_ID}
+    [Documentation]  This keyword is to click on update s3 account button
+    wait for page or element to load
+    ${status}=  Run Keyword And Return Status  Element Should Be Visible  ${UPDATE_S3_ACCOUNT_BTN_ID}
+    Run Keyword If  '${status}' == 'True'  click element  ${UPDATE_S3_ACCOUNT_BTN_ID}
+    ${status}=  Run Keyword And Return Status  Element Should Be Visible  ${S3_ACCOUNT_RESET_PASSWORD_BUTTON_ID}
+    Run Keyword If  '${status}' == 'True'  click element  ${S3_ACCOUNT_RESET_PASSWORD_BUTTON_ID}
+    wait for page or element to load
+    ${status}=  Run Keyword And Return Status  Element Should Be Visible  ${S3_ACCOUNT_SUCCESS_MESSAGE_BUTTON_ID}
+    Run Keyword If  '${status}' == 'True'  click element  ${S3_ACCOUNT_SUCCESS_MESSAGE_BUTTON_ID}
+
 
 Click on add new access key button
     [Documentation]  This keyword is to click on the add new access key button.
@@ -60,8 +67,8 @@ Click on add new access key button
     click element  ${ADD_S3_ACCOUNT_ACCESS_KEY_ID}
 
 Click on download and close button for new access key
-    [Documentation]  This keyword is to click on edit s3 account option.
-    Reload Page
+    [Documentation]  This keyword is to click on download and close button for new access key
+    #Reload Page
     wait for page or element to load
     wait until element is visible  ${ACCESS_KEY_DOWNLOAD_AND_CLOSE_BTN_ID}  timeout=30
     click element  ${ACCESS_KEY_DOWNLOAD_AND_CLOSE_BTN_ID}
@@ -161,9 +168,16 @@ update s3 account password
     [Documentation]  This keyword is to update data in s3 account.
     [Arguments]  ${password}  ${confirm_password}
     log to console and report   updating S3 account password
-    input text  ${UPDATE_S3_ACCOUNT_PASSWORD_FIELD_ID}  ${password}
-    input text  ${UPDATE_S3_ACCOUNT_CONFIRM_PASSWORD_FIELD_ID}  ${confirm_password}
-   
+    wait for page or element to load
+    ${status}=  Run Keyword And Return Status  Element Should Be Visible  ${UPDATE_S3_ACCOUNT_PASSWORD_FIELD_ID}
+    Run Keyword If  '${status}' == 'True'  input text  ${UPDATE_S3_ACCOUNT_PASSWORD_FIELD_ID}  ${password}
+    ${status}=  Run Keyword And Return Status  Element Should Be Visible  ${S3_ACCOUNT_RESET_NEW_PASSWORD_ID}
+    Run Keyword If  '${status}' == 'True'  input text  ${S3_ACCOUNT_RESET_NEW_PASSWORD_ID}  ${password}
+    ${status}=  Run Keyword And Return Status  Element Should Be Visible  ${UPDATE_S3_ACCOUNT_CONFIRM_PASSWORD_FIELD_ID}
+    Run Keyword If  '${status}' == 'True'  input text  ${UPDATE_S3_ACCOUNT_CONFIRM_PASSWORD_FIELD_ID}  ${confirm_password}
+    ${status}=  Run Keyword And Return Status  Element Should Be Visible  ${S3_ACCOUNT_RESET_CONFIRM_PASSWORD_ID}
+    Run Keyword If  '${status}' == 'True'  input text  ${S3_ACCOUNT_RESET_CONFIRM_PASSWORD_ID}  ${confirm_password}
+
 Reset Password S3 Account
     [Documentation]  Functionality to Reset S3 accounts Password
     [Arguments]  ${user_name}
@@ -174,8 +188,8 @@ Reset Password S3 Account
     ${new_password} =  Generate New Password
     input text  ${S3_ACCOUNT_RESET_NEW_PASSWORD_ID}  ${new_password}
     input text  ${S3_ACCOUNT_RESET_CONFIRM_PASSWORD_ID}  ${new_password}
-    wait until element is visible  ${S3_ACCOUNT_RESET_PAWWSORD_BUTTON_ID}  timeout=60
-    Click element  ${S3_ACCOUNT_RESET_PAWWSORD_BUTTON_ID}
+    wait until element is visible  ${S3_ACCOUNT_RESET_PASSWORD_BUTTON_ID}  timeout=60
+    Click element  ${S3_ACCOUNT_RESET_PASSWORD_BUTTON_ID}
     Sleep  5s
     wait until element is visible  ${S3_ACCOUNT_SUCCESS_MESSAGE_ID}  timeout=60
     Sleep  2s
