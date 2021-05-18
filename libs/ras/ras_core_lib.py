@@ -766,9 +766,11 @@ class RASCoreLib:
 
     def get_conf_store_vals(self, url: str, field: str) -> dict:
         """
-
-        Returns:
-
+        This will get the values from any yaml/json file using conf store
+        :param url: url of the yaml/json file
+        :param field: field whose value needs to be extracted
+        :return: field value
+        :rtype: str
         """
         cmd = common_commands.CONF_GET_CMD.format(url, field)
         LOGGER.info("Running command: %s", cmd)
@@ -778,14 +780,13 @@ class RASCoreLib:
         res = json.loads(result[0])
         return res[0]
 
-    def get_conf_store_enclosure_vals(self, field):
+    def get_conf_store_enclosure_vals(self, field: str) -> Tuple[bool, str]:
         """
-
-        Args:
-            field:
-
-        Returns:
-
+        This will get the values ffor storage_enclosure
+        :param field: field whose value needs to be extracted (
+        storage_enclosure)
+        :return: True/False, field value
+        :rtype: bool, str
         """
         url = 'yaml:///etc/sspl_global_config_copy.yaml'
         e_field = 'storage_enclosure'
@@ -802,7 +803,14 @@ class RASCoreLib:
                     return True, vals
         return False, "No value found"
 
-    def recursive_items(self, dictionary, field):
+    def recursive_items(self, dictionary: dict, field: str):
+        """
+        This will recursively traverse the yaml/json file
+        :param dictionary: dictionary from yaml/json file
+        :param field: field whose value needs to be extracted
+        :return: key, value generator
+        :rtype: generator
+        """
         for key, value in dictionary.items():
             if isinstance(value, dict):
                 if key == field:
@@ -812,14 +820,12 @@ class RASCoreLib:
             else:
                 yield key, value
 
-    def set_conf_store_vals(self, url, encl_vals: dict):
+    def set_conf_store_vals(self, url: str, encl_vals: dict):
         """
-
-        Args:
-            field:
-
-        Returns:
-
+        This will set values in yaml/json file using conf store
+        :param url: url of yaml/json file
+        :param encl_vals: dict of {field: value}
+        :return: None
         """
         for key, value in encl_vals.items():
             k = eval(f"cmn_cons.{key}")
@@ -833,9 +839,10 @@ class RASCoreLib:
 
     def encrypt_password_secret(self, string: str) -> Tuple[bool, str]:
         """
-
-        Returns:
-
+        This will encrypt the password/secret key
+        :param string: string to be encrypted
+        :return: True/False, encrypted string
+        :rtype: bool, str
         """
         local_path = cmn_cons.ENCRYPTOR_FILE_PATH
         path = "/root/encryptor.py"

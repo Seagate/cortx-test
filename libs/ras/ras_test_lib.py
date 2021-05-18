@@ -1066,14 +1066,12 @@ class RASTestLib(RASCoreLib):
 
         return True, response
 
-    def update_enclosure_values(self, enclosure_vals: dict):
+    def update_enclosure_values(self, enclosure_vals: dict) -> Tuple[bool, dict]:
         """
-
-        Args:
-            enclosure_vals:
-
-        Returns:
-
+        This will update values for enclosure in yaml/json file using conf store
+        :param enclosure_vals: dict of {field: value}
+        :return: True/False, values
+        :rtype: bool, dict
         """
         try:
             url = 'yaml:///etc/sspl_global_config_copy.yaml'
