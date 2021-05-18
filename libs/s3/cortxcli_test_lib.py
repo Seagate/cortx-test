@@ -82,12 +82,12 @@ class _S3AccountOperations(CortxCliS3AccountOperations):
                 account_name, account_email, password, **kwargs)
             if account_name in response:
                 response = self.split_table_response(response)[0]
-                acc_details["account_name"] = response[1]
-                acc_details["account_email"] = response[2]
-                acc_details["account_id"] = response[3]
-                acc_details["canonical_id"] = response[4]
-                acc_details["access_key"] = response[5]
-                acc_details["secret_key"] = response[6]
+                acc_details["account_name"] = response[0]
+                acc_details["account_email"] = response[1]
+                acc_details["account_id"] = response[2]
+                acc_details["canonical_id"] = response[3]
+                acc_details["access_key"] = response[4]
+                acc_details["secret_key"] = response[5]
                 LOGGER.info("Account Details: %s", acc_details)
                 response = acc_details
         except Exception as error:
@@ -101,7 +101,7 @@ class _S3AccountOperations(CortxCliS3AccountOperations):
         self.log.info("Total Time in seconds for Creating Account is: %s", str(end-start))
         return status, response
 
-    def list_accounts_cortxcli(self, output_format='json', sleep_time=10) -> tuple:
+    def list_accounts_cortxcli(self, output_format='json') -> tuple:
         """
         Listing accounts using  cortxcli.
 
@@ -109,7 +109,7 @@ class _S3AccountOperations(CortxCliS3AccountOperations):
         """
         try:
             self.login_cortx_cli()
-            status, response = super().show_s3account_cortx_cli(output_format=output_format, sleep_time=sleep_time)
+            status, response = super().show_s3account_cortx_cli(output_format=output_format)
             if status:
                 accounts = self.format_str_to_dict(input_str=response)["s3_accounts"]
             else:

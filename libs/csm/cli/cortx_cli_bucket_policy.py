@@ -65,9 +65,9 @@ class CortxCliS3BktPolicyOperations(CortxCli):
         command = " ".join(
             [commands.CMD_CREATE_BUCKET_POLICY, bucket_name, policy_id, file_path])
 
-        output = self.execute_cli_commands(cmd=command)[1]
+        output = self.execute_cli_commands(cmd=command, patterns=["[Y/n]"])[1]
         if "[Y/n]" in output:
-            output = self.execute_cli_commands(cmd="Y")[1]
+            output = self.execute_cli_commands(cmd="Y", patterns=["Bucket Policy Updated Successfully"])[1]
             if "Bucket Policy Updated Successfully" in output:
                 return True, output
 
@@ -85,9 +85,9 @@ class CortxCliS3BktPolicyOperations(CortxCli):
         command = " ".join(
             [commands.CMD_DELETE_BUCKET_POLICY, bucket_name])
 
-        output = self.execute_cli_commands(cmd=command)[1]
+        output = self.execute_cli_commands(cmd=command, patterns=["[Y/n]"])[1]
         if "[Y/n]" in output:
-            output = self.execute_cli_commands(cmd="Y")[1]
+            output = self.execute_cli_commands(cmd="Y", patterns=["Bucket policy deleted"])[1]
             if "Bucket policy deleted" in output:
                 return True, output
 
@@ -110,7 +110,7 @@ class CortxCliS3BktPolicyOperations(CortxCli):
         if output_format:
             show_bkt_policy = "{} -f {}".format(
                 show_bkt_policy, output_format)
-        output = self.execute_cli_commands(cmd=show_bkt_policy)[1]
+        output = self.execute_cli_commands(cmd=show_bkt_policy, patterns=["Statement"])[1]
         if "error" in output.lower() or "exception" in output.lower():
             return False, output
 

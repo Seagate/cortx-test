@@ -258,9 +258,9 @@ class TestCliS3ACC:
             password=self.s3acc_password)
         assert_utils.assert_equals(True, login[0], login[1])
         self.logger.info("Deleting s3 account %s", self.s3acc_name)
-        response = self.s3acc_obj.execute_cli_commands(cmd=delete_s3acc_cmd)[1]
+        response = self.s3acc_obj.execute_cli_commands(cmd=delete_s3acc_cmd, patterns=["[Y/n]"])[1]
         if "[Y/n]" in response:
-            response = self.s3acc_obj.execute_cli_commands(cmd="n")
+            response = self.s3acc_obj.execute_cli_commands(cmd="n", patterns=["cortxcli"])
         assert_utils.assert_equals(True, response[0], response[1])
         resp = self.s3acc_obj.show_s3account_cortx_cli()
         assert_utils.assert_exact_string(resp[1], self.s3acc_name)
@@ -278,7 +278,7 @@ class TestCliS3ACC:
         """
         dummy_acc1 = "cli_s3acc_{}".format(int(time.time()))
         dummy_acc2 = "cli_s3acc_{}".format(int(time.time()))
-        error_msg = "Access denied. Verify account name."
+        error_msg = "Access denied"
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
             account_email=self.s3acc_email,
@@ -320,7 +320,7 @@ class TestCliS3ACC:
         incorrect/invalid account_name
         """
         dummy_acc = "cli_s3acc_{}".format(int(time.time()))
-        error_msg = "Access denied. Verify account name."
+        error_msg = "Access denied"
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
             account_email=self.s3acc_email,
@@ -503,7 +503,7 @@ class TestCliS3ACC:
         Test that duplicate users should not be created between csm users
         and s3 account users in CSM CLI
         """
-        error_msg = "CSM user with same username as passed S3 account name already exists"
+        error_msg = "name already exists"
         resp = self.csm_user_obj.create_csm_user_cli(
             csm_user_name=self.s3acc_name,
             email_id=self.s3acc_email,
@@ -575,7 +575,7 @@ class TestCliS3ACC:
         while resetting account password
         """
         dummy_acc = "cli_s3acc_{}".format(int(time.time()))
-        error_msg = "Verify account name"
+        error_msg = "Access denied"
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
             account_email=self.s3acc_email,
@@ -796,7 +796,7 @@ class TestCliS3ACC:
             username=self.s3acc_name,
             password=self.s3acc_password)
         assert_utils.assert_equals(True, login[0], login[1])
-        resp = self.s3acc_obj.execute_cli_commands(cmd=commands.CMD_HELP_OPTION)
+        resp = self.s3acc_obj.execute_cli_commands(cmd=commands.CMD_HELP_OPTION, patterns=["usage:"])
         assert_utils.assert_equals(True, resp[0], resp[1])
         for cmd in constants.S3ACCOUNT_HELP_CMDS:
             assert_utils.assert_exact_string(resp[1], cmd)
@@ -872,7 +872,7 @@ class TestCliS3ACC:
             username=self.s3acc_name,
             password=self.s3acc_password)
         assert_utils.assert_equals(True, login[0], login[1])
-        resp = self.s3acc_obj.execute_cli_commands(cmd=commands.CMD_HELP_OPTION)
+        resp = self.s3acc_obj.execute_cli_commands(cmd=commands.CMD_HELP_OPTION, patterns=["usage:"])
         assert_utils.assert_equals(True, resp[0], resp[1])
         result = csm_user_opt in resp[1]
         assert_utils.assert_equals(False, result, resp[1])
@@ -1081,7 +1081,7 @@ class TestCliS3ACC:
             constants.S3ACC_CREATE_HELP]
         for command, help_options in zip(command_list, help_option_list):
             command = " ".join([command, commands.CMD_HELP_OPTION])
-            resp = self.s3acc_obj.execute_cli_commands(cmd=command)
+            resp = self.s3acc_obj.execute_cli_commands(cmd=command, patterns=["usage:"])
             assert_utils.assert_equals(True, resp[0], resp[1])
             for option in help_options:
                 assert_utils.assert_exact_string(resp[1], option)
@@ -1099,7 +1099,7 @@ class TestCliS3ACC:
             constants.S3ACC_DELETE_HELP]
         for command, help_options in zip(command_list, help_option_list):
             command = " ".join([command, commands.CMD_HELP_OPTION])
-            resp = self.s3acc_obj.execute_cli_commands(cmd=command)
+            resp = self.s3acc_obj.execute_cli_commands(cmd=command, patterns=["usage:"])
             assert_utils.assert_equals(True, resp[0], resp[1])
             for option in help_options:
                 assert_utils.assert_exact_string(resp[1], option)

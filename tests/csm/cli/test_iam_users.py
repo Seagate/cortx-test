@@ -215,7 +215,7 @@ class TestCliIAMUser:
         Initiating the test case to verify invalid IAM user name
         """
         self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        invalid_username = "Inv@lid-User"
+        invalid_username = "Inv@lid$&-User"
         self.LOGGER.info(
             "Verifying iam user will not get created with invalid name")
         resp = self.iam_obj.create_iam_user(
@@ -333,7 +333,7 @@ class TestCliIAMUser:
         resp = self.iam_obj.list_iam_user(output_format="json")[1]["iam_users"]
         user_list = [user["user_name"]
                      for user in resp if "iam_user" in user["user_name"]]
-        assert_utils.assert_list_item(user_list, user_name)
+        assert_utils.assert_list_item(user_list, self.user_name)
         self.LOGGER.info("Verified that iam user is created")
         self.LOGGER.info("Verifying iam user is not able to login cortxcli")
         logout = self.iam_obj.logout_cortx_cli()

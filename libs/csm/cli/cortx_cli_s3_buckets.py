@@ -50,7 +50,7 @@ class CortxCliS3BucketOperations(CortxCli):
         """
         create_bucket_cmd = commands.CMD_CREATE_BUCKET.format(bucket_name)
         LOGGER.info("Creating bucket with name %s", bucket_name)
-        response = self.execute_cli_commands(cmd=create_bucket_cmd)[1]
+        response = self.execute_cli_commands(cmd=create_bucket_cmd, patterns=["Bucket created"])[1]
         LOGGER.info("Response returned: \n%s", response)
         if "Bucket created" in response:
             return True, response
@@ -68,7 +68,7 @@ class CortxCliS3BucketOperations(CortxCli):
         if op_format:
             show_bkts_cmd = "{} -f {}".format(show_bkts_cmd, op_format)
         LOGGER.info("Listing buckets with cmd: %s", show_bkts_cmd)
-        response = self.execute_cli_commands(cmd=show_bkts_cmd)
+        response = self.execute_cli_commands(cmd=show_bkts_cmd, patterns=["Bucket Name", "{", "<"])
         LOGGER.info("Response returned: \n%s", response)
 
         return response
@@ -83,7 +83,7 @@ class CortxCliS3BucketOperations(CortxCli):
         """
         delete_bucket_cmd = commands.CMD_DELETE_BUCKET.format(bucket_name)
         LOGGER.info("Deleting bucket %s", bucket_name)
-        response = self.execute_cli_commands(cmd=delete_bucket_cmd)[1]
+        response = self.execute_cli_commands(cmd=delete_bucket_cmd, patterns=["Bucket deleted"])[1]
         LOGGER.info("Response returned: \n%s", response)
         if "Bucket deleted" in response:
             return True, response

@@ -232,7 +232,7 @@ class TestCliS3BKT:
         """
         Initiating the test case to verify help response for s3 bucket
         """
-        resp = self.s3bkt_obj.execute_cli_commands(cmd=commands.CMD_S3BKT_HELP)
+        resp = self.s3bkt_obj.execute_cli_commands(cmd=commands.CMD_S3BKT_HELP, patterns=["usage:"])
         assert_utils.assert_equals(True, resp[0], resp[1])
         for msg in constants.S3BUCKET_HELP:
             assert_utils.assert_exact_string(resp[1], msg)
@@ -248,7 +248,7 @@ class TestCliS3BKT:
         """
         create_bucket_help = " ".join([commands.CMD_CREATE_BUCKET.format(
             self.bucket_name), commands.CMD_HELP_OPTION])
-        resp = self.s3bkt_obj.execute_cli_commands(cmd=create_bucket_help)
+        resp = self.s3bkt_obj.execute_cli_commands(cmd=create_bucket_help, patterns=["usage:"])
         assert_utils.assert_equals(True, resp[0], resp[1])
         for msg in constants.S3BUCKET_CREATE_HELP:
             assert_utils.assert_exact_string(resp[1], msg)
@@ -264,7 +264,7 @@ class TestCliS3BKT:
         """
         delete_bucket_help = " ".join([commands.CMD_DELETE_BUCKET.format(
             self.bucket_name), commands.CMD_HELP_OPTION])
-        resp = self.s3bkt_obj.execute_cli_commands(cmd=delete_bucket_help)
+        resp = self.s3bkt_obj.execute_cli_commands(cmd=delete_bucket_help, patterns=["usage:"])
         assert_utils.assert_equals(True, resp[0], resp[1])
         for msg in constants.S3BUCKET_DELETE_HELP:
             assert_utils.assert_exact_string(resp[1], msg)
@@ -280,7 +280,7 @@ class TestCliS3BKT:
         """
         show_bucket_help = " ".join(
             [commands.CMD_SHOW_BUCKETS, commands.CMD_HELP_OPTION])
-        resp = self.s3bkt_obj.execute_cli_commands(cmd=show_bucket_help)
+        resp = self.s3bkt_obj.execute_cli_commands(cmd=show_bucket_help, patterns=["usage:"])
         assert_utils.assert_equals(True, resp[0], resp[1])
         for msg in constants.S3BUCKET_SHOW_HELP:
             assert_utils.assert_exact_string(resp[1], msg)

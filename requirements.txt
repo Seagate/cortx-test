@@ -50,6 +50,7 @@ python-jenkins
 pyyaml==5.1.2
 pyzmq==18.0.2
 requests==2.22.0
+redexpect
 s3transfer==0.2.1
 schedule
 selenium==3.141.0
