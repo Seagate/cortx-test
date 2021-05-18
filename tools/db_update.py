@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# !/usr/bin/python
 """Script to update results of manual test execution into database."""
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
@@ -16,32 +18,52 @@
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
-#
-# -*- coding: utf-8 -*-
-# !/usr/bin/python
 
 # Basic algorithm
 # for each TE:
 #     for each Test in TE:
-#         result = Search Query by ('buildNo', 'testExecutionID', 'testID', 'valid': True)
-#         if test status in db != in JIRA or no entry in db :
+#         if test status is TODO
+#             Continue
+#         result = Search DB by ('buildNo', 'testExecutionID', 'testID', 'valid': True)
+#         if no entries in DB :
+#             Create one entry in DB
+#         else :
 #             Patch all present entries to add valid key as false
-#             insert new entry with latest data from JIRA
+#             Insert new entry with latest data from JIRA
+#         if test status if FAIL:
+#             Get bug from JIRA an update in DB
 
 import argparse
 import configparser
 import json
+import logging
 import sys
+from argparse import RawDescriptionHelpFormatter
 from http import HTTPStatus
 
 import requests
-from jira import JIRA
 
 from report import jira_api
 
 headers = {
     'Content-Type': 'application/json'
 }
+
+logger = logging.getLogger('db_update')
+logger.setLevel(logging.DEBUG)
+# create file handler which logs even debug messages
+fh = logging.FileHandler('db_update.log')
+fh.setLevel(logging.DEBUG)
+# create console handler with a higher log level
+ch = logging.StreamHandler()
+ch.setLevel(logging.ERROR)
+# create formatter and add it to the handlers
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+ch.setFormatter(formatter)
+fh.setFormatter(formatter)
+# add the handlers to logger
+logger.addHandler(ch)
+logger.addHandler(fh)
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -51,7 +73,7 @@ try:
     DB_USERNAME = config["REST"]["db_username"]
     DB_PASSWORD = config["REST"]["db_password"]
 except KeyError:
-    print("Could not start DB Update script. Please verify config.ini file")
+    logger.error("Could not start DB Update script. Please verify config.ini file")
     sys.exit(1)
 
 
@@ -71,10 +93,10 @@ def patch_db_request(payload: dict) -> None:
     response = requests.request(request, HOSTNAME + endpoint, headers=headers,
                                 data=json.dumps(payload))
     if response.status_code != HTTPStatus.OK:
-        print(f'{request} on {HOSTNAME + endpoint} failed')
-        print(f'HEADERS={response.request.headers}\n'
-              f'BODY={response.request.body}',
-              f'RESPONSE={response.text}')
+        logger.error(f'{request} on {HOSTNAME + endpoint} failed\n'
+                     f'HEADERS={response.request.headers}\n'
+                     f'BODY={response.request.body}\n',
+                     f'RESPONSE={response.text}')
         sys.exit(1)
 
 
@@ -94,10 +116,10 @@ def create_db_request(payload: dict) -> None:
     response = requests.request(request, HOSTNAME + endpoint, headers=headers,
                                 data=json.dumps(payload))
     if response.status_code != HTTPStatus.OK:
-        print(f'{request} on {HOSTNAME + endpoint} failed')
-        print(f'HEADERS={response.request.headers}\n'
-              f'BODY={response.request.body}',
-              f'RESPONSE={response.text}')
+        logger.error(f'{request} on {HOSTNAME + endpoint} failed\n'
+                     f'HEADERS={response.request.headers}\n'
+                     f'BODY={response.request.body}\n',
+                     f'RESPONSE={response.text}')
         sys.exit(1)
 
 
@@ -123,159 +145,231 @@ def search_db_request(payload: dict):
         return response.json()["result"]
     if response.status_code == HTTPStatus.NOT_FOUND and "No results" in response.text:
         return None
-    print(f'{request} on {HOSTNAME + endpoint} failed')
-    print(f'HEADERS={response.request.headers}\n'
-          f'BODY={response.request.body}',
-          f'RESPONSE={response.text}')
+    logger.error(f'{request} on {HOSTNAME + endpoint} failed\n'
+                 f'HEADERS={response.request.headers}\n'
+                 f'BODY={response.request.body}\n',
+                 f'RESPONSE={response.text}')
     sys.exit(1)
 
 
-def get_features_from_test_plan(test_plan: str, username: str, password: str) -> dict:
-    """
-    Description: Get feature from test plan board
+def get_latest_test_plans_from_db() -> list:
+    """Get latest 5 test plans from DB"""
+    endpoint = "aggregate"
+    payload = {"aggregate": [
+        {"$group": {"_id": {"testPlanID": "$testPlanID"},
+                    "testStartTime": {"$min": "$testStartTime"}}},
+        {"$sort": {"testStartTime": -1}}],
+        "db_username": DB_USERNAME,
+        "db_password": DB_PASSWORD}
+    response = requests.request("GET", HOSTNAME + endpoint, headers=headers,
+                                data=json.dumps(payload))
+    tp_list = []
+    if response.status_code == HTTPStatus.OK:
+        json_response = json.loads(response.text)
+        for each in json_response["result"][:5]:
+            tp_list.append(each["_id"]["testPlanID"])
+    logger.info(f"Latest 5 test plans from DB: {tp_list}")
+    return tp_list
 
-    Returns:
-        Feature String
-    """
-    jira_url = 'https://jts.seagate.com/'
-    options = {'server': jira_url}
-    jira = JIRA(options, basic_auth=(username, password))
-    features = {}
-    for feature in jira_api.FEATURES:
-        tests = jira.search_issues(
-            f'issue in testPlanFolderTests({test_plan},\'{feature}\',\'true\')', maxResults=500)
-        features[feature] = [test.key for test in tests]
-    return features
 
+def parse_argument():
+    """Parse arguments"""
+    parser = argparse.ArgumentParser(
+        description="For syncing a given test plan, pass `only <testplan>` options "
+                    "\nFor syncing latest 5 test plans, no options are needed",
+        formatter_class=RawDescriptionHelpFormatter
+    )
+    subparsers = parser.add_subparsers(dest='subcommand')
 
-def get_feature(features: dict, test: str) -> str:
-    """Return feature from features dictionary"""
-    for feature, tests in features.items():
-        if test in tests:
-            return feature
-    return "Orphan"
+    # sub-parser for only
+    parser_only = subparsers.add_parser('only')
+    parser_only.add_argument('tp', help='Testplan for build')
+
+    args = parser.parse_args()
+    if args.subcommand:
+        logger.info(f"Will sync {args.tp} test plan from JIRA to DB")
+        return [args.tp]
+    logger.info("No options passed. Will sync last 5 test plans.")
+    return None
 
 
 # pylint: disable-msg=too-many-locals
+# pylint: disable-msg=too-many-nested-blocks
+# pylint: disable-msg=too-many-statements
+# pylint: disable-msg=too-many-branches
 def main():
     """Update test executions from JIRA to MongoDB."""
+    args = parse_argument()
+    if args:
+        tp_keys = args
+    else:
+        tp_keys = get_latest_test_plans_from_db()
+    while True:
+        for tp_key in tp_keys:
+            logger.info(f"JIRA DB Sync for Test Plan ID = {tp_key}")
+            username, password = jira_api.get_username_password()
+            tp_details = jira_api.get_details_from_test_plan(tp_key, username, password)
+            test_executions = jira_api.get_test_executions_from_test_plan(tp_key,
+                                                                          username, password)
+            test_plan_issue = jira_api.get_issue_details(tp_key, username, password)
+            test_plan_label = test_plan_issue.fields.labels[0] if \
+                test_plan_issue.fields.labels else "None"
 
-    username, password = jira_api.get_username_password()
-    build = jira_api.get_build_from_test_plan(tp_key, username, password)
-    test_executions = jira_api.get_test_executions_from_test_plan(tp_key, username, password)
-    test_plan_issue = jira_api.get_issue_details(tp_key, username, password)
-    features = get_features_from_test_plan(tp_key, username, password)
-    # for each TE:
-    for test_execution in test_executions:
-        test_execution_issue = jira_api.get_issue_details(test_execution["key"], username, password)
-        tests = jira_api.get_test_from_test_execution(test_execution["key"], username, password)
-        # for each Test in TE:
-        for test in tests:
-            query_payload = {
-                "query": {
-                    "buildNo": build,
-                    "testExecutionID": test_execution["key"],
-                    "testID": test["key"],
-                    "latest": True
-                },
-            }
-            results = search_db_request(query_payload)
+            # for each TE:
+            for test_execution in test_executions:
+                logger.debug("-Test Execution {0}".format(test_execution["key"]))
+                test_execution_issue = jira_api.get_issue_details(test_execution["key"],
+                                                                  username, password)
+                test_execution_label = test_execution_issue.fields.labels[0] if \
+                    test_execution_issue.fields.labels else "None"
+                test_team = test_execution_issue.fields.components[0].name if \
+                    test_execution_issue.fields.components else "CortxQA"
 
-            if len(results) == 0:
-                # add one entry
-                test_issue = jira_api.get_issue_details(test["key"], username, password)
-                payload = {
-                    # Unknown data
-                    "clientHostname": "",
-                    "OSVersion": "",
-                    "noOfNodes": 0,
-                    "nodesHostname": [""],
-                    "testExecutionTime": 0,
-                    "healthCheckResult": "",
-                    "buildType": "",
-                    "testTags": [""],
-                    "testType": "",
-                    # Data from JIRA
-                    "testPlanID": tp_key,
-                    "buildNo": build,
-                    "logPath": test["comment"],
-                    "testResult": test["status"],
-                    "testStartTime": test["startedOn"],
-                    "testName": test_issue["fields"]["summary"],
-                    "testID": test["key"],
-                    "testTeam": test_execution_issue["fields"]["components"][0]["name"],
-                    "testIDLabels": test_issue["fields"]["labels"],
-                    "testExecutionID": test_execution["key"],
-                    "testExecutionLabel": test_execution_issue["fields"]["labels"][0],
-                    "executionType": test_issue["fields"]["customfield_20981"],
-                    "testPlanLabel": test_plan_issue["fields"]["labels"][0],
-                    "feature": get_feature(features, test["key"]),
-                    "latest": True
-                }
-                create_db_request(payload)
-            else:
-                # if test status in db != in JIRA or no entry in db
-                if results[0]["testResult"].lower() != test["status"].lower():
-                    # Add valid key in entry false
-                    patch_payload = {
-                        "filter": query_payload["query"],
-                        "update": {
-                            "$set": {"latest": False}
+                tests = jira_api.get_test_from_test_execution(test_execution["key"],
+                                                              username, password)
+                # for each Test in TE:
+                for test in tests:
+                    logger.debug("-Test Key {0}".format(test["key"]))
+                    if test["status"] == "TODO":
+                        continue
+                    query_payload = {
+                        "query": {
+                            "buildNo": tp_details["buildNo"],
+                            "testExecutionID": test_execution["key"],
+                            "testID": test["key"],
+                            "latest": True
+                        },
+                    }
+
+                    test_issue = jira_api.get_issue_details(test["key"], username, password)
+                    feature = test_issue.fields.customfield_21087.value if \
+                        test_issue.fields.customfield_21087 else "None"
+                    feature_id = test_issue.fields.customfield_22881 if \
+                        test_issue.fields.customfield_22881 else ["None"]
+                    dr_id = test_issue.fields.customfield_22882 if \
+                        test_issue.fields.customfield_22882 else ["None"]
+                    log_path = test["comment"] if "comment" in test else "None"
+
+                    results = search_db_request(query_payload)
+
+                    if not results:
+                        logger.debug("DB entry does not exist for build "
+                                     "{0} TE {1} Test {2}".format(tp_details["buildNo"],
+                                                                  test_execution["key"],
+                                                                  test["key"]))
+                        # add one entry
+                        payload = {
+                            # Framework/Unknown data
+                            "clientHostname": "",
+                            "noOfNodes": 0,
+                            "OSVersion": "",
+                            "nodesHostname": [""],
+                            "testTags": [""],
+                            "testType": "",
+                            "testExecutionTime": 0,
+                            "healthCheckResult": "",
+                            # Data from JIRA
+                            "testStartTime": test["startedOn"],
+                            "logPath": log_path,
+                            "testResult": test["status"],
+                            "platformType": tp_details["platformType"],
+                            "serverType": tp_details["serverType"],
+                            "enclosureType": tp_details["enclosureType"],
+                            "testName": test_issue.fields.summary,
+                            "testID": test["key"],
+                            "testIDLabels": test_issue.fields.labels,
+                            "testPlanID": tp_key,
+                            "testExecutionID": test_execution["key"],
+                            "testPlanLabel": test_plan_label,
+                            "testExecutionLabel": test_execution_label,
+                            "testTeam": test_team,
+                            "buildType": tp_details["branch"],
+                            "buildNo": tp_details["buildNo"],
+                            "executionType": test_issue.fields.customfield_20981.value,
+                            "feature": feature,
+                            "latest": True,
+                            "drID": dr_id,
+                            "featureID": feature_id
                         }
-                    }
-                    patch_db_request(patch_payload)
-                    # Insert new entry with latest data from JIRA
-                    payload = {
-                        # Unknown data
-                        "clientHostname": "",
-                        "noOfNodes": "",
-                        "OSVersion": "",
-                        "nodesHostname": [""],
-                        "testExecutionTime": "",
-                        "healthCheckResult": "",
-                        # Data from JIRA
-                        "buildNo": build,
-                        "logPath": test["comment"],
-                        "testResult": test["status"],
-                        "testStartTime": test["startedOn"],
-                        # Data from previous database entry
-                        "buildType": results[0]["buildType"],
-                        "testName": results[0]["testName"],
-                        "testID": results[0]["testID"],
-                        "testIDLabels": results[0]["testIDLabels"],
-                        "testTags": results[0]["testTags"],
-                        "testPlanID": results[0]["testPlanID"],
-                        "testExecutionID": results[0]["testExecutionID"],
-                        "testType": results[0]["testType"],
-                        "testExecutionLabel": results[0]["testExecutionLabel"],
-                        "executionType": results[0]["executionType"],
-                        "testPlanLabel": results[0]["testPlanLabel"],
-                        "feature": results[0]["feature"],
-                        "latest": True
-                    }
-                    create_db_request(payload)
+                        create_db_request(payload)
+                        logger.debug("Created an entry in DB.")
+                    else:
+                        # if test status in db != in JIRA or no entry in db
+                        if results[0]["testResult"].lower() != test["status"].lower():
+                            logger.debug("Test Result from DB & JIRA are not matching for "
+                                         "Test {0}".format(test["key"]))
+                            # Add valid key in entry false
+                            patch_payload = {
+                                "filter": query_payload["query"],
+                                "update": {
+                                    "$set": {"latest": False}
+                                }
+                            }
+                            patch_db_request(patch_payload)
+                            logger.debug("Patched old entries with latest false.")
+                            # Insert new entry with latest data from JIRA
+                            payload = {
+                                # Unknown data
+                                "clientHostname": "",
+                                "noOfNodes": 0,
+                                "OSVersion": "",
+                                "nodesHostname": [""],
+                                "testExecutionTime": 0,
+                                "healthCheckResult": "",
+                                # Data from JIRA
+                                "testStartTime": test["startedOn"],
+                                "logPath": log_path,
+                                "testResult": test["status"],
+                                # Data from previous database entry
+                                "testTags": results[0]["testTags"],
+                                "testType": results[0]["testType"],
+                                "platformType": results[0]["platformType"],
+                                "serverType": results[0]["serverType"],
+                                "enclosureType": results[0]["enclosureType"],
+                                "testName": results[0]["testName"],
+                                "testID": results[0]["testID"],
+                                "testIDLabels": results[0]["testIDLabels"],
+                                "testPlanID": results[0]["testPlanID"],
+                                "testExecutionID": results[0]["testExecutionID"],
+                                "testPlanLabel": results[0]["testPlanLabel"],
+                                "testExecutionLabel": results[0]["testExecutionLabel"],
+                                "testTeam": results[0]["testTeam"],
+                                "buildType": results[0]["buildType"],
+                                "buildNo": tp_details["buildNo"],
+                                "executionType": results[0]["executionType"],
+                                "feature": results[0]["feature"],
+                                "latest": True,
+                                "drID": results[0]["drID"],
+                                "featureID": results[0]["featureID"]
+                            }
+                            create_db_request(payload)
+                            logger.debug("Created new entry with results from JIRA.")
 
-            if "fail" in test["status"].lower():
-                # Get BUG ID from JIRA
-                if "defects" not in test:
-                    print("WARNING: Failure is not mapped to any issue in JIRA "
-                          "TEST - {0}, Test Execution - {1}, "
-                          "Test Plan = {2}".format(test["key"], test_execution["key"], tp_key))
-                defects = [defect["key"] for defect in test["defects"]]
-                if defects:
-                    # PATCH issue in db entry
-                    patch_payload = {
-                        "filter": query_payload["query"],
-                        "update": {
-                            "$set": {"issueIDs": defects}
-                        }
-                    }
-                    patch_db_request(patch_payload)
+                    if "fail" in test["status"].lower():
+                        logger.debug("TEST status is FAIL in JIRA.")
+                        # Get BUG ID from JIRA
+                        if len(test["defects"]) == 0:
+                            logger.warning("Failure is not mapped to any BUG in JIRA "
+                                           "TEST - {0}, Test Execution - {1}, "
+                                           "Test Plan = {2}".format(test["key"],
+                                                                    test_execution["key"], tp_key))
+                        else:
+                            defects = [defect["key"] for defect in test["defects"]]
+                            if defects:
+                                # PATCH issue in db entry
+                                patch_payload = {
+                                    "filter": query_payload["query"],
+                                    "update": {
+                                        "$set": {"issueIDs": defects}
+                                    }
+                                }
+                                patch_db_request(patch_payload)
+                                logger.debug("Added defects linked in JIRA into DB.")
+        if not args:
+            tp_keys = get_latest_test_plans_from_db()
+        else:
+            break
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('tp', help='Testplan for current build')
-    test_plans = parser.parse_args()
-    tp_key = test_plans.tp
     main()

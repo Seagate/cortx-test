@@ -29,7 +29,7 @@ mdstat==1.0.4
 msgpack==0.6.2
 munch==2.5.0
 mypy==0.782
-pandas==0.25.1
+pandas==1.2.1
 paramiko==2.6.0
 pika==1.1.0
 pycryptodome==3.10.1

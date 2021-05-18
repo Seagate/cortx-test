@@ -60,7 +60,8 @@ def gen_table_comp_summary(n_clicks, branch, build_no, test_system,test_plan, te
     if n_clicks is None or branch is None or build_no is None or test_system is None:
         raise PreventUpdate
 
-    component_list = ["S3", "Provisioner", "CSM", "RAS", "Motr", "HA", "Hare"]
+    component_list = ["Automation", "CSM", "CFT", "doc", "Foundation", "HA", "hare", "Monitor",
+                      "Motr", "Provisioner", "S3Server", "UDX"]
     # Query for previous build
     prev_build = common.r2_get_previous_builds(branch, build_no)
     if len(prev_build) == 1:

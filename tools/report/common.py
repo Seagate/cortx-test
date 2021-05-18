@@ -40,6 +40,9 @@ TIMINGS_PARAMETERS = {
     "stopNodeTime": "Stop Node"
 }
 
+COMPONENT_LIST = ["Automation", "CSM", "CFT", "doc", "Foundation", "HA", "hare", "Monitor",
+                  "Motr", "Provisioner", "S3Server", "UDX"]
+
 
 def get_timings_db_details():
     """Read DB details from config.init file"""

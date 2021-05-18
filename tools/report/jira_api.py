@@ -30,8 +30,36 @@ from jira import JIRA
 
 BUGS_PRIORITY = ["Blocker", "Critical", "Major", "Minor", "Trivial"]
 TEST_STATUS = ["PASS", "FAIL", "ABORTED", "BLOCKED", "TODO"]
-FEATURES = ["User Operations", "Scalability", "Availability", "Longevity", "Usecases",
-            "Data Recovery", "CrossConnect"]
+FEATURES = [
+    " Longevity",
+    " Performance",
+    " Security",
+    "Application Testing (UDX, BearOS etc..)",
+    "Capacity tests",
+    "Cluster Health Operations",
+    "Cluster Manager Operation (Provision)",
+    "Cluster Monitor Operation (Alerts)",
+    "Cluster Support (Logging, support bundle, health schema)",
+    "Cluster User Operation (CSM)",
+    "CSM GUI Cluster User Operation Tests",
+    "Data Integrity",
+    "Data recovery",
+    "Failure Tests",
+    "FRU Replacement Validation",
+    "Functionality",
+    "High Availability",
+    "Interface",
+    "IO Workload",
+    "Lyve Pilot Tests",
+    "Open-Source Tests",
+    "Platform Operations",
+    "Robustness and Reliability",
+    "S3 IO load tests",
+    "S3 Operations",
+    "Scalability",
+    "Stress Tests",
+    "System Integration",
+]
 
 
 def get_test_executions_from_test_plan(test_plan: str, username: str, password: str) -> [dict]:
@@ -60,7 +88,8 @@ def get_test_executions_from_test_plan(test_plan: str, username: str, password: 
     if response.status_code == HTTPStatus.OK:
         return response.json()
     print(f'get_test_executions GET on {jira_url} failed')
-    print(f'HEADERS={response.request.headers}\n'
+    print(f'RESPONSE={response.text}\n'
+          f'HEADERS={response.request.headers}\n'
           f'BODY={response.request.body}')
     sys.exit(1)
 
@@ -181,16 +210,22 @@ def get_defects_from_test_plan(test_plan: str, username: str, password: str) -> 
     return defects
 
 
-def get_build_from_test_plan(test_plan: str, username: str, password: str):
-    """Get build number from given test plan."""
+def get_details_from_test_plan(test_plan: str, username: str, password: str) -> dict:
+    """Get details for given test plan."""
     test_plan_details = get_issue_details(test_plan, username, password)
-    build_no = "None"
-    if test_plan_details.fields.environment:
-        build_no = test_plan_details.fields.environment
-    else:
-        print(f"Test Plan {test_plan} has environment field empty. Setup it to build number.")
-        sys.exit(1)
-    return build_no
+    fields = {"platformType": test_plan_details.fields.customfield_22982,
+              "serverType": test_plan_details.fields.customfield_22983,
+              "enclosureType": test_plan_details.fields.customfield_22984,
+              "branch": test_plan_details.fields.customfield_22981,
+              "buildNo": test_plan_details.fields.customfield_22980}
+    out_dict = {}
+    for key, value in fields.items():
+        if value:
+            out_dict.update({key: value[0]})
+        else:
+            print(f"Test Plan {test_plan} has {key} field empty.")
+            sys.exit(1)
+    return out_dict
 
 
 def get_main_table_data(build_no: str):
@@ -231,7 +266,7 @@ def get_overall_qa_report_table_data(test_plan: str, test_plan1: str,
     build1 = "NA"
     count_1 = Counter()
     if test_plan1:
-        build1 = get_build_from_test_plan(test_plan1, username, password)
+        build1 = get_details_from_test_plan(test_plan1, username, password)["buildNo"]
         tests = get_test_list_from_test_plan(test_plan1, username, password)
         count_1 = Counter(test['latestStatus'] for test in tests)
 

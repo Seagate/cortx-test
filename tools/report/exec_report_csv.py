@@ -20,9 +20,10 @@
 # -*- coding: utf-8 -*-
 import argparse
 import csv
-import math
 from collections import Counter
 
+import numpy as np
+import pandas as pd
 from jira import JIRA
 
 import common
@@ -30,62 +31,43 @@ import jira_api
 import mongodb_api
 
 
-def prepare_feature_data(total_count, pass_count, fail_count):
-    """Create feature summary data."""
-    data = [["Feature Breakdown Summary"],
-            ["Features", "Total", "Pass", "Failed", "% Pass", "% Failed"]]
-
-    for feature in total_count:
-        f_pass = pass_count[feature]
-        f_total = total_count[feature]
-        f_fail = fail_count[feature]
-        if f_total:
-            pct_pass = math.ceil(f_pass * 100 / f_total)
-            pct_fail = math.floor(f_fail * 100 / f_total)
-        else:
-            pct_pass = 0
-            pct_fail = 0
-        data.extend([[feature, f_total, f_pass, f_fail, pct_pass, pct_fail]])
-
-    return data
-
-
 def get_feature_breakdown_summary_table_data(test_plan: str, username: str, password: str):
     """Get feature breakdown summary table data."""
-    fail_count = {}
-    pass_count = {}
-    total_count = {}
+    df_feature_data = pd.DataFrame(columns=["Pass", "Fail", "Total"])
     jira_url = 'https://jts.seagate.com/'
     options = {'server': jira_url}
     jira = JIRA(options, basic_auth=(username, password))
     for feature in jira_api.FEATURES:
-        fail_count[feature] = jira.search_issues(
-            f'issue in testPlanFolderTests({test_plan},\'{feature}\',\'true\',\'FAIL\',\'\')',
-            maxResults=500, json_result=True)["total"]
-        pass_count[feature] = jira.search_issues(
-            f'issue in testPlanFolderTests({test_plan},\'{feature}\',\'true\',\'PASS\',\'\')',
-            maxResults=500, json_result=True)["total"]
-        total_count[feature] = jira.search_issues(
-            f'issue in testPlanFolderTests({test_plan},\'{feature}\',\'true\')',
-            maxResults=500, json_result=True)["total"]
+        df_feature_data.loc[feature.lstrip()] = [
+            jira.search_issues(
+                f'issue in testPlanTests("{test_plan}", "PASS") AND "Test Domain" = "{feature}"',
+                maxResults=500, json_result=True)["total"],
+            jira.search_issues(
+                f'issue in testPlanTests("{test_plan}", "FAIL") AND "Test Domain" = "{feature}"',
+                maxResults=500, json_result=True)["total"],
+            jira.search_issues(
+                f'issue in testPlanTests("{test_plan}") AND "Test Domain" = "{feature}"',
+                maxResults=500, json_result=True)["total"]
+        ]
+    # Drop features with 0 data in all columns
+    df_feature_data = df_feature_data[(df_feature_data > 0)].dropna(how="all")
 
-    total_non_orphans = sum(total_count.values())
-    total_pass_non_orphans = sum(pass_count.values())
-    total_fail_non_orphans = sum(fail_count.values())
+    # Add % pass and % fail columns
+    df_feature_data["% Pass"] = (
+                df_feature_data["Pass"].divide(df_feature_data["Total"]) * 100).fillna(0).apply(
+        np.ceil)
+    df_feature_data["% Fail"] = (
+                df_feature_data["Fail"].divide(df_feature_data["Total"]) * 100).fillna(0).apply(
+        np.floor)
 
-    total_count["Total"] = len(jira_api.get_test_list_from_test_plan(test_plan, username, password))
-    pass_count["Total"] = sum(
-        x.get('latestStatus') == "PASS" for x in
-        jira_api.get_test_list_from_test_plan(test_plan, username, password))
-    fail_count["Total"] = sum(
-        x.get('latestStatus') == "FAIL" for x in
-        jira_api.get_test_list_from_test_plan(test_plan, username, password))
-
-    total_count["Orphans"] = total_count["Total"] - total_non_orphans
-    pass_count["Orphans"] = pass_count["Total"] - total_pass_non_orphans
-    fail_count["Orphans"] = fail_count["Total"] - total_fail_non_orphans
-
-    return prepare_feature_data(total_count, pass_count, fail_count)
+    df_feature_data.loc["Total"] = [df_feature_data.iloc[:, 0].sum(),
+                                    df_feature_data.iloc[:, 1].sum(),
+                                    df_feature_data.iloc[:, 2].sum(), "-", "-"]
+    df_feature_data.fillna(0, inplace=True)
+    feature_data = df_feature_data.reset_index().values.tolist()
+    feature_data.insert(0, ["Feature", "Pass", "Fail", "Total", "% Pass", "% Fail"])
+    feature_data.insert(0, ["Feature Breakdown Summary"])
+    return feature_data
 
 
 def get_code_maturity_data(test_plan: str, test_plan1: str, test_plan2: str,
@@ -97,7 +79,7 @@ def get_code_maturity_data(test_plan: str, test_plan1: str, test_plan2: str,
         if t_plan:
             tests = jira_api.get_test_list_from_test_plan(test_plan, username, password)
             counters.append(Counter(test['latestStatus'] for test in tests))
-            builds.append(jira_api.get_build_from_test_plan(t_plan, username, password))
+            builds.append(jira_api.get_details_from_test_plan(t_plan, username, password)["build"])
         else:
             counters.append(Counter())
             builds.append("NA")
@@ -170,7 +152,7 @@ def main():
     rest, db_username, db_password = common.get_timings_db_details()
     username, password = jira_api.get_username_password()
 
-    builds = [jira_api.get_build_from_test_plan(test_plan, username, password) if
+    builds = [jira_api.get_details_from_test_plan(test_plan, username, password)["buildNo"] if
               test_plan else "NA" for test_plan in tp_ids]
 
     data = []
