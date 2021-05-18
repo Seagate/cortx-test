@@ -110,6 +110,7 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
     if args.te_ticket:
         te_id = str(args.te_ticket) + "_"
     if re_execution:
+        te_tag = None
         report_name = "--html=log/re_non_parallel_" + te_id + args.html_report
         cmd_line = ["pytest", "--continue-on-collection-errors", is_parallel, is_distributed,
                     log_level, report_name]
@@ -202,10 +203,12 @@ def get_ticket_meta_from_test_list():
     pass
 
 
-def get_tests_from_te(jira_obj, args, test_type=['ALL']):
+def get_tests_from_te(jira_obj, args, test_type=None):
     """
     Get tests from given test execution
     """
+    if test_type is None:
+        test_type = ['ALL']
     test_list, tag = jira_obj.get_test_ids_from_te(args.te_ticket, test_type)
     if len(test_list) == 0 or tag == "":
         raise EnvironmentError("Please check TE provided, tests or tag is missing")
@@ -233,7 +236,7 @@ def trigger_unexecuted_tests(args, test_list):
                     write.writerow([test])
             _env = os.environ.copy()
             _env['pytest_run'] = 'distributed'
-            run_pytest_cmd(args, te_tag=None, parallel_exe=args.parallel_exe,
+            run_pytest_cmd(args, te_tag=tag, parallel_exe=args.parallel_exe,
                            env=_env, re_execution=True)
 
 
