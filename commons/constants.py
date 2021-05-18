@@ -259,3 +259,30 @@ PARAMS = {"CORTX_BUILD": "{0}", "HOST": "{1}", "HOST_PASS": "{2}", "DEBUG": "Tru
 #Locking server
 SHARED_LOCK = 'shared'
 EXCLUSIVE_LOCK = 'exclusive'
+
+class SwAlerts:
+    SVCS_3P = [
+        "hare-consul-agent.service",
+        "elasticsearch.service",
+        "statsd.service",
+        "rsyslog.service",
+        "haproxy.service",
+        "slapd.service",
+        "lnet.service",
+        "salt-master.service",
+        "salt-minion.service",
+        "glusterd.service",
+        "multipathd.service",
+        "scsi-network-relay.service",
+        "Kafka"]
+
+    class AlertType:
+        FAULT = "fault"
+        RESOLVED = "fault_resolved"
+
+    class Severity:
+        CRITICAL = "critical"
+        INFO = "informational"
+
+    class ResourceType:
+        SW_SVC = "node:sw:os:service"

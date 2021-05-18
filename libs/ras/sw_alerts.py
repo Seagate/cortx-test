@@ -22,6 +22,10 @@
 """Python library which will perform ras component related and system level operations."""
 import logging
 import re
+import os
+import time
+from collections import OrderedDict
+from commons import commands
 from libs.ras.ras_core_lib import RASCoreLib
 
 LOGGER = logging.getLogger(__name__)
@@ -29,6 +33,10 @@ LOGGER = logging.getLogger(__name__)
 
 class SoftwareAlert(RASCoreLib):
     """A class including functions for ras component related operations."""
+
+    def __init__(self, host: str, username: str, password: str) -> None:
+        super().__init__(host, username, password)
+        self.svc_path = None
 
     def run_verify_svc_state(self, svc: str, action: str, monitor_svcs: list):
         """Perform the given action on the given service and verify systemctl response.
@@ -49,8 +57,13 @@ class SoftwareAlert(RASCoreLib):
         LOGGER.info("Get systemctl status for %s ...", svc)
         prev_svc_state = self.get_svc_status([svc])[svc]
 
-        LOGGER.info("Performing %s on %s ...", action, svc)
-        self.node_utils.send_systemctl_cmd(action, [svc], exc=True)
+        LOGGER.info("Performing %s operation on %s ...", action, svc)
+        if action == "deactivating":
+            self.put_svc_deactivating(svc)
+        elif action == "activating":
+            self.put_svc_activating(svc)
+        else:
+            self.node_utils.send_systemctl_cmd(action, [svc], exc=True)
 
         LOGGER.info("Get systemctl status for %s ...", svc)
         services_status = self.get_svc_status([svc])
@@ -137,6 +150,11 @@ class SoftwareAlert(RASCoreLib):
         elif action == "disable":
             csm_response = None
 
+        elif action == "deactivating":
+            csm_response = None
+
+        elif action == "activating":
+            csm_response = None
         return csm_response
 
     def get_expected_systemctl_resp(self, action: str):
@@ -155,6 +173,10 @@ class SoftwareAlert(RASCoreLib):
             systemctl_status = {'enabled': 'enabled'}
         elif action == "disable":
             systemctl_status = {'enabled': 'disabled'}
+        elif action == "deactivating":
+            systemctl_status = {'state': 'deactivating'}
+        elif action == "activating":
+            systemctl_status = {'state': 'activating'}
         return systemctl_status
 
     def get_svc_status(self, services: list):
@@ -168,8 +190,46 @@ class SoftwareAlert(RASCoreLib):
         responses = self.node_utils.send_systemctl_cmd("status", services, exc=False)
         for svc, response in zip(services, responses):
             LOGGER.info("Systemctl status for %s service is %s", svc, response)
-            status[svc] = self.parse_systemctl_status(response)
+            if isinstance(response, bytes):
+                response = response.decode("utf8")
+                status[svc] = self.parse_systemctl_status(response)
+            elif isinstance(response, str):
+                status[svc] = self.parse_systemctl_status(response)
+            else:
+                raise Exception(response)
         return status
+
+    def get_disabled_svcs(self, services: list):
+        """Extract the inactive service from the given service list
+
+        :param services: List of services to verified
+        :return [type]: list of inactive services
+        """
+        LOGGER.info("Check that all services are in active state: %s", services)
+        resp = self.get_svc_status(services=services)
+        disabled_list = []
+        for svc, sresp in resp.items():
+            LOGGER.info("%s : %s", svc, sresp["enabled"])
+            if sresp["enabled"] != "enabled":
+                disabled_list.append(svc)
+        return disabled_list
+
+    def get_inactive_svcs(self, services: list):
+        """Extract the inactive service from the given service list
+
+        :param services: List of services to verified
+        :return [type]: list of inactive services
+        """
+        LOGGER.info("Check that all services are in active state: %s", services)
+        resp = self.node_utils.send_systemctl_cmd(command="is-active",
+                                                  services=services,
+                                                  decode=True, exc=False)
+        inactive_list = []
+        for state, svc in zip(resp, services):
+            LOGGER.info("%s : %s", svc, state)
+            if state != "active":
+                inactive_list.append(svc)
+        return inactive_list
 
     def parse_systemctl_status(self, response):
         """Parse the keywords from the systemctl response.
@@ -177,7 +237,6 @@ class SoftwareAlert(RASCoreLib):
         :param response: byte response
         :return [type]: Parsed systemctl status response.
         """
-        response = response.decode("utf8")
         parsed_op = {}
         for line in response.splitlines():
             line = line.lstrip().rstrip()
@@ -203,3 +262,117 @@ class SoftwareAlert(RASCoreLib):
                 match = re.match(pid_tokenizer, line)
                 parsed_op.update(match.groupdict())
         return parsed_op
+
+    def put_svc_deactivating(self, svc):
+        """Function to generate deactivating alert
+
+        :param svc: Service Name
+        """
+        self.write_svc_file(
+            svc, {
+                "Service": {
+                    "ExecStop": "/bin/sleep 200", "TimeoutStopSec": "500"}})
+        self.apply_svc_setting()
+        self.node_utils.host_obj.exec_command(commands.SYSTEM_CTL_STOP_CMD.format(svc))
+
+    def put_svc_activating(self, svc):
+        """Function to generate activating alert
+
+        :param svc: Service Name
+        """
+        self.node_utils.host_obj.exec_command(commands.SYSTEM_CTL_STOP_CMD.format(svc))
+        self.write_svc_file(
+            svc, {
+                "Service": {
+                    "ExecStartPre": "/bin/sleep 200", "TimeoutStartSec": "500"}})
+        self.apply_svc_setting()
+        self.node_utils.host_obj.exec_command(commands.SYSTEM_CTL_START_CMD.format(svc))
+
+    def recover_svc(self, svc: str, attempt_start: bool = True, timeout=200):
+        """
+        response recovery time is with +5sec precision
+        :param attempt_start: If True , it will try to start the stopped services.
+        :param timeout: Wait for service to come up until timeout. Seconds
+        :return dict: response: {svc_name1:{state:<value>,recovery_time:<value>},...}
+        """
+        starttime = time.time()
+        op = {}
+        time_lapsed = 0
+        while time_lapsed < timeout:
+            response = self.get_svc_status([svc])
+            LOGGER.info(svc + ":" + response[svc]["state"])
+            if attempt_start and response[svc]["state"] != "active":
+                self.node_utils.send_systemctl_cmd("start", [svc], exc=True)
+            response = self.get_svc_status([svc])
+            op = {"state": response[svc]["state"], "recovery_time": time.time() - starttime}
+            time.sleep(5)
+            time_lapsed = time.time() - starttime
+        return op
+
+    def get_tmp_svc_path(self):
+        """Generate the name of the temporary service configuration file.
+
+        :return [str]: backup for original service configuration
+        """
+        dpath, fname = os.path.split(self.svc_path)
+        tmp_svc_path = os.path.join(dpath, fname + "tmp")
+        return tmp_svc_path
+
+    def read_svc_file(self, svc):
+        """
+        Read the service configuration file and parse the same in form of dictionary
+        :param svc: service name whose file needs to be read
+        :return [dict]: parse service file
+        """
+        response = self.node_utils.read_file(self.get_svc_status([svc])[svc]["path"])
+        op = OrderedDict()
+        section = None
+        for line in response.splitlines():
+            if "[" in line and "]" in line:
+                section = re.sub("\\[", "", line)
+                section = re.sub("\\]", "", section)
+                op[section] = {}
+            elif section is not None and "=" in line:
+                txt = line.split("=")
+                if len(txt) > 2:
+                    separator = '='
+                    key = separator.join(txt[:-1])
+                else:
+                    key = txt[0]
+                    op[section].update({key: txt[-1]})
+        return op
+
+    def write_svc_file(self, svc, content):
+        """Writes content to the service configuration file
+
+        :param svc: Service name whose configaration file is to be modified.
+        :param content: Content to added or updated. It should be in format {section:{key:value}}
+        """
+        fpath = self.get_svc_status([svc])[svc]["path"]
+        self.svc_path = fpath
+        op = self.read_svc_file(svc)
+        self.node_utils.rename_file(self.svc_path, self.get_tmp_svc_path())
+
+        for section, _ in content.items():
+            op[section].update(content[section])
+            txt = ""
+            for key, value in op.items():
+                txt = txt + "[" + key + "]" + "\n"
+                for k, v in value.items():
+                    txt = txt + k + "=" + v + "\n"
+            self.node_utils.write_file(fpath, txt)
+        LOGGER.info("SVC content...")
+        LOGGER.info(txt)
+
+    def apply_svc_setting(self):
+        """Apply the changed setting using reload deemon command.
+        """
+        reload_systemctl = "systemctl daemon-reload"
+        self.node_utils.execute_cmd(cmd=reload_systemctl)
+
+    def restore_svc_config(self):
+        """Removes the changed configuration file and restroes the orhiginal one.
+        """
+        self.node_utils.remove_file(self.svc_path)
+        self.node_utils.rename_file(self.get_tmp_svc_path(), self.svc_path)
+        self.apply_svc_setting()
