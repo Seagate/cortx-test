@@ -52,7 +52,8 @@ Validate ELUA Success
     Click LicenseCancle Button
     Click Accept Button
     Verify Presence of Elements on EULA Page
-    Click LicenseCancle Image
+    #Click LicenseCancle Image
+    Click LicenseCancle Button
     Click Accept Button
     sleep  1s
     Click License Button
