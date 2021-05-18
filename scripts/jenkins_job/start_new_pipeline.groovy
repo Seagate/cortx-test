@@ -8,7 +8,7 @@ pipeline {
     stages {
 		stage('CODE_CHECKOUT') {
 			steps{
-			    checkout([$class: 'GitSCM', branches: [[name: '*/eos-19246-new-pipeline']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'rel_sanity_github_auto', url: 'https://github.com/sonalk0209/cortx-test/']]])
+			    checkout([$class: 'GitSCM', branches: [[name: '*/dev']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'rel_sanity_github_auto', url: 'https://github.com/Seagate/cortx-test/']]])
 			}
 		}
 		stage('ENV_SETUP') {
@@ -23,6 +23,7 @@ export HOSTNAME="${HOSTNAME}"
 export HOST_PASS="${HOST_PASS}"
 python3.7 setup.py install
 python3.7 setup.py develop
+rm -rf build/
 deactivate
 '''
 			}
@@ -57,8 +58,9 @@ deactivate
 	post {
 		always {
 			catchError(stageResult: 'FAILURE') {
-			    //junit allowEmptyResults: true, testResults: 'log/latest/results.xml'
-				//emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL.template"}', subject: '$PROJECT_NAME on Build # $CORTX_BUILD - $BUILD_STATUS!', to: 'nitesh.mahajan@seagate.com, dhananjay.dandapat@seagate.com, sonal.kalbende@seagate.com'
+			    archiveArtifacts allowEmptyArchive: true, artifacts: 'log/latest/results.xml, log/latest/results.html', followSymlinks: false
+			    junit allowEmptyResults: true, testResults: 'log/latest/results.xml'
+				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL.template"}', subject: '$PROJECT_NAME on Build # $CORTX_BUILD - $BUILD_STATUS!', to: 'nitesh.mahajan@seagate.com, dhananjay.dandapat@seagate.com, sonal.kalbende@seagate.com'
 			}
 		}
 	}

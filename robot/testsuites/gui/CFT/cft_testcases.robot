@@ -170,14 +170,14 @@ TEST-4932
     Verify Audit Log Generated
     Capture Page Screenshot  ${test_id}_CSM_audit_log_generated.png
     Download Audit Log  CSM  One day
-    Verify Audit Log Downloaded  ${Download_File_Path}  csm
+    Verify Audit Log Downloaded  ${Downlowait for page or element to loadad_File_Path}  csm
     Capture Page Screenshot  ${test_id}_CSM_audit_log_downloaded.png
     View Audit Log  S3  One day
-    Sleep  5s  #S3 Audit takes a while
+    wait for page or element to load
     Verify Audit Log Generated
     Capture Page Screenshot  ${test_id}_S3_audit_log_generated.png
     Download Audit Log  S3  One day
-    Sleep  5s  #S3 Audit takes a while
+    wait for page or element to load
     Verify Audit Log Downloaded  ${Download_File_Path}  s3
     Capture Page Screenshot  ${test_id}_S3_audit_log_downloaded.png
 
