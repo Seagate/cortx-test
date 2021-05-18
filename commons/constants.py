@@ -212,9 +212,10 @@ S3ACCOUNT_HELP_CMDS = [
         "s3accounts",
         "s3bucketpolicy"]
 S3ACCOUNT_HELP = ["positional arguments:",
-                  "{show,create}",
-                  "show         Displays S3 Accounts On the cli",
-                  "create       Create a new S3 Account."]
+                  "{show,create,reset_password}",
+                  "show                Displays S3 Accounts On the cli",
+                  "create              Create a new S3 Account",
+                  "reset_password      Reset password for S3 Account"]
 S3ACC_CREATE_HELP = ["positional arguments:",
                      "account_name   Name to be given to S3 account",
                      "account_email  Email to be given to S3 account"]

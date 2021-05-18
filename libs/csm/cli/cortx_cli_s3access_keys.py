@@ -51,9 +51,9 @@ class CortxCliS3AccessKeys(CortxCli):
         command = " ".join(
             [commands.CMD_CREATE_ACCESS_KEY, user_name])
         LOGGER.info("Creating s3accesskey for user %s", user_name)
-        response = self.execute_cli_commands(cmd=command)[1]
+        response = self.execute_cli_commands(cmd=command, patterns=["[Y/n]"])[1]
         if "[Y/n]" in response:
-            response = self.execute_cli_commands(cmd="Y")[1]
+            response = self.execute_cli_commands(cmd="Y", patterns=["Access Key"])[1]
             if "Access Key" in response:
                 LOGGER.info("Response returned: \n%s", response)
                 response = self.split_table_response(response)
@@ -79,9 +79,9 @@ class CortxCliS3AccessKeys(CortxCli):
             command = " ".join(
                 [commands.CMD_DELETE_ACCESS_KEY, access_key, user_name])
         LOGGER.info("Deleting s3accesskey %s", access_key)
-        response = self.execute_cli_commands(cmd=command)[1]
+        response = self.execute_cli_commands(cmd=command, patterns=["[Y/n]"])[1]
         if "[Y/n]" in response:
-            response = self.execute_cli_commands(cmd="Y")[1]
+            response = self.execute_cli_commands(cmd="Y", patterns=["Access Key Deleted"])[1]
             if "Access Key Deleted" in response:
                 LOGGER.info("Response returned: \n%s", response)
                 return True, response
@@ -129,9 +129,9 @@ class CortxCliS3AccessKeys(CortxCli):
         command = " ".join(
             [commands.CMD_UPDATE_ACCESS_KEY, user_name, access_key, status])
         LOGGER.info("Updating s3accesskey for user %s", user_name)
-        response = self.execute_cli_commands(cmd=command)[1]
+        response = self.execute_cli_commands(cmd=command, patterns=["[Y/n]"])[1]
         if "[Y/n]" in response:
-            response = self.execute_cli_commands(cmd="Y")[1]
+            response = self.execute_cli_commands(cmd="Y", patterns=["Access Key updated"])[1]
             if "Access Key updated" in response:
                 LOGGER.info("Response returned: \n%s", response)
                 return True, response
