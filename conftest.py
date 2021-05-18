@@ -54,8 +54,6 @@ from core.runner import get_db_credential
 from commons import params
 from config import CMN_CFG
 
-import csv
-csv.writer()
 FAILURES_FILE = "failures.txt"
 LOG_DIR = 'log'
 CACHE = LRUCache(1024 * 10)
@@ -69,8 +67,8 @@ LOGGER = logging.getLogger(__name__)
 SKIP_MARKS = ("dataprovider", "test", "run", "skip", "usefixtures",
               "filterwarnings", "skipif", "xfail", "parametrize",
               "tags")
-
 BASE_COMPONENTS_MARKS = ('csm', 's3', 'ha', 'ras', 'di', 'stress', 'combinational')
+SKIP_DBG_LOGGING = ['boto', 'boto3', 'botocore', 'nose', 'paramiko', 's3transfer', 'urllib3']
 
 
 def _get_items_from_cache():
@@ -193,7 +191,7 @@ def pytest_addoption(parser):
         "--build", action="store", default=None, help="Build number"
     )
     parser.addoption(
-        "--build_type", action="store", default='Release', help="Build Type(Release)"
+        "--build_type", action="store", default='stable', help="Build Type(Release)"
     )
     parser.addoption(
         "--tp_ticket", action="store", default='', help="Test Plan ticket"
@@ -279,19 +277,28 @@ def pytest_sessionfinish(session, exitstatus):
 
 
 def get_test_metadata_from_tp_meta(item):
-    tests_meta = Globals.tp_meta['test_meta']
-    flg = Globals.tp_meta['test_plan_label']
-    tp_label = Globals.tp_meta['test_plan_label'][0] if flg else 'regular'  # first is significant
-    te_meta = Globals.tp_meta['te_meta']
-    te_label = te_meta['te_label'][0]
-    te_component = Globals.tp_meta['te_meta']['te_components']
+    tp_meta = Globals.tp_meta
+    tests_meta = tp_meta['test_meta']
+    flg = tp_meta['test_plan_label']
+    tp_label = tp_meta['test_plan_label'][0] if flg else 'regular'  # first is significant
+    te_meta = tp_meta['te_meta']
+    te_label = te_meta['te_label'][0] if te_meta['te_label'] else ''
+    te_component = tp_meta['te_meta']['te_components']
     test_id = CACHE.lookup(item.nodeid)
+    # tp_meta with defaults
+
     for it in tests_meta:
         if it['test_id'] == test_id:
             it['tp_label'] = tp_label
             it['te_label'] = te_label
             it['te_component'] = te_component
+            it['build'] = tp_meta['build']
+            it['branch'] = tp_meta['branch']
+            it['platform_type'] = tp_meta['platform_type']
+            it['server_type'] = tp_meta['server_type']
+            it['enclosure_type'] = tp_meta['enclosure_type']
             return it
+    return dict()
 
 
 def get_marks_for_test_item(item):
@@ -306,21 +313,21 @@ def get_marks_for_test_item(item):
 def create_report_payload(item, call, final_result, d_u, d_pass):
     """Create Report Payload for POST request to put data in Report DB."""
     os_ver = system_utils.get_os_version()
-    _item_dict = get_test_metadata_from_tp_meta(item)
+    _item_dict = get_test_metadata_from_tp_meta(item) # item dict has all item, tp and te metadata
     marks = get_marks_for_test_item(item)
     are_logs_collected = True
     if final_result == 'FAIL':
         health_chk_res = "TODO"
     elif final_result in ['PASS', 'BLOCKED']:
         health_chk_res = "NA"
-    log_path = "NA"
+    log_path = getattr(item, 'logpath')
     nodes = len(CMN_CFG['nodes'])  # number of target hosts
     nodes_hostnames = [n['hostname'] for n in CMN_CFG['nodes']]
     data_kwargs = dict(os=os_ver,
                        build=item.config.option.build,
                        build_type=item.config.option.build_type,
                        client_hostname=system_utils.get_host_name(),
-                       execution_type="Automated",
+                       execution_type=_item_dict['execution_type'],
                        health_chk_res=health_chk_res,
                        are_logs_collected=are_logs_collected,
                        log_path=log_path,
@@ -334,14 +341,20 @@ def create_report_payload(item, call, final_result, d_u, d_pass):
                        test_id=_item_dict['test_id'],
                        test_id_labels=_item_dict['labels'],
                        test_plan_id=item.config.option.tp_ticket,
-                       test_result=final_result,
+                       test_result=final_result, # call start needs correction
                        start_time=time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(call.start)),
                        tags=marks,  # in mem te_meta
                        test_team=_item_dict['te_component'],  # TE te.fields.components[0].name
-                       test_type='Pytest',  # TE Avocado/CFT/Locust/S3bench/Pytest
+                       test_type='Pytest',  # TE Avocado/CFT/Locust/S3bench/Pytest check marks
                        latest=True,
-                       # feature Should be read from master test plan board.
+                       # feature is read from individual test case Jira.
                        feature=_item_dict.get('test_domain', 'None'),
+                       dr_id=_item_dict['dr_id'],
+                       feature_id=_item_dict['feature_id'],
+                       platform_type=_item_dict['platform_type'],
+                       server_type=_item_dict['server_type'],
+                       enclosure_type=_item_dict['enclosure_type'],
+                       failure_string='',
                        db_username=d_u,
                        db_password=d_pass
                        )
@@ -402,6 +415,9 @@ def reset_imported_module_log_level():
         if isinstance(_logger, logging.PlaceHolder):
             LOGGER.info("Skipping placeholder to reset logging level")
             continue
+        if _logger.name in SKIP_DBG_LOGGING:
+            _logger.setLevel(logging.WARNING)
+    # Handle Place holders logging
     for pkg in ['boto', 'boto3', 'botocore', 'nose', 'paramiko', 's3transfer', 'urllib3']:
         logging.getLogger(pkg).setLevel(logging.WARNING)
 
@@ -551,6 +567,14 @@ def pytest_runtest_makereport(item, call):
         test_id = CACHE.lookup(report.nodeid)
         if report.when == 'teardown':
             try:
+                remote_path = os.path.join(params.NFS_BASE_DIR,
+                                           Globals.BUILD, Globals.TP_TKT,
+                                           Globals.TE_TKT, test_id,
+                                           datetime.datetime.fromtimestamp(
+                                               time.time()).strftime(DT_PATTERN)
+                                           )
+                setattr(report, "logpath", remote_path)
+                setattr(item, "logpath", remote_path)
                 if jira_update:
                     db_user, db_pass = get_db_credential()
                     jira_id, jira_pwd = get_jira_credential()
@@ -689,12 +713,7 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
             for rec in logs:
                 fp.write(rec + '\n')
         LOGGER.info("Uploading test log file to NFS server")
-        remote_path = os.path.join(params.NFS_BASE_DIR,
-                                   Globals.BUILD, Globals.TP_TKT,
-                                   Globals.TE_TKT, test_id,
-                                   datetime.datetime.fromtimestamp(
-                                       time.time()).strftime(DT_PATTERN)
-                                   )
+        remote_path = getattr(report, 'logpath')
         resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
                                                    mnt_dir=params.MOUNT_DIR,
                                                    remote_path=remote_path,
