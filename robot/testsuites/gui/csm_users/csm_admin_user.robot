@@ -239,7 +239,7 @@ TEST-3583
         Verify New User  ${new_user_name}
         Re-login  ${new_user_name}  ${new_password}  ${page_name}
         Validate CSM Login Success  ${new_user_name}
-        Re-login  ${new_user_name}  ${password}  ${page_name}
+        Re-login  ${username}  ${password}  ${page_name}
         Delete CSM User  ${new_user_name}
     END
 
@@ -309,41 +309,35 @@ TEST-18326
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
-    CSM GUI Logout
-    Enter Username And Password  ${S3_account_name}  ${S3_password}
-    Click Sigin Button
-    wait for page or element to load
-    Validate CSM Login Success  ${s3_account_name}
-    CSM GUI Logout
-    wait for page or element to load
-    Enter Username And Password  ${username}  ${password}
-    Click Sigin Button
-    wait for page or element to load
-    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     ${S3_new_password}=  Generate New Password
     Edit S3 User Password  ${S3_account_name}  ${S3_new_password}  ${S3_new_password}
+    Re-login  ${S3_account_name}  ${S3_new_password}  S3_ACCOUNTS_TAB_ID
     Delete S3 Account  ${S3_account_name}  ${S3_new_password}  True
 
 TEST-4871
     [Documentation]  Test that SSl certificate get uploaded on SSl certificate upload page	
     ...  Reference : https://jts.seagate.com/browse/TEST-4871
     [Tags]  Priority_High  CFT_Test  TEST-4871
+    ${test_id}    Set Variable    TEST-4871
     ${installation_status_init} =  Format String  not_installed
     Navigate To Page  SETTINGS_ID  SETTINGS_SSL_BUTTON_ID
     wait for page or element to load
     SSL Upload  ${Download_File_Path}  ${server_file_name}
     Verify SSL status  ${installation_status_init}  ${server_file_name}
+    Capture Page Screenshot  ${test_id}_ssl_uploaded.png
 
 TEST-9045
     [Documentation]  Test that user should able to see latest changes on settings page : SSL certificate
     ...  Reference : https://jts.seagate.com/browse/TEST-9045
     [Tags]  Priority_High  CFT_Test  TEST-9045
+    ${test_id}    Set Variable    TEST-9045
     ${installation_status_init} =  Format String  not_installed
     ${installation_status_success} =  Format String  installation_successful
     Navigate To Page  SETTINGS_ID  SETTINGS_SSL_BUTTON_ID
-    wait for page or element to load
+    wait for page or element to load  3s
     SSL Upload  ${Download_File_Path}  ${server_file_name}
     Verify SSL status  ${installation_status_init}  ${server_file_name} 
+    Capture Page Screenshot  ${test_id}_ssl_uploaded.png
     # # These following lines should be executed in case you have the proper machine
     # Install uploaded SSL
     # wait for page or element to load  5 minutes  #will re-start all service
@@ -353,6 +347,7 @@ TEST-9045
     # Reload Page
     # wait for page or element to load  10s  # Took time to load dashboard after install
     # Verify SSL status  ${installation_status_success}  ${server_file_name}
+    # Capture Page Screenshot  ${test_id}_ssl_installed.png
 
 TEST-11152
     [Documentation]  Test that IEM alerts should be generated for number of days mentioned in /etc/csm/csm.conf prior to SSL certificate expiration
@@ -362,3 +357,36 @@ TEST-11152
     SSL certificate expiration alert Verification  1
     SSL certificate expiration alert Verification  5
     SSL certificate expiration alert Verification  30
+
+TEST-18330
+    [Documentation]  Test that reset password for s3 account does not accept invalid password
+    ...  Reference : https://jts.seagate.com/browse/TEST-18330
+    [Tags]  Priority_High  TEST-18330  S3_test  Smoke_test
+    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    wait for page or element to load
+    ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
+    wait for page or element to load
+    Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
+    Verify Invalid Password Not Accepted By Edit S3 Account
+    CSM GUI Logout
+    Enter Username And Password  ${S3_account_name}  ${S3_password}
+    Click Sigin Button
+    wait for page or element to load
+    Delete S3 Account  ${S3_account_name}  ${S3_password}  True
+
+TEST-18332
+    [Documentation]  Test that confirm rest password button remains
+    ...  disabled for password and confirm password does not match.
+    ...  Reference : https://jts.seagate.com/browse/TEST-18332
+    [Tags]  Priority_High  TEST-18332  S3_test  Smoke_test
+    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    wait for page or element to load
+    ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
+    wait for page or element to load
+    Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
+    Verify Mismatch Password Error For Edit S3account
+    CSM GUI Logout
+    Enter Username And Password  ${S3_account_name}  ${S3_password}
+    Click Sigin Button
+    wait for page or element to load
+    Delete S3 Account  ${S3_account_name}  ${S3_password}  True

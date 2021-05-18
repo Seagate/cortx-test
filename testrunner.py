@@ -56,6 +56,8 @@ def parse_args():
     parser.add_argument("-i", "--data_integrity_chk", type=str_to_bool,
                         default=False, help="Helps set DI check enabled so that tests "
                                             "perform additional checksum check")
+    parser.add_argument("-tt", "--test_type", nargs='+', type=str,
+                        default=['ALL'], help="Space separated test types")
     return parser.parse_args()
 
 
@@ -108,6 +110,7 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
     if args.te_ticket:
         te_id = str(args.te_ticket) + "_"
     if re_execution:
+        te_tag = None
         report_name = "--html=log/re_non_parallel_" + te_id + args.html_report
         cmd_line = ["pytest", "--continue-on-collection-errors", is_parallel, is_distributed,
                     log_level, report_name]
@@ -200,10 +203,12 @@ def get_ticket_meta_from_test_list():
     pass
 
 
-def get_tests_from_te(jira_obj, args, test_type='ALL'):
+def get_tests_from_te(jira_obj, args, test_type=None):
     """
     Get tests from given test execution
     """
+    if test_type is None:
+        test_type = ['ALL']
     test_list, tag = jira_obj.get_test_ids_from_te(args.te_ticket, test_type)
     if len(test_list) == 0 or tag == "":
         raise EnvironmentError("Please check TE provided, tests or tag is missing")
@@ -217,7 +222,7 @@ def trigger_unexecuted_tests(args, test_list):
     """
     jira_id, jira_pwd = runner.get_jira_credential()
     jira_obj = JiraTask(jira_id, jira_pwd)
-    te_test_list, tag = get_tests_from_te(jira_obj, args, 'TODO')
+    te_test_list, tag = get_tests_from_te(jira_obj, args, ['TODO'])
     if len(te_test_list) != 0:
         # check if there are any selected tests with todo status
         unexecuted_test_list = [test for test in test_list if test in te_test_list]
@@ -231,7 +236,7 @@ def trigger_unexecuted_tests(args, test_list):
                     write.writerow([test])
             _env = os.environ.copy()
             _env['pytest_run'] = 'distributed'
-            run_pytest_cmd(args, te_tag=None, parallel_exe=args.parallel_exe,
+            run_pytest_cmd(args, te_tag=tag, parallel_exe=args.parallel_exe,
                            env=_env, re_execution=True)
 
 
@@ -368,7 +373,11 @@ def trigger_tests_from_te(args):
     # test_list, te_tag = jira_obj.get_test_ids_from_te(args.te_ticket)
     # if len(test_list) == 0 or te_tag == "":
     #     assert False, "Please check TE provided, tests or tag is missing"
-    test_list, te_tag = get_tests_from_te(jira_obj, args)
+    test_type_arg = args.test_type
+    test_types = [ele.strip() for ele in test_type_arg]
+
+    test_list, te_tag = get_tests_from_te(jira_obj, args, test_types)
+
     # writing the data into the file
     with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_TEST_LIST), 'w') \
             as test_file:

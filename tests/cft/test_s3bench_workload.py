@@ -33,7 +33,7 @@ class TestWorkloadS3Bench:
     def setup_class(cls):
         """Setup class"""
         cls.log = logging.getLogger(__name__)
-        test_config = "config/cft/s3bench_workload_test.yaml"
+        test_config = "config/cft/test_s3bench_workload.yaml"
         cls.cft_test_cfg = configmanager.get_config_wrapper(fpath=test_config)
 
     @pytest.mark.longevity
@@ -89,6 +89,7 @@ class TestWorkloadS3Bench:
                                    log_file_prefix="TEST-19471")
             self.log.info(f"json_resp {resp[0]}\n Log Path {resp[1]}")
             assert not s3bench.check_log_file_error(resp[1],
-                                                    ["with error ", "panic", "status code"]), \
+                                                    ["with error ", "panic", "status code",
+                                                     "flag provided but not defined"]), \
                 f"S3bench workload for object size {workload} failed. " \
                 f"Please read log file {resp[1]}"
