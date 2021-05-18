@@ -24,6 +24,7 @@ Navigate To Page
     [Arguments]  ${page_name}  ${sub_page}=False
     log to console and report  Navigating to ${page_name}
     wait until element is visible  ${${page_name}}  timeout=60
+    wait for page or element to load
     Click Element  ${${page_name}}
     wait for page or element to load
     ${value}=  Convert To Boolean  ${sub_page}
