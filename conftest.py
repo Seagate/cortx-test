@@ -54,6 +54,8 @@ from core.runner import get_db_credential
 from commons import params
 from config import CMN_CFG
 
+import csv
+csv.writer()
 FAILURES_FILE = "failures.txt"
 LOG_DIR = 'log'
 CACHE = LRUCache(1024 * 10)

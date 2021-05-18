@@ -129,42 +129,42 @@ class ReportClient(SingletonMixin):
             "db_username": "",
             "db_password": ""
         }
-        """
-        payload = {"OSVersion": data_kwargs.get('os', "CentOS"),
+       """
+        payload = {"OSVersion": data_kwargs.get('os', "CentOS"), # revisit
                    "buildNo": data_kwargs.get('build'),
-                   "buildType": data_kwargs.get('build_type', "stable"),  # Revisit
+                   "buildType": data_kwargs.get('build_type', "stable"),
                    "clientHostname": data_kwargs.get('client_hostname', "autoclient"),
-                   "executionType": data_kwargs.get('execution_type', "Automated"),  # Revisit
-                   "healthCheckResult": data_kwargs.get('health_chk_res', "Pass"),  # setup
+                   "executionType": data_kwargs.get('execution_type', "R2Automated"),  # Revisit
+                   "healthCheckResult": data_kwargs.get('health_chk_res', "Pass"),  # Revisit
                    "logCollectionDone": data_kwargs.get('are_logs_collected', True),
-                   "logPath": data_kwargs.get('log_path', "DemoPath"),
-                   "noOfNodes": data_kwargs.get('nodes', 4),  # CMN_CFG
-                   "nodesHostname": data_kwargs.get('nodes_hostnames', [
-                       "sm7-r18.pun.seagate.com",
-                       "sm8-r18.pun.seagate.com"
-                   ]),  # CMN_CFG
-                   "testPlanLabel": data_kwargs.get('testPlanLabel', "S3"),  # get from TP
+                   "logPath": data_kwargs.get('log_path', "DemoPath"), # revisit
+                   "noOfNodes": data_kwargs.get('nodes', 1),  # CMN_CFG remove default
+                   "nodesHostname": data_kwargs.get('nodes_hostnames', []),  # CMN_CFG
+                   "testPlanLabel": data_kwargs['testPlanLabel'],  # get from TP
                    # get from TE
-                   "testExecutionLabel": data_kwargs.get('testExecutionLabel', "CFT"),
-                   "testExecutionID": data_kwargs.get('test_exec_id'),
+                   "testExecutionLabel": data_kwargs['testExecutionLabel'],
+                   "testExecutionID": data_kwargs['test_exec_id'],
                    "testExecutionTime": int(data_kwargs.get('test_exec_time', 0)),
-                   "testID": data_kwargs.get('test_id', "TEST-0000"),
-                   "testIDLabels": data_kwargs.get('test_id_labels', [
-                       "Demo",
-                       "Labels"
-                   ]),
-                   "testName": data_kwargs.get('test_name', "Demo test"),
-                   "testPlanID": data_kwargs.get('test_plan_id'),
-                   "testResult": data_kwargs.get('test_result'),
-                   "testStartTime": data_kwargs.get('start_time'),
+                   "testID": data_kwargs['test_id'],
+                   "testIDLabels": data_kwargs['test_id_labels'],
+                   "testName": data_kwargs['test_name'],
+                   "testPlanID": data_kwargs['test_plan_id'],
+                   "testResult": data_kwargs['test_result'],
+                   "testStartTime": data_kwargs['start_time'],
                    "testTags": data_kwargs.get('tags', []),
                    # te component first element
                    "testTeam": data_kwargs.get('test_team', "Automation"),
-                   "testType": data_kwargs.get('test_type', "Pytest"),  # use pytest
-                   "feature": data_kwargs.get('feature', "Test"),
-                   "latest": data_kwargs.get('latest'),
+                   "testType": data_kwargs.get('test_type', "Pytest"),  # use pytest default
+                   "feature": data_kwargs['feature'],
+                   "latest": data_kwargs['latest'],
                    "db_username": data_kwargs.get("db_username"),
-                   "db_password": data_kwargs.get("db_password")
+                   "db_password": data_kwargs.get("db_password"),
+                   "drID": data_kwargs['dr_id'],
+                   "featureID": data_kwargs['feature_id'],
+                   "platformType": data_kwargs['platform_type'],
+                   "serverType": data_kwargs['server_type'],
+                   "enclosureType": data_kwargs['enclosure_type'],
+                   "failureString": data_kwargs.get('failure_string'),
                    }
 
         headers = {

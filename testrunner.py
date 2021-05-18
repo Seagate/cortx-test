@@ -248,18 +248,29 @@ def create_test_meta_data_file(args, test_list, jira_obj=None):
     options = {'server': jira_url}
     auth = (jira_id, jira_pwd)
     auth_jira = JIRA(options, basic_auth=auth)
-
     # Create test meta file for reporting TR.
     tp_meta_file = os.path.join(os.getcwd(),
                                 params.LOG_DIR_NAME,
                                 params.JIRA_TEST_META_JSON)
     with open(tp_meta_file, 'w') as t_meta:
-
         test_meta = list()
         tp_resp = jira_obj.get_issue_details(args.test_plan, auth_jira=auth_jira)  # test plan id
         tp_meta['test_plan_label'] = tp_resp.fields.labels
-        tp_meta['environment'] = tp_resp.fields.environment
+        tp_meta['environment'] = tp_resp.fields.environment # deprecated
+        c_fields = dict(build=tp_resp.fields.customfield_22980,
+                        branch=tp_resp.fields.customfield_22981,
+                        plat_type=tp_resp.fields.customfield_22982,
+                        srv_type=tp_resp.fields.customfield_22983,
+                        enc_type=tp_resp.fields.customfield_22984)
+        # tp_meta with defaults
+        tp_meta['build'] = c_fields['build'][0] if c_fields['build'] else 0
+        tp_meta['branch'] = c_fields['branch'][0] if c_fields['branch'] else 'stable'
+        tp_meta['platform_type'] = c_fields['plat_type'][0] if c_fields['plat_type'] else 'VM_HW'
+        tp_meta['server_type'] = c_fields['srv_type'][0] if c_fields['srv_type'] else 'VM'
+        tp_meta['enclosure_type'] = c_fields['enc_type'][0] if c_fields['enc_type'] else '5U84'
+
         te_resp = jira_obj.get_issue_details(args.te_ticket, auth_jira=auth_jira)  # test exec id
+        te_components = 'Automation' # default
         if te_resp.fields.components:
             te_components = te_resp.fields.components[0].name
         tp_meta['te_meta'] = dict(te_id=args.te_ticket,
@@ -271,14 +282,21 @@ def create_test_meta_data_file(args, test_list, jira_obj=None):
             item['test_id'] = test
             resp = jira_obj.get_issue_details(test, auth_jira=auth_jira)
             item['test_name'] = resp.fields.summary
-            item['labels'] = resp.fields.labels
+            item['labels'] = resp.fields.labels if resp.fields.labels else list()
             if resp.fields.components:
                 component = resp.fields.components[0].name  # First items is of interest
             else:
                 component = list()
             item['component'] = component
-            domain = resp.fields.customfield_21087.value if resp.fields.customfield_21087 else 'None'
+            c_fields = dict(domain=resp.fields.customfield_21087,
+                            dr_id=resp.fields.customfield_22882,
+                            feature_id=resp.fields.customfield_22881)
+            domain = c_fields['domain'].value if c_fields['domain'] else 'None'
             item['test_domain'] = domain
+            item['dr_id'] = c_fields['dr_id'] if c_fields['dr_id'] else ['DR-0']
+            item['feature_id'] = c_fields['feature_id'] if c_fields['feature_id'] else ['F-0']
+            lbls = item['labels']
+            item['execution_type'] = lbls[0] if lbls and isinstance(lbls, list) else 'R2Automated'
             test_meta.append(item)
         tp_meta['test_meta'] = test_meta
         json.dump(tp_meta, t_meta, ensure_ascii=False)
@@ -360,13 +378,7 @@ def trigger_tests_from_te(args):
 
     tp_metadata = create_test_meta_data_file(args, test_list)
     if not args.build and not args.build_type:
-        if 'environment' in tp_metadata and tp_metadata.get('environment'):
-            test_env = tp_metadata.get('environment')
-            try:
-                _build_type, _build = test_env.split('_')
-            except ValueError:
-                raise EnvironmentError('Test plan env needs to be in format <build_type>_<build#>')
-            args.build, args.build_type = _build, _build_type
+        args.build, args.build_type = tp_metadata['build'], tp_metadata['branch']
 
     _env = os.environ.copy()
     if not args.force_serial_run:

@@ -3,6 +3,7 @@ import os
 import logging
 import pytest
 
+
 # Do not set logging after imports
 # log = logging.getLogger(__name__)
 # cortxlogging.init_loghandler(log)
@@ -79,6 +80,7 @@ def test_max_lc(logger):
     assert val == 6
 
 
+@pytest.mark.skip
 @pytest.mark.ha
 @pytest.mark.parallel
 @pytest.mark.tags("TEST-17413")
@@ -127,6 +129,17 @@ def test_max2(logger):
 def test_max4(logger):
     """A test function."""
     logger.info("test pass executed")
+
+
+@pytest.mark.ha
+@pytest.mark.parallel
+@pytest.mark.tags("TEST-17499")
+def test_max3(logger):
+    """A test function."""
+    values = (2, 3, 1, 4, 6)
+    val = max(values)
+    logger.info("max is %s" % val)
+    assert val == 6
 
 
 @pytest.mark.ha
