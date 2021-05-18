@@ -173,6 +173,7 @@ TEST-18328
     Reset Password IAMuser  ${username}
     wait for page or element to load
     Delete IAMuser  ${username}
+    wait for page or element to load
 
 TEST-18331
     [Documentation]  Test that reset password for IAM user does not accept invalid password.
@@ -199,6 +200,7 @@ TEST-18333
     Verify Reset Password IAMuser button remains disabled  ${username}
     wait for page or element to load
     Delete IAMuser  ${username}
+
 
 TEST-13109
     [Documentation]  Verify that two empty tables are shown on IAM users page

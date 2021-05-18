@@ -239,7 +239,7 @@ TEST-3583
         Verify New User  ${new_user_name}
         Re-login  ${new_user_name}  ${new_password}  ${page_name}
         Validate CSM Login Success  ${new_user_name}
-        Re-login  ${new_user_name}  ${password}  ${page_name}
+        Re-login  ${username}  ${password}  ${page_name}
         Delete CSM User  ${new_user_name}
     END
 
@@ -309,19 +309,9 @@ TEST-18326
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
-    CSM GUI Logout
-    Enter Username And Password  ${S3_account_name}  ${S3_password}
-    Click Sigin Button
-    wait for page or element to load
-    Validate CSM Login Success  ${s3_account_name}
-    CSM GUI Logout
-    wait for page or element to load
-    Enter Username And Password  ${username}  ${password}
-    Click Sigin Button
-    wait for page or element to load
-    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     ${S3_new_password}=  Generate New Password
     Edit S3 User Password  ${S3_account_name}  ${S3_new_password}  ${S3_new_password}
+    Re-login  ${S3_account_name}  ${S3_new_password}  S3_ACCOUNTS_TAB_ID
     Delete S3 Account  ${S3_account_name}  ${S3_new_password}  True
 
 TEST-4871
@@ -367,3 +357,36 @@ TEST-11152
     SSL certificate expiration alert Verification  1
     SSL certificate expiration alert Verification  5
     SSL certificate expiration alert Verification  30
+
+TEST-18330
+    [Documentation]  Test that reset password for s3 account does not accept invalid password
+    ...  Reference : https://jts.seagate.com/browse/TEST-18330
+    [Tags]  Priority_High  TEST-18330  S3_test  Smoke_test
+    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    wait for page or element to load
+    ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
+    wait for page or element to load
+    Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
+    Verify Invalid Password Not Accepted By Edit S3 Account
+    CSM GUI Logout
+    Enter Username And Password  ${S3_account_name}  ${S3_password}
+    Click Sigin Button
+    wait for page or element to load
+    Delete S3 Account  ${S3_account_name}  ${S3_password}  True
+
+TEST-18332
+    [Documentation]  Test that confirm rest password button remains
+    ...  disabled for password and confirm password does not match.
+    ...  Reference : https://jts.seagate.com/browse/TEST-18332
+    [Tags]  Priority_High  TEST-18332  S3_test  Smoke_test
+    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    wait for page or element to load
+    ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
+    wait for page or element to load
+    Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
+    Verify Mismatch Password Error For Edit S3account
+    CSM GUI Logout
+    Enter Username And Password  ${S3_account_name}  ${S3_password}
+    Click Sigin Button
+    wait for page or element to load
+    Delete S3 Account  ${S3_account_name}  ${S3_password}  True
