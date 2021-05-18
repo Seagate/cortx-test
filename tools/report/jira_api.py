@@ -30,8 +30,36 @@ from jira import JIRA
 
 BUGS_PRIORITY = ["Blocker", "Critical", "Major", "Minor", "Trivial"]
 TEST_STATUS = ["PASS", "FAIL", "ABORTED", "BLOCKED", "TODO"]
-FEATURES = ["User Operations", "Scalability", "Availability", "Longevity", "Usecases",
-            "Data Recovery", "CrossConnect"]
+FEATURES = [
+    " Longevity",
+    " Performance",
+    " Security",
+    "Application Testing (UDX, BearOS etc..)",
+    "Capacity tests",
+    "Cluster Health Operations",
+    "Cluster Manager Operation (Provision)",
+    "Cluster Monitor Operation (Alerts)",
+    "Cluster Support (Logging, support bundle, health schema)",
+    "Cluster User Operation (CSM)",
+    "CSM GUI Cluster User Operation Tests",
+    "Data Integrity",
+    "Data recovery",
+    "Failure Tests",
+    "FRU Replacement Validation",
+    "Functionality",
+    "High Availability",
+    "Interface",
+    "IO Workload",
+    "Lyve Pilot Tests",
+    "Open-Source Tests",
+    "Platform Operations",
+    "Robustness and Reliability",
+    "S3 IO load tests",
+    "S3 Operations",
+    "Scalability",
+    "Stress Tests",
+    "System Integration",
+]
 
 
 def get_test_executions_from_test_plan(test_plan: str, username: str, password: str) -> [dict]:
@@ -60,7 +88,8 @@ def get_test_executions_from_test_plan(test_plan: str, username: str, password: 
     if response.status_code == HTTPStatus.OK:
         return response.json()
     print(f'get_test_executions GET on {jira_url} failed')
-    print(f'HEADERS={response.request.headers}\n'
+    print(f'RESPONSE={response.text}\n'
+          f'HEADERS={response.request.headers}\n'
           f'BODY={response.request.body}')
     sys.exit(1)
 
