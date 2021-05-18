@@ -18,6 +18,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 # -*- coding: utf-8 -*-
+import concurrent.futures
 import getpass
 import os
 import sys
@@ -36,6 +37,7 @@ class TimeoutHTTPAdapter(HTTPAdapter):
     """
     Timeout adapater
     """
+
     def __init__(self, *args, **kwargs):
         self.timeout = DEFAULT_TIMEOUT
         if "timeout" in kwargs:
@@ -44,6 +46,9 @@ class TimeoutHTTPAdapter(HTTPAdapter):
         super().__init__(*args, **kwargs)
 
     def send(self, request, **kwargs):
+        """
+        Set timeout
+        """
         timeout = kwargs.get("timeout")
         if timeout is None:
             kwargs["timeout"] = self.timeout
@@ -82,6 +87,28 @@ class JiraTask:
         self.http.mount("https://", TimeoutHTTPAdapter(max_retries=self.retry_strategy))
         self.http.mount("http://", TimeoutHTTPAdapter(max_retries=self.retry_strategy))
 
+    def check_test_environment(self, tests, tp_env):
+        """
+        Check test environment: VM/HW
+        """
+        tp_env = tp_env.lower()
+        if ('vm' in tp_env) and ('hw' in tp_env):
+            return tests
+        valid_tests = []
+        for test_id in tests:
+            details = self.get_issue_details(test_id)
+            if details:
+                env_field = details.fields.environment
+                if env_field:
+                    env_field = env_field.lower()
+                    if tp_env.strip() in env_field.strip():
+                        valid_tests.append(test_id)
+                else:
+                    valid_tests.append(test_id)
+            else:
+                print("Error in getting test details of {}".format(test_id))
+        return valid_tests
+
     def create_new_test_exe(self, te, tp_info, skip_te):
         """
         create new test execution using existing te
@@ -91,14 +118,14 @@ class JiraTask:
         test_list = self.get_test_ids_from_te(te)
         if len(test_list) == 0:
             print("Skipping creating new TE as existing TE has no tests")
-            return '', is_te_skipped
+            return '', is_te_skipped, ''
         else:
             test_exe_details = self.get_issue_details(te)
 
             summary = test_exe_details.fields.summary
             # description = test_plan_details.fields.description
-            description = "Test Execution for Build : {}, Build type: {}, Setup type: {}".format(
-                tp_info['build'], tp_info['build_type'], tp_info['setup_type'])
+            description = "Test Execution for Build : {}, Build Branch: {}, Setup type: {}".format(
+                tp_info['build'], tp_info['build_branch'], tp_info['setup_type'])
             components = []
             for i in range(len(test_exe_details.fields.components)):
                 d = dict()
@@ -106,7 +133,7 @@ class JiraTask:
                 components.append(d)
 
             labels = test_exe_details.fields.labels
-            env_field = tp_info['build_type'] + "_" + tp_info['build']
+            env_field = tp_info['build_branch'] + "_" + tp_info['build']
             test_eve_labels = test_exe_details.fields.customfield_21006
             if te in skip_te:
                 is_te_skipped = True
@@ -120,7 +147,7 @@ class JiraTask:
                        'environment': env_field,
                        'customfield_21006': test_eve_labels}
             issue_key = self.create_issue(te_dict)
-            return issue_key, is_te_skipped
+            return issue_key, is_te_skipped, test_list
 
     def create_new_test_plan(self, test_plan, tp_info):
         """
@@ -130,8 +157,8 @@ class JiraTask:
         test_plan_details = self.get_issue_details(test_plan)
 
         # description = test_plan_details.fields.description
-        description = "Test Plan for Build : {}, Build type: {}, Setup type: {}".format(
-            tp_info['build'], tp_info['build_type'], tp_info['setup_type'])
+        description = "Test Plan for Build : {}, Build Branch: {}, Setup type: {}".format(
+            tp_info['build'], tp_info['build_branch'], tp_info['setup_type'])
         components = []
         for i in range(len(test_plan_details.fields.components)):
             d = dict()
@@ -140,19 +167,28 @@ class JiraTask:
 
         # labels = test_plan_details.fields.labels
         labels = [tp_info['setup_type']]
-        env_field = tp_info['build_type'] + "_" + tp_info['build']
-        summary = 'TP LR2 ' + str(env_field)
+        env_field = str(tp_info['nodes']) + 'Node'
+
+        # TP LR2 {Environment}_{Platform Type}_{Branch}_{Build}
+        summary = "TP LR2 " + str(env_field) + "_" + str(tp_info['platform']) + "_" + tp_info[
+            'build_branch'] + "_" + tp_info['build']
 
         fix_versions = []
         fix_dict = dict()
         for i in range(len(test_plan_details.fields.fixVersions)):
             fix_dict['name'] = test_plan_details.fields.fixVersions[i].name
             fix_versions.append(fix_dict)
+        if not fix_versions:
+            fix_dict['name'] = tp_info['fix_version']
+            fix_versions.append(fix_dict)
 
         affect_ver = []
         affect_ver_dict = dict()
         for i in range(len(test_plan_details.fields.versions)):
             affect_ver_dict['name'] = test_plan_details.fields.versions[i].name
+            affect_ver.append(affect_ver_dict)
+        if not affect_ver:
+            affect_ver_dict['name'] = tp_info['affect_version']
             affect_ver.append(affect_ver_dict)
 
         tp_dict = {'project': 'TEST',
@@ -163,7 +199,12 @@ class JiraTask:
                    'labels': labels,
                    'environment': env_field,
                    'fixVersions': fix_versions,
-                   'versions': affect_ver}
+                   'versions': affect_ver,
+                   'customfield_22980': [tp_info['build']],
+                   'customfield_22981': [tp_info['build_branch']],
+                   'customfield_22982': [tp_info['platform']],
+                   'customfield_22983': [tp_info['server_type']],
+                   'customfield_22984': [tp_info['enclosure_type']]}
         issue_key = self.create_issue(tp_dict)
         return issue_key
 
@@ -196,7 +237,8 @@ class JiraTask:
         print("Adding test executions to test plan {}".format(test_plan))
         try:
             response = self.http.post(
-                "https://jts.seagate.com/rest/raven/1.0/api/testplan/" + test_plan + "/testexecution",
+                "https://jts.seagate.com/rest/raven/1.0/api/testplan/" +
+                test_plan + "/testexecution",
                 headers={'Content-Type': 'application/json'}, json={"add": te_list},
                 auth=(self.jira_id, self.jira_password))
             print(response.status_code)
@@ -211,51 +253,69 @@ class JiraTask:
         except Exception as e:
             print(f"Exception {e} in adding te to tp")
 
-
-    def add_tests_to_te_tp(self, existing_te, new_te, new_tp):
+    def add_tests_to_te_tp(self, new_te, new_tp, tp_env, test_list):
         """
         Add tests to test execution and test plan
         """
-        test_list = self.get_test_ids_from_te(existing_te)
         if len(test_list) == 0:
             return False
         else:
-            print("adding {} tests to test execution {}".format(len(test_list), new_te))
-            try:
-                response = self.http.post(
-                    "https://jts.seagate.com/rest/raven/1.0/api/testexec/" + new_te + "/test",
-                    headers={'Content-Type': 'application/json'}, json={"add": test_list},
-                    auth=(self.jira_id, self.jira_password))
-                print(response.status_code)
-                if response.status_code == HTTPStatus.UNAUTHORIZED:
-                    print('JIRA Unauthorized access')
-                    return False
-                elif response.status_code == HTTPStatus.SERVICE_UNAVAILABLE:
-                    print('JIRA Service Unavailable')
-                    return False
-                elif response.status_code != HTTPStatus.OK:
-                    print('Error while adding tests to test execution')
-                    return False
-            except Exception as e:
-                print(f"Exception {e} in adding tests to te")
+            valid_tests = []
 
-            print("adding {} tests to test plan {}".format(len(test_list), new_tp))
-            try:
-                response = self.http.post(
-                    "https://jts.seagate.com/rest/raven/1.0/api/testplan/" + new_tp + "/test",
-                    headers={'Content-Type': 'application/json'}, json={"add": test_list},
-                    auth=(self.jira_id, self.jira_password))
-                print(response.status_code)
-                if response.status_code == HTTPStatus.OK:
-                    return True
-                elif response.status_code == HTTPStatus.UNAUTHORIZED:
-                    print('JIRA Unauthorized access')
-                    return False
-                elif response.status_code == HTTPStatus.SERVICE_UNAVAILABLE:
-                    print('JIRA Service Unavailable')
-                    return False
-            except Exception as e:
-                print(f"Exception {e} in adding tests to tp")
+            # Divide test list into multiple parts for parallel processing
+            sub_list_len = len(test_list)
+            if sub_list_len > 10:
+                sub_list_len = int(sub_list_len / 10)
+
+            test_lists = [test_list[i:i + sub_list_len] for i in
+                          range(0, len(test_list), sub_list_len)]
+
+            with concurrent.futures.ProcessPoolExecutor() as executor:
+                valid_list = {executor.submit(self.check_test_environment, tests, tp_env):
+                                  tests for tests in test_lists}
+                for future in concurrent.futures.as_completed(valid_list):
+                    try:
+                        data = future.result()
+                        valid_tests.extend(data)
+                    except Exception as exc:
+                        print(exc)
+            if valid_tests:
+                print("adding {} tests to test execution {}".format(len(valid_tests), new_te))
+                try:
+                    response = self.http.post(
+                        "https://jts.seagate.com/rest/raven/1.0/api/testexec/" + new_te + "/test",
+                        headers={'Content-Type': 'application/json'}, json={"add": valid_tests},
+                        auth=(self.jira_id, self.jira_password))
+                    print(response.status_code)
+                    if response.status_code == HTTPStatus.UNAUTHORIZED:
+                        print('JIRA Unauthorized access')
+                        return False
+                    elif response.status_code == HTTPStatus.SERVICE_UNAVAILABLE:
+                        print('JIRA Service Unavailable')
+                        return False
+                    elif response.status_code != HTTPStatus.OK:
+                        print('Error while adding tests to test execution')
+                        return False
+                except Exception as e:
+                    print(f"Exception {e} in adding tests to te")
+
+                print("adding {} tests to test plan {}".format(len(test_list), new_tp))
+                try:
+                    response = self.http.post(
+                        "https://jts.seagate.com/rest/raven/1.0/api/testplan/" + new_tp + "/test",
+                        headers={'Content-Type': 'application/json'}, json={"add": valid_tests},
+                        auth=(self.jira_id, self.jira_password))
+                    print(response.status_code)
+                    if response.status_code == HTTPStatus.OK:
+                        return True
+                    elif response.status_code == HTTPStatus.UNAUTHORIZED:
+                        print('JIRA Unauthorized access')
+                        return False
+                    elif response.status_code == HTTPStatus.SERVICE_UNAVAILABLE:
+                        print('JIRA Service Unavailable')
+                        return False
+                except Exception as e:
+                    print(f"Exception {e} in adding tests to tp")
 
     def get_test_executions_from_test_plan(self, test_plan):
         """
@@ -278,13 +338,13 @@ class JiraTask:
         """
         print("Get test executions from test plan")
         try:
-            jira_url = f'https://jts.seagate.com/rest/raven/1.0/api/testplan/{test_plan}/testexecution'
+            jira_url = f'https://jts.seagate.com/rest/raven/1.0/api/testplan/{test_plan}/' \
+                       f'testexecution'
             response = self.http.get(jira_url, auth=(self.jira_id, self.jira_password))
             if response.status_code == HTTPStatus.OK:
                 return response.json()
         except Exception as e:
             print(f"Exception {e} in get_test_executions")
-            print('get_test_executions GET on {} failed'.format(jira_url))
             sys.exit(1)
 
     def get_test_ids_from_te(self, test_exe_id):
@@ -351,7 +411,15 @@ class JiraTask:
         issue_details = ''
         while retries_cnt:
             try:
-                issue_details = self.auth_jira.issue(issue_id)
+                if not self.auth_jira or not isinstance(self.auth_jira, JIRA):
+                    auth_jira = JIRA(self.options, basic_auth=self.auth)
+                    issue_details = auth_jira.issue(issue_id)
+                else:
+                    if not hasattr(self.auth_jira._session, 'max_retries'):
+                        setattr(self.auth_jira._session, 'max_retries', 3)
+                    if not hasattr(self.auth_jira._session, 'timeout'):
+                        setattr(self.auth_jira._session, 'timeout', 30)
+                    issue_details = self.auth_jira.issue(issue_id)
             except Exception as e:
                 print(e)
                 retries_cnt = retries_cnt - 1

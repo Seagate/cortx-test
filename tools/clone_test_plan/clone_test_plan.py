@@ -25,9 +25,41 @@ import argparse
 import csv
 from datetime import datetime
 from jira_api import JiraTask
+from multiprocessing import Process, Manager
 
 # cloned test plan csv name
 CLONED_TP_CSV = 'cloned_tp_info.csv'
+
+jira_task = JiraTask()
+
+# te's to skip for ova
+ova_skip_tes = ['TEST-21365', 'TEST-21133', 'TEST-19721', 'TEST-19720', 'TEST-19719', 'TEST-19717',
+                'TEST-19716', 'TEST-19709', 'TEST-19708', 'TEST-19707', 'TEST-19704', 'TEST-19701']
+
+
+def process_te(te, tp_info, skip_tes, new_tp_key, new_skipped_te, new_te_keys):
+    """
+    Process existing te and create new te
+    """
+    # create new te
+    new_te_id, is_te_skipped, test_list = jira_task.create_new_test_exe(te, tp_info, skip_tes)
+    if new_te_id != '':
+        print("New TE created, now add tests to te and tp")
+        response = jira_task.add_tests_to_te_tp(new_te_id, new_tp_key, tp_info['platform'],
+                                                test_list)
+        if response:
+            print("Tests added to TE {} and TP {}".format(new_te_id, new_tp_key))
+            new_te_keys.append(new_te_id)
+            if is_te_skipped:
+                new_skipped_te.append(new_te_id)
+            response_add = jira_task.add_te_to_tp([new_te_id], new_tp_key)
+            if response_add:
+                print("TEs are added to TP")
+            else:
+                print("Error while adding TEs to TP")
+        else:
+            print("Error while adding tests to TE {} and TP {}".format(new_te_id, new_tp_key))
+
 
 def main(args):
     """
@@ -37,22 +69,31 @@ def main(args):
 
     tp_info = dict()
     tp_info['build'] = args.build
-    tp_info['build_type'] = args.build_type
+    tp_info['build_branch'] = args.build_branch
     tp_info['setup_type'] = args.setup_type
+    tp_info['platform'] = args.platform
+    tp_info['nodes'] = args.nodes
+    tp_info['server_type'] = args.server_type
+    tp_info['enclosure_type'] = args.enclosure_type
+    tp_info['affect_version'] = args.affect_version
+    tp_info['fix_version'] = args.fix_version
 
-    jira_obj = JiraTask()
-
-    new_tp_key = jira_obj.create_new_test_plan(test_plan, tp_info)
+    new_tp_key = jira_task.create_new_test_plan(test_plan, tp_info)
     if new_tp_key == '':
         sys.exit('New test plan creation failed')
     else:
         print("New test plan {} created".format(new_tp_key))
 
-    test_executions = jira_obj.get_test_executions_from_test_plan(test_plan)
-    te_keys = [te["key"] for te in test_executions]
+    test_executions = jira_task.get_test_executions_from_test_plan(test_plan)
+    te_keys_all = [te["key"] for te in test_executions]
+    platform = args.platform
+    if platform.lower() == 'ova':
+        te_keys = [te for te in te_keys_all if te not in ova_skip_tes]
+        tp_info['platform'] = 'VM'
+    else:
+        te_keys = te_keys_all
     print("test executions of existing test plan {}".format(te_keys))
 
-    new_te_keys = []
     skip_tes = []
     if args.skip_te:
         try:
@@ -60,38 +101,34 @@ def main(args):
             skip_tes = [ele.strip() for ele in skip_te_arg]
         except Exception as e:
             print(f"Exception {e} in getting processing skip tes")
-    new_skipped_te = []
-    for te in te_keys:
-        # create new te
-        new_te_id, is_te_skipped = jira_obj.create_new_test_exe(te, tp_info,
-                                                                skip_tes)
-        if new_te_id != '':
-            response = jira_obj.add_tests_to_te_tp(te, new_te_id, new_tp_key)
-            if response:
-                print("Tests added to TE {} and TP {}".format(new_te_id, new_tp_key))
-                new_te_keys.append(new_te_id)
-                if is_te_skipped:
-                    new_skipped_te.append(new_te_id)
-                response_add = jira_obj.add_te_to_tp(new_te_keys, new_tp_key)
-                if response_add:
-                    print("TEs are added to TP")
-                else:
-                    print("Error while adding TEs to TP")
-            else:
-                print("Error while adding tests to TE {} and TP {}".format(new_te_id,new_tp_key))
 
-    print("New Test Plan: {}".format(new_tp_key))
-    with open(os.path.join(os.getcwd(),  CLONED_TP_CSV), 'w', newline='') as tp_info_csv:
-        writer = csv.writer(tp_info_csv)
-        for te in new_te_keys:
-            if te not in new_skipped_te:
-                writer.writerow([new_tp_key.strip(), te.strip()])
+    prcs = []
+    with Manager() as manager:
+        new_skipped_te = manager.list()
+        new_te_keys = manager.list()
+        for te in te_keys:
+            p = Process(target=process_te, args=(te, tp_info, skip_tes, new_tp_key,
+                                                 new_skipped_te, new_te_keys))
+            p.start()
+            prcs.append(p)
 
-    if args.comment_jira:
-        current_time_ms = datetime.utcnow().strftime('%Y-%m-%d_%H:%M:%S.%f')
-        comment = ' Build: {}, Setup: {}, Test Plan: {}, Test Executions: {} created on {}'. \
-            format(args.build, args.setup_type, new_tp_key, new_te_keys, current_time_ms)
-        jira_obj.add_comment(args.comment_jira, comment)
+        for prc in prcs:
+            prc.join()
+
+        new_skipped_te = list(new_skipped_te)
+        new_te_keys = list(new_te_keys)
+        print("New Test Plan: {}".format(new_tp_key))
+        with open(os.path.join(os.getcwd(), CLONED_TP_CSV), 'w', newline='') as tp_info_csv:
+            writer = csv.writer(tp_info_csv)
+            for te in new_te_keys:
+                if te not in new_skipped_te:
+                    writer.writerow([new_tp_key.strip(), te.strip()])
+
+        if args.comment_jira:
+            current_time_ms = datetime.utcnow().strftime('%Y-%m-%d_%H:%M:%S.%f')
+            comment = ' Build: {}, Setup: {}, Test Plan: {}, Test Executions: {} created on {}'. \
+                format(args.build, args.setup_type, new_tp_key, new_te_keys, current_time_ms)
+            jira_task.add_comment(args.comment_jira, comment)
 
 
 def parse_args():
@@ -103,14 +140,26 @@ def parse_args():
                         help="jira xray test plan id", required=True)
     parser.add_argument("-b", "--build", type=str,
                         help="Build number", required=True)
-    parser.add_argument("-bt", "--build_type", type=str, default='stable',
-                        help="Build type (stable/main)", required=True)
-    parser.add_argument("-s", "--setup_type", type=str, default='regular',
-                        help="Setup type (regular/nearfull/isolated)", required=True)
+    parser.add_argument("-br", "--build_branch", type=str, default='stable',
+                        help="Build branch (stable/main)", required=True)
+    parser.add_argument("-s", "--setup_type", type=str, default='default',
+                        help="Setup type (default/nearfull/isolated)", required=True)
     parser.add_argument("-c", "--comment_jira", type=str,
                         help="Test id where comments to be added")
     parser.add_argument("-st", "--skip_te", nargs='+', type=str,
                         help="Space separated list of TEs to skip from execution")
+    parser.add_argument("-p", "--platform", type=str, default='VM_HW',
+                        help="For which environment test plan needs to be created: VM/HW/OVA")
+    parser.add_argument("-n", "--nodes", type=str,
+                        help="Number of nodes in target: 1/3/N", required=True)
+    parser.add_argument("-sr", "--server_type", type=str,
+                        help="Server type: HPC/DELL/SMC", required=True)
+    parser.add_argument("-e", "--enclosure_type", type=str, default='5U84',
+                        help="Enclosure type: 5U84/PODS/JBOD", required=True)
+    parser.add_argument("-a", "--affect_version", type=str, default='LR-R2',
+                        help="Affects Versions: LR-R2 or LR1.0 or LR1.0.1​")
+    parser.add_argument("-f", "--fix_version", type=str, default='LR-R2',
+                        help="Fix Versions: LR-R2 or LR1.0 or LR1.0.1​")
     return parser.parse_args()
 
 
