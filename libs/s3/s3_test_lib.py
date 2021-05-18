@@ -594,8 +594,7 @@ class S3TestLib(S3Lib):
     def get_object(
             self,
             bucket: str = None,
-            key: str = None,
-            ranges: str = None) -> tuple:
+            key: str = None) -> tuple:
         """
         Retrieve object from specified S3 bucket.
 
@@ -606,7 +605,7 @@ class S3TestLib(S3Lib):
         """
         try:
             LOGGER.info("Retrieving object from a bucket")
-            response = super().get_object(bucket, key, ranges)
+            response = super().get_object(bucket, key)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          S3TestLib.get_object.__name__,

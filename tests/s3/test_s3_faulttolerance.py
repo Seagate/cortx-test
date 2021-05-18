@@ -33,8 +33,10 @@ from commons.constants import const
 from commons.params import TEST_DATA_FOLDER
 from libs.s3 import S3H_OBJ
 from libs.s3 import s3_test_lib
+from libs.s3 import s3_multipart_test_lib
 
 S3_OBJ = s3_test_lib.S3TestLib()
+S3_M_Obj = s3_multipart_test_lib.S3MultipartTestLib()
 
 
 class TestS3Faulttoelrance:
@@ -256,14 +258,14 @@ class TestS3Faulttoelrance:
             "ENDED: Verify if more than 4 fragments gets created if S3_MAX_EXT value is set to "
             "4 in s3config.")
 
-
     @pytest.mark.skip
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-19497")
     @pytest.mark.parametrize("object_size", ["50k"])
     def test_19497(self, object_size):
         """Test to verify getobject api when object is fragmented with file size 50k."""
-        self.log.info("STARTED: Getobject api when object is fragmented with file size.", object_size)
+        self.log.info("STARTED: Getobject api when object is fragmented with file size %s",
+                      object_size)
         self.log.info("STEP 1: Create a  file using fallocate cmd. %s", self.test_file_path)
         resp = system_utils.create_file_fallocate(
             self.test_file_path, size=object_size)
@@ -283,9 +285,11 @@ class TestS3Faulttoelrance:
         assert_utils.assert_true(resp[0], resp[1])
         self.fault_flg = True
         self.log.info(
-            "STEP 3: fault injection Injected so that upload of object fails and results in motr failure.")
+            "STEP 3: fault injection Injected so that "
+            "upload of object fails and results in motr failure.")
 
-        self.log.info("STEP 4: Uploading an object %s to a bucket %s", self.object_name,self.bucket_name)
+        self.log.info("STEP 4: Uploading an object %s to a bucket %s",
+                      self.object_name, self.bucket_name)
         resp = S3_OBJ.object_upload(self.bucket_name, self.object_name, self.test_file_path)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("STEP 4: Uploaded an object to a bucket")
@@ -302,12 +306,15 @@ class TestS3Faulttoelrance:
             " fragments in json value of main object.")
         resp = S3H_OBJ.verify_and_validate_created_object_fragement(self.object_name)
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("STEP 5: Verified and Validated that object list index contains extended entries using m0kv")
+        self.log.info("STEP 5: Verified and Validated that object "
+                      "list index contains extended entries using m0kv")
 
-        self.log.info("STEP 6: Verify getobject and getobject with read range and verify the size and range ouput")
-        resp = S3_OBJ.get_object(self.bucket_name,self.test_file_path)
+        self.log.info("STEP 6: Verify getobject and getobject with "
+                      "read range and verify the size and range ouput")
+        resp = S3_OBJ.get_object(self.bucket_name, self.test_file_path)
         assert resp[0], resp[1]
-        self.log.info("STEP 6: Verify getobject and getobject with read range and verify the size and range ouput")
+        self.log.info("STEP 6: Verify getobject and getobject with "
+                      "read range and verify the size and range ouput")
 
         self.log.info("ENDED: Getobject api when object is fragmented with file size 50k.")
 
@@ -315,7 +322,7 @@ class TestS3Faulttoelrance:
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-19499")
     @pytest.mark.parametrize("object_size", ["33k"])
-    def test_19499(self,object_size):
+    def test_19499(self, object_size):
         """Test getobject api when object is fragmented with file size 33k."""
         self.test_19497(object_size)
         self.log.info("ENDED: getobject api when object is fragmented with file size 33k.")
@@ -334,7 +341,7 @@ class TestS3Faulttoelrance:
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-19504")
     @pytest.mark.parametrize("object_size", ["8MB"])
-    def test_19504(self,object_size):
+    def test_19504(self, object_size):
         """Test to verify getobject api when object is fragmented with file size 8MB."""
         self.test_19497(object_size)
         self.log.info("ENDED: Copying an s3 object to a local file")
@@ -377,7 +384,7 @@ class TestS3Faulttoelrance:
         self.log.info("STEP 5: Verified that No fragmented entries should be listed")
 
         self.log.info("STEP 6: Run getobject and check the output.")
-        resp = S3_OBJ.get_object(self.bucket_name,self.test_file_path)
+        resp = S3_OBJ.get_object(self.bucket_name, self.test_file_path)
         assert resp[0], resp[1]
         self.log.info("STEP 6: Verified getobject output")
 
@@ -388,7 +395,7 @@ class TestS3Faulttoelrance:
     @pytest.mark.tags("TEST-19506")
     @pytest.mark.parametrize("object_size", ["33k"])
     @CTFailOn(error_handler)
-    def test_19506(self,object_size):
+    def test_19506(self, object_size):
         """Test to verify if error is thrown with getobjectapi with invalid readrange."""
         self.log.info("STARTED: getobjectapi with invalid readrange.")
 
@@ -424,12 +431,13 @@ class TestS3Faulttoelrance:
             " fragments in json value of main object.")
         resp = S3H_OBJ.verify_and_validate_created_object_fragement(self.object_name)
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("STEP 5: Verified and Validated that object list index contains extended entries using m0kv")
+        self.log.info("STEP 5: Verified and Validated that "
+                      "object list index contains extended entries using m0kv")
 
         self.log.info("STEP 6: Run getobject and check the output.")
-        resp = S3_OBJ.get_object(self.bucket_name,self.test_file_path)
+        resp = S3_OBJ.get_object(self.bucket_name, self.test_file_path)
         assert resp[0], resp[1]
-        resp = S3_OBJ.get_object(self.bucket_name,self.test_file_path, ranges="1048576-3145728")
+        resp = S3_M_Obj.get_object(self.bucket_name, self.test_file_path, ranges="1048576-3145728")
         assert resp[0], resp[1]
         self.log.info("STEP 6: Verified getobject output")
 
