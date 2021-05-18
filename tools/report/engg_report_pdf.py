@@ -40,7 +40,7 @@ def build_component_table(data: List[list]):
 
 def build_single_bucket_perf_stats(data: List[list]):
     """Build single bucket performance table."""
-    col_width = 9 * [0.71 * inch]
+    col_width = 9 * [0.57 * inch]
     col_width[0] = 2 * inch
     single_bucket_perf_stats = Table(data, col_width, 10 * [0.24 * inch],
                                      style=common_pdf.common_table_style)
@@ -49,7 +49,7 @@ def build_single_bucket_perf_stats(data: List[list]):
 
 def build_multi_bucket_perf_stats(data: List[list]):
     """Build multi bucket performance table."""
-    col_width = 10 * [0.71 * inch]
+    col_width = 10 * [0.57 * inch]
     col_width[0] = 1 * inch
     col_width[1] = 1.25 * inch
 
