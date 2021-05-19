@@ -83,6 +83,9 @@ class Uploader:
         workers.end_workers()
         LOGGER.info('Upload Workers shutdown completed successfully')
         if len(uploadObjects) > 0:
+            if not os.path.exists(params.UPLOADED_FILES):
+                os.open(params.UPLOADED_FILES)
+
             with open(params.UPLOADED_FILES, 'a', newline='') as fp:
                 wr = csv.writer(fp, quoting=csv.QUOTE_NONE, delimiter=',', quotechar='', escapechar='\\')
                 fcntl.flock(fp, fcntl.LOCK_EX)
@@ -97,7 +100,7 @@ class Uploader:
         pool_len = kwargs['pool_len']
         user_name = kwargs['user']
         prefs = kwargs['prefs']
-        prefix = prefs.get('prefix_dir', 'test-1')  # todo revisit
+        prefix = prefs if prefs else 'test-1'  # prefs.get('prefix_dir', 'test-1')  # todo revisit
 
         # todo get random compression ratio and process prefs
         # get random size
@@ -122,12 +125,9 @@ class Uploader:
             obj_name = os.path.basename(file_path)
             row_data = [user_name, bucket, obj_name, md5sum]
             uploadObjects.append(row_data)
-            Uploader.change_manager.add_files_to_bucket(user_name,
-                                                        bucket,
-                                                        obj_name,
-                                                        md5sum,
-                                                        size
-                                                        )
+            file_object = {'name': obj_name, 'checksum': md5sum, 'seed': seed, 'size': size, 'mtime': "1"}
+            self.change_manager.add_file_to_bucket(
+                user_name, bucket, file_object)
 
     def start(self, users, buckets, files_count, prefs):
         LOGGER.info(f'Starting uploads for users {users}')
@@ -138,6 +138,7 @@ class Uploader:
         jobs = []
         for user, udict in users.items():
             keys = [udict['accesskey'], udict['secretkey']]
+            buckets = udict["buckets"]
             p = mp.Process(target=self.upload, args=(user, keys, buckets, files_count, prefs))
             jobs.append(p)
         for p in jobs:
@@ -145,3 +146,6 @@ class Uploader:
         for p in jobs:
             p.join()
         LOGGER.info(f'Upload Done for all users {users}')
+
+    def stop(self):
+        pass

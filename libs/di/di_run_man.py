@@ -29,14 +29,15 @@ class ASyncIO:
         self.users = users
         self.bg_thread = None
 
-    def start_io_async(self, users, buckets):
-        self.bg_thread = threading.Thread(target=self.uploader.start, args=users)
+    def start_io_async(self, users, buckets, files_count, prefs):
+        self.bg_thread = threading.Thread(
+            target=self.uploader.start, args=(users, buckets, files_count, prefs))
         self.bg_thread.start()
 
-    def stop_io_async(self, di_check=True):
+    def stop_io_async(self, users, di_check=True):
         self.bg_thread.join()
         if di_check:
-            DataIntegrityValidator.verify_data_integrity()
+            DataIntegrityValidator.verify_data_integrity(users)
 
 
 class RunDataCheckManager(ASyncIO):
@@ -44,12 +45,16 @@ class RunDataCheckManager(ASyncIO):
     def __init__(self, users):
         self.uploader = uploader.Uploader()
         self.users = users
-        super(RunDataCheckManager, self).__init__(users=users)
+        super(RunDataCheckManager, self).__init__(upload_cls=self.uploader, users=users)
 
-    def start_io(self, users, buckets):
-        self.uploader.start(users)
+    def start_io(self, users, buckets=None, files_count=10, prefs=""):
+        self.uploader.start(users, buckets, files_count, prefs)
 
-    def stop_io(self, di_check=True):
-        self.uploader.stop()
+    @staticmethod
+    def verify_data_integrity(users):
+        return DataIntegrityValidator.verify_data_integrity(users)
+
+    def stop_io(self, users, di_check=True):
+        # self.uploader.stop()
         if di_check:
-            DataIntegrityValidator.verify_data_integrity()
+            self.verify_data_integrity(users)

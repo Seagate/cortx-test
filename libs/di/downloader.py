@@ -167,8 +167,8 @@ class DataIntegrityValidator:
             kwargs['objectpath'] = ent[2]
             kwargs['bucket'] = ent[1]
             kwargs['objcsum'] = ent[3]
-            kwargs['accesskey'] = users.get(ent[0])[0]
-            kwargs['secret'] = users.get(ent[0])[1]
+            kwargs['accesskey'] = users.get(ent[0])['accesskey']
+            kwargs['secret'] = users.get(ent[0])['secretkey']
             workQ.put(kwargs)
             workers.wenque(workQ)
             LOGGER.info(f"Enqueued item {ix} for download and checksum compare")

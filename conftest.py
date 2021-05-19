@@ -53,6 +53,8 @@ from core.runner import get_jira_credential
 from core.runner import get_db_credential
 from commons import params
 from config import CMN_CFG
+from libs.di.di_run_man import RunDataCheckManager
+from libs.di.di_mgmt_ops import ManagementOPs
 
 FAILURES_FILE = "failures.txt"
 LOG_DIR = 'log'
@@ -718,3 +720,25 @@ def generate_random_string():
     :rtype: str
     """
     return ''.join(random.choice(string.ascii_lowercase) for i in range(5))
+
+
+@pytest.fixture(scope='function', autouse=True)
+def run_io_async(request):
+    if request.config.option.data_integrity_chk:
+        mgm_ops = ManagementOPs()
+        users = mgm_ops.create_account_users(nusers=random.randint(1, 4))
+        users_buckets = mgm_ops.create_buckets(nbuckets=random.randint(1, 3), users=users)
+        run_data_check_obj = RunDataCheckManager(users=users_buckets)
+        yield run_data_check_obj.start_io_async(
+            users=users_buckets, buckets=None, files_count=random.randint(1, 3), prefs="async_io")
+        run_data_check_obj.stop_io_async(
+            users=users_buckets, di_check=request.config.option.data_integrity_chk)
+    else:
+        yield
+
+
+def run_io_sequentially(users, buckets=None, files_count=10, prefs="", di_check=True):
+    run_data_check_obj = RunDataCheckManager(users=users)
+    run_data_check_obj.start_io(
+        users=users, buckets=buckets, files_count=files_count, prefs=prefs)
+    run_data_check_obj.stop_io(users, di_check=di_check)
