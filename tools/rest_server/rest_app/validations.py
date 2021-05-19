@@ -23,15 +23,16 @@ from datetime import datetime
 from http import HTTPStatus
 
 db_keys_int = ["noOfNodes", "testExecutionTime"]
-db_keys_array = ["nodesHostname", "testIDLabels", "testTags"]
+db_keys_array = ["nodesHostname", "testIDLabels", "testTags", "drID", "featureID"]
 db_keys_bool = ["latest"]
 db_keys_str = ["clientHostname", "OSVersion", "testName", "testID", "testPlanID",
                "testExecutionID", "testType", "testExecutionLabel", "testTeam",
                "testStartTime", "buildType", "buildNo", "logPath", "feature",
-               "testResult", "healthCheckResult", "executionType", "testPlanLabel"]
+               "testResult", "healthCheckResult", "executionType", "testPlanLabel",
+               "platformType", "serverType", "enclosureType"]
 db_keys = db_keys_int + db_keys_array + db_keys_bool + db_keys_str
 
-extra_db_keys_str = ["issueType"]
+extra_db_keys_str = ["issueType", "failureString"]
 extra_db_keys_array = ["issueIDs"]
 extra_db_keys_bool = ["isRegression", "logCollectionDone"]
 extra_db_keys = extra_db_keys_bool + extra_db_keys_array + extra_db_keys_str

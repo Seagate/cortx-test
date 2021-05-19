@@ -70,7 +70,7 @@ class CortxCliAlerts(CortxCli):
         if help_param:
             show_alert_cmd = "{0} -h".format(show_alert_cmd)
 
-        output = self.execute_cli_commands(cmd=show_alert_cmd)[1]
+        output = self.execute_cli_commands(cmd=show_alert_cmd, patterns=["Alert Id"])[1]
 
         if help_param:
             self.log.info("Displaying usage for show alerts")
@@ -105,7 +105,7 @@ class CortxCliAlerts(CortxCli):
         if help_param:
             acknowledge_alerts_cmd = "{} -h".format(acknowledge_alerts_cmd)
 
-        output = self.execute_cli_commands(cmd=acknowledge_alerts_cmd)[1]
+        output = self.execute_cli_commands(cmd=acknowledge_alerts_cmd, patterns=["[Y/n]", "usage:"])[1]
         if help_param:
             self.log.info("Displaying usage for acknowledge alerts")
             return True, output
@@ -113,7 +113,7 @@ class CortxCliAlerts(CortxCli):
         if "[Y/n]" not in output:
             return False, output
 
-        output = self.execute_cli_commands(cmd=confirm)[1]
+        output = self.execute_cli_commands(cmd=confirm, patterns=["Alert Updated"])[1]
         if "Alert Updated" in output:
             return True, output
 
@@ -189,7 +189,7 @@ class CortxCliAlerts(CortxCli):
             add_alert_comment_cmd = "{} -h".format(
                 cmd)
 
-        output = self.execute_cli_commands(cmd=add_alert_comment_cmd)[1]
+        output = self.execute_cli_commands(cmd=add_alert_comment_cmd, patterns=["usage:", "[Y/n]"])[1]
         if help_param:
             self.log.info("Displaying usage for add alert comment")
             return True, output
@@ -197,7 +197,7 @@ class CortxCliAlerts(CortxCli):
         if "[Y/n]" not in output:
             return False, output
 
-        output = self.execute_cli_commands(cmd=confirm)[1]
+        output = self.execute_cli_commands(cmd=confirm, patterns=["Alert Comment Added"])[1]
         if "Alert Comment Added" in output:
             return True, output
 
@@ -237,7 +237,7 @@ class CortxCliAlerts(CortxCli):
         command = " ".join([command, "-h"])
 
         # Executing a command
-        output = self.execute_cli_commands(cmd=command)[1]
+        output = self.execute_cli_commands(cmd=command, patterns=["usage:"])[1]
 
         # Checking for error response
         if "error" in output.lower() or "exception" in output.lower():

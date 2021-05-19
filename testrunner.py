@@ -56,6 +56,8 @@ def parse_args():
     parser.add_argument("-i", "--data_integrity_chk", type=str_to_bool,
                         default=False, help="Helps set DI check enabled so that tests "
                                             "perform additional checksum check")
+    parser.add_argument("-tt", "--test_type", nargs='+', type=str,
+                        default=['ALL'], help="Space separated test types")
     return parser.parse_args()
 
 
@@ -108,6 +110,7 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
     if args.te_ticket:
         te_id = str(args.te_ticket) + "_"
     if re_execution:
+        te_tag = None
         report_name = "--html=log/re_non_parallel_" + te_id + args.html_report
         cmd_line = ["pytest", "--continue-on-collection-errors", is_parallel, is_distributed,
                     log_level, report_name]
@@ -200,10 +203,12 @@ def get_ticket_meta_from_test_list():
     pass
 
 
-def get_tests_from_te(jira_obj, args, test_type='ALL'):
+def get_tests_from_te(jira_obj, args, test_type=None):
     """
     Get tests from given test execution
     """
+    if test_type is None:
+        test_type = ['ALL']
     test_list, tag = jira_obj.get_test_ids_from_te(args.te_ticket, test_type)
     if len(test_list) == 0 or tag == "":
         raise EnvironmentError("Please check TE provided, tests or tag is missing")
@@ -217,7 +222,7 @@ def trigger_unexecuted_tests(args, test_list):
     """
     jira_id, jira_pwd = runner.get_jira_credential()
     jira_obj = JiraTask(jira_id, jira_pwd)
-    te_test_list, tag = get_tests_from_te(jira_obj, args, 'TODO')
+    te_test_list, tag = get_tests_from_te(jira_obj, args, ['TODO'])
     if len(te_test_list) != 0:
         # check if there are any selected tests with todo status
         unexecuted_test_list = [test for test in test_list if test in te_test_list]
@@ -231,7 +236,7 @@ def trigger_unexecuted_tests(args, test_list):
                     write.writerow([test])
             _env = os.environ.copy()
             _env['pytest_run'] = 'distributed'
-            run_pytest_cmd(args, te_tag=None, parallel_exe=args.parallel_exe,
+            run_pytest_cmd(args, te_tag=tag, parallel_exe=args.parallel_exe,
                            env=_env, re_execution=True)
 
 
@@ -248,18 +253,29 @@ def create_test_meta_data_file(args, test_list, jira_obj=None):
     options = {'server': jira_url}
     auth = (jira_id, jira_pwd)
     auth_jira = JIRA(options, basic_auth=auth)
-
     # Create test meta file for reporting TR.
     tp_meta_file = os.path.join(os.getcwd(),
                                 params.LOG_DIR_NAME,
                                 params.JIRA_TEST_META_JSON)
     with open(tp_meta_file, 'w') as t_meta:
-
         test_meta = list()
         tp_resp = jira_obj.get_issue_details(args.test_plan, auth_jira=auth_jira)  # test plan id
         tp_meta['test_plan_label'] = tp_resp.fields.labels
-        tp_meta['environment'] = tp_resp.fields.environment
+        tp_meta['environment'] = tp_resp.fields.environment # deprecated
+        c_fields = dict(build=tp_resp.fields.customfield_22980,
+                        branch=tp_resp.fields.customfield_22981,
+                        plat_type=tp_resp.fields.customfield_22982,
+                        srv_type=tp_resp.fields.customfield_22983,
+                        enc_type=tp_resp.fields.customfield_22984)
+        # tp_meta with defaults
+        tp_meta['build'] = c_fields['build'][0] if c_fields['build'] else 0
+        tp_meta['branch'] = c_fields['branch'][0] if c_fields['branch'] else 'stable'
+        tp_meta['platform_type'] = c_fields['plat_type'][0] if c_fields['plat_type'] else 'VM_HW'
+        tp_meta['server_type'] = c_fields['srv_type'][0] if c_fields['srv_type'] else 'VM'
+        tp_meta['enclosure_type'] = c_fields['enc_type'][0] if c_fields['enc_type'] else '5U84'
+
         te_resp = jira_obj.get_issue_details(args.te_ticket, auth_jira=auth_jira)  # test exec id
+        te_components = 'Automation' # default
         if te_resp.fields.components:
             te_components = te_resp.fields.components[0].name
         tp_meta['te_meta'] = dict(te_id=args.te_ticket,
@@ -271,14 +287,21 @@ def create_test_meta_data_file(args, test_list, jira_obj=None):
             item['test_id'] = test
             resp = jira_obj.get_issue_details(test, auth_jira=auth_jira)
             item['test_name'] = resp.fields.summary
-            item['labels'] = resp.fields.labels
+            item['labels'] = resp.fields.labels if resp.fields.labels else list()
             if resp.fields.components:
                 component = resp.fields.components[0].name  # First items is of interest
             else:
                 component = list()
             item['component'] = component
-            domain = resp.fields.customfield_21087.value if resp.fields.customfield_21087 else 'None'
+            c_fields = dict(domain=resp.fields.customfield_21087,
+                            dr_id=resp.fields.customfield_22882,
+                            feature_id=resp.fields.customfield_22881)
+            domain = c_fields['domain'].value if c_fields['domain'] else 'None'
             item['test_domain'] = domain
+            item['dr_id'] = c_fields['dr_id'] if c_fields['dr_id'] else ['DR-0']
+            item['feature_id'] = c_fields['feature_id'] if c_fields['feature_id'] else ['F-0']
+            lbls = item['labels']
+            item['execution_type'] = lbls[0] if lbls and isinstance(lbls, list) else 'R2Automated'
             test_meta.append(item)
         tp_meta['test_meta'] = test_meta
         json.dump(tp_meta, t_meta, ensure_ascii=False)
@@ -350,7 +373,11 @@ def trigger_tests_from_te(args):
     # test_list, te_tag = jira_obj.get_test_ids_from_te(args.te_ticket)
     # if len(test_list) == 0 or te_tag == "":
     #     assert False, "Please check TE provided, tests or tag is missing"
-    test_list, te_tag = get_tests_from_te(jira_obj, args)
+    test_type_arg = args.test_type
+    test_types = [ele.strip() for ele in test_type_arg]
+
+    test_list, te_tag = get_tests_from_te(jira_obj, args, test_types)
+
     # writing the data into the file
     with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_TEST_LIST), 'w') \
             as test_file:
@@ -360,13 +387,7 @@ def trigger_tests_from_te(args):
 
     tp_metadata = create_test_meta_data_file(args, test_list)
     if not args.build and not args.build_type:
-        if 'environment' in tp_metadata and tp_metadata.get('environment'):
-            test_env = tp_metadata.get('environment')
-            try:
-                _build_type, _build = test_env.split('_')
-            except ValueError:
-                raise EnvironmentError('Test plan env needs to be in format <build_type>_<build#>')
-            args.build, args.build_type = _build, _build_type
+        args.build, args.build_type = tp_metadata['build'], tp_metadata['branch']
 
     _env = os.environ.copy()
     if not args.force_serial_run:
