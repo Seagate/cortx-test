@@ -143,8 +143,6 @@ def create_test_details_file(te_ticket, test_tuple):
     tp_details_file = os.path.join(os.getcwd(),
                                    params.LOG_DIR_NAME,
                                    params.JIRA_TEST_DETAILS_JSON)
-    import pdb
-    pdb.set_trace()
     with open(tp_details_file, 'w') as t_meta:
         # test_name, test_run_id
         item = dict()
