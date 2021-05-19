@@ -63,7 +63,7 @@ def get_db_credential() -> Tuple[str, Optional[str]]:
     except KeyError:
         print("DB credentials not found in environment")
         try:
-            getattr(CMN_CFG, 'db_user') and getattr(CMN_CFG, 'db_user')
+            getattr(CMN_CFG, 'db_user') and getattr(CMN_CFG, 'db_password')
             db_user, db_pwd = CMN_CFG.db_user, CMN_CFG.db_password
         except AttributeError as attr_err:
             LOGGER.exception(str(attr_err))
