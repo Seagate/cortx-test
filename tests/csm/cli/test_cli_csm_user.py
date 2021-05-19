@@ -193,6 +193,7 @@ class TestCliCSMUser:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-10816")
     def test_1266(self):
         """
@@ -214,6 +215,7 @@ class TestCliCSMUser:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-10817")
     def test_1267(self):
         """
@@ -370,6 +372,7 @@ class TestCliCSMUser:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-10824")
     def test_1244(self):
         """
@@ -774,6 +777,7 @@ class TestCliCSMUser:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-10850")
     def test_1249(self):
         """
@@ -906,6 +910,7 @@ class TestCliCSMUser:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-12789")
     def test_1257(self):
         """
@@ -978,6 +983,7 @@ class TestCliCSMUser:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-11740")
     def test_1843(self):
         """
@@ -1182,6 +1188,7 @@ class TestCliCSMUser:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-11745")
     def test_1844(self):
         """
@@ -1829,6 +1836,7 @@ class TestCliCSMUser:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-19871")
     def test_reset_self_pwd_by_csm_user(self):
         """

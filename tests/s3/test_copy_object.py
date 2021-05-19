@@ -304,6 +304,7 @@ class TestCopyObjects:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-19841")
     @CTFailOn(error_handler)
     def test_19841(self):
@@ -378,6 +379,7 @@ class TestCopyObjects:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-19842")
     @CTFailOn(error_handler)
     def test_19842(self):
