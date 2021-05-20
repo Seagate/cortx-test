@@ -40,7 +40,6 @@ LOGGER = logging.getLogger(__name__)
 config_file = 'scripts/jenkins_job/config.ini'
 config = configparser.ConfigParser()
 config.read(config_file)
-cortx_obj = CortxCliTestLib()
 
 def run_cmd(cmd):
     """
@@ -191,6 +190,7 @@ def main():
     create_db_entry(host, uname, host_passwd, mgmnt_ip, admin_user, admin_passwd)
     run_cmd("python3.7 tools/setup_update/setup_entry.py "
             "--dbuser datawrite --dbpassword seagate@123")
+    cortx_obj = CortxCliTestLib()
     acc_name = pswdmanager.decrypt(config['s3creds']['acc_name'])
     acc_email = pswdmanager.decrypt(config['s3creds']['acc_email'])
     acc_passwd = pswdmanager.decrypt(config['s3creds']['acc_passwd'])
