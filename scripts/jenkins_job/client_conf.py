@@ -22,6 +22,7 @@
 Setup file for client configuration for executing the R2 regression.
 """
 
+import configparser
 import os
 import logging
 import json
@@ -29,10 +30,16 @@ import subprocess
 import shutil
 from zipfile import ZipFile
 from commons.helpers.node_helper import Node
+from libs.s3.cortxcli_test_lib import CortxCliTestLib as cortx_obj
+from commons import pswdmanager
 
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
+
+config_file = 'scripts/jenkins_job/config.ini'
+config = configparser.ConfigParser()
+config.read(config_file)
 
 def run_cmd(cmd):
     """
@@ -110,6 +117,37 @@ def set_s3_endpoints(cluster_ip):
         else:
             fp.write("{} s3.seagate.com iam.seagate.com".format(cluster_ip))
 
+def configure_awscli(access_key, secret_key):
+    """
+    Method to configure awscli on the host
+    :return: None
+    """
+    run_cmd("python3.7 -m pip install awscli -i https://pypi.python.org/simple/.")
+    run_cmd("python3.7 -m pip install awscli-plugin-endpoint -i https://pypi.python.org/simple/.")
+    aws_configure = "aws configure"
+    local_s3_cert_path = "/etc/ssl/stx-s3-clients/s3/ca.crt"
+    proc = subprocess.Popen(aws_configure, shell=True,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            stdin=subprocess.PIPE)
+
+    proc.stdin.write(str.encode(access_key) + b"\n")
+    proc.stdin.flush()
+    proc.stdin.write(str.encode(secret_key) + b"\n")
+    proc.stdin.flush()
+    proc.stdin.write(b"US\n")
+    proc.stdin.flush()
+    proc.stdin.write(b"json\n")
+    proc.stdin.flush()
+
+    result = str(proc.communicate())
+    print("output = {}".format(result))
+    run_cmd("aws configure set plugins.endpoint awscli_plugin_endpoint")
+    run_cmd("aws configure set s3.endpoint_url https://s3.seagate.com")
+    run_cmd("aws configure set s3api.endpoint_url https://s3.seagate.com")
+    run_cmd("aws configure set ca_bundle {}".format(local_s3_cert_path))
+
+
 def setup_chrome():
     """
     Method to install chrome and chromedriver
@@ -152,6 +190,13 @@ def main():
     create_db_entry(host, uname, host_passwd, mgmnt_ip, admin_user, admin_passwd)
     run_cmd("python3.7 tools/setup_update/setup_entry.py "
             "--dbuser datawrite --dbpassword seagate@123")
+    acc_name = pswdmanager.decrypt(config['s3creds']['acc_name'])
+    acc_email = pswdmanager.decrypt(config['s3creds']['acc_email'])
+    acc_passwd = pswdmanager.decrypt(config['s3creds']['acc_passwd'])
+    resp = cortx_obj.create_account_cortxcli(acc_name, acc_email, acc_passwd)
+    access_key = resp[1]["access_key"]
+    secret_key = resp[1]["secret_key"]
+    configure_awscli(access_key, secret_key)
     print("Setting up chrome")
     setup_chrome()
     run_cmd("cp /root/secrets.json .")
