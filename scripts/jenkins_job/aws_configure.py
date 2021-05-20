@@ -81,7 +81,7 @@ def configure_awscli(access_key, secret_key):
     run_cmd("aws configure set s3api.endpoint_url https://s3.seagate.com")
     run_cmd("aws configure set ca_bundle {}".format(local_s3_cert_path))
 
-def main():
+def test_main():
     LOGGER.info("Getting access and secret key for configuring AWS")
     acc_name = pswdmanager.decrypt(config['s3creds']['acc_name'])
     acc_email = pswdmanager.decrypt(config['s3creds']['acc_email'])
@@ -91,5 +91,3 @@ def main():
     secret_key = resp[1]["secret_key"]
     configure_awscli(access_key, secret_key)
 
-if __name__ == "__main__":
-    main()
