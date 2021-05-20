@@ -21,7 +21,7 @@
 """
 AWS configuration file with access key and secret key
 """
-
+import os
 import configparser
 import logging
 import subprocess

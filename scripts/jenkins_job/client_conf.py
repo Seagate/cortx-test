@@ -93,6 +93,8 @@ def create_db_entry(hostname, username, password, ip_addr, admin_user, admin_pas
     with open(json_file, 'w') as file:
         json.dump(json_data, file)
 
+    return new_setupname
+
 def set_s3_endpoints(cluster_ip):
     """
     Set s3 endpoints to cluster ip in /etc/hosts
@@ -150,9 +152,12 @@ def main():
         run_cmd("rm -f {}".format(local_path))
     nd_obj_host.copy_file_to_local(remote_path=remote_path, local_path=local_path)
     set_s3_endpoints(clstr_ip)
-    create_db_entry(host, uname, host_passwd, mgmnt_ip, admin_user, admin_passwd)
+    setupname = create_db_entry(host, uname, host_passwd, mgmnt_ip, admin_user, admin_passwd)
     run_cmd("python3.7 tools/setup_update/setup_entry.py "
             "--dbuser datawrite --dbpassword seagate@123")
+    os.environ["TARGET"] = setupname
+    from scripts.jenkins_job.aws_configure import test_main
+    test_main()
     print("Setting up chrome")
     setup_chrome()
     run_cmd("cp /root/secrets.json .")
