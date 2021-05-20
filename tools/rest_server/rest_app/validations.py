@@ -22,7 +22,8 @@
 from datetime import datetime
 from http import HTTPStatus
 
-db_keys_int = ["noOfNodes", "testExecutionTime"]
+db_keys_int = ["noOfNodes"]
+db_keys_float = ["testExecutionTime"]
 db_keys_array = ["nodesHostname", "testIDLabels", "testTags", "drID", "featureID"]
 db_keys_bool = ["latest"]
 db_keys_str = ["clientHostname", "OSVersion", "testName", "testID", "testPlanID",
@@ -30,7 +31,7 @@ db_keys_str = ["clientHostname", "OSVersion", "testName", "testID", "testPlanID"
                "testStartTime", "buildType", "buildNo", "logPath", "feature",
                "testResult", "healthCheckResult", "executionType", "testPlanLabel",
                "platformType", "serverType", "enclosureType"]
-db_keys = db_keys_int + db_keys_array + db_keys_bool + db_keys_str
+db_keys = db_keys_int + db_keys_float + db_keys_array + db_keys_bool + db_keys_str
 
 extra_db_keys_str = ["issueType", "failureString"]
 extra_db_keys_array = ["issueIDs"]
