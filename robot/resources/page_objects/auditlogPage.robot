@@ -52,9 +52,9 @@ Download Audit Log
 
 Verify Audit Log Generated
     [Documentation]  Test keyword is to verify that audit log details has shown
-    Sleep  5s  #  Audit log need time to load
-    ${text}=  get text  ${LOGGED_IN_USER_NAME_ID}
-    Should Not Be Empty  ${AUDIT_LOG_DATA_ID}
+    wait for page or element to load  #  Audit log need time to load
+    ${text}=  get text  ${CSM_AUDIT_LOG_TABLE_XPATH}
+    Should Not Be Empty  ${text}
 
 Verify Audit Log Downloaded
     [Documentation]  Test keyword is to verify that audit log details has downloaded

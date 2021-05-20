@@ -1015,3 +1015,18 @@ def random_metadata_generator(
     :return: str
     """
     return ''.join(random.SystemRandom().choice(chars) for _ in range(size))
+
+
+def create_file_fallocate(filepath=None, size="1MB", option="l"):
+    """
+    Create file using tool fallocate.
+
+    :param filepath: Absolute/Relative filepath.
+    :param size: file size: 1k, 33k, 1MB, 4MB etc.
+    :param option: options supported by fallocate tool.
+    :return: True/False, response.
+    """
+    command = "fallocate -{} {} {}".format(option, size, filepath)
+    resp = run_local_cmd(command)
+
+    return os.path.exists(filepath), resp[1]
