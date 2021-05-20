@@ -30,7 +30,7 @@ import subprocess
 import shutil
 from zipfile import ZipFile
 from commons.helpers.node_helper import Node
-from libs.s3.cortxcli_test_lib import CortxCliTestLib as cortx_obj
+from libs.s3.cortxcli_test_lib import CortxCliTestLib
 from commons import pswdmanager
 
 
@@ -40,6 +40,7 @@ LOGGER = logging.getLogger(__name__)
 config_file = 'scripts/jenkins_job/config.ini'
 config = configparser.ConfigParser()
 config.read(config_file)
+cortx_obj = CortxCliTestLib()
 
 def run_cmd(cmd):
     """
