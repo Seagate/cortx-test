@@ -30,7 +30,6 @@ import subprocess
 import shutil
 from zipfile import ZipFile
 from commons.helpers.node_helper import Node
-from libs.s3.cortxcli_test_lib import CortxCliTestLib
 from commons import pswdmanager
 
 
@@ -190,6 +189,7 @@ def main():
     create_db_entry(host, uname, host_passwd, mgmnt_ip, admin_user, admin_passwd)
     run_cmd("python3.7 tools/setup_update/setup_entry.py "
             "--dbuser datawrite --dbpassword seagate@123")
+    from libs.s3.cortxcli_test_lib import CortxCliTestLib
     cortx_obj = CortxCliTestLib()
     acc_name = pswdmanager.decrypt(config['s3creds']['acc_name'])
     acc_email = pswdmanager.decrypt(config['s3creds']['acc_email'])
