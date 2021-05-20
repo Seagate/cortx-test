@@ -88,6 +88,7 @@ CONF_SECONDARY_PORT = CONF_STORE_ENCL_KEY + ">secondary>port"
 CONF_ENCL_USER = CONF_STORE_ENCL_KEY + ">secret"
 CONF_ENCL_SECRET = CONF_STORE_ENCL_KEY + ">user"
 CONF_SSPL_LOG_LEVEL = "SYSTEM_INFORMATION>log_level"
+SSPL_GLOBAL_CONF_URL = 'yaml:///etc/sspl_global_config_copy.yaml'
 
 """ S3 constants """
 const.S3_CONFIG = "/opt/seagate/cortx/s3/conf/s3config.yaml"

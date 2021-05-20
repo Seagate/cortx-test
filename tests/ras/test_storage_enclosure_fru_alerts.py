@@ -18,7 +18,7 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-"""SSPL test cases: Primary Node."""
+"""Test suite for storage enclosure fru related tests."""
 
 import os
 import time
@@ -43,8 +43,8 @@ from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
 LOGGER = logging.getLogger(__name__)
 
 
-class TestSSPL:
-    """SSPL Test Suite."""
+class TestStorageAlerts:
+    """SSPL Storage Enlosure FRU Test Suite."""
 
     @classmethod
     def setup_class(cls):

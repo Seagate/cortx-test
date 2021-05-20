@@ -778,6 +778,7 @@ class RASCoreLib:
                                 password=self.pwd, cmd=cmd)
         result = result[1].decode('utf-8').strip().split('\n')
         res = json.loads(result[0])
+        LOGGER.info("Response: %s", res)
         return res[0]
 
     def get_conf_store_enclosure_vals(self, field: str) -> Tuple[bool, str]:
@@ -788,7 +789,7 @@ class RASCoreLib:
         :return: True/False, field value
         :rtype: bool, str
         """
-        url = 'yaml:///etc/sspl_global_config_copy.yaml'
+        url = cmn_cons.SSPL_GLOBAL_CONF_URL
         e_field = 'storage_enclosure'
         result = self.get_conf_store_vals(url=url, field=e_field)
         for key, value in result.items():
@@ -799,7 +800,6 @@ class RASCoreLib:
             else:
                 if key == field:
                     vals = value
-                    print(vals)
                     return True, vals
         return False, "No value found"
 
