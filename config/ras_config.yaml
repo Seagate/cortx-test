@@ -82,3 +82,8 @@ raid_param:
   md0_path: "/dev/md0"
   disk_path: "/dev/{}"
   resync_delay: 300
+
+nw_fault_params:
+  min_wait_time: 180
+  max_wait_time: 300
+  min_wait_after_io: 160

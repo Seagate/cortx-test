@@ -764,3 +764,25 @@ class RASCoreLib:
                     return False, f"{host_name} : {result[1]}"
 
         return True, f"{host_name} : {result[1]}"
+
+    def toggle_nw_status(self, device, status):
+        """
+        Toggle network device status using ip set command.
+        :param str device: Name of the ip network device
+        :param str status: Expect status like up/down
+        :return: True/False
+        :rtype: Boolean
+        """
+        LOGGER.info(f"Changing {device} n/w device status to {status}")
+        cmd = common_commands.IP_LINK_CMD.format(device, status)
+        res = run_remote_cmd(
+                hostname=self.host, username=self.username, password=self.pwd,
+                cmd=cmd, read_lines=True)
+        LOGGER.debug(f"Command: {cmd}, response: {res}")
+        if res.decode() == '':
+            result = True
+        else:
+            result = False
+
+        LOGGER.debug(result)
+        return result
