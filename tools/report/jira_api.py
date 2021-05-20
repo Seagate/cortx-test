@@ -109,16 +109,15 @@ def get_test_list_from_test_plan(test_plan: str, username: str, password: str) -
     """
     jira_url = f'https://jts.seagate.com/rest/raven/1.0/api/testplan/{test_plan}/test'
     responses = []
-    all_tests = False
     i = 0
-    while not all_tests:
+    while True:
         i = i + 1
         query = {'limit': 100, 'page': i}
         response = requests.get(jira_url, auth=(username, password), params=query)
         if response.status_code == HTTPStatus.OK and response.json():
             responses.extend(response.json())
         elif response.status_code == HTTPStatus.OK and not response.json():
-            all_tests = True
+            break
         else:
             print(f'get_test_list GET on {jira_url} failed')
             print(f'RESPONSE={response.text}\n'
@@ -140,19 +139,24 @@ def get_test_from_test_execution(test_execution: str, username: str, password: s
         [{"key":"TEST-10963", "status":"FAIL", "defects": []}, {...}]
         "defects" = [{key:"EOS-123", "summary": "Bug Title", "status": "New/Started/Closed"},{}]
     """
+    responses = []
     jira_url = f'https://jts.seagate.com/rest/raven/1.0/api/testexec/{test_execution}/test'
-    query = {'detailed': "true"}
-    response = requests.get(jira_url, auth=(username, password), params=query)
-    if response.status_code == HTTPStatus.OK and response.json():
-        return response.json()
-    if response.status_code == HTTPStatus.OK and not response.json():
-        print("No tests associated with this test execution")
-        sys.exit(1)
-    print(f'get_test_from_test_execution GET on {jira_url} failed')
-    print(f'RESPONSE={response.text}\n'
-          f'HEADERS={response.request.headers}\n'
-          f'BODY={response.request.body}')
-    sys.exit(1)
+    i = 0
+    while True:
+        i = i + 1
+        query = {'detailed': "true", 'limit': 100, 'page': i}
+        response = requests.get(jira_url, auth=(username, password), params=query)
+        if response.status_code == HTTPStatus.OK and response.json():
+            responses.extend(response.json())
+        elif response.status_code == HTTPStatus.OK and not response.json():
+            break
+        else:
+            print(f'get_test_from_test_execution GET on {jira_url} failed')
+            print(f'RESPONSE={response.text}\n'
+                  f'HEADERS={response.request.headers}\n'
+                  f'BODY={response.request.body}')
+            sys.exit(1)
+    return responses
 
 
 def get_issue_details(issue_id: str, username: str, password: str):
@@ -228,9 +232,9 @@ def get_details_from_test_plan(test_plan: str, username: str, password: str) -> 
     return out_dict
 
 
-def get_main_table_data(build_no: str):
+def get_main_table_data(build_no: str, report_type: str):
     """Get header table data."""
-    data = [["CFT Exec Report"], ["Product", "Lyve Rack"],
+    data = [[f"CFT {report_type} Report"], ["Product", "Lyve Rack - 2"],
             ["Build", build_no],
             ["Date", date.today().strftime("%B %d, %Y")], ["System", ""]]
     return data

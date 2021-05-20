@@ -20,6 +20,7 @@
 
 import argparse
 import csv
+import os
 from collections import defaultdict
 from copy import deepcopy
 
@@ -68,7 +69,7 @@ def get_component_issue_summary(test_plans: list, username: str, password: str):
         else:
             builds.append("NA")
     data = [
-        ["Component Level Summary"],
+        ["Component Level Bugs Summary"],
         ["Component", builds[0], builds[1], builds[2], builds[3]],
     ]
     for component in common.COMPONENT_LIST:
@@ -107,7 +108,8 @@ def get_single_bucket_perf_stats(build, branch, uri, db_name, db_collection):
                     else:
                         temp_data.append("-")
                 else:
-                    if count > 0 and common.keys_exists(db_data[0], stat):
+                    if count > 0 and common.keys_exists(db_data[0], stat)\
+                            and "Count_of_Servers" in db_data[0]:
                         temp_data.append(common.round_off(db_data[0][stat]/db_data[0]["Count_of_Servers"]))
                     else:
                         temp_data.append("-")
@@ -259,7 +261,7 @@ def main():
     branch = jira_api.get_details_from_test_plan(test_plans.tp, username, password)["branch"]
 
     data = []
-    data.extend(jira_api.get_main_table_data(test_plans.tp))
+    data.extend(jira_api.get_main_table_data(builds[0], "Engg"))
     data.extend([""])
     data.extend(jira_api.get_reported_bug_table_data(test_plans.tp, username, password))
     data.extend([""])
@@ -279,6 +281,8 @@ def main():
     data.extend([""])
     data.extend(get_detailed_reported_bugs(test_plans.tp, username, password))
     data.extend([""])
+    if os.path.exists("../engg_report.csv"):
+        os.remove("../engg_report.csv")
     with open("../engg_report.csv", "a", newline='') as csv_file:
         writer = csv.writer(csv_file)
         writer.writerows(data)

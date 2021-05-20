@@ -20,6 +20,7 @@
 # -*- coding: utf-8 -*-
 import argparse
 import csv
+import os
 from collections import Counter
 
 import numpy as np
@@ -77,9 +78,10 @@ def get_code_maturity_data(test_plan: str, test_plan1: str, test_plan2: str,
     builds = []
     for t_plan in [test_plan, test_plan1, test_plan2]:
         if t_plan:
-            tests = jira_api.get_test_list_from_test_plan(test_plan, username, password)
+            tests = jira_api.get_test_list_from_test_plan(t_plan, username, password)
             counters.append(Counter(test['latestStatus'] for test in tests))
-            builds.append(jira_api.get_details_from_test_plan(t_plan, username, password)["build"])
+            builds.append(
+                jira_api.get_details_from_test_plan(t_plan, username, password)["buildNo"])
         else:
             counters.append(Counter())
             builds.append("NA")
@@ -156,7 +158,7 @@ def main():
               test_plan else "NA" for test_plan in tp_ids]
 
     data = []
-    data.extend(jira_api.get_main_table_data(builds[0]))
+    data.extend(jira_api.get_main_table_data(builds[0], "Exec"))
     data.extend([""])
     data.extend(jira_api.get_reported_bug_table_data(test_plans.tp, username, password))
     data.extend([""])
@@ -173,6 +175,8 @@ def main():
     data.extend([""])
     data.extend(common.get_timing_summary(tp_ids, builds, rest, db_username, db_password))
     data.extend([""])
+    if os.path.exists("../exec_report.csv"):
+        os.remove("../exec_report.csv")
     with open("../exec_report.csv", "a", newline='') as csv_file:
         writer = csv.writer(csv_file)
         writer.writerows(data)
