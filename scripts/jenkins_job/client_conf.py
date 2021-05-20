@@ -189,15 +189,15 @@ def main():
     create_db_entry(host, uname, host_passwd, mgmnt_ip, admin_user, admin_passwd)
     run_cmd("python3.7 tools/setup_update/setup_entry.py "
             "--dbuser datawrite --dbpassword seagate@123")
-    from libs.s3.cortxcli_test_lib import CortxCliTestLib
-    cortx_obj = CortxCliTestLib()
-    acc_name = pswdmanager.decrypt(config['s3creds']['acc_name'])
-    acc_email = pswdmanager.decrypt(config['s3creds']['acc_email'])
-    acc_passwd = pswdmanager.decrypt(config['s3creds']['acc_passwd'])
-    resp = cortx_obj.create_account_cortxcli(acc_name, acc_email, acc_passwd)
-    access_key = resp[1]["access_key"]
-    secret_key = resp[1]["secret_key"]
-    configure_awscli(access_key, secret_key)
+    #from libs.s3.cortxcli_test_lib import CortxCliTestLib
+    #cortx_obj = CortxCliTestLib()
+    #acc_name = pswdmanager.decrypt(config['s3creds']['acc_name'])
+    #acc_email = pswdmanager.decrypt(config['s3creds']['acc_email'])
+    #acc_passwd = pswdmanager.decrypt(config['s3creds']['acc_passwd'])
+    #resp = cortx_obj.create_account_cortxcli(acc_name, acc_email, acc_passwd)
+    #access_key = resp[1]["access_key"]
+    #secret_key = resp[1]["secret_key"]
+    configure_awscli("None", "None")
     print("Setting up chrome")
     setup_chrome()
     run_cmd("cp /root/secrets.json .")
