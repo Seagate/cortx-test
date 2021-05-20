@@ -22,7 +22,6 @@
 
 import os
 import time
-import shutil
 import logging
 import pytest
 
@@ -31,6 +30,7 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils.system_utils import create_file, remove_file
+from commons.params import TEST_DATA_FOLDER
 from libs.s3 import S3H_OBJ
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.iam_test_lib import IamTestLib
@@ -59,29 +59,9 @@ class TestAccountUserManagement:
         cls.user_name_prefix = "accusrmgmt_user"
         cls.email_id = "{}@seagate.com"
         cls.s3acc_password = S3_CFG["CliConfig"]["s3_account"]["password"]
-        cls.test_file = "testfile"
-        cls.test_dir_path = os.path.join(os.getcwd(), "testdata")
-        cls.test_file_path = os.path.join(cls.test_dir_path, cls.test_file)
-        if not os.path.exists(cls.test_dir_path):
-            os.makedirs(cls.test_dir_path)
-            cls.log.info("Created path: %s", cls.test_dir_path)
-        cls.log.info("Test file path: %s", cls.test_file_path)
         cls.log.info("STARTED: Test setup operations.")
         cls.log.info("Certificate path: %s", cls.ca_cert_path)
         cls.log.info("ENDED: setup test suite operations.")
-
-    @classmethod
-    def teardown_class(cls):
-        """
-        Function will be invoked after completion of all test case.
-
-        It will clean up resources which are getting created during test suite setup.
-        """
-        cls.log.info("STARTED: teardown test suite operations.")
-        if os.path.exists(cls.test_dir_path):
-            shutil.rmtree(cls.test_dir_path)
-        cls.log.info("Cleanup test directory: %s", cls.test_dir_path)
-        cls.log.info("ENDED: teardown test suite operations.")
 
     def setup_method(self):
         """
@@ -91,16 +71,22 @@ class TestAccountUserManagement:
         """
         # Delete created user with prefix.
         self.log.info("STARTED: Test setup operations.")
-
+        self.test_file = "testfile_{}".format(time.perf_counter_ns())
+        self.test_dir_path = os.path.join(os.getcwd(), TEST_DATA_FOLDER)
+        self.test_file_path = os.path.join(self.test_dir_path, self.test_file)
+        if not os.path.exists(self.test_dir_path):
+            os.makedirs(self.test_dir_path)
+            self.log.info("Created path: %s", self.test_dir_path)
+        self.log.info("Test file path: %s", self.test_file_path)
         self.timestamp = time.time()
         self.account_name = "{0}{1}".format(
             self.account_name_prefix, str(
-                time.perf_counter())).replace('.', '_')
+                time.perf_counter_ns())).replace('.', '_')
         self.user_name = "{0}{1}".format(
             self.user_name_prefix, str(
-                time.perf_counter())).replace('.', '_')
-        self.bucket_name = "testbucket{}".format(str(time.perf_counter()))
-        self.obj_name = "testobj{}".format(str(time.perf_counter()))
+                time.perf_counter_ns())).replace('.', '_')
+        self.bucket_name = "testbucket{}".format(str(time.perf_counter_ns()))
+        self.obj_name = "testobj{}".format(str(time.perf_counter_ns()))
 
         self.cortx_obj = CortxCliTestLib()
         self.log.info(
@@ -120,6 +106,10 @@ class TestAccountUserManagement:
         This function will delete IAM accounts and users.
         """
         self.log.info("STARTED: Test teardown Operations.")
+        self.log.info("Cleaning up test directory: %s", self.test_dir_path)
+        if os.path.exists(self.test_file_path):
+            os.remove(self.test_file_path)
+            self.log.info("Cleaned test directory: %s", self.test_dir_path)
         users_list = [user["UserName"]
                       for user in IAM_OBJ.list_users()[1]
                       if self.user_name in user["UserName"]]
@@ -368,7 +358,7 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5435")
-    @CTFailOn(error_handler)
+    # @CTFailOn(error_handler)
     def test_crud_operations_with_invalid_cred_1974(self):
         """CRUD operations with invalid login credentials."""
         self.log.info(
@@ -441,7 +431,7 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5439")
-    @CTFailOn(error_handler)
+    # @CTFailOn(error_handler)
     def test_create_new_user_from_current_account_2076(self):
         """Create new user for current Account."""
         self.log.info("START: Create new user for current Account.")
@@ -478,7 +468,7 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5422")
-    @CTFailOn(error_handler)
+    # @CTFailOn(error_handler)
     def test_update_user_2077(self):
         """Update User."""
         self.log.info("START: Update User.")
@@ -517,7 +507,7 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5428")
-    @CTFailOn(error_handler)
+    # @CTFailOn(error_handler)
     def test_list_user_2078(self):
         """List user."""
         self.log.info("START: list user")
@@ -545,7 +535,7 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5431")
-    @CTFailOn(error_handler)
+    # @CTFailOn(error_handler)
     def test_delete_user_2079(self):
         """Delete User."""
         self.log.info("START: Delete User")
@@ -571,7 +561,7 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5438")
-    @CTFailOn(error_handler)
+    # @CTFailOn(error_handler)
     def test_create_100_number_of_users_2080(self):
         """Created 100 No of Users."""
         self.log.info("START: Created 100 No of Users")
@@ -906,7 +896,7 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8718")
-    @CTFailOn(error_handler)
+    # @CTFailOn(error_handler)
     def test_create_user_account_and_check_arn_4625(self):
         """Test Create user for the account and verify output with proper ARN format."""
         self.log.info(
