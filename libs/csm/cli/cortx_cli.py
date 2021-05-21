@@ -22,10 +22,17 @@ This library contains common methods for CORTX CLI which will be used
 across all other libraries and test suites
 """
 
+import platform
 import logging
 import json
 import xmltodict
-import redexpect
+
+try:
+    if platform.system() == "Linux":
+        import redexpect
+except ModuleNotFoundError as error:
+    logging.error(error)
+
 import commons.errorcodes as err
 from commons import commands
 from commons.exceptions import CTException
