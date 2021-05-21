@@ -117,16 +117,15 @@ class TestObjectACL:
         :param object s3_test_obj: Custom s3 test object
         :return: None
         """
-        global S3_OBJ
-        S3_OBJ = s3_test_obj if s3_test_obj else S3_OBJ
+        s3_tobj = s3_test_obj if s3_test_obj else S3_OBJ
         self.log.info("Step : Creating a bucket: %s", bucket)
-        res = S3_OBJ.create_bucket(bucket)
+        res = s3_tobj.create_bucket(bucket)
         assert res[0], res[1]
         self.log.info("Step : Bucket is created: %s", bucket)
         self.log.info("Step : Creating a object:%s", obj_name)
         system_utils.create_file(self.test_file_path,
                                  S3_OBJ_TST["s3_object"]["file_size"])
-        res = S3_OBJ.put_object(bucket, obj_name, self.test_file_path)
+        res = s3_tobj.put_object(bucket, obj_name, self.test_file_path)
         assert res[0], res[1]
         self.log.info("Step : Object is created:%s", obj_name)
 
@@ -150,7 +149,7 @@ class TestObjectACL:
         secret_key = create_account[1]["secret_key"]
         canonical_id = create_account[1]["canonical_id"]
         # Creating the new s3 and ACL Object
-        s3_obj = s3_test_lib.S3TestLib(
+        s3t_obj = s3_test_lib.S3TestLib(
             access_key=access_key, secret_key=secret_key)
         s3_acl_obj = s3_acl_test_lib.S3AclTestLib(
             access_key=access_key, secret_key=secret_key)
@@ -158,7 +157,7 @@ class TestObjectACL:
             access_key=access_key, secret_key=secret_key)
         self.account_list.append(account_name)
 
-        return canonical_id, s3_obj, s3_acl_obj, s3_tag_obj
+        return canonical_id, s3t_obj, s3_acl_obj, s3_tag_obj
 
     def create_acc_and_put_obj_acp(self, bkt_name, obj_name, test_cfg):
         """
@@ -4436,7 +4435,7 @@ class TestObjectACL:
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         canonical_id, s3_test_obj2, s3_acl_obj2, _ = result
         result = self.create_s3_acc_cortxcli(
-            self.account_name, self.account_name, self.s3acc_passwd)
+            self.account_name, self.email_id, self.s3acc_passwd)
         s3_test_obj3 = result[1]
         self.log.info("Step 1: Created three accounts successfully")
         self.create_bucket_obj(self.bucket_name, self.obj_name, s3_test_obj1)
