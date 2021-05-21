@@ -38,28 +38,35 @@ S3_CMD_OBJ = s3_cmd_test_lib.S3CmdTestLib()
 S3_MP_OBJ = s3_multipart_test_lib.S3MultipartTestLib()
 
 
-
 class TestObjectWorkflowOperations:
     """Object Workflow Operations Testsuite."""
 
-    @classmethod
-    def setup_class(cls):
-        """
-        Function will be invoked prior to each test case.
-
-        It will perform all prerequisite test suite steps if any.
-        """
-        cls.log = logging.getLogger(__name__)
-        cls.log.info("STARTED: setup suite method")
-        cls.bkt_name_prefix= "objworkflow"
-        cls.obj_name_prefix= "objworkflowobj"
-        cls.folder_path = os.path.join(os.getcwd(), "test_data")
-        cls.file_path = os.path.join(cls.folder_path, "obj_workflow.txt")
-        cls.log.info("ENDED: setup suite method")
+    # @classmethod
+    # def setup_class(cls):
+    #     """
+    #     Function will be invoked prior to each test case.
+    #
+    #     It will perform all prerequisite test suite steps if any.
+    #     """
+    #     cls.log = logging.getLogger(__name__)
+    #     cls.log.info("STARTED: setup suite method")
+    #     cls.bkt_name_prefix= "objworkflow"
+    #     cls.obj_name_prefix= "objworkflowobj"
+    #     cls.folder_path = os.path.join(os.getcwd(), "test_data")
+    #     cls.file_path = os.path.join(cls.folder_path, "obj_workflow.txt")
+    #     cls.log.info("ENDED: setup suite method")
 
     def setup_method(self):
         """Setup method."""
+        self.log = logging.getLogger(__name__)
         self.log.info("STARTED: setup method")
+        self.bkt_name_prefix = "objworkflowbkt"
+        self.bucket_name = self.bkt_name_prefix+str(time.perf_counter_ns())
+        self.obj_name_prefix = "objworkflowobj"
+        self.obj_name = self.obj_name_prefix+str(time.perf_counter_ns())
+        self.folder_path = os.path.join(os.getcwd(), "test_data")
+        file_name = "obj_workflow"+str(time.perf_counter_ns())+".txt"
+        self.file_path = os.path.join(self.folder_path, file_name)
         if not path_exists(self.folder_path):
             resp = make_dirs(self.folder_path)
             self.log.info("Created path: %s", resp)
@@ -75,10 +82,13 @@ class TestObjectWorkflowOperations:
                 "cleaned path: %s, resp: %s",
                 self.folder_path,
                 resp)
-        bucket_list = S3_TEST_OBJ.bucket_list()
-        pref_list = [
-            each_bucket for each_bucket in bucket_list[1] if each_bucket.startswith(self.bkt_name_prefix)]
-        S3_TEST_OBJ.delete_multiple_buckets(pref_list)
+        # bucket_list = S3_TEST_OBJ.bucket_list()
+        # pref_list = [
+        #     each_bucket for each_bucket in bucket_list[1] if each_bucket.startswith(self.bkt_name_prefix)]
+        # S3_TEST_OBJ.delete_multiple_buckets(pref_list)
+        if self.bucket_name in S3_TEST_OBJ.bucket_list()[1]:
+            S3_TEST_OBJ.delete_object(self.bucket_name, self.obj_name)
+            S3_TEST_OBJ.delete_bucket(bucket_name=self.bucket_name, force=True)
         if os.path.exists(self.file_path):
             remove_file(self.file_path)
         if os.path.exists(self.folder_path):
@@ -131,32 +141,32 @@ class TestObjectWorkflowOperations:
         self.log.info("Copying/PUT a local file to s3")
         self.log.info(
             "STARTED: Creating a bucket with name %s",
-            S3_OBJ_TST["test_2208"]["bucket_name"])
+            self.bucket_name)
         resp = S3_TEST_OBJ.create_bucket(
-            S3_OBJ_TST["test_2208"]["bucket_name"])
+            self.bucket_name)
         assert resp[0], resp[1]
-        assert resp[1] == S3_OBJ_TST["test_2208"]["bucket_name"], resp[0]
+        assert resp[1] == self.bucket_name, resp[0]
         self.log.info(
             "Created a bucket with name %s",
-            S3_OBJ_TST["test_2208"]["bucket_name"])
+            self.bucket_name)
         create_file(
             self.file_path,
             S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info(
             "Uploading an object %s to a bucket %s",
-            S3_OBJ_TST["test_2208"]["obj_name"],
-            S3_OBJ_TST["test_2208"]["bucket_name"])
+            self.obj_name,
+            self.bucket_name)
         resp = S3_TEST_OBJ.put_object(
-            S3_OBJ_TST["test_2208"]["bucket_name"],
-            S3_OBJ_TST["test_2208"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.file_path)
         assert resp[0], resp[1]
         self.log.info("Uploaded an object to a bucket")
         self.log.info("Verifying object is successfully uploaded")
         resp = S3_TEST_OBJ.object_list(
-            S3_OBJ_TST["test_2208"]["bucket_name"])
+            self.bucket_name)
         assert resp[0], resp[1]
-        assert S3_OBJ_TST["test_2208"]["obj_name"] in resp[1], resp[1]
+        assert self.obj_name in resp[1], resp[1]
         self.log.info("Verified that object is uploaded successfully")
         self.log.info("ENDED: Copying/PUT a local file to s3")
 
@@ -170,20 +180,20 @@ class TestObjectWorkflowOperations:
             "STARTED: Copying file/object of different type & size to s3")
         self.log.info(
             "Creating a bucket with name %s",
-            S3_OBJ_TST["test_2209"]["bucket_name"])
+            self.bucket_name)
         resp = S3_TEST_OBJ.create_bucket(
-            S3_OBJ_TST["test_2209"]["bucket_name"])
+            self.bucket_name)
         assert resp[0], resp[1]
-        assert resp[1] == S3_OBJ_TST["test_2209"]["bucket_name"], resp[0]
+        assert resp[1] == self.bucket_name, resp[0]
         self.log.info(
             "Created a bucket with name %s",
-            S3_OBJ_TST["test_2209"]["bucket_name"])
+            self.bucket_name)
         self.log.info(
             "Uploading different size objects to a bucket %s",
-            S3_OBJ_TST["test_2209"]["bucket_name"])
+            self.bucket_name)
         put_object = S3_TEST_OBJ.put_random_size_objects(
-            S3_OBJ_TST["test_2209"]["bucket_name"],
-            S3_OBJ_TST["test_2209"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             S3_OBJ_TST["test_2209"]["start_range"],
             S3_OBJ_TST["test_2209"]["stop_range"],
             object_count=S3_OBJ_TST["test_2209"]["file_count"],
@@ -192,7 +202,7 @@ class TestObjectWorkflowOperations:
         self.log.info("Uploaded different size of objects")
         self.log.info("Validating objects are uploaded or not")
         obj_list = S3_TEST_OBJ.object_list(
-            S3_OBJ_TST["test_2209"]["bucket_name"])
+            self.bucket_name)
         assert obj_list[0], obj_list[1]
         assert obj_list[1] == put_object[1], obj_list[1]
         self.log.info(
@@ -207,19 +217,19 @@ class TestObjectWorkflowOperations:
         self.log.info("STARTED: Recursively copying local files to s3")
         self.log.info(
             "Creating a bucket with name %s",
-            S3_OBJ_TST["test_2210"]["bucket_name"])
+            self.bucket_name)
         resp = S3_TEST_OBJ.create_bucket(
-            S3_OBJ_TST["test_2210"]["bucket_name"])
+            self.bucket_name)
         assert resp[0], resp[1]
-        assert resp[1] == S3_OBJ_TST["test_2210"]["bucket_name"], resp[0]
+        assert resp[1] == self.bucket_name, resp[0]
         self.log.info(
             "Created a bucket with name %s",
-            S3_OBJ_TST["test_2210"]["bucket_name"])
+            self.bucket_name)
         self.log.info(
             "Recursively copying local files to a bucket %s",
-            S3_OBJ_TST["test_2210"]["bucket_name"])
+            self.bucket_name)
         resp = S3_CMD_OBJ.upload_folder_cli(
-            S3_OBJ_TST["test_2210"]["bucket_name"],
+            self.bucket_name,
             self.folder_path,
             S3_OBJ_TST["test_2210"]["file_count"])
         assert resp[0], resp[1]
@@ -238,8 +248,8 @@ class TestObjectWorkflowOperations:
             S3_OBJ_TST["s3_object"]["mb_count"])
         try:
             S3_TEST_OBJ.object_upload(
-                S3_OBJ_TST["test_2211"]["bucket_name"],
-                S3_OBJ_TST["test_2211"]["obj_name"],
+                self.bucket_name,
+                self.obj_name,
                 self.file_path)
         except CTException as error:
             assert S3_OBJ_TST["test_2211"]["error_message"] in str(
@@ -256,42 +266,42 @@ class TestObjectWorkflowOperations:
         self.log.info("STARTED: Copying an s3 object to a local file")
         self.log.info(
             "Creating a bucket with name %s",
-            S3_OBJ_TST["test_2213"]["bucket_name"])
+            self.bucket_name)
         resp = S3_TEST_OBJ.create_bucket(
-            S3_OBJ_TST["test_2213"]["bucket_name"])
+            self.bucket_name)
         assert resp[0], resp[1]
-        assert resp[1] == S3_OBJ_TST["test_2213"]["bucket_name"], resp[0]
+        assert resp[1] == self.bucket_name, resp[0]
         self.log.info(
             "Created a bucket with name %s",
-            S3_OBJ_TST["test_2213"]["bucket_name"])
+            self.bucket_name)
         create_file(
             self.file_path,
             S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info(
             "Uploading an object %s to a bucket %s",
-            S3_OBJ_TST["test_2213"]["obj_name"],
-            S3_OBJ_TST["test_2213"]["bucket_name"])
+            self.obj_name,
+            self.bucket_name)
         resp = S3_TEST_OBJ.object_upload(
-            S3_OBJ_TST["test_2213"]["bucket_name"],
-            S3_OBJ_TST["test_2213"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.file_path)
         assert resp[0], resp[1]
         assert resp[1] == self.file_path, resp[1]
         self.log.info("Uploaded an object to a bucket")
         self.log.info(
             "Listing an object from a bucket %s",
-            S3_OBJ_TST["test_2213"]["bucket_name"])
+            self.bucket_name)
         resp = S3_TEST_OBJ.object_list(
-            S3_OBJ_TST["test_2213"]["bucket_name"])
+            self.bucket_name)
         assert resp[0], resp[1]
-        assert S3_OBJ_TST["test_2213"]["obj_name"] in resp[1], resp[1]
+        assert self.obj_name in resp[1], resp[1]
         self.log.info("Objects are listed from a bucket")
         self.log.info(
             "Downloading an object from a bucket %s",
-            S3_OBJ_TST["test_2213"]["bucket_name"])
+            self.bucket_name)
         resp = S3_TEST_OBJ.object_download(
-            S3_OBJ_TST["test_2213"]["bucket_name"],
-            S3_OBJ_TST["test_2213"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.file_path)
         assert resp[0], resp[1]
         assert os.path.exists(self.file_path), resp[1]
@@ -311,28 +321,28 @@ class TestObjectWorkflowOperations:
             "STARTED: Recursively copying s3 objects to a local directory")
         self.log.info(
             "Creating a bucket with name %s",
-            S3_OBJ_TST["test_2214"]["bucket_name"])
+            self.bucket_name)
         resp = S3_TEST_OBJ.create_bucket(
-            S3_OBJ_TST["test_2214"]["bucket_name"])
+            self.bucket_name)
         assert resp[0], resp[1]
-        assert resp[1] == S3_OBJ_TST["test_2214"]["bucket_name"], resp[0]
+        assert resp[1] == self.bucket_name, resp[0]
         self.log.info(
             "Created a bucket with name %s",
-            S3_OBJ_TST["test_2214"]["bucket_name"])
+            self.bucket_name)
         self.log.info(
             "Recursively copying local files to a bucket %s",
-            S3_OBJ_TST["test_2214"]["bucket_name"])
+            self.bucket_name)
         resp = S3_CMD_OBJ.upload_folder_cli(
-            S3_OBJ_TST["test_2214"]["bucket_name"],
+            self.bucket_name,
             self.folder_path,
             S3_OBJ_TST["test_2214"]["file_count"])
         assert resp[0], resp[1]
         self.log.info("Copied local files to a bucket")
         self.log.info(
             "Downloading an object from a bucket %s",
-            S3_OBJ_TST["test_2214"]["bucket_name"])
+            self.bucket_name)
         resp = S3_CMD_OBJ.download_bucket_cli(
-            S3_OBJ_TST["test_2214"]["bucket_name"],
+            self.bucket_name,
             self.folder_path)
         assert resp[0], resp[1]
         self.log.info("Downloaded an object rom a bucket")
@@ -348,30 +358,30 @@ class TestObjectWorkflowOperations:
         self.log.info("STARTED: Copy/Download byte range of object")
         self.log.info(
             "Creating a bucket with name %s",
-            S3_OBJ_TST["test_2215"]["bucket_name"])
+            self.bucket_name)
         resp = S3_TEST_OBJ.create_bucket(
-            S3_OBJ_TST["test_2215"]["bucket_name"])
+            self.bucket_name)
         assert resp[0], resp[1]
-        assert resp[1] == S3_OBJ_TST["test_2215"]["bucket_name"], resp[0]
+        assert resp[1] == self.bucket_name, resp[0]
         self.log.info(
             "Created a bucket with name %s",
-            S3_OBJ_TST["test_2215"]["bucket_name"])
+            self.bucket_name)
         create_file(
             self.file_path,
             S3_OBJ_TST["test_2215"]["file_size"])
         self.log.info(
             "Uploading an object to a bucket %s",
-            S3_OBJ_TST["test_2215"]["bucket_name"])
+            self.bucket_name)
         resp = S3_TEST_OBJ.object_upload(
-            S3_OBJ_TST["test_2215"]["bucket_name"],
-            S3_OBJ_TST["test_2215"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.file_path)
         assert resp[0], resp[1]
         self.log.info("Object is uploaded to a bucket")
         self.log.info("Getting object within byte range")
         resp = S3_MP_OBJ.get_byte_range_of_object(
-            S3_OBJ_TST["test_2215"]["bucket_name"],
-            S3_OBJ_TST["test_2215"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             S3_OBJ_TST["test_2215"]["start_byte"],
             S3_OBJ_TST["test_2215"]["stop_byte"])
         assert resp[0], resp[1]
@@ -387,36 +397,36 @@ class TestObjectWorkflowOperations:
         self.log.info("STARTED: Retrieve Metadata of object")
         self.log.info(
             "Creating a bucket with name %s",
-            S3_OBJ_TST["test_2217"]["bucket_name"])
+            self.bucket_name)
         resp = S3_TEST_OBJ.create_bucket(
-            S3_OBJ_TST["test_2217"]["bucket_name"])
+            self.bucket_name)
         assert resp[0], resp[1]
-        assert resp[1] == S3_OBJ_TST["test_2217"]["bucket_name"], resp[0]
+        assert resp[1] == self.bucket_name, resp[0]
         self.log.info(
             "Created a bucket with name %s",
-            S3_OBJ_TST["test_2217"]["bucket_name"])
+            self.bucket_name)
         create_file(
             self.file_path,
             S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info(
             "Uploading an object to a bucket %s",
-            S3_OBJ_TST["test_2217"]["bucket_name"])
+            self.bucket_name)
         resp = S3_TEST_OBJ.object_upload(
-            S3_OBJ_TST["test_2217"]["bucket_name"],
-            S3_OBJ_TST["test_2217"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.file_path)
         assert resp[0], resp[1]
         self.log.info("Object is uploaded to a bucket")
         self.log.info("Verifying object is successfully uploaded")
         resp = S3_TEST_OBJ.object_list(
-            S3_OBJ_TST["test_2217"]["bucket_name"])
+            self.bucket_name)
         assert resp[0], resp[1]
-        assert S3_OBJ_TST["test_2217"]["obj_name"] in resp[1], resp[1]
+        assert self.obj_name in resp[1], resp[1]
         self.log.info("Verified that object is uploaded successfully")
         self.log.info("Retrieving metadata of an object")
         resp = S3_TEST_OBJ.object_info(
-            S3_OBJ_TST["test_2217"]["bucket_name"],
-            S3_OBJ_TST["test_2217"]["obj_name"])
+            self.bucket_name,
+            self.obj_name)
         assert resp[0], resp[1]
         self.log.info("Retrieved metadata of an object")
         self.log.info("ENDED: Retrieve Metadata of object")
@@ -432,44 +442,44 @@ class TestObjectWorkflowOperations:
             "if the new data is getting reflected")
         self.log.info(
             "Creating a bucket with name %s",
-            S3_OBJ_TST["test_2218"]["bucket_name"])
+            self.bucket_name)
         resp = S3_TEST_OBJ.create_bucket(
-            S3_OBJ_TST["test_2218"]["bucket_name"])
+            self.bucket_name)
         assert resp[0], resp[1]
-        assert resp[1] == S3_OBJ_TST["test_2218"]["bucket_name"], resp[0]
+        assert resp[1] == self.bucket_name, resp[0]
         self.log.info(
             "Created a bucket with name %s",
-            S3_OBJ_TST["test_2218"]["bucket_name"])
+            self.bucket_name)
         create_file(
             self.file_path,
             S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info(
             "Uploading an object to a bucket %s",
-            S3_OBJ_TST["test_2218"]["bucket_name"])
+            self.bucket_name)
         resp = S3_TEST_OBJ.object_upload(
-            S3_OBJ_TST["test_2218"]["bucket_name"],
-            S3_OBJ_TST["test_2218"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.file_path)
         assert resp[0], resp[1]
         self.log.info("Object is uploaded to a bucket")
         self.log.info("Verifying object is successfully uploaded")
         resp = S3_TEST_OBJ.object_list(
-            S3_OBJ_TST["test_2218"]["bucket_name"])
+            self.bucket_name)
         assert resp[0], resp[1]
-        assert S3_OBJ_TST["test_2218"]["obj_name"] in resp[1], resp[1]
+        assert self.obj_name in resp[1], resp[1]
         self.log.info("Verified that object is uploaded successfully")
         self.log.info("Retrieving metadata of an object")
         resp = S3_TEST_OBJ.object_info(
-            S3_OBJ_TST["test_2218"]["bucket_name"],
-            S3_OBJ_TST["test_2218"]["obj_name"])
+            self.bucket_name,
+            self.obj_name)
         assert resp[0], resp[1]
         self.log.info("Retrieved metadata of an object")
         self.log.info(
             "Adding new metadata to an object %s",
-            S3_OBJ_TST["test_2218"]["obj_name"])
+            self.obj_name)
         resp = S3_TEST_OBJ.put_object(
-            S3_OBJ_TST["test_2218"]["bucket_name"],
-            S3_OBJ_TST["test_2218"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.file_path,
             m_key=S3_OBJ_TST["test_2218"]["key"],
             m_value=S3_OBJ_TST["test_2218"]["value"])
@@ -477,10 +487,10 @@ class TestObjectWorkflowOperations:
         self.log.info("Added new metadata to an object")
         self.log.info(
             "Retrieving info of a object %s after adding new metadata",
-            S3_OBJ_TST["test_2218"]["obj_name"])
+            self.obj_name)
         resp = S3_TEST_OBJ.object_info(
-            S3_OBJ_TST["test_2218"]["bucket_name"],
-            S3_OBJ_TST["test_2218"]["obj_name"])
+            self.bucket_name,
+            self.obj_name)
         assert resp[0], resp[1]
         assert S3_OBJ_TST["test_2218"]["key"] in resp[1]["Metadata"], resp[1]
         self.log.info("Retrieved new metadata of an object")
@@ -497,21 +507,21 @@ class TestObjectWorkflowOperations:
             "Remove the existing metadata and check if the entry is not shown")
         self.log.info(
             "Creating a bucket with name %s",
-            S3_OBJ_TST["test_2219"]["bucket_name"])
+            self.bucket_name)
         resp = S3_TEST_OBJ.create_bucket(
-            S3_OBJ_TST["test_2219"]["bucket_name"])
+            self.bucket_name)
         assert resp[0], resp[1]
-        assert resp[1] == S3_OBJ_TST["test_2219"]["bucket_name"], resp[0]
+        assert resp[1] == self.bucket_name, resp[0]
         self.log.info(
             "Created a bucket with name %s",
-            S3_OBJ_TST["test_2219"]["bucket_name"])
+            self.bucket_name)
         create_file(
             self.file_path,
             S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info("Uploading an object with metadata")
         resp = S3_TEST_OBJ.put_object(
-            S3_OBJ_TST["test_2219"]["bucket_name"],
-            S3_OBJ_TST["test_2219"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.file_path,
             m_key=S3_OBJ_TST["test_2219"]["key"],
             m_value=S3_OBJ_TST["test_2219"]["value"])
@@ -519,22 +529,22 @@ class TestObjectWorkflowOperations:
         self.log.info("Uploaded an object with metadata")
         self.log.info("Retrieving metadata of an object")
         resp = S3_TEST_OBJ.object_info(
-            S3_OBJ_TST["test_2219"]["bucket_name"],
-            S3_OBJ_TST["test_2219"]["obj_name"])
+            self.bucket_name,
+            self.obj_name)
         assert resp[0], resp[1]
         assert S3_OBJ_TST["test_2219"]["key"] in resp[1]["Metadata"], resp[1]
         self.log.info("Retrieved metadata of an object")
         self.log.info("Deleting metadata")
         resp = S3_TEST_OBJ.delete_object(
-            S3_OBJ_TST["test_2219"]["bucket_name"],
-            S3_OBJ_TST["test_2219"]["obj_name"])
+            self.bucket_name,
+            self.obj_name)
         assert resp[0], resp[1]
         self.log.info("Deleted metadata")
         self.log.info("Retrieving metadata of an object")
         try:
             S3_TEST_OBJ.object_info(
-                S3_OBJ_TST["test_2219"]["bucket_name"],
-                S3_OBJ_TST["test_2219"]["obj_name"])
+                self.bucket_name,
+                self.obj_name)
         except CTException as error:
             assert S3_OBJ_TST["test_2219"]["error_message"] in str(
                 error.message), error.message
@@ -551,47 +561,47 @@ class TestObjectWorkflowOperations:
         self.log.info("STARTED: Delete object from bucket")
         self.log.info(
             "Creating a bucket with name %s",
-            S3_OBJ_TST["test_2220"]["bucket_name"])
+            self.bucket_name)
         resp = S3_TEST_OBJ.create_bucket(
-            S3_OBJ_TST["test_2220"]["bucket_name"])
+            self.bucket_name)
         assert resp[0], resp[1]
-        assert resp[1] == S3_OBJ_TST["test_2220"]["bucket_name"], resp[0]
+        assert resp[1] == self.bucket_name, resp[0]
         self.log.info(
             "Created a bucket with name %s",
-            S3_OBJ_TST["test_2220"]["bucket_name"])
+            self.bucket_name)
         create_file(
             self.file_path,
             S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info(
             "Uploading an object %s to a bucket %s",
-            S3_OBJ_TST["test_2220"]["obj_name"],
-            S3_OBJ_TST["test_2220"]["bucket_name"])
+            self.obj_name,
+            self.bucket_name)
         resp = S3_TEST_OBJ.put_object(
-            S3_OBJ_TST["test_2220"]["bucket_name"],
-            S3_OBJ_TST["test_2220"]["obj_name"],
+            self.bucket_name,
+            self.obj_name,
             self.file_path)
         assert resp[0], resp[1]
         self.log.info("Uploaded an object to a bucket")
         self.log.info("Verifying object is successfully uploaded")
         resp = S3_TEST_OBJ.object_list(
-            S3_OBJ_TST["test_2220"]["bucket_name"])
+            self.bucket_name)
         assert resp[0], resp[1]
-        assert S3_OBJ_TST["test_2220"]["obj_name"] in resp[1], resp[1]
+        assert self.obj_name in resp[1], resp[1]
         self.log.info("Verified that object is uploaded successfully")
         self.log.info(
             "Deleting object %s from a bucket %s",
-            S3_OBJ_TST["test_2220"]["obj_name"],
-            S3_OBJ_TST["test_2220"]["bucket_name"])
+            self.obj_name,
+            self.bucket_name)
         resp = S3_TEST_OBJ.delete_object(
-            S3_OBJ_TST["test_2220"]["bucket_name"],
-            S3_OBJ_TST["test_2220"]["obj_name"])
+            self.bucket_name,
+            self.obj_name)
         assert resp[0], resp[1]
         self.log.info("Object deleted from a bucket")
         self.log.info("Verifying object is deleted")
         resp = S3_TEST_OBJ.object_list(
-            S3_OBJ_TST["test_2220"]["bucket_name"])
+            self.bucket_name)
         assert resp[0], resp[1]
-        assert S3_OBJ_TST["test_2220"]["obj_name"] not in resp[1], resp[1]
+        assert self.obj_name not in resp[1], resp[1]
         self.log.info("Verified that object is deleted from a bucket")
         self.log.info("ENDED: Delete object from bucket")
 
@@ -604,18 +614,18 @@ class TestObjectWorkflowOperations:
         self.log.info("STARTED: Try deleting object not present")
         self.log.info(
             "Creating a bucket with name %s",
-            S3_OBJ_TST["test_2221"]["bucket_name"])
+            self.bucket_name)
         resp = S3_TEST_OBJ.create_bucket(
-            S3_OBJ_TST["test_2221"]["bucket_name"])
+            self.bucket_name)
         assert resp[0], resp[1]
-        assert resp[1] == S3_OBJ_TST["test_2221"]["bucket_name"], resp[0]
+        assert resp[1] == self.bucket_name, resp[0]
         self.log.info(
             "Created a bucket with name %s",
-            S3_OBJ_TST["test_2221"]["bucket_name"])
+            self.bucket_name)
         self.log.info("Deleting object which is not present")
         resp = S3_TEST_OBJ.delete_object(
-            S3_OBJ_TST["test_2221"]["bucket_name"],
-            S3_OBJ_TST["test_2221"]["obj_name"])
+            self.bucket_name,
+            self.obj_name)
         assert resp[0], resp[1]
         self.log.info(
             "Performed object delete operation on non exist object")
@@ -630,7 +640,7 @@ class TestObjectWorkflowOperations:
         self.log.info(
             "STARTED: Test Delete objects which exists with verbose mode .")
         cfg_7653 = S3_OBJ_TST["test_7653"]
-        bucket_name = cfg_7653["bucket_name"]
+        bucket_name = self.bucket_name
         obj_list = self.create_bucket_put_objects(
             bucket_name, cfg_7653["no_of_objects"])
         self.log.info(
@@ -661,7 +671,7 @@ class TestObjectWorkflowOperations:
             "STARTED: Delete objects mentioning object "
             "which doesn't exists as well with quiet mode.")
         cfg_7655 = S3_OBJ_TST["test_7655"]
-        bucket_name = cfg_7655["bucket_name"]
+        bucket_name = self.bucket_name
         obj_list = self.create_bucket_put_objects(
             bucket_name, cfg_7655["no_of_objects"])
         # Adding a dummy object to the object list which isn't uploaded to
@@ -694,7 +704,7 @@ class TestObjectWorkflowOperations:
         """Delete objects and mention 1001 objects."""
         self.log.info("STARTED: Delete objects and mention 1001 objects.")
         cfg_7656 = S3_OBJ_TST["test_7656"]
-        bucket_name = cfg_7656["bucket_name"]
+        bucket_name = self.bucket_name
         obj_list = self.create_bucket_put_objects(
             bucket_name, cfg_7656["no_of_objects"])
         self.log.info(
@@ -720,7 +730,7 @@ class TestObjectWorkflowOperations:
         """Delete objects and mention 1000 objects.."""
         self.log.info("STARTED: Delete objects and mention 1000 objects.")
         cfg_7657 = S3_OBJ_TST["test_7657"]
-        bucket_name = cfg_7657["bucket_name"]
+        bucket_name = self.bucket_name
         obj_list = self.create_bucket_put_objects(
             bucket_name, cfg_7657["no_of_objects"])
         self.log.info(
