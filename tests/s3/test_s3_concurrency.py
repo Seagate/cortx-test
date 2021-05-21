@@ -26,20 +26,22 @@ from multiprocessing import Process, Manager
 
 import logging
 import pytest
+from commons.constants import const
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.params import TEST_DATA_FOLDER
+from commons.utils.config_utils import get_config
 from config import S3CMD_CNF
+from config import S3_CFG
+from libs.s3 import SECRET_KEY, ACCESS_KEY, S3H_OBJ
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_cmd_test_lib import S3CmdTestLib
 
 MANAGER = Manager()
 S3T_OBJ = S3TestLib()
 S3CMDT_OBJ = S3CmdTestLib()
-
-
 
 
 class TestS3Concurrency:
@@ -65,6 +67,7 @@ class TestS3Concurrency:
         if not system_utils.path_exists(self.test_dir_path):
             system_utils.make_dirs(self.test_dir_path)
             self.log.info("Created path: %s", self.test_dir_path)
+        self.check_update_s3cmd_config()
         self.log.info("ENDED: Setup operations")
         yield
         self.log.info("STARTED: Teardown operations")
@@ -80,6 +83,23 @@ class TestS3Concurrency:
             system_utils.remove_file(self.file_path)
         self.log.info("Local directory was deleted")
         self.log.info("ENDED: Teardown Operations")
+
+    def check_update_s3cmd_config(self):
+        """
+        This method will check and update s3 config.
+        """
+        resp = system_utils.is_rpm_installed(const.S3CMD)
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = system_utils.path_exists(S3_CFG["s3cfg_path"])
+        assert_utils.assert_true(resp, "config path not exists: {}".format(S3_CFG["s3cfg_path"]))
+        s3cmd_access = get_config(
+            S3_CFG["s3cfg_path"], "default", "access_key")
+        s3cmd_secret = get_config(
+            S3_CFG["s3cfg_path"], "default", "secret_key")
+        if s3cmd_access != ACCESS_KEY or s3cmd_secret != SECRET_KEY:
+            self.log.info("Setting access and secret key in s3cfg.")
+            resp = S3H_OBJ.configure_s3cfg(ACCESS_KEY, SECRET_KEY)
+            assert_utils.assert_true(resp, f"Failed to update s3cfg.")
 
     def create_bucket_thread(self, bkt_name, resp_lst):
         """
