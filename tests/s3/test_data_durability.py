@@ -343,6 +343,7 @@ class TestDataDurability:
         self.log.info(
             "ENDED: Test NO data loss or corruption in case of service restart - s3server")
 
+    @pytest.mark.skip(reason="Restarting cluster make avalanche effect.")
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8007')
     @CTFailOn(error_handler)
