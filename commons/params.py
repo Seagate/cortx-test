@@ -51,7 +51,6 @@ JIRA_TEST_META_JSON = 'test_meta_data.json'
 JIRA_TEST_COLLECTION = 'test_collection.csv'
 JIRA_SELECTED_TESTS = 'selected_test_lists.csv'
 JIRA_DIST_TEST_LIST = 'dist_test_lists.csv'
-JIRA_TEST_DETAILS_JSON = 'test_details.json'
 
 # Kafka Config Params
 # Schema Registry (http(s)://host[:port]

@@ -764,16 +764,12 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
         if Globals.JIRA_UPDATE:
             jira_id, jira_pwd = get_jira_credential()
             task = jira_utils.JiraTask(jira_id, jira_pwd)
-            tp_details_file = os.path.join(os.getcwd(),
-                                           params.LOG_DIR_NAME,
-                                           params.JIRA_TEST_DETAILS_JSON)
-            tp_details = config_utils.read_content_json(tp_details_file,
-                                                        mode='rb')
             try:
-                test_run_id = tp_details[Globals.TE_TKT][test_id]
-                resp = task.update_execution_details(test_run_id=test_run_id,
-                                                     test_id=test_id,
-                                                     comment=comment)
+                if Globals.tp_meta['te_meta']['te_id'] == Globals.TE_TKT:
+                    test_run_id = next(d['test_run_id'] for i, d in enumerate(
+                        Globals.tp_meta['test_meta']) if d['test_id'] == test_id)
+                    resp = task.update_execution_details(
+                        test_run_id=test_run_id, test_id=test_id, comment=comment)
                 if resp:
                     LOGGER.info("Added execution details comment in: %s",
                                 test_id)

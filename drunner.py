@@ -274,7 +274,6 @@ def develop_execution_plan(rev_tag_map, selected_tag_map, skip_test, test_map, t
                     t_l[0].add(test)
                 else:
                     t_l[1].add(test)
-        runner.create_test_details_file(ticket, test_tuple)
 
 
 def create_test_map(base_components_marks: Tuple,

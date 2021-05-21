@@ -283,6 +283,10 @@ def create_test_meta_data_file(args, test_list, jira_obj=None):
         tp_meta['te_meta'] = dict(te_id=args.te_ticket,
                                   te_label=te_resp.fields.labels,
                                   te_components=te_components)
+
+        test_tuple, te_tag = jira_obj.get_test_ids_from_te(
+            test_exe_id=args.te_ticket)
+        test_dict = dict(test_tuple)
         # test_name, test_id, test_id_labels, test_team, test_type
         for test in test_list:
             item = dict()
@@ -304,6 +308,7 @@ def create_test_meta_data_file(args, test_list, jira_obj=None):
             item['feature_id'] = c_fields['feature_id'] if c_fields['feature_id'] else ['F-0']
             lbls = item['labels']
             item['execution_type'] = lbls[0] if lbls and isinstance(lbls, list) else 'R2Automated'
+            item['test_run_id'] = test_dict[test]
             test_meta.append(item)
         tp_meta['test_meta'] = test_meta
         json.dump(tp_meta, t_meta, ensure_ascii=False)
@@ -389,7 +394,6 @@ def trigger_tests_from_te(args):
             write.writerow([test])
 
     tp_metadata = create_test_meta_data_file(args, test_list)
-    runner.create_test_details_file(args.te_ticket, test_tuple)
     if not args.build and not args.build_type:
         args.build, args.build_type = tp_metadata['build'], tp_metadata['branch']
 
