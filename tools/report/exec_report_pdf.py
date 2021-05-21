@@ -70,7 +70,8 @@ def build_bucket_perf_stats_table(data: List[list]):
 
 def main():
     """Generate PDF executive report from csv executive report."""
-    all_data = common_pdf.get_data_from_csv('../exec_report.csv')
+    build = common_pdf.get_args()
+    all_data = common_pdf.get_data_from_csv(f'Exec_Report_{build}.csv')
 
     main_table_data, table2_start = common_pdf.get_table_data(all_data, 0)
     reported_bugs_table_data, table3_start = common_pdf.get_table_data(all_data, table2_start)
@@ -79,8 +80,6 @@ def main():
     code_maturity_table_data, table6_start = common_pdf.get_table_data(all_data, table5_start)
     bucket_perf_stats_table_data, table7_start = common_pdf.get_table_data(all_data, table6_start)
     timing_summary_table_data, _ = common_pdf.get_table_data(all_data, table7_start)
-
-    build = main_table_data[2][1]
 
     main_table = common_pdf.build_main_table(main_table_data)
 
@@ -99,7 +98,7 @@ def main():
                 bucket_perf_stats, Spacer(15, 15), timing_summary_table,
                 Paragraph("<em>NA signifies the data is Not Available.</em>")]
 
-    doc = SimpleDocTemplate(f"../Exec_Report_{build}.pdf", pagesize=letter, leftMargin=0.5 * inch,
+    doc = SimpleDocTemplate(f"Exec_Report_{build}.pdf", pagesize=letter, leftMargin=0.5 * inch,
                             rightMargin=0.5 * inch, topMargin=0.5 * inch, bottomMargin=0.5 * inch)
     doc.build(elements)
 

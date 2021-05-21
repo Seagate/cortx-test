@@ -103,7 +103,8 @@ def build_defect_table(data: List[list]):
 
 def main():
     """Generate PDF engineering report from csv executive report."""
-    all_data = common_pdf.get_data_from_csv('../engg_report.csv')
+    build = common_pdf.get_args()
+    all_data = common_pdf.get_data_from_csv(f'Engg_Report_{build}.csv')
 
     main_table_data, table2_start = common_pdf.get_table_data(all_data, 0)
     reported_bugs_table_data, table3_start = common_pdf.get_table_data(all_data, table2_start)
@@ -140,7 +141,7 @@ def main():
                 Paragraph("<em>NA signifies the data is Not Available.</em>"),
                 Spacer(15, 15), defect_table]
 
-    doc = SimpleDocTemplate(f"../Engg_Report_{build}.pdf", pagesize=letter, leftMargin=0.5 * inch,
+    doc = SimpleDocTemplate(f"Engg_Report_{build}.pdf", pagesize=letter, leftMargin=0.5 * inch,
                             rightMargin=0.5 * inch, topMargin=0.5 * inch, bottomMargin=0.5 * inch)
     doc.build(elements)
 
