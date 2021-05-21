@@ -116,6 +116,7 @@ class TestAuthServerHealthCheckAPI:
         return resp
 
     @pytest.mark.s3_ops
+    @pytest.mark.release_regression
     @pytest.mark.tags('TEST-7577')
     @CTFailOn(error_handler)
     def test_authserver_response_on_health_check_enabled_1161(self):
@@ -138,6 +139,7 @@ class TestAuthServerHealthCheckAPI:
             "Ended: Test authserver response when health check is enabled")
 
     @pytest.mark.s3_ops
+    @pytest.mark.release_regression
     @pytest.mark.tags('TEST-7578')
     @CTFailOn(error_handler)
     def test_authserver_response_on_health_check_disabled_1164(self):
