@@ -157,8 +157,6 @@ def main():
             "--dbuser datawrite --dbpassword seagate@123")
     run_cmd("cp /root/secrets.json .")
     os.environ["TARGET"] = setupname
-    from scripts.jenkins_job.aws_configure import test_main
-    test_main()
     print("Setting up chrome")
     setup_chrome()
 
