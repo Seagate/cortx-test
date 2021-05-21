@@ -507,8 +507,8 @@ class S3Helper:
             fids = []
             for line in output:
                 if "s3server" in line:
-                    LOGGER.info(line)
-                    fid = "{}@{}".format(line.split()[2], line.split()[3])
+                    LOGGER.info(line.split())
+                    fid = "{}@{}".format(line.split()[1], line.split()[2])
                     fids.append(fid)
             LOGGER.info("Fids: %s", str(fids))
 

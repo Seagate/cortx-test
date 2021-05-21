@@ -37,6 +37,7 @@ from commons.params import DATA_PATH_CONFIG_PATH
 from commons.params import S3_BKT_TEST_CONFIG
 from commons.params import S3_LDAP_TEST_CONFIG
 from commons.params import S3_USER_ACC_MGMT_CONFIG_PATH
+from commons.params import S3CMD_TEST_CONFIG
 
 
 def split_args(sys_cmd: List):
@@ -80,6 +81,8 @@ CSM_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG)
 S3_CFG = configmanager.get_config_wrapper(fpath=S3_CONFIG, target=target, target_key="s3")
 S3_OBJ_TST = configmanager.get_config_wrapper(fpath=S3_OBJ_TEST_CONFIG, target=target, target_key="s3")
 S3_BKT_TST = configmanager.get_config_wrapper(fpath=S3_BKT_TEST_CONFIG, target=target,
+                                            target_key="s3")
+S3CMD_CNF = configmanager.get_config_wrapper(fpath=S3CMD_TEST_CONFIG, target=target,
                                             target_key="s3")
 S3_LDAP_TST_CFG = configmanager.get_config_wrapper(fpath=S3_LDAP_TEST_CONFIG, target=target)
 RAS_VAL = configmanager.get_config_wrapper(fpath=RAS_CONFIG_PATH,

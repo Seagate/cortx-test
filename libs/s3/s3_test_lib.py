@@ -191,7 +191,7 @@ class S3TestLib(S3Lib):
             object_name: str = None,
             file_path: str = None) -> tuple:
         """
-        Uploading Object to the Bucket.
+        Uploading Object(small(KB)/large(GB)) to the Bucket.
 
         :param bucket_name: Name of the bucket.
         :param object_name: Name of the object.
