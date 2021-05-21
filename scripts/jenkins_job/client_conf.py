@@ -155,12 +155,12 @@ def main():
     setupname = create_db_entry(host, uname, host_passwd, mgmnt_ip, admin_user, admin_passwd)
     run_cmd("python3.7 tools/setup_update/setup_entry.py "
             "--dbuser datawrite --dbpassword seagate@123")
+    run_cmd("cp /root/secrets.json .")
     os.environ["TARGET"] = setupname
     from scripts.jenkins_job.aws_configure import test_main
     test_main()
     print("Setting up chrome")
     setup_chrome()
-    run_cmd("cp /root/secrets.json .")
 
 if __name__ == "__main__":
     main()
