@@ -158,41 +158,18 @@ class TestDataDurability:
                 self.bucket_name))
         return chksm_before_put_obj
 
-    def pcs_restart_cluster(self):
-        """
-        Function starts and stops the cluster using the pcs command.
-
-        :param string start_stop_cmd : start and stop command option
-        :param string status_cmd: status command option
-        :return: (Boolean and response)
-        """
-        resp = self.hobj.pcs_cluster_start_stop("--all", stop_flag=True)
-        self.log.info(resp)
-        time.sleep(self.sleep_time)
-        resp = self.hobj.pcs_cluster_start_stop("--all", stop_flag=False)
-        self.log.info(resp)
-        time.sleep(30)  # Hardcoded: Default time is between 10 to 30 seconds.
-        response = self.hobj.pcs_resource_cleanup(options="--all")
-        if "Cleaned up all resources on all nodes" not in str(response):
-            return False, "Failed to clean up all resources on all nodes"
-        response = self.hobj.check_node_health()
-        time.sleep(self.sleep_time)
-        self.log.info(response)
-
-        return response
-
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8005')
-    @CTFailOn(error_handler)
-    def test_no_data_loss_in_case_s3authserver_restart_4232(self):
+    @pytest.mark.parametrize("service", [const.S3AUTHSERVER])
+    def test_no_data_loss_in_case_service_restart_4232(self, service):
         """Test NO data loss in case of service restart- s3authserver."""
         self.log.info(
-            "STARTED: Test NO data loss in case of service restart- s3authserver")
-        restart_cmd = cmd.SYSTEM_CTL_RESTART_CMD.format(const.S3AUTHSERVER)
+            "STARTED: Test NO data loss in case of service restart- %s", service)
+        restart_cmd = cmd.SYSTEM_CTL_RESTART_CMD.format(service)
         checksum_before_put_obj = self.create_bkt_put_obj()
         self.log.info(
             "Step 4: Restarting %s service",
-            const.S3AUTHSERVER)
+            service)
         system_utils.run_remote_cmd(
             restart_cmd,
             self.host_ip,
@@ -200,11 +177,11 @@ class TestDataDurability:
             self.passwd)
         time.sleep(self.sleep_time)
         resp = S3H_OBJ.get_s3server_service_status(
-            const.S3AUTHSERVER)
+            service)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 4: Restarted %s service",
-            const.S3AUTHSERVER)
+            service)
         self.log.info("Step 5: Verifying that data is accessible or not")
         resp = S3T_OBJ.object_list(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
@@ -231,58 +208,14 @@ class TestDataDurability:
         self.log.info(
             "Step 7: Verified checksum of downloaded file with old file")
         self.log.info(
-            "ENDED: Test NO data loss in case of service restart- s3authserver")
+            "ENDED: Test NO data loss in case of service restart- %s", service)
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8006')
     @CTFailOn(error_handler)
     def test_no_data_loss_in_case_haproxy_restart_4233(self):
         """Test NO data loss in case of service restart - haproxy."""
-        self.log.info(
-            "STARTED: Test NO data loss in case of service restart - haproxy")
-        restart_cmd = cmd.SYSTEM_CTL_RESTART_CMD.format(const.HAPROXY)
-        checksum_before_put_obj = self.create_bkt_put_obj()
-        self.log.info(
-            "Step 4: Restarting %s service",
-            const.HAPROXY)
-        system_utils.run_remote_cmd(
-            restart_cmd,
-            self.host_ip,
-            self.uname,
-            self.passwd)
-        time.sleep(self.sleep_time)
-        resp = S3H_OBJ.get_s3server_service_status(
-            const.HAPROXY)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.log.info(
-            "Step 4: Restarted %s service", const.HAPROXY)
-        self.log.info("Step 5: Verifying that data is accessible or not")
-        resp = S3T_OBJ.object_list(self.bucket_name)
-        assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_in(
-            self.object_name,
-            resp[1],
-            f"Failed to list object '{self.object_name}' after service restart.")
-        self.log.info("Step 5: Verified that data is accessible")
-        self.log.info(
-            "Step 6: Removing file from client and downloading object")
-        system_utils.remove_file(self.file_path)
-        resp = S3T_OBJ.object_download(
-            self.bucket_name, self.object_name, self.file_path)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 6: Downloaded object from a bucket")
-        self.log.info(
-            "Step 7: Verifying checksum of downloaded file with old file should be file")
-        resp = system_utils.get_file_checksum(self.file_path)
-        assert_utils.assert_true(resp[0], resp[1])
-        chksm_after_dwnld_obj = resp[1]
-        assert_utils.assert_equal(
-            checksum_before_put_obj,
-            chksm_after_dwnld_obj)
-        self.log.info(
-            "Step 7: Verified checksum of downloaded file with old file")
-        self.log.info(
-            "ENDED: Test NO data loss in case of service restart - haproxy")
+        self.test_no_data_loss_in_case_service_restart_4232(const.HAPROXY)
 
     @pytest.mark.skip(reason="Will be taken after F-45H.")
     @pytest.mark.s3_ops
@@ -419,7 +352,7 @@ class TestDataDurability:
             "STARTED: Test NO data loss in case of service restart - motr")
         checksum_before_put_obj = self.create_bkt_put_obj()
         self.log.info("Step 4: Restarting motr service")
-        resp = self.pcs_restart_cluster()
+        resp = self.hobj.pcs_restart_cluster()
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 4: Restarted motr service")
         self.log.info("Step 5: Verifying that data is accessible or not")
