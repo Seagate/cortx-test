@@ -31,7 +31,7 @@ from commons.utils import system_utils
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.params import TEST_DATA_FOLDER
-from commons.configmanager import get_config_wrapper
+from config import S3CMD_CNF
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_cmd_test_lib import S3CmdTestLib
 
@@ -39,7 +39,7 @@ MANAGER = Manager()
 S3T_OBJ = S3TestLib()
 S3CMDT_OBJ = S3CmdTestLib()
 
-S3CMD_CNF = get_config_wrapper(fpath="config/blackbox/test_blackbox.yaml")
+
 
 
 class TestS3Concurrency:
