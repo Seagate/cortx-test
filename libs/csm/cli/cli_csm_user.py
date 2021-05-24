@@ -73,16 +73,16 @@ class CortxCliCsmUser(CortxCli):
                                                             csm_user_name,
                                                             email_id,
                                                             role])
-        output = self.execute_cli_commands(cmd=cmd)[1]
+        output = self.execute_cli_commands(cmd=cmd, patterns=["usage:", "Password"])[1]
         if help_param:
             LOG.info("Displaying usage for create csm users")
             return True, output
         if "Password" in output:
-            output = self.execute_cli_commands(cmd=password)[1]
+            output = self.execute_cli_commands(cmd=password, patterns=["Confirm Password"])[1]
             if "Confirm Password" in output:
-                output = self.execute_cli_commands(cmd=confirm_password)[1]
+                output = self.execute_cli_commands(cmd=confirm_password, patterns=["[Y/n]"])[1]
                 if "[Y/n]" in output:
-                    output = self.execute_cli_commands(cmd=confirm)[1]
+                    output = self.execute_cli_commands(cmd=confirm, patterns=["User created", "cortxcli"])[1]
                     if "User created" in output:
 
                         return True, output
@@ -105,12 +105,12 @@ class CortxCliCsmUser(CortxCli):
         cmd = " ".join([CMD_DELETE_CSM_USER,
                         "-h"]) if help_param else " ".join([CMD_DELETE_CSM_USER,
                                                             user_name])
-        output = self.execute_cli_commands(cmd=cmd)[1]
+        output = self.execute_cli_commands(cmd=cmd, patterns=["usage:", "[Y/n]"])[1]
         if help_param:
             LOG.info("Displaying usage for delete csm user")
             return True, output
         if "[Y/n]" in output:
-            output = self.execute_cli_commands(cmd=confirm)[1]
+            output = self.execute_cli_commands(cmd=confirm, patterns=["User deleted", "cortxcli"])[1]
         if "error" in output.lower() or "exception" in output.lower():
 
             return False, output
@@ -139,14 +139,14 @@ class CortxCliCsmUser(CortxCli):
                         "-h"]) if help_param else "{0} {1} -r {2}".format(CMD_UPDATE_ROLE,
                                                                           user_name,
                                                                           role)
-        output = self.execute_cli_commands(cmd=cmd)[1]
+        output = self.execute_cli_commands(cmd=cmd, patterns=["usage:", "Current Password"])[1]
         if help_param:
             LOG.info("Displaying usage for update role")
             return True, output
         if "Current Password" in output:
-            output = self.execute_cli_commands(cmd=current_password)[1]
+            output = self.execute_cli_commands(cmd=current_password, patterns=["[Y/n]"])[1]
             if "[Y/n]" in output:
-                output = self.execute_cli_commands(cmd=confirm)[1]
+                output = self.execute_cli_commands(cmd=confirm, patterns=["Updated"])[1]
 
             if "error" in output.lower() or "exception" in output.lower():
                 return False, output
@@ -175,18 +175,18 @@ class CortxCliCsmUser(CortxCli):
         confirm = kwargs.get("confirm", "Y")
         cmd = " ".join([CMD_RESET_PWD, "-h"]) if help_param else " ".join(
             [CMD_RESET_PWD, user_name])
-        output = self.execute_cli_commands(cmd=cmd)[1]
+        output = self.execute_cli_commands(cmd=cmd, patterns=["usage:", "Current Password"])[1]
         if help_param:
             LOG.info("Displaying usage for reset password")
             return True, output
         if "Current Password" in output:
-            output = self.execute_cli_commands(cmd=current_password)[1]
+            output = self.execute_cli_commands(cmd=current_password, patterns=["Password"])[1]
             if "Password" in output:
-                output = self.execute_cli_commands(cmd=new_password)[1]
+                output = self.execute_cli_commands(cmd=new_password, patterns=["Confirm Password:"])[1]
                 if "Confirm Password:" in output:
-                    output = self.execute_cli_commands(cmd=confirm_password)[1]
+                    output = self.execute_cli_commands(cmd=confirm_password, patterns=["[Y/n]"])[1]
                     if "[Y/n]" in output:
-                        output = self.execute_cli_commands(cmd=confirm)[1]
+                        output = self.execute_cli_commands(cmd=confirm, patterns=["Password Updated"])[1]
                         if "Password Updated" in output:
 
                             return True, output
@@ -203,11 +203,11 @@ class CortxCliCsmUser(CortxCli):
         """
         LOG.info("Login to csmcli using %s", username)
         cmd = "cortxcli --username {0}".format(username)
-        output = self.execute_cli_commands(cmd=cmd)[1]
+        output = self.execute_cli_commands(cmd=cmd, patterns=["Username"])[1]
         if "Username" in output:
-            output = self.execute_cli_commands(cmd=username)[1]
+            output = self.execute_cli_commands(cmd=username, patterns=["Password"])[1]
             if "Password" in output:
-                output = self.execute_cli_commands(cmd=password)[1]
+                output = self.execute_cli_commands(cmd=password, patterns=["CORTX Interactive Shell"])[1]
                 if "CORTX Interactive Shell" in output:
                     LOG.info(
                         "Logged in CORTX CLI as user %s successfully",
@@ -258,7 +258,7 @@ class CortxCliCsmUser(CortxCli):
             cmd = "{0} {1}".format(cmd, other_param)
         if help_param:
             cmd = "{0} -h".format(CMD_LIST_CSM_USERS)
-        output = self.execute_cli_commands(cmd=cmd)[1]
+        output = self.execute_cli_commands(cmd=cmd, patterns=["username", "Username", "usage:"])[1]
         if "error" in output.lower() or "exception" in output.lower():
 
             return False, output
@@ -279,7 +279,7 @@ class CortxCliCsmUser(CortxCli):
         :return: (Boolean, response)
         """
         LOG.info("Performing help option on command %s", command)
-        output = self.execute_cli_commands(cmd=CMD_HELP_OPTION)[1]
+        output = self.execute_cli_commands(cmd=CMD_HELP_OPTION, patterns=["usage:"])[1]
         if "error" in output.lower() or "exception" in output.lower():
 
             return False, output

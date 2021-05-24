@@ -117,27 +117,11 @@ TEST-18327
     ${new_user_name}  ${new_password}=  Create and login with CSM manage user
     wait for page or element to load
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    sleep  2s
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
-    sleep  5s
+    wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
-    CSM GUI Logout
-    Enter Username And Password  ${S3_account_name}  ${S3_password}
-    Click Sigin Button
-    wait for page or element to load  2s
-    Validate CSM Login Success  ${s3_account_name}
-    CSM GUI Logout
-    wait for page or element to load
-    Enter Username And Password  ${new_user_name}  ${new_password}
-    Click Sigin Button
-    wait for page or element to load
-    Validate CSM Login Success  ${new_user_name}
-    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     ${S3_new_password}=  Generate New Password
     Edit S3 User Password  ${S3_account_name}  ${S3_new_password}  ${S3_new_password}
+    Re-login  ${S3_account_name}  ${S3_new_password}  S3_ACCOUNTS_TAB_ID
     Delete S3 Account  ${S3_account_name}  ${S3_new_password}  True
-    Enter Username And Password  ${username}  ${password}
-    Click Sigin Button
-    wait for page or element to load
-    Navigate To Page    MANAGE_MENU_ID
-    Delete CSM User  ${new_user_name}
+
