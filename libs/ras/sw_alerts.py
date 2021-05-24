@@ -65,6 +65,8 @@ class SoftwareAlert(RASCoreLib):
             self.put_svc_activating(svc)
         elif action == "failed":
             self.put_svc_failed(svc)
+        elif action == "reloading":
+            self.put_svc_reloading(svc)
         else:
             self.node_utils.send_systemctl_cmd(action, [svc], exc=True)
 
@@ -197,6 +199,8 @@ class SoftwareAlert(RASCoreLib):
             systemctl_status = {'state': 'activating'}
         elif action == "failed":
             systemctl_status = {'state': 'failed'}
+        elif action == "reloading":
+            systemctl_status = {'state': 'reloading'}
         return systemctl_status
 
     def get_svc_status(self, services: list):
@@ -320,6 +324,18 @@ class SoftwareAlert(RASCoreLib):
                     "ExecStop": "/bin/sleep 200", "TimeoutStopSec": "500"}})
         self.apply_svc_setting()
         self.node_utils.host_obj.exec_command(commands.SYSTEM_CTL_STOP_CMD.format(svc))
+
+    def put_svc_reloading(self, svc):
+        """Function to generate reloading alert
+
+        :param svc: Service Name
+        """
+        self.write_svc_file(
+            svc, {
+                "Service": {
+                    "ExecStartPre": "/bin/sleep 200"}})
+        self.apply_svc_setting()
+        self.node_utils.host_obj.exec_command("systemctl reload {}".format(svc))
 
     def put_svc_activating(self, svc):
         """Function to generate activating alert
