@@ -223,13 +223,10 @@ class TestStorageAlerts:
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-11762")
-    @pytest.mark.skip
     @CTFailOn(error_handler)
     def test_disable_enclosure_drive_157(self):
         """
         EOS-9962: TA RAS Automation: Test Disabling a drive from disk group
-
-        sspl_disk_alert
         """
         LOGGER.info("STARTED: TA RAS Automation: Test Disabling a drive from "
                     "disk group")
@@ -324,13 +321,10 @@ class TestStorageAlerts:
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-11763")
-    @pytest.mark.skip
     @CTFailOn(error_handler)
     def test_enable_enclosure_drive_158(self):
         """
         EOS-9963: TA RAS Automation: Test Enabling a drive from disk group
-
-        sspl_disk_alert
         """
         LOGGER.info(
             "STARTED: TA RAS Automation: Test Enabling a drive from disk group")
