@@ -22,22 +22,20 @@ s3_object:
 test_get_obj_acl_mp:
   file_size: 100
   total_parts: 10
-  mupart_obj_path: "/home/mp_obj"
 test_9857:
   single_part_sz: 500
   total_parts: 5
-  mupart_obj_path: "/home/mp_obj"
 test_9897:
-  file_path: "/home/test_file"
   f_size: 2048
 test_9898:
-  file_path: "/home/test_file"
   f_size: 2048
   run_cmd: "aws configure set default.s3.multipart_chunksize 16MB"
+test_2879:
+  single_part_sz: 100
+  total_parts: 10
 test_9899:
   single_part_sz: 10
   total_parts: 10
-  mupart_obj_path: "/home/mp_obj"
 test_10208:
   account_name: "my_account208{}"
   emailid: "my_account208{}@seagate.com"
