@@ -101,16 +101,13 @@ def set_s3_endpoints(cluster_ip):
     :param str cluster_ip: IP of the cluster
     :return: None
     """
-    with open("/etc/hosts", 'r+') as fp:
-        for line in fp:
-            if cluster_ip in line:
-                if "s3.seagate.com iam.seagate.com" in line:
-                    break
-                else:
-                    fp.write("{} s3.seagate.com iam.seagate.com".format(cluster_ip))
-                    break
-        else:
-            fp.write("{} s3.seagate.com iam.seagate.com".format(cluster_ip))
+    # Removing contents of /etc/hosts file and writing new contents
+    run_cmd(cmd="rm -f /etc/hosts")
+    with open("/etc/hosts", 'w') as file:
+        file.write("127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4\n")
+        file.write("::1         localhost localhost.localdomain localhost6 localhost6.localdomain6\n")
+        file.write("{} s3.seagate.com sts.seagate.com iam.seagate.com sts.cloud.seagate.com\n"
+                   .format(cluster_ip))
 
 
 def setup_chrome():
@@ -127,6 +124,36 @@ def setup_chrome():
     os.chmod("chromedriver", 0o777)
     bin_path = os.path.join("venv", "bin")
     shutil.copy("chromedriver", bin_path)
+
+def configure_server_node(obj, mg_ip):
+    """
+    Method to configure server node for firewall and haproxy
+    :return: None
+    """
+    # Stopping/disabling firewalld service on node for tests
+    cmd = "systemctl stop firewalld"
+    obj.execute_cmd(cmd, read_lines=True)
+    cmd = "systemctl disable firewalld"
+    obj.execute_cmd(cmd, read_lines=True)
+    # Doing changes in haproxy file and restarting it
+    remote_path = "/etc/haproxy/haproxy.cfg"
+    local_path = "/tmp/haproxy.cfg"
+    if os.path.exists(local_path):
+        run_cmd("rm -f {}".format(local_path))
+    obj.copy_file_to_local(remote_path=remote_path, local_path=local_path)
+    with open(local_path, 'r') as file:
+        read_file = file.readlines()
+    read_file.insert(105, "    bind {}:80\n".format(mg_ip))
+    read_file.insert(106, "    bind {}:443 ssl crt /etc/ssl/stx/stx.pem\n".format(mg_ip))
+
+    with open(local_path, 'w') as file:
+        read_file = "".join(read_file)
+        file.write(read_file)
+    file.close()
+    obj.copy_file_to_remote(local_path=local_path, remote_path=remote_path)
+    cmd = "systemctl restart haproxy"
+    obj.execute_cmd(cmd, read_lines=True)
+
 
 def main():
     host = os.getenv("HOSTNAME")
@@ -151,7 +178,7 @@ def main():
     if os.path.exists(local_path):
         run_cmd("rm -f {}".format(local_path))
     nd_obj_host.copy_file_to_local(remote_path=remote_path, local_path=local_path)
-    set_s3_endpoints(clstr_ip)
+    set_s3_endpoints(mgmnt_ip)
     setupname = create_db_entry(host, uname, host_passwd, mgmnt_ip, admin_user, admin_passwd)
     run_cmd("python3.7 tools/setup_update/setup_entry.py "
             "--dbuser datawrite --dbpassword seagate@123")
@@ -159,6 +186,7 @@ def main():
     os.environ["TARGET"] = setupname
     print("Setting up chrome")
     setup_chrome()
+    configure_server_node(nd_obj_host, mgmnt_ip)
 
 if __name__ == "__main__":
     main()
