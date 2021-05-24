@@ -337,3 +337,24 @@ class GenerateAlertWrapper:
             LOGGER.error("%s %s: %s", cons.EXCEPTION_ERROR,
                          GenerateAlertWrapper.iem_alerts.__name__, error)
             return False, error
+
+    @staticmethod
+    def create_disk_group_failures(encl_ip, encl_user, encl_pwd, host, h_user,
+                                   h_pwd, input_parameters):
+        """
+
+        Returns:
+
+        """
+        controller_obj = ControllerLib(host=host, h_user=h_user, h_pwd=h_pwd,
+                                       enclosure_ip=encl_ip,
+                                       enclosure_user=encl_user,
+                                       enclosure_pwd=encl_pwd)
+        
+
+        try:
+            LOGGER.info("Check state of disk group")
+            status, disk_group_dict = controller_obj.get_show_disk_group()
+            if status:
+
+

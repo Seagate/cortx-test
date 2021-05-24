@@ -76,6 +76,7 @@ show_disk_groups:
   name: "name"
   size: "size"
   created: "create-date"
+  job: "job"
   health: "health"
   reason: "health-reason"
   action: "health-recommendation"
