@@ -21,7 +21,7 @@
 """
 AWS configuration file with access key and secret key
 """
-import os
+from time import perf_counter_ns
 import configparser
 import logging
 import subprocess
@@ -81,12 +81,13 @@ def configure_awscli(access_key, secret_key):
     run_cmd("aws configure set s3api.endpoint_url https://s3.seagate.com")
     run_cmd("aws configure set ca_bundle {}".format(local_s3_cert_path))
 
-def test_main():
+def test_aws_conf():
     LOGGER.info("Getting access and secret key for configuring AWS")
-    acc_name = pswdmanager.decrypt(config['s3creds']['acc_name'])
-    acc_email = pswdmanager.decrypt(config['s3creds']['acc_email'])
+    acc_name = "nightly_s3acc{}".format(perf_counter_ns())
+    acc_email = "nightly_s3acc{}@seagate.com".format(perf_counter_ns())
     acc_passwd = pswdmanager.decrypt(config['s3creds']['acc_passwd'])
     resp = cortx_obj.create_account_cortxcli(acc_name, acc_email, acc_passwd)
+    print("Response for account creation: {}".format(resp))
     access_key = resp[1]["access_key"]
     secret_key = resp[1]["secret_key"]
     configure_awscli(access_key, secret_key)
