@@ -23,6 +23,7 @@ This file contains the wrapper functions used by Alert Simulation API.
 """
 import logging
 import time
+import random
 from libs.ras.ras_test_lib import RASTestLib
 from commons.helpers.host import Host
 from commons import constants as cons
@@ -346,15 +347,58 @@ class GenerateAlertWrapper:
         Returns:
 
         """
+        disk_group = input_parameters["disk_group"]
         controller_obj = ControllerLib(host=host, h_user=h_user, h_pwd=h_pwd,
                                        enclosure_ip=encl_ip,
                                        enclosure_user=encl_user,
                                        enclosure_pwd=encl_pwd)
-        
+        ras_test_obj = RASTestLib(host=host, username=h_user, password=h_pwd)
 
         try:
             LOGGER.info("Check state of disk group")
             status, disk_group_dict = controller_obj.get_show_disk_group()
-            if status:
+            if not status or disk_group_dict[disk_group]['health'] != 'OK':
+                LOGGER.info("Provided disk group is not in healthy state.")
+                return status, disk_group_dict[disk_group]['health']
+
+            LOGGER.info("Getting list of drives in disk group %s", disk_group)
+
+            status, drive_list = ras_test_obj.get_dg_drive_list(disk_group=disk_group)
+            if not status:
+                return status, "Failed to get drive list"
+
+            LOGGER.info("Picking two random drives from disk group %s", disk_group)
+            d1, d2 = random.sample(drive_list, 2)
+            LOGGER.info("Removing drive : %s", d1)
+            drive_params = {"enclid": 0,
+                            "ctrl_name": "A, B",
+                            "phy_num": d1,
+                            "operation": "Disabled",
+                            "exp_status": ["Degraded", "Fault"],
+                            "telnet_file": "/root/telnet_disk_group.xml"}
+            resp = GenerateAlertWrapper.disk_faults(encl_ip, encl_user,
+                                                    encl_pwd, host, h_user,
+                                                    h_pwd, drive_params)
+
+
+            LOGGER.info("Removing drive : %s", d2)
+            drive_params = {"enclid": 0,
+                            "ctrl_name": "A, B",
+                            "phy_num": d2,
+                            "operation": "Disabled",
+                            "exp_status": ["Degraded", "Fault"],
+                            "telnet_file": "/root/telnet_disk_group.xml"}
+            resp = GenerateAlertWrapper.disk_faults(encl_ip, encl_user,
+                                                    encl_pwd, host, h_user,
+                                                    h_pwd, drive_params)
+
+
+
+
+
+
+
+
+
 
 

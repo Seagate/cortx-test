@@ -330,7 +330,7 @@ class ControllerLib:
 
         return False, "File not found : telnet_operations.py"
 
-    def set_drive_status_telnet(self, enclosure_id: str, controller_name: str,
+    def set_drive_status_telnet(self, enclosure_id: str, *controller_name: str,
                                 drive_number: str, status: str) -> Tuple[str,
                                                                          str]:
         """
@@ -348,28 +348,29 @@ class ControllerLib:
         """
         if self.copy:
             try:
-                cmd = common_cmd.SET_DRIVE_STATUS_CMD.format(
-                    enclosure_id, controller_name, drive_number, status)
+                for c in controller_name:
+                    cmd = common_cmd.SET_DRIVE_STATUS_CMD.format(
+                        enclosure_id, c, drive_number, status)
 
-                command = f"python3 /root/telnet_operations.py " \
-                          f"--telnet_op='set_drive_status_telnet(" \
-                          f"enclosure_ip=\"{self.enclosure_ip}\", " \
-                          f"username=\"{self.enclosure_user}\", " \
-                          f"pwd=\"{self.enclosure_pwd}\", " \
-                          f"status=\"{status}\", cmd=\"{cmd}\")'"
+                    command = f"python3 /root/telnet_operations.py " \
+                              f"--telnet_op='set_drive_status_telnet(" \
+                              f"enclosure_ip=\"{self.enclosure_ip}\", " \
+                              f"username=\"{self.enclosure_user}\", " \
+                              f"pwd=\"{self.enclosure_pwd}\", " \
+                              f"status=\"{status}\", cmd=\"{cmd}\")'"
 
-                LOGGER.info("Running command %s", command)
-                response = self.node_obj.execute_cmd(cmd=command,
-                                                     read_lines=True)
+                    LOGGER.info("Running command %s", command)
+                    response = self.node_obj.execute_cmd(cmd=command,
+                                                         read_lines=True)
 
-                response = response[0].split()
+                    response = response[0].split()
 
-                status = os.popen(
-                    (common_cmd.STRING_MANIPULATION.format(response[0])).
-                    replace('\n', ' ').replace('\\n', ' ')).read()
-                drive_status = os.popen(
-                    (common_cmd.STRING_MANIPULATION.format(response[1]))
-                    .replace('\n', ' ').replace('\\n', ' ')).read()
+                    status = os.popen(
+                        (common_cmd.STRING_MANIPULATION.format(response[0])).
+                        replace('\n', ' ').replace('\\n', ' ')).read()
+                    drive_status = os.popen(
+                        (common_cmd.STRING_MANIPULATION.format(response[1]))
+                        .replace('\n', ' ').replace('\\n', ' ')).read()
             except BaseException as error:
                 LOGGER.error("Error in %s: %s",
                              ControllerLib.set_drive_status_telnet.__name__,
