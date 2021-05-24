@@ -777,8 +777,8 @@ class RASCoreLib:
         result = run_remote_cmd(hostname=self.host, username=self.username,
                                 password=self.pwd, cmd=cmd)
         result = result[1].decode('utf-8').strip().split('\n')
+        LOGGER.info("Response: %s", result)
         res = json.loads(result[0])
-        LOGGER.info("Response: %s", res)
         return res[0]
 
     def get_conf_store_enclosure_vals(self, field: str) -> Tuple[bool, str]:
@@ -861,7 +861,6 @@ class RASCoreLib:
 
         LOGGER.info("Encrypting the password")
         val = self.encrypt_pwd(password, cluster_id)
-        val = val[1].split()[-1]
-        val = val.decode("utf-8")
+        val = (val[1].split()[-1]).decode("utf-8")
         val = (repr(val)[2:-1]).replace('\'', '')
         return True, val

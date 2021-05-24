@@ -229,8 +229,7 @@ class TestStorageAlerts:
         EOS-9962: Test verifies fault alert in message bus and
         CSM REST after disabling a drive from disk group
         """
-        LOGGER.info("STARTED: TA RAS Automation: Test Disabling a drive from "
-                    "disk group")
+        LOGGER.info("STARTED: Test Disabling a drive from disk group")
 
         common_cfg = RAS_VAL["ras_sspl_alert"]
         csm_error_msg = common_cfg["csm_error_msg"]
@@ -317,7 +316,7 @@ class TestStorageAlerts:
         LOGGER.info("Step 3: Successfully checked CSM REST API for alerts")
 
         LOGGER.info(
-            "ENDED: TA RAS Automation: Test Disabling a drive from disk group")
+            "ENDED: Test Disabling a drive from disk group")
 
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
@@ -329,7 +328,7 @@ class TestStorageAlerts:
         CSM REST after enabling a drive from disk group
         """
         LOGGER.info(
-            "STARTED: TA RAS Automation: Test Enabling a drive from disk group")
+            "STARTED: Test Enabling a drive from disk group")
 
         common_cfg = RAS_VAL["ras_sspl_alert"]
         csm_error_msg = common_cfg["csm_error_msg"]
@@ -414,4 +413,4 @@ class TestStorageAlerts:
         LOGGER.info("Step 6: Successfully checked CSM REST API for alerts")
 
         LOGGER.info(
-            "ENDED: TA RAS Automation: Test Enabling a drive from disk group")
+            "ENDED: Test Enabling a drive from disk group")
