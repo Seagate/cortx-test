@@ -226,7 +226,8 @@ class TestStorageAlerts:
     @CTFailOn(error_handler)
     def test_disable_enclosure_drive_157(self):
         """
-        EOS-9962: TA RAS Automation: Test Disabling a drive from disk group
+        EOS-9962: Test verifies fault alert in message bus and
+        CSM REST after disabling a drive from disk group
         """
         LOGGER.info("STARTED: TA RAS Automation: Test Disabling a drive from "
                     "disk group")
@@ -324,7 +325,8 @@ class TestStorageAlerts:
     @CTFailOn(error_handler)
     def test_enable_enclosure_drive_158(self):
         """
-        EOS-9963: TA RAS Automation: Test Enabling a drive from disk group
+        EOS-9963: Test verifies fault resolved alert in message bus and
+        CSM REST after enabling a drive from disk group
         """
         LOGGER.info(
             "STARTED: TA RAS Automation: Test Enabling a drive from disk group")

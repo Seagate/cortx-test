@@ -1074,7 +1074,7 @@ class RASTestLib(RASCoreLib):
         :rtype: bool, dict
         """
         try:
-            url = 'yaml:///etc/sspl_global_config_copy.yaml'
+            url = cmn_cons.SSPL_GLOBAL_CONF_URL
             LOGGER.info("Update correct values of enclosure using conf")
             enclosure_vals['CONF_PRIMARY_IP'] = CMN_CFG["enclosure"]["primary_enclosure_ip"]
             enclosure_vals['CONF_PRIMARY_PORT'] = 80

@@ -783,7 +783,7 @@ class RASCoreLib:
 
     def get_conf_store_enclosure_vals(self, field: str) -> Tuple[bool, str]:
         """
-        This will get the values ffor storage_enclosure
+        This will get the values for storage_enclosure
         :param field: field whose value needs to be extracted (
         storage_enclosure)
         :return: True/False, field value
