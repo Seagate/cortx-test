@@ -4,7 +4,7 @@ Resource   ${EXECDIR}/resources/common/common.robot
 Variables  ${EXECDIR}/resources/common/element_locators.py
 
 *** Variables ***
-${Download_File_Path}  \root\Downloads\
+${Download_File_Path}  /root/Downloads
 ${default_file_name}  s3server.pem
 
 *** Keywords ***

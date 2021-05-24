@@ -12,7 +12,6 @@ Resource    ${EXECDIR}/resources/page_objects/firmwareUpdatepage.robot
 Resource    ${EXECDIR}/resources/page_objects/preboardingPage.robot
 Resource    ${EXECDIR}/resources/common/common.robot
 Variables   ${EXECDIR}/resources/common/common_variables.py
-Variables   ${EXECDIR}/resources/common/common_variables.py
 
 Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
 ...  ${username}  ${password}
@@ -31,7 +30,7 @@ ${navigate_to_subpage}  False
 ${Sub_tab}  None
 ${username}
 ${password}
-${Download_File_Path}  \root\Downloads\
+${Download_File_Path}  /root/Downloads
 ${sw_version}  891
 
 *** Keywords ***
@@ -170,7 +169,7 @@ TEST-4932
     Verify Audit Log Generated
     Capture Page Screenshot  ${test_id}_CSM_audit_log_generated.png
     Download Audit Log  CSM  One day
-    Verify Audit Log Downloaded  ${Downlowait for page or element to loadad_File_Path}  csm
+    Verify Audit Log Downloaded  ${Download_File_Path}  csm
     Capture Page Screenshot  ${test_id}_CSM_audit_log_downloaded.png
     View Audit Log  S3  One day
     wait for page or element to load

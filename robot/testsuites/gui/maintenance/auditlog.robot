@@ -25,7 +25,7 @@ ${navigate_to_subpage}  False
 ${Sub_tab}  None
 ${username}
 ${password}
-${Download_File_Path}  \root\Downloads\
+${Download_File_Path}  /root/Downloads
 
 
 
