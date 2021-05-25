@@ -90,14 +90,14 @@ class TestAccountUserManagement:
         self.cortx_obj = CortxCliTestLib()
         self.users_list = list()
         self.accounts_list = list()
-        # self.log.info(
-        #     "Delete created user with prefix: %s", self.user_name)
-        # usr_list = IAM_OBJ.list_users()[1]
-        # self.log.debug("Listing users: %s", usr_list)
-        # all_usrs = [usr["UserName"]
-        #             for usr in usr_list if self.user_name in usr["UserName"]]
-        # if all_usrs:
-        #     IAM_OBJ.delete_users_with_access_key(all_usrs)
+        self.log.info(
+            "Delete created user with prefix: %s", self.user_name)
+        usr_list = IAM_OBJ.list_users()[1]
+        self.log.debug("Listing users: %s", usr_list)
+        all_usrs = [usr["UserName"]
+                    for usr in usr_list if self.user_name in usr["UserName"]]
+        if all_usrs:
+            IAM_OBJ.delete_users_with_access_key(all_usrs)
 
     def teardown_method(self):
         """
@@ -139,8 +139,8 @@ class TestAccountUserManagement:
         #             for acc in accounts if self.account_name in acc["account_name"]]
         for acc in accounts:
             self.cortx_obj.login_cortx_cli(acc, self.s3acc_password)
-            self.log.info("deleting all buckets in account %s", acc)
-            self.cortx_obj.delete_all_buckets_cortx_cli()
+            # self.log.info("deleting all buckets in account %s", acc)
+            # self.cortx_obj.delete_all_buckets_cortx_cli()
             self.log.info("deleting all users in account %s", acc)
             self.cortx_obj.delete_all_iam_users()
             self.cortx_obj.logout_cortx_cli()
