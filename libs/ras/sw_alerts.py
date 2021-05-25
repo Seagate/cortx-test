@@ -47,13 +47,10 @@ class SoftwareAlert(RASCoreLib):
         :param timeout: time to wait for service to change state before declaring timeout
         :return [type]: bool, expected csm response
         """
-        try:
-            monitor_svcs.remove(svc)
-        except ValueError:
-            pass
+        monitor_svcs_rem = [svc_rem for svc_rem in monitor_svcs if svc_rem != svc]
 
-        LOGGER.info("Get systemctl status for %s ...", monitor_svcs)
-        prev_svcs_status = self.get_svc_status(monitor_svcs)
+        LOGGER.info("Get systemctl status for %s ...", monitor_svcs_rem)
+        prev_svcs_status = self.get_svc_status(monitor_svcs_rem)
 
         LOGGER.info("Get systemctl status for %s ...", svc)
         prev_svc_state = self.get_svc_status([svc])[svc]
@@ -88,8 +85,8 @@ class SoftwareAlert(RASCoreLib):
         else:
             LOGGER.info("%s service state is NOT as expected.", svc)
 
-        LOGGER.info("Get systemctl status for %s ...", monitor_svcs)
-        new_svcs_status = self.get_svc_status(monitor_svcs)
+        LOGGER.info("Get systemctl status for %s ...", monitor_svcs_rem)
+        new_svcs_status = self.get_svc_status(monitor_svcs_rem)
         if "timestamp" in new_svcs_status:
             new_svcs_status.pop("timestamp")
         if "timestamp" in prev_svcs_status:
@@ -174,6 +171,9 @@ class SoftwareAlert(RASCoreLib):
             csm_response = None
 
         elif action == "failed":
+            csm_response = None
+
+        elif action == "reloading":
             csm_response = None
         return csm_response
 
@@ -333,9 +333,9 @@ class SoftwareAlert(RASCoreLib):
         self.write_svc_file(
             svc, {
                 "Service": {
-                    "ExecStartPre": "/bin/sleep 200"}})
+                    "ExecReload": "/bin/sleep 200"}})
         self.apply_svc_setting()
-        self.node_utils.host_obj.exec_command("systemctl reload {}".format(svc))
+        self.node_utils.host_obj.exec_command(commands.SYSTEM_CTL_RELOAD_CMD.format(svc))
 
     def put_svc_activating(self, svc):
         """Function to generate activating alert
