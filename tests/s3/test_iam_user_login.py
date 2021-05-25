@@ -67,12 +67,6 @@ class TestUserLoginProfileTests():
         self.cli_obj = cortxcli_test_lib.CortxCliTestLib()
         self.log.info("ENDED: Setup operations")
 
-    def teardown_method(self):
-        """Teardown method."""
-        self.log.info("STARTED: Teardown operations")
-        #self.cli_obj.logout_cortx_cli()
-        self.log.info("ENDED: Teardown operations")
-
     @classmethod
     def teardown_class(cls):
         """Teardown method."""
