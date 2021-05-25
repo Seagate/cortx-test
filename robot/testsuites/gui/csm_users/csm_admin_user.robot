@@ -24,7 +24,7 @@ ${page name}  MANAGE_MENU_ID
 ${url}
 ${username}
 ${password}
-${Download_File_Path}  \root\Downloads\
+${Download_File_Path}  /root/Downloads
 ${server_file_name}  s3server.pem
 
 *** Keywords ***
