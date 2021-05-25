@@ -219,9 +219,9 @@ class _IamUser(CortxCliIamUser):
                 **kwargs)
             if status and user_name in response:
                 response = self.split_table_response(response)[0]
-                user_details["user_name"] = response[1]
-                user_details["user_id"] = response[2]
-                user_details["arn"] = response[3]
+                user_details["user_name"] = response[0]
+                user_details["user_id"] = response[1]
+                user_details["arn"] = response[2]
                 response = user_details
         except Exception as error:
             LOGGER.error("Error in %s: %s",

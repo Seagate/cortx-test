@@ -22,10 +22,17 @@ This library contains common methods for CORTX CLI which will be used
 across all other libraries and test suites
 """
 
+import platform
 import logging
 import json
 import xmltodict
-import redexpect
+
+try:
+    if platform.system() == "Linux":
+        import redexpect
+except ModuleNotFoundError as error:
+    logging.error(error)
+
 import commons.errorcodes as err
 from commons import commands
 from commons.exceptions import CTException
@@ -74,7 +81,7 @@ class CortxCli(CortxCliClient):
         :return: output of executed command
         """
         try:
-            default_patterns = ["Error", "exception"]
+            default_patterns = ["Error", "exception", "Session expired"]
             default_patterns.extend(patterns)
             self.log.debug("Default patterns : %s", default_patterns)
             index, output = super().execute_cli_commands(

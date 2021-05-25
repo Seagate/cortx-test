@@ -19,8 +19,14 @@
 #
 """ This is a core library which will execute commands on interactive cortxcli"""
 
+import platform
 import logging
-import redexpect
+
+try:
+    if platform.system() == "Linux":
+        import redexpect
+except ModuleNotFoundError as error:
+    logging.error(error)
 
 
 class CortxCliClient:
@@ -58,7 +64,8 @@ class CortxCliClient:
         :return: None
         """
         if not self.session_obj:
-            self.session_obj = redexpect.RedExpect(expect_timeout=self.expect_timeout)
+            self.session_obj = redexpect.RedExpect(
+                expect_timeout=self.expect_timeout)
             self.session_obj.login(
                 hostname=self.host,
                 username=self.username,
@@ -66,7 +73,11 @@ class CortxCliClient:
                 allow_agent=True)
             self.log.debug("Opened an ssh connection with host: %s", self.host)
 
-    def execute_cli_commands(self, cmd: str, patterns: list, time_out: int) -> tuple:
+    def execute_cli_commands(
+            self,
+            cmd: str,
+            patterns: list,
+            time_out: int) -> tuple:
         """
         This function executes command on interactive shell on csm server and returns output
         :param str cmd: command to execute on shell
