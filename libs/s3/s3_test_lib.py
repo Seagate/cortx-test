@@ -152,13 +152,46 @@ class S3TestLib(S3Lib):
 
         return True, response
 
+    def copy_object(self,
+                    source_bucket: str = None,
+                    source_object: str = None,
+                    dest_bucket: str = None,
+                    dest_object: str = None,
+                    **kwargs) -> tuple:
+        """
+        Creates a copy of an object that is already stored in Seagate S3 with different permissions.
+
+        :param source_bucket: The name of the source bucket.
+        :param source_object: The name of the source object.
+        :param dest_bucket: The name of the destination bucket.
+        :param dest_object: The name of the destination object.
+        :param kwargs: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services
+        /s3.html#S3.Client.copy_object
+        :return: True, dict.
+        """
+        try:
+            response = self.s3_client.copy_object(
+                Bucket=dest_bucket,
+                CopySource='/{}/{}'.format(source_bucket, source_object),
+                Key=dest_object,
+                **kwargs
+            )
+            LOGGER.debug(response)
+        except BaseException as error:
+            LOGGER.error("Error in %s: %s",
+                         S3TestLib.copy_object.__name__,
+                         error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
+        return True, response
+
     def object_upload(
             self,
             bucket_name: str = None,
             object_name: str = None,
             file_path: str = None) -> tuple:
         """
-        Uploading Object to the Bucket.
+        Uploading Object(small(KB)/large(GB)) to the Bucket.
 
         :param bucket_name: Name of the bucket.
         :param object_name: Name of the object.
@@ -601,6 +634,27 @@ class S3TestLib(S3Lib):
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          S3TestLib.list_objects_with_prefix.__name__,
+                         error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
+        return True, response
+
+    def list_objects_details(
+            self,
+            bucket_name: str = None,) -> tuple:
+        """
+        Listing objects of a bucket with details.
+
+        :param bucket_name: Name of the bucket
+        :return: bool, response dict.
+        """
+        try:
+            response = self.s3_client.list_objects(
+                Bucket=bucket_name)
+            LOGGER.debug(response)
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         S3TestLib.list_objects_details.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 

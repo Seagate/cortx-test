@@ -35,8 +35,8 @@ Login To S3 Account
     wait for page or element to load  2s
     ${S3_account_name}  ${email}  ${s3password} =  Create S3 account
     wait for page or element to load  3s
-    Re-login  ${S3_account_name}  ${s3password}  MANAGE_MENU_ID
-    Navigate To Page  MANAGE_MENU_ID  IAM_USER_TAB_ID
+    Re-login  ${S3_account_name}  ${s3password}  S3_ACCOUNTS_TAB_ID
+    Navigate To Page   IAM_USER_TAB_ID
     wait for page or element to load  3s
     set suite variable    ${S3_account_name}
     set suite variable    ${s3password}
@@ -44,7 +44,7 @@ Login To S3 Account
 Delete S3 Account And Close Browser
     [Documentation]  This key word is for test case teardown which delete s3 account and close browsers
     [Tags]  Priority_High  S3_test
-    Navigate To Page  MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    Navigate To Page   S3_ACCOUNTS_TAB_ID
     ${S3_account_name}=  Fetch S3 Account Name
     Delete S3 Account  ${S3_account_name}  ${s3password}  True
     wait for page or element to load  1s
@@ -161,17 +161,46 @@ TEST-961
     Delete IAMuser  ${username}
     wait for page or element to load  # Need to reload the uses
 
-TEST-18197
+TEST-18328
     [Documentation]  Test that S3 account user is able to reset password of it's Child IAM user
-    ...  Reference : https://jts.seagate.com/browse/TEST-18197
-    [Tags]  Priority_High  TEST-18197  R2  IAM_user
+    ...  Reference : https://jts.seagate.com/browse/TEST-18328
+    [Tags]  Priority_High  TEST-18328  R2  IAM_user
     ${username}=  Generate New User Name
     ${password}=  Generate New Password
     Click Create IAM User Button
     Create IAMuser  ${username}  ${password}
     wait for page or element to load
-    Reset Password IAMuser  ${username}  # Aplicable for LDR R2
+    Reset Password IAMuser  ${username}
     wait for page or element to load
+    Delete IAMuser  ${username}
+    wait for page or element to load
+
+TEST-18331
+    [Documentation]  Test that reset password for IAM user does not accept invalid password.
+    ...  Reference : https://jts.seagate.com/browse/TEST-18331
+    [Tags]  Priority_High  TEST-18331  R2  IAM_user
+    ${username}=  Generate New User Name
+    ${password}=  Generate New Password
+    Click Create IAM User Button
+    Create IAMuser  ${username}  ${password}
+    wait for page or element to load
+    Reset Password IAMuser with invalid password  ${username}
+    wait for page or element to load
+    Delete IAMuser  ${username}
+
+TEST-18333
+    [Documentation]  Test that confirm rest password button remains disabled for reset IAM user password in case password and confirm password does not match.
+    ...  Reference : https://jts.seagate.com/browse/TEST-18333
+    [Tags]  Priority_High  TEST-18333  R2  IAM_user
+    ${username}=  Generate New User Name
+    ${password}=  Generate New Password
+    Click Create IAM User Button
+    Create IAMuser  ${username}  ${password}
+    wait for page or element to load
+    Verify Reset Password IAMuser button remains disabled  ${username}
+    wait for page or element to load
+    Delete IAMuser  ${username}
+
 
 TEST-13109
     [Documentation]  Verify that two empty tables are shown on IAM users page

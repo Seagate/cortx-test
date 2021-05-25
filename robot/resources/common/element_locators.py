@@ -59,6 +59,9 @@ ALERT_COMMENT_CLOSE_BUTTON_ID = 'alert-close-comment-dialogbtn'
 ALERT_COMMENT_CLOSE_IMAGE_ID = 'alert-closeadd-comment-dialog'
 ALERT_MORE_DETAILS_CLOSE_ICON_ID = 'alert-showalert-details-dialogbox'
 ALERT_COMMENT_TEXT_ID = 'alert-comment-textarea'
+ALERT_TABLE_ID = 'tblAlertLarge'
+ALERT_TABLE_XPATH = '//*[@id="tblAlertLarge"]//table//tbody//tr//td'
+ALERT_TABLE_ROW_XPATH = '//*[@id="tblAlertLarge"]//table//tbody//tr'
 ALERT_DETAILS_PAGE_ICON_XPATH = '//*[@id="tblAlertLarge"]/div/table/tbody/tr[1]/td[5]/img'
 ALERT_MORE_DETAILS_ICON_XPATH = '//label[@class="cortx-text-md cortx-cursor-pointer"]'
 ALERT_MORE_DETAILS_BODY_XPATH = '//*[@id="app"]//div[@class ="cortx-modal-container"]/div[1]/div[2]'
@@ -110,8 +113,11 @@ EDIT_S3_ACCOUNT_OPTIONS_XPATH = '//*[@id="app"]//div[@class ="py-0 col-5 col"]//
 S3_ACCOUNT_RESET_PASSWORD_XPATH = '//td[contains(text(), "{0}")]//following-sibling::td//img[@id="iam-reset-password"]'
 S3_ACCOUNT_REST_OPTION_ID = 'iam-reset-password'
 S3_ACCOUNT_RESET_NEW_PASSWORD_ID = 'user-password'
+S3ACCOUNT_INVALID_PASSWORD_ERROR_MSG_ID = 'iam-password-invalid-error'
+S3ACCOUNT_MISS_MATCH_PASSWORD_ERROR_MSG_ID = 'iam-confirmpass-notmatch-error'
+S3_ACCOUNT_POP_UP_CANCEL_BTN_ID = 'cancel-button'
 S3_ACCOUNT_RESET_CONFIRM_PASSWORD_ID = 'confirm-password'
-S3_ACCOUNT_RESET_PAWWSORD_BUTTON_ID = 'reset-password-button'
+S3_ACCOUNT_RESET_PASSWORD_BUTTON_ID = 'reset-password-button'
 S3_ACCOUNT_SUCCESS_MESSAGE_ID = 's3-success-dialog'
 S3_ACCOUNT_SUCCESS_MESSAGE_BUTTON_ID = 'confirmation-dialogbox-btn'
 S3_ACCOUNTS_TAB_S3_URL_TEXT_ID = "s3-account-manage-lbl"
@@ -207,6 +213,9 @@ IAM_USER_RESET_PAWWSORD_BUTTON_ID = "reset-password-button"
 IAM_USER_RESET_NEW_PASSWORD_ID = "user-password"
 IAM_USER_RESET_CONFIRM_PASSWORD_ID = "confirm-password"
 IAM_USER_SUCCESS_MESSAGE_ID = 'iam-success-dialog'
+INVALID_IAM_USER_RESET_PASSWORD_MSG_ID = 'iam-password-invalid-error'
+IAM_USER_RESET_PASSWORD_CLOSE_IMAGE_ID = 'close-reset-password-dialog'
+IAM_USER_RESET_PASSWORD_CANCEL_BUTTON_ID = 'cancel-button'
 IAM_USER_SUCCESS_MESSAGE_BUTTON_ID = 'confirmation-dialogbox-btn'
 IAM_USER_TABLE_ID = "iam-datatable"
 IAM_USER_ACCESS_KEY_ID = "iam-accesskey-datatable"
@@ -242,6 +251,8 @@ AUDIT_LOG_DOWNLOAD_BUTTON_ID = "auditlog-downlodbtn"
 AUDIT_LOG_COMPONENT_DROP_DOWN_ID = "auditlog-component"
 AUDIT_LOG_TIME_PERIOD_DROP_DOWN_ID = "auditlog-timeperiod"
 AUDIT_LOG_DATA_ID = "auditlog-data"
+CSM_AUDIT_LOG_TABLE_XPATH = "//*[@id='auditLog-datatable']//table//tr//td"
+
 
 # Bucket
 ADD_BUCKET_FORM_ID = "bucket-addbucket-formbtn"

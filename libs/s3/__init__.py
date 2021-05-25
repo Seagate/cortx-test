@@ -23,12 +23,13 @@
 """S3 package initializer."""
 
 from commons.helpers.s3_helper import S3Helper
-from config import CMN_CFG as CM_CFG
-from config import S3_CFG
+from commons.utils import config_utils
+from commons.params import S3_CONFIG
+from config import CMN_CFG, S3_CFG
 S3H_OBJ = S3Helper.get_instance()
 
-S3_CFG = S3_CFG
+CM_CFG = CMN_CFG
 # S3 default access_key, secret key.
 ACCESS_KEY, SECRET_KEY = S3H_OBJ.get_local_keys()
-LDAP_USERNAME = CM_CFG["ldap"]["username"]  # Ldap username.
-LDAP_PASSWD = CM_CFG["ldap"]["password"]  # Ldap password.
+LDAP_USERNAME = CMN_CFG["ldap"]["username"]  # Ldap username.
+LDAP_PASSWD = CMN_CFG["ldap"]["password"]  # Ldap password.

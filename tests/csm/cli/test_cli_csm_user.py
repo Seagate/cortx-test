@@ -47,14 +47,15 @@ class TestCliCSMUser:
         It will perform all prerequisite test suite steps if any.
             - Initialize few common variables
         """
-        cls.LOGGER = logging.getLogger(__name__)
-        cls.LOGGER.info("STARTED : Setup operations for test suit")
+        cls.logger = logging.getLogger(__name__)
+        cls.logger.info("STARTED : Setup operations for test suit")
         cls.CSM_USER = CortxCliCsmUser()
         cls.CSM_USER.open_connection()
-        cls.CSM_ALERT = CortxCliAlerts()
-        cls.IAM_USER = CortxCliIamUser()
-        cls.BKT_OPS = CortxCliS3BucketOperations()
-        cls.S3_ACC = CortxCliS3AccountOperations(session_obj=cls.CSM_USER.session_obj)
+        cls.CSM_ALERT = CortxCliAlerts(session_obj=cls.CSM_USER.session_obj)
+        cls.IAM_USER = CortxCliIamUser(session_obj=cls.CSM_USER.session_obj)
+        cls.bkt_ops = CortxCliS3BucketOperations(session_obj=cls.CSM_USER.session_obj)
+        cls.S3_ACC = CortxCliS3AccountOperations(
+            session_obj=cls.CSM_USER.session_obj)
         cls.GENERATE_ALERT_OBJ = GenerateAlertLib()
         cls.csm_user_pwd = CSM_CFG["CliConfig"]["csm_user"]["password"]
         cls.acc_password = CSM_CFG["CliConfig"]["s3_account"]["password"]
@@ -76,10 +77,10 @@ class TestCliCSMUser:
         It is performing below operations as pre-requisites.
             - Login to CORTX CLI as admin user.
         """
-        self.LOGGER.info("STARTED : Setup operations for test function")
-        self.LOGGER.info("Login to CORTX CLI using s3 account")
+        self.logger.info("STARTED : Setup operations for test function")
+        self.logger.info("Login to CORTX CLI using s3 account")
         self.update_password = False
-        self.new_pwd = "Seagate@1"
+        self.new_pwd = CSM_CFG["CliConfig"]["csm_user"]["update_password"]
         login = self.CSM_USER.login_cortx_cli()
         assert_utils.assert_equals(
             login[0], True, "Server authentication check failed")
@@ -90,7 +91,7 @@ class TestCliCSMUser:
         self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
         self.iam_user_name = "{0}{1}".format("iam_user", str(int(time.time())))
         self.bucket_name = "clis3bkt{}".format(int(time.time()))
-        self.LOGGER.info("ENDED : Setup operations for test function")
+        self.logger.info("ENDED : Setup operations for test function")
 
     def teardown_method(self):
         """
@@ -99,13 +100,13 @@ class TestCliCSMUser:
             - Delete CSM users
             - Log out from CORTX CLI console.
         """
-        self.LOGGER.info("STARTED : Teardown operations for test function")
+        self.logger.info("STARTED : Teardown operations for test function")
         if self.update_password:
             resp = self.CSM_USER.reset_root_user_password(
-                user_name=CMN_CFG["csm"]["admin_user"],
+                user_name=CMN_CFG["csm"]["csm_admin_user"]["username"],
                 current_password=self.new_pwd,
-                new_password=CMN_CFG["csm"]["admin_pass"],
-                confirm_password=CMN_CFG["csm"]["admin_pass"])
+                new_password=CMN_CFG["csm"]["csm_admin_user"]["password"],
+                confirm_password=CMN_CFG["csm"]["csm_admin_user"]["password"])
             assert_utils.assert_equals(resp[0], True, resp)
             self.CSM_USER.login_cortx_cli()
         resp = self.CSM_USER.list_csm_users(op_format="json")
@@ -116,11 +117,11 @@ class TestCliCSMUser:
             myuser for myuser in user_list if "auto_csm_user" in myuser]
         if my_users:
             for user in my_users:
-                self.LOGGER.info("Deleting CSM users %s", user)
+                self.logger.info("Deleting CSM users %s", user)
                 self.CSM_USER.delete_csm_user(user_name=user)
-                self.LOGGER.info("Deleted CSM users %s", user)
+                self.logger.info("Deleted CSM users %s", user)
         self.CSM_USER.logout_cortx_cli()
-        self.LOGGER.info("Ended : Teardown operations for test function")
+        self.logger.info("Ended : Teardown operations for test function")
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -129,8 +130,8 @@ class TestCliCSMUser:
         """
         Test that CSM user/admin is able to login to csmcli passing username as parameter
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Creating csm user with name %s", self.user_name)
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -140,8 +141,8 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
-        self.LOGGER.info("Created csm user with name %s", self.user_name)
-        self.LOGGER.info(
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info(
             "Verifying CSM user is able to login cortxcli by passing username as parameter")
         self.CSM_USER.logout_cortx_cli()
         resp = self.CSM_USER.login_with_username_param(
@@ -150,9 +151,9 @@ class TestCliCSMUser:
             resp[0], True, "Server authentication check failed")
         self.CSM_USER.logout_cortx_cli()
         self.CSM_USER.login_cortx_cli()
-        self.LOGGER.info(
+        self.logger.info(
             "Verified CSM user is able to login cortxcli by passing username as paramter")
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -161,8 +162,8 @@ class TestCliCSMUser:
         """
         Test that csm user with monitor role can list alert using CLI
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Creating csm user with name %s", self.user_name)
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -172,23 +173,23 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
-        self.LOGGER.info("Created csm user with name %s", self.user_name)
-        self.LOGGER.info("Logging using csm monitor role")
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info("Logging using csm monitor role")
         self.CSM_USER.logout_cortx_cli()
         resp = self.CSM_ALERT.login_cortx_cli(
             username=self.user_name,
             password=self.csm_user_pwd)
         assert_utils.assert_equals(
             resp[0], True, "Server authentication check failed")
-        self.LOGGER.info("Logged in using csm monitor role")
-        self.LOGGER.info("Listing alerts using csm monitor role")
+        self.logger.info("Logged in using csm monitor role")
+        self.logger.info("Listing alerts using csm monitor role")
         resp = self.CSM_ALERT.show_alerts_cli(duration="1d")
         assert_utils.assert_equals(
             resp[0], True, resp)
-        self.LOGGER.info("Listed alerts using csm monitor role")
+        self.logger.info("Listed alerts using csm monitor role")
         self.CSM_ALERT.logout_cortx_cli()
         self.CSM_USER.login_cortx_cli()
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -197,8 +198,8 @@ class TestCliCSMUser:
         """
         Initiating the test case to verify create CSM User
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Creating csm user with name %s", self.user_name)
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -208,8 +209,8 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
-        self.LOGGER.info("Created csm user with name %s", self.user_name)
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -218,8 +219,8 @@ class TestCliCSMUser:
         """
         Initiating the test case to verify create CSM User with monitor role
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Creating csm user with name %s", self.user_name)
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -229,8 +230,8 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
-        self.LOGGER.info("Created csm user with name %s", self.user_name)
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -239,8 +240,8 @@ class TestCliCSMUser:
         """
         Initiating the test case to verify create CSM User with invalid role
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Creating csm user with invalid role")
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with invalid role")
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -249,10 +250,10 @@ class TestCliCSMUser:
             confirm_password=self.csm_user_pwd)
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(resp[1], "invalid choice")
-        self.LOGGER.info(
+        self.logger.info(
             "Creating csm user with invalid role is failed with error %s",
             resp[1])
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -261,8 +262,8 @@ class TestCliCSMUser:
         """
         Initiating the test case to verify create CSM User with duplicate user name
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Creating csm user with name %s", self.user_name)
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -272,8 +273,8 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
-        self.LOGGER.info("Created csm user with name %s", self.user_name)
-        self.LOGGER.info("Creating csm user with same name")
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info("Creating csm user with same name")
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -282,10 +283,10 @@ class TestCliCSMUser:
             confirm_password=self.csm_user_pwd)
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(resp[1], "User already exists")
-        self.LOGGER.info(
+        self.logger.info(
             "Creating csm user with duplicate name is failed with error %s",
             resp[1])
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -294,13 +295,13 @@ class TestCliCSMUser:
         """
         Initiating the test case to verify create CSM User with help response
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Display help response for create csm user")
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Display help response for create csm user")
         resp = self.CSM_USER.create_csm_user_cli(help_param=True)
         assert_utils.assert_equals(resp[0], True, resp)
-        self.LOGGER.info(resp[1])
-        self.LOGGER.info("Displayed help response for create csm user")
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info(resp[1])
+        self.logger.info("Displayed help response for create csm user")
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -309,22 +310,22 @@ class TestCliCSMUser:
         """
         Initiating the test case to verify create CSM User through unauthorized user
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
         resp = self.S3_ACC.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
             account_email=self.s3acc_email,
             password=self.acc_password)
         assert_utils.assert_equals(True, resp[0], resp[1])
-        self.LOGGER.info("Created s3 account %s", self.s3acc_name)
+        self.logger.info("Created s3 account %s", self.s3acc_name)
         self.CSM_USER.logout_cortx_cli()
-        self.LOGGER.info(
+        self.logger.info(
             "Login through s3 account to verify create CSM User using unauthorized user")
         login = self.CSM_USER.login_cortx_cli(
             username=self.s3acc_name, password=self.acc_password)
         assert_utils.assert_equals(
             login[0], True, "Server authentication check failed")
-        self.LOGGER.info("Logged in to s3 account")
-        self.LOGGER.info("Creating CSM user with unauthorized user")
+        self.logger.info("Logged in to s3 account")
+        self.logger.info("Creating CSM user with unauthorized user")
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -335,10 +336,10 @@ class TestCliCSMUser:
             resp[0], False, resp)
         self.CSM_USER.logout_cortx_cli()
         self.CSM_USER.login_cortx_cli()
-        self.LOGGER.info(
+        self.logger.info(
             "Creating CSM user with unauthorized user is failed with error %s",
             resp[1])
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -347,8 +348,8 @@ class TestCliCSMUser:
         """
         Initiating the test case to verify list csm user
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Creating csm user with name %s", self.user_name)
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -358,14 +359,14 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
-        self.LOGGER.info("Created csm user with name %s", self.user_name)
-        self.LOGGER.info("Verifying list csm user")
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info("Verifying list csm user")
         resp = self.CSM_USER.list_csm_users(op_format="json")
         assert_utils.assert_equals(resp[0], True, resp)
         user_list = [each["username"] for each in resp[1]["users"]]
         assert_utils.assert_list_item(user_list, self.user_name)
-        self.LOGGER.info("Verified list csm user")
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("Verified list csm user")
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -374,9 +375,9 @@ class TestCliCSMUser:
         """
         Initiating the test case to verify list csm user with offset
         """
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
         offset = 2
-        self.LOGGER.info("Creating csm user with name %s", self.user_name)
+        self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -386,8 +387,8 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
-        self.LOGGER.info("Created csm user with name %s", self.user_name)
-        self.LOGGER.info("Verifying list csm user with offset")
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info("Verifying list csm user with offset")
         list_user = self.CSM_USER.list_csm_users(op_format="json")
         assert_utils.assert_equals(list_user[0], True, list_user)
         assert len(list_user[1]["users"]) > 0
@@ -395,8 +396,8 @@ class TestCliCSMUser:
             offset=offset, op_format="json")
         assert len(list_user[1]["users"]) == len(
             list_with_offset[1]["users"]) + offset
-        self.LOGGER.info("Verified list csm user with offset")
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("Verified list csm user with offset")
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -405,8 +406,8 @@ class TestCliCSMUser:
         """
         Test that user cannot list CSM user using cli with no value for param offset
         """
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Creating csm user with name %s", self.user_name)
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -416,15 +417,15 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
-        self.LOGGER.info("Created csm user with name %s", self.user_name)
-        self.LOGGER.info("Verifying list csm user with no value for offset")
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info("Verifying list csm user with no value for offset")
         resp = self.CSM_USER.list_csm_users(op_format="json", offset=" ")
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(resp[1], "expected one argument")
-        self.LOGGER.info(
+        self.logger.info(
             "List csm user with no value for offset is failed with error %s",
             resp[1])
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -433,9 +434,9 @@ class TestCliCSMUser:
         """
         Test that user can list CSM user using cli with valid value for param limit
         """
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
         limit = 1
-        self.LOGGER.info("Creating csm user with name %s", self.user_name)
+        self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -445,13 +446,13 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
-        self.LOGGER.info("Created csm user with name %s", self.user_name)
-        self.LOGGER.info("Verifying list csm user with limit")
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info("Verifying list csm user with limit")
         resp = self.CSM_USER.list_csm_users(limit=limit, op_format="json")
         assert_utils.assert_equals(resp[0], True, resp)
         assert len(resp[1]["users"]) == limit
-        self.LOGGER.info("Verified list csm user with limit")
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("Verified list csm user with limit")
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -460,8 +461,8 @@ class TestCliCSMUser:
         """
         Test that user cannot list CSM user using cli with invalid value for param limit
         """
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Creating csm user with name %s", self.user_name)
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -471,17 +472,17 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
-        self.LOGGER.info("Created csm user with name %s", self.user_name)
-        self.LOGGER.info(
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info(
             "Verifying list csm user with invalid value for limit")
         resp = self.CSM_USER.list_csm_users(limit=-1, op_format="json")
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(
             resp[1], "value must be positive integer")
-        self.LOGGER.info(
+        self.logger.info(
             "List csm user with invalid value for limit is failed with error %s",
             resp[1])
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -490,8 +491,8 @@ class TestCliCSMUser:
         """
         Test that user cannot list CSM user using cli with no value for param limit
         """
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Creating csm user with name %s", self.user_name)
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -501,25 +502,26 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
-        self.LOGGER.info("Created csm user with name %s", self.user_name)
-        self.LOGGER.info("Verifying list csm user with no value for limit")
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info("Verifying list csm user with no value for limit")
         resp = self.CSM_USER.list_csm_users(limit=" ", op_format="json")
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(resp[1], "expected one argument")
-        self.LOGGER.info(
+        self.logger.info(
             "List csm user with no value for limit is failed with error %s",
             resp[1])
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
-    @pytest.mark.tags("TEST-10830")
+    @pytest.mark.release_regression
+    @pytest.mark.tags("TEST-10831")
     def test_1261(self):
         """
         Initiating the test case to verify delete CSM User
         """
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Creating csm user with name %s", self.user_name)
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -529,13 +531,13 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
-        self.LOGGER.info("Created csm user with name %s", self.user_name)
-        self.LOGGER.info("Deleting CSM user with name %s", self.user_name)
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info("Deleting CSM user with name %s", self.user_name)
         resp = self.CSM_USER.delete_csm_user(user_name=self.user_name)
         assert_utils.assert_equals(resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User deleted")
-        self.LOGGER.info("Deleted CSM user with name %s", self.user_name)
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("Deleted CSM user with name %s", self.user_name)
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -544,15 +546,15 @@ class TestCliCSMUser:
         """
         Initiating the test case to verify delete CSM User with username which doesn't exist
         """
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Deleting non existing csm user")
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("Deleting non existing csm user")
         resp = self.CSM_USER.delete_csm_user(user_name="non_exist_username")
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(resp[1], "User does not exist")
-        self.LOGGER.info(
+        self.logger.info(
             "Deleting non existing csm user is failed with error %s",
             resp[1])
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -561,16 +563,16 @@ class TestCliCSMUser:
         """
         Initiating the test case to verify delete CSM User with no username
         """
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Performing delete operation with no username")
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("Performing delete operation with no username")
         resp = self.CSM_USER.delete_csm_user(user_name="")
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(
             resp[1], "The following arguments are required: username")
-        self.LOGGER.info(
+        self.logger.info(
             "Performing delete operation with no username is failed with error %s",
             resp[1])
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -579,13 +581,13 @@ class TestCliCSMUser:
         """
         Initiating the test case to verify help menu for delete CSM User
         """
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Verify help menu for delete CSM User")
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("Verify help menu for delete CSM User")
         resp = self.CSM_USER.delete_csm_user(help_param=True)
-        self.LOGGER.info(resp[1])
+        self.logger.info(resp[1])
         assert_utils.assert_equals(resp[0], True, resp)
-        self.LOGGER.info("Verified help menu for delete CSM User")
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("Verified help menu for delete CSM User")
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -594,15 +596,15 @@ class TestCliCSMUser:
         """
         Initiating the test case to verify delete admin/root User
         """
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Verifying delete admin/root User")
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("Verifying delete admin/root User")
         resp = self.CSM_USER.delete_csm_user(user_name="admin")
         assert_utils.assert_equals(resp[0], False, resp)
-        assert_utils.assert_exact_string(resp[1], "Can't delete super user")
-        self.LOGGER.info(
+        assert_utils.assert_exact_string(resp[1], "Cannot delete admin user")
+        self.logger.info(
             "Verifying delete admin/root User is failed with error %s",
             resp[1])
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -612,8 +614,8 @@ class TestCliCSMUser:
         Initiating the test case to verify CSM User
         is not deleted on entering 'no' on confirmation question
         """
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Creating csm user with name %s", self.user_name)
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -623,15 +625,16 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
-        self.LOGGER.info("Created csm user with name %s", self.user_name)
-        self.LOGGER.info(
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info(
             "Verifying CSM User is not deleted on entering 'no' on confirmation question")
-        resp = self.CSM_USER.delete_csm_user(user_name=self.user_name, confirm="n")
+        resp = self.CSM_USER.delete_csm_user(
+            user_name=self.user_name, confirm="n")
         assert_utils.assert_equals(resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "cortxcli")
-        self.LOGGER.info(
+        self.logger.info(
             "Verified CSM User is not deleted on entering 'no' on confirmation question")
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -640,8 +643,8 @@ class TestCliCSMUser:
         """
         Test that user cannot create CSM user using cli with input 'n' for confirmation prompt
         """
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info(
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info(
             "Verifying CSM User is not created on entering 'no' on confirmation question")
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
@@ -653,9 +656,9 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], False, resp)
         assert_utils.assert_exact_string(resp[1], "cortxcli")
-        self.LOGGER.info(
+        self.logger.info(
             "Verified CSM User is not created on entering 'no' on confirmation question")
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -664,8 +667,8 @@ class TestCliCSMUser:
         """
         Test that user cannot create CSM user using cli with a role as root
         """
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Creating csm user with role as root")
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with role as root")
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -675,10 +678,10 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], False, resp)
         assert_utils.assert_exact_string(resp[1], "invalid choice")
-        self.LOGGER.info(
+        self.logger.info(
             "Creating csm user with role as root is failed with error %s",
             resp[1])
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -687,13 +690,13 @@ class TestCliCSMUser:
         """
         Test that csmcli returns appropriate help message for "show user -h" command
         """
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Verifying help message for list command")
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("Verifying help message for list command")
         resp = self.CSM_USER.list_csm_users(help_param=True)
         assert_utils.assert_equals(resp[0], True, resp)
-        self.LOGGER.info(resp[1])
-        self.LOGGER.info("Verified help message for list command")
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info(resp[1])
+        self.logger.info("Verified help message for list command")
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -702,16 +705,16 @@ class TestCliCSMUser:
         """
         Initiating the test case to verify list csm user with invalid value of direction
         """
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info(
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info(
             "Verifying list csm user with invalid value of direction")
         resp = self.CSM_USER.list_csm_users(sort_dir="abc")
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(resp[1], "invalid choice")
-        self.LOGGER.info(
+        self.logger.info(
             "List csm user with invalid value of direction is faield with error %s",
             resp[1])
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -720,16 +723,16 @@ class TestCliCSMUser:
         """
         Initiating the test case to verify list csm user with invalid value of direction
         """
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info(
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info(
             "Verifying list csm user with invalid value of direction")
         resp = self.CSM_USER.list_csm_users(sort_dir=" ")
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(resp[1], "expected one argument")
-        self.LOGGER.info(
+        self.logger.info(
             "List csm user with invalid value of direction is failed with error %s",
             resp[1])
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -739,16 +742,16 @@ class TestCliCSMUser:
         Test that csmcli returns appropriate error msg
         for "users show -f" command with no value for param format
         """
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info(
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info(
             "Verifying list csm user with no value for param message")
         resp = self.CSM_USER.list_csm_users(op_format=" ")
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(resp[1], "expected one argument")
-        self.LOGGER.info(
+        self.logger.info(
             "List csm user with no value for param message is failed with error %s",
             resp[1])
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -758,16 +761,16 @@ class TestCliCSMUser:
         Test that csmcli returns appropriate error msg for
         "users show -f" command with invalid value for param format
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info(
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info(
             "Verifying list csm user with invalid value for param format")
         resp = self.CSM_USER.list_csm_users(op_format="invalid_format")
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(resp[1], "invalid choice")
-        self.LOGGER.info(
+        self.logger.info(
             "List csm user with invalid value for param format is failed with error %s",
             resp[1])
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -778,8 +781,8 @@ class TestCliCSMUser:
         "show user" command with valid value for param limit
         where users exists less than limit value
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Creating csm user with name %s", self.user_name)
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -789,8 +792,8 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
-        self.LOGGER.info("Created csm user with name %s", self.user_name)
-        self.LOGGER.info(
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info(
             "Verifying list csm user with valid value for param limit "
             "where users exists less than limit value")
         list_user = self.CSM_USER.list_csm_users(op_format="json")
@@ -798,10 +801,10 @@ class TestCliCSMUser:
         no_of_users = len(list_user[1]["users"])
         resp = self.CSM_USER.list_csm_users(limit=(no_of_users + 1))
         assert_utils.assert_equals(resp[0], True, resp)
-        self.LOGGER.info(
+        self.logger.info(
             "Verified list csm user with valid value for param limit "
             "where users exists less than limit value")
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -811,8 +814,8 @@ class TestCliCSMUser:
         Test that csmcli returns appropriate list of csm
         users with "users show -s" command with valid value for param sort
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Creating csm user with name %s", self.user_name)
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -822,15 +825,15 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
-        self.LOGGER.info("Created csm user with name %s", self.user_name)
-        self.LOGGER.info(
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info(
             "Verifying list csm user with valid value for param sort")
         resp = self.CSM_USER.list_csm_users(sort_by="user_id")
-        self.LOGGER.info(resp)
+        self.logger.info(resp)
         assert_utils.assert_equals(resp[0], True, resp)
-        self.LOGGER.info(
+        self.logger.info(
             "Verified list csm user with valid value for param sort")
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -840,17 +843,17 @@ class TestCliCSMUser:
         Test that csmcli returns appropriate error msg for
         "users show -s" command with invalid value for param sort
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info(
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info(
             "Verifying list csm user with invalid value for param sort")
         resp = self.CSM_USER.list_csm_users(sort_by="use_id")
-        self.LOGGER.info(resp)
+        self.logger.info(resp)
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(resp[1], "invalid choice")
-        self.LOGGER.info(
+        self.logger.info(
             "List csm user with invalid value for param sort is failed with error %s",
             resp[1])
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -860,17 +863,17 @@ class TestCliCSMUser:
         Test that csmcli returns appropriate error msg
         for "users show -s" command with no value for param sort
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info(
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info(
             "Verifying list csm user with no value for param sort")
         resp = self.CSM_USER.list_csm_users(sort_by=" ")
-        self.LOGGER.info(resp)
+        self.logger.info(resp)
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(resp[1], "expected one argument")
-        self.LOGGER.info(
+        self.logger.info(
             "List csm user with no value for param sort is failed with error %s",
             resp[1])
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -880,8 +883,8 @@ class TestCliCSMUser:
         Test that csmcli returns appropriate list of csm users
         for "users show -d" command with valid value for param direction
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Creating csm user with name %s", self.user_name)
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -891,15 +894,15 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
-        self.LOGGER.info("Created csm user with name %s", self.user_name)
-        self.LOGGER.info(
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info(
             "Verifying list csm user with valid value for param direction")
         resp = self.CSM_USER.list_csm_users(op_format="json", sort_dir="desc")
         assert_utils.assert_equals(resp[0], True, resp)
-        self.LOGGER.info(resp)
-        self.LOGGER.info(
+        self.logger.info(resp)
+        self.logger.info(
             "Verified list csm user with valid value for param direction")
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -909,8 +912,8 @@ class TestCliCSMUser:
         Test that csmcli returns appropriate list of users for
         "users show -f" command with valid value for param format
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Creating csm user with name %s", self.user_name)
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -920,18 +923,18 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
-        self.LOGGER.info("Created csm user with name %s", self.user_name)
-        self.LOGGER.info(
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info(
             "Verifying list csm user with valid value for param format")
         resp = self.CSM_USER.list_csm_users(op_format="json")
         assert_utils.assert_equals(resp[0], True, resp)
-        self.LOGGER.info("List of users in json format %s", resp)
+        self.logger.info("List of users in json format %s", resp)
         resp = self.CSM_USER.list_csm_users(op_format="xml")
         assert_utils.assert_equals(resp[0], True, resp)
-        self.LOGGER.info("List of users in xml format %s", resp)
-        self.LOGGER.info(
+        self.logger.info("List of users in xml format %s", resp)
+        self.logger.info(
             "Verified list csm user with valid value for param format")
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -941,8 +944,8 @@ class TestCliCSMUser:
         Test that csm user with manage role can only list
         commands using help (-h) to which the user has access to.
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Creating csm user with name %s", self.user_name)
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -952,8 +955,8 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
-        self.LOGGER.info("Created csm user with name %s", self.user_name)
-        self.LOGGER.info(
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info(
             "Verifying help response with csm manage role")
         self.CSM_USER.logout_cortx_cli()
         resp = self.CSM_USER.login_cortx_cli(
@@ -962,16 +965,16 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         resp = self.CSM_USER.help_option()
-        self.LOGGER.info(resp)
+        self.logger.info(resp)
         assert_utils.assert_equals(
             resp[0], True, resp)
         for msg in constants.CSM_USER_HELP:
             assert_utils.assert_exact_string(resp[1], msg)
         self.CSM_USER.logout_cortx_cli()
         self.CSM_USER.login_cortx_cli()
-        self.LOGGER.info(
+        self.logger.info(
             "Verified help response with csm manage role")
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -981,10 +984,10 @@ class TestCliCSMUser:
         Test that csm user with manage role can perform list,
          create delete on csm_users using CLI
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
         username = "auto_csm_user{0}".format(
             random.randint(0, 10))
-        self.LOGGER.info("Creating csm user with name %s", self.user_name)
+        self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -994,15 +997,15 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
-        self.LOGGER.info("Created csm user with name %s", self.user_name)
-        self.LOGGER.info(
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info(
             "Verifying csm user with manage role can perform list,create delete on csm_users")
         self.CSM_USER.logout_cortx_cli()
         resp = self.CSM_USER.login_cortx_cli(
             username=self.user_name,
             password=self.csm_user_pwd)
         assert_utils.assert_equals(resp[0], True, resp)
-        self.LOGGER.info("Creating csm user")
+        self.logger.info("Creating csm user")
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=username,
             email_id=self.email_id,
@@ -1013,19 +1016,19 @@ class TestCliCSMUser:
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
 
-        self.LOGGER.info("Listing csm users")
+        self.logger.info("Listing csm users")
         resp = self.CSM_USER.list_csm_users(op_format="json")
-        self.LOGGER.info(resp)
+        self.logger.info(resp)
         assert_utils.assert_equals(resp[0], True, resp)
 
-        self.LOGGER.info("Deleting csm users")
+        self.logger.info("Deleting csm users")
         resp = self.CSM_USER.delete_csm_user(user_name=self.user_name)
         assert_utils.assert_equals(resp[0], True, resp)
         self.CSM_USER.logout_cortx_cli()
         self.CSM_USER.login_cortx_cli()
-        self.LOGGER.info(
+        self.logger.info(
             "Verified csm user with manage role can perform list,create delete on csm_users")
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1034,8 +1037,8 @@ class TestCliCSMUser:
         """
         Test that csm user with monitor role can perform list operation on csm_users using CLI
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Creating csm user with name %s", self.user_name)
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -1045,8 +1048,8 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
-        self.LOGGER.info("Created csm user with name %s", self.user_name)
-        self.LOGGER.info(
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info(
             "Verifying csm monitor role can perform list operation on csm_users using")
         self.CSM_USER.logout_cortx_cli()
         resp = self.CSM_USER.login_cortx_cli(
@@ -1054,11 +1057,11 @@ class TestCliCSMUser:
             password=self.csm_user_pwd)
         assert_utils.assert_equals(resp[0], True, resp)
         resp = self.CSM_USER.list_csm_users(op_format="json")
-        self.LOGGER.info(resp)
+        self.logger.info(resp)
         assert_utils.assert_equals(resp[0], True, resp)
-        self.LOGGER.info(
+        self.logger.info(
             "Verified csm monitor role can perform list operation on csm_users using")
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1068,8 +1071,8 @@ class TestCliCSMUser:
         Test that csm user with monitor role cannot
         perform update, delete, create operation on s3_accounts using CLI
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Creating csm user with name %s", self.user_name)
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -1079,8 +1082,8 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
-        self.LOGGER.info("Created csm user with name %s", self.user_name)
-        self.LOGGER.info(
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info(
             "Verifying csm monitor role cannot perform "
             "update, delete, create operation on s3_accounts")
         self.CSM_USER.logout_cortx_cli()
@@ -1095,15 +1098,16 @@ class TestCliCSMUser:
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(resp[1], "Invalid choice")
 
-        resp = self.S3_ACC.delete_s3account_cortx_cli(account_name=self.s3acc_name)
+        resp = self.S3_ACC.delete_s3account_cortx_cli(
+            account_name=self.s3acc_name)
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(resp[1], "Invalid choice")
         self.S3_ACC.logout_cortx_cli()
         self.CSM_USER.login_cortx_cli()
-        self.LOGGER.info(
+        self.logger.info(
             "Verified csm monitor role cannot "
             "perform update, delete, create operation on s3_accounts")
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1112,8 +1116,8 @@ class TestCliCSMUser:
         """
         Test that CSM USER can create S3 account
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Creating csm user with name %s", self.user_name)
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -1123,8 +1127,8 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
-        self.LOGGER.info("Created csm user with name %s", self.user_name)
-        self.LOGGER.info(
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info(
             "Verifying csm manage role can create S3 account")
         self.CSM_USER.logout_cortx_cli()
         resp = self.S3_ACC.login_cortx_cli(
@@ -1138,9 +1142,9 @@ class TestCliCSMUser:
         assert_utils.assert_equals(resp[0], True, resp)
         self.S3_ACC.logout_cortx_cli()
         self.CSM_USER.login_cortx_cli()
-        self.LOGGER.info(
+        self.logger.info(
             "Verified csm manage role can create S3 account")
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1150,8 +1154,8 @@ class TestCliCSMUser:
         Test that csmcli returns appropriate list of csm
          users for "users show" command with valid values for all params
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Creating csm user with name %s", self.user_name)
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -1161,8 +1165,8 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
-        self.LOGGER.info("Created csm user with name %s", self.user_name)
-        self.LOGGER.info(
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info(
             "Verifying list of csm users with valid values for all params")
         resp = self.CSM_USER.list_csm_users(
             limit=1,
@@ -1172,9 +1176,9 @@ class TestCliCSMUser:
             offset=1)
         assert_utils.assert_equals(resp[0], True, resp)
         assert len(resp[1]["users"]) == 1
-        self.LOGGER.info(
+        self.logger.info(
             "Verified list of csm users with valid values for all params")
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1183,8 +1187,8 @@ class TestCliCSMUser:
         """
         Test that csm user with manage role can perform list, create on s3_accounts
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Creating csm user with name %s", self.user_name)
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -1194,8 +1198,8 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
-        self.LOGGER.info("Created csm user with name %s", self.user_name)
-        self.LOGGER.info(
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info(
             "Verifying csm manage role can list, create S3 account")
         self.CSM_USER.logout_cortx_cli()
         resp = self.S3_ACC.login_cortx_cli(
@@ -1211,9 +1215,9 @@ class TestCliCSMUser:
         assert_utils.assert_equals(resp[0], True, resp)
         self.S3_ACC.logout_cortx_cli()
         self.CSM_USER.login_cortx_cli()
-        self.LOGGER.info(
+        self.logger.info(
             "Verified csm manage role can list, create S3 account")
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1222,8 +1226,8 @@ class TestCliCSMUser:
         """
         Test that csmcli doesnot create csm user with "user create" with empty password
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info(
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info(
             "Creating csm user with name %s with empty password",
             self.user_name)
         resp = self.CSM_USER.create_csm_user_cli(
@@ -1235,8 +1239,8 @@ class TestCliCSMUser:
             resp[0], False, resp)
         assert_utils.assert_exact_string(
             resp[1], "password field can't be empty")
-        self.LOGGER.info("Created csm user with name %s", self.user_name)
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1246,8 +1250,8 @@ class TestCliCSMUser:
         Test that csm user with manage role cannot perform
         list, update, delete, create on iam_users using CLI
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Creating csm user with name %s", self.user_name)
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -1257,8 +1261,8 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
-        self.LOGGER.info("Created csm user with name %s", self.user_name)
-        self.LOGGER.info(
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info(
             "Verifying csm manage role cannot perform "
             "list, update, delete, create on iam_users")
         self.CSM_USER.logout_cortx_cli()
@@ -1267,7 +1271,7 @@ class TestCliCSMUser:
             password=self.csm_user_pwd)
         assert_utils.assert_equals(resp[0], True, resp)
 
-        self.LOGGER.info("Creating iam user with manage role")
+        self.logger.info("Creating iam user with manage role")
         resp = self.IAM_USER.create_iam_user(
             user_name=self.iam_user_name,
             password=self.iam_password,
@@ -1275,19 +1279,19 @@ class TestCliCSMUser:
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(resp[1], "invalid choice")
 
-        self.LOGGER.info("Listing iam user with manage role")
+        self.logger.info("Listing iam user with manage role")
         resp = self.IAM_USER.list_iam_user()
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(resp[1], "invalid choice")
 
-        self.LOGGER.info("Deleting iam user with manage role")
+        self.logger.info("Deleting iam user with manage role")
         resp = self.IAM_USER.delete_iam_user(user_name=self.iam_user_name)
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(resp[1], "invalid choice")
 
         self.IAM_USER.logout_cortx_cli()
         self.CSM_USER.login_cortx_cli()
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1297,8 +1301,8 @@ class TestCliCSMUser:
         Test that csm user with monitor role can
         only list commands using help (-h) to which the user has access to.
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Creating csm user with name %s", self.user_name)
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -1308,7 +1312,7 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
-        self.LOGGER.info(
+        self.logger.info(
             "Verifying help response with csm monitor role")
         self.CSM_USER.logout_cortx_cli()
         resp = self.CSM_USER.login_cortx_cli(
@@ -1317,16 +1321,16 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         resp = self.CSM_USER.help_option()
-        self.LOGGER.info(resp)
+        self.logger.info(resp)
         assert_utils.assert_equals(
             resp[0], True, resp)
         for msg in constants.CSM_USER_HELP:
             assert_utils.assert_exact_string(resp[1], msg)
         self.CSM_USER.logout_cortx_cli()
         self.CSM_USER.login_cortx_cli()
-        self.LOGGER.info(
+        self.logger.info(
             "Verified help response with csm monitor role")
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1336,9 +1340,8 @@ class TestCliCSMUser:
         Test that Root user should able to change other
         users password and roles specifying old_password through CSM-CLI
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        new_password = "Seagate@7426"
-        self.LOGGER.info(
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info(
             "Creating csm user %s with role manage", self.user_name)
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
@@ -1349,27 +1352,27 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
-        self.LOGGER.info(
+        self.logger.info(
             "Created csm user %s with role manage", self.user_name)
-        self.LOGGER.info("Updating user's password with root user")
+        self.logger.info("Updating user's password with root user")
         resp = self.CSM_USER.reset_root_user_password(
             user_name=self.user_name,
             current_password=self.csm_user_pwd,
-            new_password=new_password,
-            confirm_password=new_password)
+            new_password=self.new_pwd,
+            confirm_password=self.new_pwd)
         assert_utils.assert_equals(
             resp[0], True, resp)
-        self.LOGGER.info("Updated user's password with root user")
-        self.LOGGER.info("Verifying password is updated for csm user")
+        self.logger.info("Updated user's password with root user")
+        self.logger.info("Verifying password is updated for csm user")
         self.CSM_USER.logout_cortx_cli()
         resp = self.CSM_USER.login_cortx_cli(
-            username=self.user_name, password=new_password)
+            username=self.user_name, password=self.new_pwd)
         assert_utils.assert_equals(
             resp[0], True, resp)
         self.CSM_USER.logout_cortx_cli()
-        self.LOGGER.info("Verified password is updated for csm user")
+        self.logger.info("Verified password is updated for csm user")
         self.CSM_USER.login_cortx_cli()
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1379,8 +1382,8 @@ class TestCliCSMUser:
         Test that csm user with monitor role cannot perform
         list, update, delete, create operation on iam_users using CLI
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Creating csm user with name %s", self.user_name)
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -1390,8 +1393,8 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
-        self.LOGGER.info("Created csm user with name %s", self.user_name)
-        self.LOGGER.info(
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info(
             "Verifying csm manage role cannot perform "
             "list, update, delete, create on iam_users")
         self.CSM_USER.logout_cortx_cli()
@@ -1400,7 +1403,7 @@ class TestCliCSMUser:
             password=self.csm_user_pwd)
         assert_utils.assert_equals(resp[0], True, resp)
 
-        self.LOGGER.info("Creating iam user with manage role")
+        self.logger.info("Creating iam user with manage role")
         resp = self.IAM_USER.create_iam_user(
             user_name=self.iam_user_name,
             password=self.iam_password,
@@ -1408,19 +1411,19 @@ class TestCliCSMUser:
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(resp[1], "invalid choice")
 
-        self.LOGGER.info("Listing iam user with manage role")
+        self.logger.info("Listing iam user with manage role")
         resp = self.IAM_USER.list_iam_user()
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(resp[1], "invalid choice")
 
-        self.LOGGER.info("Deleting iam user with manage role")
+        self.logger.info("Deleting iam user with manage role")
         resp = self.IAM_USER.delete_iam_user(user_name=self.iam_user_name)
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(resp[1], "invalid choice")
 
         self.IAM_USER.logout_cortx_cli()
         self.CSM_USER.login_cortx_cli()
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1430,9 +1433,8 @@ class TestCliCSMUser:
         Test Non root user should able to change its
         password by specifying old_password and password through CSM-CLI
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Creating csm user with name %s", self.user_name)
-        new_password = "Seagate@7428"
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -1442,8 +1444,8 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
-        self.LOGGER.info("Created csm user with name %s", self.user_name)
-        self.LOGGER.info(
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info(
             "Verifying user should be able to change its password")
         self.CSM_USER.logout_cortx_cli()
         resp = self.CSM_USER.login_cortx_cli(
@@ -1454,21 +1456,21 @@ class TestCliCSMUser:
         resp = self.CSM_USER.reset_root_user_password(
             user_name=self.user_name,
             current_password=self.csm_user_pwd,
-            new_password=new_password,
-            confirm_password=new_password)
+            new_password=self.new_pwd,
+            confirm_password=self.new_pwd)
         assert_utils.assert_equals(
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "Password Updated")
-        self.LOGGER.info(
+        self.logger.info(
             "Verified user should be able to change its password")
-        self.LOGGER.info("Verifying user should be login using new password")
+        self.logger.info("Verifying user should be login using new password")
         self.CSM_USER.logout_cortx_cli()
         resp = self.CSM_USER.login_cortx_cli(
-            username=self.user_name, password=new_password)
+            username=self.user_name, password=self.new_pwd)
         assert_utils.assert_equals(
             resp[0], True, resp)
-        self.LOGGER.info("Verified user is able to login using new password")
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("Verified user is able to login using new password")
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1477,8 +1479,8 @@ class TestCliCSMUser:
         """
         Test that csm user with monitor role cannot update, delete, create csm_users using CLI
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Creating csm user with name %s", self.user_name)
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -1488,8 +1490,8 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
-        self.LOGGER.info("Created csm user with name %s", self.user_name)
-        self.LOGGER.info("Monitor user trying to create csm user")
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info("Monitor user trying to create csm user")
         self.CSM_USER.logout_cortx_cli()
         resp = self.CSM_USER.login_cortx_cli(
             username=self.user_name,
@@ -1504,20 +1506,20 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], False, resp)
         assert_utils.assert_exact_string(resp[1], "Invalid choice")
-        self.LOGGER.info(
+        self.logger.info(
             "Monitor user is failed to create csm user with error %s",
             resp[1])
-        self.LOGGER.info("Monitor user trying to delete csm user")
+        self.logger.info("Monitor user trying to delete csm user")
         resp = self.CSM_USER.delete_csm_user(user_name=self.user_name)
         assert_utils.assert_equals(
             resp[0], False, resp)
         assert_utils.assert_exact_string(resp[1], "Invalid choice")
-        self.LOGGER.info(
+        self.logger.info(
             "Monitor user is failed to delete csm user with error %s",
             resp[1])
         self.CSM_USER.logout_cortx_cli()
         self.CSM_USER.login_cortx_cli()
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1526,10 +1528,9 @@ class TestCliCSMUser:
     def test_1850(self):
         """
         Test that csm user with monitor role cannot update alert using CLI
-        :avocado: tags=csm_user
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Creating csm user with name %s", self.user_name)
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -1539,9 +1540,9 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
-        self.LOGGER.info("Created csm user with name %s", self.user_name)
+        self.logger.info("Created csm user with name %s", self.user_name)
         start_time = time.time()
-        self.LOGGER.info("Generating disk fault alert")
+        self.logger.info("Generating disk fault alert")
         resp = self.GENERATE_ALERT_OBJ.generate_alert(
             AlertType.DISK_FAULT_ALERT,
             input_parameters={
@@ -1549,8 +1550,8 @@ class TestCliCSMUser:
                 "fault": True,
                 "fault_resolved": False})
         assert_utils.assert_equals(resp[0], True, resp)
-        self.LOGGER.info("Generated disk fault alert")
-        self.LOGGER.info("Verifying alerts are generated")
+        self.logger.info("Generated disk fault alert")
+        self.logger.info("Verifying alerts are generated")
         self.CSM_USER.logout_cortx_cli()
         resp = self.CSM_ALERT.login_cortx_cli(
             username=self.user_name,
@@ -1559,18 +1560,18 @@ class TestCliCSMUser:
         resp = self.CSM_ALERT.wait_for_alert(start_time=start_time)
         assert_utils.assert_equals(resp[0], True, resp)
         alert_id = resp[1]["alerts"][0]["alert_uuid"]
-        self.LOGGER.info("Verified alerts are generated")
-        self.LOGGER.info(
+        self.logger.info("Verified alerts are generated")
+        self.logger.info(
             "Verifying csm user with monitor role cannot update alert")
         resp = self.CSM_ALERT.add_comment_alert(alert_id, "demo_comment")
-        self.LOGGER.info(resp)
+        self.logger.info(resp)
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(resp[1], "Invalid choice")
         self.CSM_ALERT.logout_cortx_cli()
         self.CSM_USER.login_cortx_cli()
-        self.LOGGER.info(
+        self.logger.info(
             "Verified that csm user with monitor role cannot update alert")
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1578,30 +1579,28 @@ class TestCliCSMUser:
     def test_7424(self):
         """
         Test that root user should able to modify self password through CSM-CLI
-        :avocado: tags=csm_user
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Updating root password")
-        self.new_pwd = "Seagate@1"
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Updating root password")
         resp = self.CSM_USER.reset_root_user_password(
-            user_name=CMN_CFG["csm"]["admin_user"],
-            current_password=CMN_CFG["csm"]["admin_pass"],
+            user_name=CMN_CFG["csm"]["csm_admin_user"]["username"],
+            current_password=CMN_CFG["csm"]["csm_admin_user"]["password"],
             new_password=self.new_pwd,
             confirm_password=self.new_pwd)
         assert_utils.assert_equals(resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "Password Updated.")
         self.CSM_USER.logout_cortx_cli()
-        self.LOGGER.info("Updated root password")
-        self.LOGGER.info(
+        self.logger.info("Updated root password")
+        self.logger.info(
             "Verifying root user is able to login with new password")
         resp = self.CSM_USER.login_cortx_cli(
-            username=CMN_CFG["csm"]["admin_user"],
+            username=CMN_CFG["csm"]["csm_admin_user"]["username"],
             password=self.new_pwd)
         assert_utils.assert_equals(resp[0], True, resp)
-        self.LOGGER.info(
+        self.logger.info(
             "Verified root user is able to login with new password")
         self.update_password = True
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1610,13 +1609,13 @@ class TestCliCSMUser:
         """
         Test that Non root user cannot change roles through CSM-CLI
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
         user_name_list = []
         user_name2 = "auto_csm_user{0}".format(
             random.randint(0, 10))
         user_name_list.append(self.user_name)
         user_name_list.append(user_name2)
-        self.LOGGER.info("Creating csm users with manage and monitor role")
+        self.logger.info("Creating csm users with manage and monitor role")
         for each in zip(user_name_list, ["manage", "monitor"]):
             resp = self.CSM_USER.create_csm_user_cli(
                 csm_user_name=each[0],
@@ -1626,8 +1625,8 @@ class TestCliCSMUser:
                 role=each[1])
             assert_utils.assert_equals(resp[0], True, resp)
         self.CSM_USER.logout_cortx_cli()
-        self.LOGGER.info("Created csm users with manage and monitor role")
-        self.LOGGER.info(
+        self.logger.info("Created csm users with manage and monitor role")
+        self.logger.info(
             "Verifying manage user can not change roles for other user")
         resp = self.CSM_USER.login_cortx_cli(
             username=self.user_name, password=self.csm_user_pwd)
@@ -1636,14 +1635,14 @@ class TestCliCSMUser:
             user_name=user_name2,
             role="monitor",
             current_password=self.csm_user_pwd)
-        self.LOGGER.debug(resp[1])
+        self.logger.debug(resp[1])
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(
-            resp[1], "Non super user cannot change other user")
+            resp[1], "Non admin user cannot change other user")
         self.CSM_USER.logout_cortx_cli()
-        self.LOGGER.info(
+        self.logger.info(
             "Verified manage user can not change roles for other user")
-        self.LOGGER.info(
+        self.logger.info(
             "Verifying monitor user can not change roles for other user")
         resp = self.CSM_USER.login_cortx_cli(
             username=user_name2, password=self.csm_user_pwd)
@@ -1652,13 +1651,13 @@ class TestCliCSMUser:
             user_name=self.user_name,
             role="manage",
             current_password=self.csm_user_pwd)
-        self.LOGGER.debug(resp[1])
+        self.logger.debug(resp[1])
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(
-            resp[1], "Non super user cannot change other user")
-        self.LOGGER.info(
+            resp[1], "Non admin user cannot change other user")
+        self.logger.info(
             "Verified monitor user can not change roles for other user")
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1668,8 +1667,8 @@ class TestCliCSMUser:
         Test that csm user with manage role cannot
         perform list, update, delete, create on buckets using CLI
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Creating csm user with name %s", self.user_name)
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -1679,33 +1678,35 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
-        self.LOGGER.info("Created csm user with name %s", self.user_name)
-        self.LOGGER.info("Performing bucket operations with csm manage role")
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info("Performing bucket operations with csm manage role")
         self.CSM_USER.logout_cortx_cli()
-        resp = self.BKT_OPS.login_cortx_cli(
+        resp = self.bkt_ops.login_cortx_cli(
             username=self.user_name,
             password=self.csm_user_pwd)
         assert_utils.assert_equals(
             resp[0], True, resp)
-        self.LOGGER.info("Creating bucket with csm manage role")
-        resp = self.BKT_OPS.create_bucket_cortx_cli(bucket_name=self.bucket_name)
+        self.logger.info("Creating bucket with csm manage role")
+        resp = self.bkt_ops.create_bucket_cortx_cli(
+            bucket_name=self.bucket_name)
         assert_utils.assert_equals(
             resp[0], False, resp)
         assert_utils.assert_exact_string(resp[1], "invalid choice")
-        self.LOGGER.info("Listing bucket with csm manage role")
-        resp = self.BKT_OPS.list_buckets_cortx_cli()
+        self.logger.info("Listing bucket with csm manage role")
+        resp = self.bkt_ops.list_buckets_cortx_cli()
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(resp[1], "invalid choice")
-        self.LOGGER.info("Deleting bucket with csm manage role")
-        resp = self.BKT_OPS.delete_bucket_cortx_cli(bucket_name=self.bucket_name)
+        self.logger.info("Deleting bucket with csm manage role")
+        resp = self.bkt_ops.delete_bucket_cortx_cli(
+            bucket_name=self.bucket_name)
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(resp[1], "invalid choice")
-        self.BKT_OPS.logout_cortx_cli()
+        self.bkt_ops.logout_cortx_cli()
         self.CSM_USER.login_cortx_cli()
-        self.LOGGER.info(
+        self.logger.info(
             "Performing bucket operations with csm manage role is failed with error %s",
             resp[1])
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1714,8 +1715,8 @@ class TestCliCSMUser:
         """
         Test that csm user with monitor role can list s3_accounts
         """
-        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.LOGGER.info("Creating csm user with name %s", self.user_name)
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name=self.user_name,
             email_id=self.email_id,
@@ -1725,8 +1726,8 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
-        self.LOGGER.info("Created csm user with name %s", self.user_name)
-        self.LOGGER.info("Listing csm user with monitor role")
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info("Listing csm user with monitor role")
         self.CSM_USER.logout_cortx_cli()
         resp = self.S3_ACC.login_cortx_cli(
             username=self.user_name,
@@ -1737,5 +1738,230 @@ class TestCliCSMUser:
         assert_utils.assert_equals(resp[0], True, resp)
         self.S3_ACC.logout_cortx_cli()
         self.CSM_USER.login_cortx_cli()
-        self.LOGGER.info("Listed csm user with monitor role")
-        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.logger.info("Listed csm user with monitor role")
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-19811")
+    def test_reset_csm_user_pwd_by_admin(self):
+        """
+        verify admin user can change password of csm user(monitor/manage)
+        """
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        user_name_list = []
+        user_name2 = "auto_csm_user{0}".format(
+            random.randint(0, 10))
+        user_name_list.append(self.user_name)
+        user_name_list.append(user_name2)
+        self.logger.info("Creating csm users with manage and monitor role")
+        for each in zip(user_name_list, ["manage", "monitor"]):
+            resp = self.CSM_USER.create_csm_user_cli(
+                csm_user_name=each[0],
+                email_id=self.email_id,
+                password=self.csm_user_pwd,
+                confirm_password=self.csm_user_pwd,
+                role=each[1])
+            assert_utils.assert_equals(resp[0], True, resp[1])
+            assert_utils.assert_exact_string(resp[1], "User created")
+        self.logger.info("Created csm users with manage and monitor role")
+        self.logger.info("Resetting password of csm users")
+        for each_user in user_name_list:
+            resp = self.CSM_USER.reset_root_user_password(
+                user_name=each_user,
+                current_password=self.csm_user_pwd,
+                new_password=self.new_pwd,
+                confirm_password=self.new_pwd)
+            assert_utils.assert_equals(resp[0], True, resp[1])
+        self.logger.info("Password has been changed for csm users")
+        self.logger.info("Login to CSM user using new password")
+        for each_user in user_name_list:
+            self.CSM_USER.logout_cortx_cli()
+            err_msg = "Login is failed for CSM user %s", each_user
+            resp = self.CSM_USER.login_cortx_cli(
+                username=each_user, password=self.new_pwd)
+            assert_utils.assert_equals(resp[0], True, err_msg)
+        self.CSM_USER.login_cortx_cli()
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-19869")
+    def test_reset_admin_pwd(self):
+        """
+        Admin user is able to modify self password
+        """
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info(
+            "Performing list CSM user before updating admin password")
+        resp = self.CSM_USER.list_csm_users(op_format="json")
+        assert_utils.assert_equals(resp[0], True, resp)
+        if resp[1]["users"]:
+            user_list_1 = [each["username"] for each in resp[1]["users"]]
+        self.logger.info("Updating root password")
+        resp = self.CSM_USER.reset_root_user_password(
+            user_name=CMN_CFG["csm"]["csm_admin_user"]["username"],
+            current_password=CMN_CFG["csm"]["csm_admin_user"]["password"],
+            new_password=self.new_pwd,
+            confirm_password=self.new_pwd)
+        assert_utils.assert_equals(resp[0], True, resp)
+        assert_utils.assert_exact_string(resp[1], "Password Updated.")
+        self.CSM_USER.logout_cortx_cli()
+        self.logger.info("Updated root password")
+        self.logger.info(
+            "Verifying root user is able to login with new password")
+        resp = self.CSM_USER.login_cortx_cli(
+            username=CMN_CFG["csm"]["csm_admin_user"]["username"],
+            password=self.new_pwd)
+        assert_utils.assert_equals(resp[0], True, resp)
+        self.update_password = True
+        self.logger.info(
+            "Verified root user is able to login with new password")
+        self.logger.info(
+            "Performing list CSM user after updating admin password")
+        resp = self.CSM_USER.list_csm_users(op_format="json")
+        assert_utils.assert_equals(resp[0], True, resp)
+        if resp[1]["users"]:
+            user_list_2 = [each["username"] for each in resp[1]["users"]]
+        self.logger.info("Verifying no data loss due to password update")
+        assert_utils.assert_list_equal(user_list_1, user_list_2)
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-19871")
+    def test_reset_self_pwd_by_csm_user(self):
+        """
+        Verify CSM user can change password of self(manage or monitor) user
+        """
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        user_name_list = []
+        user_name2 = "auto_csm_user{0}".format(
+            random.randint(0, 10))
+        user_name_list.append(self.user_name)
+        user_name_list.append(user_name2)
+        self.logger.info("Creating csm users with manage and monitor role")
+        for each in zip(user_name_list, ["manage", "monitor"]):
+            resp = self.CSM_USER.create_csm_user_cli(
+                csm_user_name=each[0],
+                email_id=self.email_id,
+                password=self.csm_user_pwd,
+                confirm_password=self.csm_user_pwd,
+                role=each[1])
+            assert_utils.assert_equals(resp[0], True, resp[1])
+            assert_utils.assert_exact_string(resp[1], "User created")
+        self.logger.info("Created csm users with manage and monitor role")
+        self.logger.info("Resetting password of csm users")
+        self.CSM_USER.logout_cortx_cli()
+        resp = self.CSM_USER.login_cortx_cli(
+            username=self.user_name, password=self.csm_user_pwd)
+        assert_utils.assert_equals(resp[0], True, resp[1])
+        resp = self.CSM_USER.reset_root_user_password(
+            user_name=self.user_name,
+            current_password=self.csm_user_pwd,
+            new_password=self.new_pwd,
+            confirm_password=self.new_pwd)
+        assert_utils.assert_equals(resp[0], True, resp[1])
+        self.CSM_USER.logout_cortx_cli()
+        self.logger.info("Password has been changed for csm users")
+        self.logger.info("Login to CSM user using new password")
+        resp = self.CSM_USER.login_cortx_cli(
+            username=self.user_name, password=self.new_pwd)
+        assert_utils.assert_equals(resp[0], True, resp[1])
+        self.CSM_USER.logout_cortx_cli()
+        self.logger.info("Login successful using new password")
+        self.CSM_USER.login_cortx_cli()
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-19879")
+    def test_reset_admin_pwd_by_csm_user(self):
+        """
+        Verify CSM user can not change password of admin user
+        """
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm users with manage role")
+        resp = self.CSM_USER.create_csm_user_cli(
+            csm_user_name=self.user_name,
+            email_id=self.email_id,
+            password=self.csm_user_pwd,
+            confirm_password=self.csm_user_pwd,
+            role="manage")
+        assert_utils.assert_equals(resp[0], True, resp[1])
+        assert_utils.assert_exact_string(resp[1], "User created")
+        self.logger.info("Created csm users with manage and monitor role")
+        self.logger.info("Resetting password of admin by csm user")
+        self.CSM_USER.logout_cortx_cli()
+        resp = self.CSM_USER.login_cortx_cli(
+            username=self.user_name, password=self.csm_user_pwd)
+        assert_utils.assert_equals(resp[0], True, resp[1])
+        resp = self.CSM_USER.reset_root_user_password(
+            user_name=CMN_CFG["csm"]["csm_admin_user"]["username"],
+            current_password=CMN_CFG["csm"]["csm_admin_user"]["password"],
+            new_password=self.new_pwd,
+            confirm_password=self.new_pwd)
+        assert_utils.assert_equals(resp[0], False, resp[1])
+        assert_utils.assert_exact_string(
+            resp[1], "Non admin user cannot change other user")
+        self.CSM_USER.logout_cortx_cli()
+        self.CSM_USER.login_cortx_cli()
+        self.logger.info(
+            "Resetting password of admin by csm user is failed with error")
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-16211")
+    def test_7425(self):
+        """
+        Test that no user should not able to change roles for root user through CSM-CLI
+        """
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        user_name_list = []
+        user_name2 = "auto_csm_user{0}".format(
+            random.randint(0, 10))
+        user_name_list.append(self.user_name)
+        user_name_list.append(user_name2)
+        self.logger.info("Creating csm users with manage and monitor role")
+        for each in zip(user_name_list, ["manage", "monitor"]):
+            resp = self.CSM_USER.create_csm_user_cli(
+                csm_user_name=each[0],
+                email_id=self.email_id,
+                password=self.csm_user_pwd,
+                confirm_password=self.csm_user_pwd,
+                role=each[1])
+            assert_utils.assert_equals(resp[0], True, resp[1])
+            assert_utils.assert_exact_string(resp[1], "User created")
+        self.logger.info("Created csm users with manage and monitor role")
+        self.logger.info(
+            "Verifying admin user should not able to change roles for root user")
+        resp = self.CSM_USER.update_role(
+            user_name=CMN_CFG["csm"]["csm_admin_user"]["username"],
+            role="manage",
+            current_password=CMN_CFG["csm"]["csm_admin_user"]["password"])
+        self.logger.debug(resp)
+        assert_utils.assert_false(resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], "Cannot change roles for admin user")
+        self.logger.info(
+            "Verified admin user should not able to change roles for root user")
+        self.logger.info(
+            "Verifying csm user is not able to change roles for root user")
+        self.CSM_USER.logout_cortx_cli()
+        for each_user in zip(user_name_list, ["monitor", "manage"]):
+            resp = self.CSM_USER.login_cortx_cli(
+                username=each_user[0], password=self.csm_user_pwd)
+            assert_utils.assert_equals(resp[0], True, resp[1])
+            resp = self.CSM_USER.update_role(
+                user_name=CMN_CFG["csm"]["csm_admin_user"]["username"],
+                role=each_user[1],
+                current_password=CMN_CFG["csm"]["csm_admin_user"]["password"])
+            self.logger.debug(resp)
+            assert_utils.assert_false(resp[0], resp[1])
+            assert_utils.assert_exact_string(resp[1], "Non admin user cannot change other user")
+            self.CSM_USER.logout_cortx_cli()
+        self.CSM_USER.login_cortx_cli()
+        self.logger.info(
+            "Verified csm user is not able to change roles for root user")
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+

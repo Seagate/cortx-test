@@ -40,8 +40,10 @@ DISK_ALERT_KEY = "diskUsedPercentage"
 LAST_SEL_INDEX = "cd /var/cortx/sspl/data/server && cat last_sel_index"
 CHECK_SSPL_LOG_FILE = "tail -f /var/log/cortx/sspl/sspl.log > '{}' 2>&1 &"
 RABBIT_MQ_FILE = "/root/rabbitmq_reader.py"
+MSG_BUS_READER_PATH = "scripts/server_scripts/read_message_bus.py"
 MANUAL_PATH = "/opt/seagate/sspl/low-level/tests/manual/"
 RABBIT_MQ_LOCAL_PATH = "scripts/server_scripts/rabbitmq_reader.py"
+MSG_BUS_READER_LOCAL_PATH = "scripts/server_scripts/read_message_bus.py"
 ENCRYPTOR_FILE_PATH = "scripts/server_scripts/encryptor.py"
 STORAGE_ENCLOSURE_PATH = "/opt/seagate/cortx/provisioner/pillar/components" \
                         "/storage_enclosure.sls"
@@ -78,9 +80,19 @@ CLUSTER_STATUS_MSG = "cluster is not currently running on this node"
 NODE_RANGE_START = 1
 NODE_RANGE_END = 3
 NODE_PREFIX = "eosnode-"
+CONF_STORE_ENCL_KEY = "storage_enclosure>enc_614f595926904dd0ab0f68395bfa7f11>controller"
+CONF_PRIMARY_IP = CONF_STORE_ENCL_KEY + ">primary>ip"
+CONF_PRIMARY_PORT = CONF_STORE_ENCL_KEY + ">primary>port"
+CONF_SECONDARY_IP = CONF_STORE_ENCL_KEY + ">secondary>ip"
+CONF_SECONDARY_PORT = CONF_STORE_ENCL_KEY + ">secondary>port"
+CONF_ENCL_USER = CONF_STORE_ENCL_KEY + ">secret"
+CONF_ENCL_SECRET = CONF_STORE_ENCL_KEY + ">user"
+CONF_SSPL_LOG_LEVEL = "SYSTEM_INFORMATION>log_level"
+SSPL_GLOBAL_CONF_URL = 'yaml:///etc/sspl_global_config_copy.yaml'
 
 """ S3 constants """
 const.S3_CONFIG = "/opt/seagate/cortx/s3/conf/s3config.yaml"
+const.LOCAL_S3_CONFIG = "/tmp/s3config.yaml"
 const.CA_CERT_PATH = "/opt/seagate/cortx/provisioner/srv/components/s3clients/files/ca.crt"
 const.REMOTE_DEFAULT_DIR = "/var/motr"
 const.CFG_FILES = ["/etc/haproxy/haproxy.cfg",
@@ -94,6 +106,14 @@ const.CRASH_COMMANDS = ["ls -l /var/crash", "ls -lR /var/motr | grep core"],
 const.AUTHSERVER_LOG_PATH = "/var/log/seagate/auth/server/app.log"
 const.S3CMD = "s3cmd"
 const.S3FS = "s3fs-fuse"
+const.SLAPD = "slapd"
+const.HAPROXY = "haproxy"
+const.S3AUTHSERVER = "s3authserver"
+const.HAPROXY_LOG_PATH = "/var/log/haproxy.log"
+const.S3_LOG_PATH = "/var/log/seagate/s3"
+const.SUPPORT_BUNDLE_SUCCESS_MSG = "S3 support bundle generated successfully"
+const.CLUSTER_NOT_RUNNING_MSG = "Cluster is not running"
+const.LOG_MSG_PATH = "/var/log/messages"
 
 
 class Rest:
@@ -205,9 +225,10 @@ S3ACCOUNT_HELP_CMDS = [
         "s3accounts",
         "s3bucketpolicy"]
 S3ACCOUNT_HELP = ["positional arguments:",
-                  "{show,create}",
-                  "show         Displays S3 Accounts On the cli",
-                  "create       Create a new S3 Account."]
+                  "{show,create,reset_password}",
+                  "show                Displays S3 Accounts On the cli",
+                  "create              Create a new S3 Account",
+                  "reset_password      Reset password for S3 Account"]
 S3ACC_CREATE_HELP = ["positional arguments:",
                      "account_name   Name to be given to S3 account",
                      "account_email  Email to be given to S3 account"]
@@ -247,3 +268,30 @@ PARAMS = {"CORTX_BUILD": "{0}", "HOST": "{1}", "HOST_PASS": "{2}", "DEBUG": "Tru
 #Locking server
 SHARED_LOCK = 'shared'
 EXCLUSIVE_LOCK = 'exclusive'
+
+class SwAlerts:
+    SVCS_3P = [
+        "hare-consul-agent.service",
+        "elasticsearch.service",
+        "statsd.service",
+        "rsyslog.service",
+        "haproxy.service",
+        "slapd.service",
+        "lnet.service",
+        "salt-master.service",
+        "salt-minion.service",
+        "glusterd.service",
+        "multipathd.service",
+        "scsi-network-relay.service",
+        "Kafka"]
+
+    class AlertType:
+        FAULT = "fault"
+        RESOLVED = "fault_resolved"
+
+    class Severity:
+        CRITICAL = "critical"
+        INFO = "informational"
+
+    class ResourceType:
+        SW_SVC = "node:sw:os:service"

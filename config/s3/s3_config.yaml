@@ -35,3 +35,19 @@ minio_path: "/root/.mc/config.json"
 minio_crt_path_list:
     - "/root/.mc/certs/CAs/ca.crt"
     - "/root/.mc/certs/s3.seagate.com.crt"
+stat_files:
+    - "disk_usage.txt"
+    - "cpuinfo.txt"
+    - "ram_usage.txt"
+    - "s3server_pids.txt"
+    - "haproxy_pids.txt"
+    - "m0d_pids.txt"
+s3_services:
+    authserver: "s3authserver"
+    haproxy: "haproxy"
+    network: "network"
+CliConfig:
+  iam_user:
+    password: "KAGpbh5Tit5kX0lVGuxSeaOwsUTFaoIsaBFf64q8OqI="
+  s3_account:
+    password: "bbTlh4ugvzXd2/4ODI12T8p2rTCYj9t5rSkUVUKiotY="

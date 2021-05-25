@@ -31,38 +31,16 @@ import common_pdf
 
 def build_component_table(data: List[list]):
     """Build component table."""
-    col_width = 10 * [0.71 * inch]
-    col_width[0] = 1.25 * inch
+    col_width = 5 * [1.3 * inch]
+    col_width[0] = 2.4 * inch
     component_table = Table(data, col_width, len(data) * [0.25 * inch],
                             style=common_pdf.common_table_style)
-    component_table.setStyle(TableStyle([
-        ('SPAN', (0, 1), (0, 2)),  # Merge Cells for Component
-        ('SPAN', (1, 1), (1, 2)),  # Merge Cells for Total
-        ('SPAN', (2, 1), (3, 1)),  # Merge Cells for Build
-        ('SPAN', (4, 1), (5, 1)),  # Merge Cells for Build-1
-        ('SPAN', (6, 1), (7, 1)),  # Merge Cells for Build-2
-        ('SPAN', (8, 1), (9, 1)),  # Merge Cells for Build-3
-        ('BACKGROUND', (2, 2), (3, -1), colors.HexColor(0xededed)),  # Grey bg 3rd & 4th column
-        ('BACKGROUND', (0, 1), (1, 2), colors.HexColor(0xa5a5a5)),  # Dark Grey bg for 2nd row
-        ('BACKGROUND', (0, 3), (0, -1), colors.HexColor(0xededed)),  # Grey bg 1st column
-        ('BACKGROUND', (1, 3), (1, -1), colors.HexColor(0xd9e2f3)),  # Blue bg 2nd row
-
-        ('TEXTCOLOR', (1, 3), (1, -1), colors.HexColor(0x0070c0)),  # Blue for 2nd column
-        ('TEXTCOLOR', (2, 2), (2, -1), colors.HexColor(0x009933)),  # Green for 3rd column
-        ('TEXTCOLOR', (3, 2), (3, -1), colors.HexColor(0xff0000)),  # Red for 4th column
-        ('TEXTCOLOR', (4, 2), (4, -1), colors.HexColor(0x009933)),  # Green for 5th column
-        ('TEXTCOLOR', (5, 2), (5, -1), colors.HexColor(0xff0000)),  # Red for 6th column
-        ('TEXTCOLOR', (6, 2), (6, -1), colors.HexColor(0x009933)),  # Green for 7th column
-        ('TEXTCOLOR', (7, 2), (7, -1), colors.HexColor(0xff0000)),  # Red for 8th column
-        ('TEXTCOLOR', (8, 2), (8, -1), colors.HexColor(0x009933)),  # Green for 9th column
-        ('TEXTCOLOR', (9, 2), (9, -1), colors.HexColor(0xff0000)),  # Red for 10th column
-    ]))
     return component_table
 
 
 def build_single_bucket_perf_stats(data: List[list]):
     """Build single bucket performance table."""
-    col_width = 9 * [0.71 * inch]
+    col_width = 9 * [0.57 * inch]
     col_width[0] = 2 * inch
     single_bucket_perf_stats = Table(data, col_width, 10 * [0.24 * inch],
                                      style=common_pdf.common_table_style)
@@ -71,7 +49,7 @@ def build_single_bucket_perf_stats(data: List[list]):
 
 def build_multi_bucket_perf_stats(data: List[list]):
     """Build multi bucket performance table."""
-    col_width = 10 * [0.71 * inch]
+    col_width = 10 * [0.57 * inch]
     col_width[0] = 1 * inch
     col_width[1] = 1.25 * inch
 

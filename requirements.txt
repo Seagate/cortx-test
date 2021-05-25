@@ -27,8 +27,9 @@ MarkupSafe==1.1.1
 matplotlib==3.1.1
 mdstat==1.0.4
 msgpack==0.6.2
+munch==2.5.0
 mypy==0.782
-pandas==0.25.1
+pandas==1.2.1
 paramiko==2.6.0
 pika==1.1.0
 pycryptodome==3.10.1
@@ -49,6 +50,7 @@ python-jenkins
 pyyaml==5.1.2
 pyzmq==18.0.2
 requests==2.22.0
+redexpect
 s3transfer==0.2.1
 schedule
 selenium==3.141.0

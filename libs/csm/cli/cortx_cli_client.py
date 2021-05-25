@@ -19,9 +19,14 @@
 #
 """ This is a core library which will execute commands on interactive cortxcli"""
 
+import platform
 import logging
-import time
-from commons.helpers.host import Host
+
+try:
+    if platform.system() == "Linux":
+        import redexpect
+except ModuleNotFoundError as error:
+    logging.error(error)
 
 
 class CortxCliClient:
@@ -50,6 +55,7 @@ class CortxCliClient:
         self.password = password
         self.session_obj = kwargs.get("session_obj", None)
         self.port = kwargs.get("port", 22)
+        self.expect_timeout = kwargs.get("expect_timeout", 300)
         self.host_obj = None
 
     def open_connection(self):
@@ -58,43 +64,39 @@ class CortxCliClient:
         :return: None
         """
         if not self.session_obj:
-            self.host_obj = Host(
+            self.session_obj = redexpect.RedExpect(
+                expect_timeout=self.expect_timeout)
+            self.session_obj.login(
                 hostname=self.host,
                 username=self.username,
-                password=self.password)
-            self.host_obj.connect(True, port=self.port)
+                password=self.password,
+                allow_agent=True)
             self.log.debug("Opened an ssh connection with host: %s", self.host)
-            self.session_obj = self.host_obj.shell_obj
-            self.log.debug("Invoked a shell session: %s", self.session_obj)
 
-    def execute_cli_commands(self, cmd: str, time_out: int = 500, sleep_time: int = 6) -> str:
+    def execute_cli_commands(
+            self,
+            cmd: str,
+            patterns: list,
+            time_out: int) -> tuple:
         """
         This function executes command on interactive shell on csm server and returns output
         :param str cmd: command to execute on shell
-        :param int time_out: max time to wait for command execution output
-        :param int sleep_time: wait time for receiving data
-        :return: output of executed command
+        :param list patterns: list of patterns to expect in the command output
+        :param int time_out: time to wait for command execution output
+        :return: index of matched pattern and output of executed command
         """
-        output = ""
         cmd = "".join([cmd, "\n"])
         self.log.info("Sending command: %s", cmd)
         self.session_obj.send(cmd)
-        poll = time.time() + time_out  # max timeout
-        while poll > time.time():
-            time.sleep(sleep_time)
-            if self.session_obj.recv_ready():
-                output = output + \
-                    self.session_obj.recv(9999).decode("utf-8")
-            else:
-                break
+        index = self.session_obj.expect(re_strings=patterns, timeout=time_out)
+        output = self.session_obj.current_output
 
-        return output
+        return index, output
 
     def close_connection(self):
         """
         This function will close the ssh connection created in init
         :return: None
         """
-        self.session_obj.close()
-        self.host_obj.disconnect()
+        self.session_obj.exit()
         self.log.debug("Closed ssh connection with host %s", self.host)
