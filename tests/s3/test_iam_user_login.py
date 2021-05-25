@@ -41,7 +41,7 @@ class TestUserLoginProfileTests():
         cls.cli_obj_class = cortxcli_test_lib.CortxCliTestLib()
         cls.user_name_prefix = "iamuser"
         cls.acc_name_prefix = "iamaccount"
-        cls.default_acc = "iamaccount{}".format(int(time.time()))
+        cls.default_acc = "iamaccount{}".format(time.perf_counter_ns())
         cls.default_acc_mail = "{}@seagate.com".format(cls.default_acc)
         cls.default_acc_pass = S3_CFG["CliConfig"]["s3_account"]["password"]
         create_account = cls.cli_obj_class.create_account_cortxcli(
@@ -59,19 +59,13 @@ class TestUserLoginProfileTests():
     def setup_method(self):
         """Setup method."""
         self.log.info("STARTED: Setup operations")
-        self.user_name = "{}{}".format(self.user_name_prefix, int(time.time()))
-        self.account_name = "iamaccount{}".format(int(time.time()))
+        self.user_name = "{}{}".format(self.user_name_prefix, time.perf_counter_ns())
+        self.account_name = "iamaccount{}".format(time.perf_counter_ns())
         self.email_id = "@seagate.com"
         self.s3acc_passwd = S3_CFG["CliConfig"]["s3_account"]["password"]
         self.test_cfg = S3_USER_ACC_MGMT_CONFIG["test_configs"]
         self.cli_obj = cortxcli_test_lib.CortxCliTestLib()
         self.log.info("ENDED: Setup operations")
-
-    def teardown_method(self):
-        """Teardown method."""
-        self.log.info("STARTED: Teardown operations")
-        self.cli_obj.logout_cortx_cli()
-        self.log.info("ENDED: Teardown operations")
 
     @classmethod
     def teardown_class(cls):
@@ -775,16 +769,18 @@ class TestUserLoginProfileTests():
         self.log.info("STARTED: Verify password change for IAM user")
         email_id = "{0}{1}".format(
             self.account_name, self.email_id)
-        self.create_account_and_user(
-            self.account_name,
-            email_id,
-            self.user_name,
-            self.test_cfg["test_9832"]["password"])
+        resp = self.cli_obj.create_account_cortxcli(self.account_name,
+                                                    email_id,
+                                                    self.s3acc_passwd)
+        assert_true(resp[0], resp[1])
         login = self.cli_obj.login_cortx_cli(
             username=self.account_name,
             password=self.s3acc_passwd)
         assert_true(login[0], login[1])
-        resp = self.cli_obj.reset_iamuser_password(
+        resp = self.cli_obj.create_user_cortxcli(self.user_name,
+                                                 self.test_cfg["test_9832"]["password"])
+        assert_true(resp[0], resp[1])
+        resp = self.cli_obj.reset_iamuser_password_cortxcli(
             self.user_name, self.test_cfg["test_9876"]["new_password"])
         assert_true(resp[0], resp[1])
         self.cli_obj.logout_cortx_cli()
@@ -939,18 +935,20 @@ class TestUserLoginProfileTests():
                       "characters ~,$,?,&,\\n,\\t,<,>")
         email_id = "{0}{1}".format(
             self.account_name, self.email_id)
-        self.create_account_and_user(
-            self.account_name,
-            email_id,
-            self.user_name,
-            self.test_cfg["test_9832"]["password"])
+        resp = self.cli_obj.create_account_cortxcli(self.account_name,
+                                                    email_id,
+                                                    self.s3acc_passwd)
+        assert_true(resp[0], resp[1])
         login = self.cli_obj.login_cortx_cli(
             username=self.account_name,
             password=self.s3acc_passwd)
         assert_true(login[0], login[1])
+        resp = self.cli_obj.create_user_cortxcli(self.user_name,
+                                                 self.test_cfg["test_9832"]["password"])
+        assert_true(resp[0], resp[1])
         for new_password in self.test_cfg["test_9882"]["list_special_char_pwd"]:
             self.log.debug(new_password)
-            resp = self.cli_obj.reset_iamuser_password(
+            resp = self.cli_obj.reset_iamuser_password_cortxcli(
                 self.user_name, new_password)
             assert_true(resp[0], resp[1])
         self.cli_obj.logout_cortx_cli()

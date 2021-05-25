@@ -472,7 +472,7 @@ test_8558:
   obj_name: "testobj8558"
   start_range: 2025
   stop_range: 2026
-  error_message: "BadRequest"
+  error_message: "An error occurred (MetadataTooLarge) when calling the PutObject operation: Your metadata headers exceed the maximum allowed metadata size"
 test_8913:
   bucket_name: "obj-metadata8913"
   obj_name: "testobj8913_"
