@@ -38,7 +38,7 @@ class CortxCliS3BktPolicyOperations(CortxCli):
     This class has all s3 bucket policy operations
     """
     node1_helper_obj = Node(
-        hostname=CMN_CFG["nodes"][0]["host"],
+        hostname=CMN_CFG["csm"]["mgmt_vip"],
         username=CMN_CFG["nodes"][0]["username"],
         password=CMN_CFG["nodes"][0]["password"])
 
