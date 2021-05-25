@@ -87,16 +87,17 @@ class TestAccountUserManagement:
                 time.perf_counter_ns())).replace('.', '_')
         self.bucket_name = "testbucket{}".format(str(time.perf_counter_ns()))
         self.obj_name = "testobj{}".format(str(time.perf_counter_ns()))
-
         self.cortx_obj = CortxCliTestLib()
-        self.log.info(
-            "Delete created user with prefix: %s", self.user_name)
-        usr_list = IAM_OBJ.list_users()[1]
-        self.log.debug("Listing users: %s", usr_list)
-        all_usrs = [usr["UserName"]
-                    for usr in usr_list if self.user_name in usr["UserName"]]
-        if all_usrs:
-            IAM_OBJ.delete_users_with_access_key(all_usrs)
+        self.users_list = list()
+        self.accounts_list = list()
+        # self.log.info(
+        #     "Delete created user with prefix: %s", self.user_name)
+        # usr_list = IAM_OBJ.list_users()[1]
+        # self.log.debug("Listing users: %s", usr_list)
+        # all_usrs = [usr["UserName"]
+        #             for usr in usr_list if self.user_name in usr["UserName"]]
+        # if all_usrs:
+        #     IAM_OBJ.delete_users_with_access_key(all_usrs)
 
     def teardown_method(self):
         """
@@ -110,9 +111,10 @@ class TestAccountUserManagement:
         if os.path.exists(self.test_file_path):
             os.remove(self.test_file_path)
             self.log.info("Cleaned test directory: %s", self.test_dir_path)
-        users_list = [user["UserName"]
-                      for user in IAM_OBJ.list_users()[1]
-                      if self.user_name in user["UserName"]]
+        # users_list = [user["UserName"]
+        #               for user in IAM_OBJ.list_users()[1]
+        #               if self.user_name in user["UserName"]]
+        users_list = self.users_list
         self.log.info("IAM users: %s", str(users_list))
         if users_list:
             self.log.info("Deleting IAM users...")
@@ -131,9 +133,10 @@ class TestAccountUserManagement:
                 except CTException as error:
                     self.log.error(error)
         self.log.info("Deleted users successfully.")
-        accounts = self.cortx_obj.list_accounts_cortxcli()
-        accounts = [acc["account_name"]
-                    for acc in accounts if self.account_name in acc["account_name"]]
+        accounts = self.accounts_list
+        # accounts = self.cortx_obj.list_accounts_cortxcli()
+        # accounts = [acc["account_name"]
+        #             for acc in accounts if self.account_name in acc["account_name"]]
         for acc in accounts:
             self.cortx_obj.login_cortx_cli(acc, self.s3acc_password)
             self.log.info("deleting all buckets in account %s", acc)
@@ -175,6 +178,7 @@ class TestAccountUserManagement:
         self.log.info(
             "Step 2: Verifying that new account is created successfully")
         assert resp[0], resp[1]
+        self.accounts_list.append(account_name)
         self.log.info("END: Tested create new account.")
 
     @pytest.mark.parallel
@@ -195,6 +199,7 @@ class TestAccountUserManagement:
         new_accounts = [acc["account_name"] for acc in list_of_accounts]
         self.log.info(new_accounts)
         assert self.account_name in new_accounts, f"{self.account_name} not in {new_accounts}"
+        self.accounts_list.append(self.account_name)
         self.log.info("END: Tested List account.")
 
     @pytest.mark.parallel
@@ -253,6 +258,7 @@ class TestAccountUserManagement:
         self.log.info(
             "Verified %s accounts are created by listing accounts",
             str(total_account))
+        self.accounts_list = account_list
         self.log.info("END: Create 100 No of Accounts.")
 
     @pytest.mark.parallel
@@ -290,12 +296,12 @@ class TestAccountUserManagement:
         """CRUD operations with valid login credentials."""
         self.log.info(
             "START: Test CRUD operations with valid login credentials.")
-        user_name = self.user_name
+
         self.log.info("Step 1: Create new account and new user in it")
         self.log.info(
             "account name: %s and user name: %s",
             str(self.account_name),
-            str(user_name))
+            str(self.user_name))
         resp = self.create_account(self.account_name)
         assert resp[0], resp[1]
         access_key = resp[1]["access_key"]
@@ -303,7 +309,7 @@ class TestAccountUserManagement:
         self.log.info("access key: %s", str(access_key))
         self.log.info("secret key: %s", str(secret_key))
         self.cortx_obj.login_cortx_cli(self.account_name, self.s3acc_password)
-        resp = self.cortx_obj.create_user_cortxcli(user_name,
+        resp = self.cortx_obj.create_user_cortxcli(self.user_name,
                                                    self.s3acc_password,
                                                    self.s3acc_password)
         self.log.info(resp)
@@ -312,7 +318,7 @@ class TestAccountUserManagement:
         self.log.info("Created new account and new user in it")
         self.log.info("Step 2: Create access key for newly created user")
         new_s3h_obj = IamTestLib(access_key=access_key, secret_key=secret_key)
-        resp = new_s3h_obj.create_access_key(user_name)
+        resp = new_s3h_obj.create_access_key(self.user_name)
         self.log.info(resp)
         assert resp[0], resp[1]
         user_access_key = resp[1]["AccessKey"]["AccessKeyId"]
@@ -352,6 +358,8 @@ class TestAccountUserManagement:
         resp = s3_user_obj.delete_bucket(bucket_name, force=True)
         self.log.info(resp)
         assert resp[0], resp[1]
+        self.accounts_list.append(self.account_name)
+        self.users_list.append(self.user_name)
         self.log.info(
             "END: Tested CRUD operations with valid login credentials")
 
@@ -364,17 +372,16 @@ class TestAccountUserManagement:
         self.log.info(
             "START: Test CRUD operations with invalid login credentials.")
         self.log.info("Step 1: Create new account and new user in it.")
-        user_name = self.user_name
         self.log.info(
             "username: %s and account name: %s",
-            str(user_name),
+            str(self.user_name),
             str(self.account_name))
         resp = self.create_account(self.account_name)
         assert resp[0], resp[1]
         self.cortx_obj.login_cortx_cli(
             username=self.account_name,
             password=self.s3acc_password)
-        resp = self.cortx_obj.create_user_cortxcli(user_name,
+        resp = self.cortx_obj.create_user_cortxcli(self.user_name,
                                                    self.s3acc_password,
                                                    self.s3acc_password)
         self.log.info(resp)
@@ -426,6 +433,8 @@ class TestAccountUserManagement:
             "Could not download object from bucket %s", str(bucket_name))
         self.log.info(
             "Step 2: Performed CRUD operations with invalid user's credentials.")
+        self.accounts_list.append(self.account_name)
+        self.users_list.append(self.user_name)
         self.log.info("END: CRUD operations with invalid login credentials")
 
     @pytest.mark.parallel
@@ -436,9 +445,9 @@ class TestAccountUserManagement:
         """Create new user for current Account."""
         self.log.info("START: Create new user for current Account.")
         self.log.info("Step 1: Create new account and new user in it")
-        user_name = self.user_name
+
         self.log.info("account name: %s", str(self.account_name))
-        self.log.info("user_name: %s", str(user_name))
+        self.log.info("user_name: %s", str(self.user_name))
         resp = self.create_account(self.account_name)
         assert resp[0], resp[1]
         access_key = resp[1]["access_key"]
@@ -448,7 +457,7 @@ class TestAccountUserManagement:
         self.cortx_obj.login_cortx_cli(
             username=self.account_name,
             password=self.s3acc_password)
-        resp = self.cortx_obj.create_user_cortxcli(user_name,
+        resp = self.cortx_obj.create_user_cortxcli(self.user_name,
                                                    self.s3acc_password,
                                                    self.s3acc_password)
         self.log.info(resp)
@@ -460,9 +469,11 @@ class TestAccountUserManagement:
         self.log.info(resp)
         self.log.info("Users_List %s", str(resp[1]))
         assert resp[0], resp[1]
-        assert user_name in resp[1], resp[1]
+        assert self.user_name in resp[1], resp[1]
         self.cortx_obj.logout_cortx_cli()
         self.log.info("Listed users and verified user is created")
+        self.accounts_list.append(self.account_name)
+        self.users_list.append(self.user_name)
         self.log.info("END: Create new user for current Account.")
 
     @pytest.mark.parallel
@@ -473,7 +484,7 @@ class TestAccountUserManagement:
         """Update User."""
         self.log.info("START: Update User.")
         self.log.info("Step 1: Create new account and new user in it")
-        user_name = self.user_name
+
         resp = self.create_account(self.account_name)
         assert resp[0], resp[1]
         access_key = resp[1]["access_key"]
@@ -481,7 +492,7 @@ class TestAccountUserManagement:
         self.cortx_obj.login_cortx_cli(
             username=self.account_name,
             password=self.s3acc_password)
-        resp = self.cortx_obj.create_user_cortxcli(user_name,
+        resp = self.cortx_obj.create_user_cortxcli(self.user_name,
                                                    self.s3acc_password,
                                                    self.s3acc_password)
         self.log.info(resp)
@@ -490,7 +501,7 @@ class TestAccountUserManagement:
         self.log.info("Step 2: Updating user name of already existing user")
         new_s3h_obj = IamTestLib(access_key=access_key, secret_key=secret_key)
         new_user_name = "testuser8676"
-        resp = new_s3h_obj.update_user(new_user_name, user_name)
+        resp = new_s3h_obj.update_user(new_user_name, self.user_name)
         self.log.info(resp)
         assert resp[0], resp[1]
         self.log.info("Updated user name of already existing user")
@@ -502,6 +513,8 @@ class TestAccountUserManagement:
         assert "testuser8676" in resp[1], resp[1]
         self.cortx_obj.logout_cortx_cli()
         self.log.info("Listed users and verified user name is updated.")
+        self.accounts_list.append(self.account_name)
+        self.users_list.append(new_user_name)
         self.log.info("END: Update User.")
 
     @pytest.mark.parallel
@@ -512,13 +525,13 @@ class TestAccountUserManagement:
         """List user."""
         self.log.info("START: list user")
         self.log.info("Step 1: Create new account and new user in it")
-        user_name = self.user_name
+
         resp = self.create_account(self.account_name)
         assert resp[0], resp[1]
         self.cortx_obj.login_cortx_cli(
             username=self.account_name,
             password=self.s3acc_password)
-        resp = self.cortx_obj.create_user_cortxcli(user_name,
+        resp = self.cortx_obj.create_user_cortxcli(self.user_name,
                                                    self.s3acc_password,
                                                    self.s3acc_password)
         assert resp[0], resp[1]
@@ -527,9 +540,11 @@ class TestAccountUserManagement:
             "Step 2: Listing users and verifying user details are listed")
         resp = self.cortx_obj.list_users_cortxcli()
         assert resp[0], resp[1]
-        assert user_name in resp[1], resp[1]
+        assert self.user_name in resp[1], resp[1]
         self.cortx_obj.logout_cortx_cli()
         self.log.info("Listed users and verified user details are listed")
+        self.accounts_list.append(self.account_name)
+        self.users_list.append(self.user_name)
         self.log.info("END: list user.")
 
     @pytest.mark.parallel
@@ -540,22 +555,23 @@ class TestAccountUserManagement:
         """Delete User."""
         self.log.info("START: Delete User")
         self.log.info("Step 1: Create new account and new user in it.")
-        user_name = self.user_name
+
         resp = self.create_account(self.account_name)
         assert resp[0], resp[1]
         self.cortx_obj.login_cortx_cli(
             username=self.account_name,
             password=self.s3acc_password)
-        resp = self.cortx_obj.create_user_cortxcli(user_name,
+        resp = self.cortx_obj.create_user_cortxcli(self.user_name,
                                                    self.s3acc_password,
                                                    self.s3acc_password)
         assert resp[0], resp[1]
         self.log.info("Created new account and new user in it")
         self.log.info("Step 2: Deleting user")
-        self.cortx_obj.delete_user_cortxcli(user_name)
+        self.cortx_obj.delete_user_cortxcli(self.user_name)
         assert resp[0], resp[1]
         self.cortx_obj.logout_cortx_cli()
         self.log.info("Step 2: Deleted user successfully")
+        self.accounts_list.append(self.account_name)
         self.log.info("END: Delete User")
 
     @pytest.mark.parallel
@@ -567,7 +583,7 @@ class TestAccountUserManagement:
         self.log.info("START: Created 100 No of Users")
         total_users = 100
         self.log.info("Step 1: Create new %s account", str(total_users))
-        user_name = self.user_name
+
         resp = self.create_account(self.account_name)
         assert resp[0], resp[1]
         access_key = resp[1]["access_key"]
@@ -578,12 +594,13 @@ class TestAccountUserManagement:
             username=self.account_name,
             password=self.s3acc_password)
         for cnt in range(total_users):
-            my_user_name = f"{user_name}{cnt}"
+            my_user_name = f"{self.user_name}{cnt}"
             self.log.info("Creating user with name %s", str(my_user_name))
             resp = self.cortx_obj.create_user_cortxcli(my_user_name,
                                                        self.s3acc_password,
                                                        self.s3acc_password)
             assert resp[0], resp[1]
+            self.users_list.append(my_user_name)
             self.log.info("Created user with name %s", str(my_user_name))
         self.log.info("Step 2: Created %s users", str(total_users))
         self.log.info("Verifying %s users are created", total_users)
@@ -594,6 +611,7 @@ class TestAccountUserManagement:
         assert resp[0], resp[1]
         assert len(list_of_users) >= total_users, list_of_users[1]
         self.log.info("Verified %s users are created", str(total_users))
+        self.accounts_list.append(self.account_name)
         self.log.info("END: Created 100 No of Users.")
 
     @pytest.mark.parallel
@@ -603,21 +621,22 @@ class TestAccountUserManagement:
     def test_create_user_with_existing_name_2081(self):
         """Creating user with existing name."""
         self.log.info("START: creating user with existing name.")
-        user_name = self.user_name
-        self.log.info("Step 1: Creating user with name %s", str(user_name))
-        resp = IAM_OBJ.create_user(user_name)
+
+        self.log.info("Step 1: Creating user with name %s", str(self.user_name))
+        resp = IAM_OBJ.create_user(self.user_name)
         assert resp[0], resp[1]
-        self.log.info("Created user with name %s", str(user_name))
+        self.log.info("Created user with name %s", str(self.user_name))
         self.log.info(
-            "Step 2: Creating user with existing name %s", str(user_name))
+            "Step 2: Creating user with existing name %s", str(self.user_name))
         try:
-            resp = IAM_OBJ.create_user(user_name)
+            resp = IAM_OBJ.create_user(self.user_name)
             self.log.info(resp)
             assert not resp[0], resp[1]
         except CTException as error:
             assert "EntityAlreadyExists" in error.message, error.message
         self.log.info(
-            "Could not create user with existing name %s", str(user_name))
+            "Could not create user with existing name %s", str(self.user_name))
+        self.users_list.append(self.user_name)
         self.log.info("END: creating user with existing name.")
 
     @pytest.mark.parallel
@@ -627,21 +646,22 @@ class TestAccountUserManagement:
     def test_create_access_key_to_the_user_2082(self):
         """Create Access key to the user."""
         self.log.info("START: Create Access key to the user")
-        user_name = self.user_name
-        self.log.info("Step 1: Creating a user with name %s", str(user_name))
-        resp = IAM_OBJ.create_user(user_name)
+
+        self.log.info("Step 1: Creating a user with name %s", str(self.user_name))
+        resp = IAM_OBJ.create_user(self.user_name)
         assert resp[0], resp[1]
         self.log.info("Verifying user is created by listing users")
         resp = IAM_OBJ.list_users()
         self.log.info("Users list %s", str(resp[1]))
         assert resp[0], resp[1]
-        assert user_name in str(resp[1]), resp[1]
+        assert self.user_name in str(resp[1]), resp[1]
         self.log.info("Verified that user is created by listing users")
-        self.log.info("Created a user with name %s", str(user_name))
+        self.log.info("Created a user with name %s", str(self.user_name))
         self.log.info("Step 2: Creating access key for the user")
-        resp = IAM_OBJ.create_access_key(user_name)
+        resp = IAM_OBJ.create_access_key(self.user_name)
         assert resp[0], resp[1]
         self.log.info("Step 2: Created access key for the user")
+        self.users_list.append(self.user_name)
         self.log.info("END: Create Access key to the user")
 
     @pytest.mark.parallel
@@ -651,22 +671,23 @@ class TestAccountUserManagement:
     def test_list_access_keys_for_the_user_2083(self):
         """List accesskeys for the user."""
         self.log.info("START: List accesskeys for the user")
-        user_name = self.user_name
-        self.log.info("Step 1: Creating a user with name %s", str(user_name))
-        resp = IAM_OBJ.create_user(user_name)
+
+        self.log.info("Step 1: Creating a user with name %s", str(self.user_name))
+        resp = IAM_OBJ.create_user(self.user_name)
         assert resp[0], resp[1]
-        self.log.info("Created a user with name %s", str(user_name))
+        self.log.info("Created a user with name %s", str(self.user_name))
         self.log.info("Step 2: Creating access key for the user")
-        resp = IAM_OBJ.create_access_key(user_name)
+        resp = IAM_OBJ.create_access_key(self.user_name)
         assert resp[0], resp[1]
         user_access_key = resp[1]["AccessKey"]["AccessKeyId"]
         self.log.info("Created access key for the user")
         self.log.info("Step 3: Listing access key of the user")
-        resp = IAM_OBJ.list_access_keys(user_name)
+        resp = IAM_OBJ.list_access_keys(self.user_name)
         assert resp[0], resp[1]
         resp_access_key = resp[1]["AccessKeyMetadata"][0]["AccessKeyId"]
         assert user_access_key == resp_access_key, resp[1]
         self.log.info("Listed access key of the user successfully")
+        self.users_list.append(self.user_name)
         self.log.info("END: List accesskeys for the user")
 
     @pytest.mark.parallel
@@ -676,26 +697,27 @@ class TestAccountUserManagement:
     def test_delete_access_key_of_a_user_2084(self):
         """Delete Accesskey of a user."""
         self.log.info("START: Delete Accesskey of a users")
-        user_name = self.user_name
-        self.log.info("Step 1: Creating a user with name %s", str(user_name))
-        resp = IAM_OBJ.create_user(user_name)
+
+        self.log.info("Step 1: Creating a user with name %s", str(self.user_name))
+        resp = IAM_OBJ.create_user(self.user_name)
         assert resp[0], resp[1]
-        self.log.info("Created a user with name %s", str(user_name))
+        self.log.info("Created a user with name %s", str(self.user_name))
         self.log.info("Step 2: Creating access key for the user")
-        resp = IAM_OBJ.create_access_key(user_name)
+        resp = IAM_OBJ.create_access_key(self.user_name)
         assert resp[0], resp[1]
         user_access_key = resp[1]["AccessKey"]["AccessKeyId"]
         self.log.info("Created access key for the user")
         self.log.info("Step 3: Deleting access key of the user")
-        resp = IAM_OBJ.delete_access_key(user_name, user_access_key)
+        resp = IAM_OBJ.delete_access_key(self.user_name, user_access_key)
         assert resp[0], resp[1]
         self.log.info("Deleted access key of the user")
         self.log.info("Step 4: Listing access key of the user")
-        resp = IAM_OBJ.list_access_keys(user_name)
+        resp = IAM_OBJ.list_access_keys(self.user_name)
         assert resp[0], resp[1]
         # Verifying list is empty.
         assert not resp[1]["AccessKeyMetadata"], resp[1]["AccessKeyMetadata"]
         self.log.info("Listed access key of the user successfully.")
+        self.users_list.append(self.user_name)
         self.log.info("END: Delete Accesskey of a users")
 
     @pytest.mark.parallel
@@ -706,22 +728,22 @@ class TestAccountUserManagement:
         """Update Accesskey of a user."""
         self.log.info("START: Update Accesskey of a user.")
         self.log.info("Update Accesskey of a user")
-        user_name = self.user_name
-        self.log.info("Step 1: Creating a user with name %s", str(user_name))
-        resp = IAM_OBJ.create_user(user_name)
+
+        self.log.info("Step 1: Creating a user with name %s", str(self.user_name))
+        resp = IAM_OBJ.create_user(self.user_name)
         assert resp[0], resp[1]
-        self.log.info("Created a user with name %s", str(user_name))
+        self.log.info("Created a user with name %s", str(self.user_name))
         self.log.info("Step 2: Creating access key for the user")
-        resp = IAM_OBJ.create_access_key(user_name)
+        resp = IAM_OBJ.create_access_key(self.user_name)
         access_key_to_update = resp[1]["AccessKey"]["AccessKeyId"]
         assert resp[0], resp[1]
         self.log.info("Step 3: Updating access key of user")
         resp = IAM_OBJ.update_access_key(
-            access_key_to_update, "Active", user_name)
+            access_key_to_update, "Active", self.user_name)
         assert resp[0], resp[1]
         self.log.info("Updated access key of user")
         self.log.info("Step 4: Verifying that access key of user is updated")
-        resp = IAM_OBJ.list_access_keys(user_name)
+        resp = IAM_OBJ.list_access_keys(self.user_name)
         assert resp[0], resp[1]
         new_access_key = resp[1]["AccessKeyMetadata"][0]["AccessKeyId"]
         status = resp[1]["AccessKeyMetadata"][0]["Status"]
@@ -729,6 +751,7 @@ class TestAccountUserManagement:
         assert status == "Active", resp[1]
         self.log.info(
             "Verified that access key of user is updated successfully")
+        self.users_list.append(self.user_name)
         self.log.info("END: Update Accesskey of a user.")
 
     @pytest.mark.parallel
@@ -739,22 +762,22 @@ class TestAccountUserManagement:
         """Update accesskey of a user with inactive mode."""
         self.log.info("START: update accesskey of a user with inactive mode.")
         self.log.info("update accesskey of a user with inactive mode")
-        user_name = self.user_name
-        self.log.info("Step 1: Creating a user with name %s", str(user_name))
-        resp = IAM_OBJ.create_user(user_name)
+
+        self.log.info("Step 1: Creating a user with name %s", str(self.user_name))
+        resp = IAM_OBJ.create_user(self.user_name)
         assert resp[0], resp[1]
-        self.log.info("Created a user with name %s", str(user_name))
+        self.log.info("Created a user with name %s", str(self.user_name))
         self.log.info("Step 2: Creating access key for the user")
-        resp = IAM_OBJ.create_access_key(user_name)
+        resp = IAM_OBJ.create_access_key(self.user_name)
         access_key_to_update = resp[1]["AccessKey"]["AccessKeyId"]
         assert resp[0], resp[1]
         self.log.info("Step 3: Updating access key of user")
         resp = IAM_OBJ.update_access_key(
-            access_key_to_update, "Inactive", user_name)
+            access_key_to_update, "Inactive", self.user_name)
         assert resp[0], resp[1]
         self.log.info("Updated access key of user")
         self.log.info("Step 4: Verifying that access key of user is updated")
-        resp = IAM_OBJ.list_access_keys(user_name)
+        resp = IAM_OBJ.list_access_keys(self.user_name)
         assert resp[0], resp[1]
         new_access_key = resp[1]["AccessKeyMetadata"][0]["AccessKeyId"]
         status = resp[1]["AccessKeyMetadata"][0]["Status"]
@@ -762,6 +785,7 @@ class TestAccountUserManagement:
         assert status == "Inactive", resp[1]
         self.log.info(
             "Verified that access key of user is updated successfully")
+        self.users_list.append(self.user_name)
         self.log.info("END: update accesskey of a user with inactive mode")
 
     @pytest.mark.parallel
@@ -772,18 +796,19 @@ class TestAccountUserManagement:
         """Create max accesskey with existing user name."""
         self.log.info("START: create max accesskey with existing user name.")
         self.log.info("create max accesskey with existing user name")
-        user_name = self.user_name
-        self.log.info("Step 1: Creating a user with name %s", str(user_name))
-        resp = IAM_OBJ.create_user(user_name)
+
+        self.log.info("Step 1: Creating a user with name %s", str(self.user_name))
+        resp = IAM_OBJ.create_user(self.user_name)
         assert resp[0], resp[1]
-        self.log.info("Created a user with name %s", str(user_name))
+        self.log.info("Created a user with name %s", str(self.user_name))
         self.log.info(
             "Step 2: Creating %s access keys for user %s",
             2,
-            user_name)
+            self.user_name)
         for _ in range(2):
-            resp = IAM_OBJ.create_access_key(user_name)
+            resp = IAM_OBJ.create_access_key(self.user_name)
             assert resp[0], resp[1]
+        self.users_list.append(self.user_name)
         self.log.info("END: create max accesskey with existing user name")
 
     @pytest.mark.parallel
@@ -794,25 +819,26 @@ class TestAccountUserManagement:
         """Update login profile."""
         self.log.info("START: update login profile.")
         self.log.info("update login profile")
-        user_name = self.user_name
-        self.log.info("Step 1: Creating a user with name %s", str(user_name))
-        resp = IAM_OBJ.create_user(user_name)
+
+        self.log.info("Step 1: Creating a user with name %s", str(self.user_name))
+        resp = IAM_OBJ.create_user(self.user_name)
         assert resp[0], resp[1]
-        self.log.info("Created a user with name %s", str(user_name))
+        self.log.info("Created a user with name %s", str(self.user_name))
         self.log.info(
-            "Step 2: Creating login profile for user %s", str(user_name))
+            "Step 2: Creating login profile for user %s", str(self.user_name))
         resp = IAM_OBJ.create_user_login_profile(
-            user_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"], True)
+            self.user_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"], True)
         assert resp[0], resp[1]
-        self.log.info("Created login profile for user %s", str(user_name))
+        self.log.info("Created login profile for user %s", str(self.user_name))
         self.log.info(
-            "Step 3: Updating login profile for user %s", str(user_name))
+            "Step 3: Updating login profile for user %s", str(self.user_name))
         resp = IAM_OBJ.update_user_login_profile(
-            user_name,
+            self.user_name,
             S3_USER_ACC_MGMT_CONFIG["s3_params"]["new_password"],
             True)
         assert resp[0], resp[1]
-        self.log.info("Updated login profile for user %s", str(user_name))
+        self.log.info("Updated login profile for user %s", str(self.user_name))
+        self.users_list.append(self.user_name)
         self.log.info("END: update login profile")
 
     @pytest.mark.parallel
@@ -862,27 +888,27 @@ class TestAccountUserManagement:
     def test_change_pwd_for_iam_user_2092(self):
         """Change passsword for IAM user."""
         self.log.info("START: Change password for IAM user.")
-        user_name = self.user_name
-        self.log.info("Step 1: Creating a user with name %s", str(user_name))
-        resp = IAM_OBJ.create_user(user_name)
+
+        self.log.info("Step 1: Creating a user with name %s", str(self.user_name))
+        resp = IAM_OBJ.create_user(self.user_name)
         assert resp[0], resp[1]
-        self.log.info("Created a user with name %s", str(user_name))
+        self.log.info("Created a user with name %s", str(self.user_name))
         self.log.info(
-            "Step 2: Creating login profile for user %s", str(user_name))
+            "Step 2: Creating login profile for user %s", str(self.user_name))
         resp = IAM_OBJ.create_user_login_profile(
-            user_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"], True)
+            self.user_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"], True)
         self.log.info(resp)
         assert resp[0], resp[1]
-        self.log.info("Created login profile for user %s", str(user_name))
+        self.log.info("Created login profile for user %s", str(self.user_name))
         self.log.info(
-            "Step 3: Creating access key for user %s", str(user_name))
-        resp = IAM_OBJ.create_access_key(user_name)
+            "Step 3: Creating access key for user %s", str(self.user_name))
+        resp = IAM_OBJ.create_access_key(self.user_name)
         self.log.info(resp)
         assert resp[0], resp[1]
-        self.log.info("Created access key for user %s", str(user_name))
+        self.log.info("Created access key for user %s", str(self.user_name))
         access_key = resp[1]["AccessKey"]["AccessKeyId"]
         secret_key = resp[1]["AccessKey"]["SecretAccessKey"]
-        self.log.info("Step 4: Changing password for %s user", str(user_name))
+        self.log.info("Step 4: Changing password for %s user", str(self.user_name))
         resp = IAM_OBJ.change_user_password(
             S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             S3_USER_ACC_MGMT_CONFIG["s3_params"]["new_password"],
@@ -890,7 +916,8 @@ class TestAccountUserManagement:
             secret_key)
         self.log.info(resp)
         assert resp[0], resp[1]
-        self.log.info("Changed password for %s user", str(user_name))
+        self.log.info("Changed password for %s user", str(self.user_name))
+        self.users_list.append(self.user_name)
         self.log.info("END: Change password for IAM user.")
 
     @pytest.mark.parallel
@@ -901,7 +928,7 @@ class TestAccountUserManagement:
         """Test Create user for the account and verify output with proper ARN format."""
         self.log.info(
             "START: Test Create user for the account and verify output with proper ARN format")
-        user_name = self.user_name
+
         self.log.info(
             "Step 1: Creating a new account with name %s", str(
                 self.account_name))
@@ -911,25 +938,26 @@ class TestAccountUserManagement:
         self.log.info(
             "Created a new account with name %s", str(
                 self.account_name))
-        self.log.info("Step 2: Creating a user with name %s", str(user_name))
+        self.log.info("Step 2: Creating a user with name %s", str(self.user_name))
         self.cortx_obj.login_cortx_cli(
             username=self.account_name,
             password=self.s3acc_password)
-        resp = self.cortx_obj.create_user_cortxcli(user_name,
+        resp = self.cortx_obj.create_user_cortxcli(self.user_name,
                                                    self.s3acc_password,
                                                    self.s3acc_password)
 
         assert resp[0], resp[1]
-        self.log.info("Created a user with name %s", str(user_name))
+        self.log.info("Created a user with name %s", str(self.user_name))
         self.log.info("User Data is: %s", str(resp[1]))
         self.cortx_obj.logout_cortx_cli()
         self.log.info(
-            "Step 3: Verifying ARN format of user %s", str(user_name))
-        arn_format = "arn:aws:iam::{}:user/{}".format(account_id, user_name)
+            "Step 3: Verifying ARN format of user %s", str(self.user_name))
+        arn_format = "arn:aws:iam::{}:user/{}".format(account_id, self.user_name)
         assert arn_format == resp[1]["arn"], "Invalid user ARN format"
         self.log.info(
             "Step 3: Verified ARN format of user %s successfully",
-            str(user_name))
-
+            str(self.user_name))
+        self.accounts_list.append(self.account_name)
+        self.users_list.append(self.user_name)
         self.log.info(
             "END: Test Create user for the account and verify output with proper ARN format")
