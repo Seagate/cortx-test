@@ -62,6 +62,8 @@ class SoftwareAlert(RASCoreLib):
             self.put_svc_deactivating(svc)
         elif action == "activating":
             self.put_svc_activating(svc)
+        elif action == "failed":
+            self.put_svc_failed(svc)
         else:
             self.node_utils.send_systemctl_cmd(action, [svc], exc=True)
 
@@ -177,6 +179,8 @@ class SoftwareAlert(RASCoreLib):
             systemctl_status = {'state': 'deactivating'}
         elif action == "activating":
             systemctl_status = {'state': 'activating'}
+        elif action == "failed":
+            systemctl_status = {'state': 'failed'}
         return systemctl_status
 
     def get_svc_status(self, services: list):
@@ -262,6 +266,16 @@ class SoftwareAlert(RASCoreLib):
                 match = re.match(pid_tokenizer, line)
                 parsed_op.update(match.groupdict())
         return parsed_op
+
+    def put_svc_failed(self, svc):
+        """Function to generate deactivating alert
+
+        :param svc: Service Name
+        """
+        ppid = self.get_svc_status([svc])[svc]["pid"]
+        self.node_utils.rename_file(self.svc_path, self.get_tmp_svc_path())
+        self.apply_svc_setting()
+        self.node_utils.host_obj.exec_command(commands.KILL_CMD.format(ppid))
 
     def put_svc_deactivating(self, svc):
         """Function to generate deactivating alert
