@@ -178,7 +178,7 @@ class RASCoreLib:
         :rtype: bool
         """
         file_path = cmn_cons.MSG_BUS_READER_PATH
-        local_path_msg_bus = cmn_cons.MSG_BUS_READER_PATH
+        local_path_msg_bus = cmn_cons.MSG_BUS_READER_LOCAL_PATH
         LOGGER.debug("Copying file to %s", self.host)
         self.node_utils.copy_file_to_remote(
             local_path=local_path_msg_bus, remote_path=file_path)
