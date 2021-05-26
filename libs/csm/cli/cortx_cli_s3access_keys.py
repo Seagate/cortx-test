@@ -57,8 +57,8 @@ class CortxCliS3AccessKeys(CortxCli):
             if "Access Key" in response:
                 LOGGER.info("Response returned: \n%s", response)
                 response = self.split_table_response(response)
-                response_dict["access_key"] = response[0][1]
-                response_dict["secret_key"] = response[0][2]
+                response_dict["access_key"] = response[0][0]
+                response_dict["secret_key"] = response[0][1]
                 return True, response_dict
 
         return False, response_dict
