@@ -210,6 +210,7 @@ class _IamUser(CortxCliIamUser):
         :return: create user using cortxcli response.
         """
         user_details = dict()
+        confirm_password = confirm_password if confirm_password else password
         try:
             kwargs.setdefault("sleep_time", 10)
             status, response = super().create_iam_user(
@@ -219,9 +220,9 @@ class _IamUser(CortxCliIamUser):
                 **kwargs)
             if status and user_name in response:
                 response = self.split_table_response(response)[0]
-                user_details["user_name"] = response[1]
-                user_details["user_id"] = response[2]
-                user_details["arn"] = response[3]
+                user_details["user_name"] = response[0]
+                user_details["user_id"] = response[1]
+                user_details["arn"] = response[2]
                 response = user_details
         except Exception as error:
             LOGGER.error("Error in %s: %s",
@@ -242,6 +243,26 @@ class _IamUser(CortxCliIamUser):
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          _IamUser.list_users_cortxcli.__name__,
+                         error)
+            raise CTException(err.S3_ERROR, error.args[0])
+
+        return status, response
+
+    def reset_iamuser_password_cortxcli(self,
+                                        iamuser_name: str,
+                                        new_password: str) -> tuple:
+        """
+        This function will update password for specified s3
+        iam user to new_password using CORTX CLI.
+        :param iamuser_name: IAM user name for which password should be updated
+        :param new_password: New password for IAM user
+        :return: True/False and Response returned by CORTX CLI
+        """
+        try:
+            status, response = super().reset_iamuser_password(iamuser_name, new_password)
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         _IamUser.reset_iamuser_password_cortxcli.__name__,
                          error)
             raise CTException(err.S3_ERROR, error.args[0])
 
