@@ -102,7 +102,7 @@ class CortxCliS3AccessKeys(CortxCli):
         command = "{0} {1} -f {2}".format(
             commands.CMD_SHOW_ACCESS_KEY, user_name, output_format)
         LOGGER.info("Listing s3accesskey of user %s", user_name)
-        response = self.execute_cli_commands(cmd=command)[1]
+        response = self.execute_cli_commands(cmd=command, patterns=["Access Key", "access_keys"])[1]
         if output_format == "json":
             response = self.format_str_to_dict(response)
         if output_format == "xml":
