@@ -6210,7 +6210,7 @@ _date
             resp = self.cli_obj.create_account_cortxcli(
                 acc_name, email_id, self.s3acc_passwd)
             acc_details.append(resp)
-        account1_id = acc_details[1][0][1]["account_id"]
+        account1_id = acc_details[0][1]["account_id"]
         S3_OBJ1 = s3_test_lib.S3TestLib(
             access_key=acc_details[0][1]["access_key"],
             secret_key=acc_details[0][1]["secret_key"])

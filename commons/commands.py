@@ -31,6 +31,8 @@ SYSTEM_CTL_START_CMD = "systemctl start {}"
 SYSTEM_CTL_STOP_CMD = "systemctl stop {}"
 START_MSG_BUS_READER_CMD = "python3 read_message_bus.py"
 ADD_SPARES = "add spares {} disk-group {}"
+CONF_GET_CMD = "conf '{}' get '{}'"
+CONF_SET_CMD = "conf '{}' set '{}'"
 
 # S3IAMCLI Commands
 BUNDLE_CMD = "sh /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh"

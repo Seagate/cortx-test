@@ -410,3 +410,29 @@ class Health(Host):
             return False, response[1]
 
         return True, "cluster {} up and running.".format(self.hostname)
+
+    def pcs_restart_cluster(self):
+        """
+        Function starts and stops the cluster using the pcs command.
+
+        command used:
+            pcs cluster stop --all
+            pcs cluster start --all
+            pcs resource cleanup --all
+        :return: (Boolean and response)
+        """
+        resp = self.pcs_cluster_start_stop("--all", stop_flag=True)
+        LOG.info(resp)
+        time.sleep(10)
+        resp = self.pcs_cluster_start_stop("--all", stop_flag=False)
+        LOG.info(resp)
+        time.sleep(30)  # Hardcoded: Default time is between 10 to 30 seconds.
+        response = self.pcs_resource_cleanup(options="--all")
+        if "Cleaned up all resources on all nodes" not in str(response):
+            return False, "Failed to clean up all resources on all nodes"
+        time.sleep(10)
+        response = self.check_node_health()
+        time.sleep(10)
+        LOG.info(response)
+
+        return response
