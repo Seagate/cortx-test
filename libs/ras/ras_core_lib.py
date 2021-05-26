@@ -798,3 +798,30 @@ class RASCoreLib:
         else:
             LOGGER.error("Failed to get drive details")
             return status, drive_dict
+
+    def get_drive_usage(self, phy_num: list):
+        """
+
+        Args:
+            phy_num:
+
+        Returns:
+
+        """
+        drive_usage_dict = {}
+        status, drive_dict = self.controller_obj.get_show_disks()
+        if status:
+            LOGGER.info("Getting drive usage")
+            for d in phy_num:
+                for key, value in drive_dict.items():
+                    try:
+                        if value['location'] == d:
+                            drive_usage_dict[d] = value['usage']
+                    except KeyError:
+                        LOGGER.error("No disk found of phy number %s", d)
+                        continue
+
+            return True, drive_usage_dict
+        else:
+            LOGGER.error("Failed to get drive details")
+            return status, drive_dict

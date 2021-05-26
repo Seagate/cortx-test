@@ -29,6 +29,7 @@ from commons import commands as common_cmd
 from commons import errorcodes as cterr
 from commons.exceptions import CTException
 from commons.utils import config_utils as conf_util
+from libs.ras.ras_test_lib import RASTestLib
 from config import CMN_CFG, RAS_VAL, CMN_DESTRUCTIVE_CFG
 
 LOGGER = logging.getLogger(__name__)
@@ -66,6 +67,8 @@ class ControllerLib:
         self.enclosure_pwd = enclosure_pwd
         self.node_obj = Node(hostname=self.host, username=self.h_user,
                              password=self.h_pwd)
+        self.ras_test_obj = RASTestLib(host=self.host, username=self.h_user,
+                                       password=self.h_pwd)
 
         self.copy = True
         runner_path = cons.REMOTE_TELNET_PATH
@@ -330,7 +333,7 @@ class ControllerLib:
 
         return False, "File not found : telnet_operations.py"
 
-    def set_drive_status_telnet(self, enclosure_id: str, *controller_name: str,
+    def set_drive_status_telnet(self, enclosure_id: str, controller_name: str,
                                 drive_number: str, status: str) -> Tuple[str,
                                                                          str]:
         """
@@ -348,29 +351,28 @@ class ControllerLib:
         """
         if self.copy:
             try:
-                for c in controller_name:
-                    cmd = common_cmd.SET_DRIVE_STATUS_CMD.format(
-                        enclosure_id, c, drive_number, status)
+                cmd = common_cmd.SET_DRIVE_STATUS_CMD.format(
+                    enclosure_id, controller_name, drive_number, status)
 
-                    command = f"python3 /root/telnet_operations.py " \
-                              f"--telnet_op='set_drive_status_telnet(" \
-                              f"enclosure_ip=\"{self.enclosure_ip}\", " \
-                              f"username=\"{self.enclosure_user}\", " \
-                              f"pwd=\"{self.enclosure_pwd}\", " \
-                              f"status=\"{status}\", cmd=\"{cmd}\")'"
+                command = f"python3 /root/telnet_operations.py " \
+                          f"--telnet_op='set_drive_status_telnet(" \
+                          f"enclosure_ip=\"{self.enclosure_ip}\", " \
+                          f"username=\"{self.enclosure_user}\", " \
+                          f"pwd=\"{self.enclosure_pwd}\", " \
+                          f"status=\"{status}\", cmd=\"{cmd}\")'"
 
-                    LOGGER.info("Running command %s", command)
-                    response = self.node_obj.execute_cmd(cmd=command,
-                                                         read_lines=True)
+                LOGGER.info("Running command %s", command)
+                response = self.node_obj.execute_cmd(cmd=command,
+                                                     read_lines=True)
 
-                    response = response[0].split()
+                response = response[0].split()
 
-                    status = os.popen(
-                        (common_cmd.STRING_MANIPULATION.format(response[0])).
-                        replace('\n', ' ').replace('\\n', ' ')).read()
-                    drive_status = os.popen(
-                        (common_cmd.STRING_MANIPULATION.format(response[1]))
-                        .replace('\n', ' ').replace('\\n', ' ')).read()
+                status = os.popen(
+                    (common_cmd.STRING_MANIPULATION.format(response[0])).
+                    replace('\n', ' ').replace('\\n', ' ')).read()
+                drive_status = os.popen(
+                    (common_cmd.STRING_MANIPULATION.format(response[1]))
+                    .replace('\n', ' ').replace('\\n', ' ')).read()
             except BaseException as error:
                 LOGGER.error("Error in %s: %s",
                              ControllerLib.set_drive_status_telnet.__name__,
@@ -790,3 +792,122 @@ class ControllerLib:
             return status
 
         return "False"
+
+    def remove_add_drive(self, enclosure_id: str, controller_name: list,
+                         drive_number: list, status: str) -> Tuple[str, str]:
+        """
+        Enable or Disable drive status from disk group.
+
+        :param enclosure_id: Enclosure ID of the machine
+        :type: str
+        :param controller_name: Server controller name
+        :type: list
+        :param drive_number: Drive number
+        :type: list
+        :param status: Status of the drive. Value will be enabled or disabled
+        :type: str
+        :return: None
+        """
+        if self.copy:
+            try:
+                for d in drive_number:
+                    for c in controller_name:
+                        cmd = common_cmd.SET_DRIVE_STATUS_CMD.format(
+                            enclosure_id, c, d, status)
+
+                        command = f"python3 /root/telnet_operations.py " \
+                                  f"--telnet_op='set_drive_status_telnet(" \
+                                  f"enclosure_ip=\"{self.enclosure_ip}\", " \
+                                  f"username=\"{self.enclosure_user}\", " \
+                                  f"pwd=\"{self.enclosure_pwd}\", " \
+                                  f"status=\"{status}\", cmd=\"{cmd}\")'"
+
+                        LOGGER.info("Running command %s", command)
+                        response = self.node_obj.execute_cmd(cmd=command,
+                                                             read_lines=True)
+
+                        response = response[0].split()
+
+                        status = os.popen(
+                            (common_cmd.STRING_MANIPULATION.format(response[0]))
+                            .replace('\n', ' ').replace('\\n', ' ')).read()
+                        drive_status = os.popen(
+                            (common_cmd.STRING_MANIPULATION.format(response[1]))
+                            .replace('\n', ' ').replace('\\n', ' ')).read()
+            except BaseException as error:
+                LOGGER.error("Error in %s: %s",
+                             ControllerLib.remove_add_drive.__name__,
+                             error)
+                raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
+
+            return status, drive_status
+
+        return "False", "File not found : telnet_operations.py"
+
+    def add_spares_dg(self, drives: list, disk_group: str):
+        """
+
+        Args:
+            drives:
+            disk_group:
+
+        Returns:
+
+        """
+        if self.copy:
+            try:
+                LOGGER.info("Adding available drives to disk group %s", disk_group)
+                LOGGER.info("Check usage of drives %s", drives)
+                status, drive_usage_dict = self.ras_test_obj.get_drive_usage(
+                    phy_num=drives)
+                if not status:
+                    return status, f"Failed to get drive usages for drives {drives}"
+
+                LOGGER.info("Drive usages: %s", drive_usage_dict)
+
+                for key, value in drive_usage_dict.items():
+                    if value == "LINEAR POOL":
+                        return True, "Drive is already part of disk group"
+                    elif value == "AVAIL":
+                        LOGGER.info("Drive is already available")
+                    elif value != "AVAIL" and value != "LINEAR POOL":
+                        LOGGER.info("Running clear metadata")
+                        resp = self.clear_drive_metadata(drive_num=key)
+                        if not resp[0]:
+                            return resp[0], resp[1]
+
+                        LOGGER.info("Successfully cleared drive metadata of %s", key)
+
+                    LOGGER.info("Adding spare drive %s to disk group %s", key,
+                                disk_group)
+                    cmd = common_cmd.ADD_SPARES.format(key, disk_group)
+                    command = f"python3 /root/telnet_operations.py " \
+                              f"--telnet_op='set_drive_status_telnet(" \
+                              f"enclosure_ip=\"{self.enclosure_ip}\", " \
+                              f"username=\"{self.enclosure_user}\", " \
+                              f"pwd=\"{self.enclosure_pwd}\", " \
+                              f"status=\"{status}\", cmd=\"{cmd}\")'"
+
+                    LOGGER.info("Running command %s", command)
+                    response = self.node_obj.execute_cmd(cmd=command,
+                                                         read_lines=True)
+
+                    LOGGER.info("Response: %s", response)
+                    response = response[0].split()
+
+                    status = os.popen(
+                        (common_cmd.STRING_MANIPULATION.format(response[0]))
+                        .replace('\n', ' ').replace('\\n', ' ')).read()
+                    resp = os.popen(
+                        (common_cmd.STRING_MANIPULATION.format(response[1]))
+                        .replace('\n', ' ').replace('\\n', ' ')).read()
+            except BaseException as error:
+                LOGGER.error("Error in %s: %s",
+                             ControllerLib.add_spares_dg.__name__,
+                             error)
+                raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
+
+            return True, f"Successfully added drives {drives} to disk group " \
+                         f"{disk_group}"
+
+

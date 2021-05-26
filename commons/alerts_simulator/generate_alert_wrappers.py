@@ -347,6 +347,9 @@ class GenerateAlertWrapper:
         Returns:
 
         """
+        enclid = input_parameters["enclid"]
+        ctrl_name = input_parameters["ctrl_name"]
+        operation = input_parameters["operation"]
         disk_group = input_parameters["disk_group"]
         controller_obj = ControllerLib(host=host, h_user=h_user, h_pwd=h_pwd,
                                        enclosure_ip=encl_ip,
@@ -368,37 +371,109 @@ class GenerateAlertWrapper:
                 return status, "Failed to get drive list"
 
             LOGGER.info("Picking two random drives from disk group %s", disk_group)
-            d1, d2 = random.sample(drive_list, 2)
-            LOGGER.info("Removing drive : %s", d1)
-            drive_params = {"enclid": 0,
-                            "ctrl_name": "A, B",
-                            "phy_num": d1,
-                            "operation": "Disabled",
-                            "exp_status": ["Degraded", "Fault"],
-                            "telnet_file": "/root/telnet_disk_group.xml"}
-            resp = GenerateAlertWrapper.disk_faults(encl_ip, encl_user,
-                                                    encl_pwd, host, h_user,
-                                                    h_pwd, drive_params)
+            drives = random.sample(drive_list, 2)
+            LOGGER.info("Removing drive : %s", drives)
+            resp = controller_obj.remove_add_drive(enclosure_id=enclid,
+                                                   controller_name=ctrl_name,
+                                                   drive_number=drives,
+                                                   status=operation)
 
+            if not resp[0]:
+                return resp[0], "Failed to remove drives"
 
-            LOGGER.info("Removing drive : %s", d2)
-            drive_params = {"enclid": 0,
-                            "ctrl_name": "A, B",
-                            "phy_num": d2,
-                            "operation": "Disabled",
-                            "exp_status": ["Degraded", "Fault"],
-                            "telnet_file": "/root/telnet_disk_group.xml"}
-            resp = GenerateAlertWrapper.disk_faults(encl_ip, encl_user,
-                                                    encl_pwd, host, h_user,
-                                                    h_pwd, drive_params)
+            LOGGER.info("Check if drives are completely removed")
+            status, drive_list = ras_test_obj.get_dg_drive_list(
+                                 disk_group=disk_group)
+            if not status:
+                return status, "Failed to get drive list"
 
+            for d in drives:
+                if d in drive_list:
+                    return False, f"Drive {d} is not removed"
 
+            return True, drive_list
+        except BaseException as error:
+            LOGGER.error("%s %s: %s", cons.EXCEPTION_ERROR,
+                         GenerateAlertWrapper.create_disk_group_failures.__name__, error)
+            return False, error
 
+    @staticmethod
+    def resolve_disk_group_failures(encl_ip, encl_user, encl_pwd, host, h_user,
+                                    h_pwd, input_parameters):
+        """
 
+        Returns:
 
+        """
+        enclid = input_parameters["enclid"]
+        ctrl_name = input_parameters["ctrl_name"]
+        phy_num = input_parameters["phy_num"]
+        operation = input_parameters["operation"]
+        disk_group = input_parameters["disk_group"]
+        controller_obj = ControllerLib(host=host, h_user=h_user, h_pwd=h_pwd,
+                                       enclosure_ip=encl_ip,
+                                       enclosure_user=encl_user,
+                                       enclosure_pwd=encl_pwd)
+        ras_test_obj = RASTestLib(host=host, username=h_user, password=h_pwd)
 
+        try:
+            LOGGER.info("Check state of disk group")
+            status, disk_group_dict = controller_obj.get_show_disk_group()
+            if status or disk_group_dict[disk_group]['health'] == 'OK':
+                LOGGER.info("Provided disk group is in healthy state.")
+                return status, disk_group_dict[disk_group]['health']
 
+            LOGGER.info("RAID type of disk group %s is %s", disk_group,
+                        disk_group_dict[disk_group]['raidtype'])
 
+            LOGGER.info("Adding drives %s", phy_num)
+            resp = controller_obj.remove_add_drive(enclosure_id=enclid,
+                                                   controller_name=ctrl_name,
+                                                   drive_number=phy_num,
+                                                   status=operation)
 
+            if not resp[0]:
+                return resp[0], f"Failed to add drives {phy_num} to disk " \
+                                f"group {disk_group}"
 
+            LOGGER.info("Adding drives to the disk group %s", disk_group)
+            if disk_group_dict[disk_group]['raidtype'] == "ADAPT":
+                LOGGER.info("Check usage of drives %s", phy_num)
+                status, drive_usage_dict = ras_test_obj.get_drive_usage(
+                    phy_num=phy_num)
+                if not status:
+                    return status, f"Failed to get drive usages for drives" \
+                                   f" {phy_num}"
 
+                LOGGER.info("Drive usages: %s", drive_usage_dict)
+
+                for key, value in drive_usage_dict.items():
+                    if value != "AVAIL" and value != "LINEAR POOL":
+                        LOGGER.info("Running clear metadata")
+                        resp = controller_obj.clear_drive_metadata(
+                            drive_num=key)
+                        if not resp[0]:
+                            return resp[0], resp[1]
+
+                    LOGGER.info("Successfully cleared drive metadata of %s", key)
+            else:
+                LOGGER.info("Adding available/spare drives to disk group %s",
+                            disk_group)
+                resp = controller_obj.add_spares_dg(drives=phy_num,
+                                                    disk_group=disk_group)
+                if not resp[0]:
+                    return resp[0], f"Failed to add drives {phy_num} to disk " \
+                                    f"group {disk_group}"
+
+            LOGGER.info("Check if reconstruction of disk group is started")
+            status, disk_group_dict = controller_obj.get_show_disk_group()
+            if status and disk_group_dict[disk_group]['current-job'] == 'RCON':
+                LOGGER.info("Successfully started reconstruction of disk "
+                            "group %s", disk_group)
+                return True, "Disk Group reconstruction is started"
+            return False, "Failed to start Disk Group reconstruction"
+        except BaseException as error:
+            LOGGER.error("%s %s: %s", cons.EXCEPTION_ERROR,
+                         GenerateAlertWrapper.resolve_disk_group_failures.__name__,
+                         error)
+            return False, error
