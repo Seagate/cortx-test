@@ -59,7 +59,8 @@ class TestBucketWorkflowOperations:
         self.account_name = "bktwrkflowaccnt{}".format(time.perf_counter_ns())
         self.email_id = "{}@seagate.com".format(self.account_name)
         self.s3acc_password = S3_CFG["CliConfig"]["s3_account"]["password"]
-        self.folder_path = os.path.join(TEST_DATA_FOLDER, "TestBucketWorkflowOperations")
+        self.folder_path = os.path.join(
+            TEST_DATA_FOLDER, "TestBucketWorkflowOperations")
         self.filename = "bkt_workflow{}.txt".format(time.perf_counter_ns())
         self.file_path = os.path.join(self.folder_path, self.filename)
         if not system_utils.path_exists(self.folder_path):
@@ -72,13 +73,14 @@ class TestBucketWorkflowOperations:
         self.log.info("STARTED: Setup test operations.")
         bucket_list = S3_TEST_OBJ.bucket_list()[1]
         for bucket_name in self.bucket_list:
-            if bucket_name in bucket_list: 
+            if bucket_name in bucket_list:
                 ACL_OBJ.put_bucket_acl(bucket_name, acl="private")
                 resp = S3_TEST_OBJ.delete_bucket(bucket_name, force=True)
                 assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Account list: %s", self.account_list)
         for acc in self.account_list:
-            self.cortx_obj.delete_account_cortxcli(account_name=acc, password=self.s3acc_password)
+            self.cortx_obj.delete_account_cortxcli(
+                account_name=acc, password=self.s3acc_password)
         self.log.info("ENDED: Setup test operations.")
 
     @pytest.mark.parallel
@@ -780,7 +782,8 @@ class TestBucketWorkflowOperations:
         self.log.info(
             "Step 1: Deleting the objects for non-existing bucket")
         try:
-            resp = S3_TEST_OBJ.delete_multiple_objects(self.bucket_name, obj_lst)
+            resp = S3_TEST_OBJ.delete_multiple_objects(
+                self.bucket_name, obj_lst)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error.message)
@@ -818,7 +821,9 @@ class TestBucketWorkflowOperations:
             "Step : Creating account with name %s and email_id %s",
             self.account_name, self.email_id)
         create_account = self.cortx_obj.create_account_cortxcli(
-            account_name=self.account_name, account_email=self.email_id, password=self.s3acc_password)
+            account_name=self.account_name,
+            account_email=self.email_id,
+            password=self.s3acc_password)
         assert create_account[0], create_account[1]
         access_key = create_account[1]["access_key"]
         secret_key = create_account[1]["secret_key"]
@@ -881,7 +886,9 @@ class TestBucketWorkflowOperations:
             "Step : Creating account with name %s and email_id %s",
             self.account_name, self.email_id)
         create_account = self.cortx_obj.create_account_cortxcli(
-            account_name=self.account_name, account_email=self.email_id, password=self.s3acc_password)
+            account_name=self.account_name,
+            account_email=self.email_id,
+            password=self.s3acc_password)
         assert create_account[0], create_account[1]
         access_key = create_account[1]["access_key"]
         secret_key = create_account[1]["secret_key"]
