@@ -36,6 +36,8 @@ jira_task = JiraTask()
 ova_skip_tes = ['TEST-21365', 'TEST-21133', 'TEST-19721', 'TEST-19720', 'TEST-19719', 'TEST-19717',
                 'TEST-19716', 'TEST-19709', 'TEST-19708', 'TEST-19707', 'TEST-19704', 'TEST-19701']
 
+vm_hw_skip_tes = ['TEST-19713']
+
 
 def process_te(te, tp_info, skip_tes, new_tp_key, new_skipped_te, new_te_keys):
     """
@@ -91,7 +93,7 @@ def main(args):
         te_keys = [te for te in te_keys_all if te not in ova_skip_tes]
         tp_info['platform'] = 'VM'
     else:
-        te_keys = te_keys_all
+        te_keys = [te for te in te_keys_all if te not in vm_hw_skip_tes]
     print("test executions of existing test plan {}".format(te_keys))
 
     skip_tes = []
