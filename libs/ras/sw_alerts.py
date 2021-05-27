@@ -38,12 +38,13 @@ class SoftwareAlert(RASCoreLib):
         super().__init__(host, username, password)
         self.svc_path = None
 
-    def run_verify_svc_state(self, svc: str, action: str, monitor_svcs: list):
+    def run_verify_svc_state(self, svc: str, action: str, monitor_svcs: list, timeout:int=5):
         """Perform the given action on the given service and verify systemctl response.
 
         :param svc: service name on whoch action is to be performed
         :param action: start/stop/restart/..
         :param monitor_svcs: other services which should be monitored along with action.
+        :param timeout: time to wait for service to change state before declaring timeout
         :return [type]: bool, expected csm response
         """
         try:
@@ -68,14 +69,19 @@ class SoftwareAlert(RASCoreLib):
             self.node_utils.send_systemctl_cmd(action, [svc], exc=True)
 
         LOGGER.info("Get systemctl status for %s ...", svc)
-        services_status = self.get_svc_status([svc])
-        a_sysctl_resp = services_status[svc]
-        e_sysctl_resp = self.get_expected_systemctl_resp(action)
-        svc_result = self.verify_systemctl_response(expected=e_sysctl_resp, actual=a_sysctl_resp)
+        starttime = time.time()
+        while( not svc_result and time_lapsed < timeout):
+            services_status = self.get_svc_status([svc])
+            a_sysctl_resp = services_status[svc]
+            e_sysctl_resp = self.get_expected_systemctl_resp(action)
+            svc_result = self.verify_systemctl_response(expected=e_sysctl_resp, actual=a_sysctl_resp)
+            time_lapsed = time.time() - starttime
+
+        LOGGER.info("Time take for service to change state: %s seconds", time_lapsed)
         if svc_result:
-            LOGGER.info("%s service state is as expected.")
+            LOGGER.info("%s service state is as expected.", svc)
         else:
-            LOGGER.info("%s service state is NOT as expected.")
+            LOGGER.info("%s service state is NOT as expected.", svc)
 
         LOGGER.info("Get systemctl status for %s ...", monitor_svcs)
         new_svcs_status = self.get_svc_status(monitor_svcs)
@@ -156,6 +162,9 @@ class SoftwareAlert(RASCoreLib):
             csm_response = None
 
         elif action == "activating":
+            csm_response = None
+
+        elif action == "failed":
             csm_response = None
         return csm_response
 
@@ -272,10 +281,18 @@ class SoftwareAlert(RASCoreLib):
 
         :param svc: Service Name
         """
-        ppid = self.get_svc_status([svc])[svc]["pid"]
-        self.node_utils.rename_file(self.svc_path, self.get_tmp_svc_path())
+        svc_status = self.get_svc_status([svc])[svc]
+        ppid = svc_status["pid"]
+        LOGGER.info("Process ID of the service : %s", ppid)
+        self.svc_path = svc_status["path"]
+        LOGGER.info("Old service configuration path : %s", self.svc_path)
+        tmp_path = self.get_tmp_svc_path()
+        LOGGER.info("New service configuration path : %s", tmp_path)
+        self.node_utils.rename_file(self.svc_path, tmp_path)
         self.apply_svc_setting()
-        self.node_utils.host_obj.exec_command(commands.KILL_CMD.format(ppid))
+        cmd = commands.KILL_CMD.format(ppid)
+        LOGGER.info("Sending kill command : %s", cmd)
+        self.node_utils.execute_cmd(cmd)
 
     def put_svc_deactivating(self, svc):
         """Function to generate deactivating alert
@@ -365,8 +382,10 @@ class SoftwareAlert(RASCoreLib):
         fpath = self.get_svc_status([svc])[svc]["path"]
         self.svc_path = fpath
         op = self.read_svc_file(svc)
+        LOGGER.info("Existing service configuration :")
+        LOGGER.info(op)
         self.node_utils.rename_file(self.svc_path, self.get_tmp_svc_path())
-
+        LOGGER.info("Content modified in service configuration : %s", content)
         for section, _ in content.items():
             op[section].update(content[section])
             txt = ""
@@ -375,18 +394,25 @@ class SoftwareAlert(RASCoreLib):
                 for k, v in value.items():
                     txt = txt + k + "=" + v + "\n"
             self.node_utils.write_file(fpath, txt)
-        LOGGER.info("SVC content...")
+        LOGGER.info("Changed service configuration :")
         LOGGER.info(txt)
 
     def apply_svc_setting(self):
         """Apply the changed setting using reload deemon command.
         """
         reload_systemctl = "systemctl daemon-reload"
+        LOGGER.info("Sending %s command...", reload_systemctl)
         self.node_utils.execute_cmd(cmd=reload_systemctl)
+        LOGGER.info("Successfully reloaded systemctl.")
 
     def restore_svc_config(self):
         """Removes the changed configuration file and restroes the orhiginal one.
         """
-        self.node_utils.remove_file(self.svc_path)
+        LOGGER.info("Restoring the service configuration...")
+        try:
+            self.node_utils.remove_file(self.svc_path)
+        except FileNotFoundError:
+            LOGGER.info("Ignoring file %s not found", self.svc_path)
         self.node_utils.rename_file(self.get_tmp_svc_path(), self.svc_path)
         self.apply_svc_setting()
+        LOGGER.info("Service configuration is successfully restored.")
