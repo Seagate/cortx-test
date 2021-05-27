@@ -111,38 +111,11 @@ class TestAccountUserManagement:
         if os.path.exists(self.test_file_path):
             os.remove(self.test_file_path)
             self.log.info("Cleaned test directory: %s", self.test_dir_path)
-        # users_list = [user["UserName"]
-        #               for user in IAM_OBJ.list_users()[1]
-        #               if self.user_name in user["UserName"]]
-        users_list = self.users_list
-        self.log.info("IAM users: %s", str(users_list))
-        if users_list:
-            self.log.info("Deleting IAM users...")
-            for user in users_list:
-                res = IAM_OBJ.list_access_keys(user)
-                if res[0]:
-                    self.log.info("Deleting user access key...")
-                    for key in res[1]["AccessKeyMetadata"]:
-                        IAM_OBJ.delete_access_key(
-                            user, key["AccessKeyId"])
-                    self.log.info("Deleted user access key.")
-                try:
-                    self.log.info("Deleting a user: %s", str(user))
-                    resp = IAM_OBJ.delete_user(user)
-                    self.log.info(resp)
-                except CTException as error:
-                    self.log.error(error)
-        self.log.info("Deleted users successfully.")
-        accounts = self.accounts_list
-        # accounts = self.cortx_obj.list_accounts_cortxcli()
-        # accounts = [acc["account_name"]
-        #             for acc in accounts if self.account_name in acc["account_name"]]
-        for acc in accounts:
+        for acc in self.accounts_list:
             self.cortx_obj.login_cortx_cli(acc, self.s3acc_password)
-            # self.log.info("deleting all buckets in account %s", acc)
-            # self.cortx_obj.delete_all_buckets_cortx_cli()
             self.log.info("deleting all users in account %s", acc)
-            self.cortx_obj.delete_all_iam_users()
+            for user in self.users_list:
+                self.cortx_obj.delete_iam_user(user)
             self.cortx_obj.logout_cortx_cli()
             self.log.info("deleting %s", acc)
             self.cortx_obj.delete_account_cortxcli(
@@ -366,7 +339,7 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5435")
-    # @CTFailOn(error_handler)
+    @CTFailOn(error_handler)
     def test_crud_operations_with_invalid_cred_1974(self):
         """CRUD operations with invalid login credentials."""
         self.log.info(
@@ -440,7 +413,7 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5439")
-    # @CTFailOn(error_handler)
+    @CTFailOn(error_handler)
     def test_create_new_user_from_current_account_2076(self):
         """Create new user for current Account."""
         self.log.info("START: Create new user for current Account.")
@@ -479,7 +452,7 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5422")
-    # @CTFailOn(error_handler)
+    @CTFailOn(error_handler)
     def test_update_user_2077(self):
         """Update User."""
         self.log.info("START: Update User.")
@@ -520,7 +493,7 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5428")
-    # @CTFailOn(error_handler)
+    @CTFailOn(error_handler)
     def test_list_user_2078(self):
         """List user."""
         self.log.info("START: list user")
@@ -550,7 +523,7 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5431")
-    # @CTFailOn(error_handler)
+    @CTFailOn(error_handler)
     def test_delete_user_2079(self):
         """Delete User."""
         self.log.info("START: Delete User")
@@ -577,7 +550,7 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5438")
-    # @CTFailOn(error_handler)
+    @CTFailOn(error_handler)
     def test_create_100_number_of_users_2080(self):
         """Created 100 No of Users."""
         self.log.info("START: Created 100 No of Users")
@@ -923,7 +896,7 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-8718")
-    # @CTFailOn(error_handler)
+    @CTFailOn(error_handler)
     def test_create_user_account_and_check_arn_4625(self):
         """Test Create user for the account and verify output with proper ARN format."""
         self.log.info(
