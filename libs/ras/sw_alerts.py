@@ -431,7 +431,7 @@ class SoftwareAlert(RASCoreLib):
         LOGGER.info(txt)
 
     def apply_svc_setting(self):
-        """Apply the changed setting using reload deemon command.
+        """Apply the changed setting using reload daemon command.
         """
         reload_systemctl = "systemctl daemon-reload"
         LOGGER.info("Sending %s command...", reload_systemctl)
@@ -439,7 +439,7 @@ class SoftwareAlert(RASCoreLib):
         LOGGER.info("Successfully reloaded systemctl.")
 
     def restore_svc_config(self):
-        """Removes the changed configuration file and restroes the orhiginal one.
+        """Removes the changed configuration file and restores the original one.
         """
         LOGGER.info("Restoring the service configuration...")
         try:

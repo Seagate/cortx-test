@@ -122,6 +122,13 @@ class Test3PSvcMonitoring:
         """Teardown operations."""
         LOGGER.info("Performing Teardown operation")
 
+        if not self.restored_config:
+            LOGGER.info("Restoring the service configuration in Teardown")
+            self.sw_alert_obj.restore_svc_config()
+            op = self.sw_alert_obj.recover_svc(self.restored_svc)
+            LOGGER.info("Service recovery details : %s", op)
+            assert op["state"] == "active", "Unable to recover the service"
+
         if self.changed_level:
             kv_store_path = LOG_STORE_PATH
             common_cfg = RAS_VAL["ras_sspl_alert"]["sspl_config"]
