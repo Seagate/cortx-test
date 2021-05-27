@@ -30,6 +30,7 @@ from config import CMN_CFG
 from config import CSM_CFG
 from libs.csm.cli.cortxcli_iam_user import CortxCliIamUser
 from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
+from libs.csm.cli.cortx_cli_s3access_keys import CortxCliS3AccessKeys
 
 
 class TestCliIAMUser:
@@ -54,6 +55,8 @@ class TestCliIAMUser:
             username=CMN_CFG["csm"]["csm_admin_user"]["username"],
             password=CMN_CFG["csm"]["csm_admin_user"]["password"])
         cls.s3acc_obj = CortxCliS3AccountOperations(
+            session_obj=cls.iam_obj.session_obj)
+        cls.access_key_obj = CortxCliS3AccessKeys(
             session_obj=cls.iam_obj.session_obj)
         cls.s3acc_name = "{}_{}".format("cli_s3acc", int(time.time()))
         cls.s3acc_email = "{}@seagate.com".format(cls.s3acc_name)
@@ -516,3 +519,179 @@ class TestCliIAMUser:
         self.LOGGER.info(
             "Verified that appropriate message should be returned when user enters valid username")
         self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-21823")
+    def test_21823_create_access_key(self):
+        """
+        Create access keys for IAM user through CLI
+        """
+        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.LOGGER.info("Creating iam user with name %s", self.user_name)
+        resp = self.iam_obj.create_iam_user(user_name=self.user_name,
+                                            password=self.iam_password,
+                                            confirm_password=self.iam_password)
+        assert_utils.assert_exact_string(resp[1], self.user_name)
+        self.LOGGER.info("Created iam user with name %s", self.iam_password)
+        self.LOGGER.info("Creating access key for IAM user %s", self.user_name)
+        create_access_key = self.access_key_obj.create_s3_iam_access_key(
+            user_name=self.user_name)
+        assert_utils.assert_equals(
+            True, create_access_key[0], create_access_key[1])
+        self.LOGGER.info("Created access key for IAM user %s", self.user_name)
+        self.LOGGER.info("Verify access key is created")
+        resp = self.access_key_obj.show_s3access_key(user_name=self.user_name)
+        access_keys = [i["access_key_id"] for i in resp["access_keys"]]
+        assert create_access_key[1]["access_key"] in access_keys
+        self.LOGGER.info("Verified access key is created")
+        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-21824")
+    def test_21824_delete_access_key(self):
+        """
+        Verify delete access key for IAM user
+        """
+        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.LOGGER.info("Creating iam user with name %s", self.user_name)
+        resp = self.iam_obj.create_iam_user(user_name=self.user_name,
+                                            password=self.iam_password,
+                                            confirm_password=self.iam_password)
+        assert_utils.assert_exact_string(resp[1], self.user_name)
+        self.LOGGER.info("Created iam user with name %s", self.iam_password)
+        self.LOGGER.info("Creating access key for IAM user %s", self.user_name)
+        create_access_key = self.access_key_obj.create_s3_iam_access_key(
+            user_name=self.user_name)
+        assert_utils.assert_equals(
+            True, create_access_key[0], create_access_key[1])
+        iam_access_key = create_access_key[1]["access_key"]
+        self.LOGGER.info("Created access key for IAM user %s", self.user_name)
+        self.LOGGER.info("Verify access key is created")
+        resp = self.access_key_obj.show_s3access_key(user_name=self.user_name)
+        access_keys = [i["access_key_id"] for i in resp["access_keys"]]
+        assert iam_access_key in access_keys
+        self.LOGGER.info("Verified access key is created")
+        self.LOGGER.info("Deleting access key of IAM user %s", self.user_name)
+        resp = self.access_key_obj.delete_s3access_key(
+            access_key=iam_access_key, user_name=self.user_name)
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        self.LOGGER.info("Deleted access key of IAM user %s", self.user_name)
+        self.LOGGER.info(
+            "Verify access key is deleted for IAM user %s",
+            self.user_name)
+        resp = self.access_key_obj.show_s3access_key(user_name=self.user_name)
+        access_keys = [i["access_key_id"] for i in resp["access_keys"]]
+        assert iam_access_key not in access_keys
+        self.LOGGER.info(
+            "Verified access key is deleted for IAM user %s",
+            self.user_name)
+        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-21825")
+    def test_21825_update_access_key_status(self):
+        """
+        Update status of access for IAM user through CLI
+        """
+        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        access_key_status = "Inactive"
+        self.LOGGER.info("Creating iam user with name %s", self.user_name)
+        resp = self.iam_obj.create_iam_user(user_name=self.user_name,
+                                            password=self.iam_password,
+                                            confirm_password=self.iam_password)
+        assert_utils.assert_exact_string(resp[1], self.user_name)
+        self.LOGGER.info("Created iam user with name %s", self.iam_password)
+        self.LOGGER.info("Creating access key for IAM user %s", self.user_name)
+        create_access_key = self.access_key_obj.create_s3_iam_access_key(
+            user_name=self.user_name)
+        assert_utils.assert_equals(
+            True, create_access_key[0], create_access_key[1])
+        iam_access_key = create_access_key[1]["access_key"]
+        self.LOGGER.info("Created access key for IAM user %s", self.user_name)
+        self.LOGGER.info("Verify access key is created")
+        resp = self.access_key_obj.show_s3access_key(user_name=self.user_name)
+        access_keys = [i["access_key_id"] for i in resp["access_keys"]]
+        assert iam_access_key in access_keys
+        self.LOGGER.info("Verified access key is created")
+        self.LOGGER.info(
+            "Updating status of access key of user %s",
+            self.user_name)
+        resp = self.access_key_obj.update_s3access_key(
+            access_key=iam_access_key,
+            user_name=self.user_name,
+            status=access_key_status)
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        self.LOGGER.info(
+            "Updated status of access key of user %s",
+            self.user_name)
+        self.LOGGER.info(
+            "Verify status is updated for access key %s",
+            iam_access_key)
+        resp = self.access_key_obj.show_s3access_key(user_name=self.user_name)
+        updated_status = [i["status"] for i in resp["access_keys"]
+                          if iam_access_key == i["access_key_id"]]
+        assert_utils.assert_equals(updated_status[0], access_key_status, resp)
+        self.LOGGER.info(
+            "Verified status is updated for access key %s",
+            iam_access_key)
+        self.LOGGER.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-21999")
+    def test_21999_check_access_key_count(self):
+        """
+        Verify IAM user can not create more than two access keys
+        """
+        self.LOGGER.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        access_key_status = "Inactive"
+        self.LOGGER.info("Creating iam user with name %s", self.user_name)
+        resp = self.iam_obj.create_iam_user(user_name=self.user_name,
+                                            password=self.iam_password,
+                                            confirm_password=self.iam_password)
+        assert_utils.assert_exact_string(resp[1], self.user_name)
+        self.LOGGER.info("Created iam user with name %s", self.iam_password)
+        self.LOGGER.info("Creating access key for IAM user %s", self.user_name)
+        create_access_key = self.access_key_obj.create_s3_iam_access_key(
+            user_name=self.user_name)
+        assert_utils.assert_equals(
+            True, create_access_key[0], create_access_key[1])
+        iam_access_key = create_access_key[1]["access_key"]
+        self.LOGGER.info("Created access key for IAM user %s", self.user_name)
+        self.LOGGER.info(
+            "Verify two access keys are present for IAM user %s",
+            self.user_name)
+        resp = self.access_key_obj.show_s3access_key(user_name=self.user_name)
+        access_keys = [i["access_key_id"] for i in resp["access_keys"]]
+        assert iam_access_key in access_keys
+        assert len(access_keys) == 2
+        self.LOGGER.info(
+            "Verified two access keys are present for IAM user %s",
+            self.user_name)
+        self.LOGGER.info(
+            "Verify IAM user can not have more than two access keys")
+        resp = self.access_key_obj.create_s3_iam_access_key(
+            user_name=self.user_name)
+        assert_utils.assert_equals(False, resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], "exceeded quota")
+        self.LOGGER.info(resp)
+        self.LOGGER.info(
+            "Verified IAM user can not have more than two access keys")
+
+        self.LOGGER.info("Verify invalid user name for delete option")
+        resp = self.access_key_obj.delete_s3access_key(
+            access_key="AA-FGH-@r", user_name="dummy_iam_user")
+        assert_utils.assert_equals(False, resp[0], resp[1])
+        self.LOGGER.info("Verified invalid user name for delete option")
+        self.LOGGER.info("Updating status of invalid access key")
+        resp = self.access_key_obj.update_s3access_key(
+            access_key="invalid-access-key",
+            user_name=self.user_name,
+            status=access_key_status)
+        assert_utils.assert_equals(False, resp[0], resp[1])
+        self.LOGGER.info(
+            "Updating status of invalid access key is failed with error %s",
+            resp[1])
