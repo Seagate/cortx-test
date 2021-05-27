@@ -269,7 +269,6 @@ class TestAccountUserManagement:
         """CRUD operations with valid login credentials."""
         self.log.info(
             "START: Test CRUD operations with valid login credentials.")
-
         self.log.info("Step 1: Create new account and new user in it")
         self.log.info(
             "account name: %s and user name: %s",
@@ -418,7 +417,6 @@ class TestAccountUserManagement:
         """Create new user for current Account."""
         self.log.info("START: Create new user for current Account.")
         self.log.info("Step 1: Create new account and new user in it")
-
         self.log.info("account name: %s", str(self.account_name))
         self.log.info("user_name: %s", str(self.user_name))
         resp = self.create_account(self.account_name)
@@ -434,7 +432,6 @@ class TestAccountUserManagement:
                                                    self.s3acc_password,
                                                    self.s3acc_password)
         self.log.info(resp)
-
         assert resp[0], resp[1]
         self.log.info("Created new account and new user in it.")
         self.log.info("Step 2: Listing users and verifying user is created.")
@@ -457,7 +454,6 @@ class TestAccountUserManagement:
         """Update User."""
         self.log.info("START: Update User.")
         self.log.info("Step 1: Create new account and new user in it")
-
         resp = self.create_account(self.account_name)
         assert resp[0], resp[1]
         access_key = resp[1]["access_key"]
@@ -498,7 +494,6 @@ class TestAccountUserManagement:
         """List user."""
         self.log.info("START: list user")
         self.log.info("Step 1: Create new account and new user in it")
-
         resp = self.create_account(self.account_name)
         assert resp[0], resp[1]
         self.cortx_obj.login_cortx_cli(
@@ -528,7 +523,6 @@ class TestAccountUserManagement:
         """Delete User."""
         self.log.info("START: Delete User")
         self.log.info("Step 1: Create new account and new user in it.")
-
         resp = self.create_account(self.account_name)
         assert resp[0], resp[1]
         self.cortx_obj.login_cortx_cli(
@@ -556,7 +550,6 @@ class TestAccountUserManagement:
         self.log.info("START: Created 100 No of Users")
         total_users = 100
         self.log.info("Step 1: Create new %s account", str(total_users))
-
         resp = self.create_account(self.account_name)
         assert resp[0], resp[1]
         access_key = resp[1]["access_key"]
@@ -594,7 +587,6 @@ class TestAccountUserManagement:
     def test_create_user_with_existing_name_2081(self):
         """Creating user with existing name."""
         self.log.info("START: creating user with existing name.")
-
         self.log.info("Step 1: Creating user with name %s", str(self.user_name))
         resp = IAM_OBJ.create_user(self.user_name)
         assert resp[0], resp[1]
@@ -619,7 +611,6 @@ class TestAccountUserManagement:
     def test_create_access_key_to_the_user_2082(self):
         """Create Access key to the user."""
         self.log.info("START: Create Access key to the user")
-
         self.log.info("Step 1: Creating a user with name %s", str(self.user_name))
         resp = IAM_OBJ.create_user(self.user_name)
         assert resp[0], resp[1]
@@ -644,7 +635,6 @@ class TestAccountUserManagement:
     def test_list_access_keys_for_the_user_2083(self):
         """List accesskeys for the user."""
         self.log.info("START: List accesskeys for the user")
-
         self.log.info("Step 1: Creating a user with name %s", str(self.user_name))
         resp = IAM_OBJ.create_user(self.user_name)
         assert resp[0], resp[1]
@@ -670,7 +660,6 @@ class TestAccountUserManagement:
     def test_delete_access_key_of_a_user_2084(self):
         """Delete Accesskey of a user."""
         self.log.info("START: Delete Accesskey of a users")
-
         self.log.info("Step 1: Creating a user with name %s", str(self.user_name))
         resp = IAM_OBJ.create_user(self.user_name)
         assert resp[0], resp[1]
@@ -701,7 +690,6 @@ class TestAccountUserManagement:
         """Update Accesskey of a user."""
         self.log.info("START: Update Accesskey of a user.")
         self.log.info("Update Accesskey of a user")
-
         self.log.info("Step 1: Creating a user with name %s", str(self.user_name))
         resp = IAM_OBJ.create_user(self.user_name)
         assert resp[0], resp[1]
@@ -735,7 +723,6 @@ class TestAccountUserManagement:
         """Update accesskey of a user with inactive mode."""
         self.log.info("START: update accesskey of a user with inactive mode.")
         self.log.info("update accesskey of a user with inactive mode")
-
         self.log.info("Step 1: Creating a user with name %s", str(self.user_name))
         resp = IAM_OBJ.create_user(self.user_name)
         assert resp[0], resp[1]
@@ -769,7 +756,6 @@ class TestAccountUserManagement:
         """Create max accesskey with existing user name."""
         self.log.info("START: create max accesskey with existing user name.")
         self.log.info("create max accesskey with existing user name")
-
         self.log.info("Step 1: Creating a user with name %s", str(self.user_name))
         resp = IAM_OBJ.create_user(self.user_name)
         assert resp[0], resp[1]
@@ -792,7 +778,6 @@ class TestAccountUserManagement:
         """Update login profile."""
         self.log.info("START: update login profile.")
         self.log.info("update login profile")
-
         self.log.info("Step 1: Creating a user with name %s", str(self.user_name))
         resp = IAM_OBJ.create_user(self.user_name)
         assert resp[0], resp[1]
@@ -861,7 +846,6 @@ class TestAccountUserManagement:
     def test_change_pwd_for_iam_user_2092(self):
         """Change passsword for IAM user."""
         self.log.info("START: Change password for IAM user.")
-
         self.log.info("Step 1: Creating a user with name %s", str(self.user_name))
         resp = IAM_OBJ.create_user(self.user_name)
         assert resp[0], resp[1]
@@ -901,7 +885,6 @@ class TestAccountUserManagement:
         """Test Create user for the account and verify output with proper ARN format."""
         self.log.info(
             "START: Test Create user for the account and verify output with proper ARN format")
-
         self.log.info(
             "Step 1: Creating a new account with name %s", str(
                 self.account_name))
