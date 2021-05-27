@@ -24,18 +24,32 @@ from typing import List
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter, inch
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Spacer, Paragraph, PageBreak
+from reportlab.lib.styles import getSampleStyleSheet
 
 import common_pdf
 
 
 def build_feature_breakdown_table(data: List[list]):
     """Build feature breakdown table."""
-    component_table = Table(data, 6 * [1.26 * inch], len(data) * [0.225 * inch],
+    stylesheet = getSampleStyleSheet()
+
+    # Set wrap text style for 5th column (Bug Description) in table.
+    for row in data[2:]:  # Do not apply for first two header rows
+        row[0] = Paragraph(f'''<b>{row[0]}</b>''', stylesheet['BodyText'])
+
+    col_width = 6 * [0.86 * inch]
+    col_width[0] = 3.25 * inch
+
+    component_table = Table(data, col_width, None,
                             style=common_pdf.common_table_style)
     component_table.setStyle(TableStyle([
         ('TEXTCOLOR', (1, 2), (1, -1), colors.HexColor(0x0070c0)),  # Blue for 2nd (Total) column
         ('TEXTCOLOR', (2, 2), (2, -1), colors.HexColor(0x00b050)),  # Green for 3nd (Pass) column
         ('TEXTCOLOR', (3, 2), (3, -1), colors.HexColor(0xff0000)),  # Red for 4nd (Failed) column
+        ('LEFTPADDING', (0, 0), (-1, -1), 5),
+        ('TOPPADDING', (0, 0), (-1, -1), 5),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 5),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
     ]))
     return component_table
 
