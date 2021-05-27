@@ -89,7 +89,7 @@ class TestCortxcli:
             self.s3acc_prefix, "object", int(time.perf_counter()))
         self.s3user_name = "{0}{1}".format("iam_user", str(time.perf_counter_ns())).replace('.', '_')
         login = self.s3acc_obj.login_cortx_cli()
-        assert_utils.assert_equals(True, login[0], login[1])
+        assert_utils.assert_true(login[0], login[1])
         self.log.info("ENDED : Setup operations at test function level")
 
     def teardown_method(self):
@@ -105,7 +105,6 @@ class TestCortxcli:
                 username=acc, password=self.s3acc_password)
             for iam_user in self.iam_users_list:
                 self.iam_user_obj.delete_iam_user(iam_user)
-                # self.iam_user_obj.delete_all_iam_users()
             self.s3acc_obj.delete_s3account_cortx_cli(account_name=acc)
             self.s3acc_obj.logout_cortx_cli()
         self.s3acc_obj.close_connection()
@@ -140,7 +139,7 @@ class TestCortxcli:
             "Step 2: Verified that new account is created successfully")
         self.log.debug("Logging out from s3acc cortxcli")
         logout = self.s3acc_obj.logout_cortx_cli()
-        assert_utils.assert_equals(True, logout[0], logout[1])
+        assert_utils.assert_true(logout[0], logout[1])
         self.s3_accounts_list.append(self.s3acc_name)
         self.log.info("ENDED: create account using cortxcli")
 
@@ -169,7 +168,7 @@ class TestCortxcli:
             "Step 2: Verified that new account is created successfully")
         self.log.debug("Logging out from s3acc cortxcli")
         logout = self.s3acc_obj.logout_cortx_cli()
-        assert_utils.assert_equals(True, logout[0], logout[1])
+        assert_utils.assert_true(logout[0], logout[1])
         self.s3_accounts_list.append(self.s3acc_name)
         self.log.info("ENDED: List account using cortxcli")
 
@@ -246,7 +245,7 @@ class TestCortxcli:
             "Step 2: Created another account with existing account name")
         self.log.debug("Logging out from s3acc cortxcli")
         logout = self.s3acc_obj.logout_cortx_cli()
-        assert_utils.assert_equals(True, logout[0], logout[1])
+        assert_utils.assert_true(logout[0], logout[1])
         self.s3_accounts_list.append(self.s3acc_name)
         self.log.info(
             "ENDED: create account with existing name using cortxcli")
@@ -266,7 +265,7 @@ class TestCortxcli:
         self.log.info(
             "Step 1: Created a new account with name %s", self.s3acc_name)
         logout = self.s3acc_obj.logout_cortx_cli()
-        assert_utils.assert_equals(True, logout[0], logout[1])
+        assert_utils.assert_true(logout[0], logout[1])
         login = self.s3acc_obj.login_cortx_cli(
             username=self.s3acc_name,
             password=self.s3acc_password)
@@ -281,7 +280,7 @@ class TestCortxcli:
             self.s3acc_name)
         self.log.debug("Logging out from s3acc cortxcli")
         logout = self.s3acc_obj.logout_cortx_cli()
-        assert_utils.assert_equals(True, logout[0], logout[1])
+        assert_utils.assert_true(logout[0], logout[1])
         self.log.info("ENDED: Delete Account using cortxcli")
 
     @pytest.mark.parallel
@@ -326,7 +325,6 @@ class TestCortxcli:
         self.log.info(
             "Step 3: Performing CRUD operations using valid user's credentials")
         self.log.info("Creating a bucket with name %s", self.s3bucket_name)
-        # resp = self.s3bkt_obj.create_bucket_cortx_cli(self.s3bucket_name)
         resp = s3_user_obj.create_bucket(self.s3bucket_name)
         assert_true(resp[0], resp[1])
         self.log.info(
@@ -357,7 +355,7 @@ class TestCortxcli:
             "Step 3: Performed CRUD operations using valid user's credentials")
         self.log.debug("Logging out from s3_user cortxcli")
         logout = self.iam_user_obj.logout_cortx_cli()
-        assert_utils.assert_equals(True, logout[0], logout[1])
+        assert_utils.assert_true(logout[0], logout[1])
         self.s3_accounts_list.append(self.s3acc_name)
         self.iam_users_list.append(self.s3user_name)
         self.log.info(
@@ -397,7 +395,7 @@ class TestCortxcli:
         resp = self.iam_user_obj.delete_iam_user(self.s3user_name)
         assert_utils.assert_exact_string(resp[1], "IAM User Deleted")
         logout = self.iam_user_obj.logout_cortx_cli()
-        assert_utils.assert_equals(True, logout[0], logout[1])
+        assert_utils.assert_true(logout[0], logout[1])
         self.s3_accounts_list.append(self.s3acc_name)
         self.iam_users_list.append(self.s3user_name)
         self.log.info("ENDED: create user using cortxcli")
@@ -440,7 +438,7 @@ class TestCortxcli:
         resp = self.iam_user_obj.delete_iam_user(self.s3user_name)
         assert_utils.assert_exact_string(resp[1], "IAM User Deleted")
         logout = self.iam_user_obj.logout_cortx_cli()
-        assert_utils.assert_equals(True, logout[0], logout[1])
+        assert_utils.assert_true(logout[0], logout[1])
         self.s3_accounts_list.append(self.s3acc_name)
         self.iam_users_list.append(self.s3user_name)
         self.log.info("ENDED: create access key for user using cortxcli")
@@ -493,7 +491,7 @@ class TestCortxcli:
             resp = self.iam_user_obj.delete_iam_user(user_name)
             assert_utils.assert_exact_string(resp[1], "IAM User Deleted")
         logout = self.iam_user_obj.logout_cortx_cli()
-        assert_utils.assert_equals(True, logout[0], logout[1])
+        assert_utils.assert_true(logout[0], logout[1])
         self.log.info("ENDED: max num of users supported using cortxcli")
 
     @pytest.mark.parallel
@@ -541,7 +539,7 @@ class TestCortxcli:
         resp = self.iam_user_obj.delete_iam_user(self.s3user_name)
         assert_utils.assert_exact_string(resp[1], "IAM User Deleted")
         logout = self.iam_user_obj.logout_cortx_cli()
-        assert_utils.assert_equals(True, logout[0], logout[1])
+        assert_utils.assert_true(logout[0], logout[1])
         self.s3_accounts_list.append(self.s3acc_name)
         self.log.info(
             "ENDED: creating user with existing user name using cortxcli")
@@ -577,7 +575,7 @@ class TestCortxcli:
         resp = self.iam_user_obj.delete_iam_user(self.s3user_name)
         assert_utils.assert_exact_string(resp[1], "IAM User Deleted")
         logout = self.iam_user_obj.logout_cortx_cli()
-        assert_utils.assert_equals(True, logout[0], logout[1])
+        assert_utils.assert_true(logout[0], logout[1])
         self.log.info("Step 2: Deleted user successfully")
         self.s3_accounts_list.append(self.s3acc_name)
         self.log.info("ENDED: Delete user using cortxcli")
@@ -616,7 +614,7 @@ class TestCortxcli:
         resp = self.iam_user_obj.delete_iam_user(self.s3user_name)
         assert_utils.assert_exact_string(resp[1], "IAM User Deleted")
         logout = self.iam_user_obj.logout_cortx_cli()
-        assert_utils.assert_equals(True, logout[0], logout[1])
+        assert_utils.assert_true(logout[0], logout[1])
         self.log.info(
             "Listed users and verified user details are listed")
         self.s3_accounts_list.append(self.s3acc_name)
@@ -685,7 +683,7 @@ class TestCortxcli:
         assert_utils.assert_exact_string(resp[1], "IAM User Deleted")
         self.log.info("logging out from user account")
         logout = self.iam_user_obj.logout_cortx_cli()
-        assert_utils.assert_equals(True, logout[0], logout[1])
+        assert_utils.assert_true(logout[0], logout[1])
         self.s3_accounts_list.append(self.s3acc_name)
         self.iam_users_list.append(self.s3user_name)
         self.log.info("ENDED: delete accesskey using cortxcli")
@@ -771,7 +769,7 @@ class TestCortxcli:
         resp = self.iam_user_obj.delete_iam_user(user_name=self.s3user_name)
         assert_utils.assert_exact_string(resp[1], "IAM User Deleted")
         logout = self.iam_user_obj.logout_cortx_cli()
-        assert_utils.assert_equals(True, logout[0], logout[1])
+        assert_utils.assert_true(logout[0], logout[1])
         self.log.info(
             "Step 6: Verified that access key of user is updated successfully")
         self.s3_accounts_list.append(self.s3acc_name)
@@ -838,7 +836,7 @@ class TestCortxcli:
         resp = self.iam_user_obj.delete_iam_user(user_name=self.s3user_name)
         assert_utils.assert_exact_string(resp[1], "IAM User Deleted")
         logout = self.iam_user_obj.logout_cortx_cli()
-        assert_utils.assert_equals(True, logout[0], logout[1])
+        assert_utils.assert_true(logout[0], logout[1])
         self.s3_accounts_list.append(self.s3acc_name)
         self.iam_users_list.append(self.s3user_name)
         self.log.info("ENDED: list accesskey for User using cortxcli")
@@ -927,7 +925,7 @@ class TestCortxcli:
         resp = self.iam_user_obj.delete_iam_user(user_name=self.s3user_name)
         assert_utils.assert_exact_string(resp[1], "IAM User Deleted")
         logout = self.iam_user_obj.logout_cortx_cli()
-        assert_utils.assert_equals(True, logout[0], logout[1])
+        assert_utils.assert_true(logout[0], logout[1])
         self.log.info(
             "Step 6: Verified that access key of user is updated successfully")
         self.s3_accounts_list.append(self.s3acc_name)
@@ -960,7 +958,7 @@ class TestCortxcli:
                                                   password=self.s3acc_password)
         assert_utils.assert_equals(login[0], True, "Server authentication check failed")
         logout = self.iam_user_obj.logout_cortx_cli()
-        assert_utils.assert_equals(True, logout[0], logout[1])
+        assert_utils.assert_true(logout[0], logout[1])
         s3_user_obj = s3_test_lib.S3TestLib(
             access_key=user_access_key,
             secret_key=user_secret_key)
@@ -1090,7 +1088,7 @@ class TestCortxcli:
         resp = self.s3bkt_obj.delete_bucket_cortx_cli(self.s3bucket_name)
         assert_true(resp[0], resp[1])
         logout = self.iam_user_obj.logout_cortx_cli()
-        assert_utils.assert_equals(True, logout[0], logout[1])
+        assert_utils.assert_true(logout[0], logout[1])
         self.log.info(
             "ENDED: login to account with valid creds and perform s3 crud ops using cortxcli")
 
