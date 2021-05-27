@@ -3,7 +3,7 @@
 export CORTX_TEST_ROOT=/cortx-test
 export LIB=/usr/lib/python3.7
 export SITE_PKGS=/usr/lib/python3.7/site-packages
-export PYTHONPATH=$LIB:$SITE_PKGS:$CORTX_TEST_ROOT:
+export PYTHONPATH=$LIB:$SITE_PKGS:$CORTX_TEST_ROOT
 
 python3.7 ci_tools/aws_configure.py --access_key=$AWS_ACCESS_KEY_ID --secret_key=$AWS_SECRET_ACCESS_KEY  
 
