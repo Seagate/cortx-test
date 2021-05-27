@@ -137,11 +137,12 @@ def main():
     rest, db_username, db_password = common.get_timings_db_details()
     username, password = jira_api.get_username_password()
 
-    builds = [jira_api.get_details_from_test_plan(test_plan, username, password)["buildNo"] if
-              test_plan else "NA" for test_plan in test_plans]
+    tps_info = [jira_api.get_details_from_test_plan(test_plan, username, password) if
+                test_plan else "NA" for test_plan in test_plans]
+    builds = [x["buildNo"] if x != 'NA' else 'NA' for x in tps_info]
 
     data = []
-    data.extend(jira_api.get_main_table_data(builds[0], "Exec"))
+    data.extend(jira_api.get_main_table_data(tps_info[0], "Exec"))
     data.extend([""])
     data.extend(jira_api.get_reported_bug_table_data(test_plans[0], username, password))
     data.extend([""])

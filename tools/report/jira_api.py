@@ -20,6 +20,7 @@
 
 import getpass
 import os
+import re
 import sys
 from collections import Counter
 from datetime import date
@@ -229,14 +230,28 @@ def get_details_from_test_plan(test_plan: str, username: str, password: str) -> 
         else:
             print(f"Test Plan {test_plan} has {key} field empty.")
             sys.exit(1)
+    env = test_plan_details.fields.environment
+    if env:
+        match = re.match(r"([0-9]+)([a-z]+)", env, re.I)
+        if not match:
+            print(f"Environment field for Test Plan {test_plan} does not have correct format "
+                  f"e.g. 3Node or 1node.")
+            sys.exit(1)
+        out_dict["nodes"] = f"{match.groups()[0]} {match.groups()[1]}"
+    else:
+        print(f"Environment field for Test Plan {test_plan} is empty."
+              f"Example values, 3Node or 1node.")
+        sys.exit(1)
+
     return out_dict
 
 
-def get_main_table_data(build_no: str, report_type: str):
+def get_main_table_data(tp_info: dict, report_type: str):
     """Get header table data."""
     data = [[f"CFT {report_type} Report"], ["Product", "Lyve Rack - 2"],
-            ["Build", build_no],
-            ["Date", date.today().strftime("%B %d, %Y")], ["System", ""]]
+            ["Build", f"{tp_info['branch']} {tp_info['buildNo']}"],
+            ["Date", date.today().strftime("%B %d, %Y")],
+            ["System", f"{tp_info['nodes']} {tp_info['platformType']}"]]
     return data
 
 
@@ -253,7 +268,7 @@ def get_reported_bug_table_data(test_plan: str, username: str, password: str):
         else:
             cortx_bugs[defect.fields.priority.name] += 1
     data = [
-        ["Reported Bugs"], ["Priority", "Test Setup", "Cortx Stack"],
+        ["Reported Bugs"], ["Priority", "Test Issues", "Cortx Issues"],
         ["Total", sum(test_bugs.values()), sum(cortx_bugs.values())],
     ]
     for priority in BUGS_PRIORITY:

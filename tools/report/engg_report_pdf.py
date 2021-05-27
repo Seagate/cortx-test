@@ -118,8 +118,6 @@ def main():
 
     main_table = common_pdf.build_main_table(main_table_data)
 
-    build = main_table_data[2][1]
-
     two_tables = common_pdf.build_two_tables(reported_bugs_table_data, qa_report_table_data)
 
     component_table = build_component_table(component_table_data)
