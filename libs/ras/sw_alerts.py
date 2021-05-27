@@ -70,6 +70,8 @@ class SoftwareAlert(RASCoreLib):
 
         LOGGER.info("Get systemctl status for %s ...", svc)
         starttime = time.time()
+        svc_result = False
+        time_lapsed = 0
         while( not svc_result and time_lapsed < timeout):
             services_status = self.get_svc_status([svc])
             a_sysctl_resp = services_status[svc]
@@ -85,6 +87,10 @@ class SoftwareAlert(RASCoreLib):
 
         LOGGER.info("Get systemctl status for %s ...", monitor_svcs)
         new_svcs_status = self.get_svc_status(monitor_svcs)
+        if "timestamp" in new_svcs_status:
+            new_svcs_status.pop("timestamp")
+        if "timestamp" in prev_svcs_status:
+            prev_svcs_status.pop("timestamp")
         monitor_svcs_result = new_svcs_status == prev_svcs_status
         if monitor_svcs_result:
             LOGGER.info("There is no change in the state of other services")
@@ -220,6 +226,7 @@ class SoftwareAlert(RASCoreLib):
         """
         LOGGER.info("Check that all services are in active state: %s", services)
         resp = self.get_svc_status(services=services)
+        LOGGER.info("Get service status response : %s", resp)
         disabled_list = []
         for svc, sresp in resp.items():
             LOGGER.info("%s : %s", svc, sresp["enabled"])
@@ -253,8 +260,11 @@ class SoftwareAlert(RASCoreLib):
         parsed_op = {}
         for line in response.splitlines():
             line = line.lstrip().rstrip()
-            if "● " in line and "-" in line:
-                service_tokenizer = re.compile(r'● (?P<service>.*?) - (?P<description>.*)')
+            if "● " in line:
+                if " - " in line:
+                    service_tokenizer = re.compile(r'● (?P<service>.*?) - (?P<description>.*)')
+                else:
+                    service_tokenizer = re.compile(r'● (?P<service>.*)')
                 match = re.match(service_tokenizer, line)
                 parsed_op.update(match.groupdict())
             if "Active:" in line:
@@ -292,7 +302,11 @@ class SoftwareAlert(RASCoreLib):
         self.apply_svc_setting()
         cmd = commands.KILL_CMD.format(ppid)
         LOGGER.info("Sending kill command : %s", cmd)
-        self.node_utils.execute_cmd(cmd)
+        try:
+            self.node_utils.execute_cmd(cmd)
+        except OSError as error:
+            LOGGER.warning(error)
+            LOGGER.info("Process is not running.")
 
     def put_svc_deactivating(self, svc):
         """Function to generate deactivating alert
@@ -331,12 +345,14 @@ class SoftwareAlert(RASCoreLib):
         time_lapsed = 0
         while time_lapsed < timeout:
             response = self.get_svc_status([svc])
-            LOGGER.info(svc + ":" + response[svc]["state"])
-            if attempt_start and response[svc]["state"] != "active":
-                self.node_utils.send_systemctl_cmd("start", [svc], exc=True)
-            response = self.get_svc_status([svc])
             op = {"state": response[svc]["state"], "recovery_time": time.time() - starttime}
-            time.sleep(5)
+            LOGGER.info(svc + ":" + response[svc]["state"])
+            if response[svc]["state"] == "active":
+                LOGGER.info("%s is recovered in %s seconds", svc, time_lapsed)
+                break
+            if attempt_start and response[svc]["state"] != "active":
+                self.node_utils.send_systemctl_cmd("start", [svc], exc=True)            
+            time.sleep(1)
             time_lapsed = time.time() - starttime
         return op
 

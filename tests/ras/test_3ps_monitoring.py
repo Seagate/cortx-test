@@ -61,12 +61,12 @@ class Test3PSvcMonitoring:
         cls.csm_alert_obj = SystemAlerts(cls.node_obj)
         cls.start_msg_bus = cls.cm_cfg["start_msg_bus"]
         cls.sw_alert_obj = SoftwareAlert(cls.host, cls.uname, cls.passwd)
+        cls.external_svcs = const.SVCS_3P_ENABLED_VM
         LOGGER.info("Completed setup_class")
 
     def setup_method(self):
         """Setup operations per test."""
         LOGGER.info("Running setup_method")
-        external_services = const.SVCS_3P
         common_cfg = RAS_VAL["ras_sspl_alert"]
         services = self.cm_cfg["service"]
         sspl_svc = services["sspl_service"]
@@ -93,12 +93,12 @@ class Test3PSvcMonitoring:
         assert res["state"] == "active", "Kafka is not in active state"
 
         LOGGER.info("Check that all the 3rd party services are enabled.")
-        resp = self.sw_alert_obj.get_disabled_svcs(external_services)
+        resp = self.sw_alert_obj.get_disabled_svcs(self.external_svcs)
         assert resp == [], f"{resp} are in disabled state"
         LOGGER.info("All 3rd party services are enabled.")
 
         LOGGER.info("Check that all the 3rd party services are active")
-        resp = self.sw_alert_obj.get_inactive_svcs(external_services)
+        resp = self.sw_alert_obj.get_inactive_svcs(self.external_svcs)
         assert resp == [], f"{resp} are in inactive state"
         LOGGER.info("All 3rd party services are in active state.")
 
@@ -164,6 +164,7 @@ class Test3PSvcMonitoring:
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
         external_svcs = const.SVCS_3P
+
         for svc in external_svcs:
             LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
 
@@ -411,15 +412,16 @@ class Test3PSvcMonitoring:
         """
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
-        external_svcs = const.SVCS_3P
-        for svc in external_svcs:
+        #external_svcs = const.SVCS_3P
+        print(self.external_svcs)
+        for svc in self.external_svcs:
             LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
 
             LOGGER.info("Step 1: Fail %s service...", svc)
             starttime = time.time()
             result, e_csm_resp = self.sw_alert_obj.run_verify_svc_state(svc, "failed", [], 
                                                                         timeout=60)
-            assert result, "Failed in failing service"
+            assert result, f"Failed in failing {svc} service"
             LOGGER.info("Step 1: Failed %s service...", svc)
 
             if self.start_msg_bus:
@@ -438,9 +440,10 @@ class Test3PSvcMonitoring:
 
             self.sw_alert_obj.restore_svc_config()
             LOGGER.info("Step 4: Wait for the %s service to start", svc)
-            op = self.sw_alert_obj.recover_svc(svc, attempt_start=True, timeout=5)
+            op = self.sw_alert_obj.recover_svc(svc, attempt_start=True, 
+                                               timeout=const.SVC_LOAD_TIMEOUT_SEC)
             LOGGER.info("Service recovery details : %s", op)
-            assert op["state"] == "active", "Unable to recover the service"
+            assert op["state"] == "active", f"Unable to recover {svc} service"
             LOGGER.info("Step 4: %s service is active and running", svc)
 
             if self.start_msg_bus:
