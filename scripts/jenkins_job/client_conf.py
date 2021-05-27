@@ -178,7 +178,7 @@ def main():
     if os.path.exists(local_path):
         run_cmd("rm -f {}".format(local_path))
     nd_obj_host.copy_file_to_local(remote_path=remote_path, local_path=local_path)
-    set_s3_endpoints(mgmnt_ip)
+    set_s3_endpoints(clstr_ip)
     setupname = create_db_entry(host, uname, host_passwd, mgmnt_ip, admin_user, admin_passwd)
     run_cmd("python3.7 tools/setup_update/setup_entry.py "
             "--dbuser datawrite --dbpassword seagate@123")
@@ -186,7 +186,7 @@ def main():
     os.environ["TARGET"] = setupname
     print("Setting up chrome")
     setup_chrome()
-    configure_server_node(nd_obj_host, mgmnt_ip)
+    configure_server_node(nd_obj_host, clstr_ip)
 
 if __name__ == "__main__":
     main()
