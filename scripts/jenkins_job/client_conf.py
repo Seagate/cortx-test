@@ -102,6 +102,7 @@ def set_s3_endpoints(cluster_ip):
     :return: None
     """
     # Removing contents of /etc/hosts file and writing new contents
+    print("Setting s3 endpoints on client.")
     run_cmd(cmd="rm -f /etc/hosts")
     with open("/etc/hosts", 'w') as file:
         file.write("127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4\n")
@@ -131,6 +132,7 @@ def configure_server_node(obj, mg_ip):
     :return: None
     """
     # Stopping/disabling firewalld service on node for tests
+    print("Doing server side settings for firewalld and haproxy.")
     cmd = "systemctl stop firewalld"
     obj.execute_cmd(cmd, read_lines=True)
     cmd = "systemctl disable firewalld"
