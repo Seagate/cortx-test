@@ -38,33 +38,33 @@ class TestUserLoginProfileTests:
         """It will perform all prerequisite test suite steps if any."""
         cls.log = logging.getLogger(__name__)
         cls.log.info("STARTED: Setup operations at suit level")
-        cls.cli_obj_class = cortxcli_test_lib.CortxCliTestLib()
+        # cls.cli_obj_class = cortxcli_test_lib.CortxCliTestLib()
         cls.user_name_prefix = "iamuser"
         cls.acc_name_prefix = "iamaccount"
         cls.default_acc = "iamaccount{}".format(int(time.perf_counter_ns()))
         cls.default_acc_mail = "{}@seagate.com".format(cls.default_acc)
         cls.default_acc_pass = S3_CFG["CliConfig"]["s3_account"]["password"]
-        create_account = cls.cli_obj_class.create_account_cortxcli(
-            account_name=cls.default_acc,
-            account_email=cls.default_acc_mail,
-            password=cls.default_acc_pass)
-        assert create_account[0], create_account[1]
-        cls.log.debug("Successfully created s3 account %s", create_account[1])
-        access_key = create_account[1]["access_key"]
-        secret_key = create_account[1]["secret_key"]
-        cls.iam_test_obj = iam_test_lib.IamTestLib(
-            access_key=access_key, secret_key=secret_key)
         cls.log.info("ENDED: Setup operations at suit level")
 
     def setup_method(self):
         """Setup method."""
         self.log.info("STARTED: Setup operations")
+        self.cli_obj = cortxcli_test_lib.CortxCliTestLib()
+        create_account = self.cli_obj.create_account_cortxcli(
+            account_name=self.default_acc,
+            account_email=self.default_acc_mail,
+            password=self.default_acc_pass)
+        assert create_account[0], create_account[1]
+        self.log.debug("Successfully created s3 account %s", create_account[1])
+        access_key = create_account[1]["access_key"]
+        secret_key = create_account[1]["secret_key"]
+        self.iam_test_obj = iam_test_lib.IamTestLib(
+            access_key=access_key, secret_key=secret_key)
         self.user_name = "{}{}".format(self.user_name_prefix, int(time.perf_counter_ns()))
         self.account_name = "iamaccount{}".format(int(time.perf_counter_ns()))
         self.email_id = "@seagate.com"
         self.s3acc_passwd = S3_CFG["CliConfig"]["s3_account"]["password"]
         self.test_cfg = S3_USER_ACC_MGMT_CONFIG["test_configs"]
-        self.cli_obj = cortxcli_test_lib.CortxCliTestLib()
         self.users_list = list()
         self.account_list = list()
         self.log.info("ENDED: Setup operations")
@@ -94,28 +94,25 @@ class TestUserLoginProfileTests:
         # all_accounts = self.cli_obj_class.list_accounts_cortxcli()
         # iam_accounts = [acc["account_name"]
         #                 for acc in all_accounts if self.acc_name_prefix in acc["account_name"]]
-        iam_accounts = self.account_list
-        self.log.debug("IAM accounts: %s", iam_accounts)
-        if iam_accounts:
-            self.log.debug("Deleting IAM accounts...")
-            for acc in iam_accounts:
-                self.log.debug("Deleting %s account", acc)
-                self.cli_obj_class.login_cortx_cli(
-                    username=acc, password=self.default_acc_pass)
-                # self.cli_obj_class.delete_all_buckets_cortx_cli()
-                self.cli_obj_class.delete_all_iam_users()
-                self.cli_obj_class.logout_cortx_cli()
-                self.cli_obj_class.delete_account_cortxcli(
-                    account_name=acc, password=self.default_acc_pass)
+        for acc in self.account_list:
+            self.log.debug("Deleting %s account", acc)
+            self.cli_obj.login_cortx_cli(
+                username=acc, password=self.default_acc_pass)
+            # self.cli_obj_class.delete_all_buckets_cortx_cli()
+            for user in self.users_list:
+                self.cli_obj.delete_iam_user(user)
+            self.cli_obj.logout_cortx_cli()
+            self.cli_obj.delete_account_cortxcli(
+                account_name=acc, password=self.default_acc_pass)
         del self.cli_obj
         self.log.info("ENDED: Teardown operations")
 
-    @classmethod
-    def teardown_class(cls):
-        """Teardown method."""
-        cls.log.info("STARTED: Teardown operations at suit level")
-        del cls.cli_obj_class
-        cls.log.info("ENDED: Teardown operations at suit level")
+    # @classmethod
+    # def teardown_class(cls):
+    #     """Teardown method."""
+    #     cls.log.info("STARTED: Teardown operations at suit level")
+    #     del cls.cli_obj_class
+    #     cls.log.info("ENDED: Teardown operations at suit level")
 
     def create_user_and_access_key(
             self,
