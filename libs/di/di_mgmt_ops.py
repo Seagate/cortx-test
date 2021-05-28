@@ -113,7 +113,8 @@ class ManagementOPs:
         Creates random buckets for each user. This api
         caches buckets for continuous crud operations on
         them.
-        :param nbuckets:
+        :param nbuckets: No of buckets to be created per user
+        :param users: user dict
         :return:
         """
         users = dict() if not users else users
@@ -202,7 +203,7 @@ class ManagementOPs:
         pass
 
     @classmethod
-    def create_users_and_buckets(cls, maxusers=100, maxbuckets=100):
+    def create_iam_users_and_buckets(cls, maxusers=100, maxbuckets=100):
         """
         Creates random users and random buckets for each user. This api
         caches users and their buckets for continuous crud operations on
@@ -218,16 +219,10 @@ class ManagementOPs:
         s3_bkt_obj = cctl.CortxCliTestLib()
         s3acc_obj.open_connection()
         s3_acc = cls.create_account_users(nusers=1)
-        for acc, acc_details in s3_acc.items():
+        for _, acc_details in s3_acc.items():
             username = acc_details["user_name"]
             password = acc_details["password"]
             s3acc_obj.login_cortx_cli(username=username, password=password)
-            # """Creating Connection"""
-            # iam = boto3.client('iam', verify=S3_CFG['iam_cert_path'],
-            #                    aws_access_key_id=access_key,
-            #                    aws_secret_access_key=secret_key,
-            #                    endpoint_url=S3_CFG['iam_url'])
-
             users = {"user{}".format(i): tuple() for i in range(1, maxusers + 1)}
             buckets = {"user{}".format(i): list() for i in range(1, maxbuckets + 1)}
             # Create IAM users

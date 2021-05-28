@@ -726,19 +726,39 @@ def generate_random_string():
 def run_io_async(request):
     if request.config.option.data_integrity_chk:
         mgm_ops = ManagementOPs()
-        users = mgm_ops.create_account_users(nusers=random.randint(1, 4))
-        users_buckets = mgm_ops.create_buckets(nbuckets=random.randint(1, 3), users=users)
+        secret_range = random.SystemRandom()
+        users = mgm_ops.create_account_users(nusers=secret_range.randint(1, 4))
+        users_buckets = mgm_ops.create_buckets(nbuckets=secret_range.randint(1, 3), users=users)
         run_data_check_obj = RunDataCheckManager(users=users_buckets)
+        prefs_dict = {'prefix_dir': "async_io_dir"}
         yield run_data_check_obj.start_io_async(
-            users=users_buckets, buckets=None, files_count=random.randint(1, 3), prefs="async_io")
+            users=users_buckets, buckets=None, files_count=secret_range.randint(1, 3), prefs=prefs_dict)
+        session = request.session
+        gracefully_stop = False
+        if session.testsfailed:
+            print("Gracefully stopping IO due to test failure")
+            gracefully_stop = True
         run_data_check_obj.stop_io_async(
-            users=users_buckets, di_check=request.config.option.data_integrity_chk)
+            users=users_buckets, di_check=request.config.option.data_integrity_chk, stop_gracefully=gracefully_stop)
     else:
         yield
 
 
-def run_io_sequentially(users, buckets=None, files_count=10, prefs="", di_check=True):
+def run_io_sequentially(users, buckets=None, files_count=10, prefs=None, di_check=True):
+    """
+    Function to start IO within test sequentially(write, read, verify)
+    prefs = {
+        'prefix_dir': test_name
+    }
+    :param users: user data which includes username, accesskey, secretkey, account id etc
+    :param buckets: user buckets in
+    :param files_count: objects to be uploaded per buckts
+    :param prefs: dir prefix where objects will be created for uploading
+    :param di_check: checks for data integrity after download
+    :return: None
+    """
     run_data_check_obj = RunDataCheckManager(users=users)
+    prefs_dict = prefs if isinstance(prefs, dict) else {"prefix_dir": prefs}
     run_data_check_obj.start_io(
-        users=users, buckets=buckets, files_count=files_count, prefs=prefs)
+        users=users, buckets=buckets, files_count=files_count, prefs=prefs_dict)
     run_data_check_obj.stop_io(users, di_check=di_check)

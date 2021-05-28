@@ -100,7 +100,8 @@ class Uploader:
         pool_len = kwargs['pool_len']
         user_name = kwargs['user']
         prefs = kwargs['prefs']
-        prefix = prefs if prefs else 'test-1'  # prefs.get('prefix_dir', 'test-1')  # todo revisit
+        prefix = prefs.get('prefix_dir', 'test-1')
+        #prefs if prefs else 'test-1'  # prefs.get('prefix_dir', 'test-1')  # todo revisit
 
         # todo get random compression ratio and process prefs
         # get random size
@@ -123,9 +124,13 @@ class Uploader:
             with open(file_path, 'rb') as fp:
                 md5sum = hashlib.md5(fp.read()).hexdigest()
             obj_name = os.path.basename(file_path)
+            stat_info = os.stat(obj_name)
             row_data = [user_name, bucket, obj_name, md5sum]
             uploadObjects.append(row_data)
-            file_object = {'name': obj_name, 'checksum': md5sum, 'seed': seed, 'size': size, 'mtime': "1"}
+            file_object = {
+                'name': obj_name, 'checksum': md5sum, 'seed': seed, 'size': size,
+                'mtime': stat_info.st_mtime
+            }
             self.change_manager.add_file_to_bucket(
                 user_name, bucket, file_object)
 
