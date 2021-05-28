@@ -143,16 +143,18 @@ def configure_server_node(obj, mg_ip):
     if os.path.exists(local_path):
         run_cmd("rm -f {}".format(local_path))
     obj.copy_file_to_local(remote_path=remote_path, local_path=local_path)
-    line_src = "bind srvnode-1.data.public:443 ssl crt /etc/ssl/stx/stx.pem"
-    with open(local_path, 'r') as file:
-        read_file = file.readlines()
+    line_src = "option forwardfor"
+    with open(local_path) as file:
         for num, line in enumerate(file, 1):
             if line_src in line:
                 indx = num
-    read_file.insert(indx+1, "    bind {}:80\n".format(mg_ip))
-    read_file.insert(indx+2, "    bind {}:443 ssl crt /etc/ssl/stx/stx.pem\n".format(mg_ip))
+    with open(local_path, 'r') as file:
+        read_file = file.readlines()
+    read_file.insert(indx - 2, "    bind {}:80\n".format(mg_ip))
+    read_file.insert(indx - 1, "    bind {}:443 ssl crt /etc/ssl/stx/stx.pem\n".format(mg_ip))
 
-    with open(local_path, 'w') as file:
+
+with open(local_path, 'w') as file:
         read_file = "".join(read_file)
         file.write(read_file)
     obj.copy_file_to_remote(local_path=local_path, remote_path=remote_path)
