@@ -118,12 +118,12 @@ class TestNetworkFault:
         #     pwd=self.passwd)
         # assert resp[0], resp[1]
         #
-        # if self.start_msg_bus:
-        #     LOGGER.info("Running read_message_bus.py script on node")
-        #     resp = self.ras_test_obj.start_message_bus_reader_cmd(
-        #         self.cm_cfg["sspl_exch"], self.cm_cfg["sspl_key"])
-        #     assert_true(resp, "Failed to start message bus reader")
-        #     LOGGER.info("Successfully started read_message_bus.py script on node")
+        if self.start_msg_bus:
+            LOGGER.info("Running read_message_bus.py script on node")
+            resp = self.ras_test_obj.start_message_bus_reader_cmd()
+            assert_true(resp, "Failed to start RMQ channel")
+            LOGGER.info(
+                "Successfully started read_message_bus.py script on node")
 
         LOGGER.info("Starting collection of sspl.log")
         res = self.ras_test_obj.sspl_log_collect()

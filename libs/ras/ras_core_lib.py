@@ -778,13 +778,9 @@ class RASCoreLib:
                 hostname=self.host, username=self.username, password=self.pwd,
                 cmd=cmd, read_lines=True)
         LOGGER.debug(f"Command: {cmd}, response: {res}")
-        if res.decode() == '':
-            result = True
-        else:
-            result = False
 
-        LOGGER.debug(result)
-        return result
+        LOGGER.debug(res)
+        return res[0]
 
     def get_conf_store_vals(self, url: str, field: str) -> dict:
         """
