@@ -772,59 +772,6 @@ class RASCoreLib:
 
         return True, f"{host_name} : {result[1]}"
 
-    def get_dg_drive_list(self, disk_group: str) -> Tuple[bool, Any]:
-        """
-
-        Args:
-            disk_group:
-
-        Returns:
-
-        """
-        drive_list = []
-        status, drive_dict = self.controller_obj.get_show_disks()
-        if status:
-            LOGGER.info("Collecting drives under same disk group")
-            for key, value in drive_dict.items():
-                try:
-                    if value['disk_group'] == disk_group:
-                        drive_list.append(value['location'])
-                except KeyError:
-                    LOGGER.error("No disk group found for %s", key)
-                    continue
-
-            return True, drive_list
-        else:
-            LOGGER.error("Failed to get drive details")
-            return status, drive_dict
-
-    def get_drive_usage(self, phy_num: list):
-        """
-
-        Args:
-            phy_num:
-
-        Returns:
-
-        """
-        drive_usage_dict = {}
-        status, drive_dict = self.controller_obj.get_show_disks()
-        if status:
-            LOGGER.info("Getting drive usage")
-            for d in phy_num:
-                for key, value in drive_dict.items():
-                    try:
-                        if value['location'] == d:
-                            drive_usage_dict[d] = value['usage']
-                    except KeyError:
-                        LOGGER.error("No disk found of phy number %s", d)
-                        continue
-
-            return True, drive_usage_dict
-        else:
-            LOGGER.error("Failed to get drive details")
-            return status, drive_dict
-
     def get_conf_store_vals(self, url: str, field: str) -> dict:
         """
         This will get the values from any yaml/json file using conf store

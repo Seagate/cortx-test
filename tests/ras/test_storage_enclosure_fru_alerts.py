@@ -72,7 +72,7 @@ class TestStorageAlerts:
         cls.alert_api_obj = GenerateAlertLib()
         cls.csm_alert_obj = SystemAlerts(cls.node_obj)
         # Enable this flag for starting RMQ channel
-        cls.start_rmq = cls.cm_cfg["start_rmq"]
+        cls.start_rmq = cls.cm_cfg["start_msg_bus"]
         cls.s3obj = S3H_OBJ
 
         field_list = ["CONF_PRIMARY_IP", "CONF_PRIMARY_PORT",

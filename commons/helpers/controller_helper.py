@@ -29,7 +29,6 @@ from commons import commands as common_cmd
 from commons import errorcodes as cterr
 from commons.exceptions import CTException
 from commons.utils import config_utils as conf_util
-from libs.ras.ras_test_lib import RASTestLib
 from config import CMN_CFG, RAS_VAL, CMN_DESTRUCTIVE_CFG
 
 LOGGER = logging.getLogger(__name__)
@@ -67,8 +66,6 @@ class ControllerLib:
         self.enclosure_pwd = enclosure_pwd
         self.node_obj = Node(hostname=self.host, username=self.h_user,
                              password=self.h_pwd)
-        self.ras_test_obj = RASTestLib(host=self.host, username=self.h_user,
-                                       password=self.h_pwd)
 
         self.copy = True
         runner_path = cons.REMOTE_TELNET_PATH
@@ -858,8 +855,7 @@ class ControllerLib:
             try:
                 LOGGER.info("Adding available drives to disk group %s", disk_group)
                 LOGGER.info("Check usage of drives %s", drives)
-                status, drive_usage_dict = self.ras_test_obj.get_drive_usage(
-                    phy_num=drives)
+                status, drive_usage_dict = self.get_drive_usage(phy_num=drives)
                 if not status:
                     return status, f"Failed to get drive usages for drives {drives}"
 
@@ -910,4 +906,56 @@ class ControllerLib:
             return True, f"Successfully added drives {drives} to disk group " \
                          f"{disk_group}"
 
+    def get_dg_drive_list(self, disk_group: str) -> Tuple[bool, Any]:
+        """
+
+        Args:
+            disk_group:
+
+        Returns:
+
+        """
+        drive_list = []
+        status, drive_dict = self.get_show_disks()
+        if status:
+            LOGGER.info("Collecting drives under same disk group")
+            for key, value in drive_dict.items():
+                try:
+                    if value['disk_group'] == disk_group:
+                        drive_list.append(value['location'])
+                except KeyError:
+                    LOGGER.error("No disk group found for %s", key)
+                    continue
+
+            return True, drive_list
+        else:
+            LOGGER.error("Failed to get drive details")
+            return status, drive_dict
+
+    def get_drive_usage(self, phy_num: list):
+        """
+
+        Args:
+            phy_num:
+
+        Returns:
+
+        """
+        drive_usage_dict = {}
+        status, drive_dict = self.get_show_disks()
+        if status:
+            LOGGER.info("Getting drive usage")
+            for d in phy_num:
+                for key, value in drive_dict.items():
+                    try:
+                        if value['location'] == d:
+                            drive_usage_dict[d] = value['usage']
+                    except KeyError:
+                        LOGGER.error("No disk found of phy number %s", d)
+                        continue
+
+            return True, drive_usage_dict
+        else:
+            LOGGER.error("Failed to get drive details")
+            return status, drive_dict
 

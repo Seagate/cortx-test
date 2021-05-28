@@ -366,7 +366,7 @@ class GenerateAlertWrapper:
 
             LOGGER.info("Getting list of drives in disk group %s", disk_group)
 
-            status, drive_list = ras_test_obj.get_dg_drive_list(disk_group=disk_group)
+            status, drive_list = controller_obj.get_dg_drive_list(disk_group=disk_group)
             if not status:
                 return status, "Failed to get drive list"
 
@@ -382,7 +382,7 @@ class GenerateAlertWrapper:
                 return resp[0], "Failed to remove drives"
 
             LOGGER.info("Check if drives are completely removed")
-            status, drive_list = ras_test_obj.get_dg_drive_list(
+            status, drive_list = controller_obj.get_dg_drive_list(
                                  disk_group=disk_group)
             if not status:
                 return status, "Failed to get drive list"
@@ -439,7 +439,7 @@ class GenerateAlertWrapper:
             LOGGER.info("Adding drives to the disk group %s", disk_group)
             if disk_group_dict[disk_group]['raidtype'] == "ADAPT":
                 LOGGER.info("Check usage of drives %s", phy_num)
-                status, drive_usage_dict = ras_test_obj.get_drive_usage(
+                status, drive_usage_dict = controller_obj.get_drive_usage(
                     phy_num=phy_num)
                 if not status:
                     return status, f"Failed to get drive usages for drives" \
