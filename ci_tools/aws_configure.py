@@ -15,3 +15,5 @@ lines = ['[default]\n','aws_access_key_id = {}\n'.format(ACCESS_KEY),'aws_secret
 f = open('/root/.aws/credentials','w')
 f.writelines(lines)
 f.close()
+
+print('Added Credentials')
