@@ -1,4 +1,4 @@
-CFT Exec Report
+CFT Engg Report
 Product,Lyve Rack
 Build,#Build
 Date,Date
@@ -124,4 +124,3 @@ CFT_NEW_TEST,TEST-14347,Major,EOS-15336,In Progress,DR : service failed to recov
 CSM,TEST-12846,Major,EOS-15350,In Progress,Stopping Node-2 services causes the node-1 to shutdown
 CFT_NEW_TEST,TEST-14990,Major,EOS-15390,In Progress,Build 515: No alerts observed for enclosure disk disable/enable and enclosure fan removal/insertion operations
 CSM,TEST-6150,Major,EOS-15443,New,Firmware upgrade status shows FAIL on UI even if it is passed on controller
-
