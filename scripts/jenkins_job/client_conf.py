@@ -154,7 +154,7 @@ def configure_server_node(obj, mg_ip):
     read_file.insert(indx - 1, "    bind {}:443 ssl crt /etc/ssl/stx/stx.pem\n".format(mg_ip))
 
 
-with open(local_path, 'w') as file:
+    with open(local_path, 'w') as file:
         read_file = "".join(read_file)
         file.write(read_file)
     obj.copy_file_to_remote(local_path=local_path, remote_path=remote_path)
