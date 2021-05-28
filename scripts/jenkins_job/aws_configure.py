@@ -81,7 +81,7 @@ def configure_awscli(access_key, secret_key):
     run_cmd("aws configure set s3api.endpoint_url https://s3.seagate.com")
     run_cmd("aws configure set ca_bundle {}".format(local_s3_cert_path))
 
-def test_aws_conf():
+def test_create_acc_aws_conf():
     LOGGER.info("Getting access and secret key for configuring AWS")
     acc_name = "nightly_s3acc{}".format(perf_counter_ns())
     acc_email = "nightly_s3acc{}@seagate.com".format(perf_counter_ns())

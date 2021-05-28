@@ -118,7 +118,7 @@ def setup_chrome():
     """
     run_cmd(cmd="wget https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm")
     run_cmd(cmd="yum install -y google-chrome-stable_current_x86_64.rpm")
-    run_cmd(cmd="wget https://chromedriver.storage.googleapis.com/89.0.4389.23/chromedriver_linux64.zip")
+    run_cmd(cmd="wget https://chromedriver.storage.googleapis.com/91.0.4472.19/chromedriver_linux64.zip")
     with ZipFile('chromedriver_linux64.zip', 'r') as zipObj:
         # Extract all the contents of zip file in current directory
         zipObj.extractall()
@@ -143,15 +143,18 @@ def configure_server_node(obj, mg_ip):
     if os.path.exists(local_path):
         run_cmd("rm -f {}".format(local_path))
     obj.copy_file_to_local(remote_path=remote_path, local_path=local_path)
+    line_src = "bind srvnode-1.data.public:443 ssl crt /etc/ssl/stx/stx.pem"
     with open(local_path, 'r') as file:
         read_file = file.readlines()
-    read_file.insert(105, "    bind {}:80\n".format(mg_ip))
-    read_file.insert(106, "    bind {}:443 ssl crt /etc/ssl/stx/stx.pem\n".format(mg_ip))
+        for num, line in enumerate(file, 1):
+            if line_src in line:
+                indx = num
+    read_file.insert(indx+1, "    bind {}:80\n".format(mg_ip))
+    read_file.insert(indx+2, "    bind {}:443 ssl crt /etc/ssl/stx/stx.pem\n".format(mg_ip))
 
     with open(local_path, 'w') as file:
         read_file = "".join(read_file)
         file.write(read_file)
-    file.close()
     obj.copy_file_to_remote(local_path=local_path, remote_path=remote_path)
     cmd = "systemctl restart haproxy"
     obj.execute_cmd(cmd, read_lines=True)
@@ -182,9 +185,9 @@ def main():
     nd_obj_host.copy_file_to_local(remote_path=remote_path, local_path=local_path)
     set_s3_endpoints(clstr_ip)
     setupname = create_db_entry(host, uname, host_passwd, mgmnt_ip, admin_user, admin_passwd)
+    run_cmd("cp /root/secrets.json .")
     run_cmd("python3.7 tools/setup_update/setup_entry.py "
             "--dbuser datawrite --dbpassword seagate@123")
-    run_cmd("cp /root/secrets.json .")
     os.environ["TARGET"] = setupname
     print("Setting up chrome")
     setup_chrome()
