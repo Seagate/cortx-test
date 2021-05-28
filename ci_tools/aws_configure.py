@@ -10,11 +10,10 @@ args = parser.parse_args()
 ACCESS_KEY=args.access_key
 SECRET_KEY=args.secret_key
 
-print(ACCESS_KEY)
-print(SECRET_KEY)
-
 lines = ['[default]\n','aws_access_key_id = {}\n'.format(ACCESS_KEY),'aws_secret_access_key = {}\n'.format(SECRET_KEY)]
 
 f = open('/root/.aws/credentials','w')
 f.writelines(lines)
 f.close()
+
+print('Added Credentials')
