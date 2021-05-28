@@ -1,5 +1,6 @@
 {
 "setupname":"T2",
+"setup_type":"VM",
 "setup_in_useby": "",
 "in_use_for_parallel": false,
 "parallel_client_cnt": 0,
