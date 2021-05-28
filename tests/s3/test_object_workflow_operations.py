@@ -41,31 +41,19 @@ S3_MP_OBJ = s3_multipart_test_lib.S3MultipartTestLib()
 class TestObjectWorkflowOperations:
     """Object Workflow Operations Testsuite."""
 
-    # @classmethod
-    # def setup_class(cls):
-    #     """
-    #     Function will be invoked prior to each test case.
-    #
-    #     It will perform all prerequisite test suite steps if any.
-    #     """
-    #     cls.log = logging.getLogger(__name__)
-    #     cls.log.info("STARTED: setup suite method")
-    #     cls.bkt_name_prefix= "objworkflow"
-    #     cls.obj_name_prefix= "objworkflowobj"
-    #     cls.folder_path = os.path.join(os.getcwd(), "test_data")
-    #     cls.file_path = os.path.join(cls.folder_path, "obj_workflow.txt")
-    #     cls.log.info("ENDED: setup suite method")
-
     def setup_method(self):
         """Setup method."""
         self.log = logging.getLogger(__name__)
         self.log.info("STARTED: setup method")
+        self.buckets_list = list()
+        self.objects_list = list()
         self.bkt_name_prefix = "objworkflowbkt"
-        self.bucket_name = self.bkt_name_prefix+str(time.perf_counter_ns())
+        self.bucket_name = "{0}{1}".format(self.bkt_name_prefix, time.perf_counter_ns())
         self.obj_name_prefix = "objworkflowobj"
-        self.obj_name = self.obj_name_prefix+str(time.perf_counter_ns())
-        self.folder_path = os.path.join(os.getcwd(), "test_data")
-        file_name = "obj_workflow"+str(time.perf_counter_ns())+".txt"
+        self.obj_name = "{0}{1}".format(self.obj_name_prefix, time.perf_counter_ns())
+        self.folder_path_prefix = "{0}{1}".format("test_data", time.perf_counter_ns())
+        self.folder_path = os.path.join(os.getcwd(), self.folder_path_prefix)
+        file_name = "{0}{1}".format("obj_workflow", time.perf_counter_ns())
         self.file_path = os.path.join(self.folder_path, file_name)
         if not path_exists(self.folder_path):
             resp = make_dirs(self.folder_path)
@@ -76,23 +64,14 @@ class TestObjectWorkflowOperations:
         """Teardown method."""
         self.log.info("STARTED: teardown method")
         self.log.info("Clean : %s", self.folder_path)
-        if path_exists(self.folder_path):
-            resp = cleanup_dir(self.folder_path)
+        if path_exists(self.file_path):
+            resp = remove_file(self.file_path)
             self.log.info(
                 "cleaned path: %s, resp: %s",
                 self.folder_path,
                 resp)
-        # bucket_list = S3_TEST_OBJ.bucket_list()
-        # pref_list = [
-        #     each_bucket for each_bucket in bucket_list[1] if each_bucket.startswith(self.bkt_name_prefix)]
-        # S3_TEST_OBJ.delete_multiple_buckets(pref_list)
-        if self.bucket_name in S3_TEST_OBJ.bucket_list()[1]:
-            S3_TEST_OBJ.delete_object(self.bucket_name, self.obj_name)
-            S3_TEST_OBJ.delete_bucket(bucket_name=self.bucket_name, force=True)
-        if os.path.exists(self.file_path):
-            remove_file(self.file_path)
-        if os.path.exists(self.folder_path):
-            shutil.rmtree(self.folder_path)
+        for bucket_name in self.buckets_list:
+            S3_TEST_OBJ.delete_bucket(bucket_name=bucket_name, force=True)
         self.log.info("ENDED: teardown method")
 
     def create_bucket_put_objects(self, bucket_name, object_count):
@@ -168,6 +147,8 @@ class TestObjectWorkflowOperations:
         assert resp[0], resp[1]
         assert self.obj_name in resp[1], resp[1]
         self.log.info("Verified that object is uploaded successfully")
+        self.buckets_list.append(self.bucket_name)
+        self.objects_list.append(self.obj_name)
         self.log.info("ENDED: Copying/PUT a local file to s3")
 
     @pytest.mark.parallel
@@ -205,6 +186,12 @@ class TestObjectWorkflowOperations:
             self.bucket_name)
         assert obj_list[0], obj_list[1]
         assert obj_list[1] == put_object[1], obj_list[1]
+        self.buckets_list.append(self.bucket_name)
+        self.log.debug("Deleting multiple objects created")
+        for obj in put_object[1]:
+            S3_TEST_OBJ.delete_object(self.bucket_name, obj)
+        # for obj in S3_TEST_OBJ.list_objects_with_prefix(self.bucket_name, self.obj_name)[1]:
+        #     S3_TEST_OBJ.delete_object(self.bucket_name, obj)
         self.log.info(
             "ENDED: Copying file/object of different type & size to s3")
 
@@ -234,6 +221,7 @@ class TestObjectWorkflowOperations:
             S3_OBJ_TST["test_2210"]["file_count"])
         assert resp[0], resp[1]
         self.log.info("Copied local files to a bucket")
+        self.buckets_list.append(self.bucket_name)
         self.log.info("ENDED: Recursively copying local files to s3")
 
     @pytest.mark.parallel
@@ -306,6 +294,8 @@ class TestObjectWorkflowOperations:
         assert resp[0], resp[1]
         assert os.path.exists(self.file_path), resp[1]
         self.log.info("Objects are downloaded from a bucket")
+        self.buckets_list.append(self.bucket_name)
+        self.objects_list.append(self.obj_name)
         self.log.info("Cleanup activity")
         if os.path.exists(self.file_path):
             remove_file(self.file_path)
@@ -346,6 +336,7 @@ class TestObjectWorkflowOperations:
             self.folder_path)
         assert resp[0], resp[1]
         self.log.info("Downloaded an object rom a bucket")
+        self.buckets_list.append(self.bucket_name)
         self.log.info(
             "ENDED: Recursively copying s3 objects to a local directory")
 
@@ -386,6 +377,8 @@ class TestObjectWorkflowOperations:
             S3_OBJ_TST["test_2215"]["stop_byte"])
         assert resp[0], resp[1]
         self.log.info("Byte range of an object is downloaded")
+        self.buckets_list.append(self.bucket_name)
+        self.objects_list.append(self.obj_name)
         self.log.info("ENDED: Copy/Download byte range of object")
 
     @pytest.mark.parallel
@@ -429,6 +422,8 @@ class TestObjectWorkflowOperations:
             self.obj_name)
         assert resp[0], resp[1]
         self.log.info("Retrieved metadata of an object")
+        self.buckets_list.append(self.bucket_name)
+        self.objects_list.append(self.obj_name)
         self.log.info("ENDED: Retrieve Metadata of object")
 
     @pytest.mark.parallel
@@ -494,6 +489,8 @@ class TestObjectWorkflowOperations:
         assert resp[0], resp[1]
         assert S3_OBJ_TST["test_2218"]["key"] in resp[1]["Metadata"], resp[1]
         self.log.info("Retrieved new metadata of an object")
+        self.buckets_list.append(self.bucket_name)
+        self.objects_list.append(self.obj_name)
         self.log.info(
             "ENDED: Add new metadata to the object and check if the new data is getting reflected")
 
@@ -549,6 +546,8 @@ class TestObjectWorkflowOperations:
             assert S3_OBJ_TST["test_2219"]["error_message"] in str(
                 error.message), error.message
         self.log.info("Retrieving of metadata is failed")
+        self.buckets_list.append(self.bucket_name)
+        self.objects_list.append(self.obj_name)
         self.log.info(
             "Remove the existing metadata and check if the entry is not shown")
 
@@ -603,6 +602,7 @@ class TestObjectWorkflowOperations:
         assert resp[0], resp[1]
         assert self.obj_name not in resp[1], resp[1]
         self.log.info("Verified that object is deleted from a bucket")
+        self.buckets_list.append(self.bucket_name)
         self.log.info("ENDED: Delete object from bucket")
 
     @pytest.mark.parallel
@@ -629,6 +629,7 @@ class TestObjectWorkflowOperations:
         assert resp[0], resp[1]
         self.log.info(
             "Performed object delete operation on non exist object")
+        self.buckets_list.append(self.bucket_name)
         self.log.info("ENDED: Try deleting object not present")
 
     @pytest.mark.parallel
@@ -658,6 +659,7 @@ class TestObjectWorkflowOperations:
         assert len(resp[1]) == 0, resp[1]
         self.log.info(
             "Step 4: Listed objects and verified that all objects are deleted successfully")
+        self.buckets_list.append(self.bucket_name)
         self.log.info(
             "ENDED: Test Delete objects which exists with verbose mode .")
 
@@ -676,7 +678,7 @@ class TestObjectWorkflowOperations:
             bucket_name, cfg_7655["no_of_objects"])
         # Adding a dummy object to the object list which isn't uploaded to
         # bucket
-        obj_list.append(self.obj_name_prefix + str(int(time.time())))
+        obj_list.append(self.obj_name_prefix + str(time.perf_counter_ns()))
         self.log.info(
             "Step 3: Deleting all existing objects along with one non existing object from bucket "
             "with quiet mode")
@@ -693,6 +695,7 @@ class TestObjectWorkflowOperations:
         assert len(resp[1]) == 0, resp[1]
         self.log.info(
             "Step 4: Listed objects and verified that all objects are deleted successfully")
+        self.buckets_list.append(self.bucket_name)
         self.log.info(
             "ENDED: Delete objects mentioning object which doesn't exists as well with quiet mode.")
 
@@ -720,6 +723,7 @@ class TestObjectWorkflowOperations:
             "Step 3: Deleting %s objects from a bucket failed with %s",
             cfg_7656["del_obj_cnt"],
             cfg_7656["err_message"])
+        self.buckets_list.append(self.bucket_name)
         self.log.info("ENDED: Delete objects and mention 1001 objects.")
 
     @pytest.mark.parallel
@@ -752,4 +756,5 @@ class TestObjectWorkflowOperations:
         self.log.info(
             "Step 4: Listed objects and verified that %s objects are deleted successfully",
             cfg_7657["del_obj_cnt"])
+        self.buckets_list.append(self.bucket_name)
         self.log.info("ENDED: Delete objects and mention 1000 objects.")
