@@ -18,7 +18,7 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-import argparse
+
 import csv
 from collections import defaultdict
 from copy import deepcopy
@@ -68,7 +68,7 @@ def get_component_issue_summary(test_plans: list, username: str, password: str):
         else:
             builds.append("NA")
     data = [
-        ["Component Level Summary"],
+        ["Component Level Bugs Summary"],
         ["Component", builds[0], builds[1], builds[2], builds[3]],
     ]
     for component in common.COMPONENT_LIST:
@@ -107,8 +107,10 @@ def get_single_bucket_perf_stats(build, branch, uri, db_name, db_collection):
                     else:
                         temp_data.append("-")
                 else:
-                    if count > 0 and common.keys_exists(db_data[0], stat):
-                        temp_data.append(common.round_off(db_data[0][stat]/db_data[0]["Count_of_Servers"]))
+                    if count > 0 and common.keys_exists(db_data[0], stat)\
+                            and "Count_of_Servers" in db_data[0]:
+                        temp_data.append(
+                            common.round_off(db_data[0][stat] / db_data[0]["Count_of_Servers"]))
                     else:
                         temp_data.append("-")
             data.extend([temp_data])
@@ -141,8 +143,10 @@ def get_bench_data(build, uri, db_name, db_collection, branch):
                         db_data = mongodb_api.find_documents(query=query, uri=uri, db_name=db_name,
                                                              collection=db_collection)
 
-                        if count > 0 and stat == "Throughput" and common.keys_exists(db_data[0], stat):
-                            temp_data.append(common.round_off(db_data[0][stat]/db_data[0]["Count_of_Servers"]))
+                        if count > 0 and stat == "Throughput" and common.keys_exists(db_data[0],
+                                                                                     stat):
+                            temp_data.append(
+                                common.round_off(db_data[0][stat] / db_data[0]["Count_of_Servers"]))
                         elif count > 0 and common.keys_exists(db_data[0], stat):
                             temp_data.append(common.round_off(db_data[0][stat]))
                         else:
@@ -231,43 +235,28 @@ def get_detailed_reported_bugs(test_plan: str, username: str, password: str):
     return data
 
 
-def get_args():
-    """Parse arguments and collect database information"""
-    parser = argparse.ArgumentParser()
-    parser.add_argument('tp', help='Testplan for current build')
-    parser.add_argument('--tp1', help='Testplan for current-1 build', default=None)
-    parser.add_argument('--tp2', help='Testplan for current-2 build', default=None)
-    parser.add_argument('--tp3', help='Testplan for current-3 build', default=None)
-
-    test_plans = parser.parse_args()
-
-    uri, db_name, db_collection = common.get_perf_db_details()
-    return test_plans, uri, db_name, db_collection
-
-
 def main():
     """Generate csv engineering report from test plan JIRA."""
-    test_plans, uri, db_name, db_collection = get_args()
+    test_plans, uri, db_name, db_collection = common.get_args()
     rest, db_username, db_password = common.get_timings_db_details()
     username, password = jira_api.get_username_password()
 
-    tp_ids = [test_plans.tp, test_plans.tp1, test_plans.tp2, test_plans.tp3]
+    tps_info = [jira_api.get_details_from_test_plan(test_plan, username, password) if
+                test_plan else "NA" for test_plan in test_plans]
+    builds = [x["buildNo"] if x != 'NA' else 'NA' for x in tps_info]
 
-    builds = [jira_api.get_details_from_test_plan(test_plan, username, password)["buildNo"] if
-              test_plan else "NA" for test_plan in tp_ids]
-
-    branch = jira_api.get_details_from_test_plan(test_plans.tp, username, password)["branch"]
+    branch = tps_info[0]["branch"]
 
     data = []
-    data.extend(jira_api.get_main_table_data(test_plans.tp))
+    data.extend(jira_api.get_main_table_data(tps_info[0], "Engg"))
     data.extend([""])
-    data.extend(jira_api.get_reported_bug_table_data(test_plans.tp, username, password))
+    data.extend(jira_api.get_reported_bug_table_data(test_plans[0], username, password))
     data.extend([""])
-    data.extend(jira_api.get_overall_qa_report_table_data(test_plans.tp, test_plans.tp1,
+    data.extend(jira_api.get_overall_qa_report_table_data(test_plans[0], test_plans[1],
                                                           builds[0], username,
                                                           password))
     data.extend([""])
-    data.extend(get_component_issue_summary(tp_ids, username, password))
+    data.extend(get_component_issue_summary(test_plans, username, password))
     data.extend([""])
     data.extend(get_single_bucket_perf_stats(builds[0], branch, uri, db_name, db_collection))
     data.extend([""])
@@ -275,11 +264,11 @@ def main():
     data.extend([""])
     data.extend(get_metadata_latencies(builds[0], uri, db_name, db_collection))
     data.extend([""])
-    data.extend(common.get_timing_summary(tp_ids, builds, rest, db_username, db_password))
+    data.extend(common.get_timing_summary(test_plans, builds, rest, db_username, db_password))
     data.extend([""])
-    data.extend(get_detailed_reported_bugs(test_plans.tp, username, password))
+    data.extend(get_detailed_reported_bugs(test_plans[0], username, password))
     data.extend([""])
-    with open("../engg_report.csv", "a", newline='') as csv_file:
+    with open(f"Engg_Report_{builds[0]}.csv", "w+", newline='') as csv_file:
         writer = csv.writer(csv_file)
         writer.writerows(data)
 
