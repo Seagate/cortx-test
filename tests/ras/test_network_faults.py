@@ -66,7 +66,7 @@ class TestNetworkFault:
         cls.alert_api_obj = GenerateAlertLib()
         cls.csm_alert_obj = SystemAlerts(cls.node_obj)
         # Enable this flag for starting message_bus
-        cls.start_msg_bus = False
+        cls.start_msg_bus = cls.cm_cfg["start_msg_bus"]
 
         cls.mgmt_fault_flag = False
 
@@ -236,7 +236,7 @@ class TestNetworkFault:
         resp = self.alert_api_obj.generate_alert(
             AlertType.MGMT_NW_PRT_FAULT_RESOLVED,
             input_parameters={'device': self.mgmt_device,
-                              'status': network_fault_params["generate_fault"],
+                              'status': network_fault_params["resolve_fault"],
                               'host_data_ip': self.public_data_ip})
         assert_true(resp[0], "{} {}".format(network_fault_params["error_msg"],
                                          network_fault_params["resolve_fault"]))
