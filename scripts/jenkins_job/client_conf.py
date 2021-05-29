@@ -188,8 +188,10 @@ def main():
     set_s3_endpoints(clstr_ip)
     setupname = create_db_entry(host, uname, host_passwd, mgmnt_ip, admin_user, admin_passwd)
     run_cmd("cp /root/secrets.json .")
+    with open("/root/secrets.json", 'r') as file:
+        json_data = json.load(file)
     run_cmd("python3.7 tools/setup_update/setup_entry.py "
-            "--dbuser datawrite --dbpassword seagate@123")
+            "--dbuser {} --dbpassword {}".format(json_data['DB_USER'], json_data['DB_PASSWORD']))
     os.environ["TARGET"] = setupname
     print("Setting up chrome")
     setup_chrome()
