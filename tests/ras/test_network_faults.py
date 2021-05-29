@@ -104,10 +104,9 @@ class TestNetworkFault:
 
         LOGGER.info("Change sspl log level to DEBUG")
         self.ras_test_obj.set_conf_store_vals(
-            url="yaml:///etc/sspl.conf", encl_vals={"CONF_SSPL_LOG_LEVEL":
-                                                    "DEBUG"})
+            url=cons.SSPL_CFG_URL, encl_vals={"CONF_SSPL_LOG_LEVEL": "DEBUG"})
         resp = self.ras_test_obj.get_conf_store_vals(
-            url="yaml:///etc/sspl.conf",
+            url=cons.SSPL_CFG_URL,
             field=cons.CONF_SSPL_LOG_LEVEL)
         LOGGER.info("Now SSPL log level is: %s", resp)
 
