@@ -175,9 +175,9 @@ class TestNetworkFault:
                 LOGGER.info("Removing log file %s from the Node", file)
                 self.node_obj.remove_file(filename=file)
 
-        self.health_obj.restart_pcs_resource(
-            resource=self.cm_cfg["sspl_resource_id"])
-        time.sleep(self.cm_cfg["sleep_val"])
+        # self.health_obj.restart_pcs_resource(
+        #     resource=self.cm_cfg["sspl_resource_id"])
+        # time.sleep(self.cm_cfg["sleep_val"])
 
         LOGGER.info("ENDED: Successfully performed the Teardown Operations")
 
