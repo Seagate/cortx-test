@@ -162,8 +162,8 @@ class TestNetworkFault:
         self.node_obj.remove_file(filename=self.cm_cfg["file"]["sspl_log_file"])
 
         if self.start_msg_bus:
-            LOGGER.info("Terminating the process rabbitmq_reader.py")
-            self.ras_test_obj.kill_remote_process("rabbitmq_reader.py")
+            LOGGER.info("Terminating the process read_message_bus.py")
+            self.ras_test_obj.kill_remote_process("read_message_bus.py")
             files = [self.cm_cfg["file"]["alert_log_file"],
                      self.cm_cfg["file"]["extracted_alert_file"],
                      self.cm_cfg["file"]["screen_log"]]
