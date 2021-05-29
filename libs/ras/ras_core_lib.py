@@ -852,7 +852,7 @@ class RASCoreLib:
             result = run_remote_cmd(hostname=self.host,
                                     username=self.username,
                                     password=self.pwd, cmd=cmd)
-            result = result[0].decode('utf-8').strip().split('\n')
+            result = result[0]
             LOGGER.info("Response: %s", result)
 
     def encrypt_password_secret(self, string: str) -> Tuple[bool, str]:

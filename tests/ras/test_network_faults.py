@@ -95,17 +95,6 @@ class TestNetworkFault:
             assert response[0], response[1]
         LOGGER.info("Done Checking SSPL state file")
 
-        service = self.cm_cfg["service"]
-        services = [service["sspl_service"], service["kafka_service"],
-                    service["csm_web"], service["csm_agent"]]
-        for svc in services:
-            LOGGER.info("Checking status of %s service", svc)
-            resp = self.s3obj.get_s3server_service_status(service=svc,
-                                                          host=self.host,
-                                                          user=self.uname,
-                                                          pwd=self.passwd)
-            assert resp[0], resp[1]
-            LOGGER.info("%s service is active/running", svc)
         if self.start_msg_bus:
             LOGGER.info("Running read_message_bus.py script on node")
             resp = self.ras_test_obj.start_message_bus_reader_cmd()
@@ -115,12 +104,31 @@ class TestNetworkFault:
 
         LOGGER.info("Change sspl log level to DEBUG")
         self.ras_test_obj.set_conf_store_vals(
-            url="yaml:///etc/sspl.conf", encl_vals={cons.CONF_SSPL_LOG_LEVEL:
+            url="yaml:///etc/sspl.conf", encl_vals={"CONF_SSPL_LOG_LEVEL":
                                                     "DEBUG"})
         resp = self.ras_test_obj.get_conf_store_vals(
             url="yaml:///etc/sspl.conf",
             field=cons.CONF_SSPL_LOG_LEVEL)
         LOGGER.info("Now SSPL log level is: %s", resp)
+
+        LOGGER.info("Restarting SSPL service")
+        service = self.cm_cfg["service"]
+        services = [service["sspl_service"], service["kafka_service"],
+                    service["csm_web"], service["csm_agent"]]
+        resp = self.s3obj.get_s3server_service_status(
+            service=service["sspl_service"], host=self.host, user=self.uname,
+            pwd=self.passwd)
+        assert resp[0], resp[1]
+
+        for svc in services:
+            LOGGER.info("Checking status of %s service", svc)
+            resp = self.s3obj.get_s3server_service_status(service=svc,
+                                                          host=self.host,
+                                                          user=self.uname,
+                                                          pwd=self.passwd)
+            assert resp[0], resp[1]
+            LOGGER.info("%s service is active/running", svc)
+
         LOGGER.info("Starting collection of sspl.log")
         res = self.ras_test_obj.sspl_log_collect()
         assert_true(res[0], res[1])
