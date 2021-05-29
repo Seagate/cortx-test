@@ -82,7 +82,7 @@ class TestStorageAlerts:
             zip(field_list, [None]*len(field_list))))
         assert_true(resp[0], "Successfully updated enclosure values")
 
-        LOGGER.info("Successfully run setup_class")
+        LOGGER.info("Successfully ran setup_class")
 
     def setup_method(self):
         """Setup operations per test."""
