@@ -54,7 +54,7 @@ class TestStorageAlerts:
         cls.host = CMN_CFG["nodes"][0]["host"]
         cls.uname = CMN_CFG["nodes"][0]["username"]
         cls.passwd = CMN_CFG["nodes"][0]["password"]
-        cls.sspl_stop = cls.changed_level = cls.selinux_enabled = False
+        cls.sspl_stop = cls.dg_failure = False
         cls.default_cpu_usage = cls.default_mem_usage = True
 
         cls.ras_test_obj = RASTestLib(host=cls.host, username=cls.uname,
@@ -72,7 +72,7 @@ class TestStorageAlerts:
         cls.alert_api_obj = GenerateAlertLib()
         cls.csm_alert_obj = SystemAlerts(cls.node_obj)
         # Enable this flag for starting RMQ channel
-        cls.start_rmq = cls.cm_cfg["start_msg_bus"]
+        cls.start_msg_bus = cls.cm_cfg["start_msg_bus"]
         cls.s3obj = S3H_OBJ
 
         field_list = ["CONF_PRIMARY_IP", "CONF_PRIMARY_PORT",
@@ -83,13 +83,6 @@ class TestStorageAlerts:
             zip(field_list, [None]*len(field_list))))
         assert_true(resp[0], "Successfully updated enclosure values")
 
-        LOGGER.info("Change sspl log level to DEBUG")
-        cls.ras_test_obj.set_conf_store_vals(
-            url="yaml:///etc/sspl.conf", encl_vals={cons.CONF_SSPL_LOG_LEVEL:
-                                                    "DEBUG"})
-        resp = cls.ras_test_obj.get_conf_store_vals(url="yaml:///etc/sspl.conf",
-                                                    field=cons.CONF_SSPL_LOG_LEVEL)
-        LOGGER.info("Now SSPL log level is: %s", resp)
         LOGGER.info("Successfully run setup_class")
 
     def setup_method(self):
@@ -110,30 +103,24 @@ class TestStorageAlerts:
             assert response[0], response[1]
         LOGGER.info("Done Checking SSPL state file")
 
-        LOGGER.info("Delete keys with prefix SSPL_")
-        cmd = common_cmd.REMOVE_UNWANTED_CONSUL
-        self.node_obj.execute_cmd(cmd=cmd, read_lines=True)
-
         LOGGER.info("Restarting sspl service")
         resp = self.health_obj.restart_pcs_resource(self.cm_cfg["sspl_resource_id"])
         assert resp, "Failed to restart sspl-ll"
         time.sleep(self.cm_cfg["sspl_timeout"])
-        LOGGER.info(
-            "Verifying the status of sspl and kafka service is online")
-
-        # Getting SSPl and Kafka service status
-        services = self.cm_cfg["service"]
-        resp = self.s3obj.get_s3server_service_status(
-            service=services["sspl_service"], host=self.host, user=self.uname,
-            pwd=self.passwd)
-        assert resp[0], resp[1]
-        resp = self.s3obj.get_s3server_service_status(
-            service=services["kafka_service"], host=self.host, user=self.uname,
-            pwd=self.passwd)
-        assert resp[0], resp[1]
 
         LOGGER.info(
-            "Validated the status of sspl and kafka service are online")
+            "Verifying the status of required services is online")
+        service = self.cm_cfg["service"]
+        services = [service["sspl_service"], service["kafka_service"],
+                    service["csm_web"], service["csm_agent"]]
+        for svc in services:
+            LOGGER.info("Checking status of %s service", svc)
+            resp = self.s3obj.get_s3server_service_status(service=svc,
+                                                          host=self.host,
+                                                          user=self.uname,
+                                                          pwd=self.passwd)
+            assert resp[0], resp[1]
+            LOGGER.info("%s service is active/running", svc)
 
         if self.start_rmq:
             LOGGER.info("Running read_message_bus.py script on node")
@@ -142,6 +129,13 @@ class TestStorageAlerts:
             LOGGER.info(
                 "Successfully started read_message_bus.py script on node")
 
+        LOGGER.info("Change sspl log level to DEBUG")
+        self.ras_test_obj.set_conf_store_vals(
+            url="yaml:///etc/sspl.conf", encl_vals={cons.CONF_SSPL_LOG_LEVEL:
+                                                    "DEBUG"})
+        resp = self.ras_test_obj.get_conf_store_vals(url="yaml:///etc/sspl.conf",
+                                                     field=cons.CONF_SSPL_LOG_LEVEL)
+        LOGGER.info("Now SSPL log level is: %s", resp)
         LOGGER.info("Starting collection of sspl.log")
         res = self.ras_test_obj.sspl_log_collect()
         assert_true(res[0], res[1])
@@ -160,13 +154,6 @@ class TestStorageAlerts:
             resp = self.ras_test_obj.enable_disable_service(
                 "enable", self.cm_cfg["sspl_resource_id"])
             assert resp, "Failed to enable sspl-master"
-
-        LOGGER.info("Restoring values to default in consul")
-        LOGGER.info("Updating disk usage threshold value")
-        res = self.ras_test_obj.update_threshold_values(
-            cons.KV_STORE_DISK_USAGE, self.cm_cfg["sspl_config"]["sspl_du_key"],
-            self.cm_cfg["sspl_config"]["sspl_du_dval"])
-        assert res
 
         LOGGER.info("Change sspl log level to INFO")
         self.ras_test_obj.set_conf_store_vals(
@@ -414,3 +401,81 @@ class TestStorageAlerts:
 
         LOGGER.info(
             "ENDED: Test Enabling a drive from disk group")
+
+    @pytest.mark.cluster_monitor_ops
+    @pytest.mark.hw_alert
+    @pytest.mark.tags("22060")
+    @CTFailOn(error_handler)
+    def test_basic_dg_alerts_22060(self):
+        """
+
+        Returns:
+
+        """
+        test_cfg = RAS_TEST_CFG["test_22060"]
+        disk_group = test_cfg["disk_group"]
+        LOGGER.info("Step 1: Create disk group failure on %s", disk_group)
+        resp = self.alert_api_obj.generate_alert(
+            AlertType.DG_FAULT,
+            input_parameters={"enclid": test_cfg["enclid"],
+                              "ctrl_name": test_cfg["ctrl_name"],
+                              "operation": test_cfg["operation_fault"],
+                              "disk_group": disk_group})
+        assert_true(resp[0], resp[1])
+        self.dg_failure = True
+        drives = resp[1]
+        LOGGER.info("Step 1: Successfully created disk group failure on %s",
+                    disk_group)
+
+        time.sleep(self.cm_cfg["sleep_val"])
+        if self.start_msg_bus:
+            LOGGER.info("Step 2: Verifying alert logs for fault alert ")
+            alert_list = [test_cfg["resource_type"], test_cfg["alert_fault"]]
+            resp = self.ras_test_obj.list_alert_validation(alert_list)
+            assert_true(resp[0], resp[1])
+            LOGGER.info("Step 2: Checked generated alert logs")
+
+        LOGGER.info("Step 3: Checking CSM REST API for fault alert")
+        time.sleep(self.cm_cfg["csm_alert_gen_delay"])
+        resp = self.csm_alert_obj.verify_csm_response(self.starttime,
+                                                      test_cfg["alert_fault"],
+                                                      False,
+                                                      test_cfg["resource_type"])
+
+        assert_true(resp, test_cfg["csm_error_msg"])
+        LOGGER.info("Step 3: Successfully checked CSM REST API for fault "
+                    "alert")
+
+        LOGGER.info("Step 4: Resolve disk group failure on %s", disk_group)
+        resp = self.alert_api_obj.generate_alert(
+            AlertType.DG_FAULT_RESOLVED,
+            input_parameters={"enclid": test_cfg["enclid"],
+                              "ctrl_name": test_cfg["ctrl_name"],
+                              "operation": test_cfg["operation_fault_resolved"],
+                              "disk_group": disk_group,
+                              "phy_num": drives, "poll": True})
+        assert_true(resp[0], resp[1])
+        self.dg_failure = False
+        LOGGER.info("Step 4: Successfully resolved disk group failure on %s",
+                    disk_group)
+
+        time.sleep(self.cm_cfg["sleep_val"])
+        if self.start_msg_bus:
+            LOGGER.info("Step 5: Verifying alert logs for fault_resolved "
+                        "alert ")
+            alert_list = [test_cfg["resource_type"],
+                          test_cfg["alert_fault_resolved"]]
+            resp = self.ras_test_obj.list_alert_validation(alert_list)
+            assert_true(resp[0], resp[1])
+            LOGGER.info("Step 5: Checked generated alert logs")
+
+        LOGGER.info("Step 6: Checking CSM REST API for fault alert")
+        time.sleep(self.cm_cfg["csm_alert_gen_delay"])
+        resp = self.csm_alert_obj.verify_csm_response(self.starttime,
+                                                      test_cfg["alert_fault_resolved"],
+                                                      True,
+                                                      test_cfg["resource_type"])
+
+        assert_true(resp, test_cfg["csm_error_msg"])
+        LOGGER.info("Step 6: Successfully checked CSM REST API for "
+                    "fault_resolved alert")

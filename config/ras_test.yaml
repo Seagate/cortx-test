@@ -213,3 +213,13 @@ test_5343:
   alert_insertion: "insertion"
   alert_fault_resolved: "fault_resolved"
 
+test_22060:
+  disk_group: "dg00"
+  alert_fault: "fault"
+  resource_type: "node:os:raid_data"
+  alert_fault_resolved: "fault_resolved"
+  enclid: 0
+  ctrl_name: ['A', 'B']
+  operation_fault: "Disabled"
+  operation_fault_resolved: "Enabled"
+  csm_error_msg: "Failed to get alerts using CSM REST API"

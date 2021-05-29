@@ -77,7 +77,7 @@ show_disk_groups:
   size: "size"
   created: "create-date"
   job: "current-job"
-  job_percent: "current-job-numeric"
+  job_percent: "current-job-completion"
   raidtype: "raidtype"
   health: "health"
   reason: "health-reason"

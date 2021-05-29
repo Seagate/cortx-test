@@ -791,7 +791,7 @@ class ControllerLib:
         return "False"
 
     def remove_add_drive(self, enclosure_id: str, controller_name: list,
-                         drive_number: list, status: str) -> Tuple[str, str]:
+                         drive_number: list, operation: str) -> Tuple[str, str]:
         """
         Enable or Disable drive status from disk group.
 
@@ -801,23 +801,24 @@ class ControllerLib:
         :type: list
         :param drive_number: Drive number
         :type: list
-        :param status: Status of the drive. Value will be enabled or disabled
+        :param operation: Status of the drive. Value will be enabled or disabled
         :type: str
         :return: None
         """
         if self.copy:
             try:
-                for d in drive_number:
-                    for c in controller_name:
+                for drv in drive_number:
+                    drv = drv.split(".")[-1]
+                    for cnt in controller_name:
                         cmd = common_cmd.SET_DRIVE_STATUS_CMD.format(
-                            enclosure_id, c, d, status)
+                            enclosure_id, cnt, drv, operation)
 
                         command = f"python3 /root/telnet_operations.py " \
                                   f"--telnet_op='set_drive_status_telnet(" \
                                   f"enclosure_ip=\"{self.enclosure_ip}\", " \
                                   f"username=\"{self.enclosure_user}\", " \
                                   f"pwd=\"{self.enclosure_pwd}\", " \
-                                  f"status=\"{status}\", cmd=\"{cmd}\")'"
+                                  f"status=\"{operation}\", cmd=\"{cmd}\")'"
 
                         LOGGER.info("Running command %s", command)
                         response = self.node_obj.execute_cmd(cmd=command,
@@ -906,7 +907,7 @@ class ControllerLib:
             return True, f"Successfully added drives {drives} to disk group " \
                          f"{disk_group}"
 
-    def get_dg_drive_list(self, disk_group: str) -> Tuple[bool, Any]:
+    def get_dg_drive_list(self, disk_group: str) -> Tuple[bool, any]:
         """
 
         Args:
@@ -959,3 +960,22 @@ class ControllerLib:
             LOGGER.error("Failed to get drive details")
             return status, drive_dict
 
+    def poll_dg_recon_status(self, disk_group: str) -> Tuple[bool, int]:
+        """
+
+        Returns:
+
+        """
+        LOGGER.info("Polling disk group reconstruction percent")
+        recon_percent = 0
+        while recon_percent != 100:
+            status, disk_group_dict = self.get_show_disk_group()
+            LOGGER.info("Reconstruction percent: %s", recon_percent)
+            recon_percent = disk_group_dict[disk_group].get('job_percent', 100)
+
+        if disk_group_dict[disk_group]['health'] == 'OK':
+            LOGGER.info("Reconstruction of disk group %s completed. Disk "
+                        "group is in healthy state", disk_group)
+            return True, recon_percent
+
+        return False, recon_percent

@@ -355,14 +355,15 @@ class GenerateAlertWrapper:
                                        enclosure_ip=encl_ip,
                                        enclosure_user=encl_user,
                                        enclosure_pwd=encl_pwd)
-        ras_test_obj = RASTestLib(host=host, username=h_user, password=h_pwd)
 
         try:
             LOGGER.info("Check state of disk group")
             status, disk_group_dict = controller_obj.get_show_disk_group()
-            if not status or disk_group_dict[disk_group]['health'] != 'OK':
+            if not status:
+                return status, "Failed to get information about disk groups"
+            elif disk_group_dict[disk_group]['health'] != 'OK':
                 LOGGER.info("Provided disk group is not in healthy state.")
-                return status, disk_group_dict[disk_group]['health']
+                return False, disk_group_dict[disk_group]['health']
 
             LOGGER.info("Getting list of drives in disk group %s", disk_group)
 
@@ -376,7 +377,7 @@ class GenerateAlertWrapper:
             resp = controller_obj.remove_add_drive(enclosure_id=enclid,
                                                    controller_name=ctrl_name,
                                                    drive_number=drives,
-                                                   status=operation)
+                                                   operation=operation)
 
             if not resp[0]:
                 return resp[0], "Failed to remove drives"
@@ -391,7 +392,7 @@ class GenerateAlertWrapper:
                 if d in drive_list:
                     return False, f"Drive {d} is not removed"
 
-            return True, drive_list
+            return True, drives
         except BaseException as error:
             LOGGER.error("%s %s: %s", cons.EXCEPTION_ERROR,
                          GenerateAlertWrapper.create_disk_group_failures.__name__, error)
@@ -410,16 +411,18 @@ class GenerateAlertWrapper:
         phy_num = input_parameters["phy_num"]
         operation = input_parameters["operation"]
         disk_group = input_parameters["disk_group"]
+        poll = input_parameters["poll"]
         controller_obj = ControllerLib(host=host, h_user=h_user, h_pwd=h_pwd,
                                        enclosure_ip=encl_ip,
                                        enclosure_user=encl_user,
                                        enclosure_pwd=encl_pwd)
-        ras_test_obj = RASTestLib(host=host, username=h_user, password=h_pwd)
 
         try:
             LOGGER.info("Check state of disk group")
             status, disk_group_dict = controller_obj.get_show_disk_group()
-            if status or disk_group_dict[disk_group]['health'] == 'OK':
+            if not status:
+                return status, "Failed to get information about disk groups"
+            elif disk_group_dict[disk_group]['health'] == 'OK':
                 LOGGER.info("Provided disk group is in healthy state.")
                 return status, disk_group_dict[disk_group]['health']
 
@@ -430,7 +433,7 @@ class GenerateAlertWrapper:
             resp = controller_obj.remove_add_drive(enclosure_id=enclid,
                                                    controller_name=ctrl_name,
                                                    drive_number=phy_num,
-                                                   status=operation)
+                                                   operation=operation)
 
             if not resp[0]:
                 return resp[0], f"Failed to add drives {phy_num} to disk " \
@@ -467,11 +470,23 @@ class GenerateAlertWrapper:
 
             LOGGER.info("Check if reconstruction of disk group is started")
             status, disk_group_dict = controller_obj.get_show_disk_group()
-            if status and disk_group_dict[disk_group]['current-job'] == 'RCON':
+            if disk_group_dict[disk_group]['job'] == 'RCON':
                 LOGGER.info("Successfully started reconstruction of disk "
                             "group %s", disk_group)
-                return True, "Disk Group reconstruction is started"
-            return False, "Failed to start Disk Group reconstruction"
+            else:
+                return False, "Failed to start Disk Group reconstruction"
+
+            if poll:
+                poll_status, poll_percent = controller_obj.poll_dg_recon_status(
+                    disk_group=disk_group)
+                if poll_status:
+                    LOGGER.info("Successfully recovered disk group %s \n "
+                                "Reconstruction percent = %s", disk_group,
+                                poll_percent)
+                    return poll_status, poll_percent
+                else:
+                    LOGGER.error("Failed to recover disk group %s", disk_group)
+                    return poll_status, poll_percent
         except BaseException as error:
             LOGGER.error("%s %s: %s", cons.EXCEPTION_ERROR,
                          GenerateAlertWrapper.resolve_disk_group_failures.__name__,
