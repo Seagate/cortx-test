@@ -25,6 +25,7 @@ import time
 import random
 import logging
 import pytest
+import pandas as pd
 from libs.ras.ras_test_lib import RASTestLib
 from commons.helpers.node_helper import Node
 from commons.helpers.health_helper import Health
@@ -33,7 +34,6 @@ from libs.s3 import S3H_OBJ
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons import constants as cons
-from commons import commands as common_cmd
 from commons.utils.assert_utils import *
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from commons.alerts_simulator.generate_alert_lib import \
@@ -122,7 +122,7 @@ class TestStorageAlerts:
             assert resp[0], resp[1]
             LOGGER.info("%s service is active/running", svc)
 
-        if self.start_rmq:
+        if self.start_msg_bus:
             LOGGER.info("Running read_message_bus.py script on node")
             resp = self.ras_test_obj.start_message_bus_reader_cmd()
             assert_true(resp, "Failed to start RMQ channel")
@@ -191,7 +191,7 @@ class TestStorageAlerts:
             "Removing file %s", self.cm_cfg["file"]["sspl_log_file"])
         self.node_obj.remove_file(filename=self.cm_cfg["file"]["sspl_log_file"])
 
-        if self.start_rmq:
+        if self.start_msg_bus:
             LOGGER.info("Terminating the process read_message_bus.py")
             self.ras_test_obj.kill_remote_process("read_message_bus.py")
             files = [self.cm_cfg["file"]["alert_log_file"],
@@ -291,7 +291,7 @@ class TestStorageAlerts:
 
         LOGGER.info("Step 5: Successfully put phy in %s state", phy_stat)
 
-        if self.start_rmq:
+        if self.start_msg_bus:
             LOGGER.info("Step 6: Checking the generated alert logs")
             alert_list = [test_cfg["resource_type"], test_cfg["alert_type"],
                           resource_id]
@@ -380,7 +380,7 @@ class TestStorageAlerts:
             resource_id = "disk_00.{}".format(phy_num)
 
         time.sleep(common_cfg["sleep_val"])
-        if self.start_rmq:
+        if self.start_msg_bus:
             LOGGER.info("Step 5: Checking the generated alert logs")
             alert_list = [test_cfg["resource_type"], test_cfg["alert_type"],
                           resource_id]
@@ -414,6 +414,9 @@ class TestStorageAlerts:
         """
         test_cfg = RAS_TEST_CFG["test_22060"]
         disk_group = test_cfg["disk_group"]
+        df = pd.DataFrame(index='Step1 Step2 Step3 Step4 Step5 Step6'.split(),
+                          columns='Iteration0'.split())
+        df = df.assign(Iteration0='Pass')
         LOGGER.info("Step 1: Create disk group failure on %s", disk_group)
         resp = self.alert_api_obj.generate_alert(
             AlertType.DG_FAULT,
@@ -421,7 +424,9 @@ class TestStorageAlerts:
                               "ctrl_name": test_cfg["ctrl_name"],
                               "operation": test_cfg["operation_fault"],
                               "disk_group": disk_group})
-        assert_true(resp[0], resp[1])
+        if not resp[0]:
+            df['Iteration0']['Step1'] = 'Fail'
+            LOGGER.error("Error: %s", resp[1])
         self.dg_failure = True
         drives = resp[1]
         LOGGER.info("Step 1: Successfully created disk group failure on %s",
@@ -432,7 +437,9 @@ class TestStorageAlerts:
             LOGGER.info("Step 2: Verifying alert logs for fault alert ")
             alert_list = [test_cfg["resource_type"], test_cfg["alert_fault"]]
             resp = self.ras_test_obj.list_alert_validation(alert_list)
-            assert_true(resp[0], resp[1])
+            if not resp[0]:
+                df['Iteration0']['Step2'] = 'Fail'
+                LOGGER.error("Error: %s", resp[1])
             LOGGER.info("Step 2: Checked generated alert logs")
 
         LOGGER.info("Step 3: Checking CSM REST API for fault alert")
@@ -442,7 +449,9 @@ class TestStorageAlerts:
                                                       False,
                                                       test_cfg["resource_type"])
 
-        assert_true(resp, test_cfg["csm_error_msg"])
+        if not resp[0]:
+            df['Iteration0']['Step3'] = 'Fail'
+            LOGGER.error("Error: %s", test_cfg["csm_error_msg"])
         LOGGER.info("Step 3: Successfully checked CSM REST API for fault "
                     "alert")
 
@@ -454,7 +463,9 @@ class TestStorageAlerts:
                               "operation": test_cfg["operation_fault_resolved"],
                               "disk_group": disk_group,
                               "phy_num": drives, "poll": True})
-        assert_true(resp[0], resp[1])
+        if not resp[0]:
+            df['Iteration0']['Step4'] = 'Fail'
+            LOGGER.error("Error: %s", resp[1])
         self.dg_failure = False
         LOGGER.info("Step 4: Successfully resolved disk group failure on %s",
                     disk_group)
@@ -466,7 +477,9 @@ class TestStorageAlerts:
             alert_list = [test_cfg["resource_type"],
                           test_cfg["alert_fault_resolved"]]
             resp = self.ras_test_obj.list_alert_validation(alert_list)
-            assert_true(resp[0], resp[1])
+            if not resp[0]:
+                df['Iteration0']['Step5'] = 'Fail'
+                LOGGER.error("Error: %s", resp[1])
             LOGGER.info("Step 5: Checked generated alert logs")
 
         LOGGER.info("Step 6: Checking CSM REST API for fault alert")
@@ -476,6 +489,11 @@ class TestStorageAlerts:
                                                       True,
                                                       test_cfg["resource_type"])
 
-        assert_true(resp, test_cfg["csm_error_msg"])
+        if not resp[0]:
+            df['Iteration0']['Step6'] = 'Fail'
+            LOGGER.error("Error: %s", test_cfg["csm_error_msg"])
+
+        self.assertNotIn('Fail', df.values, "Failed : SAS cable fault "
+                                                 "scenario")
         LOGGER.info("Step 6: Successfully checked CSM REST API for "
                     "fault_resolved alert")
