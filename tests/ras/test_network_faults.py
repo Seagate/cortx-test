@@ -33,6 +33,7 @@ from libs.csm.rest.csm_rest_alert import SystemAlerts
 from commons.alerts_simulator.generate_alert_lib import \
      GenerateAlertLib, AlertType
 from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
+from commons import constants as cons
 
 LOGGER = logging.getLogger(__name__)
 
@@ -55,7 +56,6 @@ class TestNetworkFault:
         cls.mgmt_device = cls.nw_interfaces["MGMT"]
         cls.public_data_device = cls.nw_interfaces["PUBLIC_DATA"]
         cls.private_data_device = cls.nw_interfaces["PRIVATE_DATA"]
-        cls.sspl_stop = cls.changed_level = False
 
         cls.ras_test_obj = RASTestLib(host=cls.host, username=cls.uname,
                                       password=cls.passwd)
@@ -95,29 +95,17 @@ class TestNetworkFault:
             assert response[0], response[1]
         LOGGER.info("Done Checking SSPL state file")
 
-        services = self.cm_cfg["service"]
-
-        resp = self.s3obj.get_s3server_service_status(
-            service=services["sspl_service"], host=self.host, user=self.uname,
-            pwd=self.passwd)
-        assert resp[0], resp[1]
-        # resp = self.s3obj.get_s3server_service_status(
-        #     service=services["kafka_service"], host=self.host,
-        #     user=self.uname,
-        #     pwd=self.passwd)
-        # assert resp[0], resp[1]
-        #
-        # LOGGER.info("Check CSM Web status")
-        # resp = self.s3obj.get_s3server_service_status(
-        #     service="csm_web", host=self.host, user=self.uname, pwd=self.passwd)
-        # assert resp[0], resp[1]
-        #
-        # LOGGER.info("Check CSM Agent status")
-        # resp = self.s3obj.get_s3server_service_status(
-        #     service="csm_agent", host=self.host, user=self.uname,
-        #     pwd=self.passwd)
-        # assert resp[0], resp[1]
-        #
+        service = self.cm_cfg["service"]
+        services = [service["sspl_service"], service["kafka_service"],
+                    service["csm_web"], service["csm_agent"]]
+        for svc in services:
+            LOGGER.info("Checking status of %s service", svc)
+            resp = self.s3obj.get_s3server_service_status(service=svc,
+                                                          host=self.host,
+                                                          user=self.uname,
+                                                          pwd=self.passwd)
+            assert resp[0], resp[1]
+            LOGGER.info("%s service is active/running", svc)
         if self.start_msg_bus:
             LOGGER.info("Running read_message_bus.py script on node")
             resp = self.ras_test_obj.start_message_bus_reader_cmd()
@@ -125,6 +113,14 @@ class TestNetworkFault:
             LOGGER.info(
                 "Successfully started read_message_bus.py script on node")
 
+        LOGGER.info("Change sspl log level to DEBUG")
+        self.ras_test_obj.set_conf_store_vals(
+            url="yaml:///etc/sspl.conf", encl_vals={cons.CONF_SSPL_LOG_LEVEL:
+                                                    "DEBUG"})
+        resp = self.ras_test_obj.get_conf_store_vals(
+            url="yaml:///etc/sspl.conf",
+            field=cons.CONF_SSPL_LOG_LEVEL)
+        LOGGER.info("Now SSPL log level is: %s", resp)
         LOGGER.info("Starting collection of sspl.log")
         res = self.ras_test_obj.sspl_log_collect()
         assert_true(res[0], res[1])
