@@ -19,6 +19,7 @@
 #
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
+import argparse
 import csv
 from typing import List
 
@@ -144,3 +145,12 @@ def get_table_data(data: List[list], start: int = 0):
             break
         table_data.append(data[idx])
     return table_data, end
+
+
+def get_args():
+    """Parse arguments and collect database information"""
+    parser = argparse.ArgumentParser()
+    parser.add_argument('build', help='Build number')
+
+    args = parser.parse_args()
+    return args.build
