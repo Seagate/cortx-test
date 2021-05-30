@@ -23,6 +23,7 @@
 import logging
 import os
 import sys
+import time
 import platform
 import random
 import shutil
@@ -36,7 +37,6 @@ from hashlib import md5
 from paramiko import SSHClient, AutoAddPolicy
 from commons import commands
 from commons import params
-
 
 if sys.platform == 'win32':
     try:
@@ -1053,3 +1053,49 @@ def toggle_nw_status(device: str, status: str, host: str, username: str,
 
     LOGGER.debug(res)
     return res[0]
+
+
+def create_dir_hierarchy_and_objects(directory_path=None,
+                                     obj_prefix=None,
+                                     depth: int = 1,
+                                     obj_count: int = 1,
+                                     count: int = 1,
+                                     b_size: int = 1) -> list:
+    """
+    Create directory hierarchy as per depth and create number of objects in each folder.
+
+    :param directory_path: Absolute path of root directory.
+    :param obj_prefix: Name of the object prefix.
+    :param depth: Directory hierarchy.
+    :param obj_count: object count per directory.
+    :param b_size: object block size.
+    :param count: count.
+    :return: filepath list.
+    """
+    file_path_list = []
+    for objcnt in range(obj_count):
+        fpath = os.path.join(directory_path,
+                             f"{obj_prefix}{objcnt}{time.perf_counter_ns()}")
+        run_local_cmd(
+            commands.CREATE_FILE.format("/dev/zero", fpath, count, b_size))
+        if os.path.exists(fpath):
+            file_path_list.append(fpath)
+    for dcnt in range(depth):
+        dpath = os.path.join(
+            directory_path,
+            ''.join(
+                random.SystemRandom().choice(
+                    string.ascii_uppercase +
+                    string.ascii_lowercase) for _ in range(5)))
+        if not os.path.exists(dpath):
+            os.makedirs(dpath)
+        for objcnt in range(obj_count):
+            fpath = os.path.join(
+                dpath, f"{obj_prefix}{objcnt}{time.perf_counter_ns()}")
+            run_local_cmd(
+                commands.CREATE_FILE.format("/dev/zero", fpath, count, b_size))
+            if os.path.exists(fpath):
+                file_path_list.append(fpath)
+    LOGGER.info("File list: %s", file_path_list)
+
+    return file_path_list
