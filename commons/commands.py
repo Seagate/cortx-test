@@ -394,7 +394,8 @@ CMD_AWSCLI_LIST_PARTS = "aws s3api list-parts --bucket {0} --key {1} --upload-id
 CMD_AWSCLI_COMPLETE_MULTIPART = "aws s3api complete-multipart-upload --multipart-upload " \
                                 "file://{0} --bucket {1} --key {2} --upload-id {3}"
 CMD_AWSCLI_DOWNLOAD_OBJECT = "aws s3 cp s3://{0}/{1} {2}"
-CMD_AWSCLI_UPLOAD_DIR_TO_BUCKET = "aws s3 sync {0} s3://{1}"  # Upload directory recursively to s3.
+# Upload directory recursively to s3.
+CMD_AWSCLI_UPLOAD_DIR_TO_BUCKET = "aws s3 sync {0} s3://{1}"
 CMD_AWSCLI_LIST_OBJECTS_V2_BUCKETS = "aws s3api list-objects-v2 --bucket {0}"
 CMD_AWSCLI_LIST_OBJECTS_V2_OPTIONS_BUCKETS = "aws s3api list-objects-v2 --bucket {0} {1}"
 

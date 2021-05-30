@@ -54,7 +54,7 @@ class TestObjectV2List:
         self.folder_path = os.path.join(TEST_DATA_FOLDER, "TestObjectV2List")
         if not system_utils.path_exists(self.folder_path):
             system_utils.make_dirs(self.folder_path)
-        self.log.info(f"Test data path: %s", self.folder_path)
+        self.log.info("Test data path: %s", self.folder_path)
         yield
         if system_utils.path_exists(self.folder_path):
             system_utils.remove_dirs(self.folder_path)
@@ -168,7 +168,7 @@ class TestObjectV2List:
     @pytest.mark.tags("TEST-15192")
     @CTFailOn(error_handler)
     def test_15192(self):
-        """Test list-objects-v2 --start-after option using aws s3api"""
+        """Test list-objects-v2 --start-after option using aws s3api."""
         self.create_bucket_upload_folder(self.bucket_name)
         self.log.info(
             "Run list-objects-v2 --start-after to list all keys after the key specified.")

@@ -1059,8 +1059,7 @@ def create_dir_hierarchy_and_objects(directory_path=None,
                                      obj_prefix=None,
                                      depth: int = 1,
                                      obj_count: int = 1,
-                                     count: int = 1,
-                                     b_size: int = 1) -> list:
+                                     **kwargs) -> list:
     """
     Create directory hierarchy as per depth and create number of objects in each folder.
 
@@ -1070,9 +1069,11 @@ def create_dir_hierarchy_and_objects(directory_path=None,
     :param obj_count: object count per directory.
     :param b_size: object block size.
     :param count: count.
-    :return: filepath list.
+    :return: file path list.
     """
     file_path_list = []
+    count = kwargs.get("count", 1)
+    b_size = kwargs.get("b_size", 1)
     for objcnt in range(obj_count):
         fpath = os.path.join(directory_path,
                              f"{obj_prefix}{objcnt}{time.perf_counter_ns()}")
@@ -1080,7 +1081,7 @@ def create_dir_hierarchy_and_objects(directory_path=None,
             commands.CREATE_FILE.format("/dev/zero", fpath, count, b_size))
         if os.path.exists(fpath):
             file_path_list.append(fpath)
-    for dcnt in range(depth):
+    for _ in range(depth):
         dpath = os.path.join(
             directory_path,
             ''.join(

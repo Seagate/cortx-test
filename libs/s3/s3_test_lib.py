@@ -159,7 +159,7 @@ class S3TestLib(S3Lib):
                     dest_object: str = None,
                     **kwargs) -> tuple:
         """
-        Creates a copy of an object that is already stored in Seagate S3 with different permissions.
+        Copy of an object that is already stored in Seagate S3 with different permissions.
 
         :param source_bucket: The name of the source bucket.
         :param source_object: The name of the source object.
@@ -698,7 +698,8 @@ class S3TestLib(S3Lib):
     @staticmethod
     def create_bucket_awscli(bucket_name: str):
         """
-        Method to create a bucket using awscli
+        Method to create a bucket using awscli.
+
         :param bucket_name: Name of the bucket
         :return: True/False and output of command execution
         """
@@ -716,7 +717,8 @@ class S3TestLib(S3Lib):
     @staticmethod
     def delete_bucket_awscli(bucket_name: str, force: bool = False):
         """
-        Method to delete a bucket using awscli
+        Method to delete a bucket using awscli.
+
         :param bucket_name: Name of the bucket
         :param force: True for forcefully deleting bucket containing objects
         :return: True/False and output of command execution
@@ -736,6 +738,7 @@ class S3TestLib(S3Lib):
 
 
 class AWScliS3api:
+    """Class including methods related to aws cli s3api operations."""
 
     @staticmethod
     def create_bucket(bucket_name: str) -> tuple:
@@ -747,7 +750,7 @@ class AWScliS3api:
         """
         LOGGER.info("Create bucket: %s", bucket_name)
         cmd_create_bkt = commands.CMD_AWSCLI_CREATE_BUCKET.format(bucket_name)
-        status, output = run_local_cmd(cmd_create_bkt)
+        _, output = run_local_cmd(cmd_create_bkt)
         if bucket_name in output:
             return True, output
 
@@ -766,7 +769,7 @@ class AWScliS3api:
         cmd_del_bkt = commands.CMD_AWSCLI_DELETE_BUCKET.format(bucket_name)
         cmd_del_bkt = " ".join([cmd_del_bkt, "--force"]
                                ) if force else cmd_del_bkt
-        status, output = run_local_cmd(cmd_del_bkt)
+        _, output = run_local_cmd(cmd_del_bkt)
         if bucket_name in output:
             return True, output
 
@@ -776,6 +779,7 @@ class AWScliS3api:
     def list_bucket() -> list:
         """
         Method to list buckets using awscli.
+
         :return: list of buckets.
         """
         LOGGER.info("List buckets")
@@ -790,13 +794,14 @@ class AWScliS3api:
     def download_object(bucket_name, object_name, file_path):
         """
         Download s3 object to file path.
+
         :param bucket_name: Name of the bucket.
         :param object_name: name of the object.
         :param file_path: download file path.
         :return: true/false, response.
         """
         LOGGER.info("Download s3 object.")
-        status, output = run_local_cmd(
+        _, output = run_local_cmd(
             commands.CMD_AWSCLI_DOWNLOAD_OBJECT.format(
                 bucket_name, object_name, file_path))
 
@@ -842,7 +847,7 @@ class AWScliS3api:
                     options += " --{} {}".format(key, value)
                 else:
                     options += " --{}".format(key)
-            status, resp = run_local_cmd(
+            status, output = run_local_cmd(
                 commands.CMD_AWSCLI_LIST_OBJECTS_V2_OPTIONS_BUCKETS.format(bucket_name, options))
         else:
             status, output = run_local_cmd(
