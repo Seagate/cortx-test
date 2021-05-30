@@ -641,7 +641,7 @@ class S3TestLib(S3Lib):
 
     def list_objects_details(
             self,
-            bucket_name: str = None,) -> tuple:
+            bucket_name: str = None, ) -> tuple:
         """
         Listing objects of a bucket with details.
 
@@ -733,6 +733,124 @@ class S3TestLib(S3Lib):
             return True, response
 
         return False, response
+
+
+class AWScliS3api:
+
+    @staticmethod
+    def create_bucket(bucket_name: str) -> tuple:
+        """
+        Create s3 bucket using s3api.
+
+        :param bucket_name: Name of the bucket.
+        :return: True/False, response.
+        """
+        LOGGER.info("Create bucket: %s", bucket_name)
+        cmd_create_bkt = commands.CMD_AWSCLI_CREATE_BUCKET.format(bucket_name)
+        status, output = run_local_cmd(cmd_create_bkt)
+        if bucket_name in output:
+            return True, output
+
+        return False, output
+
+    @staticmethod
+    def delete_bucket(bucket_name, force=False) -> tuple:
+        """
+        Method to delete a bucket using awscli.
+
+        :param bucket_name: Name of the bucket
+        :param force: True for forcefully deleting bucket containing objects
+        :return: True/False and output of command execution
+        """
+        LOGGER.info("Delete bucket: %s", bucket_name)
+        cmd_del_bkt = commands.CMD_AWSCLI_DELETE_BUCKET.format(bucket_name)
+        cmd_del_bkt = " ".join([cmd_del_bkt, "--force"]
+                               ) if force else cmd_del_bkt
+        status, output = run_local_cmd(cmd_del_bkt)
+        if bucket_name in output:
+            return True, output
+
+        return False, output
+
+    @staticmethod
+    def list_bucket() -> list:
+        """
+        Method to list buckets using awscli.
+        :return: list of buckets.
+        """
+        LOGGER.info("List buckets")
+        bktlist = list()
+        status, output = run_local_cmd(commands.CMD_AWSCLI_LIST_BUCKETS)
+        if status:
+            bktlist = [bkt.split(-1) for bkt in output.split("\n") if bkt]
+
+        return bktlist
+
+    @staticmethod
+    def download_object(bucket_name, object_name, file_path):
+        """
+        Download s3 object to file path.
+        :param bucket_name: Name of the bucket.
+        :param object_name: name of the object.
+        :param file_path: download file path.
+        :return: true/false, response.
+        """
+        LOGGER.info("Download s3 object.")
+        status, output = run_local_cmd(
+            commands.CMD_AWSCLI_DOWNLOAD_OBJECT.format(
+                bucket_name, object_name, file_path))
+
+        return os.path.exists(file_path), output
+
+    @staticmethod
+    def upload_directory(bucket_name, directory_path) -> tuple:
+        """
+        Upload directory to s3 bucket.
+
+        :param bucket_name: Name of the bucket.
+        :param directory_path: Absolute directory path.
+        :return: true/false, response.
+        """
+        LOGGER.info("Download s3 object.")
+        status, output = run_local_cmd(
+            commands.CMD_AWSCLI_UPLOAD_DIR_TO_BUCKET.format(directory_path, bucket_name))
+        upload_list = output.split("\n")
+        LOGGER.info("Upload list: %s", upload_list)
+
+        return status, upload_list
+
+    @staticmethod
+    def list_objects_v2(bucket_name, **kwargs):
+        """
+        Method to list objects using aws s3api.
+
+        :param bucket_name: Name of the bucket.
+        :param kwargs: All supported options by list-object-v2.
+        :return: true/false, response.
+        """
+        LOGGER.info("List objects using aws s3api.")
+        output = ""
+        if kwargs:
+            options = ""
+            for key, value in kwargs.items():
+                key = "start-after" if key == "start_after" else key
+                key = "fetch-owner" if key == "fetch_owner" else key
+                key = "starting-token" if key == "starting_token" else key
+                key = "max-items" if key == "max_items" else key
+                key = "no-fetch-owner" if key == "no_fetch_owner" else key
+                if value:
+                    options += " --{} {}".format(key, value)
+                else:
+                    options += " --{}".format(key)
+            status, resp = run_local_cmd(
+                commands.CMD_AWSCLI_LIST_OBJECTS_V2_OPTIONS_BUCKETS.format(bucket_name, options))
+        else:
+            status, output = run_local_cmd(
+                commands.CMD_AWSCLI_LIST_OBJECTS_V2_BUCKETS.format(bucket_name))
+        if status:
+            return status, eval(output)
+
+        return False, output
 
 
 class S3LibNoAuth(S3TestLib, S3AclTestLib, S3BucketPolicyTestLib):
