@@ -960,7 +960,8 @@ class ControllerLib:
             LOGGER.error("Failed to get drive details")
             return status, drive_dict
 
-    def poll_dg_recon_status(self, disk_group: str) -> Tuple[bool, int]:
+    def poll_dg_recon_status(self, disk_group: str, percent: int = 100) \
+            -> Tuple[bool, int]:
         """
 
         Returns:
@@ -968,10 +969,11 @@ class ControllerLib:
         """
         LOGGER.info("Polling disk group reconstruction percent")
         recon_percent = 0
-        while recon_percent != 100:
+        while recon_percent >= percent:
             status, disk_group_dict = self.get_show_disk_group()
             LOGGER.info("Reconstruction percent: %s", recon_percent)
-            recon_percent = disk_group_dict[disk_group].get('job_percent', 100)
+            recon_percent = disk_group_dict[disk_group].get('job_percent',
+                                                            percent)
 
         if disk_group_dict[disk_group]['health'] == 'OK':
             LOGGER.info("Reconstruction of disk group %s completed. Disk "

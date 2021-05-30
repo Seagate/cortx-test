@@ -34,6 +34,7 @@ from libs.s3 import S3H_OBJ
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons import constants as cons
+from commons import commands as common_cmd
 from commons.utils.assert_utils import *
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from commons.alerts_simulator.generate_alert_lib import \
@@ -406,12 +407,10 @@ class TestStorageAlerts:
 
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
-    @pytest.mark.tags("22060")
+    @pytest.mark.tags("TEST-22060")
     def test_basic_dg_alerts_22060(self):
         """
-
-        Returns:
-
+        Test alerts when disk group is in degraded/OK health
         """
         LOGGER.info("STARTED: Test Disk group failure faults")
 
@@ -503,3 +502,271 @@ class TestStorageAlerts:
         assert_true(result, "Test failed. Please check summary for failed "
                             "step.")
         LOGGER.info("ENDED: Test Disk group failure faults")
+
+    @pytest.mark.cluster_monitor_ops
+    @pytest.mark.hw_alert
+    @pytest.mark.tags("TEST-22062")
+    def test_persistent_cache_dg_alerts_sspl_22062(self):
+        """
+        Test alerts in persistent cache for storage enclosure fru
+        (disk group failure) - Restart SSPL
+        """
+        LOGGER.info("STARTED: Test persistent cache for Disk group faults "
+                    "when SSPL is stopped and started")
+
+        test_cfg = RAS_TEST_CFG["test_22060"]
+        disk_group = test_cfg["disk_group"]
+        df = pd.DataFrame(index='Step1 Step2 Step3 Step4 Step5 Step6 '
+                                'Step7 Step8'.split(),
+                          columns='Iteration0'.split())
+        df = df.assign(Iteration0='Pass')
+        LOGGER.info("Step 1: Create disk group failure on %s", disk_group)
+        resp = self.alert_api_obj.generate_alert(
+            AlertType.DG_FAULT,
+            input_parameters={"enclid": test_cfg["enclid"],
+                              "ctrl_name": test_cfg["ctrl_name"],
+                              "operation": test_cfg["operation_fault"],
+                              "disk_group": disk_group})
+        if not resp[0]:
+            df['Iteration0']['Step1'] = 'Fail'
+            LOGGER.error("Error: %s", resp[1])
+        self.dg_failure = True
+        drives = resp[1]
+        LOGGER.info("Step 1: Successfully created disk group failure on %s",
+                    disk_group)
+
+        time.sleep(self.cm_cfg["sleep_val"])
+        if self.start_msg_bus:
+            LOGGER.info("Step 2: Verifying alert logs for fault alert ")
+            alert_list = [test_cfg["resource_type"], test_cfg["alert_fault"]]
+            resp = self.ras_test_obj.list_alert_validation(alert_list)
+            if not resp[0]:
+                df['Iteration0']['Step2'] = 'Fail'
+                LOGGER.error("Error: %s", resp[1])
+            LOGGER.info("Step 2: Checked generated alert logs")
+
+        # LOGGER.info("Step 3: Checking CSM REST API for fault alert")
+        # time.sleep(self.cm_cfg["csm_alert_gen_delay"])
+        # resp = self.csm_alert_obj.verify_csm_response(self.starttime,
+        #                                               test_cfg["alert_fault"],
+        #                                               False,
+        #                                               test_cfg["resource_type"])
+        #
+        # if not resp[0]:
+        #     df['Iteration0']['Step3'] = 'Fail'
+        #     LOGGER.error("Error: %s", test_cfg["csm_error_msg"])
+        # LOGGER.info("Step 3: Successfully checked CSM REST API for fault "
+        #             "alert")
+
+        LOGGER.info("Step 4: Stopping SSPL service")
+        service = self.cm_cfg["service"]
+        resp = self.node_obj.send_systemctl_cmd(command="stop",
+                                                services=service["sspl_service"],
+                                                decode=True, exc=False)
+
+        resp = self.s3obj.get_s3server_service_status(
+                service=service["sspl_service"], host=self.host,
+                user=self.uname,
+                pwd=self.passwd)
+        if resp[0]:
+            df['Iteration0']['Step4'] = 'Fail'
+            LOGGER.error("Step 4: Failed to stop SSPL service. Error: %s",
+                         resp[1])
+        else:
+            LOGGER.info("Step 4: Successfully stopped SSPL service")
+
+        LOGGER.info("Step 5: Resolve disk group failure on %s", disk_group)
+        resp = self.alert_api_obj.generate_alert(
+            AlertType.DG_FAULT_RESOLVED,
+            input_parameters={"enclid": test_cfg["enclid"],
+                              "ctrl_name": test_cfg["ctrl_name"],
+                              "operation": test_cfg["operation_fault_resolved"],
+                              "disk_group": disk_group,
+                              "phy_num": drives, "poll": True})
+        if not resp[0]:
+            df['Iteration0']['Step5'] = 'Fail'
+            LOGGER.error("Error: %s", resp[1])
+        self.dg_failure = False
+        LOGGER.info("Step 5: Successfully resolved disk group failure on %s",
+                    disk_group)
+
+        LOGGER.info("Step 6: Starting SSPL service")
+        service = self.cm_cfg["service"]
+        resp = self.node_obj.send_systemctl_cmd(command="start",
+                                                services=service[
+                                                    "sspl_service"],
+                                                decode=True, exc=False)
+
+        resp = self.s3obj.get_s3server_service_status(
+            service=service["sspl_service"], host=self.host,
+            user=self.uname,
+            pwd=self.passwd)
+        if not resp[0]:
+            df['Iteration0']['Step6'] = 'Fail'
+            LOGGER.error("Step 6: Failed to stop SSPL service. Error: %s",
+                         resp[1])
+        else:
+            LOGGER.info("Step 6: Successfully stopped SSPL service")
+
+        time.sleep(self.cm_cfg["sleep_val"])
+        if self.start_msg_bus:
+            LOGGER.info("Step 7: Verifying alert logs for fault_resolved "
+                        "alert ")
+            alert_list = [test_cfg["resource_type"],
+                          test_cfg["alert_fault_resolved"]]
+            resp = self.ras_test_obj.list_alert_validation(alert_list)
+            if not resp[0]:
+                df['Iteration0']['Step7'] = 'Fail'
+                LOGGER.error("Error: %s", resp[1])
+            LOGGER.info("Step 7: Checked generated alert logs")
+
+        # LOGGER.info("Step 8: Checking CSM REST API for fault alert")
+        # time.sleep(self.cm_cfg["csm_alert_gen_delay"])
+        # resp = self.csm_alert_obj.verify_csm_response(self.starttime,
+        #                                               test_cfg["alert_fault_resolved"],
+        #                                               True,
+        #                                               test_cfg["resource_type"])
+        #
+        # if not resp[0]:
+        #     df['Iteration0']['Step8'] = 'Fail'
+        #     LOGGER.error("Error: %s", test_cfg["csm_error_msg"])
+        # LOGGER.info("Step 8: Successfully checked CSM REST API for "
+        #             "fault_resolved alert")
+
+        LOGGER.info("Summary of test: %s", df)
+        result = False if 'Fail' in df.values else True
+        assert_true(result, "Test failed. Please check summary for failed "
+                            "step.")
+        LOGGER.info("ENDED: Test persistent cache for Disk group faults "
+                    "when SSPL is stopped and started")
+
+    @pytest.mark.cluster_monitor_ops
+    @pytest.mark.hw_alert
+    @pytest.mark.tags("TEST-22063")
+    def test_persistent_cache_dg_alerts_reboot_22063(self):
+        """
+        Test alerts in persistent cache for storage enclosure fru
+        (disk group failure) - Reboot node
+        """
+        LOGGER.info("STARTED: Test persistent cache for Disk group faults "
+                    "when node is rebooted")
+
+        test_cfg = RAS_TEST_CFG["test_22060"]
+        disk_group = test_cfg["disk_group"]
+        df = pd.DataFrame(index='Step1 Step2 Step3 Step4 Step5 Step6 '
+                                'Step7 Step8 Step9'.split(),
+                          columns='Iteration0'.split())
+        df = df.assign(Iteration0='Pass')
+        LOGGER.info("Step 1: Create disk group failure on %s", disk_group)
+        resp = self.alert_api_obj.generate_alert(
+            AlertType.DG_FAULT,
+            input_parameters={"enclid": test_cfg["enclid"],
+                              "ctrl_name": test_cfg["ctrl_name"],
+                              "operation": test_cfg["operation_fault"],
+                              "disk_group": disk_group})
+        if not resp[0]:
+            df['Iteration0']['Step1'] = 'Fail'
+            LOGGER.error("Error: %s", resp[1])
+        self.dg_failure = True
+        drives = resp[1]
+        LOGGER.info("Step 1: Successfully created disk group failure on %s",
+                    disk_group)
+
+        time.sleep(self.cm_cfg["sleep_val"])
+        if self.start_msg_bus:
+            LOGGER.info("Step 2: Verifying alert logs for fault alert ")
+            alert_list = [test_cfg["resource_type"], test_cfg["alert_fault"]]
+            resp = self.ras_test_obj.list_alert_validation(alert_list)
+            if not resp[0]:
+                df['Iteration0']['Step2'] = 'Fail'
+                LOGGER.error("Error: %s", resp[1])
+            LOGGER.info("Step 2: Checked generated alert logs")
+
+        # LOGGER.info("Step 3: Checking CSM REST API for fault alert")
+        # time.sleep(self.cm_cfg["csm_alert_gen_delay"])
+        # resp = self.csm_alert_obj.verify_csm_response(self.starttime,
+        #                                               test_cfg["alert_fault"],
+        #                                               False,
+        #                                               test_cfg["resource_type"])
+        #
+        # if not resp[0]:
+        #     df['Iteration0']['Step3'] = 'Fail'
+        #     LOGGER.error("Error: %s", test_cfg["csm_error_msg"])
+        # LOGGER.info("Step 3: Successfully checked CSM REST API for fault "
+        #             "alert")
+
+        LOGGER.info("Step 4: Start reconstruction of disk group %s", disk_group)
+        resp = self.alert_api_obj.generate_alert(
+            AlertType.DG_FAULT_RESOLVED,
+            input_parameters={"enclid": test_cfg["enclid"],
+                              "ctrl_name": test_cfg["ctrl_name"],
+                              "operation": test_cfg["operation_fault_resolved"],
+                              "disk_group": disk_group,
+                              "phy_num": drives, "poll": False})
+        if not resp[0]:
+            df['Iteration0']['Step4'] = 'Fail'
+            LOGGER.error("Error: %s", resp[1])
+        self.dg_failure = False
+        LOGGER.info("Step 4: Successfully started reconstruction of disk group "
+                    "%s", disk_group)
+
+        LOGGER.info("Step 5: Polling progress of reconstruction job of disk "
+                    "group")
+        poll_status, poll_percent = self.controller_obj.poll_dg_recon_status(
+            disk_group=disk_group, percent=98)
+        if poll_status:
+            df['Iteration0']['Step5'] = 'Fail'
+            LOGGER.error("Expected reconstruction percent <100. Actual: %s",
+                         resp[1])
+        elif poll_percent < 100:
+            LOGGER.info("Step 6: Rebooting node %s ", self.host)
+            resp = self.node_obj.execute_cmd(cmd=common_cmd.REBOOT_NODE_CMD,
+                                             read_lines=True, exc=False)
+            LOGGER.info(
+                "Step 6: Rebooted node: %s, Response: %s", self.host, resp)
+
+        time.sleep(self.cm_cfg["reboot_delay"])
+        LOGGER.info("Step 7: Checking if disk group is reconstructed "
+                    "successfully")
+        poll_status, poll_percent = self.controller_obj.poll_dg_recon_status(
+            disk_group=disk_group)
+        if poll_status:
+            LOGGER.info("Step 7: Successfully recovered disk group %s \n "
+                        "Reconstruction percent = %s", disk_group,
+                        poll_percent)
+        else:
+            LOGGER.error("Step 7: Failed to recover disk group %s", disk_group)
+            df['Iteration0']['Step7'] = 'Fail'
+            LOGGER.error("Expected reconstruction percent: 100. Actual: %s",
+                         resp[1])
+
+        if self.start_msg_bus:
+            LOGGER.info("Step 8: Verifying alert logs for fault_resolved "
+                        "alert ")
+            alert_list = [test_cfg["resource_type"],
+                          test_cfg["alert_fault_resolved"]]
+            resp = self.ras_test_obj.list_alert_validation(alert_list)
+            if not resp[0]:
+                df['Iteration0']['Step8'] = 'Fail'
+                LOGGER.error("Error: %s", resp[1])
+            LOGGER.info("Step 8: Checked generated alert logs")
+
+        # LOGGER.info("Step 9: Checking CSM REST API for fault alert")
+        # time.sleep(self.cm_cfg["csm_alert_gen_delay"])
+        # resp = self.csm_alert_obj.verify_csm_response(self.starttime,
+        #                                               test_cfg["alert_fault_resolved"],
+        #                                               True,
+        #                                               test_cfg["resource_type"])
+        #
+        # if not resp[0]:
+        #     df['Iteration0']['Step9'] = 'Fail'
+        #     LOGGER.error("Error: %s", test_cfg["csm_error_msg"])
+        # LOGGER.info("Step 9: Successfully checked CSM REST API for "
+        #             "fault_resolved alert")
+
+        LOGGER.info("Summary of test: %s", df)
+        result = False if 'Fail' in df.values else True
+        assert_true(result, "Test failed. Please check summary for failed "
+                            "step.")
+        LOGGER.info("ENDED: Test persistent cache for Disk group faults "
+                    "when SSPL is stopped and started")

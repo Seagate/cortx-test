@@ -487,6 +487,7 @@ class GenerateAlertWrapper:
                 else:
                     LOGGER.error("Failed to recover disk group %s", disk_group)
                     return poll_status, poll_percent
+            return True, "Reconstruction started"
         except BaseException as error:
             LOGGER.error("%s %s: %s", cons.EXCEPTION_ERROR,
                          GenerateAlertWrapper.resolve_disk_group_failures.__name__,
