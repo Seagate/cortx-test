@@ -75,12 +75,16 @@ class TestObjectV2List:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Upload few object in hierarchical and non-hierarchical list.")
-        system_utils.create_dir_hierarchy_and_objects(self.folder_path,
-                                                      self.object_prefix,
-                                                      depth=6,
-                                                      obj_count=10)
+        fpathlist = system_utils.create_dir_hierarchy_and_objects(
+            self.folder_path, self.object_prefix, depth=3, obj_count=5)
+        self.log.info("File list: %s", fpathlist)
+        assert_utils.assert_equal(
+            20, len(fpathlist), "Failed to create hierarchy.")
         resp = AWS_CLI_OBJ.upload_directory(bucket_name, self.folder_path)
         assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(
+            len(fpathlist), len(
+                resp[1]), "Failed to upload hierarchy.")
 
         return resp[1]
 
@@ -102,7 +106,7 @@ class TestObjectV2List:
         """Test list-objects-v2--delimiter options using aws s3api."""
         self.create_bucket_upload_folder(self.bucket_name)
         self.log.info("Run list-objects-v2 --delimiter to group keys.")
-        resp = AWS_CLI_OBJ.list_objects_v2(self.bucket_name, delimiter="/")
+        resp = AWS_CLI_OBJ.list_objects_v2(self.bucket_name, delimiter="//")
         assert_utils.assert_true(resp[0], resp[1])
 
     @pytest.mark.s3_ops
@@ -117,6 +121,8 @@ class TestObjectV2List:
         resp = AWS_CLI_OBJ.list_objects_v2(
             self.bucket_name, prefix=self.object_prefix)
         assert_utils.assert_true(resp[0], resp[1])
+        for rdict in resp[1]["Contents"]:
+            assert_utils.assert_in(self.object_prefix, rdict["Key"])
 
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-15190")
@@ -128,7 +134,7 @@ class TestObjectV2List:
             "Run list-objects-v2  --delimiter and --prefix to Limits the response to keys"
             " that begin with the specified prefix and group similar key with delimiter")
         resp = AWS_CLI_OBJ.list_objects_v2(
-            self.bucket_name, prefix=self.object_prefix, delimiter='/')
+            self.bucket_name, prefix=self.object_prefix, delimiter='//')
         assert_utils.assert_true(resp[0], resp[1])
 
     @pytest.mark.s3_ops
@@ -142,12 +148,13 @@ class TestObjectV2List:
             " of items to return in the command's output and then token to specify where"
             " to start paginating. This is the NextToken from a previously truncated response.")
         resp = AWS_CLI_OBJ.list_objects_v2(
-            self.bucket_name, prefix=self.bucket_name, max_items=2)
+            self.bucket_name, prefix=self.object_prefix, max_items=2)
         assert_utils.assert_true(resp[0], resp[1])
+        NextToken = resp[1]["NextToken"]
         resp = AWS_CLI_OBJ.list_objects_v2(
             self.bucket_name,
-            prefix=self.bucket_name,
-            starting_token="")
+            prefix=self.object_prefix,
+            starting_token=NextToken)
         assert_utils.assert_true(resp[0], resp[1])
 
     @pytest.mark.s3_ops
