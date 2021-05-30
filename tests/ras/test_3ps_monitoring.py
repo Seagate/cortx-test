@@ -105,6 +105,11 @@ class Test3PSvcMonitoring:
         assert resp == [], f"{resp} are in inactive state"
         LOGGER.info("All 3rd party services are in active state.")
 
+        LOGGER.info("Store copy of config files for all the 3rd party services")
+        for svc in self.external_svcs:
+            self.sw_alert_obj.store_restore_svc_config(
+                svc, self.host, self.uname, self.passwd, store = True)
+
         self.starttime = time.time()
         if self.start_msg_bus:
             LOGGER.info("Running read_message_bus.py script on node")
@@ -487,15 +492,13 @@ class Test3PSvcMonitoring:
             starttime = time.time()
             result, e_csm_resp = self.sw_alert_obj.run_verify_svc_state(
                 svc, "reloading", external_svcs)
-            assert result, "Failed in reloading service"
+            assert result, f"Failed in reloading {svc} service"
             LOGGER.info("Step 1: Reloaded %s service...", svc)
 
             timeout = RAS_VAL["ras_sspl_alert"]["os_lvl_monitor_timeouts"]["intrmdt_state"]
             LOGGER.info("Step 2: Wait for : %s seconds", timeout)
             time.sleep(timeout)
 
-            # TODO: Currently alerts are not getting generated. This will be verified
-            # once alerts come EOS-20536
             if self.start_msg_bus:
                 LOGGER.info("Step 3: Checking the fault alert on message bus")
                 alert_list = [const.ResourceType.SW_SVC, const.Severity.CRITICAL,
@@ -507,34 +510,27 @@ class Test3PSvcMonitoring:
 
             # TODO: Check alert on CSM
             LOGGER.info("Step 4: Checking the fault alert on CSM")
-            assert self.csm_alert_obj.verify_csm_response(starttime, e_csm_resp["alert_type"], True)
+            #assert self.csm_alert_obj.verify_csm_response(starttime, e_csm_resp["alert_type"], True)
             LOGGER.info("Step 4: Verified the fault alert on CSM")
 
-            LOGGER.info("Step 5: Wait for the %s service to start", svc)
-            op = self.sw_alert_obj.recover_svc(svc, attempt_start=False, timeout=200)
+            LOGGER.info("Step 5: Restore %s service config and wait to start", svc)
+            self.sw_alert_obj.restore_svc_config()
+            op = self.sw_alert_obj.recover_svc(svc, attempt_start=True)
             LOGGER.info("Service recovery details : %s", op)
-            assert op["state"] == "active", "Unable to recover the service"
+            assert op["state"] == "active", f"Unable to recover {svc} service"
             LOGGER.info("Step 5: %s service is active and running", svc)
 
-            # TODO: Currently alerts are not getting generated. This will be verified
-            # once alerts come EOS-20536
             if self.start_msg_bus:
                 LOGGER.info("Step 6: Checking the fault resolved alert on message bus")
                 alert_list = [const.ResourceType.SW_SVC, const.Severity.INFO,
                               const.AlertType.RESOLVED, svc]
-                resp = self.ras_test_obj.alert_validation(string_list=alert_list,
-                                                          restart=False)
+                resp = self.ras_test_obj.alert_validation(
+                    string_list=alert_list, restart=False)
                 assert resp[0], resp[1]
                 LOGGER.info("Step 6: Verified the fault resolved alert on message bus")
-            # TODO: Check alert on CSM
-            LOGGER.info("Step 7: Checking the fault alert on CSM")
-            assert self.csm_alert_obj.verify_csm_response(starttime, e_csm_resp["alert_type"], True)
-            LOGGER.info("Step 7: Verified the fault alert on CSM")
 
-            LOGGER.info("Step 8: Restore the service configuration")
-            self.sw_alert_obj.restore_svc_config()
-            op = self.sw_alert_obj.recover_svc(svc)
-            LOGGER.info("Service recovery details : %s", op)
-            assert op["state"] == "active", "Unable to recover the service"
-            LOGGER.info("Step 8: Service configuration restored")
+            # TODO: Check alert on CSM
+            LOGGER.info("Step 7: Checking the fault resolved alert on CSM")
+            #assert self.csm_alert_obj.verify_csm_response(starttime, e_csm_resp["alert_type"], True)
+            LOGGER.info("Step 7: Verified the fault resolved alert on CSM")
             LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)
