@@ -1076,23 +1076,23 @@ def create_dir_hierarchy_and_objects(directory_path=None,
     b_size = kwargs.get("b_size", 1)
     for objcnt in range(obj_count):
         fpath = os.path.join(directory_path,
-                             f"{obj_prefix}{objcnt}{time.perf_counter_ns()}")
+                             f"{obj_prefix}{objcnt}{time.perf_counter_ns()}.txt")
         run_local_cmd(
             commands.CREATE_FILE.format("/dev/zero", fpath, count, b_size))
         if os.path.exists(fpath):
             file_path_list.append(fpath)
-    for _ in range(depth):
-        dpath = os.path.join(
-            directory_path,
-            ''.join(
+    for dcnt in range(depth):
+        directory_path = os.path.join(
+            directory_path, ''.join(
                 random.SystemRandom().choice(
-                    string.ascii_uppercase +
-                    string.ascii_lowercase) for _ in range(5)))
-        if not os.path.exists(dpath):
-            os.makedirs(dpath)
+                    string.ascii_lowercase) for _ in range(
+                    5 + dcnt)))
+        if not os.path.exists(directory_path):
+            os.makedirs(directory_path)
         for objcnt in range(obj_count):
             fpath = os.path.join(
-                dpath, f"{obj_prefix}{objcnt}{time.perf_counter_ns()}")
+                directory_path,
+                f"{obj_prefix}{objcnt}{time.perf_counter_ns()}.txt")
             run_local_cmd(
                 commands.CREATE_FILE.format("/dev/zero", fpath, count, b_size))
             if os.path.exists(fpath):

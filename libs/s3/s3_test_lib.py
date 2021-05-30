@@ -819,7 +819,7 @@ class AWScliS3api:
         LOGGER.info("Download s3 object.")
         status, output = run_local_cmd(
             commands.CMD_AWSCLI_UPLOAD_DIR_TO_BUCKET.format(directory_path, bucket_name))
-        upload_list = output.split("\n")
+        upload_list = [out.split("\\r")[-1] for out in output.split("\\n") if out][:-1]
         LOGGER.info("Upload list: %s", upload_list)
 
         return status, upload_list
@@ -834,15 +834,10 @@ class AWScliS3api:
         :return: true/false, response.
         """
         LOGGER.info("List objects using aws s3api.")
-        output = ""
         if kwargs:
             options = ""
             for key, value in kwargs.items():
-                key = "start-after" if key == "start_after" else key
-                key = "fetch-owner" if key == "fetch_owner" else key
-                key = "starting-token" if key == "starting_token" else key
-                key = "max-items" if key == "max_items" else key
-                key = "no-fetch-owner" if key == "no_fetch_owner" else key
+                key = key.replace("_", "-")
                 if value:
                     options += " --{} {}".format(key, value)
                 else:
@@ -852,8 +847,10 @@ class AWScliS3api:
         else:
             status, output = run_local_cmd(
                 commands.CMD_AWSCLI_LIST_OBJECTS_V2_BUCKETS.format(bucket_name))
+        output = eval(eval(output.strip('b'))) if output else output
+        LOGGER.info("list-objects-v2: %s", output)
         if status:
-            return status, eval(output)
+            return status, output
 
         return False, output
 
