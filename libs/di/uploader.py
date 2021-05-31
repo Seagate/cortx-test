@@ -83,9 +83,6 @@ class Uploader:
         workers.end_workers()
         LOGGER.info('Upload Workers shutdown completed successfully')
         if len(uploadObjects) > 0:
-            if not os.path.exists(params.UPLOADED_FILES):
-                os.open(params.UPLOADED_FILES)
-
             with open(params.UPLOADED_FILES, 'a', newline='') as fp:
                 wr = csv.writer(fp, quoting=csv.QUOTE_NONE, delimiter=',', quotechar='', escapechar='\\')
                 fcntl.flock(fp, fcntl.LOCK_EX)
@@ -100,8 +97,7 @@ class Uploader:
         pool_len = kwargs['pool_len']
         user_name = kwargs['user']
         prefs = kwargs['prefs']
-        prefix = prefs.get('prefix_dir', 'test-1')
-        #prefs if prefs else 'test-1'  # prefs.get('prefix_dir', 'test-1')  # todo revisit
+        prefix = prefs.get('prefix_dir', 'test-1')  # todo revisit
 
         # todo get random compression ratio and process prefs
         # get random size
@@ -124,7 +120,7 @@ class Uploader:
             with open(file_path, 'rb') as fp:
                 md5sum = hashlib.md5(fp.read()).hexdigest()
             obj_name = os.path.basename(file_path)
-            stat_info = os.stat(obj_name)
+            stat_info = os.stat(file_path)
             row_data = [user_name, bucket, obj_name, md5sum]
             uploadObjects.append(row_data)
             file_object = {

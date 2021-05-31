@@ -727,12 +727,21 @@ def run_io_async(request):
     if request.config.option.data_integrity_chk:
         mgm_ops = ManagementOPs()
         secret_range = random.SystemRandom()
-        users = mgm_ops.create_account_users(nusers=secret_range.randint(1, 4))
-        users_buckets = mgm_ops.create_buckets(nbuckets=secret_range.randint(1, 3), users=users)
+        if not request.param:
+            nuser = secret_range.randint(1, 4)
+            nbuckets = secret_range.randint(1, 3)
+            file_counts = secret_range.randint(1, 3)
+            prefs_dict = {'prefix_dir': "async_io_dir"}
+        else:
+            nuser = request.param["user"]
+            nbuckets = request.param["buckets"]
+            file_counts = request.param["files_count"]
+            prefs_dict = request.param["prefs"]
+        users = mgm_ops.create_account_users(nusers=nuser)
+        users_buckets = mgm_ops.create_buckets(nbuckets=nbuckets, users=users)
         run_data_check_obj = RunDataCheckManager(users=users_buckets)
-        prefs_dict = {'prefix_dir': "async_io_dir"}
         yield run_data_check_obj.start_io_async(
-            users=users_buckets, buckets=None, files_count=secret_range.randint(1, 3), prefs=prefs_dict)
+            users=users_buckets, buckets=None, files_count=file_counts, prefs=prefs_dict)
         session = request.session
         gracefully_stop = False
         if session.testsfailed:
