@@ -149,6 +149,7 @@ class TestCliIAMUser:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-10861")
     def test_875_delete_iam_user(self):
         """
@@ -354,6 +355,7 @@ class TestCliIAMUser:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-10863")
     def test_878_list_user(self):
         """
