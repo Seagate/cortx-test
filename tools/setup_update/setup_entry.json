@@ -13,7 +13,8 @@
         "username": "node 0 username",
         "password": "node 0 password",
         "public_data_ip":"",
-        "private_data_ip":""
+        "private_data_ip":"",
+        "mgmt_ip": ""
     },
     {
         "host": "eos-node-1",
@@ -22,7 +23,8 @@
         "username": "node 1 username",
         "password": "node 1 password",
         "public_data_ip":"",
-        "private_data_ip":""
+        "private_data_ip":"",
+        "mgmt_ip": ""
     }
 ],
 
