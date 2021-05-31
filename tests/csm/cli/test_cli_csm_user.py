@@ -378,15 +378,17 @@ class TestCliCSMUser:
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
         offset = 2
         self.logger.info("Creating csm user with name %s", self.user_name)
-        resp = self.CSM_USER.create_csm_user_cli(
-            csm_user_name=self.user_name,
-            email_id=self.email_id,
-            role="manage",
-            password=self.csm_user_pwd,
-            confirm_password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            resp[0], True, resp)
-        assert_utils.assert_exact_string(resp[1], "User created")
+        for i in range(2):
+            user_name = "{0}{1}".format(self.user_name, i)
+            resp = self.CSM_USER.create_csm_user_cli(
+                csm_user_name=user_name,
+                email_id=self.email_id,
+                role="manage",
+                password=self.csm_user_pwd,
+                confirm_password=self.csm_user_pwd)
+            assert_utils.assert_equals(
+                resp[0], True, resp)
+            assert_utils.assert_exact_string(resp[1], "User created")
         self.logger.info("Created csm user with name %s", self.user_name)
         self.logger.info("Verifying list csm user with offset")
         list_user = self.CSM_USER.list_csm_users(op_format="json")
