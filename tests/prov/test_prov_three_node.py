@@ -24,6 +24,7 @@ Prov test file for all the Prov tests scenarios for single node VM.
 
 import os
 import logging
+import time
 import pytest
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
@@ -82,7 +83,7 @@ class TestProvThreeNode:
         cls.prov_obj = Provisioner()
         LOGGER.info("Done: Setup module operations")
 
-    @pytest.mark.prov
+    @pytest.mark.cluster_management_ops
     @pytest.mark.tags("TEST-21584")
     @CTFailOn(error_handler)
     def test_deployment_three_node_vm(self):
@@ -130,7 +131,7 @@ class TestProvThreeNode:
                 nd_obj.hostname)
             resp = self.prov_obj.install_pre_requisites(
                 node_obj=nd_obj, build_url=self.build_url)
-            assert_utils.assert_true(resp[0], resp[1])
+            assert_utils.assert_true(resp[0], "Provisioner Installation Failed")
             LOGGER.info("Provisioner Version: %s", resp[1])
 
         LOGGER.info("Creating config.ini file")
@@ -147,12 +148,12 @@ class TestProvThreeNode:
         LOGGER.info("Performing Cortx Bootstrap")
         resp = self.prov_obj.bootstrap_cortx(
             test_cfg["config_path_remote"], self.build_url, node_obj_list)
-        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], "Bootstrap Failed")
 
         LOGGER.info("Preparing pillar data")
         resp = self.prov_obj.prepare_pillar_data(
             self.nd1_obj, test_cfg["config_path_remote"], node_count=3)
-        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], "Pillar data updation Failed")
 
         LOGGER.info("Validating Bootstrap")
         resp = self.prov_obj.bootstrap_validation(self.nd1_obj)
@@ -160,13 +161,14 @@ class TestProvThreeNode:
 
         LOGGER.info("Starting Deploy")
         resp = self.prov_obj.deploy_vm(self.nd1_obj, test_cfg["setup-type"])
-        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], "Deploy Failed")
 
         LOGGER.info("Starting Cluster")
         resp = self.nd1_obj.execute_cmd(
             cmd=common_cmds.CMD_START_CLSTR,
             read_lines=True)[0].strip()
         assert_utils.assert_exact_string(resp, PROV_CFG["cluster_start_msg"])
+        time.sleep(test_cfg["cluster_start_delay"])
 
         LOGGER.info("Starting the post deployment checks")
         test_cfg = PROV_CFG["system"]

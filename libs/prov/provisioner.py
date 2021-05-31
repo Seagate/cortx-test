@@ -108,7 +108,9 @@ class Provisioner:
             node_obj.write_file(fpath=common_cnst.PIP_CONFIG, content=config)
 
             LOGGER.info("Installing Cortx Pre-requisites")
-            node_obj.execute_cmd(cmd=common_cmd.CMD_INSTALL_JAVA, read_lines=True)
+            node_obj.execute_cmd(
+                cmd=common_cmd.CMD_INSTALL_JAVA,
+                read_lines=True)
             node_obj.execute_cmd(
                 cmd=common_cmd.CMD_INSTALL_CORTX_PRE_REQ,
                 read_lines=True)
@@ -128,18 +130,27 @@ class Provisioner:
             node_obj.execute_cmd(
                 cmd=common_cmd.CMD_RM_CORTXISO_REPO,
                 read_lines=True)
-            node_obj.execute_cmd(cmd=common_cmd.CMD_YUM_CLEAN_ALL, read_lines=True)
-            node_obj.execute_cmd(cmd=common_cmd.CMD_RM_YUM_CACHE, read_lines=True)
-            node_obj.execute_cmd(cmd=common_cmd.CMD_RM_PIP_CONF, read_lines=True)
+            node_obj.execute_cmd(
+                cmd=common_cmd.CMD_YUM_CLEAN_ALL,
+                read_lines=True)
+            node_obj.execute_cmd(
+                cmd=common_cmd.CMD_RM_YUM_CACHE,
+                read_lines=True)
+            node_obj.execute_cmd(
+                cmd=common_cmd.CMD_RM_PIP_CONF,
+                read_lines=True)
 
             LOGGER.info("Checking Provisioner version")
             prvsnr_version = node_obj.execute_cmd(
                 cmd=common_cmd.CMD_PRVSNR_VER, read_lines=True)[0]
         except IOError as error:
             LOGGER.error(
-                "An error in %s: %s:",
-                Provisioner.install_pre_requisites.__name__,
-                error)
+                "An error occurred in %s:",
+                Provisioner.install_pre_requisites.__name__)
+            if isinstance(error.args[0], list):
+                LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
+            else:
+                LOGGER.error(error.args[0])
             return False, error
 
         return True, prvsnr_version
@@ -174,10 +185,10 @@ class Provisioner:
                 node = "srvnode-{}".format(node_count)
                 hostname = node_obj.hostname
                 device_list = node_obj.execute_cmd(
-                    cmd=common_cmd.CMD_LIST_DEVICES, read_lines=True)[0].split(",")
+                    cmd=common_cmd.CMD_LIST_DEVICES,
+                    read_lines=True)[0].split(",")
                 metadata_devices = device_list[0]
                 data_devices = ",".join(device_list[1:])
-
                 config_utils.update_config_ini(
                     config_file, node, key="hostname", value=hostname, add_section=False)
                 config_utils.update_config_ini(
@@ -194,9 +205,12 @@ class Provisioner:
                     add_section=False)
         except Exception as error:
             LOGGER.error(
-                "An error in %s: %s:",
-                Provisioner.create_deployment_config.__name__,
-                error)
+                "An error occurred in %s:",
+                Provisioner.create_deployment_config.__name__)
+            if isinstance(error.args[0], list):
+                LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
+            else:
+                LOGGER.error(error.args[0])
             return False, error
 
         return True, config_file
@@ -206,7 +220,7 @@ class Provisioner:
             config_path: str,
             build_url: str,
             node_obj_list: list,
-            timeout: int = 1800):
+            timeout: int = 1800) -> tuple:
         """
         This method runs provisioner setup_provisioner command on the primary node
         :param config_path: Path of config.ini on primary node
@@ -215,7 +229,8 @@ class Provisioner:
         :param timeout: Max Time for bootstrap command should take to complete
         :return: True/False and output of bootstrap command
         """
-        bootstrap_cmd = common_cmd.CMD_SETUP_PRVSNR.format(config_path, build_url)
+        bootstrap_cmd = common_cmd.CMD_SETUP_PRVSNR.format(
+            config_path, build_url)
         if len(node_obj_list) > 1:
             bootstrap_cmd = "{0} {1} ".format(bootstrap_cmd, "--ha")
         for node_count, node_obj in enumerate(node_obj_list, start=1):
@@ -223,10 +238,10 @@ class Provisioner:
             hostname = node_obj.hostname
             bootstrap_cmd = "{0} {1}:{2}".format(bootstrap_cmd, node, hostname)
         LOGGER.info("Running Bootstrap command %s", bootstrap_cmd)
-        print(bootstrap_cmd)
         node1_obj = node_obj_list[0]
         node1_obj.connect(shell=True)
         channel = node1_obj.shell_obj
+        output = ""
         current_output = ""
         start_time = time.time()
         channel.send("".join([bootstrap_cmd, "\n"]))
@@ -234,22 +249,23 @@ class Provisioner:
         while (time.time() - start_time) < timeout:
             time.sleep(30)
             if channel.recv_ready():
-                current_output = current_output + \
-                    channel.recv(9999).decode("utf-8")
-                print(current_output)
+                current_output = channel.recv(9999).decode("utf-8")
+                output = output + current_output
+                LOGGER.info(current_output)
             elif "Password:" in current_output and passwd_counter < len(node_obj_list):
                 channel.send(
                     "".join([node_obj_list[passwd_counter].password, "\n"]))
                 passwd_counter += 1
-            elif "PROVISIONER FAILED" in current_output or "Exiting now.." in current_output:
+            elif "PROVISIONER FAILED" in output or "INFO - Done" in output:
+                LOGGER.error(current_output)
                 break
         else:
             return False, "Bootstap Timeout"
 
-        if "PROVISIONER FAILED" in current_output:
-            return False, current_output
+        if "PROVISIONER FAILED" in output:
+            return False, output
 
-        return True, current_output
+        return True, output
 
     @staticmethod
     def prepare_pillar_data(
@@ -275,54 +291,56 @@ class Provisioner:
                 cmd=common_cmd.CMD_CONFSTORE_EXPORT, read_lines=True)
         except Exception as error:
             LOGGER.error(
-                "An error in %s: %s:",
-                Provisioner.create_deployment_config.__name__,
-                error)
+                "An error occurred in %s:",
+                Provisioner.prepare_pillar_data.__name__)
+            if isinstance(error.args[0], list):
+                LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
+            else:
+                LOGGER.error(error.args[0])
+
             return False, error
 
         return True, resp
 
     @staticmethod
-    def bootstrap_validation(node_obj: object):
+    def bootstrap_validation(node_obj: object) -> bool:
         """
         This method validates if Cortx bootstrap is successful on given node
         :param node_obj: Host object of the primary node
         :return: True/False
         """
+        command_list = [common_cmd.CMD_SALT_PING,
+                        common_cmd.CMD_SALT_STOP_PUPPET,
+                        common_cmd.CMD_SALT_DISABLE_PUPPET,
+                        common_cmd.CMD_SALT_GET_RELEASE,
+                        common_cmd.CMD_SALT_GET_NODE_ID,
+                        common_cmd.CMD_SALT_GET_CLUSTER_ID,
+                        common_cmd.CMD_SALT_GET_ROLES
+                        ]
         try:
-            node_obj.execute_cmd(cmd=common_cmd.CMD_SALT_PING, read_lines=True)
-            node_obj.execute_cmd(
-                cmd=common_cmd.CMD_SALT_STOP_PUPPET,
-                read_lines=True)
-            node_obj.execute_cmd(
-                cmd=common_cmd.CMD_SALT_DISABLE_PUPPET,
-                read_lines=True)
-            node_obj.execute_cmd(
-                cmd=common_cmd.CMD_SALT_GET_RELEASE,
-                read_lines=True)
-            node_obj.execute_cmd(
-                cmd=common_cmd.CMD_SALT_GET_NODE_ID,
-                read_lines=True)
-            node_obj.execute_cmd(
-                cmd=common_cmd.CMD_SALT_GET_CLUSTER_ID,
-                read_lines=True)
-            node_obj.execute_cmd(cmd=common_cmd.CMD_SALT_GET_ROLES, read_lines=True)
+            for command in command_list:
+                command = " ".join([command, "--no-color"])
+                resp = node_obj.execute_cmd(cmd=command, read_lines=True)
+                LOGGER.debug(resp)
         except Exception as error:
             LOGGER.error(
-                "An error in %s: %s:",
-                Provisioner.bootstrap_validation.__name__,
-                error)
+                "An error occurred in %s:",
+                Provisioner.bootstrap_validation.__name__)
+            if isinstance(error.args[0], list):
+                LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
+            else:
+                LOGGER.error(error.args[0])
             return False
 
         return True
 
     @staticmethod
-    def deploy_vm(node_obj: object, setup_type: str):
+    def deploy_vm(node_obj: object, setup_type: str) -> tuple:
         """
-        This method deploys cortx and 3rd part software components on given VM setup
+        This method deploys cortx and 3rd party software components on given VM setup
         :param node_obj: Host object of the primary node
         :param setup_type: Type of setup e.g., single, 3_node etc
-        :return:
+        :return: True/False and deployment status
         """
         components = [
             "system",
@@ -339,9 +357,12 @@ class Provisioner:
                         setup_type, comp), read_lines=True)
             except Exception as error:
                 LOGGER.error(
-                    "An error in %s: %s:",
-                    Provisioner.deploy_vm.__name__,
-                    error)
+                    "An error occurred in %s:",
+                    Provisioner.deploy_vm.__name__)
+                if isinstance(error.args[0], list):
+                    LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
+                else:
+                    LOGGER.error(error.args[0])
                 return False, error
 
         return True, "Deployment Completed"
