@@ -103,6 +103,7 @@ class TestStorageAlerts:
             assert response[0], response[1]
         LOGGER.info("Done Checking SSPL state file")
 
+        # Revisit when R2 HW is available.
         # LOGGER.info("Restarting sspl service")
         # resp = self.health_obj.restart_pcs_resource(self.cm_cfg["sspl_resource_id"])
         # assert resp, "Failed to restart sspl-ll"
@@ -124,6 +125,7 @@ class TestStorageAlerts:
 
         LOGGER.info("Restarting SSPL service")
         service = self.cm_cfg["service"]
+        # Revisit when R2 HW is available.
         # services = [service["sspl_service"], service["kafka_service"],
         #             service["csm_web"], service["csm_agent"]]
         resp = self.s3obj.get_s3server_service_status(
@@ -131,6 +133,7 @@ class TestStorageAlerts:
             pwd=self.passwd)
         assert resp[0], resp[1]
 
+        # Revisit when R2 HW is available.
         # for svc in services:
         #     LOGGER.info("Checking status of %s service", svc)
         #     resp = self.s3obj.get_s3server_service_status(service=svc,
@@ -198,6 +201,7 @@ class TestStorageAlerts:
                 LOGGER.info("Removing log file %s from the Node", file)
                 self.node_obj.remove_file(filename=file)
 
+        # Revisit when R2 HW is available.
         # self.health_obj.restart_pcs_resource(
         #     resource=self.cm_cfg["sspl_resource_id"])
         # time.sleep(self.cm_cfg["sleep_val"])
@@ -445,6 +449,7 @@ class TestStorageAlerts:
                 LOGGER.error("Error: %s", resp[1])
             LOGGER.info("Step 2: Checked generated alert logs")
 
+        # Revisit when R2 HW is available.
         # LOGGER.info("Step 3: Checking CSM REST API for fault alert")
         # time.sleep(self.cm_cfg["csm_alert_gen_delay"])
         # resp = self.csm_alert_obj.verify_csm_response(self.starttime,
@@ -485,6 +490,7 @@ class TestStorageAlerts:
                 LOGGER.error("Error: %s", resp[1])
             LOGGER.info("Step 5: Checked generated alert logs")
 
+        # Revisit when R2 HW is available.
         # LOGGER.info("Step 6: Checking CSM REST API for fault alert")
         # time.sleep(self.cm_cfg["csm_alert_gen_delay"])
         # resp = self.csm_alert_obj.verify_csm_response(self.starttime,
@@ -547,6 +553,7 @@ class TestStorageAlerts:
                 LOGGER.error("Error: %s", resp[1])
             LOGGER.info("Step 2: Checked generated alert logs")
 
+        # Revisit when R2 HW is available.
         # LOGGER.info("Step 3: Checking CSM REST API for fault alert")
         # time.sleep(self.cm_cfg["csm_alert_gen_delay"])
         # resp = self.csm_alert_obj.verify_csm_response(self.starttime,
@@ -622,6 +629,7 @@ class TestStorageAlerts:
                 LOGGER.error("Error: %s", resp[1])
             LOGGER.info("Step 7: Checked generated alert logs")
 
+        # Revisit when R2 HW is available.
         # LOGGER.info("Step 8: Checking CSM REST API for fault alert")
         # time.sleep(self.cm_cfg["csm_alert_gen_delay"])
         # resp = self.csm_alert_obj.verify_csm_response(self.starttime,
@@ -685,6 +693,7 @@ class TestStorageAlerts:
                 LOGGER.error("Error: %s", resp[1])
             LOGGER.info("Step 2: Checked generated alert logs")
 
+        # Revisit when R2 HW is available.
         # LOGGER.info("Step 3: Checking CSM REST API for fault alert")
         # time.sleep(self.cm_cfg["csm_alert_gen_delay"])
         # resp = self.csm_alert_obj.verify_csm_response(self.starttime,
@@ -761,6 +770,7 @@ class TestStorageAlerts:
                 LOGGER.error("Error: %s", resp[1])
             LOGGER.info("Step 8: Checked generated alert logs")
 
+        # Revisit when R2 HW is available.
         # LOGGER.info("Step 9: Checking CSM REST API for fault alert")
         # time.sleep(self.cm_cfg["csm_alert_gen_delay"])
         # resp = self.csm_alert_obj.verify_csm_response(self.starttime,

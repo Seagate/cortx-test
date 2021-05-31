@@ -877,7 +877,7 @@ class ControllerLib:
 
                     LOGGER.info("Adding spare drive %s to disk group %s", key,
                                 disk_group)
-                    cmd = common_cmd.ADD_SPARES.format(key, disk_group)
+                    cmd = common_cmd.ADD_SPARES_CMD.format(key, disk_group)
                     command = f"python3 /root/telnet_operations.py " \
                               f"--telnet_op='set_drive_status_telnet(" \
                               f"enclosure_ip=\"{self.enclosure_ip}\", " \
