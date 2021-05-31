@@ -27,7 +27,7 @@ from libs.ras.ras_test_lib import RASTestLib
 from commons.helpers.host import Host
 from commons import constants as cons
 from commons.helpers.controller_helper import ControllerLib
-from commons.utils.system_utils import run_remote_cmd
+from commons.utils.system_utils import run_remote_cmd, toggle_nw_status
 from commons import commands
 
 LOGGER = logging.getLogger(__name__)
@@ -360,8 +360,8 @@ class GenerateAlertWrapper:
             LOGGER.info(f"Creating management fault on resource {device} on "
                         f"{host}")
             LOGGER.info(f"Making {device} {status} on {host}")
-            ras_test_obj = RASTestLib(host=host, username=h_user, password=h_pwd)
-            resp = ras_test_obj.toggle_nw_status(device=device, status=status)
+            resp = toggle_nw_status(device=device, status=status, host=host,
+                                    username=h_user, pwd=h_pwd)
             return resp, "Created Mgmt NW Port Fault"
         except BaseException as error:
             LOGGER.error("%s %s: %s", cons.EXCEPTION_ERROR,

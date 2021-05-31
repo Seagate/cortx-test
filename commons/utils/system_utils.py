@@ -1030,3 +1030,26 @@ def create_file_fallocate(filepath=None, size="1MB", option="l"):
     resp = run_local_cmd(command)
 
     return os.path.exists(filepath), resp[1]
+
+
+def toggle_nw_status(device: str, status: str, host: str, username: str,
+                     pwd: str):
+    """
+    Toggle network device status using ip set command.
+    :param str device: Name of the ip network device
+    :param str status: Expect status like up/down
+    :param host: Host name on which command is to be run
+    :param username: Username of host
+    :param pwd: Password of host
+    :return: True/False
+    :rtype: Boolean
+    """
+    LOGGER.info(f"Changing {device} n/w device status to {status}")
+    cmd = commands.IP_LINK_CMD.format(device, status)
+    res = run_remote_cmd(
+            hostname=host, username=username, password=pwd, cmd=cmd,
+            read_lines=True)
+    LOGGER.debug(f"Command: {cmd}, response: {res}")
+
+    LOGGER.debug(res)
+    return res[0]

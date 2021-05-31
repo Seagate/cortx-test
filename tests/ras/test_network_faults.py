@@ -50,7 +50,7 @@ class TestNetworkFault:
         cls.uname = CMN_CFG["nodes"][0]["username"]
         cls.passwd = CMN_CFG["nodes"][0]["password"]
         cls.public_data_ip = CMN_CFG["nodes"][0]["public_data_ip"]
-        cls.mgmt_ip = CMN_CFG["nodes"][0]['ip']
+        cls.mgmt_ip = CMN_CFG["nodes"][0]['mgmt_ip']
         cls.setup_type = CMN_CFG['setup_type']
         cls.nw_interfaces = RAS_TEST_CFG["network_interfaces"][cls.setup_type]
         cls.mgmt_device = cls.nw_interfaces["MGMT"]
@@ -178,6 +178,7 @@ class TestNetworkFault:
                 LOGGER.info("Removing log file %s from the Node", file)
                 self.node_obj.remove_file(filename=file)
 
+        # Revisit when actual HW is available
         # self.health_obj.restart_pcs_resource(
         #     resource=self.cm_cfg["sspl_resource_id"])
         # time.sleep(self.cm_cfg["sleep_val"])
@@ -227,6 +228,7 @@ class TestNetworkFault:
             assert_true(resp[0], resp[1])
             LOGGER.info("Step 1.2: Successfully checked generated alerts")
 
+        # Revisit when actual HW is available
         # LOGGER.info("Step 1.3: Validating csm alert response")
         # resp = self.csm_alerts_obj.verify_csm_response(
         #                 self.starttime, self.alert_type["fault"],
@@ -262,6 +264,7 @@ class TestNetworkFault:
             assert_true(resp[0], resp[1])
             LOGGER.info("Step 2.1: Successfully checked generated alerts")
 
+        # Revisit when actual HW is available
         # LOGGER.info(
         #     "Step 2.2: Validating csm alert response after resolving fault")
         #
