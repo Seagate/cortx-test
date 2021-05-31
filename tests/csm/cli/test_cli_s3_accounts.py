@@ -118,6 +118,7 @@ class TestCliS3ACC:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-10872")
     @CTFailOn(error_handler)
     def test_1008_delete_s3_account(self):
@@ -145,6 +146,7 @@ class TestCliS3ACC:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-10877")
     @CTFailOn(error_handler)
     def test_1012_delete_diff_acc(self):
@@ -406,6 +408,7 @@ class TestCliS3ACC:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-10883")
     @CTFailOn(error_handler)
     def test_1147_s3_acc_login(self):
@@ -462,6 +465,7 @@ class TestCliS3ACC:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-10885")
     @CTFailOn(error_handler)
     def test_1916_update_acc_passwd(self):
@@ -572,6 +576,7 @@ class TestCliS3ACC:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-10889")
     @CTFailOn(error_handler)
     def test_1006_list_account_with_format(self):
@@ -749,6 +754,7 @@ class TestCliS3ACC:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-11231")
     @CTFailOn(error_handler)
     def test_882_perform_iam_operations(self):
@@ -786,6 +792,7 @@ class TestCliS3ACC:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-11748")
     @CTFailOn(error_handler)
     def test_1870_perform_bucket_operations(self):
