@@ -973,9 +973,7 @@ class ControllerLib:
             status, disk_group_dict = self.get_show_disk_group()
             LOGGER.info("Reconstruction percent: %s", recon_percent)
             recon_percent = disk_group_dict[disk_group].get('job_percent',
-                                                            percent)
-            if recon_percent == percent:
-                break
+                                                            '100%')
             recon_percent = int(recon_percent.split("%")[0])
 
         if recon_percent >= percent:
