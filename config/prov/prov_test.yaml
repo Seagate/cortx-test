@@ -15,6 +15,7 @@ services:
     - "kafka-zookeeper.service"
     - "salt-master.service"
     - "salt-minion.service"
+    - "lnet.service"
   hw_specific:
     - "multipathd.service"
     - "scsi-network-relay.service"
