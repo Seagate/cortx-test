@@ -27,7 +27,6 @@ import time
 from collections import OrderedDict
 from commons import commands
 from libs.ras.ras_core_lib import RASCoreLib
-from commons.utils import system_utils
 
 LOGGER = logging.getLogger(__name__)
 
@@ -420,24 +419,20 @@ class SoftwareAlert(RASCoreLib):
 
         if store:
             command = "cp -u " + self.svc_path + " " + tmp_svc_conf_copy
-            system_utils.run_remote_cmd(command, self.host, self.username, self.pwd)
+            self.node_utils.execute_cmd(cmd=command)
             LOGGER.info("Performed {} on {}".format(command, self.host))
         else:
             # Remove modified service configuration file
-            command = "rm -f " + self.svc_path
-            system_utils.run_remote_cmd(command, self.host, self.username, self.pwd)
-            LOGGER.info("Performed {} on {}".format(command, self.host))
+            self.node_utils.remove_file(self.svc_path)
 
             # Restore copy config to with original service configuration file name
             command = "cp -u " + tmp_svc_conf_copy + " " + self.svc_path
-            system_utils.run_remote_cmd(command, self.host, self.username, self.pwd)
+            self.node_utils.execute_cmd(cmd=command)
             LOGGER.info("Performed {} on {}".format(command, self.host))
             self.apply_svc_setting()
 
             # Remove copy service configuration file
-            command = "rm -f " + tmp_svc_conf_copy + " " + self.get_tmp_svc_path()
-            system_utils.run_remote_cmd(command, self.host, self.username, self.pwd)
-            LOGGER.info("Performed {} on {}".format(command, self.host))
+            self.node_utils.remove_file(tmp_svc_conf_copy)
 
     def write_svc_file(self, svc, content):
         """Writes content to the service configuration file
