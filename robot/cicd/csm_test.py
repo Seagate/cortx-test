@@ -8,9 +8,6 @@ import logging
 import datetime
 from subprocess import Popen
 
-
-
-
 LOGGER = logging.getLogger(__name__)
 
 

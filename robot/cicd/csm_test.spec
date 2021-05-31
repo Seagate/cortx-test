@@ -1,7 +1,7 @@
 Name: <RPM_NAME>
 Version: %{version}
 Release: %{dist}
-Summary: CSM Tools
+Summary: CSM Test RPM IS TO TEST AND VALIDATE THE CSM GUI TEST CASES ON TARGTE MACHINE
 License: Seagate
 URL: https://github.com/Seagate/cortx-test
 Source0: <PRODUCT>-csm_test-%{version}.tar.gz
