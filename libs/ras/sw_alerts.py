@@ -407,13 +407,10 @@ class SoftwareAlert(RASCoreLib):
                     op[section].update({key: txt[-1]})
         return op
 
-    def store_restore_svc_config(self, svc, host, usr, pswd, store: bool = True):
+    def store_restore_svc_config(self, svc, store: bool = True):
         """
         Store OR Restore the service config file depending on store param value
         :param svc: service name whose file needs to be store or restored
-        :param host: remote server hostname
-        :param usr: remote server username
-        :param pswd: remote server password
         :param store: If true generate copy service config file with svc.servicecopy name
         """
         fpath = self.get_svc_status([svc])[svc]["path"]
@@ -423,23 +420,24 @@ class SoftwareAlert(RASCoreLib):
 
         if store:
             command = "cp -u " + self.svc_path + " " + tmp_svc_conf_copy
-            system_utils.run_remote_cmd(command, host, usr, pswd)
-            LOGGER.info("Performed {} on {}".format(command, host))
+            system_utils.run_remote_cmd(command, self.host, self.username, self.pwd)
+            LOGGER.info("Performed {} on {}".format(command, self.host))
         else:
             # Remove modified service configuration file
             command = "rm -f " + self.svc_path
-            system_utils.run_remote_cmd(command, host, usr, pswd)
-            LOGGER.info("Performed {} on {}".format(command, host))
-            
+            system_utils.run_remote_cmd(command, self.host, self.username, self.pwd)
+            LOGGER.info("Performed {} on {}".format(command, self.host))
+
             # Restore copy config to with original service configuration file name
-            command = "cp -u " + tmp_svc_conf_copy + " " +  self.svc_path
-            system_utils.run_remote_cmd(command, host, usr, pswd)
-            LOGGER.info("Performed {} on {}".format(command, host))
-            
+            command = "cp -u " + tmp_svc_conf_copy + " " + self.svc_path
+            system_utils.run_remote_cmd(command, self.host, self.username, self.pwd)
+            LOGGER.info("Performed {} on {}".format(command, self.host))
+            self.apply_svc_setting()
+
             # Remove copy service configuration file
             command = "rm -f " + tmp_svc_conf_copy + " " + self.get_tmp_svc_path()
-            system_utils.run_remote_cmd(command, host, usr, pswd)
-            LOGGER.info("Performed {} on {}".format(command, host))
+            system_utils.run_remote_cmd(command, self.host, self.username, self.pwd)
+            LOGGER.info("Performed {} on {}".format(command, self.host))
 
     def write_svc_file(self, svc, content):
         """Writes content to the service configuration file
