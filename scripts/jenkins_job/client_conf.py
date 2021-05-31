@@ -116,9 +116,9 @@ def setup_chrome():
     Method to install chrome and chromedriver
     :return: none
     """
-    run_cmd(cmd="wget https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm")
+    run_cmd(cmd="wget -N https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm")
     run_cmd(cmd="yum install -y google-chrome-stable_current_x86_64.rpm")
-    run_cmd(cmd="wget https://chromedriver.storage.googleapis.com/91.0.4472.19/chromedriver_linux64.zip")
+    run_cmd(cmd="wget -N https://chromedriver.storage.googleapis.com/91.0.4472.19/chromedriver_linux64.zip")
     with ZipFile('chromedriver_linux64.zip', 'r') as zipObj:
         # Extract all the contents of zip file in current directory
         zipObj.extractall()
