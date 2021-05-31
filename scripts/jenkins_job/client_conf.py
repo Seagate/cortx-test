@@ -30,9 +30,9 @@ import shutil
 from zipfile import ZipFile
 from commons.helpers.node_helper import Node
 
-
 # Global Constants
 LOGGER = logging.getLogger(__name__)
+
 
 def run_cmd(cmd):
     """
@@ -93,37 +93,74 @@ def create_db_entry(hostname, username, password, ip_addr, admin_user, admin_pas
     with open(json_file, 'w') as file:
         json.dump(json_data, file)
 
+    return new_setupname
+
 def set_s3_endpoints(cluster_ip):
     """
     Set s3 endpoints to cluster ip in /etc/hosts
     :param str cluster_ip: IP of the cluster
     :return: None
     """
-    with open("/etc/hosts", 'r+') as fp:
-        for line in fp:
-            if cluster_ip in line:
-                if "s3.seagate.com iam.seagate.com" in line:
-                    break
-                else:
-                    fp.write("{} s3.seagate.com iam.seagate.com".format(cluster_ip))
-                    break
-        else:
-            fp.write("{} s3.seagate.com iam.seagate.com".format(cluster_ip))
+    # Removing contents of /etc/hosts file and writing new contents
+    print("Setting s3 endpoints on client.")
+    run_cmd(cmd="rm -f /etc/hosts")
+    with open("/etc/hosts", 'w') as file:
+        file.write("127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4\n")
+        file.write("::1         localhost localhost.localdomain localhost6 localhost6.localdomain6\n")
+        file.write("{} s3.seagate.com sts.seagate.com iam.seagate.com sts.cloud.seagate.com\n"
+                   .format(cluster_ip))
+
 
 def setup_chrome():
     """
     Method to install chrome and chromedriver
     :return: none
     """
-    run_cmd(cmd="wget https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm")
+    run_cmd(cmd="wget -N https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm")
     run_cmd(cmd="yum install -y google-chrome-stable_current_x86_64.rpm")
-    run_cmd(cmd="wget https://chromedriver.storage.googleapis.com/89.0.4389.23/chromedriver_linux64.zip")
+    run_cmd(cmd="wget -N https://chromedriver.storage.googleapis.com/91.0.4472.19/chromedriver_linux64.zip")
     with ZipFile('chromedriver_linux64.zip', 'r') as zipObj:
         # Extract all the contents of zip file in current directory
         zipObj.extractall()
     os.chmod("chromedriver", 0o777)
     bin_path = os.path.join("venv", "bin")
     shutil.copy("chromedriver", bin_path)
+
+def configure_server_node(obj, mg_ip):
+    """
+    Method to configure server node for firewall and haproxy
+    :return: None
+    """
+    # Stopping/disabling firewalld service on node for tests
+    print("Doing server side settings for firewalld and haproxy.")
+    cmd = "systemctl stop firewalld"
+    obj.execute_cmd(cmd, read_lines=True)
+    cmd = "systemctl disable firewalld"
+    obj.execute_cmd(cmd, read_lines=True)
+    # Doing changes in haproxy file and restarting it
+    remote_path = "/etc/haproxy/haproxy.cfg"
+    local_path = "/tmp/haproxy.cfg"
+    if os.path.exists(local_path):
+        run_cmd("rm -f {}".format(local_path))
+    obj.copy_file_to_local(remote_path=remote_path, local_path=local_path)
+    line_src = "option forwardfor"
+    with open(local_path) as file:
+        for num, line in enumerate(file, 1):
+            if line_src in line:
+                indx = num
+    with open(local_path, 'r') as file:
+        read_file = file.readlines()
+    read_file.insert(indx - 2, "    bind {}:80\n".format(mg_ip))
+    read_file.insert(indx - 1, "    bind {}:443 ssl crt /etc/ssl/stx/stx.pem\n".format(mg_ip))
+
+
+    with open(local_path, 'w') as file:
+        read_file = "".join(read_file)
+        file.write(read_file)
+    obj.copy_file_to_remote(local_path=local_path, remote_path=remote_path)
+    cmd = "systemctl restart haproxy"
+    obj.execute_cmd(cmd, read_lines=True)
+
 
 def main():
     host = os.getenv("HOSTNAME")
@@ -149,12 +186,20 @@ def main():
         run_cmd("rm -f {}".format(local_path))
     nd_obj_host.copy_file_to_local(remote_path=remote_path, local_path=local_path)
     set_s3_endpoints(clstr_ip)
-    create_db_entry(host, uname, host_passwd, mgmnt_ip, admin_user, admin_passwd)
-    run_cmd("python3.7 tools/setup_update/setup_entry.py "
-            "--dbuser datawrite --dbpassword seagate@123")
+    setupname = create_db_entry(host, uname, host_passwd, mgmnt_ip, admin_user, admin_passwd)
+    run_cmd("cp /root/secrets.json .")
+    with open("/root/secrets.json", 'r') as file:
+        json_data = json.load(file)
+    output = run_cmd("python3.7 tools/setup_update/setup_entry.py "
+                     "--dbuser {} --dbpassword {}".format(json_data['DB_USER'], json_data['DB_PASSWORD']))
+    if "Entry already exits" in str(output):
+        print("DB already exists for target: {}, so will update it.".format(setupname))
+        run_cmd("python3.7 tools/setup_update/setup_entry.py "
+                "--dbuser {} --dbpassword {} --new_entry False".format(json_data['DB_USER'], json_data['DB_PASSWORD']))
+    os.environ["TARGET"] = setupname
     print("Setting up chrome")
     setup_chrome()
-    run_cmd("cp /root/secrets.json .")
+    configure_server_node(nd_obj_host, clstr_ip)
 
 if __name__ == "__main__":
     main()

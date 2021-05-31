@@ -118,6 +118,7 @@ class TestCliS3BKT:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-10805")
     @CTFailOn(error_handler)
     def test_971_verify_delete_bucket(self):
@@ -305,6 +306,7 @@ class TestCliS3BKT:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-10815")
     @CTFailOn(error_handler)
     def test_934_list_bucket(self):
@@ -355,6 +357,7 @@ class TestCliS3BKT:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-17175")
     @CTFailOn(error_handler)
     def test_959_list_buckets_with_format(self):

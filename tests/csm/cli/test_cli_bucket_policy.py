@@ -262,6 +262,7 @@ class TestCliBucketPolicy:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-10800")
     @CTFailOn(error_handler)
     def test_6170_delete_bucket_policy(self):

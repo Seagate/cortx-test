@@ -358,6 +358,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-5459")
     @CTFailOn(error_handler)
     def test_create_single_bucket_2039(self):
@@ -471,6 +472,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-5457")
     @CTFailOn(error_handler)
     def test_delete_bucket_with_objects_2045(self):
@@ -548,6 +550,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-5455")
     @CTFailOn(error_handler)
     def test_delete_empty_bucket_2047(self):
@@ -621,6 +624,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-5452")
     @CTFailOn(error_handler)
     def test_list_all_buckets_2050(self):
