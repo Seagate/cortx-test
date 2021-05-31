@@ -537,8 +537,7 @@ class TestCliIAMUser:
         self.logger.info("Creating access key for IAM user %s", self.user_name)
         create_access_key = self.access_key_obj.create_s3_iam_access_key(
             user_name=self.user_name)
-        assert_utils.assert_equals(
-            True, create_access_key[0], create_access_key[1])
+        assert_utils.assert_true(create_access_key[0], create_access_key[1])
         self.logger.info("Created access key for IAM user %s", self.user_name)
         self.logger.info("Verify access key is created")
         resp = self.access_key_obj.show_s3access_key(user_name=self.user_name)
@@ -564,8 +563,7 @@ class TestCliIAMUser:
         self.logger.info("Creating access key for IAM user %s", self.user_name)
         create_access_key = self.access_key_obj.create_s3_iam_access_key(
             user_name=self.user_name)
-        assert_utils.assert_equals(
-            True, create_access_key[0], create_access_key[1])
+        assert_utils.assert_true(create_access_key[0], create_access_key[1])
         iam_access_key = create_access_key[1]["access_key"]
         self.logger.info("Created access key for IAM user %s", self.user_name)
         self.logger.info("Verify access key is created")
@@ -607,8 +605,7 @@ class TestCliIAMUser:
         self.logger.info("Creating access key for IAM user %s", self.user_name)
         create_access_key = self.access_key_obj.create_s3_iam_access_key(
             user_name=self.user_name)
-        assert_utils.assert_equals(
-            True, create_access_key[0], create_access_key[1])
+        assert_utils.assert_true(create_access_key[0], create_access_key[1])
         iam_access_key = create_access_key[1]["access_key"]
         self.logger.info("Created access key for IAM user %s", self.user_name)
         self.logger.info("Verify access key is created")
@@ -657,8 +654,7 @@ class TestCliIAMUser:
         self.logger.info("Creating access key for IAM user %s", self.user_name)
         create_access_key = self.access_key_obj.create_s3_iam_access_key(
             user_name=self.user_name)
-        assert_utils.assert_equals(
-            True, create_access_key[0], create_access_key[1])
+        assert_utils.assert_true(create_access_key[0], create_access_key[1])
         iam_access_key = create_access_key[1]["access_key"]
         self.logger.info("Created access key for IAM user %s", self.user_name)
         self.logger.info(
