@@ -38,7 +38,7 @@ class SoftwareAlert(RASCoreLib):
         super().__init__(host, username, password)
         self.svc_path = None
 
-    def run_verify_svc_state(self, svc: str, action: str, monitor_svcs: list, timeout:int=5):
+    def run_verify_svc_state(self, svc: str, action: str, monitor_svcs: list, timeout: int = 5):
         """Perform the given action on the given service and verify systemctl response.
 
         :param svc: service name on whoch action is to be performed
@@ -72,11 +72,12 @@ class SoftwareAlert(RASCoreLib):
         starttime = time.time()
         svc_result = False
         time_lapsed = 0
-        while( not svc_result and time_lapsed < timeout):
+        while(not svc_result and time_lapsed < timeout):
             services_status = self.get_svc_status([svc])
             a_sysctl_resp = services_status[svc]
             e_sysctl_resp = self.get_expected_systemctl_resp(action)
-            svc_result = self.verify_systemctl_response(expected=e_sysctl_resp, actual=a_sysctl_resp)
+            svc_result = self.verify_systemctl_response(
+                expected=e_sysctl_resp, actual=a_sysctl_resp)
             time_lapsed = time.time() - starttime
 
         LOGGER.info("Time take for service to change state: %s seconds", time_lapsed)
@@ -351,7 +352,7 @@ class SoftwareAlert(RASCoreLib):
                 LOGGER.info("%s is recovered in %s seconds", svc, time_lapsed)
                 break
             if attempt_start and response[svc]["state"] != "active":
-                self.node_utils.send_systemctl_cmd("start", [svc], exc=True)            
+                self.node_utils.send_systemctl_cmd("start", [svc], exc=True)
             time.sleep(1)
             time_lapsed = time.time() - starttime
         return op
