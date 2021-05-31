@@ -22,6 +22,7 @@
 Prov test file for all the Prov tests scenarios for single node VM.
 """
 
+import os
 import logging
 import pytest
 from commons.helpers.health_helper import Health
@@ -50,8 +51,14 @@ class TestProvSingleNode:
         Setup operations for the test file.
         """
         LOGGER.info("STARTED: Setup Module operations")
+        cls.setup_type = CMN_CFG["setup_type"]
         cls.host = CMN_CFG["nodes"][0]["hostname"]
-        cls.build_path = CMN_CFG["build_path"]
+        cls.build = os.getenv("Build", None)
+        cls.build = "{}/{}".format(cls.build,
+                                   "prod") if cls.build else "last_successful_prod"
+        cls.build_branch = os.getenv("Build_Branch", "stable")
+        cls.build_path = PROV_CFG["build_url"].format(
+            cls.build_branch, cls.build)
         LOGGER.info(
             "User provided Hostname: {} and build path: {}".format(
                 cls.host, cls.build_path))
@@ -74,7 +81,7 @@ class TestProvSingleNode:
         Teardown operations after each test.
         """
 
-    @pytest.mark.prov
+    @pytest.mark.cluster_management_ops
     @pytest.mark.singlenode
     @pytest.mark.tags("TEST-19439")
     @CTFailOn(error_handler)
@@ -85,7 +92,7 @@ class TestProvSingleNode:
         and after deployment done, check for services status.
         """
         LOGGER.info("Starting the prerequisite checks.")
-        test_cfg = PROV_CFG["prereq"]
+        test_cfg = PROV_CFG["single-node"]["prereq"]
 
         LOGGER.info("Check that the host is pinging")
         cmd = common_cmds.CMD_PING.format(self.host)
@@ -117,7 +124,7 @@ class TestProvSingleNode:
             "Kernel version differs than expected.")
 
         LOGGER.info("Starting the deployment steps.")
-        test_cfg = PROV_CFG["deploy"]
+        test_cfg = PROV_CFG["single-node"]["deploy"]
 
         common_cnst.PARAMS["CORTX_BUILD"] = self.build_path
         common_cnst.PARAMS["HOST"] = self.host
@@ -149,26 +156,25 @@ class TestProvSingleNode:
         for line in resp:
             assert_utils.assert_not_in(
                 test_cfg["stopped"], line, "Some services are not up.")
-
-        LOGGER.info("Check that all services are running on respective ports.")
-        self.nd_obj.send_systemctl_cmd(
-            command="restart", services=[
-                PROV_CFG["services"]["firewall"]])
-        status = self.nd_obj.send_systemctl_cmd(
-            command="status", services=[
-                PROV_CFG["services"]["firewall"]], decode=True)
-        assert_utils.assert_in(
-            test_cfg["active"],
-            status[0],
-            "Firewalld service is not running")
-        inactive_ports = list()
-        for service in PROV_CFG["service_ports"]:
-            active_ports = self.hlt_obj.get_ports_for_firewall_cmd(service)
-            for port in PROV_CFG["service_ports"][service]:
-                if port not in active_ports:
-                    LOGGER.error("%s is not running on port %s", service, port)
-                    inactive_ports.append(port)
-        assert_utils.assert_list_equal([], inactive_ports)
         LOGGER.info(
             "Successfully deployed the build after prereq checks and done post "
             "deploy checks as well.")
+
+    @pytest.mark.cluster_management_ops
+    @pytest.mark.singlenode
+    @pytest.mark.tags("TEST-22639")
+    @CTFailOn(error_handler)
+    def test_verify_services_ports_single_node_vm(self):
+        """
+        Prov test to verify services running on respective nodes
+        """
+        LOGGER.info("Checking all services are running on respective ports")
+        self.nd_obj.send_systemctl_cmd(
+            command="start", services=[
+                PROV_CFG["services"]["all"][0]])
+        resp = self.prov_obj.verify_services_ports(
+            self.hlt_obj, PROV_CFG["service_ports"])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info(
+            "Verified all the services running on node %s",
+            self.nd_obj.hostname)
