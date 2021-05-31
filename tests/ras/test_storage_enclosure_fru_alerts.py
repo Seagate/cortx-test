@@ -429,10 +429,11 @@ class TestStorageAlerts:
         if not resp[0]:
             df['Iteration0']['Step1'] = 'Fail'
             LOGGER.error("Error: %s", resp[1])
-        self.dg_failure = True
+        else:
+            self.dg_failure = True
+            LOGGER.info("Step 1: Successfully created disk group failure on %s",
+                        disk_group)
         drives = resp[1]
-        LOGGER.info("Step 1: Successfully created disk group failure on %s",
-                    disk_group)
 
         time.sleep(self.cm_cfg["sleep_val"])
         if self.start_msg_bus:
@@ -530,10 +531,11 @@ class TestStorageAlerts:
         if not resp[0]:
             df['Iteration0']['Step1'] = 'Fail'
             LOGGER.error("Error: %s", resp[1])
-        self.dg_failure = True
+        else:
+            self.dg_failure = True
+            LOGGER.info("Step 1: Successfully created disk group failure on %s",
+                        disk_group)
         drives = resp[1]
-        LOGGER.info("Step 1: Successfully created disk group failure on %s",
-                    disk_group)
 
         time.sleep(self.cm_cfg["sleep_val"])
         if self.start_msg_bus:
@@ -667,10 +669,11 @@ class TestStorageAlerts:
         if not resp[0]:
             df['Iteration0']['Step1'] = 'Fail'
             LOGGER.error("Error: %s", resp[1])
-        self.dg_failure = True
+        else:
+            self.dg_failure = True
+            LOGGER.info("Step 1: Successfully created disk group failure on %s",
+                        disk_group)
         drives = resp[1]
-        LOGGER.info("Step 1: Successfully created disk group failure on %s",
-                    disk_group)
 
         time.sleep(self.cm_cfg["sleep_val"])
         if self.start_msg_bus:

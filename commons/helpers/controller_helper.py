@@ -975,7 +975,7 @@ class ControllerLib:
             recon_percent = disk_group_dict[disk_group].get('job_percent',
                                                             percent)
 
-        if disk_group_dict[disk_group]['health'] == 'OK':
+        if recon_percent >= percent:
             LOGGER.info("Reconstruction of disk group %s completed. Disk "
                         "group is in healthy state", disk_group)
             return True, recon_percent

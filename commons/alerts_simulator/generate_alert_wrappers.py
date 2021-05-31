@@ -373,6 +373,8 @@ class GenerateAlertWrapper:
 
             LOGGER.info("Picking two random drives from disk group %s", disk_group)
             drives = random.sample(drive_list, 2)
+            if disk_group_dict[disk_group]['raidtype'] == "ADAPT":
+                drives = drives[-1]
             LOGGER.info("Removing drive : %s", drives)
             resp = controller_obj.remove_add_drive(enclosure_id=enclid,
                                                    controller_name=ctrl_name,
@@ -429,6 +431,21 @@ class GenerateAlertWrapper:
             LOGGER.info("RAID type of disk group %s is %s", disk_group,
                         disk_group_dict[disk_group]['raidtype'])
 
+            if disk_group_dict[disk_group]['raidtype'] == "ADAPT" and \
+                    [disk_group_dict[disk_group]['health'] == "RCON" or
+                     disk_group_dict[disk_group]['health'] == "RBAL"]:
+                LOGGER.info("Wait for %s job to complete.",
+                            disk_group_dict[disk_group]['health'])
+                poll_status, poll_percent = controller_obj.poll_dg_recon_status(
+                        disk_group=disk_group)
+                if poll_status:
+                    LOGGER.info("Completed job %s", disk_group_dict[
+                        disk_group]['health'])
+                else:
+                    LOGGER.error("Job %s failed", disk_group_dict[disk_group]['health'])
+                    return poll_status, f"{disk_group_dict[disk_group]['health']}" \
+                                        f"job failed. Job progress: {poll_percent}"
+
             LOGGER.info("Adding drives %s", phy_num)
             resp = controller_obj.remove_add_drive(enclosure_id=enclid,
                                                    controller_name=ctrl_name,
@@ -470,8 +487,9 @@ class GenerateAlertWrapper:
 
             LOGGER.info("Check if reconstruction of disk group is started")
             status, disk_group_dict = controller_obj.get_show_disk_group()
-            if disk_group_dict[disk_group]['job'] == 'RCON':
-                LOGGER.info("Successfully started reconstruction of disk "
+            if disk_group_dict[disk_group]['job'] == 'RCON' or \
+                    disk_group_dict[disk_group]['job'] == 'RBAL':
+                LOGGER.info("Successfully started recovery of disk "
                             "group %s", disk_group)
             else:
                 return False, "Failed to start Disk Group reconstruction"
@@ -483,7 +501,12 @@ class GenerateAlertWrapper:
                     LOGGER.info("Successfully recovered disk group %s \n "
                                 "Reconstruction percent = %s", disk_group,
                                 poll_percent)
-                    return poll_status, poll_percent
+                    status, disk_group_dict = controller_obj.get_show_disk_group()
+                    if disk_group_dict[disk_group]['health'] == "OK":
+                        return poll_status, poll_percent
+                    else:
+                        LOGGER.error("Disk group health state is: %s", disk_group_dict[disk_group]['health'])
+                        return poll_status, poll_percent
                 else:
                     LOGGER.error("Failed to recover disk group %s", disk_group)
                     return poll_status, poll_percent
