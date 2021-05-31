@@ -18,7 +18,6 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 # -*- coding: utf-8 -*-
-import argparse
 import csv
 from collections import Counter
 
@@ -77,9 +76,10 @@ def get_code_maturity_data(test_plan: str, test_plan1: str, test_plan2: str,
     builds = []
     for t_plan in [test_plan, test_plan1, test_plan2]:
         if t_plan:
-            tests = jira_api.get_test_list_from_test_plan(test_plan, username, password)
+            tests = jira_api.get_test_list_from_test_plan(t_plan, username, password)
             counters.append(Counter(test['latestStatus'] for test in tests))
-            builds.append(jira_api.get_details_from_test_plan(t_plan, username, password)["build"])
+            builds.append(
+                jira_api.get_details_from_test_plan(t_plan, username, password)["buildNo"])
         else:
             counters.append(Counter())
             builds.append("NA")
@@ -131,49 +131,35 @@ def get_single_bucket_perf_data(build, uri, db_name, db_collection):
     return data
 
 
-def get_args():
-    """Parse arguments and collect database information"""
-    parser = argparse.ArgumentParser()
-    parser.add_argument('tp', help='Testplan for current build')
-    parser.add_argument('--tp1', help='Testplan for current-1 build', default=None)
-    parser.add_argument('--tp2', help='Testplan for current-2 build', default=None)
-    parser.add_argument('--tp3', help='Testplan for current-2 build', default=None)
-
-    test_plans = parser.parse_args()
-
-    uri, db_name, db_collection = common.get_perf_db_details()
-    return test_plans, uri, db_name, db_collection
-
-
 def main():
     """Generate csv executive report from test plan JIRA."""
-    test_plans, uri, db_name, db_collection = get_args()
-    tp_ids = [test_plans.tp, test_plans.tp1, test_plans.tp2, test_plans.tp3]
+    test_plans, uri, db_name, db_collection = common.get_args()
     rest, db_username, db_password = common.get_timings_db_details()
     username, password = jira_api.get_username_password()
 
-    builds = [jira_api.get_details_from_test_plan(test_plan, username, password)["buildNo"] if
-              test_plan else "NA" for test_plan in tp_ids]
+    tps_info = [jira_api.get_details_from_test_plan(test_plan, username, password) if
+                test_plan else "NA" for test_plan in test_plans]
+    builds = [x["buildNo"] if x != 'NA' else 'NA' for x in tps_info]
 
     data = []
-    data.extend(jira_api.get_main_table_data(builds[0]))
+    data.extend(jira_api.get_main_table_data(tps_info[0], "Exec"))
     data.extend([""])
-    data.extend(jira_api.get_reported_bug_table_data(test_plans.tp, username, password))
+    data.extend(jira_api.get_reported_bug_table_data(test_plans[0], username, password))
     data.extend([""])
-    data.extend(jira_api.get_overall_qa_report_table_data(test_plans.tp, test_plans.tp1,
+    data.extend(jira_api.get_overall_qa_report_table_data(test_plans[0], test_plans[1],
                                                           builds[0], username, password))
     data.extend([""])
     data.extend(get_feature_breakdown_summary_table_data(
-        test_plans.tp, username, password))
+        test_plans[0], username, password))
     data.extend([""])
-    data.extend(get_code_maturity_data(test_plans.tp, test_plans.tp1, test_plans.tp2,
+    data.extend(get_code_maturity_data(test_plans[0], test_plans[1], test_plans[2],
                                        username, password))
     data.extend([""])
     data.extend(get_single_bucket_perf_data(builds[0], uri, db_name, db_collection))
     data.extend([""])
-    data.extend(common.get_timing_summary(tp_ids, builds, rest, db_username, db_password))
+    data.extend(common.get_timing_summary(test_plans, builds, rest, db_username, db_password))
     data.extend([""])
-    with open("../exec_report.csv", "a", newline='') as csv_file:
+    with open(f"Exec_Report_{builds[0]}.csv", "w+", newline='') as csv_file:
         writer = csv.writer(csv_file)
         writer.writerows(data)
 
