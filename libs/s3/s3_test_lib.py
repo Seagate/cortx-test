@@ -137,10 +137,12 @@ class S3TestLib(S3Lib):
         :param bucket_name: Name of the bucket
         :param object_name: Name of the object
         :param file_path: Path of the file
+        :keyword content_md5: base64-encoded MD5 digest of message
         :return: (Boolean, object of put object method)
         """
         kwargs["m_key"] = kwargs.get("m_key", None)
         kwargs["m_value"] = kwargs.get("m_value", None)
+        kwargs["content_md5"] = kwargs.get("content_md5", None)  # base64-encoded 128-bit MD5 digest of the message.
         LOGGER.info("Putting object")
         try:
             response = super().put_object(bucket_name, object_name, file_path, **kwargs)
