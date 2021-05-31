@@ -146,8 +146,8 @@ class Test3PSvcMonitoring:
                 LOGGER.info("Terminating the process read_message_bus.py")
                 self.ras_test_obj.kill_remote_process("read_message_bus.py")
                 files = [self.cm_cfg["file"]["alert_log_file"],
-                        self.cm_cfg["file"]["extracted_alert_file"],
-                        self.cm_cfg["file"]["screen_log"]]
+                         self.cm_cfg["file"]["extracted_alert_file"],
+                         self.cm_cfg["file"]["screen_log"]]
                 for file in files:
                     LOGGER.info("Removing log file %s from the Node", file)
                     self.node_obj.remove_file(filename=file)
@@ -402,7 +402,6 @@ class Test3PSvcMonitoring:
             LOGGER.info("Step 9: Service configuration restored")
             LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)
 
-
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-21193")
@@ -412,14 +411,13 @@ class Test3PSvcMonitoring:
         """
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
-        #external_svcs = const.SVCS_3P
-        print(self.external_svcs)
+        LOGGER.info("External services : %s", self.external_svcs)
         for svc in self.external_svcs:
             LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
 
             LOGGER.info("Step 1: Fail %s service...", svc)
             starttime = time.time()
-            result, e_csm_resp = self.sw_alert_obj.run_verify_svc_state(svc, "failed", [], 
+            result, e_csm_resp = self.sw_alert_obj.run_verify_svc_state(svc, "failed", [],
                                                                         timeout=60)
             assert result, f"Failed in failing {svc} service"
             LOGGER.info("Step 1: Failed %s service...", svc)
@@ -435,12 +433,12 @@ class Test3PSvcMonitoring:
 
             LOGGER.info("Step 3: Checking the fault alert on CSM")
             # TODO: Check alert on CSM
-            #assert self.csm_alert_obj.verify_csm_response(starttime, e_csm_resp["alert_type"], True)
+            assert self.csm_alert_obj.verify_csm_response(starttime, e_csm_resp["alert_type"], True)
             LOGGER.info("Step 3: Verified the fault alert on CSM")
 
             self.sw_alert_obj.restore_svc_config()
             LOGGER.info("Step 4: Wait for the %s service to start", svc)
-            op = self.sw_alert_obj.recover_svc(svc, attempt_start=True, 
+            op = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
                                                timeout=const.SVC_LOAD_TIMEOUT_SEC)
             LOGGER.info("Service recovery details : %s", op)
             assert op["state"] == "active", f"Unable to recover {svc} service"
@@ -454,10 +452,10 @@ class Test3PSvcMonitoring:
                                                           restart=False)
                 assert resp[0], resp[1]
                 LOGGER.info("Step 5: Verified the fault resolved alert on message bus")
-            
+
             LOGGER.info("Step 6: Checking the fault resolved alert on CSM")
             # TODO: Check alert on CSM
-            #assert self.csm_alert_obj.verify_csm_response(starttime, e_csm_resp["alert_type"], True)
+            assert self.csm_alert_obj.verify_csm_response(starttime, e_csm_resp["alert_type"], True)
             LOGGER.info("Step 6: Verified the fault resolved alert on CSM")
 
             LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)
